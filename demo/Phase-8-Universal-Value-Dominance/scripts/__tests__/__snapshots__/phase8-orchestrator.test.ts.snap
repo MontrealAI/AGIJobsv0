@@ -8,10 +8,12 @@ Generated: <timestamp>
 - Total monthly value flow: $688.00B
 - Annual capital allocation: $1.97T
 - Average resilience index: 0.925
-- Universal dominance score: 97.1 / 100
+- Universal dominance score: 96.0 / 100
 - Sentinel coverage per guardian cycle: 45.0 minutes
 - Domains covered by sentinels: 100.0%
 - Domains with capital funding: 100.0%
+- Emergency protocol coverage: 2/3 via system pause
+- Fastest emergency reaction window: immediate
 - Minimum sentinel coverage per domain: 900s (requirement 720s, adequacy 125.0%)
 - Maximum encoded autonomy: 7800 bps
 - Minimum per-domain capital coverage: $720.00B / yr
@@ -52,6 +54,11 @@ Generated: <timestamp>
 - Climate Stabilization Endowment · $720.00B/yr · expansion 1300 bps · targets climate-harmonizer, infrastructure-synthesis
 - Planetary Resilience Fund · $890.00B/yr · expansion 1250 bps · targets planetary-finance, health-sovereign, knowledge-lattice
 - Innovation Thrust Catalyst · $360.00B/yr · expansion 1600 bps · targets knowledge-lattice, infrastructure-synthesis
+
+## Emergency Protocols
+- Guardian Council · Superpause · trigger: Any sentinel escalates to critical severity or drawdown exceeds the maxDrawdown guard. · action: Submit forwardPauseCall(systemPause, pauseAll()) via the Phase8 manager to freeze every module instantly. · reaction 0s · authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87
+- Domain Isolation · Planetary Finance · trigger: Planetary Finance Mesh sentinel emits anomaly > 400 bps or TVL drawdown breaches 20%. · action: Call forwardPauseCall(systemPause, pauseDomain(keccak256("planetary-finance"))) to isolate the domain. · reaction 900s · authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87
+- Capital Stream Freeze · Planetary Resilience Fund · trigger: Guardian Council vote to redirect treasury following sentinel misuse report or policy shift. · action: Invoke setCapitalStreamActive(planetary-resilience, false) then forwardPauseCall for dependent domains. · reaction 3600s · authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87
 
 ## Self-Improvement Kernel
 - Strategic plan: cadence 7200s (2.00 h) · hash 0x7d2556f5ae0a7dd2e9c3c5e29377b7af168e2b2f42a3e08d96b9f8e32d4b9f10 · last report ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json

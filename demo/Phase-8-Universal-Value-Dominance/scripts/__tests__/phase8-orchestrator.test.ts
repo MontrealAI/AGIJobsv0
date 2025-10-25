@@ -241,6 +241,7 @@ describe("Phase 8 orchestration console", () => {
         planPayload: join(tempDir, "phase8-self-improvement-plan.json"),
         cycleReport: join(tempDir, "phase8-cycle-report.csv"),
         governanceDirectives: join(tempDir, "phase8-governance-directives.md"),
+        emergencyPlaybook: join(tempDir, "phase8-emergency-playbook.md"),
         dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
       };
 
@@ -253,6 +254,7 @@ describe("Phase 8 orchestration console", () => {
         { label: "Self-improvement payload", path: artifactPaths.planPayload },
         { label: "Cycle report", path: artifactPaths.cycleReport },
         { label: "Governance directives", path: artifactPaths.governanceDirectives },
+        { label: "Emergency playbook", path: artifactPaths.emergencyPlaybook },
         { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
       ]);
 
@@ -261,12 +263,14 @@ describe("Phase 8 orchestration console", () => {
 
       const telemetry = readFileSync(artifactPaths.telemetry, "utf-8");
       const diagram = readFileSync(artifactPaths.mermaid, "utf-8");
+      const emergencyPlaybook = readFileSync(artifactPaths.emergencyPlaybook, "utf-8");
 
       expect(telemetryMarkdown(config, metrics)).toContain("Phase 8 — Universal Value Dominance Telemetry");
       const stableTelemetry = telemetry.replace(/Generated: .*/u, "Generated: <timestamp>");
       expect(stableTelemetry).toMatchSnapshot();
       expect(mermaid(config)).toEqual(diagram);
       expect(diagram).toMatchSnapshot();
+      expect(emergencyPlaybook).toContain("Emergency Response Playbook");
 
       const manifest = JSON.parse(readFileSync(artifactPaths.manifest, "utf-8"));
       expect(manifest.metrics.minimumCoverageAdequacyPercent).toBeGreaterThan(0);

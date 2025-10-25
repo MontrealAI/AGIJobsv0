@@ -13,7 +13,7 @@ test.describe('Phase 8 dashboard happy path', () => {
   test('renders strategic metrics from manifest schema', async ({ page }) => {
     const dominance = page.locator('[data-test-id="stat-card"][data-stat-key="dominance-score"]');
     await expect(dominance).toContainText('Universal dominance score');
-    await expect(dominance).toContainText('97.1 / 100');
+    await expect(dominance).toContainText('96.0 / 100');
 
     const monthlyFlow = page.locator('[data-test-id="stat-card"][data-stat-key="monthly-flow"]');
     await expect(monthlyFlow).toContainText('Monthly value flow');
@@ -27,6 +27,11 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(funding).toContainText('Dominions funded');
     await expect(funding).toContainText('100.0%');
     await expect(funding).toContainText('$720.00B/yr');
+
+    const emergency = page.locator('[data-test-id="stat-card"][data-stat-key="emergency-readiness"]');
+    await expect(emergency).toContainText('Emergency readiness');
+    await expect(emergency).toContainText('2/3 via pause');
+    await expect(emergency).toContainText('0 s');
   });
 
   test('renders sentinel lattice and capital streams from manifest', async ({ page }) => {
@@ -37,6 +42,10 @@ test.describe('Phase 8 dashboard happy path', () => {
     const streamCards = page.locator('[data-test-id="stream-card"]');
     await expect(streamCards).toHaveCount(3);
     await expect(streamCards.first()).toContainText('Climate Stabilization Endowment');
+
+    const emergencyCards = page.locator('[data-test-id="emergency-card"]');
+    await expect(emergencyCards).toHaveCount(3);
+    await expect(emergencyCards.first()).toContainText('Guardian Council · Superpause');
 
     const financeDomain = page.locator('[data-domain-slug="planetary-finance"]');
     await expect(financeDomain).toContainText('Funding $890.00B/yr');
@@ -60,16 +69,17 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(alerts).toHaveCount(1);
     await expect(alerts.first()).toContainText('Universal dominance secured');
 
-    const tooltipButton = page.locator('[data-test-id="runbook-step"] .info-button').first();
+    const installStep = page.locator('[data-runbook-key="install"]');
+    const tooltipButton = installStep.locator('.info-button').first();
     await tooltipButton.click();
     const tooltip = page.locator('[data-test-id="runbook-step"] .tooltip').first();
     await expect(tooltip).toHaveAttribute('data-visible', 'true');
     await expect(tooltip).toContainText('deterministic installs');
 
-    const copyButton = page.locator('[data-test-id="copy-command"]').first();
+    const copyButton = installStep.locator('[data-test-id="copy-command"]').first();
     await copyButton.click();
     await expect(copyButton).toHaveAttribute('data-copy-state', 'copied');
-    const feedback = page.locator('[data-test-id="copy-feedback"]').first();
+    const feedback = installStep.locator('[data-test-id="copy-feedback"]').first();
     await expect(feedback).toContainText('Copied to clipboard');
 
     const downloadLink = page.locator('[data-test-id="runbook-download"]').first();
@@ -77,6 +87,9 @@ test.describe('Phase 8 dashboard happy path', () => {
 
     const directivesLink = page.locator('[data-runbook-key="brief"] [data-test-id="runbook-download"]');
     await expect(directivesLink).toHaveAttribute('href', './output/phase8-governance-directives.md');
+
+    const emergencyLink = page.locator('[data-runbook-key="emergency"] [data-test-id="runbook-download"]');
+    await expect(emergencyLink).toHaveAttribute('href', './output/phase8-emergency-playbook.md');
 
     const scorecardLink = page.locator('[data-runbook-key="scorecard"] [data-test-id="runbook-download"]');
     await expect(scorecardLink).toHaveAttribute('href', './output/phase8-dominance-scorecard.json');

@@ -55,6 +55,20 @@ const streamSchema = z.object({
   active: z.boolean(),
 });
 
+const emergencySchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  trigger: z.string().min(1),
+  action: z.string().min(1),
+  authority: address,
+  contract: address,
+  functionSignature: z.string().min(1),
+  reactionWindowSeconds: z.number().int().min(0),
+  communications: z.string().optional(),
+  notes: z.string().optional(),
+  targets: z.array(z.string()).default([]),
+});
+
 const planSchema = z
   .object({
     planURI: z.string().min(1),
@@ -85,6 +99,7 @@ const configSchema = z.object({
   domains: z.array(domainSchema).min(1),
   sentinels: z.array(sentinelSchema).min(1),
   capitalStreams: z.array(streamSchema).min(1),
+  emergencyProtocols: z.array(emergencySchema).min(1),
   selfImprovement: z.object({
     plan: planSchema,
     playbooks: z
@@ -172,6 +187,45 @@ function main() {
   const unfunded = Array.from(slugs.values()).filter((slug) => (streamCoverage.get(slug) ?? 0) <= 0);
   if (unfunded.length > 0) {
     throw new Error(`All domains require capital stream funding — missing: ${unfunded.join(", ")}`);
+  }
+
+  const emergencySlugs = new Set<string>();
+  const systemPauseAddress = config.global.systemPause.toLowerCase();
+  let systemPauseProtocols = 0;
+  let fastestReaction = Number.POSITIVE_INFINITY;
+  for (const protocol of config.emergencyProtocols) {
+    const slug = protocol.slug.toLowerCase();
+    if (emergencySlugs.has(slug)) {
+      throw new Error(`Duplicate emergency protocol slug detected: ${protocol.slug}`);
+    }
+    emergencySlugs.add(slug);
+    if (protocol.contract.toLowerCase() === systemPauseAddress) {
+      systemPauseProtocols += 1;
+    }
+    for (const target of protocol.targets ?? []) {
+      const normalized = target.toLowerCase();
+      if (!slugs.has(normalized)) {
+        throw new Error(`Emergency protocol ${protocol.slug} references unknown domain ${target}`);
+      }
+    }
+    if (Number.isFinite(protocol.reactionWindowSeconds) && protocol.reactionWindowSeconds >= 0) {
+      fastestReaction = Math.min(fastestReaction, protocol.reactionWindowSeconds);
+    }
+  }
+
+  if (systemPauseProtocols === 0) {
+    throw new Error("At least one emergency protocol must route through the configured system pause");
+  }
+
+  if (config.emergencyProtocols.length > 0) {
+    if (!Number.isFinite(fastestReaction)) {
+      throw new Error("Emergency protocols must declare finite reaction windows");
+    }
+    if (fastestReaction > config.global.guardianReviewWindow) {
+      throw new Error(
+        `Fastest emergency reaction window ${fastestReaction}s exceeds guardian review window ${config.global.guardianReviewWindow}s`,
+      );
+    }
   }
 
   const sentinelCoverage = config.sentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);

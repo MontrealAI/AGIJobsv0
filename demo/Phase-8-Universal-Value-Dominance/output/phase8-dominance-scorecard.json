@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2025-10-24T21:34:02.536Z",
+  "generatedAt": "2025-10-25T00:44:27.944Z",
   "chain": {
     "id": 1,
     "manager": "0x0000000000000000000000000000000000000000"
   },
   "metrics": {
-    "dominanceScore": 97.1,
+    "dominanceScore": 96,
     "monthlyValueUSD": 688000000000,
     "annualBudgetUSD": 1970000000000,
     "averageResilience": 0.925,
@@ -16,7 +16,10 @@
     "cadenceHours": 2,
     "minimumCoverageSeconds": 900,
     "guardianWindowSeconds": 720,
-    "minimumCoverageAdequacyPercent": 125
+    "minimumCoverageAdequacyPercent": 125,
+    "emergencyProtocolCount": 3,
+    "systemPauseProtocols": 2,
+    "fastestReactionSeconds": 0
   },
   "domains": [
     {
@@ -169,6 +172,53 @@
         "knowledge-lattice",
         "infrastructure-synthesis"
       ]
+    }
+  ],
+  "emergencyProtocols": [
+    {
+      "slug": "guardian-council-superpause",
+      "name": "Guardian Council · Superpause",
+      "trigger": "Any sentinel escalates to critical severity or drawdown exceeds the maxDrawdown guard.",
+      "action": "Submit forwardPauseCall(systemPause, pauseAll()) via the Phase8 manager to freeze every module instantly.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "functionSignature": "pauseAll()",
+      "reactionWindowSeconds": 0,
+      "targets": [],
+      "communications": "Notify Guardian Council war-room and Mission Control bridge immediately.",
+      "notes": "Full lattice stop; resume only after guardian attestations and validator quorum sign-off."
+    },
+    {
+      "slug": "domain-isolation-planetary-finance",
+      "name": "Domain Isolation · Planetary Finance",
+      "trigger": "Planetary Finance Mesh sentinel emits anomaly > 400 bps or TVL drawdown breaches 20%.",
+      "action": "Call forwardPauseCall(systemPause, pauseDomain(keccak256(\"planetary-finance\"))) to isolate the domain.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "functionSignature": "pauseDomain(bytes32 domainId)",
+      "reactionWindowSeconds": 900,
+      "targets": [
+        "planetary-finance"
+      ],
+      "communications": "Guardian council posts override window (15 minutes) to Finance Dominion Ops channel.",
+      "notes": "Keeps the rest of the dominion lattice live while finance undergoes rapid audit."
+    },
+    {
+      "slug": "capital-stream-freeze-resilience",
+      "name": "Capital Stream Freeze · Planetary Resilience Fund",
+      "trigger": "Guardian Council vote to redirect treasury following sentinel misuse report or policy shift.",
+      "action": "Invoke setCapitalStreamActive(planetary-resilience, false) then forwardPauseCall for dependent domains.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+      "functionSignature": "setCapitalStreamActive(bytes32 streamId, bool active)",
+      "reactionWindowSeconds": 3600,
+      "targets": [
+        "planetary-finance",
+        "health-sovereign",
+        "knowledge-lattice"
+      ],
+      "communications": "Upgrade Coordinator dispatch posts updated funding matrix to Mission Control + Treasury Ops.",
+      "notes": "Suspends disbursements while new vault routing is approved; resumes only after updated calldata batch."
     }
   ],
   "guardrails": {

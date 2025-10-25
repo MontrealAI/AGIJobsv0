@@ -32,6 +32,9 @@ type DominanceScoreInput = {
   maxAutonomyBps: number;
   autonomyGuardCapBps: number;
   cadenceSeconds: number;
+  emergencyProtocolCount: number;
+  systemPauseProtocolCount: number;
+  fastestReactionSeconds: number;
 };
 
 function computeDominanceScore(input: DominanceScoreInput): number {
@@ -49,9 +52,25 @@ function computeDominanceScore(input: DominanceScoreInput): number {
     input.cadenceSeconds > 0
       ? Math.max(0, 1 - Math.min(1, input.cadenceSeconds / (24 * 60 * 60)))
       : 0.5;
+  const pauseCoverageScore =
+    input.emergencyProtocolCount <= 0
+      ? 0
+      : Math.min(1, input.systemPauseProtocolCount / input.emergencyProtocolCount);
+  const reactionReference = 15 * 60; // 15 minute guardian override window target
+  const reactionScore =
+    input.fastestReactionSeconds <= 0
+      ? 1
+      : Math.min(1, reactionReference / Math.max(input.fastestReactionSeconds, 1));
+  const protocolScore =
+    input.emergencyProtocolCount <= 0 ? 0 : Math.min(1, (pauseCoverageScore + reactionScore) / 2);
 
   const weighted =
-    0.3 * valueScore + 0.25 * resilienceScore + 0.2 * coverageScore + 0.15 * autonomyScore + 0.1 * cadenceScore;
+    0.28 * valueScore +
+    0.23 * resilienceScore +
+    0.18 * coverageScore +
+    0.14 * autonomyScore +
+    0.09 * cadenceScore +
+    0.08 * protocolScore;
   return Math.min(100, Math.round(weighted * 1000) / 10);
 }
 
@@ -183,6 +202,25 @@ const StreamSchema = z.object({
   active: z.boolean().default(true),
 });
 
+const EmergencyProtocolSchema = z.object({
+  slug: z.string({ required_error: "Emergency protocol slug is required" }).min(1, "Emergency protocol slug is required"),
+  name: z.string({ required_error: "Emergency protocol name is required" }).min(1, "Emergency protocol name is required"),
+  trigger: z.string({ required_error: "Emergency protocol trigger is required" }).min(1, "Emergency protocol trigger is required"),
+  action: z.string({ required_error: "Emergency protocol action is required" }).min(1, "Emergency protocol action is required"),
+  authority: AddressSchema,
+  contract: AddressSchema,
+  functionSignature: z
+    .string({ required_error: "Emergency protocol functionSignature is required" })
+    .min(1, "Emergency protocol functionSignature is required"),
+  reactionWindowSeconds: z
+    .number({ invalid_type_error: "Emergency protocol reactionWindowSeconds must be a number" })
+    .int("Emergency protocol reactionWindowSeconds must be an integer")
+    .nonnegative("Emergency protocol reactionWindowSeconds cannot be negative"),
+  communications: z.string().optional(),
+  notes: z.string().optional(),
+  targets: z.array(z.string()).default([]),
+});
+
 const KernelChecksumSchema = z.object({
   algorithm: z
     .string({ required_error: "Guardrail checksum algorithm is required" })
@@ -299,6 +337,7 @@ const ManifestSchema = z
     domains: z.array(DomainSchema).default([]),
     sentinels: z.array(SentinelSchema).default([]),
     capitalStreams: z.array(StreamSchema).default([]),
+    emergencyProtocols: z.array(EmergencyProtocolSchema).default([]),
     selfImprovement: SelfImprovementSchema.optional(),
   })
   .superRefine((value, ctx) => {
@@ -349,6 +388,53 @@ const ManifestSchema = z
       }
       streamSlugMap.set(slug, index);
     });
+
+    const emergencyProtocols = value.emergencyProtocols ?? [];
+    const protocolSlugMap = new Map<string, number>();
+    let systemPauseProtocolCount = 0;
+    const systemPauseAddress = String(value.global?.systemPause ?? "").toLowerCase();
+    emergencyProtocols.forEach((protocol, index) => {
+      const slug = String(protocol?.slug ?? "").toLowerCase();
+      if (!slug) return;
+      if (protocolSlugMap.has(slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate emergency protocol slug detected: ${slug}`,
+          path: ["emergencyProtocols", index, "slug"],
+        });
+      } else {
+        protocolSlugMap.set(slug, index);
+      }
+      if (systemPauseAddress && String(protocol?.contract ?? "").toLowerCase() === systemPauseAddress) {
+        systemPauseProtocolCount += 1;
+      }
+      for (const target of protocol?.targets ?? []) {
+        const normalized = String(target ?? "").toLowerCase();
+        if (normalized && !domainSlugMap.has(normalized)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Emergency protocol ${protocol?.slug ?? ""} references unknown domain ${target}`,
+            path: ["emergencyProtocols", index, "targets"],
+          });
+        }
+      }
+    });
+
+    if (domains.length > 0 && emergencyProtocols.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one emergency protocol is required when domains are active",
+        path: ["emergencyProtocols"],
+      });
+    }
+
+    if (systemPauseAddress && emergencyProtocols.length > 0 && systemPauseProtocolCount === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one emergency protocol must route through the configured system pause",
+        path: ["emergencyProtocols"],
+      });
+    }
 
     const guardrail = value.selfImprovement?.autonomyGuards?.maxAutonomyBps;
     if (domains.length > 0 && guardrail === undefined) {
@@ -667,6 +753,33 @@ export function guardrailDiagnostics(config: Phase8Config): string[] {
     }
   }
 
+  const emergencyProtocols = config.emergencyProtocols ?? [];
+  if (domains.length > 0 && emergencyProtocols.length === 0) {
+    diagnostics.push("No emergency protocols configured for active dominions");
+  }
+  const systemPauseAddress = String(config.global?.systemPause ?? "").toLowerCase();
+  if (
+    systemPauseAddress &&
+    emergencyProtocols.length > 0 &&
+    !emergencyProtocols.some((protocol) => String(protocol.contract ?? "").toLowerCase() === systemPauseAddress)
+  ) {
+    diagnostics.push("Emergency protocols do not route through the configured system pause contract");
+  }
+  if (emergencyProtocols.length > 0) {
+    let fastestReaction = Number.POSITIVE_INFINITY;
+    for (const protocol of emergencyProtocols) {
+      const reactionSeconds = Number(protocol.reactionWindowSeconds ?? 0);
+      if (Number.isFinite(reactionSeconds) && reactionSeconds >= 0 && reactionSeconds < fastestReaction) {
+        fastestReaction = reactionSeconds;
+      }
+    }
+    if (Number.isFinite(fastestReaction) && guardianWindow > 0 && fastestReaction > guardianWindow) {
+      diagnostics.push(
+        `Fastest emergency protocol reaction window ${fastestReaction}s exceeds guardian review window ${guardianWindow}s`,
+      );
+    }
+  }
+
   return diagnostics;
 }
 
@@ -711,6 +824,7 @@ export function computeMetrics(config: Phase8Config) {
   const domains = config.domains ?? [];
   const sentinels = config.sentinels ?? [];
   const streams = config.capitalStreams ?? [];
+  const emergencyProtocols = config.emergencyProtocols ?? [];
   const plan = config.selfImprovement?.plan ?? {};
   const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
   const domainCoverageMap = coverageMap(sentinels, domainSlugs);
@@ -762,6 +876,22 @@ export function computeMetrics(config: Phase8Config) {
       : 0;
   const cadenceHours = Number(plan.cadenceSeconds ?? 0) / 3600;
   const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
+  const systemPauseAddress = String(config.global?.systemPause ?? "").toLowerCase();
+  let systemPauseProtocolCount = 0;
+  let fastestReactionSeconds = Number.POSITIVE_INFINITY;
+  for (const protocol of emergencyProtocols) {
+    const contractAddress = String(protocol.contract ?? "").toLowerCase();
+    if (systemPauseAddress && contractAddress === systemPauseAddress) {
+      systemPauseProtocolCount += 1;
+    }
+    const reactionSeconds = Number(protocol.reactionWindowSeconds ?? 0);
+    if (Number.isFinite(reactionSeconds) && reactionSeconds >= 0 && reactionSeconds < fastestReactionSeconds) {
+      fastestReactionSeconds = reactionSeconds;
+    }
+  }
+  if (!Number.isFinite(fastestReactionSeconds)) {
+    fastestReactionSeconds = 0;
+  }
   const dominanceScore = computeDominanceScore({
     totalMonthlyUSD,
     averageResilience,
@@ -771,6 +901,9 @@ export function computeMetrics(config: Phase8Config) {
     maxAutonomyBps: maxAutonomy,
     autonomyGuardCapBps: Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0),
     cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
+    emergencyProtocolCount: emergencyProtocols.length,
+    systemPauseProtocolCount,
+    fastestReactionSeconds,
   });
   const fundingObject: Record<string, number> = {};
   for (const domain of domains) {
@@ -794,6 +927,9 @@ export function computeMetrics(config: Phase8Config) {
     minimumCoverageAdequacy,
     minDomainFundingUSD,
     domainFundingMap: fundingObject,
+    emergencyProtocolCount: emergencyProtocols.length,
+    systemPauseProtocolCount,
+    fastestReactionSeconds,
   };
 }
 
@@ -1045,6 +1181,12 @@ export function telemetryMarkdown(
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
   lines.push(`- Domains with capital funding: ${metrics.fundedDomainRatio.toFixed(1)}%`);
+  lines.push(
+    `- Emergency protocol coverage: ${metrics.systemPauseProtocolCount}/${metrics.emergencyProtocolCount} via system pause`,
+  );
+  lines.push(
+    `- Fastest emergency reaction window: ${metrics.fastestReactionSeconds > 0 ? `${metrics.fastestReactionSeconds}s` : "immediate"}`,
+  );
   if (metrics.guardianWindowSeconds) {
     const adequacyPercent = metrics.minimumCoverageAdequacy * 100;
     lines.push(
@@ -1115,6 +1257,18 @@ export function telemetryMarkdown(
     lines.push(
       `- ${stream.name} · ${usd(Number(stream.annualBudget ?? 0))}/yr · expansion ${stream.expansionBps} bps · targets ${(stream.domains || []).join(", ")}`,
     );
+  }
+  lines.push("");
+
+  lines.push(`## Emergency Protocols`);
+  if ((config.emergencyProtocols ?? []).length === 0) {
+    lines.push("- No emergency protocols configured. Configure guardian-controlled pause playbooks immediately.");
+  } else {
+    for (const protocol of config.emergencyProtocols ?? []) {
+      lines.push(
+        `- ${protocol.name} · trigger: ${protocol.trigger} · action: ${protocol.action} · reaction ${protocol.reactionWindowSeconds}s · authority ${protocol.authority}`,
+      );
+    }
   }
   lines.push("");
 
@@ -1273,6 +1427,7 @@ function generateOperatorRunbook(
       : "configure PHASE8_MANAGER_ADDRESS to route pause calls";
   lines.push(`• Invoke SystemPause via forwardPauseCall → ${pauseTarget}`);
   lines.push("• Guardian council retains immediate pause authority");
+  lines.push("• Emergency binder: output/phase8-emergency-playbook.md (guardian response quick reference)");
   lines.push("");
   lines.push("Console shortcuts:");
   lines.push(
@@ -1409,6 +1564,9 @@ function generateGovernanceDirectives(
     "4. Distribute `output/phase8-governance-directives.md` and `output/phase8-dominance-scorecard.json` to guardian council and observers for sign-off.",
   );
   lines.push("5. Launch the dashboard with `npx serve demo/Phase-8-Universal-Value-Dominance` for live monitoring.");
+  lines.push(
+    "6. Deliver `output/phase8-emergency-playbook.md` to guardian response leads so pause instructions are at hand.",
+  );
   lines.push("");
   lines.push("## Oversight priorities");
   for (const domain of config.domains ?? []) {
@@ -1441,6 +1599,23 @@ function generateGovernanceDirectives(
       `- Kernel zk-proof ${config.selfImprovement.guardrails.zkProof.circuit} :: status ${config.selfImprovement.guardrails.zkProof.status} :: artifact ${config.selfImprovement.guardrails.zkProof.artifactURI}`,
     );
   }
+  lines.push(
+    `- Emergency protocols ${metrics.systemPauseProtocolCount}/${metrics.emergencyProtocolCount} routed through system pause · fastest reaction ${metrics.fastestReactionSeconds > 0 ? `${metrics.fastestReactionSeconds}s` : "immediate"}.`,
+  );
+  lines.push("");
+  lines.push("## Emergency response protocols");
+  if ((config.emergencyProtocols ?? []).length === 0) {
+    lines.push("- No emergency protocols configured. Add guardian-controlled pause playbooks before enabling dominions.");
+  } else {
+    for (const protocol of config.emergencyProtocols ?? []) {
+      const targets = (protocol.targets ?? []).length
+        ? `targets ${(protocol.targets ?? []).join(', ')}`
+        : 'targets all';
+      lines.push(
+        `- ${protocol.name}: trigger → ${protocol.trigger}; action → ${protocol.action}; reaction ${protocol.reactionWindowSeconds}s; authority ${protocol.authority}; ${targets}.`,
+      );
+    }
+  }
   lines.push("");
   lines.push("## Reporting & distribution");
   lines.push("- Share the dominance scorecard (JSON) with analytics teams for downstream automation.");
@@ -1452,6 +1627,79 @@ function generateGovernanceDirectives(
   lines.push(shortAddress("System pause", config.global?.systemPause));
   lines.push(shortAddress("Upgrade coordinator", config.global?.upgradeCoordinator));
   lines.push(shortAddress("Validator registry", config.global?.validatorRegistry));
+
+  return `${lines.join("\n")}\n`;
+}
+
+function generateEmergencyPlaybook(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  generatedAt: string,
+): string {
+  const lines: string[] = [];
+  const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+  const fastestReaction = metrics.fastestReactionSeconds > 0 ? `${metrics.fastestReactionSeconds}s` : "immediate";
+  lines.push("# Phase 8 — Emergency Response Playbook");
+  lines.push(`Generated: ${generatedAt}`);
+  lines.push("");
+  lines.push("## Control overview");
+  lines.push(`- Guardian council: ${config.global?.guardianCouncil}`);
+  lines.push(`- System pause contract: ${config.global?.systemPause}`);
+  lines.push(`- Phase8 manager (set via env): ${environment.managerAddress ?? ZERO_ADDRESS}`);
+  lines.push(`- Guardian review window: ${guardianWindow}s`);
+  lines.push(
+    `- Fastest emergency reaction: ${fastestReaction} · ${metrics.systemPauseProtocolCount}/${metrics.emergencyProtocolCount} protocols route through system pause`,
+  );
+  lines.push("");
+  lines.push("## Execution quick steps");
+  lines.push("1. Convene guardian council multi-sig with quorum.");
+  lines.push("2. Load the encoded calldata bundle or prepare manual transactions as outlined below.");
+  lines.push("3. Broadcast incident notice to Mission Control and domain operators.");
+  lines.push("4. Execute protocol-specific calldata; log tx hashes in incident channel.");
+  lines.push("5. Maintain override window for human review then coordinate staged unpause.");
+  lines.push("");
+
+  const protocols = config.emergencyProtocols ?? [];
+  if (protocols.length === 0) {
+    lines.push("## Protocol registry");
+    lines.push("No emergency protocols configured. Add guardian-controlled playbooks before enabling production traffic.");
+    return `${lines.join("\n")}\n`;
+  }
+
+  lines.push("## Protocol registry");
+  lines.push(
+    "| Protocol | Trigger | Action | Authority | Contract | Function | Reaction | Targets | Communications | Notes |",
+  );
+  lines.push("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |");
+  for (const protocol of protocols) {
+    const targets = (protocol.targets ?? []).map((target) => {
+      const slug = String(target);
+      const hash = slugId(slug);
+      return `${slug} (${hash.slice(0, 10)}…)`;
+    });
+    lines.push(
+      `| ${protocol.name} | ${protocol.trigger} | ${protocol.action} | ${protocol.authority} | ${protocol.contract} | ${protocol.functionSignature} | ${protocol.reactionWindowSeconds}s | ${
+        targets.length ? targets.join('<br>') : 'all'
+      } | ${protocol.communications ?? '—'} | ${protocol.notes ?? '—'} |`,
+    );
+  }
+  lines.push("");
+
+  lines.push("## Manual calldata reference");
+  lines.push("- Use Phase8 manager `forwardPauseCall(target, data)` when invoking pause actions from the emergency console.");
+  lines.push(
+    "- For domain isolation protocols, compute `bytes32 domainId = keccak256(abi.encodePacked(slug))` using the slug shown above.",
+  );
+  lines.push(
+    "- For capital stream freezes, execute the generated calldata to toggle stream activity, then apply updated stream bindings.",
+  );
+  lines.push("");
+
+  lines.push("## Post-incident checklist");
+  lines.push("- Archive incident summary, tx hashes, and updated telemetry in governance records.");
+  lines.push("- Rerun `npm run demo:phase8:orchestrate` to regenerate directives reflecting new parameters.");
+  lines.push("- Validate sentinel coverage and capital funding remain ≥ guardian review window before resuming full autonomy.");
 
   return `${lines.join("\n")}\n`;
 }
@@ -1488,6 +1736,9 @@ function generateDominanceScorecard(
       minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
       guardianWindowSeconds: metrics.guardianWindowSeconds,
       minimumCoverageAdequacyPercent: Number((metrics.minimumCoverageAdequacy * 100).toFixed(1)),
+      emergencyProtocolCount: metrics.emergencyProtocolCount,
+      systemPauseProtocols: metrics.systemPauseProtocolCount,
+      fastestReactionSeconds: metrics.fastestReactionSeconds,
     },
     domains: (config.domains ?? []).map((domain) => {
       const slug = String(domain.slug ?? "").toLowerCase();
@@ -1518,6 +1769,19 @@ function generateDominanceScorecard(
       annualBudgetUSD: Number(stream.annualBudget ?? 0),
       expansionBps: Number(stream.expansionBps ?? 0),
       domains: stream.domains ?? [],
+    })),
+    emergencyProtocols: (config.emergencyProtocols ?? []).map((protocol) => ({
+      slug: protocol.slug,
+      name: protocol.name,
+      trigger: protocol.trigger,
+      action: protocol.action,
+      authority: protocol.authority,
+      contract: protocol.contract,
+      functionSignature: protocol.functionSignature,
+      reactionWindowSeconds: Number(protocol.reactionWindowSeconds ?? 0),
+      targets: protocol.targets ?? [],
+      communications: protocol.communications ?? "",
+      notes: protocol.notes ?? "",
     })),
     guardrails: {
       autonomy: config.selfImprovement?.autonomyGuards ?? null,
@@ -1573,6 +1837,9 @@ export function writeArtifacts(
       fundedDomainRatio: metrics.fundedDomainRatio,
       minDomainFundingUSD: metrics.minDomainFundingUSD,
       domainFundingUSD: metrics.domainFundingMap,
+      emergencyProtocolCount: metrics.emergencyProtocolCount,
+      systemPauseProtocolCount: metrics.systemPauseProtocolCount,
+      fastestReactionSeconds: metrics.fastestReactionSeconds,
     },
     calls: entries,
   };
@@ -1617,6 +1884,9 @@ export function writeArtifacts(
   const directivesPath = join(outputDir, "phase8-governance-directives.md");
   writeFileSync(directivesPath, generateGovernanceDirectives(config, metrics, environment, generatedAt));
 
+  const emergencyPlaybookPath = join(outputDir, "phase8-emergency-playbook.md");
+  writeFileSync(emergencyPlaybookPath, generateEmergencyPlaybook(config, metrics, environment, generatedAt));
+
   const scorecardPath = join(outputDir, "phase8-dominance-scorecard.json");
   writeFileSync(scorecardPath, `${JSON.stringify(generateDominanceScorecard(config, metrics, environment, generatedAt), null, 2)}\n`);
 
@@ -1629,6 +1899,7 @@ export function writeArtifacts(
     { label: "Self-improvement payload", path: planPayloadPath },
     { label: "Cycle report", path: cycleReportPath },
     { label: "Governance directives", path: directivesPath },
+    { label: "Emergency playbook", path: emergencyPlaybookPath },
     { label: "Dominance scorecard", path: scorecardPath },
   ];
 }
@@ -1683,6 +1954,11 @@ export function main() {
       `Domains funded by capital streams: ${metrics.fundedDomainRatio.toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
     );
     console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
+    console.log(
+      `Emergency protocols: ${metrics.emergencyProtocolCount} total (${metrics.systemPauseProtocolCount} via system pause) · fastest reaction ${
+        metrics.fastestReactionSeconds > 0 ? `${metrics.fastestReactionSeconds}s` : "immediate"
+      }`,
+    );
     if (metrics.cadenceHours) {
       console.log(`Self-improvement cadence: every ${metrics.cadenceHours.toFixed(2)} hours`);
     }
@@ -1717,6 +1993,18 @@ export function main() {
       console.log(
         `  ${stream.name}: ${usd(Number(stream.annualBudget ?? 0))}/yr, expansion ${stream.expansionBps}bps → ${(stream.domains || []).join(", ")}`
       );
+    }
+
+    banner("Emergency response deck");
+    if ((config.emergencyProtocols ?? []).length === 0) {
+      console.log("  No emergency protocols configured — add guardian-controlled pause playbooks.");
+    } else {
+      for (const protocol of config.emergencyProtocols ?? []) {
+        const targets = (protocol.targets ?? []).length ? (protocol.targets ?? []).join(", ") : "all";
+        console.log(
+          `  ${protocol.name}: trigger ${protocol.trigger} → action ${protocol.action} (${protocol.functionSignature}) :: reaction ${protocol.reactionWindowSeconds}s :: targets ${targets}`,
+        );
+      }
     }
 
     banner("Self-improvement kernel");

@@ -203,6 +203,53 @@
       "active": true
     }
   ],
+  "emergencyProtocols": [
+    {
+      "slug": "guardian-council-superpause",
+      "name": "Guardian Council · Superpause",
+      "trigger": "Any sentinel escalates to critical severity or drawdown exceeds the maxDrawdown guard.",
+      "action": "Submit forwardPauseCall(systemPause, pauseAll()) via the Phase8 manager to freeze every module instantly.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "functionSignature": "pauseAll()",
+      "reactionWindowSeconds": 0,
+      "communications": "Notify Guardian Council war-room and Mission Control bridge immediately.",
+      "notes": "Full lattice stop; resume only after guardian attestations and validator quorum sign-off.",
+      "targets": []
+    },
+    {
+      "slug": "domain-isolation-planetary-finance",
+      "name": "Domain Isolation · Planetary Finance",
+      "trigger": "Planetary Finance Mesh sentinel emits anomaly > 400 bps or TVL drawdown breaches 20%.",
+      "action": "Call forwardPauseCall(systemPause, pauseDomain(keccak256(\"planetary-finance\"))) to isolate the domain.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "functionSignature": "pauseDomain(bytes32 domainId)",
+      "reactionWindowSeconds": 900,
+      "communications": "Guardian council posts override window (15 minutes) to Finance Dominion Ops channel.",
+      "notes": "Keeps the rest of the dominion lattice live while finance undergoes rapid audit.",
+      "targets": [
+        "planetary-finance"
+      ]
+    },
+    {
+      "slug": "capital-stream-freeze-resilience",
+      "name": "Capital Stream Freeze · Planetary Resilience Fund",
+      "trigger": "Guardian Council vote to redirect treasury following sentinel misuse report or policy shift.",
+      "action": "Invoke setCapitalStreamActive(planetary-resilience, false) then forwardPauseCall for dependent domains.",
+      "authority": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+      "contract": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+      "functionSignature": "setCapitalStreamActive(bytes32 streamId, bool active)",
+      "reactionWindowSeconds": 3600,
+      "communications": "Upgrade Coordinator dispatch posts updated funding matrix to Mission Control + Treasury Ops.",
+      "notes": "Suspends disbursements while new vault routing is approved; resumes only after updated calldata batch.",
+      "targets": [
+        "planetary-finance",
+        "health-sovereign",
+        "knowledge-lattice"
+      ]
+    }
+  ],
   "selfImprovement": {
     "plan": {
       "planURI": "ipfs://agi-jobs/phase8/self-improvement/plan.json",
