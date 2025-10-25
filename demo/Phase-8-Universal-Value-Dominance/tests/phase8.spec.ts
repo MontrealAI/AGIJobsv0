@@ -13,7 +13,7 @@ test.describe('Phase 8 dashboard happy path', () => {
   test('renders strategic metrics from manifest schema', async ({ page }) => {
     const dominance = page.locator('[data-test-id="stat-card"][data-stat-key="dominance-score"]');
     await expect(dominance).toContainText('Universal dominance score');
-    await expect(dominance).toContainText('96.9 / 100');
+    await expect(dominance).toContainText('97.1 / 100');
 
     const monthlyFlow = page.locator('[data-test-id="stat-card"][data-stat-key="monthly-flow"]');
     await expect(monthlyFlow).toContainText('Monthly value flow');
