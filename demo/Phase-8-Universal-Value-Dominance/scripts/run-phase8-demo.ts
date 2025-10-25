@@ -574,6 +574,116 @@ const LABEL_MAP: Record<string, string> = {
   removeCapitalStreams: "removeCapitalStream",
 };
 
+type ChecklistCopy = {
+  title: string;
+  summary: string;
+  verification: string;
+  emphasis?: string;
+};
+
+type ChecklistGroup = {
+  count: number;
+  slugs: Set<string>;
+};
+
+const CHECKLIST_CALL_ORDER = [
+  "setGlobalParameters",
+  "setGuardianCouncil",
+  "setSystemPause",
+  "registerDomain",
+  "setSentinelDomains",
+  "registerSentinel",
+  "registerCapitalStream",
+  "setCapitalStreamDomains",
+  "setSelfImprovementPlan",
+  "recordSelfImprovementExecution",
+  "removeDomain",
+  "removeSentinel",
+  "removeCapitalStream",
+];
+
+const CHECKLIST_COPY: Record<string, ChecklistCopy> = {
+  setGlobalParameters: {
+    title: "Prime global parameters",
+    summary:
+      "Commit treasury, vault, upgrade, validator, mission control, and knowledge graph endpoints alongside heartbeat, review window, drawdown guard, and manifesto URI.",
+    verification: "Cross-check every address against the guardian roster and confirm the manifesto hash matches the signed directive before execution.",
+    emphasis: "This call unlocks the rest of the run — treat it as the canonical source of truth for the superintelligence's operating map.",
+  },
+  setGuardianCouncil: {
+    title: "Authorize guardian council multisig",
+    summary:
+      "Hands the emergency override lever to the council so human governance can veto or pause any subsystem within minutes.",
+    verification: "Confirm quorum participants are online and that timelock policies (if any) reflect the latest governance resolution.",
+  },
+  setSystemPause: {
+    title: "Wire emergency pause relay",
+    summary:
+      "Routes forwardPauseCall payloads to the SystemPause contract, ensuring circuit breakers halt or resume every module instantly.",
+    verification: "Validate the pause contract address on-chain and confirm guardians rehearsed the pause/unpause sequence with this target.",
+  },
+  registerDomain: {
+    title: "Activate dominion orchestrators",
+    summary:
+      "Registers each value domain with orchestrator, validator, policy kernel, heartbeat, TVL cap, and autonomy guardrails.",
+    verification: "Compare autonomy bps, heartbeat seconds, and vault limits with the manifest briefing for each domain before confirming.",
+  },
+  setSentinelDomains: {
+    title: "Bind sentinel coverage",
+    summary:
+      "Links each sentinel to the domains it must supervise, enforcing lattice coverage guarantees over the economy.",
+    verification: "Ensure every domain slug listed here is covered ≥ guardian review window seconds and aligns with the telemetry report.",
+  },
+  registerSentinel: {
+    title: "Commission sentinel agents",
+    summary:
+      "Authorizes watchdog agents with coverage cadences, sensitivity thresholds, and policy URIs so anomalies trigger guardians immediately.",
+    verification: "Confirm agent addresses correspond to deployed sentinel contracts and that sensitivity bps matches guardian expectations.",
+  },
+  registerCapitalStream: {
+    title: "Spin up capital conduits",
+    summary:
+      "Allocates annual budgets and expansion curves that fund the dominions autonomously via dedicated vaults.",
+    verification: "Verify annual budget totals sum to the treasury directive and that vault addresses have multisig control or timelock protections.",
+  },
+  setCapitalStreamDomains: {
+    title: "Aim capital flows",
+    summary:
+      "Targets each capital stream at specific dominions so funding ratios stay synchronized with resilience and performance signals.",
+    verification: "Confirm every funded domain matches the cycle report ledger and that no required dominion is omitted.",
+  },
+  setSelfImprovementPlan: {
+    title: "Publish self-improvement plan",
+    summary:
+      "Updates cadence, checksum, and URI for the automated upgrade charter governing the self-improvement kernel.",
+    verification: "Have guardians re-hash the payload locally and ensure cadence seconds honour human override windows before committing.",
+  },
+  recordSelfImprovementExecution: {
+    title: "Record latest improvement cycle",
+    summary:
+      "Appends timestamp + report URI so every retraining run is immutably logged for auditors and mission control.",
+    verification: "Confirm the referenced report is uploaded (IPFS or archive) and that the timestamp reflects finalized evaluation sign-off.",
+  },
+  removeDomain: {
+    title: "Teardown dominions (optional)",
+    summary:
+      "Removes legacy dominions from the registry when decommissioning or rotating orchestrators.",
+    verification: "Only execute after capital streams are retargeted and sentinel coverage migrates — document rationale in guardian minutes.",
+  },
+  removeSentinel: {
+    title: "Decommission sentinels (optional)",
+    summary:
+      "Clears sentinel agents from the lattice once replacements are confirmed or coverage is rebalanced.",
+    verification: "Ensure a successor sentinel already covers the affected dominions so coverage adequacy never drops below 100%.",
+  },
+  removeCapitalStream: {
+    title: "Retire capital streams (optional)",
+    summary:
+      "Stops legacy funding programs once treasuries are merged or mandates expire.",
+    verification: "Validate that remaining streams keep every dominion at or above the mandated funding floor before removal.",
+  },
+};
+
 function formatZodError(context: string, error: ZodError) {
   const issues = error.issues
     .map((issue) => {
@@ -1422,6 +1532,67 @@ export function flattenCalldataEntries(data: Record<string, any>): CalldataEntry
   return entries;
 }
 
+type ChecklistLookups = {
+  domainLookup: Map<string, string>;
+  sentinelLookup: Map<string, string>;
+  streamLookup: Map<string, string>;
+};
+
+function buildChecklistLookups(config: Phase8Config): ChecklistLookups {
+  const domainLookup = new Map<string, string>();
+  for (const domain of config.domains ?? []) {
+    const slug = String(domain.slug ?? "").toLowerCase();
+    if (!slug) continue;
+    const name = String(domain.name ?? slug).trim();
+    domainLookup.set(slug, name.length > 0 ? name : slug);
+  }
+
+  const sentinelLookup = new Map<string, string>();
+  for (const sentinel of config.sentinels ?? []) {
+    const slug = String(sentinel.slug ?? "").toLowerCase();
+    if (!slug) continue;
+    const name = String(sentinel.name ?? slug).trim();
+    sentinelLookup.set(slug, name.length > 0 ? name : slug);
+  }
+
+  const streamLookup = new Map<string, string>();
+  for (const stream of config.capitalStreams ?? []) {
+    const slug = String(stream.slug ?? "").toLowerCase();
+    if (!slug) continue;
+    const name = String(stream.name ?? slug).trim();
+    streamLookup.set(slug, name.length > 0 ? name : slug);
+  }
+
+  return { domainLookup, sentinelLookup, streamLookup };
+}
+
+function resolveChecklistTarget(label: string, slug: string, lookups: ChecklistLookups): string | null {
+  const normalized = String(slug ?? "").toLowerCase();
+  if (!normalized) return null;
+
+  const base = slug || normalized;
+  if (["registerDomain", "removeDomain"].includes(label)) {
+    const name = lookups.domainLookup.get(normalized);
+    return name ? `${base} — ${name}` : base;
+  }
+  if (["registerSentinel", "setSentinelDomains", "removeSentinel"].includes(label)) {
+    const name = lookups.sentinelLookup.get(normalized);
+    return name ? `${base} — ${name}` : base;
+  }
+  if (["registerCapitalStream", "setCapitalStreamDomains", "removeCapitalStream"].includes(label)) {
+    const name = lookups.streamLookup.get(normalized);
+    return name ? `${base} — ${name}` : base;
+  }
+  return base;
+}
+
+function formatChecklistTargets(label: string, slugs: Set<string>, lookups: ChecklistLookups): string[] {
+  const rendered = Array.from(slugs)
+    .map((slug) => resolveChecklistTarget(label, slug, lookups))
+    .filter((value): value is string => Boolean(value));
+  return rendered.sort((a, b) => a.localeCompare(b));
+}
+
 function ensureOutputDirectory(dir: string) {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -2201,6 +2372,102 @@ function generateEmergencyOverrides(
   };
 }
 
+function generateGovernanceChecklist(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  entries: CalldataEntry[],
+  generatedAt: string,
+) {
+  const lookups = buildChecklistLookups(config);
+  const grouped = new Map<string, ChecklistGroup>();
+  for (const entry of entries) {
+    const label = entry.label;
+    const group = grouped.get(label) ?? { count: 0, slugs: new Set<string>() };
+    group.count += 1;
+    if (entry.slug) {
+      group.slugs.add(String(entry.slug));
+    }
+    grouped.set(label, group);
+  }
+
+  const lines: string[] = [];
+  lines.push(`# Phase 8 — Governance Execution Checklist`);
+  lines.push(`Generated: ${generatedAt}`);
+  lines.push("");
+  lines.push(
+    "> This briefing converts the encoded calldata manifest into a guardian flight plan so non-technical operators can command the universal value mesh with total confidence.",
+  );
+  lines.push("");
+  lines.push(`- Manager Safe / Timelock: \`${environment.managerAddress}\``);
+  lines.push(`- Chain ID: ${environment.chainId}`);
+  lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
+  lines.push(
+    `- Guardian lattice coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} min (minimum adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%)`,
+  );
+  lines.push(
+    `- Capital floor: ${usd(metrics.minDomainFundingUSD)} / yr per dominion (100% funded coverage)`,
+  );
+  lines.push("");
+  lines.push("## Execution order");
+  let step = 1;
+  for (const label of CHECKLIST_CALL_ORDER) {
+    const group = grouped.get(label);
+    if (!group) continue;
+    const copy = CHECKLIST_COPY[label] ?? {
+      title: label,
+      summary: `Execute ${label} with guardian oversight.`,
+      verification: "Document guardian sign-off before broadcasting.",
+    };
+    lines.push(`${step}. **${copy.title}**`);
+    lines.push(`   - ${copy.summary}`);
+    const targets = formatChecklistTargets(label, group.slugs, lookups);
+    if (targets.length > 0) {
+      lines.push(`   - Targets: ${targets.join(" · ")}`);
+    }
+    lines.push(`   - Encoded calls: ${group.count}`);
+    if (copy.verification) {
+      lines.push(`   - Verification: ${copy.verification}`);
+    }
+    if (copy.emphasis) {
+      lines.push(`   - Note: ${copy.emphasis}`);
+    }
+    step += 1;
+  }
+
+  const remaining = Array.from(grouped.entries()).filter(
+    ([label]) => !CHECKLIST_CALL_ORDER.includes(label),
+  );
+  if (remaining.length > 0) {
+    lines.push("");
+    lines.push("## Additional manifest calls");
+    for (const [label, group] of remaining.sort(([a], [b]) => a.localeCompare(b))) {
+      const targets = formatChecklistTargets(label, group.slugs, lookups);
+      lines.push(`- ${label}: ${group.count} call(s)${targets.length ? ` → ${targets.join(" · ")}` : ""}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Pre-flight checks");
+  lines.push("- Circulate `phase8-governance-directives.md` for guardian signatures.");
+  lines.push("- Import `phase8-safe-transaction-batch.json` into the Safe or timelock and map steps to this checklist.");
+  lines.push("- Verify pause coverage using `phase8-emergency-overrides.json` in case guardians need the circuit breaker mid-flight.");
+  lines.push("- Present the dominance scorecard to stakeholders to confirm readiness metrics remain ≥ guardrail thresholds.");
+
+  lines.push("");
+  lines.push("## Post-execution confirmation");
+  lines.push("- Rerun `npm run demo:phase8:orchestrate` to refresh telemetry and validate no drift across manifest + scorecard.");
+  lines.push("- Publish the updated self-improvement plan hash and cadence to mission control.");
+  lines.push("- Archive Safe transaction receipts with this checklist for audit trails — this forms the human verification layer for the superintelligence.");
+
+  lines.push("");
+  lines.push(
+    "> When every checkbox above is satisfied, guardians have mathematically verified control over the superintelligence — universal value dominance with human override dials intact.",
+  );
+
+  return `${lines.join("\n")}\n`;
+}
+
 export function writeArtifacts(
   config: Phase8Config,
   metrics: ReturnType<typeof computeMetrics>,
@@ -2287,6 +2554,12 @@ export function writeArtifacts(
   const directivesPath = join(outputDir, "phase8-governance-directives.md");
   writeFileSync(directivesPath, generateGovernanceDirectives(config, metrics, environment, generatedAt));
 
+  const checklistPath = join(outputDir, "phase8-governance-checklist.md");
+  writeFileSync(
+    checklistPath,
+    generateGovernanceChecklist(config, metrics, environment, entries, generatedAt),
+  );
+
   const scorecardPath = join(outputDir, "phase8-dominance-scorecard.json");
   writeFileSync(scorecardPath, `${JSON.stringify(generateDominanceScorecard(config, metrics, environment, generatedAt), null, 2)}\n`);
 
@@ -2312,6 +2585,7 @@ export function writeArtifacts(
     { label: "Self-improvement payload", path: planPayloadPath },
     { label: "Cycle report", path: cycleReportPath },
     { label: "Governance directives", path: directivesPath },
+    { label: "Governance checklist", path: checklistPath },
     { label: "Dominance scorecard", path: scorecardPath },
     { label: "Emergency overrides", path: emergencyOverridesPath },
     { label: "Guardian response playbook", path: guardianPlaybookPath },

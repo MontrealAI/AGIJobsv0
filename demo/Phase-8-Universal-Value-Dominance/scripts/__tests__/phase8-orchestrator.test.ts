@@ -265,33 +265,35 @@ describe("Phase 8 orchestration console", () => {
 
     try {
       const outputs = writeArtifacts(config, metrics, data, env, { outputDir: tempDir });
-    const artifactPaths = {
-      manifest: join(tempDir, "phase8-governance-calldata.json"),
-      safeBatch: join(tempDir, "phase8-safe-transaction-batch.json"),
-      mermaid: join(tempDir, "phase8-mermaid-diagram.mmd"),
-      telemetry: join(tempDir, "phase8-telemetry-report.md"),
-      runbook: join(tempDir, "phase8-orchestration-report.txt"),
-      planPayload: join(tempDir, "phase8-self-improvement-plan.json"),
-      cycleReport: join(tempDir, "phase8-cycle-report.csv"),
-      governanceDirectives: join(tempDir, "phase8-governance-directives.md"),
-      dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
-      emergencyOverrides: join(tempDir, "phase8-emergency-overrides.json"),
-      guardianPlaybook: join(tempDir, "phase8-guardian-response-playbook.md"),
-    };
+      const artifactPaths = {
+        manifest: join(tempDir, "phase8-governance-calldata.json"),
+        safeBatch: join(tempDir, "phase8-safe-transaction-batch.json"),
+        mermaid: join(tempDir, "phase8-mermaid-diagram.mmd"),
+        telemetry: join(tempDir, "phase8-telemetry-report.md"),
+        runbook: join(tempDir, "phase8-orchestration-report.txt"),
+        planPayload: join(tempDir, "phase8-self-improvement-plan.json"),
+        cycleReport: join(tempDir, "phase8-cycle-report.csv"),
+        governanceDirectives: join(tempDir, "phase8-governance-directives.md"),
+        governanceChecklist: join(tempDir, "phase8-governance-checklist.md"),
+        dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
+        emergencyOverrides: join(tempDir, "phase8-emergency-overrides.json"),
+        guardianPlaybook: join(tempDir, "phase8-guardian-response-playbook.md"),
+      };
 
-    expect(outputs).toEqual([
-      { label: "Calldata manifest", path: artifactPaths.manifest },
-      { label: "Safe transaction batch", path: artifactPaths.safeBatch },
+      expect(outputs).toEqual([
+        { label: "Calldata manifest", path: artifactPaths.manifest },
+        { label: "Safe transaction batch", path: artifactPaths.safeBatch },
         { label: "Mermaid diagram", path: artifactPaths.mermaid },
         { label: "Telemetry report", path: artifactPaths.telemetry },
         { label: "Operator runbook", path: artifactPaths.runbook },
         { label: "Self-improvement payload", path: artifactPaths.planPayload },
         { label: "Cycle report", path: artifactPaths.cycleReport },
-      { label: "Governance directives", path: artifactPaths.governanceDirectives },
-      { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
-      { label: "Emergency overrides", path: artifactPaths.emergencyOverrides },
-      { label: "Guardian response playbook", path: artifactPaths.guardianPlaybook },
-    ]);
+        { label: "Governance directives", path: artifactPaths.governanceDirectives },
+        { label: "Governance checklist", path: artifactPaths.governanceChecklist },
+        { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
+        { label: "Emergency overrides", path: artifactPaths.emergencyOverrides },
+        { label: "Guardian response playbook", path: artifactPaths.guardianPlaybook },
+      ]);
 
       expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
       expect(metrics.minimumCoverageAdequacy).toBeGreaterThan(1);
@@ -352,30 +354,34 @@ describe("Phase 8 orchestration console", () => {
       expect(cycleReportLines).toHaveLength((config.domains?.length ?? 0) + 1);
       expect(cycleReportLines[1]).toContain(String(config.domains?.[0]?.slug ?? ""));
 
-    const emergencyOverrides = JSON.parse(readFileSync(artifactPaths.emergencyOverrides, "utf-8"));
-    expect(emergencyOverrides.overrides).toHaveLength(2);
+      const emergencyOverrides = JSON.parse(readFileSync(artifactPaths.emergencyOverrides, "utf-8"));
+      expect(emergencyOverrides.overrides).toHaveLength(2);
       expect(emergencyOverrides.overrides[0]).toMatchObject({
         key: expect.any(String),
         managerCalldata: expect.stringMatching(/^0x[0-9a-f]+$/),
         pauseCalldata: expect.stringMatching(/^0x[0-9a-f]+$/),
       });
       expect(emergencyOverrides.readiness).toBeDefined();
-    expect(emergencyOverrides.metrics).toMatchObject({
-      guardianWindowSeconds: expect.any(Number),
-      minimumCoverageAdequacy: expect.any(Number),
-      dominanceScore: expect.any(Number),
-    });
+      expect(emergencyOverrides.metrics).toMatchObject({
+        guardianWindowSeconds: expect.any(Number),
+        minimumCoverageAdequacy: expect.any(Number),
+        dominanceScore: expect.any(Number),
+      });
 
       const guardianPlaybook = readFileSync(artifactPaths.guardianPlaybook, "utf-8");
       expect(guardianPlaybook).toContain("Guardian Response Playbook");
       expect(guardianPlaybook).toContain("Scenario 1");
-
       const stableGuardianPlaybook = guardianPlaybook.replace(/Generated: .*/u, "Generated: <timestamp>");
       expect(stableGuardianPlaybook).toMatchSnapshot("phase8-guardian-playbook");
-  } finally {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
-});
+
+      const governanceChecklist = readFileSync(artifactPaths.governanceChecklist, "utf-8");
+      expect(governanceChecklist).toContain("Governance Execution Checklist");
+      expect(governanceChecklist).toContain("Execution order");
+      expect(governanceChecklist).toContain("Manager Safe / Timelock");
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 
   it("schedules playbooks with guardrails and handles manual workflows", () => {
     const schedules = schedulePlaybooks(config, 1_700_000_000);

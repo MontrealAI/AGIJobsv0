@@ -1,5 +1,5 @@
 # Phase 8 — Guardian Response Playbook
-Generated: 2025-10-25T13:09:58.291Z
+Generated: 2025-10-25T15:50:47.853Z
 
 ## Protocol posture
 - Protocols defined: 3

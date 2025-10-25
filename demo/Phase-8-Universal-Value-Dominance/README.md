@@ -29,6 +29,7 @@
     * `phase8-mermaid-diagram.mmd` — raw Mermaid blueprint for design docs.
     * `phase8-orchestration-report.txt` — operator runbook summarising governance addresses, guardrails, and execution order.
     * `phase8-governance-directives.md` — guardian-ready briefing distilling oversight actions, emergency levers, and contact points.
+    * `phase8-governance-checklist.md` — Safe/timelock execution checklist mapping every calldata label to verification steps and guardian sign-off notes.
     * `phase8-self-improvement-plan.json` — machine-readable self-improvement payload ready for timelock ingestion.
     * `phase8-cycle-report.csv` — per-domain sentinel coverage + capital funding ledger for audit trails.
     * `phase8-dominance-scorecard.json` — analytics-grade snapshot of dominance metrics for dashboards and regulators.
@@ -87,6 +88,7 @@ latest run. Safe imports should always display the chain ID and manager address 
 * **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the
   superintelligent mesh.
 * **Instant circuit breaker** – the emergency overrides pack encodes `forwardPauseCall` payloads so the guardian council can halt or resume every module with a single Safe transaction.
+* **Guardian execution checklists** – `phase8-governance-checklist.md` converts the calldata manifest into numbered Safe/timelock instructions so guardians can verify coverage, funding, and autonomy guardrails before signing.
 
 > With the default manifest, the console reports ~$688B in monthly value flow, ~$1.97T annual capital allocation, an average resilience index of 0.925, 45.0 minutes of sentinel coverage per guardian cycle, **100% dominion funding with a $720B/yr floor**, and a Universal Dominance Score of 97.1 / 100 — a direct signal that the network is outperforming its guardrails while staying within human override windows.
 

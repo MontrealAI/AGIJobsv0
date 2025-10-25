@@ -98,6 +98,9 @@ test.describe('Phase 8 dashboard happy path', () => {
     const directivesLink = page.locator('[data-runbook-key="brief"] [data-test-id="runbook-download"]');
     await expect(directivesLink).toHaveAttribute('href', './output/phase8-governance-directives.md');
 
+    const checklistLink = page.locator('[data-runbook-key="checklist"] [data-test-id="runbook-download"]');
+    await expect(checklistLink).toHaveAttribute('href', './output/phase8-governance-checklist.md');
+
     const emergencyLink = page.locator('[data-runbook-key="emergency"] [data-test-id="runbook-download"]');
     await expect(emergencyLink).toHaveAttribute('href', './output/phase8-emergency-overrides.json');
 

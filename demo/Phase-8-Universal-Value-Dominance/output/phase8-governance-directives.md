@@ -1,5 +1,5 @@
 # Phase 8 — Governance Directives
-Generated: 2025-10-25T13:09:58.291Z
+Generated: 2025-10-25T15:50:47.853Z
 Chain ID: 1
 Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 
