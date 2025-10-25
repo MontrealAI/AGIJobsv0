@@ -990,21 +990,20 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     }
   }
 
-  const fundingByDomain = new Map<string, bigint>();
+  const fundingByDomain = new Map<string, number>();
   for (const slug of domainSlugs) {
-    fundingByDomain.set(slug, BigInt(0));
+    fundingByDomain.set(slug, 0);
   }
   for (const stream of streams) {
     const budgetRaw = Number(stream.annualBudget ?? 0);
     if (!Number.isFinite(budgetRaw) || budgetRaw <= 0) continue;
-    const budget = BigInt(Math.round(budgetRaw));
     const declaredTargets = Array.from(
       new Set((stream.domains ?? []).map((entry) => String(entry ?? "").toLowerCase()).filter((entry) => domainSet.has(entry))),
     );
     const targets = declaredTargets.length > 0 ? declaredTargets : domainSlugs;
     for (const target of targets) {
-      const current = fundingByDomain.get(target) ?? BigInt(0);
-      fundingByDomain.set(target, current + budget);
+      const current = fundingByDomain.get(target) ?? 0;
+      fundingByDomain.set(target, current + budgetRaw);
     }
   }
 
@@ -1013,7 +1012,7 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const cadenceSeconds = Number(config.selfImprovement?.plan?.cadenceSeconds ?? 0);
 
   const coverageEntries = domainSlugs.map((slug) => coverageByDomain.get(slug) ?? 0);
-  const fundingEntries = domainSlugs.map((slug) => Number(fundingByDomain.get(slug) ?? BigInt(0)));
+  const fundingEntries = domainSlugs.map((slug) => fundingByDomain.get(slug) ?? 0);
 
   const coveredCount = coverageEntries.filter((value) => value > 0).length;
   const fundedCount = fundingEntries.filter((value) => value > 0).length;
@@ -1023,20 +1022,16 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const minFundingUSD = domainSlugs.length === 0 ? 0 : Math.min(...fundingEntries, Number.POSITIVE_INFINITY);
 
   const crossCheck = {
-    totalMonthlyUSD: Number(
-      domains.reduce(
-        (acc: bigint, domain) => acc + BigInt(Math.round(Number(domain.valueFlowMonthlyUSD ?? 0))),
-        BigInt(0),
-      ),
+    totalMonthlyUSD: domains.reduce(
+      (acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0),
+      0,
     ),
     averageResilience:
       domains.length === 0
         ? 0
         : domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length,
     guardianCoverageMinutes: totalSentinelCoverageSeconds / 60,
-    annualBudget: Number(
-      streams.reduce((acc: bigint, stream) => acc + BigInt(Math.round(Number(stream.annualBudget ?? 0))), BigInt(0)),
-    ),
+    annualBudget: streams.reduce((acc, stream) => acc + Number(stream.annualBudget ?? 0), 0),
     coverageRatioPercent: domainSlugs.length === 0 ? 0 : (coveredCount / domainSlugs.length) * 100,
     fundedDomainRatioPercent: domainSlugs.length === 0 ? 0 : (fundedCount / domainSlugs.length) * 100,
     averageDomainCoverageSeconds: domainSlugs.length === 0 ? 0 : totalCoverageSeconds / domainSlugs.length,
@@ -1049,11 +1044,9 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     cadenceHours: cadenceSeconds / 3600,
     lastExecutedAt: Number(config.selfImprovement?.plan?.lastExecutedAt ?? 0),
     dominanceScore: computeDominanceScore({
-      totalMonthlyUSD: Number(
-        domains.reduce(
-          (acc: bigint, domain) => acc + BigInt(Math.round(Number(domain.valueFlowMonthlyUSD ?? 0))),
-          BigInt(0),
-        ),
+      totalMonthlyUSD: domains.reduce(
+        (acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0),
+        0,
       ),
       averageResilience:
         domains.length === 0
@@ -1092,7 +1085,7 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
         ? 0
         : protocols.reduce((acc, protocol) => acc + (severityWeights[protocol.severity ?? "high"] ?? 0.5), 0) /
           protocols.length,
-    domainFundingMap: Object.fromEntries(domainSlugs.map((slug) => [slug, Number(fundingByDomain.get(slug) ?? BigInt(0))])),
+    domainFundingMap: Object.fromEntries(domainSlugs.map((slug) => [slug, fundingByDomain.get(slug) ?? 0])),
   };
 
   const defaultTolerance: Record<string, number> = {
