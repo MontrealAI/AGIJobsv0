@@ -1,5 +1,5 @@
 # Phase 8 — Governance Directives
-Generated: 2025-10-24T21:34:02.536Z
+Generated: 2025-10-25T00:44:27.944Z
 Chain ID: 1
 Phase8 manager: Set PHASE8_MANAGER_ADDRESS before submitting calls
 
@@ -9,6 +9,7 @@ Phase8 manager: Set PHASE8_MANAGER_ADDRESS before submitting calls
 3. Load `output/phase8-governance-calldata.json` or `output/phase8-safe-transaction-batch.json` into your multisig / timelock and execute the queued actions in sequence.
 4. Distribute `output/phase8-governance-directives.md` and `output/phase8-dominance-scorecard.json` to guardian council and observers for sign-off.
 5. Launch the dashboard with `npx serve demo/Phase-8-Universal-Value-Dominance` for live monitoring.
+6. Deliver `output/phase8-emergency-playbook.md` to guardian response leads so pause instructions are at hand.
 
 ## Oversight priorities
 - Planetary Finance Mesh: resilience 0.960, autonomy 7800 bps, coverage 900s (125.0% of guardian window), funding $890.00B/yr, sentinels Capital Watch Exocomptroller, streams Planetary Resilience Fund
@@ -23,6 +24,12 @@ Phase8 manager: Set PHASE8_MANAGER_ADDRESS before submitting calls
 - Self-improvement cadence 2.00 h · last execution 2023-11-14T22:20:00.000Z.
 - Kernel checksum sha3-256 0xf37c9df49d3b7b2b40fd1c7ed49f59f450e8e6afc3d93f0a1d7c5e3ab4f2c1d0
 - Kernel zk-proof phase8-alignment-v1 :: status pending :: artifact ipfs://agi-jobs/phase8/self-improvement/zk-proof-placeholder.json
+- Emergency protocols 2/3 routed through system pause · fastest reaction immediate.
+
+## Emergency response protocols
+- Guardian Council · Superpause: trigger → Any sentinel escalates to critical severity or drawdown exceeds the maxDrawdown guard.; action → Submit forwardPauseCall(systemPause, pauseAll()) via the Phase8 manager to freeze every module instantly.; reaction 0s; authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87; targets all.
+- Domain Isolation · Planetary Finance: trigger → Planetary Finance Mesh sentinel emits anomaly > 400 bps or TVL drawdown breaches 20%.; action → Call forwardPauseCall(systemPause, pauseDomain(keccak256("planetary-finance"))) to isolate the domain.; reaction 900s; authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87; targets planetary-finance.
+- Capital Stream Freeze · Planetary Resilience Fund: trigger → Guardian Council vote to redirect treasury following sentinel misuse report or policy shift.; action → Invoke setCapitalStreamActive(planetary-resilience, false) then forwardPauseCall for dependent domains.; reaction 3600s; authority 0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87; targets planetary-finance, health-sovereign, knowledge-lattice.
 
 ## Reporting & distribution
 - Share the dominance scorecard (JSON) with analytics teams for downstream automation.
