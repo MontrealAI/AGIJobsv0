@@ -47,6 +47,8 @@
    * `output/kardashev-orchestration-report.md` – non-technical runbook covering energy budgets, bridge latencies, and pause levers.
    * `output/kardashev-telemetry.json` – machine-readable metrics for dashboards, including triple-verified energy + compute deltas.
    * `output/kardashev-mermaid.mmd` – federated systems map (rendered automatically in the UI).
+   * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
+   * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
    * Console output summarising dominance scores, delta checks, and incident alerts.
 3. **Launch the holographic control surface**
    ```bash
@@ -54,8 +56,10 @@
    ```
    Visit `http://localhost:3000` to interact with:
    * **Federated Command Deck** – flip between Earth/Mars/Orbital, inspect autonomy levers, and trigger pause/resume.
-   * **Dyson Swarm Progression** – animated milestone timeline bound to the manifest, showing captured GW vs target.
+   * **Dyson Swarm Progression** – animated milestone timeline bound to the manifest, showing captured GW vs target with the Gantt chart output.
    * **Bridge Sentinel Monitor** – live badge of interplanetary bridge health sourced from `kardashev-telemetry.json`.
+   * **Owner directive console** – mission powers, escalation hotlines, and drill cadence lifted from the manifest.
+   * **Federation readiness grid** – per-federation energy, compute, domain, and sentinel posture snapshots for non-technical audits.
 4. **Enforce Kardashev-II readiness in CI**
    ```bash
    npm run demo:kardashev-ii:ci
@@ -118,6 +122,13 @@ sequenceDiagram
 * **Regional energy arbitration** – Earth, Mars, and Orbital clusters provide available GW, storage, and latency; the CLI sorts workloads accordingly and reports energy debt so operators can top-up storage before dispatching long-running swarms.
 * **Compute rollup** – All compute capacity is measured in exaFLOPs and agent counts. A reconciliation matrix confirms that per-region totals equal the Interstellar Council view and Dyson programme requirements.
 
+## 🎛️ Mission directives & verification dashboards
+
+* **Operator briefing pack** – `output/kardashev-operator-briefing.md` condenses owner powers, escalation pathways, drill cadence, and verification status so non-technical stewards can sign off in under two minutes.
+* **Mission directives mirroring** – The UI reflects `missionDirectives.ownerPowers` and hotlines verbatim, ensuring Safe transaction order, phone numbers, and bridge failover text are always in sync with the manifest.
+* **Triple-verification badges** – Dashboard metrics highlight energy model agreement, compute deviation vs tolerance, and bridge latency tolerance; each badge flips red if the orchestrator’s cross-checks fail.
+* **Federation readiness grid** – Per-federation cards summarise chain IDs, governance Safes, energy posture, compute load, dominant domains, and sentinel coverage so governors can prioritise interventions at a glance.
+
 ---
 
 ## 🛡️ Governance and safety levers
@@ -136,7 +147,11 @@ sequenceDiagram
 | `config/kardashev-ii.manifest.json` | Canonical manifest describing federations, energy, compute, sentinels, capital streams, bridges, and Dyson Phases. |
 | `scripts/run-kardashev-demo.ts` | Orchestrator CLI that validates the manifest, computes dominance/energy metrics, and emits Safe payloads + diagrams. |
 | `scripts/ci-validate.ts` | CI harness ensuring outputs, README sections, and manifest invariants stay in sync. |
-| `output/kardashev-*` | Pre-generated artefacts (Safe batch, telemetry, Mermaid, runbook) used by UI and ops playbooks. |
+| `output/kardashev-telemetry.json` | Telemetry ledger driving the dashboard, verification badges, and CI drift checks. |
+| `output/kardashev-orchestration-report.md` | Detailed runbook for non-technical operators (energy, bridges, checklist). |
+| `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
+| `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
+| `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
 | `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
 
@@ -144,10 +159,11 @@ sequenceDiagram
 
 ## 🧪 Verification rituals
 
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energyIntegrity.tripleCheck === true` and `governance.ownerOverridesReady === true`.
+1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, and `governance.ownerOverridesReady === true`.
 2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
-3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge (the UI reads `kardashev-telemetry.json` and `kardashev-orchestration-report.md`).
+3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
 4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
+5. **Guardian sign-off** – Circulate `output/kardashev-operator-briefing.md` to guardians; all verification badges must remain green before signatures are collected.
 
 ---
 

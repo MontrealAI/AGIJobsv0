@@ -44,9 +44,57 @@
       "targetKelvin": 0.81
     }
   },
+  "missionDirectives": {
+    "ownerPowers": [
+      {
+        "id": "pause",
+        "title": "Pause & resume entire civilisation mesh",
+        "description": "Execute forwardPauseCall(pauseAll/unpauseAll) from the Safe batch to freeze or relaunch all federations.",
+        "safeIndex": 0,
+        "playbookURI": "ipfs://QmKardashevPauseProtocol"
+      },
+      {
+        "id": "upgrade",
+        "title": "Upgrade governance parameters",
+        "description": "Use setGlobalParameters + setGuardianCouncil transactions to roll new addresses, rate limits, or manifests.",
+        "safeIndex": 1,
+        "playbookURI": "ipfs://QmKardashevUpgradeProtocol"
+      },
+      {
+        "id": "deploy-domain",
+        "title": "Deploy or reconfigure a domain",
+        "description": "Register domains, sentinels, and capital streams in one action bundle; review autonomy levels before execution.",
+        "safeIndex": 4,
+        "playbookURI": "ipfs://QmKardashevDomainProtocol"
+      }
+    ],
+    "escalation": {
+      "guardianHotline": "guardian@agi.jobs",
+      "operationsHotline": "+1-800-AGI-JOBS",
+      "statusPageURI": "https://status.agi.jobs/kardashev",
+      "bridgeFailover": "Trigger bridge isolation routine if latency exceeds failsafe for 3 consecutive intervals."
+    },
+    "drills": {
+      "pauseCadenceHours": 6,
+      "guardianReviewMinutes": 12,
+      "nextDrillISO8601": "2025-03-02T12:00:00Z"
+    }
+  },
+  "verificationProtocols": {
+    "energyModels": [
+      "regionalSum",
+      "dysonProjection",
+      "thermostatBudget"
+    ],
+    "computeTolerancePct": 0.75,
+    "bridgeLatencyToleranceSeconds": 120,
+    "manifestHashing": "keccak256",
+    "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
+  },
   "federations": [
     {
       "slug": "earth",
+      "name": "Earth Sovereign Federation",
       "chainId": 1,
       "governanceSafe": "0xAaCcFefb5b833B41c1A6ff1d4A20E2F91B9Fa5C2",
       "energy": {
@@ -127,6 +175,7 @@
     },
     {
       "slug": "mars",
+      "name": "Mars Terraforming Compact",
       "chainId": 534352,
       "governanceSafe": "0x7B0f87d532f43C4a0E7816d9D7806f48A9c3f2D1",
       "energy": {
@@ -190,6 +239,7 @@
     },
     {
       "slug": "orbital",
+      "name": "Orbital Research Halo",
       "chainId": 42161,
       "governanceSafe": "0x1B3dA8f56E47c29E8cEafF4b2d9C8B5d7aE2c6F4",
       "energy": {
