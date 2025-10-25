@@ -1,0 +1,41 @@
+{
+  "shards": [
+    {
+      "id": "earth",
+      "jobRegistry": "0x000000000000000000000000000000000000eAr1",
+      "latencyMs": 40,
+      "domains": ["finance", "health", "infrastructure"],
+      "guardianCouncil": "0x00000000000000000000000000000000000EaRdg",
+      "sentinels": [
+        "0x0000000000000000000000000000000000EaR51",
+        "0x0000000000000000000000000000000000EaR52"
+      ]
+    },
+    {
+      "id": "mars",
+      "jobRegistry": "0x000000000000000000000000000000000000MaRS",
+      "latencyMs": 720000,
+      "domains": ["terraforming", "resource-extraction", "biosafety"],
+      "guardianCouncil": "0x0000000000000000000000000000000000MarDG",
+      "sentinels": [
+        "0x0000000000000000000000000000000000Mar51",
+        "0x0000000000000000000000000000000000Mar52"
+      ]
+    },
+    {
+      "id": "orbital",
+      "jobRegistry": "0x0000000000000000000000000000000000000rb1",
+      "latencyMs": 1200,
+      "domains": ["dyson-swarm", "astro-logistics"],
+      "guardianCouncil": "0x0000000000000000000000000000000000OrbDG",
+      "sentinels": [
+        "0x0000000000000000000000000000000000Orb51",
+        "0x0000000000000000000000000000000000Orb52"
+      ]
+    }
+  ],
+  "knowledgeGraph": "0x0000000000000000000000000000000000Kn0wG",
+  "energyOracle": "0x0000000000000000000000000000000000En0rg",
+  "rewardEngine": "0x0000000000000000000000000000000000Therm",
+  "phase8Manager": "0x0000000000000000000000000000000000Ph8Mgr"
+}

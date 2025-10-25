@@ -1,0 +1,34 @@
+---
+title Dyson Swarm Execution Tree
+---
+flowchart TB
+    root((Dyson Swarm))
+    root --> design[Design Lattice Blueprints]
+    root --> mining[Asteroid Mining Campaign]
+    root --> manufacturing[Orbital Manufacturing]
+    root --> launch[Launch Windows]
+    root --> operations[Adaptive Operations]
+
+    design --> cad[CAD Agents]
+    design --> governance[Manifest Updates]
+
+    mining --> probes[Prospecting Swarm]
+    mining --> refineries[Autonomous Refineries]
+
+    manufacturing --> printers[Microgravity Printers]
+    manufacturing --> qa[QA Sentinels]
+
+    launch --> boosters[Reusable Boosters]
+    launch --> elevators[Mass Drivers]
+
+    operations --> control[Beam Steering]
+    operations --> maintenance[Self-Healing Rituals]
+
+    style root fill:#111827,stroke:#0ea5e9,stroke-width:3px
+    style operations fill:#1f2937,stroke:#f97316
+    subgraph Progress Metrics
+        built[Satellites assembled: 2919/10000]
+        coverage[Coverage: 29.19%]
+        mw[Captured MW: 131,355]
+    end
+
