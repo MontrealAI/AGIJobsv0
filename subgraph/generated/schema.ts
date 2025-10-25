@@ -1046,6 +1046,1156 @@ export class ValidatorVote extends Entity {
   }
 }
 
+export class Phase6Domain extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Phase6Domain entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Phase6Domain must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Phase6Domain", id.toString(), this);
+    }
+  }
+
+  static loadInBlock(id: string): Phase6Domain | null {
+    return changetype<Phase6Domain | null>(
+      store.get_in_block("Phase6Domain", id)
+    );
+  }
+
+  static load(id: string): Phase6Domain | null {
+    return changetype<Phase6Domain | null>(store.get("Phase6Domain", id));
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get slug(): string {
+    let value = this.get("slug");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set slug(value: string) {
+    this.set("slug", Value.fromString(value));
+  }
+
+  get name(): string {
+    let value = this.get("name");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set name(value: string) {
+    this.set("name", Value.fromString(value));
+  }
+
+  get metadataURI(): string {
+    let value = this.get("metadataURI");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set metadataURI(value: string) {
+    this.set("metadataURI", Value.fromString(value));
+  }
+
+  get subgraphEndpoint(): string {
+    let value = this.get("subgraphEndpoint");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set subgraphEndpoint(value: string) {
+    this.set("subgraphEndpoint", Value.fromString(value));
+  }
+
+  get validationModule(): Bytes | null {
+    let value = this.get("validationModule");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set validationModule(value: Bytes | null) {
+    if (!value) {
+      this.unset("validationModule");
+    } else {
+      this.set("validationModule", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get dataOracle(): Bytes | null {
+    let value = this.get("dataOracle");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set dataOracle(value: Bytes | null) {
+    if (!value) {
+      this.unset("dataOracle");
+    } else {
+      this.set("dataOracle", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get l2Gateway(): Bytes | null {
+    let value = this.get("l2Gateway");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set l2Gateway(value: Bytes | null) {
+    if (!value) {
+      this.unset("l2Gateway");
+    } else {
+      this.set("l2Gateway", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get executionRouter(): Bytes | null {
+    let value = this.get("executionRouter");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set executionRouter(value: Bytes | null) {
+    if (!value) {
+      this.unset("executionRouter");
+    } else {
+      this.set("executionRouter", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get heartbeatSeconds(): i32 {
+    let value = this.get("heartbeatSeconds");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set heartbeatSeconds(value: i32) {
+    this.set("heartbeatSeconds", Value.fromI32(value));
+  }
+
+  get active(): boolean {
+    let value = this.get("active");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set active(value: boolean) {
+    this.set("active", Value.fromBoolean(value));
+  }
+
+  get lifecycle(): string {
+    let value = this.get("lifecycle");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set lifecycle(value: string) {
+    this.set("lifecycle", Value.fromString(value));
+  }
+
+  get manifestURI(): string {
+    let value = this.get("manifestURI");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set manifestURI(value: string) {
+    this.set("manifestURI", Value.fromString(value));
+  }
+
+  get agentOps(): Bytes | null {
+    let value = this.get("agentOps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set agentOps(value: Bytes | null) {
+    if (!value) {
+      this.unset("agentOps");
+    } else {
+      this.set("agentOps", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get dataPipeline(): Bytes | null {
+    let value = this.get("dataPipeline");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set dataPipeline(value: Bytes | null) {
+    if (!value) {
+      this.unset("dataPipeline");
+    } else {
+      this.set("dataPipeline", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get credentialVerifier(): Bytes | null {
+    let value = this.get("credentialVerifier");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set credentialVerifier(value: Bytes | null) {
+    if (!value) {
+      this.unset("credentialVerifier");
+    } else {
+      this.set("credentialVerifier", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get fallbackOperator(): Bytes | null {
+    let value = this.get("fallbackOperator");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set fallbackOperator(value: Bytes | null) {
+    if (!value) {
+      this.unset("fallbackOperator");
+    } else {
+      this.set("fallbackOperator", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get controlPlaneURI(): string {
+    let value = this.get("controlPlaneURI");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set controlPlaneURI(value: string) {
+    this.set("controlPlaneURI", Value.fromString(value));
+  }
+
+  get autopilotCadenceSeconds(): i32 {
+    let value = this.get("autopilotCadenceSeconds");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set autopilotCadenceSeconds(value: i32) {
+    this.set("autopilotCadenceSeconds", Value.fromI32(value));
+  }
+
+  get autopilotEnabled(): boolean {
+    let value = this.get("autopilotEnabled");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set autopilotEnabled(value: boolean) {
+    this.set("autopilotEnabled", Value.fromBoolean(value));
+  }
+
+  get registeredAtBlock(): BigInt {
+    let value = this.get("registeredAtBlock");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set registeredAtBlock(value: BigInt) {
+    this.set("registeredAtBlock", Value.fromBigInt(value));
+  }
+
+  get registeredAtTimestamp(): BigInt {
+    let value = this.get("registeredAtTimestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set registeredAtTimestamp(value: BigInt) {
+    this.set("registeredAtTimestamp", Value.fromBigInt(value));
+  }
+
+  get updatedAtBlock(): BigInt {
+    let value = this.get("updatedAtBlock");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set updatedAtBlock(value: BigInt) {
+    this.set("updatedAtBlock", Value.fromBigInt(value));
+  }
+
+  get updatedAtTimestamp(): BigInt {
+    let value = this.get("updatedAtTimestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set updatedAtTimestamp(value: BigInt) {
+    this.set("updatedAtTimestamp", Value.fromBigInt(value));
+  }
+
+  get maxActiveJobs(): i32 {
+    let value = this.get("maxActiveJobs");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set maxActiveJobs(value: i32) {
+    this.set("maxActiveJobs", Value.fromI32(value));
+  }
+
+  get maxQueueDepth(): i32 {
+    let value = this.get("maxQueueDepth");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set maxQueueDepth(value: i32) {
+    this.set("maxQueueDepth", Value.fromI32(value));
+  }
+
+  get minStake(): BigInt {
+    let value = this.get("minStake");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set minStake(value: BigInt) {
+    this.set("minStake", Value.fromBigInt(value));
+  }
+
+  get treasuryShareBps(): i32 {
+    let value = this.get("treasuryShareBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set treasuryShareBps(value: i32) {
+    this.set("treasuryShareBps", Value.fromI32(value));
+  }
+
+  get circuitBreakerBps(): i32 {
+    let value = this.get("circuitBreakerBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set circuitBreakerBps(value: i32) {
+    this.set("circuitBreakerBps", Value.fromI32(value));
+  }
+
+  get requiresHumanValidation(): boolean {
+    let value = this.get("requiresHumanValidation");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set requiresHumanValidation(value: boolean) {
+    this.set("requiresHumanValidation", Value.fromBoolean(value));
+  }
+
+  get telemetryResilienceBps(): i32 {
+    let value = this.get("telemetryResilienceBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryResilienceBps(value: i32) {
+    this.set("telemetryResilienceBps", Value.fromI32(value));
+  }
+
+  get telemetryAutomationBps(): i32 {
+    let value = this.get("telemetryAutomationBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryAutomationBps(value: i32) {
+    this.set("telemetryAutomationBps", Value.fromI32(value));
+  }
+
+  get telemetryComplianceBps(): i32 {
+    let value = this.get("telemetryComplianceBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryComplianceBps(value: i32) {
+    this.set("telemetryComplianceBps", Value.fromI32(value));
+  }
+
+  get settlementLatencySeconds(): i32 {
+    let value = this.get("settlementLatencySeconds");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set settlementLatencySeconds(value: i32) {
+    this.set("settlementLatencySeconds", Value.fromI32(value));
+  }
+
+  get usesL2Settlement(): boolean {
+    let value = this.get("usesL2Settlement");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set usesL2Settlement(value: boolean) {
+    this.set("usesL2Settlement", Value.fromBoolean(value));
+  }
+
+  get sentinelOracle(): Bytes | null {
+    let value = this.get("sentinelOracle");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set sentinelOracle(value: Bytes | null) {
+    if (!value) {
+      this.unset("sentinelOracle");
+    } else {
+      this.set("sentinelOracle", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get settlementAsset(): Bytes | null {
+    let value = this.get("settlementAsset");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set settlementAsset(value: Bytes | null) {
+    if (!value) {
+      this.unset("settlementAsset");
+    } else {
+      this.set("settlementAsset", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get telemetryMetricsDigest(): Bytes | null {
+    let value = this.get("telemetryMetricsDigest");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set telemetryMetricsDigest(value: Bytes | null) {
+    if (!value) {
+      this.unset("telemetryMetricsDigest");
+    } else {
+      this.set("telemetryMetricsDigest", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get telemetryManifestHash(): Bytes | null {
+    let value = this.get("telemetryManifestHash");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set telemetryManifestHash(value: Bytes | null) {
+    if (!value) {
+      this.unset("telemetryManifestHash");
+    } else {
+      this.set("telemetryManifestHash", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get removedAtBlock(): BigInt | null {
+    let value = this.get("removedAtBlock");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set removedAtBlock(value: BigInt | null) {
+    if (!value) {
+      this.unset("removedAtBlock");
+    } else {
+      this.set("removedAtBlock", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get removedAtTimestamp(): BigInt | null {
+    let value = this.get("removedAtTimestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set removedAtTimestamp(value: BigInt | null) {
+    if (!value) {
+      this.unset("removedAtTimestamp");
+    } else {
+      this.set("removedAtTimestamp", Value.fromBigInt(<BigInt>value));
+    }
+  }
+}
+
+export class Phase6GlobalConfig extends Entity {
+  constructor(id: string) {
+    super();
+    this.set("id", Value.fromString(id));
+  }
+
+  save(): void {
+    let id = this.get("id");
+    assert(id != null, "Cannot save Phase6GlobalConfig entity without an ID");
+    if (id) {
+      assert(
+        id.kind == ValueKind.STRING,
+        `Entities of type Phase6GlobalConfig must have an ID of type String but the id '${id.displayData()}' is of type ${id.displayKind()}`
+      );
+      store.set("Phase6GlobalConfig", id.toString(), this);
+    }
+  }
+
+  static loadInBlock(id: string): Phase6GlobalConfig | null {
+    return changetype<Phase6GlobalConfig | null>(
+      store.get_in_block("Phase6GlobalConfig", id)
+    );
+  }
+
+  static load(id: string): Phase6GlobalConfig | null {
+    return changetype<Phase6GlobalConfig | null>(
+      store.get("Phase6GlobalConfig", id)
+    );
+  }
+
+  get id(): string {
+    let value = this.get("id");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set id(value: string) {
+    this.set("id", Value.fromString(value));
+  }
+
+  get iotOracleRouter(): Bytes | null {
+    let value = this.get("iotOracleRouter");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set iotOracleRouter(value: Bytes | null) {
+    if (!value) {
+      this.unset("iotOracleRouter");
+    } else {
+      this.set("iotOracleRouter", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get defaultL2Gateway(): Bytes | null {
+    let value = this.get("defaultL2Gateway");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set defaultL2Gateway(value: Bytes | null) {
+    if (!value) {
+      this.unset("defaultL2Gateway");
+    } else {
+      this.set("defaultL2Gateway", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get didRegistry(): Bytes | null {
+    let value = this.get("didRegistry");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set didRegistry(value: Bytes | null) {
+    if (!value) {
+      this.unset("didRegistry");
+    } else {
+      this.set("didRegistry", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get treasuryBridge(): Bytes | null {
+    let value = this.get("treasuryBridge");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set treasuryBridge(value: Bytes | null) {
+    if (!value) {
+      this.unset("treasuryBridge");
+    } else {
+      this.set("treasuryBridge", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get l2SyncCadence(): i32 {
+    let value = this.get("l2SyncCadence");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set l2SyncCadence(value: i32) {
+    this.set("l2SyncCadence", Value.fromI32(value));
+  }
+
+  get manifestURI(): string {
+    let value = this.get("manifestURI");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set manifestURI(value: string) {
+    this.set("manifestURI", Value.fromString(value));
+  }
+
+  get systemPause(): Bytes | null {
+    let value = this.get("systemPause");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set systemPause(value: Bytes | null) {
+    if (!value) {
+      this.unset("systemPause");
+    } else {
+      this.set("systemPause", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get escalationBridge(): Bytes | null {
+    let value = this.get("escalationBridge");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set escalationBridge(value: Bytes | null) {
+    if (!value) {
+      this.unset("escalationBridge");
+    } else {
+      this.set("escalationBridge", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get lastEscalationTarget(): Bytes | null {
+    let value = this.get("lastEscalationTarget");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set lastEscalationTarget(value: Bytes | null) {
+    if (!value) {
+      this.unset("lastEscalationTarget");
+    } else {
+      this.set("lastEscalationTarget", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get lastEscalationData(): Bytes | null {
+    let value = this.get("lastEscalationData");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set lastEscalationData(value: Bytes | null) {
+    if (!value) {
+      this.unset("lastEscalationData");
+    } else {
+      this.set("lastEscalationData", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get lastEscalationResponse(): Bytes | null {
+    let value = this.get("lastEscalationResponse");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set lastEscalationResponse(value: Bytes | null) {
+    if (!value) {
+      this.unset("lastEscalationResponse");
+    } else {
+      this.set("lastEscalationResponse", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get lastEscalationKind(): string | null {
+    let value = this.get("lastEscalationKind");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
+  }
+
+  set lastEscalationKind(value: string | null) {
+    if (!value) {
+      this.unset("lastEscalationKind");
+    } else {
+      this.set("lastEscalationKind", Value.fromString(<string>value));
+    }
+  }
+
+  get lastEscalationAtBlock(): BigInt | null {
+    let value = this.get("lastEscalationAtBlock");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set lastEscalationAtBlock(value: BigInt | null) {
+    if (!value) {
+      this.unset("lastEscalationAtBlock");
+    } else {
+      this.set("lastEscalationAtBlock", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get lastEscalationAtTimestamp(): BigInt | null {
+    let value = this.get("lastEscalationAtTimestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set lastEscalationAtTimestamp(value: BigInt | null) {
+    if (!value) {
+      this.unset("lastEscalationAtTimestamp");
+    } else {
+      this.set("lastEscalationAtTimestamp", Value.fromBigInt(<BigInt>value));
+    }
+  }
+
+  get updatedAtBlock(): BigInt {
+    let value = this.get("updatedAtBlock");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set updatedAtBlock(value: BigInt) {
+    this.set("updatedAtBlock", Value.fromBigInt(value));
+  }
+
+  get updatedAtTimestamp(): BigInt {
+    let value = this.get("updatedAtTimestamp");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toBigInt();
+    }
+  }
+
+  set updatedAtTimestamp(value: BigInt) {
+    this.set("updatedAtTimestamp", Value.fromBigInt(value));
+  }
+
+  get treasuryBufferBps(): i32 {
+    let value = this.get("treasuryBufferBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set treasuryBufferBps(value: i32) {
+    this.set("treasuryBufferBps", Value.fromI32(value));
+  }
+
+  get circuitBreakerBps(): i32 {
+    let value = this.get("circuitBreakerBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set circuitBreakerBps(value: i32) {
+    this.set("circuitBreakerBps", Value.fromI32(value));
+  }
+
+  get anomalyGracePeriod(): i32 {
+    let value = this.get("anomalyGracePeriod");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set anomalyGracePeriod(value: i32) {
+    this.set("anomalyGracePeriod", Value.fromI32(value));
+  }
+
+  get autoPauseEnabled(): boolean {
+    let value = this.get("autoPauseEnabled");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set autoPauseEnabled(value: boolean) {
+    this.set("autoPauseEnabled", Value.fromBoolean(value));
+  }
+
+  get oversightCouncil(): Bytes | null {
+    let value = this.get("oversightCouncil");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set oversightCouncil(value: Bytes | null) {
+    if (!value) {
+      this.unset("oversightCouncil");
+    } else {
+      this.set("oversightCouncil", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get telemetryManifestHash(): Bytes | null {
+    let value = this.get("telemetryManifestHash");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set telemetryManifestHash(value: Bytes | null) {
+    if (!value) {
+      this.unset("telemetryManifestHash");
+    } else {
+      this.set("telemetryManifestHash", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get telemetryMetricsDigest(): Bytes | null {
+    let value = this.get("telemetryMetricsDigest");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set telemetryMetricsDigest(value: Bytes | null) {
+    if (!value) {
+      this.unset("telemetryMetricsDigest");
+    } else {
+      this.set("telemetryMetricsDigest", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get telemetryResilienceFloorBps(): i32 {
+    let value = this.get("telemetryResilienceFloorBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryResilienceFloorBps(value: i32) {
+    this.set("telemetryResilienceFloorBps", Value.fromI32(value));
+  }
+
+  get telemetryAutomationFloorBps(): i32 {
+    let value = this.get("telemetryAutomationFloorBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryAutomationFloorBps(value: i32) {
+    this.set("telemetryAutomationFloorBps", Value.fromI32(value));
+  }
+
+  get telemetryOversightWeightBps(): i32 {
+    let value = this.get("telemetryOversightWeightBps");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set telemetryOversightWeightBps(value: i32) {
+    this.set("telemetryOversightWeightBps", Value.fromI32(value));
+  }
+
+  get meshCoordinator(): Bytes | null {
+    let value = this.get("meshCoordinator");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set meshCoordinator(value: Bytes | null) {
+    if (!value) {
+      this.unset("meshCoordinator");
+    } else {
+      this.set("meshCoordinator", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get dataLake(): Bytes | null {
+    let value = this.get("dataLake");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set dataLake(value: Bytes | null) {
+    if (!value) {
+      this.unset("dataLake");
+    } else {
+      this.set("dataLake", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get identityBridge(): Bytes | null {
+    let value = this.get("identityBridge");
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBytes();
+    }
+  }
+
+  set identityBridge(value: Bytes | null) {
+    if (!value) {
+      this.unset("identityBridge");
+    } else {
+      this.set("identityBridge", Value.fromBytes(<Bytes>value));
+    }
+  }
+
+  get infrastructureTopologyURI(): string {
+    let value = this.get("infrastructureTopologyURI");
+    if (!value || value.kind == ValueKind.NULL) {
+      throw new Error("Cannot return null for a required field.");
+    } else {
+      return value.toString();
+    }
+  }
+
+  set infrastructureTopologyURI(value: string) {
+    this.set("infrastructureTopologyURI", Value.fromString(value));
+  }
+
+  get infrastructureAutopilotCadence(): i32 {
+    let value = this.get("infrastructureAutopilotCadence");
+    if (!value || value.kind == ValueKind.NULL) {
+      return 0;
+    } else {
+      return value.toI32();
+    }
+  }
+
+  set infrastructureAutopilotCadence(value: i32) {
+    this.set("infrastructureAutopilotCadence", Value.fromI32(value));
+  }
+
+  get enforceDecentralizedInfra(): boolean {
+    let value = this.get("enforceDecentralizedInfra");
+    if (!value || value.kind == ValueKind.NULL) {
+      return false;
+    } else {
+      return value.toBoolean();
+    }
+  }
+
+  set enforceDecentralizedInfra(value: boolean) {
+    this.set("enforceDecentralizedInfra", Value.fromBoolean(value));
+  }
+}
+
 export class ValidatorVoteLoader extends Entity {
   _entity: string;
   _field: string;

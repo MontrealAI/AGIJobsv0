@@ -205,6 +205,52 @@ describe("Phase6ExpansionManager", function () {
     expect(stored.heartbeatSeconds).to.equal(360);
   });
 
+  it("removes domains and cleans up state", async function () {
+    const config = domainStruct({ validationModule: validationStub.target });
+    await (await manager.connect(governance).registerDomain(config)).wait();
+    const id = await manager.domainId(config.slug);
+
+    await manager.connect(governance).setDomainOperations(id, operationsStruct());
+    await manager.connect(governance).setDomainTelemetry(id, telemetryStruct());
+    await manager.connect(governance).setDomainInfrastructure(id, infrastructureStruct());
+
+    expect(await manager.domainExists(id)).to.equal(true);
+
+    await expect(manager.connect(outsider).removeDomain(id)).to.be.revertedWithCustomError(
+      manager,
+      "NotGovernance",
+    );
+
+    await expect(
+      manager.connect(governance).removeDomain(id),
+    )
+      .to.emit(manager, "DomainRemoved")
+      .withArgs(id, config.slug);
+
+    expect(await manager.domainExists(id)).to.equal(false);
+
+    await expect(manager.getDomain(id)).to.be.revertedWithCustomError(manager, "UnknownDomain");
+    await expect(manager.getDomainOperations(id)).to.be.revertedWithCustomError(
+      manager,
+      "UnknownDomain",
+    );
+    await expect(manager.getDomainTelemetry(id)).to.be.revertedWithCustomError(
+      manager,
+      "UnknownDomain",
+    );
+    await expect(manager.getDomainInfrastructure(id)).to.be.revertedWithCustomError(
+      manager,
+      "UnknownDomain",
+    );
+
+    const listing = await manager.listDomains();
+    expect(listing).to.have.lengthOf(0);
+
+    await expect(
+      manager.connect(governance).removeDomain(ethers.id("missing")),
+    ).to.be.revertedWithCustomError(manager, "UnknownDomain");
+  });
+
   it("manages global config, pause forwarding and escalation bridges", async function () {
     const config = domainStruct({ validationModule: validationStub.target });
     const id = await manager

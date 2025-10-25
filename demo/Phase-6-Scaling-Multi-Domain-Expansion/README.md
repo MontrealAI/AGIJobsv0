@@ -70,7 +70,7 @@
 
 `contracts/v2/Phase6ExpansionManager.sol` introduces a governance-only control plane that keeps the owner in absolute command:
 
-* `registerDomain`, `updateDomain`, `configureDomainConnectors`, `setDomainStatus`
+* `registerDomain`, `updateDomain`, `configureDomainConnectors`, `setDomainStatus`, `removeDomain`
 * `setGlobalConfig`, `setGlobalGuards`, `setGlobalTelemetry`, `setSystemPause`, `setEscalationBridge`, `forwardPauseCall`, `forwardEscalation`
 * `setDomainOperations` locks in per-domain max concurrency, staking floors, revenue share, circuit breakers, and human validation toggles.
 * `setDomainTelemetry` publishes resilience/automation/compliance BPS, settlement latency, sentinel oracle, and manifest/metrics digests for every industry vertical.

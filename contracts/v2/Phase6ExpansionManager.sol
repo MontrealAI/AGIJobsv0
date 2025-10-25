@@ -156,6 +156,7 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
     error InvalidDigest(string field);
     error InvalidInfrastructureURI();
     error InvalidAutopilotCadence();
+    error DomainIndexCorrupted(bytes32 id);
 
     /// -----------------------------------------------------------------------
     /// Events
@@ -188,6 +189,7 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         bool active
     );
     event DomainStatusChanged(bytes32 indexed id, bool active);
+    event DomainRemoved(bytes32 indexed id, string slug);
     event GlobalConfigUpdated(
         address indexed iotOracleRouter,
         address indexed defaultL2Gateway,
@@ -314,6 +316,19 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         }
         domain.active = active;
         emit DomainStatusChanged(id, active);
+    }
+
+    /// @notice Permanently removes a domain and all associated metadata.
+    function removeDomain(bytes32 id) external onlyGovernance {
+        if (!_known[id]) revert UnknownDomain(id);
+        Domain memory removed = _domains[id];
+        delete _domains[id];
+        delete _domainOperations[id];
+        delete _domainTelemetry[id];
+        delete _domainInfrastructure[id];
+        _known[id] = false;
+        _removeDomainFromIndex(id);
+        emit DomainRemoved(id, removed.slug);
     }
 
     /// @notice Batch updates subset of domain pointers while preserving immutable metadata.
@@ -538,6 +553,10 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         return _idFor(slug);
     }
 
+    function domainExists(bytes32 id) external view returns (bool) {
+        return _known[id];
+    }
+
     function getDomain(bytes32 id) external view returns (Domain memory) {
         if (!_known[id]) revert UnknownDomain(id);
         return _domains[id];
@@ -678,6 +697,20 @@ contract Phase6ExpansionManager is Governable, ReentrancyGuard {
         if (infrastructure.autopilotCadence != 0 && infrastructure.autopilotCadence < 30) {
             revert InvalidAutopilotCadence();
         }
+    }
+
+    function _removeDomainFromIndex(bytes32 id) private {
+        uint256 length = _domainIndex.length;
+        for (uint256 i = 0; i < length; i++) {
+            if (_domainIndex[i] == id) {
+                if (i != length - 1) {
+                    _domainIndex[i] = _domainIndex[length - 1];
+                }
+                _domainIndex.pop();
+                return;
+            }
+        }
+        revert DomainIndexCorrupted(id);
     }
 
     function _idFor(string memory slug) private pure returns (bytes32) {
