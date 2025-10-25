@@ -9,6 +9,9 @@ const README = join(__dirname, "..", "README.md");
 const OUTPUT_DIR = join(__dirname, "..", "output");
 const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
 const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
+const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const address = z
   .string()
@@ -77,6 +80,7 @@ const configSchema = z.object({
     knowledgeGraph: address,
     guardianCouncil: address,
     systemPause: address,
+    phase8Manager: address,
     heartbeatSeconds: z.number().int().positive(),
     guardianReviewWindow: z.number().int().positive(),
     maxDrawdownBps: z.number().int().min(0).max(10_000),
@@ -110,6 +114,10 @@ const configSchema = z.object({
 function main() {
   const configRaw = JSON.parse(readFileSync(ROOT, "utf-8"));
   const config = configSchema.parse(configRaw);
+
+  if (config.global.phase8Manager === ZERO_ADDRESS) {
+    throw new Error("global.phase8Manager must be a non-zero address to stage emergency overrides");
+  }
 
   const slugs = new Set<string>();
   for (const domain of config.domains) {
@@ -242,6 +250,7 @@ function main() {
     "phase8-self-improvement-plan.json",
     "phase8-cycle-report.csv",
     "phase8-dominance-scorecard.json",
+    "phase8-emergency-overrides.json",
   ];
   for (const artifact of requiredArtifacts) {
     if (!readme.includes(artifact)) {
@@ -269,6 +278,34 @@ function main() {
   }
   if (!scorecardRaw?.chain?.manager) {
     throw new Error("Dominance scorecard must specify chain.manager to guide multisig routing.");
+  }
+
+  if (!existsSync(EMERGENCY)) {
+    throw new Error("Emergency overrides pack missing. Regenerate outputs via npm run demo:phase8:orchestrate.");
+  }
+  const emergencyRaw = JSON.parse(readFileSync(EMERGENCY, "utf-8"));
+  if (!Array.isArray(emergencyRaw?.overrides) || emergencyRaw.overrides.length < 2) {
+    throw new Error("Emergency overrides must include pause and resume call descriptors.");
+  }
+  for (const override of emergencyRaw.overrides) {
+    if (!override?.managerCalldata || typeof override.managerCalldata !== "string") {
+      throw new Error("Emergency override entries must include managerCalldata hex string.");
+    }
+    if (!override?.pauseCalldata || typeof override.pauseCalldata !== "string") {
+      throw new Error("Emergency override entries must include pauseCalldata hex string.");
+    }
+    if (!/^0x[a-fA-F0-9]+$/.test(override.managerCalldata)) {
+      throw new Error("Emergency override managerCalldata must be hex encoded.");
+    }
+    if (!/^0x[a-fA-F0-9]+$/.test(override.pauseCalldata)) {
+      throw new Error("Emergency override pauseCalldata must be hex encoded.");
+    }
+  }
+  if (typeof emergencyRaw?.manager !== "string" || !/^0x[a-fA-F0-9]{40}$/.test(emergencyRaw.manager)) {
+    throw new Error("Emergency overrides must include manager address.");
+  }
+  if (!emergencyRaw?.metrics || typeof emergencyRaw.metrics?.minimumCoverageAdequacy !== "number") {
+    throw new Error("Emergency overrides must surface minimum coverage adequacy metric.");
   }
 
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));

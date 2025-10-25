@@ -242,6 +242,7 @@ describe("Phase 8 orchestration console", () => {
         cycleReport: join(tempDir, "phase8-cycle-report.csv"),
         governanceDirectives: join(tempDir, "phase8-governance-directives.md"),
         dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
+        emergencyOverrides: join(tempDir, "phase8-emergency-overrides.json"),
       };
 
       expect(outputs).toEqual([
@@ -254,6 +255,7 @@ describe("Phase 8 orchestration console", () => {
         { label: "Cycle report", path: artifactPaths.cycleReport },
         { label: "Governance directives", path: artifactPaths.governanceDirectives },
         { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
+        { label: "Emergency overrides", path: artifactPaths.emergencyOverrides },
       ]);
 
       expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
@@ -314,6 +316,20 @@ describe("Phase 8 orchestration console", () => {
       const cycleReportLines = cycleReport.trim().split("\n");
       expect(cycleReportLines).toHaveLength((config.domains?.length ?? 0) + 1);
       expect(cycleReportLines[1]).toContain(String(config.domains?.[0]?.slug ?? ""));
+
+      const emergencyOverrides = JSON.parse(readFileSync(artifactPaths.emergencyOverrides, "utf-8"));
+      expect(emergencyOverrides.overrides).toHaveLength(2);
+      expect(emergencyOverrides.overrides[0]).toMatchObject({
+        key: expect.any(String),
+        managerCalldata: expect.stringMatching(/^0x[0-9a-f]+$/),
+        pauseCalldata: expect.stringMatching(/^0x[0-9a-f]+$/),
+      });
+      expect(emergencyOverrides.readiness).toBeDefined();
+      expect(emergencyOverrides.metrics).toMatchObject({
+        guardianWindowSeconds: expect.any(Number),
+        minimumCoverageAdequacy: expect.any(Number),
+        dominanceScore: expect.any(Number),
+      });
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

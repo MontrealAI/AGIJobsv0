@@ -14,7 +14,18 @@ const CONFIG_PATH = join(__dirname, "..", "config", "universal.value.manifest.js
 const OUTPUT_DIR = join(__dirname, "..", "output");
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ZERO_HASH = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const HEX_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const RESILIENCE_ALERT_THRESHOLD = 0.9;
+
+const MANAGER_ABI = ["function forwardPauseCall(bytes data)"];
+const SYSTEM_PAUSE_ABI = ["function pauseAll()", "function unpauseAll()", "function pauseModule(bytes32)", "function unpauseModule(bytes32)"];
+
+function normalizeAddress(value: unknown): string {
+  if (typeof value !== "string") return ZERO_ADDRESS;
+  const trimmed = value.trim();
+  if (!HEX_ADDRESS_REGEX.test(trimmed)) return ZERO_ADDRESS;
+  return trimmed.toLowerCase();
+}
 
 const AUTOMATION_INTERVALS: Record<string, number> = {
   hourly: 60 * 60,
@@ -276,6 +287,7 @@ const ManifestSchema = z
       knowledgeGraph: AddressSchema,
       guardianCouncil: AddressSchema,
       systemPause: AddressSchema,
+      phase8Manager: AddressSchema.optional(),
       heartbeatSeconds: z
         .number({ invalid_type_error: "Global heartbeatSeconds must be a number" })
         .int("Global heartbeatSeconds must be an integer")
@@ -1542,6 +1554,112 @@ export function buildSafeTransactions(entries: CalldataEntry[], managerAddress: 
   }));
 }
 
+function systemPauseAddress(config: Phase8Config): string {
+  return normalizeAddress(config.global?.systemPause ?? ZERO_ADDRESS);
+}
+
+function manifestManagerAddress(config: Phase8Config): string {
+  return normalizeAddress(config.global?.phase8Manager ?? ZERO_ADDRESS);
+}
+
+function resolveManagerAddress(config: Phase8Config, candidate?: string): string {
+  const normalizedCandidate = normalizeAddress(candidate);
+  if (normalizedCandidate !== ZERO_ADDRESS) {
+    return normalizedCandidate;
+  }
+  return manifestManagerAddress(config);
+}
+
+function generateEmergencyOverrides(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  environment: EnvironmentConfig,
+  generatedAt: string,
+  managerAddress: string,
+  pauseAddress: string,
+) {
+  const manager = resolveManagerAddress(config, managerAddress);
+  const guardianCouncil = normalizeAddress(config.global?.guardianCouncil ?? ZERO_ADDRESS);
+  const pauseTarget = normalizeAddress(pauseAddress);
+  const pauseInterface = new Interface(SYSTEM_PAUSE_ABI);
+  const managerInterface = new Interface(MANAGER_ABI);
+  const guardWindow = Number(metrics.guardianWindowSeconds ?? 0);
+  const coverageSeconds = Number((metrics.guardianCoverageMinutes ?? 0) * 60);
+  const minCoverage = Number(metrics.minDomainCoverageSeconds ?? 0);
+  const minimumAdequacy = Number((metrics.minimumCoverageAdequacy ?? 0).toFixed(3));
+  const dominanceScore = Number(metrics.dominanceScore.toFixed(1));
+  const readinessState =
+    manager === ZERO_ADDRESS ? "missing-manager" : pauseTarget === ZERO_ADDRESS ? "missing-system-pause" : "ready";
+
+  const overrideDescriptors = [
+    {
+      key: "pauseAll",
+      label: "Pause all core modules",
+      description:
+        "Dispatch an immediate circuit breaker across job routing, staking, validation, dispute, and treasury flows.",
+      payload: pauseInterface.encodeFunctionData("pauseAll"),
+      advisory: [
+        "Confirm sentinel alerts justify halting all domains.",
+        "Notify mission control that queued jobs will stall until unpaused.",
+      ],
+    },
+    {
+      key: "unpauseAll",
+      label: "Restore core modules",
+      description: "Re-enable every module once the guardian council signs the remediation postmortem.",
+      payload: pauseInterface.encodeFunctionData("unpauseAll"),
+      advisory: [
+        "Run regression diagnostics before resuming.",
+        "Coordinate with validator registry to re-seed quorum where needed.",
+      ],
+    },
+  ];
+
+  const overrides = overrideDescriptors.map((entry) => ({
+    key: entry.key,
+    label: entry.label,
+    description: entry.description,
+    enabled: readinessState === "ready",
+    to: manager,
+    target: pauseTarget,
+    managerCalldata: managerInterface.encodeFunctionData("forwardPauseCall", [entry.payload]),
+    pauseCalldata: entry.payload,
+    prerequisites: [
+      "Guardian council multi-sig approval",
+      manager === ZERO_ADDRESS
+        ? "Phase8 manager address missing — set PHASE8_MANAGER_ADDRESS or update global.phase8Manager before invoking"
+        : "Phase8 manager configured as Safe module",
+      pauseTarget === ZERO_ADDRESS
+        ? "System pause address missing — set via setSystemPause before invoking"
+        : "System pause contract confirmed",
+    ],
+    advisory: entry.advisory,
+  }));
+
+  return {
+    generatedAt,
+    chainId: environment.chainId,
+    manager,
+    systemPause: pauseTarget,
+    guardianCouncil,
+    readiness: readinessState,
+    metrics: {
+      guardianWindowSeconds: guardWindow,
+      sentinelCoverageSeconds: coverageSeconds,
+      minimumCoverageSeconds: minCoverage,
+      minimumCoverageAdequacy: minimumAdequacy,
+      dominanceScore,
+    },
+    procedures: [
+      "1. Verify sentinel alerts and telemetry support intervention.",
+      "2. Convene guardian council for a signed decision (≥2/3 quorum).",
+      "3. Execute the desired override via Safe transaction builder using the calldata below.",
+      "4. Broadcast status to mission control and validators immediately after execution.",
+    ],
+    overrides,
+  };
+}
+
 export function writeArtifacts(
   config: Phase8Config,
   metrics: ReturnType<typeof computeMetrics>,
@@ -1553,7 +1671,15 @@ export function writeArtifacts(
   ensureOutputDirectory(outputDir);
   const generatedAt = new Date().toISOString();
   const entries = flattenCalldataEntries(data);
-  const managerAddress = overrides.managerAddress ?? environment.managerAddress;
+  const overrideManager = normalizeAddress(overrides.managerAddress);
+  const environmentManager = normalizeAddress(environment.managerAddress);
+  const manifestManager = manifestManagerAddress(config);
+  const managerAddress =
+    overrideManager !== ZERO_ADDRESS
+      ? overrideManager
+      : environmentManager !== ZERO_ADDRESS
+      ? environmentManager
+      : manifestManager;
   const chainId = overrides.chainId ?? environment.chainId;
   const callManifest = {
     generatedAt,
@@ -1620,6 +1746,16 @@ export function writeArtifacts(
   const scorecardPath = join(outputDir, "phase8-dominance-scorecard.json");
   writeFileSync(scorecardPath, `${JSON.stringify(generateDominanceScorecard(config, metrics, environment, generatedAt), null, 2)}\n`);
 
+  const emergencyOverridesPath = join(outputDir, "phase8-emergency-overrides.json");
+  writeFileSync(
+    emergencyOverridesPath,
+    `${JSON.stringify(
+      generateEmergencyOverrides(config, metrics, environment, generatedAt, managerAddress, systemPauseAddress(config)),
+      null,
+      2,
+    )}\n`,
+  );
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
@@ -1630,6 +1766,7 @@ export function writeArtifacts(
     { label: "Cycle report", path: cycleReportPath },
     { label: "Governance directives", path: directivesPath },
     { label: "Dominance scorecard", path: scorecardPath },
+    { label: "Emergency overrides", path: emergencyOverridesPath },
   ];
 }
 
@@ -1659,11 +1796,24 @@ function printDomainTable(config: Phase8Config) {
 
 export function main() {
   try {
-    const environment = resolveEnvironment();
+    const environmentOverrides = resolveEnvironment();
     const config = loadConfig();
+    const effectiveManager = resolveManagerAddress(config, environmentOverrides.managerAddress);
+    const environment: EnvironmentConfig = {
+      ...environmentOverrides,
+      managerAddress: effectiveManager,
+    };
     banner("Phase 8 — Universal Value Dominance");
     console.log("Configuration:", CONFIG_PATH);
-    console.log(`Environment overrides → manager: ${environment.managerAddress}, chainId: ${environment.chainId}`);
+    console.log(
+      `Environment overrides → manager: ${environmentOverrides.managerAddress}, chainId: ${environmentOverrides.chainId}`,
+    );
+    if (effectiveManager !== environmentOverrides.managerAddress) {
+      console.log(`Effective manager fallback: ${effectiveManager}`);
+    }
+    if (effectiveManager === ZERO_ADDRESS) {
+      console.log("Warning: Phase 8 manager address not configured — emergency overrides will remain disabled.");
+    }
 
     const metrics = computeMetrics(config);
     banner("Network telemetry");

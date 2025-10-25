@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2025-10-25T02:15:26.178Z",
+  "chainId": 1,
+  "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
+  "systemPause": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+  "guardianCouncil": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+  "readiness": "ready",
+  "metrics": {
+    "guardianWindowSeconds": 720,
+    "sentinelCoverageSeconds": 2700,
+    "minimumCoverageSeconds": 900,
+    "minimumCoverageAdequacy": 1.25,
+    "dominanceScore": 97.1
+  },
+  "procedures": [
+    "1. Verify sentinel alerts and telemetry support intervention.",
+    "2. Convene guardian council for a signed decision (≥2/3 quorum).",
+    "3. Execute the desired override via Safe transaction builder using the calldata below.",
+    "4. Broadcast status to mission control and validators immediately after execution."
+  ],
+  "overrides": [
+    {
+      "key": "pauseAll",
+      "label": "Pause all core modules",
+      "description": "Dispatch an immediate circuit breaker across job routing, staking, validation, dispute, and treasury flows.",
+      "enabled": true,
+      "to": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
+      "target": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "managerCalldata": "0xa7e5f9d700000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004595c6a6700000000000000000000000000000000000000000000000000000000",
+      "pauseCalldata": "0x595c6a67",
+      "prerequisites": [
+        "Guardian council multi-sig approval",
+        "Phase8 manager configured as Safe module",
+        "System pause contract confirmed"
+      ],
+      "advisory": [
+        "Confirm sentinel alerts justify halting all domains.",
+        "Notify mission control that queued jobs will stall until unpaused."
+      ]
+    },
+    {
+      "key": "unpauseAll",
+      "label": "Restore core modules",
+      "description": "Re-enable every module once the guardian council signs the remediation postmortem.",
+      "enabled": true,
+      "to": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
+      "target": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "managerCalldata": "0xa7e5f9d7000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000048a2ddd0300000000000000000000000000000000000000000000000000000000",
+      "pauseCalldata": "0x8a2ddd03",
+      "prerequisites": [
+        "Guardian council multi-sig approval",
+        "Phase8 manager configured as Safe module",
+        "System pause contract confirmed"
+      ],
+      "advisory": [
+        "Run regression diagnostics before resuming.",
+        "Coordinate with validator registry to re-seed quorum where needed."
+      ]
+    }
+  ]
+}
