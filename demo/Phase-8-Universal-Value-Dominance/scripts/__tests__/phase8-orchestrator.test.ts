@@ -9,6 +9,7 @@ const {
   buildSafeTransactions,
   calldata,
   computeMetrics,
+  crossVerifyMetrics,
   flattenCalldataEntries,
   guardrailDiagnostics,
   loadConfig,
@@ -129,6 +130,18 @@ describe("Phase 8 orchestration console", () => {
     expect(metrics.guardianProtocolCount).toBe(config.guardianProtocols.length);
     expect(metrics.guardianProtocolCoverageRatio).toBeCloseTo(expectedProtocolCoverage, 10);
     expect(metrics.guardianProtocolSeverityScore).toBeCloseTo(expectedProtocolSeverity, 10);
+  });
+
+  it("cross-verifies metrics with an independent aggregation pathway", () => {
+    const result = crossVerifyMetrics(config);
+    expect(result.metrics.dominanceScore).toBeCloseTo(result.crossCheck.dominanceScore, 10);
+    expect(result.metrics.coverageRatio).toBeCloseTo(result.crossCheck.coverageRatioPercent, 10);
+    expect(result.metrics.fundedDomainRatio).toBeCloseTo(result.crossCheck.fundedDomainRatioPercent, 10);
+    const fundingKeys = Object.keys(result.metrics.domainFundingMap);
+    expect(fundingKeys.length).toBeGreaterThan(0);
+    for (const key of fundingKeys) {
+      expect(result.metrics.domainFundingMap[key]).toBe(result.crossCheck.domainFundingMap[key]);
+    }
   });
 
   it("parses the manifest with strict validation", () => {
