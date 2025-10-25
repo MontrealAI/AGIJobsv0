@@ -122,6 +122,69 @@ type Phase6Domain @entity {
   telemetryManifestHash: Bytes
 }
 
+type Phase6Registry @entity {
+  id: ID!
+  contract: Bytes!
+  controller: Bytes
+  manifestHash: Bytes
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type Phase6RegistryDomain @entity {
+  id: ID!
+  registry: Phase6Registry!
+  slug: String!
+  name: String!
+  metadataURI: String!
+  domainId: Bytes!
+  manifestHash: Bytes!
+  active: Boolean!
+  credentialRequires: Boolean!
+  credentialActive: Boolean!
+  credentialAttestor: Bytes
+  credentialSchema: Bytes
+  credentialURI: String
+  registeredAtBlock: BigInt!
+  registeredAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+  skills: [Phase6RegistrySkill!]! @derivedFrom(field: "domain")
+  agents: [Phase6RegistryAgent!]! @derivedFrom(field: "domain")
+}
+
+type Phase6RegistrySkill @entity {
+  id: ID!
+  domain: Phase6RegistryDomain!
+  skillId: Bytes!
+  key: String!
+  label: String!
+  metadataURI: String!
+  requiresCredential: Boolean!
+  active: Boolean!
+  registeredAtBlock: BigInt!
+  registeredAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+}
+
+type Phase6RegistryAgent @entity {
+  id: ID!
+  domain: Phase6RegistryDomain!
+  agent: Bytes!
+  didURI: String!
+  manifestHash: Bytes!
+  credentialHash: Bytes
+  submitter: Bytes!
+  approved: Boolean!
+  active: Boolean!
+  registeredAtBlock: BigInt!
+  registeredAtTimestamp: BigInt!
+  updatedAtBlock: BigInt!
+  updatedAtTimestamp: BigInt!
+  skillIds: [Bytes!]!
+}
+
 type Phase6GlobalConfig @entity {
   id: ID!
   iotOracleRouter: Bytes

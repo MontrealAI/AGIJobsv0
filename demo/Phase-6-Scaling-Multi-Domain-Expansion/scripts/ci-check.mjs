@@ -10,6 +10,8 @@ const root = join(__dirname, '..');
 const configPath = join(root, 'config', 'domains.phase6.json');
 const repoAbiPath = join(__dirname, '..', '..', '..', 'subgraph', 'abis', 'Phase6ExpansionManager.json');
 const demoAbiPath = join(root, 'abi', 'Phase6ExpansionManager.json');
+const repoRegistryAbiPath = join(__dirname, '..', '..', '..', 'subgraph', 'abis', 'Phase6DomainRegistry.json');
+const demoRegistryAbiPath = join(root, 'abi', 'Phase6DomainRegistry.json');
 const htmlPath = join(root, 'index.html');
 
 function fail(message) {
@@ -29,10 +31,18 @@ if (!existsSync(demoAbiPath)) {
 if (!existsSync(htmlPath)) {
   fail(`UI file missing: ${htmlPath}`);
 }
+if (!existsSync(repoRegistryAbiPath)) {
+  fail(`Registry ABI file missing: ${repoRegistryAbiPath}`);
+}
+if (!existsSync(demoRegistryAbiPath)) {
+  fail(`Demo registry ABI file missing: ${demoRegistryAbiPath}`);
+}
 
 const config = JSON.parse(readFileSync(configPath, 'utf-8'));
 const repoAbi = JSON.parse(readFileSync(repoAbiPath, 'utf-8'));
 const demoAbi = JSON.parse(readFileSync(demoAbiPath, 'utf-8'));
+const repoRegistryAbi = JSON.parse(readFileSync(repoRegistryAbiPath, 'utf-8'));
+const demoRegistryAbi = JSON.parse(readFileSync(demoRegistryAbiPath, 'utf-8'));
 const html = readFileSync(htmlPath, 'utf-8');
 
 if (!Array.isArray(repoAbi) || !repoAbi.length) {
@@ -41,6 +51,9 @@ if (!Array.isArray(repoAbi) || !repoAbi.length) {
 
 if (JSON.stringify(repoAbi) !== JSON.stringify(demoAbi)) {
   fail('Demo ABI file is out of sync with subgraph ABI. Run `cp subgraph/abis/Phase6ExpansionManager.json demo/Phase-6-Scaling-Multi-Domain-Expansion/abi/`');
+}
+if (JSON.stringify(repoRegistryAbi) !== JSON.stringify(demoRegistryAbi)) {
+  fail('Demo registry ABI file is out of sync with subgraph ABI. Run `cp subgraph/abis/Phase6DomainRegistry.json demo/Phase-6-Scaling-Multi-Domain-Expansion/abi/`');
 }
 
 if (!config.global || !config.global.manifestURI) {
@@ -320,6 +333,123 @@ config.domains.forEach((domain, idx) => {
       fail(`${context}: infrastructureControl.autopilotCadence must be 0 or >= 30 seconds.`);
     }
   }
+});
+
+const registry = config.registry;
+if (!registry || typeof registry !== 'object') {
+  fail('registry configuration is required.');
+}
+if (registry.manifestHash && (!registry.manifestHash.startsWith('0x') || registry.manifestHash.length !== 66)) {
+  fail('registry.manifestHash must be a bytes32 hex string when provided.');
+}
+if (registry.contract && (!addressPattern.test(registry.contract) || /^0x0{40}$/i.test(registry.contract))) {
+  fail('registry.contract must be a valid 0x-prefixed address when provided.');
+}
+if (!Array.isArray(registry.domains) || registry.domains.length === 0) {
+  fail('registry.domains must contain at least one domain.');
+}
+
+const domainSlugs = new Set(config.domains.map((domain) => domain.slug.toLowerCase()));
+registry.domains.forEach((registryDomain, idx) => {
+  const context = `registry.domains[${idx}]`;
+  if (!registryDomain || typeof registryDomain !== 'object') {
+    fail(`${context} must be an object.`);
+  }
+  if (!registryDomain.slug || typeof registryDomain.slug !== 'string') {
+    fail(`${context}.slug must be a non-empty string.`);
+  }
+  if (!domainSlugs.has(registryDomain.slug.toLowerCase())) {
+    fail(`${context}.slug must correspond to an existing domain slug.`);
+  }
+  if (!registryDomain.manifestHash || registryDomain.manifestHash.length !== 66 || !registryDomain.manifestHash.startsWith('0x')) {
+    fail(`${context}.manifestHash must be a bytes32 hex string.`);
+  }
+  if (registryDomain.metadataURI && typeof registryDomain.metadataURI !== 'string') {
+    fail(`${context}.metadataURI must be a string when provided.`);
+  }
+  const credentialRule = registryDomain.credentialRule;
+  if (credentialRule) {
+    if (typeof credentialRule !== 'object') {
+      fail(`${context}.credentialRule must be an object when provided.`);
+    }
+    if (credentialRule.attestor && (!addressPattern.test(credentialRule.attestor) || /^0x0{40}$/i.test(credentialRule.attestor))) {
+      fail(`${context}.credentialRule.attestor must be a valid address when provided.`);
+    }
+    if (
+      credentialRule.schemaId &&
+      (typeof credentialRule.schemaId !== 'string' || credentialRule.schemaId.length !== 66 || !credentialRule.schemaId.startsWith('0x'))
+    ) {
+      fail(`${context}.credentialRule.schemaId must be a bytes32 hex string when provided.`);
+    }
+    if (credentialRule.uri && typeof credentialRule.uri !== 'string') {
+      fail(`${context}.credentialRule.uri must be a string when provided.`);
+    }
+  }
+  if (!Array.isArray(registryDomain.skills) || registryDomain.skills.length === 0) {
+    fail(`${context}.skills must include at least one skill definition.`);
+  }
+  registryDomain.skills.forEach((skill, skillIdx) => {
+    const skillContext = `${context}.skills[${skillIdx}]`;
+    if (!skill || typeof skill !== 'object') {
+      fail(`${skillContext} must be an object.`);
+    }
+    if (!skill.key || typeof skill.key !== 'string') {
+      fail(`${skillContext}.key must be a non-empty string.`);
+    }
+    if (!skill.label || typeof skill.label !== 'string') {
+      fail(`${skillContext}.label must be a non-empty string.`);
+    }
+    if (!skill.metadataURI || typeof skill.metadataURI !== 'string') {
+      fail(`${skillContext}.metadataURI must be a non-empty string.`);
+    }
+    if (skill.requiresCredential !== undefined && typeof skill.requiresCredential !== 'boolean') {
+      fail(`${skillContext}.requiresCredential must be boolean when provided.`);
+    }
+    if (skill.active !== undefined && typeof skill.active !== 'boolean') {
+      fail(`${skillContext}.active must be boolean when provided.`);
+    }
+  });
+  if (!Array.isArray(registryDomain.agents) || registryDomain.agents.length === 0) {
+    fail(`${context}.agents must include at least one agent.`);
+  }
+  registryDomain.agents.forEach((agent, agentIdx) => {
+    const agentContext = `${context}.agents[${agentIdx}]`;
+    if (!agent || typeof agent !== 'object') {
+      fail(`${agentContext} must be an object.`);
+    }
+    if (!agent.address || typeof agent.address !== 'string' || !addressPattern.test(agent.address) || /^0x0{40}$/i.test(agent.address)) {
+      fail(`${agentContext}.address must be a non-zero 0x-prefixed address.`);
+    }
+    if (!agent.alias || typeof agent.alias !== 'string') {
+      fail(`${agentContext}.alias must be a non-empty string.`);
+    }
+    if (!agent.did || typeof agent.did !== 'string') {
+      fail(`${agentContext}.did must be a non-empty string.`);
+    }
+    if (!agent.manifestHash || agent.manifestHash.length !== 66 || !agent.manifestHash.startsWith('0x')) {
+      fail(`${agentContext}.manifestHash must be a bytes32 hex string.`);
+    }
+    if (
+      agent.credentialHash &&
+      (typeof agent.credentialHash !== 'string' || agent.credentialHash.length !== 66 || !agent.credentialHash.startsWith('0x'))
+    ) {
+      fail(`${agentContext}.credentialHash must be a bytes32 hex string when provided.`);
+    }
+    if (agent.approved !== undefined && typeof agent.approved !== 'boolean') {
+      fail(`${agentContext}.approved must be boolean when provided.`);
+    }
+    if (agent.active !== undefined && typeof agent.active !== 'boolean') {
+      fail(`${agentContext}.active must be boolean when provided.`);
+    }
+    if (!Array.isArray(agent.skills)) {
+      fail(`${agentContext}.skills must be an array.`);
+    }
+    agent.skills.forEach((skillKey, skillIndex) => {
+      if (typeof skillKey !== 'string' || !skillKey.trim()) {
+        fail(`${agentContext}.skills[${skillIndex}] must be a non-empty string.`);
+      }
+    });
+  });
 });
 
 if (!html.includes('mermaid')) {

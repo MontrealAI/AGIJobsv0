@@ -10,6 +10,7 @@ Layer-2 deployments.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -18,6 +19,11 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, TYPE_CHECKING
+
+try:  # pragma: no cover - optional dependency for keccak
+    from eth_hash.auto import keccak as _auto_keccak
+except Exception:  # pragma: no cover - gracefully degrade if unavailable
+    _auto_keccak = None
 
 if TYPE_CHECKING:  # pragma: no cover - imported during type checking only
     from ..models import Step
@@ -116,6 +122,44 @@ class GlobalControls:
     telemetry_oversight_weight_bps: int = 0
 
 
+@dataclass(slots=True)
+class RegistrySkill:
+    key: str
+    skill_id: str
+    label: str
+    metadata_uri: str
+    requires_credential: bool
+    active: bool
+
+
+@dataclass(slots=True)
+class RegistryAgent:
+    address: str
+    alias: str
+    did: str
+    manifest_hash: str
+    credential_hash: Optional[str]
+    skills: Set[str]
+    approved: Optional[bool]
+    active: Optional[bool]
+    note: Optional[str]
+
+
+@dataclass(slots=True)
+class RegistryDomain:
+    slug: str
+    domain_id: str
+    manifest_hash: str
+    metadata_uri: str
+    active: bool
+    credential_requires: bool
+    credential_attestor: Optional[str]
+    credential_schema: Optional[str]
+    credential_uri: Optional[str]
+    skills: Dict[str, RegistrySkill] = field(default_factory=dict)
+    agents: List[RegistryAgent] = field(default_factory=list)
+
+
 class DomainExpansionRuntime:
     """Helper powering Phase 6 routing decisions inside the orchestrator."""
 
@@ -129,6 +173,9 @@ class DomainExpansionRuntime:
         self._global = global_controls
         self._source = source
         self._loaded_at = time.time()
+        self._registry_domains: Dict[str, RegistryDomain] = {}
+        self._registry_manifest_hash: Optional[str] = None
+        self._registry_contract: Optional[str] = None
         _LOG.debug("Loaded %s Phase 6 domains from %s", len(domains), source or "<in-memory>")
 
     # ------------------------------------------------------------------
@@ -252,7 +299,11 @@ class DomainExpansionRuntime:
             telemetry_automation_floor_bps=int(telemetry_payload.get("automationFloorBps", 0)),
             telemetry_oversight_weight_bps=int(telemetry_payload.get("oversightWeightBps", 0)),
         )
-        return cls(domains, controls, source=source)
+        registry_payload = payload.get("registry")
+        runtime = cls(domains, controls, source=source)
+        if registry_payload is not None:
+            runtime._load_registry(registry_payload)
+        return runtime
 
     @classmethod
     def from_file(cls, path: Path) -> "DomainExpansionRuntime":
@@ -278,6 +329,18 @@ class DomainExpansionRuntime:
     @property
     def global_infrastructure(self) -> Sequence[Dict[str, str]]:
         return list(self._global.decentralized_infra)
+
+    @property
+    def registry_manifest(self) -> Optional[str]:
+        return self._registry_manifest_hash
+
+    @property
+    def registry_contract(self) -> Optional[str]:
+        return self._registry_contract
+
+    @property
+    def registry_domains(self) -> Sequence[RegistryDomain]:
+        return list(self._registry_domains.values())
 
     def annotate_step(self, step: "Step") -> List[str]:
         if not self._domains:
@@ -381,6 +444,23 @@ class DomainExpansionRuntime:
                 for item in profile.infrastructure[:3]
             )
             logs.append(f"• infra mesh: {preview}")
+        registry = self._registry_domains.get(profile.slug)
+        if registry:
+            skill_preview = ", ".join(sorted(registry.skills.keys())) or "—"
+            logs.append(f"• registry skills: {skill_preview}")
+            if registry.credential_requires:
+                logs.append(
+                    "• credential rule: "
+                    f"attestor={registry.credential_attestor or '—'} "
+                    f"schema={registry.credential_schema or '—'}"
+                )
+            if registry.agents:
+                approved = sum(1 for agent in registry.agents if agent.approved)
+                active = sum(1 for agent in registry.agents if agent.active or agent.active is None)
+                logs.append(
+                    "• registry agents: "
+                    f"{len(registry.agents)} total / {approved} approved / {active} active"
+                )
         logs.append(f"• operations: {profile.operations_summary()}")
         return logs
 
@@ -497,6 +577,125 @@ class DomainExpansionRuntime:
         if best_profile is None:
             return None, float("nan"), set()
         return best_profile, best_score, normalized_tags.intersection(best_profile.skill_tags)
+
+    def _load_registry(self, payload: object) -> None:
+        if not isinstance(payload, dict):
+            raise ValueError("registry payload must be an object")
+        manifest = payload.get("manifestHash")
+        if manifest:
+            self._registry_manifest_hash = _normalize_bytes32(manifest)
+        contract = payload.get("contract")
+        if contract:
+            self._registry_contract = _normalize_address(contract)
+        domains_payload = payload.get("domains", [])
+        if not isinstance(domains_payload, list):
+            raise ValueError("registry.domains must be an array")
+        registry_domains: Dict[str, RegistryDomain] = {}
+        for entry in domains_payload:
+            if not isinstance(entry, dict):
+                raise ValueError("registry domain entries must be objects")
+            slug_raw = str(entry.get("slug", "")).strip()
+            if not slug_raw:
+                raise ValueError("registry domain slug is required")
+            slug = slug_raw.lower()
+            domain_id = _normalize_bytes32(entry.get("domainId"))
+            if not domain_id:
+                domain_id = _keccak_hex(slug)
+            manifest_hash = _normalize_bytes32(entry.get("manifestHash")) or _ZERO_BYTES32
+            metadata_uri = str(entry.get("metadataURI", "")).strip()
+            credential_rule = entry.get("credentialRule") or {}
+            if credential_rule and not isinstance(credential_rule, dict):
+                raise ValueError(f"registry domain {slug} credentialRule must be an object")
+            credential_requires = bool(credential_rule.get("requiresCredential", False))
+            registry_domain = RegistryDomain(
+                slug=slug,
+                domain_id=domain_id,
+                manifest_hash=manifest_hash,
+                metadata_uri=metadata_uri or f"ipfs://phase6/domains/{slug}.json",
+                active=bool(entry.get("active", True)),
+                credential_requires=credential_requires,
+                credential_attestor=_normalize_address(credential_rule.get("attestor")),
+                credential_schema=_normalize_bytes32(credential_rule.get("schemaId")),
+                credential_uri=str(credential_rule.get("uri", "")).strip() or None,
+            )
+            skills_payload = entry.get("skills", [])
+            if not isinstance(skills_payload, list):
+                raise ValueError(f"registry domain {slug} skills must be an array")
+            for skill_entry in skills_payload:
+                if not isinstance(skill_entry, dict):
+                    raise ValueError(f"registry domain {slug} skill entries must be objects")
+                key_raw = str(skill_entry.get("key", "")).strip()
+                if not key_raw:
+                    raise ValueError(f"registry domain {slug} skill.key required")
+                skill_key = key_raw.lower()
+                skill_id = _normalize_bytes32(skill_entry.get("id"))
+                if not skill_id:
+                    skill_id = _keccak_hex(skill_key)
+                registry_domain.skills[skill_key] = RegistrySkill(
+                    key=skill_key,
+                    skill_id=skill_id,
+                    label=str(skill_entry.get("label", key_raw)).strip() or key_raw,
+                    metadata_uri=str(skill_entry.get("metadataURI", "")).strip(),
+                    requires_credential=bool(skill_entry.get("requiresCredential", False)),
+                    active=bool(skill_entry.get("active", True)),
+                )
+            agents_payload = entry.get("agents", [])
+            if not isinstance(agents_payload, list):
+                raise ValueError(f"registry domain {slug} agents must be an array")
+            for agent_entry in agents_payload:
+                if not isinstance(agent_entry, dict):
+                    raise ValueError(f"registry domain {slug} agent entries must be objects")
+                address = _normalize_address(agent_entry.get("address"))
+                if not address:
+                    raise ValueError(f"registry domain {slug} agent missing address")
+                alias = str(agent_entry.get("alias", address)).strip() or address
+                did = str(agent_entry.get("did", "")).strip()
+                manifest_hash_agent = _normalize_bytes32(agent_entry.get("manifestHash")) or _ZERO_BYTES32
+                credential_hash = _normalize_bytes32(agent_entry.get("credentialHash"))
+                skills = {
+                    str(skill).strip().lower()
+                    for skill in _ensure_array(agent_entry.get("skills"))
+                    if isinstance(skill, str) and skill.strip()
+                }
+                registry_domain.agents.append(
+                    RegistryAgent(
+                        address=address,
+                        alias=alias,
+                        did=did,
+                        manifest_hash=manifest_hash_agent,
+                        credential_hash=credential_hash,
+                        skills=skills,
+                        approved=_coerce_optional_bool(agent_entry.get("approved")),
+                        active=_coerce_optional_bool(agent_entry.get("active")),
+                        note=str(agent_entry.get("note", "")).strip() or None,
+                    )
+                )
+            registry_domains[slug] = registry_domain
+        self._registry_domains = registry_domains
+
+
+def _keccak_hex(value: str) -> str:
+    data = value.encode("utf-8")
+    if _auto_keccak is not None:
+        try:
+            digest = _auto_keccak(data)
+        except Exception:  # pragma: no cover - fallback to hashlib
+            digest = hashlib.sha3_256(data).digest()
+    else:  # pragma: no cover - fallback when eth_hash unavailable
+        digest = hashlib.sha3_256(data).digest()
+    return "0x" + digest.hex()
+
+
+def _ensure_array(value: object) -> List[object]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, set):
+        return list(value)
+    return [value]
 
 
 def _normalize_infrastructure(
