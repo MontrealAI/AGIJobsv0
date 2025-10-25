@@ -359,6 +359,7 @@ const ManifestSchema = z
 
     const sentinels = value.sentinels ?? [];
     const sentinelSlugMap = new Map<string, number>();
+    const sentinelDomainsBySlug = new Map<string, string[]>();
     sentinels.forEach((sentinel, index) => {
       const slug = String(sentinel?.slug ?? "").toLowerCase();
       if (!slug) return;
@@ -371,6 +372,10 @@ const ManifestSchema = z
         return;
       }
       sentinelSlugMap.set(slug, index);
+      const sentinelDomains = Array.from(
+        new Set((sentinel.domains ?? []).map((domain) => String(domain || "").toLowerCase()).filter(Boolean)),
+      );
+      sentinelDomainsBySlug.set(slug, sentinelDomains);
     });
 
     const streams = value.capitalStreams ?? [];
@@ -500,6 +505,7 @@ const ManifestSchema = z
         });
       }
 
+      const sentinelDomainTargets = new Set<string>();
       for (const sentinelSlug of sentinelRefs) {
         if (!sentinelSlugMap.has(sentinelSlug)) {
           ctx.addIssue({
@@ -507,10 +513,21 @@ const ManifestSchema = z
             message: `Guardian protocol ${protocol.scenario} references unknown sentinel ${sentinelSlug}`,
             path: ["guardianProtocols", index, "linkedSentinels"],
           });
+          continue;
         }
+        const assignedDomains = sentinelDomainsBySlug.get(sentinelSlug) ?? [];
+        assignedDomains.forEach((domain) => sentinelDomainTargets.add(domain));
       }
 
-      const targets = domainRefs.length > 0 ? domainRefs : domainSlugs;
+      if (!domainRefs.length && sentinelRefs.length > 0 && sentinelDomainTargets.size === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Guardian protocol ${protocol.scenario} references sentinels without domain assignments — specify linkedDomains to declare coverage`,
+          path: ["guardianProtocols", index, "linkedDomains"],
+        });
+      }
+
+      const targets = domainRefs.length > 0 ? domainRefs : Array.from(sentinelDomainTargets);
       for (const target of targets) {
         if (!domainSlugMap.has(target)) {
           ctx.addIssue({
