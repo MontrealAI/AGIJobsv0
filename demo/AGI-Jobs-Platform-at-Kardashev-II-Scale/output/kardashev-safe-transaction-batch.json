@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "chainId": 1,
-  "createdAt": "2025-03-01T00:00:00Z",
+  "createdAt": 1740787200000,
   "meta": {
     "name": "AGI Jobs Kardashev-II Command Batch",
     "description": "Owner-calibrated payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale"

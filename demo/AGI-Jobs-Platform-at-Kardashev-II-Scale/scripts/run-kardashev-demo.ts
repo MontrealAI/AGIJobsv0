@@ -467,8 +467,10 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
   const domainCount = manifest.federations.reduce((sum, f) => sum + f.domains.length, 0);
   const averageResilience = domainCount > 0 ? totalResilience / domainCount : 0;
-  const totalCoverage = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.coverageSeconds, 0);
+  const domainCoverages = manifest.federations.flatMap((f) => f.domains.map((d) => d.coverageSeconds));
+  const totalCoverage = domainCoverages.reduce((sum, coverage) => sum + coverage, 0);
   const averageCoverage = domainCount > 0 ? totalCoverage / domainCount : 0;
+  const minimumCoverage = domainCoverages.length > 0 ? Math.min(...domainCoverages) : 0;
 
   const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
   const regionalEnergy = manifest.federations.map((f) => ({
@@ -493,7 +495,9 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
 
-  const coverageOk = averageCoverage >= manifest.interstellarCouncil.guardianReviewWindow;
+  const coverageOk = domainCoverages.every(
+    (coverage) => coverage >= manifest.interstellarCouncil.guardianReviewWindow
+  );
   const bridgeTelemetry: Record<string, any> = {};
   for (const [bridgeName, data] of Object.entries(manifest.interplanetaryBridges)) {
     bridgeTelemetry[bridgeName] = {
@@ -521,6 +525,7 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
       ownerOverridesReady: true,
       guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,
       averageCoverageSeconds: averageCoverage,
+      minimumCoverageSeconds: minimumCoverage,
       coverageOk,
     },
     energy: {
@@ -559,10 +564,14 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
 }
 
 function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
+  const parsedCreatedAt =
+    typeof manifest.generatedAt === "number" ? manifest.generatedAt : Date.parse(manifest.generatedAt);
+  const createdAt = Number.isFinite(parsedCreatedAt) ? parsedCreatedAt : Date.now();
+
   return {
     version: "1.0",
     chainId: manifest.interstellarCouncil.chainId,
-    createdAt: manifest.generatedAt,
+    createdAt,
     meta: {
       name: "AGI Jobs Kardashev-II Command Batch",
       description: "Owner-calibrated payload synthesised by demo/AGI-Jobs-Platform-at-Kardashev-II-Scale",
