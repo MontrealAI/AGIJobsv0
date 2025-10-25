@@ -62,6 +62,12 @@ h1 {
   color: rgba(226, 232, 240, 0.85);
 }
 
+.card h3 {
+  margin: 16px 0 8px;
+  font-size: 1rem;
+  color: rgba(226, 232, 240, 0.85);
+}
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -84,6 +90,51 @@ h1 {
 .section-title h2 {
   margin: 0;
   font-size: 1.35rem;
+}
+
+.lede {
+  font-size: 1.05rem;
+  color: rgba(226, 232, 240, 0.92);
+  margin-bottom: 8px;
+}
+
+.ledger-score {
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 0.95rem;
+  margin-bottom: 14px;
+}
+
+.ledger-list,
+.ledger-methods,
+.ledger-alerts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ledger-list li,
+.ledger-methods li,
+.ledger-alerts li {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+.ledger-evidence {
+  display: block;
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.85);
+  margin-top: 4px;
+}
+
+.ledger-alerts h3 {
+  margin-top: 20px;
 }
 
 button {

@@ -163,13 +163,63 @@ function renderFederations(telemetry) {
   });
 }
 
+function renderLedger(ledger) {
+  document.querySelector("#ledger-summary").textContent = ledger.confidence.summary;
+  const composite = `${(ledger.confidence.compositeScore * 100).toFixed(2)}%`;
+  document.querySelector("#ledger-score").textContent = composite;
+  document
+    .querySelector("#ledger-score")
+    .classList.toggle("status-ok", ledger.confidence.quorum);
+  document
+    .querySelector("#ledger-score")
+    .classList.toggle("status-fail", !ledger.confidence.quorum);
+
+  const checkList = document.querySelector("#ledger-checks");
+  checkList.innerHTML = "";
+  ledger.checks.forEach((check) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${check.title}</strong> — <span class="ledger-evidence">${check.evidence}</span>`;
+    li.classList.add(check.status ? "status-ok" : "status-fail");
+    checkList.appendChild(li);
+  });
+
+  const methodsList = document.querySelector("#ledger-methods");
+  methodsList.innerHTML = "";
+  ledger.confidence.methods.forEach((method) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${method.method}</strong>: ${(method.score * 100).toFixed(2)}% — ${method.explanation}`;
+    li.classList.add(method.score >= 0.95 ? "status-ok" : method.score >= 0.75 ? "status-warn" : "status-fail");
+    methodsList.appendChild(li);
+  });
+
+  const alertsList = document.querySelector("#ledger-alerts");
+  alertsList.innerHTML = "";
+  if (ledger.alerts.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No alerts — all invariants satisfied.";
+    li.classList.add("status-ok");
+    alertsList.appendChild(li);
+  } else {
+    ledger.alerts.forEach((alert) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${alert.title}</strong> (${alert.severity}) — ${alert.evidence}`;
+      li.classList.add("status-fail");
+      alertsList.appendChild(li);
+    });
+  }
+}
+
 async function bootstrap() {
   try {
-    const telemetry = await fetchJson("./output/kardashev-telemetry.json");
+    const [telemetry, ledger] = await Promise.all([
+      fetchJson("./output/kardashev-telemetry.json"),
+      fetchJson("./output/kardashev-stability-ledger.json"),
+    ]);
     renderMetrics(telemetry);
     attachReflectionButton(telemetry);
     renderOwnerDirectives(telemetry);
     renderFederations(telemetry);
+    renderLedger(ledger);
     await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");
     await renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram");
   } catch (error) {

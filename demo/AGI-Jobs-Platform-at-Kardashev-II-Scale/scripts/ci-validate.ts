@@ -32,6 +32,7 @@ function validateReadme() {
     "## 🧱 Architecture overview",
     "## 🔌 Energy & compute governance",
     "## 🎛️ Mission directives & verification dashboards",
+    "## 🧬 Stability ledger & unstoppable consensus",
     "## 🛡️ Governance and safety levers",
     "## 📦 Artefacts in this directory",
     "## 🧪 Verification rituals",

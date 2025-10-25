@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2025-03-01T00:00:00Z",
+  "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
+  "dominanceScore": 90,
+  "confidence": {
+    "compositeScore": 1,
+    "quorum": true,
+    "summary": "All Kardashev-II invariants satisfied. Safe batch ready for execution.",
+    "methods": [
+      {
+        "method": "deterministic-consensus",
+        "score": 1,
+        "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
+      },
+      {
+        "method": "redundant-telemetry",
+        "score": 1,
+        "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
+      },
+      {
+        "method": "energy-safety-buffer",
+        "score": 1,
+        "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "manifest-digest",
+      "title": "Manifest digests aligned",
+      "severity": "critical",
+      "status": true,
+      "weight": 1.2,
+      "evidence": "expected 0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033, observed 0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033"
+    },
+    {
+      "id": "self-improvement-digest",
+      "title": "Self-improvement charter verified",
+      "severity": "critical",
+      "status": true,
+      "weight": 1,
+      "evidence": "expected 0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d, observed 0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d"
+    },
+    {
+      "id": "owner-control",
+      "title": "Owner override levers encoded",
+      "severity": "high",
+      "status": true,
+      "weight": 0.9,
+      "evidence": "setGlobalParameters + pause/unpause transactions present"
+    },
+    {
+      "id": "guardian-coverage",
+      "title": "Guardian coverage >= review window",
+      "severity": "high",
+      "status": true,
+      "weight": 0.85,
+      "evidence": "minimum coverage 1800s vs 900s window"
+    },
+    {
+      "id": "energy-triple-check",
+      "title": "Energy models reconciled",
+      "severity": "critical",
+      "status": true,
+      "weight": 1.1,
+      "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
+    },
+    {
+      "id": "energy-margin",
+      "title": "Dyson thermostat buffer intact",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.6,
+      "evidence": "utilisation 57.62% vs permitted 87.50%"
+    },
+    {
+      "id": "compute-alignment",
+      "title": "Compute deviation within tolerance",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.7,
+      "evidence": "deviation 0.45% (≤ 0.75%)"
+    },
+    {
+      "id": "bridge-latency",
+      "title": "Bridge latency ≤ tolerance",
+      "severity": "high",
+      "status": true,
+      "weight": 0.75,
+      "evidence": "tolerance 120s · failsafe 120s"
+    }
+  ],
+  "alerts": [],
+  "ownerControls": {
+    "manager": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+    "systemPause": "0xb740e9e719f1a3f138ce7c36418495f5d9e6b4d2",
+    "guardianCouncil": "0x3ecb7d31b20d4a3bf59f7ae8894d42bee0b1a24b",
+    "transactionsEncoded": 23,
+    "pauseCallEncoded": true,
+    "resumeCallEncoded": true
+  },
+  "safety": {
+    "guardianReviewWindow": 900,
+    "minimumCoverageSeconds": 1800,
+    "coverageRatio": 1,
+    "bridgeFailsafeSeconds": 120,
+    "permittedUtilisation": 0.875,
+    "utilisation": 0.5761904761904761
+  }
+}

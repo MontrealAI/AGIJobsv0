@@ -49,6 +49,7 @@
    * `output/kardashev-mermaid.mmd` – federated systems map (rendered automatically in the UI).
    * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
    * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
+   * `output/kardashev-stability-ledger.json` – consensus ledger uniting deterministic, redundant, and thermodynamic checks.
    * Console output summarising dominance scores, delta checks, and incident alerts.
 3. **Launch the holographic control surface**
    ```bash
@@ -151,9 +152,19 @@ sequenceDiagram
 | `output/kardashev-orchestration-report.md` | Detailed runbook for non-technical operators (energy, bridges, checklist). |
 | `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
+| `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
 | `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
+
+---
+
+## 🧬 Stability ledger & unstoppable consensus
+
+* **Composite quorum** – `kardashev-stability-ledger.json` scores governance, energy, compute, bridge, and pause levers with deterministic weights. The dashboard promotes the score, colour-coding it green only when ≥95% of weighted checks pass.
+* **Redundant verification vectors** – The ledger records independent confidence methods: boolean consensus, redundant telemetry agreement, and residual Dyson thermostat buffer. Operators can inspect divergences instantly.
+* **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
+* **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
 
 ---
 
