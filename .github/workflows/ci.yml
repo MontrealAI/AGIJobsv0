@@ -291,6 +291,8 @@ jobs:
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Validate Kardashev II demo
         run: npm run demo:kardashev-ii:ci
+      - name: Validate Stellar Kardashev II demo
+        run: npm run demo:kardashev-ii-stellar:ci
 
   asi_takeoff_demo:
     name: ASI Take-Off Demonstration
