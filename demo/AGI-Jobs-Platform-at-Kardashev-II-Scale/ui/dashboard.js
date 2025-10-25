@@ -298,11 +298,59 @@ function renderScenarioSweep(telemetry) {
   });
 }
 
+function renderOwnerProof(ownerProof, telemetry) {
+  const scorePct = (ownerProof.verification.unstoppableScore * 100).toFixed(2);
+  const scoreElement = document.querySelector("#owner-proof-score");
+  scoreElement.textContent = `Unstoppable control score: ${scorePct}%`;
+  scoreElement.classList.toggle("status-ok", ownerProof.verification.unstoppableScore >= 0.95);
+  scoreElement.classList.toggle("status-warn", ownerProof.verification.unstoppableScore < 0.95);
+
+  const summaryList = document.querySelector("#owner-proof-summary");
+  summaryList.innerHTML = "";
+  const summaryItems = [
+    { label: "Selectors complete", ok: ownerProof.verification.selectorsComplete },
+    { label: "Pause embedded", ok: ownerProof.pauseEmbedding.pauseAll },
+    { label: "Resume embedded", ok: ownerProof.pauseEmbedding.unpauseAll },
+    { label: "Targets isolated", ok: ownerProof.verification.singleOwnerTargets },
+  ];
+  summaryItems.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = `${item.label}: ${item.ok ? "✅" : "❌"}`;
+    li.classList.add(item.ok ? "status-ok" : "status-fail");
+    summaryList.appendChild(li);
+  });
+
+  const functionsList = document.querySelector("#owner-proof-functions");
+  functionsList.innerHTML = "";
+  ownerProof.requiredFunctions.forEach((fn) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${fn.name}</span><span>${fn.occurrences}/${fn.minimumRequired}</span>`;
+    li.classList.add(fn.present ? "status-ok" : "status-fail");
+    functionsList.appendChild(li);
+  });
+
+  document.querySelector("#owner-proof-tx-hash").textContent = ownerProof.hashes.transactionSet;
+  document.querySelector("#owner-proof-selector-hash").textContent = ownerProof.hashes.selectorSet;
+
+  const targets = ownerProof.targets.nonOwner;
+  const targetElement = document.querySelector("#owner-proof-targets");
+  if (targets.length === 0) {
+    targetElement.textContent = "Call targets confined to manager and SystemPause contracts.";
+    targetElement.classList.add("status-ok");
+    targetElement.classList.remove("status-fail");
+  } else {
+    targetElement.textContent = `Unexpected targets detected: ${targets.join(", ")}`;
+    targetElement.classList.add("status-fail");
+    targetElement.classList.remove("status-ok");
+  }
+}
+
 async function bootstrap() {
   try {
-    const [telemetry, ledger] = await Promise.all([
+    const [telemetry, ledger, ownerProof] = await Promise.all([
       fetchJson("./output/kardashev-telemetry.json"),
       fetchJson("./output/kardashev-stability-ledger.json"),
+      fetchJson("./output/kardashev-owner-proof.json"),
     ]);
     renderMetrics(telemetry);
     attachReflectionButton(telemetry);
@@ -312,6 +360,7 @@ async function bootstrap() {
     renderComputeFabric(telemetry.computeFabric);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);
+    renderOwnerProof(ownerProof, telemetry);
     await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");
     await renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram");
   } catch (error) {

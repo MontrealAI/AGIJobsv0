@@ -15,7 +15,15 @@
     "guardianReviewWindow": 900,
     "averageCoverageSeconds": 2028,
     "minimumCoverageSeconds": 1800,
-    "coverageOk": true
+    "coverageOk": true,
+    "ownerProof": {
+      "unstoppableScore": 1,
+      "selectorsComplete": true,
+      "pauseEmbedding": true,
+      "singleOwnerTargets": true,
+      "transactionSetHash": "0x11dec585125d51217cac224930f131e1fdaae40f80746f9114dfb5a3a137a965",
+      "selectorSetHash": "0x4371d8024568b9a059926694ea7e6726e356e284ccb1ab9b1fd30ddbbf603b24"
+    }
   },
   "energy": {
     "capturedGw": 420000,
@@ -426,6 +434,13 @@
       ]
     }
   ],
+  "ownerControls": {
+    "pauseCallEncoded": true,
+    "resumeCallEncoded": true,
+    "unstoppableScore": 1,
+    "selectorsComplete": true,
+    "transactionsEncoded": 23
+  },
   "missionDirectives": {
     "ownerPowers": [
       {

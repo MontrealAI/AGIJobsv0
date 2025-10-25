@@ -36,6 +36,11 @@
         "method": "compute-fabric",
         "score": 1,
         "explanation": "Hierarchical compute planes maintain quorum under worst-case failover."
+      },
+      {
+        "method": "owner-control-proof",
+        "score": 1,
+        "explanation": "Selector coverage, pause toggles, and target isolation verified for owner overrides."
       }
     ]
   },
@@ -62,7 +67,7 @@
       "severity": "high",
       "status": true,
       "weight": 0.9,
-      "evidence": "setGlobalParameters + pause/unpause transactions present"
+      "evidence": "10/10 selectors · pause yes · resume yes · unstoppable 100.0%"
     },
     {
       "id": "guardian-coverage",
@@ -218,7 +223,8 @@
     "guardianCouncil": "0x3ecb7d31b20d4a3bf59f7ae8894d42bee0b1a24b",
     "transactionsEncoded": 23,
     "pauseCallEncoded": true,
-    "resumeCallEncoded": true
+    "resumeCallEncoded": true,
+    "unstoppableScore": 1
   },
   "safety": {
     "guardianReviewWindow": 900,

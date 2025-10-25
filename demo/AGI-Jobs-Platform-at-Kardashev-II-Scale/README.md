@@ -195,6 +195,15 @@ flowchart TD
 
 ---
 
+## 🗝️ Owner override proof deck
+
+* **Selector quorum proof** – `output/kardashev-owner-proof.json` enumerates every governance selector, counts encoded occurrences, and fails the unstoppable score if any mandatory selector is missing. The CLI mirrors this in telemetry so operators see coverage status instantly.
+* **Pause embedding audit** – The proof explicitly hashes both pause and resume calldata (via `forwardPauseCall`). Reflection mode blocks deployment if either lever is absent, guaranteeing the owner can halt or restart the mesh.
+* **Target isolation** – Unique call targets are checked against the manifest’s manager and SystemPause addresses. Non-technical owners receive hashes and call maps confirming no stray contracts are touched.
+* **Unstoppable control score** – A composite score averages selector coverage, pause toggles, and target isolation. UI badges and the stability ledger promote the score and highlight any deviation beneath the 95% readiness floor.
+
+---
+
 ## 📦 Artefacts in this directory
 
 | Path | Purpose |
@@ -208,6 +217,7 @@ flowchart TD
 | `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
 | `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
+| `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, and unstoppable control score. |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
 | `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
