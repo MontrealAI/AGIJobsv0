@@ -9,6 +9,12 @@ AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling 
 
 All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes and dispute deposits with the token address fixed at deployment. The canonical token is deployed externally; this repository ships [`contracts/test/AGIALPHAToken.sol`](contracts/test/AGIALPHAToken.sol) for local testing only. Token address and decimal configuration live in [`config/agialpha.json`](config/agialpha.json) and feed both Solidity and TypeScript consumers.
 
+## Directory Overview
+
+- `contracts/` – Solidity smart contracts such as the core `AGIJobManagerv0.sol`.
+- `scripts/` – Deployment and maintenance scripts, like `scripts/deploy.ts`.
+- `tests/` – Placeholder for unit and integration tests (to be added).
+
 ## Prerequisites
 
 - Node.js 20.18.1 LTS and npm 10+
