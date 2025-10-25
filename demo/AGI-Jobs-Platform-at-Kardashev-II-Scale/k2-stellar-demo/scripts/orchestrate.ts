@@ -224,6 +224,64 @@ type SafeTransaction = {
   description: string;
 };
 
+type MissionPower = z.infer<typeof MissionPowerSchema>;
+
+function normaliseForMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const missionDirectiveValidators: Record<
+  string,
+  (power: MissionPower, tx: SafeTransaction, manifest: Manifest) => boolean
+> = {
+  "global-parameters": (_power, tx, _manifest) =>
+    normaliseForMatch(tx.description).includes("global parameters"),
+  "guardian-council": (_power, tx, _manifest) =>
+    normaliseForMatch(tx.description).includes("guardian council"),
+  "system-pause": (_power, tx, _manifest) =>
+    normaliseForMatch(tx.description).includes("system pause"),
+  "self-improvement": (_power, tx, _manifest) =>
+    normaliseForMatch(tx.description).includes("self improvement plan"),
+  "pause-all": (_power, tx, _manifest) => {
+    const description = normaliseForMatch(tx.description);
+    return description.includes("pause") && description.includes("forwardpausecall");
+  },
+  "resume-all": (_power, tx, _manifest) => {
+    const description = normaliseForMatch(tx.description);
+    return description.includes("resume") && description.includes("forwardpausecall");
+  },
+};
+
+function directiveMatches(power: MissionPower, tx: SafeTransaction, manifest: Manifest): boolean {
+  const validator = missionDirectiveValidators[power.id];
+  if (validator) {
+    return validator(power, tx, manifest);
+  }
+
+  const normaliseTokens = (value: string) =>
+    normaliseForMatch(value)
+      .split(" ")
+      .filter((token) => token.length > 2);
+
+  const directiveTokens = new Set([
+    ...normaliseTokens(power.title),
+    ...normaliseTokens(power.description),
+  ]);
+  const transactionTokens = new Set(normaliseTokens(tx.description));
+
+  const sharedTokens = [...directiveTokens].filter((token) => transactionTokens.has(token));
+
+  if (sharedTokens.length >= Math.min(2, directiveTokens.size)) {
+    return true;
+  }
+
+  return normaliseForMatch(power.title) === normaliseForMatch(tx.description);
+}
+
 function loadManifest(): Manifest {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
@@ -807,11 +865,26 @@ function buildStabilityLedger(
         );
 
   const directiveIndices = new Set(manifest.missionDirectives.ownerPowers.map((power) => power.safeIndex));
+  const directiveAlignmentIssues: string[] = [];
+  manifest.missionDirectives.ownerPowers.forEach((power) => {
+    if (power.safeIndex < 0 || power.safeIndex >= transactions.length) {
+      directiveAlignmentIssues.push(
+        `${power.id} points to out-of-range index ${power.safeIndex}`
+      );
+      return;
+    }
+
+    const tx = transactions[power.safeIndex];
+    if (!directiveMatches(power, tx, manifest)) {
+      directiveAlignmentIssues.push(
+        `${power.id} expected ${power.title} but found tx[${power.safeIndex}] "${tx.description}"`
+      );
+    }
+  });
+
   const directivesAligned =
     directiveIndices.size === manifest.missionDirectives.ownerPowers.length &&
-    manifest.missionDirectives.ownerPowers.every(
-      (power) => power.safeIndex >= 0 && power.safeIndex < transactions.length
-    );
+    directiveAlignmentIssues.length === 0;
 
   const reflectionPrepared =
     telemetry.manifest.manifestoHashMatches &&
@@ -878,7 +951,10 @@ function buildStabilityLedger(
       severity: "medium",
       status: directivesAligned,
       weight: 0.65,
-      evidence: `owner powers ${manifest.missionDirectives.ownerPowers.length} · unique indices ${directiveIndices.size} · transactions ${transactions.length}`,
+      evidence:
+        directiveAlignmentIssues.length === 0
+          ? `owner powers ${manifest.missionDirectives.ownerPowers.length} · unique indices ${directiveIndices.size} · transactions ${transactions.length}`
+          : directiveAlignmentIssues.join("; "),
     },
     {
       id: "guardian-coverage",
