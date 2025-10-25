@@ -243,6 +243,41 @@ button:hover {
   font-size: 0.85rem;
 }
 
+.owner-proof-summary,
+.owner-proof-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.owner-proof-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 0.9rem;
+}
+
+.owner-proof-summary li {
+  font-size: 0.95rem;
+}
+
+.owner-proof-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 0.82rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
 .escalation-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

@@ -279,6 +279,44 @@ const ManifestSchema = z.object({
 
 type Manifest = z.infer<typeof ManifestSchema>;
 
+type OwnerControlProof = {
+  manager: string;
+  systemPause: string;
+  guardianCouncil: string;
+  requiredFunctions: Array<{
+    name: string;
+    selector: string;
+    occurrences: number;
+    present: boolean;
+    minimumRequired: number;
+  }>;
+  pauseEmbedding: {
+    pauseAll: boolean;
+    unpauseAll: boolean;
+  };
+  targets: {
+    unique: string[];
+    nonOwner: string[];
+  };
+  hashes: {
+    manifest: string;
+    transactionSet: string;
+    selectorSet: string;
+  };
+  verification: {
+    selectorsComplete: boolean;
+    pauseEmbedding: boolean;
+    singleOwnerTargets: boolean;
+    unstoppableScore: number;
+  };
+  calls: Array<{
+    index: number;
+    description: string;
+    to: string;
+    selector: string;
+  }>;
+};
+
 type SafeTransaction = {
   to: string;
   data: string;
@@ -304,10 +342,10 @@ type ScenarioResult = {
   recommendedActions: string[];
 };
 
-function loadManifest(): Manifest {
+function loadManifest(): { manifest: Manifest; raw: string } {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
-  return ManifestSchema.parse(parsed);
+  return { manifest: ManifestSchema.parse(parsed), raw };
 }
 
 function ensureOutputDir() {
@@ -518,6 +556,107 @@ function buildTransactions(manifest: Manifest): SafeTransaction[] {
   });
 
   return txs;
+}
+
+function buildOwnerControlProof(
+  manifest: Manifest,
+  transactions: SafeTransaction[],
+  manifestHash: string
+): OwnerControlProof {
+  const manager = manifest.interstellarCouncil.managerAddress.toLowerCase();
+  const systemPause = manifest.interstellarCouncil.systemPauseAddress.toLowerCase();
+  const guardianCouncil = manifest.interstellarCouncil.guardianCouncil.toLowerCase();
+
+  const callMap = transactions.map((tx, index) => ({
+    index,
+    description: tx.description,
+    to: tx.to.toLowerCase(),
+    selector: tx.data.slice(0, 10).toLowerCase(),
+  }));
+
+  const selectorCount = callMap.reduce<Map<string, number>>((acc, call) => {
+    acc.set(call.selector, (acc.get(call.selector) ?? 0) + 1);
+    return acc;
+  }, new Map());
+
+  const requiredFunctions = [
+    { name: "setGlobalParameters", signature: "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))", minimum: 1 },
+    { name: "setGuardianCouncil", signature: "setGuardianCouncil(address)", minimum: 1 },
+    { name: "setSystemPause", signature: "setSystemPause(address)", minimum: 1 },
+    { name: "setSelfImprovementPlan", signature: "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))", minimum: 1 },
+    { name: "registerDomain", signature: "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))", minimum: manifest.federations.reduce((sum, f) => sum + f.domains.length, 0) },
+    { name: "registerSentinel", signature: "registerSentinel((string,string,string,address,uint64,uint256,bool))", minimum: manifest.federations.reduce((sum, f) => sum + f.sentinels.length, 0) },
+    { name: "registerCapitalStream", signature: "registerCapitalStream((string,string,string,address,uint256,uint256,bool))", minimum: manifest.federations.reduce((sum, f) => sum + f.capitalStreams.length, 0) },
+    { name: "setSentinelDomains", signature: "setSentinelDomains(bytes32,bytes32[])", minimum: manifest.federations.reduce((sum, f) => sum + f.sentinels.length, 0) },
+    { name: "setCapitalStreamDomains", signature: "setCapitalStreamDomains(bytes32,bytes32[])", minimum: manifest.federations.reduce((sum, f) => sum + f.capitalStreams.length, 0) },
+    { name: "forwardPauseCall", signature: "forwardPauseCall(bytes)", minimum: 2 },
+  ];
+
+  const requiredFunctionProof = requiredFunctions.map((fn) => {
+    const selector = managerInterface.getFunction(fn.signature).selector.toLowerCase();
+    const occurrences = selectorCount.get(selector) ?? 0;
+    const minimumRequired = fn.minimum;
+    const present = occurrences >= Math.max(1, minimumRequired);
+    return { name: fn.name, selector, occurrences, present, minimumRequired };
+  });
+
+  const pauseCalldata = managerInterface.encodeFunctionData("forwardPauseCall", [
+    systemPauseInterface.encodeFunctionData("pauseAll"),
+  ]);
+  const resumeCalldata = managerInterface.encodeFunctionData("forwardPauseCall", [
+    systemPauseInterface.encodeFunctionData("unpauseAll"),
+  ]);
+
+  const pauseEmbedded = transactions.some(
+    (tx) => tx.to.toLowerCase() === manager && tx.data.toLowerCase() === pauseCalldata.toLowerCase()
+  );
+  const resumeEmbedded = transactions.some(
+    (tx) => tx.to.toLowerCase() === manager && tx.data.toLowerCase() === resumeCalldata.toLowerCase()
+  );
+
+  const uniqueTargets = Array.from(new Set(callMap.map((call) => call.to)));
+  const nonOwnerTargets = uniqueTargets.filter((address) => address !== manager && address !== systemPause);
+
+  const concatenatedData = transactions
+    .map((tx) => tx.data.replace(/^0x/i, ""))
+    .join("");
+  const transactionSetHash = keccak256(`0x${concatenatedData}`);
+  const selectorSetHash = keccak256(`0x${callMap.map((call) => call.selector.replace(/^0x/i, "")).join("")}`);
+
+  const signals = [
+    requiredFunctionProof.every((fn) => fn.present) ? 1 : 0,
+    pauseEmbedded ? 1 : 0,
+    resumeEmbedded ? 1 : 0,
+    nonOwnerTargets.length === 0 ? 1 : 0,
+  ];
+  const unstoppableScore = signals.reduce((sum, value) => sum + value, 0) / signals.length;
+
+  return {
+    manager,
+    systemPause,
+    guardianCouncil,
+    requiredFunctions: requiredFunctionProof,
+    pauseEmbedding: {
+      pauseAll: pauseEmbedded,
+      unpauseAll: resumeEmbedded,
+    },
+    targets: {
+      unique: uniqueTargets,
+      nonOwner: nonOwnerTargets,
+    },
+    hashes: {
+      manifest: manifestHash,
+      transactionSet: transactionSetHash,
+      selectorSet: selectorSetHash,
+    },
+    verification: {
+      selectorsComplete: requiredFunctionProof.every((fn) => fn.present),
+      pauseEmbedding: pauseEmbedded && resumeEmbedded,
+      singleOwnerTargets: nonOwnerTargets.length === 0,
+      unstoppableScore,
+    },
+    calls: callMap,
+  };
 }
 
 function buildMermaid(manifest: Manifest, dominanceScore: number): string {
@@ -929,6 +1068,11 @@ function buildRunbook(
   lines.push("2. Verify manager, guardian council, and system pause addresses in review modals.");
   lines.push("3. Stage pause + resume transactions but leave them unsent until incident drills.");
   lines.push("4. Confirm self-improvement plan hash matches guardian-approved digest.");
+  lines.push(
+    `5. Confirm unstoppable owner score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (pause ${
+      telemetry.ownerControls.pauseCallEncoded
+    }, resume ${telemetry.ownerControls.resumeCallEncoded}).`
+  );
   lines.push("\n---\n");
   lines.push("## Energy telemetry");
   lines.push(`* Captured GW (Dyson baseline): ${telemetry.energy.capturedGw.toLocaleString()} GW.`);
@@ -1041,6 +1185,11 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   lines.push(
     `* Bridge latency tolerance (${telemetry.verification.bridges.toleranceSeconds}s): ${telemetry.verification.bridges.allWithinTolerance}`
   );
+  lines.push(
+    `* Owner override unstoppable score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (selectors ${
+      telemetry.governance.ownerProof.selectorsComplete
+    }, pause ${telemetry.ownerControls.pauseCallEncoded}, resume ${telemetry.ownerControls.resumeCallEncoded}).`
+  );
   const scenarioSweep: ScenarioResult[] = telemetry.scenarioSweep ?? [];
   const nominalScenarios = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
   const warningScenarios = scenarioSweep.filter((scenario) => scenario.status === "warning").length;
@@ -1107,7 +1256,12 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   return lines.join("\n");
 }
 
-function computeTelemetry(manifest: Manifest, dominanceScore: number) {
+function computeTelemetry(
+  manifest: Manifest,
+  dominanceScore: number,
+  manifestHash: string,
+  ownerProof: OwnerControlProof
+) {
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
   const domainCount = manifest.federations.reduce((sum, f) => sum + f.domains.length, 0);
@@ -1141,7 +1295,6 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
   const energyAgreementWithinMargin =
     sumRegionalGw <= dysonYield && sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) && dysonYield >= capturedGw;
 
-  const manifestHash = keccak256(toUtf8Bytes(readFileSync(CONFIG_PATH, "utf8")));
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
 
@@ -1303,11 +1456,22 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
       knowledgeGraphURI: manifest.interstellarCouncil.knowledgeGraphURI ?? null,
     },
     governance: {
-      ownerOverridesReady: true,
+      ownerOverridesReady:
+        ownerProof.verification.selectorsComplete &&
+        ownerProof.verification.pauseEmbedding &&
+        ownerProof.verification.singleOwnerTargets,
       guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,
       averageCoverageSeconds: averageCoverage,
       minimumCoverageSeconds: minimumCoverage,
       coverageOk,
+      ownerProof: {
+        unstoppableScore: ownerProof.verification.unstoppableScore,
+        selectorsComplete: ownerProof.verification.selectorsComplete,
+        pauseEmbedding: ownerProof.verification.pauseEmbedding,
+        singleOwnerTargets: ownerProof.verification.singleOwnerTargets,
+        transactionSetHash: ownerProof.hashes.transactionSet,
+        selectorSetHash: ownerProof.hashes.selectorSet,
+      },
     },
     energy: {
       capturedGw,
@@ -1379,6 +1543,13 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
     },
     bridges: bridgeTelemetry,
     federations: federationsDetail,
+    ownerControls: {
+      pauseCallEncoded: ownerProof.pauseEmbedding.pauseAll,
+      resumeCallEncoded: ownerProof.pauseEmbedding.unpauseAll,
+      unstoppableScore: ownerProof.verification.unstoppableScore,
+      selectorsComplete: ownerProof.verification.selectorsComplete,
+      transactionsEncoded: ownerProof.calls.length,
+    },
     missionDirectives: manifest.missionDirectives,
     verification: {
       energyModels: {
@@ -1429,7 +1600,8 @@ function buildStabilityLedger(
   telemetry: Telemetry,
   dominanceScore: number,
   transactions: SafeTransaction[],
-  scenarios: ScenarioResult[]
+  scenarios: ScenarioResult[],
+  ownerProof: OwnerControlProof
 ) {
   const safetyMargin = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
   const permittedUtilisation = 1 - safetyMargin;
@@ -1458,6 +1630,9 @@ function buildStabilityLedger(
     telemetry.identity.revocationWithinTolerance,
     telemetry.computeFabric.failoverWithinQuorum,
     telemetry.governance.coverageOk,
+    ownerProof.verification.selectorsComplete,
+    ownerProof.verification.pauseEmbedding,
+    ownerProof.verification.singleOwnerTargets,
     scenarioHealthy,
   ];
   const redundancyScore =
@@ -1495,7 +1670,7 @@ function buildStabilityLedger(
       severity: "high",
       status: telemetry.governance.ownerOverridesReady,
       weight: 0.9,
-      evidence: "setGlobalParameters + pause/unpause transactions present",
+      evidence: `${ownerProof.requiredFunctions.filter((fn) => fn.present).length}/${ownerProof.requiredFunctions.length} selectors · pause ${ownerProof.pauseEmbedding.pauseAll ? "yes" : "no"} · resume ${ownerProof.pauseEmbedding.unpauseAll ? "yes" : "no"} · unstoppable ${(ownerProof.verification.unstoppableScore * 100).toFixed(1)}%`,
     },
     {
       id: "guardian-coverage",
@@ -1642,6 +1817,11 @@ function buildStabilityLedger(
           score: telemetry.computeFabric.failoverWithinQuorum ? 1 : 0,
           explanation: "Hierarchical compute planes maintain quorum under worst-case failover.",
         },
+        {
+          method: "owner-control-proof",
+          score: ownerProof.verification.unstoppableScore,
+          explanation: "Selector coverage, pause toggles, and target isolation verified for owner overrides.",
+        },
       ],
     },
     checks,
@@ -1664,9 +1844,10 @@ function buildStabilityLedger(
       manager: manifest.interstellarCouncil.managerAddress,
       systemPause: manifest.interstellarCouncil.systemPauseAddress,
       guardianCouncil: manifest.interstellarCouncil.guardianCouncil,
-      transactionsEncoded: transactions.length,
-      pauseCallEncoded: pauseIncluded,
-      resumeCallEncoded: resumeIncluded,
+      transactionsEncoded: ownerProof.calls.length,
+      pauseCallEncoded: ownerProof.pauseEmbedding.pauseAll,
+      resumeCallEncoded: ownerProof.pauseEmbedding.unpauseAll,
+      unstoppableScore: ownerProof.verification.unstoppableScore,
     },
     safety: {
       guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,
@@ -1714,7 +1895,7 @@ function writeOrCheck(path: string, content: string) {
 }
 
 function run() {
-  const manifest = loadManifest();
+  const { manifest, raw } = loadManifest();
   ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
@@ -1736,7 +1917,9 @@ function run() {
 
   const transactions = buildTransactions(manifest);
   const safeBatch = buildSafeBatch(manifest, transactions);
-  const telemetry = computeTelemetry(manifest, dominanceScore);
+  const manifestHash = keccak256(toUtf8Bytes(raw));
+  const ownerProof = buildOwnerControlProof(manifest, transactions, manifestHash);
+  const telemetry = computeTelemetry(manifest, dominanceScore, manifestHash, ownerProof);
   const scenarioSweep = buildScenarioSweep(manifest, telemetry);
   const telemetryWithScenarios = { ...telemetry, scenarioSweep };
   const stabilityLedger = buildStabilityLedger(
@@ -1744,7 +1927,8 @@ function run() {
     telemetryWithScenarios,
     dominanceScore,
     transactions,
-    scenarioSweep
+    scenarioSweep,
+    ownerProof
   );
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
@@ -1755,6 +1939,7 @@ function run() {
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
+  const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
@@ -1765,6 +1950,7 @@ function run() {
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
     { path: join(OUTPUT_DIR, "kardashev-operator-briefing.md"), content: `${operatorBriefing}\n` },
+    { path: join(OUTPUT_DIR, "kardashev-owner-proof.json"), content: ownerProofJson },
   ];
 
   for (const output of outputs) {
@@ -1802,6 +1988,11 @@ function run() {
   console.log(
     `   Bridge latency compliance: ${telemetry.verification.bridges.allWithinTolerance} (tolerance ${telemetry.verification.bridges.toleranceSeconds}s).`
   );
+  console.log(
+    `   Owner override unstoppable score: ${(ownerProof.verification.unstoppableScore * 100).toFixed(2)}% (selectors ${
+      ownerProof.verification.selectorsComplete
+    }, pause ${ownerProof.pauseEmbedding.pauseAll}, resume ${ownerProof.pauseEmbedding.unpauseAll}).`
+  );
   if (scenarioSweep.length > 0) {
     const scenarioNominal = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
     const scenarioWarning = scenarioSweep.filter((scenario) => scenario.status === "warning").length;
@@ -1831,6 +2022,11 @@ function run() {
       .map(([name, data]) => `${name}=${data.withinFailsafe}`)
       .join(", ")}`);
     console.log(
+      ` - Owner unstoppable score ≥95%: ${ownerProof.verification.unstoppableScore >= 0.95} (${(
+        ownerProof.verification.unstoppableScore * 100
+      ).toFixed(2)}%)`
+    );
+    console.log(
       ` - Scenario sweep stable: ${
         scenarioSweep.length === 0 ? true : scenarioSweep.every((scenario) => scenario.status !== "critical")
       }`
@@ -1839,6 +2035,10 @@ function run() {
       telemetry.manifest.manifestoHashMatches,
       telemetry.manifest.planHashMatches,
       telemetry.governance.coverageOk,
+      ownerProof.verification.selectorsComplete,
+      ownerProof.pauseEmbedding.pauseAll,
+      ownerProof.pauseEmbedding.unpauseAll,
+      ownerProof.verification.unstoppableScore >= 0.95,
       telemetry.energy.tripleCheck,
       ...Object.values(telemetry.bridges).map((b: any) => b.withinFailsafe),
       scenarioSweep.length === 0 || scenarioSweep.every((scenario) => scenario.status !== "critical"),

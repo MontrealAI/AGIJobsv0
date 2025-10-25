@@ -37,6 +37,7 @@ function validateReadme() {
     "## 🔭 Scenario stress sweep",
     "## 🧬 Stability ledger & unstoppable consensus",
     "## 🛡️ Governance and safety levers",
+    "## 🗝️ Owner override proof deck",
     "## 📦 Artefacts in this directory",
     "## 🧪 Verification rituals",
     "## 🧠 Reflective checklist for owners",

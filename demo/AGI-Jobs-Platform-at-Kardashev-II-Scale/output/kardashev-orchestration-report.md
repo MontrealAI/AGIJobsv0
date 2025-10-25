@@ -10,6 +10,7 @@
 2. Verify manager, guardian council, and system pause addresses in review modals.
 3. Stage pause + resume transactions but leave them unsent until incident drills.
 4. Confirm self-improvement plan hash matches guardian-approved digest.
+5. Confirm unstoppable owner score 100.00% (pause true, resume true).
 
 ---
 
