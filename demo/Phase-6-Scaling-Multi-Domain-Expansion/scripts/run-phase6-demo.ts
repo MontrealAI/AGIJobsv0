@@ -191,6 +191,21 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     `Autopilot coverage: ${(metrics.autopilotCoverage * 100).toFixed(1)}% ` +
       `(${metrics.autopilotEnabledCount}/${metrics.domainCount} domains)`,
   );
+  if (metrics.resilienceStdDev !== undefined) {
+    console.log(`Resilience deviation: ±${metrics.resilienceStdDev.toFixed(4)}`);
+  }
+  if (metrics.resilienceFloorCoverage !== undefined) {
+    console.log(
+      `Resilience floor coverage: ${(metrics.resilienceFloorCoverage * 100).toFixed(1)}% ` +
+        `(breaches ${metrics.resilienceFloorBreaches ?? 0})`,
+    );
+  }
+  if (metrics.automationFloorCoverage !== undefined) {
+    console.log(
+      `Automation floor coverage: ${(metrics.automationFloorCoverage * 100).toFixed(1)}% ` +
+        `(breaches ${metrics.automationFloorBreaches ?? 0})`,
+    );
+  }
   console.log(
     `Guard rails: treasuryBuffer=${formatBps(blueprint.guards.treasuryBufferBps)} | ` +
       `circuitBreaker=${formatBps(blueprint.guards.circuitBreakerBps)} | grace=${blueprint.guards.anomalyGracePeriod}s | ` +

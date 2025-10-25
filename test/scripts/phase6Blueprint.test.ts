@@ -20,6 +20,11 @@ describe('Phase 6 blueprint generator', function () {
     );
     expect(blueprint.configPath).to.equal(CONFIG_PATH);
     expect(blueprint.mermaid).to.contain('Phase6ExpansionManager');
+    expect(blueprint.metrics.resilienceStdDev).to.be.a('number');
+    expect(blueprint.metrics.resilienceFloorBreaches).to.equal(0);
+    expect(blueprint.metrics.resilienceFloorCoverage).to.equal(1);
+    expect(blueprint.metrics.automationFloorBreaches).to.equal(2);
+    expect(blueprint.metrics.automationFloorCoverage).to.be.closeTo(0.6, 0.0001);
   });
 
   it('normalises domains and exposes deterministic ids', function () {

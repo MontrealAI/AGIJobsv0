@@ -395,6 +395,10 @@
         let l2Coverage = 0;
         const valueFlows = [];
         const sentinels = new Set();
+        const resilienceFloor = Number(config.global?.telemetry?.resilienceFloorBps ?? NaN);
+        const automationFloor = Number(config.global?.telemetry?.automationFloorBps ?? NaN);
+        let resilienceFloorBreaches = 0;
+        let automationFloorBreaches = 0;
         config.domains.forEach((domain) => {
           const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
           if (!Number.isNaN(idx)) {
@@ -402,11 +406,18 @@
           }
           if (domain.telemetry) {
             const telemetry = domain.telemetry;
+            const resilienceBps = Number(telemetry.resilienceBps ?? NaN);
+            if (!Number.isNaN(resilienceBps) && !Number.isNaN(resilienceFloor) && resilienceBps < resilienceFloor) {
+              resilienceFloorBreaches += 1;
+            }
             const auto = Number(telemetry.automationBps ?? NaN);
             const comp = Number(telemetry.complianceBps ?? NaN);
             const latencySeconds = Number(telemetry.settlementLatencySeconds ?? NaN);
             if (!Number.isNaN(auto)) {
               automation.push(auto);
+              if (!Number.isNaN(automationFloor) && auto < automationFloor) {
+                automationFloorBreaches += 1;
+              }
             }
             if (!Number.isNaN(comp)) {
               compliance.push(comp);
@@ -430,11 +441,31 @@
           resilience.length > 0 ? resilience.reduce((acc, cur) => acc + cur, 0) / resilience.length : null;
         const minResilience = resilience.length > 0 ? Math.min(...resilience) : null;
         const maxResilience = resilience.length > 0 ? Math.max(...resilience) : null;
+        const resilienceStdDev =
+          resilience.length > 0 && averageResilience !== null
+            ? Math.sqrt(
+                resilience.reduce((acc, cur) => {
+                  const diff = cur - averageResilience;
+                  return acc + diff * diff;
+                }, 0) / resilience.length,
+              )
+            : null;
         const totalValueFlow = valueFlows.reduce((acc, cur) => acc + cur, 0);
+        const domainCount = config.domains.length || 0;
+        const computeCoverage = (breaches, floor) => {
+          if (Number.isNaN(floor)) {
+            return null;
+          }
+          if (!domainCount) {
+            return 1;
+          }
+          return (domainCount - breaches) / domainCount;
+        };
         return {
           averageResilience,
           minResilience,
           maxResilience,
+          resilienceStdDev,
           totalValueFlow,
           sentinelCount: sentinels.size,
           averageAutomation: automation.length
@@ -445,6 +476,10 @@
             : null,
           averageLatency: latency.length ? latency.reduce((acc, cur) => acc + cur, 0) / latency.length : null,
           l2Coverage: config.domains.length ? l2Coverage / config.domains.length : 0,
+          resilienceFloorCoverage: computeCoverage(resilienceFloorBreaches, resilienceFloor),
+          resilienceFloorBreaches,
+          automationFloorCoverage: computeCoverage(automationFloorBreaches, automationFloor),
+          automationFloorBreaches,
           autopilotEnabled: config.domains.reduce(
             (acc, domain) => (domain.infrastructureControl?.autopilotEnabled ? acc + 1 : acc),
             0,
@@ -497,9 +532,17 @@
             averageCompliance,
             averageLatency,
             l2Coverage,
+            resilienceStdDev,
+            resilienceFloorCoverage,
+            resilienceFloorBreaches,
+            automationFloorCoverage,
+            automationFloorBreaches,
           } = state.metrics;
           if (averageResilience !== null) {
             items.push(`Network resilience: avg ${averageResilience.toFixed(3)} (min ${minResilience?.toFixed(3)}, max ${maxResilience?.toFixed(3)})`);
+          }
+          if (resilienceStdDev !== null) {
+            items.push(`Resilience deviation: ±${resilienceStdDev.toFixed(4)}`);
           }
           if (averageAutomation !== null) {
             items.push(`Automation maturity: ${formatBps(averageAutomation)}`);
@@ -515,6 +558,16 @@
             items.push(`Monthly value flow across domains: ${formatUSD(totalValueFlow)}`);
           }
           items.push(`Active sentinels: ${sentinelCount}`);
+          if (resilienceFloorCoverage !== null) {
+            items.push(
+              `Resilience floor coverage: ${(resilienceFloorCoverage * 100).toFixed(1)}% (breaches ${resilienceFloorBreaches})`,
+            );
+          }
+          if (automationFloorCoverage !== null) {
+            items.push(
+              `Automation floor coverage: ${(automationFloorCoverage * 100).toFixed(1)}% (breaches ${automationFloorBreaches})`,
+            );
+          }
           if (config.domains.length) {
             items.push(
               `Autopilot coverage: ${(
