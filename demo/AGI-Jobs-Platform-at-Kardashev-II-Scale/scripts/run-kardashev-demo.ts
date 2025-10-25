@@ -224,6 +224,25 @@ type SafeTransaction = {
   description: string;
 };
 
+type ScenarioStatus = "nominal" | "warning" | "critical";
+
+type ScenarioMetric = {
+  label: string;
+  value: string;
+  ok: boolean;
+};
+
+type ScenarioResult = {
+  id: string;
+  title: string;
+  status: ScenarioStatus;
+  summary: string;
+  confidence: number;
+  impact: string;
+  metrics: ScenarioMetric[];
+  recommendedActions: string[];
+};
+
 function loadManifest(): Manifest {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
@@ -281,6 +300,10 @@ function formatUSD(value: number): string {
     return `${millions.toFixed(2)}M`;
   }
   return value.toLocaleString();
+}
+
+function formatGw(value: number): string {
+  return `${value.toLocaleString()} GW`;
 }
 
 function addDays(date: Date, days: number): Date {
@@ -495,7 +518,240 @@ function buildDysonTimeline(manifest: Manifest): string {
   return lines.join("\n");
 }
 
-function buildRunbook(manifest: Manifest, telemetry: any, dominanceScore: number): string {
+function normaliseConfidence(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
+}
+
+function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof computeTelemetry>): ScenarioResult[] {
+  const safetyMargin = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
+  const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const thermostatMarginGw = capturedGw * safetyMargin;
+  const failsafeLatency = manifest.dysonProgram.safety.failsafeLatencySeconds;
+  const guardianWindow = manifest.interstellarCouncil.guardianReviewWindow;
+  const totalTimelineDays = manifest.dysonProgram.phases.reduce((sum, phase) => sum + phase.durationDays, 0);
+
+  const scenarioResults: ScenarioResult[] = [];
+
+  // Scenario 1 — 20% surge in civilisation-wide energy demand
+  const stressDemandGw = telemetry.energy.models.regionalSumGw * 1.2;
+  const remainingBufferGw = capturedGw - stressDemandGw;
+  const energyStatus: ScenarioStatus =
+    remainingBufferGw >= thermostatMarginGw
+      ? "nominal"
+      : remainingBufferGw >= 0
+      ? "warning"
+      : "critical";
+  const energyConfidence = normaliseConfidence((remainingBufferGw + thermostatMarginGw) / (thermostatMarginGw * 2));
+  scenarioResults.push({
+    id: "energy-demand-surge",
+    title: "20% demand surge vs Dyson safety margin",
+    status: energyStatus,
+    summary:
+      remainingBufferGw >= 0
+        ? `Dyson lattice absorbs surge with ${formatGw(Math.max(0, remainingBufferGw))} spare.`
+        : `Dyson lattice overrun by ${formatGw(Math.abs(remainingBufferGw))}. Immediate throttling required.`,
+    confidence: energyConfidence,
+    impact:
+      energyStatus === "critical"
+        ? "Star-scale compute would brown-out without emergency pause."
+        : "Thermostat margin remains controllable under surge scenario.",
+    metrics: [
+      { label: "Simulated demand", value: formatGw(stressDemandGw), ok: remainingBufferGw >= 0 },
+      { label: "Remaining buffer", value: formatGw(remainingBufferGw), ok: remainingBufferGw >= thermostatMarginGw },
+      { label: "Thermostat margin", value: formatGw(thermostatMarginGw), ok: true },
+      {
+        label: "Utilisation",
+        value: `${((stressDemandGw / capturedGw) * 100).toFixed(2)}%`,
+        ok: remainingBufferGw >= 0,
+      },
+    ],
+    recommendedActions: [
+      "Dispatch pause bundle for non-critical Earth workloads.",
+      "Increase stellar thermostat target via setGlobalParameters if surge persists.",
+    ],
+  });
+
+  // Scenario 2 — Bridge outage causing rerouted latency doubling
+  const bridgeLatencies = Object.values(telemetry.bridges).map((bridge: any) => Number(bridge.latencySeconds));
+  const baselineWorstLatency = bridgeLatencies.length > 0 ? Math.max(...bridgeLatencies) : 0;
+  const failoverLatency = baselineWorstLatency * 2;
+  const latencySlack = failsafeLatency - failoverLatency;
+  const bridgeStatus: ScenarioStatus =
+    latencySlack >= failsafeLatency * 0.25
+      ? "nominal"
+      : latencySlack >= 0
+      ? "warning"
+      : "critical";
+  const bridgeConfidence = normaliseConfidence((latencySlack + failsafeLatency) / (failsafeLatency * 2));
+  scenarioResults.push({
+    id: "bridge-failover",
+    title: "Interplanetary bridge outage simulation",
+    status: bridgeStatus,
+    summary:
+      latencySlack >= 0
+        ? `Failover latency ${failoverLatency.toFixed(0)}s leaves ${latencySlack.toFixed(0)}s slack within ${failsafeLatency}s failsafe.`
+        : `Failover latency ${failoverLatency.toFixed(0)}s breaches ${failsafeLatency}s failsafe.`,
+    confidence: bridgeConfidence,
+    impact:
+      bridgeStatus === "critical"
+        ? "Cross-federation coordination would desynchronise without isolation."
+        : "Bridge sentries maintain cadence under reroute load.",
+    metrics: [
+      {
+        label: "Baseline latency",
+        value: `${baselineWorstLatency.toFixed(0)}s`,
+        ok: baselineWorstLatency <= failsafeLatency,
+      },
+      {
+        label: "Failover latency",
+        value: `${failoverLatency.toFixed(0)}s`,
+        ok: latencySlack >= 0,
+      },
+      { label: "Failsafe budget", value: `${failsafeLatency}s`, ok: true },
+      { label: "Slack", value: `${latencySlack.toFixed(0)}s`, ok: latencySlack >= 0 },
+    ],
+    recommendedActions: [
+      "Execute bridge isolation routine from mission directives if slack < 0.",
+      "Rebalance capital streams to spin up orbital relays before load crosses failsafe.",
+    ],
+  });
+
+  // Scenario 3 — Sentinel coverage gap of 10 minutes
+  const sentinelCoverages = manifest.federations.flatMap((federation) =>
+    federation.sentinels.map((sentinel) => sentinel.coverageSeconds)
+  );
+  const minimumSentinelCoverage = sentinelCoverages.length > 0 ? Math.min(...sentinelCoverages) : 0;
+  const simulatedCoverage = Math.max(0, minimumSentinelCoverage - 600);
+  const sentinelStatus: ScenarioStatus =
+    simulatedCoverage >= guardianWindow
+      ? "nominal"
+      : simulatedCoverage >= guardianWindow * 0.75
+      ? "warning"
+      : "critical";
+  const sentinelConfidence = normaliseConfidence(simulatedCoverage / Math.max(guardianWindow, 1));
+  scenarioResults.push({
+    id: "sentinel-gap",
+    title: "Sentinel outage (10 min) coverage test",
+    status: sentinelStatus,
+    summary:
+      simulatedCoverage >= guardianWindow
+        ? "Guardian window stays protected under sentinel gap."
+        : "Guardian window breached — deploy backup sentinel immediately.",
+    confidence: sentinelConfidence,
+    impact:
+      sentinelStatus === "critical"
+        ? "Domain autonomy would exceed guardrail without manual override."
+        : "Coverage redundancy remains adequate for guardian review cadence.",
+    metrics: [
+      { label: "Minimum sentinel coverage", value: `${minimumSentinelCoverage}s`, ok: minimumSentinelCoverage >= guardianWindow },
+      { label: "Simulated coverage", value: `${simulatedCoverage}s`, ok: simulatedCoverage >= guardianWindow },
+      { label: "Guardian window", value: `${guardianWindow}s`, ok: true },
+      {
+        label: "Coverage ratio",
+        value: `${((simulatedCoverage / Math.max(guardianWindow, 1)) * 100).toFixed(2)}%`,
+        ok: simulatedCoverage >= guardianWindow,
+      },
+    ],
+    recommendedActions: [
+      "Register standby sentinel via Safe batch if ratio < 100%.",
+      "Shorten guardian drill cadence until redundancy restored.",
+    ],
+  });
+
+  // Scenario 4 — 15% compute drawdown across federations
+  const projectedExaflops = telemetry.verification.compute.dysonProjectionExaflops;
+  const stressedExaflops = telemetry.compute.totalExaflops * 0.85;
+  const stressedDeviationPct =
+    projectedExaflops === 0
+      ? 0
+      : Math.abs(stressedExaflops - projectedExaflops) / Math.max(projectedExaflops, 1) * 100;
+  const computeTolerance = manifest.verificationProtocols.computeTolerancePct;
+  const warningThreshold = Math.max(5, computeTolerance * 20);
+  const computeStatus: ScenarioStatus =
+    stressedDeviationPct <= computeTolerance * 2
+      ? "nominal"
+      : stressedDeviationPct <= warningThreshold
+      ? "warning"
+      : "critical";
+  const computeConfidence = normaliseConfidence(1 - stressedDeviationPct / Math.max(warningThreshold * 1.5, 1));
+  scenarioResults.push({
+    id: "compute-drawdown",
+    title: "Compute drawdown (15%) resilience",
+    status: computeStatus,
+    summary:
+      computeStatus === "nominal"
+        ? "Dyson projection stays within tolerance under drawdown."
+        : `Deviation ${stressedDeviationPct.toFixed(2)}% exceeds tolerance ${computeTolerance}%.`,
+    confidence: computeConfidence,
+    impact:
+      computeStatus === "critical"
+        ? "Validator quorum would require capital reallocation before mission resume."
+        : "Capital streams absorb transient compute reduction.",
+    metrics: [
+      { label: "Projected compute", value: `${projectedExaflops.toFixed(2)} EF`, ok: true },
+      { label: "Stressed compute", value: `${stressedExaflops.toFixed(2)} EF`, ok: stressedDeviationPct <= computeTolerance },
+      {
+        label: "Deviation",
+        value: `${stressedDeviationPct.toFixed(2)}%`,
+        ok: stressedDeviationPct <= computeTolerance,
+      },
+      { label: "Tolerance", value: `${computeTolerance}%`, ok: true },
+    ],
+    recommendedActions: [
+      "Authorise capital stream expansion for orbital compute nodes.",
+      "Notify guardians to ratify temporary autonomy reduction if deviation persists.",
+    ],
+  });
+
+  // Scenario 5 — 30 day slip in final Dyson phase
+  const slipDays = 30;
+  const finalPhase = manifest.dysonProgram.phases[manifest.dysonProgram.phases.length - 1];
+  const remainingSlackDays = finalPhase ? finalPhase.durationDays - slipDays : -slipDays;
+  const slipRatio = totalTimelineDays === 0 ? 0 : slipDays / totalTimelineDays;
+  const dysonStatus: ScenarioStatus =
+    slipRatio <= 0.05
+      ? "nominal"
+      : slipRatio <= 0.12
+      ? "warning"
+      : "critical";
+  const dysonConfidence = normaliseConfidence(1 - slipRatio * 1.5);
+  scenarioResults.push({
+    id: "dyson-phase-slip",
+    title: "Dyson phase slip (30 days)",
+    status: dysonStatus,
+    summary:
+      remainingSlackDays >= 0
+        ? `Schedule buffer absorbs slip with ${remainingSlackDays} days remaining.`
+        : `Slip overruns phase by ${Math.abs(remainingSlackDays)} days — escalate to council.`,
+    confidence: dysonConfidence,
+    impact:
+      dysonStatus === "critical"
+        ? "Energy capture curve would miss annual targets without governance action."
+        : "Swarm cadence remains aligned with annual capture commitments.",
+    metrics: [
+      { label: "Total timeline", value: `${totalTimelineDays} days`, ok: true },
+      { label: "Slip", value: `${slipDays} days`, ok: slipRatio <= 0.12 },
+      { label: "Remaining buffer", value: `${remainingSlackDays} days`, ok: remainingSlackDays >= 0 },
+      { label: "Slip ratio", value: `${(slipRatio * 100).toFixed(2)}%`, ok: slipRatio <= 0.12 },
+    ],
+    recommendedActions: [
+      "Accelerate self-improvement plan execution to reclaim schedule slack.",
+      "Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.",
+    ],
+  });
+
+  return scenarioResults;
+}
+
+function buildRunbook(
+  manifest: Manifest,
+  telemetry: any,
+  dominanceScore: number,
+  scenarios: ScenarioResult[]
+): string {
   const lines: string[] = [];
   lines.push("# Kardashev II Orchestration Runbook");
   lines.push("");
@@ -517,9 +773,25 @@ function buildRunbook(manifest: Manifest, telemetry: any, dominanceScore: number
   }
   lines.push("\n---\n");
   lines.push("## Compute & domains");
+  lines.push(
+    `* Aggregate compute ${telemetry.compute.totalExaflops.toFixed(2)} EF · ${telemetry.compute.totalAgents.toLocaleString()} agents · deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (≤ ${telemetry.verification.compute.tolerancePct}%).`
+  );
   for (const federation of manifest.federations) {
     const fTelemetry = telemetry.compute.regional.find((r: any) => r.slug === federation.slug);
     lines.push(`* **${federation.slug.toUpperCase()}** – ${fTelemetry.exaflops.toFixed(2)} EF, ${fTelemetry.agents.toLocaleString()} agents, resilience ${(fTelemetry.resilience * 100).toFixed(2)}%.`);
+  }
+  lines.push("\n---\n");
+  lines.push("## Scenario stress sweep");
+  for (const scenario of scenarios) {
+    lines.push(
+      `* **${scenario.title}** — status ${scenario.status.toUpperCase()} (confidence ${(scenario.confidence * 100).toFixed(1)}%) · ${scenario.summary}`
+    );
+    scenario.metrics.forEach((metric) => {
+      lines.push(`  - ${metric.label}: ${metric.value} (${metric.ok ? "ok" : "check"})`);
+    });
+    if (scenario.recommendedActions.length > 0) {
+      lines.push(`  - Recommended: ${scenario.recommendedActions.join(" · ")}`);
+    }
   }
   lines.push("\n---\n");
   lines.push("## Bridges");
@@ -574,6 +846,20 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   lines.push(
     `* Bridge latency tolerance (${telemetry.verification.bridges.toleranceSeconds}s): ${telemetry.verification.bridges.allWithinTolerance}`
   );
+  const scenarioSweep: ScenarioResult[] = telemetry.scenarioSweep ?? [];
+  const nominalScenarios = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
+  const warningScenarios = scenarioSweep.filter((scenario) => scenario.status === "warning").length;
+  const criticalScenarios = scenarioSweep.filter((scenario) => scenario.status === "critical").length;
+  if (scenarioSweep.length > 0) {
+    lines.push(
+      `* Scenario sweep: ${nominalScenarios}/${scenarioSweep.length} nominal, ${warningScenarios} warning, ${criticalScenarios} critical.`
+    );
+    scenarioSweep
+      .filter((scenario) => scenario.status !== "nominal")
+      .forEach((scenario) => {
+        lines.push(`  - ${scenario.title}: ${scenario.summary}`);
+      });
+  }
   lines.push(`* Audit checklist: ${telemetry.verification.auditChecklistURI}`);
   lines.push("");
   lines.push("## Federation snapshot");
@@ -782,13 +1068,14 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
   };
 }
 
-type Telemetry = ReturnType<typeof computeTelemetry>;
+type Telemetry = ReturnType<typeof computeTelemetry> & { scenarioSweep?: ScenarioResult[] };
 
 function buildStabilityLedger(
   manifest: Manifest,
   telemetry: Telemetry,
   dominanceScore: number,
-  transactions: SafeTransaction[]
+  transactions: SafeTransaction[],
+  scenarios: ScenarioResult[]
 ) {
   const safetyMargin = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
   const permittedUtilisation = 1 - safetyMargin;
@@ -797,12 +1084,23 @@ function buildStabilityLedger(
   const energyBufferScore =
     safetyMargin === 0 ? (overshoot === 0 ? 1 : 0) : Math.max(0, Math.min(1, 1 - overshoot / safetyMargin));
 
+  const scenarioTotal = scenarios.length;
+  const scenarioNominal = scenarios.filter((scenario) => scenario.status === "nominal").length;
+  const scenarioWarning = scenarios.filter((scenario) => scenario.status === "warning").length;
+  const scenarioCritical = scenarios.filter((scenario) => scenario.status === "critical").length;
+  const scenarioConfidence =
+    scenarioTotal === 0
+      ? 1
+      : scenarios.reduce((sum, scenario) => sum + scenario.confidence, 0) / Math.max(scenarioTotal, 1);
+  const scenarioHealthy = scenarioCritical === 0;
+
   const redundantFlags = [
     telemetry.energy.tripleCheck,
     telemetry.verification.energyModels.withinMargin,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
     telemetry.governance.coverageOk,
+    scenarioHealthy,
   ];
   const redundancyScore =
     redundantFlags.reduce((sum, flag) => sum + (flag ? 1 : 0), 0) / Math.max(redundantFlags.length, 1);
@@ -881,6 +1179,14 @@ function buildStabilityLedger(
       weight: 0.75,
       evidence: `tolerance ${telemetry.verification.bridges.toleranceSeconds}s · failsafe ${manifest.dysonProgram.safety.failsafeLatencySeconds}s`,
     },
+    {
+      id: "scenario-resilience",
+      title: "Scenario sweep resilient",
+      severity: scenarioCritical > 0 ? "critical" : scenarioWarning > 0 ? "medium" : "medium",
+      status: scenarioHealthy && scenarioWarning <= Math.max(1, Math.ceil(scenarioTotal * 0.25)),
+      weight: 0.8,
+      evidence: `${scenarioNominal}/${scenarioTotal || 1} nominal · ${scenarioWarning} warning · ${scenarioCritical} critical`,
+    },
   ];
 
   const totalWeight = checks.reduce((sum, check) => sum + check.weight, 0);
@@ -923,10 +1229,29 @@ function buildStabilityLedger(
           score: energyBufferScore,
           explanation: "Remaining Dyson thermostat buffer relative to configured safety margin.",
         },
+        {
+          method: "scenario-sweep",
+          score: scenarioConfidence,
+          explanation: "Average confidence across Kardashev-II surge, bridge, sentinel, compute, and schedule stressors.",
+        },
       ],
     },
     checks,
     alerts,
+    scenarioSweep: {
+      total: scenarioTotal,
+      nominal: scenarioNominal,
+      warning: scenarioWarning,
+      critical: scenarioCritical,
+      averageConfidence: scenarioConfidence,
+      entries: scenarios.map((scenario) => ({
+        id: scenario.id,
+        title: scenario.title,
+        status: scenario.status,
+        confidence: scenario.confidence,
+        summary: scenario.summary,
+      })),
+    },
     ownerControls: {
       manager: manifest.interstellarCouncil.managerAddress,
       systemPause: manifest.interstellarCouncil.systemPauseAddress,
@@ -1004,20 +1329,30 @@ function run() {
   const transactions = buildTransactions(manifest);
   const safeBatch = buildSafeBatch(manifest, transactions);
   const telemetry = computeTelemetry(manifest, dominanceScore);
-  const stabilityLedger = buildStabilityLedger(manifest, telemetry, dominanceScore, transactions);
+  const scenarioSweep = buildScenarioSweep(manifest, telemetry);
+  const telemetryWithScenarios = { ...telemetry, scenarioSweep };
+  const stabilityLedger = buildStabilityLedger(
+    manifest,
+    telemetryWithScenarios,
+    dominanceScore,
+    transactions,
+    scenarioSweep
+  );
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
-  const runbook = buildRunbook(manifest, telemetry, dominanceScore);
-  const operatorBriefing = buildOperatorBriefing(manifest, telemetry);
+  const runbook = buildRunbook(manifest, telemetryWithScenarios, dominanceScore, scenarioSweep);
+  const operatorBriefing = buildOperatorBriefing(manifest, telemetryWithScenarios);
 
-  const telemetryJson = `${JSON.stringify(telemetry, null, 2)}\n`;
+  const telemetryJson = `${JSON.stringify(telemetryWithScenarios, null, 2)}\n`;
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
+  const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
     { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
+    { path: join(OUTPUT_DIR, "kardashev-scenario-sweep.json"), content: scenariosJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
@@ -1059,6 +1394,14 @@ function run() {
   console.log(
     `   Bridge latency compliance: ${telemetry.verification.bridges.allWithinTolerance} (tolerance ${telemetry.verification.bridges.toleranceSeconds}s).`
   );
+  if (scenarioSweep.length > 0) {
+    const scenarioNominal = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
+    const scenarioWarning = scenarioSweep.filter((scenario) => scenario.status === "warning").length;
+    const scenarioCritical = scenarioSweep.filter((scenario) => scenario.status === "critical").length;
+    console.log(
+      `   Scenario sweep: ${scenarioNominal}/${scenarioSweep.length} nominal, ${scenarioWarning} warning, ${scenarioCritical} critical.`
+    );
+  }
   if (telemetry.energy.warnings.length) {
     console.log(`   ⚠ Energy warnings: ${telemetry.energy.warnings.join("; ")}`);
   }
@@ -1079,12 +1422,18 @@ function run() {
     console.log(` - Bridges within failsafe: ${Object.entries(telemetry.bridges)
       .map(([name, data]) => `${name}=${data.withinFailsafe}`)
       .join(", ")}`);
+    console.log(
+      ` - Scenario sweep stable: ${
+        scenarioSweep.length === 0 ? true : scenarioSweep.every((scenario) => scenario.status !== "critical")
+      }`
+    );
     const anyFailures = [
       telemetry.manifest.manifestoHashMatches,
       telemetry.manifest.planHashMatches,
       telemetry.governance.coverageOk,
       telemetry.energy.tripleCheck,
       ...Object.values(telemetry.bridges).map((b: any) => b.withinFailsafe),
+      scenarioSweep.length === 0 || scenarioSweep.every((scenario) => scenario.status !== "critical"),
     ].some((flag) => !flag);
     if (anyFailures) {
       console.error("❌ Reflection checks failed. Resolve before deploying.");

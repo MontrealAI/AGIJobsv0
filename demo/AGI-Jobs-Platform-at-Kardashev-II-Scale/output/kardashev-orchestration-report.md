@@ -21,9 +21,44 @@
 ---
 
 ## Compute & domains
+* Aggregate compute 49.10 EF · 4,480,000,000 agents · deviation 0.45% (≤ 0.75%).
 * **EARTH** – 18.40 EF, 2,800,000,000 agents, resilience 94.50%.
 * **MARS** – 6.10 EF, 720,000,000 agents, resilience 93.50%.
 * **ORBITAL** – 24.60 EF, 960,000,000 agents, resilience 95.90%.
+
+---
+
+## Scenario stress sweep
+* **20% demand surge vs Dyson safety margin** — status NOMINAL (confidence 100.0%) · Dyson lattice absorbs surge with 129,600 GW spare.
+  - Simulated demand: 290,400 GW (ok)
+  - Remaining buffer: 129,600 GW (ok)
+  - Thermostat margin: 52,500 GW (ok)
+  - Utilisation: 69.14% (ok)
+  - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
+* **Interplanetary bridge outage simulation** — status CRITICAL (confidence 25.0%) · Failover latency 180s breaches 120s failsafe.
+  - Baseline latency: 90s (ok)
+  - Failover latency: 180s (check)
+  - Failsafe budget: 120s (ok)
+  - Slack: -60s (check)
+  - Recommended: Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
+* **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
+  - Minimum sentinel coverage: 1800s (ok)
+  - Simulated coverage: 1200s (ok)
+  - Guardian window: 900s (ok)
+  - Coverage ratio: 133.33% (ok)
+  - Recommended: Register standby sentinel via Safe batch if ratio < 100%. · Shorten guardian drill cadence until redundancy restored.
+* **Compute drawdown (15%) resilience** — status WARNING (confidence 35.0%) · Deviation 14.62% exceeds tolerance 0.75%.
+  - Projected compute: 48.88 EF (ok)
+  - Stressed compute: 41.73 EF (check)
+  - Deviation: 14.62% (check)
+  - Tolerance: 0.75% (ok)
+  - Recommended: Authorise capital stream expansion for orbital compute nodes. · Notify guardians to ratify temporary autonomy reduction if deviation persists.
+* **Dyson phase slip (30 days)** — status NOMINAL (confidence 95.0%) · Schedule buffer absorbs slip with 490 days remaining.
+  - Total timeline: 900 days (ok)
+  - Slip: 30 days (ok)
+  - Remaining buffer: 490 days (ok)
+  - Slip ratio: 3.33% (ok)
+  - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
 
 ---
 

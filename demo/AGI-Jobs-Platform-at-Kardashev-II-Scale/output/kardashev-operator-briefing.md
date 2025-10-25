@@ -18,6 +18,9 @@
 * Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
 * Compute deviation 0.45% (tolerance 0.75%): true
 * Bridge latency tolerance (120s): true
+* Scenario sweep: 3/5 nominal, 1 warning, 1 critical.
+  - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
+  - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.
 * Audit checklist: ipfs://QmKardashevAuditChecklist
 
 ## Federation snapshot
