@@ -16,6 +16,7 @@
 
 ## Verification status
 * Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
+* Monte Carlo breach 0.00% (≤ 1% tolerance): true
 * Compute deviation 0.45% (tolerance 0.75%): true
 * Bridge latency tolerance (120s): true
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%).

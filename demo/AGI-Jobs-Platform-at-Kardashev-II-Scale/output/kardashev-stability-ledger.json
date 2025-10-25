@@ -23,6 +23,11 @@
         "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
       },
       {
+        "method": "monte-carlo",
+        "score": 1,
+        "explanation": "Energy breach probability 0.00% across 256 simulations (tolerance 1.00%)."
+      },
+      {
         "method": "scenario-sweep",
         "score": 0.7929052035435014,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
@@ -97,6 +102,14 @@
       "status": true,
       "weight": 1.1,
       "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
+    },
+    {
+      "id": "energy-monte-carlo",
+      "title": "Monte Carlo breach ≤ tolerance",
+      "severity": "critical",
+      "status": true,
+      "weight": 1,
+      "evidence": "breach 0.00% (runs 256)"
     },
     {
       "id": "energy-margin",
@@ -252,6 +265,8 @@
     "coverageRatio": 1,
     "bridgeFailsafeSeconds": 120,
     "permittedUtilisation": 0.875,
-    "utilisation": 0.5761904761904761
+    "utilisation": 0.5761904761904761,
+    "monteCarloBreachProbability": 0,
+    "monteCarloWithinTolerance": true
   }
 }

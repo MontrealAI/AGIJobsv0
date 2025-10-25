@@ -52,6 +52,12 @@ function renderMetrics(telemetry) {
       ? `Aligned — ${formatNumber(telemetry.energy.models.regionalSumGw)} vs ${formatNumber(telemetry.energy.models.dysonProjectionGw)} GW`
       : "Mismatch across energy models"
   );
+  const monteCarlo = telemetry.energy.monteCarlo;
+  document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(monteCarlo.breachProbability * 100).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
+  setStatus(
+    document.querySelector("#energy-monte-carlo-status"),
+    monteCarlo.withinTolerance
+  );
   setStatusText(
     document.querySelector("#compute-deviation"),
     telemetry.verification.compute.withinTolerance,
@@ -87,6 +93,7 @@ function attachReflectionButton(telemetry) {
       { label: "Self-improvement plan hash", ok: telemetry.manifest.planHashMatches },
       { label: "Guardian coverage", ok: telemetry.governance.coverageOk },
       { label: "Energy triple check", ok: telemetry.energy.tripleCheck },
+      { label: "Energy Monte Carlo", ok: telemetry.energy.monteCarlo.withinTolerance },
       ...Object.entries(telemetry.bridges).map(([name, data]) => ({ label: `Bridge ${name}`, ok: data.withinFailsafe })),
     ];
     const list = document.querySelector("#reflection-checklist");
