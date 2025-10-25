@@ -577,7 +577,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
   // Scenario 2 — Bridge outage causing rerouted latency doubling
   const bridgeLatencies = Object.values(telemetry.bridges).map((bridge: any) => Number(bridge.latencySeconds));
   const baselineWorstLatency = bridgeLatencies.length > 0 ? Math.max(...bridgeLatencies) : 0;
-  const failoverLatency = baselineWorstLatency * 1.25;
+  const failoverLatency = baselineWorstLatency * 2;
   const latencySlack = failsafeLatency - failoverLatency;
   const bridgeStatus: ScenarioStatus =
     latencySlack >= failsafeLatency * 0.25
