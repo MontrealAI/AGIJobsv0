@@ -782,6 +782,170 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
   };
 }
 
+type Telemetry = ReturnType<typeof computeTelemetry>;
+
+function buildStabilityLedger(
+  manifest: Manifest,
+  telemetry: Telemetry,
+  dominanceScore: number,
+  transactions: SafeTransaction[]
+) {
+  const safetyMargin = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
+  const permittedUtilisation = 1 - safetyMargin;
+  const utilisation = telemetry.energy.utilisationPct;
+  const overshoot = Math.max(0, utilisation - permittedUtilisation);
+  const energyBufferScore =
+    safetyMargin === 0 ? (overshoot === 0 ? 1 : 0) : Math.max(0, Math.min(1, 1 - overshoot / safetyMargin));
+
+  const redundantFlags = [
+    telemetry.energy.tripleCheck,
+    telemetry.verification.energyModels.withinMargin,
+    telemetry.verification.compute.withinTolerance,
+    telemetry.verification.bridges.allWithinTolerance,
+    telemetry.governance.coverageOk,
+  ];
+  const redundancyScore =
+    redundantFlags.reduce((sum, flag) => sum + (flag ? 1 : 0), 0) / Math.max(redundantFlags.length, 1);
+
+  const coverageRatio =
+    manifest.interstellarCouncil.guardianReviewWindow === 0
+      ? 1
+      : Math.min(
+          1,
+          telemetry.governance.minimumCoverageSeconds /
+            Math.max(manifest.interstellarCouncil.guardianReviewWindow, 1)
+        );
+
+  const checks = [
+    {
+      id: "manifest-digest",
+      title: "Manifest digests aligned",
+      severity: "critical",
+      status: telemetry.manifest.manifestoHashMatches,
+      weight: 1.2,
+      evidence: `expected ${manifest.interstellarCouncil.manifestoHash}, observed ${telemetry.manifest.manifestoHash}`,
+    },
+    {
+      id: "self-improvement-digest",
+      title: "Self-improvement charter verified",
+      severity: "critical",
+      status: telemetry.manifest.planHashMatches,
+      weight: 1,
+      evidence: `expected ${manifest.selfImprovement.planHash}, observed ${telemetry.manifest.planHash}`,
+    },
+    {
+      id: "owner-control",
+      title: "Owner override levers encoded",
+      severity: "high",
+      status: telemetry.governance.ownerOverridesReady,
+      weight: 0.9,
+      evidence: "setGlobalParameters + pause/unpause transactions present",
+    },
+    {
+      id: "guardian-coverage",
+      title: "Guardian coverage >= review window",
+      severity: "high",
+      status: telemetry.governance.coverageOk,
+      weight: 0.85,
+      evidence: `minimum coverage ${telemetry.governance.minimumCoverageSeconds}s vs ${manifest.interstellarCouncil.guardianReviewWindow}s window`,
+    },
+    {
+      id: "energy-triple-check",
+      title: "Energy models reconciled",
+      severity: "critical",
+      status: telemetry.energy.tripleCheck && telemetry.verification.energyModels.withinMargin,
+      weight: 1.1,
+      evidence: `regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW · Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW · thermostat ${telemetry.energy.models.thermostatBudgetGw.toLocaleString()} GW`,
+    },
+    {
+      id: "energy-margin",
+      title: "Dyson thermostat buffer intact",
+      severity: "medium",
+      status: overshoot === 0,
+      weight: 0.6,
+      evidence: `utilisation ${(utilisation * 100).toFixed(2)}% vs permitted ${(permittedUtilisation * 100).toFixed(2)}%`,
+    },
+    {
+      id: "compute-alignment",
+      title: "Compute deviation within tolerance",
+      severity: "medium",
+      status: telemetry.verification.compute.withinTolerance,
+      weight: 0.7,
+      evidence: `deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (≤ ${telemetry.verification.compute.tolerancePct}%)`,
+    },
+    {
+      id: "bridge-latency",
+      title: "Bridge latency ≤ tolerance",
+      severity: "high",
+      status: telemetry.verification.bridges.allWithinTolerance,
+      weight: 0.75,
+      evidence: `tolerance ${telemetry.verification.bridges.toleranceSeconds}s · failsafe ${manifest.dysonProgram.safety.failsafeLatencySeconds}s`,
+    },
+  ];
+
+  const totalWeight = checks.reduce((sum, check) => sum + check.weight, 0);
+  const compositeScore =
+    totalWeight === 0
+      ? 1
+      : checks.reduce((sum, check) => sum + check.weight * (check.status ? 1 : 0), 0) / totalWeight;
+
+  const pauseIncluded = transactions.some((tx) => tx.description === "Pause all modules");
+  const resumeIncluded = transactions.some((tx) => tx.description === "Resume all modules");
+
+  const alerts = checks
+    .filter((check) => !check.status)
+    .map((check) => ({ id: check.id, title: check.title, severity: check.severity, evidence: check.evidence }));
+
+  return {
+    generatedAt: manifest.generatedAt,
+    manifestVersion: manifest.version,
+    dominanceScore,
+    confidence: {
+      compositeScore,
+      quorum: compositeScore >= 0.95,
+      summary:
+        alerts.length === 0
+          ? "All Kardashev-II invariants satisfied. Safe batch ready for execution."
+          : `Manual review required for ${alerts.length} check(s).`,
+      methods: [
+        {
+          method: "deterministic-consensus",
+          score: compositeScore,
+          explanation: "Weighted boolean consensus across critical governance, energy, and compute checks.",
+        },
+        {
+          method: "redundant-telemetry",
+          score: redundancyScore,
+          explanation: "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage.",
+        },
+        {
+          method: "energy-safety-buffer",
+          score: energyBufferScore,
+          explanation: "Remaining Dyson thermostat buffer relative to configured safety margin.",
+        },
+      ],
+    },
+    checks,
+    alerts,
+    ownerControls: {
+      manager: manifest.interstellarCouncil.managerAddress,
+      systemPause: manifest.interstellarCouncil.systemPauseAddress,
+      guardianCouncil: manifest.interstellarCouncil.guardianCouncil,
+      transactionsEncoded: transactions.length,
+      pauseCallEncoded: pauseIncluded,
+      resumeCallEncoded: resumeIncluded,
+    },
+    safety: {
+      guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,
+      minimumCoverageSeconds: telemetry.governance.minimumCoverageSeconds,
+      coverageRatio,
+      bridgeFailsafeSeconds: manifest.dysonProgram.safety.failsafeLatencySeconds,
+      permittedUtilisation,
+      utilisation,
+    },
+  };
+}
+
 function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
   const parsedCreatedAt =
     typeof manifest.generatedAt === "number" ? manifest.generatedAt : Date.parse(manifest.generatedAt);
@@ -840,6 +1004,7 @@ function run() {
   const transactions = buildTransactions(manifest);
   const safeBatch = buildSafeBatch(manifest, transactions);
   const telemetry = computeTelemetry(manifest, dominanceScore);
+  const stabilityLedger = buildStabilityLedger(manifest, telemetry, dominanceScore, transactions);
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
   const runbook = buildRunbook(manifest, telemetry, dominanceScore);
@@ -847,10 +1012,12 @@ function run() {
 
   const telemetryJson = `${JSON.stringify(telemetry, null, 2)}\n`;
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
+  const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
+    { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
@@ -880,6 +1047,9 @@ function run() {
   console.log(`   Monthly value throughput: ${formatUSD(totalMonthlyValue)}.`);
   console.log(`   Average resilience: ${(averageResilience * 100).toFixed(2)}%.`);
   console.log(`   Energy utilisation: ${(telemetry.energy.utilisationPct * 100).toFixed(2)}% (margin ${(telemetry.energy.marginPct * 100).toFixed(2)}%).`);
+  console.log(
+    `   Stability ledger composite confidence: ${(stabilityLedger.confidence.compositeScore * 100).toFixed(2)}% (quorum ${stabilityLedger.confidence.quorum}).`
+  );
   console.log(
     `   Energy models aligned: ${telemetry.verification.energyModels.withinMargin} (regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW vs Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW).`
   );
