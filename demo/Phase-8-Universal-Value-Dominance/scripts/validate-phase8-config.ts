@@ -109,6 +109,18 @@ const configSchema = z.object({
       pausable: z.boolean(),
       escalationChannels: z.array(z.string()).min(1),
     }),
+    guardrails: z.object({
+      checksum: z.object({
+        algorithm: z.string().min(1),
+        value: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+      }),
+      zkProof: z.object({
+        circuit: z.string().min(1),
+        artifactURI: z.string().min(1),
+        status: z.string().min(1),
+        notes: z.string().optional(),
+      }),
+    }),
   }),
 });
 
@@ -131,18 +143,22 @@ function main() {
 
   const sentinelSlugs = new Set<string>();
   const sentinelDomains = new Set<string>();
+  const domainCoverage = new Map<string, number>();
+  const domainList = config.domains.map((domain) => domain.slug.toLowerCase());
   for (const sentinel of config.sentinels) {
     const slug = sentinel.slug.toLowerCase();
     if (sentinelSlugs.has(slug)) {
       throw new Error(`Duplicate sentinel slug detected: ${slug}`);
     }
     sentinelSlugs.add(slug);
-    for (const domain of sentinel.domains ?? []) {
-      const normalized = domain.toLowerCase();
-      if (!slugs.has(normalized)) {
+    const sentinelDomainSlugs = (sentinel.domains ?? []).map((domain) => domain.toLowerCase());
+    const targets = sentinelDomainSlugs.length > 0 ? sentinelDomainSlugs : domainList;
+    for (const domain of targets) {
+      if (!slugs.has(domain)) {
         throw new Error(`Sentinel ${sentinel.slug} references unknown domain ${domain}`);
       }
-      sentinelDomains.add(normalized);
+      sentinelDomains.add(domain);
+      domainCoverage.set(domain, (domainCoverage.get(domain) ?? 0) + sentinel.coverageSeconds);
     }
   }
 
@@ -192,24 +208,9 @@ function main() {
 
   const guardianWindow = config.global.guardianReviewWindow;
   if (guardianWindow > 0) {
-    const domainCoverage = new Map<string, number>();
-    const domainList = Array.from(slugs.values());
     if (domainList.length !== config.domains.length) {
       // Defer to slug validation errors before enforcing coverage-specific diagnostics.
       return;
-    }
-
-    for (const sentinel of config.sentinels) {
-      const coverage = sentinel.coverageSeconds;
-      if (!Number.isFinite(coverage) || coverage <= 0) continue;
-
-      const sentinelDomains = (sentinel.domains ?? []).map((domain) => domain.toLowerCase());
-      const targets = sentinelDomains.length > 0 ? sentinelDomains : domainList;
-
-      for (const domain of targets) {
-        if (!slugs.has(domain)) continue;
-        domainCoverage.set(domain, (domainCoverage.get(domain) ?? 0) + coverage);
-      }
     }
 
     const insufficient = domainList.filter((domain) => (domainCoverage.get(domain) ?? 0) < guardianWindow);
@@ -323,6 +324,308 @@ function main() {
   }
   if (!scorecardRaw?.chain?.manager) {
     throw new Error("Dominance scorecard must specify chain.manager to guide multisig routing.");
+  }
+
+  const approxEqual = (a: number, b: number, tolerance = 1e-6) => Math.abs(a - b) <= tolerance;
+
+  const computeDominanceScore = () => {
+    const totalMonthlyUSD = config.domains.reduce((acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
+    const averageResilience =
+      config.domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) /
+      Math.max(1, config.domains.length);
+    const coverageRatio = sentinelDomains.size / Math.max(1, config.domains.length);
+    const averageDomainCoverage =
+      Array.from(domainCoverage.values()).reduce((acc, value) => acc + value, 0) /
+      Math.max(1, domainCoverage.size || config.domains.length);
+    const maxDomainAutonomy = Math.max(...config.domains.map((domain) => domain.autonomyLevelBps));
+
+    const cadenceSeconds = config.selfImprovement.plan.cadenceSeconds;
+    const valueScore = totalMonthlyUSD <= 0 ? 0 : Math.min(1, totalMonthlyUSD / 500_000_000_000);
+    const resilienceScore = Math.max(0, Math.min(1, averageResilience));
+    const coverageRatioScore = coverageRatio <= 0 ? 0 : Math.min(1, coverageRatio);
+    const coverageStrengthScore =
+      guardianWindow > 0 ? Math.min(1, averageDomainCoverage / guardianWindow) : 1;
+    const coverageScore = Math.min(1, (coverageRatioScore + coverageStrengthScore) / 2);
+    const autonomyScore =
+      config.selfImprovement.autonomyGuards.maxAutonomyBps > 0
+        ? Math.min(1, maxDomainAutonomy / config.selfImprovement.autonomyGuards.maxAutonomyBps)
+        : 1;
+    const cadenceScore =
+      cadenceSeconds > 0 ? Math.max(0, 1 - Math.min(1, cadenceSeconds / (24 * 60 * 60))) : 0.5;
+
+    const weighted =
+      0.3 * valueScore +
+      0.25 * resilienceScore +
+      0.2 * coverageScore +
+      0.15 * autonomyScore +
+      0.1 * cadenceScore;
+    return Math.min(100, Math.round(weighted * 1000) / 10);
+  };
+
+  const expectedMonthlyValue = config.domains.reduce((acc, domain) => acc + domain.valueFlowMonthlyUSD, 0);
+  if (!approxEqual(Number(scorecardRaw.metrics.monthlyValueUSD ?? 0), expectedMonthlyValue, 1)) {
+    throw new Error("Dominance scorecard monthly value mismatch with manifest.");
+  }
+
+  const expectedAnnualBudget = config.capitalStreams.reduce((acc, stream) => acc + stream.annualBudget, 0);
+  if (!approxEqual(Number(scorecardRaw.metrics.annualBudgetUSD ?? 0), expectedAnnualBudget, 1)) {
+    throw new Error("Dominance scorecard annual budget mismatch with manifest.");
+  }
+
+  const expectedAverageResilience =
+    config.domains.reduce((acc, domain) => acc + domain.resilienceIndex, 0) / Math.max(1, config.domains.length);
+  if (!approxEqual(Number(scorecardRaw.metrics.averageResilience ?? 0), expectedAverageResilience, 1e-3)) {
+    throw new Error("Dominance scorecard average resilience mismatch with manifest.");
+  }
+
+  const expectedSentinelCoverageMinutes = sentinelCoverage / 60;
+  if (!approxEqual(Number(scorecardRaw.metrics.sentinelCoverageMinutes ?? 0), expectedSentinelCoverageMinutes, 0.25)) {
+    throw new Error("Dominance scorecard sentinel coverage minutes mismatch with manifest.");
+  }
+
+  const expectedCoverageRatioPercent = Math.round((sentinelDomains.size / Math.max(1, config.domains.length)) * 100);
+  if (!approxEqual(Number(scorecardRaw.metrics.coverageRatioPercent ?? 0), expectedCoverageRatioPercent, 0.5)) {
+    throw new Error("Dominance scorecard coverage ratio percent mismatch with manifest.");
+  }
+
+  const expectedFundedRatioPercent = Math.round(
+    (Array.from(streamCoverage.entries()).filter(([, budget]) => budget > 0).length / Math.max(1, config.domains.length)) *
+      100,
+  );
+  if (!approxEqual(Number(scorecardRaw.metrics.fundedDomainRatioPercent ?? 0), expectedFundedRatioPercent, 0.5)) {
+    throw new Error("Dominance scorecard funded domain ratio mismatch with manifest.");
+  }
+
+  const expectedMaxAutonomy = Math.max(...config.domains.map((domain) => domain.autonomyLevelBps));
+  if (!approxEqual(Number(scorecardRaw.metrics.maxAutonomyBps ?? 0), expectedMaxAutonomy, 1e-6)) {
+    throw new Error("Dominance scorecard maximum autonomy mismatch with manifest.");
+  }
+
+  const expectedCadenceHours = config.selfImprovement.plan.cadenceSeconds / 3600;
+  if (!approxEqual(Number(scorecardRaw.metrics.cadenceHours ?? 0), expectedCadenceHours, 0.01)) {
+    throw new Error("Dominance scorecard cadence hours mismatch with manifest.");
+  }
+
+  const minimumCoverageSeconds = domainList.length
+    ? Math.min(...domainList.map((slug) => domainCoverage.get(slug) ?? 0))
+    : 0;
+  if (!approxEqual(Number(scorecardRaw.metrics.minimumCoverageSeconds ?? 0), minimumCoverageSeconds, 1e-6)) {
+    throw new Error("Dominance scorecard minimum coverage seconds mismatch with manifest.");
+  }
+
+  if (!approxEqual(Number(scorecardRaw.metrics.guardianWindowSeconds ?? 0), guardianWindow, 1e-6)) {
+    throw new Error("Dominance scorecard guardian window mismatch with manifest.");
+  }
+
+  const expectedAdequacy = guardianWindow > 0 ? Math.round((minimumCoverageSeconds / guardianWindow) * 100) : 0;
+  if (!approxEqual(Number(scorecardRaw.metrics.minimumCoverageAdequacyPercent ?? 0), expectedAdequacy, 0.5)) {
+    throw new Error("Dominance scorecard minimum coverage adequacy mismatch with manifest.");
+  }
+
+  const expectedDominanceScore = computeDominanceScore();
+  if (!approxEqual(Number(scorecardRaw.metrics.dominanceScore ?? 0), expectedDominanceScore, 0.15)) {
+    throw new Error("Dominance scorecard dominance score mismatch with manifest computation.");
+  }
+
+  if (scorecardRaw.chain?.manager?.toLowerCase() !== config.global.phase8Manager.toLowerCase()) {
+    throw new Error("Dominance scorecard manager address must match manifest global.phase8Manager.");
+  }
+
+  const ensureSameStrings = (a: string[] = [], b: string[] = []) => {
+    const left = new Set(a.map((value) => value.toLowerCase()));
+    const right = new Set(b.map((value) => value.toLowerCase()));
+    if (left.size !== right.size) return false;
+    for (const value of left) {
+      if (!right.has(value)) return false;
+    }
+    return true;
+  };
+
+  const domainBySlug = new Map(config.domains.map((domain) => [domain.slug.toLowerCase(), domain]));
+  const sentinelLookup = new Map(config.sentinels.map((sentinel) => [sentinel.slug.toLowerCase(), sentinel]));
+  const streamLookup = new Map(config.capitalStreams.map((stream) => [stream.slug.toLowerCase(), stream]));
+
+  const sentinelNamesByDomain = new Map<string, string[]>();
+  for (const sentinel of config.sentinels) {
+    const domains = sentinel.domains ?? [];
+    const targets = domains.length > 0 ? domains : domainList;
+    for (const domain of targets) {
+      const key = domain.toLowerCase();
+      if (!sentinelNamesByDomain.has(key)) {
+        sentinelNamesByDomain.set(key, []);
+      }
+      sentinelNamesByDomain.get(key)!.push(sentinel.name);
+    }
+  }
+
+  const capitalSupportByDomain = new Map<string, number>();
+  for (const stream of config.capitalStreams) {
+    const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
+    const effectiveTargets = targets.length > 0 ? targets : domainList;
+    for (const domain of effectiveTargets) {
+      if (!capitalSupportByDomain.has(domain)) {
+        capitalSupportByDomain.set(domain, 0);
+      }
+      capitalSupportByDomain.set(domain, (capitalSupportByDomain.get(domain) ?? 0) + stream.annualBudget);
+    }
+  }
+
+  if (scorecardRaw.domains.length !== config.domains.length) {
+    throw new Error("Dominance scorecard domain count mismatch with manifest.");
+  }
+
+  for (const scorecardDomain of scorecardRaw.domains) {
+    const manifestDomain = domainBySlug.get(String(scorecardDomain.slug ?? "").toLowerCase());
+    if (!manifestDomain) {
+      throw new Error(`Dominance scorecard references unknown domain ${scorecardDomain.slug}`);
+    }
+
+    if (scorecardDomain.name !== manifestDomain.name) {
+      throw new Error(`Dominance scorecard name mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    if (!approxEqual(Number(scorecardDomain.autonomyLevelBps ?? 0), manifestDomain.autonomyLevelBps, 1e-6)) {
+      throw new Error(`Dominance scorecard autonomy mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    if (!approxEqual(Number(scorecardDomain.resilienceIndex ?? 0), manifestDomain.resilienceIndex, 1e-3)) {
+      throw new Error(`Dominance scorecard resilience mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    if (!approxEqual(Number(scorecardDomain.heartbeatSeconds ?? 0), manifestDomain.heartbeatSeconds, 1e-6)) {
+      throw new Error(`Dominance scorecard heartbeat mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    if (String(scorecardDomain.tvlLimit ?? "") !== manifestDomain.tvlLimit) {
+      throw new Error(`Dominance scorecard TVL limit mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    if (!approxEqual(Number(scorecardDomain.valueFlowMonthlyUSD ?? 0), manifestDomain.valueFlowMonthlyUSD, 1)) {
+      throw new Error(`Dominance scorecard monthly value mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    const expectedDomainCoverage = domainCoverage.get(manifestDomain.slug.toLowerCase()) ?? 0;
+    if (!approxEqual(Number(scorecardDomain.sentinelCoverageSeconds ?? 0), expectedDomainCoverage, 1)) {
+      throw new Error(`Dominance scorecard sentinel coverage mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    const sentinelNames = sentinelNamesByDomain.get(manifestDomain.slug.toLowerCase()) ?? [];
+    if (!ensureSameStrings(scorecardDomain.sentinelGuardians ?? [], sentinelNames)) {
+      throw new Error(`Dominance scorecard sentinel guardian mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    const expectedCapitalSupport = capitalSupportByDomain.get(manifestDomain.slug.toLowerCase()) ?? 0;
+    if (!approxEqual(Number(scorecardDomain.capitalSupportUSD ?? 0), expectedCapitalSupport, 1)) {
+      throw new Error(`Dominance scorecard capital support mismatch for domain ${manifestDomain.slug}`);
+    }
+
+    const expectedStreamNames = config.capitalStreams
+      .filter((stream) => {
+        const targets = (stream.domains ?? []).map((domain) => domain.toLowerCase());
+        const normalizedTargets = targets.length > 0 ? targets : domainList;
+        return normalizedTargets.includes(manifestDomain.slug.toLowerCase());
+      })
+      .map((stream) => stream.name);
+    if (!ensureSameStrings(scorecardDomain.capitalStreams ?? [], expectedStreamNames)) {
+      throw new Error(`Dominance scorecard stream list mismatch for domain ${manifestDomain.slug}`);
+    }
+  }
+
+  if (scorecardRaw.sentinels.length !== config.sentinels.length) {
+    throw new Error("Dominance scorecard sentinel count mismatch with manifest.");
+  }
+
+  for (const scorecardSentinel of scorecardRaw.sentinels) {
+    const manifestSentinel = sentinelLookup.get(String(scorecardSentinel.slug ?? "").toLowerCase());
+    if (!manifestSentinel) {
+      throw new Error(`Dominance scorecard references unknown sentinel ${scorecardSentinel.slug}`);
+    }
+    if (scorecardSentinel.name !== manifestSentinel.name) {
+      throw new Error(`Dominance scorecard name mismatch for sentinel ${manifestSentinel.slug}`);
+    }
+    if (!approxEqual(Number(scorecardSentinel.coverageSeconds ?? 0), manifestSentinel.coverageSeconds, 1)) {
+      throw new Error(`Dominance scorecard coverage mismatch for sentinel ${manifestSentinel.slug}`);
+    }
+    if (!approxEqual(Number(scorecardSentinel.sensitivityBps ?? 0), manifestSentinel.sensitivityBps, 1e-6)) {
+      throw new Error(`Dominance scorecard sensitivity mismatch for sentinel ${manifestSentinel.slug}`);
+    }
+    if (!ensureSameStrings(scorecardSentinel.domains ?? [], manifestSentinel.domains ?? [])) {
+      throw new Error(`Dominance scorecard domain list mismatch for sentinel ${manifestSentinel.slug}`);
+    }
+  }
+
+  if (scorecardRaw.capitalStreams.length !== config.capitalStreams.length) {
+    throw new Error("Dominance scorecard capital stream count mismatch with manifest.");
+  }
+
+  for (const scorecardStream of scorecardRaw.capitalStreams) {
+    const manifestStream = streamLookup.get(String(scorecardStream.slug ?? "").toLowerCase());
+    if (!manifestStream) {
+      throw new Error(`Dominance scorecard references unknown capital stream ${scorecardStream.slug}`);
+    }
+    if (scorecardStream.name !== manifestStream.name) {
+      throw new Error(`Dominance scorecard name mismatch for capital stream ${manifestStream.slug}`);
+    }
+    if (!approxEqual(Number(scorecardStream.annualBudgetUSD ?? 0), manifestStream.annualBudget, 1)) {
+      throw new Error(`Dominance scorecard budget mismatch for capital stream ${manifestStream.slug}`);
+    }
+    if (!approxEqual(Number(scorecardStream.expansionBps ?? 0), manifestStream.expansionBps, 1e-6)) {
+      throw new Error(`Dominance scorecard expansion mismatch for capital stream ${manifestStream.slug}`);
+    }
+    if (!ensureSameStrings(scorecardStream.domains ?? [], manifestStream.domains ?? [])) {
+      throw new Error(`Dominance scorecard domain list mismatch for capital stream ${manifestStream.slug}`);
+    }
+  }
+
+  const guardrails = scorecardRaw.guardrails ?? {};
+  if (guardrails.autonomy?.maxAutonomyBps !== config.selfImprovement.autonomyGuards.maxAutonomyBps) {
+    throw new Error("Dominance scorecard autonomy guard mismatch with manifest.");
+  }
+  if (guardrails.autonomy?.humanOverrideMinutes !== config.selfImprovement.autonomyGuards.humanOverrideMinutes) {
+    throw new Error("Dominance scorecard human override window mismatch with manifest.");
+  }
+  if (guardrails.autonomy?.pausable !== config.selfImprovement.autonomyGuards.pausable) {
+    throw new Error("Dominance scorecard pausable flag mismatch with manifest.");
+  }
+  if (!ensureSameStrings(guardrails.autonomy?.escalationChannels ?? [], config.selfImprovement.autonomyGuards.escalationChannels)) {
+    throw new Error("Dominance scorecard escalation channels mismatch with manifest.");
+  }
+
+  if (guardrails.kernel?.checksum?.algorithm !== config.selfImprovement.guardrails.checksum.algorithm) {
+    throw new Error("Dominance scorecard checksum algorithm mismatch with manifest guardrails.");
+  }
+  if (guardrails.kernel?.checksum?.value !== config.selfImprovement.guardrails.checksum.value) {
+    throw new Error("Dominance scorecard checksum value mismatch with manifest guardrails.");
+  }
+  if (guardrails.kernel?.zkProof?.circuit !== config.selfImprovement.guardrails.zkProof.circuit) {
+    throw new Error("Dominance scorecard zk-proof circuit mismatch with manifest guardrails.");
+  }
+  if (guardrails.kernel?.zkProof?.artifactURI !== config.selfImprovement.guardrails.zkProof.artifactURI) {
+    throw new Error("Dominance scorecard zk-proof artifact mismatch with manifest guardrails.");
+  }
+  if (guardrails.kernel?.zkProof?.status !== config.selfImprovement.guardrails.zkProof.status) {
+    throw new Error("Dominance scorecard zk-proof status mismatch with manifest guardrails.");
+  }
+
+  const plan = guardrails.plan ?? {};
+  if (plan.planURI !== config.selfImprovement.plan.planURI) {
+    throw new Error("Dominance scorecard plan URI mismatch with manifest.");
+  }
+  if (plan.planHash !== config.selfImprovement.plan.planHash) {
+    throw new Error("Dominance scorecard plan hash mismatch with manifest.");
+  }
+  if (Number(plan.cadenceSeconds ?? 0) !== config.selfImprovement.plan.cadenceSeconds) {
+    throw new Error("Dominance scorecard plan cadence mismatch with manifest.");
+  }
+  if (Number(plan.lastExecutedAt ?? 0) !== config.selfImprovement.plan.lastExecutedAt) {
+    throw new Error("Dominance scorecard plan lastExecutedAt mismatch with manifest.");
+  }
+  if (plan.lastReportURI !== config.selfImprovement.plan.lastReportURI) {
+    throw new Error("Dominance scorecard plan lastReportURI mismatch with manifest.");
+  }
+
+  if (Number(guardrails.maxDrawdownBps ?? 0) !== config.global.maxDrawdownBps) {
+    throw new Error("Dominance scorecard maxDrawdownBps mismatch with manifest.");
   }
 
   if (!existsSync(EMERGENCY)) {
