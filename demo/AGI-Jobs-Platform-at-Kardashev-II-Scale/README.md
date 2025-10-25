@@ -169,6 +169,7 @@ flowchart TD
 * **Kelvin guardrails** – Reward temperature (Kelvin) must stay between 0.35 and 0.92; the orchestrator double checks the manifest and telemetry and aborts if the Thermostat would fall outside the band.
 * **Regional energy arbitration** – Earth, Mars, and Orbital clusters provide available GW, storage, and latency; the CLI sorts workloads accordingly and reports energy debt so operators can top-up storage before dispatching long-running swarms.
 * **Compute rollup** – All compute capacity is measured in exaFLOPs and agent counts. A reconciliation matrix confirms that per-region totals equal the Interstellar Council view and Dyson programme requirements.
+* **Probabilistic assurance** – Monte Carlo simulations (256 deterministic runs) estimate breach probability vs the 1% tolerance. Results surface in the UI and `output/kardashev-monte-carlo.json`; any breach probability above tolerance halts orchestration.
 
 ## 🎛️ Mission directives & verification dashboards
 
@@ -219,6 +220,7 @@ flowchart TD
 | `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
 | `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
+| `output/kardashev-monte-carlo.json` | Monte Carlo summary (runs, breach probability, percentiles) validating the energy thermostat tolerance. |
 | `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, and unstoppable control score. |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
@@ -233,12 +235,13 @@ flowchart TD
 * **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
 * **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
 * **Dual unstoppable verification** – A secondary decoder replays the Safe batch, recomputes selectors and pause embeddings, and records the corroborating unstoppable score next to the primary proof so drift is impossible to miss.
+* **Monte Carlo sentinel** – The ledger adds a dedicated check gating execution on the 1% breach tolerance, with confidence vectors publishing the simulated demand percentiles for guardian review.
 
 ---
 
 ## 🧪 Verification rituals
 
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
+1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `verification.energyMonteCarlo.withinTolerance === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
 2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
 3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
 4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
@@ -253,6 +256,7 @@ Run `npm run demo:kardashev-ii:orchestrate -- --reflect` to receive:
 - ✅ Recomputed manifest hash vs `interstellarCouncil.manifestoHash`.
 - ✅ Confirmation that guardian coverage ≥ guardian review window.
 - ✅ Energy debt matrix (Earth, Mars, Orbital) all ≤ 0.
+- ✅ Monte Carlo breach probability ≤ 1% (see `kardashev-monte-carlo.json`).
 - ✅ Bridge latency vs Dyson failsafe latency.
 - ✅ Scenario stress sweep free of critical statuses (confidence badges ≥ 95%).
 - ✅ Pause bundle parity (pause/unpause both targeting configured SystemPause).

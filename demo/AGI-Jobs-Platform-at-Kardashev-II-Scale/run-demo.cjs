@@ -144,6 +144,63 @@ function simulateDysonSwarm(rng) {
   return progress;
 }
 
+function simulateEnergyMonteCarlo(fabric, energyFeeds, rng, runs = 256) {
+  const safetyMarginPct = 0.125;
+  const capturedGw = energyFeeds.reduce((sum, feed) => sum + feed.nominalMw, 0) / 1000;
+  const marginGw = capturedGw * safetyMarginPct;
+  let breaches = 0;
+  let totalDemand = 0;
+  let peakDemand = 0;
+  const samples = [];
+
+  for (let i = 0; i < runs; i += 1) {
+    let demandGw = 0;
+    for (const feed of energyFeeds) {
+      const baseGw = feed.nominalMw / 1000;
+      const bufferGw = feed.bufferMw / 1000;
+      const latencyPenalty = Math.min(0.2, feed.latencyMs / 1_200_000) * 0.25;
+      const jitter = (rng() - 0.5) * 0.04; // ±2%
+      const regionalDemand = Math.max(0, baseGw * (1 + jitter + latencyPenalty) - bufferGw * 2);
+      demandGw += regionalDemand;
+    }
+    const remainingBuffer = capturedGw - demandGw;
+    if (remainingBuffer < marginGw) {
+      breaches += 1;
+    }
+    if (demandGw > peakDemand) {
+      peakDemand = demandGw;
+    }
+    totalDemand += demandGw;
+    samples.push(demandGw);
+  }
+
+  samples.sort((a, b) => a - b);
+  const percentile = (p) => {
+    if (samples.length === 0) return 0;
+    const idx = Math.min(samples.length - 1, Math.floor(Math.max(0, Math.min(1, p)) * (samples.length - 1)));
+    return samples[idx];
+  };
+
+  const breachProbability = breaches / runs;
+  const summary = {
+    runs,
+    breachProbability,
+    tolerance: 0.01,
+    withinTolerance: breachProbability <= 0.01,
+    capturedGw,
+    marginGw,
+    peakDemandGw: peakDemand,
+    averageDemandGw: samples.length === 0 ? 0 : totalDemand / samples.length,
+    percentileGw: {
+      p50: percentile(0.5),
+      p95: percentile(0.95),
+      p99: percentile(0.99),
+    },
+  };
+  debugLog('energy-monte-carlo', summary);
+  return summary;
+}
+
 function buildMermaidTaskHierarchy(dyson) {
   return `---
 title Dyson Swarm Execution Tree
@@ -214,6 +271,7 @@ function main() {
   const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
+  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, rng);
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -244,6 +302,9 @@ function main() {
   );
   reportLines.push(
     `- **Captured Power:** ${formatNumber(dyson.capturedMw)} MW available for reallocation.`
+  );
+  reportLines.push(
+    `- **Energy Monte Carlo:** ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% breach probability across ${energyMonteCarlo.runs} runs (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
@@ -327,6 +388,7 @@ function main() {
     shards: shardMetrics,
     sentinelFindings,
     dyson,
+    energyMonteCarlo,
     configs: {
       knowledgeGraph: fabric.knowledgeGraph,
       energyOracle: fabric.energyOracle,
@@ -359,6 +421,9 @@ function main() {
   console.log('   - Report: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-report.md');
   console.log('   - Governance playbook: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/governance-playbook.md');
   console.log('   - Telemetry: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/telemetry.json');
+  console.log(
+    `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
+  );
 }
 
 if (require.main === module) {

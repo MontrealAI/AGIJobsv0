@@ -64,6 +64,19 @@
       "dysonProjectionGw": 488800,
       "thermostatBudgetGw": 340200,
       "withinMargin": true
+    },
+    "monteCarlo": {
+      "runs": 256,
+      "breachProbability": 0,
+      "percentileGw": {
+        "p50": 237030.969218213,
+        "p95": 251695.495238463,
+        "p99": 255130.15072335023
+      },
+      "maxGw": 257220.62304422446,
+      "averageGw": 236494.16525702746,
+      "withinTolerance": true,
+      "tolerance": 0.01
     }
   },
   "compute": {
@@ -504,6 +517,17 @@
         "thermostatBudgetGw": 340200
       },
       "withinMargin": true
+    },
+    "energyMonteCarlo": {
+      "runs": 256,
+      "breachProbability": 0,
+      "tolerance": 0.01,
+      "withinTolerance": true,
+      "percentileGw": {
+        "p50": 237030.969218213,
+        "p95": 251695.495238463,
+        "p99": 255130.15072335023
+      }
     },
     "compute": {
       "tolerancePct": 0.75,

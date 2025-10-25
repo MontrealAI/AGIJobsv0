@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2125-01-01T04:46:17.285Z",
+  "generatedAt": "2125-01-01T08:19:21.838Z",
   "dominanceScore": 99.9,
   "shards": [
     {
@@ -47,6 +47,21 @@
     "energyPerSatelliteMw": 45,
     "capturedMw": 131355,
     "coveragePercent": 29.19
+  },
+  "energyMonteCarlo": {
+    "runs": 256,
+    "breachProbability": 0,
+    "tolerance": 0.01,
+    "withinTolerance": true,
+    "capturedGw": 613,
+    "marginGw": 76.625,
+    "peakDemandGw": 497.31924606092264,
+    "averageDemandGw": 485.9969112264529,
+    "percentileGw": {
+      "p50": 486.2788814702444,
+      "p95": 494.3491990757454,
+      "p99": 496.096386420615
+    }
   },
   "configs": {
     "knowledgeGraph": "0x0000000000000000000000000000000000Kn0wG",

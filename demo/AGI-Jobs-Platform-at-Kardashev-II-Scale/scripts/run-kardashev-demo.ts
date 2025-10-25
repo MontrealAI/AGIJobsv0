@@ -32,6 +32,20 @@ const systemPauseInterface = new Interface([
   "function unpauseAll()",
 ]);
 
+function createDeterministicRng(seed: string): () => number {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i += 1) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return () => {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  };
+}
+
 const AddressSchema = z
   .string()
   .trim()
@@ -348,6 +362,83 @@ type ScenarioResult = {
   metrics: ScenarioMetric[];
   recommendedActions: string[];
 };
+
+type MonteCarloSummary = {
+  runs: number;
+  breachProbability: number;
+  percentileGw: { p50: number; p95: number; p99: number };
+  maxGw: number;
+  averageGw: number;
+  withinTolerance: boolean;
+  tolerance: number;
+};
+
+function percentile(values: number[], ratio: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  const clamped = Math.min(1, Math.max(0, ratio));
+  const index = Math.floor(clamped * (values.length - 1));
+  return values[index];
+}
+
+function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
+  const rng = createDeterministicRng(`${seed}:${runs}`);
+  const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const safetyMarginFraction = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
+  const marginGw = capturedGw * safetyMarginFraction;
+
+  const samples: number[] = [];
+  let breaches = 0;
+  let maxGw = 0;
+  let totalGw = 0;
+
+  for (let iteration = 0; iteration < runs; iteration += 1) {
+    let civilisationDemandGw = 0;
+    for (const federation of manifest.federations) {
+      const baseAvailability = federation.energy.availableGw;
+      const computeIntensityGw = federation.compute.exaflops * 12; // heuristic: 12 GW per EF
+      const renewablePenalty = (1 - Math.min(1, federation.energy.renewablePct)) * 0.1;
+      const latencyPenalty = Math.min(0.15, federation.energy.latencyMs / 120_000);
+      const stochasticShift = (rng() - 0.5) * 0.2; // ±10%
+      const storageRelief = Math.min(federation.energy.storageGwh / 24, baseAvailability * 0.2);
+
+      const regionalDemand = Math.max(
+        0,
+        (baseAvailability + computeIntensityGw) * (1 + renewablePenalty + latencyPenalty + stochasticShift) - storageRelief
+      );
+      civilisationDemandGw += regionalDemand;
+    }
+
+    const bufferRemaining = capturedGw - civilisationDemandGw;
+    if (bufferRemaining < marginGw) {
+      breaches += 1;
+    }
+    if (civilisationDemandGw > maxGw) {
+      maxGw = civilisationDemandGw;
+    }
+    samples.push(civilisationDemandGw);
+    totalGw += civilisationDemandGw;
+  }
+
+  samples.sort((a, b) => a - b);
+  const breachProbability = breaches / runs;
+  const averageGw = samples.length === 0 ? 0 : totalGw / samples.length;
+
+  return {
+    runs,
+    breachProbability,
+    percentileGw: {
+      p50: percentile(samples, 0.5),
+      p95: percentile(samples, 0.95),
+      p99: percentile(samples, 0.99),
+    },
+    maxGw,
+    averageGw,
+    withinTolerance: breachProbability <= 0.01,
+    tolerance: 0.01,
+  };
+}
 
 function loadManifest(): { manifest: Manifest; raw: string } {
   const raw = readFileSync(CONFIG_PATH, "utf8");
@@ -1168,6 +1259,16 @@ function buildRunbook(
   lines.push(`* Captured GW (Dyson baseline): ${telemetry.energy.capturedGw.toLocaleString()} GW.`);
   lines.push(`* Utilisation: ${(telemetry.energy.utilisationPct * 100).toFixed(2)}% (margin ${telemetry.energy.marginPct.toFixed(2)}%).`);
   lines.push(`* Regional availability: ${telemetry.energy.regional.map((r: any) => `${r.slug} ${r.availableGw} GW`).join(" · ")}.`);
+  lines.push(
+    `* Monte Carlo breach probability ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (runs ${
+      telemetry.energy.monteCarlo.runs
+    }, tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`
+  );
+  lines.push(
+    `* Demand percentiles: P95 ${telemetry.energy.monteCarlo.percentileGw.p95.toLocaleString()} GW · P99 ${
+      telemetry.energy.monteCarlo.percentileGw.p99.toLocaleString()
+    } GW.`
+  );
   if (telemetry.energy.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.energy.warnings.join("; ")}`);
   }
@@ -1268,6 +1369,11 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   lines.push("## Verification status");
   lines.push(
     `* Energy models (${telemetry.verification.energyModels.expected.join(", ")}) aligned: ${telemetry.verification.energyModels.withinMargin}`
+  );
+  lines.push(
+    `* Monte Carlo breach ${(telemetry.verification.energyMonteCarlo.breachProbability * 100).toFixed(2)}% (≤ ${
+      telemetry.verification.energyMonteCarlo.tolerance * 100
+    }% tolerance): ${telemetry.verification.energyMonteCarlo.withinTolerance}`
   );
   lines.push(
     `* Compute deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (tolerance ${telemetry.verification.compute.tolerancePct}%): ${telemetry.verification.compute.withinTolerance}`
@@ -1380,6 +1486,13 @@ function computeTelemetry(
   }
   if (dysonYield < capturedGw) {
     energyWarnings.push("Dyson programme yield below captured baseline");
+  }
+
+  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
+  if (!energyMonteCarlo.withinTolerance) {
+    energyWarnings.push(
+      `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
+    );
   }
 
   const thermostatBudgetGw =
@@ -1580,6 +1693,7 @@ function computeTelemetry(
         thermostatBudgetGw,
         withinMargin: energyAgreementWithinMargin,
       },
+      monteCarlo: energyMonteCarlo,
     },
     compute: {
       totalAgents: manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0),
@@ -1655,6 +1769,13 @@ function computeTelemetry(
         },
         withinMargin: energyAgreementWithinMargin,
       },
+      energyMonteCarlo: {
+        runs: energyMonteCarlo.runs,
+        breachProbability: energyMonteCarlo.breachProbability,
+        tolerance: energyMonteCarlo.tolerance,
+        withinTolerance: energyMonteCarlo.withinTolerance,
+        percentileGw: energyMonteCarlo.percentileGw,
+      },
       compute: {
         tolerancePct: manifest.verificationProtocols.computeTolerancePct,
         deviationPct: computeDeviationPct,
@@ -1717,6 +1838,7 @@ function buildStabilityLedger(
   const redundantFlags = [
     telemetry.energy.tripleCheck,
     telemetry.verification.energyModels.withinMargin,
+    telemetry.energy.monteCarlo.withinTolerance,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
     telemetry.identity.withinQuorum,
@@ -1789,6 +1911,14 @@ function buildStabilityLedger(
       status: telemetry.energy.tripleCheck && telemetry.verification.energyModels.withinMargin,
       weight: 1.1,
       evidence: `regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW · Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW · thermostat ${telemetry.energy.models.thermostatBudgetGw.toLocaleString()} GW`,
+    },
+    {
+      id: "energy-monte-carlo",
+      title: "Monte Carlo breach ≤ tolerance",
+      severity: "critical",
+      status: telemetry.energy.monteCarlo.withinTolerance,
+      weight: 1,
+      evidence: `breach ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (runs ${telemetry.energy.monteCarlo.runs})`,
     },
     {
       id: "energy-margin",
@@ -1905,6 +2035,11 @@ function buildStabilityLedger(
           explanation: "Remaining Dyson thermostat buffer relative to configured safety margin.",
         },
         {
+          method: "monte-carlo",
+          score: telemetry.energy.monteCarlo.withinTolerance ? 1 : Math.max(0, 1 - telemetry.energy.monteCarlo.breachProbability / telemetry.energy.monteCarlo.tolerance),
+          explanation: `Energy breach probability ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% across ${telemetry.energy.monteCarlo.runs} simulations (tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`,
+        },
+        {
           method: "scenario-sweep",
           score: scenarioConfidence,
           explanation: "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors.",
@@ -1964,6 +2099,8 @@ function buildStabilityLedger(
       bridgeFailsafeSeconds: manifest.dysonProgram.safety.failsafeLatencySeconds,
       permittedUtilisation,
       utilisation,
+      monteCarloBreachProbability: telemetry.energy.monteCarlo.breachProbability,
+      monteCarloWithinTolerance: telemetry.energy.monteCarlo.withinTolerance,
     },
   };
 }
@@ -2048,12 +2185,14 @@ function run() {
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
   const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
+  const monteCarloJson = `${JSON.stringify(telemetry.energy.monteCarlo, null, 2)}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
     { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
     { path: join(OUTPUT_DIR, "kardashev-scenario-sweep.json"), content: scenariosJson },
+    { path: join(OUTPUT_DIR, "kardashev-monte-carlo.json"), content: monteCarloJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
@@ -2091,6 +2230,9 @@ function run() {
     `   Energy models aligned: ${telemetry.verification.energyModels.withinMargin} (regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW vs Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW).`
   );
   console.log(
+    `   Energy Monte Carlo breach probability: ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`
+  );
+  console.log(
     `   Compute deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (tolerance ${telemetry.verification.compute.tolerancePct}%).`
   );
   console.log(
@@ -2126,6 +2268,9 @@ function run() {
     console.log(` - Plan hash matches: ${telemetry.manifest.planHashMatches}`);
     console.log(` - Guardian coverage ok: ${telemetry.governance.coverageOk}`);
     console.log(` - Energy triple check: ${telemetry.energy.tripleCheck}`);
+    console.log(
+      ` - Monte Carlo breach within tolerance: ${telemetry.energy.monteCarlo.withinTolerance} (breach ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% ≤ ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%)`
+    );
     console.log(` - Bridges within failsafe: ${Object.entries(telemetry.bridges)
       .map(([name, data]) => `${name}=${data.withinFailsafe}`)
       .join(", ")}`);
@@ -2148,6 +2293,7 @@ function run() {
       ownerProof.pauseEmbedding.unpauseAll,
       ownerProof.verification.unstoppableScore >= 0.95,
       telemetry.energy.tripleCheck,
+      telemetry.energy.monteCarlo.withinTolerance,
       ...Object.values(telemetry.bridges).map((b: any) => b.withinFailsafe),
       scenarioSweep.length === 0 || scenarioSweep.every((scenario) => scenario.status !== "critical"),
     ].some((flag) => !flag);

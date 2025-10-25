@@ -18,6 +18,8 @@
 * Captured GW (Dyson baseline): 420,000 GW.
 * Utilisation: 57.62% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
+* Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
+* Demand percentiles: P95 251,695.495 GW · P99 255,130.151 GW.
 
 ---
 
