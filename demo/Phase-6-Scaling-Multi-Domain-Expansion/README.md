@@ -31,17 +31,25 @@
    * Layer-2 bridge plans synthesized from the config and the on-chain ABI.
    * A ready-to-copy mermaid system diagram and runtime routing commentary from the Python orchestrator.
    * Encoded `setSystemPause` / `setEscalationBridge` transactions so governance can pivot or halt instantly.
-3. **Produce a governance-ready Markdown runbook** (optional):
+3. **Simulate IoT + external system signals (hands-off preview)**:
+   ```bash
+   npm run demo:phase6:iot
+   ```
+   * Streams a console storyboard showing how the runtime routes finance, health, logistics, climate, and education events.
+   * Provides guard-rail summaries (staking floors, circuit breakers, human validation flags) per event.
+   * Outputs Layer-2 bridge plans and autopilot cadences; append `-- --json iot-report.json` for machine-readable export.
+   * Point to your own feed with `-- --events my-events.json` to dry-run enterprise telemetry without editing the repo.
+4. **Produce a governance-ready Markdown runbook** (optional):
    ```bash
    npm run demo:phase6:runbook -- --output phase6-runbook.md
    ```
    The output file bundles the executive summary, emergency calldata, per-domain guard rails, decentralized infra mesh, and the mermaid map for instant stakeholder distribution.
-4. **Verify readiness in CI** (runs automatically, can be triggered locally):
+5. **Verify readiness in CI** (runs automatically, can be triggered locally):
    ```bash
    npm run demo:phase6:ci
    ```
    The script validates JSON schema, address hygiene, ABI sync, and UI artifacts before the CI job signs off.
-5. **Push the manifest on-chain (dry-run by default)**:
+6. **Push the manifest on-chain (dry-run by default)**:
    ```bash
    npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager>
    ```
