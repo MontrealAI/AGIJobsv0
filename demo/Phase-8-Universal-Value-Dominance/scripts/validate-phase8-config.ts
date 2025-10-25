@@ -11,6 +11,7 @@ const README = join(__dirname, "..", "README.md");
 const OUTPUT_DIR = join(__dirname, "..", "output");
 const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
 const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
+const CHECKLIST = join(OUTPUT_DIR, "phase8-governance-checklist.md");
 const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
 const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
 const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
@@ -389,6 +390,7 @@ function main() {
     "phase8-mermaid-diagram.mmd",
     "phase8-orchestration-report.txt",
     "phase8-governance-directives.md",
+    "phase8-governance-checklist.md",
     "phase8-self-improvement-plan.json",
     "phase8-cycle-report.csv",
     "phase8-dominance-scorecard.json",
@@ -407,6 +409,14 @@ function main() {
   const directives = readFileSync(DIRECTIVES, "utf-8");
   if (!directives.includes("Immediate directives") || !directives.includes("Oversight priorities")) {
     throw new Error("Governance directives must include Immediate directives and Oversight priorities sections.");
+  }
+
+  if (!existsSync(CHECKLIST)) {
+    throw new Error("Governance checklist file missing. Run npm run demo:phase8:orchestrate to regenerate outputs.");
+  }
+  const checklist = readFileSync(CHECKLIST, "utf-8");
+  if (!checklist.includes("Governance Execution Checklist") || !checklist.includes("Execution order")) {
+    throw new Error("Governance checklist must include Execution order guidance for guardians.");
   }
 
   if (!existsSync(SCORECARD)) {
