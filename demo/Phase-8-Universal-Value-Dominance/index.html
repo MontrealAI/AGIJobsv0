@@ -398,6 +398,125 @@
         box-shadow: 0 22px 42px rgba(5, 12, 22, 0.35);
       }
 
+      .protocol-grid {
+        display: grid;
+        gap: 1.75rem;
+      }
+
+      .protocol-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        margin: 0 0 1.5rem;
+      }
+
+      .protocol-summary__metric {
+        display: grid;
+        gap: 0.35rem;
+        min-width: 180px;
+      }
+
+      .protocol-summary__label {
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .protocol-summary__value {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+
+      .protocol-card {
+        background: rgba(15, 35, 68, 0.75);
+        border: 1px solid rgba(108, 192, 255, 0.25);
+        border-radius: 20px;
+        padding: 1.75rem 2rem;
+        display: grid;
+        gap: 1rem;
+        box-shadow: inset 0 0 0 1px rgba(90, 210, 255, 0.06);
+      }
+
+      .protocol-card h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .protocol-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .protocol-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(108, 192, 255, 0.25);
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: rgba(8, 28, 58, 0.65);
+      }
+
+      .protocol-chip[data-level="CRITICAL"] {
+        border-color: rgba(255, 107, 107, 0.6);
+        color: var(--critical);
+      }
+
+      .protocol-chip[data-level="HIGH"] {
+        border-color: rgba(255, 196, 0, 0.6);
+        color: var(--warning);
+      }
+
+      .protocol-chip[data-level="MEDIUM"] {
+        border-color: rgba(90, 210, 255, 0.45);
+      }
+
+      .protocol-chip[data-level="LOW"] {
+        border-color: rgba(125, 255, 202, 0.4);
+      }
+
+      .protocol-card dl {
+        margin: 0;
+        display: grid;
+        gap: 0.5rem;
+        color: var(--muted);
+      }
+
+      .protocol-card dt {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.8rem;
+        color: var(--accent);
+      }
+
+      .protocol-card dd {
+        margin: 0;
+        font-size: 0.95rem;
+      }
+
+      .section-hint {
+        margin: 0 0 1.5rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .protocol-list {
+        margin: 0;
+        padding-left: 1.25rem;
+        display: grid;
+        gap: 0.3rem;
+        color: var(--text);
+      }
+
       section h2 {
         margin: 0 0 1.5rem;
         text-transform: uppercase;
@@ -1089,6 +1208,10 @@
         <h2 id="playbooks-heading" data-i18n-key="headings.playbooks">Self-Improvement Kernel</h2>
         <div class="playbook-list" id="playbooks"></div>
       </section>
+      <section aria-labelledby="protocols-heading">
+        <h2 id="protocols-heading" data-i18n-key="headings.protocols">Guardian Response Protocols</h2>
+        <div class="protocol-grid" id="protocols"></div>
+      </section>
       <section aria-labelledby="emergency-heading">
         <h2 id="emergency-heading" data-i18n-key="headings.emergency">Emergency Overrides</h2>
         <div class="emergency-grid" id="emergency"></div>
@@ -1161,6 +1284,7 @@
           sentinels: "Sentinel Lattice",
           streams: "Capital Streams",
           playbooks: "Self-Improvement Kernel",
+          protocols: "Guardian Response Protocols",
           emergency: "Emergency Overrides",
           actions: "Governance Action Deck",
           mermaid: "Mermaid · Universal Value Mesh",
@@ -1203,6 +1327,29 @@
           toggleExpand: "Show full calldata",
           toggleCollapse: "Collapse calldata",
           missing: "Emergency overrides pack unavailable — rerun the orchestrator to regenerate calldata.",
+        },
+        protocols: {
+          heading: "Guardian response protocols",
+          description: "Hard-coded guardian scenarios that describe how to pause, stabilize, and communicate during incidents.",
+          stats: {
+            count: "Protocols",
+            coverage: "Coverage",
+            severity: "Severity posture",
+            coverageSuffix: "coverage",
+          },
+          labels: {
+            trigger: "Trigger",
+            severity: "Severity",
+            guardians: "Guardians",
+            domains: "Domains",
+            immediate: "Immediate actions",
+            stabilization: "Stabilization",
+            communications: "Communications",
+            success: "Success criteria",
+            allGuardians: "All sentinels",
+            allDomains: "All dominions",
+          },
+          empty: "No guardian response protocols configured — drop a manifest with guardianProtocols defined.",
         },
         runbook: {
           tooltipAria: "Show additional guidance for step {step}",
@@ -1593,6 +1740,7 @@
         domains: [],
         sentinels: [],
         capitalStreams: [],
+        guardianProtocols: [],
         selfImprovement: {
           plan: null,
           playbooks: [],
@@ -1751,6 +1899,7 @@
         { target: "#sentinels", renderer: renderSentinels },
         { target: "#streams", renderer: renderStreams },
         { target: "#playbooks", renderer: renderPlaybooks },
+        { target: "#protocols", renderer: renderProtocols },
         { target: "#emergency", renderer: renderEmergency },
         { target: "#actions", renderer: renderActionDeck },
         { target: "#runbook", renderer: renderRunbook },
@@ -1825,6 +1974,15 @@
 
       const formatPercent = (value) => `${(toNumber(value, 0) * 100).toFixed(1)}%`;
 
+      const severityWeights = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+
+      const severityDescriptor = (score) => {
+        if (score >= 0.875) return "CRITICAL";
+        if (score >= 0.65) return "HIGH";
+        if (score >= 0.45) return "MEDIUM";
+        return "LOW";
+      };
+
       const truncateHex = (value) => {
         if (!value) return "—";
         const hex = String(value);
@@ -1877,6 +2035,7 @@
         const domains = asArray(manifest.domains);
         const sentinels = asArray(manifest.sentinels);
         const streams = asArray(manifest.capitalStreams);
+        const protocols = asArray(manifest.guardianProtocols);
         const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
 
         const coverageMap = new Map();
@@ -1917,6 +2076,10 @@
         let coveredDomains = 0;
         let fundedDomains = 0;
         let minFundingUSD = domains.length ? Number.POSITIVE_INFINITY : 0;
+        const severityWeights = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+        const domainSlugSet = new Set(domainSlugs.map((slug) => String(slug ?? "").toLowerCase()));
+        const protocolCoverageSet = new Set();
+        let protocolSeverityTotal = 0;
         for (const domain of domains) {
           const key = String(domain.slug ?? "").toLowerCase();
           const coverageSeconds = coverageMap.get(key) || 0;
@@ -1932,11 +2095,28 @@
             minFundingUSD = fundingUSD;
           }
         }
+        for (const protocol of protocols) {
+          const severityKey = String(protocol?.severity ?? "high").toLowerCase();
+          protocolSeverityTotal += severityWeights[severityKey] ?? severityWeights.high;
+          const domainRefs = Array.from(
+            new Set(asArray(protocol?.linkedDomains).map((entry) => String(entry || "").toLowerCase()).filter(Boolean)),
+          );
+          const targets = domainRefs.length > 0 ? domainRefs : Array.from(domainSlugSet.values());
+          for (const target of targets) {
+            if (!target || !domainSlugSet.has(target)) continue;
+            protocolCoverageSet.add(target);
+          }
+        }
         const averageCoverageSeconds = domains.length ? totalCoverageSeconds / domains.length : 0;
         const guardianWindowSeconds = toNumber(manifest.global?.guardianReviewWindow, 0);
         const maxAutonomy = domains.reduce((acc, domain) => Math.max(acc, toNumber(domain.autonomyLevelBps, 0)), 0);
         const autonomyCap = toNumber(manifest.selfImprovement?.autonomyGuards?.maxAutonomyBps, 0);
         const cadenceSeconds = toNumber(manifest.selfImprovement?.plan?.cadenceSeconds, 0);
+        const protocolCoverageRatio = domains.length ? protocolCoverageSet.size / domains.length : 0;
+        const protocolSeverityScore = protocols.length ? protocolSeverityTotal / protocols.length : 0;
+        const protocolCoverageGaps = domains.filter(
+          (domain) => !protocolCoverageSet.has(String(domain.slug ?? "").toLowerCase()),
+        );
         const dominanceScore = computeDominanceScore({
           totalMonthlyUSD: totalMonthly,
           averageResilience,
@@ -2001,6 +2181,21 @@
             description: `Dominance score ${dominanceScore.toFixed(1)} / 100 — review autonomy caps, sentinel cadence, and domain resilience.`,
           });
         }
+        if (!protocols.length) {
+          alerts.push({
+            level: "warning",
+            title: "Guardian response protocols missing",
+            description: "Define guardianProtocols scenarios so guardians have codified incident playbooks.",
+          });
+        } else if (protocolCoverageGaps.length) {
+          alerts.push({
+            level: "warning",
+            title: "Dominions missing guardian response protocols",
+            description: `Assign guardianProtocols coverage to: ${protocolCoverageGaps
+              .map((domain) => domain.name || domain.slug)
+              .join(", ")}.`,
+          });
+        }
 
         return {
           coverageMap,
@@ -2008,6 +2203,8 @@
           streamBindings,
           uncoveredDomains,
           unfundedDomains,
+          protocolCoverageSet,
+          protocolCoverageGaps,
           totals: {
             totalMonthly,
             annualBudget,
@@ -2022,6 +2219,9 @@
             autonomyCap,
             cadenceSeconds,
             minDomainFundingUSD: Number.isFinite(minFundingUSD) ? minFundingUSD : 0,
+            guardianProtocolCount: protocols.length,
+            guardianProtocolCoverageRatio: protocolCoverageRatio,
+            guardianProtocolSeverityScore: protocolSeverityScore,
           },
           alerts,
         };
@@ -2291,6 +2491,24 @@
           });
         }
 
+        const protocolCount = asArray(manifest.guardianProtocols).length;
+        if (protocolCount) {
+          const coveragePercent = `${(toNumber(context.totals.guardianProtocolCoverageRatio, 0) * 100).toFixed(1)}%`;
+          const severityScore = toNumber(context.totals.guardianProtocolSeverityScore, 0);
+          const severityLabel = severityDescriptor(severityScore);
+          const severityPercent = `${Math.round(severityScore * 100)}%`;
+          stats.push({
+            key: "guardian-protocols",
+            label: t("protocols.stats.count"),
+            value: `${protocolCount} · ${coveragePercent} ${t("protocols.stats.coverageSuffix")}`,
+          });
+          stats.push({
+            key: "guardian-protocol-severity",
+            label: t("protocols.stats.severity"),
+            value: `${severityLabel} · ${severityPercent}`,
+          });
+        }
+
         container.innerHTML = stats
           .map(
             (item) => `
@@ -2440,6 +2658,128 @@
             `,
           )
           .join("");
+      }
+
+      function renderProtocols(container, manifest, context) {
+        if (!container) return;
+        const protocols = asArray(manifest.guardianProtocols);
+        if (!protocols.length) {
+          container.innerHTML = `<p data-i18n-key="protocols.empty">${t("protocols.empty")}</p>`;
+          return;
+        }
+
+        const sentinelLookup = new Map();
+        for (const sentinel of asArray(manifest.sentinels)) {
+          const slug = String(sentinel?.slug ?? "").toLowerCase();
+          if (!slug) continue;
+          sentinelLookup.set(slug, sentinel?.name || sentinel?.slug || slug);
+        }
+
+        const domainLookup = new Map();
+        for (const domain of asArray(manifest.domains)) {
+          const slug = String(domain?.slug ?? "").toLowerCase();
+          if (!slug) continue;
+          domainLookup.set(slug, domain?.name || domain?.slug || slug);
+        }
+
+        const severityWeights = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+        const totals = context?.totals ?? {};
+        const coverageRatio = Number(totals.guardianProtocolCoverageRatio ?? 0);
+        const severityScore = Number(totals.guardianProtocolSeverityScore ?? 0);
+        const severityLevel = severityDescriptor(severityScore);
+        const severityPercent = `${Math.round(severityScore * 100)}%`;
+        const coveragePercent = `${(coverageRatio * 100).toFixed(1)}%`;
+
+        const descriptionMarkup = `<p class="section-hint" data-i18n-key="protocols.description">${t(
+          "protocols.description",
+        )}</p>`;
+        const summaryMarkup = `
+          <div class="protocol-summary" data-test-id="protocol-summary">
+            <div class="protocol-summary__metric" data-metric="count">
+              <span class="protocol-summary__label" data-i18n-key="protocols.stats.count">${t("protocols.stats.count")}</span>
+              <span class="protocol-summary__value">${protocols.length}</span>
+            </div>
+            <div class="protocol-summary__metric" data-metric="coverage">
+              <span class="protocol-summary__label" data-i18n-key="protocols.stats.coverage">${t(
+                "protocols.stats.coverage",
+              )}</span>
+              <span class="protocol-summary__value">${coveragePercent}</span>
+            </div>
+            <div class="protocol-summary__metric" data-metric="severity">
+              <span class="protocol-summary__label" data-i18n-key="protocols.stats.severity">${t(
+                "protocols.stats.severity",
+              )}</span>
+              <span class="protocol-summary__value" data-level="${severityLevel}">${severityLevel} · ${severityPercent}</span>
+            </div>
+          </div>
+        `;
+
+        const cards = protocols
+          .map((protocol, index) => {
+            const rawSeverity = String(protocol?.severity ?? "high").toLowerCase();
+            const severityWeight = severityWeights[rawSeverity] ?? severityWeights.high;
+            const severityLabel = severityDescriptor(severityWeight);
+            const sentinelList = asArray(protocol?.linkedSentinels)
+              .map((slug) => {
+                const key = String(slug ?? "").toLowerCase();
+                return sentinelLookup.get(key) || slug || key || t("protocols.labels.allGuardians");
+              })
+              .filter(Boolean);
+            const domainList = asArray(protocol?.linkedDomains)
+              .map((slug) => {
+                const key = String(slug ?? "").toLowerCase();
+                return domainLookup.get(key) || slug || key || t("protocols.labels.allDomains");
+              })
+              .filter(Boolean);
+            const guardiansDisplay = sentinelList.length
+              ? sentinelList.join(" · ")
+              : t("protocols.labels.allGuardians");
+            const domainsDisplay = domainList.length ? domainList.join(" · ") : t("protocols.labels.allDomains");
+            const immediateActions = asArray(protocol?.immediateActions)
+              .map((action) => `<li>${escapeHtml(action)}</li>`)
+              .join("");
+            const stabilizationActions = asArray(protocol?.stabilizationActions)
+              .map((action) => `<li>${escapeHtml(action)}</li>`)
+              .join("");
+            const communications = asArray(protocol?.communications)
+              .map((step) => `<li>${escapeHtml(step)}</li>`)
+              .join("");
+            const successCriteria = asArray(protocol?.successCriteria)
+              .map((entry) => `<li>${escapeHtml(entry)}</li>`)
+              .join("");
+
+            const successMarkup = successCriteria
+              ? `
+                  <dt data-i18n-key="protocols.labels.success">${t("protocols.labels.success")}</dt>
+                  <dd><ul class="protocol-list">${successCriteria}</ul></dd>
+                `
+              : "";
+
+            return `
+              <article class="protocol-card" data-test-id="protocol-card" data-protocol-index="${index}">
+                <h3>${escapeHtml(protocol?.scenario || `Protocol ${index + 1}`)}</h3>
+                <div class="protocol-meta">
+                  <span class="protocol-chip" data-level="${severityLabel}">${t("protocols.labels.severity")}: ${severityLabel}</span>
+                  <span class="protocol-chip">${t("protocols.labels.guardians")}: ${escapeHtml(guardiansDisplay)}</span>
+                  <span class="protocol-chip">${t("protocols.labels.domains")}: ${escapeHtml(domainsDisplay)}</span>
+                </div>
+                <dl>
+                  <dt data-i18n-key="protocols.labels.trigger">${t("protocols.labels.trigger")}</dt>
+                  <dd>${escapeHtml(protocol?.trigger || "—")}</dd>
+                  <dt data-i18n-key="protocols.labels.immediate">${t("protocols.labels.immediate")}</dt>
+                  <dd><ul class="protocol-list">${immediateActions}</ul></dd>
+                  <dt data-i18n-key="protocols.labels.stabilization">${t("protocols.labels.stabilization")}</dt>
+                  <dd><ul class="protocol-list">${stabilizationActions}</ul></dd>
+                  <dt data-i18n-key="protocols.labels.communications">${t("protocols.labels.communications")}</dt>
+                  <dd><ul class="protocol-list">${communications}</ul></dd>
+                  ${successMarkup}
+                </dl>
+              </article>
+            `;
+          })
+          .join("");
+
+        container.innerHTML = `${descriptionMarkup}${summaryMarkup}${cards}`;
       }
 
       function renderDomains(container, manifest, context) {

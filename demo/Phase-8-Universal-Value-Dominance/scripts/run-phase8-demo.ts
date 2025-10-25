@@ -194,6 +194,32 @@ const StreamSchema = z.object({
   active: z.boolean().default(true),
 });
 
+const GuardianProtocolSchema = z.object({
+  scenario: z.string({ required_error: "Guardian protocol scenario is required" }).min(1, "Guardian protocol scenario is required"),
+  severity: z
+    .enum(["critical", "high", "medium", "low"], {
+      required_error: "Guardian protocol severity must be provided",
+      invalid_type_error: "Guardian protocol severity must be critical, high, medium, or low",
+    })
+    .default("high"),
+  trigger: z.string({ required_error: "Guardian protocol trigger is required" }).min(1, "Guardian protocol trigger is required"),
+  linkedSentinels: z.array(z.string()).default([]),
+  linkedDomains: z.array(z.string()).default([]),
+  immediateActions: z
+    .array(z.string({ required_error: "Guardian protocol immediate action is required" }).min(1, "Guardian protocol immediate action is required"))
+    .min(1, "Guardian protocol requires at least one immediate action"),
+  stabilizationActions: z
+    .array(z.string({ required_error: "Guardian protocol stabilization action is required" }).min(1, "Guardian protocol stabilization action is required"))
+    .min(1, "Guardian protocol requires at least one stabilization action"),
+  communications: z
+    .array(z.string({ required_error: "Guardian protocol communication step is required" }).min(1, "Guardian protocol communication step is required"))
+    .min(1, "Guardian protocol requires at least one communications step"),
+  successCriteria: z
+    .array(z.string({ required_error: "Guardian protocol success criteria entry is required" }).min(1, "Guardian protocol success criteria entry is required"))
+    .min(1)
+    .optional(),
+});
+
 const KernelChecksumSchema = z.object({
   algorithm: z
     .string({ required_error: "Guardrail checksum algorithm is required" })
@@ -311,6 +337,7 @@ const ManifestSchema = z
     domains: z.array(DomainSchema).default([]),
     sentinels: z.array(SentinelSchema).default([]),
     capitalStreams: z.array(StreamSchema).default([]),
+    guardianProtocols: z.array(GuardianProtocolSchema).default([]),
     selfImprovement: SelfImprovementSchema.optional(),
   })
   .superRefine((value, ctx) => {
@@ -453,6 +480,57 @@ const ManifestSchema = z
           path: ["sentinels"],
         });
       }
+    }
+
+    const protocolCoverage = new Map<string, number>();
+    const protocols = value.guardianProtocols ?? [];
+    protocols.forEach((protocol, index) => {
+      const sentinelRefs = Array.from(
+        new Set((protocol.linkedSentinels ?? []).map((entry) => String(entry || "").toLowerCase()).filter(Boolean)),
+      );
+      const domainRefs = Array.from(
+        new Set((protocol.linkedDomains ?? []).map((entry) => String(entry || "").toLowerCase()).filter(Boolean)),
+      );
+
+      if (!sentinelRefs.length && !domainRefs.length) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Guardian protocol must target at least one sentinel or domain",
+          path: ["guardianProtocols", index, "linkedDomains"],
+        });
+      }
+
+      for (const sentinelSlug of sentinelRefs) {
+        if (!sentinelSlugMap.has(sentinelSlug)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Guardian protocol ${protocol.scenario} references unknown sentinel ${sentinelSlug}`,
+            path: ["guardianProtocols", index, "linkedSentinels"],
+          });
+        }
+      }
+
+      const targets = domainRefs.length > 0 ? domainRefs : domainSlugs;
+      for (const target of targets) {
+        if (!domainSlugMap.has(target)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Guardian protocol ${protocol.scenario} references unknown domain ${target}`,
+            path: ["guardianProtocols", index, "linkedDomains"],
+          });
+          continue;
+        }
+        protocolCoverage.set(target, (protocolCoverage.get(target) ?? 0) + 1);
+      }
+    });
+
+    const missingProtocols = domainSlugs.filter((slug) => (protocolCoverage.get(slug) ?? 0) === 0);
+    if (missingProtocols.length > 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `All domains require at least one guardian response protocol — missing coverage for: ${missingProtocols.join(", ")}`,
+        path: ["guardianProtocols"],
+      });
     }
   });
 
@@ -723,25 +801,35 @@ export function computeMetrics(config: Phase8Config) {
   const domains = config.domains ?? [];
   const sentinels = config.sentinels ?? [];
   const streams = config.capitalStreams ?? [];
+  const protocols = config.guardianProtocols ?? [];
   const plan = config.selfImprovement?.plan ?? {};
+
   const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
   const domainCoverageMap = coverageMap(sentinels, domainSlugs);
   const domainFundingMap = capitalCoverageMap(streams, domainSlugs);
-  const totalMonthlyUSD = domains.reduce((acc: number, d: any) => acc + Number(d.valueFlowMonthlyUSD ?? 0), 0);
-  const maxAutonomy = domains.reduce((acc: number, d: any) => Math.max(acc, Number(d.autonomyLevelBps ?? 0)), 0);
+
+  const totalMonthlyUSD = domains.reduce((acc: number, domain: any) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
+  const maxAutonomy = domains.reduce((acc: number, domain: any) => Math.max(acc, Number(domain.autonomyLevelBps ?? 0)), 0);
   const averageResilience =
     domains.length === 0
       ? 0
-      : domains.reduce((acc: number, d: any) => acc + Number(d.resilienceIndex ?? 0), 0) / domains.length;
-  const guardianCoverageMinutes = sentinels.reduce((acc: number, s: any) => acc + Number(s.coverageSeconds ?? 0), 0) / 60;
-  const annualBudget = streams.reduce((acc: number, s: any) => acc + Number(s.annualBudget ?? 0), 0);
+      : domains.reduce((acc: number, domain: any) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length;
+  const guardianCoverageMinutes = sentinels.reduce((acc: number, sentinel: any) => acc + Number(sentinel.coverageSeconds ?? 0), 0) / 60;
+  const annualBudget = streams.reduce((acc: number, stream: any) => acc + Number(stream.annualBudget ?? 0), 0);
+
   const coverageSet = new Set<string>();
   const fundedSet = new Set<string>();
+  const protocolCoverageSet = new Set<string>();
+  const severityWeight: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+  let protocolSeverityTotal = 0;
   let totalDomainCoverageSeconds = 0;
   let minDomainCoverageSeconds = domains.length === 0 ? 0 : Number.POSITIVE_INFINITY;
   let minDomainFundingUSD = domains.length === 0 ? 0 : Number.POSITIVE_INFINITY;
+
+  const domainSlugSet = new Set(domainSlugs.map((slug) => String(slug ?? "").toLowerCase()));
+
   for (const slug of domainSlugs) {
-    const normalized = slug.toLowerCase();
+    const normalized = String(slug ?? "").toLowerCase();
     const coverage = domainCoverageMap.get(normalized) ?? 0;
     const funding = domainFundingMap.get(normalized) ?? 0;
     if (coverage > 0) {
@@ -758,22 +846,41 @@ export function computeMetrics(config: Phase8Config) {
       minDomainFundingUSD = funding;
     }
   }
-  const coverageRatio = domains.length === 0 ? 0 : (coverageSet.size / domains.length);
+
+  for (const protocol of protocols) {
+    protocolSeverityTotal += severityWeight[protocol.severity ?? "high"] ?? 0.5;
+    const domainRefs = Array.from(
+      new Set((protocol.linkedDomains ?? []).map((entry) => String(entry || "").toLowerCase()).filter(Boolean)),
+    );
+    const targets = domainRefs.length > 0 ? domainRefs : Array.from(domainSlugSet.values());
+    for (const target of targets) {
+      if (!target || !domainSlugSet.has(target)) continue;
+      protocolCoverageSet.add(target);
+    }
+  }
+
+  const coverageRatio = domains.length === 0 ? 0 : coverageSet.size / domains.length;
   const fundingRatio = domains.length === 0 ? 0 : fundedSet.size / domains.length;
   const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
   const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
+
   if (!Number.isFinite(minDomainCoverageSeconds)) {
     minDomainCoverageSeconds = 0;
   }
   if (!Number.isFinite(minDomainFundingUSD)) {
     minDomainFundingUSD = 0;
   }
+
   const minimumCoverageAdequacy =
     guardianWindowSeconds > 0 && Number.isFinite(minDomainCoverageSeconds)
       ? minDomainCoverageSeconds / guardianWindowSeconds
       : 0;
-  const cadenceHours = Number(plan.cadenceSeconds ?? 0) / 3600;
+
+  const cadenceSeconds = Number(plan.cadenceSeconds ?? 0);
+  const cadenceHours = cadenceSeconds / 3600;
   const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
+  const autonomyGuardCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0);
+
   const dominanceScore = computeDominanceScore({
     totalMonthlyUSD,
     averageResilience,
@@ -781,14 +888,16 @@ export function computeMetrics(config: Phase8Config) {
     averageDomainCoverageSeconds,
     guardianReviewWindowSeconds: guardianWindowSeconds,
     maxAutonomyBps: maxAutonomy,
-    autonomyGuardCapBps: Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0),
-    cadenceSeconds: Number(plan.cadenceSeconds ?? 0),
+    autonomyGuardCapBps: autonomyGuardCap,
+    cadenceSeconds,
   });
+
   const fundingObject: Record<string, number> = {};
   for (const domain of domains) {
     const normalized = String(domain.slug ?? "").toLowerCase();
     fundingObject[normalized] = domainFundingMap.get(normalized) ?? 0;
   }
+
   return {
     totalMonthlyUSD,
     maxAutonomy,
@@ -805,6 +914,9 @@ export function computeMetrics(config: Phase8Config) {
     minDomainCoverageSeconds,
     minimumCoverageAdequacy,
     minDomainFundingUSD,
+    guardianProtocolCount: protocols.length,
+    guardianProtocolCoverageRatio: domains.length === 0 ? 0 : (protocolCoverageSet.size / domains.length) * 100,
+    guardianProtocolSeverityScore: protocols.length === 0 ? 0 : protocolSeverityTotal / protocols.length,
     domainFundingMap: fundingObject,
   };
 }
@@ -815,6 +927,28 @@ function usd(value: number) {
   if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
   if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
   return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+}
+
+function formatSeverity(severity: string | undefined) {
+  switch ((severity ?? "high").toLowerCase()) {
+    case "critical":
+      return "CRITICAL — immediate guardian intervention";
+    case "high":
+      return "HIGH — act within guardian review window";
+    case "medium":
+      return "MEDIUM — monitor closely and prepare overrides";
+    case "low":
+      return "LOW — advisory posture only";
+    default:
+      return `${String(severity ?? "unknown").toUpperCase()} — classify with guardian council`;
+  }
+}
+
+function describeSeverityAverage(score: number) {
+  if (score >= 0.875) return "critical";
+  if (score >= 0.65) return "high";
+  if (score >= 0.45) return "medium";
+  return "low";
 }
 
 function formatAmount(value: any) {
@@ -1057,6 +1191,12 @@ export function telemetryMarkdown(
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
   lines.push(`- Domains with capital funding: ${metrics.fundedDomainRatio.toFixed(1)}%`);
+  lines.push(
+    `- Guardian response protocols: ${metrics.guardianProtocolCount} scenarios covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains`,
+  );
+  lines.push(
+    `- Protocol severity posture: ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()} (${metrics.guardianProtocolSeverityScore.toFixed(2)})`,
+  );
   if (metrics.guardianWindowSeconds) {
     const adequacyPercent = metrics.minimumCoverageAdequacy * 100;
     lines.push(
@@ -1127,6 +1267,33 @@ export function telemetryMarkdown(
     lines.push(
       `- ${stream.name} · ${usd(Number(stream.annualBudget ?? 0))}/yr · expansion ${stream.expansionBps} bps · targets ${(stream.domains || []).join(", ")}`,
     );
+  }
+  lines.push("");
+
+  lines.push(`## Guardian Response Protocols`);
+  if ((config.guardianProtocols ?? []).length === 0) {
+    lines.push("- No guardian response protocols configured — define scenarios to codify emergency playbooks.");
+  } else {
+    let index = 1;
+    for (const protocol of config.guardianProtocols ?? []) {
+      const sentinelList = (protocol.linkedSentinels ?? []).length
+        ? (protocol.linkedSentinels ?? []).join(", ")
+        : "All sentinels";
+      const domainList = (protocol.linkedDomains ?? []).length
+        ? (protocol.linkedDomains ?? []).join(", ")
+        : "All domains";
+      lines.push(`- [${index}] ${protocol.scenario} — ${formatSeverity(protocol.severity)}`);
+      lines.push(`  • Trigger: ${protocol.trigger}`);
+      lines.push(`  • Guardians: ${sentinelList}`);
+      lines.push(`  • Domains: ${domainList}`);
+      lines.push(`  • Immediate actions: ${protocol.immediateActions.join(" | ")}`);
+      lines.push(`  • Stabilization actions: ${protocol.stabilizationActions.join(" | ")}`);
+      lines.push(`  • Communications: ${protocol.communications.join(" | ")}`);
+      if (protocol.successCriteria && protocol.successCriteria.length > 0) {
+        lines.push(`  • Success criteria: ${protocol.successCriteria.join(" | ")}`);
+      }
+      index += 1;
+    }
   }
   lines.push("");
 
@@ -1278,6 +1445,18 @@ function generateOperatorRunbook(
     );
   }
   lines.push("");
+  lines.push("Guardian response protocols:");
+  if ((config.guardianProtocols ?? []).length === 0) {
+    lines.push("• Configure guardianProtocols in the manifest so every dominion has an emergency response script.");
+  } else {
+    lines.push(
+      `• ${config.guardianProtocols.length} playbooks covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (average severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()}).`,
+    );
+    for (const protocol of config.guardianProtocols ?? []) {
+      lines.push(`  - ${protocol.scenario}: ${formatSeverity(protocol.severity)} → ${protocol.trigger}`);
+    }
+  }
+  lines.push("");
   lines.push("Emergency stops:");
   const pauseTarget =
     environment.managerAddress && environment.managerAddress !== ZERO_ADDRESS
@@ -1385,6 +1564,73 @@ function generateCycleReportCsv(
   return `${lines.join("\n")}\n`;
 }
 
+function generateGuardianResponsePlaybook(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  generatedAt: string,
+): string {
+  const sentinelLookup = new Map((config.sentinels ?? []).map((sentinel) => [String(sentinel.slug ?? "").toLowerCase(), sentinel.name ?? sentinel.slug ?? "Sentinel"]));
+  const domainLookup = new Map((config.domains ?? []).map((domain) => [String(domain.slug ?? "").toLowerCase(), domain.name ?? domain.slug ?? "Domain"]));
+  const protocols = config.guardianProtocols ?? [];
+
+  const lines: string[] = [];
+  lines.push("# Phase 8 — Guardian Response Playbook");
+  lines.push(`Generated: ${generatedAt}`);
+  lines.push("");
+  lines.push("## Protocol posture");
+  lines.push(`- Protocols defined: ${protocols.length}`);
+  lines.push(`- Domain coverage: ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains secured by response plans`);
+  const severityDescriptor = describeSeverityAverage(metrics.guardianProtocolSeverityScore ?? 0);
+  lines.push(`- Average severity posture: ${severityDescriptor.toUpperCase()} (${metrics.guardianProtocolSeverityScore.toFixed(2)})`);
+  if (metrics.guardianWindowSeconds) {
+    lines.push(
+      `- Guardian review window: ${metrics.guardianWindowSeconds}s with minimum sentinel coverage ${metrics.minDomainCoverageSeconds.toFixed(0)}s`,
+    );
+  }
+  lines.push("");
+
+  protocols.forEach((protocol, index) => {
+    const sentinelNames = (protocol.linkedSentinels ?? []).map((slug) => sentinelLookup.get(String(slug ?? "").toLowerCase()) ?? slug);
+    const domainNames = (protocol.linkedDomains ?? []).map((slug) => domainLookup.get(String(slug ?? "").toLowerCase()) ?? slug);
+    const guardianLabel = sentinelNames.length > 0 ? sentinelNames.join(" · ") : "All sentinel guardians";
+    const domainLabel = domainNames.length > 0 ? domainNames.join(" · ") : "All domains";
+    lines.push(`## Scenario ${index + 1} — ${protocol.scenario}`);
+    lines.push(`- Severity: ${formatSeverity(protocol.severity)}`);
+    lines.push(`- Trigger condition: ${protocol.trigger}`);
+    lines.push(`- Guardian coverage: ${guardianLabel}`);
+    lines.push(`- Impacted domains: ${domainLabel}`);
+    lines.push("");
+    lines.push("### Immediate actions");
+    protocol.immediateActions.forEach((action, actionIndex) => {
+      lines.push(`${actionIndex + 1}. ${action}`);
+    });
+    lines.push("");
+    lines.push("### Stabilization actions");
+    protocol.stabilizationActions.forEach((action, actionIndex) => {
+      lines.push(`${actionIndex + 1}. ${action}`);
+    });
+    lines.push("");
+    lines.push("### Communications");
+    protocol.communications.forEach((step) => {
+      lines.push(`- ${step}`);
+    });
+    if (protocol.successCriteria && protocol.successCriteria.length > 0) {
+      lines.push("");
+      lines.push("### Success criteria");
+      protocol.successCriteria.forEach((criterion) => {
+        lines.push(`- ${criterion}`);
+      });
+    }
+    lines.push("");
+  });
+
+  if (protocols.length === 0) {
+    lines.push("No guardian response protocols configured — define scenarios in the manifest to unlock automated guardrails.");
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 function generateGovernanceDirectives(
   config: Phase8Config,
   metrics: ReturnType<typeof computeMetrics>,
@@ -1399,6 +1645,12 @@ function generateGovernanceDirectives(
   );
   const sentinelLabels = sentinelNameMap(config);
   const streamLabels = streamNameMap(config);
+  const domainLabels = new Map(
+    (config.domains ?? []).map((domain) => [String(domain.slug ?? "").toLowerCase(), domain.name ?? domain.slug ?? "Domain"]),
+  );
+  const sentinelNameBySlug = new Map(
+    (config.sentinels ?? []).map((sentinel) => [String(sentinel.slug ?? "").toLowerCase(), sentinel.name ?? sentinel.slug ?? "Sentinel"]),
+  );
   const lines: string[] = [];
   lines.push("# Phase 8 — Governance Directives");
   lines.push(`Generated: ${generatedAt}`);
@@ -1459,6 +1711,24 @@ function generateGovernanceDirectives(
   lines.push("- Provide the orchestration report and directives markdown to auditors for immutable records.");
   lines.push("- Archive the telemetry markdown for board-level status updates.");
   lines.push("");
+  lines.push("## Guardian response protocols");
+  if ((config.guardianProtocols ?? []).length === 0) {
+    lines.push("- Configure guardianProtocols in the manifest so every domain has an emergency response script.");
+  } else {
+    lines.push(
+      `- ${config.guardianProtocols.length} protocols active covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (average severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()}).`,
+    );
+    for (const protocol of config.guardianProtocols ?? []) {
+      const sentinelNames = (protocol.linkedSentinels ?? []).map((slug) => sentinelNameBySlug.get(String(slug ?? "").toLowerCase()) ?? slug);
+      const domainNames = (protocol.linkedDomains ?? []).map((slug) => domainLabels.get(String(slug ?? "").toLowerCase()) ?? slug);
+      const guardianSummary = sentinelNames.length ? sentinelNames.join(" · ") : "All sentinels";
+      const domainSummary = domainNames.length ? domainNames.join(" · ") : "All domains";
+      lines.push(
+        `- ${protocol.scenario}: ${formatSeverity(protocol.severity)} · Guardians ${guardianSummary} · Domains ${domainSummary}`,
+      );
+    }
+  }
+  lines.push("");
   lines.push("## Contacts");
   lines.push(shortAddress("Guardian council", config.global?.guardianCouncil));
   lines.push(shortAddress("System pause", config.global?.systemPause));
@@ -1500,6 +1770,10 @@ function generateDominanceScorecard(
       minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
       guardianWindowSeconds: metrics.guardianWindowSeconds,
       minimumCoverageAdequacyPercent: Number((metrics.minimumCoverageAdequacy * 100).toFixed(1)),
+      guardianProtocolCount: metrics.guardianProtocolCount,
+      guardianProtocolCoveragePercent: Number(metrics.guardianProtocolCoverageRatio.toFixed(1)),
+      guardianProtocolSeverityScore: Number(metrics.guardianProtocolSeverityScore.toFixed(2)),
+      guardianProtocolSeverityLevel: describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase(),
     },
     domains: (config.domains ?? []).map((domain) => {
       const slug = String(domain.slug ?? "").toLowerCase();
@@ -1530,6 +1804,17 @@ function generateDominanceScorecard(
       annualBudgetUSD: Number(stream.annualBudget ?? 0),
       expansionBps: Number(stream.expansionBps ?? 0),
       domains: stream.domains ?? [],
+    })),
+    guardianProtocols: (config.guardianProtocols ?? []).map((protocol) => ({
+      scenario: protocol.scenario,
+      severity: protocol.severity,
+      trigger: protocol.trigger,
+      linkedSentinels: protocol.linkedSentinels ?? [],
+      linkedDomains: protocol.linkedDomains ?? [],
+      immediateActions: protocol.immediateActions,
+      stabilizationActions: protocol.stabilizationActions,
+      communications: protocol.communications,
+      successCriteria: protocol.successCriteria ?? [],
     })),
     guardrails: {
       autonomy: config.selfImprovement?.autonomyGuards ?? null,
@@ -1699,6 +1984,9 @@ export function writeArtifacts(
       fundedDomainRatio: metrics.fundedDomainRatio,
       minDomainFundingUSD: metrics.minDomainFundingUSD,
       domainFundingUSD: metrics.domainFundingMap,
+      guardianProtocolCount: metrics.guardianProtocolCount,
+      guardianProtocolCoveragePercent: metrics.guardianProtocolCoverageRatio,
+      guardianProtocolSeverityScore: metrics.guardianProtocolSeverityScore,
     },
     calls: entries,
   };
@@ -1756,6 +2044,9 @@ export function writeArtifacts(
     )}\n`,
   );
 
+  const guardianPlaybookPath = join(outputDir, "phase8-guardian-response-playbook.md");
+  writeFileSync(guardianPlaybookPath, generateGuardianResponsePlaybook(config, metrics, generatedAt));
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
@@ -1767,6 +2058,7 @@ export function writeArtifacts(
     { label: "Governance directives", path: directivesPath },
     { label: "Dominance scorecard", path: scorecardPath },
     { label: "Emergency overrides", path: emergencyOverridesPath },
+    { label: "Guardian response playbook", path: guardianPlaybookPath },
   ];
 }
 
@@ -1831,6 +2123,9 @@ export function main() {
     console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
     console.log(
       `Domains funded by capital streams: ${metrics.fundedDomainRatio.toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
+    );
+    console.log(
+      `Guardian response protocols: ${metrics.guardianProtocolCount} covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()})`,
     );
     console.log(`Maximum encoded autonomy: ${metrics.maxAutonomy} bps`);
     if (metrics.cadenceHours) {
@@ -1901,6 +2196,20 @@ export function main() {
       console.log(
         `  Autonomy guard: ≤${guards.maxAutonomyBps}bps autonomy, override ${guards.humanOverrideMinutes}m, escalation ${(guards.escalationChannels || []).join(" → ")}`
       );
+    }
+
+    banner("Guardian response protocols");
+    if ((config.guardianProtocols ?? []).length === 0) {
+      console.log("  No guardian protocols configured — update guardianProtocols in the manifest to codify emergency actions.");
+    } else {
+      config.guardianProtocols.forEach((protocol, index) => {
+        const sentinels = (protocol.linkedSentinels ?? []).length ? protocol.linkedSentinels?.join(", ") : "all";
+        const domains = (protocol.linkedDomains ?? []).length ? protocol.linkedDomains?.join(", ") : "all";
+        console.log(
+          `  ${index + 1}. ${protocol.scenario} :: ${formatSeverity(protocol.severity)} :: guardians ${sentinels} :: domains ${domains}`,
+        );
+        console.log(`     Trigger → ${protocol.trigger}`);
+      });
     }
 
     banner("Mermaid system map");
