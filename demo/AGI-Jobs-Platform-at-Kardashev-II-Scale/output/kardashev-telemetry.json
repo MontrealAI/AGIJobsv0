@@ -334,5 +334,177 @@
       "allWithinTolerance": true
     },
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
-  }
+  },
+  "scenarioSweep": [
+    {
+      "id": "energy-demand-surge",
+      "title": "20% demand surge vs Dyson safety margin",
+      "status": "nominal",
+      "summary": "Dyson lattice absorbs surge with 129,600 GW spare.",
+      "confidence": 1,
+      "impact": "Thermostat margin remains controllable under surge scenario.",
+      "metrics": [
+        {
+          "label": "Simulated demand",
+          "value": "290,400 GW",
+          "ok": true
+        },
+        {
+          "label": "Remaining buffer",
+          "value": "129,600 GW",
+          "ok": true
+        },
+        {
+          "label": "Thermostat margin",
+          "value": "52,500 GW",
+          "ok": true
+        },
+        {
+          "label": "Utilisation",
+          "value": "69.14%",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Dispatch pause bundle for non-critical Earth workloads.",
+        "Increase stellar thermostat target via setGlobalParameters if surge persists."
+      ]
+    },
+    {
+      "id": "bridge-failover",
+      "title": "Interplanetary bridge outage simulation",
+      "status": "warning",
+      "summary": "Failover latency 113s leaves 8s slack within 120s failsafe.",
+      "confidence": 0.53125,
+      "impact": "Bridge sentries maintain cadence under reroute load.",
+      "metrics": [
+        {
+          "label": "Baseline latency",
+          "value": "90s",
+          "ok": true
+        },
+        {
+          "label": "Failover latency",
+          "value": "113s",
+          "ok": true
+        },
+        {
+          "label": "Failsafe budget",
+          "value": "120s",
+          "ok": true
+        },
+        {
+          "label": "Slack",
+          "value": "8s",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Execute bridge isolation routine from mission directives if slack < 0.",
+        "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
+      ]
+    },
+    {
+      "id": "sentinel-gap",
+      "title": "Sentinel outage (10 min) coverage test",
+      "status": "nominal",
+      "summary": "Guardian window stays protected under sentinel gap.",
+      "confidence": 1,
+      "impact": "Coverage redundancy remains adequate for guardian review cadence.",
+      "metrics": [
+        {
+          "label": "Minimum sentinel coverage",
+          "value": "1800s",
+          "ok": true
+        },
+        {
+          "label": "Simulated coverage",
+          "value": "1200s",
+          "ok": true
+        },
+        {
+          "label": "Guardian window",
+          "value": "900s",
+          "ok": true
+        },
+        {
+          "label": "Coverage ratio",
+          "value": "133.33%",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Register standby sentinel via Safe batch if ratio < 100%.",
+        "Shorten guardian drill cadence until redundancy restored."
+      ]
+    },
+    {
+      "id": "compute-drawdown",
+      "title": "Compute drawdown (15%) resilience",
+      "status": "warning",
+      "summary": "Deviation 14.62% exceeds tolerance 0.75%.",
+      "confidence": 0.35033642480450966,
+      "impact": "Capital streams absorb transient compute reduction.",
+      "metrics": [
+        {
+          "label": "Projected compute",
+          "value": "48.88 EF",
+          "ok": true
+        },
+        {
+          "label": "Stressed compute",
+          "value": "41.73 EF",
+          "ok": false
+        },
+        {
+          "label": "Deviation",
+          "value": "14.62%",
+          "ok": false
+        },
+        {
+          "label": "Tolerance",
+          "value": "0.75%",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Authorise capital stream expansion for orbital compute nodes.",
+        "Notify guardians to ratify temporary autonomy reduction if deviation persists."
+      ]
+    },
+    {
+      "id": "dyson-phase-slip",
+      "title": "Dyson phase slip (30 days)",
+      "status": "nominal",
+      "summary": "Schedule buffer absorbs slip with 490 days remaining.",
+      "confidence": 0.95,
+      "impact": "Swarm cadence remains aligned with annual capture commitments.",
+      "metrics": [
+        {
+          "label": "Total timeline",
+          "value": "900 days",
+          "ok": true
+        },
+        {
+          "label": "Slip",
+          "value": "30 days",
+          "ok": true
+        },
+        {
+          "label": "Remaining buffer",
+          "value": "490 days",
+          "ok": true
+        },
+        {
+          "label": "Slip ratio",
+          "value": "3.33%",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Accelerate self-improvement plan execution to reclaim schedule slack.",
+        "Reallocate capital from Earth infrastructure to Dyson assembly for this epoch."
+      ]
+    }
+  ]
 }

@@ -21,6 +21,11 @@
         "method": "energy-safety-buffer",
         "score": 1,
         "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
+      },
+      {
+        "method": "scenario-sweep",
+        "score": 0.7663172849609019,
+        "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, and schedule stressors."
       }
     ]
   },
@@ -88,9 +93,61 @@
       "status": true,
       "weight": 0.75,
       "evidence": "tolerance 120s · failsafe 120s"
+    },
+    {
+      "id": "scenario-resilience",
+      "title": "Scenario sweep resilient",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.8,
+      "evidence": "3/5 nominal · 2 warning · 0 critical"
     }
   ],
   "alerts": [],
+  "scenarioSweep": {
+    "total": 5,
+    "nominal": 3,
+    "warning": 2,
+    "critical": 0,
+    "averageConfidence": 0.7663172849609019,
+    "entries": [
+      {
+        "id": "energy-demand-surge",
+        "title": "20% demand surge vs Dyson safety margin",
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Dyson lattice absorbs surge with 129,600 GW spare."
+      },
+      {
+        "id": "bridge-failover",
+        "title": "Interplanetary bridge outage simulation",
+        "status": "warning",
+        "confidence": 0.53125,
+        "summary": "Failover latency 113s leaves 8s slack within 120s failsafe."
+      },
+      {
+        "id": "sentinel-gap",
+        "title": "Sentinel outage (10 min) coverage test",
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Guardian window stays protected under sentinel gap."
+      },
+      {
+        "id": "compute-drawdown",
+        "title": "Compute drawdown (15%) resilience",
+        "status": "warning",
+        "confidence": 0.35033642480450966,
+        "summary": "Deviation 14.62% exceeds tolerance 0.75%."
+      },
+      {
+        "id": "dyson-phase-slip",
+        "title": "Dyson phase slip (30 days)",
+        "status": "nominal",
+        "confidence": 0.95,
+        "summary": "Schedule buffer absorbs slip with 490 days remaining."
+      }
+    ]
+  },
   "ownerControls": {
     "manager": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
     "systemPause": "0xb740e9e719f1a3f138ce7c36418495f5d9e6b4d2",

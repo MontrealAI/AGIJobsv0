@@ -209,6 +209,66 @@ function renderLedger(ledger) {
   }
 }
 
+function renderScenarioSweep(telemetry) {
+  const container = document.querySelector("#scenario-list");
+  container.innerHTML = "";
+  const scenarios = telemetry.scenarioSweep ?? [];
+  if (scenarios.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No scenarios registered.";
+    li.classList.add("status-ok");
+    container.appendChild(li);
+    return;
+  }
+
+  scenarios.forEach((scenario) => {
+    const li = document.createElement("li");
+    li.classList.add("scenario-item");
+
+    const header = document.createElement("div");
+    header.classList.add("scenario-header");
+
+    const title = document.createElement("h3");
+    title.textContent = scenario.title;
+    header.appendChild(title);
+
+    const status = document.createElement("span");
+    status.classList.add("scenario-status", scenario.status);
+    status.textContent = `${scenario.status.toUpperCase()} · ${(scenario.confidence * 100).toFixed(1)}% conf.`;
+    header.appendChild(status);
+
+    li.appendChild(header);
+
+    const summary = document.createElement("p");
+    summary.textContent = scenario.summary;
+    li.appendChild(summary);
+
+    const metricsList = document.createElement("ul");
+    metricsList.classList.add("scenario-metrics");
+    scenario.metrics.forEach((metric) => {
+      const metricItem = document.createElement("li");
+      const label = document.createElement("span");
+      label.textContent = metric.label;
+      const value = document.createElement("span");
+      value.textContent = metric.value;
+      value.classList.add(metric.ok ? "status-ok" : "status-fail");
+      metricItem.appendChild(label);
+      metricItem.appendChild(value);
+      metricsList.appendChild(metricItem);
+    });
+    li.appendChild(metricsList);
+
+    if (scenario.recommendedActions.length > 0) {
+      const actions = document.createElement("p");
+      actions.classList.add("scenario-actions");
+      actions.textContent = `Recommended: ${scenario.recommendedActions.join(" · ")}`;
+      li.appendChild(actions);
+    }
+
+    container.appendChild(li);
+  });
+}
+
 async function bootstrap() {
   try {
     const [telemetry, ledger] = await Promise.all([
@@ -219,6 +279,7 @@ async function bootstrap() {
     attachReflectionButton(telemetry);
     renderOwnerDirectives(telemetry);
     renderFederations(telemetry);
+    renderScenarioSweep(telemetry);
     renderLedger(ledger);
     await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");
     await renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram");

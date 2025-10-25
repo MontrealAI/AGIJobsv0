@@ -46,6 +46,7 @@
    * `output/kardashev-safe-transaction-batch.json` – Safe Transaction Builder payload with manager, guardian, pause, and domain actions.
    * `output/kardashev-orchestration-report.md` – non-technical runbook covering energy budgets, bridge latencies, and pause levers.
    * `output/kardashev-telemetry.json` – machine-readable metrics for dashboards, including triple-verified energy + compute deltas.
+   * `output/kardashev-scenario-sweep.json` – deterministic stress simulations covering energy, bridges, sentinels, compute, and Dyson scheduling.
    * `output/kardashev-mermaid.mmd` – federated systems map (rendered automatically in the UI).
    * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
    * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
@@ -132,6 +133,15 @@ sequenceDiagram
 
 ---
 
+## 🔭 Scenario stress sweep
+
+* **Deterministic five-pack** – `npm run demo:kardashev-ii:orchestrate` simulates a 20% energy surge, doubled bridge latency, sentinel downtime, 15% compute drawdown, and a 30-day Dyson slip. Outputs are codified in `output/kardashev-scenario-sweep.json` and surfaced in telemetry.
+* **Actionable scoring** – Each scenario emits a confidence percentage, coloured status, and recommended Safe actions. The stability ledger ingests the average confidence to extend the unstoppable consensus calculation.
+* **Dashboard rehearsal** – The static UI renders the sweep with metric-by-metric evidence so non-technical owners can rehearse interventions (pause, bridge isolation, capital reallocation) without parsing raw JSON.
+* **Reflection enforcement** – Reflection mode now fails if any scenario turns critical, preventing deployment until governors resolve the highlighted mitigation plan.
+
+---
+
 ## 🛡️ Governance and safety levers
 
 * **Absolute owner control** – Every mutating action uses owner-gated Phase 8 manager calls. The Safe batch positions `setGlobalParameters`, `setGuardianCouncil`, `setSystemPause`, `registerDomain`, `registerSentinel`, `registerCapitalStream`, `setSelfImprovementPlan`, and dual `forwardPauseCall` payloads (pause/unpause) at the top of the queue.
@@ -149,6 +159,7 @@ sequenceDiagram
 | `scripts/run-kardashev-demo.ts` | Orchestrator CLI that validates the manifest, computes dominance/energy metrics, and emits Safe payloads + diagrams. |
 | `scripts/ci-validate.ts` | CI harness ensuring outputs, README sections, and manifest invariants stay in sync. |
 | `output/kardashev-telemetry.json` | Telemetry ledger driving the dashboard, verification badges, and CI drift checks. |
+| `output/kardashev-scenario-sweep.json` | Stress-test outcomes (energy, bridge, sentinel, compute, Dyson slip) with confidence + mitigations. |
 | `output/kardashev-orchestration-report.md` | Detailed runbook for non-technical operators (energy, bridges, checklist). |
 | `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
@@ -170,7 +181,7 @@ sequenceDiagram
 
 ## 🧪 Verification rituals
 
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, and `governance.ownerOverridesReady === true`.
+1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `governance.ownerOverridesReady === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
 2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
 3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
 4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
@@ -186,6 +197,7 @@ Run `npm run demo:kardashev-ii:orchestrate -- --reflect` to receive:
 - ✅ Confirmation that guardian coverage ≥ guardian review window.
 - ✅ Energy debt matrix (Earth, Mars, Orbital) all ≤ 0.
 - ✅ Bridge latency vs Dyson failsafe latency.
+- ✅ Scenario stress sweep free of critical statuses (confidence badges ≥ 95%).
 - ✅ Pause bundle parity (pause/unpause both targeting configured SystemPause).
 
 Only sign the Safe transaction after all checks print green.
