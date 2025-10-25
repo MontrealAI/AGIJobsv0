@@ -36,10 +36,10 @@
   {
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
-    "status": "critical",
+    "status": "warning",
     "summary": "Failover latency 180s breaches 120s failsafe.",
     "confidence": 0.25,
-    "impact": "Cross-federation coordination would desynchronise without isolation.",
+    "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
         "label": "Baseline latency",
@@ -167,6 +167,74 @@
     "recommendedActions": [
       "Accelerate self-improvement plan execution to reclaim schedule slack.",
       "Reallocate capital from Earth infrastructure to Dyson assembly for this epoch."
+    ]
+  },
+  {
+    "id": "identity-infiltration",
+    "title": "Identity infiltration (3% forged daily credentials)",
+    "status": "nominal",
+    "summary": "Revocation network absorbs infiltration within tolerance.",
+    "confidence": 1,
+    "impact": "Quorum anchors maintain trust lattice despite forged credential surge.",
+    "metrics": [
+      {
+        "label": "Forged credentials",
+        "value": "103,200",
+        "ok": true
+      },
+      {
+        "label": "Revocation load",
+        "value": "23.39 ppm",
+        "ok": true
+      },
+      {
+        "label": "Tolerance",
+        "value": "120 ppm",
+        "ok": true
+      },
+      {
+        "label": "Anchors at quorum",
+        "value": "3/3",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Execute fallback ENS registrar policy if forged rate exceeds tolerance.",
+      "Rotate identity anchors using Safe batch identity transactions."
+    ]
+  },
+  {
+    "id": "compute-plane-failover",
+    "title": "Primary compute plane offline",
+    "status": "nominal",
+    "summary": "Failover capacity 44.50 EF covers quorum.",
+    "confidence": 1,
+    "impact": "Hierarchical scheduler retains quorum despite primary outage.",
+    "metrics": [
+      {
+        "label": "Largest plane",
+        "value": "Solara Earth Core",
+        "ok": true
+      },
+      {
+        "label": "Failover capacity",
+        "value": "44.50 EF",
+        "ok": true
+      },
+      {
+        "label": "Required quorum",
+        "value": "42.90 EF",
+        "ok": true
+      },
+      {
+        "label": "Average availability",
+        "value": "98.23%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Trigger failover playbook defined in compute fabrics policy.",
+      "Increase energy allocation for reserve plane from Dyson thermostat."
     ]
   }
 ]

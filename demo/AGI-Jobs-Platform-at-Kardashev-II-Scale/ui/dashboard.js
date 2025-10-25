@@ -163,6 +163,35 @@ function renderFederations(telemetry) {
   });
 }
 
+function renderIdentity(identity) {
+  document.querySelector("#identity-root").textContent = identity.global.rootAuthority;
+  document.querySelector("#identity-merkle").textContent = identity.global.identityMerkleRoot;
+  document.querySelector("#identity-revocation").textContent = `${identity.totals.revocationRatePpm.toFixed(2)} ppm ≤ ${identity.global.revocationTolerancePpm} ppm`;
+  document.querySelector("#identity-latency").textContent = `${identity.totals.maxAttestationLatencySeconds.toFixed(0)}s / ${identity.global.revocationWindowSeconds}s`;
+  document.querySelector("#identity-summary").textContent = `${identity.withinQuorum ? "✅" : "⚠️"} ${identity.totals.anchorsMeetingQuorum}/${identity.totals.federationCount} federations at quorum ${identity.global.attestationQuorum} · coverage ${(identity.totals.minCoveragePct * 100).toFixed(2)}% (floor ${(identity.global.coverageFloorPct * 100).toFixed(2)}%)`;
+
+  const list = document.querySelector("#identity-federations");
+  list.innerHTML = "";
+  identity.federations.forEach((federation) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${federation.name}</strong> — DID ${federation.didRegistry} · anchors ${federation.anchors.length} · methods ${federation.attestationMethods.join(", ")} · latency ${federation.attestationLatencySeconds}s · coverage ${(federation.coveragePct * 100).toFixed(2)}% · revocations ${federation.credentialRevocations24h.toLocaleString()}/24h`;
+    list.appendChild(li);
+  });
+}
+
+function renderComputeFabric(fabric) {
+  document.querySelector("#fabric-summary").textContent = `${fabric.failoverWithinQuorum ? "✅" : "⚠️"} Failover ${fabric.failoverCapacityExaflops.toFixed(2)} EF vs quorum ${fabric.requiredFailoverCapacity.toFixed(2)} EF`;
+  document.querySelector("#fabric-meta").textContent = `Total ${fabric.totalCapacityExaflops.toFixed(2)} EF · average availability ${(fabric.averageAvailabilityPct * 100).toFixed(2)}% · hierarchy ${fabric.policies.layeredHierarchies} layers`;
+
+  const list = document.querySelector("#fabric-planes");
+  list.innerHTML = "";
+  fabric.planes.forEach((plane) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${plane.name}</strong> (${plane.geography}) — ${plane.capacityExaflops.toFixed(2)} EF · energy ${plane.energyGw.toLocaleString()} GW · latency ${plane.latencyMs} ms · availability ${(plane.availabilityPct * 100).toFixed(2)}% · partner ${plane.failoverPartner}`;
+    list.appendChild(li);
+  });
+}
+
 function renderLedger(ledger) {
   document.querySelector("#ledger-summary").textContent = ledger.confidence.summary;
   const composite = `${(ledger.confidence.compositeScore * 100).toFixed(2)}%`;
@@ -279,6 +308,8 @@ async function bootstrap() {
     attachReflectionButton(telemetry);
     renderOwnerDirectives(telemetry);
     renderFederations(telemetry);
+    renderIdentity(telemetry.identity);
+    renderComputeFabric(telemetry.computeFabric);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);
     await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");

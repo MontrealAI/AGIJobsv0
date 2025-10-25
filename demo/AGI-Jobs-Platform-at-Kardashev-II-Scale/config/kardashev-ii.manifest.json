@@ -91,6 +91,148 @@
     "manifestHashing": "keccak256",
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
   },
+  "identityProtocols": {
+    "global": {
+      "rootAuthority": "0x4C9fA72Be46dE83F2d15d6E4E4d3b21F7aC1b0d2",
+      "attestationQuorum": 5,
+      "revocationWindowSeconds": 240,
+      "identityMerkleRoot": "0x2b3aa7c0c2a715f3a4d19c6b7d8f4e90c214a8c1b3d4e56f7a8b9c0d1e2f3a45",
+      "auditLogURI": "ipfs://QmKardashevIdentityAudit",
+      "fallbackPolicyURI": "ipfs://QmKardashevIdentityFallbackPolicy",
+      "lastAuditISO8601": "2025-02-20T00:00:00Z",
+      "revocationTolerancePpm": 120,
+      "coverageFloorPct": 0.92
+    },
+    "federations": [
+      {
+        "slug": "earth",
+        "name": "Earth Identity Mesh",
+        "authority": "0x5E3dB4a8C1F7d2E6A9B4c3F2a1D5e6C7B8f9a0D1",
+        "didRegistry": "did:agi:earth",
+        "fallbackEnsRegistrar": "0x7a9bE3d4C5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0",
+        "anchors": [
+          "0x83d5a91C7fB2E4d6A8C9F0e1B2c3D4e5F6a7B8c9",
+          "0x51A4c3D2e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0",
+          "0x29F0e1B2C3d4E5f6A7B8c9D0E1f2A3b4c5D6e7F8",
+          "0x6b8C9d0E1F2a3B4c5D6e7F8a9B0c1D2e3F4a5B6c",
+          "0x942d3E4f5A6b7C8d9E0f1A2b3C4d5E6f7A8b9C0d"
+        ],
+        "attestationMethods": [
+          "ens",
+          "did",
+          "zkCredential"
+        ],
+        "attestationLatencySeconds": 42,
+        "credentialIssuances24h": 1820000,
+        "credentialRevocations24h": 820,
+        "totalAgents": 2800000000,
+        "totalValidators": 1480000,
+        "coveragePct": 0.97,
+        "lastAnchorRotationISO8601": "2025-02-28T08:00:00Z"
+      },
+      {
+        "slug": "mars",
+        "name": "Mars Identity Council",
+        "authority": "0x8F2a3C4d5E6f7A8b9C0D1e2F3a4B5c6D7e8F9a0B",
+        "didRegistry": "did:agi:mars",
+        "fallbackEnsRegistrar": "0x1d3e4F5a6B7c8D9e0F1a2B3c4D5e6F7a8B9c0D1e",
+        "anchors": [
+          "0x7c8D9e0F1A2b3C4d5E6f7A8b9C0d1E2f3A4b5C6d",
+          "0x3f4A5b6C7d8E9f0A1B2c3D4e5F6a7B8c9D0e1F2a",
+          "0x6d7E8f9A0b1C2d3E4f5A6b7C8d9E0f1A2b3C4d5E",
+          "0x4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2e3F",
+          "0x2b3C4d5E6f7A8b9C0d1E2f3A4b5C6d7E8f9A0b1C"
+        ],
+        "attestationMethods": [
+          "did",
+          "sbt",
+          "zkCredential"
+        ],
+        "attestationLatencySeconds": 96,
+        "credentialIssuances24h": 640000,
+        "credentialRevocations24h": 340,
+        "totalAgents": 720000000,
+        "totalValidators": 420000,
+        "coveragePct": 0.945,
+        "lastAnchorRotationISO8601": "2025-02-18T16:00:00Z"
+      },
+      {
+        "slug": "orbital",
+        "name": "Orbital Identity Halo",
+        "authority": "0x3a5B6c7D8e9F0a1B2C3d4E5f6A7b8C9d0E1f2A3b",
+        "didRegistry": "did:agi:orbital",
+        "fallbackEnsRegistrar": "0x5c6D7e8F9a0B1c2D3e4F5a6B7c8D9e0F1a2B3c4D",
+        "anchors": [
+          "0x8e9F0a1B2c3D4e5F6a7B8c9D0e1F2a3B4c5D6e7F",
+          "0x1B2c3D4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c",
+          "0x4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B1c2D3e",
+          "0x9A0b1C2d3E4f5A6b7C8d9E0f1A2b3C4d5E6f7A8b",
+          "0x2C3d4E5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0C1d"
+        ],
+        "attestationMethods": [
+          "did",
+          "quantumBeacon",
+          "zkCredential"
+        ],
+        "attestationLatencySeconds": 28,
+        "credentialIssuances24h": 980000,
+        "credentialRevocations24h": 410,
+        "totalAgents": 960000000,
+        "totalValidators": 640000,
+        "coveragePct": 0.963,
+        "lastAnchorRotationISO8601": "2025-02-22T11:45:00Z"
+      }
+    ]
+  },
+  "computeFabrics": {
+    "orchestrationPlanes": [
+      {
+        "slug": "sol-earth",
+        "name": "Solara Earth Core",
+        "scheduler": "0x2F4a6B7C8d9E0f1A2b3C4d5E6f7A8b9C0d1E2F34",
+        "orchestratorSafe": "0x8b9C0d1E2F3a4B5c6D7e8F9a0B1c2D3e4F5a6B70",
+        "geography": "Earth orbit low-latency ring",
+        "capacityExaflops": 38.0,
+        "energyGw": 112000,
+        "latencyMs": 38,
+        "availabilityPct": 0.986,
+        "failoverPartner": "sol-mars",
+        "notes": "Primary civilisation scheduler with quantum-state replication"
+      },
+      {
+        "slug": "sol-mars",
+        "name": "Ares Horizon Fabric",
+        "scheduler": "0x4D6e8F0a1B2c3D4e5F6a7B8c9D0e1F2a3B4c5D61",
+        "orchestratorSafe": "0x5A7b8C9d0E1f2A3b4C5d6E7f8A9b0C1d2E3f4A56",
+        "geography": "Mars synchronous polar array",
+        "capacityExaflops": 18.5,
+        "energyGw": 52000,
+        "latencyMs": 112,
+        "availabilityPct": 0.972,
+        "failoverPartner": "sol-orbital",
+        "notes": "Terraforming and biosphere orchestrator with radiation shielding"
+      },
+      {
+        "slug": "sol-orbital",
+        "name": "Helios Orbital Halo",
+        "scheduler": "0x7E9f0A1B2c3D4e5F6a7B8c9D0e1F2a3B4c5D6e78",
+        "orchestratorSafe": "0x1C3d4E5f6A7b8C9d0E1f2A3b4C5d6E7f8A9b0C12",
+        "geography": "Dyson swarm maintenance lattice",
+        "capacityExaflops": 26.0,
+        "energyGw": 148000,
+        "latencyMs": 24,
+        "availabilityPct": 0.989,
+        "failoverPartner": "sol-earth",
+        "notes": "High-availability research and defense plane"
+      }
+    ],
+    "failoverPolicies": {
+      "quorumPct": 0.52,
+      "layeredHierarchies": 3,
+      "auditURI": "ipfs://QmKardashevComputeAudit",
+      "energyBalancing": "Dyson thermostat dispatch dynamically shifts GW budget to the active failover plane."
+    }
+  },
   "federations": [
     {
       "slug": "earth",

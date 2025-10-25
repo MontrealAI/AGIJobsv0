@@ -30,6 +30,8 @@ function validateReadme() {
     "## 🧭 Ultra-deep readiness map",
     "## 🚀 Kardashev-II operator quickstart",
     "## 🧱 Architecture overview",
+    "## 🪪 Identity lattice & trust fabric",
+    "## 🛰️ Compute fabric hierarchy",
     "## 🔌 Energy & compute governance",
     "## 🎛️ Mission directives & verification dashboards",
     "## 🔭 Scenario stress sweep",

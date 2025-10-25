@@ -205,6 +205,38 @@ button:hover {
   line-height: 1.6;
 }
 
+.identity-list,
+.fabric-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.identity-list li,
+.fabric-list li {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 14px;
+  padding: 12px 16px;
+  line-height: 1.5;
+}
+
+.identity-meta,
+.fabric-meta {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.fabric-meta {
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+}
+
 .owner-powers .uri {
   color: rgba(96, 165, 250, 0.9);
   font-family: "IBM Plex Mono", "Fira Mono", monospace;
