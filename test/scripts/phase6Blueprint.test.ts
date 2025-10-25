@@ -25,6 +25,11 @@ describe('Phase 6 blueprint generator', function () {
     expect(blueprint.metrics.resilienceFloorCoverage).to.equal(1);
     expect(blueprint.metrics.automationFloorBreaches).to.equal(2);
     expect(blueprint.metrics.automationFloorCoverage).to.be.closeTo(0.6, 0.0001);
+    expect(blueprint.metrics.credentialedDomainCount).to.equal(config.domains.length);
+    expect(blueprint.metrics.credentialRequirementCount).to.equal(
+      config.domains.reduce((acc, domain) => acc + (domain.credentials?.length ?? 0), 0),
+    );
+    expect(blueprint.metrics.credentialCoverage).to.equal(1);
   });
 
   it('normalises domains and exposes deterministic ids', function () {

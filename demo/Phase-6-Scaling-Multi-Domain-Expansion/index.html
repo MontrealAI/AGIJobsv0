@@ -147,6 +147,20 @@
         font-size: 0.9rem;
         line-height: 1.5;
       }
+      ul.credential-list {
+        margin-top: 18px;
+      }
+      ul.credential-list li strong {
+        display: block;
+        color: var(--text);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      ul.credential-list li span {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
       pre {
         background: rgba(15, 23, 42, 0.78);
         border-radius: 18px;
@@ -198,6 +212,12 @@
       <section class="card">
         <h2>Global readiness dashboard</h2>
         <div class="metrics" id="global-summary"></div>
+      </section>
+
+      <section class="card">
+        <h2>Credential governance</h2>
+        <div class="metrics" id="credential-summary"></div>
+        <div class="grid columns-2" id="credential-grid"></div>
       </section>
 
       <section class="card">
@@ -281,6 +301,32 @@
         const enabled = Boolean(control.autopilotEnabled);
         const cadence = formatCadence(control.autopilotCadence);
         return `${enabled ? 'enabled' : 'standby'} @ ${cadence}`;
+      }
+
+      function ensureArray(value) {
+        return Array.isArray(value) ? value : [];
+      }
+
+      function formatList(values, fallback = '—') {
+        if (!values || !values.length) {
+          return fallback;
+        }
+        return values.join(', ');
+      }
+
+      function appendCredentialItem(list, heading, lines = []) {
+        const li = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = heading;
+        li.appendChild(title);
+        lines
+          .filter((line) => typeof line === 'string' && line.length)
+          .forEach((line) => {
+            const span = document.createElement('span');
+            span.textContent = line;
+            li.appendChild(span);
+          });
+        list.appendChild(li);
       }
 
       function heartbeatSummary(domain, global) {
@@ -399,6 +445,22 @@
         const automationFloor = Number(config.global?.telemetry?.automationFloorBps ?? NaN);
         let resilienceFloorBreaches = 0;
         let automationFloorBreaches = 0;
+        const globalCredentials = config.global?.credentials ?? {};
+        const globalTrustAnchors = ensureArray(globalCredentials.trustAnchors);
+        const globalIssuers = ensureArray(globalCredentials.issuers);
+        const globalPolicies = ensureArray(globalCredentials.policies);
+        const issuerDomainCoverage = new Set();
+        globalIssuers.forEach((issuer) => {
+          ensureArray(issuer.domains).forEach((domain) => {
+            issuerDomainCoverage.add(String(domain).toLowerCase());
+          });
+        });
+        const globalRevocationRegistry =
+          typeof globalCredentials.revocationRegistry === 'string' && globalCredentials.revocationRegistry
+            ? globalCredentials.revocationRegistry
+            : null;
+        let credentialedDomains = 0;
+        let credentialRequirements = 0;
         config.domains.forEach((domain) => {
           const idx = Number.parseFloat(domain.metadata?.resilienceIndex ?? '');
           if (!Number.isNaN(idx)) {
@@ -428,6 +490,11 @@
             if (telemetry.usesL2Settlement) {
               l2Coverage += 1;
             }
+          }
+          const domainCredentials = ensureArray(domain.credentials);
+          if (domainCredentials.length) {
+            credentialedDomains += 1;
+            credentialRequirements += domainCredentials.length;
           }
           const value = domain.metadata?.valueFlowMonthlyUSD;
           if (typeof value === 'number' && Number.isFinite(value)) {
@@ -484,6 +551,14 @@
             (acc, domain) => (domain.infrastructureControl?.autopilotEnabled ? acc + 1 : acc),
             0,
           ),
+          credentialCoverage: config.domains.length ? credentialedDomains / config.domains.length : 0,
+          credentialedDomains,
+          credentialRequirements,
+          globalCredentialAnchors: globalTrustAnchors.length,
+          globalCredentialIssuers: globalIssuers.length,
+          globalCredentialPolicies: globalPolicies.length,
+          globalCredentialDomainCoverage: issuerDomainCoverage.size,
+          globalRevocationRegistry,
         };
       }
 
@@ -537,6 +612,14 @@
             resilienceFloorBreaches,
             automationFloorCoverage,
             automationFloorBreaches,
+            credentialCoverage,
+            credentialedDomains,
+            credentialRequirements,
+            globalCredentialAnchors,
+            globalCredentialIssuers,
+            globalCredentialPolicies,
+            globalCredentialDomainCoverage,
+            globalRevocationRegistry,
           } = state.metrics;
           if (averageResilience !== null) {
             items.push(`Network resilience: avg ${averageResilience.toFixed(3)} (min ${minResilience?.toFixed(3)}, max ${maxResilience?.toFixed(3)})`);
@@ -575,11 +658,184 @@
               ).toFixed(1)}% (${state.metrics.autopilotEnabled}/${config.domains.length} domains)`,
             );
           }
+          items.push(
+            `Credential coverage: ${(credentialCoverage * 100).toFixed(1)}% (${credentialedDomains}/${config.domains.length} domains, ${credentialRequirements} requirements)`,
+          );
+          items.push(
+            `Trust anchors: ${globalCredentialAnchors} | issuers: ${globalCredentialIssuers} | policies: ${globalCredentialPolicies}`,
+          );
+          items.push(
+            `Issuer footprint: ${globalCredentialDomainCoverage} domains | Revocation registry: ${
+              globalRevocationRegistry ?? '—'
+            }`,
+          );
         }
         items.forEach((text) => {
           const span = document.createElement('span');
           span.textContent = `• ${text}`;
           target.appendChild(span);
+        });
+      }
+
+      function renderCredentialGovernance(config) {
+        const summary = document.getElementById('credential-summary');
+        const grid = document.getElementById('credential-grid');
+        summary.innerHTML = '';
+        grid.innerHTML = '';
+
+        const metrics = state.metrics || {};
+        const coverage = Number(metrics.credentialCoverage ?? 0);
+        const credentialedDomains = Number(metrics.credentialedDomains ?? 0);
+        const requirements = Number(metrics.credentialRequirements ?? 0);
+        const trustAnchorsCount = Number(metrics.globalCredentialAnchors ?? 0);
+        const issuerCount = Number(metrics.globalCredentialIssuers ?? 0);
+        const policyCount = Number(metrics.globalCredentialPolicies ?? 0);
+        const issuerFootprint = Number(metrics.globalCredentialDomainCoverage ?? 0);
+        const configDomainCount = config.domains.length || 0;
+        const globalCredentials = config.global.credentials || {};
+        const revocationRegistry =
+          metrics.globalRevocationRegistry ?? globalCredentials.revocationRegistry ?? '—';
+        const summaryItems = [
+          `Global coverage: ${(coverage * 100).toFixed(1)}% (${credentialedDomains}/${configDomainCount} domains)`,
+          `Credential safeguards: ${requirements} total requirements`,
+          `Trust anchors: ${trustAnchorsCount} | issuers: ${issuerCount} | policies: ${policyCount}`,
+          `Issuer footprint: ${issuerFootprint} domains`,
+          `Revocation registry: ${revocationRegistry}`,
+        ];
+        summaryItems.forEach((text) => {
+          const span = document.createElement('span');
+          span.textContent = `• ${text}`;
+          summary.appendChild(span);
+        });
+
+        const trustAnchors = ensureArray(globalCredentials.trustAnchors);
+        const issuers = ensureArray(globalCredentials.issuers);
+        const policies = ensureArray(globalCredentials.policies);
+
+        const globalCard = document.createElement('div');
+        globalCard.className = 'domain-card';
+        const globalHeading = document.createElement('h3');
+        globalHeading.textContent = 'Global credential control';
+        globalCard.appendChild(globalHeading);
+
+        const globalMetrics = document.createElement('div');
+        globalMetrics.className = 'metrics';
+        globalMetrics.innerHTML = `
+          <span>Trust anchors: ${trustAnchors.length}</span>
+          <span>Issuers: ${issuers.length}</span>
+          <span>Policies: ${policies.length}</span>
+          <span>Issuer footprint: ${issuerFootprint} domains</span>
+          <span>Revocation registry: ${revocationRegistry}</span>
+        `;
+        globalCard.appendChild(globalMetrics);
+
+        const anchorList = document.createElement('ul');
+        anchorList.className = 'mesh-list credential-list';
+        if (trustAnchors.length) {
+          trustAnchors.forEach((anchor, idx) => {
+            appendCredentialItem(anchorList, `[Anchor ${idx + 1}] ${anchor.name}`, [
+              `DID: ${anchor.did}`,
+              anchor.role ? `Role: ${anchor.role}` : '',
+              anchor.policyURI ? `Policy: ${anchor.policyURI}` : '',
+            ]);
+          });
+        } else {
+          appendCredentialItem(anchorList, 'Trust anchors pending', [
+            'Define global oversight issuers to unlock credential automation.',
+          ]);
+        }
+        globalCard.appendChild(anchorList);
+
+        const issuerList = document.createElement('ul');
+        issuerList.className = 'mesh-list credential-list';
+        if (issuers.length) {
+          issuers.forEach((issuer, idx) => {
+            appendCredentialItem(issuerList, `[Issuer ${idx + 1}] ${issuer.name}`, [
+              `DID: ${issuer.did}`,
+              issuer.attestationType ? `Attestation: ${issuer.attestationType}` : '',
+              issuer.registry ? `Registry: ${issuer.registry}` : '',
+              issuer.domains?.length ? `Domains: ${formatList(issuer.domains)}` : '',
+            ]);
+          });
+        } else {
+          appendCredentialItem(issuerList, 'Issuers pending', [
+            'Register credential issuers to activate cross-domain access control.',
+          ]);
+        }
+        globalCard.appendChild(issuerList);
+
+        const policyList = document.createElement('ul');
+        policyList.className = 'mesh-list credential-list';
+        if (policies.length) {
+          policies.forEach((policy, idx) => {
+            appendCredentialItem(policyList, `[Policy ${idx + 1}] ${policy.name}`, [
+              policy.description || '',
+              policy.uri ? `URI: ${policy.uri}` : '',
+            ]);
+          });
+        } else {
+          appendCredentialItem(policyList, 'Policies pending', [
+            'Publish credential policies to guide human oversight enrollment.',
+          ]);
+        }
+        globalCard.appendChild(policyList);
+        grid.appendChild(globalCard);
+
+        config.domains.forEach((domain) => {
+          const domainCard = document.createElement('div');
+          domainCard.className = 'domain-card';
+          const heading = document.createElement('h3');
+          heading.textContent = domain.name;
+          domainCard.appendChild(heading);
+
+          const domainCredentials = ensureArray(domain.credentials);
+          const issuerSet = new Set();
+          const verifierSet = new Set();
+          const registrySet = new Set();
+          domainCredentials.forEach((credential) => {
+            ensureArray(credential.issuers).forEach((issuer) => issuerSet.add(issuer));
+            ensureArray(credential.verifiers).forEach((verifier) => verifierSet.add(verifier));
+            if (credential.registry) {
+              registrySet.add(credential.registry);
+            }
+          });
+
+          const domainMetrics = document.createElement('div');
+          domainMetrics.className = 'metrics';
+          domainMetrics.innerHTML = `
+            <span>Total requirements: ${domainCredentials.length}</span>
+            <span>Issuers in scope: ${issuerSet.size}</span>
+            <span>Verifiers active: ${verifierSet.size}</span>
+            <span>Registries referenced: ${registrySet.size}</span>
+          `;
+          domainCard.appendChild(domainMetrics);
+
+          const credentialList = document.createElement('ul');
+          credentialList.className = 'mesh-list credential-list';
+          if (domainCredentials.length) {
+            domainCredentials.forEach((credential, idx) => {
+              appendCredentialItem(credentialList, `[${idx + 1}] ${credential.name}`, [
+                credential.requirement,
+                credential.credentialType ? `Type: ${credential.credentialType}` : '',
+                credential.format ? `Format: ${credential.format}` : '',
+                credential.issuers?.length
+                  ? `Issuers: ${formatList(credential.issuers)}`
+                  : '',
+                credential.verifiers?.length
+                  ? `Verifiers: ${formatList(credential.verifiers)}`
+                  : '',
+                credential.registry ? `Registry: ${credential.registry}` : '',
+                credential.evidence ? `Evidence: ${credential.evidence}` : '',
+                credential.notes ? `Notes: ${credential.notes}` : '',
+              ]);
+            });
+          } else {
+            appendCredentialItem(credentialList, 'Credential plan pending', [
+              'Define verifiable credential guard rails before enabling autonomous operations.',
+            ]);
+          }
+          domainCard.appendChild(credentialList);
+          grid.appendChild(domainCard);
         });
       }
 
@@ -643,6 +899,25 @@
             <span>Autopilot posture: ${formatAutopilot(control)}</span>
           `;
           card.appendChild(metrics);
+
+          const credentialList = document.createElement('ul');
+          credentialList.className = 'mesh-list credential-list';
+          const domainCredentials = ensureArray(domain.credentials);
+          if (domainCredentials.length) {
+            domainCredentials.forEach((credential, idx) => {
+              appendCredentialItem(credentialList, `[${idx + 1}] ${credential.name}`, [
+                credential.requirement,
+                credential.issuers?.length ? `Issuers: ${formatList(credential.issuers)}` : '',
+                credential.verifiers?.length ? `Verifiers: ${formatList(credential.verifiers)}` : '',
+                credential.registry ? `Registry: ${credential.registry}` : '',
+              ]);
+            });
+          } else {
+            appendCredentialItem(credentialList, 'Credential guard rails', [
+              'No verifiable credentials configured yet — follow governance checklist before launch.',
+            ]);
+          }
+          card.appendChild(credentialList);
           grid.appendChild(card);
         });
       }
@@ -825,6 +1100,7 @@
         state.config = cfg;
         state.metrics = computeMetrics(cfg);
         renderGlobal(cfg);
+        renderCredentialGovernance(cfg);
         renderDomains(cfg);
         renderBridgePlans(cfg);
         renderInfrastructure(cfg);

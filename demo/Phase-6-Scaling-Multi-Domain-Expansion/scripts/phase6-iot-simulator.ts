@@ -48,6 +48,12 @@ interface EvaluatedEvent {
     treasuryShareBps: number;
     circuitBreakerBps: number;
   };
+  credentialPlan: {
+    requirements: string[];
+    issuers: string[];
+    verifiers: string[];
+    notes: string[];
+  };
 }
 
 const DEFAULT_CONFIG_PATH = join(__dirname, '..', 'config', 'domains.phase6.json');
@@ -208,6 +214,7 @@ function evaluateEvents(blueprint: Phase6Blueprint, events: EventPayload[]): Eva
         treasuryShareBps: recommendedDomain.operations.treasuryShareBps,
         circuitBreakerBps: recommendedDomain.operations.circuitBreakerBps,
       },
+      credentialPlan: buildCredentialPlan(recommendedDomain, event),
     };
   });
 }
@@ -303,6 +310,25 @@ function buildBridgePlan(blueprint: Phase6Blueprint, domain: DomainBlueprint) {
   };
 }
 
+function buildCredentialPlan(domain: DomainBlueprint, event: EventPayload) {
+  if (!domain.credentials.length) {
+    return { requirements: [], issuers: [], verifiers: [], notes: [] };
+  }
+  const prioritized = event.metadata?.requiresHumanInLoop
+    ? domain.credentials
+    : domain.credentials.slice(0, Math.max(1, Math.min(2, domain.credentials.length)));
+  const unique = (values: string[]) => Array.from(new Set(values.filter((value) => value && value.length)));
+  const notes = prioritized
+    .map((credential) => credential.notes)
+    .filter((note): note is string => typeof note === 'string' && note.length > 0);
+  return {
+    requirements: prioritized.map((credential) => credential.name),
+    issuers: unique(prioritized.flatMap((credential) => credential.issuers)),
+    verifiers: unique(prioritized.flatMap((credential) => credential.verifiers)),
+    notes,
+  };
+}
+
 function summariseEvent(result: EvaluatedEvent) {
   console.log(`\n\x1b[38;5;105mEvent: ${result.event.summary}\x1b[0m`);
   console.log(`  id: ${result.event.id}`);
@@ -318,6 +344,16 @@ function summariseEvent(result: EvaluatedEvent) {
   console.log(`    bridge plan: ${result.bridgePlan.settlementLayer} via ${result.bridgePlan.l2Gateway ?? '—'} (${result.bridgePlan.autopilot})`);
   if (result.bridgePlan.requiresHumanValidation) {
     console.log('    ⚠ Requires human validation – route through credential verifier.');
+  }
+  if (result.credentialPlan.requirements.length) {
+    console.log(
+      `    credential plan: ${result.credentialPlan.requirements.join(', ')} | issuers ${
+        result.credentialPlan.issuers.join(', ') || '—'
+      } | verifiers ${result.credentialPlan.verifiers.join(', ') || '—'}`,
+    );
+    if (result.credentialPlan.notes.length) {
+      console.log(`    notes: ${result.credentialPlan.notes.join(' | ')}`);
+    }
   }
   console.log('    Rationale:');
   result.rationale.forEach((reason) => {
@@ -342,6 +378,7 @@ function emitJson(results: EvaluatedEvent[], path?: string) {
     rationale: result.rationale,
     bridgePlan: result.bridgePlan,
     guardRails: result.guardRails,
+    credentialPlan: result.credentialPlan,
     scorecard: result.scorecard,
   }));
 

@@ -101,6 +101,74 @@ config.global.decentralizedInfra.forEach((entry, idx) => {
   }
 });
 
+const globalCredentials = config.global.credentials;
+if (!globalCredentials || typeof globalCredentials !== 'object') {
+  fail('Global credentials configuration is required.');
+}
+
+const trustAnchors = globalCredentials.trustAnchors;
+if (!Array.isArray(trustAnchors) || trustAnchors.length < 3) {
+  fail('global.credentials.trustAnchors must include at least three entries.');
+}
+trustAnchors.forEach((anchor, idx) => {
+  const context = `global.credentials.trustAnchors[${idx}]`;
+  if (!anchor || typeof anchor !== 'object') {
+    fail(`${context}: entry must be an object.`);
+  }
+  ['name', 'did', 'role'].forEach((field) => {
+    if (!anchor[field] || typeof anchor[field] !== 'string') {
+      fail(`${context}: ${field} must be a non-empty string.`);
+    }
+  });
+  if (anchor.policyURI && typeof anchor.policyURI !== 'string') {
+    fail(`${context}: policyURI must be a string when provided.`);
+  }
+});
+
+const issuerEntries = globalCredentials.issuers;
+if (!Array.isArray(issuerEntries) || issuerEntries.length === 0) {
+  fail('global.credentials.issuers must include at least one entry.');
+}
+issuerEntries.forEach((issuer, idx) => {
+  const context = `global.credentials.issuers[${idx}]`;
+  if (!issuer || typeof issuer !== 'object') {
+    fail(`${context}: entry must be an object.`);
+  }
+  ['name', 'did', 'attestationType', 'registry'].forEach((field) => {
+    if (!issuer[field] || typeof issuer[field] !== 'string') {
+      fail(`${context}: ${field} must be a non-empty string.`);
+    }
+  });
+  if (!Array.isArray(issuer.domains) || issuer.domains.length === 0) {
+    fail(`${context}: domains must be a non-empty array of strings.`);
+  }
+  issuer.domains.forEach((domain, domainIdx) => {
+    if (typeof domain !== 'string' || !domain.trim()) {
+      fail(`${context}: domains[${domainIdx}] must be a non-empty string.`);
+    }
+  });
+});
+
+const credentialPolicies = globalCredentials.policies;
+if (!Array.isArray(credentialPolicies) || credentialPolicies.length < 2) {
+  fail('global.credentials.policies must include at least two entries.');
+}
+credentialPolicies.forEach((policy, idx) => {
+  const context = `global.credentials.policies[${idx}]`;
+  if (!policy || typeof policy !== 'object') {
+    fail(`${context}: entry must be an object.`);
+  }
+  ['name', 'description', 'uri'].forEach((field) => {
+    if (!policy[field] || typeof policy[field] !== 'string') {
+      fail(`${context}: ${field} must be a non-empty string.`);
+    }
+  });
+});
+
+if (!globalCredentials.revocationRegistry || typeof globalCredentials.revocationRegistry !== 'string') {
+  fail('global.credentials.revocationRegistry must be a non-empty string.');
+}
+
 const globalTelemetry = config.global.telemetry;
 if (!globalTelemetry || typeof globalTelemetry !== 'object') {
   fail('Global telemetry configuration is required.');
@@ -214,6 +282,39 @@ config.domains.forEach((domain, idx) => {
   if (!metadata || typeof metadata !== 'object') {
     fail(`${context}: metadata object is required.`);
   }
+  if (!Array.isArray(domain.credentials) || domain.credentials.length === 0) {
+    fail(`${context}: credentials array is required with at least one entry.`);
+  }
+  domain.credentials.forEach((credential, credIdx) => {
+    const credContext = `${context}.credentials[${credIdx}]`;
+    if (!credential || typeof credential !== 'object') {
+      fail(`${credContext}: entry must be an object.`);
+    }
+    ['name', 'requirement', 'credentialType', 'format'].forEach((field) => {
+      if (!credential[field] || typeof credential[field] !== 'string') {
+        fail(`${credContext}: ${field} must be a non-empty string.`);
+      }
+    });
+    ['issuers', 'verifiers'].forEach((field) => {
+      const list = credential[field];
+      if (!Array.isArray(list) || list.length === 0) {
+        fail(`${credContext}: ${field} must be a non-empty array of strings.`);
+      }
+      list.forEach((entry, entryIdx) => {
+        if (typeof entry !== 'string' || !entry.trim()) {
+          fail(`${credContext}: ${field}[${entryIdx}] must be a non-empty string.`);
+        }
+      });
+    });
+    ['registry', 'evidence'].forEach((field) => {
+      if (!credential[field] || typeof credential[field] !== 'string') {
+        fail(`${credContext}: ${field} must be a non-empty string.`);
+      }
+    });
+    if (credential.notes && typeof credential.notes !== 'string') {
+      fail(`${credContext}: notes must be a string when provided.`);
+    }
+  });
   if (!domain.telemetry || typeof domain.telemetry !== 'object') {
     fail(`${context}: telemetry object is required.`);
   }

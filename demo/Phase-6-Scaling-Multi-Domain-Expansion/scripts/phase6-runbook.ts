@@ -91,6 +91,24 @@ function renderDomain(domain: DomainBlueprint, globalCadenceSeconds: number): st
     `- **Autopilot**: ${domain.infrastructureControl.autopilotEnabled ? 'enabled' : 'standby'} @ ${domain.infrastructureControl.autopilotCadenceSeconds}s`,
   );
   lines.push('');
+  lines.push('### Credential Requirements');
+  if (domain.credentials.length) {
+    domain.credentials.forEach((credential, idx) => {
+      const issuers = credential.issuers.join(', ') || '—';
+      const verifiers = credential.verifiers.join(', ') || '—';
+      const notes = credential.notes ? ` Notes: ${credential.notes}` : '';
+      lines.push(
+        `- [${idx + 1}] ${credential.name} — ${credential.requirement} (type: ${credential.credentialType}, format: ${credential.format})`,
+      );
+      lines.push(`  • Issuers: ${issuers}`);
+      lines.push(`  • Verifiers: ${verifiers}`);
+      lines.push(`  • Registry: ${credential.registry}`);
+      lines.push(`  • Evidence: ${credential.evidence}${notes}`);
+    });
+  } else {
+    lines.push('- None required.');
+  }
+  lines.push('');
   lines.push('### Decentralized Infrastructure Mesh');
   domain.infrastructure.forEach((integration, idx) => {
     const endpoint = integration.endpoint ?? integration.uri ?? '—';
@@ -156,6 +174,10 @@ export function createPhase6Runbook(blueprint: Phase6Blueprint): string {
   lines.push(`- Global Infra Touchpoints: ${blueprint.metrics.globalInfraCount}`);
   lines.push(`- Domain Infra Touchpoints: ${blueprint.metrics.domainInfraCount}`);
   lines.push(`- Autopilot Coverage: ${(blueprint.metrics.autopilotCoverage * 100).toFixed(1)}%`);
+  lines.push(
+    `- Credential Coverage: ${(blueprint.metrics.credentialCoverage * 100).toFixed(1)}% ` +
+      `(${blueprint.metrics.credentialedDomainCount}/${blueprint.metrics.domainCount} domains, ${blueprint.metrics.credentialRequirementCount} requirements)`,
+  );
   lines.push('');
   lines.push('## Global Controls & Guard Rails');
   lines.push(formatAddress('IoT Oracle Router', blueprint.global.iotOracleRouter));
@@ -199,6 +221,44 @@ export function createPhase6Runbook(blueprint: Phase6Blueprint): string {
     lines.push(`setGlobalInfrastructure: ${blueprint.calldata.globalInfrastructure}`);
   }
   lines.push('```');
+  lines.push('');
+  lines.push('## Credential Governance Mesh');
+  lines.push(
+    `- Global Revocation Registry: ${
+      blueprint.credentials.global.revocationRegistry ?? '—'
+    }`
+  );
+  lines.push(
+    `- Domain Coverage: ${blueprint.credentials.totals.credentialedDomains}/${blueprint.metrics.domainCount} domains (${(
+      blueprint.credentials.totals.coverage * 100
+    ).toFixed(1)}%)`
+  );
+  lines.push(`- Total Credential Requirements: ${blueprint.credentials.totals.requirements}`);
+  if (blueprint.credentials.global.trustAnchors.length) {
+    lines.push('### Trust Anchors');
+    blueprint.credentials.global.trustAnchors.forEach((anchor, idx) => {
+      lines.push(
+        `- [TA${idx + 1}] ${anchor.name} — DID ${anchor.did}, role ${anchor.role}${
+          anchor.policyURI ? `, policy ${anchor.policyURI}` : ''
+        }`,
+      );
+    });
+  }
+  if (blueprint.credentials.global.issuers.length) {
+    lines.push('### Credential Issuers');
+    blueprint.credentials.global.issuers.forEach((issuer, idx) => {
+      const domains = issuer.domains.join(', ') || '—';
+      lines.push(
+        `- [ISS${idx + 1}] ${issuer.name} — DID ${issuer.did}, attestation ${issuer.attestationType}, registry ${issuer.registry}, domains ${domains}`,
+      );
+    });
+  }
+  if (blueprint.credentials.global.policies.length) {
+    lines.push('### Credential Policies');
+    blueprint.credentials.global.policies.forEach((policy, idx) => {
+      lines.push(`- [POL${idx + 1}] ${policy.name} — ${policy.description} (${policy.uri})`);
+    });
+  }
   lines.push('');
   lines.push('## Decentralized Infrastructure Mesh (Global)');
   blueprint.infrastructure.global.forEach((integration, idx) => {

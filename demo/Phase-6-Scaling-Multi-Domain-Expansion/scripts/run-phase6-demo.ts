@@ -207,10 +207,44 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     );
   }
   console.log(
+    `Credential coverage: ${(metrics.credentialCoverage * 100).toFixed(1)}% ` +
+      `(${metrics.credentialedDomainCount}/${metrics.domainCount} domains, ${metrics.credentialRequirementCount} requirements)`,
+  );
+  console.log(
     `Guard rails: treasuryBuffer=${formatBps(blueprint.guards.treasuryBufferBps)} | ` +
       `circuitBreaker=${formatBps(blueprint.guards.circuitBreakerBps)} | grace=${blueprint.guards.anomalyGracePeriod}s | ` +
       `autoPause=${blueprint.guards.autoPauseEnabled ? 'on' : 'off'}`,
   );
+
+  banner('Credential governance mesh');
+  console.log(
+    `Global revocation registry: ${blueprint.credentials.global.revocationRegistry ?? '—'} | ` +
+      `requirements ${blueprint.credentials.totals.requirements} across ${blueprint.credentials.totals.credentialedDomains} domains`,
+  );
+  if (blueprint.credentials.global.trustAnchors.length) {
+    console.log('Trust anchors:');
+    blueprint.credentials.global.trustAnchors.forEach((anchor, idx) => {
+      console.log(
+        `  [TA${idx + 1}] ${anchor.name} — DID ${anchor.did} | role=${anchor.role}` +
+          (anchor.policyURI ? ` | policy=${anchor.policyURI}` : ''),
+      );
+    });
+  }
+  if (blueprint.credentials.global.issuers.length) {
+    console.log('Issuers:');
+    blueprint.credentials.global.issuers.forEach((issuer, idx) => {
+      console.log(
+        `  [ISS${idx + 1}] ${issuer.name} — DID ${issuer.did} | attestation=${issuer.attestationType} | ` +
+          `domains=${issuer.domains.join(', ') || '—'}`,
+      );
+    });
+  }
+  if (blueprint.credentials.global.policies.length) {
+    console.log('Policies:');
+    blueprint.credentials.global.policies.forEach((policy, idx) => {
+      console.log(`  [POL${idx + 1}] ${policy.name} — ${policy.description} (${policy.uri})`);
+    });
+  }
 
   banner('Global controls');
   renderTable([
@@ -324,6 +358,12 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
       summarizeAddress('Credential verifier', control.credentialVerifier).split(': '),
       summarizeAddress('Fallback operator', control.fallbackOperator).split(': '),
       ['Control plane URI', control.controlPlaneURI],
+      [
+        'Credential requirements',
+        domain.credentials.length
+          ? domain.credentials.map((credential) => credential.name).join('; ')
+          : '—',
+      ],
       ['Autopilot posture', formatAutopilotSummary(control.autopilotEnabled, control.autopilotCadenceSeconds)],
     ] as unknown as Array<[string, string]>);
 
@@ -344,6 +384,19 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     console.log(`    ${domain.calldata.setDomainTelemetry}`);
     console.log('  setDomainInfrastructure calldata:');
     console.log(`    ${domain.calldata.setDomainInfrastructure}`);
+    if (domain.credentials.length) {
+      console.log('  Credential requirements:');
+      domain.credentials.forEach((credential, idx) => {
+        console.log(
+          `    [CR${idx + 1}] ${credential.name} — ${credential.requirement} | format=${credential.format} | ` +
+            `issuers=${credential.issuers.join(', ') || '—'} | verifiers=${credential.verifiers.join(', ') || '—'} ` +
+            `| registry=${credential.registry}` +
+            (credential.notes ? ` | notes=${credential.notes}` : ''),
+        );
+      });
+    } else {
+      console.log('  Credential requirements: none');
+    }
   });
 
   banner('Mermaid system map (copy/paste into dashboards)');

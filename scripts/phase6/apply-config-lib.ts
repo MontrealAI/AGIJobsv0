@@ -22,6 +22,46 @@ export interface InfrastructureEntry {
   uri?: string;
 }
 
+export interface GlobalCredentialAnchorInput {
+  name: string;
+  did: string;
+  role: string;
+  policyURI?: string;
+}
+
+export interface GlobalCredentialIssuerInput {
+  name: string;
+  did: string;
+  attestationType: string;
+  registry: string;
+  domains: string[];
+}
+
+export interface GlobalCredentialPolicyInput {
+  name: string;
+  description: string;
+  uri: string;
+}
+
+export interface GlobalCredentialsInput {
+  trustAnchors: GlobalCredentialAnchorInput[];
+  issuers: GlobalCredentialIssuerInput[];
+  policies: GlobalCredentialPolicyInput[];
+  revocationRegistry: string;
+}
+
+export interface DomainCredentialRequirementInput {
+  name: string;
+  requirement: string;
+  credentialType: string;
+  format: string;
+  issuers: string[];
+  verifiers: string[];
+  registry: string;
+  evidence: string;
+  notes?: string;
+}
+
 export interface DomainMetadata {
   domain: string;
   l2: string;
@@ -43,6 +83,7 @@ export type GlobalConfigInput = {
   systemPause?: string;
   escalationBridge?: string;
   decentralizedInfra?: DecentralizedInfraEntry[];
+  credentials?: GlobalCredentialsInput;
 };
 
 export type DomainConfigInput = {
@@ -66,6 +107,7 @@ export type DomainConfigInput = {
   infrastructure?: InfrastructureEntry[];
   infrastructureControl?: DomainInfrastructureControlInput;
   sunsetPlan?: SunsetPlanInput;
+  credentials?: DomainCredentialRequirementInput[];
 };
 
 export type SunsetPlanInput = {

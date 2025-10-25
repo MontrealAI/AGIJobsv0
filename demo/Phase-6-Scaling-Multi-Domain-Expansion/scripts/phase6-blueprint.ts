@@ -18,6 +18,39 @@ export interface DomainInfrastructureEntry {
   uri?: string;
 }
 
+export interface GlobalCredentialAnchorConfig {
+  name: string;
+  did: string;
+  role: string;
+  policyURI?: string;
+}
+
+export interface GlobalCredentialIssuerConfig {
+  name: string;
+  did: string;
+  attestationType: string;
+  registry: string;
+  domains: string[];
+}
+
+export interface GlobalCredentialPolicyConfig {
+  name: string;
+  description: string;
+  uri: string;
+}
+
+export interface DomainCredentialRequirementConfig {
+  name: string;
+  requirement: string;
+  credentialType: string;
+  format: string;
+  issuers: string[];
+  verifiers: string[];
+  registry: string;
+  evidence: string;
+  notes?: string;
+}
+
 export interface DomainOperationsConfig {
   maxActiveJobs: number;
   maxQueueDepth: number;
@@ -68,6 +101,12 @@ export interface Phase6DemoConfig {
       oversightCouncil?: string;
     };
     decentralizedInfra?: DecentralizedInfraEntry[];
+    credentials?: {
+      trustAnchors?: GlobalCredentialAnchorConfig[];
+      issuers?: GlobalCredentialIssuerConfig[];
+      policies?: GlobalCredentialPolicyConfig[];
+      revocationRegistry?: string;
+    };
     telemetry?: {
       manifestHash: string;
       metricsDigest: string;
@@ -110,6 +149,7 @@ export interface Phase6DemoConfig {
       autopilotCadence?: number;
       autopilotEnabled?: boolean;
     };
+    credentials?: DomainCredentialRequirementConfig[];
   }>;
 }
 
@@ -167,6 +207,7 @@ export interface DomainBlueprint {
     autopilotCadenceSeconds: number;
     autopilotEnabled: boolean;
   };
+  credentials: DomainCredentialRequirementConfig[];
   calldata: {
     registerDomain: string;
     updateDomain: string;
@@ -202,6 +243,9 @@ export interface Phase6Blueprint {
     resilienceFloorCoverage?: number;
     automationFloorBreaches?: number;
     automationFloorCoverage?: number;
+    credentialedDomainCount: number;
+    credentialRequirementCount: number;
+    credentialCoverage: number;
   };
   global: {
     manifestURI: string;
@@ -237,6 +281,20 @@ export interface Phase6Blueprint {
     global: DecentralizedInfraEntry[];
     domains: Record<string, DomainInfrastructureEntry[]>;
   };
+  credentials: {
+    global: {
+      trustAnchors: GlobalCredentialAnchorConfig[];
+      issuers: GlobalCredentialIssuerConfig[];
+      policies: GlobalCredentialPolicyConfig[];
+      revocationRegistry: string | null;
+    };
+    domains: Record<string, DomainCredentialRequirementConfig[]>;
+    totals: {
+      requirements: number;
+      credentialedDomains: number;
+      coverage: number;
+    };
+  };
   calldata: {
     globalConfig: string;
     globalGuards: string;
@@ -270,6 +328,16 @@ const ABI_INTERFACE = new Interface(ABI_FRAGMENTS);
 
 function ensureArray<T>(value: T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [];
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry : String(entry)))
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
 }
 
 function normaliseAddress(value: string | undefined): string | null {
@@ -321,12 +389,19 @@ function computeMetrics(config: Phase6DemoConfig) {
   let l2Settlements = 0;
   let totalValueFlow = 0;
   let autopilotEnabled = 0;
+  let credentialedDomains = 0;
+  let credentialRequirementCount = 0;
   const resilienceFloor = toNumber(config.global.telemetry?.resilienceFloorBps);
   const automationFloor = toNumber(config.global.telemetry?.automationFloorBps);
   let resilienceFloorBreaches = 0;
   let automationFloorBreaches = 0;
 
   for (const domain of config.domains) {
+    const domainCredentials = ensureArray(domain.credentials);
+    if (domainCredentials.length) {
+      credentialedDomains += 1;
+      credentialRequirementCount += domainCredentials.length;
+    }
     const metadata = domain.metadata;
     if (metadata) {
       const resilienceIndex = toNumber(metadata.resilienceIndex);
@@ -422,6 +497,9 @@ function computeMetrics(config: Phase6DemoConfig) {
     resilienceFloorCoverage: computeCoverage(resilienceFloorBreaches, resilienceFloor),
     automationFloorBreaches: automationFloor !== null ? automationFloorBreaches : undefined,
     automationFloorCoverage: computeCoverage(automationFloorBreaches, automationFloor),
+    credentialedDomainCount: credentialedDomains,
+    credentialRequirementCount,
+    credentialCoverage: domainCount ? credentialedDomains / domainCount : 0,
   };
 }
 
@@ -562,6 +640,23 @@ export function buildPhase6Blueprint(
     const telemetry = domain.telemetry ?? ({} as DomainTelemetryConfig);
     const operations = domain.operations ?? ({} as DomainOperationsConfig);
     const control = domain.infrastructureControl;
+    const credentialRequirements = ensureArray(domain.credentials).map((entry) => {
+      const notes =
+        entry && entry.notes !== undefined && entry.notes !== null
+          ? String(entry.notes)
+          : undefined;
+      return {
+        name: String(entry?.name ?? ''),
+        requirement: String(entry?.requirement ?? ''),
+        credentialType: String(entry?.credentialType ?? ''),
+        format: String(entry?.format ?? ''),
+        issuers: normalizeStringArray(entry?.issuers ?? []),
+        verifiers: normalizeStringArray(entry?.verifiers ?? []),
+        registry: String(entry?.registry ?? ''),
+        evidence: String(entry?.evidence ?? ''),
+        notes,
+      };
+    });
 
     return {
       slug: domain.slug,
@@ -619,6 +714,7 @@ export function buildPhase6Blueprint(
         autopilotCadenceSeconds: Number(control?.autopilotCadence ?? 0),
         autopilotEnabled: Boolean(control?.autopilotEnabled ?? false),
       },
+      credentials: credentialRequirements,
       calldata: {
         registerDomain: ABI_INTERFACE.encodeFunctionData('registerDomain', [tuples.tuple]),
         updateDomain: ABI_INTERFACE.encodeFunctionData('updateDomain', [domainId, tuples.tuple]),
@@ -637,6 +733,39 @@ export function buildPhase6Blueprint(
   for (const domain of config.domains) {
     domainInfra[domain.slug] = ensureArray(domain.infrastructure);
   }
+  const domainCredentialMap: Record<string, DomainCredentialRequirementConfig[]> = {};
+  for (const domain of domains) {
+    domainCredentialMap[domain.slug] = domain.credentials;
+  }
+
+  const rawGlobalCredentials = config.global.credentials ?? {};
+  const globalCredentials = {
+    trustAnchors: ensureArray(rawGlobalCredentials.trustAnchors).map((anchor) => ({
+      name: String(anchor?.name ?? ''),
+      did: String(anchor?.did ?? ''),
+      role: String(anchor?.role ?? ''),
+      policyURI:
+        anchor && typeof anchor.policyURI === 'string' && anchor.policyURI.length
+          ? anchor.policyURI
+          : undefined,
+    })),
+    issuers: ensureArray(rawGlobalCredentials.issuers).map((issuer) => ({
+      name: String(issuer?.name ?? ''),
+      did: String(issuer?.did ?? ''),
+      attestationType: String(issuer?.attestationType ?? ''),
+      registry: String(issuer?.registry ?? ''),
+      domains: normalizeStringArray(issuer?.domains ?? []),
+    })),
+    policies: ensureArray(rawGlobalCredentials.policies).map((policy) => ({
+      name: String(policy?.name ?? ''),
+      description: String(policy?.description ?? ''),
+      uri: String(policy?.uri ?? ''),
+    })),
+    revocationRegistry:
+      typeof rawGlobalCredentials.revocationRegistry === 'string'
+        ? rawGlobalCredentials.revocationRegistry
+        : null,
+  };
 
   const calldata = {
     globalConfig: ABI_INTERFACE.encodeFunctionData('setGlobalConfig', [globalTuple]),
@@ -693,6 +822,15 @@ export function buildPhase6Blueprint(
     infrastructure: {
       global: globalInfra,
       domains: domainInfra,
+    },
+    credentials: {
+      global: globalCredentials,
+      domains: domainCredentialMap,
+      totals: {
+        requirements: metrics.credentialRequirementCount,
+        credentialedDomains: metrics.credentialedDomainCount,
+        coverage: metrics.credentialCoverage,
+      },
     },
     calldata,
     mermaid,
