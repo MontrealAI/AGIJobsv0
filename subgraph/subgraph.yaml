@@ -96,6 +96,8 @@ dataSources:
           handler: handlePhase6DomainUpdated
         - event: DomainStatusChanged(indexed bytes32,bool)
           handler: handlePhase6DomainStatusChanged
+        - event: DomainRemoved(indexed bytes32,string)
+          handler: handlePhase6DomainRemoved
         - event: DomainOperationsUpdated(indexed bytes32,uint48,uint48,uint96,uint16,uint16,bool)
           handler: handlePhase6DomainOperationsUpdated
         - event: DomainTelemetryUpdated(indexed bytes32,uint32,uint32,uint32,uint32,bool,address,address,bytes32,bytes32)

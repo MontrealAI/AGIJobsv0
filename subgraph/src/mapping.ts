@@ -383,10 +383,25 @@ function upsertPhase6Domain(id: string, event: ethereum.Event): Phase6Domain {
     domain = new Phase6Domain(id);
     domain.registeredAtBlock = event.block.number;
     domain.registeredAtTimestamp = event.block.timestamp;
+    domain.lifecycle = 'active';
+    domain.active = true;
+    domain.removedAtBlock = null;
+    domain.removedAtTimestamp = null;
   }
   domain.updatedAtBlock = event.block.number;
   domain.updatedAtTimestamp = event.block.timestamp;
   return domain as Phase6Domain;
+}
+
+function applyPhase6Lifecycle(domain: Phase6Domain, active: boolean): void {
+  if (domain.lifecycle == 'removed') {
+    domain.active = false;
+    return;
+  }
+  domain.active = active;
+  domain.lifecycle = active ? 'active' : 'paused';
+  domain.removedAtBlock = null;
+  domain.removedAtTimestamp = null;
 }
 
 export function handlePhase6DomainRegistered(event: ethereum.Event): void {
@@ -402,7 +417,7 @@ export function handlePhase6DomainRegistered(event: ethereum.Event): void {
   domain.l2Gateway = params[6].value.toAddress();
   domain.executionRouter = params[8].value.toAddress();
   domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
-  domain.active = params[10].value.toBoolean();
+  applyPhase6Lifecycle(domain, params[10].value.toBoolean());
   domain.manifestURI = params[3].value.toString();
   domain.agentOps = Address.zero();
   domain.dataPipeline = Address.zero();
@@ -446,7 +461,7 @@ export function handlePhase6DomainUpdated(event: ethereum.Event): void {
   domain.subgraphEndpoint = params[7].value.toString();
   domain.executionRouter = params[8].value.toAddress();
   domain.heartbeatSeconds = params[9].value.toBigInt().toI32();
-  domain.active = params[10].value.toBoolean();
+  applyPhase6Lifecycle(domain, params[10].value.toBoolean());
   domain.manifestURI = params[3].value.toString();
   domain.save();
 }
@@ -469,7 +484,19 @@ export function handlePhase6DomainStatusChanged(event: ethereum.Event): void {
   const params = event.parameters;
   const id = phase6DomainId(params[0].value);
   const domain = upsertPhase6Domain(id, event);
-  domain.active = params[1].value.toBoolean();
+  applyPhase6Lifecycle(domain, params[1].value.toBoolean());
+  domain.save();
+}
+
+export function handlePhase6DomainRemoved(event: ethereum.Event): void {
+  const params = event.parameters;
+  const id = phase6DomainId(params[0].value);
+  const domain = upsertPhase6Domain(id, event);
+  domain.slug = params[1].value.toString();
+  domain.lifecycle = 'removed';
+  domain.active = false;
+  domain.removedAtBlock = event.block.number;
+  domain.removedAtTimestamp = event.block.timestamp;
   domain.save();
 }
 

@@ -93,6 +93,7 @@ type Phase6Domain @entity {
   executionRouter: Bytes
   heartbeatSeconds: Int!
   active: Boolean!
+  lifecycle: String!
   manifestURI: String!
   agentOps: Bytes
   dataPipeline: Bytes
@@ -120,6 +121,8 @@ type Phase6Domain @entity {
   settlementAsset: Bytes
   telemetryMetricsDigest: Bytes
   telemetryManifestHash: Bytes
+  removedAtBlock: BigInt
+  removedAtTimestamp: BigInt
 }
 
 type Phase6GlobalConfig @entity {
