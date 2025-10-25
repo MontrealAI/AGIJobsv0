@@ -309,6 +309,13 @@ type OwnerControlProof = {
     singleOwnerTargets: boolean;
     unstoppableScore: number;
   };
+  secondaryVerification: {
+    selectorsMatch: boolean;
+    pauseDecoded: boolean;
+    resumeDecoded: boolean;
+    unstoppableScore: number;
+    matchesPrimaryScore: boolean;
+  };
   calls: Array<{
     index: number;
     description: string;
@@ -631,6 +638,14 @@ function buildOwnerControlProof(
   ];
   const unstoppableScore = signals.reduce((sum, value) => sum + value, 0) / signals.length;
 
+  const secondaryVerification = crossVerifyOwnerOverride({
+    transactions,
+    manager,
+    requiredFunctions,
+    nonOwnerTargets,
+    primaryScore: unstoppableScore,
+  });
+
   return {
     manager,
     systemPause,
@@ -655,8 +670,81 @@ function buildOwnerControlProof(
       singleOwnerTargets: nonOwnerTargets.length === 0,
       unstoppableScore,
     },
+    secondaryVerification,
     calls: callMap,
   };
+}
+
+function crossVerifyOwnerOverride(params: {
+  transactions: SafeTransaction[];
+  manager: string;
+  requiredFunctions: Array<{ name: string; signature: string; minimum: number }>;
+  nonOwnerTargets: string[];
+  primaryScore: number;
+}) {
+  const { transactions, manager, requiredFunctions, nonOwnerTargets, primaryScore } = params;
+  const selectorCounts = new Map<string, number>();
+  for (const tx of transactions) {
+    const selector = `0x${tx.data.slice(2, 10).toLowerCase()}`;
+    selectorCounts.set(selector, (selectorCounts.get(selector) ?? 0) + 1);
+  }
+
+  const selectorsMatch = requiredFunctions.every((fn) => {
+    const manualSelector = computeSelector(fn.signature);
+    const count = selectorCounts.get(manualSelector) ?? 0;
+    return count >= Math.max(1, fn.minimum);
+  });
+
+  const forwardSelector = computeSelector("forwardPauseCall(bytes)");
+  const pauseSelector = computeSelector("pauseAll()");
+  const resumeSelector = computeSelector("unpauseAll()");
+
+  let pauseDecoded = false;
+  let resumeDecoded = false;
+
+  for (const tx of transactions) {
+    if (tx.to.toLowerCase() !== manager) {
+      continue;
+    }
+    const selector = `0x${tx.data.slice(2, 10).toLowerCase()}`;
+    if (selector !== forwardSelector) {
+      continue;
+    }
+    try {
+      const decoded = managerInterface.decodeFunctionData("forwardPauseCall", tx.data);
+      const innerCalldata: string = decoded[0];
+      const innerSelector = `0x${innerCalldata.slice(2, 10).toLowerCase()}`;
+      if (innerSelector === pauseSelector) {
+        pauseDecoded = true;
+      }
+      if (innerSelector === resumeSelector) {
+        resumeDecoded = true;
+      }
+    } catch (error) {
+      pauseDecoded = false;
+      resumeDecoded = false;
+    }
+  }
+
+  const signals = [
+    selectorsMatch ? 1 : 0,
+    pauseDecoded ? 1 : 0,
+    resumeDecoded ? 1 : 0,
+    nonOwnerTargets.length === 0 ? 1 : 0,
+  ];
+  const unstoppableScore = signals.reduce((sum, value) => sum + value, 0) / signals.length;
+
+  return {
+    selectorsMatch,
+    pauseDecoded,
+    resumeDecoded,
+    unstoppableScore,
+    matchesPrimaryScore: Math.abs(unstoppableScore - primaryScore) < 1e-9,
+  };
+}
+
+function computeSelector(signature: string): string {
+  return keccak256(toUtf8Bytes(signature)).slice(0, 10).toLowerCase();
 }
 
 function buildMermaid(manifest: Manifest, dominanceScore: number): string {
@@ -1071,7 +1159,9 @@ function buildRunbook(
   lines.push(
     `5. Confirm unstoppable owner score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (pause ${
       telemetry.ownerControls.pauseCallEncoded
-    }, resume ${telemetry.ownerControls.resumeCallEncoded}).`
+    }, resume ${telemetry.ownerControls.resumeCallEncoded}, secondary corroboration ${
+      telemetry.governance.ownerProof.secondary.matchesPrimaryScore ? "aligned" : "drift"
+    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%).`
   );
   lines.push("\n---\n");
   lines.push("## Energy telemetry");
@@ -1188,7 +1278,9 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   lines.push(
     `* Owner override unstoppable score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (selectors ${
       telemetry.governance.ownerProof.selectorsComplete
-    }, pause ${telemetry.ownerControls.pauseCallEncoded}, resume ${telemetry.ownerControls.resumeCallEncoded}).`
+    }, pause ${telemetry.ownerControls.pauseCallEncoded}, resume ${telemetry.ownerControls.resumeCallEncoded}, secondary ${
+      telemetry.governance.ownerProof.secondary.matchesPrimaryScore ? "aligned" : "drift"
+    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%).`
   );
   const scenarioSweep: ScenarioResult[] = telemetry.scenarioSweep ?? [];
   const nominalScenarios = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
@@ -1471,6 +1563,7 @@ function computeTelemetry(
         singleOwnerTargets: ownerProof.verification.singleOwnerTargets,
         transactionSetHash: ownerProof.hashes.transactionSet,
         selectorSetHash: ownerProof.hashes.selectorSet,
+        secondary: ownerProof.secondaryVerification,
       },
     },
     energy: {
@@ -1549,6 +1642,7 @@ function computeTelemetry(
       unstoppableScore: ownerProof.verification.unstoppableScore,
       selectorsComplete: ownerProof.verification.selectorsComplete,
       transactionsEncoded: ownerProof.calls.length,
+      secondary: ownerProof.secondaryVerification,
     },
     missionDirectives: manifest.missionDirectives,
     verification: {
@@ -1671,6 +1765,14 @@ function buildStabilityLedger(
       status: telemetry.governance.ownerOverridesReady,
       weight: 0.9,
       evidence: `${ownerProof.requiredFunctions.filter((fn) => fn.present).length}/${ownerProof.requiredFunctions.length} selectors · pause ${ownerProof.pauseEmbedding.pauseAll ? "yes" : "no"} · resume ${ownerProof.pauseEmbedding.unpauseAll ? "yes" : "no"} · unstoppable ${(ownerProof.verification.unstoppableScore * 100).toFixed(1)}%`,
+    },
+    {
+      id: "owner-control-secondary",
+      title: "Owner override cross-check aligned",
+      severity: "medium",
+      status: ownerProof.secondaryVerification.matchesPrimaryScore,
+      weight: 0.7,
+      evidence: `secondary ${(ownerProof.secondaryVerification.unstoppableScore * 100).toFixed(1)}% vs primary ${(ownerProof.verification.unstoppableScore * 100).toFixed(1)}%`,
     },
     {
       id: "guardian-coverage",
@@ -1822,6 +1924,11 @@ function buildStabilityLedger(
           score: ownerProof.verification.unstoppableScore,
           explanation: "Selector coverage, pause toggles, and target isolation verified for owner overrides.",
         },
+        {
+          method: "owner-control-secondary",
+          score: ownerProof.secondaryVerification.unstoppableScore,
+          explanation: "Independent decode of Safe batch confirms unstoppable levers match primary proof.",
+        },
       ],
     },
     checks,
@@ -1848,6 +1955,7 @@ function buildStabilityLedger(
       pauseCallEncoded: ownerProof.pauseEmbedding.pauseAll,
       resumeCallEncoded: ownerProof.pauseEmbedding.unpauseAll,
       unstoppableScore: ownerProof.verification.unstoppableScore,
+      secondary: ownerProof.secondaryVerification,
     },
     safety: {
       guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,

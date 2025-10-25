@@ -95,6 +95,13 @@
     "singleOwnerTargets": true,
     "unstoppableScore": 1
   },
+  "secondaryVerification": {
+    "selectorsMatch": true,
+    "pauseDecoded": true,
+    "resumeDecoded": true,
+    "unstoppableScore": 1,
+    "matchesPrimaryScore": true
+  },
   "calls": [
     {
       "index": 0,

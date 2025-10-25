@@ -232,12 +232,13 @@ flowchart TD
 * **Redundant verification vectors** – The ledger records independent confidence methods: boolean consensus, redundant telemetry agreement, and residual Dyson thermostat buffer. Operators can inspect divergences instantly.
 * **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
 * **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
+* **Dual unstoppable verification** – A secondary decoder replays the Safe batch, recomputes selectors and pause embeddings, and records the corroborating unstoppable score next to the primary proof so drift is impossible to miss.
 
 ---
 
 ## 🧪 Verification rituals
 
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `governance.ownerOverridesReady === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
+1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
 2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
 3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
 4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
@@ -255,6 +256,7 @@ Run `npm run demo:kardashev-ii:orchestrate -- --reflect` to receive:
 - ✅ Bridge latency vs Dyson failsafe latency.
 - ✅ Scenario stress sweep free of critical statuses (confidence badges ≥ 95%).
 - ✅ Pause bundle parity (pause/unpause both targeting configured SystemPause).
+- ✅ Secondary unstoppable decoder matches the primary score (≥95% corroborated).
 
 Only sign the Safe transaction after all checks print green.
 
