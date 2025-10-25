@@ -1,6 +1,8 @@
 # AGI Jobs Platform at Kardashev II Scale — Demonstration Command Deck
 
 > **Thesis**: a non-technical steward can summon, audit, and steer a civilisation-scale AGI labour mesh – spanning Earth, Mars, and orbital habitats – using **AGI Jobs v0 (v2)** from a laptop. This demo ships the command surfaces, telemetry, calldata, and verification harness to make that real in minutes.
+>
+> **Operator’s note**: the hyper-augmented `k2-stellar-demo/` variant is bundled alongside this command deck. It mirrors every manifest entry, adds Titan/orbital orchestration, and exposes the unstoppable pause/resume levers exactly as encoded in the Safe payload so owners can prove universal control at a glance.
 
 ---
 

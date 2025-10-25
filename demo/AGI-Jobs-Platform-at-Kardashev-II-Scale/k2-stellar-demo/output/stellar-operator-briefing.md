@@ -5,8 +5,8 @@
 - **Assign guardian council** (Safe step #1) — Updates guardian council multisig with fresh signers · Playbook: ipfs://QmPlaybooksGuardianCouncil
 - **Point to system pause** (Safe step #2) — Ensures SystemPause contract is owner controlled · Playbook: ipfs://QmPlaybooksSystemPause
 - **Install self-improvement charter** (Safe step #3) — Loads plan hash, cadence, and last execution marker · Playbook: ipfs://QmPlaybooksSelfImprovement
-- **Stage global pause** (Safe step #48) — Encodes forwardPauseCall(pauseAll) for emergency stop · Playbook: ipfs://QmPlaybooksPause
-- **Stage global resume** (Safe step #49) — Encodes forwardPauseCall(unpauseAll) to restart · Playbook: ipfs://QmPlaybooksResume
+- **Pause all modules** (Safe step #48) — Encodes forwardPauseCall(pauseAll) so the owner can halt the entire mesh instantly · Playbook: ipfs://QmPlaybooksPause
+- **Resume all modules** (Safe step #49) — Encodes forwardPauseCall(unpauseAll) to restart planetary domains once safe · Playbook: ipfs://QmPlaybooksResume
 
 ## Escalation pathways
 * Guardians: +1-415-555-2718 · Ops: +1-415-555-7741
