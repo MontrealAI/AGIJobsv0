@@ -18,7 +18,7 @@
 * Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
 * Compute deviation 0.45% (tolerance 0.75%): true
 * Bridge latency tolerance (120s): true
-* Owner override unstoppable score 100.00% (selectors true, pause true, resume true).
+* Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%).
 * Scenario sweep: 5/7 nominal, 2 warning, 0 critical.
   - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
   - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.

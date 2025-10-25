@@ -305,6 +305,23 @@ function renderOwnerProof(ownerProof, telemetry) {
   scoreElement.classList.toggle("status-ok", ownerProof.verification.unstoppableScore >= 0.95);
   scoreElement.classList.toggle("status-warn", ownerProof.verification.unstoppableScore < 0.95);
 
+  const secondary = ownerProof.secondaryVerification;
+  const secondaryPct = (secondary.unstoppableScore * 100).toFixed(2);
+  const secondaryElement = document.querySelector("#owner-proof-secondary");
+  secondaryElement.textContent = `Secondary unstoppable score: ${secondaryPct}% (selectors ${
+    secondary.selectorsMatch ? "✅" : "❌"
+  }, pause ${secondary.pauseDecoded ? "✅" : "❌"}, resume ${secondary.resumeDecoded ? "✅" : "❌"}, match ${
+    secondary.matchesPrimaryScore ? "✅" : "❌"
+  })`;
+  secondaryElement.classList.toggle(
+    "status-ok",
+    secondary.unstoppableScore >= 0.95 && secondary.matchesPrimaryScore
+  );
+  secondaryElement.classList.toggle(
+    "status-warn",
+    secondary.unstoppableScore < 0.95 || !secondary.matchesPrimaryScore
+  );
+
   const summaryList = document.querySelector("#owner-proof-summary");
   summaryList.innerHTML = "";
   const summaryItems = [
@@ -312,6 +329,10 @@ function renderOwnerProof(ownerProof, telemetry) {
     { label: "Pause embedded", ok: ownerProof.pauseEmbedding.pauseAll },
     { label: "Resume embedded", ok: ownerProof.pauseEmbedding.unpauseAll },
     { label: "Targets isolated", ok: ownerProof.verification.singleOwnerTargets },
+    { label: "Secondary selectors", ok: secondary.selectorsMatch },
+    { label: "Secondary pause decode", ok: secondary.pauseDecoded },
+    { label: "Secondary resume decode", ok: secondary.resumeDecoded },
+    { label: "Scores aligned", ok: secondary.matchesPrimaryScore },
   ];
   summaryItems.forEach((item) => {
     const li = document.createElement("li");

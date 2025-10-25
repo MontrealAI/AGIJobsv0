@@ -22,7 +22,14 @@
       "pauseEmbedding": true,
       "singleOwnerTargets": true,
       "transactionSetHash": "0x11dec585125d51217cac224930f131e1fdaae40f80746f9114dfb5a3a137a965",
-      "selectorSetHash": "0x4371d8024568b9a059926694ea7e6726e356e284ccb1ab9b1fd30ddbbf603b24"
+      "selectorSetHash": "0x4371d8024568b9a059926694ea7e6726e356e284ccb1ab9b1fd30ddbbf603b24",
+      "secondary": {
+        "selectorsMatch": true,
+        "pauseDecoded": true,
+        "resumeDecoded": true,
+        "unstoppableScore": 1,
+        "matchesPrimaryScore": true
+      }
     }
   },
   "energy": {
@@ -439,7 +446,14 @@
     "resumeCallEncoded": true,
     "unstoppableScore": 1,
     "selectorsComplete": true,
-    "transactionsEncoded": 23
+    "transactionsEncoded": 23,
+    "secondary": {
+      "selectorsMatch": true,
+      "pauseDecoded": true,
+      "resumeDecoded": true,
+      "unstoppableScore": 1,
+      "matchesPrimaryScore": true
+    }
   },
   "missionDirectives": {
     "ownerPowers": [
