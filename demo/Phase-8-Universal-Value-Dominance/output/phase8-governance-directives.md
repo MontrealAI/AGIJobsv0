@@ -1,7 +1,7 @@
 # Phase 8 — Governance Directives
-Generated: 2025-10-24T21:34:02.536Z
+Generated: 2025-10-25T02:15:26.178Z
 Chain ID: 1
-Phase8 manager: Set PHASE8_MANAGER_ADDRESS before submitting calls
+Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 
 ## Immediate directives
 1. Confirm npm dependencies remain locked via `npm ci` (step enforced by CI).

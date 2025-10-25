@@ -44,6 +44,26 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(financeStreams).toContainText('Planetary Resilience Fund');
   });
 
+  test('surfaces emergency overrides pack', async ({ page }) => {
+    const summary = page.locator('[data-test-id="emergency-summary"]');
+    await expect(summary).toContainText('Circuit breaker ready');
+    const download = page.locator('[data-test-id="emergency-download"]');
+    await expect(download).toHaveAttribute('href', './output/phase8-emergency-overrides.json');
+    const cards = page.locator('[data-test-id="emergency-card"]');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.first()).toContainText('Pause all core modules');
+    await expect(cards.nth(1)).toContainText('Restore core modules');
+
+    const firstCalldata = cards.first().locator('[data-test-id="emergency-calldata"]');
+    await expect(firstCalldata).toContainText('…');
+    const toggle = cards.first().locator('[data-test-id="toggle-calldata"]');
+    await toggle.click();
+    await expect(firstCalldata).not.toContainText('…');
+    await expect(firstCalldata).toHaveText(/^0x[0-9a-f]+$/i);
+    await toggle.click();
+    await expect(firstCalldata).toContainText('…');
+  });
+
   test('renders mermaid diagram once manifest loads', async ({ page }) => {
     const diagram = page.locator('#mermaid-diagram');
     const status = await diagram.getAttribute('data-rendered');
@@ -77,6 +97,9 @@ test.describe('Phase 8 dashboard happy path', () => {
 
     const directivesLink = page.locator('[data-runbook-key="brief"] [data-test-id="runbook-download"]');
     await expect(directivesLink).toHaveAttribute('href', './output/phase8-governance-directives.md');
+
+    const emergencyLink = page.locator('[data-runbook-key="emergency"] [data-test-id="runbook-download"]');
+    await expect(emergencyLink).toHaveAttribute('href', './output/phase8-emergency-overrides.json');
 
     const scorecardLink = page.locator('[data-runbook-key="scorecard"] [data-test-id="runbook-download"]');
     await expect(scorecardLink).toHaveAttribute('href', './output/phase8-dominance-scorecard.json');

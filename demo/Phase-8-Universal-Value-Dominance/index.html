@@ -494,6 +494,68 @@
         background: rgba(12, 20, 38, 0.72);
       }
 
+      .emergency-grid {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .emergency-summary,
+      .emergency-card {
+        background: rgba(12, 20, 38, 0.78);
+        border-radius: 22px;
+        border: 1px solid rgba(90, 210, 255, 0.25);
+        padding: 1.75rem 2rem;
+        box-shadow: 0 18px 40px rgba(5, 12, 22, 0.4);
+      }
+
+      .emergency-summary {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .emergency-summary ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: var(--muted);
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.95rem;
+      }
+
+      .emergency-summary .download-link {
+        align-self: flex-start;
+      }
+
+      .emergency-card {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .emergency-card h3 {
+        margin: 0;
+        font-size: 1.35rem;
+      }
+
+      .emergency-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .emergency-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .emergency-checklist {
+        margin: 0;
+        padding-left: 1.25rem;
+        display: grid;
+        gap: 0.35rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
       .mermaid-actions {
         display: flex;
         align-items: center;
@@ -573,11 +635,46 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem 1rem;
-        align-items: center;
+        align-items: stretch;
       }
 
       .command-row code {
-        flex: 1 1 auto;
+        flex: 1 1 100%;
+        max-width: 100%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 12px;
+        background: rgba(90, 210, 255, 0.08);
+        border: 1px solid rgba(90, 210, 255, 0.12);
+        word-break: break-all;
+        overflow-wrap: anywhere;
+      }
+
+      .command-actions {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .calldata-toggle {
+        appearance: none;
+        border: 1px solid rgba(90, 210, 255, 0.4);
+        background: rgba(90, 210, 255, 0.08);
+        color: var(--text);
+        padding: 0.38rem 0.85rem;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 150ms ease;
+      }
+
+      .calldata-toggle[data-expanded="true"] {
+        background: rgba(90, 210, 255, 0.22);
+      }
+
+      .calldata-toggle:hover,
+      .calldata-toggle:focus-visible {
+        background: rgba(90, 210, 255, 0.22);
       }
 
       .copy-button {
@@ -883,6 +980,10 @@
         <h2 id="playbooks-heading" data-i18n-key="headings.playbooks">Self-Improvement Kernel</h2>
         <div class="playbook-list" id="playbooks"></div>
       </section>
+      <section aria-labelledby="emergency-heading">
+        <h2 id="emergency-heading" data-i18n-key="headings.emergency">Emergency Overrides</h2>
+        <div class="emergency-grid" id="emergency"></div>
+      </section>
       <section aria-labelledby="mermaid-heading">
         <h2 id="mermaid-heading" data-i18n-key="headings.mermaid">Mermaid · Universal Value Mesh</h2>
         <div class="mermaid-actions" data-role="mermaid-controls" data-visible="false">
@@ -952,6 +1053,31 @@
           docsLabel: "Open dashboard operations guide",
           docsHref: "../../docs/phase8-dashboard-operations.md",
         },
+        emergency: {
+          readiness: {
+            ready: "Circuit breaker ready — guardian council can act instantly.",
+            "missing-system-pause": "Configure the System Pause contract to activate the circuit breaker.",
+            "system-pause-unconfigured": "Configure the System Pause contract to activate the circuit breaker.",
+            missing: "Configure the System Pause contract to activate the circuit breaker.",
+            "missing-manager": "Set the Phase 8 manager Safe address to activate the circuit breaker.",
+            unknown: "Emergency readiness unavailable — regenerate the overrides pack.",
+          },
+          metrics: {
+            guardianWindow: "Guardian review window",
+            coverage: "Total sentinel coverage",
+            minimumAdequacy: "Minimum coverage adequacy",
+            dominanceScore: "Dominance score",
+          },
+          downloadLabel: "Download overrides pack",
+          statusReady: "Override ready",
+          statusBlocked: "Await configuration",
+          prerequisitesLabel: "Prerequisites",
+          advisoryLabel: "Advisory checks",
+          copyLabel: "Copy calldata for {action}",
+          toggleExpand: "Show full calldata",
+          toggleCollapse: "Collapse calldata",
+          missing: "Emergency overrides pack unavailable — rerun the orchestrator to regenerate calldata.",
+        },
         runbook: {
           tooltipAria: "Show additional guidance for step {step}",
           steps: {
@@ -972,6 +1098,12 @@
               tooltip:
                 "Share the autogenerated guardian directives so the council signs off on the encoded plan and pause routes.",
               downloadLabel: "Download governance directives",
+            },
+            emergency: {
+              text: "Stage emergency overrides",
+              tooltip:
+                "Load the overrides pack to copy forwardPauseCall payloads for pause/unpause guardianship actions.",
+              downloadLabel: "Download overrides pack",
             },
             apply: {
               text: "Apply transactions via your governance Safe / Timelock",
@@ -1208,6 +1340,32 @@
         copyButtonTimers.set(button, timer);
       };
 
+      const handleCalldataToggle = (button) => {
+        const targetId = button.getAttribute('data-target');
+        if (!targetId) return;
+        const codeElement = document.getElementById(targetId);
+        if (!(codeElement instanceof HTMLElement)) return;
+        const expanded = button.getAttribute('data-expanded') === 'true';
+        const truncated = codeElement.getAttribute('data-truncated') ?? '';
+        const full = codeElement.getAttribute('data-full') ?? '';
+        const nextExpanded = !expanded;
+        const nextValue = nextExpanded ? full || truncated : truncated || full;
+        codeElement.textContent = nextValue || '—';
+        codeElement.setAttribute('data-expanded', nextExpanded ? 'true' : 'false');
+        const titleValue = nextValue || full || truncated;
+        if (titleValue) {
+          codeElement.setAttribute('title', titleValue);
+        } else {
+          codeElement.removeAttribute('title');
+        }
+        button.setAttribute('data-expanded', nextExpanded ? 'true' : 'false');
+        button.setAttribute('aria-expanded', nextExpanded ? 'true' : 'false');
+        const labelKey = nextExpanded ? 'emergency.toggleCollapse' : 'emergency.toggleExpand';
+        const labelText = t(labelKey);
+        button.textContent = labelText;
+        button.setAttribute('aria-label', labelText);
+      };
+
       const mainContent = document.getElementById("main");
       const alertsRegion = document.getElementById("alerts");
       const errorPanel = document.querySelector('[data-role="error-panel"]');
@@ -1300,6 +1458,7 @@
       let defaultManifestSource = null;
       let currentManifest = null;
       let currentSource = null;
+      let emergencyOverridesData = null;
 
       const setManifestFeedback = (message, tone = "info") => {
         if (!manifestFeedbackNode) return;
@@ -1366,6 +1525,15 @@
           },
         },
         {
+          key: "emergency",
+          text: t("runbook.steps.emergency.text"),
+          tooltip: t("runbook.steps.emergency.tooltip"),
+          download: {
+            href: "./output/phase8-emergency-overrides.json",
+            label: t("runbook.steps.emergency.downloadLabel"),
+          },
+        },
+        {
           key: "apply",
           text: t("runbook.steps.apply.text"),
           tooltip: t("runbook.steps.apply.tooltip"),
@@ -1420,6 +1588,7 @@
         { target: "#sentinels", renderer: renderSentinels },
         { target: "#streams", renderer: renderStreams },
         { target: "#playbooks", renderer: renderPlaybooks },
+        { target: "#emergency", renderer: renderEmergency },
         { target: "#runbook", renderer: renderRunbook },
         { target: "#mermaid-diagram", renderer: renderMermaid },
       ];
@@ -1488,6 +1657,15 @@
         const value = toNumber(seconds, 0);
         if (!value) return "—";
         return `${dateFormatter.format(new Date(value * 1000))} UTC`;
+      };
+
+      const formatPercent = (value) => `${(toNumber(value, 0) * 100).toFixed(1)}%`;
+
+      const truncateHex = (value) => {
+        if (!value) return "—";
+        const hex = String(value);
+        if (hex.length <= 14) return hex;
+        return `${hex.slice(0, 10)}…${hex.slice(-6)}`;
       };
 
       const computeDominanceScore = (input) => {
@@ -1702,6 +1880,7 @@
         const normalizedSource = { ...(source ?? {}), type: source?.type ?? "custom" };
         currentSource = normalizedSource;
         renderManifest(normalized);
+        refreshEmergencyOverrides();
         setManifestStatus(normalizedSource);
         if (options.storeAsDefault) {
           defaultManifest = cloneManifest(normalized);
@@ -1778,6 +1957,25 @@
             }
           }
           return false;
+        }
+      }
+
+      async function refreshEmergencyOverrides() {
+        try {
+          const response = await fetch(new URL("./output/phase8-emergency-overrides.json", import.meta.url), {
+            cache: "no-cache",
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to load emergency overrides: ${response.status}`);
+          }
+          emergencyOverridesData = await response.json();
+        } catch (error) {
+          console.warn("Unable to load emergency overrides", error);
+          emergencyOverridesData = null;
+        }
+        const emergencyContainer = document.getElementById("emergency");
+        if (emergencyContainer) {
+          renderEmergency(emergencyContainer, currentManifest, emergencyOverridesData);
         }
       }
 
@@ -2194,6 +2392,127 @@
         container.innerHTML = entries.join("");
       }
 
+      function renderEmergency(container, manifest, _context) {
+        if (!container) return;
+        const data = emergencyOverridesData;
+        if (!data) {
+          container.innerHTML = `<p data-i18n-key="emergency.missing" data-test-id="emergency-empty">${t("emergency.missing")}</p>`;
+          return;
+        }
+
+        const readinessTranslations = (TEXT.emergency && TEXT.emergency.readiness) || {};
+        const rawReadiness = typeof data.readiness === "string" ? data.readiness : "unknown";
+        const normalizedReadiness =
+          rawReadiness === "system-pause-unconfigured" || rawReadiness === "missing"
+            ? "missing-system-pause"
+            : rawReadiness;
+        const readinessKey = readinessTranslations[normalizedReadiness] ? normalizedReadiness : "unknown";
+        const readinessMessage = t(`emergency.readiness.${readinessKey}`);
+        const readinessClass = readinessKey === "ready" ? "chip alt" : "chip warning";
+        const metrics = data.metrics ?? {};
+        const summaryMetrics = [
+          `${t("emergency.metrics.guardianWindow")}: ${formatSeconds(metrics.guardianWindowSeconds)}`,
+          `${t("emergency.metrics.coverage")}: ${formatSeconds(metrics.sentinelCoverageSeconds)}`,
+          `${t("emergency.metrics.minimumAdequacy")}: ${formatPercent(metrics.minimumCoverageAdequacy)}`,
+          `${t("emergency.metrics.dominanceScore")}: ${Number(metrics.dominanceScore ?? 0).toFixed(1)} / 100`,
+        ];
+
+        const guardianAddress = data.guardianCouncil ?? manifest?.global?.guardianCouncil ?? "";
+        const pauseAddress = data.systemPause ?? manifest?.global?.systemPause ?? "";
+
+        const summary = `
+          <article class="emergency-summary" data-test-id="emergency-summary" data-readiness="${escapeHtml(
+            normalizedReadiness,
+          )}">
+            <div class="${readinessClass}">${escapeHtml(readinessMessage)}</div>
+            <ul>
+              ${summaryMetrics.map((entry) => `<li>${escapeHtml(entry)}</li>`).join("")}
+              <li>${escapeHtml(t("controls.guardianCouncil"))}: ${escapeHtml(shortAddress(guardianAddress))}</li>
+              <li>${escapeHtml(t("controls.systemPause"))}: ${escapeHtml(shortAddress(pauseAddress))}</li>
+            </ul>
+            <a class="download-link" href="./output/phase8-emergency-overrides.json" download data-test-id="emergency-download">
+              ${escapeHtml(t("emergency.downloadLabel"))}
+            </a>
+          </article>
+        `;
+
+        const cards = (Array.isArray(data.overrides) ? data.overrides : []).map((entry, index) => {
+          const label = entry.label || entry.key || `Override ${index + 1}`;
+          const description = entry.description || "";
+          const prerequisites = Array.isArray(entry.prerequisites)
+            ? entry.prerequisites.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+            : "";
+          const advisory = Array.isArray(entry.advisory)
+            ? entry.advisory.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+            : "";
+          const statusLabel = entry.enabled ? t("emergency.statusReady") : t("emergency.statusBlocked");
+          const feedbackId = `emergency-${index}`;
+          const copyLabel = t("emergency.copyLabel").replace("{action}", label);
+          const rawCalldata = typeof entry.managerCalldata === "string" ? entry.managerCalldata.trim() : "";
+          const truncatedCalldata = truncateHex(rawCalldata);
+          const hasCalldata = rawCalldata.length > 0;
+          const isExpandable = hasCalldata && truncatedCalldata !== rawCalldata;
+          const codeId = `emergency-calldata-${index}`;
+          const truncatedDisplay = hasCalldata ? (isExpandable ? truncatedCalldata : rawCalldata) : "—";
+          const codeDisplay = hasCalldata ? truncatedDisplay : "—";
+          const targetAddress = entry.target || pauseAddress;
+          return `
+            <article class="emergency-card" data-test-id="emergency-card" data-emergency-key="${escapeHtml(
+              entry.key || String(index),
+            )}" data-enabled="${entry.enabled ? "true" : "false"}">
+              <h3>${escapeHtml(label)}</h3>
+              <p>${escapeHtml(description)}</p>
+              <div class="emergency-meta">
+                <span class="chip">${escapeHtml(statusLabel)}</span>
+                <span class="chip">${escapeHtml(t("controls.guardianCouncil"))}: ${escapeHtml(shortAddress(guardianAddress))}</span>
+                <span class="chip alt">Target ${escapeHtml(shortAddress(targetAddress))}</span>
+              </div>
+              <div class="command-row" data-test-id="emergency-command">
+                <code
+                  id="${escapeHtml(codeId)}"
+                  data-test-id="emergency-calldata"
+                  data-expanded="false"
+                  data-truncated="${escapeHtml(truncatedDisplay)}"
+                  data-full="${escapeHtml(rawCalldata)}"
+                  title="${escapeHtml(rawCalldata || truncatedDisplay)}"
+                >${escapeHtml(codeDisplay)}</code>
+                <div class="command-actions">
+                  ${
+                    isExpandable
+                      ? `<button class="calldata-toggle" type="button" data-target="${escapeHtml(
+                          codeId,
+                        )}" data-expanded="false" data-test-id="toggle-calldata">${escapeHtml(
+                          t("emergency.toggleExpand"),
+                        )}</button>`
+                      : ""
+                  }
+                  ${copyButtonMarkup(entry.managerCalldata, {
+                    ariaLabel: copyLabel,
+                    feedbackId,
+                    testId: "copy-emergency",
+                    copyLabel,
+                    type: "emergency",
+                  })}
+                </div>
+              </div>
+              <span class="copy-feedback" data-feedback-for="${escapeHtml(feedbackId)}" data-test-id="copy-feedback" role="status" aria-live="polite"></span>
+              ${
+                prerequisites
+                  ? `<div><strong>${escapeHtml(t("emergency.prerequisitesLabel"))}</strong><ul class="emergency-checklist">${prerequisites}</ul></div>`
+                  : ""
+              }
+              ${
+                advisory
+                  ? `<div><strong>${escapeHtml(t("emergency.advisoryLabel"))}</strong><ul class="emergency-checklist">${advisory}</ul></div>`
+                  : ""
+              }
+            </article>
+          `;
+        });
+
+        container.innerHTML = [summary, ...cards].join("");
+      }
+
       function renderRunbook(container) {
         container.innerHTML = RUNBOOK_STEPS.map((step, index) => {
           const tooltipId = `runbook-tooltip-${index}`;
@@ -2360,6 +2679,13 @@
         if (copyButton) {
           event.preventDefault();
           handleCopy(copyButton);
+          return;
+        }
+
+        const toggleButton = target.closest('.calldata-toggle');
+        if (toggleButton) {
+          event.preventDefault();
+          handleCalldataToggle(toggleButton);
           return;
         }
 

@@ -32,7 +32,9 @@
        * `phase8-self-improvement-plan.json` — machine-readable self-improvement payload ready for timelock ingestion.
        * `phase8-cycle-report.csv` — per-domain sentinel coverage + capital funding ledger for audit trails.
        * `phase8-dominance-scorecard.json` — analytics-grade snapshot of dominance metrics for dashboards and regulators.
+      * `phase8-emergency-overrides.json` — circuit-breaker calldata bundle (pause & resume) for instant guardian action.
    > **Tip**: export `PHASE8_MANAGER_ADDRESS=0x…` and `PHASE8_CHAIN_ID=1` (or your deployment chain) before running the script to pre-fill the Safe transaction batch with production parameters.
+   > The manifest now includes `global.phase8Manager`, so emergency overrides default to a “ready” state even without environment overrides; customise the target Safe by setting the environment variables above.
 3. **Launch the control surface UI** (no build step required):
    ```bash
    npx serve demo/Phase-8-Universal-Value-Dominance
@@ -79,6 +81,7 @@ latest run. Safe imports should always display the chain ID and manager address 
   the operator launch automated retraining and adversarial stress-tests while ensuring autonomy stays bounded.
 * **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the
   superintelligent mesh.
+* **Instant circuit breaker** – the emergency overrides pack encodes `forwardPauseCall` payloads so the guardian council can halt or resume every module with a single Safe transaction.
 
 > With the default manifest, the console reports ~$688B in monthly value flow, ~$1.97T annual capital allocation, an average resilience index of 0.925, 45.0 minutes of sentinel coverage per guardian cycle, **100% dominion funding with a $720B/yr floor**, and a Universal Dominance Score of 97.1 / 100 — a direct signal that the network is outperforming its guardrails while staying within human override windows.
 
@@ -160,14 +163,14 @@ Running `npm run demo:phase8:orchestrate` surfaces these guardrails alongside ca
 
 ### Emergency rollback & overrides
 
-1. **Freeze automation** – run `npm run owner:system-pause` (or execute the generated Safe call) to forward the pause signal to
-   the configured `SystemPause` contract. Guardians retain immediate pause authority as a backstop.
-2. **Revert the plan** – rerun the orchestrator with a known-good manifest (e.g., previous git tag) to emit a replacement
+1. **Load overrides pack** – open `output/phase8-emergency-overrides.json` and copy the `managerCalldata` for `pauseAll` or `unpauseAll` alongside the guardian and pause addresses.
+2. **Freeze automation** – paste the calldata into Safe Transaction Builder (or run `npm run owner:system-pause` if wired) to forward the pause signal through the configured `SystemPause` contract. Guardians retain immediate pause authority as a backstop.
+3. **Revert the plan** – rerun the orchestrator with a known-good manifest (e.g., previous git tag) to emit a replacement
    `phase8-self-improvement-plan.json`, then submit the encoded `setSelfImprovementPlan` transaction to restore trusted cadence
    and guardrails.
-3. **Audit sentinels** – execute `npm run monitoring:sentinels` to dump current coverage assignments and confirm every domain
+4. **Audit sentinels** – execute `npm run monitoring:sentinels` to dump current coverage assignments and confirm every domain
    still receives ≥ guardian window coverage before resuming automation.
-4. **Document the rollback** – append an emergency note to the next `recordSelfImprovementExecution` report so downstream
+5. **Document the rollback** – append an emergency note to the next `recordSelfImprovementExecution` report so downstream
    analytics capture the interruption and checksum transition.
 
 ---
@@ -181,6 +184,7 @@ Open [`index.html`](./index.html) to explore the fully client-side control room:
 * Sentinel lattice view with live coverage, sensitivity, and domain bindings (auto-highlighted when a domain loses coverage).
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
 * Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
+* Emergency overrides cards ship with expand/collapse controls so governors can inspect and copy the full `forwardPauseCall` payload without leaving the console.
 * An auto-generated Mermaid diagram illustrating governance, sentinels, and capital flow.
 * A **Manifest Command Console** that enables instant manifest swaps (file upload, remote URL, or query parameter). Non-technical operators can preview alternative governance states, refresh baselines, or roll back to the orchestrator output with one click.
 
@@ -196,6 +200,7 @@ Running `npm run demo:phase8:orchestrate` now writes a ready-to-run export kit i
 * **Mermaid blueprint** – `phase8-mermaid-diagram.mmd` reproduces the architecture map for docs, wikis, or governance proposals.
 * **Operator runbook** – `phase8-orchestration-report.txt` mirrors the UI runbook, listing command order, control addresses, sentinel coverage, and emergency procedures.
 * **Guardian directives** – `phase8-governance-directives.md` equips the council with plain-language actions, escalation levers, and verification contacts before execution.
+* **Emergency overrides** – `phase8-emergency-overrides.json` captures pre-encoded `forwardPauseCall` payloads (pause + resume) with readiness metrics so the guardian council can flip the circuit breaker without touching Solidity.
 * **Self-improvement payload** – `phase8-self-improvement-plan.json` packages the cadence, plan hash, and upcoming playbooks so governance can update the on-chain charter in one paste.
 * **Cycle coverage report** – `phase8-cycle-report.csv` exports coverage, capital share, and resilience signals for every domain, enabling spreadsheet driven oversight.
 * **Dominance scorecard** – `phase8-dominance-scorecard.json` gives analytics teams a machine-ingestible snapshot of autonomy caps, funding floors, and sentinel coverage for compliance dashboards.

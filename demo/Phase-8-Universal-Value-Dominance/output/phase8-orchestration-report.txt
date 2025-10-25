@@ -1,5 +1,5 @@
 PHASE 8 — UNIVERSAL VALUE DOMINANCE :: OPERATOR RUNBOOK
-Generated at 2025-10-24T21:34:02.536Z
+Generated at 2025-10-25T02:15:26.178Z
 
 Key telemetry snapshot:
 • Universal dominance score: 97.1 / 100
@@ -17,7 +17,7 @@ Command ribbon (execute sequentially):
 
 Governance control points:
 Guardian council: 0x4c3ab8…e98c87
-Phase 8 manager: set PHASE8_MANAGER_ADDRESS before execution
+Phase 8 manager: 0xfa12b3…432109
 Treasury: 0x8a1f8f…8e7d6c
 Universal vault: 0xb5c7fe…c0a8f9
 System pause: 0xdd1f26…c74e5c
@@ -44,7 +44,7 @@ Self-improvement kernel:
 • Autonomy guard ≤7900bps · Override 15m · Escalation guardian-council → dao-emergency → sentinel-lockdown
 
 Emergency stops:
-• Invoke SystemPause via forwardPauseCall → configure PHASE8_MANAGER_ADDRESS to route pause calls
+• Invoke SystemPause via forwardPauseCall → 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 • Guardian council retains immediate pause authority
 
 Console shortcuts:

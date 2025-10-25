@@ -8,6 +8,7 @@
     "knowledgeGraph": "0x9b2b5f9c4d4e58a63e934f52aa4c3f62f6c4b672",
     "guardianCouncil": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
     "systemPause": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+    "phase8Manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
     "heartbeatSeconds": 540,
     "guardianReviewWindow": 720,
     "maxDrawdownBps": 3200,
