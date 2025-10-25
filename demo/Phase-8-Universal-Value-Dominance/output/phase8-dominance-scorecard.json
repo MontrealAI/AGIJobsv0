@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-25T12:29:59.759Z",
+  "generatedAt": "2025-10-25T13:09:58.291Z",
   "chain": {
     "id": 1,
     "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109"
@@ -16,7 +16,11 @@
     "cadenceHours": 2,
     "minimumCoverageSeconds": 900,
     "guardianWindowSeconds": 720,
-    "minimumCoverageAdequacyPercent": 125
+    "minimumCoverageAdequacyPercent": 125,
+    "guardianProtocolCount": 3,
+    "guardianProtocolCoveragePercent": 100,
+    "guardianProtocolSeverityScore": 0.92,
+    "guardianProtocolSeverityLevel": "CRITICAL"
   },
   "domains": [
     {
@@ -168,6 +172,103 @@
       "domains": [
         "knowledge-lattice",
         "infrastructure-synthesis"
+      ]
+    }
+  ],
+  "guardianProtocols": [
+    {
+      "scenario": "Sentinel outage across climate lattice",
+      "severity": "critical",
+      "trigger": "Solar Shield guardian misses 2 heartbeats or coverage < 85% of guardian window",
+      "linkedSentinels": [
+        "solar-shield"
+      ],
+      "linkedDomains": [
+        "climate-harmonizer",
+        "infrastructure-synthesis"
+      ],
+      "immediateActions": [
+        "Execute forwardPauseCall(pauseAll) for climate-harmonizer and infrastructure-synthesis payloads",
+        "Route remaining geoengineering requests to validator registry for manual approval",
+        "Escalate to guardian council with telemetry bundle and last known coverage snapshot"
+      ],
+      "stabilizationActions": [
+        "Re-deploy Solar Shield guardian or spin up hot-standby sentinel with identical policy URI",
+        "Run Universal Value Mesh Stress Tests playbook to validate resumed coverage",
+        "Lift pauses sequentially once 3 consecutive coverage intervals exceed guardian window"
+      ],
+      "communications": [
+        "Notify mission control and climate sovereign working group of pause activation",
+        "Publish incident digest to knowledge lattice for postmortem archiving",
+        "Ping validator registry to increase sampling cadence to every 5 minutes until recovery"
+      ],
+      "successCriteria": [
+        "Sentinel coverage restored ≥ guardian window for two consecutive cycles",
+        "No pending geoengineering jobs without validator approval",
+        "Guardian council sign-off recorded in governance directives log"
+      ]
+    },
+    {
+      "scenario": "Capital drawdown breach",
+      "severity": "high",
+      "trigger": "Capital Watch Exocomptroller flags drawdown > maxDrawdownBps or funded ratio < 95%",
+      "linkedSentinels": [
+        "capital-watch"
+      ],
+      "linkedDomains": [
+        "planetary-finance",
+        "knowledge-lattice"
+      ],
+      "immediateActions": [
+        "Throttle capital stream disbursements to affected domains via emergency overrides pack",
+        "Call setRiskParameters with temporary drawdown ceiling 50% of baseline",
+        "Request validator registry to enforce human sign-off on all treasury outflows"
+      ],
+      "stabilizationActions": [
+        "Rebalance annual budgets by +5% towards resilience-positive domains",
+        "Trigger Hyperparameter Evolution playbook focused on capital routing policies",
+        "Resume normal capital cadence after two audit cycles confirm funded ratio ≥ 100%"
+      ],
+      "communications": [
+        "Brief treasury stewards with dominance scorecard delta",
+        "Issue Guardian Council notice referencing Safe transaction hashes",
+        "Share funded domain ledger with public oversight channel"
+      ],
+      "successCriteria": [
+        "Funded domain ratio back to 100% for impacted domains",
+        "Drawdown metric stabilized below 0.8 × maxDrawdownBps",
+        "Treasury postmortem logged with knowledge lattice URI"
+      ]
+    },
+    {
+      "scenario": "Bio-sentinel anomaly detection",
+      "severity": "critical",
+      "trigger": "Bio Sentinel Continuity raises sensitivity breach or validator quorum rejects deployment",
+      "linkedSentinels": [
+        "bio-sentinel"
+      ],
+      "linkedDomains": [
+        "health-sovereign"
+      ],
+      "immediateActions": [
+        "Pause Health Sovereign Continuum orchestrator via overrides pack",
+        "Escalate to guardian council and bioethics board with validator transcripts",
+        "Switch healthcare deployment queue into human-only review mode"
+      ],
+      "stabilizationActions": [
+        "Mandate cross-check with Infrastructure Synthesis Grid for supply readiness",
+        "Run Universal Value Mesh Stress Tests with biosecurity focus",
+        "Resume automation after guardian council records affirmative restart vote"
+      ],
+      "communications": [
+        "Notify public health partners through mission control broadcast",
+        "Distribute incident brief via knowledge lattice with anonymized metrics",
+        "Alert validator registry to maintain heightened scrutiny for 48 hours"
+      ],
+      "successCriteria": [
+        "Bio sentinel coverage back to baseline 900s",
+        "All critical deployments receive validator sign-off during incident window",
+        "Guardian council restart authorization logged"
       ]
     }
   ],

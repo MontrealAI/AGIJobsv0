@@ -1,5 +1,5 @@
 # Phase 8 — Governance Directives
-Generated: 2025-10-25T12:29:59.759Z
+Generated: 2025-10-25T13:09:58.291Z
 Chain ID: 1
 Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 
@@ -28,6 +28,12 @@ Phase8 manager: 0xfa12b3c4d5e6f7890abcdeffedcba98765432109
 - Share the dominance scorecard (JSON) with analytics teams for downstream automation.
 - Provide the orchestration report and directives markdown to auditors for immutable records.
 - Archive the telemetry markdown for board-level status updates.
+
+## Guardian response protocols
+- 3 protocols active covering 100.0% of domains (average severity CRITICAL).
+- Sentinel outage across climate lattice: CRITICAL — immediate guardian intervention · Guardians Solar Shield Guardian · Domains Climate Harmonizer Array · Infrastructure Synthesis Grid
+- Capital drawdown breach: HIGH — act within guardian review window · Guardians Capital Watch Exocomptroller · Domains Planetary Finance Mesh · Knowledge Lattice Nexus
+- Bio-sentinel anomaly detection: CRITICAL — immediate guardian intervention · Guardians Bio Sentinel Continuity · Domains Health Sovereign Continuum
 
 ## Contacts
 Guardian council: 0x4c3ab8…e98c87

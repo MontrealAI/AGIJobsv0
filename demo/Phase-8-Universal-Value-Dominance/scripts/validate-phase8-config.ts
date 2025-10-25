@@ -11,8 +11,17 @@ const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
 const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
 const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
 const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
+const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const SEVERITY_WEIGHTS: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
+
+function severityDescriptor(score: number): string {
+  if (score >= 0.875) return "CRITICAL";
+  if (score >= 0.65) return "HIGH";
+  if (score >= 0.45) return "MEDIUM";
+  return "LOW";
+}
 
 const address = z
   .string()
@@ -59,6 +68,18 @@ const streamSchema = z.object({
   active: z.boolean(),
 });
 
+const guardianProtocolSchema = z.object({
+  scenario: z.string().min(1),
+  severity: z.enum(["critical", "high", "medium", "low"]),
+  trigger: z.string().min(1),
+  linkedSentinels: z.array(z.string()).default([]),
+  linkedDomains: z.array(z.string()).default([]),
+  immediateActions: z.array(z.string().min(1)).min(1),
+  stabilizationActions: z.array(z.string().min(1)).min(1),
+  communications: z.array(z.string().min(1)).min(1),
+  successCriteria: z.array(z.string().min(1)).optional(),
+});
+
 const planSchema = z
   .object({
     planURI: z.string().min(1),
@@ -90,6 +111,7 @@ const configSchema = z.object({
   domains: z.array(domainSchema).min(1),
   sentinels: z.array(sentinelSchema).min(1),
   capitalStreams: z.array(streamSchema).min(1),
+  guardianProtocols: z.array(guardianProtocolSchema).min(1),
   selfImprovement: z.object({
     plan: planSchema,
     playbooks: z
@@ -199,6 +221,41 @@ function main() {
     throw new Error(`All domains require capital stream funding — missing: ${unfunded.join(", ")}`);
   }
 
+  const protocolCoverage = new Map<string, number>();
+  let protocolSeverityTotal = 0;
+  for (const [index, protocol] of config.guardianProtocols.entries()) {
+    const sentinelRefs = new Set((protocol.linkedSentinels ?? []).map((slug) => slug.toLowerCase()).filter(Boolean));
+    for (const sentinel of sentinelRefs) {
+      if (!config.sentinels.some((entry) => entry.slug.toLowerCase() === sentinel)) {
+        throw new Error(`Guardian protocol ${protocol.scenario} references unknown sentinel ${sentinel} (index ${index})`);
+      }
+    }
+
+    const domainRefs = new Set((protocol.linkedDomains ?? []).map((slug) => slug.toLowerCase()).filter(Boolean));
+    if (sentinelRefs.size === 0 && domainRefs.size === 0) {
+      throw new Error(`Guardian protocol ${protocol.scenario} must target at least one sentinel or domain`);
+    }
+
+    const targets = domainRefs.size > 0 ? Array.from(domainRefs.values()) : domainList;
+    for (const domain of targets) {
+      if (!slugs.has(domain)) {
+        throw new Error(`Guardian protocol ${protocol.scenario} references unknown domain ${domain}`);
+      }
+      protocolCoverage.set(domain, (protocolCoverage.get(domain) ?? 0) + 1);
+    }
+
+    protocolSeverityTotal += SEVERITY_WEIGHTS[protocol.severity] ?? 0.5;
+  }
+
+  const unprotected = domainList.filter((slug) => (protocolCoverage.get(slug) ?? 0) === 0);
+  if (unprotected.length > 0) {
+    throw new Error(`All domains require guardian response coverage — missing protocols for: ${unprotected.join(", ")}`);
+  }
+
+  const protocolCoveragePercent = domainList.length === 0 ? 0 : (protocolCoverage.size / domainList.length) * 100;
+  const protocolSeverityScore = config.guardianProtocols.length === 0 ? 0 : protocolSeverityTotal / config.guardianProtocols.length;
+  const protocolSeverityLevel = severityDescriptor(protocolSeverityScore);
+
   const sentinelCoverage = config.sentinels.reduce((acc, s) => acc + s.coverageSeconds, 0);
   if (sentinelCoverage < config.global.guardianReviewWindow) {
     throw new Error(
@@ -297,6 +354,7 @@ function main() {
     "phase8-cycle-report.csv",
     "phase8-dominance-scorecard.json",
     "phase8-emergency-overrides.json",
+    "phase8-guardian-response-playbook.md",
   ];
   for (const artifact of requiredArtifacts) {
     if (!readme.includes(artifact)) {
@@ -394,6 +452,22 @@ function main() {
   );
   if (!approxEqual(Number(scorecardRaw.metrics.fundedDomainRatioPercent ?? 0), expectedFundedRatioPercent, 0.5)) {
     throw new Error("Dominance scorecard funded domain ratio mismatch with manifest.");
+  }
+
+  if (!approxEqual(Number(scorecardRaw.metrics.guardianProtocolCount ?? 0), config.guardianProtocols.length, 1e-6)) {
+    throw new Error("Dominance scorecard guardian protocol count mismatch with manifest.");
+  }
+
+  if (!approxEqual(Number(scorecardRaw.metrics.guardianProtocolCoveragePercent ?? 0), protocolCoveragePercent, 0.5)) {
+    throw new Error("Dominance scorecard guardian protocol coverage mismatch with manifest.");
+  }
+
+  if (!approxEqual(Number(scorecardRaw.metrics.guardianProtocolSeverityScore ?? 0), protocolSeverityScore, 0.01)) {
+    throw new Error("Dominance scorecard guardian protocol severity score mismatch with manifest.");
+  }
+
+  if ((scorecardRaw.metrics.guardianProtocolSeverityLevel ?? "").toUpperCase() !== protocolSeverityLevel) {
+    throw new Error("Dominance scorecard guardian protocol severity level mismatch with manifest.");
   }
 
   const expectedMaxAutonomy = Math.max(...config.domains.map((domain) => domain.autonomyLevelBps));
@@ -654,6 +728,17 @@ function main() {
   }
   if (!emergencyRaw?.metrics || typeof emergencyRaw.metrics?.minimumCoverageAdequacy !== "number") {
     throw new Error("Emergency overrides must surface minimum coverage adequacy metric.");
+  }
+
+  if (!existsSync(GUARDIAN_PLAYBOOK)) {
+    throw new Error("Guardian response playbook missing. Regenerate outputs via npm run demo:phase8:orchestrate.");
+  }
+  const guardianPlaybook = readFileSync(GUARDIAN_PLAYBOOK, "utf-8");
+  if (!guardianPlaybook.includes("Guardian Response Playbook")) {
+    throw new Error("Guardian playbook must include title 'Guardian Response Playbook'.");
+  }
+  if (!guardianPlaybook.includes("Scenario") || !guardianPlaybook.includes("Immediate actions")) {
+    throw new Error("Guardian playbook must document scenarios and immediate actions.");
   }
 
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));
