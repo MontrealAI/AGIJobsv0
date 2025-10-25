@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0x432acfa7f0e9bd0b81a85d8318c0708f4c7d620fe739220dfdd995446828e390
+**Manifest hash**: 0xc285085cf97f46c1ad59df7e8b337161f922d24d0b653880755c567c0abd27e6
 **Dominance score**: 90.0 / 100
 
 ---

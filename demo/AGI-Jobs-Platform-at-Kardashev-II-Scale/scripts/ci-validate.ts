@@ -31,6 +31,7 @@ function validateReadme() {
     "## 🚀 Kardashev-II operator quickstart",
     "## 🧱 Architecture overview",
     "## 🔌 Energy & compute governance",
+    "## 🎛️ Mission directives & verification dashboards",
     "## 🛡️ Governance and safety levers",
     "## 📦 Artefacts in this directory",
     "## 🧪 Verification rituals",

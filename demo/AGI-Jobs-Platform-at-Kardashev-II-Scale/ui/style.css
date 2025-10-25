@@ -110,6 +110,14 @@ button:hover {
   overflow-x: auto;
 }
 
+#dyson-container {
+  background: rgba(15, 23, 42, 0.6);
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  overflow-x: auto;
+}
+
 .footer-note {
   font-size: 0.85rem;
   color: rgba(148, 163, 184, 0.8);
@@ -127,4 +135,81 @@ button:hover {
 
 .status-fail {
   color: #f87171;
+}
+
+.owner-powers {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.owner-powers li {
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 14px;
+  padding: 12px 14px;
+  line-height: 1.6;
+}
+
+.owner-powers .uri {
+  color: rgba(96, 165, 250, 0.9);
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  font-size: 0.85rem;
+}
+
+.escalation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.escalation-grid p {
+  margin: 0;
+}
+
+.federation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.federation-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(94, 234, 212, 0.22);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.federation-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: rgba(129, 230, 217, 0.95);
+}
+
+.domain-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.domain-list li {
+  background: rgba(45, 55, 72, 0.55);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
+.sentinel-row {
+  font-size: 0.9rem;
+  color: rgba(129, 230, 217, 0.8);
 }

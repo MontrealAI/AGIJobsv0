@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0x432acfa7f0e9bd0b81a85d8318c0708f4c7d620fe739220dfdd995446828e390",
+    "hash": "0xc285085cf97f46c1ad59df7e8b337161f922d24d0b653880755c567c0abd27e6",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -43,7 +43,13 @@
         "renewablePct": 0.99
       }
     ],
-    "tripleCheck": true
+    "tripleCheck": true,
+    "models": {
+      "regionalSumGw": 242000,
+      "dysonProjectionGw": 488800,
+      "thermostatBudgetGw": 340200,
+      "withinMargin": true
+    }
   },
   "compute": {
     "totalAgents": 4480000000,
@@ -69,7 +75,7 @@
       }
     ],
     "crossChecks": {
-      "sumAgainstCouncil": 439.7
+      "sumAgainstCouncil": 0.21999999999999886
     }
   },
   "dominance": {
@@ -93,5 +99,240 @@
       "protocol": "optimistic-rollup",
       "withinFailsafe": true
     }
+  },
+  "federations": [
+    {
+      "slug": "earth",
+      "name": "Earth Sovereign Federation",
+      "chainId": 1,
+      "governanceSafe": "0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2",
+      "energy": {
+        "availableGw": 82000,
+        "renewablePct": 0.87,
+        "storageGwh": 54000,
+        "latencyMs": 85
+      },
+      "compute": {
+        "agents": 2800000000,
+        "exaflops": 18.4,
+        "validatorNodes": 1480000,
+        "edgeNodes": 760000000
+      },
+      "domains": [
+        {
+          "slug": "earth.finance",
+          "name": "Earth Treasury Fusion",
+          "resilience": 0.948,
+          "monthlyValueUSD": 428000000000,
+          "autonomyLevelBps": 6100,
+          "coverageSeconds": 1800,
+          "orchestrator": "0x3cf87a9f52f06a9f5303a1b447dd71f4c912c2f1"
+        },
+        {
+          "slug": "earth.infrastructure",
+          "name": "Orbital Infrastructure Directorate",
+          "resilience": 0.942,
+          "monthlyValueUSD": 512000000000,
+          "autonomyLevelBps": 6900,
+          "coverageSeconds": 2100,
+          "orchestrator": "0x92fd8c11f4866cb3c0a0ce2f3111337a2d7f8b51"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "gaia-energy-watch",
+          "name": "Gaia Energy Sentinel",
+          "coverageSeconds": 1800,
+          "sensitivityBps": 420,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "earth.capital-grid",
+          "name": "Earth Grid Endowment",
+          "annualBudget": "3800000000000000000000000000",
+          "expansionBps": 480,
+          "active": true
+        }
+      ]
+    },
+    {
+      "slug": "mars",
+      "name": "Mars Terraforming Compact",
+      "chainId": 534352,
+      "governanceSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+      "energy": {
+        "availableGw": 24000,
+        "renewablePct": 0.93,
+        "storageGwh": 18000,
+        "latencyMs": 820
+      },
+      "compute": {
+        "agents": 720000000,
+        "exaflops": 6.1,
+        "validatorNodes": 420000,
+        "edgeNodes": 98000000
+      },
+      "domains": [
+        {
+          "slug": "mars.terraforming",
+          "name": "Mars Terraforming Directorate",
+          "resilience": 0.935,
+          "monthlyValueUSD": 298000000000,
+          "autonomyLevelBps": 7400,
+          "coverageSeconds": 2400,
+          "orchestrator": "0x8b4f3d2e965ab438f47c0f5847ff3ba4a9d1e5f8"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "ares-habitat-guard",
+          "name": "Ares Habitat Guardian",
+          "coverageSeconds": 2400,
+          "sensitivityBps": 360,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "mars.bio-regeneration",
+          "name": "Mars Bio-Regeneration Fund",
+          "annualBudget": "960000000000000000000000000",
+          "expansionBps": 650,
+          "active": true
+        }
+      ]
+    },
+    {
+      "slug": "orbital",
+      "name": "Orbital Research Halo",
+      "chainId": 42161,
+      "governanceSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+      "energy": {
+        "availableGw": 136000,
+        "renewablePct": 0.99,
+        "storageGwh": 128000,
+        "latencyMs": 42
+      },
+      "compute": {
+        "agents": 960000000,
+        "exaflops": 24.6,
+        "validatorNodes": 640000,
+        "edgeNodes": 220000000
+      },
+      "domains": [
+        {
+          "slug": "orbital.defense",
+          "name": "Orbital Defense Shield",
+          "resilience": 0.957,
+          "monthlyValueUSD": 618000000000,
+          "autonomyLevelBps": 6800,
+          "coverageSeconds": 1980,
+          "orchestrator": "0x6c7e5f2a0bd4fc5e8d91a3b4c5f6d7e8f9a0b1c2"
+        },
+        {
+          "slug": "orbital.research",
+          "name": "Interstellar Research Nexus",
+          "resilience": 0.961,
+          "monthlyValueUSD": 452000000000,
+          "autonomyLevelBps": 7200,
+          "coverageSeconds": 1860,
+          "orchestrator": "0x9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "orbital-solar-shield",
+          "name": "Orbital Solar Shield Sentinel",
+          "coverageSeconds": 2100,
+          "sensitivityBps": 400,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "orbital.solar-lattice",
+          "name": "Orbital Solar Lattice Fund",
+          "annualBudget": "5200000000000000000000000000",
+          "expansionBps": 720,
+          "active": true
+        }
+      ]
+    }
+  ],
+  "missionDirectives": {
+    "ownerPowers": [
+      {
+        "id": "pause",
+        "title": "Pause & resume entire civilisation mesh",
+        "description": "Execute forwardPauseCall(pauseAll/unpauseAll) from the Safe batch to freeze or relaunch all federations.",
+        "safeIndex": 0,
+        "playbookURI": "ipfs://QmKardashevPauseProtocol"
+      },
+      {
+        "id": "upgrade",
+        "title": "Upgrade governance parameters",
+        "description": "Use setGlobalParameters + setGuardianCouncil transactions to roll new addresses, rate limits, or manifests.",
+        "safeIndex": 1,
+        "playbookURI": "ipfs://QmKardashevUpgradeProtocol"
+      },
+      {
+        "id": "deploy-domain",
+        "title": "Deploy or reconfigure a domain",
+        "description": "Register domains, sentinels, and capital streams in one action bundle; review autonomy levels before execution.",
+        "safeIndex": 4,
+        "playbookURI": "ipfs://QmKardashevDomainProtocol"
+      }
+    ],
+    "escalation": {
+      "guardianHotline": "guardian@agi.jobs",
+      "operationsHotline": "+1-800-AGI-JOBS",
+      "statusPageURI": "https://status.agi.jobs/kardashev",
+      "bridgeFailover": "Trigger bridge isolation routine if latency exceeds failsafe for 3 consecutive intervals."
+    },
+    "drills": {
+      "pauseCadenceHours": 6,
+      "guardianReviewMinutes": 12,
+      "nextDrillISO8601": "2025-03-02T12:00:00Z"
+    }
+  },
+  "verification": {
+    "energyModels": {
+      "expected": [
+        "regionalSum",
+        "dysonProjection",
+        "thermostatBudget"
+      ],
+      "results": {
+        "regionalSumGw": 242000,
+        "dysonProjectionGw": 488800,
+        "thermostatBudgetGw": 340200
+      },
+      "withinMargin": true
+    },
+    "compute": {
+      "tolerancePct": 0.75,
+      "deviationPct": 0.45008183306055416,
+      "dysonProjectionExaflops": 48.88,
+      "withinTolerance": true
+    },
+    "bridges": {
+      "toleranceSeconds": 120,
+      "compliance": [
+        {
+          "name": "earthToMars",
+          "latencySeconds": 90,
+          "withinTolerance": true
+        },
+        {
+          "name": "earthToOrbital",
+          "latencySeconds": 2,
+          "withinTolerance": true
+        }
+      ],
+      "allWithinTolerance": true
+    },
+    "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
   }
 }
