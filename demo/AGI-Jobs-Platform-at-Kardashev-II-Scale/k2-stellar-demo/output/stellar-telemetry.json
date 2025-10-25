@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.k2-stellar.demo.v1",
     "generatedAt": "2025-04-15T00:00:00Z",
-    "hash": "0xee8439327a43c913df73a2bf8621af5c664842d7da84100906f2416c002f863c",
+    "hash": "0x39b4d76a35ffcdc6c67a0227e9f7f2f9d905ee9d05d040df13df51bd5ebec889",
     "manifestoHash": "0x003e5745a210203b6e7badbead17047325e9308bd37888396d47c03bf9872fe3",
     "manifestoHashMatches": true,
     "planHash": "0xfcf6ec17dbeaaa17853e4ee4e5f37136dc4b288f841aaed2ea19ea9205ccb198",
@@ -476,15 +476,15 @@
       },
       {
         "id": "pause-all",
-        "title": "Stage global pause",
-        "description": "Encodes forwardPauseCall(pauseAll) for emergency stop",
+        "title": "Pause all modules",
+        "description": "Encodes forwardPauseCall(pauseAll) so the owner can halt the entire mesh instantly",
         "safeIndex": 48,
         "playbookURI": "ipfs://QmPlaybooksPause"
       },
       {
         "id": "resume-all",
-        "title": "Stage global resume",
-        "description": "Encodes forwardPauseCall(unpauseAll) to restart",
+        "title": "Resume all modules",
+        "description": "Encodes forwardPauseCall(unpauseAll) to restart planetary domains once safe",
         "safeIndex": 49,
         "playbookURI": "ipfs://QmPlaybooksResume"
       }

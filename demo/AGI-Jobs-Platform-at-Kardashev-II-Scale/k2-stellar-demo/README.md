@@ -137,6 +137,7 @@ sequenceDiagram
 * **Sentinel coverage** — Each sentinel’s coverage seconds exceed guardian review window; deficits raise warnings in the ledger and UI.
 * **Self-improvement charter** — `selfImprovement.planHash` and `planURI` hashed + reflected in outputs; CLI validates `recordSelfImprovementExecution` cadence.
 * **Bridge sentries** — Telemetry tracks interplanetary bridge latency/bandwidth and flags breaches versus failsafe latency.
+* **Superintelligent kill-switch** — Pause/resume directives surface exactly as the Safe payload descriptions ("Pause all modules" / "Resume all modules"), so owners can trigger the unstoppable global halt or restart without decoding calldata.
 
 ---
 

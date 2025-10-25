@@ -246,14 +246,10 @@ const missionDirectiveValidators: Record<
     normaliseForMatch(tx.description).includes("system pause"),
   "self-improvement": (_power, tx, _manifest) =>
     normaliseForMatch(tx.description).includes("self improvement plan"),
-  "pause-all": (_power, tx, _manifest) => {
-    const description = normaliseForMatch(tx.description);
-    return description.includes("pause") && description.includes("forwardpausecall");
-  },
-  "resume-all": (_power, tx, _manifest) => {
-    const description = normaliseForMatch(tx.description);
-    return description.includes("resume") && description.includes("forwardpausecall");
-  },
+  "pause-all": (power, tx, _manifest) =>
+    normaliseForMatch(tx.description) === normaliseForMatch(power.title),
+  "resume-all": (power, tx, _manifest) =>
+    normaliseForMatch(tx.description) === normaliseForMatch(power.title),
 };
 
 function directiveMatches(power: MissionPower, tx: SafeTransaction, manifest: Manifest): boolean {

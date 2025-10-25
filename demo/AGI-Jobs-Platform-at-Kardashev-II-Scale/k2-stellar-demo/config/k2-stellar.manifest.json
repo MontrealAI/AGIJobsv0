@@ -76,15 +76,15 @@
       },
       {
         "id": "pause-all",
-        "title": "Stage global pause",
-        "description": "Encodes forwardPauseCall(pauseAll) for emergency stop",
+        "title": "Pause all modules",
+        "description": "Encodes forwardPauseCall(pauseAll) so the owner can halt the entire mesh instantly",
         "safeIndex": 48,
         "playbookURI": "ipfs://QmPlaybooksPause"
       },
       {
         "id": "resume-all",
-        "title": "Stage global resume",
-        "description": "Encodes forwardPauseCall(unpauseAll) to restart",
+        "title": "Resume all modules",
+        "description": "Encodes forwardPauseCall(unpauseAll) to restart planetary domains once safe",
         "safeIndex": 49,
         "playbookURI": "ipfs://QmPlaybooksResume"
       }

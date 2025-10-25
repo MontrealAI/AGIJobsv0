@@ -1,6 +1,6 @@
 # Kardashev II Stellar Orchestration Runbook
 
-**Manifest hash**: 0xee8439327a43c913df73a2bf8621af5c664842d7da84100906f2416c002f863c
+**Manifest hash**: 0x39b4d76a35ffcdc6c67a0227e9f7f2f9d905ee9d05d040df13df51bd5ebec889
 **Dominance score**: 90.5 / 100
 
 ---
