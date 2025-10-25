@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2025-04-15T00:00:00Z",
+  "manifestVersion": "agi-jobs.k2-stellar.demo.v1",
+  "dominanceScore": 90.5,
+  "confidence": {
+    "compositeScore": 1,
+    "quorum": true,
+    "summary": "All Stellar Kardashev-II invariants satisfied. Safe batch ready for execution.",
+    "methods": [
+      {
+        "method": "deterministic-consensus",
+        "score": 1,
+        "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
+      },
+      {
+        "method": "redundant-telemetry",
+        "score": 1,
+        "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
+      },
+      {
+        "method": "energy-safety-buffer",
+        "score": 1,
+        "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
+      },
+      {
+        "method": "mission-directive-alignment",
+        "score": 1,
+        "explanation": "Owner directive indices validated against encoded Safe payload."
+      },
+      {
+        "method": "reflection-preflight",
+        "score": 1,
+        "explanation": "Manifest and plan digests match with guardian coverage and energy triple-check."
+      },
+      {
+        "method": "autonomy-harmonics",
+        "score": 0.9382246376811594,
+        "explanation": "Average deviation of domain autonomy against configured maxima."
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "manifest-digest",
+      "title": "Manifest digests aligned",
+      "severity": "critical",
+      "status": true,
+      "weight": 1.2,
+      "evidence": "expected 0x003e5745a210203b6e7badbead17047325e9308bd37888396d47c03bf9872fe3, observed 0x003e5745a210203b6e7badbead17047325e9308bd37888396d47c03bf9872fe3"
+    },
+    {
+      "id": "self-improvement-digest",
+      "title": "Self-improvement charter verified",
+      "severity": "critical",
+      "status": true,
+      "weight": 1,
+      "evidence": "expected 0xfcf6ec17dbeaaa17853e4ee4e5f37136dc4b288f841aaed2ea19ea9205ccb198, observed 0xfcf6ec17dbeaaa17853e4ee4e5f37136dc4b288f841aaed2ea19ea9205ccb198"
+    },
+    {
+      "id": "owner-control",
+      "title": "Owner override levers encoded",
+      "severity": "high",
+      "status": true,
+      "weight": 0.9,
+      "evidence": "setGlobalParameters + pause/unpause transactions present"
+    },
+    {
+      "id": "mission-directive-alignment",
+      "title": "Mission directives map to Safe payload",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.65,
+      "evidence": "owner powers 6 · unique indices 6 · transactions 50"
+    },
+    {
+      "id": "guardian-coverage",
+      "title": "Guardian coverage >= review window",
+      "severity": "high",
+      "status": true,
+      "weight": 0.85,
+      "evidence": "minimum coverage 1380s vs 420s window"
+    },
+    {
+      "id": "energy-triple-check",
+      "title": "Energy models reconciled",
+      "severity": "critical",
+      "status": true,
+      "weight": 1.1,
+      "evidence": "regional 11,300,000 GW · Dyson 19,600,000 GW · thermostat 10,980,000 GW"
+    },
+    {
+      "id": "reflection-ready",
+      "title": "Reflection gate satisfied",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.75,
+      "evidence": "Manifest + plan digests match, guardians cover, energy triple-check true."
+    },
+    {
+      "id": "energy-margin",
+      "title": "Dyson thermostat buffer intact",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.6,
+      "evidence": "utilisation 92.62% vs permitted 93.00%"
+    },
+    {
+      "id": "compute-alignment",
+      "title": "Compute deviation within tolerance",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.7,
+      "evidence": "deviation 2.04% (≤ 3.5%)"
+    },
+    {
+      "id": "bridge-latency",
+      "title": "Bridge latency ≤ tolerance",
+      "severity": "high",
+      "status": true,
+      "weight": 0.75,
+      "evidence": "tolerance 360s · failsafe 540s"
+    },
+    {
+      "id": "autonomy-harmonics",
+      "title": "Autonomy harmonics within guardrail",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.55,
+      "evidence": "harmonics 93.82%"
+    }
+  ],
+  "alerts": [],
+  "ownerControls": {
+    "manager": "0x9f0ca2b4d1b23456789012345678901234567890",
+    "systemPause": "0x5aa0b184c6d427a2f6711dfb837dba9a0ef6a2dc",
+    "guardianCouncil": "0x7c8fa0d2e3b41c5d7e9012aa34b6cc45d1f2e3a4",
+    "transactionsEncoded": 50,
+    "pauseCallEncoded": true,
+    "resumeCallEncoded": true
+  },
+  "safety": {
+    "guardianReviewWindow": 420,
+    "minimumCoverageSeconds": 1380,
+    "coverageRatio": 1,
+    "bridgeFailsafeSeconds": 540,
+    "permittedUtilisation": 0.9299999999999999,
+    "utilisation": 0.9262295081967213
+  }
+}
