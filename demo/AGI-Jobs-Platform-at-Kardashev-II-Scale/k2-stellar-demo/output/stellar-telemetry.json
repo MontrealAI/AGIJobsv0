@@ -1,0 +1,552 @@
+{
+  "manifest": {
+    "version": "agi-jobs.k2-stellar.demo.v1",
+    "generatedAt": "2025-04-15T00:00:00Z",
+    "hash": "0xee8439327a43c913df73a2bf8621af5c664842d7da84100906f2416c002f863c",
+    "manifestoHash": "0x003e5745a210203b6e7badbead17047325e9308bd37888396d47c03bf9872fe3",
+    "manifestoHashMatches": true,
+    "planHash": "0xfcf6ec17dbeaaa17853e4ee4e5f37136dc4b288f841aaed2ea19ea9205ccb198",
+    "planHashMatches": true,
+    "knowledgeGraphAddress": "0x4bd8123466cfe75aa4b8d2e5378899f012345678",
+    "knowledgeGraphURI": "https://stellar.agi/jobs/graph"
+  },
+  "governance": {
+    "ownerOverridesReady": true,
+    "guardianReviewWindow": 420,
+    "averageCoverageSeconds": 1570,
+    "minimumCoverageSeconds": 1380,
+    "coverageOk": true
+  },
+  "energy": {
+    "capturedGw": 12200000,
+    "dysonYield": 19600000,
+    "utilisationPct": 0.9262295081967213,
+    "marginPct": 0.07,
+    "warnings": [],
+    "regional": [
+      {
+        "slug": "earth-sovereign-grid",
+        "availableGw": 4300000,
+        "storageGwh": 780000,
+        "renewablePct": 0.82
+      },
+      {
+        "slug": "mars-terraforming-directorate",
+        "availableGw": 2100000,
+        "storageGwh": 420000,
+        "renewablePct": 0.76
+      },
+      {
+        "slug": "titan-cryofusion-array",
+        "availableGw": 1800000,
+        "storageGwh": 360000,
+        "renewablePct": 0.68
+      },
+      {
+        "slug": "orbital-dyson-halo",
+        "availableGw": 3100000,
+        "storageGwh": 520000,
+        "renewablePct": 0.94
+      }
+    ],
+    "tripleCheck": true,
+    "models": {
+      "regionalSumGw": 11300000,
+      "dysonProjectionGw": 19600000,
+      "thermostatBudgetGw": 10980000,
+      "withinMargin": true
+    }
+  },
+  "compute": {
+    "totalAgents": 3210000000000,
+    "totalExaflops": 1920,
+    "regional": [
+      {
+        "slug": "earth-sovereign-grid",
+        "agents": 1200000000000,
+        "exaflops": 620,
+        "resilience": 0.955
+      },
+      {
+        "slug": "mars-terraforming-directorate",
+        "agents": 620000000000,
+        "exaflops": 480,
+        "resilience": 0.9416666666666665
+      },
+      {
+        "slug": "titan-cryofusion-array",
+        "agents": 410000000000,
+        "exaflops": 380,
+        "resilience": 0.9356666666666666
+      },
+      {
+        "slug": "orbital-dyson-halo",
+        "agents": 980000000000,
+        "exaflops": 440,
+        "resilience": 0.9676666666666667
+      }
+    ],
+    "crossChecks": {
+      "sumAgainstCouncil": 40
+    }
+  },
+  "dominance": {
+    "monthlyValueUSD": 60400000000000,
+    "averageResilience": 0.9499999999999998,
+    "averageCoverage": 1570,
+    "score": 90.5
+  },
+  "bridges": {
+    "earth-mars": {
+      "latencySeconds": 340,
+      "bandwidthGbps": 420,
+      "bridgeOperator": "0x2211445566778899aabbccddeeff001122334455",
+      "protocol": "HyperBridge",
+      "withinFailsafe": true
+    },
+    "earth-orbital": {
+      "latencySeconds": 120,
+      "bandwidthGbps": 1280,
+      "bridgeOperator": "0x33225566778899aabbccddeeff00112233445566",
+      "protocol": "QuantumMesh",
+      "withinFailsafe": true
+    },
+    "mars-titan": {
+      "latencySeconds": 320,
+      "bandwidthGbps": 310,
+      "bridgeOperator": "0x443366778899aabbccddeeff0011223344556677",
+      "protocol": "GravLink",
+      "withinFailsafe": true
+    },
+    "orbital-titan": {
+      "latencySeconds": 340,
+      "bandwidthGbps": 800,
+      "bridgeOperator": "0x5544778899aabbccddeeff001122334455667788",
+      "protocol": "PhotonWeave",
+      "withinFailsafe": true
+    }
+  },
+  "federations": [
+    {
+      "slug": "earth-sovereign-grid",
+      "name": "Earth Sovereign Grid",
+      "chainId": 1,
+      "governanceSafe": "0xf10123456789abcdef0123456789abcdef012345",
+      "energy": {
+        "availableGw": 4300000,
+        "renewablePct": 0.82,
+        "storageGwh": 780000,
+        "latencyMs": 40
+      },
+      "compute": {
+        "agents": 1200000000000,
+        "exaflops": 620,
+        "validatorNodes": 54000,
+        "edgeNodes": 14500000
+      },
+      "domains": [
+        {
+          "slug": "earth-finance",
+          "name": "Earth Finance",
+          "resilience": 0.965,
+          "monthlyValueUSD": 9800000000000,
+          "autonomyLevelBps": 8900,
+          "coverageSeconds": 1800,
+          "orchestrator": "0x1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d"
+        },
+        {
+          "slug": "earth-infrastructure",
+          "name": "Earth Infrastructure",
+          "resilience": 0.952,
+          "monthlyValueUSD": 7600000000000,
+          "autonomyLevelBps": 8700,
+          "coverageSeconds": 1680,
+          "orchestrator": "0x5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f7081"
+        },
+        {
+          "slug": "earth-climate",
+          "name": "Earth Climate Response",
+          "resilience": 0.948,
+          "monthlyValueUSD": 5400000000000,
+          "autonomyLevelBps": 8600,
+          "coverageSeconds": 1620,
+          "orchestrator": "0x92a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "earth-guardian-safety",
+          "name": "Earth Guardian Safety",
+          "coverageSeconds": 780,
+          "sensitivityBps": 6200,
+          "active": true
+        },
+        {
+          "slug": "earth-climate-sentinel",
+          "name": "Earth Climate Sentinel",
+          "coverageSeconds": 900,
+          "sensitivityBps": 5800,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "earth-public-works",
+          "name": "Earth Public Works",
+          "annualBudget": "360000000000000",
+          "expansionBps": 180,
+          "active": true
+        },
+        {
+          "slug": "earth-fintech-grant",
+          "name": "Earth FinTech Grant",
+          "annualBudget": "420000000000000",
+          "expansionBps": 210,
+          "active": true
+        }
+      ]
+    },
+    {
+      "slug": "mars-terraforming-directorate",
+      "name": "Mars Terraforming Directorate",
+      "chainId": 2810,
+      "governanceSafe": "0xa41098765432fedcba1098765432fedcba109876",
+      "energy": {
+        "availableGw": 2100000,
+        "renewablePct": 0.76,
+        "storageGwh": 420000,
+        "latencyMs": 310
+      },
+      "compute": {
+        "agents": 620000000000,
+        "exaflops": 480,
+        "validatorNodes": 31000,
+        "edgeNodes": 9200000
+      },
+      "domains": [
+        {
+          "slug": "mars-terraforming",
+          "name": "Mars Terraforming",
+          "resilience": 0.942,
+          "monthlyValueUSD": 3200000000000,
+          "autonomyLevelBps": 8800,
+          "coverageSeconds": 1500,
+          "orchestrator": "0x12aa34bb56cc78dd90ee12ff34aa56bb78cc90dd"
+        },
+        {
+          "slug": "mars-resource-logistics",
+          "name": "Mars Resource Logistics",
+          "resilience": 0.938,
+          "monthlyValueUSD": 2400000000000,
+          "autonomyLevelBps": 8500,
+          "coverageSeconds": 1440,
+          "orchestrator": "0x56ee78ff90aa12bb34cc56dd78ee90ff12aa34bb"
+        },
+        {
+          "slug": "mars-defense-grid",
+          "name": "Mars Defense Grid",
+          "resilience": 0.945,
+          "monthlyValueUSD": 2100000000000,
+          "autonomyLevelBps": 8400,
+          "coverageSeconds": 1380,
+          "orchestrator": "0x90cc23dd45ee67ff89aa01bb23cc45dd67ee89ff"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "mars-sentinel-autonomy",
+          "name": "Mars Autonomy Sentinel",
+          "coverageSeconds": 780,
+          "sensitivityBps": 6400,
+          "active": true
+        },
+        {
+          "slug": "mars-sentinel-defense",
+          "name": "Mars Defense Sentinel",
+          "coverageSeconds": 810,
+          "sensitivityBps": 6000,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "mars-terraforming-fund",
+          "name": "Mars Terraforming Fund",
+          "annualBudget": "220000000000000",
+          "expansionBps": 190,
+          "active": true
+        },
+        {
+          "slug": "mars-defense-endowment",
+          "name": "Mars Defense Endowment",
+          "annualBudget": "180000000000000",
+          "expansionBps": 160,
+          "active": true
+        }
+      ]
+    },
+    {
+      "slug": "titan-cryofusion-array",
+      "name": "Titan Cryo-Fusion Array",
+      "chainId": 7000,
+      "governanceSafe": "0xbc1098fedc7654321bc1098fedc7654321bc1098",
+      "energy": {
+        "availableGw": 1800000,
+        "renewablePct": 0.68,
+        "storageGwh": 360000,
+        "latencyMs": 520
+      },
+      "compute": {
+        "agents": 410000000000,
+        "exaflops": 380,
+        "validatorNodes": 28000,
+        "edgeNodes": 6100000
+      },
+      "domains": [
+        {
+          "slug": "titan-fusion-harvest",
+          "name": "Titan Fusion Harvest",
+          "resilience": 0.94,
+          "monthlyValueUSD": 2600000000000,
+          "autonomyLevelBps": 8300,
+          "coverageSeconds": 1500,
+          "orchestrator": "0x11aa22bb33cc44dd55ee66ff77889900aabbccdd"
+        },
+        {
+          "slug": "titan-cryogenic-logistics",
+          "name": "Titan Cryogenic Logistics",
+          "resilience": 0.936,
+          "monthlyValueUSD": 2200000000000,
+          "autonomyLevelBps": 8200,
+          "coverageSeconds": 1470,
+          "orchestrator": "0x55ee66ff77889900aabbccddeeff001122334455"
+        },
+        {
+          "slug": "titan-habitats",
+          "name": "Titan Habitats",
+          "resilience": 0.931,
+          "monthlyValueUSD": 1800000000000,
+          "autonomyLevelBps": 8150,
+          "coverageSeconds": 1410,
+          "orchestrator": "0x99aabbccddeeff00112233445566778899aabbcc"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "titan-sentinel-energy",
+          "name": "Titan Energy Sentinel",
+          "coverageSeconds": 780,
+          "sensitivityBps": 6100,
+          "active": true
+        },
+        {
+          "slug": "titan-sentinel-life",
+          "name": "Titan Life Support Sentinel",
+          "coverageSeconds": 810,
+          "sensitivityBps": 5900,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "titan-fusion-fund",
+          "name": "Titan Fusion Fund",
+          "annualBudget": "200000000000000",
+          "expansionBps": 175,
+          "active": true
+        },
+        {
+          "slug": "titan-habitat-trust",
+          "name": "Titan Habitat Trust",
+          "annualBudget": "160000000000000",
+          "expansionBps": 150,
+          "active": true
+        }
+      ]
+    },
+    {
+      "slug": "orbital-dyson-halo",
+      "name": "Orbital Dyson Halo",
+      "chainId": 9100,
+      "governanceSafe": "0xde9876543210fedcba9876543210fedcba987654",
+      "energy": {
+        "availableGw": 3100000,
+        "renewablePct": 0.94,
+        "storageGwh": 520000,
+        "latencyMs": 90
+      },
+      "compute": {
+        "agents": 980000000000,
+        "exaflops": 440,
+        "validatorNodes": 46000,
+        "edgeNodes": 18300000
+      },
+      "domains": [
+        {
+          "slug": "orbital-research",
+          "name": "Orbital Research",
+          "resilience": 0.972,
+          "monthlyValueUSD": 8800000000000,
+          "autonomyLevelBps": 9050,
+          "coverageSeconds": 1740,
+          "orchestrator": "0x1333557799bbaa00112233445566778899aabbdd"
+        },
+        {
+          "slug": "orbital-defense",
+          "name": "Orbital Defense",
+          "resilience": 0.968,
+          "monthlyValueUSD": 7600000000000,
+          "autonomyLevelBps": 9000,
+          "coverageSeconds": 1680,
+          "orchestrator": "0x57799baa00112233445566778899aabbccddeeff"
+        },
+        {
+          "slug": "orbital-logistics",
+          "name": "Orbital Logistics",
+          "resilience": 0.963,
+          "monthlyValueUSD": 6900000000000,
+          "autonomyLevelBps": 8980,
+          "coverageSeconds": 1620,
+          "orchestrator": "0x9bbccddeeff00112233445566778899aabbccdd0"
+        }
+      ],
+      "sentinels": [
+        {
+          "slug": "orbital-sentinel-research",
+          "name": "Orbital Research Sentinel",
+          "coverageSeconds": 900,
+          "sensitivityBps": 6300,
+          "active": true
+        },
+        {
+          "slug": "orbital-sentinel-defense",
+          "name": "Orbital Defense Sentinel",
+          "coverageSeconds": 870,
+          "sensitivityBps": 6100,
+          "active": true
+        }
+      ],
+      "capitalStreams": [
+        {
+          "slug": "orbital-research-trust",
+          "name": "Orbital Research Trust",
+          "annualBudget": "280000000000000",
+          "expansionBps": 185,
+          "active": true
+        },
+        {
+          "slug": "orbital-defense-fund",
+          "name": "Orbital Defense Fund",
+          "annualBudget": "260000000000000",
+          "expansionBps": 175,
+          "active": true
+        }
+      ]
+    }
+  ],
+  "missionDirectives": {
+    "ownerPowers": [
+      {
+        "id": "global-parameters",
+        "title": "Install global parameters",
+        "description": "Applies treasury, vault, guardians, heartbeat, manifesto hash",
+        "safeIndex": 0,
+        "playbookURI": "ipfs://QmPlaybooksGlobalParameters"
+      },
+      {
+        "id": "guardian-council",
+        "title": "Assign guardian council",
+        "description": "Updates guardian council multisig with fresh signers",
+        "safeIndex": 1,
+        "playbookURI": "ipfs://QmPlaybooksGuardianCouncil"
+      },
+      {
+        "id": "system-pause",
+        "title": "Point to system pause",
+        "description": "Ensures SystemPause contract is owner controlled",
+        "safeIndex": 2,
+        "playbookURI": "ipfs://QmPlaybooksSystemPause"
+      },
+      {
+        "id": "self-improvement",
+        "title": "Install self-improvement charter",
+        "description": "Loads plan hash, cadence, and last execution marker",
+        "safeIndex": 3,
+        "playbookURI": "ipfs://QmPlaybooksSelfImprovement"
+      },
+      {
+        "id": "pause-all",
+        "title": "Stage global pause",
+        "description": "Encodes forwardPauseCall(pauseAll) for emergency stop",
+        "safeIndex": 48,
+        "playbookURI": "ipfs://QmPlaybooksPause"
+      },
+      {
+        "id": "resume-all",
+        "title": "Stage global resume",
+        "description": "Encodes forwardPauseCall(unpauseAll) to restart",
+        "safeIndex": 49,
+        "playbookURI": "ipfs://QmPlaybooksResume"
+      }
+    ],
+    "escalation": {
+      "guardianHotline": "+1-415-555-2718",
+      "operationsHotline": "+1-415-555-7741",
+      "statusPageURI": "https://status.stellar.agi/jobs",
+      "bridgeFailover": "Invoke quantum relay #7 and isolate impacted federation"
+    },
+    "drills": {
+      "pauseCadenceHours": 6,
+      "guardianReviewMinutes": 7,
+      "nextDrillISO8601": "2025-04-18T16:00:00Z"
+    }
+  },
+  "verification": {
+    "energyModels": {
+      "expected": [
+        "regional-sum",
+        "dyson-projection",
+        "thermostat-budget"
+      ],
+      "results": {
+        "regionalSumGw": 11300000,
+        "dysonProjectionGw": 19600000,
+        "thermostatBudgetGw": 10980000
+      },
+      "withinMargin": true
+    },
+    "compute": {
+      "tolerancePct": 3.5,
+      "deviationPct": 2.0408163265306123,
+      "dysonProjectionExaflops": 1960,
+      "withinTolerance": true
+    },
+    "bridges": {
+      "toleranceSeconds": 360,
+      "compliance": [
+        {
+          "name": "earth-mars",
+          "latencySeconds": 340,
+          "withinTolerance": true
+        },
+        {
+          "name": "earth-orbital",
+          "latencySeconds": 120,
+          "withinTolerance": true
+        },
+        {
+          "name": "mars-titan",
+          "latencySeconds": 320,
+          "withinTolerance": true
+        },
+        {
+          "name": "orbital-titan",
+          "latencySeconds": 340,
+          "withinTolerance": true
+        }
+      ],
+      "allWithinTolerance": true
+    },
+    "auditChecklistURI": "ipfs://QmStellarAuditChecklistV1"
+  }
+}
