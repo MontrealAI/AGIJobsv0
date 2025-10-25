@@ -41,6 +41,7 @@
    ```
    Navigate to `http://localhost:3000` to view the live dashboard.
    * The opening **Manifest Command Console** lets you drag-and-drop a custom Phase 8 manifest or paste a remote URL (HTTPS or IPFS gateway). The entire dashboard reconfigures instantly, and you can revert at any moment with the “Use baseline manifest” button.
+   * The **Governance Action Deck** auto-loads the orchestrator’s calldata manifest and lays out copy-ready action cards (governance priming, dominion onboarding, sentinel bindings, capital routing, safety kernel, and teardown levers) so a non-technical owner can stage the superintelligence in minutes.
    * Shareable states are supported: append `?manifest=<url>` to the dashboard URL to preload an audited manifest for guardian review.
 4. **Enforce readiness in CI**:
    ```bash
@@ -185,6 +186,7 @@ Open [`index.html`](./index.html) to explore the fully client-side control room:
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
 * Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
 * Emergency overrides cards ship with expand/collapse controls so governors can inspect and copy the full `forwardPauseCall` payload without leaving the console.
+* A **Governance Action Deck** tiles every critical calldata payload into copy-ready action cards (governance, dominions, sentinels, capital streams, safety kernel, and teardown levers) so the owner can assert universal value dominance without decoding hex.
 * An auto-generated Mermaid diagram illustrating governance, sentinels, and capital flow.
 * A **Manifest Command Console** that enables instant manifest swaps (file upload, remote URL, or query parameter). Non-technical operators can preview alternative governance states, refresh baselines, or roll back to the orchestrator output with one click.
 

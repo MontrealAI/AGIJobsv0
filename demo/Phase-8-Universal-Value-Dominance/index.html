@@ -494,6 +494,115 @@
         background: rgba(12, 20, 38, 0.72);
       }
 
+      .action-grid {
+        display: grid;
+        gap: 2rem;
+      }
+
+      .action-summary {
+        display: grid;
+        gap: 1rem;
+        padding: 1.75rem 2rem;
+        border-radius: 22px;
+        border: 1px solid rgba(90, 210, 255, 0.28);
+        background: rgba(10, 18, 34, 0.78);
+        box-shadow: 0 20px 45px rgba(5, 12, 22, 0.45);
+      }
+
+      .action-summary h3 {
+        margin: 0;
+        font-size: 1.45rem;
+      }
+
+      .action-summary p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .action-summary .action-summary-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .action-category {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .action-category h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .action-card-list {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .action-card {
+        padding: 1.5rem 1.75rem;
+        border-radius: 20px;
+        border: 1px solid rgba(90, 210, 255, 0.22);
+        background: rgba(12, 20, 38, 0.74);
+        box-shadow: 0 18px 42px rgba(5, 12, 22, 0.42);
+        display: grid;
+        gap: 1rem;
+      }
+
+      .action-card h4 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: 0.04em;
+      }
+
+      .action-card p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .action-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .action-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .action-commands {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .action-command-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--muted);
+      }
+
+      .action-card .command-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .action-card code {
+        max-width: 100%;
+        overflow-x: auto;
+        display: inline-block;
+      }
+
       .emergency-grid {
         display: grid;
         gap: 1.25rem;
@@ -984,6 +1093,10 @@
         <h2 id="emergency-heading" data-i18n-key="headings.emergency">Emergency Overrides</h2>
         <div class="emergency-grid" id="emergency"></div>
       </section>
+      <section aria-labelledby="actions-heading">
+        <h2 id="actions-heading" data-i18n-key="headings.actions">Governance Action Deck</h2>
+        <div class="action-grid" id="actions"></div>
+      </section>
       <section aria-labelledby="mermaid-heading">
         <h2 id="mermaid-heading" data-i18n-key="headings.mermaid">Mermaid · Universal Value Mesh</h2>
         <div class="mermaid-actions" data-role="mermaid-controls" data-visible="false">
@@ -1039,6 +1152,19 @@
           diagramAria: "Copy Mermaid architecture to clipboard",
           success: "Copied to clipboard.",
           error: "Copy failed. Use manual copy.",
+        },
+        headings: {
+          hero: "Phase 8 · Universal Value Dominance",
+          stats: "Strategic Metrics",
+          controls: "Governance Control Surface",
+          domains: "Dominion Registry",
+          sentinels: "Sentinel Lattice",
+          streams: "Capital Streams",
+          playbooks: "Self-Improvement Kernel",
+          emergency: "Emergency Overrides",
+          actions: "Governance Action Deck",
+          mermaid: "Mermaid · Universal Value Mesh",
+          runbook: "Operator Runbook",
         },
         errors: {
           loadTitle: "Manifest unavailable",
@@ -1150,6 +1276,41 @@
           systemPause: "System pause",
           manifest: "Manifest",
           drawdown: "Drawdown guard",
+        },
+        actions: {
+          summaryTitle: "Action deck — copy/paste readiness",
+          summaryBody:
+            "Every action card is compiled from the orchestrator's calldata manifest so guardians can command the superintelligent economy without decoding hex.",
+          unstoppable:
+            "This deck hands you the reins of a trillion-dollar, self-improving value mesh — universal dominance in a single copy/paste flow.",
+          summaryLinks: {
+            manifest: "View calldata manifest",
+            safe: "Open Safe batch",
+          },
+          chips: {
+            chain: "Chain",
+            manager: "Manager",
+            slug: "Slug",
+            autonomy: "Autonomy",
+            tvl: "TVL cap",
+            heartbeat: "Heartbeat",
+            funding: "Funding",
+            coverage: "Coverage",
+            resilience: "Resilience",
+            sensitivity: "Sensitivity",
+            expansion: "Expansion",
+          },
+          categories: {
+            governance: "Governance priming",
+            dominions: "Dominion activations",
+            sentinels: "Sentinel guardians",
+            streams: "Capital conduits",
+            safety: "Self-improvement & safety",
+            teardown: "Teardown levers",
+          },
+          fallback: "Governance action deck unavailable — rerun npm run demo:phase8:orchestrate to regenerate calldata.",
+          copyLabel: "Copy calldata for {title}",
+          commandLabel: "Command",
         },
         manifestConsole: {
           heading: "Manifest command console",
@@ -1459,6 +1620,8 @@
       let currentManifest = null;
       let currentSource = null;
       let emergencyOverridesData = null;
+      let calldataManifest = null;
+      let lastContext = null;
 
       const setManifestFeedback = (message, tone = "info") => {
         if (!manifestFeedbackNode) return;
@@ -1589,6 +1752,7 @@
         { target: "#streams", renderer: renderStreams },
         { target: "#playbooks", renderer: renderPlaybooks },
         { target: "#emergency", renderer: renderEmergency },
+        { target: "#actions", renderer: renderActionDeck },
         { target: "#runbook", renderer: renderRunbook },
         { target: "#mermaid-diagram", renderer: renderMermaid },
       ];
@@ -1866,6 +2030,7 @@
       function renderManifest(manifest) {
         clearErrorState();
         const context = buildContext(manifest);
+        lastContext = context;
         renderAlerts(context.alerts);
         for (const section of SECTION_SCHEMA) {
           const node = document.querySelector(section.target);
@@ -1881,6 +2046,7 @@
         currentSource = normalizedSource;
         renderManifest(normalized);
         refreshEmergencyOverrides();
+        refreshActionDeck();
         setManifestStatus(normalizedSource);
         if (options.storeAsDefault) {
           defaultManifest = cloneManifest(normalized);
@@ -1976,6 +2142,26 @@
         const emergencyContainer = document.getElementById("emergency");
         if (emergencyContainer) {
           renderEmergency(emergencyContainer, currentManifest, emergencyOverridesData);
+        }
+      }
+
+      async function refreshActionDeck() {
+        try {
+          const response = await fetch(new URL("./output/phase8-governance-calldata.json", import.meta.url), {
+            cache: "no-cache",
+          });
+          if (!response.ok) {
+            throw new Error(`Failed to load governance calldata manifest: ${response.status}`);
+          }
+          calldataManifest = await response.json();
+        } catch (error) {
+          console.warn("Unable to load governance calldata manifest", error);
+          calldataManifest = null;
+        }
+
+        const actionsContainer = document.getElementById("actions");
+        if (actionsContainer && currentManifest && lastContext) {
+          renderActionDeck(actionsContainer, currentManifest, lastContext);
         }
       }
 
@@ -2511,6 +2697,393 @@
         });
 
         container.innerHTML = [summary, ...cards].join("");
+      }
+
+      function renderActionDeck(container, manifest, context) {
+        if (!container) return;
+        const data = calldataManifest;
+        if (!data || !Array.isArray(data.calls) || data.calls.length === 0) {
+          container.innerHTML = `<p data-i18n-key="actions.fallback" data-test-id="action-fallback">${t("actions.fallback")}</p>`;
+          return;
+        }
+
+        const domains = asArray(manifest.domains);
+        const sentinels = asArray(manifest.sentinels);
+        const streams = asArray(manifest.capitalStreams);
+        const domainMap = new Map(domains.map((domain) => [String(domain.slug ?? "").toLowerCase(), domain]));
+        const sentinelMap = new Map(sentinels.map((sentinel) => [String(sentinel.slug ?? "").toLowerCase(), sentinel]));
+        const streamMap = new Map(streams.map((stream) => [String(stream.slug ?? "").toLowerCase(), stream]));
+        const coverageMap = context?.coverageMap ?? new Map();
+        const fundingMap = context?.fundingMap ?? new Map();
+        const guardianWindowSeconds = toNumber(manifest.global?.guardianReviewWindow, 0);
+
+        const callsByLabel = new Map();
+        for (const call of data.calls) {
+          const label = String(call.label || "");
+          if (!callsByLabel.has(label)) callsByLabel.set(label, []);
+          callsByLabel.get(label).push(call);
+        }
+
+        const getCalls = (label, slug) => {
+          const entries = callsByLabel.get(label) || [];
+          if (slug === undefined) return entries;
+          const normalized = String(slug || "").toLowerCase();
+          return entries.filter((entry) => String(entry.slug || "").toLowerCase() === normalized);
+        };
+        const getCall = (label, slug) => {
+          const entries = getCalls(label, slug);
+          return entries.length ? entries[0] : undefined;
+        };
+
+        const summaryChips = [];
+        const chainIdText = data.chainId !== undefined ? String(data.chainId) : "?";
+        summaryChips.push(`<span class="chip">${t("actions.chips.chain")} ${escapeHtml(chainIdText)}</span>`);
+        const managerAddress = data.managerAddress || manifest.global?.phase8Manager || manifest.global?.guardianCouncil || "";
+        if (managerAddress) {
+          summaryChips.push(`<span class="chip">${t("actions.chips.manager")} ${escapeHtml(shortAddress(managerAddress))}</span>`);
+        }
+        if (guardianWindowSeconds) {
+          summaryChips.push(`<span class="chip">${t("actions.chips.coverage")} ${formatDuration(guardianWindowSeconds)}</span>`);
+        }
+        const dominanceScore = Number(context?.totals?.dominanceScore ?? 0);
+        if (dominanceScore) {
+          summaryChips.push(`<span class="chip alt">Dominance ${dominanceScore.toFixed(1)} / 100</span>`);
+        }
+
+        const generatedStamp = data.generatedAt ? `${dateFormatter.format(new Date(data.generatedAt))} UTC` : "";
+        const summaryMeta = generatedStamp ? [`Generated ${generatedStamp}`] : [];
+
+        const cards = [];
+        const pushCard = (card) => {
+          if (!card) return;
+          const commands = Array.isArray(card.commands) ? card.commands.filter((entry) => entry && entry.data) : [];
+          if (!commands.length) return;
+          card.commands = commands;
+          cards.push(card);
+        };
+
+        const global = manifest.global || {};
+        const globalCall = getCall("setGlobalParameters");
+        if (globalCall) {
+          const chips = [
+            `<span class="chip">${t("controls.treasury")}: ${escapeHtml(shortAddress(global.treasury))}</span>`,
+            `<span class="chip">${t("controls.guardianCouncil")}: ${escapeHtml(shortAddress(global.guardianCouncil))}</span>`,
+          ];
+          if (global.heartbeatSeconds) {
+            chips.push(`<span class="chip">${t("actions.chips.heartbeat")} ${formatDuration(global.heartbeatSeconds)}</span>`);
+          }
+          if (guardianWindowSeconds) {
+            chips.push(`<span class="chip">${t("actions.chips.coverage")} ${formatDuration(guardianWindowSeconds)}</span>`);
+          }
+          if (global.maxDrawdownBps !== undefined) {
+            chips.push(`<span class="chip">${t("controls.drawdown")} ${toNumber(global.maxDrawdownBps, 0)} bps</span>`);
+          }
+          pushCard({
+            category: "governance",
+            key: "set-global-parameters",
+            title: "Anchor global parameters",
+            summary: "Set treasury, universal vault, oversight timers, and manifesto hash for the value mesh.",
+            chips,
+            commands: [{ label: "setGlobalParameters", data: globalCall.data }],
+          });
+        }
+
+        const guardianCall = getCall("setGuardianCouncil");
+        if (guardianCall) {
+          pushCard({
+            category: "governance",
+            key: "set-guardian-council",
+            title: "Empower guardian council",
+            summary: `Route emergency authority to ${escapeHtml(shortAddress(global.guardianCouncil))} so humans stay in command.`,
+            chips: [`<span class="chip">${t("controls.guardianCouncil")}: ${escapeHtml(shortAddress(global.guardianCouncil))}</span>`],
+            commands: [{ label: guardianCall.label || "setGuardianCouncil", data: guardianCall.data }],
+          });
+        }
+
+        const pauseCall = getCall("setSystemPause");
+        if (pauseCall) {
+          pushCard({
+            category: "governance",
+            key: "set-system-pause",
+            title: "Wire the circuit breaker",
+            summary: `Point forwardPauseCall to ${escapeHtml(shortAddress(global.systemPause))} so the council can freeze automation instantly.`,
+            chips: [`<span class="chip">${t("controls.systemPause")}: ${escapeHtml(shortAddress(global.systemPause))}</span>`],
+            commands: [{ label: pauseCall.label || "setSystemPause", data: pauseCall.data }],
+          });
+        }
+
+        for (const domain of domains) {
+          const slug = String(domain.slug ?? "").toLowerCase();
+          const registerCall = getCall("registerDomain", slug);
+          if (!registerCall) continue;
+          const coverageSeconds = coverageMap.get(slug) || 0;
+          const fundingUSD = fundingMap.get(slug) || 0;
+          const coveragePercent = guardianWindowSeconds > 0 ? (coverageSeconds / guardianWindowSeconds) * 100 : 0;
+          const chips = [
+            `<span class="chip">${t("actions.chips.slug")} ${escapeHtml(domain.slug || "—")}</span>`,
+            `<span class="chip">${t("actions.chips.autonomy")} ${toNumber(domain.autonomyLevelBps, 0)} bps</span>`,
+            `<span class="chip">${t("actions.chips.resilience")} ${(toNumber(domain.resilienceIndex, 0)).toFixed(3)}</span>`,
+            `<span class="chip">${t("actions.chips.tvl")} ${escapeHtml(formatAmount(domain.tvlLimit))}</span>`,
+            `<span class="chip">${t("actions.chips.heartbeat")} ${formatDuration(domain.heartbeatSeconds)}</span>`,
+            `<span class="chip">${t("actions.chips.coverage")} ${formatDuration(coverageSeconds)} (${coveragePercent.toFixed(1)}%)</span>`,
+            `<span class="chip alt">${t("actions.chips.funding")} ${formatUSD(fundingUSD)}/yr</span>`,
+          ];
+          const monthly = formatUSD(domain.valueFlowMonthlyUSD);
+          const narrative = domain.autonomyNarrative ? [domain.autonomyNarrative] : undefined;
+          pushCard({
+            category: "dominions",
+            key: `register-domain-${slug}`,
+            title: `Onboard dominion · ${domain.name || domain.slug}`,
+            summary: `Activate ${domain.name || domain.slug} to marshal ${monthly}/mo with baked-in coverage and capital floors.`,
+            chips,
+            meta: narrative,
+            commands: [{ label: `registerDomain · ${domain.slug || "id"}`, data: registerCall.data }],
+          });
+        }
+
+        for (const sentinel of sentinels) {
+          const slug = String(sentinel.slug ?? "").toLowerCase();
+          const registerCall = getCall("registerSentinel", slug);
+          const bindingCalls = getCalls("setSentinelDomains", slug);
+          const commands = [];
+          if (registerCall) {
+            commands.push({ label: `registerSentinel · ${sentinel.slug || "id"}`, data: registerCall.data });
+          }
+          for (const binding of bindingCalls) {
+            commands.push({ label: `setSentinelDomains · ${binding.slug || sentinel.slug || "id"}`, data: binding.data });
+          }
+          if (!commands.length) continue;
+          const targetNames = asArray(sentinel.domains)
+            .map((id) => domainMap.get(String(id || "").toLowerCase())?.name || id)
+            .filter(Boolean)
+            .join(" · ") || "—";
+          const chips = [
+            `<span class="chip">${t("actions.chips.slug")} ${escapeHtml(sentinel.slug || "—")}</span>`,
+            `<span class="chip">${t("actions.chips.coverage")} ${formatDuration(sentinel.coverageSeconds)}</span>`,
+            `<span class="chip">${t("actions.chips.sensitivity")} ${toNumber(sentinel.sensitivityBps, 0)} bps</span>`,
+          ];
+          const meta = [`Agent ${shortAddress(sentinel.agent)}`, `Policy ${sentinel.uri || "—"}`];
+          pushCard({
+            category: "sentinels",
+            key: `register-sentinel-${slug}`,
+            title: `Deploy sentinel · ${sentinel.name || sentinel.slug}`,
+            summary: `Spin up ${sentinel.name || sentinel.slug} to continuously audit ${targetNames}.`,
+            chips,
+            meta,
+            commands,
+          });
+        }
+
+        for (const stream of streams) {
+          const slug = String(stream.slug ?? "").toLowerCase();
+          const registerCall = getCall("registerCapitalStream", slug);
+          const bindingCalls = getCalls("setCapitalStreamDomains", slug);
+          const commands = [];
+          if (registerCall) {
+            commands.push({ label: `registerCapitalStream · ${stream.slug || "id"}`, data: registerCall.data });
+          }
+          for (const binding of bindingCalls) {
+            commands.push({ label: `setCapitalStreamDomains · ${binding.slug || stream.slug || "id"}`, data: binding.data });
+          }
+          if (!commands.length) continue;
+          const targetNames = asArray(stream.domains)
+            .map((id) => domainMap.get(String(id || "").toLowerCase())?.name || id)
+            .filter(Boolean)
+            .join(" · ") || "—";
+          const chips = [
+            `<span class="chip">${t("actions.chips.slug")} ${escapeHtml(stream.slug || "—")}</span>`,
+            `<span class="chip">${t("actions.chips.funding")} ${formatUSD(stream.annualBudget)}/yr</span>`,
+            `<span class="chip">${t("actions.chips.expansion")} ${toNumber(stream.expansionBps, 0)} bps</span>`,
+          ];
+          const meta = [`Vault ${shortAddress(stream.vault)}`, `Mandate ${stream.uri || "—"}`];
+          pushCard({
+            category: "streams",
+            key: `register-stream-${slug}`,
+            title: `Prime capital stream · ${stream.name || stream.slug}`,
+            summary: `Fund ${targetNames} with ${formatUSD(stream.annualBudget)}/yr and programmable growth.`,
+            chips,
+            meta,
+            commands,
+          });
+        }
+
+        const planCall = getCall("setSelfImprovementPlan");
+        const recordCall = getCall("recordSelfImprovementExecution");
+        if (planCall || recordCall) {
+          const plan = manifest.selfImprovement?.plan || {};
+          const guards = manifest.selfImprovement?.autonomyGuards || {};
+          const chips = [];
+          if (plan.planHash) {
+            chips.push(`<span class="chip">Plan ${escapeHtml(truncateHex(plan.planHash))}</span>`);
+          }
+          if (plan.cadenceSeconds) {
+            chips.push(`<span class="chip">Cadence ${formatDuration(plan.cadenceSeconds)}</span>`);
+          }
+          if (plan.lastExecutedAt) {
+            chips.push(`<span class="chip">Last ${dateFormatter.format(new Date(plan.lastExecutedAt * 1000))} UTC</span>`);
+          }
+          if (guards.maxAutonomyBps !== undefined) {
+            chips.push(`<span class="chip">Guard ≤${toNumber(guards.maxAutonomyBps, 0)} bps</span>`);
+          }
+          const commands = [];
+          if (planCall) {
+            commands.push({ label: planCall.label || "setSelfImprovementPlan", data: planCall.data });
+          }
+          if (recordCall) {
+            commands.push({ label: recordCall.label || "recordSelfImprovementExecution", data: recordCall.data });
+          }
+          pushCard({
+            category: "safety",
+            key: "self-improvement",
+            title: "Lock self-improvement charter",
+            summary: "Publish cadence, checksum, and zk-proof hooks so upgrades stay auditable and human-aligned.",
+            chips,
+            meta: guards.escalationChannels?.length ? [`Escalation ${guards.escalationChannels.join(" → ")}`] : undefined,
+            commands,
+          });
+        }
+
+        const removeDomainCalls = getCalls("removeDomain");
+        if (removeDomainCalls.length) {
+          pushCard({
+            category: "teardown",
+            key: "remove-domains",
+            title: "Deactivate dominions on command",
+            summary: "Guardian council can revoke any dominion instantly if metrics drift beyond guardrails.",
+            chips: [`<span class="chip">${removeDomainCalls.length} dominion${removeDomainCalls.length === 1 ? "" : "s"}</span>`],
+            commands: removeDomainCalls.map((call) => ({
+              label: `removeDomain · ${call.slug || "id"}`,
+              data: call.data,
+            })),
+          });
+        }
+
+        const removeSentinelCalls = getCalls("removeSentinel");
+        if (removeSentinelCalls.length) {
+          pushCard({
+            category: "teardown",
+            key: "remove-sentinels",
+            title: "Retire sentinels instantly",
+            summary: "Strip any sentinel of authority the moment it misbehaves or coverage rotates.",
+            chips: [`<span class="chip">${removeSentinelCalls.length} sentinel${removeSentinelCalls.length === 1 ? "" : "s"}</span>`],
+            commands: removeSentinelCalls.map((call) => ({
+              label: `removeSentinel · ${call.slug || "id"}`,
+              data: call.data,
+            })),
+          });
+        }
+
+        const removeStreamCalls = getCalls("removeCapitalStream");
+        if (removeStreamCalls.length) {
+          pushCard({
+            category: "teardown",
+            key: "remove-streams",
+            title: "Reclaim capital flows",
+            summary: "Redirect treasury firehoses in one click when priorities change.",
+            chips: [`<span class="chip">${removeStreamCalls.length} stream${removeStreamCalls.length === 1 ? "" : "s"}</span>`],
+            commands: removeStreamCalls.map((call) => ({
+              label: `removeCapitalStream · ${call.slug || "id"}`,
+              data: call.data,
+            })),
+          });
+        }
+
+        const copyTemplate = t("actions.copyLabel");
+        const renderCommand = (command, index, cardKey) => {
+          const payload = String(command.data || "").trim();
+          if (!payload) return "";
+          const truncated = truncateHex(payload);
+          const label = command.label || `${t("actions.commandLabel")} ${index + 1}`;
+          const feedbackId = `${cardKey}-command-${index}`;
+          const copyLabel = copyTemplate.replace("{title}", `${cardKey} · ${label}`);
+          return `
+            <div class="action-command" data-test-id="action-command">
+              <span class="action-command-label">${escapeHtml(label)}</span>
+              <div class="command-row">
+                <code title="${escapeHtml(payload)}">${escapeHtml(truncated)}</code>
+                <div class="command-actions">
+                  ${copyButtonMarkup(payload, {
+                    ariaLabel: copyLabel,
+                    feedbackId,
+                    testId: "copy-action",
+                    copyLabel,
+                    type: "action",
+                  })}
+                </div>
+              </div>
+              <span class="copy-feedback" data-feedback-for="${escapeHtml(feedbackId)}" data-test-id="copy-feedback" role="status" aria-live="polite"></span>
+            </div>
+          `;
+        };
+
+        const renderCard = (card) => {
+          const chipsMarkup = card.chips?.length ? `<div class="action-chips">${card.chips.join("")}</div>` : "";
+          const metaMarkup = card.meta?.length
+            ? `<div class="action-meta">${card.meta.map((entry) => escapeHtml(entry)).join(" · ")}</div>`
+            : "";
+          const commandsMarkup = card.commands
+            ? `<div class="action-commands">${card.commands
+                .map((command, index) => renderCommand(command, index, card.key || card.category))
+                .join("")}</div>`
+            : "";
+          return `
+            <article class="action-card" data-test-id="action-card" data-action-category="${escapeHtml(card.category)}">
+              <h4>${escapeHtml(card.title)}</h4>
+              <p>${escapeHtml(card.summary)}</p>
+              ${chipsMarkup}
+              ${metaMarkup}
+              ${commandsMarkup}
+            </article>
+          `;
+        };
+
+        const summaryMarkup = `
+          <article class="action-summary" data-test-id="action-summary">
+            <h3 data-i18n-key="actions.summaryTitle">${t("actions.summaryTitle")}</h3>
+            <p data-i18n-key="actions.summaryBody">${t("actions.summaryBody")}</p>
+            <p data-i18n-key="actions.unstoppable">${t("actions.unstoppable")}</p>
+            <div class="action-chips">${summaryChips.join("")}</div>
+            ${
+              summaryMeta.length
+                ? `<div class="action-meta">${summaryMeta.map((entry) => escapeHtml(entry)).join(" · ")}</div>`
+                : ""
+            }
+            <div class="action-summary-links">
+              <a class="download-link" href="./output/phase8-governance-calldata.json" download data-test-id="action-manifest-link">${t(
+                "actions.summaryLinks.manifest",
+              )}</a>
+              <a class="download-link" href="./output/phase8-safe-transaction-batch.json" download data-test-id="action-safe-link">${t(
+                "actions.summaryLinks.safe",
+              )}</a>
+            </div>
+          </article>
+        `;
+
+        const categoryConfig = [
+          { key: "governance", title: t("actions.categories.governance") },
+          { key: "dominions", title: t("actions.categories.dominions") },
+          { key: "sentinels", title: t("actions.categories.sentinels") },
+          { key: "streams", title: t("actions.categories.streams") },
+          { key: "safety", title: t("actions.categories.safety") },
+          { key: "teardown", title: t("actions.categories.teardown") },
+        ];
+
+        const sections = categoryConfig
+          .map((category) => {
+            const categoryCards = cards.filter((card) => card.category === category.key);
+            if (!categoryCards.length) return "";
+            return `
+              <div class="action-category" data-action-group="${escapeHtml(category.key)}">
+                <h3>${escapeHtml(category.title)}</h3>
+                <div class="action-card-list">
+                  ${categoryCards.map((card) => renderCard(card)).join("")}
+                </div>
+              </div>
+            `;
+          })
+          .filter(Boolean);
+
+        container.innerHTML = [summaryMarkup, ...sections].join("");
       }
 
       function renderRunbook(container) {
