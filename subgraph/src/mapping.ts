@@ -7,9 +7,27 @@ import {
 } from '../generated/StakeManager/StakeManager';
 import { ValidationRevealed } from '../generated/ValidationModule/ValidationModule';
 import {
+  AgentProfileApproval as RegistryAgentProfileApproval,
+  AgentProfileRegistered as RegistryAgentProfileRegistered,
+  AgentProfileStatus as RegistryAgentProfileStatus,
+  AgentProfileUpdated as RegistryAgentProfileUpdated,
+  AgentSkillsSnapshot as RegistryAgentSkillsSnapshot,
+  CredentialRuleUpdated as RegistryCredentialRuleUpdated,
+  DomainRegistered as RegistryDomainRegistered,
+  DomainStatusChanged as RegistryDomainStatusChanged,
+  DomainUpdated as RegistryDomainUpdated,
+  SkillRegistered as RegistrySkillRegistered,
+  SkillUpdated as RegistrySkillUpdated,
+  Phase6DomainRegistry,
+} from '../generated/Phase6DomainRegistry/Phase6DomainRegistry';
+import {
   Job,
   Phase6Domain,
   Phase6GlobalConfig,
+  Phase6Registry,
+  Phase6RegistryAgent,
+  Phase6RegistryDomain,
+  Phase6RegistrySkill,
   ProtocolStats,
   Stake,
   StakeAggregate,
@@ -20,6 +38,7 @@ import {
 const ZERO = BigInt.zero();
 const PROTOCOL_ID = 'agi-jobs';
 const PHASE6_GLOBAL_ID = 'phase6-global';
+const PHASE6_REGISTRY_ID = 'phase6-registry';
 
 function safeDecrement(value: i32): i32 {
   return value > 0 ? value - 1 : 0;
@@ -389,6 +408,129 @@ function upsertPhase6Domain(id: string, event: ethereum.Event): Phase6Domain {
   return domain as Phase6Domain;
 }
 
+function registryDomainId(domainId: Bytes): string {
+  return domainId.toHexString();
+}
+
+function registrySkillId(domainId: Bytes, skillId: Bytes): string {
+  return domainId.toHexString() + ':' + skillId.toHexString();
+}
+
+function registryAgentEntityId(domainId: Bytes, agent: Address): string {
+  return domainId.toHexString() + ':' + agent.toHexString();
+}
+
+function isZeroBytes(value: Bytes): boolean {
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] != 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function getOrCreatePhase6Registry(event: ethereum.Event): Phase6Registry {
+  let registry = Phase6Registry.load(PHASE6_REGISTRY_ID);
+  if (registry == null) {
+    registry = new Phase6Registry(PHASE6_REGISTRY_ID);
+    registry.contract = event.address;
+    registry.controller = Address.zero();
+    registry.manifestHash = null;
+    registry.updatedAtBlock = event.block.number;
+    registry.updatedAtTimestamp = event.block.timestamp;
+  } else {
+    registry.contract = event.address;
+    registry.updatedAtBlock = event.block.number;
+    registry.updatedAtTimestamp = event.block.timestamp;
+  }
+  return registry as Phase6Registry;
+}
+
+function getOrCreatePhase6RegistryDomain(
+  domainKey: Bytes,
+  event: ethereum.Event,
+): Phase6RegistryDomain {
+  const id = registryDomainId(domainKey);
+  let domain = Phase6RegistryDomain.load(id);
+  if (domain == null) {
+    const registry = getOrCreatePhase6Registry(event);
+    registry.save();
+    domain = new Phase6RegistryDomain(id);
+    domain.registry = registry.id;
+    domain.slug = id;
+    domain.name = id;
+    domain.metadataURI = '';
+    domain.domainId = domainKey;
+    domain.manifestHash = Bytes.fromHexString(
+      '0x0000000000000000000000000000000000000000000000000000000000000000',
+    ) as Bytes;
+    domain.active = true;
+    domain.credentialRequires = false;
+    domain.credentialActive = false;
+    domain.credentialAttestor = null;
+    domain.credentialSchema = null;
+    domain.credentialURI = null;
+    domain.registeredAtBlock = event.block.number;
+    domain.registeredAtTimestamp = event.block.timestamp;
+  }
+  domain.updatedAtBlock = event.block.number;
+  domain.updatedAtTimestamp = event.block.timestamp;
+  return domain as Phase6RegistryDomain;
+}
+
+function getOrCreatePhase6RegistryAgent(
+  domain: Phase6RegistryDomain,
+  agentAddress: Address,
+  event: ethereum.Event,
+): Phase6RegistryAgent {
+  const id = registryAgentEntityId(domain.domainId, agentAddress);
+  let agent = Phase6RegistryAgent.load(id);
+  if (agent == null) {
+    agent = new Phase6RegistryAgent(id);
+    agent.domain = domain.id;
+    agent.agent = agentAddress;
+    agent.didURI = '';
+    agent.manifestHash = Bytes.fromHexString(
+      '0x0000000000000000000000000000000000000000000000000000000000000000',
+    ) as Bytes;
+    agent.credentialHash = null;
+    agent.submitter = event.transaction.from;
+    agent.approved = false;
+    agent.active = true;
+    agent.skillIds = [];
+    agent.registeredAtBlock = event.block.number;
+    agent.registeredAtTimestamp = event.block.timestamp;
+  }
+  agent.updatedAtBlock = event.block.number;
+  agent.updatedAtTimestamp = event.block.timestamp;
+  return agent as Phase6RegistryAgent;
+}
+
+function refreshRegistryAgentFromContract(
+  contract: Phase6DomainRegistry,
+  domainKey: Bytes,
+  agentAddress: Address,
+  agent: Phase6RegistryAgent,
+): void {
+  const profileResult = contract.try_getAgentProfile(agentAddress, domainKey);
+  if (profileResult.reverted) {
+    return;
+  }
+  const profile = profileResult.value.value0;
+  const skills = profileResult.value.value1;
+  agent.didURI = profile.didURI;
+  agent.manifestHash = profile.manifestHash;
+  agent.credentialHash = isZeroBytes(profile.credentialHash) ? null : profile.credentialHash;
+  agent.submitter = profile.submitter;
+  agent.approved = profile.approved;
+  agent.active = profile.active;
+  const normalizedSkills = new Array<Bytes>();
+  for (let i = 0; i < skills.length; i++) {
+    normalizedSkills.push(skills[i]);
+  }
+  agent.skillIds = normalizedSkills;
+}
+
 export function handlePhase6DomainRegistered(event: ethereum.Event): void {
   const params = event.parameters;
   const id = phase6DomainId(params[0].value);
@@ -593,4 +735,159 @@ export function handlePhase6EscalationForwarded(event: ethereum.Event): void {
   global.updatedAtBlock = event.block.number;
   global.updatedAtTimestamp = event.block.timestamp;
   global.save();
+}
+
+export function handlePhase6RegistryDomainRegistered(event: RegistryDomainRegistered): void {
+  const registry = getOrCreatePhase6Registry(event);
+  registry.save();
+
+  const domain = getOrCreatePhase6RegistryDomain(event.params.id, event);
+  domain.slug = event.params.slug.toLowerCase();
+  domain.name = event.params.name;
+  domain.metadataURI = event.params.metadataURI;
+  domain.domainId = event.params.id;
+  domain.manifestHash = event.params.manifestHash;
+  domain.active = true;
+  domain.save();
+}
+
+export function handlePhase6RegistryDomainUpdated(event: RegistryDomainUpdated): void {
+  const registry = getOrCreatePhase6Registry(event);
+  registry.save();
+
+  const domain = getOrCreatePhase6RegistryDomain(event.params.id, event);
+  domain.slug = event.params.slug.toLowerCase();
+  domain.name = event.params.name;
+  domain.metadataURI = event.params.metadataURI;
+  domain.manifestHash = event.params.manifestHash;
+  domain.active = event.params.active;
+  domain.save();
+}
+
+export function handlePhase6RegistryDomainStatusChanged(event: RegistryDomainStatusChanged): void {
+  const domain = getOrCreatePhase6RegistryDomain(event.params.id, event);
+  domain.active = event.params.active;
+  domain.save();
+}
+
+export function handlePhase6RegistryCredentialRuleUpdated(event: RegistryCredentialRuleUpdated): void {
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.credentialRequires = event.params.requiresCredential;
+  domain.credentialActive = event.params.active;
+  domain.credentialAttestor = event.params.attestor;
+  domain.credentialSchema = event.params.schemaId;
+  domain.credentialURI = event.params.uri;
+  domain.save();
+}
+
+export function handlePhase6RegistrySkillRegistered(event: RegistrySkillRegistered): void {
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const id = registrySkillId(event.params.domainId, event.params.skillId);
+  let skill = Phase6RegistrySkill.load(id);
+  if (skill == null) {
+    skill = new Phase6RegistrySkill(id);
+    skill.domain = domain.id;
+    skill.skillId = event.params.skillId;
+    skill.registeredAtBlock = event.block.number;
+    skill.registeredAtTimestamp = event.block.timestamp;
+  }
+  skill.key = event.params.key;
+  skill.label = event.params.label;
+  skill.metadataURI = event.params.metadataURI;
+  skill.requiresCredential = event.params.requiresCredential;
+  skill.active = true;
+  skill.updatedAtBlock = event.block.number;
+  skill.updatedAtTimestamp = event.block.timestamp;
+  skill.save();
+}
+
+export function handlePhase6RegistrySkillUpdated(event: RegistrySkillUpdated): void {
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const id = registrySkillId(event.params.domainId, event.params.skillId);
+  let skill = Phase6RegistrySkill.load(id);
+  if (skill == null) {
+    skill = new Phase6RegistrySkill(id);
+    skill.domain = domain.id;
+    skill.skillId = event.params.skillId;
+    skill.registeredAtBlock = event.block.number;
+    skill.registeredAtTimestamp = event.block.timestamp;
+  }
+  skill.key = event.params.key;
+  skill.label = event.params.label;
+  skill.metadataURI = event.params.metadataURI;
+  skill.requiresCredential = event.params.requiresCredential;
+  skill.active = event.params.active;
+  skill.updatedAtBlock = event.block.number;
+  skill.updatedAtTimestamp = event.block.timestamp;
+  skill.save();
+}
+
+export function handlePhase6RegistryAgentProfileRegistered(
+  event: RegistryAgentProfileRegistered,
+): void {
+  const contract = Phase6DomainRegistry.bind(event.address);
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const agent = getOrCreatePhase6RegistryAgent(domain, event.params.agent, event);
+  agent.didURI = event.params.didURI;
+  agent.manifestHash = event.params.manifestHash;
+  agent.submitter = event.transaction.from;
+  agent.approved = false;
+  agent.active = true;
+  agent.skillIds = [];
+  refreshRegistryAgentFromContract(contract, event.params.domainId, event.params.agent, agent);
+  agent.save();
+}
+
+export function handlePhase6RegistryAgentProfileUpdated(event: RegistryAgentProfileUpdated): void {
+  const contract = Phase6DomainRegistry.bind(event.address);
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const agent = getOrCreatePhase6RegistryAgent(domain, event.params.agent, event);
+  agent.didURI = event.params.didURI;
+  agent.manifestHash = event.params.manifestHash;
+  refreshRegistryAgentFromContract(contract, event.params.domainId, event.params.agent, agent);
+  agent.save();
+}
+
+export function handlePhase6RegistryAgentProfileApproval(event: RegistryAgentProfileApproval): void {
+  const contract = Phase6DomainRegistry.bind(event.address);
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const agent = getOrCreatePhase6RegistryAgent(domain, event.params.agent, event);
+  agent.approved = event.params.approved;
+  refreshRegistryAgentFromContract(contract, event.params.domainId, event.params.agent, agent);
+  agent.save();
+}
+
+export function handlePhase6RegistryAgentProfileStatus(event: RegistryAgentProfileStatus): void {
+  const contract = Phase6DomainRegistry.bind(event.address);
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const agent = getOrCreatePhase6RegistryAgent(domain, event.params.agent, event);
+  agent.active = event.params.active;
+  refreshRegistryAgentFromContract(contract, event.params.domainId, event.params.agent, agent);
+  agent.save();
+}
+
+export function handlePhase6RegistryAgentSkillsSnapshot(event: RegistryAgentSkillsSnapshot): void {
+  const domain = getOrCreatePhase6RegistryDomain(event.params.domainId, event);
+  domain.save();
+
+  const agent = getOrCreatePhase6RegistryAgent(domain, event.params.agent, event);
+  const normalized = new Array<Bytes>();
+  const skillIds = event.params.skillIds;
+  for (let i = 0; i < skillIds.length; i++) {
+    normalized.push(skillIds[i]);
+  }
+  agent.skillIds = normalized;
+  agent.save();
 }

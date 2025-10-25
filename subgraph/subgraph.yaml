@@ -117,3 +117,46 @@ dataSources:
         - event: EscalationForwarded(indexed address,bytes,bytes)
           handler: handlePhase6EscalationForwarded
       file: ./src/mapping.ts
+  - kind: ethereum
+    name: Phase6DomainRegistry
+    network: hardhat
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: Phase6DomainRegistry
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Phase6Registry
+        - Phase6RegistryDomain
+        - Phase6RegistrySkill
+        - Phase6RegistryAgent
+      abis:
+        - name: Phase6DomainRegistry
+          file: ./abis/Phase6DomainRegistry.json
+      eventHandlers:
+        - event: DomainRegistered(indexed bytes32,string,string,string,bytes32)
+          handler: handlePhase6RegistryDomainRegistered
+        - event: DomainUpdated(indexed bytes32,string,string,string,bytes32,bool)
+          handler: handlePhase6RegistryDomainUpdated
+        - event: DomainStatusChanged(indexed bytes32,bool)
+          handler: handlePhase6RegistryDomainStatusChanged
+        - event: CredentialRuleUpdated(indexed bytes32,indexed address,bytes32,string,bool,bool)
+          handler: handlePhase6RegistryCredentialRuleUpdated
+        - event: SkillRegistered(indexed bytes32,indexed bytes32,string,string,string,bool)
+          handler: handlePhase6RegistrySkillRegistered
+        - event: SkillUpdated(indexed bytes32,indexed bytes32,string,string,string,bool,bool)
+          handler: handlePhase6RegistrySkillUpdated
+        - event: AgentProfileRegistered(indexed bytes32,indexed address,string,bytes32)
+          handler: handlePhase6RegistryAgentProfileRegistered
+        - event: AgentProfileUpdated(indexed bytes32,indexed address,string,bytes32)
+          handler: handlePhase6RegistryAgentProfileUpdated
+        - event: AgentProfileApproval(indexed bytes32,indexed address,bool)
+          handler: handlePhase6RegistryAgentProfileApproval
+        - event: AgentProfileStatus(indexed bytes32,indexed address,bool)
+          handler: handlePhase6RegistryAgentProfileStatus
+        - event: AgentSkillsSnapshot(indexed bytes32,indexed address,bytes32[])
+          handler: handlePhase6RegistryAgentSkillsSnapshot
+      file: ./src/mapping.ts

@@ -346,6 +346,78 @@ function printBlueprint(blueprint: Phase6Blueprint, options: CliOptions) {
     console.log(`    ${domain.calldata.setDomainInfrastructure}`);
   });
 
+  if (blueprint.registry) {
+    const registry = blueprint.registry;
+    banner('Phase 6 skill & identity registry');
+    renderTable([
+      ['Manifest hash', registry.manifestHash ?? '—'],
+      summarizeAddress('Registry contract', registry.contract).split(': '),
+      summarizeAddress('Controller', registry.controller).split(': '),
+      ['Domains', `${registry.metrics.domainCount}`],
+      ['Skills', `${registry.metrics.skillCount}`],
+      ['Credential-gated skills', `${registry.metrics.credentialProtectedSkills}`],
+      ['Agents (approved/active)', `${registry.metrics.agentCount} (${registry.metrics.approvedAgents}/${registry.metrics.activeAgents})`],
+    ] as unknown as Array<[string, string]>);
+
+    registry.domains.forEach((domain) => {
+      console.log(`\n\x1b[36m${domain.name} (${domain.slug})\x1b[0m`);
+      renderTable([
+        ['Domain ID', domain.domainId],
+        ['Manifest hash', domain.manifestHash],
+        ['Active', domain.active ? 'true' : 'false'],
+        ['Metadata URI', domain.metadataURI],
+      ] as unknown as Array<[string, string]>);
+      if (domain.credentialRule) {
+        const rule = domain.credentialRule;
+        renderTable([
+          ['Requires credential', rule.requiresCredential ? 'yes' : 'no'],
+          ['Credential active', rule.active ? 'yes' : 'no'],
+          summarizeAddress('Attestor', rule.attestor).split(': '),
+          ['Schema ID', rule.schemaId ?? '—'],
+          ['Rule URI', rule.uri ?? '—'],
+        ] as unknown as Array<[string, string]>);
+        if (rule.calldata) {
+          console.log(`  setCredentialRule calldata: ${rule.calldata}`);
+        }
+      }
+      if (domain.skills.length) {
+        console.log('  Skills');
+        domain.skills.forEach((skill) => {
+          console.log(
+            `    • ${skill.key} (${skill.id}) — ${skill.label} [credential=${skill.requiresCredential ? 'yes' : 'no'}, active=${skill.active ? 'yes' : 'no'}]`,
+          );
+          console.log(`      registerSkill: ${skill.calldata.registerSkill}`);
+          console.log(`      updateSkill:   ${skill.calldata.updateSkill}`);
+        });
+      }
+      if (domain.agents.length) {
+        console.log('  Agents');
+        domain.agents.forEach((agent) => {
+          renderTable([
+            ['Alias', agent.alias],
+            summarizeAddress('Address', agent.address).split(': '),
+            ['DID', agent.did],
+            ['Manifest hash', agent.manifestHash],
+            ['Credential hash', agent.credentialHash ?? '—'],
+            ['Skills', agent.skills.join(', ') || '—'],
+            ['Approved', agent.approved === null ? 'pending' : agent.approved ? 'yes' : 'no'],
+            ['Active', agent.active === null ? 'unspecified' : agent.active ? 'yes' : 'no'],
+            ['Note', agent.note ?? '—'],
+          ] as unknown as Array<[string, string]>);
+          console.log(`      register: ${agent.calldata.register}`);
+          if (agent.calldata.approve) {
+            console.log(`      approve:  ${agent.calldata.approve}`);
+          }
+          if (agent.calldata.activate) {
+            console.log(`      activate: ${agent.calldata.activate}`);
+          }
+        });
+      }
+      console.log(`  registerDomain calldata: ${domain.calldata.registerDomain}`);
+      console.log(`  updateDomain calldata: ${domain.calldata.updateDomain}`);
+    });
+  }
+
   banner('Mermaid system map (copy/paste into dashboards)');
   console.log(blueprint.mermaid);
 

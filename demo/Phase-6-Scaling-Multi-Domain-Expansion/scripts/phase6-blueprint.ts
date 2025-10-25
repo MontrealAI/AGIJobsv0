@@ -111,6 +111,53 @@ export interface Phase6DemoConfig {
       autopilotEnabled?: boolean;
     };
   }>;
+  registry?: Phase6RegistryConfig;
+}
+
+export interface Phase6RegistryConfig {
+  manifestHash?: string;
+  contract?: string;
+  controller?: string;
+  domains: RegistryDomainConfig[];
+}
+
+export interface RegistryDomainConfig {
+  slug: string;
+  name?: string;
+  metadataURI?: string;
+  manifestHash?: string;
+  active?: boolean;
+  skills?: RegistrySkillConfig[];
+  credentialRule?: RegistryCredentialRuleConfig;
+  agents?: RegistryAgentConfig[];
+}
+
+export interface RegistrySkillConfig {
+  key: string;
+  label: string;
+  metadataURI: string;
+  requiresCredential?: boolean;
+  active?: boolean;
+}
+
+export interface RegistryCredentialRuleConfig {
+  requiresCredential?: boolean;
+  active?: boolean;
+  attestor?: string;
+  schemaId?: string;
+  uri?: string;
+}
+
+export interface RegistryAgentConfig {
+  address: string;
+  alias: string;
+  did: string;
+  manifestHash: string;
+  credentialHash?: string;
+  skills?: string[];
+  approved?: boolean;
+  active?: boolean;
+  note?: string;
 }
 
 export interface DomainBlueprint {
@@ -174,6 +221,79 @@ export interface DomainBlueprint {
     setDomainTelemetry: string;
     setDomainInfrastructure?: string;
   };
+}
+
+export interface RegistrySkillBlueprint {
+  key: string;
+  id: string;
+  label: string;
+  metadataURI: string;
+  requiresCredential: boolean;
+  active: boolean;
+  calldata: {
+    registerSkill: string;
+    updateSkill: string;
+  };
+}
+
+export interface RegistryCredentialBlueprint {
+  requiresCredential: boolean;
+  active: boolean;
+  attestor: string | null;
+  schemaId: string | null;
+  uri: string | null;
+  calldata: string | null;
+}
+
+export interface RegistryAgentBlueprint {
+  address: string;
+  alias: string;
+  did: string;
+  manifestHash: string;
+  credentialHash: string | null;
+  skills: string[];
+  skillIds: string[];
+  approved: boolean | null;
+  active: boolean | null;
+  note: string | null;
+  calldata: {
+    register: string;
+    approve?: string;
+    activate?: string;
+  };
+}
+
+export interface RegistryDomainBlueprint {
+  slug: string;
+  name: string;
+  domainId: string;
+  metadataURI: string;
+  manifestHash: string;
+  active: boolean;
+  credentialRule: RegistryCredentialBlueprint | null;
+  skills: RegistrySkillBlueprint[];
+  agents: RegistryAgentBlueprint[];
+  calldata: {
+    registerDomain: string;
+    updateDomain: string;
+  };
+}
+
+export interface RegistryBlueprintMetrics {
+  domainCount: number;
+  skillCount: number;
+  credentialProtectedSkills: number;
+  agentCount: number;
+  approvedAgents: number;
+  activeAgents: number;
+}
+
+export interface RegistryBlueprint {
+  manifestHash: string | null;
+  contract: string | null;
+  controller: string | null;
+  metrics: RegistryBlueprintMetrics;
+  domains: RegistryDomainBlueprint[];
 }
 
 export interface Phase6Blueprint {
@@ -247,6 +367,7 @@ export interface Phase6Blueprint {
   };
   mermaid: string;
   domains: DomainBlueprint[];
+  registry?: RegistryBlueprint;
 }
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -267,6 +388,19 @@ export const ABI_FRAGMENTS = [
 ];
 
 const ABI_INTERFACE = new Interface(ABI_FRAGMENTS);
+
+const REGISTRY_ABI_FRAGMENTS = [
+  'function registerDomain(string slug,string name,string metadataURI,bytes32 manifestHash,bool active)',
+  'function updateDomain(bytes32 id,string name,string metadataURI,bytes32 manifestHash,bool active)',
+  'function setCredentialRule(bytes32 domainKey,(address attestor,bytes32 schemaId,string uri,bool requiresCredential,bool active,uint64 updatedAt) rule)',
+  'function registerSkill(bytes32 domainKey,string key,string label,string metadataURI,bool requiresCredential)',
+  'function updateSkill(bytes32 domainKey,string key,string label,string metadataURI,bool requiresCredential,bool active)',
+  'function registerAgentProfileFor(address agent,(string domain,string didURI,bytes32 manifestHash,bytes32 credentialHash,string[] skills) registration)',
+  'function setAgentApproval(bytes32 domainKey,address agent,bool approved)',
+  'function setAgentStatus(bytes32 domainKey,address agent,bool active)',
+];
+
+const REGISTRY_ABI_INTERFACE = new Interface(REGISTRY_ABI_FRAGMENTS);
 
 function ensureArray<T>(value: T[] | undefined | null): T[] {
   return Array.isArray(value) ? value : [];
@@ -497,6 +631,207 @@ function buildDomainTuples(domain: Phase6DemoConfig['domains'][number]) {
   return { tuple, opsTuple, telemetryTuple, infraTuple };
 }
 
+function buildRegistryBlueprint(config: Phase6DemoConfig): RegistryBlueprint | undefined {
+  const registry = config.registry;
+  if (!registry || !Array.isArray(registry.domains) || registry.domains.length === 0) {
+    return undefined;
+  }
+
+  const domainIndex = new Map<string, { name: string; metadataURI: string }>();
+  for (const domain of config.domains) {
+    domainIndex.set(domain.slug.toLowerCase(), { name: domain.name, metadataURI: domain.manifestURI });
+  }
+
+  const domains: RegistryDomainBlueprint[] = [];
+  let skillCount = 0;
+  let credentialProtected = 0;
+  let agentCount = 0;
+  let approvedAgents = 0;
+  let activeAgents = 0;
+
+  for (const domain of ensureArray(registry.domains)) {
+    if (!domain || typeof domain.slug !== 'string' || domain.slug.trim().length === 0) {
+      continue;
+    }
+    const slug = domain.slug.trim();
+    const normalizedSlug = slug.toLowerCase();
+    const domainId = keccak256(toUtf8Bytes(normalizedSlug));
+    const base = domainIndex.get(normalizedSlug);
+    const name = domain.name ?? base?.name ?? slug;
+    const metadataURI = (domain.metadataURI ?? base?.metadataURI ?? `ipfs://phase6/domains/${normalizedSlug}.json`).trim();
+    const manifestHash = domain.manifestHash ?? ZERO_BYTES32;
+    const isActive = domain.active ?? true;
+
+    const registerDomainCall = REGISTRY_ABI_INTERFACE.encodeFunctionData('registerDomain', [
+      slug,
+      name,
+      metadataURI,
+      manifestHash,
+      isActive,
+    ]);
+    const updateDomainCall = REGISTRY_ABI_INTERFACE.encodeFunctionData('updateDomain', [
+      domainId,
+      name,
+      metadataURI,
+      manifestHash,
+      isActive,
+    ]);
+
+    let credentialBlueprint: RegistryCredentialBlueprint | null = null;
+    if (domain.credentialRule) {
+      const rule = domain.credentialRule;
+      const requiresCredential = Boolean(rule.requiresCredential ?? false);
+      const active = Boolean(rule.active ?? requiresCredential);
+      const attestor = normaliseAddress(rule.attestor ?? undefined);
+      const schemaId = rule.schemaId ?? ZERO_BYTES32;
+      const uri = rule.uri ?? null;
+      const ruleTuple = [
+        attestor ?? ZERO_ADDRESS,
+        schemaId,
+        uri ?? '',
+        requiresCredential,
+        active,
+        BigInt(0),
+      ];
+      credentialBlueprint = {
+        requiresCredential,
+        active,
+        attestor,
+        schemaId,
+        uri,
+        calldata: REGISTRY_ABI_INTERFACE.encodeFunctionData('setCredentialRule', [domainId, ruleTuple]),
+      };
+    }
+
+    const skills: RegistrySkillBlueprint[] = [];
+    for (const skill of ensureArray(domain.skills)) {
+      if (!skill || typeof skill.key !== 'string' || skill.key.trim().length === 0) {
+        continue;
+      }
+      const key = skill.key.trim();
+      const normalizedKey = key.toLowerCase();
+      const id = keccak256(toUtf8Bytes(normalizedKey));
+      const requiresCredential = Boolean(skill.requiresCredential ?? false);
+      const active = Boolean(skill.active ?? true);
+      if (requiresCredential) {
+        credentialProtected += 1;
+      }
+      skillCount += 1;
+      skills.push({
+        key,
+        id,
+        label: skill.label ?? key,
+        metadataURI: skill.metadataURI,
+        requiresCredential,
+        active,
+        calldata: {
+          registerSkill: REGISTRY_ABI_INTERFACE.encodeFunctionData('registerSkill', [
+            domainId,
+            key,
+            skill.label ?? key,
+            skill.metadataURI,
+            requiresCredential,
+          ]),
+          updateSkill: REGISTRY_ABI_INTERFACE.encodeFunctionData('updateSkill', [
+            domainId,
+            key,
+            skill.label ?? key,
+            skill.metadataURI,
+            requiresCredential,
+            active,
+          ]),
+        },
+      });
+    }
+
+    const agents: RegistryAgentBlueprint[] = [];
+    for (const agent of ensureArray(domain.agents)) {
+      if (!agent || typeof agent.address !== 'string' || agent.address.trim().length === 0) {
+        continue;
+      }
+      const skillsRaw = ensureArray(agent.skills).map((entry) => String(entry));
+      const normalizedSkills = skillsRaw.map((entry) => entry.toLowerCase());
+      const skillIds = normalizedSkills.map((entry) => keccak256(toUtf8Bytes(entry)));
+      const credentialHash = agent.credentialHash ?? ZERO_BYTES32;
+      const approved = agent.approved ?? null;
+      const active = agent.active ?? null;
+      agentCount += 1;
+      if (approved === true) {
+        approvedAgents += 1;
+      }
+      if (active !== false) {
+        activeAgents += 1;
+      }
+      const calldata: RegistryAgentBlueprint['calldata'] = {
+        register: REGISTRY_ABI_INTERFACE.encodeFunctionData('registerAgentProfileFor', [
+          agent.address,
+          [slug, agent.did, agent.manifestHash, credentialHash, skillsRaw],
+        ]),
+      };
+      if (approved !== null) {
+        calldata.approve = REGISTRY_ABI_INTERFACE.encodeFunctionData('setAgentApproval', [
+          domainId,
+          agent.address,
+          Boolean(approved),
+        ]);
+      }
+      if (active !== null) {
+        calldata.activate = REGISTRY_ABI_INTERFACE.encodeFunctionData('setAgentStatus', [
+          domainId,
+          agent.address,
+          Boolean(active),
+        ]);
+      }
+      agents.push({
+        address: agent.address,
+        alias: agent.alias ?? agent.address,
+        did: agent.did,
+        manifestHash: agent.manifestHash,
+        credentialHash,
+        skills: normalizedSkills,
+        skillIds,
+        approved,
+        active,
+        note: agent.note ?? null,
+        calldata,
+      });
+    }
+
+    domains.push({
+      slug,
+      name,
+      domainId,
+      metadataURI,
+      manifestHash,
+      active: Boolean(isActive),
+      credentialRule: credentialBlueprint,
+      skills,
+      agents,
+      calldata: {
+        registerDomain: registerDomainCall,
+        updateDomain: updateDomainCall,
+      },
+    });
+  }
+
+  const metrics: RegistryBlueprintMetrics = {
+    domainCount: domains.length,
+    skillCount,
+    credentialProtectedSkills: credentialProtected,
+    agentCount,
+    approvedAgents,
+    activeAgents,
+  };
+
+  return {
+    manifestHash: registry.manifestHash ?? null,
+    contract: normaliseAddress(registry.contract ?? undefined),
+    controller: normaliseAddress(registry.controller ?? undefined),
+    metrics,
+    domains,
+  };
+}
+
 export function loadPhase6Config(path: string): Phase6DemoConfig {
   const data = JSON.parse(readFileSync(path, 'utf-8'));
   return data as Phase6DemoConfig;
@@ -653,12 +988,14 @@ export function buildPhase6Blueprint(
       : undefined,
   };
 
+  const registryBlueprint = buildRegistryBlueprint(config);
+
   return {
     generatedAt: new Date().toISOString(),
     configPath: options.configPath,
     configHash,
     specVersion: 'phase6.expansion.v2',
-    fragments: [...ABI_FRAGMENTS],
+    fragments: [...ABI_FRAGMENTS, ...REGISTRY_ABI_FRAGMENTS],
     metrics,
     global: {
       manifestURI: config.global.manifestURI,
@@ -697,6 +1034,7 @@ export function buildPhase6Blueprint(
     calldata,
     mermaid,
     domains,
+    registry: registryBlueprint,
   };
 }
 

@@ -1,6 +1,12 @@
 import { formatEther } from 'ethers';
 
-import type { DomainBlueprint, Phase6Blueprint } from './phase6-blueprint';
+import type {
+  DomainBlueprint,
+  Phase6Blueprint,
+  RegistryAgentBlueprint,
+  RegistryDomainBlueprint,
+  RegistrySkillBlueprint,
+} from './phase6-blueprint';
 
 function formatBps(value?: number | null): string {
   if (typeof value !== 'number' || Number.isNaN(value)) {
@@ -111,6 +117,77 @@ function renderDomain(domain: DomainBlueprint, globalCadenceSeconds: number): st
   return lines.join('\n');
 }
 
+function renderRegistrySkills(skills: RegistrySkillBlueprint[]): string {
+  if (!skills.length) {
+    return '- Skills: —';
+  }
+  const lines = ['- Skills:'];
+  skills.forEach((skill) => {
+    lines.push(
+      `  - ${skill.key} (${skill.id}) — ${skill.label} [credential=${skill.requiresCredential ? 'yes' : 'no'}, active=${skill.active ? 'yes' : 'no'}]`,
+    );
+    lines.push(`    - registerSkill: ${skill.calldata.registerSkill}`);
+    lines.push(`    - updateSkill: ${skill.calldata.updateSkill}`);
+  });
+  return lines.join('\n');
+}
+
+function renderRegistryAgents(agents: RegistryAgentBlueprint[]): string {
+  if (!agents.length) {
+    return '- Agents: —';
+  }
+  const lines = ['- Agents:'];
+  agents.forEach((agent) => {
+    lines.push(`  - ${agent.alias} (${agent.address})`);
+    lines.push(`    - DID: ${agent.did}`);
+    lines.push(`    - Manifest Hash: ${agent.manifestHash}`);
+    lines.push(`    - Credential Hash: ${agent.credentialHash ?? '—'}`);
+    lines.push(`    - Skills: ${agent.skills.join(', ') || '—'}`);
+    lines.push(`    - Approved: ${agent.approved === null ? 'Pending' : agent.approved ? 'Yes' : 'No'}`);
+    lines.push(`    - Active: ${agent.active === null ? 'Unspecified' : agent.active ? 'Yes' : 'No'}`);
+    if (agent.note) {
+      lines.push(`    - Note: ${agent.note}`);
+    }
+    lines.push(`    - register: ${agent.calldata.register}`);
+    if (agent.calldata.approve) {
+      lines.push(`    - approve: ${agent.calldata.approve}`);
+    }
+    if (agent.calldata.activate) {
+      lines.push(`    - activate: ${agent.calldata.activate}`);
+    }
+  });
+  return lines.join('\n');
+}
+
+function renderRegistryDomain(domain: RegistryDomainBlueprint): string {
+  const lines: string[] = [];
+  lines.push(`### Registry Domain: ${domain.name} (${domain.slug})`);
+  lines.push('');
+  lines.push(`- Domain ID: ${domain.domainId}`);
+  lines.push(`- Manifest Hash: ${domain.manifestHash}`);
+  lines.push(`- Metadata URI: ${domain.metadataURI}`);
+  lines.push(`- Active: ${domain.active ? 'Yes' : 'No'}`);
+  if (domain.credentialRule) {
+    const rule = domain.credentialRule;
+    lines.push('- Credential Rule:');
+    lines.push(`  - Requires Credential: ${rule.requiresCredential ? 'Yes' : 'No'}`);
+    lines.push(`  - Active: ${rule.active ? 'Yes' : 'No'}`);
+    lines.push(`  - Attestor: ${rule.attestor ?? '—'}`);
+    lines.push(`  - Schema ID: ${rule.schemaId ?? '—'}`);
+    lines.push(`  - URI: ${rule.uri ?? '—'}`);
+    if (rule.calldata) {
+      lines.push(`  - setCredentialRule: ${rule.calldata}`);
+    }
+  }
+  lines.push(renderRegistrySkills(domain.skills));
+  lines.push(renderRegistryAgents(domain.agents));
+  lines.push('- Calldata:');
+  lines.push(`  - registerDomain: ${domain.calldata.registerDomain}`);
+  lines.push(`  - updateDomain: ${domain.calldata.updateDomain}`);
+  lines.push('');
+  return lines.join('\n');
+}
+
 export function createPhase6Runbook(blueprint: Phase6Blueprint): string {
   const lines: string[] = [];
   lines.push('# Phase 6 Expansion Runbook');
@@ -213,6 +290,24 @@ export function createPhase6Runbook(blueprint: Phase6Blueprint): string {
   blueprint.domains.forEach((domain) => {
     lines.push(renderDomain(domain, blueprint.global.l2SyncCadenceSeconds));
   });
+  if (blueprint.registry) {
+    lines.push('');
+    lines.push('## Phase 6 Registry');
+    lines.push('');
+    lines.push(`- Manifest Hash: ${blueprint.registry.manifestHash ?? '—'}`);
+    lines.push(formatAddress('Registry Contract', blueprint.registry.contract));
+    lines.push(formatAddress('Controller', blueprint.registry.controller));
+    lines.push(`- Domains: ${blueprint.registry.metrics.domainCount}`);
+    lines.push(`- Skills: ${blueprint.registry.metrics.skillCount}`);
+    lines.push(`- Credential-Gated Skills: ${blueprint.registry.metrics.credentialProtectedSkills}`);
+    lines.push(
+      `- Agents (Approved/Active): ${blueprint.registry.metrics.agentCount} (${blueprint.registry.metrics.approvedAgents}/${blueprint.registry.metrics.activeAgents})`,
+    );
+    lines.push('');
+    blueprint.registry.domains.forEach((registryDomain) => {
+      lines.push(renderRegistryDomain(registryDomain));
+    });
+  }
   lines.push('');
   lines.push('## Operational Checklist');
   lines.push('- [ ] Review calldata payloads with governance multisig');

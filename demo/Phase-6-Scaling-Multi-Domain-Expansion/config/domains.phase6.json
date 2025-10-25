@@ -503,5 +503,317 @@
         "autopilotEnabled": true
       }
     }
-  ]
+  ],
+  "registry": {
+    "manifestHash": "0x13579bdf2468ace013579bdf2468ace013579bdf2468ace013579bdf2468ace0",
+    "contract": "0x55556666777788889999AAAABBBBCCCCDDDDEEEE",
+    "controller": "0x9999AAAABBBBCCCCDDDDEEEEFFFF000011112222",
+    "domains": [
+      {
+        "slug": "finance",
+        "name": "Sovereign Finance Hypergrid",
+        "metadataURI": "ipfs://phase6/registry/domains/finance.json",
+        "manifestHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "active": true,
+        "credentialRule": {
+          "requiresCredential": true,
+          "active": true,
+          "attestor": "0xAAAABBBBCCCCDDDDEEEEFFFF0000111122223333",
+          "schemaId": "0x111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000",
+          "uri": "ipfs://phase6/registry/finance/credentials/global.json"
+        },
+        "skills": [
+          {
+            "key": "quantum-risk",
+            "label": "Quantum Risk Sentinel",
+            "metadataURI": "ipfs://phase6/registry/finance/skills/quantum-risk.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "treasury-ops",
+            "label": "Treasury Mesh Ops",
+            "metadataURI": "ipfs://phase6/registry/finance/skills/treasury-ops.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "defi-arbitrage",
+            "label": "DeFi Circuit Breaker",
+            "metadataURI": "ipfs://phase6/registry/finance/skills/defi-arbitrage.json",
+            "requiresCredential": false,
+            "active": true
+          }
+        ],
+        "agents": [
+          {
+            "address": "0xf100000000000000000000000000000000000001",
+            "alias": "Atlas Finance AGI",
+            "did": "did:agi:finance:atlas",
+            "manifestHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "credentialHash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "skills": ["quantum-risk", "treasury-ops"],
+            "approved": true,
+            "active": true,
+            "note": "Lead liquidity sentinel"
+          },
+          {
+            "address": "0xf100000000000000000000000000000000000002",
+            "alias": "Helios DeFi Mesh",
+            "did": "did:agi:finance:helios",
+            "manifestHash": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "credentialHash": "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "skills": ["defi-arbitrage", "treasury-ops"],
+            "approved": false,
+            "active": true,
+            "note": "Autonomous arbitrage coordinator"
+          }
+        ]
+      },
+      {
+        "slug": "health",
+        "name": "Interplanetary Health Mesh",
+        "metadataURI": "ipfs://phase6/registry/domains/health.json",
+        "manifestHash": "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        "active": true,
+        "credentialRule": {
+          "requiresCredential": true,
+          "active": true,
+          "attestor": "0xBBBBCCCCDDDDEEEEFFFF00001111222233334444",
+          "schemaId": "0x0000111122223333444455556666777788889999aaaabbbbccccddddeeeeffff",
+          "uri": "ipfs://phase6/registry/health/credentials/clinical.json"
+        },
+        "skills": [
+          {
+            "key": "clinical-governance",
+            "label": "Clinical Governance",
+            "metadataURI": "ipfs://phase6/registry/health/skills/clinical-governance.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "radiology-oracle",
+            "label": "Radiology Oracle",
+            "metadataURI": "ipfs://phase6/registry/health/skills/radiology-oracle.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "bioethics",
+            "label": "Bioethics Oversight",
+            "metadataURI": "ipfs://phase6/registry/health/skills/bioethics.json",
+            "requiresCredential": false,
+            "active": true
+          }
+        ],
+        "agents": [
+          {
+            "address": "0xe100000000000000000000000000000000000001",
+            "alias": "Aurora Care Mesh",
+            "did": "did:agi:health:aurora",
+            "manifestHash": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "credentialHash": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "skills": ["clinical-governance", "radiology-oracle"],
+            "approved": true,
+            "active": true,
+            "note": "HIPAA-aligned diagnostics crew"
+          },
+          {
+            "address": "0xe100000000000000000000000000000000000002",
+            "alias": "Zephyr Medical QA",
+            "did": "did:agi:health:zephyr",
+            "manifestHash": "0x9999999999999999999999999999999999999999999999999999999999999999",
+            "credentialHash": "0x8888888888888888888888888888888888888888888888888888888888888888",
+            "skills": ["bioethics", "clinical-governance"],
+            "approved": false,
+            "active": true,
+            "note": "Bioethics escalation specialist"
+          }
+        ]
+      },
+      {
+        "slug": "logistics",
+        "name": "Autonomous Supply Lattice",
+        "metadataURI": "ipfs://phase6/registry/domains/logistics.json",
+        "manifestHash": "0x0f0f0f0f1f1f1f1f2f2f2f2f3f3f3f3f4f4f4f4f5f5f5f5f6f6f6f6f7f7f7f7f",
+        "active": true,
+        "credentialRule": {
+          "requiresCredential": false,
+          "active": true,
+          "attestor": "0xCCCCDDDDEEEEFFFF000011112222333344445555",
+          "schemaId": "0x22223333444455556666777788889999aaaabbbbccccddddeeeeffff00001111",
+          "uri": "ipfs://phase6/registry/logistics/credentials/mesh.json"
+        },
+        "skills": [
+          {
+            "key": "iot-routing",
+            "label": "IoT Routing Mesh",
+            "metadataURI": "ipfs://phase6/registry/logistics/skills/iot-routing.json",
+            "requiresCredential": false,
+            "active": true
+          },
+          {
+            "key": "supply-chain",
+            "label": "Supply Chain Autopilot",
+            "metadataURI": "ipfs://phase6/registry/logistics/skills/supply-chain.json",
+            "requiresCredential": false,
+            "active": true
+          },
+          {
+            "key": "drone-fleet",
+            "label": "Drone Fleet Overseer",
+            "metadataURI": "ipfs://phase6/registry/logistics/skills/drone-fleet.json",
+            "requiresCredential": true,
+            "active": true
+          }
+        ],
+        "agents": [
+          {
+            "address": "0xd100000000000000000000000000000000000001",
+            "alias": "Atlas Freight Mesh",
+            "did": "did:agi:logistics:atlas",
+            "manifestHash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+            "credentialHash": "0x6666666666666666666666666666666666666666666666666666666666666666",
+            "skills": ["iot-routing", "supply-chain"],
+            "approved": true,
+            "active": true,
+            "note": "IoT-integrated convoy coordinator"
+          },
+          {
+            "address": "0xd100000000000000000000000000000000000002",
+            "alias": "Equinox Port Mesh",
+            "did": "did:agi:logistics:equinox",
+            "manifestHash": "0x5555555555555555555555555555555555555555555555555555555555555555",
+            "credentialHash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+            "skills": ["drone-fleet", "supply-chain"],
+            "approved": false,
+            "active": true,
+            "note": "Aerial dispatch + fallback operator"
+          }
+        ]
+      },
+      {
+        "slug": "climate",
+        "name": "Climate Resilience Nexus",
+        "metadataURI": "ipfs://phase6/registry/domains/climate.json",
+        "manifestHash": "0xa1b2c3d4e5f60718293a4b5c6d7e8f901234567890abcdef0123456789abcdef",
+        "active": true,
+        "credentialRule": {
+          "requiresCredential": true,
+          "active": true,
+          "attestor": "0xDDDDFFFF00001111222233334444555566667777",
+          "schemaId": "0x3333444455556666777788889999aaaabbbbccccddddeeeeffff000011112222",
+          "uri": "ipfs://phase6/registry/climate/credentials/resilience.json"
+        },
+        "skills": [
+          {
+            "key": "climate-modeling",
+            "label": "Climate Modeling",
+            "metadataURI": "ipfs://phase6/registry/climate/skills/climate-modeling.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "carbon-markets",
+            "label": "Carbon Market Architect",
+            "metadataURI": "ipfs://phase6/registry/climate/skills/carbon-markets.json",
+            "requiresCredential": false,
+            "active": true
+          },
+          {
+            "key": "grid-orchestration",
+            "label": "Grid Orchestration",
+            "metadataURI": "ipfs://phase6/registry/climate/skills/grid-orchestration.json",
+            "requiresCredential": true,
+            "active": true
+          }
+        ],
+        "agents": [
+          {
+            "address": "0xc100000000000000000000000000000000000001",
+            "alias": "Nimbus Climate Mesh",
+            "did": "did:agi:climate:nimbus",
+            "manifestHash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+            "credentialHash": "0x3333333333333333333333333333333333333333333333333333333333333333",
+            "skills": ["climate-modeling", "grid-orchestration"],
+            "approved": true,
+            "active": true,
+            "note": "Satellites + grid balancing agents"
+          },
+          {
+            "address": "0xc100000000000000000000000000000000000002",
+            "alias": "Gaia Carbon Mesh",
+            "did": "did:agi:climate:gaia",
+            "manifestHash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+            "credentialHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "skills": ["carbon-markets", "grid-orchestration"],
+            "approved": false,
+            "active": true,
+            "note": "Global carbon settlement steward"
+          }
+        ]
+      },
+      {
+        "slug": "education",
+        "name": "Omniversal Knowledge Cooperative",
+        "metadataURI": "ipfs://phase6/registry/domains/education.json",
+        "manifestHash": "0x0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+        "active": true,
+        "credentialRule": {
+          "requiresCredential": true,
+          "active": true,
+          "attestor": "0xEEEEFFFF11112222333344445555666677778888",
+          "schemaId": "0xabcdef0123456789fedcba9876543210abcdef0123456789fedcba9876543210",
+          "uri": "ipfs://phase6/registry/education/credentials/pedagogy.json"
+        },
+        "skills": [
+          {
+            "key": "curriculum-design",
+            "label": "Curriculum Design",
+            "metadataURI": "ipfs://phase6/registry/education/skills/curriculum-design.json",
+            "requiresCredential": true,
+            "active": true
+          },
+          {
+            "key": "simulation-labs",
+            "label": "Simulation Labs",
+            "metadataURI": "ipfs://phase6/registry/education/skills/simulation-labs.json",
+            "requiresCredential": false,
+            "active": true
+          },
+          {
+            "key": "governance-advisor",
+            "label": "Governance Advisor",
+            "metadataURI": "ipfs://phase6/registry/education/skills/governance-advisor.json",
+            "requiresCredential": true,
+            "active": true
+          }
+        ],
+        "agents": [
+          {
+            "address": "0xb100000000000000000000000000000000000001",
+            "alias": "Lumos Learning Mesh",
+            "did": "did:agi:education:lumos",
+            "manifestHash": "0x444455556666777788889999aaaabbbbccccddddeeeeffff0000111122223333",
+            "credentialHash": "0x55556666777788889999aaaabbbbccccddddeeeeffff00001111222233334444",
+            "skills": ["curriculum-design", "governance-advisor"],
+            "approved": true,
+            "active": true,
+            "note": "Global credentialing architect"
+          },
+          {
+            "address": "0xb100000000000000000000000000000000000002",
+            "alias": "Orion Knowledge Mesh",
+            "did": "did:agi:education:orion",
+            "manifestHash": "0x6666777788889999aaaabbbbccccddddeeeeffff000011112222333344445555",
+            "credentialHash": "0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666",
+            "skills": ["simulation-labs", "curriculum-design"],
+            "approved": false,
+            "active": true,
+            "note": "Immersive training orchestrator"
+          }
+        ]
+      }
+    ]
+  }
 }
