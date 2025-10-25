@@ -64,6 +64,7 @@ class DomainProfile:
     settlement_asset: Optional[str] = None
     telemetry_metrics_digest: Optional[str] = None
     telemetry_manifest_hash: Optional[str] = None
+    credentials: List[Dict[str, object]] = field(default_factory=list)
 
     def score(self, tags: Iterable[str]) -> float:
         if not tags:
@@ -114,6 +115,10 @@ class GlobalControls:
     telemetry_resilience_floor_bps: int = 0
     telemetry_automation_floor_bps: int = 0
     telemetry_oversight_weight_bps: int = 0
+    credential_trust_anchors: List[Dict[str, str]] = field(default_factory=list)
+    credential_issuers: List[Dict[str, object]] = field(default_factory=list)
+    credential_policies: List[Dict[str, str]] = field(default_factory=list)
+    credential_revocation_registry: Optional[str] = None
 
 
 class DomainExpansionRuntime:
@@ -164,6 +169,7 @@ class DomainExpansionRuntime:
                 f"domain {slug}",
                 require_layer=True,
             )
+            credentials = _normalize_credentials(entry.get("credentials"), f"domain {slug}")
             operations_payload = entry.get("operations") or {}
             if operations_payload and not isinstance(operations_payload, dict):
                 raise ValueError(f"domain {slug} operations must be an object")
@@ -213,6 +219,7 @@ class DomainExpansionRuntime:
                 settlement_asset=_normalize_address(telemetry_payload.get("settlementAsset")),
                 telemetry_metrics_digest=_normalize_bytes32(telemetry_payload.get("metricsDigest")),
                 telemetry_manifest_hash=_normalize_bytes32(telemetry_payload.get("manifestHash")),
+                credentials=credentials,
             )
             if not profile.manifest_uri:
                 raise ValueError(f"domain {slug} missing manifestURI")
@@ -251,6 +258,10 @@ class DomainExpansionRuntime:
             telemetry_resilience_floor_bps=int(telemetry_payload.get("resilienceFloorBps", 0)),
             telemetry_automation_floor_bps=int(telemetry_payload.get("automationFloorBps", 0)),
             telemetry_oversight_weight_bps=int(telemetry_payload.get("oversightWeightBps", 0)),
+            credential_trust_anchors=_normalize_trust_anchors(global_payload.get("credentials")),
+            credential_issuers=_normalize_credential_issuers(global_payload.get("credentials")),
+            credential_policies=_normalize_credential_policies(global_payload.get("credentials")),
+            credential_revocation_registry=_normalize_revocation_registry(global_payload.get("credentials")),
         )
         return cls(domains, controls, source=source)
 
@@ -310,6 +321,13 @@ class DomainExpansionRuntime:
                 "• emergency levers: pause="
                 f"{self._global.system_pause or '—'} / escalation={self._global.escalation_bridge or '—'}"
             )
+        if self._global.credential_trust_anchors:
+            anchor_preview = ", ".join(
+                anchor.get("name", "anchor") for anchor in self._global.credential_trust_anchors[:2]
+            )
+            if len(self._global.credential_trust_anchors) > 2:
+                anchor_preview += ", …"
+            logs.append(f"• trust anchors: {anchor_preview}")
         if (
             self._global.treasury_buffer_bps
             or self._global.circuit_breaker_bps
@@ -381,6 +399,13 @@ class DomainExpansionRuntime:
                 for item in profile.infrastructure[:3]
             )
             logs.append(f"• infra mesh: {preview}")
+        if profile.credentials:
+            credential_preview = ", ".join(
+                cred.get("name", "credential") for cred in profile.credentials[:2]
+            )
+            if len(profile.credentials) > 2:
+                credential_preview += ", …"
+            logs.append(f"• credential guard rails: {credential_preview}")
         logs.append(f"• operations: {profile.operations_summary()}")
         return logs
 
@@ -420,6 +445,7 @@ class DomainExpansionRuntime:
                 "metricsDigest": profile.telemetry_metrics_digest,
                 "manifestHash": profile.telemetry_manifest_hash,
             },
+            "credentials": profile.credentials,
         }
 
     def ingest_iot_signal(self, signal: Dict[str, object]) -> Tuple[str, List[str]]:
@@ -457,6 +483,11 @@ class DomainExpansionRuntime:
                     f"{profile.settlement_latency_seconds:.1f}s | L2={'yes' if profile.uses_l2_settlement else 'no'}"
                 )
             logs.append(f"• operations: {profile.operations_summary()}")
+            if profile.credentials:
+                cred_names = ", ".join(
+                    credential.get("name", "credential") for credential in profile.credentials[:2]
+                )
+                logs.append(f"• credentials in scope: {cred_names}")
         elif self._global.decentralized_infra:
             primary = self._global.decentralized_infra[0]
             mesh_hint = " / ".join(
@@ -540,6 +571,131 @@ def _normalize_infrastructure(
                 entry_norm["endpoint"] = endpoint_text
         normalized.append(entry_norm)
     return normalized
+
+
+def _normalize_credentials(payload: object, context: str) -> List[Dict[str, object]]:
+    if payload is None:
+        return []
+    if not isinstance(payload, list):
+        raise ValueError(f"{context} credentials must be an array")
+    normalized: List[Dict[str, object]] = []
+    for idx, cred in enumerate(payload):
+        if not isinstance(cred, dict):
+            raise ValueError(f"{context} credentials[{idx}] must be an object")
+        entry: Dict[str, object] = {
+            "name": str(cred.get("name", "")).strip(),
+            "requirement": str(cred.get("requirement", "")).strip(),
+            "credentialType": str(cred.get("credentialType", "")).strip(),
+            "format": str(cred.get("format", "")).strip(),
+            "issuers": [
+                str(value).strip()
+                for value in cred.get("issuers", [])
+                if isinstance(value, str) and value.strip()
+            ],
+            "verifiers": [
+                str(value).strip()
+                for value in cred.get("verifiers", [])
+                if isinstance(value, str) and value.strip()
+            ],
+            "registry": str(cred.get("registry", "")).strip(),
+            "evidence": str(cred.get("evidence", "")).strip(),
+        }
+        notes = cred.get("notes")
+        if isinstance(notes, str) and notes.strip():
+            entry["notes"] = notes.strip()
+        normalized.append(entry)
+    return normalized
+
+
+def _normalize_trust_anchors(payload: object) -> List[Dict[str, str]]:
+    if not isinstance(payload, dict):
+        return []
+    anchors = payload.get("trustAnchors")
+    if not isinstance(anchors, list):
+        return []
+    normalized: List[Dict[str, str]] = []
+    for anchor in anchors:
+        if not isinstance(anchor, dict):
+            continue
+        name = str(anchor.get("name", "")).strip()
+        did = str(anchor.get("did", "")).strip()
+        role = str(anchor.get("role", "")).strip()
+        if not name or not did:
+            continue
+        entry: Dict[str, str] = {"name": name, "did": did}
+        if role:
+            entry["role"] = role
+        policy_uri = anchor.get("policyURI") or anchor.get("policyUri")
+        if isinstance(policy_uri, str) and policy_uri.strip():
+            entry["policyURI"] = policy_uri.strip()
+        normalized.append(entry)
+    return normalized
+
+
+def _normalize_credential_issuers(payload: object) -> List[Dict[str, object]]:
+    if not isinstance(payload, dict):
+        return []
+    issuers = payload.get("issuers")
+    if not isinstance(issuers, list):
+        return []
+    normalized: List[Dict[str, object]] = []
+    for issuer in issuers:
+        if not isinstance(issuer, dict):
+            continue
+        name = str(issuer.get("name", "")).strip()
+        did = str(issuer.get("did", "")).strip()
+        attestation = str(issuer.get("attestationType", "")).strip()
+        registry = str(issuer.get("registry", "")).strip()
+        if not name or not did:
+            continue
+        domains = [
+            str(value).strip()
+            for value in issuer.get("domains", [])
+            if isinstance(value, str) and value.strip()
+        ]
+        normalized.append(
+            {
+                "name": name,
+                "did": did,
+                "attestationType": attestation,
+                "registry": registry,
+                "domains": domains,
+            }
+        )
+    return normalized
+
+
+def _normalize_credential_policies(payload: object) -> List[Dict[str, str]]:
+    if not isinstance(payload, dict):
+        return []
+    policies = payload.get("policies")
+    if not isinstance(policies, list):
+        return []
+    normalized: List[Dict[str, str]] = []
+    for policy in policies:
+        if not isinstance(policy, dict):
+            continue
+        name = str(policy.get("name", "")).strip()
+        description = str(policy.get("description", "")).strip()
+        uri = str(policy.get("uri", "")).strip()
+        if not name:
+            continue
+        entry: Dict[str, str] = {"name": name}
+        if description:
+            entry["description"] = description
+        if uri:
+            entry["uri"] = uri
+        normalized.append(entry)
+    return normalized
+
+
+def _normalize_revocation_registry(payload: object) -> Optional[str]:
+    if not isinstance(payload, dict):
+        return None
+    value = payload.get("revocationRegistry")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
 
 
 def _normalize_bytes32(value: object) -> Optional[str]:

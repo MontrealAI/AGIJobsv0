@@ -19,5 +19,8 @@ describe('Phase 6 runbook generator', function () {
     expect(markdown).to.contain('registerDomain: 0x');
     expect(markdown).to.contain('Resilience Floor Coverage');
     expect(markdown).to.contain('Automation Floor Coverage');
+    expect(markdown).to.contain('Credential Governance Mesh');
+    expect(markdown).to.contain('Credential Coverage');
+    expect(markdown).to.contain('Trust Anchors');
   });
 });

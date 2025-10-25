@@ -44,12 +44,18 @@
    npm run demo:phase6:runbook -- --output phase6-runbook.md
    ```
    The output file bundles the executive summary, emergency calldata, per-domain guard rails, decentralized infra mesh, and the mermaid map for instant stakeholder distribution.
-5. **Verify readiness in CI** (runs automatically, can be triggered locally):
+5. **Audit DID & credential coverage**:
+   ```bash
+   npm run demo:phase6:did
+   ```
+   * Prints credential coverage, missing domains, and the active trust anchors/issuers.
+   * Append `-- --json did-audit.json` to produce a machine-readable report for governance archives.
+6. **Verify readiness in CI** (runs automatically, can be triggered locally):
    ```bash
    npm run demo:phase6:ci
    ```
    The script validates JSON schema, address hygiene, ABI sync, and UI artifacts before the CI job signs off.
-6. **Push the manifest on-chain (dry-run by default)**:
+7. **Push the manifest on-chain (dry-run by default)**:
    ```bash
    npx hardhat run --no-compile scripts/phase6/apply-config.ts --network <network> -- --manager <Phase6ExpansionManager>
    ```
@@ -57,7 +63,7 @@
    * Defaults to a dry-run – add `--apply` to execute transactions once reviewed.
    * Scope updates with `--domain finance,health` or skip globals via `--skip-global`.
    * Append `--export-plan plan.json` to emit a JSON manifest of the actions for multisig or council review.
-6. **Open the control surface UI**:
+8. **Open the control surface UI**:
    *Serve locally or open directly in the repo*
    ```bash
    npx serve demo/Phase-6-Scaling-Multi-Domain-Expansion
@@ -122,6 +128,16 @@ These additions power UI cards, CI validation, and off-chain monitoring (e.g., t
 * `index.html` renders the infra mesh alongside bridge plans so non-technical operators see exactly which L2s, storage rails, DID registries, and compute meshes come online.
 * `scripts/ci-check.mjs` enforces structural integrity: at least three integrations per domain and valid metadata for every mesh element.
 * `orchestrator/extensions/phase6.py` consumes the infra map to annotate runtime logs (`infra mesh: Layer-2:Linea(active)`) and to expose integration hints to IoT signal handlers.
+
+---
+
+## ✅ Credential governance mesh
+
+* Every domain in `config/domains.phase6.json` now declares explicit credential requirements (name, requirement, issuers, verifiers, registry, evidence).
+* Global trust anchors, issuers, policies, and the revocation registry are enforced by `scripts/ci-check.mjs` and surfaced throughout the blueprint, runtime, and UI.
+* `npm run demo:phase6:did` produces a credential coverage audit (and optional JSON) so governance can prove DID readiness before activating new industries.
+* The Python runtime annotates orchestrator logs with credential guard rails, and the IoT simulator reports issuer/verifier sets for every event.
+* The control-surface UI renders credential counts and requirement summaries on each domain card for non-technical operators.
 
 ---
 

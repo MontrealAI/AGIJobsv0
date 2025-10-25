@@ -41,6 +41,57 @@
         "endpoint": "https://mesh.agi.jobs/lit-threshold"
       }
     ],
+    "credentials": {
+      "trustAnchors": [
+        {
+          "name": "AGI Jobs Oversight Council Multisig",
+          "did": "did:ens:agi.jobs.council",
+          "role": "Issues emergency oversight credentials and pause authorisations",
+          "policyURI": "ipfs://phase6/global/policies/oversight.json"
+        },
+        {
+          "name": "Global Neutrality Notary",
+          "did": "did:key:z6MkqGlobalNeutrality",
+          "role": "Attests to cross-jurisdictional compliance packages",
+          "policyURI": "ipfs://phase6/global/policies/compliance.json"
+        },
+        {
+          "name": "AI Alignment Guardians",
+          "did": "did:pkh:eip155:1:0x9090909090909090909090909090909090909090",
+          "role": "Provides mission-critical AI safety attestations for human-in-the-loop tasks",
+          "policyURI": "ipfs://phase6/global/policies/alignment.json"
+        }
+      ],
+      "issuers": [
+        {
+          "name": "Sovereign Identity Issuer",
+          "did": "did:ens:agi.jobs.identity",
+          "domains": ["finance", "health", "logistics", "climate", "education"],
+          "attestationType": "AGIJobsEmploymentCredential",
+          "registry": "did:ethr:0x5555aaAA5555aaAA5555aaAA5555aaAA5555aaAA"
+        },
+        {
+          "name": "Phase 6 Autonomous Validator Guild",
+          "did": "did:pkh:eip155:1:0x1212121212121212121212121212121212121212",
+          "domains": ["finance", "logistics"],
+          "attestationType": "ValidatorClearanceCredential",
+          "registry": "did:key:z6MkiValidatorClearance"
+        }
+      ],
+      "policies": [
+        {
+          "name": "Global Compliance Baseline",
+          "description": "Defines minimum DID + VC requirements for any human oversight or treasury interaction",
+          "uri": "ipfs://phase6/global/policies/compliance-baseline.md"
+        },
+        {
+          "name": "Autonomous Agent Safeguard",
+          "description": "Specifies verification cadence for autonomous agents participating in high-risk workflows",
+          "uri": "ipfs://phase6/global/policies/autonomous-safeguard.md"
+        }
+      ],
+      "revocationRegistry": "did:pkh:eip155:1:0xABCDabcdABCDabcdABCDabcdABCDabcdABCDabcd"
+    },
     "telemetry": {
       "manifestHash": "0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa",
       "metricsDigest": "0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
@@ -108,6 +159,40 @@
         "valueFlowMonthlyUSD": 28400000000,
         "valueFlowDisplay": "$28.4B"
       },
+      "credentials": [
+        {
+          "name": "Basel III Treasury Credential",
+          "requirement": "Mandatory for autonomous treasury actions above $50M notional",
+          "credentialType": "BaselIIIComplianceCredential",
+          "format": "EIP-712",
+          "issuers": [
+            "did:ens:agi.jobs.council",
+            "did:ens:agi.jobs.identity"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.finance.verifier",
+            "did:pkh:eip155:1:0x4545454545454545454545454545454545454545"
+          ],
+          "registry": "did:ethr:0xf1F1f1F1f1F1f1F1f1F1f1F1f1F1f1F1f1F1f1F1",
+          "evidence": "ipfs://phase6/domains/finance/credentials/basel-iii.pdf",
+          "notes": "Gatekeeping autopilot overrides and emergency liquidity injections"
+        },
+        {
+          "name": "Cross-Border Settlement Passport",
+          "requirement": "Required to clear interjurisdictional cash flows or derivative settlements",
+          "credentialType": "ISO20022InterchangeCredential",
+          "format": "JSON-LD VC",
+          "issuers": [
+            "did:key:z6MkqGlobalNeutrality"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.finance.verifier"
+          ],
+          "registry": "did:pkh:eip155:1:0x5656565656565656565656565656565656565656",
+          "evidence": "ipfs://phase6/domains/finance/credentials/iso20022.json",
+          "notes": "Ensures compliance desks can review real-time routes"
+        }
+      ],
       "infrastructure": [
         {
           "layer": "Settlement",
@@ -196,6 +281,40 @@
         "valueFlowMonthlyUSD": 18600000000,
         "valueFlowDisplay": "$18.6B"
       },
+      "credentials": [
+        {
+          "name": "HIPAA Verifier Credential",
+          "requirement": "Required for any human validator or agent accessing protected health information",
+          "credentialType": "HIPAAComplianceCredential",
+          "format": "JSON-LD VC",
+          "issuers": [
+            "did:ens:agi.jobs.identity",
+            "did:key:z6MkqGlobalNeutrality"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.health.verifier",
+            "did:pkh:eip155:1:0x3131313131313131313131313131313131313131"
+          ],
+          "registry": "did:ethr:0x7777777777777777777777777777777777777777",
+          "evidence": "ipfs://phase6/domains/health/credentials/hipaa-checklist.json",
+          "notes": "Used to unlock diagnostics autopilot and escalate to human review"
+        },
+        {
+          "name": "Clinical Oversight Token",
+          "requirement": "Mandatory for high-risk telemedicine overrides or prescription issuance",
+          "credentialType": "ClinicalOversightCredential",
+          "format": "EIP-712",
+          "issuers": [
+            "did:pkh:eip155:1:0x9090909090909090909090909090909090909090"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.health.verifier"
+          ],
+          "registry": "did:key:z6MkqClinicalOversight",
+          "evidence": "ipfs://phase6/domains/health/credentials/clinical-oversight.pdf",
+          "notes": "Expiring credential forcing rotation every 30 days"
+        }
+      ],
       "infrastructure": [
         {
           "layer": "Settlement",
@@ -286,6 +405,40 @@
         "valueFlowMonthlyUSD": 22400000000,
         "valueFlowDisplay": "$22.4B"
       },
+      "credentials": [
+        {
+          "name": "Critical Cargo Custody Credential",
+          "requirement": "Needed to authorize rerouting of climate-sensitive or sovereign cargo",
+          "credentialType": "CustodyChainCredential",
+          "format": "JSON-LD VC",
+          "issuers": [
+            "did:ens:agi.jobs.identity",
+            "did:pkh:eip155:1:0x1212121212121212121212121212121212121212"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.logistics.verifier"
+          ],
+          "registry": "did:ethr:0x8888888888888888888888888888888888888888",
+          "evidence": "ipfs://phase6/domains/logistics/credentials/custody.json",
+          "notes": "Sensor mesh verifies credential before executing drone or fleet dispatch"
+        },
+        {
+          "name": "Port Authority Liaison Pass",
+          "requirement": "Enables agents to interact with human port authorities and customs APIs",
+          "credentialType": "PortAuthorityCredential",
+          "format": "EIP-712",
+          "issuers": [
+            "did:key:z6MkqGlobalNeutrality"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.logistics.verifier",
+            "did:pkh:eip155:1:0x7878787878787878787878787878787878787878"
+          ],
+          "registry": "did:key:z6MkqPortAuthority",
+          "evidence": "ipfs://phase6/domains/logistics/credentials/port-pass.pdf",
+          "notes": "Mandatory for emergency rerouting or customs overrides"
+        }
+      ],
       "infrastructure": [
         {
           "layer": "Settlement",
@@ -375,6 +528,40 @@
         "valueFlowMonthlyUSD": 11200000000,
         "valueFlowDisplay": "$11.2B"
       },
+      "credentials": [
+        {
+          "name": "Climate Data Steward Credential",
+          "requirement": "Required for human sign-off on carbon accounting and resilience dashboards",
+          "credentialType": "ClimateStewardCredential",
+          "format": "JSON-LD VC",
+          "issuers": [
+            "did:ens:agi.jobs.identity",
+            "did:key:z6MkqGlobalNeutrality"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.climate.verifier"
+          ],
+          "registry": "did:ethr:0x9999999999999999999999999999999999999999",
+          "evidence": "ipfs://phase6/domains/climate/credentials/steward.json",
+          "notes": "Enforced before publishing data to public markets or regulators"
+        },
+        {
+          "name": "Grid Emergency Override Pass",
+          "requirement": "Enables coordination with human grid operators during emergency demand response",
+          "credentialType": "GridOverrideCredential",
+          "format": "EIP-712",
+          "issuers": [
+            "did:pkh:eip155:1:0x9090909090909090909090909090909090909090"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.climate.verifier",
+            "did:pkh:eip155:1:0x4545454545454545454545454545454545454545"
+          ],
+          "registry": "did:key:z6MkqGridOverride",
+          "evidence": "ipfs://phase6/domains/climate/credentials/grid-override.pdf",
+          "notes": "Short-lived credential with 6-hour expiry for safety"
+        }
+      ],
       "infrastructure": [
         {
           "layer": "Settlement",
@@ -464,6 +651,40 @@
         "valueFlowMonthlyUSD": 9800000000,
         "valueFlowDisplay": "$9.8B"
       },
+      "credentials": [
+        {
+          "name": "Accredited Mentor Credential",
+          "requirement": "Required for humans providing peer review or graduation approvals",
+          "credentialType": "MentorAccreditationCredential",
+          "format": "JSON-LD VC",
+          "issuers": [
+            "did:ens:agi.jobs.identity",
+            "did:pkh:eip155:1:0x1212121212121212121212121212121212121212"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.education.verifier"
+          ],
+          "registry": "did:ethr:0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+          "evidence": "ipfs://phase6/domains/education/credentials/mentor.json",
+          "notes": "Unlocks credential issuance autopilot for verified mentors"
+        },
+        {
+          "name": "Curriculum Integrity Token",
+          "requirement": "Needed to publish or update global course manifests across domains",
+          "credentialType": "CurriculumIntegrityCredential",
+          "format": "EIP-712",
+          "issuers": [
+            "did:key:z6MkqGlobalNeutrality"
+          ],
+          "verifiers": [
+            "did:ens:agi.jobs.education.verifier",
+            "did:pkh:eip155:1:0x5555777788889999aaaabbbbccccddddeeeeff00"
+          ],
+          "registry": "did:key:z6MkqCurriculumIntegrity",
+          "evidence": "ipfs://phase6/domains/education/credentials/curriculum.pdf",
+          "notes": "Enforces DID-based authorship trails and revocation support"
+        }
+      ],
       "infrastructure": [
         {
           "layer": "Settlement",

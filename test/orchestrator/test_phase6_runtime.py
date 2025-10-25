@@ -29,6 +29,33 @@ def sample_payload():
                     "endpoint": "https://mesh.agi.jobs/saturn",
                 },
             ],
+            "credentials": {
+                "trustAnchors": [
+                    {
+                        "name": "Oversight Council",
+                        "did": "did:ens:agi.jobs.council",
+                        "role": "Emergency pause escalation",
+                        "policyURI": "ipfs://policies/oversight.json",
+                    }
+                ],
+                "issuers": [
+                    {
+                        "name": "Identity Bureau",
+                        "did": "did:key:z6Mkissuer",
+                        "attestationType": "AGIJobsEmploymentCredential",
+                        "registry": "did:ethr:0x1234",
+                        "domains": ["finance", "health"],
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "Baseline Compliance",
+                        "description": "Ensures verifiers validate DID signatures",
+                        "uri": "ipfs://policies/compliance.md",
+                    }
+                ],
+                "revocationRegistry": "did:pkh:eip155:1:0xabcd",
+            },
         },
         "domains": [
             {
@@ -57,6 +84,18 @@ def sample_payload():
                         "role": "Portfolio manifest archive",
                         "status": "active",
                     },
+                ],
+                "credentials": [
+                    {
+                        "name": "Treasury Operations Clearance",
+                        "requirement": "Required for settlements above $10M",
+                        "credentialType": "BaselIII",
+                        "format": "JSON-LD",
+                        "issuers": ["did:ens:agi.jobs.council"],
+                        "verifiers": ["did:ens:agi.jobs.finance.verifier"],
+                        "registry": "did:ethr:0x1234",
+                        "evidence": "ipfs://credentials/finance/treasury.pdf",
+                    }
                 ],
             },
             {
@@ -99,6 +138,8 @@ def test_runtime_selects_domain_and_builds_bridge(sample_payload):
     logs = runtime.annotate_step(step)
     assert any("finance" in line for line in logs)
     assert any("infra mesh" in line for line in logs)
+    assert any("trust anchors" in line.lower() for line in logs)
+    assert any("credential guard rails" in line.lower() for line in logs)
     assert runtime.global_infrastructure[0]["name"] == "EigenLayer Risk Shield"
     bridge_plan = runtime.build_bridge_plan("finance")
     assert bridge_plan["domain"] == "finance"
@@ -108,6 +149,8 @@ def test_runtime_selects_domain_and_builds_bridge(sample_payload):
     assert bridge_plan["infrastructure"]
     assert bridge_plan["infrastructure"][0]["layer"] == "Layer-2"
     assert bridge_plan["globalInfrastructure"]
+    assert bridge_plan["credentials"]
+    assert bridge_plan["credentials"][0]["name"] == "Treasury Operations Clearance"
 
 
 def test_runtime_hints_and_iot_signals(tmp_path: Path, sample_payload):
