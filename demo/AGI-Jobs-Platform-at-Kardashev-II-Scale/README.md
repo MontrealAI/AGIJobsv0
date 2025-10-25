@@ -117,6 +117,50 @@ sequenceDiagram
 
 ---
 
+## 🪪 Identity lattice & trust fabric
+
+* **Tri-federation DID mesh** – `identityProtocols.federations` codifies Earth, Mars, and Orbital registries with on-chain anchors, DID registries, fallback ENS registrars, and attestation methods. The CLI refuses to emit artefacts if any federation lacks quorum anchors, stale rotations, or coverage below the 92% floor.
+* **Revocation thermodynamics** – Attestation and revocation flow are double-accounted. The orchestrator computes revocation parts-per-million, compares against the 120ppm tolerance, and emits ledger evidence plus dashboard badges if the forged-credential surge scenario breaches thresholds.
+* **Latency covenant** – Maximum attestation latency is reconciled against the 240s revocation window. Dashboards surface the live window (`identity-latency`) so guardians can confirm the trust lattice remains within emergency revocation bounds before greenlighting Safe payloads.
+
+```mermaid
+flowchart LR
+  Root[(Root Authority\n0x4C9f…)] --> EarthID{Earth Identity Mesh}
+  Root --> MarsID{Mars Identity Council}
+  Root --> OrbitalID{Orbital Identity Halo}
+  EarthID -->|anchors 5| EarthAnchors[[Anchors ∑5]]
+  MarsID -->|anchors 5| MarsAnchors[[Anchors ∑5]]
+  OrbitalID -->|anchors 5| OrbAnchors[[Anchors ∑5]]
+  EarthID -->|revocations 820/24h| EarthLedger[(Δ Agents)]
+  MarsID -->|revocations 340/24h| MarsLedger[(Δ Agents)]
+  OrbitalID -->|revocations 410/24h| OrbLedger[(Δ Agents)]
+  classDef council fill:#0b1120,stroke:#6366f1,color:#e2e8f0;
+  classDef registry fill:#111c4e,stroke:#818cf8,color:#f8fafc;
+  classDef ledger fill:#0f172a,stroke:#38bdf8,color:#e2f5ff;
+```
+
+---
+
+## 🛰️ Compute fabric hierarchy
+
+* **Three-plane orchestration** – `computeFabrics.orchestrationPlanes` models Solara Earth Core, Ares Horizon Fabric, and Helios Orbital Halo. Each plane exposes scheduler addresses, orchestrator Safes, capacity, latency, energy draw, and failover partners so non-technical operators can reason about compute placement from the manifest alone.
+* **Quorum-aware failover** – The CLI recomputes total vs failover capacity, compares to the 52% quorum policy, and encodes ledger evidence (`compute-fabric-failover`). Scenario sweeps simulate the loss of the largest plane and prove the remaining fabric sustains quorum.
+* **Energy-balanced dispatch** – Telemetry reconciles plane energy usage with the Dyson thermostat. The dashboard summarises total exaFLOPs, availability, and partner pairings, letting owners retune the Dyson thermostat or reassign capital streams before pushing the Safe batch.
+
+```mermaid
+flowchart TD
+  Dyson[(Dyson Thermostat)] --> EarthPlane[Solara Earth Core\n38 EF]
+  Dyson --> MarsPlane[Ares Horizon Fabric\n18.5 EF]
+  Dyson --> OrbitalPlane[Helios Orbital Halo\n26 EF]
+  EarthPlane --> MarsPlane
+  MarsPlane --> OrbitalPlane
+  OrbitalPlane --> EarthPlane
+  classDef plane fill:#0b1120,stroke:#38bdf8,color:#f1f5f9;
+  classDef source fill:#111c4e,stroke:#818cf8,color:#f8fafc;
+```
+
+---
+
 ## 🔌 Energy & compute governance
 
 * **Stellar lattice thermostat** – The CLI enforces `energyProtocols.stellarLattice.safetyMarginPct`, refusing to route jobs if predicted Dyson Swarm draw would exceed the margin. It prints redline warnings whenever utilisation > 87.5% of captured GW.

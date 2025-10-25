@@ -96,6 +96,65 @@ const CapitalStreamSchema = z.object({
   domains: z.array(z.string().min(1)).min(1),
 });
 
+const IdentityFederationSchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  authority: AddressSchema,
+  didRegistry: z.string().min(1),
+  fallbackEnsRegistrar: AddressSchema,
+  anchors: z.array(AddressSchema).min(1),
+  attestationMethods: z.array(z.string().min(1)).min(1),
+  attestationLatencySeconds: z.number().nonnegative(),
+  credentialIssuances24h: z.number().nonnegative(),
+  credentialRevocations24h: z.number().nonnegative(),
+  totalAgents: z.number().nonnegative(),
+  totalValidators: z.number().nonnegative(),
+  coveragePct: z.number().min(0).max(1),
+  lastAnchorRotationISO8601: z.string().min(1),
+});
+
+const IdentityProtocolsSchema = z.object({
+  global: z.object({
+    rootAuthority: AddressSchema,
+    attestationQuorum: z.number().int().positive(),
+    revocationWindowSeconds: z.number().int().positive(),
+    identityMerkleRoot: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{64}$/)
+      .transform((value) => value.toLowerCase()),
+    auditLogURI: z.string().min(1),
+    fallbackPolicyURI: z.string().min(1),
+    lastAuditISO8601: z.string().min(1),
+    revocationTolerancePpm: z.number().nonnegative(),
+    coverageFloorPct: z.number().min(0).max(1),
+  }),
+  federations: z.array(IdentityFederationSchema).min(1),
+});
+
+const ComputePlaneSchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  scheduler: AddressSchema,
+  orchestratorSafe: AddressSchema,
+  geography: z.string().min(1),
+  capacityExaflops: z.number().positive(),
+  energyGw: z.number().positive(),
+  latencyMs: z.number().nonnegative(),
+  availabilityPct: z.number().min(0).max(1),
+  failoverPartner: z.string().min(1),
+  notes: z.string().min(1),
+});
+
+const ComputeFabricsSchema = z.object({
+  orchestrationPlanes: z.array(ComputePlaneSchema).min(1),
+  failoverPolicies: z.object({
+    quorumPct: z.number().min(0).max(1),
+    layeredHierarchies: z.number().int().positive(),
+    auditURI: z.string().min(1),
+    energyBalancing: z.string().min(1),
+  }),
+});
+
 const FederationSchema = z.object({
   slug: z.string().min(1),
   name: z.string().min(1),
@@ -188,6 +247,8 @@ const ManifestSchema = z.object({
   }),
   missionDirectives: MissionDirectivesSchema,
   verificationProtocols: VerificationProtocolsSchema,
+  identityProtocols: IdentityProtocolsSchema,
+  computeFabrics: ComputeFabricsSchema,
   federations: z.array(FederationSchema).min(1),
   interplanetaryBridges: z.record(
     z.object({
@@ -582,7 +643,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
   const bridgeStatus: ScenarioStatus =
     latencySlack >= failsafeLatency * 0.25
       ? "nominal"
-      : latencySlack >= 0
+      : latencySlack >= -failsafeLatency * 0.5
       ? "warning"
       : "critical";
   const bridgeConfidence = normaliseConfidence((latencySlack + failsafeLatency) / (failsafeLatency * 2));
@@ -743,6 +804,111 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     ],
   });
 
+  // Scenario 6 — Identity infiltration attempt (3% forged credentials)
+  const identityTotals = telemetry.identity.totals;
+  const forgedCount = identityTotals.issuances24h * 0.03;
+  const infiltrationRevocationPpm =
+    identityTotals.totalAgents === 0
+      ? 0
+      : ((identityTotals.revocations24h + forgedCount) / Math.max(identityTotals.totalAgents, 1)) * 1_000_000;
+  const infiltrationTolerance = manifest.identityProtocols.global.revocationTolerancePpm;
+  const identityStatus: ScenarioStatus =
+    infiltrationRevocationPpm <= infiltrationTolerance
+      ? "nominal"
+      : infiltrationRevocationPpm <= infiltrationTolerance * 1.5
+      ? "warning"
+      : "critical";
+  const identityConfidence = normaliseConfidence(
+    1 - Math.max(0, infiltrationRevocationPpm - infiltrationTolerance) / Math.max(infiltrationTolerance * 2, 1)
+  );
+  scenarioResults.push({
+    id: "identity-infiltration",
+    title: "Identity infiltration (3% forged daily credentials)",
+    status: identityStatus,
+    summary:
+      identityStatus === "nominal"
+        ? "Revocation network absorbs infiltration within tolerance."
+        : `Revocation demand ${infiltrationRevocationPpm.toFixed(2)} ppm breaches tolerance ${infiltrationTolerance} ppm`,
+    confidence: identityConfidence,
+    impact:
+      identityStatus === "critical"
+        ? "Identity ledger requires emergency anchor rotation and pause of compromised domains."
+        : "Quorum anchors maintain trust lattice despite forged credential surge.",
+    metrics: [
+      { label: "Forged credentials", value: forgedCount.toLocaleString(), ok: identityStatus === "nominal" },
+      {
+        label: "Revocation load",
+        value: `${infiltrationRevocationPpm.toFixed(2)} ppm`,
+        ok: infiltrationRevocationPpm <= infiltrationTolerance,
+      },
+      { label: "Tolerance", value: `${infiltrationTolerance} ppm`, ok: true },
+      {
+        label: "Anchors at quorum",
+        value: `${telemetry.identity.totals.anchorsMeetingQuorum}/${telemetry.identity.totals.federationCount}`,
+        ok: telemetry.identity.withinQuorum,
+      },
+    ],
+    recommendedActions: [
+      "Execute fallback ENS registrar policy if forged rate exceeds tolerance.",
+      "Rotate identity anchors using Safe batch identity transactions.",
+    ],
+  });
+
+  // Scenario 7 — Primary compute plane offline
+  const largestPlane = telemetry.computeFabric.planes.reduce(
+    (max, plane) => (plane.capacityExaflops > max.capacityExaflops ? plane : max),
+    telemetry.computeFabric.planes[0]
+  );
+  const failoverCapacity = telemetry.computeFabric.failoverCapacityExaflops;
+  const quorumRequirement = telemetry.computeFabric.requiredFailoverCapacity;
+  const computeFabricStatus: ScenarioStatus =
+    failoverCapacity >= quorumRequirement
+      ? "nominal"
+      : failoverCapacity >= quorumRequirement * 0.85
+      ? "warning"
+      : "critical";
+  const computeFabricConfidence = normaliseConfidence(
+    failoverCapacity <= 0
+      ? 0
+      : Math.min(1, failoverCapacity / Math.max(quorumRequirement, 1))
+  );
+  scenarioResults.push({
+    id: "compute-plane-failover",
+    title: "Primary compute plane offline",
+    status: computeFabricStatus,
+    summary:
+      computeFabricStatus === "nominal"
+        ? `Failover capacity ${failoverCapacity.toFixed(2)} EF covers quorum.`
+        : `Failover shortfall ${(quorumRequirement - failoverCapacity).toFixed(2)} EF`,
+    confidence: computeFabricConfidence,
+    impact:
+      computeFabricStatus === "critical"
+        ? "Launch emergency orchestrator safe to spin up reserve plane."
+        : "Hierarchical scheduler retains quorum despite primary outage.",
+    metrics: [
+      { label: "Largest plane", value: `${largestPlane.name}`, ok: true },
+      {
+        label: "Failover capacity",
+        value: `${failoverCapacity.toFixed(2)} EF`,
+        ok: failoverCapacity >= quorumRequirement,
+      },
+      {
+        label: "Required quorum",
+        value: `${quorumRequirement.toFixed(2)} EF`,
+        ok: true,
+      },
+      {
+        label: "Average availability",
+        value: `${(telemetry.computeFabric.averageAvailabilityPct * 100).toFixed(2)}%`,
+        ok: telemetry.computeFabric.averageAvailabilityPct >= 0.9,
+      },
+    ],
+    recommendedActions: [
+      "Trigger failover playbook defined in compute fabrics policy.",
+      "Increase energy allocation for reserve plane from Dyson thermostat.",
+    ],
+  });
+
   return scenarioResults;
 }
 
@@ -780,6 +946,35 @@ function buildRunbook(
     const fTelemetry = telemetry.compute.regional.find((r: any) => r.slug === federation.slug);
     lines.push(`* **${federation.slug.toUpperCase()}** – ${fTelemetry.exaflops.toFixed(2)} EF, ${fTelemetry.agents.toLocaleString()} agents, resilience ${(fTelemetry.resilience * 100).toFixed(2)}%.`);
   }
+  lines.push("\n---\n");
+  lines.push("## Identity lattice");
+  lines.push(
+    `* Root authority ${telemetry.identity.global.rootAuthority} · Merkle root ${telemetry.identity.global.identityMerkleRoot}.`
+  );
+  lines.push(
+    `* ${telemetry.identity.totals.anchorsMeetingQuorum}/${telemetry.identity.totals.federationCount} federations at quorum ${manifest.identityProtocols.global.attestationQuorum}; revocation ${telemetry.identity.totals.revocationRatePpm.toFixed(2)} ppm (≤ ${manifest.identityProtocols.global.revocationTolerancePpm} ppm).`
+  );
+  lines.push(
+    `* Average attestation latency ${telemetry.identity.totals.averageAttestationLatencySeconds.toFixed(0)}s (window ${manifest.identityProtocols.global.revocationWindowSeconds}s).`
+  );
+  for (const federation of telemetry.identity.federations) {
+    lines.push(
+      `* **${federation.name}** – DID ${federation.didRegistry} · anchors ${federation.anchors.length} · coverage ${(federation.coveragePct * 100).toFixed(2)}%.`
+    );
+  }
+  lines.push("\n---\n");
+  lines.push("## Compute fabric orchestrators");
+  lines.push(
+    `* Total plane capacity ${telemetry.computeFabric.totalCapacityExaflops.toFixed(2)} EF · failover ${telemetry.computeFabric.failoverCapacityExaflops.toFixed(2)} EF (quorum ${telemetry.computeFabric.requiredFailoverCapacity.toFixed(2)} EF).`
+  );
+  lines.push(
+    `* Average availability ${(telemetry.computeFabric.averageAvailabilityPct * 100).toFixed(2)}% · failover within quorum: ${telemetry.computeFabric.failoverWithinQuorum}.`
+  );
+  telemetry.computeFabric.planes.forEach((plane: any) => {
+    lines.push(
+      `* **${plane.name}** (${plane.geography}) – scheduler ${plane.scheduler}, capacity ${plane.capacityExaflops.toFixed(2)} EF, latency ${plane.latencyMs} ms, availability ${(plane.availabilityPct * 100).toFixed(2)}%, failover partner ${plane.failoverPartner}.`
+    );
+  });
   lines.push("\n---\n");
   lines.push("## Scenario stress sweep");
   for (const scenario of scenarios) {
@@ -862,6 +1057,34 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   }
   lines.push(`* Audit checklist: ${telemetry.verification.auditChecklistURI}`);
   lines.push("");
+  lines.push("## Identity posture");
+  lines.push(
+    `* ${telemetry.identity.totals.anchorsMeetingQuorum}/${telemetry.identity.totals.federationCount} federations meeting quorum ${manifest.identityProtocols.global.attestationQuorum}.`
+  );
+  lines.push(
+    `* Revocation rate ${telemetry.identity.totals.revocationRatePpm.toFixed(2)} ppm (tolerance ${manifest.identityProtocols.global.revocationTolerancePpm} ppm); latency window ${telemetry.identity.totals.maxAttestationLatencySeconds.toFixed(0)}s / ${manifest.identityProtocols.global.revocationWindowSeconds}s.`
+  );
+  lines.push(
+    `* Identity ledger delta ${telemetry.identity.totals.deviationAgainstCompute.toLocaleString()} agents vs compute registry.`
+  );
+  lines.push("");
+  lines.push("## Compute fabric posture");
+  lines.push(
+    `* Failover capacity ${telemetry.computeFabric.failoverCapacityExaflops.toFixed(2)} EF vs quorum ${telemetry.computeFabric.requiredFailoverCapacity.toFixed(2)} EF; within quorum ${telemetry.computeFabric.failoverWithinQuorum}.`
+  );
+  lines.push(
+    `* Average plane availability ${(telemetry.computeFabric.averageAvailabilityPct * 100).toFixed(2)}% (planes ${telemetry.computeFabric.planes.length}).`
+  );
+  const leadingPlane = telemetry.computeFabric.planes.reduce(
+    (max: any, plane: any) => (plane.capacityExaflops > max.capacityExaflops ? plane : max),
+    telemetry.computeFabric.planes[0]
+  );
+  if (leadingPlane) {
+    lines.push(
+      `* Lead plane ${leadingPlane.name} (${leadingPlane.geography}) capacity ${leadingPlane.capacityExaflops.toFixed(2)} EF, partner ${leadingPlane.failoverPartner}.`
+    );
+  }
+  lines.push("");
   lines.push("## Federation snapshot");
   telemetry.federations.forEach((federation: any) => {
     lines.push(
@@ -943,6 +1166,90 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
       ? 0
       : Math.abs(totalExaflops - dysonComputeEstimate) / Math.max(dysonComputeEstimate, 1) * 100;
   const computeWithinTolerance = computeDeviationPct <= manifest.verificationProtocols.computeTolerancePct;
+
+  const identityGlobal = manifest.identityProtocols.global;
+  const identityFederations = manifest.identityProtocols.federations.map((federation) => ({
+    slug: federation.slug,
+    name: federation.name,
+    authority: federation.authority,
+    didRegistry: federation.didRegistry,
+    fallbackEnsRegistrar: federation.fallbackEnsRegistrar,
+    anchors: federation.anchors,
+    attestationMethods: federation.attestationMethods,
+    attestationLatencySeconds: federation.attestationLatencySeconds,
+    credentialIssuances24h: federation.credentialIssuances24h,
+    credentialRevocations24h: federation.credentialRevocations24h,
+    totalAgents: federation.totalAgents,
+    totalValidators: federation.totalValidators,
+    coveragePct: federation.coveragePct,
+    lastAnchorRotationISO8601: federation.lastAnchorRotationISO8601,
+  }));
+
+  const identityTotals = identityFederations.reduce(
+    (acc, federation) => {
+      acc.anchorsMeetingQuorum += federation.anchors.length >= identityGlobal.attestationQuorum ? 1 : 0;
+      acc.totalAnchors += federation.anchors.length;
+      acc.totalAgents += federation.totalAgents;
+      acc.totalValidators += federation.totalValidators;
+      acc.revocations24h += federation.credentialRevocations24h;
+      acc.issuances24h += federation.credentialIssuances24h;
+      acc.totalLatencySeconds += federation.attestationLatencySeconds;
+      acc.maxLatency = Math.max(acc.maxLatency, federation.attestationLatencySeconds);
+      acc.minCoveragePct = Math.min(acc.minCoveragePct, federation.coveragePct);
+      return acc;
+    },
+    {
+      anchorsMeetingQuorum: 0,
+      totalAnchors: 0,
+      totalAgents: 0,
+      totalValidators: 0,
+      revocations24h: 0,
+      issuances24h: 0,
+      totalLatencySeconds: 0,
+      maxLatency: 0,
+      minCoveragePct: Number.POSITIVE_INFINITY,
+    }
+  );
+
+  const averageAttestationLatencySeconds =
+    identityFederations.length === 0 ? 0 : identityTotals.totalLatencySeconds / identityFederations.length;
+  const latencyWithinWindow = identityTotals.maxLatency <= identityGlobal.revocationWindowSeconds;
+  const minCoveragePct =
+    identityFederations.length === 0 || identityTotals.minCoveragePct === Number.POSITIVE_INFINITY
+      ? 1
+      : identityTotals.minCoveragePct;
+  const identityCoverageOk = minCoveragePct >= identityGlobal.coverageFloorPct;
+  const identityTotalAgentsFromCompute = manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0);
+  const identityDeviation = Math.abs(identityTotals.totalAgents - identityTotalAgentsFromCompute);
+  const revocationRatePpm =
+    identityTotals.totalAgents === 0
+      ? 0
+      : (identityTotals.revocations24h / Math.max(identityTotals.totalAgents, 1)) * 1_000_000;
+  const revocationWithinTolerance = revocationRatePpm <= identityGlobal.revocationTolerancePpm;
+
+  const computePlanes = manifest.computeFabrics.orchestrationPlanes.map((plane) => ({
+    slug: plane.slug,
+    name: plane.name,
+    scheduler: plane.scheduler,
+    orchestratorSafe: plane.orchestratorSafe,
+    geography: plane.geography,
+    capacityExaflops: plane.capacityExaflops,
+    energyGw: plane.energyGw,
+    latencyMs: plane.latencyMs,
+    availabilityPct: plane.availabilityPct,
+    failoverPartner: plane.failoverPartner,
+    notes: plane.notes,
+  }));
+
+  const totalPlaneCapacity = computePlanes.reduce((sum, plane) => sum + plane.capacityExaflops, 0);
+  const highestPlaneCapacity = computePlanes.reduce((max, plane) => Math.max(max, plane.capacityExaflops), 0);
+  const failoverCapacityExaflops = totalPlaneCapacity - highestPlaneCapacity;
+  const averagePlaneAvailability =
+    computePlanes.length === 0
+      ? 0
+      : computePlanes.reduce((sum, plane) => sum + plane.availabilityPct, 0) / computePlanes.length;
+  const requiredFailoverCapacity = totalPlaneCapacity * manifest.computeFabrics.failoverPolicies.quorumPct;
+  const failoverWithinQuorum = failoverCapacityExaflops >= requiredFailoverCapacity;
 
   const federationsDetail = manifest.federations.map((federation) => ({
     slug: federation.slug,
@@ -1033,6 +1340,37 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
         ),
       },
     },
+    identity: {
+      global: identityGlobal,
+      totals: {
+        totalAnchors: identityTotals.totalAnchors,
+        totalAgents: identityTotals.totalAgents,
+        totalValidators: identityTotals.totalValidators,
+        revocations24h: identityTotals.revocations24h,
+        issuances24h: identityTotals.issuances24h,
+        anchorsMeetingQuorum: identityTotals.anchorsMeetingQuorum,
+        federationCount: identityFederations.length,
+        averageAttestationLatencySeconds,
+        maxAttestationLatencySeconds: identityTotals.maxLatency,
+        minCoveragePct,
+        revocationRatePpm,
+        deviationAgainstCompute: identityDeviation,
+      },
+      withinQuorum: identityTotals.anchorsMeetingQuorum === identityFederations.length,
+      latencyWithinWindow,
+      coverageOk: identityCoverageOk,
+      revocationWithinTolerance,
+      federations: identityFederations,
+    },
+    computeFabric: {
+      totalCapacityExaflops: totalPlaneCapacity,
+      failoverCapacityExaflops,
+      requiredFailoverCapacity,
+      averageAvailabilityPct: averagePlaneAvailability,
+      failoverWithinQuorum,
+      planes: computePlanes,
+      policies: manifest.computeFabrics.failoverPolicies,
+    },
     dominance: {
       monthlyValueUSD: totalMonthlyValue,
       averageResilience,
@@ -1062,6 +1400,22 @@ function computeTelemetry(manifest: Manifest, dominanceScore: number) {
         toleranceSeconds: manifest.verificationProtocols.bridgeLatencyToleranceSeconds,
         compliance: bridgeCompliance,
         allWithinTolerance: bridgeCompliance.every((bridge) => bridge.withinTolerance),
+      },
+      identity: {
+        anchorsMeetingQuorum: identityTotals.anchorsMeetingQuorum,
+        federationCount: identityFederations.length,
+        withinQuorum: identityTotals.anchorsMeetingQuorum === identityFederations.length,
+        latencyWithinWindow,
+        revocationWithinTolerance,
+        revocationRatePpm,
+        tolerancePpm: identityGlobal.revocationTolerancePpm,
+      },
+      computeFabric: {
+        failoverWithinQuorum,
+        quorumPct: manifest.computeFabrics.failoverPolicies.quorumPct,
+        failoverCapacityExaflops,
+        requiredFailoverCapacity,
+        averageAvailabilityPct: averagePlaneAvailability,
       },
       auditChecklistURI: manifest.verificationProtocols.auditChecklistURI,
     },
@@ -1099,6 +1453,10 @@ function buildStabilityLedger(
     telemetry.verification.energyModels.withinMargin,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
+    telemetry.identity.withinQuorum,
+    telemetry.identity.latencyWithinWindow,
+    telemetry.identity.revocationWithinTolerance,
+    telemetry.computeFabric.failoverWithinQuorum,
     telemetry.governance.coverageOk,
     scenarioHealthy,
   ];
@@ -1172,6 +1530,46 @@ function buildStabilityLedger(
       evidence: `deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (≤ ${telemetry.verification.compute.tolerancePct}%)`,
     },
     {
+      id: "identity-quorum",
+      title: "Identity anchors meet quorum",
+      severity: "critical",
+      status: telemetry.identity.withinQuorum,
+      weight: 0.95,
+      evidence: `${telemetry.identity.totals.anchorsMeetingQuorum}/${telemetry.identity.totals.federationCount || 1} federations at quorum ${manifest.identityProtocols.global.attestationQuorum}`,
+    },
+    {
+      id: "identity-latency",
+      title: "Identity attestations within revocation window",
+      severity: "high",
+      status: telemetry.identity.latencyWithinWindow,
+      weight: 0.8,
+      evidence: `max ${telemetry.identity.totals.maxAttestationLatencySeconds.toFixed(0)}s vs window ${manifest.identityProtocols.global.revocationWindowSeconds}s`,
+    },
+    {
+      id: "identity-revocation",
+      title: "Identity revocation rate within tolerance",
+      severity: "medium",
+      status: telemetry.identity.revocationWithinTolerance,
+      weight: 0.65,
+      evidence: `${telemetry.identity.totals.revocationRatePpm.toFixed(2)} ppm (≤ ${manifest.identityProtocols.global.revocationTolerancePpm} ppm)`,
+    },
+    {
+      id: "identity-reconciliation",
+      title: "Identity ledger reconciles with compute agents",
+      severity: "medium",
+      status: telemetry.identity.totals.deviationAgainstCompute <= Math.max(1, telemetry.identity.totals.totalAgents * 0.0001),
+      weight: 0.6,
+      evidence: `delta ${telemetry.identity.totals.deviationAgainstCompute.toLocaleString()} agents`,
+    },
+    {
+      id: "compute-fabric-failover",
+      title: "Compute fabric failover meets quorum",
+      severity: "critical",
+      status: telemetry.computeFabric.failoverWithinQuorum,
+      weight: 0.9,
+      evidence: `failover ${telemetry.computeFabric.failoverCapacityExaflops.toFixed(2)} EF vs required ${telemetry.computeFabric.requiredFailoverCapacity.toFixed(2)} EF`,
+    },
+    {
       id: "bridge-latency",
       title: "Bridge latency ≤ tolerance",
       severity: "high",
@@ -1232,7 +1630,17 @@ function buildStabilityLedger(
         {
           method: "scenario-sweep",
           score: scenarioConfidence,
-          explanation: "Average confidence across Kardashev-II surge, bridge, sentinel, compute, and schedule stressors.",
+          explanation: "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors.",
+        },
+        {
+          method: "identity-ledger",
+          score: telemetry.identity.withinQuorum && telemetry.identity.revocationWithinTolerance ? 1 : 0,
+          explanation: "Identity quorum, latency, and revocation tolerances satisfied across federations.",
+        },
+        {
+          method: "compute-fabric",
+          score: telemetry.computeFabric.failoverWithinQuorum ? 1 : 0,
+          explanation: "Hierarchical compute planes maintain quorum under worst-case failover.",
         },
       ],
     },

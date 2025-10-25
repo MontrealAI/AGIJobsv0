@@ -18,10 +18,20 @@
 * Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
 * Compute deviation 0.45% (tolerance 0.75%): true
 * Bridge latency tolerance (120s): true
-* Scenario sweep: 3/5 nominal, 1 warning, 1 critical.
+* Scenario sweep: 5/7 nominal, 2 warning, 0 critical.
   - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
   - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.
 * Audit checklist: ipfs://QmKardashevAuditChecklist
+
+## Identity posture
+* 3/3 federations meeting quorum 5.
+* Revocation rate 0.35 ppm (tolerance 120 ppm); latency window 96s / 240s.
+* Identity ledger delta 0 agents vs compute registry.
+
+## Compute fabric posture
+* Failover capacity 44.50 EF vs quorum 42.90 EF; within quorum true.
+* Average plane availability 98.23% (planes 3).
+* Lead plane Solara Earth Core (Earth orbit low-latency ring) capacity 38.00 EF, partner sol-mars.
 
 ## Federation snapshot
 * **Earth Sovereign Federation** (chain 1) — Safe 0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2, energy 82000 GW, compute 18.4 EF.
