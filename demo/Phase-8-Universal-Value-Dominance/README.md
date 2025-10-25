@@ -102,6 +102,9 @@ latest run. Safe imports should always display the chain ID and manager address 
   `removeSentinel`, `removeCapitalStream`) with automatic pruning of bindings.
 * **Self-improvement charter** – `setSelfImprovementPlan` and `recordSelfImprovementExecution` keep the cadence, plan hash,
   and audit trail of upgrades under direct governance control.
+* **Guardian-first invariants** – the Phase 8 readiness CI refuses manifests with zeroed control addresses, missing manifesto
+  hashes, or inadequate sentinel coverage versus the human override window, guaranteeing governance always retains the pause
+  lever.
 
 The contract emits deterministic events so dashboards, subgraphs, and auditors can stream changes. All mutative calls remain
 `onlyGovernance`, satisfying the requirement that the owner can reconfigure everything – including pausing – at will.

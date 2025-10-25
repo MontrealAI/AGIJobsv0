@@ -10,6 +10,8 @@ const OUTPUT_DIR = join(__dirname, "..", "output");
 const SCORECARD = join(OUTPUT_DIR, "phase8-dominance-scorecard.json");
 const DIRECTIVES = join(OUTPUT_DIR, "phase8-governance-directives.md");
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 const address = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}$/)
@@ -81,6 +83,7 @@ const configSchema = z.object({
     guardianReviewWindow: z.number().int().positive(),
     maxDrawdownBps: z.number().int().min(0).max(10_000),
     manifestoURI: z.string().min(1),
+    manifestoHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
   }),
   domains: z.array(domainSchema).min(1),
   sentinels: z.array(sentinelSchema).min(1),
@@ -111,6 +114,21 @@ function main() {
   const configRaw = JSON.parse(readFileSync(ROOT, "utf-8"));
   const config = configSchema.parse(configRaw);
 
+  const assertNonZero = (field: string, value: string) => {
+    if (value.toLowerCase() === ZERO_ADDRESS) {
+      throw new Error(`${field} must be a non-zero address to preserve owner control surfaces.`);
+    }
+  };
+
+  assertNonZero("global.treasury", config.global.treasury);
+  assertNonZero("global.universalVault", config.global.universalVault);
+  assertNonZero("global.upgradeCoordinator", config.global.upgradeCoordinator);
+  assertNonZero("global.validatorRegistry", config.global.validatorRegistry);
+  assertNonZero("global.missionControl", config.global.missionControl);
+  assertNonZero("global.knowledgeGraph", config.global.knowledgeGraph);
+  assertNonZero("global.guardianCouncil", config.global.guardianCouncil);
+  assertNonZero("global.systemPause", config.global.systemPause);
+
   const slugs = new Set<string>();
   for (const domain of config.domains) {
     const slug = domain.slug.toLowerCase();
@@ -118,6 +136,11 @@ function main() {
       throw new Error(`Duplicate domain slug detected: ${slug}`);
     }
     slugs.add(slug);
+
+    assertNonZero(`domain[${domain.slug}].orchestrator`, domain.orchestrator);
+    assertNonZero(`domain[${domain.slug}].capitalVault`, domain.capitalVault);
+    assertNonZero(`domain[${domain.slug}].validatorModule`, domain.validatorModule);
+    assertNonZero(`domain[${domain.slug}].policyKernel`, domain.policyKernel);
   }
 
   const sentinelSlugs = new Set<string>();
@@ -128,6 +151,8 @@ function main() {
       throw new Error(`Duplicate sentinel slug detected: ${slug}`);
     }
     sentinelSlugs.add(slug);
+
+    assertNonZero(`sentinel[${sentinel.slug}].agent`, sentinel.agent);
     for (const domain of sentinel.domains ?? []) {
       const normalized = domain.toLowerCase();
       if (!slugs.has(normalized)) {
@@ -150,6 +175,8 @@ function main() {
       throw new Error(`Duplicate capital stream slug detected: ${slug}`);
     }
     streamSlugs.add(slug);
+
+    assertNonZero(`capitalStream[${stream.slug}].vault`, stream.vault);
     for (const domain of stream.domains ?? []) {
       const normalized = domain.toLowerCase();
       if (!slugs.has(normalized)) {
@@ -179,6 +206,17 @@ function main() {
     throw new Error(
       `Sentinel coverage ${sentinelCoverage}s must exceed guardian review window ${config.global.guardianReviewWindow}s`,
     );
+  }
+
+  const overrideWindowSeconds = config.selfImprovement.autonomyGuards.humanOverrideMinutes * 60;
+  if (sentinelCoverage < overrideWindowSeconds) {
+    throw new Error(
+      `Sentinel coverage ${sentinelCoverage}s must exceed human override window ${overrideWindowSeconds}s for pause authority.`,
+    );
+  }
+
+  if (!config.selfImprovement.autonomyGuards.pausable) {
+    throw new Error("Autonomy guards must keep the network pausable by governance.");
   }
 
   const guardianWindow = config.global.guardianReviewWindow;
