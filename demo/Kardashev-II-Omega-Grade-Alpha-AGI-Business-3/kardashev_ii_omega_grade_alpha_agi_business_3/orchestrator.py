@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, spawn_agent
 from .checkpoint import CheckpointManager
@@ -101,8 +101,11 @@ class Orchestrator:
         if self.config.resume_from_checkpoint:
             snapshot = self.checkpoint.load()
             if snapshot:
-                self._info("state_rehydrated", job_count=len(snapshot["jobs"]))
-                for agent, balances in snapshot["resources"].items():
+                job_records = self._rehydrate_jobs(snapshot.get("jobs", {}))
+                if job_records:
+                    self.job_registry.rehydrate(job_records)
+                self._info("state_rehydrated", job_count=len(job_records))
+                for agent, balances in snapshot.get("resources", {}).items():
                     account = self.resources.ensure_account(agent)
                     account.tokens = balances["tokens"]
                     account.locked = balances["locked"]
@@ -171,6 +174,8 @@ class Orchestrator:
 
 
     async def _seed_jobs(self) -> None:
+        if any(self.job_registry.iter_jobs()):
+            return
         root_spec = JobSpec(
             title="Planetary Dyson Swarm Expansion",
             description="Coordinate planetary-scale infrastructure deployment leveraging recursive AGI labour markets.",
@@ -198,6 +203,104 @@ class Orchestrator:
                 energy_available=snapshot.energy_available,
                 compute_available=snapshot.compute_available,
             )
+
+    def _rehydrate_jobs(self, serialized: Dict[str, Any]) -> List[JobRecord]:
+        records: List[JobRecord] = []
+        for job_id, payload in serialized.items():
+            spec_payload = payload.get("spec", {})
+            validation_window: timedelta
+            if "validation_window_seconds" in spec_payload:
+                validation_window = timedelta(seconds=float(spec_payload["validation_window_seconds"]))
+            else:
+                validation_window = self._parse_timedelta(spec_payload.get("validation_window", 0))
+            deadline_raw = spec_payload.get("deadline")
+            deadline = (
+                datetime.fromisoformat(deadline_raw)
+                if isinstance(deadline_raw, str)
+                else datetime.now(timezone.utc)
+            )
+            spec = JobSpec(
+                title=spec_payload.get("title", ""),
+                description=spec_payload.get("description", ""),
+                required_skills=list(spec_payload.get("required_skills", [])),
+                reward_tokens=float(spec_payload.get("reward_tokens", 0.0)),
+                deadline=deadline,
+                validation_window=validation_window,
+                parent_id=spec_payload.get("parent_id"),
+                stake_required=float(spec_payload.get("stake_required", 0.0)),
+                energy_budget=float(spec_payload.get("energy_budget", 0.0)),
+                compute_budget=float(spec_payload.get("compute_budget", 0.0)),
+                metadata=dict(spec_payload.get("metadata", {})),
+            )
+            created_at_raw = payload.get("created_at")
+            created_at = (
+                datetime.fromisoformat(created_at_raw)
+                if isinstance(created_at_raw, str)
+                else datetime.now(timezone.utc)
+            )
+            status_raw = payload.get("status", JobStatus.POSTED.value)
+            status = self._parse_job_status(status_raw)
+            validator_votes = {
+                validator: bool(vote) for validator, vote in payload.get("validator_votes", {}).items()
+            }
+            record = JobRecord(
+                job_id=job_id,
+                spec=spec,
+                status=status,
+                created_at=created_at,
+                assigned_agent=payload.get("assigned_agent"),
+                energy_used=float(payload.get("energy_used", 0.0)),
+                compute_used=float(payload.get("compute_used", 0.0)),
+                stake_locked=float(payload.get("stake_locked", 0.0)),
+                result_summary=payload.get("result_summary"),
+                validator_commits=dict(payload.get("validator_commits", {})),
+                validator_votes=validator_votes,
+            )
+            records.append(record)
+        return records
+
+    @staticmethod
+    def _parse_job_status(value: Any) -> JobStatus:
+        if isinstance(value, JobStatus):
+            return value
+        if isinstance(value, str):
+            try:
+                return JobStatus(value)
+            except ValueError:
+                token = value.split(".")[-1]
+                return JobStatus[token]
+        raise ValueError(f"Unsupported job status value: {value!r}")
+
+    @staticmethod
+    def _parse_timedelta(value: Any) -> timedelta:
+        if isinstance(value, timedelta):
+            return value
+        if isinstance(value, (int, float)):
+            return timedelta(seconds=float(value))
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return timedelta(0)
+            days = 0
+            time_text = text
+            if "," in text:
+                day_part, time_text = text.split(",", 1)
+                day_tokens = day_part.strip().split()
+                if day_tokens:
+                    try:
+                        days = int(day_tokens[0])
+                    except ValueError:
+                        days = 0
+                time_text = time_text.strip()
+            try:
+                hours_str, minutes_str, seconds_str = time_text.split(":")
+                hours = int(hours_str)
+                minutes = int(minutes_str)
+                seconds = float(seconds_str)
+            except ValueError:
+                return timedelta(seconds=float(time_text))
+            return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+        return timedelta(0)
 
     async def _result_listener(self) -> None:
         async with self.bus.subscribe("*") as receiver:
