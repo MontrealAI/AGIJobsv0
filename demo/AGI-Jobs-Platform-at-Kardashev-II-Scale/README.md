@@ -169,6 +169,7 @@ flowchart TD
 * **Kelvin guardrails** – Reward temperature (Kelvin) must stay between 0.35 and 0.92; the orchestrator double checks the manifest and telemetry and aborts if the Thermostat would fall outside the band.
 * **Regional energy arbitration** – Earth, Mars, and Orbital clusters provide available GW, storage, and latency; the CLI sorts workloads accordingly and reports energy debt so operators can top-up storage before dispatching long-running swarms.
 * **Compute rollup** – All compute capacity is measured in exaFLOPs and agent counts. A reconciliation matrix confirms that per-region totals equal the Interstellar Council view and Dyson programme requirements.
+* **Free-energy surplus watchdog** – Deterministic thermodynamic accounting converts exaFLOPs into GW using the Dyson heuristics, nets out storage relief, and guarantees the civilisation-wide free-energy buffer stays above the thermostat margin. Both the stability ledger and dashboard flag any deficit in red, forcing owner review before launch.
 * **Probabilistic assurance** – Monte Carlo simulations (256 deterministic runs) estimate breach probability vs the 1% tolerance. Results surface in the UI and `output/kardashev-monte-carlo.json`; any breach probability above tolerance halts orchestration.
 
 ## 🎛️ Mission directives & verification dashboards
@@ -232,6 +233,7 @@ flowchart TD
 
 * **Composite quorum** – `kardashev-stability-ledger.json` scores governance, energy, compute, bridge, and pause levers with deterministic weights. The dashboard promotes the score, colour-coding it green only when ≥95% of weighted checks pass.
 * **Redundant verification vectors** – The ledger records independent confidence methods: boolean consensus, redundant telemetry agreement, and residual Dyson thermostat buffer. Operators can inspect divergences instantly.
+* **Thermodynamic sentry** – A dedicated “free energy buffer” invariant ensures the Dyson thermostat margin is respected; if civilisational free energy slips below target, the ledger raises a critical alert and the UI blocks “ready for launch” states.
 * **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
 * **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
 * **Dual unstoppable verification** – A secondary decoder replays the Safe batch, recomputes selectors and pause embeddings, and records the corroborating unstoppable score next to the primary proof so drift is impossible to miss.
@@ -256,6 +258,7 @@ Run `npm run demo:kardashev-ii:orchestrate -- --reflect` to receive:
 - ✅ Recomputed manifest hash vs `interstellarCouncil.manifestoHash`.
 - ✅ Confirmation that guardian coverage ≥ guardian review window.
 - ✅ Energy debt matrix (Earth, Mars, Orbital) all ≤ 0.
+- ✅ Free energy buffer ≥ thermostat margin (see `kardashev-telemetry.json` → `energy.freeEnergy`).
 - ✅ Monte Carlo breach probability ≤ 1% (see `kardashev-monte-carlo.json`).
 - ✅ Bridge latency vs Dyson failsafe latency.
 - ✅ Scenario stress sweep free of critical statuses (confidence badges ≥ 95%).

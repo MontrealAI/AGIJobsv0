@@ -104,6 +104,14 @@
       "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
     },
     {
+      "id": "free-energy-buffer",
+      "title": "Free energy buffer ≥ thermostat margin",
+      "severity": "critical",
+      "status": true,
+      "weight": 0.95,
+      "evidence": "global free 419410.80 GW · margin 52500.00 GW"
+    },
+    {
       "id": "energy-monte-carlo",
       "title": "Monte Carlo breach ≤ tolerance",
       "severity": "critical",
