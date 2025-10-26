@@ -1,0 +1,33 @@
+{
+  "owner": "0xOwnerProxy",
+  "governanceCouncil": [
+    "0xCouncilMember1",
+    "0xCouncilMember2",
+    "0xCouncilMember3"
+  ],
+  "globalPause": false,
+  "pauseGuardian": "0xPauseGuardian",
+  "tripwireSensitivity": "HIGH",
+  "validatorGuild": "0xValidatorGuildMultisig",
+  "humanCoPilotRequired": true,
+  "budgetCapUSD": 7500,
+  "stakeTiers": {
+    "STANDARD": { "multiplier": 1 },
+    "PRO": { "multiplier": 2 },
+    "ULTRA": { "multiplier": 3 }
+  },
+  "ci": {
+    "workflow": ".github/workflows/v2-ci.yml",
+    "requireStatusChecks": [
+      "lint",
+      "unit",
+      "e2e",
+      "security-audit"
+    ]
+  },
+  "upgradeHooks": {
+    "onNewModel": "ModelRegistry.setActiveAdapter",
+    "onPolicyChange": "GovernanceTimelock.queueAndExecute",
+    "onEmergency": "PauseGuardian.pauseAll"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://schemas.agijobs.xyz/job-spec.v2.json",
+  "jobName": "Phase8-Universal-Value-Dominance",
+  "description": "Launch a three-agent swarm to design, implement, and validate a market-entry strategy for an autonomous AGI venture.",
+  "maxDurationMinutes": 480,
+  "autonomy": {
+    "checkpointIntervalMinutes": 10,
+    "requireValidatorCheckIn": true,
+    "maxIdleMinutes": 20
+  },
+  "economics": {
+    "stakeTier": "ULTRA",
+    "stakeMultiplier": 3,
+    "milestones": [
+      {
+        "name": "Blueprint",
+        "payoutBps": 2500,
+        "checkpoint": "planner:blueprint"
+      },
+      {
+        "name": "Implementation",
+        "payoutBps": 4500,
+        "checkpoint": "dev:implementation"
+      },
+      {
+        "name": "Validation",
+        "payoutBps": 3000,
+        "checkpoint": "validator:signoff"
+      }
+    ],
+    "maxBudgetUSD": 7500,
+    "rewardAdjustment": {
+      "durationBonusBps": 800,
+      "failurePenaltyMultiplier": 1.5
+    }
+  },
+  "agents": [
+    {
+      "role": "planner",
+      "model": "gpt-elite-256k",
+      "capabilities": ["strategic-planning", "contract-drafting"],
+      "memory": {
+        "type": "persistent",
+        "bucket": "phase8-planner",
+        "retentionHours": 12
+      }
+    },
+    {
+      "role": "dev",
+      "model": "code-savant-x",
+      "capabilities": ["fullstack-dev", "governance-automation"],
+      "memory": {
+        "type": "persistent",
+        "bucket": "phase8-dev",
+        "retentionHours": 12
+      }
+    },
+    {
+      "role": "analyst",
+      "model": "sentience-alpha",
+      "capabilities": ["market-intel", "risk-analysis"],
+      "memory": {
+        "type": "persistent",
+        "bucket": "phase8-analyst",
+        "retentionHours": 12
+      }
+    }
+  ],
+  "validators": {
+    "guild": "0xValidatorGuildMultisig",
+    "checkpoints": ["planner:blueprint", "dev:implementation", "analyst:market-report"],
+    "rewardBps": 1200
+  },
+  "safety": {
+    "tripwires": [
+      "toxicity-filter",
+      "privacy-leak-detector",
+      "budget-guard"
+    ],
+    "haltOnTripwire": true,
+    "pauseGuardian": "0xPauseGuardian"
+  },
+  "governance": {
+    "ownerProxy": "0xOwnerProxy",
+    "allowHumanCoPilot": true,
+    "requiredValidatorApprovals": 2
+  }
+}
