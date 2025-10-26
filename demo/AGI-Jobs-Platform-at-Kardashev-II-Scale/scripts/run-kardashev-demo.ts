@@ -472,7 +472,8 @@ function performEnergyCrossVerification(manifest: Manifest): EnergyCrossVerifica
   const projection = computeEnergyWindowProjection(manifest);
   const projectionValue = projection.normalisedTotalGw;
   const coverageSlack = Math.max(0, 1 - projection.coverageRatio);
-  const tolerancePct = 0.04 + coverageSlack * 0.05;
+  const ppmTolerance = 1e-6;
+  const tolerancePct = ppmTolerance * (1 + coverageSlack);
   const toleranceGw = Math.max(1e-6, direct * tolerancePct);
   const deviations = [
     Math.abs(direct - kahan),

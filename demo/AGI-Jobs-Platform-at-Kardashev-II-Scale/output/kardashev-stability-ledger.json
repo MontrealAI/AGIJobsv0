@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9589743589743589,
-    "quorum": true,
-    "summary": "Manual review required for 1 check(s).",
+    "compositeScore": 0.9102564102564102,
+    "quorum": false,
+    "summary": "Manual review required for 2 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9589743589743589,
+        "score": 0.9102564102564102,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.96,
+        "score": 0.92,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -107,9 +107,9 @@
       "id": "energy-cross-verification",
       "title": "Energy cross-verification consensus",
       "severity": "high",
-      "status": true,
+      "status": false,
       "weight": 0.95,
-      "evidence": "max deviation 8000.000000 GW · tolerance 9680.000000 GW · coverage 100.00%"
+      "evidence": "max deviation 8000.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
     },
     {
       "id": "energy-monte-carlo",
@@ -257,6 +257,12 @@
     }
   ],
   "alerts": [
+    {
+      "id": "energy-cross-verification",
+      "title": "Energy cross-verification consensus",
+      "severity": "high",
+      "evidence": "max deviation 8000.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
+    },
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
