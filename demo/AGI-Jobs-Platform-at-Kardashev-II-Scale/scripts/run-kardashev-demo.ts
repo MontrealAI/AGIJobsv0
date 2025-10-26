@@ -214,6 +214,31 @@ const VerificationProtocolsSchema = z.object({
   auditChecklistURI: z.string().min(1),
 });
 
+const EnergyWindowSchema = z.object({
+  federation: z.string().min(1),
+  startHourUTC: z.number().int().min(0).max(23),
+  durationHours: z.number().positive(),
+  availableGw: NonNegativeNumberSchema,
+  backupGw: NonNegativeNumberSchema,
+  renewablePct: z.number().min(0).max(1),
+  reliabilityPct: z.number().min(0).max(1),
+  priorityDomains: z.array(z.string().min(1)).min(1),
+  transferCapacityGbps: z.number().positive(),
+});
+
+const SettlementProtocolSchema = z.object({
+  name: z.string().min(1),
+  chainId: z.number().int().positive(),
+  bridge: z.string().min(1),
+  settlementAsset: z.string().min(1),
+  finalityMinutes: z.number().positive(),
+  toleranceMinutes: z.number().positive(),
+  coveragePct: z.number().min(0).max(1),
+  slippageBps: z.number().nonnegative(),
+  riskLevel: z.enum(["low", "medium", "high"]),
+  watchers: z.array(AddressSchema).min(1),
+});
+
 const ManifestSchema = z.object({
   version: z.string().min(1),
   generatedAt: z.string().min(1),
@@ -266,6 +291,8 @@ const ManifestSchema = z.object({
   identityProtocols: IdentityProtocolsSchema,
   computeFabrics: ComputeFabricsSchema,
   federations: z.array(FederationSchema).min(1),
+  energyWindows: z.array(EnergyWindowSchema).min(1),
+  settlementProtocols: z.array(SettlementProtocolSchema).min(1),
   interplanetaryBridges: z.record(
     z.object({
       latencySeconds: z.number().positive(),
@@ -419,6 +446,11 @@ function percentile(values: number[], ratio: number): number {
   const clamped = Math.min(1, Math.max(0, ratio));
   const index = Math.floor(clamped * (values.length - 1));
   return values[index];
+}
+
+function round(value: number, decimals = 2): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
 }
 
 function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
@@ -1173,7 +1205,114 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     ],
   });
 
-  // Scenario 6 — Identity infiltration attempt (3% forged credentials)
+  // Scenario 6 — Loss of largest energy window
+  const schedule = telemetry.energy.schedule ?? null;
+  if (schedule && schedule.windows.length > 0) {
+    const sortedWindows = [...schedule.windows].sort(
+      (a: any, b: any) => Number(b.windowEnergyGwH) - Number(a.windowEnergyGwH)
+    );
+    const removed = sortedWindows[0];
+    const remainingGwH = sortedWindows.slice(1).reduce((sum: number, window: any) => {
+      return sum + Number(window.windowEnergyGwH);
+    }, 0);
+    const demandGwH = schedule.coverage.reduce((sum: number, entry: any) => {
+      return sum + Number(entry.dailyDemandGwH);
+    }, 0);
+    const remainingCoverageRatio = demandGwH === 0 ? 1 : remainingGwH / Math.max(demandGwH, 1);
+    const coverageThreshold =
+      schedule.coverageThreshold ?? telemetry.verification.energySchedule.thresholdCoverage;
+    const coverageSlack = remainingCoverageRatio - coverageThreshold;
+    const scheduleStatus: ScenarioStatus =
+      coverageSlack >= 0.02
+        ? "nominal"
+        : coverageSlack >= -0.02
+        ? "warning"
+        : "critical";
+    const scheduleConfidence = normaliseConfidence(remainingCoverageRatio / Math.max(coverageThreshold, 0.0001));
+    scenarioResults.push({
+      id: "energy-window-loss",
+      title: "Primary energy window offline",
+      status: scheduleStatus,
+      summary:
+        scheduleStatus === "critical"
+          ? `Removing ${removed.federation} ${removed.durationHours}h window drops coverage to ${(remainingCoverageRatio * 100).toFixed(2)}%.`
+          : `Coverage remains ${(remainingCoverageRatio * 100).toFixed(2)}% after losing ${removed.federation} ${removed.durationHours}h window.`,
+      confidence: scheduleConfidence,
+      impact:
+        scheduleStatus === "critical"
+          ? "Civilisation would breach Dyson thermostat margin without immediate load shedding."
+          : "Secondary windows can absorb the loss with limited throttling.",
+      metrics: [
+        { label: "Removed window", value: `${removed.federation} @ ${removed.startHourUTC}h`, ok: false },
+        {
+          label: "Remaining coverage",
+          value: `${(remainingCoverageRatio * 100).toFixed(2)}%`,
+          ok: remainingCoverageRatio >= coverageThreshold,
+        },
+        { label: "Threshold", value: `${(coverageThreshold * 100).toFixed(2)}%`, ok: true },
+        {
+          label: "Lost capacity",
+          value: `${Number(removed.windowEnergyGwH).toFixed(2)} GW·h`,
+          ok: false,
+        },
+      ],
+      recommendedActions: [
+        "Trigger orbital battery discharge if coverage < threshold.",
+        "Re-route Mars workloads to orbital halo until replacement window is provisioned.",
+      ],
+    });
+  }
+
+  // Scenario 7 — Settlement backlog increases finality by 40%
+  const settlement = telemetry.settlement ?? null;
+  if (settlement && settlement.protocols.length > 0) {
+    const stressedProtocols = settlement.protocols.map((protocol: any) => ({
+      name: protocol.name,
+      stressedFinality: Number(protocol.finalityMinutes) * 1.4,
+      tolerance: Number(protocol.toleranceMinutes ?? telemetry.verification.settlement.maxToleranceMinutes),
+    }));
+    const breaches = stressedProtocols.filter((protocol) => protocol.stressedFinality > protocol.tolerance);
+    const settlementStatus: ScenarioStatus =
+      breaches.length === 0 ? "nominal" : breaches.length === 1 ? "warning" : "critical";
+    const worstOverrun =
+      breaches.length === 0
+        ? 0
+        : Math.max(...breaches.map((protocol) => protocol.stressedFinality - protocol.tolerance));
+    const settlementConfidence = normaliseConfidence(
+      Math.max(
+        0,
+        1 - worstOverrun / Math.max(telemetry.verification.settlement.maxToleranceMinutes || 1, 1)
+      )
+    );
+    scenarioResults.push({
+      id: "settlement-backlog",
+      title: "Settlement backlog (+40% finality)",
+      status: settlementStatus,
+      summary:
+        settlementStatus === "critical"
+          ? `${breaches.length} protocol(s) exceed tolerance by up to ${worstOverrun.toFixed(2)} min.`
+          : "Settlement mesh absorbs backlog within tolerance.",
+      confidence: settlementConfidence,
+      impact:
+        settlementStatus === "critical"
+          ? "Cross-planet payouts would stall; manual forex routing required."
+          : "Guardian council can rely on automated settlement buffers.",
+      metrics: stressedProtocols.map((protocol) => ({
+        label: protocol.name,
+        value: `${protocol.stressedFinality.toFixed(2)} min`,
+        ok: protocol.stressedFinality <= protocol.tolerance,
+      })),
+      recommendedActions:
+        breaches.length === 0
+          ? ["Maintain watcher quorum and monitor bridge latency dashboards."]
+          : [
+              "Activate treasury failover to orbital credit rails.",
+              "Deploy additional watchers to reduce backlog latency.",
+            ],
+    });
+  }
+
+  // Scenario 8 — Identity infiltration attempt (3% forged credentials)
   const identityTotals = telemetry.identity.totals;
   const forgedCount = identityTotals.issuances24h * 0.03;
   const infiltrationRevocationPpm =
@@ -1379,6 +1518,27 @@ function buildRunbook(
   lines.push(
     `* Feed latency: avg ${telemetry.energy.liveFeeds.averageLatencyMs.toFixed(0)} ms · max ${telemetry.energy.liveFeeds.maxLatencyMs} ms (calibrated ${telemetry.energy.liveFeeds.calibrationISO8601}).`
   );
+  lines.push(
+    `* Energy window coverage ${(telemetry.energy.schedule.globalCoverageRatio * 100).toFixed(2)}% (threshold ${
+      telemetry.energy.schedule.coverageThreshold * 100
+    }%) · reliability ${(telemetry.energy.schedule.globalReliabilityPct * 100).toFixed(2)}%.`
+  );
+  if (telemetry.energy.schedule.deficits.length > 0) {
+    lines.push(
+      `* ⚠️ Energy deficits: ${telemetry.energy.schedule.deficits
+        .map((deficit: any) => `${deficit.federation} ${(deficit.coverageRatio * 100).toFixed(2)}% (${deficit.deficitGwH} GW·h short)`) 
+        .join(" · ")}.`
+    );
+  } else {
+    lines.push("* Energy window deficits: none — all federations meet coverage targets.");
+  }
+  if (telemetry.energy.schedule.reliabilityDeficits.length > 0) {
+    lines.push(
+      `* ⚠️ Reliability watchlist: ${telemetry.energy.schedule.reliabilityDeficits
+        .map((entry: any) => `${entry.federation} ${(entry.reliabilityPct * 100).toFixed(2)}%`)
+        .join(" · ")}.`
+    );
+  }
   if (telemetry.energy.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.energy.warnings.join("; ")}`);
   }
@@ -1456,6 +1616,34 @@ function buildRunbook(
     lines.push(`* ${bridge}: latency ${data.latencySeconds}s, bandwidth ${data.bandwidthGbps} Gbps, operator ${data.bridgeOperator}.`);
   }
   lines.push("\n---\n");
+  lines.push("## Settlement lattice & forex");
+  lines.push(
+    `* Average finality ${telemetry.settlement.averageFinalityMinutes.toFixed(2)} min (max ${telemetry.verification.settlement.maxToleranceMinutes.toFixed(
+      2
+    )} min) · coverage ${(telemetry.settlement.minCoveragePct * 100).toFixed(2)}% (threshold ${
+      telemetry.settlement.coverageThreshold * 100
+    }%).`
+  );
+  lines.push(
+    `* Watchers online ${telemetry.settlement.watchersOnline}/${telemetry.settlement.watchers.length} · slippage threshold ${telemetry.settlement.slippageThresholdBps} bps.`
+  );
+  lines.push(
+    `* Protocols: ${telemetry.settlement.protocols
+      .map(
+        (protocol: any) =>
+          `${protocol.name} — finality ${protocol.finalityMinutes.toFixed(2)} min (tol ${protocol.toleranceMinutes.toFixed(2)} min) · coverage ${(protocol.coveragePct * 100).toFixed(2)}%`
+      )
+      .join(" · ")}.`
+  );
+  if (!telemetry.verification.settlement.allWithinTolerance) {
+    const failing = telemetry.settlement.protocols
+      .filter((protocol: any) => protocol.finalityMinutes > protocol.toleranceMinutes)
+      .map((protocol: any) => `${protocol.name} ${(protocol.finalityMinutes - protocol.toleranceMinutes).toFixed(2)} min over`);
+    if (failing.length > 0) {
+      lines.push(`* ⚠️ Settlement finality overruns: ${failing.join(" · ")}`);
+    }
+  }
+  lines.push("\n---\n");
   lines.push("## Dyson programme");
   for (const phase of manifest.dysonProgram.phases) {
     lines.push(`* ${phase.name}: ${phase.satellites.toLocaleString()} satellites, ${phase.energyYieldGw.toLocaleString()} GW, ${phase.durationDays} days.`);
@@ -1503,6 +1691,11 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
     }% tolerance): ${telemetry.verification.energyMonteCarlo.withinTolerance}`
   );
   lines.push(
+    `* Energy window coverage ${(telemetry.energy.schedule.globalCoverageRatio * 100).toFixed(2)}% (threshold ${
+      telemetry.energy.schedule.coverageThreshold * 100
+    }%) · reliability ${(telemetry.energy.schedule.globalReliabilityPct * 100).toFixed(2)}%.`
+  );
+  lines.push(
     `* Compute deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (tolerance ${telemetry.verification.compute.tolerancePct}%): ${telemetry.verification.compute.withinTolerance}`
   );
   lines.push(
@@ -1510,6 +1703,11 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
   );
   lines.push(
     `* Bridge latency tolerance (${telemetry.verification.bridges.toleranceSeconds}s): ${telemetry.verification.bridges.allWithinTolerance}`
+  );
+  lines.push(
+    `* Settlement finality ${telemetry.settlement.averageFinalityMinutes.toFixed(2)} min (max ${telemetry.verification.settlement.maxToleranceMinutes.toFixed(
+      2
+    )} min) · slippage threshold ${telemetry.settlement.slippageThresholdBps} bps.`
   );
   lines.push(
     `* Owner override unstoppable score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (selectors ${
@@ -1664,6 +1862,186 @@ function computeTelemetry(
     };
   });
 
+  const rawScheduleWindows = manifest.energyWindows.map((window) => {
+    const federation = manifest.federations.find((f) => f.slug === window.federation);
+    const energyGw = window.availableGw + window.backupGw;
+    const windowEnergyGwH = energyGw * window.durationHours;
+    const demandExaflops = federation?.compute.exaflops ?? 0;
+    const supportedExaflops = energyGw / 12;
+    const coverageRatio =
+      demandExaflops === 0 ? 1 : Math.min(1, supportedExaflops / Math.max(demandExaflops, 1e-6));
+    const baseJobsPerHour =
+      federation && federation.compute.agents > 0
+        ? (federation.compute.agents / 1_000_000) * 120
+        : 0;
+    const recommendedJobsPerHour = baseJobsPerHour * coverageRatio;
+    return {
+      id: `${window.federation}-${window.startHourUTC}`,
+      federation: window.federation,
+      startHourUTC: window.startHourUTC,
+      durationHours: window.durationHours,
+      availableGw: window.availableGw,
+      backupGw: window.backupGw,
+      renewablePct: window.renewablePct,
+      reliabilityPct: window.reliabilityPct,
+      priorityDomains: window.priorityDomains,
+      transferCapacityGbps: window.transferCapacityGbps,
+      supportedExaflops,
+      demandExaflops,
+      coverageRatio,
+      recommendedJobsPerHour,
+      recommendedJobs: Math.round(recommendedJobsPerHour * window.durationHours),
+      windowEnergyGwH,
+    };
+  });
+
+  const rawScheduleCoverage = manifest.federations.map((federation) => {
+    const windows = rawScheduleWindows.filter((window) => window.federation === federation.slug);
+    const scheduledGwH = windows.reduce((sum, window) => sum + window.windowEnergyGwH, 0);
+    const dailyDemandGwH = federation.energy.availableGw * 24;
+    const coverageRatio =
+      dailyDemandGwH === 0 ? 1 : scheduledGwH / Math.max(dailyDemandGwH, 1);
+    const reliabilityPct =
+      scheduledGwH === 0
+        ? 0
+        : windows.reduce((sum, window) => sum + window.reliabilityPct * window.windowEnergyGwH, 0) /
+          Math.max(scheduledGwH, 1);
+    const transferCapacityGbps = windows.reduce((sum, window) => sum + window.transferCapacityGbps, 0);
+    return {
+      federation: federation.slug,
+      dailyDemandGwH,
+      scheduledGwH,
+      coverageRatio,
+      reliabilityPct,
+      windowCount: windows.length,
+      transferCapacityGbps,
+      deficitGwH: Math.max(0, dailyDemandGwH - scheduledGwH),
+    };
+  });
+
+  const totalWindowEnergyGwH = rawScheduleWindows.reduce((sum, window) => sum + window.windowEnergyGwH, 0);
+  const totalDailyDemandGwH = manifest.federations.reduce(
+    (sum, federation) => sum + federation.energy.availableGw * 24,
+    0
+  );
+  const globalCoverageRatio =
+    totalDailyDemandGwH === 0
+      ? 1
+      : Math.min(1, totalWindowEnergyGwH / Math.max(totalDailyDemandGwH, 1));
+  const globalReliabilityPct =
+    totalWindowEnergyGwH === 0
+      ? 0
+      : rawScheduleWindows.reduce(
+          (sum, window) => sum + window.reliabilityPct * window.windowEnergyGwH,
+          0
+        ) / Math.max(totalWindowEnergyGwH, 1);
+
+  const scheduleCoverageThreshold = 0.98;
+  const scheduleReliabilityThreshold = 0.95;
+
+  const energyScheduleWindows = rawScheduleWindows.map((window) => ({
+    ...window,
+    supportedExaflops: round(window.supportedExaflops, 2),
+    demandExaflops: round(window.demandExaflops, 2),
+    coverageRatio: round(window.coverageRatio, 4),
+    recommendedJobsPerHour: round(window.recommendedJobsPerHour, 2),
+    windowEnergyGwH: round(window.windowEnergyGwH, 2),
+  }));
+
+  const energyScheduleCoverage = rawScheduleCoverage.map((entry) => ({
+    ...entry,
+    dailyDemandGwH: round(entry.dailyDemandGwH, 2),
+    scheduledGwH: round(entry.scheduledGwH, 2),
+    coverageRatio: round(entry.coverageRatio, 4),
+    reliabilityPct: round(entry.reliabilityPct, 4),
+    transferCapacityGbps: round(entry.transferCapacityGbps, 2),
+    deficitGwH: round(entry.deficitGwH, 2),
+  }));
+
+  const energyScheduleDeficits = rawScheduleCoverage
+    .filter((entry) => entry.coverageRatio < 1)
+    .map((entry) => ({
+      federation: entry.federation,
+      coverageRatio: round(entry.coverageRatio, 4),
+      deficitGwH: round(entry.deficitGwH, 2),
+    }));
+
+  const energyScheduleReliabilityDeficits = rawScheduleCoverage
+    .filter((entry) => entry.reliabilityPct < scheduleReliabilityThreshold)
+    .map((entry) => ({
+      federation: entry.federation,
+      reliabilityPct: round(entry.reliabilityPct, 4),
+    }));
+
+  const scheduleCoverageOk = rawScheduleCoverage.every(
+    (entry) => entry.coverageRatio >= scheduleCoverageThreshold
+  );
+  const scheduleReliabilityOk = rawScheduleCoverage.every(
+    (entry) => entry.reliabilityPct >= scheduleReliabilityThreshold
+  );
+
+  const settlementCoverageThreshold = 0.95;
+  const settlementSlippageThresholdBps = 75;
+
+  const rawSettlementProtocols = manifest.settlementProtocols.map((protocol) => {
+    const watchers = protocol.watchers.map((watcher) => watcher.toLowerCase());
+    const bridge = manifest.interplanetaryBridges[protocol.bridge];
+    return {
+      name: protocol.name,
+      chainId: protocol.chainId,
+      bridge: protocol.bridge,
+      settlementAsset: protocol.settlementAsset,
+      finalityMinutes: protocol.finalityMinutes,
+      toleranceMinutes: protocol.toleranceMinutes,
+      coveragePct: protocol.coveragePct,
+      slippageBps: protocol.slippageBps,
+      riskLevel: protocol.riskLevel,
+      watchers,
+      watchersCount: watchers.length,
+      withinTolerance: protocol.finalityMinutes <= protocol.toleranceMinutes,
+      bridgeLatencySeconds: bridge?.latencySeconds ?? null,
+      bridgeBandwidthGbps: bridge?.bandwidthGbps ?? null,
+    };
+  });
+
+  const settlementProtocolsTelemetry = rawSettlementProtocols.map((protocol) => ({
+    ...protocol,
+    finalityMinutes: round(protocol.finalityMinutes, 2),
+    toleranceMinutes: round(protocol.toleranceMinutes, 2),
+    coveragePct: round(protocol.coveragePct, 4),
+    slippageBps: round(protocol.slippageBps, 2),
+  }));
+
+  const settlementWatchers = new Set<string>();
+  rawSettlementProtocols.forEach((protocol) => {
+    protocol.watchers.forEach((watcher) => settlementWatchers.add(watcher));
+  });
+
+  const settlementAllWithinTolerance = rawSettlementProtocols.every((protocol) => protocol.withinTolerance);
+  const settlementCoverageOk = rawSettlementProtocols.every(
+    (protocol) => protocol.coveragePct >= settlementCoverageThreshold
+  );
+  const settlementSlippageOk = rawSettlementProtocols.every(
+    (protocol) => protocol.slippageBps <= settlementSlippageThresholdBps
+  );
+  const settlementRiskOk = rawSettlementProtocols.every((protocol) => protocol.riskLevel !== "high");
+  const averageFinalityMinutes =
+    rawSettlementProtocols.length === 0
+      ? 0
+      : rawSettlementProtocols.reduce((sum, protocol) => sum + protocol.finalityMinutes, 0) /
+        rawSettlementProtocols.length;
+  const minSettlementCoveragePct =
+    rawSettlementProtocols.length === 0
+      ? 1
+      : rawSettlementProtocols.reduce((min, protocol) => Math.min(min, protocol.coveragePct), 1);
+  const maxToleranceMinutes =
+    rawSettlementProtocols.length === 0
+      ? 0
+      : rawSettlementProtocols.reduce(
+          (max, protocol) => Math.max(max, protocol.toleranceMinutes),
+          0
+        );
+
   const feedsWithinTolerance = feedComparisons.every((feed) => feed.withinTolerance);
   const driftAlerts = feedComparisons.filter((feed) => feed.driftAlert);
   const averageFeedLatencyMs =
@@ -1749,11 +2127,11 @@ function computeTelemetry(
   const averageAttestationLatencySeconds =
     identityFederations.length === 0 ? 0 : identityTotals.totalLatencySeconds / identityFederations.length;
   const latencyWithinWindow = identityTotals.maxLatency <= identityGlobal.revocationWindowSeconds;
-  const minCoveragePct =
+  const minIdentityCoveragePct =
     identityFederations.length === 0 || identityTotals.minCoveragePct === Number.POSITIVE_INFINITY
       ? 1
       : identityTotals.minCoveragePct;
-  const identityCoverageOk = minCoveragePct >= identityGlobal.coverageFloorPct;
+  const identityCoverageOk = minIdentityCoveragePct >= identityGlobal.coverageFloorPct;
   const identityTotalAgentsFromCompute = manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0);
   const identityDeviation = Math.abs(identityTotals.totalAgents - identityTotalAgentsFromCompute);
   const revocationRatePpm =
@@ -1932,6 +2310,16 @@ function computeTelemetry(
         averageLatencyMs: averageFeedLatencyMs,
         maxLatencyMs: maxFeedLatencyMs,
       },
+      schedule: {
+        globalCoverageRatio: round(globalCoverageRatio, 4),
+        globalReliabilityPct: round(globalReliabilityPct, 4),
+        coverageThreshold: scheduleCoverageThreshold,
+        reliabilityThreshold: scheduleReliabilityThreshold,
+        windows: energyScheduleWindows,
+        coverage: energyScheduleCoverage,
+        deficits: energyScheduleDeficits,
+        reliabilityDeficits: energyScheduleReliabilityDeficits,
+      },
     },
     compute: {
       totalAgents: manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0),
@@ -1961,7 +2349,7 @@ function computeTelemetry(
         federationCount: identityFederations.length,
         averageAttestationLatencySeconds,
         maxAttestationLatencySeconds: identityTotals.maxLatency,
-        minCoveragePct,
+        minCoveragePct: minIdentityCoveragePct,
         revocationRatePpm,
         deviationAgainstCompute: identityDeviation,
       },
@@ -1995,6 +2383,20 @@ function computeTelemetry(
       score: dominanceScore,
     },
     bridges: bridgeTelemetry,
+    settlement: {
+      protocols: settlementProtocolsTelemetry,
+      watchers: Array.from(settlementWatchers),
+      watchersOnline: settlementWatchers.size,
+      averageFinalityMinutes: round(averageFinalityMinutes, 2),
+      minCoveragePct: round(minSettlementCoveragePct, 4),
+      maxToleranceMinutes: round(maxToleranceMinutes, 2),
+      coverageThreshold: settlementCoverageThreshold,
+      slippageThresholdBps: settlementSlippageThresholdBps,
+      allWithinTolerance: settlementAllWithinTolerance,
+      coverageOk: settlementCoverageOk,
+      slippageOk: settlementSlippageOk,
+      riskOk: settlementRiskOk,
+    },
     federations: federationsDetail,
     ownerControls: {
       pauseCallEncoded: ownerProof.pauseEmbedding.pauseAll,
@@ -2030,6 +2432,16 @@ function computeTelemetry(
         allWithinTolerance: feedsWithinTolerance,
         driftAlerts: driftAlerts.map((feed) => feed.region),
       },
+      energySchedule: {
+        thresholdCoverage: scheduleCoverageThreshold,
+        thresholdReliability: scheduleReliabilityThreshold,
+        coverageOk: scheduleCoverageOk,
+        reliabilityOk: scheduleReliabilityOk,
+        globalCoverageRatio: round(globalCoverageRatio, 4),
+        globalReliabilityPct: round(globalReliabilityPct, 4),
+        deficits: energyScheduleDeficits,
+        reliabilityDeficits: energyScheduleReliabilityDeficits,
+      },
       compute: {
         tolerancePct: manifest.verificationProtocols.computeTolerancePct,
         deviationPct: computeDeviationPct,
@@ -2040,6 +2452,17 @@ function computeTelemetry(
         toleranceSeconds: manifest.verificationProtocols.bridgeLatencyToleranceSeconds,
         compliance: bridgeCompliance,
         allWithinTolerance: bridgeCompliance.every((bridge) => bridge.withinTolerance),
+      },
+      settlement: {
+        averageFinalityMinutes: round(averageFinalityMinutes, 2),
+        minCoveragePct: round(minSettlementCoveragePct, 4),
+        maxToleranceMinutes: round(maxToleranceMinutes, 2),
+        coverageThreshold: settlementCoverageThreshold,
+        slippageThresholdBps: settlementSlippageThresholdBps,
+        allWithinTolerance: settlementAllWithinTolerance,
+        coverageOk: settlementCoverageOk,
+        slippageOk: settlementSlippageOk,
+        riskOk: settlementRiskOk,
       },
       identity: {
         anchorsMeetingQuorum: identityTotals.anchorsMeetingQuorum,
@@ -2101,8 +2524,14 @@ function buildStabilityLedger(
     telemetry.verification.energyModels.withinMargin,
     telemetry.energy.monteCarlo.withinTolerance,
     telemetry.energy.liveFeeds.allWithinTolerance,
+    telemetry.verification.energySchedule.coverageOk,
+    telemetry.verification.energySchedule.reliabilityOk,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
+    telemetry.verification.settlement.allWithinTolerance,
+    telemetry.verification.settlement.coverageOk,
+    telemetry.verification.settlement.slippageOk,
+    telemetry.verification.settlement.riskOk,
     telemetry.identity.withinQuorum,
     telemetry.identity.latencyWithinWindow,
     telemetry.identity.revocationWithinTolerance,
@@ -2196,6 +2625,26 @@ function buildStabilityLedger(
         .join(" · "),
     },
     {
+      id: "energy-schedule-coverage",
+      title: "Energy windows cover demand",
+      severity: "medium",
+      status: telemetry.verification.energySchedule.coverageOk,
+      weight: 0.7,
+      evidence: `global ${(telemetry.verification.energySchedule.globalCoverageRatio * 100).toFixed(2)}% (threshold ${
+        telemetry.verification.energySchedule.thresholdCoverage * 100
+      }%)`,
+    },
+    {
+      id: "energy-schedule-reliability",
+      title: "Energy window reliability",
+      severity: "medium",
+      status: telemetry.verification.energySchedule.reliabilityOk,
+      weight: 0.6,
+      evidence: `global ${(telemetry.verification.energySchedule.globalReliabilityPct * 100).toFixed(2)}% (threshold ${
+        telemetry.verification.energySchedule.thresholdReliability * 100
+      }%)`,
+    },
+    {
       id: "energy-margin",
       title: "Dyson thermostat buffer intact",
       severity: "medium",
@@ -2273,6 +2722,44 @@ function buildStabilityLedger(
       status: telemetry.verification.bridges.allWithinTolerance,
       weight: 0.75,
       evidence: `tolerance ${telemetry.verification.bridges.toleranceSeconds}s · failsafe ${manifest.dysonProgram.safety.failsafeLatencySeconds}s`,
+    },
+    {
+      id: "settlement-finality",
+      title: "Settlement finality within tolerance",
+      severity: "medium",
+      status: telemetry.verification.settlement.allWithinTolerance,
+      weight: 0.6,
+      evidence: `avg ${telemetry.verification.settlement.averageFinalityMinutes.toFixed(2)} min ≤ ${telemetry.verification.settlement.maxToleranceMinutes.toFixed(2)} min`,
+    },
+    {
+      id: "settlement-coverage",
+      title: "Settlement coverage ≥ threshold",
+      severity: "medium",
+      status: telemetry.verification.settlement.coverageOk,
+      weight: 0.55,
+      evidence: `min ${(telemetry.verification.settlement.minCoveragePct * 100).toFixed(2)}% (threshold ${
+        telemetry.verification.settlement.coverageThreshold * 100
+      }%)`,
+    },
+    {
+      id: "settlement-slippage",
+      title: "Settlement slippage within tolerance",
+      severity: "medium",
+      status: telemetry.verification.settlement.slippageOk,
+      weight: 0.5,
+      evidence: `max ${telemetry.settlement.protocols
+        .reduce((max: number, protocol: any) => Math.max(max, protocol.slippageBps), 0)
+        .toFixed(2)} bps (threshold ${telemetry.verification.settlement.slippageThresholdBps} bps)`,
+    },
+    {
+      id: "settlement-risk",
+      title: "Settlement risk band acceptable",
+      severity: "medium",
+      status: telemetry.verification.settlement.riskOk,
+      weight: 0.5,
+      evidence: `risk levels: ${telemetry.settlement.protocols.map((protocol: any) => `${protocol.name}=${protocol.riskLevel}`).join(
+        " · "
+      )}`,
     },
     {
       id: "scenario-resilience",
@@ -2510,6 +2997,9 @@ function run() {
     2
   )}\n`;
 
+  const energyScheduleJson = `${JSON.stringify(telemetry.energy.schedule, null, 2)}\n`;
+  const settlementJson = `${JSON.stringify(telemetry.settlement, null, 2)}\n`;
+
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
@@ -2518,6 +3008,8 @@ function run() {
     { path: join(OUTPUT_DIR, "kardashev-monte-carlo.json"), content: monteCarloJson },
     { path: join(OUTPUT_DIR, "kardashev-energy-feeds.json"), content: energyFeedsJson },
     { path: join(OUTPUT_DIR, "kardashev-fabric-ledger.json"), content: fabricLedgerJson },
+    { path: join(OUTPUT_DIR, "kardashev-energy-schedule.json"), content: energyScheduleJson },
+    { path: join(OUTPUT_DIR, "kardashev-settlement-ledger.json"), content: settlementJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
@@ -2567,6 +3059,18 @@ function run() {
     `   Energy feed drift compliance: ${telemetry.verification.energyFeeds.allWithinTolerance} (tolerance ${telemetry.verification.energyFeeds.tolerancePct}%).`
   );
   console.log(
+    `   Energy schedule coverage ${(telemetry.energy.schedule.globalCoverageRatio * 100).toFixed(2)}% (threshold ${
+      telemetry.energy.schedule.coverageThreshold * 100
+    }%) · reliability ${(telemetry.energy.schedule.globalReliabilityPct * 100).toFixed(2)}%.`
+  );
+  console.log(
+    `   Settlement finality ${telemetry.settlement.averageFinalityMinutes.toFixed(2)} min (max ${telemetry.verification.settlement.maxToleranceMinutes.toFixed(
+      2
+    )} min) · coverage ${(telemetry.settlement.minCoveragePct * 100).toFixed(2)}% (threshold ${
+      telemetry.settlement.coverageThreshold * 100
+    }%) · watchers ${telemetry.settlement.watchersOnline}.`
+  );
+  console.log(
     `   Sharded fabric coverage — domains ${telemetry.verification.orchestrationFabric.domainsOk}, sentinels ${telemetry.verification.orchestrationFabric.sentinelsOk}, federations ${telemetry.verification.orchestrationFabric.federationsOk}.`
   );
   console.log(
@@ -2606,6 +3110,21 @@ function run() {
       .map(([name, data]) => `${name}=${data.withinFailsafe}`)
       .join(", ")}`);
     console.log(
+      ` - Energy schedule coverage ok: ${telemetry.verification.energySchedule.coverageOk} (global ${(telemetry.energy.schedule.globalCoverageRatio * 100).toFixed(
+        2
+      )}%)`
+    );
+    console.log(
+      ` - Energy schedule reliability ok: ${telemetry.verification.energySchedule.reliabilityOk}`
+    );
+    console.log(
+      ` - Settlement finality within tolerance: ${telemetry.verification.settlement.allWithinTolerance} (avg ${telemetry.settlement.averageFinalityMinutes.toFixed(
+        2
+      )} min)`
+    );
+    console.log(` - Settlement coverage ok: ${telemetry.verification.settlement.coverageOk}`);
+    console.log(` - Settlement slippage ok: ${telemetry.verification.settlement.slippageOk}`);
+    console.log(
       ` - Owner unstoppable score ≥95%: ${ownerProof.verification.unstoppableScore >= 0.95} (${(
         ownerProof.verification.unstoppableScore * 100
       ).toFixed(2)}%)`
@@ -2626,6 +3145,12 @@ function run() {
       telemetry.energy.tripleCheck,
       telemetry.energy.monteCarlo.withinTolerance,
       ...Object.values(telemetry.bridges).map((b: any) => b.withinFailsafe),
+      telemetry.verification.energySchedule.coverageOk,
+      telemetry.verification.energySchedule.reliabilityOk,
+      telemetry.verification.settlement.allWithinTolerance,
+      telemetry.verification.settlement.coverageOk,
+      telemetry.verification.settlement.slippageOk,
+      telemetry.verification.settlement.riskOk,
       scenarioSweep.length === 0 || scenarioSweep.every((scenario) => scenario.status !== "critical"),
     ].some((flag) => !flag);
     if (anyFailures) {

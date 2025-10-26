@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0xb05a246fd503c67846c8b9151ce17109a8c1fb050b07a8098f152e436ea5d473
+**Manifest hash**: 0xa0c1060b66988cbe8a3f254d8f7697132f7b45af9d68f1cb732868a6e209db4c
 **Dominance score**: 90.0 / 100
 
 ---
@@ -19,9 +19,11 @@
 * Utilisation: 57.62% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Demand percentiles: P95 251,695.495 GW · P99 255,130.151 GW.
+* Demand percentiles: P95 251,371.354 GW · P99 255,867.241 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
+* Energy window coverage 100.00% (threshold 98%) · reliability 98.54%.
+* Energy window deficits: none — all federations meet coverage targets.
 
 ---
 
@@ -85,6 +87,17 @@
   - Remaining buffer: 490 days (ok)
   - Slip ratio: 3.33% (ok)
   - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
+* **Primary energy window offline** — status CRITICAL (confidence 84.9%) · Removing orbital 8h window drops coverage to 83.20%.
+  - Removed window: orbital @ 0h (check)
+  - Remaining coverage: 83.20% (check)
+  - Threshold: 98.00% (ok)
+  - Lost capacity: 1168000.00 GW·h (check)
+  - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
+* **Settlement backlog (+40% finality)** — status WARNING (confidence 90.8%) · Settlement mesh absorbs backlog within tolerance.
+  - Sol-Earth Safe Settlement: 7.70 min (ok)
+  - Mars Credit Hub: 10.92 min (check)
+  - Orbital Lattice Clearing: 3.36 min (ok)
+  - Recommended: Activate treasury failover to orbital credit rails. · Deploy additional watchers to reduce backlog latency.
 * **Identity infiltration (3% forged daily credentials)** — status NOMINAL (confidence 100.0%) · Revocation network absorbs infiltration within tolerance.
   - Forged credentials: 103,200 (ok)
   - Revocation load: 23.39 ppm (ok)
@@ -109,6 +122,13 @@
 ## Bridges
 * earthToMars: latency 90s, bandwidth 14.6 Gbps, operator 0xb12d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d.
 * earthToOrbital: latency 2s, bandwidth 240 Gbps, operator 0xd4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3.
+
+---
+
+## Settlement lattice & forex
+* Average finality 5.23 min (max 10.00 min) · coverage 96.70% (threshold 95%).
+* Watchers online 9/9 · slippage threshold 75 bps.
+* Protocols: Sol-Earth Safe Settlement — finality 5.50 min (tol 8.00 min) · coverage 98.40% · Mars Credit Hub — finality 7.80 min (tol 10.00 min) · coverage 96.70% · Orbital Lattice Clearing — finality 2.40 min (tol 4.50 min) · coverage 99.50%.
 
 ---
 

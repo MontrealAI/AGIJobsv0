@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0xb05a246fd503c67846c8b9151ce17109a8c1fb050b07a8098f152e436ea5d473",
+    "hash": "0xa0c1060b66988cbe8a3f254d8f7697132f7b45af9d68f1cb732868a6e209db4c",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -69,12 +69,12 @@
       "runs": 256,
       "breachProbability": 0,
       "percentileGw": {
-        "p50": 237030.969218213,
-        "p95": 251695.495238463,
-        "p99": 255130.15072335023
+        "p50": 235760.79008348397,
+        "p95": 251371.3536611373,
+        "p99": 255867.24135491467
       },
-      "maxGw": 257220.62304422446,
-      "averageGw": 236494.16525702746,
+      "maxGw": 258033.64239481383,
+      "averageGw": 236069.87531376135,
       "withinTolerance": true,
       "tolerance": 0.01
     },
@@ -127,6 +127,251 @@
       "driftAlerts": [],
       "averageLatencyMs": 241466.66666666666,
       "maxLatencyMs": 720000
+    },
+    "schedule": {
+      "globalCoverageRatio": 1,
+      "globalReliabilityPct": 0.9854,
+      "coverageThreshold": 0.98,
+      "reliabilityThreshold": 0.95,
+      "windows": [
+        {
+          "id": "earth-0",
+          "federation": "earth",
+          "startHourUTC": 0,
+          "durationHours": 6,
+          "availableGw": 72000,
+          "backupGw": 15000,
+          "renewablePct": 0.94,
+          "reliabilityPct": 0.985,
+          "priorityDomains": [
+            "earth.finance",
+            "earth.infrastructure"
+          ],
+          "transferCapacityGbps": 520,
+          "supportedExaflops": 7250,
+          "demandExaflops": 18.4,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 336000,
+          "recommendedJobs": 2016000,
+          "windowEnergyGwH": 522000
+        },
+        {
+          "id": "earth-6",
+          "federation": "earth",
+          "startHourUTC": 6,
+          "durationHours": 6,
+          "availableGw": 70000,
+          "backupGw": 14000,
+          "renewablePct": 0.92,
+          "reliabilityPct": 0.982,
+          "priorityDomains": [
+            "earth.finance"
+          ],
+          "transferCapacityGbps": 505,
+          "supportedExaflops": 7000,
+          "demandExaflops": 18.4,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 336000,
+          "recommendedJobs": 2016000,
+          "windowEnergyGwH": 504000
+        },
+        {
+          "id": "earth-12",
+          "federation": "earth",
+          "startHourUTC": 12,
+          "durationHours": 6,
+          "availableGw": 68000,
+          "backupGw": 15000,
+          "renewablePct": 0.91,
+          "reliabilityPct": 0.979,
+          "priorityDomains": [
+            "earth.infrastructure"
+          ],
+          "transferCapacityGbps": 488,
+          "supportedExaflops": 6916.67,
+          "demandExaflops": 18.4,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 336000,
+          "recommendedJobs": 2016000,
+          "windowEnergyGwH": 498000
+        },
+        {
+          "id": "earth-18",
+          "federation": "earth",
+          "startHourUTC": 18,
+          "durationHours": 6,
+          "availableGw": 66000,
+          "backupGw": 16000,
+          "renewablePct": 0.9,
+          "reliabilityPct": 0.978,
+          "priorityDomains": [
+            "earth.finance",
+            "earth.infrastructure"
+          ],
+          "transferCapacityGbps": 472,
+          "supportedExaflops": 6833.33,
+          "demandExaflops": 18.4,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 336000,
+          "recommendedJobs": 2016000,
+          "windowEnergyGwH": 492000
+        },
+        {
+          "id": "mars-0",
+          "federation": "mars",
+          "startHourUTC": 0,
+          "durationHours": 8,
+          "availableGw": 22000,
+          "backupGw": 4500,
+          "renewablePct": 0.93,
+          "reliabilityPct": 0.966,
+          "priorityDomains": [
+            "mars.terraforming"
+          ],
+          "transferCapacityGbps": 210,
+          "supportedExaflops": 2208.33,
+          "demandExaflops": 6.1,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 86400,
+          "recommendedJobs": 691200,
+          "windowEnergyGwH": 212000
+        },
+        {
+          "id": "mars-8",
+          "federation": "mars",
+          "startHourUTC": 8,
+          "durationHours": 8,
+          "availableGw": 21500,
+          "backupGw": 4800,
+          "renewablePct": 0.91,
+          "reliabilityPct": 0.963,
+          "priorityDomains": [
+            "mars.terraforming"
+          ],
+          "transferCapacityGbps": 198,
+          "supportedExaflops": 2191.67,
+          "demandExaflops": 6.1,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 86400,
+          "recommendedJobs": 691200,
+          "windowEnergyGwH": 210400
+        },
+        {
+          "id": "mars-16",
+          "federation": "mars",
+          "startHourUTC": 16,
+          "durationHours": 8,
+          "availableGw": 21000,
+          "backupGw": 5200,
+          "renewablePct": 0.9,
+          "reliabilityPct": 0.959,
+          "priorityDomains": [
+            "mars.terraforming"
+          ],
+          "transferCapacityGbps": 204,
+          "supportedExaflops": 2183.33,
+          "demandExaflops": 6.1,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 86400,
+          "recommendedJobs": 691200,
+          "windowEnergyGwH": 209600
+        },
+        {
+          "id": "orbital-0",
+          "federation": "orbital",
+          "startHourUTC": 0,
+          "durationHours": 8,
+          "availableGw": 110000,
+          "backupGw": 36000,
+          "renewablePct": 0.99,
+          "reliabilityPct": 0.994,
+          "priorityDomains": [
+            "orbital.defense"
+          ],
+          "transferCapacityGbps": 640,
+          "supportedExaflops": 12166.67,
+          "demandExaflops": 24.6,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 115200,
+          "recommendedJobs": 921600,
+          "windowEnergyGwH": 1168000
+        },
+        {
+          "id": "orbital-8",
+          "federation": "orbital",
+          "startHourUTC": 8,
+          "durationHours": 8,
+          "availableGw": 104000,
+          "backupGw": 34000,
+          "renewablePct": 0.99,
+          "reliabilityPct": 0.992,
+          "priorityDomains": [
+            "orbital.research"
+          ],
+          "transferCapacityGbps": 612,
+          "supportedExaflops": 11500,
+          "demandExaflops": 24.6,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 115200,
+          "recommendedJobs": 921600,
+          "windowEnergyGwH": 1104000
+        },
+        {
+          "id": "orbital-16",
+          "federation": "orbital",
+          "startHourUTC": 16,
+          "durationHours": 8,
+          "availableGw": 102000,
+          "backupGw": 33000,
+          "renewablePct": 0.985,
+          "reliabilityPct": 0.991,
+          "priorityDomains": [
+            "orbital.defense",
+            "orbital.research"
+          ],
+          "transferCapacityGbps": 598,
+          "supportedExaflops": 11250,
+          "demandExaflops": 24.6,
+          "coverageRatio": 1,
+          "recommendedJobsPerHour": 115200,
+          "recommendedJobs": 921600,
+          "windowEnergyGwH": 1080000
+        }
+      ],
+      "coverage": [
+        {
+          "federation": "earth",
+          "dailyDemandGwH": 1968000,
+          "scheduledGwH": 2016000,
+          "coverageRatio": 1.0244,
+          "reliabilityPct": 0.9811,
+          "windowCount": 4,
+          "transferCapacityGbps": 1985,
+          "deficitGwH": 0
+        },
+        {
+          "federation": "mars",
+          "dailyDemandGwH": 576000,
+          "scheduledGwH": 632000,
+          "coverageRatio": 1.0972,
+          "reliabilityPct": 0.9627,
+          "windowCount": 3,
+          "transferCapacityGbps": 612,
+          "deficitGwH": 0
+        },
+        {
+          "federation": "orbital",
+          "dailyDemandGwH": 3264000,
+          "scheduledGwH": 3352000,
+          "coverageRatio": 1.027,
+          "reliabilityPct": 0.9924,
+          "windowCount": 3,
+          "transferCapacityGbps": 1850,
+          "deficitGwH": 0
+        }
+      ],
+      "deficits": [],
+      "reliabilityDeficits": []
     }
   },
   "compute": {
@@ -425,6 +670,91 @@
       "withinFailsafe": true
     }
   },
+  "settlement": {
+    "protocols": [
+      {
+        "name": "Sol-Earth Safe Settlement",
+        "chainId": 1,
+        "bridge": "earthToMars",
+        "settlementAsset": "AGI",
+        "finalityMinutes": 5.5,
+        "toleranceMinutes": 8,
+        "coveragePct": 0.984,
+        "slippageBps": 22,
+        "riskLevel": "low",
+        "watchers": [
+          "0x8a1f3b9d5c6e7f8123456789abcdef0123456789",
+          "0x9b2c4d6e8f1032547698abcdef0123456789abce",
+          "0x7c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f"
+        ],
+        "watchersCount": 3,
+        "withinTolerance": true,
+        "bridgeLatencySeconds": 90,
+        "bridgeBandwidthGbps": 14.6
+      },
+      {
+        "name": "Mars Credit Hub",
+        "chainId": 7331,
+        "bridge": "earthToMars",
+        "settlementAsset": "AGI.MARS",
+        "finalityMinutes": 7.8,
+        "toleranceMinutes": 10,
+        "coveragePct": 0.967,
+        "slippageBps": 35,
+        "riskLevel": "medium",
+        "watchers": [
+          "0x5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+          "0x4c3d2e1f0a9b8c7d6e5f40312233445566778899",
+          "0x3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b"
+        ],
+        "watchersCount": 3,
+        "withinTolerance": true,
+        "bridgeLatencySeconds": 90,
+        "bridgeBandwidthGbps": 14.6
+      },
+      {
+        "name": "Orbital Lattice Clearing",
+        "chainId": 8453,
+        "bridge": "earthToOrbital",
+        "settlementAsset": "AGI.ORBITAL",
+        "finalityMinutes": 2.4,
+        "toleranceMinutes": 4.5,
+        "coveragePct": 0.995,
+        "slippageBps": 18,
+        "riskLevel": "low",
+        "watchers": [
+          "0xa1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "0xb2c3d4e5f60718293a4b5c6d7e8f9012345678a9",
+          "0xc3d4e5f60718293a4b5c6d7e8f9012345678a9b0"
+        ],
+        "watchersCount": 3,
+        "withinTolerance": true,
+        "bridgeLatencySeconds": 2,
+        "bridgeBandwidthGbps": 240
+      }
+    ],
+    "watchers": [
+      "0x8a1f3b9d5c6e7f8123456789abcdef0123456789",
+      "0x9b2c4d6e8f1032547698abcdef0123456789abce",
+      "0x7c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f",
+      "0x5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80",
+      "0x4c3d2e1f0a9b8c7d6e5f40312233445566778899",
+      "0x3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b",
+      "0xa1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "0xb2c3d4e5f60718293a4b5c6d7e8f9012345678a9",
+      "0xc3d4e5f60718293a4b5c6d7e8f9012345678a9b0"
+    ],
+    "watchersOnline": 9,
+    "averageFinalityMinutes": 5.23,
+    "minCoveragePct": 0.967,
+    "maxToleranceMinutes": 10,
+    "coverageThreshold": 0.95,
+    "slippageThresholdBps": 75,
+    "allWithinTolerance": true,
+    "coverageOk": true,
+    "slippageOk": true,
+    "riskOk": true
+  },
   "federations": [
     {
       "slug": "earth",
@@ -656,9 +986,9 @@
       "tolerance": 0.01,
       "withinTolerance": true,
       "percentileGw": {
-        "p50": 237030.969218213,
-        "p95": 251695.495238463,
-        "p99": 255130.15072335023
+        "p50": 235760.79008348397,
+        "p95": 251371.3536611373,
+        "p99": 255867.24135491467
       }
     },
     "energyFeeds": {
@@ -709,6 +1039,16 @@
       "allWithinTolerance": true,
       "driftAlerts": []
     },
+    "energySchedule": {
+      "thresholdCoverage": 0.98,
+      "thresholdReliability": 0.95,
+      "coverageOk": true,
+      "reliabilityOk": true,
+      "globalCoverageRatio": 1,
+      "globalReliabilityPct": 0.9854,
+      "deficits": [],
+      "reliabilityDeficits": []
+    },
     "compute": {
       "tolerancePct": 0.75,
       "deviationPct": 0.45008183306055416,
@@ -730,6 +1070,17 @@
         }
       ],
       "allWithinTolerance": true
+    },
+    "settlement": {
+      "averageFinalityMinutes": 5.23,
+      "minCoveragePct": 0.967,
+      "maxToleranceMinutes": 10,
+      "coverageThreshold": 0.95,
+      "slippageThresholdBps": 75,
+      "allWithinTolerance": true,
+      "coverageOk": true,
+      "slippageOk": true,
+      "riskOk": true
     },
     "identity": {
       "anchorsMeetingQuorum": 3,
@@ -925,6 +1276,69 @@
       "recommendedActions": [
         "Accelerate self-improvement plan execution to reclaim schedule slack.",
         "Reallocate capital from Earth infrastructure to Dyson assembly for this epoch."
+      ]
+    },
+    {
+      "id": "energy-window-loss",
+      "title": "Primary energy window offline",
+      "status": "critical",
+      "summary": "Removing orbital 8h window drops coverage to 83.20%.",
+      "confidence": 0.8489346151683814,
+      "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
+      "metrics": [
+        {
+          "label": "Removed window",
+          "value": "orbital @ 0h",
+          "ok": false
+        },
+        {
+          "label": "Remaining coverage",
+          "value": "83.20%",
+          "ok": false
+        },
+        {
+          "label": "Threshold",
+          "value": "98.00%",
+          "ok": true
+        },
+        {
+          "label": "Lost capacity",
+          "value": "1168000.00 GW·h",
+          "ok": false
+        }
+      ],
+      "recommendedActions": [
+        "Trigger orbital battery discharge if coverage < threshold.",
+        "Re-route Mars workloads to orbital halo until replacement window is provisioned."
+      ]
+    },
+    {
+      "id": "settlement-backlog",
+      "title": "Settlement backlog (+40% finality)",
+      "status": "warning",
+      "summary": "Settlement mesh absorbs backlog within tolerance.",
+      "confidence": 0.908,
+      "impact": "Guardian council can rely on automated settlement buffers.",
+      "metrics": [
+        {
+          "label": "Sol-Earth Safe Settlement",
+          "value": "7.70 min",
+          "ok": true
+        },
+        {
+          "label": "Mars Credit Hub",
+          "value": "10.92 min",
+          "ok": false
+        },
+        {
+          "label": "Orbital Lattice Clearing",
+          "value": "3.36 min",
+          "ok": true
+        }
+      ],
+      "recommendedActions": [
+        "Activate treasury failover to orbital credit rails.",
+        "Deploy additional watchers to reduce backlog latency."
       ]
     },
     {

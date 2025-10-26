@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 1,
+    "compositeScore": 0.9568733153638813,
     "quorum": true,
-    "summary": "All Kardashev-II invariants satisfied. Safe batch ready for execution.",
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 1,
+        "score": 0.9568733153638813,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 1,
+        "score": 0.9583333333333334,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -29,7 +29,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.8187920531005637,
+        "score": 0.8307271039972892,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -120,6 +120,22 @@
       "evidence": "earth-grid 0.00% · mars-dome 0.00% · orbital-swarm 0.00%"
     },
     {
+      "id": "energy-schedule-coverage",
+      "title": "Energy windows cover demand",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.7,
+      "evidence": "global 100.00% (threshold 98%)"
+    },
+    {
+      "id": "energy-schedule-reliability",
+      "title": "Energy window reliability",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.6,
+      "evidence": "global 98.54% (threshold 95%)"
+    },
+    {
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
       "severity": "medium",
@@ -192,21 +208,60 @@
       "evidence": "tolerance 120s · failsafe 120s"
     },
     {
-      "id": "scenario-resilience",
-      "title": "Scenario sweep resilient",
+      "id": "settlement-finality",
+      "title": "Settlement finality within tolerance",
       "severity": "medium",
       "status": true,
+      "weight": 0.6,
+      "evidence": "avg 5.23 min ≤ 10.00 min"
+    },
+    {
+      "id": "settlement-coverage",
+      "title": "Settlement coverage ≥ threshold",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.55,
+      "evidence": "min 96.70% (threshold 95%)"
+    },
+    {
+      "id": "settlement-slippage",
+      "title": "Settlement slippage within tolerance",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.5,
+      "evidence": "max 35.00 bps (threshold 75 bps)"
+    },
+    {
+      "id": "settlement-risk",
+      "title": "Settlement risk band acceptable",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.5,
+      "evidence": "risk levels: Sol-Earth Safe Settlement=low · Mars Credit Hub=medium · Orbital Lattice Clearing=low"
+    },
+    {
+      "id": "scenario-resilience",
+      "title": "Scenario sweep resilient",
+      "severity": "critical",
+      "status": false,
       "weight": 0.8,
-      "evidence": "6/8 nominal · 2 warning · 0 critical"
+      "evidence": "6/10 nominal · 3 warning · 1 critical"
     }
   ],
-  "alerts": [],
+  "alerts": [
+    {
+      "id": "scenario-resilience",
+      "title": "Scenario sweep resilient",
+      "severity": "critical",
+      "evidence": "6/10 nominal · 3 warning · 1 critical"
+    }
+  ],
   "scenarioSweep": {
-    "total": 8,
+    "total": 10,
     "nominal": 6,
-    "warning": 2,
-    "critical": 0,
-    "averageConfidence": 0.8187920531005637,
+    "warning": 3,
+    "critical": 1,
+    "averageConfidence": 0.8307271039972892,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -242,6 +297,20 @@
         "status": "nominal",
         "confidence": 0.95,
         "summary": "Schedule buffer absorbs slip with 490 days remaining."
+      },
+      {
+        "id": "energy-window-loss",
+        "title": "Primary energy window offline",
+        "status": "critical",
+        "confidence": 0.8489346151683814,
+        "summary": "Removing orbital 8h window drops coverage to 83.20%."
+      },
+      {
+        "id": "settlement-backlog",
+        "title": "Settlement backlog (+40% finality)",
+        "status": "warning",
+        "confidence": 0.908,
+        "summary": "Settlement mesh absorbs backlog within tolerance."
       },
       {
         "id": "identity-infiltration",
