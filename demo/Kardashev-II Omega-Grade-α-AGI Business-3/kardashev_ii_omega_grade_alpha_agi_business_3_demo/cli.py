@@ -21,6 +21,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-sim", action="store_true", help="Disable the synthetic planetary simulation")
     parser.add_argument("--control", type=Path, default=Path("control-channel.jsonl"), help="Control channel file path")
     parser.add_argument("--insight-interval", type=int, default=30, help="Seconds between strategic insight broadcasts")
+    parser.add_argument("--simulation-tick", type=float, default=1.0, help="Seconds between simulation updates")
+    parser.add_argument(
+        "--simulation-hours", type=float, default=1.0, help="In-simulation hours progressed per tick"
+    )
+    parser.add_argument(
+        "--simulation-energy-scale",
+        type=float,
+        default=2.0,
+        help="Multiplier converting GW output into available energy capacity",
+    )
+    parser.add_argument(
+        "--simulation-compute-scale",
+        type=float,
+        default=1.0,
+        help="Multiplier applied to prosperity/sustainability derived compute capacity",
+    )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
@@ -55,6 +71,10 @@ async def _run_async(args: argparse.Namespace) -> None:
         "enable_simulation": not args.no_sim,
         "control_channel_file": args.control,
         "insight_interval_seconds": args.insight_interval,
+        "simulation_tick_seconds": args.simulation_tick,
+        "simulation_hours_per_tick": args.simulation_hours,
+        "simulation_energy_scale": args.simulation_energy_scale,
+        "simulation_compute_scale": args.simulation_compute_scale,
         "audit_log_path": args.audit_log,
     }
     params.update(overrides)

@@ -301,6 +301,39 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(operator_after, operator_before)
             await orchestrator.shutdown()
 
+    async def test_simulation_updates_resources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.05),
+                validator_reveal_window=timedelta(seconds=0.05),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=2,
+                checkpoint_interval_seconds=10,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                energy_capacity=500.0,
+                compute_capacity=1_000.0,
+                simulation_tick_seconds=0.05,
+                simulation_hours_per_tick=6.0,
+                simulation_energy_scale=1.0,
+                simulation_compute_scale=1.0,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.3)
+            energy_after = orchestrator.resources.energy_available
+            compute_after = orchestrator.resources.compute_available
+            await orchestrator.shutdown()
+            self.assertGreater(energy_after, 500.0)
+            self.assertGreater(compute_after, 1_000.0)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

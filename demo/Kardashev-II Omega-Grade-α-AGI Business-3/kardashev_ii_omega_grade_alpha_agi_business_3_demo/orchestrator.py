@@ -28,6 +28,10 @@ class OrchestratorConfig:
     checkpoint_interval_seconds: int = 60
     resume_from_checkpoint: bool = True
     enable_simulation: bool = True
+    simulation_tick_seconds: float = 1.0
+    simulation_hours_per_tick: float = 1.0
+    simulation_energy_scale: float = 2.0
+    simulation_compute_scale: float = 1.0
     operator_account: str = "operator"
     base_agent_tokens: float = 10_000.0
     energy_capacity: float = 1_000_000.0
@@ -182,14 +186,37 @@ class Orchestrator:
         assert self.simulation is not None
         while self._running:
             await self._paused.wait()
-            state = self.simulation.tick(hours=1)
+            hours = max(0.0, float(self.config.simulation_hours_per_tick)) or 1.0
+            state = self.simulation.tick(hours=hours)
+            energy_capacity_target = max(
+                self.resources.energy_capacity,
+                self.config.energy_capacity,
+                state.energy_output_gw * self.config.simulation_energy_scale,
+            )
+            prosperity_factor = 1.0 + state.prosperity_index * self.config.simulation_compute_scale
+            sustainability_factor = 1.0 + state.sustainability_index * 0.5 * self.config.simulation_compute_scale
+            compute_capacity_target = max(
+                self.resources.compute_capacity,
+                self.config.compute_capacity,
+                self.config.compute_capacity * prosperity_factor * sustainability_factor,
+            )
+            self.resources.update_capacity(
+                energy_capacity=energy_capacity_target,
+                energy_available=energy_capacity_target,
+                compute_capacity=compute_capacity_target,
+                compute_available=compute_capacity_target,
+            )
             self._info(
                 "simulation_tick",
                 energy_output=state.energy_output_gw,
                 prosperity=state.prosperity_index,
                 sustainability=state.sustainability_index,
+                energy_available=self.resources.energy_available,
+                compute_available=self.resources.compute_available,
+                energy_price=self.resources.energy_price,
+                compute_price=self.resources.compute_price,
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(max(0.01, float(self.config.simulation_tick_seconds)))
 
     async def _seed_jobs(self) -> None:
         if any(self.job_registry.iter_jobs()):
@@ -541,6 +568,10 @@ class Orchestrator:
                 "cycle_sleep_seconds",
                 "checkpoint_interval_seconds",
                 "max_cycles",
+                "simulation_tick_seconds",
+                "simulation_hours_per_tick",
+                "simulation_energy_scale",
+                "simulation_compute_scale",
             ):
                 if field in config_updates:
                     value = config_updates[field]
@@ -552,6 +583,9 @@ class Orchestrator:
                         except (TypeError, ValueError):
                             numeric_value = None
                         setattr(self.config, field, None if not numeric_value or numeric_value <= 0 else numeric_value)
+                    elif field in {"simulation_tick_seconds", "simulation_hours_per_tick", "simulation_energy_scale", "simulation_compute_scale"}:
+                        numeric = float(value)
+                        setattr(self.config, field, max(0.0, numeric))
                     else:
                         numeric = float(value)
                         setattr(self.config, field, numeric)

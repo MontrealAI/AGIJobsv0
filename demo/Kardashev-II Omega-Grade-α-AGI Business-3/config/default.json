@@ -4,6 +4,10 @@
   "enable_simulation": true,
   "resume_from_checkpoint": true,
   "insight_interval_seconds": 20,
+  "simulation_tick_seconds": 1.0,
+  "simulation_hours_per_tick": 1.0,
+  "simulation_energy_scale": 2.0,
+  "simulation_compute_scale": 1.0,
   "worker_specs": {
     "energy-architect": 1.5,
     "supply-chain": 1.2,

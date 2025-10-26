@@ -7,6 +7,7 @@
 - **Planetary orchestration** – multi-hour/day autonomous mission loops with resumable checkpoints and structured telemetry.
 - **Recursive job graph** – agents continuously decompose work into sub-jobs with full validator oversight.
 - **Tokenised resource economy** – energy & compute scarcity dynamically reprice AGIALPHA rewards and stakes.
+- **Simulation-driven economics** – synthetic economy telemetry continuously rescales planetary energy & compute capacity.
 - **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & live parameter control.
 - **Tamper-evident audit** – optional BLAKE3 (or BLAKE2b fallback) message hashing to JSONL for compliance-grade traceability.
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
@@ -46,7 +47,8 @@ flowchart LR
    ```
 
    - `--cycles 0` keeps the orchestrator running indefinitely (perfect for multi-day missions).
-   - The config file contains every knob (staking ratios, validator set, worker profiles) – edit JSON values and rerun to update.
+   - The config file contains every knob (staking ratios, validator set, worker profiles, simulation scaling) – edit JSON values and rerun to update.
+   - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
 
 3. **Live control** – stream JSON commands into `control-channel.jsonl`:
 
@@ -76,6 +78,7 @@ flowchart LR
 - `set_account` hot-patches individual agent treasuries or quotas (tokens, locked stakes, energy/compute allowances).
 - `cancel_job` immediately halts any job (even mid-validation), returning rewards to the employer and releasing all stakes.
 - Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
+- `simulation_energy_scale`, `simulation_compute_scale`, and `simulation_tick_seconds` can be adjusted live to model external energy or demand shocks.
 
 ## 📜 Audit Ledger
 
@@ -117,10 +120,14 @@ Attach real simulators by replacing `SyntheticEconomySim` with your own class im
 
 ```python
 class PlanetarySimulation(Protocol):
-    def tick(self, hours: int) -> SimulationState: ...
+    def tick(self, hours: float) -> SimulationState: ...
 ```
 
 Agents instantly adapt to the new telemetry – no further wiring required.
+
+The default `SyntheticEconomySim` feeds the orchestrator with gigawatt production, prosperity, and sustainability scores. The
+orchestrator multiplies these metrics by `simulation_energy_scale` and `simulation_compute_scale` to refresh `ResourceManager`
+capacities in real time, which in turn updates scarcity pricing and validator/worker quotas.
 
 ## 🔐 Governance & Security
 
