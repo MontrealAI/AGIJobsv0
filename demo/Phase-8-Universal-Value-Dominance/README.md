@@ -19,17 +19,20 @@ Phase-8-Universal-Value-Dominance/
 │   ├── job.multi-agent.json      # Declarative job spec for multi-agent swarms
 │   ├── governance-policies.json  # Governance toggles & emergency levers
 │   ├── model-adapters.json       # Registry of pluggable model adapters with health scores
-│   └── owner-directives.json     # Owner control manifest powering the command console
+│   ├── owner-directives.json     # Owner control manifest powering the command console
+│   └── contract-extensions.json  # Declarative contract upgrade bundles with guardian guardrails
 ├── scripts/
 │   ├── bootstrap-demo.ts         # Governance bootstrap planner (dry-run + optional on-chain execution)
 │   ├── monitors.ts               # Safety tripwires, logging fan-out, budget watchdogs
 │   ├── evaluation-pipeline.ts    # Continuous evaluation harness for new models
-│   └── owner-console.ts          # Generates a full owner command plan + CI validation
+│   ├── owner-console.ts          # Generates a full owner command plan + CI validation
+│   └── contract-extensions.ts    # Compiles extension calldata, markdown, and mermaid artefacts
 ├── ui/
 │   ├── index.html                # Zero-install dashboard for orchestrating & monitoring the demo
 │   └── styles.css
 └── assets/
-    └── orchestration-flow.mmd    # Mermaid diagram rendered in docs/UI
+    ├── orchestration-flow.mmd    # Mission orchestration topology
+    └── contract-extensions.mmd   # Guardian-gated upgrade lattice
 ```
 
 ## How It Works (Executive Summary)
@@ -91,10 +94,12 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
    - The command performs a dry run, regenerates governance artifacts, and prints call groups. Add `--execute` (optionally `-y`) once you are ready to broadcast transactions with the owner key.
 4. **Materialise owner plan:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/owner-console.ts --json demo/Phase-8-Universal-Value-Dominance/output/owner-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/owner-console.mmd --markdown demo/Phase-8-Universal-Value-Dominance/output/owner-briefing.md`
    - Validates `owner-directives.json`, confirms CI enforcement, and stores JSON, Mermaid, and Markdown artefacts for operators and auditors.
-5. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
-6. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
-7. **Attach owner directives:** Drop `configs/owner-directives.json` into the Owner Command Console panel to visualise control coverage, CI gatekeepers, and autonomy levers.
-8. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
+5. **Stage contract upgrades:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/contract-extensions.ts --json demo/Phase-8-Universal-Value-Dominance/output/extension-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/extension.mmd`
+   - Cross-checks `contract-extensions.json` against the manifest, emits stage/activate calldata, and produces markdown/mermaid dossiers for guardians.
+6. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
+7. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
+8. **Attach owner directives:** Drop `configs/owner-directives.json` into the Owner Command Console panel to visualise control coverage, CI gatekeepers, and autonomy levers.
+9. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
 
 ## Why This Matters
 

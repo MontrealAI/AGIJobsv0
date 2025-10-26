@@ -1,0 +1,93 @@
+{
+  "version": "2025.10-phase8",
+  "generatedAt": "2025-10-24T12:00:00Z",
+  "extensions": [
+    {
+      "slug": "sentinel-orchestrator-v3",
+      "module": "SentinelOrchestrator",
+      "name": "Sentinel Orchestrator v3",
+      "description": "Upgrades the sentinel lattice to support hour-scale autonomy, multi-agent telemetry stitching, and guardian hot-swap controls.",
+      "implementation": "0xa124e5f6d7c8b9a0c1d2e3f40516273849ab3cde",
+      "initializer": "0x",
+      "pauseBeforeUpgrade": true,
+      "upgradeWindowHours": 6,
+      "dependencies": [
+        { "type": "sentinel", "slug": "solar-shield" },
+        { "type": "domain", "slug": "climate-harmonizer" }
+      ],
+      "ciChecks": [
+        "demo-phase-8-universal-value-dominance",
+        "guardian-sentinel-integration",
+        "phase8-safety-tripwires"
+      ],
+      "guardianApprovers": [
+        "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+        "0x3ad9f2b4c6d8e0f1a2b3c4d5e6f708192a3b4c5d"
+      ],
+      "rolloutPlan": [
+        "Announce freeze window to validator guild",
+        "Pause sentinel mesh via SystemPause",
+        "Stage upgrade bundle on Safe with guardian signatures",
+        "Run 2h soak test with synthetic anomalies",
+        "Activate extension and resume lattice",
+        "Publish telemetry digest to guardian console"
+      ],
+      "rollback": {
+        "description": "Re-stage the previous SentinelOrchestrator implementation with identical pause cadence and guardian signatures.",
+        "call": "phase8Manager.stageExtension(keccak256('SentinelOrchestrator'), oldImplementation, true, 2h, 0x)"
+      },
+      "observability": [
+        "Grafana › https://observability.agi.jobs/d/phase8-sentinels",
+        "PagerDuty › guardian-core-oncall"
+      ],
+      "valueLevers": [
+        "Reduces false-positive pauses by 42% under simulation load",
+        "Unlocks 8h autonomy approvals for resilience >0.9 domains"
+      ],
+      "checksum": "0x1e2f3d4c5b6a79808192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f8"
+    },
+    {
+      "slug": "capital-stream-router-v2",
+      "module": "CapitalStreamRouter",
+      "name": "Capital Stream Router v2",
+      "description": "Introduces milestone-aware streaming with guardian-triggered throttle controls for high-risk domains.",
+      "implementation": "0xb43ed5927ac81f02d34be76a90c1f2e38475609b",
+      "initializer": "0x1234",
+      "pauseBeforeUpgrade": true,
+      "upgradeWindowHours": 4,
+      "dependencies": [
+        { "type": "stream", "slug": "planetary-resilience" },
+        { "type": "domain", "slug": "planetary-finance" },
+        { "type": "aiTeam", "slug": "orchestration-macro" }
+      ],
+      "ciChecks": [
+        "demo-phase-8-universal-value-dominance",
+        "phase8-economic-invariants",
+        "milestone-router-e2e"
+      ],
+      "guardianApprovers": [
+        "0x7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c"
+      ],
+      "rolloutPlan": [
+        "Snapshot vault balances and outstanding milestones",
+        "Stage router extension with guardian pause",
+        "Replay last 30 days of cashflows in simulation",
+        "Activate extension once validator guild signs audit",
+        "Broadcast new throttle policy to mission control"
+      ],
+      "rollback": {
+        "description": "Fallback to router v1 using recorded vault snapshots and guardian pause window.",
+        "call": "phase8Manager.stageExtension(keccak256('CapitalStreamRouter'), legacyImplementation, true, 1h, 0x)"
+      },
+      "observability": [
+        "Looker › https://analytics.agi.jobs/phase8-streams",
+        "PagerDuty › treasury-net"
+      ],
+      "valueLevers": [
+        "Enables milestone-based drip releases for multi-agent swarms",
+        "Improves capital efficiency by 18% across funded domains"
+      ],
+      "checksum": "0x9f8e7d6c5b4a39281716f5e4d3c2b1a09876543210fedcba9876543210fedcba"
+    }
+  ]
+}

@@ -184,6 +184,18 @@ button:hover {
   margin: 0.25rem 0;
 }
 
+.extension-summary {
+  margin-bottom: 1rem;
+}
+
+.extension-summary p {
+  margin: 0.25rem 0;
+}
+
+.extension-summary .error {
+  color: #ff8e3c;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

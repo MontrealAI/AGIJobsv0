@@ -83,9 +83,18 @@ All actions are reversible in the same UI once the issue is resolved.
 | `bootstrap-demo.ts` fails with `PAUSE_GUARDIAN_NOT_OWNER` | Ensure `OWNER_ADDRESS` matches multisig owner of existing pause guardian contract. |
 | Monitors exit due to "Budget exceeded" | Increase `maxBudgetUSD` in job spec and relaunch, or reduce agent parallelism. |
 | Validators not receiving summons | Check attestation service running (`npm run dev:attestation`) and wallet addresses in `governance-policies.json`. |
+| `contract-extensions.ts` throws dependency errors | Confirm every `dependencies[].slug` exists in the manifest (domains, sentinels, capital streams, or AI teams). |
 
 ---
-## 6. Continuous Improvement Loop
+## 6. Guardian-Gated Contract Extensions
+
+1. Run `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/contract-extensions.ts --json demo/Phase-8-Universal-Value-Dominance/output/extension-plan.json --markdown demo/Phase-8-Universal-Value-Dominance/output/extension-briefing.md --mermaid demo/Phase-8-Universal-Value-Dominance/output/extension-graph.mmd`.
+2. Verify the console output lists **stageExtension**/**activateExtension** call groups and guardian approvers per bundle.
+3. Share the generated markdown with the guardian council; the Mermaid diagram mirrors the dependency lattice for fast review.
+4. Load the JSON plan into Safe Transaction Builder or your preferred multisig tooling once CI + guardian quorum approve.
+
+---
+## 7. Continuous Improvement Loop
 
 - Schedule `evaluation-pipeline.ts` in CI to run nightly against sandboxed jobs.
 - Pipe results into governance proposals (`contracts/governance/`) to auto-schedule adapter upgrades with quorum thresholds.
@@ -93,7 +102,7 @@ All actions are reversible in the same UI once the issue is resolved.
 - Lock branch protection to require `demo-phase-8-universal-value-dominance / phase8-demo` before merging manifests; the owner console surfaces this automatically for non-technical operators.
 
 ---
-## 7. Appendix — Key Links
+## 8. Appendix — Key Links
 
 - **Core Contracts:** `contracts/jobs/`, `contracts/governance/`, `contracts/security/`
 - **Agent Runtime:** `apps/orchestrator`, `services/agent-gateway`
