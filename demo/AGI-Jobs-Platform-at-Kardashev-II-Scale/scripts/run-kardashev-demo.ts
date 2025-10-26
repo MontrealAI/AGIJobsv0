@@ -666,7 +666,8 @@ function computeMissionCriticalPath(task: MissionTask): number {
     return task.durationDays;
   }
   const childDurations = task.children.map((child) => computeMissionCriticalPath(child));
-  return task.durationDays + Math.max(...childDurations);
+  const longestChildPath = Math.max(...childDurations);
+  return Math.max(task.durationDays, longestChildPath);
 }
 
 function buildMissionMermaid(lattice: MissionLattice): string {
