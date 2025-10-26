@@ -8,6 +8,7 @@
 - **Recursive job graph** – agents continuously decompose work into sub-jobs with full validator oversight.
 - **Tokenised resource economy** – energy & compute scarcity dynamically reprice AGIALPHA rewards and stakes.
 - **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & live parameter control.
+- **Tamper-evident audit** – optional BLAKE3 (or BLAKE2b fallback) message hashing to JSONL for compliance-grade traceability.
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
 
 ```mermaid
@@ -41,7 +42,7 @@ flowchart LR
 
    ```bash
    cd AGIJobsv0
-   demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/bin/run.sh --cycles 200 --config demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/config/default.json
+   demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/bin/run.sh --cycles 200 --audit-log logs/omega-audit.jsonl --config demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/config/default.json
    ```
 
    - `--cycles 0` keeps the orchestrator running indefinitely (perfect for multi-day missions).
@@ -75,6 +76,12 @@ flowchart LR
 - `set_account` hot-patches individual agent treasuries or quotas (tokens, locked stakes, energy/compute allowances).
 - `cancel_job` immediately halts any job (even mid-validation), returning rewards to the employer and releasing all stakes.
 - Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
+
+## 📜 Audit Ledger
+
+- Supply `--audit-log audit.jsonl` (or set `"audit_log_path"` in JSON config) to activate the append-only ledger.
+- Each message bus publication is canonicalised, hashed (BLAKE3 if available, BLAKE2b-256 otherwise), and written as JSONL with timestamp, topic, publisher, and digest.
+- The ledger is safe for hot-rotation; records are flushed immediately for non-technical operators tailing the file.
 
 ## 🧪 CI & Validation
 
