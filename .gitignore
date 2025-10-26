@@ -57,6 +57,8 @@ apps/onebox-static/dist/
 apps/onebox/dist/
 apps/onebox/test/dist/
 examples/agentic/runtime-agentic.jsonl
+demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3-Omega-Upgrade/analytics*.jsonl
+demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3-Omega-Upgrade/config/analytics*.jsonl
 !scripts/v2/run-owner-plan.js
 !scripts/v2/lib/
 
