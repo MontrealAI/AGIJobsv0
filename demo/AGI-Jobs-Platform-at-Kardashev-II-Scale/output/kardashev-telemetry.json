@@ -29,6 +29,156 @@
         "resumeDecoded": true,
         "unstoppableScore": 1,
         "matchesPrimaryScore": true
+      },
+      "tertiary": {
+        "selectorsMatch": true,
+        "pauseDecoded": true,
+        "resumeDecoded": true,
+        "singleOwnerTargets": true,
+        "unstoppableScore": 1,
+        "matchesPrimaryScore": true,
+        "matchesSecondaryScore": true,
+        "decodeFailures": 0,
+        "decodedCalls": [
+          {
+            "index": 0,
+            "signature": "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 1,
+            "signature": "setGuardianCouncil(address)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 2,
+            "signature": "setSystemPause(address)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 3,
+            "signature": "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 4,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 5,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 6,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 7,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 8,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 9,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 10,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 11,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 12,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 13,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 14,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 15,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 16,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 17,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 18,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 19,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 20,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 21,
+            "signature": "forwardPauseCall(bytes)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 22,
+            "signature": "forwardPauseCall(bytes)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          }
+        ]
       }
     }
   },
@@ -1104,6 +1254,156 @@
       "resumeDecoded": true,
       "unstoppableScore": 1,
       "matchesPrimaryScore": true
+    },
+    "tertiary": {
+      "selectorsMatch": true,
+      "pauseDecoded": true,
+      "resumeDecoded": true,
+      "singleOwnerTargets": true,
+      "unstoppableScore": 1,
+      "matchesPrimaryScore": true,
+      "matchesSecondaryScore": true,
+      "decodeFailures": 0,
+      "decodedCalls": [
+        {
+          "index": 0,
+          "signature": "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 1,
+          "signature": "setGuardianCouncil(address)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 2,
+          "signature": "setSystemPause(address)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 3,
+          "signature": "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 4,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 5,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 6,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 7,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 8,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 9,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 10,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 11,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 12,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 13,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 14,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 15,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 16,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 17,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 18,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 19,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 20,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 21,
+          "signature": "forwardPauseCall(bytes)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 22,
+          "signature": "forwardPauseCall(bytes)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        }
+      ]
     }
   },
   "missionDirectives": {
