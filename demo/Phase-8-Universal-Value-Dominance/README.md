@@ -20,7 +20,7 @@ Phase-8-Universal-Value-Dominance/
 │   ├── governance-policies.json  # Governance toggles & emergency levers
 │   └── model-adapters.json       # Registry of pluggable model adapters with health scores
 ├── scripts/
-│   ├── bootstrap-demo.ts         # End-to-end setup script (node + tsx)
+│   ├── bootstrap-demo.ts         # Governance bootstrap planner (dry-run + optional on-chain execution)
 │   ├── monitors.ts               # Safety tripwires, logging fan-out, budget watchdogs
 │   └── evaluation-pipeline.ts    # Continuous evaluation harness for new models
 ├── ui/
@@ -84,8 +84,9 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
 ## Quickstart (10 Minutes, Zero Solidity)
 
 1. **Install deps:** `npm install`
-2. **Copy environment template:** `cp .env.example .env` and fill RPC URLs + private keys.
+2. **Copy environment template:** `cp .env.example .env` and fill RPC URLs + private keys (set `PHASE8_MANAGER_ADDRESS` if the manifest should be overridden).
 3. **Run bootstrapper:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts`
+   - The command performs a dry run, regenerates governance artifacts, and prints call groups. Add `--execute` (optionally `-y`) once you are ready to broadcast transactions with the owner key.
 4. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
 5. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
 6. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
