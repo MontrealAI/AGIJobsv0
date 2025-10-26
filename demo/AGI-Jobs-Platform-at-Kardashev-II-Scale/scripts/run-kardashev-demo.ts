@@ -1,17 +1,67 @@
 #!/usr/bin/env ts-node
 
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve, isAbsolute } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
 import { z } from "zod";
 
-const DEMO_ROOT = join(__dirname, "..");
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+
+function resolveDemoRoot(): string {
+  const defaultRoot = join(__dirname, "..");
+  const repoRoot = resolve(defaultRoot, "..", "..", "..");
+
+  let profile = process.env.KARDASHEV_DEMO_PROFILE?.trim();
+  let explicitRoot = process.env.KARDASHEV_DEMO_ROOT?.trim();
+
+  for (let i = 0; i < rawArgs.length; i += 1) {
+    const token = rawArgs[i];
+    if (token === "--profile" && rawArgs[i + 1]) {
+      profile = rawArgs[i + 1];
+      i += 1;
+    } else if (token?.startsWith("--profile=")) {
+      profile = token.split("=", 2)[1];
+    } else if (token === "--config-root" && rawArgs[i + 1]) {
+      explicitRoot = rawArgs[i + 1];
+      i += 1;
+    } else if (token?.startsWith("--config-root=")) {
+      explicitRoot = token.split("=", 2)[1];
+    }
+  }
+
+  if (profile && profile.length > 0) {
+    const candidate = resolve(defaultRoot, profile);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    throw new Error(`Profile directory not found: ${candidate}`);
+  }
+
+  if (explicitRoot && explicitRoot.length > 0) {
+    const candidate = isAbsolute(explicitRoot)
+      ? explicitRoot
+      : resolve(repoRoot, explicitRoot);
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    throw new Error(`Config root override not found: ${candidate}`);
+  }
+
+  return defaultRoot;
+}
+
+const DEMO_ROOT = resolveDemoRoot();
 const CONFIG_PATH = join(DEMO_ROOT, "config", "kardashev-ii.manifest.json");
 const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
 const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
+const OUTPUT_PREFIX = (() => {
+  const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
+  const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
+  return slug.length > 0 ? slug : "kardashev";
+})();
 
-const args = new Set(process.argv.slice(2));
 const CHECK_MODE = args.has("--check") || args.has("--ci");
 const REFLECT_MODE = args.has("--reflect");
 
@@ -331,6 +381,7 @@ const ManifestSchema = z.object({
       maxKelvin: z.number().max(1.2).refine((v) => v > 0),
       targetKelvin: z.number().min(0),
     }),
+    coverageThresholdPct: z.number().min(0).max(100).optional(),
   }),
   missionDirectives: MissionDirectivesSchema,
   verificationProtocols: VerificationProtocolsSchema,
@@ -2202,7 +2253,10 @@ function computeTelemetry(
           0
         ) / Math.max(totalWindowEnergyGwH, 1);
 
-  const scheduleCoverageThreshold = 0.98;
+  const scheduleCoverageThreshold =
+    manifest.energyProtocols?.coverageThresholdPct !== undefined
+      ? manifest.energyProtocols.coverageThresholdPct / 100
+      : 0.98;
   const scheduleReliabilityThreshold = 0.95;
 
   const energyScheduleWindows = rawScheduleWindows.map((window) => ({
@@ -3520,23 +3574,26 @@ function run() {
   const logisticsJson = `${JSON.stringify(telemetry.logistics, null, 2)}\n`;
 
   const outputs = [
-    { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
-    { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
-    { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
-    { path: join(OUTPUT_DIR, "kardashev-consistency-ledger.json"), content: consistencyJson },
-    { path: join(OUTPUT_DIR, "kardashev-scenario-sweep.json"), content: scenariosJson },
-    { path: join(OUTPUT_DIR, "kardashev-monte-carlo.json"), content: monteCarloJson },
-    { path: join(OUTPUT_DIR, "kardashev-energy-feeds.json"), content: energyFeedsJson },
-    { path: join(OUTPUT_DIR, "kardashev-fabric-ledger.json"), content: fabricLedgerJson },
-    { path: join(OUTPUT_DIR, "kardashev-energy-schedule.json"), content: energyScheduleJson },
-    { path: join(OUTPUT_DIR, "kardashev-settlement-ledger.json"), content: settlementJson },
-    { path: join(OUTPUT_DIR, "kardashev-logistics-ledger.json"), content: logisticsJson },
-    { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
-    { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
-    { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
-    { path: join(OUTPUT_DIR, "kardashev-operator-briefing.md"), content: `${operatorBriefing}\n` },
-    { path: join(OUTPUT_DIR, "kardashev-owner-proof.json"), content: ownerProofJson },
-  ];
+    { suffix: "telemetry.json", content: telemetryJson },
+    { suffix: "safe-transaction-batch.json", content: safeJson },
+    { suffix: "stability-ledger.json", content: ledgerJson },
+    { suffix: "consistency-ledger.json", content: consistencyJson },
+    { suffix: "scenario-sweep.json", content: scenariosJson },
+    { suffix: "monte-carlo.json", content: monteCarloJson },
+    { suffix: "energy-feeds.json", content: energyFeedsJson },
+    { suffix: "fabric-ledger.json", content: fabricLedgerJson },
+    { suffix: "energy-schedule.json", content: energyScheduleJson },
+    { suffix: "settlement-ledger.json", content: settlementJson },
+    { suffix: "logistics-ledger.json", content: logisticsJson },
+    { suffix: "mermaid.mmd", content: `${mermaid}\n` },
+    { suffix: "orchestration-report.md", content: `${runbook}\n` },
+    { suffix: "dyson.mmd", content: `${dysonTimeline}\n` },
+    { suffix: "operator-briefing.md", content: `${operatorBriefing}\n` },
+    { suffix: "owner-proof.json", content: ownerProofJson },
+  ].map(({ suffix, content }) => ({
+    path: join(OUTPUT_DIR, `${OUTPUT_PREFIX}-${suffix}`),
+    content,
+  }));
 
   for (const output of outputs) {
     if (!CHECK_MODE && !existsSync(output.path)) {

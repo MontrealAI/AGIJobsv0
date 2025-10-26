@@ -1,0 +1,326 @@
+{
+  "globalCoverageRatio": 1,
+  "globalReliabilityPct": 0.9849,
+  "coverageThreshold": 0.84,
+  "reliabilityThreshold": 0.95,
+  "windows": [
+    {
+      "id": "earth-0",
+      "federation": "earth",
+      "startHourUTC": 0,
+      "durationHours": 6,
+      "availableGw": 72000,
+      "backupGw": 15000,
+      "renewablePct": 0.94,
+      "reliabilityPct": 0.985,
+      "priorityDomains": [
+        "earth.finance",
+        "earth.infrastructure"
+      ],
+      "transferCapacityGbps": 520,
+      "supportedExaflops": 7250,
+      "demandExaflops": 18.4,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 336000,
+      "recommendedJobs": 2016000,
+      "windowEnergyGwH": 522000
+    },
+    {
+      "id": "earth-6",
+      "federation": "earth",
+      "startHourUTC": 6,
+      "durationHours": 6,
+      "availableGw": 70000,
+      "backupGw": 14000,
+      "renewablePct": 0.92,
+      "reliabilityPct": 0.982,
+      "priorityDomains": [
+        "earth.finance"
+      ],
+      "transferCapacityGbps": 505,
+      "supportedExaflops": 7000,
+      "demandExaflops": 18.4,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 336000,
+      "recommendedJobs": 2016000,
+      "windowEnergyGwH": 504000
+    },
+    {
+      "id": "earth-12",
+      "federation": "earth",
+      "startHourUTC": 12,
+      "durationHours": 6,
+      "availableGw": 68000,
+      "backupGw": 15000,
+      "renewablePct": 0.91,
+      "reliabilityPct": 0.979,
+      "priorityDomains": [
+        "earth.infrastructure"
+      ],
+      "transferCapacityGbps": 488,
+      "supportedExaflops": 6916.67,
+      "demandExaflops": 18.4,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 336000,
+      "recommendedJobs": 2016000,
+      "windowEnergyGwH": 498000
+    },
+    {
+      "id": "earth-18",
+      "federation": "earth",
+      "startHourUTC": 18,
+      "durationHours": 6,
+      "availableGw": 66000,
+      "backupGw": 16000,
+      "renewablePct": 0.9,
+      "reliabilityPct": 0.978,
+      "priorityDomains": [
+        "earth.finance",
+        "earth.infrastructure"
+      ],
+      "transferCapacityGbps": 472,
+      "supportedExaflops": 6833.33,
+      "demandExaflops": 18.4,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 336000,
+      "recommendedJobs": 2016000,
+      "windowEnergyGwH": 492000
+    },
+    {
+      "id": "mars-0",
+      "federation": "mars",
+      "startHourUTC": 0,
+      "durationHours": 8,
+      "availableGw": 22000,
+      "backupGw": 4500,
+      "renewablePct": 0.93,
+      "reliabilityPct": 0.966,
+      "priorityDomains": [
+        "mars.terraforming"
+      ],
+      "transferCapacityGbps": 210,
+      "supportedExaflops": 2208.33,
+      "demandExaflops": 6.1,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 86400,
+      "recommendedJobs": 691200,
+      "windowEnergyGwH": 212000
+    },
+    {
+      "id": "mars-8",
+      "federation": "mars",
+      "startHourUTC": 8,
+      "durationHours": 8,
+      "availableGw": 21500,
+      "backupGw": 4800,
+      "renewablePct": 0.91,
+      "reliabilityPct": 0.963,
+      "priorityDomains": [
+        "mars.terraforming"
+      ],
+      "transferCapacityGbps": 198,
+      "supportedExaflops": 2191.67,
+      "demandExaflops": 6.1,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 86400,
+      "recommendedJobs": 691200,
+      "windowEnergyGwH": 210400
+    },
+    {
+      "id": "mars-16",
+      "federation": "mars",
+      "startHourUTC": 16,
+      "durationHours": 8,
+      "availableGw": 21000,
+      "backupGw": 5200,
+      "renewablePct": 0.9,
+      "reliabilityPct": 0.959,
+      "priorityDomains": [
+        "mars.terraforming"
+      ],
+      "transferCapacityGbps": 204,
+      "supportedExaflops": 2183.33,
+      "demandExaflops": 6.1,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 86400,
+      "recommendedJobs": 691200,
+      "windowEnergyGwH": 209600
+    },
+    {
+      "id": "orbital-0",
+      "federation": "orbital",
+      "startHourUTC": 0,
+      "durationHours": 8,
+      "availableGw": 110000,
+      "backupGw": 36000,
+      "renewablePct": 0.99,
+      "reliabilityPct": 0.994,
+      "priorityDomains": [
+        "orbital.defense"
+      ],
+      "transferCapacityGbps": 640,
+      "supportedExaflops": 12166.67,
+      "demandExaflops": 24.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 115200,
+      "recommendedJobs": 921600,
+      "windowEnergyGwH": 1168000
+    },
+    {
+      "id": "orbital-8",
+      "federation": "orbital",
+      "startHourUTC": 8,
+      "durationHours": 8,
+      "availableGw": 104000,
+      "backupGw": 34000,
+      "renewablePct": 0.99,
+      "reliabilityPct": 0.992,
+      "priorityDomains": [
+        "orbital.research"
+      ],
+      "transferCapacityGbps": 612,
+      "supportedExaflops": 11500,
+      "demandExaflops": 24.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 115200,
+      "recommendedJobs": 921600,
+      "windowEnergyGwH": 1104000
+    },
+    {
+      "id": "orbital-16",
+      "federation": "orbital",
+      "startHourUTC": 16,
+      "durationHours": 8,
+      "availableGw": 102000,
+      "backupGw": 33000,
+      "renewablePct": 0.985,
+      "reliabilityPct": 0.991,
+      "priorityDomains": [
+        "orbital.defense",
+        "orbital.research"
+      ],
+      "transferCapacityGbps": 598,
+      "supportedExaflops": 11250,
+      "demandExaflops": 24.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 115200,
+      "recommendedJobs": 921600,
+      "windowEnergyGwH": 1080000
+    },
+    {
+      "id": "luna-0",
+      "federation": "luna",
+      "startHourUTC": 0,
+      "durationHours": 8,
+      "availableGw": 23500,
+      "backupGw": 4800,
+      "renewablePct": 0.92,
+      "reliabilityPct": 0.982,
+      "priorityDomains": [
+        "luna.logistics"
+      ],
+      "transferCapacityGbps": 220,
+      "supportedExaflops": 2358.33,
+      "demandExaflops": 7.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 50400,
+      "recommendedJobs": 403200,
+      "windowEnergyGwH": 226400
+    },
+    {
+      "id": "luna-8",
+      "federation": "luna",
+      "startHourUTC": 8,
+      "durationHours": 8,
+      "availableGw": 22800,
+      "backupGw": 5200,
+      "renewablePct": 0.91,
+      "reliabilityPct": 0.979,
+      "priorityDomains": [
+        "luna.logistics"
+      ],
+      "transferCapacityGbps": 208,
+      "supportedExaflops": 2333.33,
+      "demandExaflops": 7.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 50400,
+      "recommendedJobs": 403200,
+      "windowEnergyGwH": 224000
+    },
+    {
+      "id": "luna-16",
+      "federation": "luna",
+      "startHourUTC": 16,
+      "durationHours": 8,
+      "availableGw": 22200,
+      "backupGw": 5400,
+      "renewablePct": 0.9,
+      "reliabilityPct": 0.978,
+      "priorityDomains": [
+        "luna.logistics"
+      ],
+      "transferCapacityGbps": 204,
+      "supportedExaflops": 2300,
+      "demandExaflops": 7.6,
+      "coverageRatio": 1,
+      "recommendedJobsPerHour": 50400,
+      "recommendedJobs": 403200,
+      "windowEnergyGwH": 220800
+    }
+  ],
+  "coverage": [
+    {
+      "federation": "earth",
+      "dailyDemandGwH": 2016000,
+      "scheduledGwH": 2016000,
+      "coverageRatio": 1,
+      "reliabilityPct": 0.9811,
+      "windowCount": 4,
+      "transferCapacityGbps": 1985,
+      "deficitGwH": 0
+    },
+    {
+      "federation": "mars",
+      "dailyDemandGwH": 631999.99,
+      "scheduledGwH": 632000,
+      "coverageRatio": 1,
+      "reliabilityPct": 0.9627,
+      "windowCount": 3,
+      "transferCapacityGbps": 612,
+      "deficitGwH": 0
+    },
+    {
+      "federation": "orbital",
+      "dailyDemandGwH": 3352000.01,
+      "scheduledGwH": 3352000,
+      "coverageRatio": 1,
+      "reliabilityPct": 0.9924,
+      "windowCount": 3,
+      "transferCapacityGbps": 1850,
+      "deficitGwH": 0.01
+    },
+    {
+      "federation": "luna",
+      "dailyDemandGwH": 671200.01,
+      "scheduledGwH": 671200,
+      "coverageRatio": 1,
+      "reliabilityPct": 0.9797,
+      "windowCount": 3,
+      "transferCapacityGbps": 632,
+      "deficitGwH": 0.01
+    }
+  ],
+  "deficits": [
+    {
+      "federation": "orbital",
+      "coverageRatio": 1,
+      "deficitGwH": 0.01
+    },
+    {
+      "federation": "luna",
+      "coverageRatio": 1,
+      "deficitGwH": 0.01
+    }
+  ],
+  "reliabilityDeficits": []
+}

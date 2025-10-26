@@ -1,0 +1,375 @@
+[
+  {
+    "id": "energy-demand-surge",
+    "title": "20% demand surge vs Dyson safety margin",
+    "status": "nominal",
+    "summary": "Dyson lattice absorbs surge with 146,440 GW spare.",
+    "confidence": 1,
+    "impact": "Thermostat margin remains controllable under surge scenario.",
+    "metrics": [
+      {
+        "label": "Simulated demand",
+        "value": "333,560 GW",
+        "ok": true
+      },
+      {
+        "label": "Remaining buffer",
+        "value": "146,440 GW",
+        "ok": true
+      },
+      {
+        "label": "Thermostat margin",
+        "value": "69,600 GW",
+        "ok": true
+      },
+      {
+        "label": "Utilisation",
+        "value": "69.49%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Dispatch pause bundle for non-critical Earth workloads.",
+      "Increase stellar thermostat target via setGlobalParameters if surge persists."
+    ]
+  },
+  {
+    "id": "bridge-failover",
+    "title": "Interplanetary bridge outage simulation",
+    "status": "warning",
+    "summary": "Failover latency 220s leaves 20s slack within 240s failsafe.",
+    "confidence": 0.5416666666666666,
+    "impact": "Bridge sentries maintain cadence under reroute load.",
+    "metrics": [
+      {
+        "label": "Baseline latency",
+        "value": "110s",
+        "ok": true
+      },
+      {
+        "label": "Failover latency",
+        "value": "220s",
+        "ok": true
+      },
+      {
+        "label": "Failsafe budget",
+        "value": "240s",
+        "ok": true
+      },
+      {
+        "label": "Slack",
+        "value": "20s",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Execute bridge isolation routine from mission directives if slack < 0.",
+      "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
+    ]
+  },
+  {
+    "id": "sentinel-gap",
+    "title": "Sentinel outage (10 min) coverage test",
+    "status": "nominal",
+    "summary": "Guardian window stays protected under sentinel gap.",
+    "confidence": 1,
+    "impact": "Coverage redundancy remains adequate for guardian review cadence.",
+    "metrics": [
+      {
+        "label": "Minimum sentinel coverage",
+        "value": "1500s",
+        "ok": true
+      },
+      {
+        "label": "Simulated coverage",
+        "value": "900s",
+        "ok": true
+      },
+      {
+        "label": "Guardian window",
+        "value": "900s",
+        "ok": true
+      },
+      {
+        "label": "Coverage ratio",
+        "value": "100.00%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Register standby sentinel via Safe batch if ratio < 100%.",
+      "Shorten guardian drill cadence until redundancy restored."
+    ]
+  },
+  {
+    "id": "compute-drawdown",
+    "title": "Compute drawdown (15%) resilience",
+    "status": "nominal",
+    "summary": "Dyson projection stays within tolerance under drawdown.",
+    "confidence": 0.9375,
+    "impact": "Capital streams absorb transient compute reduction.",
+    "metrics": [
+      {
+        "label": "Projected compute",
+        "value": "56.70 EF",
+        "ok": true
+      },
+      {
+        "label": "Stressed compute",
+        "value": "48.20 EF",
+        "ok": false
+      },
+      {
+        "label": "Deviation",
+        "value": "15.00%",
+        "ok": false
+      },
+      {
+        "label": "Tolerance",
+        "value": "8%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Authorise capital stream expansion for orbital compute nodes.",
+      "Notify guardians to ratify temporary autonomy reduction if deviation persists."
+    ]
+  },
+  {
+    "id": "dyson-phase-slip",
+    "title": "Dyson phase slip (30 days)",
+    "status": "nominal",
+    "summary": "Schedule buffer absorbs slip with 490 days remaining.",
+    "confidence": 0.95,
+    "impact": "Swarm cadence remains aligned with annual capture commitments.",
+    "metrics": [
+      {
+        "label": "Total timeline",
+        "value": "900 days",
+        "ok": true
+      },
+      {
+        "label": "Slip",
+        "value": "30 days",
+        "ok": true
+      },
+      {
+        "label": "Remaining buffer",
+        "value": "490 days",
+        "ok": true
+      },
+      {
+        "label": "Slip ratio",
+        "value": "3.33%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Accelerate self-improvement plan execution to reclaim schedule slack.",
+      "Reallocate capital from Earth infrastructure to Dyson assembly for this epoch."
+    ]
+  },
+  {
+    "id": "energy-window-loss",
+    "title": "Primary energy window offline",
+    "status": "warning",
+    "summary": "Coverage remains 82.49% after losing orbital 8h window.",
+    "confidence": 0.9820464926262302,
+    "impact": "Secondary windows can absorb the loss with limited throttling.",
+    "metrics": [
+      {
+        "label": "Removed window",
+        "value": "orbital @ 0h",
+        "ok": false
+      },
+      {
+        "label": "Remaining coverage",
+        "value": "82.49%",
+        "ok": false
+      },
+      {
+        "label": "Threshold",
+        "value": "84.00%",
+        "ok": true
+      },
+      {
+        "label": "Lost capacity",
+        "value": "1168000.00 GW·h",
+        "ok": false
+      }
+    ],
+    "recommendedActions": [
+      "Trigger orbital battery discharge if coverage < threshold.",
+      "Re-route Mars workloads to orbital halo until replacement window is provisioned."
+    ]
+  },
+  {
+    "id": "logistics-demand-spike",
+    "title": "Logistics demand spike (+25%)",
+    "status": "warning",
+    "summary": "Corridors absorb spike with utilisation 102.72% and buffers 12.00d.",
+    "confidence": 0.8728395061728395,
+    "impact": "Corridor reserves sufficient; monitor watchers for sustained load.",
+    "metrics": [
+      {
+        "label": "Nominal utilisation",
+        "value": "82.17%",
+        "ok": true
+      },
+      {
+        "label": "Stressed utilisation",
+        "value": "102.72%",
+        "ok": false
+      },
+      {
+        "label": "Spare capacity",
+        "value": "433,200 tonnes/day",
+        "ok": true
+      },
+      {
+        "label": "Buffer after spike",
+        "value": "12.00 days",
+        "ok": false
+      }
+    ],
+    "recommendedActions": [
+      "Stage failover corridor encoded in manifest.failoverCorridor via Safe batch.",
+      "Increase watcher quorum on highest utilisation corridor within 12h."
+    ]
+  },
+  {
+    "id": "settlement-backlog",
+    "title": "Settlement backlog (+40% finality)",
+    "status": "nominal",
+    "summary": "Settlement mesh absorbs backlog within tolerance.",
+    "confidence": 1,
+    "impact": "Guardian council can rely on automated settlement buffers.",
+    "metrics": [
+      {
+        "label": "Sol-Earth Safe Settlement",
+        "value": "7.70 min",
+        "ok": true
+      },
+      {
+        "label": "Mars Credit Hub",
+        "value": "10.92 min",
+        "ok": true
+      },
+      {
+        "label": "Orbital Lattice Clearing",
+        "value": "3.36 min",
+        "ok": true
+      },
+      {
+        "label": "Selene Clearing House",
+        "value": "4.48 min",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Maintain watcher quorum and monitor bridge latency dashboards."
+    ]
+  },
+  {
+    "id": "identity-infiltration",
+    "title": "Identity infiltration (3% forged daily credentials)",
+    "status": "nominal",
+    "summary": "Revocation network absorbs infiltration within tolerance.",
+    "confidence": 1,
+    "impact": "Quorum anchors maintain trust lattice despite forged credential surge.",
+    "metrics": [
+      {
+        "label": "Forged credentials",
+        "value": "121,800",
+        "ok": true
+      },
+      {
+        "label": "Revocation load",
+        "value": "25.21 ppm",
+        "ok": true
+      },
+      {
+        "label": "Tolerance",
+        "value": "120 ppm",
+        "ok": true
+      },
+      {
+        "label": "Anchors at quorum",
+        "value": "4/4",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Execute fallback ENS registrar policy if forged rate exceeds tolerance.",
+      "Rotate identity anchors using Safe batch identity transactions."
+    ]
+  },
+  {
+    "id": "energy-feed-drift",
+    "title": "Live energy feed drift shock",
+    "status": "nominal",
+    "summary": "Live feeds remain within tolerance bands.",
+    "confidence": 1,
+    "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
+    "metrics": [
+      {
+        "label": "Max drift",
+        "value": "1.52%",
+        "ok": true
+      },
+      {
+        "label": "Tolerance",
+        "value": "5%",
+        "ok": true
+      },
+      {
+        "label": "Drift alert",
+        "value": "8.5%",
+        "ok": true
+      },
+      {
+        "label": "Average latency",
+        "value": "181550 ms",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Trigger energy oracle recalibration from mission directives.",
+      "Rebalance Dyson thermostat inputs toward the affected federation until drift subsides."
+    ]
+  },
+  {
+    "id": "compute-plane-failover",
+    "title": "Primary compute plane offline",
+    "status": "nominal",
+    "summary": "Failover capacity 56.90 EF covers quorum.",
+    "confidence": 1,
+    "impact": "Hierarchical scheduler retains quorum despite primary outage.",
+    "metrics": [
+      {
+        "label": "Largest plane",
+        "value": "Solara Earth Core",
+        "ok": true
+      },
+      {
+        "label": "Failover capacity",
+        "value": "56.90 EF",
+        "ok": true
+      },
+      {
+        "label": "Required quorum",
+        "value": "49.35 EF",
+        "ok": true
+      },
+      {
+        "label": "Average availability",
+        "value": "98.13%",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Trigger failover playbook defined in compute fabrics policy.",
+      "Increase energy allocation for reserve plane from Dyson thermostat."
+    ]
+  }
+]

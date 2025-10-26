@@ -1,0 +1,275 @@
+{
+  "manager": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+  "systemPause": "0x6b4c92f8e1d0a3c5b7d9e2f0a1b3c4d5e6f7a8b9",
+  "guardianCouncil": "0x7f2da4b9c1e0f5a6b7c8d9e0f1a2b3c4d5e6f7a8",
+  "requiredFunctions": [
+    {
+      "name": "setGlobalParameters",
+      "selector": "0x1469bf40",
+      "occurrences": 1,
+      "present": true,
+      "minimumRequired": 1
+    },
+    {
+      "name": "setGuardianCouncil",
+      "selector": "0xda9ec140",
+      "occurrences": 1,
+      "present": true,
+      "minimumRequired": 1
+    },
+    {
+      "name": "setSystemPause",
+      "selector": "0x9e0cb2bd",
+      "occurrences": 1,
+      "present": true,
+      "minimumRequired": 1
+    },
+    {
+      "name": "setSelfImprovementPlan",
+      "selector": "0x9ecc95c6",
+      "occurrences": 1,
+      "present": true,
+      "minimumRequired": 1
+    },
+    {
+      "name": "registerDomain",
+      "selector": "0x29767566",
+      "occurrences": 6,
+      "present": true,
+      "minimumRequired": 6
+    },
+    {
+      "name": "registerSentinel",
+      "selector": "0x6356f2e0",
+      "occurrences": 4,
+      "present": true,
+      "minimumRequired": 4
+    },
+    {
+      "name": "registerCapitalStream",
+      "selector": "0x7cf45c71",
+      "occurrences": 4,
+      "present": true,
+      "minimumRequired": 4
+    },
+    {
+      "name": "setSentinelDomains",
+      "selector": "0xb41ba9fc",
+      "occurrences": 4,
+      "present": true,
+      "minimumRequired": 4
+    },
+    {
+      "name": "setCapitalStreamDomains",
+      "selector": "0x5fdb4ff6",
+      "occurrences": 4,
+      "present": true,
+      "minimumRequired": 4
+    },
+    {
+      "name": "forwardPauseCall",
+      "selector": "0xa7e5f9d7",
+      "occurrences": 2,
+      "present": true,
+      "minimumRequired": 2
+    }
+  ],
+  "pauseEmbedding": {
+    "pauseAll": true,
+    "unpauseAll": true
+  },
+  "targets": {
+    "unique": [
+      "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10"
+    ],
+    "nonOwner": []
+  },
+  "hashes": {
+    "manifest": "0x2b2f4619ec4bfb56efd34786c42dbc81f07eba577f9507d7d7045469ad6b8820",
+    "transactionSet": "0x7537f8437cc95c0f11f5e065b625013e45ed2d47637c23ec99e73afd287387e3",
+    "selectorSet": "0xed7e03f41f7bf9e51d9b79b6f4075e45b776a62ffa3026fb52ef22aa85f9b408"
+  },
+  "verification": {
+    "selectorsComplete": true,
+    "pauseEmbedding": true,
+    "singleOwnerTargets": true,
+    "unstoppableScore": 1
+  },
+  "secondaryVerification": {
+    "selectorsMatch": true,
+    "pauseDecoded": true,
+    "resumeDecoded": true,
+    "unstoppableScore": 1,
+    "matchesPrimaryScore": true
+  },
+  "calls": [
+    {
+      "index": 0,
+      "description": "Install global parameters",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x1469bf40"
+    },
+    {
+      "index": 1,
+      "description": "Assign guardian council",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xda9ec140"
+    },
+    {
+      "index": 2,
+      "description": "Point to system pause",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x9e0cb2bd"
+    },
+    {
+      "index": 3,
+      "description": "Install self-improvement plan",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x9ecc95c6"
+    },
+    {
+      "index": 4,
+      "description": "Register domain earth.finance",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 5,
+      "description": "Register domain earth.infrastructure",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 6,
+      "description": "Register sentinel gaia-energy-watch",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x6356f2e0"
+    },
+    {
+      "index": 7,
+      "description": "Bind sentinel gaia-energy-watch domains",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xb41ba9fc"
+    },
+    {
+      "index": 8,
+      "description": "Register capital stream earth.capital-grid",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x7cf45c71"
+    },
+    {
+      "index": 9,
+      "description": "Bind capital stream earth.capital-grid",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x5fdb4ff6"
+    },
+    {
+      "index": 10,
+      "description": "Register domain mars.terraforming",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 11,
+      "description": "Register sentinel ares-habitat-guard",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x6356f2e0"
+    },
+    {
+      "index": 12,
+      "description": "Bind sentinel ares-habitat-guard domains",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xb41ba9fc"
+    },
+    {
+      "index": 13,
+      "description": "Register capital stream mars.bio-regeneration",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x7cf45c71"
+    },
+    {
+      "index": 14,
+      "description": "Bind capital stream mars.bio-regeneration",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x5fdb4ff6"
+    },
+    {
+      "index": 15,
+      "description": "Register domain orbital.defense",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 16,
+      "description": "Register domain orbital.research",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 17,
+      "description": "Register sentinel orbital-solar-shield",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x6356f2e0"
+    },
+    {
+      "index": 18,
+      "description": "Bind sentinel orbital-solar-shield domains",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xb41ba9fc"
+    },
+    {
+      "index": 19,
+      "description": "Register capital stream orbital.solar-lattice",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x7cf45c71"
+    },
+    {
+      "index": 20,
+      "description": "Bind capital stream orbital.solar-lattice",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x5fdb4ff6"
+    },
+    {
+      "index": 21,
+      "description": "Register domain luna.logistics",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x29767566"
+    },
+    {
+      "index": 22,
+      "description": "Register sentinel selene-hull-watch",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x6356f2e0"
+    },
+    {
+      "index": 23,
+      "description": "Bind sentinel selene-hull-watch domains",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xb41ba9fc"
+    },
+    {
+      "index": 24,
+      "description": "Register capital stream luna.regolith-supply",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x7cf45c71"
+    },
+    {
+      "index": 25,
+      "description": "Bind capital stream luna.regolith-supply",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0x5fdb4ff6"
+    },
+    {
+      "index": 26,
+      "description": "Pause all modules",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xa7e5f9d7"
+    },
+    {
+      "index": 27,
+      "description": "Resume all modules",
+      "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+      "selector": "0xa7e5f9d7"
+    }
+  ]
+}

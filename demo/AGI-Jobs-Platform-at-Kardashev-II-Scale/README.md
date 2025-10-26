@@ -57,6 +57,10 @@
    * `output/kardashev-energy-schedule.json` – deterministic energy window coverage + reliability ledger with job cadence recommendations.
    * `output/kardashev-settlement-ledger.json` – settlement protocol matrix covering finality, tolerance, coverage, slippage, and risk posture.
    * Console output summarising dominance scores, delta checks, and incident alerts.
+
+   > **Switching profiles** – The orchestrator now supports the `stellar-civilization-lattice` profile. Run either
+   > `npm run demo:kardashev-ii-lattice:orchestrate` or `npm run demo:kardashev-ii:orchestrate -- --profile stellar-civilization-lattice`
+   > to generate the Sovereign Lattice artefacts in `stellar-civilization-lattice/output/` while reusing the shared command deck.
 3. **Launch the holographic control surface**
    ```bash
    npx serve demo/AGI-Jobs-Platform-at-Kardashev-II-Scale
@@ -72,6 +76,13 @@
    npm run demo:kardashev-ii:ci
    ```
    This revalidates manifests, recalculates telemetry, ensures README guardrails remain intact, and fails if artefacts drift.
+
+   To enforce the Sovereign Lattice profile explicitly, run:
+
+   ```bash
+   npm run demo:kardashev-ii-lattice:ci
+   ```
+   or pass `--profile stellar-civilization-lattice` to the shared CI entrypoint.
 
 ---
 
