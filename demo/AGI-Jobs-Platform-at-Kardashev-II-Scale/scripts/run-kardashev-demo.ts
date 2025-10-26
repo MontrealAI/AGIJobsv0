@@ -613,6 +613,22 @@ type OwnerControlProof = {
     unstoppableScore: number;
     matchesPrimaryScore: boolean;
   };
+  tertiaryVerification: {
+    selectorsMatch: boolean;
+    pauseDecoded: boolean;
+    resumeDecoded: boolean;
+    singleOwnerTargets: boolean;
+    unstoppableScore: number;
+    matchesPrimaryScore: boolean;
+    matchesSecondaryScore: boolean;
+    decodeFailures: number;
+    decodedCalls: Array<{
+      index: number;
+      signature: string;
+      to: string;
+      matched: boolean;
+    }>;
+  };
   calls: Array<{
     index: number;
     description: string;
@@ -1037,6 +1053,15 @@ function buildOwnerControlProof(
     primaryScore: unstoppableScore,
   });
 
+  const tertiaryVerification = triangulateOwnerOverride({
+    transactions,
+    manager,
+    systemPause,
+    requiredFunctions,
+    primaryScore: unstoppableScore,
+    secondaryScore: secondaryVerification.unstoppableScore,
+  });
+
   return {
     manager,
     systemPause,
@@ -1062,6 +1087,7 @@ function buildOwnerControlProof(
       unstoppableScore,
     },
     secondaryVerification,
+    tertiaryVerification,
     calls: callMap,
   };
 }
@@ -1131,6 +1157,91 @@ function crossVerifyOwnerOverride(params: {
     resumeDecoded,
     unstoppableScore,
     matchesPrimaryScore: Math.abs(unstoppableScore - primaryScore) < 1e-9,
+  };
+}
+
+function triangulateOwnerOverride(params: {
+  transactions: SafeTransaction[];
+  manager: string;
+  systemPause: string;
+  requiredFunctions: Array<{ name: string; signature: string; minimum: number }>;
+  primaryScore: number;
+  secondaryScore: number;
+}) {
+  const { transactions, manager, systemPause, requiredFunctions, primaryScore, secondaryScore } = params;
+  const signatureCounts = new Map<string, number>();
+  const decodedCalls: Array<{ index: number; signature: string; to: string; matched: boolean }> = [];
+  let pauseDecoded = false;
+  let resumeDecoded = false;
+  let decodeFailures = 0;
+  const uniqueTargets = new Set<string>();
+
+  for (let index = 0; index < transactions.length; index += 1) {
+    const tx = transactions[index];
+    const to = tx.to.toLowerCase();
+    uniqueTargets.add(to);
+
+    if (to !== manager) {
+      // Still record the call so the decoded ledger shows unexpected destinations.
+      decodedCalls.push({ index, signature: "external", to, matched: false });
+      continue;
+    }
+
+    try {
+      const parsed = managerInterface.parseTransaction({ data: tx.data });
+      const signature = parsed.signature;
+      signatureCounts.set(signature, (signatureCounts.get(signature) ?? 0) + 1);
+
+      if (parsed.name === "forwardPauseCall" && parsed.args?.length > 0) {
+        const innerCalldata = parsed.args[0] as string;
+        try {
+          const innerParsed = systemPauseInterface.parseTransaction({ data: innerCalldata });
+          if (innerParsed?.name === "pauseAll") {
+            pauseDecoded = true;
+          }
+          if (innerParsed?.name === "unpauseAll") {
+            resumeDecoded = true;
+          }
+        } catch (error) {
+          decodeFailures += 1;
+        }
+      }
+
+      const matched = requiredFunctions.some((fn) => fn.signature === signature);
+      decodedCalls.push({ index, signature, to, matched });
+    } catch (error) {
+      decodeFailures += 1;
+      decodedCalls.push({ index, signature: "decode-error", to, matched: false });
+    }
+  }
+
+  const selectorsMatch = requiredFunctions.every((fn) => {
+    const count = signatureCounts.get(fn.signature) ?? 0;
+    return count >= Math.max(1, fn.minimum);
+  });
+
+  const nonOwnerTargets = Array.from(uniqueTargets).filter(
+    (address) => address !== manager && address !== systemPause
+  );
+
+  const signals = [
+    selectorsMatch ? 1 : 0,
+    pauseDecoded ? 1 : 0,
+    resumeDecoded ? 1 : 0,
+    nonOwnerTargets.length === 0 ? 1 : 0,
+  ];
+  const unstoppableScore = signals.reduce((sum, value) => sum + value, 0) / signals.length;
+
+  return {
+    selectorsMatch,
+    pauseDecoded,
+    resumeDecoded,
+    singleOwnerTargets: nonOwnerTargets.length === 0,
+    unstoppableScore,
+    matchesPrimaryScore: Math.abs(unstoppableScore - primaryScore) < 1e-9,
+    matchesSecondaryScore: Math.abs(unstoppableScore - secondaryScore) < 1e-9,
+    decodeFailures,
+    decodedCalls,
   };
 }
 
@@ -1777,7 +1888,15 @@ function buildRunbook(
       telemetry.ownerControls.pauseCallEncoded
     }, resume ${telemetry.ownerControls.resumeCallEncoded}, secondary corroboration ${
       telemetry.governance.ownerProof.secondary.matchesPrimaryScore ? "aligned" : "drift"
-    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%).`
+    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%, tertiary decode ${
+      telemetry.governance.ownerProof.tertiary.matchesPrimaryScore &&
+      telemetry.governance.ownerProof.tertiary.matchesSecondaryScore &&
+      telemetry.governance.ownerProof.tertiary.decodeFailures === 0
+        ? "aligned"
+        : "review"
+    } @ ${(telemetry.governance.ownerProof.tertiary.unstoppableScore * 100).toFixed(2)}% · decode failures ${
+      telemetry.governance.ownerProof.tertiary.decodeFailures
+    }).`
   );
   lines.push("\n---\n");
   lines.push("## Energy telemetry");
@@ -2030,7 +2149,15 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
       telemetry.governance.ownerProof.selectorsComplete
     }, pause ${telemetry.ownerControls.pauseCallEncoded}, resume ${telemetry.ownerControls.resumeCallEncoded}, secondary ${
       telemetry.governance.ownerProof.secondary.matchesPrimaryScore ? "aligned" : "drift"
-    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%).`
+    } @ ${(telemetry.governance.ownerProof.secondary.unstoppableScore * 100).toFixed(2)}%, tertiary ${
+      telemetry.governance.ownerProof.tertiary.matchesPrimaryScore &&
+      telemetry.governance.ownerProof.tertiary.matchesSecondaryScore &&
+      telemetry.governance.ownerProof.tertiary.decodeFailures === 0
+        ? "aligned"
+        : "review"
+    } @ ${(telemetry.governance.ownerProof.tertiary.unstoppableScore * 100).toFixed(2)}% · decode failures ${
+      telemetry.governance.ownerProof.tertiary.decodeFailures
+    }).`
   );
   const scenarioSweep: ScenarioResult[] = telemetry.scenarioSweep ?? [];
   const nominalScenarios = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
@@ -2734,6 +2861,7 @@ function computeTelemetry(
         transactionSetHash: ownerProof.hashes.transactionSet,
         selectorSetHash: ownerProof.hashes.selectorSet,
         secondary: ownerProof.secondaryVerification,
+        tertiary: ownerProof.tertiaryVerification,
       },
     },
     energy: {
@@ -2871,6 +2999,7 @@ function computeTelemetry(
       selectorsComplete: ownerProof.verification.selectorsComplete,
       transactionsEncoded: ownerProof.calls.length,
       secondary: ownerProof.secondaryVerification,
+      tertiary: ownerProof.tertiaryVerification,
     },
     missionDirectives: manifest.missionDirectives,
     verification: {
@@ -3071,6 +3200,17 @@ function buildStabilityLedger(
       status: ownerProof.secondaryVerification.matchesPrimaryScore,
       weight: 0.7,
       evidence: `secondary ${(ownerProof.secondaryVerification.unstoppableScore * 100).toFixed(1)}% vs primary ${(ownerProof.verification.unstoppableScore * 100).toFixed(1)}%`,
+    },
+    {
+      id: "owner-control-tertiary",
+      title: "Owner override decode consensus",
+      severity: "medium",
+      status:
+        ownerProof.tertiaryVerification.matchesPrimaryScore &&
+        ownerProof.tertiaryVerification.matchesSecondaryScore &&
+        ownerProof.tertiaryVerification.decodeFailures === 0,
+      weight: 0.65,
+      evidence: `tertiary ${(ownerProof.tertiaryVerification.unstoppableScore * 100).toFixed(1)}% · decode failures ${ownerProof.tertiaryVerification.decodeFailures}`,
     },
     {
       id: "guardian-coverage",
@@ -3360,6 +3500,11 @@ function buildStabilityLedger(
           score: ownerProof.secondaryVerification.unstoppableScore,
           explanation: "Independent decode of Safe batch confirms unstoppable levers match primary proof.",
         },
+        {
+          method: "owner-control-tertiary",
+          score: ownerProof.tertiaryVerification.unstoppableScore,
+          explanation: "Interface-level replay validates pause/resume embeds with zero decode failures.",
+        },
       ],
     },
     checks,
@@ -3387,6 +3532,7 @@ function buildStabilityLedger(
       resumeCallEncoded: ownerProof.pauseEmbedding.unpauseAll,
       unstoppableScore: ownerProof.verification.unstoppableScore,
       secondary: ownerProof.secondaryVerification,
+      tertiary: ownerProof.tertiaryVerification,
     },
     safety: {
       guardianReviewWindow: manifest.interstellarCouncil.guardianReviewWindow,

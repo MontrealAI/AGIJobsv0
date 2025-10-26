@@ -281,7 +281,7 @@ flowchart TD
 | `output/kardashev-energy-schedule.json` | Deterministic energy window plan with per-federation coverage, reliability, and job cadence recommendations. |
 | `output/kardashev-settlement-ledger.json` | Settlement protocol ledger detailing finality, tolerance, coverage, slippage, and risk posture for forex bridges. |
 | `output/kardashev-fabric-ledger.json` | Registry shard ledger capturing domain coverage, sentinel parity, unmatched federations, and latency envelope. |
-| `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, and unstoppable control score. |
+| `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, unstoppable control score, and triple-check decoder evidence (primary, secondary, tertiary). |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
 | `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
@@ -294,14 +294,14 @@ flowchart TD
 * **Redundant verification vectors** – The ledger records independent confidence methods: boolean consensus, redundant telemetry agreement, and residual Dyson thermostat buffer. Operators can inspect divergences instantly.
 * **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
 * **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
-* **Dual unstoppable verification** – A secondary decoder replays the Safe batch, recomputes selectors and pause embeddings, and records the corroborating unstoppable score next to the primary proof so drift is impossible to miss.
+* **Triple unstoppable verification** – The ledger now persists primary selector checks, a secondary decoder replay, and a tertiary interface-level replay that fails if any pause/resume embed mis-decodes or if decode failures occur, placing all unstoppable scores side-by-side.
 * **Monte Carlo sentinel** – The ledger adds a dedicated check gating execution on the 1% breach tolerance, with confidence vectors publishing the simulated demand percentiles for guardian review.
 
 ---
 
 ## 🧪 Verification rituals
 
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `verification.energyMonteCarlo.withinTolerance === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
+1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `verification.energyMonteCarlo.withinTolerance === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, `governance.ownerProof.tertiary.decodeFailures === 0`, `governance.ownerProof.tertiary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
 2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
 3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
 4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
