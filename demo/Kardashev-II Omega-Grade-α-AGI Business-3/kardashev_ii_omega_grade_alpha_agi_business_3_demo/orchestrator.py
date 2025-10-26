@@ -262,6 +262,7 @@ class Orchestrator:
                 result_summary=payload.get("result_summary"),
                 validator_commits=dict(payload.get("validator_commits", {})),
                 validator_votes=validator_votes,
+                validators_with_stake=set(payload.get("validators_with_stake", [])),
             )
             records.append(record)
         return records
@@ -402,6 +403,7 @@ class Orchestrator:
     async def _initiate_validation(self, job: JobRecord) -> None:
         for validator in self.config.validator_names:
             self.resources.lock_stake(validator, self.governance.params.validator_stake)
+            job.validators_with_stake.add(validator)
             await self.bus.publish(
                 f"validation:request:{job.job_id}",
                 {"validator": validator, "job_id": job.job_id},
@@ -426,9 +428,15 @@ class Orchestrator:
             if job.assigned_agent:
                 self.resources.credit_tokens(job.assigned_agent, job.spec.reward_tokens)
                 self.resources.release_stake(job.assigned_agent, job.stake_locked)
-        for validator in self.config.validator_names:
-            self.resources.release_stake(validator, self.governance.params.validator_stake)
+        self._release_validator_stake(job)
         self._info("job_finalized", job_id=job.job_id, status=job.status.value)
+
+    def _release_validator_stake(self, job: JobRecord) -> None:
+        if not job.validators_with_stake:
+            return
+        for validator in list(job.validators_with_stake):
+            self.resources.release_stake(validator, self.governance.params.validator_stake)
+        job.validators_with_stake.clear()
 
     def pause(self) -> None:
         self._paused.clear()
@@ -573,8 +581,7 @@ class Orchestrator:
         self.resources.credit_tokens(employer, job.spec.reward_tokens)
         if job.assigned_agent:
             self.resources.release_stake(job.assigned_agent, job.stake_locked)
-        for validator in self.config.validator_names:
-            self.resources.release_stake(validator, self.governance.params.validator_stake)
+        self._release_validator_stake(job)
         job = self.job_registry.mark_cancelled(job_id, str(reason))
         await self.bus.publish(
             f"jobs:cancelled:{job_id}",

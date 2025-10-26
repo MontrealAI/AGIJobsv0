@@ -6,7 +6,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, Iterable, Iterator, List, Optional
+from typing import Dict, Iterable, Iterator, List, Optional, Set
 
 
 class JobStatus(Enum):
@@ -67,6 +67,7 @@ class JobRecord:
     result_summary: Optional[str] = None
     validator_commits: Dict[str, str] = field(default_factory=dict)
     validator_votes: Dict[str, bool] = field(default_factory=dict)
+    validators_with_stake: Set[str] = field(default_factory=set)
 
     def to_serializable(self) -> Dict[str, object]:
         return {
@@ -81,6 +82,7 @@ class JobRecord:
             "result_summary": self.result_summary,
             "validator_commits": dict(self.validator_commits),
             "validator_votes": dict(self.validator_votes),
+            "validators_with_stake": list(self.validators_with_stake),
         }
 
 
