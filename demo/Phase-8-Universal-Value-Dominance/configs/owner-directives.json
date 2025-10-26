@@ -1,0 +1,181 @@
+{
+  "owner": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
+  "pauseGuardian": "0x4c3ab8173d97d58b0daa9f73a2e3e87a4fe98c87",
+  "governanceCouncil": [
+    "0x3ad9f2b4c6d8e0f1a2b3c4d5e6f708192a3b4c5d",
+    "0x7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c"
+  ],
+  "validatorGuild": "0x21f49cff41f9e69a13a3d6cef7b1a92d9c4e0d8e",
+  "controlSurfaces": [
+    {
+      "key": "phase8Manager",
+      "name": "Phase 8 Manager",
+      "address": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109",
+      "description": "Master governance router coordinating upgrades, budgets, and agent deployments.",
+      "capabilities": [
+        "upgrade-modules",
+        "configure-autonomy",
+        "dispatch-ai-teams"
+      ],
+      "guardrails": [
+        "guardian-council-veto",
+        "validator-review",
+        "branch-protected-ci"
+      ],
+      "methods": [
+        {
+          "signature": "function upgradeModule(address module, address implementation)",
+          "description": "Swap module implementations with pause-guardian oversight.",
+          "safetyNotes": "Requires guardian council approval hash prior to execution."
+        },
+        {
+          "signature": "function setAutonomyCap(uint16 bps)",
+          "description": "Adjust maximum autonomy for any domain in seconds.",
+          "safetyNotes": "Verify cadence against guardian review window before raising caps."
+        }
+      ]
+    },
+    {
+      "key": "systemPause",
+      "name": "System Pause Kernel",
+      "address": "0xdd1f26bcb5d0faa1a69729db849bb4c276c74e5c",
+      "description": "Instantly halts or resumes every orchestrator, vault, and agent container.",
+      "capabilities": [
+        "pause-all",
+        "resume-all",
+        "module-specific-pause"
+      ],
+      "guardrails": [
+        "owner-multisig",
+        "pause-guardian",
+        "validator-quorum"
+      ],
+      "methods": [
+        {
+          "signature": "function pauseAll()",
+          "description": "Freeze all AI activity and escrow movements immediately.",
+          "safetyNotes": "Broadcast validator notice and capture container snapshots."
+        },
+        {
+          "signature": "function unpauseAll()",
+          "description": "Resume execution after validator guild sign-off.",
+          "safetyNotes": "Ensure tripwire ledger cleared and guardian ack recorded."
+        }
+      ]
+    },
+    {
+      "key": "upgradeCoordinator",
+      "name": "Upgrade Coordinator",
+      "address": "0x3e8b71da4c5e981a2d4facfe97b53bd2736d1d10",
+      "description": "Queues staged upgrades, notarises self-improvement loops, and manages phased deployments.",
+      "capabilities": [
+        "schedule-upgrades",
+        "publish-merkle-proofs",
+        "coordinate-migration"
+      ],
+      "guardrails": [
+        "guardian-timelock",
+        "ci-greenlight",
+        "validator-audit"
+      ],
+      "methods": [
+        {
+          "signature": "function queueUpgrade(bytes32 playbookId, bytes manifest)",
+          "description": "Register an upgrade bundle for guardian review.",
+          "safetyNotes": "Attach zk-proof commitment when available."
+        },
+        {
+          "signature": "function executeUpgrade(bytes32 playbookId)",
+          "description": "Execute an approved upgrade using safe relays.",
+          "safetyNotes": "Confirm branch protection report is green before execution."
+        }
+      ]
+    },
+    {
+      "key": "validatorRegistry",
+      "name": "Validator Registry",
+      "address": "0x21f49cff41f9e69a13a3d6cef7b1a92d9c4e0d8e",
+      "description": "Maintains validator guild rosters, slashing parameters, and milestone quorums.",
+      "capabilities": [
+        "register-validator",
+        "update-stake",
+        "slash-validator"
+      ],
+      "guardrails": [
+        "stake-thresholds",
+        "pause-guardian",
+        "owner-override"
+      ],
+      "methods": [
+        {
+          "signature": "function updateStake(address validator, uint256 newStake)",
+          "description": "Rebalance validator stake requirements for long missions.",
+          "safetyNotes": "Ensure stake increases propagate to budget calculators."
+        },
+        {
+          "signature": "function setMilestoneQuorum(uint8 quorum)",
+          "description": "Adjust validator approvals required for payouts.",
+          "safetyNotes": "Coordinate with validator guild to avoid stalled payouts."
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "guardianReviewWindow",
+      "path": "global.guardianReviewWindow",
+      "description": "Minutes guardians have to review before autonomy continues.",
+      "unit": "seconds",
+      "desired": 720,
+      "min": 360,
+      "max": 1200,
+      "call": "setGuardianReviewWindow(uint256)"
+    },
+    {
+      "name": "maxAutonomyBps",
+      "path": "selfImprovement.autonomyGuards.maxAutonomyBps",
+      "description": "Maximum autonomy per domain before human intervention.",
+      "unit": "bps",
+      "desired": 7900,
+      "min": 5000,
+      "max": 9000,
+      "call": "setAutonomyCap(uint16)"
+    },
+    {
+      "name": "heartbeatSeconds",
+      "path": "global.heartbeatSeconds",
+      "description": "Global heartbeat for sentinel and validator liveness probes.",
+      "unit": "seconds",
+      "desired": 540,
+      "min": 120,
+      "max": 600,
+      "call": "setGlobalHeartbeat(uint256)"
+    }
+  ],
+  "tripwires": [
+    {
+      "id": "budget-surge",
+      "description": "Budget usage exceeds 85% before milestone two is complete.",
+      "severity": "critical",
+      "response": "Trigger pauseAll(), rotate validator quorum, and dispatch guardian audit."
+    },
+    {
+      "id": "model-regression",
+      "description": "Evaluation pipeline detects >5% regression in resilience score.",
+      "severity": "warning",
+      "response": "Lock upgrade coordinator queue and require human co-pilot confirmation."
+    },
+    {
+      "id": "tripwire-ledger-gap",
+      "description": "Checkpoint ledger misses two consecutive uploads.",
+      "severity": "warning",
+      "response": "Dispatch validator ping and throttle autonomy to 40% of cap."
+    }
+  ],
+  "ci": {
+    "workflow": "demo-phase-8-universal-value-dominance.yml",
+    "requireStatusChecks": [
+      "demo-phase-8-universal-value-dominance / phase8-demo"
+    ]
+  }
+}

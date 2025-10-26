@@ -35,3 +35,5 @@ describe("Phase 8 bootstrap planner", () => {
     expect(plan.entries.length).toBeGreaterThan(0);
   });
 });
+
+export {};

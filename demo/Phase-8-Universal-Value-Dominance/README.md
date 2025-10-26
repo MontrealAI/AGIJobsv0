@@ -18,11 +18,13 @@ Phase-8-Universal-Value-Dominance/
 ├── configs/
 │   ├── job.multi-agent.json      # Declarative job spec for multi-agent swarms
 │   ├── governance-policies.json  # Governance toggles & emergency levers
-│   └── model-adapters.json       # Registry of pluggable model adapters with health scores
+│   ├── model-adapters.json       # Registry of pluggable model adapters with health scores
+│   └── owner-directives.json     # Owner control manifest powering the command console
 ├── scripts/
 │   ├── bootstrap-demo.ts         # Governance bootstrap planner (dry-run + optional on-chain execution)
 │   ├── monitors.ts               # Safety tripwires, logging fan-out, budget watchdogs
-│   └── evaluation-pipeline.ts    # Continuous evaluation harness for new models
+│   ├── evaluation-pipeline.ts    # Continuous evaluation harness for new models
+│   └── owner-console.ts          # Generates a full owner command plan + CI validation
 ├── ui/
 │   ├── index.html                # Zero-install dashboard for orchestrating & monitoring the demo
 │   └── styles.css
@@ -87,9 +89,12 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
 2. **Copy environment template:** `cp .env.example .env` and fill RPC URLs + private keys (set `PHASE8_MANAGER_ADDRESS` if the manifest should be overridden).
 3. **Run bootstrapper:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts`
    - The command performs a dry run, regenerates governance artifacts, and prints call groups. Add `--execute` (optionally `-y`) once you are ready to broadcast transactions with the owner key.
-4. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
-5. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
-6. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
+4. **Materialise owner plan:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/owner-console.ts --json demo/Phase-8-Universal-Value-Dominance/output/owner-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/owner-console.mmd --markdown demo/Phase-8-Universal-Value-Dominance/output/owner-briefing.md`
+   - Validates `owner-directives.json`, confirms CI enforcement, and stores JSON, Mermaid, and Markdown artefacts for operators and auditors.
+5. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
+6. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
+7. **Attach owner directives:** Drop `configs/owner-directives.json` into the Owner Command Console panel to visualise control coverage, CI gatekeepers, and autonomy levers.
+8. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
 
 ## Why This Matters
 
@@ -98,3 +103,9 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
 - **Human-first guardrails:** Even during multi-hour autonomy, validators can attach mid-flight, pause the mission, or slash misbehaving agents with one click.
 
 Ready to go deeper? Read `playbook.md` for a detailed walkthrough with screenshots, CLI commands, and operator SOPs.
+
+## CI & Governance Enforcement
+
+- `.github/workflows/demo-phase-8-universal-value-dominance.yml` keeps this demo green across pull requests and enforces the owner-mandated status checks.
+- `scripts/owner-console.ts` fails fast if the workflow or required status checks go missing, guaranteeing the contract owner retains pause-and-upgrade authority.
+- Pair this with GitHub branch protection rules to ensure production governance changes only merge when the Universal Value Dominance demo is green.
