@@ -82,6 +82,24 @@ class ResourceManagerTests(unittest.TestCase):
         manager.slash("worker", 20)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 20)  # type: ignore[attr-defined]
 
+    def test_capacity_updates_preserve_recorded_usage(self) -> None:
+        manager = ResourceManager(energy_capacity=1_000, compute_capacity=2_000, base_token_supply=5_000)
+        manager.record_usage("worker", energy=250, compute=800)
+        self.assertAlmostEqual(manager.energy_available, 750)
+        self.assertAlmostEqual(manager.compute_available, 1_200)
+
+        manager.update_capacity(
+            energy_capacity=1_500,
+            compute_capacity=2_500,
+            energy_available=1_250,
+            compute_available=1_700,
+        )
+
+        self.assertAlmostEqual(manager.energy_available, 1_250)
+        self.assertAlmostEqual(manager.compute_available, 1_700)
+        self.assertAlmostEqual(manager.energy_price, 1.0 + max(0.0, 1.0 - 1_250 / 1_500))
+        self.assertAlmostEqual(manager.compute_price, 1.0 + max(0.0, 1.0 - 1_700 / 2_500))
+
 
 class MessageBusTests(unittest.IsolatedAsyncioTestCase):
     async def test_pattern_subscription(self) -> None:

@@ -188,6 +188,10 @@ class Orchestrator:
             await self._paused.wait()
             hours = max(0.0, float(self.config.simulation_hours_per_tick)) or 1.0
             state = self.simulation.tick(hours=hours)
+            prev_energy_capacity = self.resources.energy_capacity
+            prev_energy_available = self.resources.energy_available
+            prev_compute_capacity = self.resources.compute_capacity
+            prev_compute_available = self.resources.compute_available
             energy_capacity_target = max(
                 self.resources.energy_capacity,
                 self.config.energy_capacity,
@@ -200,11 +204,15 @@ class Orchestrator:
                 self.config.compute_capacity,
                 self.config.compute_capacity * prosperity_factor * sustainability_factor,
             )
+            energy_usage = max(0.0, prev_energy_capacity - prev_energy_available)
+            compute_usage = max(0.0, prev_compute_capacity - prev_compute_available)
+            energy_available_target = max(0.0, energy_capacity_target - energy_usage)
+            compute_available_target = max(0.0, compute_capacity_target - compute_usage)
             self.resources.update_capacity(
                 energy_capacity=energy_capacity_target,
-                energy_available=energy_capacity_target,
+                energy_available=energy_available_target,
                 compute_capacity=compute_capacity_target,
-                compute_available=compute_capacity_target,
+                compute_available=compute_available_target,
             )
             self._info(
                 "simulation_tick",
