@@ -39,6 +39,18 @@ class ResourceManager:
         self.compute_price = 1.0
         self.energy_price = 1.0
 
+    @property
+    def energy_capacity(self) -> float:
+        """Return the current planetary energy capacity."""
+
+        return self._base_energy_capacity
+
+    @property
+    def compute_capacity(self) -> float:
+        """Return the current planetary compute capacity."""
+
+        return self._base_compute_capacity
+
     def ensure_account(self, name: str, initial_tokens: float = 0.0) -> Account:
         account = self._accounts.get(name)
         if account is None:

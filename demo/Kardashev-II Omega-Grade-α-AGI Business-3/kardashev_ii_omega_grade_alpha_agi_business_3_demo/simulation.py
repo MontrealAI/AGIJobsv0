@@ -16,7 +16,7 @@ class SimulationState:
 class PlanetarySimulation:
     """Interface for world simulators."""
 
-    def tick(self, hours: int) -> SimulationState:  # pragma: no cover - abstract
+    def tick(self, hours: float) -> SimulationState:  # pragma: no cover - abstract
         raise NotImplementedError
 
 
@@ -33,7 +33,7 @@ class SyntheticEconomySim(PlanetarySimulation):
         self.prosperity_index = min(1.0, self.prosperity_index + action.get("stimulus", 0.0) * 0.01)
         self.sustainability_index = min(1.0, self.sustainability_index + action.get("green_shift", 0.0) * 0.02)
 
-    def tick(self, hours: int) -> SimulationState:
+    def tick(self, hours: float) -> SimulationState:
         drift = hours / 24
         self.energy_output_gw *= 1.0 + 0.0001 * drift
         self.prosperity_index = min(1.0, self.prosperity_index + 0.0005 * drift)

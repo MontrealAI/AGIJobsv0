@@ -82,6 +82,24 @@ class ResourceManagerTests(unittest.TestCase):
         manager.slash("worker", 20)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 20)  # type: ignore[attr-defined]
 
+    def test_capacity_updates_preserve_recorded_usage(self) -> None:
+        manager = ResourceManager(energy_capacity=1_000, compute_capacity=2_000, base_token_supply=5_000)
+        manager.record_usage("worker", energy=250, compute=800)
+        self.assertAlmostEqual(manager.energy_available, 750)
+        self.assertAlmostEqual(manager.compute_available, 1_200)
+
+        manager.update_capacity(
+            energy_capacity=1_500,
+            compute_capacity=2_500,
+            energy_available=1_250,
+            compute_available=1_700,
+        )
+
+        self.assertAlmostEqual(manager.energy_available, 1_250)
+        self.assertAlmostEqual(manager.compute_available, 1_700)
+        self.assertAlmostEqual(manager.energy_price, 1.0 + max(0.0, 1.0 - 1_250 / 1_500))
+        self.assertAlmostEqual(manager.compute_price, 1.0 + max(0.0, 1.0 - 1_700 / 2_500))
+
 
 class MessageBusTests(unittest.IsolatedAsyncioTestCase):
     async def test_pattern_subscription(self) -> None:
@@ -300,6 +318,39 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             operator_after = orchestrator.resources.get_account(config.operator_account).tokens
             self.assertGreaterEqual(operator_after, operator_before)
             await orchestrator.shutdown()
+
+    async def test_simulation_updates_resources(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.05),
+                validator_reveal_window=timedelta(seconds=0.05),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=2,
+                checkpoint_interval_seconds=10,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                energy_capacity=500.0,
+                compute_capacity=1_000.0,
+                simulation_tick_seconds=0.05,
+                simulation_hours_per_tick=6.0,
+                simulation_energy_scale=1.0,
+                simulation_compute_scale=1.0,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.3)
+            energy_after = orchestrator.resources.energy_available
+            compute_after = orchestrator.resources.compute_available
+            await orchestrator.shutdown()
+            self.assertGreater(energy_after, 500.0)
+            self.assertGreater(compute_after, 1_000.0)
 
 
 if __name__ == "__main__":  # pragma: no cover
