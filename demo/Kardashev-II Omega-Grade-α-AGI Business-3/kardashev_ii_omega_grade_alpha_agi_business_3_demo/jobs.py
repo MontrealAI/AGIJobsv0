@@ -140,6 +140,11 @@ class JobRecord:
     validator_commits: Dict[str, str] = field(default_factory=dict)
     validator_votes: Dict[str, bool] = field(default_factory=dict)
     validators_with_stake: Set[str] = field(default_factory=set)
+    deadline_event_id: Optional[str] = None
+    commit_event_id: Optional[str] = None
+    finalization_event_id: Optional[str] = None
+    commit_deadline: Optional[datetime] = None
+    reveal_deadline: Optional[datetime] = None
 
     def to_serializable(self) -> Dict[str, object]:
         return {
@@ -155,6 +160,11 @@ class JobRecord:
             "validator_commits": dict(self.validator_commits),
             "validator_votes": dict(self.validator_votes),
             "validators_with_stake": list(self.validators_with_stake),
+            "deadline_event_id": self.deadline_event_id,
+            "commit_event_id": self.commit_event_id,
+            "finalization_event_id": self.finalization_event_id,
+            "commit_deadline": self.commit_deadline.isoformat() if self.commit_deadline else None,
+            "reveal_deadline": self.reveal_deadline.isoformat() if self.reveal_deadline else None,
         }
 
 

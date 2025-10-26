@@ -23,6 +23,9 @@ from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.governance import (
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.resources import (
     ResourceManager,
 )
+from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.scheduler import (
+    EventScheduler,
+)
 
 
 class JobRegistryTests(unittest.TestCase):
@@ -144,6 +147,50 @@ class MessageBusTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls, [("jobs:test", "tester")])
 
 
+class SchedulerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_scheduler_dispatches_events(self) -> None:
+        events: list[str] = []
+
+        async def dispatcher(event) -> None:  # type: ignore[no-untyped-def]
+            events.append(event.event_type)
+
+        scheduler = EventScheduler(dispatcher)
+        await scheduler.schedule(
+            "alpha",
+            datetime.now(timezone.utc) + timedelta(seconds=0.05),
+            {"job_id": "alpha"},
+        )
+        await asyncio.sleep(0.1)
+        self.assertEqual(events, ["alpha"])
+        self.assertIsNone(scheduler.peek_next())
+        await scheduler.shutdown()
+
+    async def test_scheduler_rehydrates_from_snapshot(self) -> None:
+        captured: list[str] = []
+
+        async def dispatcher(event) -> None:  # type: ignore[no-untyped-def]
+            captured.append(event.payload["value"])  # type: ignore[index]
+
+        scheduler = EventScheduler(dispatcher)
+        await scheduler.schedule(
+            "beta",
+            datetime.now(timezone.utc) + timedelta(seconds=0.5),
+            {"value": "original"},
+        )
+        snapshot = scheduler.to_serializable()
+        await scheduler.shutdown()
+
+        adjusted_execution = (datetime.now(timezone.utc) + timedelta(seconds=0.05)).isoformat()
+        for payload in snapshot.values():
+            payload["execute_at"] = adjusted_execution
+
+        restored = EventScheduler(dispatcher)
+        await restored.rehydrate(snapshot)
+        await asyncio.sleep(0.1)
+        self.assertEqual(captured, ["original"])
+        await restored.shutdown()
+
+
 class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
     async def test_orchestrator_runs_and_finalises_jobs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -179,6 +226,7 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(any(job.status in {JobStatus.COMPLETED, JobStatus.FINALIZED, JobStatus.FAILED} for job in jobs))
             snapshot = json.loads(checkpoint.read_text())
             self.assertIn("jobs", snapshot)
+            self.assertIn("scheduler", snapshot)
 
     async def test_initial_jobs_seeded_from_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
