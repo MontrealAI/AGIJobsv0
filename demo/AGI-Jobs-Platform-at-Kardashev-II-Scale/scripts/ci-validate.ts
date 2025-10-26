@@ -38,6 +38,7 @@ function validateReadme() {
     "## 🕸️ Sharded job fabric & routing ledger",
     "## 🎛️ Mission directives & verification dashboards",
     "## 🌐 Settlement lattice & forex fabric",
+    "## ♾️ Consistency ledger & multi-angle verification",
     "## 🔭 Scenario stress sweep",
     "## 🧬 Stability ledger & unstoppable consensus",
     "## 🛡️ Governance and safety levers",
