@@ -1366,6 +1366,8 @@ export function computeMetrics(config: Phase8Config) {
 
   const coverageRatio = domains.length === 0 ? 0 : coverageSet.size / domains.length;
   const fundingRatio = domains.length === 0 ? 0 : fundedSet.size / domains.length;
+  const coverageRatioPercent = coverageRatio * 100;
+  const fundedDomainRatioPercent = fundingRatio * 100;
   const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
   const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
 
@@ -1434,8 +1436,12 @@ export function computeMetrics(config: Phase8Config) {
     averageResilience,
     guardianCoverageMinutes,
     annualBudget,
-    coverageRatio: coverageRatio * 100,
-    fundedDomainRatio: fundingRatio * 100,
+    coverageRatio: coverageRatioPercent,
+    coverageRatioPercent,
+    coverageRatioFraction: coverageRatio,
+    fundedDomainRatio: fundedDomainRatioPercent,
+    fundedDomainRatioPercent,
+    fundedDomainRatioFraction: fundingRatio,
     cadenceHours,
     lastExecutedAt,
     dominanceScore,
@@ -1699,6 +1705,9 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const tolerance = { ...defaultTolerance, ...overrides };
   const mismatches: string[] = [];
 
+  const coverageRatioBaseline = metrics.coverageRatioPercent ?? metrics.coverageRatio;
+  const fundedDomainRatioBaseline = metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio;
+
   const comparisons: Array<{
     key: keyof typeof tolerance;
     baseline: number;
@@ -1708,8 +1717,8 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     { key: "averageResilience", baseline: metrics.averageResilience, cross: crossCheck.averageResilience },
     { key: "guardianCoverageMinutes", baseline: metrics.guardianCoverageMinutes, cross: crossCheck.guardianCoverageMinutes },
     { key: "annualBudget", baseline: metrics.annualBudget, cross: crossCheck.annualBudget },
-    { key: "coverageRatio", baseline: metrics.coverageRatio, cross: crossCheck.coverageRatioPercent },
-    { key: "fundedDomainRatio", baseline: metrics.fundedDomainRatio, cross: crossCheck.fundedDomainRatioPercent },
+    { key: "coverageRatio", baseline: coverageRatioBaseline, cross: crossCheck.coverageRatioPercent },
+    { key: "fundedDomainRatio", baseline: fundedDomainRatioBaseline, cross: crossCheck.fundedDomainRatioPercent },
     {
       key: "averageDomainCoverageSeconds",
       baseline: metrics.averageDomainCoverageSeconds,
@@ -1961,7 +1970,7 @@ export function simulateMission(
     dominanceScore: metrics.dominanceScore,
     sentinelCoverageMinutes: metrics.guardianCoverageMinutes,
     coverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
-    fundedDomainRatioPercent: metrics.fundedDomainRatio,
+    fundedDomainRatioPercent: metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio,
     autonomyEnvelopeHours: metrics.sessionMaxHours ?? (autonomy?.session?.maxHours ?? 0),
     checkpointCadenceMinutes: autonomy?.session?.checkpointCadenceMinutes ?? 0,
     aiTeamCount: aiTeams.length,
@@ -2415,9 +2424,12 @@ export function telemetryMarkdown(
   lines.push(`- Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`- Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
   lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
+  const coverageRatioPercent = metrics.coverageRatioPercent ?? metrics.coverageRatio;
+  const fundedDomainRatioPercent = metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio;
+
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
-  lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
-  lines.push(`- Domains with capital funding: ${metrics.fundedDomainRatio.toFixed(1)}%`);
+  lines.push(`- Domains covered by sentinels: ${coverageRatioPercent.toFixed(1)}%`);
+  lines.push(`- Domains with capital funding: ${fundedDomainRatioPercent.toFixed(1)}%`);
   lines.push(
     `- Guardian response protocols: ${metrics.guardianProtocolCount} scenarios covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains`,
   );
@@ -2445,7 +2457,7 @@ export function telemetryMarkdown(
   }
   if (metrics.aiTeamCount) {
     lines.push(
-      `- Multi-agent teams: ${metrics.aiTeamCount} orchestrators covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
+    `- Multi-agent teams: ${metrics.aiTeamCount} orchestrators covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
     );
   }
   if (metrics.safetyTripwireCount || metrics.validatorConsoleCount) {
@@ -2724,7 +2736,7 @@ function generateOperatorRunbook(
   lines.push(`• Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`• Sentinel lattice coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes / cycle`);
   lines.push(
-    `• Domains funded: ${metrics.fundedDomainRatio.toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
+    `• Domains funded: ${(metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
   );
   if (metrics.guardianWindowSeconds) {
     lines.push(
@@ -2873,7 +2885,7 @@ function generateSelfImprovementPlanPayload(
     generatedAt,
     dominanceScore: Number(metrics.dominanceScore.toFixed(1)),
     sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-    fundedDomainRatio: Number(metrics.fundedDomainRatio.toFixed(1)),
+    fundedDomainRatio: Number((metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)),
     plan: {
       uri: plan.planURI ?? "",
       hash: plan.planHash ?? "",
@@ -3146,8 +3158,8 @@ function generateDominanceScorecard(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: Number(metrics.averageResilience.toFixed(3)),
       sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-      coverageRatioPercent: Number(metrics.coverageRatio.toFixed(1)),
-      fundedDomainRatioPercent: Number(metrics.fundedDomainRatio.toFixed(1)),
+      coverageRatioPercent: Number((metrics.coverageRatioPercent ?? metrics.coverageRatio).toFixed(1)),
+      fundedDomainRatioPercent: Number((metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)),
       maxAutonomyBps: metrics.maxAutonomy,
       cadenceHours: Number(metrics.cadenceHours.toFixed(2)),
       minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
@@ -3523,13 +3535,13 @@ export function writeArtifacts(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: metrics.averageResilience,
       guardianCoverageMinutes: metrics.guardianCoverageMinutes,
-      coverageRatio: metrics.coverageRatio,
+      coverageRatio: metrics.coverageRatioPercent ?? metrics.coverageRatio,
       dominanceScore: metrics.dominanceScore,
       averageDomainCoverageSeconds: metrics.averageDomainCoverageSeconds,
       guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
       minDomainCoverageSeconds: metrics.minDomainCoverageSeconds,
       minimumCoverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
-      fundedDomainRatio: metrics.fundedDomainRatio,
+      fundedDomainRatio: metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio,
       minDomainFundingUSD: metrics.minDomainFundingUSD,
       domainFundingUSD: metrics.domainFundingMap,
       guardianProtocolCount: metrics.guardianProtocolCount,
@@ -3691,9 +3703,9 @@ export function main() {
         `Minimum coverage per domain: ${metrics.minDomainCoverageSeconds.toFixed(0)}s (requirement ${metrics.guardianWindowSeconds}s, adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%)`,
       );
     }
-    console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
+    console.log(`Domains with sentinel coverage: ${(metrics.coverageRatioPercent ?? metrics.coverageRatio).toFixed(1)}%`);
     console.log(
-      `Domains funded by capital streams: ${metrics.fundedDomainRatio.toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
+      `Domains funded by capital streams: ${(metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
     );
     console.log(
       `Guardian response protocols: ${metrics.guardianProtocolCount} covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()})`,
