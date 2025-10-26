@@ -15,6 +15,7 @@ const CHECKLIST = join(OUTPUT_DIR, "phase8-governance-checklist.md");
 const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
 const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
 const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
+const AI_TEAM_MATRIX = join(OUTPUT_DIR, "phase8-ai-team-matrix.json");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const SEVERITY_WEIGHTS: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
@@ -83,6 +84,203 @@ const guardianProtocolSchema = z.object({
   successCriteria: z.array(z.string().min(1)).optional(),
 });
 
+const autonomySchema = z.object({
+  session: z.object({
+    maxHours: z.number().positive(),
+    contextWindowTokens: z.number().int().positive(),
+    checkpointCadenceMinutes: z.number().int().positive(),
+    memoryBacking: z.string().min(1),
+    environment: z.string().min(1),
+    persistence: z.string().min(1),
+  }),
+  persistentExecution: z
+    .object({
+      runtime: z.string().min(1),
+      image: z.string().min(1),
+      resources: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          storage: z.string().optional(),
+        })
+        .optional(),
+      stateMount: z.string().optional(),
+    })
+    .optional(),
+  progressCheckpoints: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().min(1),
+        intervalMinutes: z.number().int().positive(),
+        outputs: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+  memoryStrategy: z.string().min(1),
+});
+
+const aiSpecialistSchema = z.object({
+  role: z.string().min(1),
+  agent: address,
+  model: z.string().min(1),
+  capabilities: z.array(z.string()).default([]),
+  contextWindowTokens: z.number().int().positive(),
+  maxAutonomyMinutes: z.number().int().positive(),
+});
+
+const aiTeamSchema = z.object({
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  mission: z.string().min(1),
+  leadAgent: address,
+  leadModel: z.string().min(1),
+  collaborationProtocol: z.string().min(1),
+  memoryChannel: z.string().optional(),
+  escalationContact: z.string().optional(),
+  cadenceMinutes: z.number().int().positive(),
+  domains: z.array(z.string()).default([]),
+  specialists: z.array(aiSpecialistSchema).default([]),
+});
+
+const safetySchema = z.object({
+  autonomyThresholdMinutes: z.number().int().positive(),
+  checkInCadenceMinutes: z.number().int().positive(),
+  logging: z
+    .object({
+      sinks: z
+        .array(
+          z.object({
+            name: z.string().min(1),
+            target: z.string().min(1),
+            retentionDays: z.number().int().positive(),
+            piiHandling: z.string().optional(),
+          }),
+        )
+        .default([]),
+      traceSampling: z.number().min(0).max(1),
+      auditConsole: z.string().optional(),
+    })
+    .default({ sinks: [], traceSampling: 0 }),
+  tripwires: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        trigger: z.string().min(1),
+        action: z.string().min(1),
+        severity: z.enum(["critical", "high", "medium", "low"]),
+      }),
+    )
+    .default([]),
+  validatorConsoles: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        url: z.string().min(1),
+        capabilities: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+});
+
+const economySchema = z.object({
+  stakeTiers: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        durationHours: z.number().int().positive(),
+        minimumStake: z.string().min(1),
+        slashMultiplier: z.number().positive(),
+      }),
+    )
+    .default([]),
+  milestoneTemplates: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().min(1),
+        payoutBps: z.number().int().min(0).max(10_000),
+      }),
+    )
+    .default([]),
+  budgetCaps: z
+    .object({
+      maxComputeUSD: z.number().min(0),
+      maxApiSpendUSD: z.number().min(0),
+      maxTokenSpendUSD: z.number().min(0),
+    })
+    .optional(),
+  rewardCurves: z
+    .object({
+      longTaskBonusBps: z.number().int().min(0).max(10_000),
+      validatorPremiumBps: z.number().int().min(0).max(10_000),
+    })
+    .optional(),
+});
+
+const modelSchema = z.object({
+  adapters: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        provider: z.string().min(1),
+        modality: z.string().min(1),
+        maxContextTokens: z.number().int().positive(),
+        costPer1kTokensUSD: z.number().min(0),
+        strengths: z.array(z.string()).default([]),
+        evalScore: z.number().min(0).max(100).optional(),
+      }),
+    )
+    .default([]),
+  evaluationCadenceHours: z.number().int().positive(),
+  evaluationBenchmarks: z.array(z.string()).default([]),
+  dynamicRouting: z
+    .object({
+      strategy: z.string().min(1),
+      metrics: z.array(z.string()).default([]),
+    })
+    .optional(),
+  safetyTests: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        frequencyHours: z.number().int().positive(),
+      }),
+    )
+    .default([]),
+});
+
+const governanceSchema = z.object({
+  interface: z.string().min(1),
+  validatorTools: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        url: z.string().min(1),
+        capabilities: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+  proposalTemplates: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        summary: z.string().min(1),
+        executionEtaHours: z.number().int().positive(),
+      }),
+    )
+    .default([]),
+  humanPolicyControls: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        requirement: z.string().min(1),
+        enforcement: z.string().min(1),
+      }),
+    )
+    .default([]),
+});
+
 const planSchema = z
   .object({
     planURI: z.string().min(1),
@@ -147,7 +345,13 @@ const configSchema = z.object({
       }),
     }),
   }),
-});
+  autonomy: autonomySchema.optional(),
+  aiTeams: z.array(aiTeamSchema).default([]),
+  safety: safetySchema.optional(),
+  economy: economySchema.optional(),
+  models: modelSchema.optional(),
+  governance: governanceSchema.optional(),
+}).passthrough();
 
 function main() {
   const configRaw = JSON.parse(readFileSync(ROOT, "utf-8"));
@@ -192,6 +396,42 @@ function main() {
   if (uncoveredDomains.length > 0) {
     const list = uncoveredDomains.map((domain) => domain.slug).join(", ");
     throw new Error(`All domains require sentinel coverage — missing: ${list}`);
+  }
+
+  const teamSlugs = new Set<string>();
+  for (const team of config.aiTeams) {
+    const slug = team.slug.toLowerCase();
+    if (teamSlugs.has(slug)) {
+      throw new Error(`Duplicate AI team slug detected: ${slug}`);
+    }
+    teamSlugs.add(slug);
+    for (const domain of team.domains ?? []) {
+      if (!slugs.has(domain.toLowerCase())) {
+        throw new Error(`AI team ${team.slug} references unknown domain ${domain}`);
+      }
+    }
+  }
+
+  if (config.autonomy) {
+    const sessionMinutes = config.autonomy.session.maxHours * 60;
+    if (config.safety && sessionMinutes > config.safety.autonomyThresholdMinutes * 2) {
+      throw new Error(
+        `Autonomy session maxHours (${config.autonomy.session.maxHours}) exceeds double safety threshold (${config.safety.autonomyThresholdMinutes})`,
+      );
+    }
+  }
+
+  if (config.economy?.stakeTiers?.length) {
+    const durations = config.economy.stakeTiers.map((tier) => tier.durationHours);
+    for (let i = 1; i < durations.length; i += 1) {
+      if (durations[i] < durations[i - 1]) {
+        throw new Error("economy.stakeTiers must be sorted by durationHours ascending");
+      }
+    }
+  }
+
+  if (config.models && config.models.adapters.length === 0) {
+    throw new Error("models.adapters must contain at least one adapter");
   }
 
   const streamSlugs = new Set<string>();
@@ -788,6 +1028,132 @@ function main() {
   }
   if (!guardianPlaybook.includes("Scenario") || !guardianPlaybook.includes("Immediate actions")) {
     throw new Error("Guardian playbook must document scenarios and immediate actions.");
+  }
+
+  if (!existsSync(AI_TEAM_MATRIX)) {
+    throw new Error("AI team matrix missing. Run npm run demo:phase8:orchestrate to regenerate outputs.");
+  }
+  const aiTeamMatrixRaw = JSON.parse(readFileSync(AI_TEAM_MATRIX, "utf-8"));
+  if (!aiTeamMatrixRaw || typeof aiTeamMatrixRaw !== "object") {
+    throw new Error("AI team matrix must be a JSON object.");
+  }
+  if (!Array.isArray(aiTeamMatrixRaw.teams)) {
+    throw new Error("AI team matrix must include a teams array.");
+  }
+  if (!aiTeamMatrixRaw.summary || typeof aiTeamMatrixRaw.summary !== "object") {
+    throw new Error("AI team matrix must include a summary block.");
+  }
+  const summary = aiTeamMatrixRaw.summary as Record<string, unknown>;
+  const expectedTeamCount = config.aiTeams.length;
+  if (Number(summary.teams ?? 0) !== expectedTeamCount) {
+    throw new Error("AI team matrix summary.teams must match manifest aiTeams length.");
+  }
+  const aiTeamCoverage = new Set<string>();
+  for (const team of config.aiTeams) {
+    for (const domain of team.domains ?? []) {
+      const normalized = domain.toLowerCase();
+      if (domainList.includes(normalized)) {
+        aiTeamCoverage.add(normalized);
+      }
+    }
+  }
+  const expectedCoveragePercent =
+    domainList.length === 0 ? 0 : Number(((aiTeamCoverage.size / domainList.length) * 100).toFixed(1));
+  if (Number(summary.domainCoveragePercent ?? 0) !== expectedCoveragePercent) {
+    throw new Error("AI team matrix coverage percent must match manifest coverage ratio.");
+  }
+  const expectedSessionMaxHours = Number(config.autonomy?.session?.maxHours ?? 0);
+  if (Number(summary.sessionMaxHours ?? 0) !== expectedSessionMaxHours) {
+    throw new Error("AI team matrix sessionMaxHours must match autonomy.session.maxHours.");
+  }
+  const expectedCheckpointCadence = Number(config.autonomy?.session?.checkpointCadenceMinutes ?? 0);
+  if (Number(summary.checkpointCadenceMinutes ?? 0) !== expectedCheckpointCadence) {
+    throw new Error("AI team matrix checkpoint cadence must match autonomy.session.checkpointCadenceMinutes.");
+  }
+
+  const manifestTeams = new Map<string, typeof config.aiTeams[number]>();
+  for (const team of config.aiTeams) {
+    manifestTeams.set(team.slug.toLowerCase(), team);
+  }
+  for (const entry of aiTeamMatrixRaw.teams as Array<Record<string, unknown>>) {
+    const slug = String(entry?.slug ?? "").toLowerCase();
+    if (!slug) {
+      throw new Error("AI team matrix entries must include slug.");
+    }
+    const manifestTeam = manifestTeams.get(slug);
+    if (!manifestTeam) {
+      throw new Error(`AI team matrix references unknown team ${entry?.slug}`);
+    }
+    if (String(entry.name ?? "") !== manifestTeam.name) {
+      throw new Error(`AI team matrix name mismatch for team ${manifestTeam.slug}`);
+    }
+    if (String(entry.mission ?? "") !== manifestTeam.mission) {
+      throw new Error(`AI team matrix mission mismatch for team ${manifestTeam.slug}`);
+    }
+    if (Number(entry.cadenceMinutes ?? 0) !== manifestTeam.cadenceMinutes) {
+      throw new Error(`AI team matrix cadence mismatch for team ${manifestTeam.slug}`);
+    }
+    if (String(entry.collaborationProtocol ?? "") !== manifestTeam.collaborationProtocol) {
+      throw new Error(`AI team matrix collaborationProtocol mismatch for team ${manifestTeam.slug}`);
+    }
+    const expectedMemoryChannel = manifestTeam.memoryChannel ?? null;
+    if ((entry.memoryChannel ?? null) !== expectedMemoryChannel) {
+      throw new Error(`AI team matrix memoryChannel mismatch for team ${manifestTeam.slug}`);
+    }
+    const expectedEscalation = manifestTeam.escalationContact ?? null;
+    if ((entry.escalationContact ?? null) !== expectedEscalation) {
+      throw new Error(`AI team matrix escalationContact mismatch for team ${manifestTeam.slug}`);
+    }
+    const expectedLeadAgent = manifestTeam.leadAgent.toLowerCase();
+    const matrixLeadAgent = String(entry.leadAgent ?? "").toLowerCase();
+    if (matrixLeadAgent !== expectedLeadAgent) {
+      throw new Error(`AI team matrix leadAgent mismatch for team ${manifestTeam.slug}`);
+    }
+    if (String(entry.leadModel ?? "") !== manifestTeam.leadModel) {
+      throw new Error(`AI team matrix leadModel mismatch for team ${manifestTeam.slug}`);
+    }
+    const matrixDomains = Array.isArray(entry.domains) ? (entry.domains as string[]) : [];
+    if (!ensureSameStrings(matrixDomains, manifestTeam.domains ?? [])) {
+      throw new Error(`AI team matrix domains mismatch for team ${manifestTeam.slug}`);
+    }
+    const manifestSpecialists = manifestTeam.specialists ?? [];
+    const matrixSpecialists = Array.isArray(entry.specialists) ? (entry.specialists as Array<Record<string, unknown>>) : [];
+    if (matrixSpecialists.length !== manifestSpecialists.length) {
+      throw new Error(`AI team matrix specialist count mismatch for team ${manifestTeam.slug}`);
+    }
+    const specialistLookup = new Map<string, (typeof manifestSpecialists)[number]>();
+    for (const specialist of manifestSpecialists) {
+      specialistLookup.set(specialist.role.toLowerCase(), specialist);
+    }
+    for (const specialist of matrixSpecialists) {
+      const role = String(specialist?.role ?? "").toLowerCase();
+      if (!role) {
+        throw new Error(`AI team matrix specialist missing role for team ${manifestTeam.slug}`);
+      }
+      const manifestSpecialist = specialistLookup.get(role);
+      if (!manifestSpecialist) {
+        throw new Error(`AI team matrix references unknown specialist role ${specialist?.role} for team ${manifestTeam.slug}`);
+      }
+      const matrixAgent = String(specialist.agent ?? "").toLowerCase();
+      if (matrixAgent !== manifestSpecialist.agent.toLowerCase()) {
+        throw new Error(`AI team matrix specialist agent mismatch for ${manifestTeam.slug}:${manifestSpecialist.role}`);
+      }
+      if (specialist.model !== manifestSpecialist.model) {
+        throw new Error(`AI team matrix specialist model mismatch for ${manifestTeam.slug}:${manifestSpecialist.role}`);
+      }
+      if (Number(specialist.contextWindowTokens ?? 0) !== manifestSpecialist.contextWindowTokens) {
+        throw new Error(`AI team matrix specialist contextWindowTokens mismatch for ${manifestTeam.slug}:${manifestSpecialist.role}`);
+      }
+      if (Number(specialist.maxAutonomyMinutes ?? 0) !== manifestSpecialist.maxAutonomyMinutes) {
+        throw new Error(`AI team matrix specialist maxAutonomyMinutes mismatch for ${manifestTeam.slug}:${manifestSpecialist.role}`);
+      }
+      const matrixCapabilities = Array.isArray(specialist.capabilities)
+        ? (specialist.capabilities as string[])
+        : [];
+      if (!ensureSameStrings(matrixCapabilities, manifestSpecialist.capabilities ?? [])) {
+        throw new Error(`AI team matrix specialist capabilities mismatch for ${manifestTeam.slug}:${manifestSpecialist.role}`);
+      }
+    }
   }
 
   const maxDomainAutonomy = Math.max(...config.domains.map((d) => d.autonomyLevelBps));

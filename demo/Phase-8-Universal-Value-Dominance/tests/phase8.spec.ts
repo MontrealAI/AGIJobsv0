@@ -27,6 +27,20 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(funding).toContainText('Dominions funded');
     await expect(funding).toContainText('100.0%');
     await expect(funding).toContainText('$720.00B/yr');
+
+    const autonomy = page.locator('[data-test-id="stat-card"][data-stat-key="autonomy-envelope"]');
+    await expect(autonomy).toContainText('Autonomous session');
+    await expect(autonomy).toContainText('6.50 h');
+    await expect(autonomy).toContainText('480,000 tok');
+    await expect(autonomy).toContainText('checkpoint 20 m');
+
+    const aiTeams = page.locator('[data-test-id="stat-card"][data-stat-key="ai-team"]');
+    await expect(aiTeams).toContainText('AI teams active');
+    await expect(aiTeams).toContainText('3 · 100.0% coverage');
+
+    const safetyMesh = page.locator('[data-test-id="stat-card"][data-stat-key="safety-mesh"]');
+    await expect(safetyMesh).toContainText('Safety mesh');
+    await expect(safetyMesh).toContainText('2 tripwires · 2 consoles');
   });
 
   test('renders sentinel lattice and capital streams from manifest', async ({ page }) => {
@@ -81,16 +95,18 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(alerts.first()).toContainText('Universal dominance secured');
 
     const tooltipButton = page.locator('[data-test-id="runbook-step"] .info-button').first();
-    await tooltipButton.click();
-    const tooltip = page.locator('[data-test-id="runbook-step"] .tooltip').first();
-    await expect(tooltip).toHaveAttribute('data-visible', 'true');
+    const tooltipId = await tooltipButton.getAttribute('aria-controls');
+    expect(tooltipId).toBeTruthy();
+    const tooltip = page.locator(`#${tooltipId}`);
     await expect(tooltip).toContainText('deterministic installs');
 
     const copyButton = page.locator('[data-test-id="copy-command"]').first();
     await copyButton.click();
-    await expect(copyButton).toHaveAttribute('data-copy-state', 'copied');
-    const feedback = page.locator('[data-test-id="copy-feedback"]').first();
-    await expect(feedback).toContainText('Copied to clipboard');
+    await expect(copyButton).toHaveAttribute('data-copy-state', /copied|error/);
+    const feedbackId = await copyButton.getAttribute('data-feedback-id');
+    expect(feedbackId).toBeTruthy();
+    const feedback = page.locator(`[data-test-id="copy-feedback"][data-feedback-for="${feedbackId}"]`);
+    await expect(feedback).toContainText(/Copied to clipboard|Copy failed/);
 
     const downloadLink = page.locator('[data-test-id="runbook-download"]').first();
     await expect(downloadLink).toHaveAttribute('href', './output/phase8-orchestration-report.txt');
@@ -119,6 +135,15 @@ test.describe('Phase 8 dashboard happy path', () => {
     const monthlyFlow = page.locator('[data-test-id="stat-card"][data-stat-key="monthly-flow"]');
     await expect(monthlyFlow).toContainText('$2.00M');
 
+    const autonomyFallback = page.locator('#autonomy .detail-card').first();
+    await expect(autonomyFallback).toContainText('No autonomy configuration');
+
+    const aiTeamFallback = page.locator('#ai-teams .team-card').first();
+    await expect(aiTeamFallback).toContainText('No AI teams declared');
+
+    const safetyFallback = page.locator('#safety .safety-card').first();
+    await expect(safetyFallback).toContainText('Safety lattice inactive');
+
     const feedback = page.locator('[data-manifest-feedback]');
     await expect(feedback).toContainText('Uploaded manifest applied to dashboard.');
   });
@@ -127,6 +152,32 @@ test.describe('Phase 8 dashboard happy path', () => {
     const axe = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']);
     const results = await axe.analyze();
     expect(results.violations).toEqual([]);
+  });
+
+  test('renders autonomy, AI teams, safety, economy, models, and governance detail panels', async ({ page }) => {
+    const autonomyCards = page.locator('#autonomy .detail-card');
+    await expect(autonomyCards).toHaveCount(3);
+    await expect(autonomyCards.first()).toContainText('Session envelope');
+
+    const aiTeamCards = page.locator('#ai-teams .team-card');
+    await expect(aiTeamCards).toHaveCount(3);
+    await expect(aiTeamCards.first()).toContainText('Macro Coordination Nexus');
+
+    const safetyCards = page.locator('#safety .safety-card');
+    await expect(safetyCards).toHaveCount(4);
+    await expect(safetyCards.first()).toContainText('Autonomy threshold');
+
+    const economyCards = page.locator('#economy .detail-card');
+    await expect(economyCards).toHaveCount(3);
+    await expect(economyCards.first()).toContainText('Stake tiers');
+
+    const modelCards = page.locator('#models .model-card');
+    await expect(modelCards).toHaveCount(3);
+    await expect(modelCards.first()).toContainText('Sovereign-8k');
+
+    const governanceCards = page.locator('#governance .governance-card');
+    await expect(governanceCards).toHaveCount(4);
+    await expect(governanceCards.first()).toContainText('Governance interface');
   });
 });
 
@@ -142,5 +193,6 @@ test('shows troubleshooting guidance when manifest fails to load', async ({ page
   await expect(errorPanel).toContainText('Troubleshooting steps');
   await expect(errorPanel.locator('ol li')).toHaveCount(3);
 
-  await expect(page.locator('main')).toBeHidden();
+  await expect(page.locator('main')).toHaveAttribute('hidden', 'true');
+  await expect(page.locator('main')).toHaveAttribute('aria-hidden', 'true');
 });

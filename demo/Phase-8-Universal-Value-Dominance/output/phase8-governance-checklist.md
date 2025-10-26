@@ -1,5 +1,5 @@
 # Phase 8 — Governance Execution Checklist
-Generated: 2025-10-25T15:50:47.853Z
+Generated: 2025-10-26T13:37:19.417Z
 
 > This briefing converts the encoded calldata manifest into a guardian flight plan so non-technical operators can command the universal value mesh with total confidence.
 
@@ -28,16 +28,16 @@ Generated: 2025-10-25T15:50:47.853Z
    - Targets: climate-harmonizer — Climate Harmonizer Array · health-sovereign — Health Sovereign Continuum · infrastructure-synthesis — Infrastructure Synthesis Grid · knowledge-lattice — Knowledge Lattice Nexus · planetary-finance — Planetary Finance Mesh
    - Encoded calls: 5
    - Verification: Compare autonomy bps, heartbeat seconds, and vault limits with the manifest briefing for each domain before confirming.
-5. **Bind sentinel coverage**
-   - Links each sentinel to the domains it must supervise, enforcing lattice coverage guarantees over the economy.
-   - Targets: bio-sentinel — Bio Sentinel Continuity · capital-watch — Capital Watch Exocomptroller · solar-shield — Solar Shield Guardian
-   - Encoded calls: 3
-   - Verification: Ensure every domain slug listed here is covered ≥ guardian review window seconds and aligns with the telemetry report.
-6. **Commission sentinel agents**
+5. **Commission sentinel agents**
    - Authorizes watchdog agents with coverage cadences, sensitivity thresholds, and policy URIs so anomalies trigger guardians immediately.
    - Targets: bio-sentinel — Bio Sentinel Continuity · capital-watch — Capital Watch Exocomptroller · solar-shield — Solar Shield Guardian
    - Encoded calls: 3
    - Verification: Confirm agent addresses correspond to deployed sentinel contracts and that sensitivity bps matches guardian expectations.
+6. **Bind sentinel coverage**
+   - Links each sentinel to the domains it must supervise, enforcing lattice coverage guarantees over the economy.
+   - Targets: bio-sentinel — Bio Sentinel Continuity · capital-watch — Capital Watch Exocomptroller · solar-shield — Solar Shield Guardian
+   - Encoded calls: 3
+   - Verification: Ensure every domain slug listed here is covered ≥ guardian review window seconds and aligns with the telemetry report.
 7. **Spin up capital conduits**
    - Allocates annual budgets and expansion curves that fund the dominions autonomously via dedicated vaults.
    - Targets: climate-stabilization — Climate Stabilization Endowment · innovation-thrust — Innovation Thrust Catalyst · planetary-resilience — Planetary Resilience Fund

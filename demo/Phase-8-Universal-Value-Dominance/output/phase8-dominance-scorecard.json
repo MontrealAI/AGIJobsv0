@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-25T15:50:47.853Z",
+  "generatedAt": "2025-10-26T13:37:19.417Z",
   "chain": {
     "id": 1,
     "manager": "0xfa12b3c4d5e6f7890abcdeffedcba98765432109"
@@ -20,7 +20,22 @@
     "guardianProtocolCount": 3,
     "guardianProtocolCoveragePercent": 100,
     "guardianProtocolSeverityScore": 0.92,
-    "guardianProtocolSeverityLevel": "CRITICAL"
+    "guardianProtocolSeverityLevel": "CRITICAL",
+    "sessionMaxHours": 6.5,
+    "sessionContextTokens": 480000,
+    "checkpointCadenceMinutes": 20,
+    "checkpointCount": 3,
+    "aiTeamCount": 3,
+    "aiTeamCoveragePercent": 100,
+    "safetyTripwireCount": 2,
+    "validatorConsoleCount": 2,
+    "stakeTierCount": 3,
+    "milestoneTemplateCount": 3,
+    "modelAdapterCount": 2,
+    "modelEvaluationCadenceHours": 12,
+    "modelSafetyTestCount": 2,
+    "governanceProposalTemplateCount": 2,
+    "humanPolicyControlCount": 2
   },
   "domains": [
     {
@@ -303,5 +318,335 @@
       "lastReportURI": "ipfs://agi-jobs/phase8/self-improvement/reports/epoch-144.json"
     },
     "maxDrawdownBps": 3200
+  },
+  "autonomy": {
+    "session": {
+      "maxHours": 6.5,
+      "contextWindowTokens": 480000,
+      "checkpointCadenceMinutes": 20,
+      "memoryBacking": "ipfs://agi-jobs/persistence/state-ledger",
+      "environment": "phase8-orchestrator/2025.10 persistent container",
+      "persistence": "encrypted overlayfs snapshots notarised by guardian council"
+    },
+    "persistentExecution": {
+      "runtime": "cosmos-linux-amd64",
+      "image": "registry.agi.jobs/phase8/autonomy-kernel:2025.10",
+      "resources": {
+        "cpu": "32 vCPU",
+        "memory": "256 GiB",
+        "storage": "4 TiB NVMe"
+      },
+      "stateMount": "guardian-approved-zfs"
+    },
+    "progressCheckpoints": [
+      {
+        "name": "Guardian sync",
+        "description": "Emit deterministic digest for guardian console confirmation.",
+        "intervalMinutes": 20,
+        "outputs": [
+          "guardian-console://phase8/status",
+          "ipfs://agi-jobs/phase8/checkpoints/guardian.json"
+        ]
+      },
+      {
+        "name": "Telemetry rollup",
+        "description": "Commit resilience, value flow, and sentinel deltas to observability ledger.",
+        "intervalMinutes": 40,
+        "outputs": [
+          "postgresql://telemetry/phase8",
+          "ipfs://agi-jobs/phase8/telemetry/rollup.json"
+        ]
+      },
+      {
+        "name": "Budget compliance",
+        "description": "Verify budget and autonomy guardrails before continuing execution.",
+        "intervalMinutes": 60,
+        "outputs": [
+          "guardian-console://phase8/budget",
+          "ipfs://agi-jobs/phase8/audits/autonomy.json"
+        ]
+      }
+    ],
+    "memoryStrategy": "Sentinel-notarised ledger streaming to IPFS + Redshift for post-hoc human review."
+  },
+  "aiTeams": [
+    {
+      "slug": "orchestration-macro",
+      "name": "Macro Coordination Nexus",
+      "mission": "Continuously balance planetary finance and climate dominions while pre-authorising guardian overrides.",
+      "leadAgent": "0x2a9f0fce823d40886ec1f6d6273b4b3b9b3fdabc",
+      "leadModel": "sov-agi-macro-2025q4",
+      "cadenceMinutes": 30,
+      "domains": [
+        "planetary-finance",
+        "climate-harmonizer"
+      ],
+      "specialists": [
+        {
+          "role": "liquidity-strategist",
+          "agent": "0x6ef12dce13a9d154ee8f5b81dd17f6cbe6f19ef0",
+          "model": "sovereign-liquidity-alpha",
+          "contextWindowTokens": 320000,
+          "maxAutonomyMinutes": 45
+        },
+        {
+          "role": "climate-adaptive-allocator",
+          "agent": "0x1c74e8bb44dfead42e2f1c9420b1de7025770b7f",
+          "model": "climate-alignment-beta",
+          "contextWindowTokens": 280000,
+          "maxAutonomyMinutes": 30
+        }
+      ]
+    },
+    {
+      "slug": "sentinel-refinery",
+      "name": "Sentinel Refinery Guild",
+      "mission": "Refine anomaly detectors and route tripwire alerts with human-readable remediation plans.",
+      "leadAgent": "0x7e3d9a4f5b2e1c789d0b4f1a3c5d7e9f1234abcd",
+      "leadModel": "sentinel-refinery-ensemble",
+      "cadenceMinutes": 15,
+      "domains": [
+        "knowledge-lattice",
+        "infrastructure-synthesis"
+      ],
+      "specialists": [
+        {
+          "role": "alignment-auditor",
+          "agent": "0x0d94e8fa21a0ce758abce301b13de982f4530c41",
+          "model": "guardian-audit-judge",
+          "contextWindowTokens": 220000,
+          "maxAutonomyMinutes": 25
+        },
+        {
+          "role": "inference-prober",
+          "agent": "0x9ad47ef64f5cbda0fe82c78340b8d6c25f83f120",
+          "model": "anomaly-probe-scout",
+          "contextWindowTokens": 260000,
+          "maxAutonomyMinutes": 20
+        }
+      ]
+    },
+    {
+      "slug": "guardian-ops",
+      "name": "Guardian Operations Relay",
+      "mission": "Stage Safe payloads, milestone payouts, and emergency overrides for human governors in real time.",
+      "leadAgent": "0x5f1a8d4ce38a9bfa71c4a2d8f1b3d5e7c9a1b2c3",
+      "leadModel": "governance-steward-prime",
+      "cadenceMinutes": 10,
+      "domains": [
+        "planetary-finance",
+        "health-sovereign",
+        "knowledge-lattice"
+      ],
+      "specialists": [
+        {
+          "role": "runbook-scribe",
+          "agent": "0x3c1adf84c5e7f9b0d81234f56a7b8c9d0e1f2a3b",
+          "model": "guardian-briefing-scribe",
+          "contextWindowTokens": 180000,
+          "maxAutonomyMinutes": 15
+        }
+      ]
+    }
+  ],
+  "safety": {
+    "autonomyThresholdMinutes": 240,
+    "checkInCadenceMinutes": 15,
+    "logging": {
+      "sinks": [
+        {
+          "name": "Guardian Console",
+          "target": "guardian-console://phase8/logs",
+          "retentionDays": 30,
+          "piiHandling": "redacted"
+        },
+        {
+          "name": "IPFS Audit Log",
+          "target": "ipfs://agi-jobs/phase8/audit/logs",
+          "retentionDays": 365
+        }
+      ],
+      "traceSampling": 0.35,
+      "auditConsole": "https://guardian.agi.jobs/phase8"
+    },
+    "tripwires": [
+      {
+        "name": "Toxic output filter",
+        "trigger": "llm-output:disallowed-content",
+        "action": "pause-domain + notify guardians",
+        "severity": "critical"
+      },
+      {
+        "name": "Budget overspend",
+        "trigger": "capital-stream > 105% monthly budget",
+        "action": "halt stream + require human approval",
+        "severity": "high"
+      }
+    ],
+    "validatorConsoles": [
+      {
+        "name": "Guardian Console",
+        "url": "https://guardian.agi.jobs/phase8",
+        "capabilities": [
+          "live-logs",
+          "pause-toggle",
+          "calldata-review"
+        ]
+      },
+      {
+        "name": "Sentinel Flight Deck",
+        "url": "https://sentinel.agi.jobs/flight-deck",
+        "capabilities": [
+          "tripwire-override",
+          "sentinel-restart"
+        ]
+      }
+    ]
+  },
+  "economy": {
+    "stakeTiers": [
+      {
+        "name": "Express",
+        "durationHours": 1,
+        "minimumStake": "1000000000000000000000",
+        "slashMultiplier": 1.2
+      },
+      {
+        "name": "Multi-hour",
+        "durationHours": 6,
+        "minimumStake": "4000000000000000000000",
+        "slashMultiplier": 1.5
+      },
+      {
+        "name": "Full-cycle",
+        "durationHours": 24,
+        "minimumStake": "9000000000000000000000",
+        "slashMultiplier": 1.8
+      }
+    ],
+    "milestoneTemplates": [
+      {
+        "name": "Alpha Delivery",
+        "description": "Guardian-verified prototype shipped to production sandbox.",
+        "payoutBps": 2500
+      },
+      {
+        "name": "Guardian Review",
+        "description": "Validators approve telemetry, resilience, and ethics checks.",
+        "payoutBps": 3000
+      },
+      {
+        "name": "Autonomy Hardening",
+        "description": "Sentinel tripwire rehearsal and human override drill completed.",
+        "payoutBps": 4500
+      }
+    ],
+    "budgetCaps": {
+      "maxComputeUSD": 4500000,
+      "maxApiSpendUSD": 1750000,
+      "maxTokenSpendUSD": 1250000
+    },
+    "rewardCurves": {
+      "longTaskBonusBps": 650,
+      "validatorPremiumBps": 420
+    }
+  },
+  "models": {
+    "adapters": [
+      {
+        "name": "Sovereign-8k",
+        "provider": "AGI Jobs Frontier",
+        "modality": "multimodal-reasoning",
+        "maxContextTokens": 512000,
+        "costPer1kTokensUSD": 0.0065,
+        "strengths": [
+          "multi-domain-coordination",
+          "safe-autonomy"
+        ],
+        "evalScore": 92.4
+      },
+      {
+        "name": "Atlas-Coder",
+        "provider": "Atlas Systems",
+        "modality": "code-generation",
+        "maxContextTokens": 320000,
+        "costPer1kTokensUSD": 0.0042,
+        "strengths": [
+          "contract-audits",
+          "validator-tooling"
+        ],
+        "evalScore": 89.7
+      }
+    ],
+    "evaluationCadenceHours": 12,
+    "evaluationBenchmarks": [
+      "phase8-governance-suite",
+      "sentinel-tripwire-pack",
+      "capital-rebalancing"
+    ],
+    "dynamicRouting": {
+      "strategy": "cost-aware-dominance-optimizer",
+      "metrics": [
+        "latency-ms",
+        "context-utilisation",
+        "dominance-delta"
+      ]
+    },
+    "safetyTests": [
+      {
+        "name": "Alignment stress harness",
+        "frequencyHours": 6
+      },
+      {
+        "name": "Red-team jailbreak battery",
+        "frequencyHours": 4
+      }
+    ]
+  },
+  "governance": {
+    "interface": "https://governance.agi.jobs/phase8",
+    "validatorTools": [
+      {
+        "name": "Guardian Console",
+        "url": "https://guardian.agi.jobs/phase8",
+        "capabilities": [
+          "signing",
+          "telemetry",
+          "pause"
+        ]
+      },
+      {
+        "name": "Safe Transaction Builder",
+        "url": "https://safe.global/tx-builder",
+        "capabilities": [
+          "batching",
+          "simulation"
+        ]
+      }
+    ],
+    "proposalTemplates": [
+      {
+        "title": "Phase 8 parameter refresh",
+        "summary": "Updates treasury, sentinel, and autonomy bounds for the next guardian cycle.",
+        "executionEtaHours": 8
+      },
+      {
+        "title": "AI team onboarding",
+        "summary": "Adds a new specialist guild for emergent economic domains with predefined guardrails.",
+        "executionEtaHours": 12
+      }
+    ],
+    "humanPolicyControls": [
+      {
+        "name": "Medical domain sign-off",
+        "requirement": "Licensed medical validator must co-sign autonomy above 2 hours for health-sovereign domain.",
+        "enforcement": "Guardian console blocks payout until human signature recorded."
+      },
+      {
+        "name": "Emergency override rehearsal",
+        "requirement": "Guardian council must rehearse full pause/unpause within last 14 days before enabling >5h autonomy.",
+        "enforcement": "Autonomy guard refuses escalation without rehearsal certificate."
+      }
+    ]
   }
 }

@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2025-10-26T13:37:19.417Z",
+  "summary": {
+    "teams": 3,
+    "domainCoveragePercent": 100,
+    "sessionMaxHours": 6.5,
+    "checkpointCadenceMinutes": 20
+  },
+  "teams": [
+    {
+      "slug": "orchestration-macro",
+      "name": "Macro Coordination Nexus",
+      "mission": "Continuously balance planetary finance and climate dominions while pre-authorising guardian overrides.",
+      "cadenceMinutes": 30,
+      "collaborationProtocol": "guardian-mpc-channel",
+      "memoryChannel": "guardian-console://phase8/nexus",
+      "escalationContact": "ops@agi.jobs",
+      "leadAgent": "0x2a9f0fce823d40886ec1f6d6273b4b3b9b3fdabc",
+      "leadModel": "sov-agi-macro-2025q4",
+      "domains": [
+        "planetary-finance",
+        "climate-harmonizer"
+      ],
+      "specialists": [
+        {
+          "role": "liquidity-strategist",
+          "agent": "0x6ef12dce13a9d154ee8f5b81dd17f6cbe6f19ef0",
+          "model": "sovereign-liquidity-alpha",
+          "contextWindowTokens": 320000,
+          "maxAutonomyMinutes": 45,
+          "capabilities": [
+            "cross-domain-liquidity",
+            "treasury-arbitrage"
+          ]
+        },
+        {
+          "role": "climate-adaptive-allocator",
+          "agent": "0x1c74e8bb44dfead42e2f1c9420b1de7025770b7f",
+          "model": "climate-alignment-beta",
+          "contextWindowTokens": 280000,
+          "maxAutonomyMinutes": 30,
+          "capabilities": [
+            "carbon-bid-matching",
+            "resilience-forecasting"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "sentinel-refinery",
+      "name": "Sentinel Refinery Guild",
+      "mission": "Refine anomaly detectors and route tripwire alerts with human-readable remediation plans.",
+      "cadenceMinutes": 15,
+      "collaborationProtocol": "sentinel-lattice-bus",
+      "memoryChannel": "ipfs://agi-jobs/phase8/sentinel-guild",
+      "escalationContact": "guardians@agi.jobs",
+      "leadAgent": "0x7e3d9a4f5b2e1c789d0b4f1a3c5d7e9f1234abcd",
+      "leadModel": "sentinel-refinery-ensemble",
+      "domains": [
+        "knowledge-lattice",
+        "infrastructure-synthesis"
+      ],
+      "specialists": [
+        {
+          "role": "alignment-auditor",
+          "agent": "0x0d94e8fa21a0ce758abce301b13de982f4530c41",
+          "model": "guardian-audit-judge",
+          "contextWindowTokens": 220000,
+          "maxAutonomyMinutes": 25,
+          "capabilities": [
+            "policy-audit",
+            "tripwire-hydration"
+          ]
+        },
+        {
+          "role": "inference-prober",
+          "agent": "0x9ad47ef64f5cbda0fe82c78340b8d6c25f83f120",
+          "model": "anomaly-probe-scout",
+          "contextWindowTokens": 260000,
+          "maxAutonomyMinutes": 20,
+          "capabilities": [
+            "adversarial-testing",
+            "model-eval-routing"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "guardian-ops",
+      "name": "Guardian Operations Relay",
+      "mission": "Stage Safe payloads, milestone payouts, and emergency overrides for human governors in real time.",
+      "cadenceMinutes": 10,
+      "collaborationProtocol": "safe-transaction-stream",
+      "memoryChannel": "guardian-console://phase8/runbook",
+      "escalationContact": "council@agi.jobs",
+      "leadAgent": "0x5f1a8d4ce38a9bfa71c4a2d8f1b3d5e7c9a1b2c3",
+      "leadModel": "governance-steward-prime",
+      "domains": [
+        "planetary-finance",
+        "health-sovereign",
+        "knowledge-lattice"
+      ],
+      "specialists": [
+        {
+          "role": "runbook-scribe",
+          "agent": "0x3c1adf84c5e7f9b0d81234f56a7b8c9d0e1f2a3b",
+          "model": "guardian-briefing-scribe",
+          "contextWindowTokens": 180000,
+          "maxAutonomyMinutes": 15,
+          "capabilities": [
+            "checklist-mapping",
+            "human-briefing"
+          ]
+        }
+      ]
+    }
+  ]
+}
