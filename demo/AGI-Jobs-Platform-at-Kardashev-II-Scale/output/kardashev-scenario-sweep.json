@@ -173,8 +173,8 @@
     "id": "energy-window-loss",
     "title": "Primary energy window offline",
     "status": "critical",
-    "summary": "Removing orbital 8h window drops coverage to 83.20%.",
-    "confidence": 0.8489346151683814,
+    "summary": "Removing orbital 8h window drops coverage to 80.58%.",
+    "confidence": 0.8222297183336145,
     "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
     "metrics": [
       {
@@ -184,7 +184,7 @@
       },
       {
         "label": "Remaining coverage",
-        "value": "83.20%",
+        "value": "80.58%",
         "ok": false
       },
       {
@@ -194,7 +194,7 @@
       },
       {
         "label": "Lost capacity",
-        "value": "1168000.00 GW·h",
+        "value": "1128000.00 GW·h",
         "ok": false
       }
     ],

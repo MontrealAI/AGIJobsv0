@@ -17,7 +17,7 @@
 ## Verification status
 * Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
 * Monte Carlo breach 0.00% (≤ 1% tolerance): true
-* Energy window coverage 100.00% (threshold 98%) · reliability 98.54%.
+* Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Compute deviation 0.45% (tolerance 0.75%): true
 * Energy feed drift ≤ 5%: true
 * Bridge latency tolerance (120s): true
@@ -27,7 +27,7 @@
 * Scenario sweep: 6/11 nominal, 4 warning, 1 critical.
   - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
   - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.
-  - Primary energy window offline: Removing orbital 8h window drops coverage to 83.20%.
+  - Primary energy window offline: Removing orbital 8h window drops coverage to 80.58%.
   - Logistics demand spike (+25%): Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
   - Settlement backlog (+40% finality): Settlement mesh absorbs backlog within tolerance.
 * Audit checklist: ipfs://QmKardashevAuditChecklist

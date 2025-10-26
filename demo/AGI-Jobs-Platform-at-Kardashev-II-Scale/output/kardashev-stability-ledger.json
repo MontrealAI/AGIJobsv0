@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9137931034482757,
-    "quorum": false,
-    "summary": "Manual review required for 2 check(s).",
+    "compositeScore": 0.960591133004926,
+    "quorum": true,
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9137931034482757,
+        "score": 0.960591133004926,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.9333333333333333,
+        "score": 0.9666666666666667,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -34,7 +34,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.8330897688984855,
+        "score": 0.8306620510044156,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -112,9 +112,9 @@
       "id": "energy-cross-verification",
       "title": "Energy cross-verification consensus",
       "severity": "high",
-      "status": false,
+      "status": true,
       "weight": 0.95,
-      "evidence": "max deviation 8000.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
+      "evidence": "max deviation 0.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
     },
     {
       "id": "energy-monte-carlo",
@@ -146,7 +146,7 @@
       "severity": "medium",
       "status": true,
       "weight": 0.6,
-      "evidence": "global 98.54% (threshold 95%)"
+      "evidence": "global 98.56% (threshold 95%)"
     },
     {
       "id": "logistics-corridors",
@@ -271,12 +271,6 @@
   ],
   "alerts": [
     {
-      "id": "energy-cross-verification",
-      "title": "Energy cross-verification consensus",
-      "severity": "high",
-      "evidence": "max deviation 8000.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
-    },
-    {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
@@ -288,7 +282,7 @@
     "nominal": 6,
     "warning": 4,
     "critical": 1,
-    "averageConfidence": 0.8330897688984855,
+    "averageConfidence": 0.8306620510044156,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -329,8 +323,8 @@
         "id": "energy-window-loss",
         "title": "Primary energy window offline",
         "status": "critical",
-        "confidence": 0.8489346151683814,
-        "summary": "Removing orbital 8h window drops coverage to 83.20%."
+        "confidence": 0.8222297183336145,
+        "summary": "Removing orbital 8h window drops coverage to 80.58%."
       },
       {
         "id": "logistics-demand-spike",

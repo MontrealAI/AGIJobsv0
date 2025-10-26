@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0xcb043f7b9e05f2321f6e162cc77e9344b8546c8064a1726d3eeb1806f93fd2f9
+**Manifest hash**: 0x96c86f0f4ff7f3c7ee017c892efcc7f43774e16019c2356298d0151e24694f1c
 **Dominance score**: 90.0 / 100
 
 ---
@@ -19,10 +19,10 @@
 * Utilisation: 57.62% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Demand percentiles: P95 250,346.829 GW · P99 255,892.346 GW.
+* Demand percentiles: P95 252,189.139 GW · P99 255,160.811 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
-* Energy window coverage 100.00% (threshold 98%) · reliability 98.54%.
+* Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Energy window deficits: none — all federations meet coverage targets.
 
 ---
@@ -95,11 +95,11 @@
   - Remaining buffer: 490 days (ok)
   - Slip ratio: 3.33% (ok)
   - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
-* **Primary energy window offline** — status CRITICAL (confidence 84.9%) · Removing orbital 8h window drops coverage to 83.20%.
+* **Primary energy window offline** — status CRITICAL (confidence 82.2%) · Removing orbital 8h window drops coverage to 80.58%.
   - Removed window: orbital @ 0h (check)
-  - Remaining coverage: 83.20% (check)
+  - Remaining coverage: 80.58% (check)
   - Threshold: 98.00% (ok)
-  - Lost capacity: 1168000.00 GW·h (check)
+  - Lost capacity: 1128000.00 GW·h (check)
   - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
 * **Logistics demand spike (+25%)** — status WARNING (confidence 85.7%) · Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
   - Nominal utilisation: 83.46% (ok)
