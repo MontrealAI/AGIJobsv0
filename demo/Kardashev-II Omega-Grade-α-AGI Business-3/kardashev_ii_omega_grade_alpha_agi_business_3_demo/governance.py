@@ -23,6 +23,11 @@ class GovernanceController:
     def __init__(self, params: GovernanceParameters) -> None:
         self.params = params
 
+    def update(self, **changes: object) -> None:
+        for key, value in changes.items():
+            if hasattr(self.params, key):
+                setattr(self.params, key, value)
+
     def require_quorum(self, approvals: int) -> bool:
         return approvals >= self.params.approvals_required
 

@@ -119,6 +119,94 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             snapshot = json.loads(checkpoint.read_text())
             self.assertIn("jobs", snapshot)
 
+    async def test_control_updates_parameters(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.1),
+                validator_reveal_window=timedelta(seconds=0.1),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.1)
+            await orchestrator.bus.broadcast_control(
+                {
+                    "action": "update_parameters",
+                    "governance": {
+                        "worker_stake_ratio": 0.25,
+                        "validator_commit_window": 0.2,
+                        "approvals_required": 1,
+                        "pause_enabled": False,
+                    },
+                    "resources": {
+                        "energy_capacity": 2_000.0,
+                        "energy_available": 2_000.0,
+                        "compute_available": 3_000.0,
+                        "accounts": [
+                            {"name": config.operator_account, "tokens": 50_000.0},
+                        ],
+                    },
+                    "config": {"insight_interval_seconds": 2, "max_cycles": 0},
+                },
+                "test",
+            )
+            await asyncio.sleep(0.5)
+            self.assertAlmostEqual(orchestrator.governance.params.worker_stake_ratio, 0.25)
+            self.assertFalse(orchestrator.governance.params.pause_enabled)
+            self.assertAlmostEqual(orchestrator.resources.energy_available, 2_000.0)
+            self.assertAlmostEqual(orchestrator.resources.compute_available, 3_000.0)
+            operator = orchestrator.resources.get_account(config.operator_account)
+            self.assertAlmostEqual(operator.tokens, 50_000.0)
+            self.assertIsNone(orchestrator.config.max_cycles)
+            await orchestrator.shutdown()
+
+    async def test_operator_can_cancel_job(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.1),
+                validator_reveal_window=timedelta(seconds=0.1),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=20,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.5)
+            posted = orchestrator.job_registry.jobs_by_status(JobStatus.POSTED)
+            self.assertTrue(posted)
+            job = posted[0]
+            operator_before = orchestrator.resources.get_account(config.operator_account).tokens
+            await orchestrator.bus.broadcast_control(
+                {"action": "cancel_job", "job_id": job.job_id, "reason": "Operator override"},
+                "test",
+            )
+            await asyncio.sleep(0.5)
+            cancelled = orchestrator.job_registry.get_job(job.job_id)
+            self.assertEqual(cancelled.status, JobStatus.CANCELLED)
+            operator_after = orchestrator.resources.get_account(config.operator_account).tokens
+            self.assertGreaterEqual(operator_after, operator_before)
+            await orchestrator.shutdown()
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

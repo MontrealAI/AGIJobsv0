@@ -53,6 +53,12 @@ class ResourceManager:
             account.tokens = max(account.tokens, initial_tokens)
         return account
 
+    def get_account(self, name: str) -> Account:
+        account = self._accounts.get(name)
+        if account is None:
+            raise KeyError(f"Unknown account {name}")
+        return account
+
     def debit_tokens(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
         account.ensure_budget(amount)
@@ -89,6 +95,46 @@ class ResourceManager:
         account.energy_quota += energy
         account.compute_quota += compute
         self._rebalance_prices()
+
+    def update_capacity(
+        self,
+        *,
+        energy_capacity: float | None = None,
+        compute_capacity: float | None = None,
+        energy_available: float | None = None,
+        compute_available: float | None = None,
+    ) -> None:
+        if energy_capacity is not None:
+            self._base_energy_capacity = max(0.0, energy_capacity)
+        if compute_capacity is not None:
+            self._base_compute_capacity = max(0.0, compute_capacity)
+        if energy_available is not None:
+            self.energy_available = max(0.0, energy_available)
+        if compute_available is not None:
+            self.compute_available = max(0.0, compute_available)
+        self._rebalance_prices()
+
+    def adjust_account(
+        self,
+        name: str,
+        *,
+        tokens: float | None = None,
+        locked: float | None = None,
+        energy_quota: float | None = None,
+        compute_quota: float | None = None,
+    ) -> Account:
+        account = self.ensure_account(name)
+        if tokens is not None:
+            delta = tokens - account.tokens
+            account.tokens = tokens
+            self.token_supply += delta
+        if locked is not None:
+            account.locked = locked
+        if energy_quota is not None:
+            account.energy_quota = energy_quota
+        if compute_quota is not None:
+            account.compute_quota = compute_quota
+        return account
 
     def snapshot(self) -> ResourceSnapshot:
         return ResourceSnapshot(
