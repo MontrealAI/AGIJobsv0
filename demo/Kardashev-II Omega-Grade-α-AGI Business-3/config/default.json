@@ -1,0 +1,23 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade α-AGI Business 3",
+  "checkpoint_path": "checkpoint.json",
+  "enable_simulation": true,
+  "resume_from_checkpoint": true,
+  "insight_interval_seconds": 20,
+  "worker_specs": {
+    "energy-architect": 1.5,
+    "supply-chain": 1.2,
+    "validator-ops": 1.0
+  },
+  "validator_names": ["validator-1", "validator-2", "validator-3"],
+  "strategist_names": ["macro-strategist"],
+  "governance": {
+    "worker_stake_ratio": 0.2,
+    "validator_stake": 100,
+    "validator_commit_window": 300,
+    "validator_reveal_window": 300,
+    "approvals_required": 2,
+    "pause_enabled": true,
+    "slash_ratio": 0.5
+  }
+}

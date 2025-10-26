@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kardashev-II Omega-Grade α-AGI Business 3 – Mission Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #0f172a, #020617 70%);
+        color: #e2e8f0;
+      }
+      body {
+        margin: 2rem;
+        line-height: 1.6;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+      .card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(94, 234, 212, 0.4);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(56, 189, 248, 0.25);
+      }
+      h1 {
+        font-size: 2.8rem;
+        margin-bottom: 0.2rem;
+        background: linear-gradient(90deg, #f472b6, #38bdf8, #a855f7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 0;
+      }
+      pre {
+        white-space: pre-wrap;
+      }
+    </style>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>α‑AGI Omega Mission Control</h1>
+      <p>Monitor recursive AGI labour markets, validator governance, and planetary resources in real time.</p>
+    </header>
+
+    <section class="card">
+      <h2>Agentic Flywheel</h2>
+      <div class="mermaid">
+        graph TD
+          O[Operator Intent] --> C[Control Channel]
+          C -->|JSON commands| Ω[Omega Orchestrator]
+          Ω -->|post job| J[Job Registry]
+          J -->|broadcast| B[A2A Message Bus]
+          B -->|skill targeted| W(Worker Swarms)
+          W -->|delegate| J
+          W -->|submit results| V(Validator Council)
+          V -->|commit reveal| G[Governance]
+          G -->|settle rewards| R[Resource Ledger]
+          R -->|update quotas| Ω
+          Ω -->|checkpoint| P[(Checkpoint Vault)]
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Resource & Token Telemetry</h2>
+      <pre>
+AGIALPHA Supply: dynamic
+Energy Availability: adaptive scarcity pricing (Dyson swarm growth)
+Compute Availability: asynchronous load balancing
+Validator Stakes: automatically rehydrated on restart
+      </pre>
+    </section>
+
+    <section class="card">
+      <h2>Operator Playbook</h2>
+      <ol>
+        <li>Launch <code>bin/run.sh</code> with your mission configuration.</li>
+        <li>Adjust parameters mid-flight by editing <code>config/default.json</code> and writing <code>{"action":"pause"}</code> followed by <code>{"action":"resume"}</code>.</li>
+        <li>Review structured logs or stream them into Grafana/ELK for real-time dashboards.</li>
+        <li>Attach planetary simulators by swapping the <code>SyntheticEconomySim</code> implementation.</li>
+      </ol>
+    </section>
+  </body>
+</html>

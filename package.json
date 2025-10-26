@@ -265,6 +265,8 @@
     "demo:phase8:ci": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-8-Universal-Value-Dominance/scripts/validate-phase8-config.ts",
     "demo:kardashev-ii:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/run-kardashev-demo.ts",
     "demo:kardashev-ii:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/ci-validate.ts",
+    "demo:kardashev-omega-iii:run": "python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo --cycles 25",
+    "demo:kardashev-omega-iii:ci": "python -m unittest test.demo.test_kardashev_ii_omega_grade_alpha_agi_business_3_demo",
     "demo:kardashev-ii-stellar:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo/scripts/orchestrate.ts",
     "demo:kardashev-ii-stellar:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo/scripts/ci-validate.ts",
     "demo:kardashev-ii-lattice:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/scripts/orchestrate.ts",
