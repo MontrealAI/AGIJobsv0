@@ -23,6 +23,7 @@ const EXPECTED_CONTEXTS = [
   "ci (v2) / Phase 6 readiness",
   "ci (v2) / Phase 8 readiness",
   "ci (v2) / CI summary",
+  "ci (v2) / Branch protection guard",
 ] as const;
 
 type BranchProtectionResponse = {

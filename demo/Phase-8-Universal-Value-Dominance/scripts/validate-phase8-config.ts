@@ -16,6 +16,7 @@ const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
 const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
 const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
 const AI_TEAM_MATRIX = join(OUTPUT_DIR, "phase8-ai-team-matrix.json");
+const OWNER_BATCH = join(OUTPUT_DIR, "phase8-owner-batch.json");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const SEVERITY_WEIGHTS: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
@@ -671,6 +672,36 @@ function main() {
   }
   if (!scorecardRaw?.chain?.manager) {
     throw new Error("Dominance scorecard must specify chain.manager to guide multisig routing.");
+  }
+
+  if (!existsSync(OWNER_BATCH)) {
+    throw new Error("Owner command batch missing. Run npm run demo:phase8:owner-console to regenerate owner calldata.");
+  }
+  const ownerBatchRaw = JSON.parse(readFileSync(OWNER_BATCH, "utf-8"));
+  if (!Array.isArray(ownerBatchRaw?.transactions) || ownerBatchRaw.transactions.length === 0) {
+    throw new Error("Owner command batch must include at least one transaction entry.");
+  }
+  ownerBatchRaw.transactions.forEach((tx: unknown, index: number) => {
+    const entry = tx as { to?: string; data?: string; description?: string };
+    if (!entry?.to || !/^0x[a-fA-F0-9]{40}$/.test(entry.to)) {
+      throw new Error(`Owner batch transaction #${index} missing valid 'to' address.`);
+    }
+    if (!entry?.data || typeof entry.data !== "string" || !/^0x[a-fA-F0-9]+$/.test(entry.data)) {
+      throw new Error(`Owner batch transaction #${index} missing hex calldata.`);
+    }
+    if (!entry?.description) {
+      throw new Error(`Owner batch transaction #${index} requires a human-readable description.`);
+    }
+  });
+  if (!ownerBatchRaw?.manifestHash || !/^0x[a-fA-F0-9]{64}$/.test(ownerBatchRaw.manifestHash)) {
+    throw new Error("Owner batch must embed a manifestHash to prove provenance.");
+  }
+  if (!ownerBatchRaw?.analytics?.score) {
+    throw new Error("Owner batch analytics must include the dominance score snapshot.");
+  }
+  const batchManager = ownerBatchRaw?.manager ? String(ownerBatchRaw.manager).toLowerCase() : null;
+  if (batchManager !== config.global.phase8Manager.toLowerCase()) {
+    throw new Error("Owner batch manager mismatch — regenerate calldata to keep addresses in sync.");
   }
 
   const approxEqual = (a: number, b: number, tolerance = 1e-6) => Math.abs(a - b) <= tolerance;
