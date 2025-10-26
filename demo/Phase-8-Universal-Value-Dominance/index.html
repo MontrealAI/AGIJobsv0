@@ -390,6 +390,104 @@
         word-break: break-word;
       }
 
+      .detail-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .detail-card,
+      .team-card,
+      .safety-card,
+      .model-card,
+      .governance-card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 18px 42px rgba(5, 12, 22, 0.45);
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .detail-card h3,
+      .team-card h3,
+      .safety-card h3,
+      .model-card h3,
+      .governance-card h3 {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.95rem;
+        color: var(--accent);
+      }
+
+      .detail-card p,
+      .team-card p,
+      .safety-card p,
+      .model-card p,
+      .governance-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .team-card ul,
+      .safety-card ul,
+      .model-card ul,
+      .governance-card ul {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.35rem;
+        color: var(--muted);
+      }
+
+      .metric-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(90, 210, 255, 0.15);
+        border: 1px solid rgba(90, 210, 255, 0.35);
+        color: var(--accent);
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+
+      .team-specialists {
+        display: grid;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(90, 210, 255, 0.15);
+      }
+
+      .team-specialists strong {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .tag {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
       section {
         background: var(--panel);
         border: 1px solid var(--panel-border);
@@ -1192,6 +1290,18 @@
         <h2 id="controls-heading" data-i18n-key="headings.controls">Governance Control Surface</h2>
         <div class="sentinel-list" id="controls"></div>
       </section>
+      <section aria-labelledby="autonomy-heading">
+        <h2 id="autonomy-heading" data-i18n-key="headings.autonomy">Autonomy Kernel</h2>
+        <div class="detail-grid" id="autonomy"></div>
+      </section>
+      <section aria-labelledby="teams-heading">
+        <h2 id="teams-heading" data-i18n-key="headings.teams">AI Team Orchestration</h2>
+        <div class="detail-grid" id="ai-teams"></div>
+      </section>
+      <section aria-labelledby="safety-heading">
+        <h2 id="safety-heading" data-i18n-key="headings.safety">Safety &amp; Oversight Mesh</h2>
+        <div class="detail-grid" id="safety"></div>
+      </section>
       <section aria-labelledby="domains-heading">
         <h2 id="domains-heading" data-i18n-key="headings.domains">Dominion Registry</h2>
         <div class="domain-grid" id="domains"></div>
@@ -1204,6 +1314,14 @@
         <h2 id="streams-heading" data-i18n-key="headings.streams">Capital Streams</h2>
         <div class="stream-list" id="streams"></div>
       </section>
+      <section aria-labelledby="economy-heading">
+        <h2 id="economy-heading" data-i18n-key="headings.economy">Economic Incentive Stack</h2>
+        <div class="detail-grid" id="economy"></div>
+      </section>
+      <section aria-labelledby="models-heading">
+        <h2 id="models-heading" data-i18n-key="headings.models">Model Integration Layer</h2>
+        <div class="detail-grid" id="models"></div>
+      </section>
       <section aria-labelledby="playbooks-heading">
         <h2 id="playbooks-heading" data-i18n-key="headings.playbooks">Self-Improvement Kernel</h2>
         <div class="playbook-list" id="playbooks"></div>
@@ -1211,6 +1329,10 @@
       <section aria-labelledby="protocols-heading">
         <h2 id="protocols-heading" data-i18n-key="headings.protocols">Guardian Response Protocols</h2>
         <div class="protocol-grid" id="protocols"></div>
+      </section>
+      <section aria-labelledby="governance-heading">
+        <h2 id="governance-heading" data-i18n-key="headings.governance">Human Governance Interface</h2>
+        <div class="detail-grid" id="governance"></div>
       </section>
       <section aria-labelledby="emergency-heading">
         <h2 id="emergency-heading" data-i18n-key="headings.emergency">Emergency Overrides</h2>
@@ -1280,11 +1402,17 @@
           hero: "Phase 8 · Universal Value Dominance",
           stats: "Strategic Metrics",
           controls: "Governance Control Surface",
+          autonomy: "Autonomy Kernel",
+          teams: "AI Team Orchestration",
+          safety: "Safety & Oversight Mesh",
           domains: "Dominion Registry",
           sentinels: "Sentinel Lattice",
           streams: "Capital Streams",
+          economy: "Economic Incentive Stack",
+          models: "Model Integration Layer",
           playbooks: "Self-Improvement Kernel",
           protocols: "Guardian Response Protocols",
+          governance: "Human Governance Interface",
           emergency: "Emergency Overrides",
           actions: "Governance Action Deck",
           mermaid: "Mermaid · Universal Value Mesh",
@@ -1910,11 +2038,17 @@
       const SECTION_SCHEMA = [
         { target: "#stats", renderer: renderStats },
         { target: "#controls", renderer: renderControls },
+        { target: "#autonomy", renderer: renderAutonomy },
+        { target: "#ai-teams", renderer: renderAiTeams },
+        { target: "#safety", renderer: renderSafety },
         { target: "#domains", renderer: renderDomains },
         { target: "#sentinels", renderer: renderSentinels },
         { target: "#streams", renderer: renderStreams },
+        { target: "#economy", renderer: renderEconomy },
+        { target: "#models", renderer: renderModels },
         { target: "#playbooks", renderer: renderPlaybooks },
         { target: "#protocols", renderer: renderProtocols },
+        { target: "#governance", renderer: renderGovernanceDetail },
         { target: "#emergency", renderer: renderEmergency },
         { target: "#actions", renderer: renderActionDeck },
         { target: "#runbook", renderer: renderRunbook },
@@ -2093,6 +2227,30 @@
         let minFundingUSD = domains.length ? Number.POSITIVE_INFINITY : 0;
         const severityWeights = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
         const domainSlugSet = new Set(domainSlugs.map((slug) => String(slug ?? "").toLowerCase()));
+        const autonomySession = manifest.autonomy?.session || {};
+        const autonomyCheckpoints = asArray(manifest.autonomy?.progressCheckpoints);
+        const checkpointIntervals = autonomyCheckpoints
+          .map((checkpoint) => toNumber(checkpoint?.intervalMinutes, 0))
+          .filter((interval) => Number.isFinite(interval) && interval > 0);
+        const sessionCheckpointCadence = toNumber(autonomySession?.checkpointCadenceMinutes, 0);
+        const checkpointCadenceMinutes = checkpointIntervals.length
+          ? Math.min(...checkpointIntervals)
+          : sessionCheckpointCadence;
+        const aiTeams = asArray(manifest.aiTeams);
+        const aiTeamCoverageSet = new Set();
+        for (const team of aiTeams) {
+          for (const domain of asArray(team?.domains)) {
+            const normalized = String(domain ?? "").toLowerCase();
+            if (normalized) {
+              aiTeamCoverageSet.add(normalized);
+            }
+          }
+        }
+        const aiTeamCoverageRatio = domainSlugSet.size
+          ? Math.min(1, aiTeamCoverageSet.size / domainSlugSet.size)
+          : 0;
+        const safetyTripwireCount = asArray(manifest.safety?.tripwires).length;
+        const validatorConsoleCount = asArray(manifest.safety?.validatorConsoles).length;
         const protocolCoverageSet = new Set();
         let protocolSeverityTotal = 0;
         for (const domain of domains) {
@@ -2237,6 +2395,14 @@
             guardianProtocolCount: protocols.length,
             guardianProtocolCoverageRatio: protocolCoverageRatio,
             guardianProtocolSeverityScore: protocolSeverityScore,
+            sessionMaxHours: toNumber(autonomySession?.maxHours, 0),
+            sessionContextTokens: toNumber(autonomySession?.contextWindowTokens, 0),
+            checkpointCadenceMinutes,
+            checkpointCount: autonomyCheckpoints.length,
+            aiTeamCount: aiTeams.length,
+            aiTeamCoverageRatio,
+            safetyTripwireCount,
+            validatorConsoleCount,
           },
           alerts,
         };
@@ -2506,6 +2672,28 @@
           });
         }
 
+        if (context.totals.sessionMaxHours) {
+          stats.push({
+            key: "autonomy-envelope",
+            label: "Autonomous session",
+            value: `${context.totals.sessionMaxHours.toFixed(2)} h · ${context.totals.sessionContextTokens.toLocaleString()} tok · checkpoint ${context.totals.checkpointCadenceMinutes.toFixed(0)} m`,
+          });
+        }
+        if (context.totals.aiTeamCount) {
+          stats.push({
+            key: "ai-team",
+            label: "AI teams active",
+            value: `${context.totals.aiTeamCount} · ${(context.totals.aiTeamCoverageRatio * 100).toFixed(1)}% coverage`,
+          });
+        }
+        if (context.totals.safetyTripwireCount || context.totals.validatorConsoleCount) {
+          stats.push({
+            key: "safety-mesh",
+            label: "Safety mesh",
+            value: `${context.totals.safetyTripwireCount} tripwires · ${context.totals.validatorConsoleCount} consoles`,
+          });
+        }
+        
         const protocolCount = asArray(manifest.guardianProtocols).length;
         if (protocolCount) {
           const coveragePercent = `${(toNumber(context.totals.guardianProtocolCoverageRatio, 0) * 100).toFixed(1)}%`;
@@ -2534,6 +2722,265 @@
             `,
           )
           .join("");
+      }
+
+      function renderAutonomy(container, manifest) {
+        const autonomy = manifest.autonomy;
+        if (!autonomy) {
+          container.innerHTML = `
+            <article class="detail-card">
+              <h3>No autonomy configuration</h3>
+              <p>Drop a manifest with an autonomy.session block to orchestrate persistent agents.</p>
+            </article>
+          `;
+          return;
+        }
+
+        const session = autonomy.session || {};
+        const checkpoints = asArray(autonomy.progressCheckpoints);
+        const persistent = autonomy.persistentExecution || {};
+        const checkpointMarkup = checkpoints
+          .map(
+            (checkpoint) => `
+              <li>
+                <strong>${escapeHtml(checkpoint.name || "Checkpoint")}</strong> — every ${checkpoint.intervalMinutes} minutes · ${escapeHtml(checkpoint.description || "")}
+              </li>
+            `,
+          )
+          .join("");
+
+        container.innerHTML = `
+          <article class="detail-card">
+            <h3>Session envelope</h3>
+            <p>${session.maxHours?.toFixed ? session.maxHours.toFixed(2) : session.maxHours} hours · ${Number(session.contextWindowTokens || 0).toLocaleString()} tokens · checkpoints every ${session.checkpointCadenceMinutes} minutes.</p>
+            <p>Memory: ${escapeHtml(autonomy.memoryStrategy || "—")}.</p>
+            <div class="tag-list">
+              <span class="tag">${escapeHtml(session.environment || "runtime")}</span>
+              <span class="tag">${escapeHtml(session.persistence || "persistence")}</span>
+            </div>
+          </article>
+          <article class="detail-card">
+            <h3>Persistent execution</h3>
+            <p>${escapeHtml(persistent.runtime || "runtime not configured")} @ ${escapeHtml(persistent.image || "image")}</p>
+            <p>Resources: ${(persistent.resources?.cpu || "cpu")}, ${(persistent.resources?.memory || "memory")}, ${(persistent.resources?.storage || "storage")}</p>
+            <p>State mount: ${escapeHtml(persistent.stateMount || "—")}</p>
+          </article>
+          <article class="detail-card">
+            <h3>Progress checkpoints</h3>
+            <ul>${checkpointMarkup}</ul>
+          </article>
+        `;
+      }
+
+      function renderAiTeams(container, manifest) {
+        const teams = asArray(manifest.aiTeams);
+        if (!teams.length) {
+          container.innerHTML = `
+            <article class="team-card">
+              <h3>No AI teams declared</h3>
+              <p>Define aiTeams in the manifest to visualise orchestrated guilds and their domain coverage.</p>
+            </article>
+          `;
+          return;
+        }
+
+        container.innerHTML = teams
+          .map((team) => {
+            const specialists = asArray(team.specialists)
+              .map(
+                (specialist) => `
+                  <div>
+                    <strong>${escapeHtml(specialist.role || "Specialist")}</strong>
+                    <p>${escapeHtml(shortAddress(specialist.agent || "—"))} · ${escapeHtml(specialist.model || "model")}</p>
+                    <div class="tag-list">
+                      <span class="tag">${Number(specialist.contextWindowTokens || 0).toLocaleString()} tokens</span>
+                      <span class="tag">${specialist.maxAutonomyMinutes || 0} minutes</span>
+                      ${(specialist.capabilities || []).map((capability) => `<span class="tag">${escapeHtml(capability)}</span>`).join("")}
+                    </div>
+                  </div>
+                `,
+              )
+              .join("");
+            const domains = asArray(team.domains)
+              .map((domain) => `<span class="tag">${escapeHtml(domain)}</span>`)
+              .join("");
+            return `
+              <article class="team-card" data-team-slug="${escapeHtml(team.slug)}">
+                <h3>${escapeHtml(team.name || team.slug || "Team")}</h3>
+                <p>${escapeHtml(team.mission || "Mission not documented.")}</p>
+                <p><span class="metric-pill">Cadence ${team.cadenceMinutes || 0}m</span> · Lead ${escapeHtml(shortAddress(team.leadAgent || ""))} · Model ${escapeHtml(team.leadModel || "model")}</p>
+                <div class="tag-list">${domains}</div>
+                <div class="team-specialists">
+                  ${specialists}
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderSafety(container, manifest) {
+        const safety = manifest.safety;
+        if (!safety) {
+          container.innerHTML = `
+            <article class="safety-card">
+              <h3>Safety lattice inactive</h3>
+              <p>Configure safety.autonomyThresholdMinutes and tripwires to enforce guardian oversight.</p>
+            </article>
+          `;
+          return;
+        }
+
+        const tripwires = asArray(safety.tripwires)
+          .map((tripwire) => `<li>${escapeHtml(tripwire.name)} — ${escapeHtml(tripwire.trigger)} → ${escapeHtml(tripwire.action)} (${escapeHtml(tripwire.severity)})</li>`)
+          .join("");
+        const sinks = asArray(safety.logging?.sinks)
+          .map((sink) => `<li>${escapeHtml(sink.name)} · ${escapeHtml(sink.target)} (${sink.retentionDays}d)</li>`)
+          .join("");
+        const consoles = asArray(safety.validatorConsoles)
+          .map((console) => `<li>${escapeHtml(console.name)} — <a href="${escapeHtml(console.url)}">${escapeHtml(console.url)}</a></li>`)
+          .join("");
+
+        container.innerHTML = `
+          <article class="safety-card">
+            <h3>Thresholds</h3>
+            <p>Autonomy threshold ${safety.autonomyThresholdMinutes} minutes · check-ins every ${safety.checkInCadenceMinutes} minutes · trace sampling ${(safety.logging?.traceSampling || 0) * 100}%.</p>
+          </article>
+          <article class="safety-card">
+            <h3>Logging</h3>
+            <ul>${sinks}</ul>
+          </article>
+          <article class="safety-card">
+            <h3>Tripwires</h3>
+            <ul>${tripwires}</ul>
+          </article>
+          <article class="safety-card">
+            <h3>Validator consoles</h3>
+            <ul>${consoles}</ul>
+          </article>
+        `;
+      }
+
+      function renderEconomy(container, manifest) {
+        const economy = manifest.economy;
+        if (!economy) {
+          container.innerHTML = `
+            <article class="detail-card">
+              <h3>Economy defaults</h3>
+              <p>Define economy stake tiers and milestones to scale incentives with autonomy.</p>
+            </article>
+          `;
+          return;
+        }
+
+        const tiers = asArray(economy.stakeTiers)
+          .map((tier) => `<li>${escapeHtml(tier.name)} · ${tier.durationHours}h · stake ${formatAmount(tier.minimumStake)} · slash ×${tier.slashMultiplier}</li>`)
+          .join("");
+        const milestones = asArray(economy.milestoneTemplates)
+          .map((milestone) => `<li>${escapeHtml(milestone.name)} — ${escapeHtml(milestone.description)} (${milestone.payoutBps} bps)</li>`)
+          .join("");
+
+        container.innerHTML = `
+          <article class="detail-card">
+            <h3>Stake tiers</h3>
+            <ul>${tiers}</ul>
+          </article>
+          <article class="detail-card">
+            <h3>Milestone templates</h3>
+            <ul>${milestones}</ul>
+          </article>
+          <article class="detail-card">
+            <h3>Budget caps</h3>
+            <p>Compute ${formatUSD(economy.budgetCaps?.maxComputeUSD || 0)} · API ${formatUSD(economy.budgetCaps?.maxApiSpendUSD || 0)} · Token ${formatUSD(economy.budgetCaps?.maxTokenSpendUSD || 0)}</p>
+            <p>Rewards: long task ${economy.rewardCurves?.longTaskBonusBps ?? 0} bps · validator premium ${economy.rewardCurves?.validatorPremiumBps ?? 0} bps.</p>
+          </article>
+        `;
+      }
+
+      function renderModels(container, manifest) {
+        const models = manifest.models;
+        if (!models) {
+          container.innerHTML = `
+            <article class="model-card">
+              <h3>No adapters configured</h3>
+              <p>Declare models.adapters to surface next-gen integration readiness.</p>
+            </article>
+          `;
+          return;
+        }
+
+        const adapters = asArray(models.adapters)
+          .map(
+            (adapter) => `
+              <article class="model-card" data-model-name="${escapeHtml(adapter.name)}">
+                <h3>${escapeHtml(adapter.name)}</h3>
+                <p>${escapeHtml(adapter.provider)} · ${escapeHtml(adapter.modality)}</p>
+                <div class="tag-list">
+                  <span class="tag">${adapter.maxContextTokens.toLocaleString()} tokens</span>
+                  <span class="tag">$${adapter.costPer1kTokensUSD.toFixed(4)}/1k</span>
+                  ${adapter.evalScore !== undefined ? `<span class="tag">Score ${Number(adapter.evalScore).toFixed(1)}</span>` : ""}
+                </div>
+                <p>Strengths: ${(adapter.strengths || []).join(" · ") || "—"}</p>
+              </article>
+            `,
+          )
+          .join("");
+
+        const safetyTests = asArray(models.safetyTests)
+          .map((test) => `<li>${escapeHtml(test.name)} — every ${test.frequencyHours}h</li>`)
+          .join("");
+
+        container.innerHTML = `
+          ${adapters}
+          <article class="model-card">
+            <h3>Evaluation pipeline</h3>
+            <p>Cadence every ${models.evaluationCadenceHours}h · Benchmarks ${(models.evaluationBenchmarks || []).join(" · ") || "—"}</p>
+            <p>Routing: ${escapeHtml(models.dynamicRouting?.strategy || "manual")} · Metrics ${(models.dynamicRouting?.metrics || []).join(" · ") || "—"}</p>
+            <ul>${safetyTests}</ul>
+          </article>
+        `;
+      }
+
+      function renderGovernanceDetail(container, manifest) {
+        const governance = manifest.governance;
+        if (!governance) {
+          container.innerHTML = `
+            <article class="governance-card">
+              <h3>Governance defaults</h3>
+              <p>Specify governance.interface, validator tools, and policy controls to empower human oversight.</p>
+            </article>
+          `;
+          return;
+        }
+
+        const validators = asArray(governance.validatorTools)
+          .map((tool) => `<li>${escapeHtml(tool.name)} — <a href="${escapeHtml(tool.url)}">${escapeHtml(tool.url)}</a></li>`)
+          .join("");
+        const proposals = asArray(governance.proposalTemplates)
+          .map((proposal) => `<li>${escapeHtml(proposal.title)} — ${escapeHtml(proposal.summary)} (ETA ${proposal.executionEtaHours}h)</li>`)
+          .join("");
+        const policies = asArray(governance.humanPolicyControls)
+          .map((policy) => `<li>${escapeHtml(policy.name)} — ${escapeHtml(policy.requirement)} · ${escapeHtml(policy.enforcement)}</li>`)
+          .join("");
+
+        container.innerHTML = `
+          <article class="governance-card">
+            <h3>Governance interface</h3>
+            <p><a href="${escapeHtml(governance.interface)}">${escapeHtml(governance.interface)}</a></p>
+          </article>
+          <article class="governance-card">
+            <h3>Validator tools</h3>
+            <ul>${validators}</ul>
+          </article>
+          <article class="governance-card">
+            <h3>Proposal templates</h3>
+            <ul>${proposals}</ul>
+          </article>
+          <article class="governance-card">
+            <h3>Human policy controls</h3>
+            <ul>${policies}</ul>
+          </article>
+        `;
       }
 
       function renderControls(container, manifest) {

@@ -78,17 +78,14 @@ latest run. Safe imports should always display the chain ID and manager address 
 
 ## 🧭 Why this demo matters
 
-* **Universal authority with hard guardrails** – the new `Phase8UniversalValueManager` contract keeps the owner in absolute
-  control of domains, sentinel policies, capital streams, and emergency pause forwarding.
-* **Planetary telemetry in one command** – governance can read resilience, autonomy, value flow, and sentinel coverage from the
-  CLI and UI without touching Solidity or Hardhat.
-* **Dominance instrumentation** – a composite Universal Dominance Score rolls value throughput, resilience, sentinel saturation, capital coverage, autonomy discipline, and retraining cadence into a single 0–100 index so governors know instantly if the mesh is outperforming its guardrails.
-* **Self-improving and self-checking** – an on-chain self-improvement charter (plan hash + cadence) plus manifest playbooks let
-  the operator launch automated retraining and adversarial stress-tests while ensuring autonomy stays bounded.
-* **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the
-  superintelligent mesh.
+* **Universal authority with hard guardrails** – the new `Phase8UniversalValueManager` contract keeps the owner in absolute control of domains, sentinel policies, capital streams, autonomy envelopes, AI guild coordination, and emergency pause forwarding.
+* **Planetary telemetry in one command** – governance can read resilience, autonomy, AI team coverage, safety mesh density, and sentinel coverage from the CLI and UI without touching Solidity or Hardhat.
+* **Dominance instrumentation** – a composite Universal Dominance Score rolls value throughput, resilience, sentinel saturation, capital coverage, autonomy discipline, AI teamwork, and retraining cadence into a single 0–100 index so governors know instantly if the mesh is outperforming its guardrails.
+* **Self-improving and self-checking** – an on-chain self-improvement charter (plan hash + cadence) plus manifest playbooks let the operator launch automated retraining and adversarial stress-tests while ensuring multi-hour autonomy stays bounded by human checkpoints.
+* **AI team intelligence** – the AI Team Orchestration section and `phase8-ai-team-matrix.json` broadcast coverage ratios, escalation contacts, and specialist loadouts so guardians can redirect guilds in seconds.
+* **Mermaid-first storytelling** – every run emits a rich diagram to explain how trillions in value flow through the superintelligent mesh.
 * **Instant circuit breaker** – the emergency overrides pack encodes `forwardPauseCall` payloads so the guardian council can halt or resume every module with a single Safe transaction.
-* **Guardian execution checklists** – `phase8-governance-checklist.md` converts the calldata manifest into numbered Safe/timelock instructions so guardians can verify coverage, funding, and autonomy guardrails before signing.
+* **Guardian execution checklists** – `phase8-governance-checklist.md` converts the calldata manifest into numbered Safe/timelock instructions so guardians can verify coverage, funding, autonomy guardrails, and AI guild staffing before signing.
 
 > With the default manifest, the console reports ~$688B in monthly value flow, ~$1.97T annual capital allocation, an average resilience index of 0.925, 45.0 minutes of sentinel coverage per guardian cycle, **100% dominion funding with a $720B/yr floor**, and a Universal Dominance Score of 97.1 / 100 — a direct signal that the network is outperforming its guardrails while staying within human override windows.
 
@@ -154,8 +151,9 @@ Running `npm run demo:phase8:orchestrate` surfaces these guardrails alongside ca
 * **CLI telemetry** – rerun `npm run demo:phase8:orchestrate` or `npx ts-node demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts`
   and confirm the console emits:
   * `Kernel checksum: sha3-256 …` and `Kernel zk-proof: … status pending` so governors know the manifest hash and placeholder proof.
-  * `Guardian sentinel coverage` ≥ 12 minutes (720 seconds) with `Minimum coverage per domain` meeting or exceeding the guardian
-    review window.
+  * `Autonomy envelope` entries reflecting max hours, context tokens, checkpoint cadence, and checkpoint count.
+  * `Guardian sentinel coverage` ≥ 12 minutes (720 seconds) with `Minimum coverage per domain` meeting or exceeding the guardian review window.
+  * `AI team coverage ratio` and guild counts so staffing gaps are obvious without opening the UI.
   * `Maximum encoded autonomy` bounded below the guardrail (≤ 7,900 bps).
 * **Telemetry markdown** – ship `output/phase8-telemetry-report.md` to ops chat. The Self-Improvement Kernel section includes the
   checksum + zk-proof metadata for passive monitoring and audit trails.
@@ -186,11 +184,20 @@ Running `npm run demo:phase8:orchestrate` surfaces these guardrails alongside ca
 
 Open [`index.html`](./index.html) to explore the fully client-side control room:
 
-* Planetary stats (value flow, budget, resilience, sentinel coverage) plus a **Universal Dominance Score** composite (97.1 / 100 in the demo manifest) blending value flow, resilience, autonomy discipline, sentinel saturation, and self-improvement cadence.
+* Planetary stats (value flow, budget, resilience, sentinel coverage) plus a **Universal Dominance Score** composite (97.1 / 100 in the demo manifest) blending value flow, resilience, autonomy discipline, sentinel saturation, AI guild coverage, and self-improvement cadence.
+* Autonomy Kernel cards summarising the session envelope, persistent execution footprint, and checkpoint regimen so humans can approve multi-hour automation.
+* AI Team Orchestration grid highlighting guild missions, cadence, lead agents, domain coverage, and specialist skills for instant redeployment decisions.
+* Safety & Oversight Mesh cards enumerating tripwires, logging sinks, validator consoles, and autonomy thresholds — every lever required for human override.
 * Domain cards with autonomy bps, resilience, heartbeat, skill badges, **per-domain capital coverage**, and linked funding streams.
 * Sentinel lattice view with live coverage, sensitivity, and domain bindings (auto-highlighted when a domain loses coverage).
 * Capital stream portfolio with annual budgets, vault routing, and linked dominions.
-* Guardian response protocols board summarising coverage %, severity posture, and every protocol scenario with triggers,
+* Economic Incentive Stack, Model Integration Layer, and Governance Interface sections that expose stake tiers, milestone templates, adapter readiness, evaluation cadence, validator consoles, proposal templates, and human policy controls.
+* Guardian response protocols board summarising coverage %, severity posture, and every protocol scenario with triggers, immediate actions, stabilisation playbooks, communication routes, and success criteria — all synced from the manifest.
+* Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
+* Emergency overrides cards ship with expand/collapse controls so governors can inspect and copy the full `forwardPauseCall` payload without leaving the console.
+* A **Governance Action Deck** tiles every critical calldata payload into copy-ready action cards (governance, dominions, sentinels, capital streams, safety kernel, and teardown levers) so the owner can assert universal value dominance without decoding hex.
+* An auto-generated Mermaid diagram illustrating governance, sentinels, capital flow, and how AI guilds pair with autonomy guardrails.
+* A **Manifest Command Console** that enables instant manifest swaps (file upload, remote URL, or query parameter). Non-technical operators can preview alternative governance states, refresh baselines, or roll back to the orchestrator output with one click.
   immediate actions, stabilisation playbooks, communication routes, and success criteria — all synced from the manifest.
 * Self-improvement plan (hash, cadence, report URI) plus playbooks and guardrails rendered with owner addresses.
 * Emergency overrides cards ship with expand/collapse controls so governors can inspect and copy the full `forwardPauseCall` payload without leaving the console.

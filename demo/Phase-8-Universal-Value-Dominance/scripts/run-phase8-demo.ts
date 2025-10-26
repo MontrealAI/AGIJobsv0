@@ -131,6 +131,276 @@ const EnvironmentSchema = z
     managerAddress: value.managerAddress,
   }));
 
+const AutonomySessionSchema = z.object({
+  maxHours: z
+    .number({ invalid_type_error: "Autonomy session maxHours must be a number" })
+    .positive("Autonomy session maxHours must be positive"),
+  contextWindowTokens: z
+    .number({ invalid_type_error: "Autonomy session contextWindowTokens must be a number" })
+    .int("Autonomy session contextWindowTokens must be an integer")
+    .positive("Autonomy session contextWindowTokens must be positive"),
+  checkpointCadenceMinutes: z
+    .number({ invalid_type_error: "Autonomy session checkpointCadenceMinutes must be a number" })
+    .int("Autonomy session checkpointCadenceMinutes must be an integer")
+    .positive("Autonomy session checkpointCadenceMinutes must be positive"),
+  memoryBacking: z
+    .string({ required_error: "Autonomy session memoryBacking is required" })
+    .min(1, "Autonomy session memoryBacking is required"),
+  environment: z
+    .string({ required_error: "Autonomy session environment is required" })
+    .min(1, "Autonomy session environment is required"),
+  persistence: z
+    .string({ required_error: "Autonomy session persistence is required" })
+    .min(1, "Autonomy session persistence is required"),
+});
+
+const AutonomyCheckpointSchema = z.object({
+  name: z.string({ required_error: "Autonomy checkpoint name is required" }).min(1),
+  description: z
+    .string({ required_error: "Autonomy checkpoint description is required" })
+    .min(1),
+  intervalMinutes: z
+    .number({ invalid_type_error: "Autonomy checkpoint intervalMinutes must be a number" })
+    .int("Autonomy checkpoint intervalMinutes must be an integer")
+    .positive("Autonomy checkpoint intervalMinutes must be positive"),
+  outputs: z.array(z.string()).default([]),
+});
+
+const AutonomySchema = z.object({
+  session: AutonomySessionSchema,
+  persistentExecution: z
+    .object({
+      runtime: z
+        .string({ required_error: "Autonomy persistentExecution.runtime is required" })
+        .min(1, "Autonomy persistentExecution.runtime is required"),
+      image: z
+        .string({ required_error: "Autonomy persistentExecution.image is required" })
+        .min(1, "Autonomy persistentExecution.image is required"),
+      resources: z
+        .object({
+          cpu: z.string().optional(),
+          memory: z.string().optional(),
+          storage: z.string().optional(),
+        })
+        .default({}),
+      stateMount: z.string().optional(),
+    })
+    .optional(),
+  progressCheckpoints: z.array(AutonomyCheckpointSchema).default([]),
+  memoryStrategy: z
+    .string({ required_error: "Autonomy memoryStrategy is required" })
+    .min(1, "Autonomy memoryStrategy is required"),
+});
+
+const AiSpecialistSchema = z.object({
+  role: z.string({ required_error: "AI specialist role is required" }).min(1),
+  agent: AddressSchema,
+  model: z.string({ required_error: "AI specialist model is required" }).min(1),
+  capabilities: z.array(z.string()).default([]),
+  contextWindowTokens: z
+    .number({ invalid_type_error: "AI specialist contextWindowTokens must be a number" })
+    .int("AI specialist contextWindowTokens must be an integer")
+    .positive("AI specialist contextWindowTokens must be positive"),
+  maxAutonomyMinutes: z
+    .number({ invalid_type_error: "AI specialist maxAutonomyMinutes must be a number" })
+    .int("AI specialist maxAutonomyMinutes must be an integer")
+    .positive("AI specialist maxAutonomyMinutes must be positive"),
+});
+
+const AiTeamSchema = z.object({
+  slug: z.string({ required_error: "AI team slug is required" }).min(1),
+  name: z.string({ required_error: "AI team name is required" }).min(1),
+  mission: z.string({ required_error: "AI team mission is required" }).min(1),
+  leadAgent: AddressSchema,
+  leadModel: z.string({ required_error: "AI team leadModel is required" }).min(1),
+  collaborationProtocol: z
+    .string({ required_error: "AI team collaborationProtocol is required" })
+    .min(1),
+  memoryChannel: z.string().optional(),
+  escalationContact: z.string().optional(),
+  cadenceMinutes: z
+    .number({ invalid_type_error: "AI team cadenceMinutes must be a number" })
+    .int("AI team cadenceMinutes must be an integer")
+    .positive("AI team cadenceMinutes must be positive"),
+  domains: z.array(z.string()).default([]),
+  specialists: z.array(AiSpecialistSchema).default([]),
+});
+
+const SafetyTripwireSchema = z.object({
+  name: z.string({ required_error: "Safety tripwire name is required" }).min(1),
+  trigger: z.string({ required_error: "Safety tripwire trigger is required" }).min(1),
+  action: z.string({ required_error: "Safety tripwire action is required" }).min(1),
+  severity: z.enum(["critical", "high", "medium", "low"]).default("high"),
+});
+
+const SafetyLoggingSinkSchema = z.object({
+  name: z.string({ required_error: "Safety logging sink name is required" }).min(1),
+  target: z.string({ required_error: "Safety logging sink target is required" }).min(1),
+  retentionDays: z
+    .number({ invalid_type_error: "Safety logging sink retentionDays must be a number" })
+    .int("Safety logging sink retentionDays must be an integer")
+    .positive("Safety logging sink retentionDays must be positive"),
+  piiHandling: z.string().optional(),
+});
+
+const SafetySchema = z.object({
+  autonomyThresholdMinutes: z
+    .number({ invalid_type_error: "Safety autonomyThresholdMinutes must be a number" })
+    .int("Safety autonomyThresholdMinutes must be an integer")
+    .positive("Safety autonomyThresholdMinutes must be positive"),
+  checkInCadenceMinutes: z
+    .number({ invalid_type_error: "Safety checkInCadenceMinutes must be a number" })
+    .int("Safety checkInCadenceMinutes must be an integer")
+    .positive("Safety checkInCadenceMinutes must be positive"),
+  logging: z
+    .object({
+      sinks: z.array(SafetyLoggingSinkSchema).default([]),
+      traceSampling: z
+        .number({ invalid_type_error: "Safety logging traceSampling must be a number" })
+        .min(0, "Safety logging traceSampling cannot be negative")
+        .max(1, "Safety logging traceSampling cannot exceed 1"),
+      auditConsole: z.string().optional(),
+    })
+    .default({ sinks: [], traceSampling: 0 }),
+  tripwires: z.array(SafetyTripwireSchema).default([]),
+  validatorConsoles: z
+    .array(
+      z.object({
+        name: z.string({ required_error: "Safety validator console name is required" }).min(1),
+        url: z.string({ required_error: "Safety validator console url is required" }).min(1),
+        capabilities: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+});
+
+const EconomyStakeTierSchema = z.object({
+  name: z.string({ required_error: "Economy stake tier name is required" }).min(1),
+  durationHours: z
+    .number({ invalid_type_error: "Economy stake tier durationHours must be a number" })
+    .int("Economy stake tier durationHours must be an integer")
+    .positive("Economy stake tier durationHours must be positive"),
+  minimumStake: BigNumberishSchema,
+  slashMultiplier: z
+    .number({ invalid_type_error: "Economy stake tier slashMultiplier must be a number" })
+    .positive("Economy stake tier slashMultiplier must be positive"),
+});
+
+const EconomyMilestoneSchema = z.object({
+  name: z.string({ required_error: "Economy milestone name is required" }).min(1),
+  description: z.string({ required_error: "Economy milestone description is required" }).min(1),
+  payoutBps: z
+    .number({ invalid_type_error: "Economy milestone payoutBps must be a number" })
+    .int("Economy milestone payoutBps must be an integer")
+    .min(0, "Economy milestone payoutBps cannot be negative")
+    .max(10_000, "Economy milestone payoutBps cannot exceed 10000"),
+});
+
+const EconomySchema = z.object({
+  stakeTiers: z.array(EconomyStakeTierSchema).default([]),
+  milestoneTemplates: z.array(EconomyMilestoneSchema).default([]),
+  budgetCaps: z
+    .object({
+      maxComputeUSD: z.number({ invalid_type_error: "Economy budget maxComputeUSD must be a number" }).min(0),
+      maxApiSpendUSD: z.number({ invalid_type_error: "Economy budget maxApiSpendUSD must be a number" }).min(0),
+      maxTokenSpendUSD: z.number({ invalid_type_error: "Economy budget maxTokenSpendUSD must be a number" }).min(0),
+    })
+    .optional(),
+  rewardCurves: z
+    .object({
+      longTaskBonusBps: z
+        .number({ invalid_type_error: "Economy reward longTaskBonusBps must be a number" })
+        .int("Economy reward longTaskBonusBps must be an integer")
+        .min(0)
+        .max(10_000),
+      validatorPremiumBps: z
+        .number({ invalid_type_error: "Economy reward validatorPremiumBps must be a number" })
+        .int("Economy reward validatorPremiumBps must be an integer")
+        .min(0)
+        .max(10_000),
+    })
+    .optional(),
+});
+
+const ModelAdapterSchema = z.object({
+  name: z.string({ required_error: "Model adapter name is required" }).min(1),
+  provider: z.string({ required_error: "Model adapter provider is required" }).min(1),
+  modality: z.string({ required_error: "Model adapter modality is required" }).min(1),
+  maxContextTokens: z
+    .number({ invalid_type_error: "Model adapter maxContextTokens must be a number" })
+    .int("Model adapter maxContextTokens must be an integer")
+    .positive("Model adapter maxContextTokens must be positive"),
+  costPer1kTokensUSD: z
+    .number({ invalid_type_error: "Model adapter costPer1kTokensUSD must be a number" })
+    .min(0, "Model adapter costPer1kTokensUSD cannot be negative"),
+  strengths: z.array(z.string()).default([]),
+  evalScore: z
+    .number({ invalid_type_error: "Model adapter evalScore must be a number" })
+    .min(0, "Model adapter evalScore cannot be negative")
+    .max(100, "Model adapter evalScore cannot exceed 100")
+    .optional(),
+});
+
+const ModelSchema = z.object({
+  adapters: z.array(ModelAdapterSchema).default([]),
+  evaluationCadenceHours: z
+    .number({ invalid_type_error: "Model evaluationCadenceHours must be a number" })
+    .int("Model evaluationCadenceHours must be an integer")
+    .positive("Model evaluationCadenceHours must be positive"),
+  evaluationBenchmarks: z.array(z.string()).default([]),
+  dynamicRouting: z
+    .object({
+      strategy: z.string({ required_error: "Model dynamicRouting.strategy is required" }).min(1),
+      metrics: z.array(z.string()).default([]),
+    })
+    .optional(),
+  safetyTests: z
+    .array(
+      z.object({
+        name: z.string({ required_error: "Model safety test name is required" }).min(1),
+        frequencyHours: z
+          .number({ invalid_type_error: "Model safety test frequencyHours must be a number" })
+          .int("Model safety test frequencyHours must be an integer")
+          .positive("Model safety test frequencyHours must be positive"),
+      }),
+    )
+    .default([]),
+});
+
+const GovernanceProposalSchema = z.object({
+  title: z.string({ required_error: "Governance proposal title is required" }).min(1),
+  summary: z.string({ required_error: "Governance proposal summary is required" }).min(1),
+  executionEtaHours: z
+    .number({ invalid_type_error: "Governance proposal executionEtaHours must be a number" })
+    .int("Governance proposal executionEtaHours must be an integer")
+    .positive("Governance proposal executionEtaHours must be positive"),
+});
+
+const GovernanceSchema = z.object({
+  interface: z
+    .string({ required_error: "Governance interface description is required" })
+    .min(1, "Governance interface description is required"),
+  validatorTools: z
+    .array(
+      z.object({
+        name: z.string({ required_error: "Governance validator tool name is required" }).min(1),
+        url: z.string({ required_error: "Governance validator tool url is required" }).min(1),
+        capabilities: z.array(z.string()).default([]),
+      }),
+    )
+    .default([]),
+  proposalTemplates: z.array(GovernanceProposalSchema).default([]),
+  humanPolicyControls: z
+    .array(
+      z.object({
+        name: z.string({ required_error: "Governance human policy control name is required" }).min(1),
+        requirement: z.string({ required_error: "Governance human policy control requirement is required" }).min(1),
+        enforcement: z.string({ required_error: "Governance human policy control enforcement is required" }).min(1),
+      }),
+    )
+    .default([]),
+});
+
 const DomainSchema = z.object({
   slug: z.string({ required_error: "Domain slug is required" }).min(1, "Domain slug is required"),
   name: z.string({ required_error: "Domain name is required" }).min(1, "Domain name is required"),
@@ -339,6 +609,12 @@ const ManifestSchema = z
     capitalStreams: z.array(StreamSchema).default([]),
     guardianProtocols: z.array(GuardianProtocolSchema).default([]),
     selfImprovement: SelfImprovementSchema.optional(),
+    autonomy: AutonomySchema.optional(),
+    aiTeams: z.array(AiTeamSchema).default([]),
+    safety: SafetySchema.optional(),
+    economy: EconomySchema.optional(),
+    models: ModelSchema.optional(),
+    governance: GovernanceSchema.optional(),
   })
   .superRefine((value, ctx) => {
     const domains = value.domains ?? [];
@@ -415,6 +691,55 @@ const ManifestSchema = z
       });
     }
 
+    const teamSlugs = new Set<string>();
+    (value.aiTeams ?? []).forEach((team, index) => {
+      const slug = String(team?.slug ?? "").toLowerCase();
+      if (!slug) return;
+      if (teamSlugs.has(slug)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate aiTeams slug detected: ${slug}`,
+          path: ["aiTeams", index, "slug"],
+        });
+      }
+      teamSlugs.add(slug);
+      (team.domains ?? []).forEach((domainSlug, domainIndex) => {
+        const normalized = String(domainSlug || "").toLowerCase();
+        if (!normalized) return;
+        if (!domainSlugMap.has(normalized)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `AI team ${team.slug ?? index} references unknown domain ${domainSlug}`,
+            path: ["aiTeams", index, "domains", domainIndex],
+          });
+        }
+      });
+    });
+
+    if (value.autonomy?.session && value.safety?.autonomyThresholdMinutes) {
+      const sessionMinutes = Number(value.autonomy.session.maxHours ?? 0) * 60;
+      if (sessionMinutes > value.safety.autonomyThresholdMinutes * 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Autonomy session maxHours significantly exceed safety autonomy threshold — adjust thresholds or cadence",
+          path: ["autonomy", "session", "maxHours"],
+        });
+      }
+    }
+
+    const stakeTiers = value.economy?.stakeTiers ?? [];
+    const sortedDurations = [...stakeTiers].sort((a, b) => Number(a.durationHours) - Number(b.durationHours));
+    for (let index = 0; index < stakeTiers.length; index += 1) {
+      if (stakeTiers[index] !== sortedDurations[index]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Economy stake tiers must be ordered by durationHours ascending",
+          path: ["economy", "stakeTiers"],
+        });
+        break;
+      }
+    }
+  
     const guardianWindow = Number(value.global?.guardianReviewWindow ?? 0);
     const domainSlugs = Array.from(domainSlugMap.keys());
 
@@ -930,6 +1255,12 @@ export function computeMetrics(config: Phase8Config) {
   const streams = config.capitalStreams ?? [];
   const protocols = config.guardianProtocols ?? [];
   const plan = config.selfImprovement?.plan ?? {};
+  const autonomy = config.autonomy;
+  const aiTeams = config.aiTeams ?? [];
+  const safety = config.safety;
+  const economy = config.economy;
+  const models = config.models;
+  const governance = config.governance;
 
   const domainSlugs = domains.map((domain) => String(domain.slug ?? ""));
   const domainCoverageMap = coverageMap(sentinels, domainSlugs);
@@ -1008,6 +1339,31 @@ export function computeMetrics(config: Phase8Config) {
   const lastExecutedAt = Number(plan.lastExecutedAt ?? 0);
   const autonomyGuardCap = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0);
 
+  const sessionMaxHours = Number(autonomy?.session?.maxHours ?? 0);
+  const sessionContextTokens = Number(autonomy?.session?.contextWindowTokens ?? 0);
+  const checkpointCadenceMinutes = Number(autonomy?.session?.checkpointCadenceMinutes ?? 0);
+  const checkpointCount = (autonomy?.progressCheckpoints ?? []).length;
+  const aiTeamDomainSet = new Set<string>();
+  aiTeams.forEach((team) => {
+    (team.domains ?? []).forEach((domain) => {
+      const normalized = String(domain ?? "").toLowerCase();
+      if (normalized) {
+        aiTeamDomainSet.add(normalized);
+      }
+    });
+  });
+  const aiTeamCoverageRatio =
+    domains.length === 0 ? 0 : Math.min(1, aiTeamDomainSet.size / Math.max(domains.length, 1));
+  const safetyTripwireCount = (safety?.tripwires ?? []).length;
+  const validatorConsoleCount = (safety?.validatorConsoles ?? []).length;
+  const stakeTierCount = (economy?.stakeTiers ?? []).length;
+  const milestoneTemplateCount = (economy?.milestoneTemplates ?? []).length;
+  const modelAdapterCount = (models?.adapters ?? []).length;
+  const modelEvaluationCadenceHours = Number(models?.evaluationCadenceHours ?? 0);
+  const modelSafetyTestCount = (models?.safetyTests ?? []).length;
+  const governanceProposalTemplateCount = (governance?.proposalTemplates ?? []).length;
+  const humanPolicyControlCount = (governance?.humanPolicyControls ?? []).length;
+
   const dominanceScore = computeDominanceScore({
     totalMonthlyUSD,
     averageResilience,
@@ -1045,6 +1401,21 @@ export function computeMetrics(config: Phase8Config) {
     guardianProtocolCoverageRatio: domains.length === 0 ? 0 : (protocolCoverageSet.size / domains.length) * 100,
     guardianProtocolSeverityScore: protocols.length === 0 ? 0 : protocolSeverityTotal / protocols.length,
     domainFundingMap: fundingObject,
+    sessionMaxHours,
+    sessionContextTokens,
+    checkpointCadenceMinutes,
+    checkpointCount,
+    aiTeamCount: aiTeams.length,
+    aiTeamCoverageRatio,
+    safetyTripwireCount,
+    validatorConsoleCount,
+    stakeTierCount,
+    milestoneTemplateCount,
+    modelAdapterCount,
+    modelEvaluationCadenceHours,
+    modelSafetyTestCount,
+    governanceProposalTemplateCount,
+    humanPolicyControlCount,
   };
 }
 
@@ -1068,6 +1439,21 @@ type MetricToleranceOverrides = Partial<
     | "guardianProtocolCount"
     | "guardianProtocolCoverageRatio"
     | "guardianProtocolSeverityScore"
+    | "sessionMaxHours"
+    | "sessionContextTokens"
+    | "checkpointCadenceMinutes"
+    | "checkpointCount"
+    | "aiTeamCount"
+    | "aiTeamCoverageRatio"
+    | "safetyTripwireCount"
+    | "validatorConsoleCount"
+    | "stakeTierCount"
+    | "milestoneTemplateCount"
+    | "modelAdapterCount"
+    | "modelEvaluationCadenceHours"
+    | "modelSafetyTestCount"
+    | "governanceProposalTemplateCount"
+    | "humanPolicyControlCount"
   , number>
 >;
 
@@ -1196,6 +1582,35 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
         : protocols.reduce((acc, protocol) => acc + (severityWeights[protocol.severity ?? "high"] ?? 0.5), 0) /
           protocols.length,
     domainFundingMap: Object.fromEntries(domainSlugs.map((slug) => [slug, fundingByDomain.get(slug) ?? 0])),
+    sessionMaxHours: Number(config.autonomy?.session?.maxHours ?? 0),
+    sessionContextTokens: Number(config.autonomy?.session?.contextWindowTokens ?? 0),
+    checkpointCadenceMinutes: Number(config.autonomy?.session?.checkpointCadenceMinutes ?? 0),
+    checkpointCount: Number((config.autonomy?.progressCheckpoints ?? []).length),
+    aiTeamCount: Number((config.aiTeams ?? []).length),
+    aiTeamCoverageRatio:
+      domainSlugs.length === 0
+        ? 0
+        : (() => {
+            const coverageSet = new Set<string>();
+            for (const team of config.aiTeams ?? []) {
+              for (const domain of team.domains ?? []) {
+                const normalized = String(domain ?? "").toLowerCase();
+                if (domainSet.has(normalized)) {
+                  coverageSet.add(normalized);
+                }
+              }
+            }
+            return Math.min(1, coverageSet.size / domainSlugs.length);
+          })(),
+    safetyTripwireCount: Number((config.safety?.tripwires ?? []).length),
+    validatorConsoleCount: Number((config.safety?.validatorConsoles ?? []).length),
+    stakeTierCount: Number((config.economy?.stakeTiers ?? []).length),
+    milestoneTemplateCount: Number((config.economy?.milestoneTemplates ?? []).length),
+    modelAdapterCount: Number((config.models?.adapters ?? []).length),
+    modelEvaluationCadenceHours: Number(config.models?.evaluationCadenceHours ?? 0),
+    modelSafetyTestCount: Number((config.models?.safetyTests ?? []).length),
+    governanceProposalTemplateCount: Number((config.governance?.proposalTemplates ?? []).length),
+    humanPolicyControlCount: Number((config.governance?.humanPolicyControls ?? []).length),
   };
 
   const defaultTolerance: Record<string, number> = {
@@ -1217,6 +1632,21 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     guardianProtocolCount: 1e-9,
     guardianProtocolCoverageRatio: 1e-6,
     guardianProtocolSeverityScore: 1e-9,
+    sessionMaxHours: 1e-9,
+    sessionContextTokens: 1e-9,
+    checkpointCadenceMinutes: 1e-9,
+    checkpointCount: 1e-9,
+    aiTeamCount: 1e-9,
+    aiTeamCoverageRatio: 1e-9,
+    safetyTripwireCount: 1e-9,
+    validatorConsoleCount: 1e-9,
+    stakeTierCount: 1e-9,
+    milestoneTemplateCount: 1e-9,
+    modelAdapterCount: 1e-9,
+    modelEvaluationCadenceHours: 1e-9,
+    modelSafetyTestCount: 1e-9,
+    governanceProposalTemplateCount: 1e-9,
+    humanPolicyControlCount: 1e-9,
   };
 
   const tolerance = { ...defaultTolerance, ...overrides };
@@ -1256,6 +1686,41 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
       key: "guardianProtocolSeverityScore",
       baseline: metrics.guardianProtocolSeverityScore,
       cross: crossCheck.guardianProtocolSeverityScore,
+    },
+    { key: "sessionMaxHours", baseline: metrics.sessionMaxHours, cross: crossCheck.sessionMaxHours },
+    { key: "sessionContextTokens", baseline: metrics.sessionContextTokens, cross: crossCheck.sessionContextTokens },
+    {
+      key: "checkpointCadenceMinutes",
+      baseline: metrics.checkpointCadenceMinutes,
+      cross: crossCheck.checkpointCadenceMinutes,
+    },
+    { key: "checkpointCount", baseline: metrics.checkpointCount, cross: crossCheck.checkpointCount },
+    { key: "aiTeamCount", baseline: metrics.aiTeamCount, cross: crossCheck.aiTeamCount },
+    { key: "aiTeamCoverageRatio", baseline: metrics.aiTeamCoverageRatio, cross: crossCheck.aiTeamCoverageRatio },
+    { key: "safetyTripwireCount", baseline: metrics.safetyTripwireCount, cross: crossCheck.safetyTripwireCount },
+    { key: "validatorConsoleCount", baseline: metrics.validatorConsoleCount, cross: crossCheck.validatorConsoleCount },
+    { key: "stakeTierCount", baseline: metrics.stakeTierCount, cross: crossCheck.stakeTierCount },
+    {
+      key: "milestoneTemplateCount",
+      baseline: metrics.milestoneTemplateCount,
+      cross: crossCheck.milestoneTemplateCount,
+    },
+    { key: "modelAdapterCount", baseline: metrics.modelAdapterCount, cross: crossCheck.modelAdapterCount },
+    {
+      key: "modelEvaluationCadenceHours",
+      baseline: metrics.modelEvaluationCadenceHours,
+      cross: crossCheck.modelEvaluationCadenceHours,
+    },
+    { key: "modelSafetyTestCount", baseline: metrics.modelSafetyTestCount, cross: crossCheck.modelSafetyTestCount },
+    {
+      key: "governanceProposalTemplateCount",
+      baseline: metrics.governanceProposalTemplateCount,
+      cross: crossCheck.governanceProposalTemplateCount,
+    },
+    {
+      key: "humanPolicyControlCount",
+      baseline: metrics.humanPolicyControlCount,
+      cross: crossCheck.humanPolicyControlCount,
     },
   ];
 
@@ -1605,6 +2070,12 @@ export function telemetryMarkdown(
 ): string {
   const sentinelCoverageMap = sentinelNameMap(config);
   const streamDomainMap = streamNameMap(config);
+  const autonomy = config.autonomy;
+  const safety = config.safety;
+  const economy = config.economy;
+  const models = config.models;
+  const governance = config.governance;
+  const aiTeams = config.aiTeams ?? [];
 
   const lines: string[] = [];
   lines.push(`# Phase 8 — Universal Value Dominance Telemetry`);
@@ -1638,6 +2109,36 @@ export function telemetryMarkdown(
   if (metrics.lastExecutedAt) {
     lines.push(`- Last self-improvement execution: ${new Date(metrics.lastExecutedAt * 1000).toISOString()}`);
   }
+  if (metrics.sessionMaxHours) {
+    lines.push(
+      `- Autonomous session envelope: ${metrics.sessionMaxHours.toFixed(2)} hours · ${metrics.sessionContextTokens.toLocaleString()} token context · checkpoints every ${metrics.checkpointCadenceMinutes.toFixed(0)} minutes (${metrics.checkpointCount} checkpoints)`,
+    );
+  }
+  if (metrics.aiTeamCount) {
+    lines.push(
+      `- Multi-agent teams: ${metrics.aiTeamCount} orchestrators covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
+    );
+  }
+  if (metrics.safetyTripwireCount || metrics.validatorConsoleCount) {
+    lines.push(
+      `- Safety lattice: ${metrics.safetyTripwireCount} automated tripwires · ${metrics.validatorConsoleCount} validator consoles`,
+    );
+  }
+  if (metrics.stakeTierCount || metrics.milestoneTemplateCount) {
+    lines.push(
+      `- Economic incentives: ${metrics.stakeTierCount} stake tiers · ${metrics.milestoneTemplateCount} milestone templates`,
+    );
+  }
+  if (metrics.modelAdapterCount || metrics.modelEvaluationCadenceHours) {
+    lines.push(
+      `- Model adapters: ${metrics.modelAdapterCount} adapters · evaluation cadence ${metrics.modelEvaluationCadenceHours.toFixed(1)}h · ${metrics.modelSafetyTestCount} safety tests`,
+    );
+  }
+  if (metrics.governanceProposalTemplateCount || metrics.humanPolicyControlCount) {
+    lines.push(
+      `- Governance readiness: ${metrics.governanceProposalTemplateCount} proposal templates · ${metrics.humanPolicyControlCount} human policy controls`,
+    );
+  }
   lines.push("");
 
   const diagnostics = guardrailDiagnostics(config);
@@ -1664,6 +2165,117 @@ export function telemetryMarkdown(
   lines.push(`- Manifest Hash: ${config.global?.manifestoHash ?? "—"}`);
   lines.push(`- Max drawdown guard: ${config.global?.maxDrawdownBps} bps`);
   lines.push("");
+
+  if (autonomy || aiTeams.length) {
+    lines.push(`## Autonomy & Multi-Agent Execution`);
+    if (autonomy?.session) {
+      lines.push(
+        `- Session runtime: ${autonomy.session.maxHours}h · context ${autonomy.session.contextWindowTokens.toLocaleString()} tokens · checkpoint cadence ${autonomy.session.checkpointCadenceMinutes} minutes`,
+      );
+      lines.push(`- Memory strategy: ${autonomy.memoryStrategy}`);
+      if (autonomy.persistentExecution) {
+        const resources = autonomy.persistentExecution.resources ?? {};
+        lines.push(
+          `- Persistent execution: ${autonomy.persistentExecution.runtime} @ ${autonomy.persistentExecution.image} (${resources.cpu ?? "cpu"}/${resources.memory ?? "ram"}/${resources.storage ?? "storage"})`,
+        );
+      }
+      for (const checkpoint of autonomy.progressCheckpoints ?? []) {
+        lines.push(
+          `  • Checkpoint ${checkpoint.name}: every ${checkpoint.intervalMinutes} minutes — ${checkpoint.description}`,
+        );
+      }
+    }
+    if (aiTeams.length) {
+      for (const team of aiTeams) {
+        const specialists = (team.specialists ?? []).length;
+        lines.push(
+          `- Team ${team.name}: ${team.mission} · cadence ${team.cadenceMinutes} minutes · specialists ${specialists} · collaboration ${team.collaborationProtocol}`,
+        );
+      }
+    }
+    lines.push("");
+  }
+
+  if (safety) {
+    lines.push(`## Oversight & Safety`);
+    lines.push(
+      `- Autonomy threshold ${safety.autonomyThresholdMinutes} minutes · check-ins ${safety.checkInCadenceMinutes} minutes · trace sampling ${(safety.logging?.traceSampling ?? 0) * 100}%`,
+    );
+    lines.push(`- Logging sinks: ${(safety.logging?.sinks ?? []).map((sink) => sink.name).join(", ") || "None"}`);
+    for (const tripwire of safety.tripwires ?? []) {
+      lines.push(`  • Tripwire ${tripwire.name}: ${tripwire.trigger} → ${tripwire.action} (${tripwire.severity})`);
+    }
+    if (safety.validatorConsoles?.length) {
+      lines.push(
+        `- Validator consoles: ${safety.validatorConsoles.map((console) => `${console.name} (${console.url})`).join(", ")}`,
+      );
+    }
+    lines.push("");
+  }
+
+  if (economy) {
+    lines.push(`## Economic Incentives`);
+    for (const tier of economy.stakeTiers ?? []) {
+      lines.push(
+        `- Stake tier ${tier.name}: duration ${tier.durationHours}h · minimum stake ${tier.minimumStake} · slash ×${tier.slashMultiplier}`,
+      );
+    }
+    for (const milestone of economy.milestoneTemplates ?? []) {
+      lines.push(`  • Milestone ${milestone.name}: ${milestone.description} (${milestone.payoutBps} bps)`);
+    }
+    if (economy.budgetCaps) {
+      lines.push(
+        `- Budget caps: compute ${usd(economy.budgetCaps.maxComputeUSD)} · API ${usd(economy.budgetCaps.maxApiSpendUSD)} · token ${usd(economy.budgetCaps.maxTokenSpendUSD)}`,
+      );
+    }
+    if (economy.rewardCurves) {
+      lines.push(
+        `- Reward curves: long task bonus ${economy.rewardCurves.longTaskBonusBps} bps · validator premium ${economy.rewardCurves.validatorPremiumBps} bps`,
+      );
+    }
+    lines.push("");
+  }
+
+  if (models) {
+    lines.push(`## Model Integration Layer`);
+    lines.push(
+      `- Evaluation cadence: every ${models.evaluationCadenceHours}h · benchmarks ${(models.evaluationBenchmarks ?? []).join(", ") || "—"}`,
+    );
+    for (const adapter of models.adapters ?? []) {
+      lines.push(
+        `  • Adapter ${adapter.name} (${adapter.provider}) — ${adapter.modality} · ${adapter.maxContextTokens.toLocaleString()} tokens · $${adapter.costPer1kTokensUSD.toFixed(4)}/1k tokens · strengths ${(adapter.strengths ?? []).join(", ") || "—"}`,
+      );
+    }
+    if (models.dynamicRouting) {
+      lines.push(
+        `- Dynamic routing: ${models.dynamicRouting.strategy} · metrics ${(models.dynamicRouting.metrics ?? []).join(", ") || "—"}`,
+      );
+    }
+    for (const test of models.safetyTests ?? []) {
+      lines.push(`  • Safety test ${test.name}: every ${test.frequencyHours}h`);
+    }
+    lines.push("");
+  }
+
+  if (governance) {
+    lines.push(`## Governance & Human Collaboration`);
+    lines.push(`- Governance interface: ${governance.interface}`);
+    if (governance.validatorTools?.length) {
+      lines.push(
+        `- Validator tools: ${governance.validatorTools.map((tool) => `${tool.name} (${tool.url})`).join(", ")}`,
+      );
+    }
+    for (const proposal of governance.proposalTemplates ?? []) {
+      lines.push(`  • Proposal template ${proposal.title}: ETA ${proposal.executionEtaHours}h — ${proposal.summary}`);
+    }
+    if (governance.humanPolicyControls?.length) {
+      lines.push("- Human-in-the-loop controls:");
+      for (const control of governance.humanPolicyControls) {
+        lines.push(`  • ${control.name}: requirement ${control.requirement} — enforcement ${control.enforcement}`);
+      }
+    }
+    lines.push("");
+  }
 
   lines.push(`## Domains`);
   lines.push(
@@ -1788,6 +2400,21 @@ function generateOperatorRunbook(
   if (metrics.guardianWindowSeconds) {
     lines.push(
       `• Minimum sentinel coverage: ${metrics.minDomainCoverageSeconds.toFixed(0)}s vs guardian window ${metrics.guardianWindowSeconds}s`,
+    );
+  }
+  if (metrics.sessionMaxHours) {
+    lines.push(
+      `• Autonomous session envelope: ${metrics.sessionMaxHours.toFixed(2)}h · ${metrics.sessionContextTokens.toLocaleString()} tokens · checkpoint ${metrics.checkpointCadenceMinutes.toFixed(0)}m`,
+    );
+  }
+  if (metrics.aiTeamCount) {
+    lines.push(
+      `• AI team mesh: ${metrics.aiTeamCount} teams covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
+    );
+  }
+  if (metrics.safetyTripwireCount || metrics.validatorConsoleCount) {
+    lines.push(
+      `• Safety posture: ${metrics.safetyTripwireCount} tripwires · ${metrics.validatorConsoleCount} validator consoles on standby`,
     );
   }
   lines.push("");
@@ -2201,6 +2828,21 @@ function generateDominanceScorecard(
       guardianProtocolCoveragePercent: Number(metrics.guardianProtocolCoverageRatio.toFixed(1)),
       guardianProtocolSeverityScore: Number(metrics.guardianProtocolSeverityScore.toFixed(2)),
       guardianProtocolSeverityLevel: describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase(),
+      sessionMaxHours: metrics.sessionMaxHours,
+      sessionContextTokens: metrics.sessionContextTokens,
+      checkpointCadenceMinutes: metrics.checkpointCadenceMinutes,
+      checkpointCount: metrics.checkpointCount,
+      aiTeamCount: metrics.aiTeamCount,
+      aiTeamCoveragePercent: Number((metrics.aiTeamCoverageRatio * 100).toFixed(1)),
+      safetyTripwireCount: metrics.safetyTripwireCount,
+      validatorConsoleCount: metrics.validatorConsoleCount,
+      stakeTierCount: metrics.stakeTierCount,
+      milestoneTemplateCount: metrics.milestoneTemplateCount,
+      modelAdapterCount: metrics.modelAdapterCount,
+      modelEvaluationCadenceHours: metrics.modelEvaluationCadenceHours,
+      modelSafetyTestCount: metrics.modelSafetyTestCount,
+      governanceProposalTemplateCount: metrics.governanceProposalTemplateCount,
+      humanPolicyControlCount: metrics.humanPolicyControlCount,
     },
     domains: (config.domains ?? []).map((domain) => {
       const slug = String(domain.slug ?? "").toLowerCase();
@@ -2249,6 +2891,27 @@ function generateDominanceScorecard(
       plan: config.selfImprovement?.plan ?? null,
       maxDrawdownBps: config.global?.maxDrawdownBps ?? null,
     },
+    autonomy: config.autonomy ?? null,
+    aiTeams: (config.aiTeams ?? []).map((team) => ({
+      slug: team.slug,
+      name: team.name,
+      mission: team.mission,
+      leadAgent: team.leadAgent,
+      leadModel: team.leadModel,
+      cadenceMinutes: team.cadenceMinutes,
+      domains: team.domains ?? [],
+      specialists: (team.specialists ?? []).map((specialist) => ({
+        role: specialist.role,
+        agent: specialist.agent,
+        model: specialist.model,
+        contextWindowTokens: specialist.contextWindowTokens,
+        maxAutonomyMinutes: specialist.maxAutonomyMinutes,
+      })),
+    })),
+    safety: config.safety ?? null,
+    economy: config.economy ?? null,
+    models: config.models ?? null,
+    governance: config.governance ?? null,
   };
 }
 
@@ -2264,6 +2927,38 @@ export function buildSafeTransactions(entries: CalldataEntry[], managerAddress: 
     },
     contractInputsValues: {},
   }));
+}
+
+function generateAiTeamMatrix(config: Phase8Config, metrics: ReturnType<typeof computeMetrics>, generatedAt: string) {
+  return {
+    generatedAt,
+    summary: {
+      teams: metrics.aiTeamCount,
+      domainCoveragePercent: Number((metrics.aiTeamCoverageRatio * 100).toFixed(1)),
+      sessionMaxHours: metrics.sessionMaxHours,
+      checkpointCadenceMinutes: metrics.checkpointCadenceMinutes,
+    },
+    teams: (config.aiTeams ?? []).map((team) => ({
+      slug: team.slug,
+      name: team.name,
+      mission: team.mission,
+      cadenceMinutes: team.cadenceMinutes,
+      collaborationProtocol: team.collaborationProtocol,
+      memoryChannel: team.memoryChannel ?? null,
+      escalationContact: team.escalationContact ?? null,
+      leadAgent: team.leadAgent,
+      leadModel: team.leadModel,
+      domains: team.domains ?? [],
+      specialists: (team.specialists ?? []).map((specialist) => ({
+        role: specialist.role,
+        agent: specialist.agent,
+        model: specialist.model,
+        contextWindowTokens: specialist.contextWindowTokens,
+        maxAutonomyMinutes: specialist.maxAutonomyMinutes,
+        capabilities: specialist.capabilities ?? [],
+      })),
+    })),
+  };
 }
 
 function systemPauseAddress(config: Phase8Config): string {
@@ -2576,6 +3271,9 @@ export function writeArtifacts(
   const guardianPlaybookPath = join(outputDir, "phase8-guardian-response-playbook.md");
   writeFileSync(guardianPlaybookPath, generateGuardianResponsePlaybook(config, metrics, generatedAt));
 
+  const aiTeamMatrixPath = join(outputDir, "phase8-ai-team-matrix.json");
+  writeFileSync(aiTeamMatrixPath, `${JSON.stringify(generateAiTeamMatrix(config, metrics, generatedAt), null, 2)}\n`);
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
@@ -2589,6 +3287,7 @@ export function writeArtifacts(
     { label: "Dominance scorecard", path: scorecardPath },
     { label: "Emergency overrides", path: emergencyOverridesPath },
     { label: "Guardian response playbook", path: guardianPlaybookPath },
+    { label: "AI team matrix", path: aiTeamMatrixPath },
   ];
 }
 
