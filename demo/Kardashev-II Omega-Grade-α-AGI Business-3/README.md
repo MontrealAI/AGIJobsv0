@@ -11,6 +11,7 @@
 - **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & live parameter control.
 - **Tamper-evident audit** – optional BLAKE3 (or BLAKE2b fallback) message hashing to JSONL for compliance-grade traceability.
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
+- **Resilient mission scheduler** – checkpointed event graph restarts instantly with deadlines, validation windows, and control events intact.
 
 ```mermaid
 flowchart LR
@@ -80,6 +81,7 @@ flowchart LR
 - `cancel_job` immediately halts any job (even mid-validation), returning rewards to the employer and releasing all stakes.
 - Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
 - `simulation_energy_scale`, `simulation_compute_scale`, and `simulation_tick_seconds` can be adjusted live to model external energy or demand shocks.
+- `scheduler` snapshots (visible via `--status-output`) expose pending deadlines & validation windows, allowing operators to time new sub-jobs or pauses precisely.
 
 ## 📜 Audit Ledger
 
@@ -137,6 +139,11 @@ capacities in real time, which in turn updates scarcity pricing and validator/wo
 - **Stake management** for workers and validators backed by the `ResourceManager` ledger.
 - **Emergency pause / resume / shutdown** via file-based control channel for air-gapped operations.
 - **Checkpointing** ensures instant crash recovery with zero operator intervention.
+
+## ♾️ Persistent Scheduler Telemetry
+
+- `scheduler.json` payloads saved inside checkpoints now persist every in-flight deadline, commit window, and finalisation timer; restarts simply resume the queue.
+- The status stream’s `scheduler` object surfaces pending counts and the next scheduled event with an ETA, enabling dashboards to highlight looming risk.
 
 ## 📈 Extending the Demo
 

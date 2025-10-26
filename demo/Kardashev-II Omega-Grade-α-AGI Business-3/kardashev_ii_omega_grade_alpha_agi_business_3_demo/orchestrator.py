@@ -9,7 +9,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional
 
 from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, spawn_agent
 from .audit import AuditTrail
@@ -19,6 +19,7 @@ from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
 from .logging_config import configure_logging
 from .messaging import MessageBus
 from .resources import ResourceManager
+from .scheduler import EventScheduler, ScheduledEvent
 from .simulation import PlanetarySimulation, SimulationState, SyntheticEconomySim
 
 
@@ -74,6 +75,7 @@ class Orchestrator:
             base_token_supply=config.base_agent_tokens * 10,
         )
         self.job_registry = JobRegistry()
+        self.scheduler = EventScheduler(self._dispatch_scheduled_event)
         self.checkpoint = CheckpointManager(config.checkpoint_path)
         self.governance = GovernanceController(config.governance)
         self.simulation: Optional[PlanetarySimulation] = SyntheticEconomySim() if config.enable_simulation else None
@@ -90,6 +92,11 @@ class Orchestrator:
             self._status_path.parent.mkdir(parents=True, exist_ok=True)
             if not self._status_path.exists():
                 self._status_path.touch()
+        self._event_handlers: Dict[str, Callable[[ScheduledEvent], Awaitable[None]]] = {
+            "job_deadline": self._handle_job_deadline_event,
+            "validation_commit_end": self._handle_validation_commit_end_event,
+            "validation_finalize": self._handle_validation_finalize_event,
+        }
 
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
@@ -137,12 +144,11 @@ class Orchestrator:
                 job_records = self._rehydrate_jobs(snapshot.get("jobs", {}))
                 if job_records:
                     self.job_registry.rehydrate(job_records)
-                    for record in job_records:
-                        if record.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
-                            asyncio.create_task(
-                                self._schedule_deadline(record),
-                                name=f"deadline:{record.job_id}",
-                            )
+                    scheduler_state = snapshot.get("scheduler", {})
+                    if isinstance(scheduler_state, dict):
+                        await self.scheduler.rehydrate(scheduler_state)
+                    for record in self.job_registry.iter_jobs():
+                        await self._ensure_job_events(record)
                 self._info("state_rehydrated", job_count=len(job_records))
                 for agent, balances in snapshot.get("resources", {}).items():
                     account = self.resources.ensure_account(agent)
@@ -150,6 +156,37 @@ class Orchestrator:
                     account.locked = balances["locked"]
                     account.energy_quota = balances["energy_quota"]
                     account.compute_quota = balances["compute_quota"]
+
+    async def _ensure_job_events(self, job: JobRecord) -> None:
+        if job.status in {JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.FINALIZED}:
+            await self._cancel_job_events(job)
+            return
+        if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
+            if not self.scheduler.has_event(job.deadline_event_id):
+                deadline = await self.scheduler.schedule(
+                    "job_deadline",
+                    job.spec.deadline,
+                    {"job_id": job.job_id},
+                    event_id=job.deadline_event_id,
+                )
+                job.deadline_event_id = deadline.event_id
+        if job.status == JobStatus.COMPLETED:
+            if job.commit_deadline and not self.scheduler.has_event(job.commit_event_id):
+                commit = await self.scheduler.schedule(
+                    "validation_commit_end",
+                    job.commit_deadline,
+                    {"job_id": job.job_id},
+                    event_id=job.commit_event_id,
+                )
+                job.commit_event_id = commit.event_id
+            if job.reveal_deadline and not self.scheduler.has_event(job.finalization_event_id):
+                finalize = await self.scheduler.schedule(
+                    "validation_finalize",
+                    job.reveal_deadline,
+                    {"job_id": job.job_id},
+                    event_id=job.finalization_event_id,
+                )
+                job.finalization_event_id = finalize.event_id
 
     async def _spawn_agents(self) -> List[asyncio.Task[None]]:
         tasks: List[asyncio.Task[None]] = []
@@ -270,6 +307,7 @@ class Orchestrator:
             self.checkpoint.save(
                 {record.job_id: record for record in self.job_registry.iter_jobs()},
                 self.resources,
+                scheduler=self.scheduler,
             )
             snapshot = self.resources.snapshot()
             self._info(
@@ -330,6 +368,21 @@ class Orchestrator:
                 validator_votes=validator_votes,
                 validators_with_stake=set(payload.get("validators_with_stake", [])),
             )
+            record.deadline_event_id = payload.get("deadline_event_id")
+            record.commit_event_id = payload.get("commit_event_id")
+            record.finalization_event_id = payload.get("finalization_event_id")
+            commit_deadline_raw = payload.get("commit_deadline")
+            if isinstance(commit_deadline_raw, str):
+                commit_deadline = datetime.fromisoformat(commit_deadline_raw)
+                if commit_deadline.tzinfo is None:
+                    commit_deadline = commit_deadline.replace(tzinfo=timezone.utc)
+                record.commit_deadline = commit_deadline
+            reveal_deadline_raw = payload.get("reveal_deadline")
+            if isinstance(reveal_deadline_raw, str):
+                reveal_deadline = datetime.fromisoformat(reveal_deadline_raw)
+                if reveal_deadline.tzinfo is None:
+                    reveal_deadline = reveal_deadline.replace(tzinfo=timezone.utc)
+                record.reveal_deadline = reveal_deadline
             records.append(record)
         return records
 
@@ -355,6 +408,13 @@ class Orchestrator:
                 elif message.topic.startswith("validation:reveal:"):
                     job_id = message.topic.split(":")[-1]
                     await self._handle_reveal(job_id, message.payload["validator"], message.payload["vote"])
+
+    async def _dispatch_scheduled_event(self, event: ScheduledEvent) -> None:
+        handler = self._event_handlers.get(event.event_type)
+        if handler is None:
+            self._warning("scheduler_unknown_event", event_type=event.event_type, payload=event.payload)
+            return
+        await handler(event)
 
     async def _control_file_listener(self) -> None:
         try:
@@ -408,6 +468,7 @@ class Orchestrator:
                 self.resources.record_usage(record.assigned_agent, energy_used, compute_used)
             except ValueError as exc:
                 self._warning("resource_overuse", job_id=job_id, error=str(exc))
+        await self._cancel_job_events(record)
         record = self.job_registry.mark_completed(job_id, summary, energy_used, compute_used)
         await self._initiate_validation(record)
         await self._persist_status_snapshot()
@@ -421,6 +482,88 @@ class Orchestrator:
         else:
             await self._persist_status_snapshot()
 
+    async def _cancel_job_events(
+        self,
+        job: JobRecord,
+        *,
+        include_deadline: bool = True,
+        skip_event_id: Optional[str] = None,
+    ) -> None:
+        if include_deadline:
+            deadline_id = job.deadline_event_id
+            if deadline_id and deadline_id != skip_event_id:
+                await self.scheduler.cancel(deadline_id)
+            job.deadline_event_id = None
+        commit_id = job.commit_event_id
+        finalize_id = job.finalization_event_id
+        clear_validation = False
+        if commit_id:
+            if commit_id != skip_event_id:
+                await self.scheduler.cancel(commit_id)
+            job.commit_event_id = None
+            clear_validation = True
+        if finalize_id:
+            if finalize_id != skip_event_id:
+                await self.scheduler.cancel(finalize_id)
+            job.finalization_event_id = None
+            clear_validation = True
+        if skip_event_id in {commit_id, finalize_id}:
+            clear_validation = True
+        if clear_validation:
+            job.commit_deadline = None
+            job.reveal_deadline = None
+
+    async def _handle_job_deadline_event(self, event: ScheduledEvent) -> None:
+        job_id = str(event.payload.get("job_id", ""))
+        if not job_id:
+            return
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            return
+        job.deadline_event_id = None
+        if job.status in {JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.FINALIZED}:
+            return
+        if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
+            job = self.job_registry.mark_failed(job.job_id, "Deadline reached")
+            self._warning("job_deadline_missed", job_id=job.job_id)
+            if job.assigned_agent:
+                slash_amount = self.governance.slash_amount(job.stake_locked)
+                self.resources.slash(job.assigned_agent, slash_amount)
+            await self.bus.publish(
+                f"jobs:recovery:{job.job_id}",
+                {"job_id": job.job_id, "status": job.status.value},
+                "orchestrator",
+            )
+            await self._cancel_job_events(job, include_deadline=False, skip_event_id=event.event_id)
+            await self._persist_status_snapshot()
+
+    async def _handle_validation_commit_end_event(self, event: ScheduledEvent) -> None:
+        job_id = str(event.payload.get("job_id", ""))
+        if not job_id:
+            return
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            return
+        job.commit_event_id = None
+        await self.bus.publish(
+            f"validation:phase:reveal:{job_id}",
+            {"job_id": job_id, "stage": "reveal"},
+            "orchestrator",
+        )
+        await self._persist_status_snapshot()
+
+    async def _handle_validation_finalize_event(self, event: ScheduledEvent) -> None:
+        job_id = str(event.payload.get("job_id", ""))
+        if not job_id:
+            return
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            return
+        await self._finalize_job(job, skip_event_id=event.event_id)
+
     async def post_alpha_job(self, spec: JobSpec) -> JobRecord:
         employer = spec.metadata.get("employer", self.config.operator_account)
         employer_account = self.resources.ensure_account(employer, self.config.base_agent_tokens)
@@ -431,7 +574,13 @@ class Orchestrator:
         spec.stake_required = stake_required
         record = self.job_registry.create_job(spec)
         self._info("job_posted", job_id=record.job_id, title=spec.title, reward=spec.reward_tokens)
-        asyncio.create_task(self._schedule_deadline(record), name=f"deadline:{record.job_id}")
+        deadline_event = await self.scheduler.schedule(
+            "job_deadline",
+            spec.deadline,
+            {"job_id": record.job_id},
+            event_id=record.deadline_event_id,
+        )
+        record.deadline_event_id = deadline_event.event_id
         await self.bus.publish(
             topic=f"jobs:{spec.required_skills[0] if spec.required_skills else 'general'}",
             payload={"spec": spec, "job_id": record.job_id},
@@ -455,23 +604,6 @@ class Orchestrator:
         await self._persist_status_snapshot()
         return job
 
-    async def _schedule_deadline(self, job: JobRecord) -> None:
-        await asyncio.sleep(max(0.0, (job.spec.deadline - datetime.now(timezone.utc)).total_seconds()))
-        if job.status in {JobStatus.FINALIZED, JobStatus.CANCELLED}:
-            return
-        if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
-            job = self.job_registry.mark_failed(job.job_id, "Deadline reached")
-            self._warning("job_deadline_missed", job_id=job.job_id)
-            if job.assigned_agent:
-                slash_amount = self.governance.slash_amount(job.stake_locked)
-                self.resources.slash(job.assigned_agent, slash_amount)
-            await self.bus.publish(
-                f"jobs:recovery:{job.job_id}",
-                {"job_id": job.job_id, "status": job.status.value},
-                "orchestrator",
-            )
-            await self._persist_status_snapshot()
-
     async def _initiate_validation(self, job: JobRecord) -> None:
         for validator in self.config.validator_names:
             self.resources.lock_stake(validator, self.governance.params.validator_stake)
@@ -481,11 +613,27 @@ class Orchestrator:
                 {"validator": validator, "job_id": job.job_id},
                 "orchestrator",
             )
-        await asyncio.sleep(self.governance.params.validator_commit_window.total_seconds())
-        await asyncio.sleep(self.governance.params.validator_reveal_window.total_seconds())
-        await self._finalize_job(job)
+        now = datetime.now(timezone.utc)
+        commit_deadline = now + self.governance.params.validator_commit_window
+        reveal_deadline = commit_deadline + self.governance.params.validator_reveal_window
+        job.commit_deadline = commit_deadline
+        job.reveal_deadline = reveal_deadline
+        commit_event = await self.scheduler.schedule(
+            "validation_commit_end",
+            commit_deadline,
+            {"job_id": job.job_id},
+            event_id=job.commit_event_id,
+        )
+        finalize_event = await self.scheduler.schedule(
+            "validation_finalize",
+            reveal_deadline,
+            {"job_id": job.job_id},
+            event_id=job.finalization_event_id,
+        )
+        job.commit_event_id = commit_event.event_id
+        job.finalization_event_id = finalize_event.event_id
 
-    async def _finalize_job(self, job: JobRecord) -> None:
+    async def _finalize_job(self, job: JobRecord, *, skip_event_id: Optional[str] = None) -> None:
         if job.status == JobStatus.FINALIZED:
             return
         approvals = sum(1 for v in job.validator_votes.values() if v)
@@ -500,6 +648,7 @@ class Orchestrator:
             if job.assigned_agent:
                 self.resources.credit_tokens(job.assigned_agent, job.spec.reward_tokens)
                 self.resources.release_stake(job.assigned_agent, job.stake_locked)
+        await self._cancel_job_events(job, skip_event_id=skip_event_id)
         self._release_validator_stake(job)
         self._info("job_finalized", job_id=job.job_id, status=job.status.value)
         await self._persist_status_snapshot()
@@ -534,9 +683,11 @@ class Orchestrator:
         if pending:
             await asyncio.gather(*pending, return_exceptions=True)
         self._tasks = [task for task in self._tasks if not task.cancelled() and not task.done()]
+        await self.scheduler.shutdown()
         self.checkpoint.save(
             {record.job_id: record for record in self.job_registry.iter_jobs()},
             self.resources,
+            scheduler=self.scheduler,
         )
         self._info("orchestrator_stopped")
         if self.audit:
@@ -665,6 +816,7 @@ class Orchestrator:
         if job.assigned_agent:
             self.resources.release_stake(job.assigned_agent, job.stake_locked)
         self._release_validator_stake(job)
+        await self._cancel_job_events(job)
         job = self.job_registry.mark_cancelled(job_id, str(reason))
         await self.bus.publish(
             f"jobs:cancelled:{job_id}",
@@ -692,6 +844,20 @@ class Orchestrator:
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
                 "prosperity_index": self._latest_simulation_state.prosperity_index,
                 "sustainability_index": self._latest_simulation_state.sustainability_index,
+            }
+        pending_events = list(self.scheduler.pending_events())
+        pending_counts = Counter(event.event_type for event in pending_events)
+        next_event = self.scheduler.peek_next()
+        next_event_payload: Optional[Dict[str, Any]] = None
+        if next_event is not None:
+            next_event_payload = {
+                "type": next_event.event_type,
+                "execute_at": next_event.execute_at.isoformat(),
+                "job_id": next_event.payload.get("job_id"),
+                "eta_seconds": max(
+                    0.0,
+                    (next_event.execute_at - datetime.now(timezone.utc)).total_seconds(),
+                ),
             }
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -724,6 +890,11 @@ class Orchestrator:
                 "validator_reveal_window_seconds": governance.validator_reveal_window.total_seconds(),
             },
             "simulation": simulation_state,
+            "scheduler": {
+                "pending_events": len(pending_events),
+                "pending_by_type": dict(pending_counts),
+                "next_event": next_event_payload,
+            },
         }
 
     async def _persist_status_snapshot(self) -> None:
