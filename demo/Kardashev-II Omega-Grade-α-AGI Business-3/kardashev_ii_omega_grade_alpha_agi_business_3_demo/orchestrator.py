@@ -101,19 +101,6 @@ class Orchestrator:
         self._tasks.append(asyncio.create_task(self._cycle_loop(), name="cycles"))
 
     async def _bootstrap_state(self) -> None:
-        if self.config.resume_from_checkpoint:
-            snapshot = self.checkpoint.load()
-            if snapshot:
-                job_records = self._rehydrate_jobs(snapshot.get("jobs", {}))
-                if job_records:
-                    self.job_registry.rehydrate(job_records)
-                self._info("state_rehydrated", job_count=len(job_records))
-                for agent, balances in snapshot.get("resources", {}).items():
-                    account = self.resources.ensure_account(agent)
-                    account.tokens = balances["tokens"]
-                    account.locked = balances["locked"]
-                    account.energy_quota = balances["energy_quota"]
-                    account.compute_quota = balances["compute_quota"]
         self.resources.ensure_account(self.config.operator_account, self.config.base_agent_tokens * 10)
         self._control_path = self.config.control_channel_file
         self._control_path.parent.mkdir(parents=True, exist_ok=True)
@@ -124,6 +111,25 @@ class Orchestrator:
             self.resources.ensure_account(validator, self.config.base_agent_tokens / 2)
         for strategist in self.config.strategist_names:
             self.resources.ensure_account(strategist, self.config.base_agent_tokens)
+        if self.config.resume_from_checkpoint:
+            snapshot = self.checkpoint.load()
+            if snapshot:
+                job_records = self._rehydrate_jobs(snapshot.get("jobs", {}))
+                if job_records:
+                    self.job_registry.rehydrate(job_records)
+                    for record in job_records:
+                        if record.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
+                            asyncio.create_task(
+                                self._schedule_deadline(record),
+                                name=f"deadline:{record.job_id}",
+                            )
+                self._info("state_rehydrated", job_count=len(job_records))
+                for agent, balances in snapshot.get("resources", {}).items():
+                    account = self.resources.ensure_account(agent)
+                    account.tokens = balances["tokens"]
+                    account.locked = balances["locked"]
+                    account.energy_quota = balances["energy_quota"]
+                    account.compute_quota = balances["compute_quota"]
 
     async def _spawn_agents(self) -> List[asyncio.Task[None]]:
         tasks: List[asyncio.Task[None]] = []
