@@ -94,6 +94,7 @@ function validateReadme() {
     "## 🌐 Settlement lattice & forex fabric",
     "## ♾️ Consistency ledger & multi-angle verification",
     "## 🔭 Scenario stress sweep",
+    "## 🪐 Mission lattice & task hierarchy",
     "## 🧬 Stability ledger & unstoppable consensus",
     "## 🛡️ Governance and safety levers",
     "## 🗝️ Owner override proof deck",

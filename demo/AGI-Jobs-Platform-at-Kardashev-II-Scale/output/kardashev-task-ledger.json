@@ -1,0 +1,113 @@
+{
+  "version": "agi-jobs.kardashev-ii.tasks.v1",
+  "generatedAt": "2025-03-01T00:00:00Z",
+  "totals": {
+    "programmes": 3,
+    "tasks": 26,
+    "energyGw": 2441200,
+    "computeExaflops": 261.9,
+    "agentQuorum": 31910000000,
+    "averageTimelineDays": 441.67
+  },
+  "verification": {
+    "dependenciesResolved": true,
+    "sentinelCoverage": true,
+    "fallbackCoverage": true,
+    "ownerAlignment": true,
+    "autonomyWithinBounds": false,
+    "timelineAligned": false,
+    "programmeDependenciesResolved": true,
+    "unstoppableScore": 0.7778,
+    "warnings": [
+      "dyson-swarm timeline deficit -600.00 days",
+      "dyson-swarm autonomy exceeds max 7800 bps",
+      "ares-biosphere timeline deficit -220.00 days",
+      "gaia-resilience timeline deficit -240.00 days"
+    ]
+  },
+  "programmes": [
+    {
+      "id": "dyson-swarm",
+      "name": "Dyson Swarm Expansion Programme",
+      "federation": "orbital",
+      "ownerSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+      "taskCount": 17,
+      "totalEnergyGw": 2173200,
+      "totalComputeExaflops": 187.9,
+      "totalAgentQuorum": 25370000000,
+      "criticalPathDays": 1140,
+      "timelineDays": 540,
+      "timelineSlackDays": -600,
+      "unstoppableScore": 0.6667,
+      "riskDistribution": {
+        "low": 5,
+        "medium": 11,
+        "high": 1
+      },
+      "dependencies": [],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": false,
+      "autonomyOk": false
+    },
+    {
+      "id": "ares-biosphere",
+      "name": "Ares Biosphere Terraforming Sprint",
+      "federation": "mars",
+      "ownerSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+      "taskCount": 5,
+      "totalEnergyGw": 172000,
+      "totalComputeExaflops": 44,
+      "totalAgentQuorum": 3020000000,
+      "criticalPathDays": 640,
+      "timelineDays": 420,
+      "timelineSlackDays": -220,
+      "unstoppableScore": 0.8333,
+      "riskDistribution": {
+        "low": 1,
+        "medium": 3,
+        "high": 1
+      },
+      "dependencies": [
+        "dyson-swarm"
+      ],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": false,
+      "autonomyOk": true
+    },
+    {
+      "id": "gaia-resilience",
+      "name": "Gaia Resilience Grid",
+      "federation": "earth",
+      "ownerSafe": "0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2",
+      "taskCount": 4,
+      "totalEnergyGw": 96000,
+      "totalComputeExaflops": 30,
+      "totalAgentQuorum": 3520000000,
+      "criticalPathDays": 605,
+      "timelineDays": 365,
+      "timelineSlackDays": -240,
+      "unstoppableScore": 0.8333,
+      "riskDistribution": {
+        "low": 1,
+        "medium": 3,
+        "high": 0
+      },
+      "dependencies": [
+        "dyson-swarm"
+      ],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": false,
+      "autonomyOk": true
+    }
+  ],
+  "dependencyCycles": []
+}

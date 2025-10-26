@@ -212,6 +212,14 @@ flowchart TD
 * **Dashboard card** – A new “Sharded registry fabric” panel visualises shard registries, latencies, and issues (e.g., missing domains or sentinel drift) with colour-coded badges so non-technical stewards can direct remediation instantly.
 * **Scenario integration** – Scenario 8 (“Primary compute plane offline”) now draws on shard coverage data, while the new fabric check feeds the unstoppable consensus score to guarantee routing health before executing multi-planet jobs.
 
+## 🪐 Mission lattice & task hierarchy
+
+* **Programme ledger** – `config/task-lattice.json` enumerates Dyson, terraforming, and resilience programmes with recursive task trees, autonomy caps, sentinel coverage, and fallback plans. The orchestrator validates dependencies, autonomy, sentinels, and owner safes before emitting artefacts.
+* **Unstoppable proofing** – Telemetry exposes mission-level unstoppable scores, dependency health, sentinel coverage, and timeline slack. CI and the stability ledger fail if mission unstoppable drops below 95% or if dependencies drift.
+* **Mermaid blueprint** – `output/kardashev-task-hierarchy.mmd` renders the full interstellar execution graph with risk-coloured nodes. The dashboard loads it alongside the federated command deck so non-technical owners can inspect every dependency in seconds.
+* **Mission ledger** – `output/kardashev-task-ledger.json` captures per-programme critical paths, energy/compute totals, risk mix, sentinel alerts, and unstoppable metrics for auditors, guardians, and executives.
+* **Runbook integration** – Operator briefings and reflection checklists now highlight mission unstoppable scores, dependency health, and warnings to guarantee civilisation-scale projects stay under owner control.
+
 ## 🎛️ Mission directives & verification dashboards
 
 * **Operator briefing pack** – `output/kardashev-operator-briefing.md` condenses owner powers, escalation pathways, drill cadence, and verification status so non-technical stewards can sign off in under two minutes.
@@ -281,10 +289,12 @@ flowchart TD
 | `output/kardashev-energy-schedule.json` | Deterministic energy window plan with per-federation coverage, reliability, and job cadence recommendations. |
 | `output/kardashev-settlement-ledger.json` | Settlement protocol ledger detailing finality, tolerance, coverage, slippage, and risk posture for forex bridges. |
 | `output/kardashev-fabric-ledger.json` | Registry shard ledger capturing domain coverage, sentinel parity, unmatched federations, and latency envelope. |
+| `output/kardashev-task-ledger.json` | Mission lattice ledger covering programme totals, critical paths, unstoppable scores, and dependency issues. |
 | `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, unstoppable control score, and triple-check decoder evidence (primary, secondary, tertiary). |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
 | `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
+| `output/kardashev-task-hierarchy.mmd` | Mermaid diagram visualising programme trees, dependencies, and risk classes for Dyson, terraforming, and resilience missions. |
 
 ---
 

@@ -55,6 +55,7 @@ const DEMO_ROOT = resolveDemoRoot();
 const CONFIG_PATH = join(DEMO_ROOT, "config", "kardashev-ii.manifest.json");
 const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
 const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
+const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
@@ -457,6 +458,51 @@ const FabricConfigSchema = z.object({
 type EnergyFeedsConfig = z.infer<typeof EnergyFeedsConfigSchema>;
 type FabricConfig = z.infer<typeof FabricConfigSchema>;
 
+const MissionTaskSchema = z.lazy(() =>
+  z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    domain: z.string().min(1),
+    federation: z.string().min(1),
+    ownerSafe: AddressSchema,
+    durationDays: z.number().positive(),
+    energyGw: NonNegativeNumberSchema,
+    computeExaflops: NonNegativeNumberSchema,
+    agentQuorum: z.number().nonnegative(),
+    autonomyBps: z.number().int().min(0).max(10_000),
+    risk: z.enum(["low", "medium", "high"]),
+    fallbackPlan: z.string().min(1),
+    sentinel: z.string().min(1),
+    dependencies: z.array(z.string().min(1)).default([]),
+    description: z.string().min(1),
+    children: z.array(MissionTaskSchema).default([]),
+  })
+);
+
+type MissionTask = z.infer<typeof MissionTaskSchema>;
+
+const MissionProgrammeSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  objective: z.string().min(1),
+  federation: z.string().min(1),
+  ownerSafe: AddressSchema,
+  targetValueUSD: z.number().nonnegative(),
+  timelineDays: z.number().positive(),
+  dependencies: z.array(z.string().min(1)).default([]),
+  successCriteria: z.array(z.string().min(1)).min(1),
+  rootTask: MissionTaskSchema,
+});
+
+const MissionLatticeSchema = z.object({
+  version: z.string().min(1),
+  generatedAt: z.string().min(1),
+  programmes: z.array(MissionProgrammeSchema).min(1),
+});
+
+type MissionProgramme = z.infer<typeof MissionProgrammeSchema>;
+type MissionLattice = z.infer<typeof MissionLatticeSchema>;
+
 type EnergyWindowProjection = {
   perFederation: Array<{
     federation: string;
@@ -486,6 +532,454 @@ type EnergyCrossVerification = {
   coverageRatio: number;
   projection: EnergyWindowProjection;
 };
+
+type MissionTelemetrySummary = {
+  version: string;
+  generatedAt: string;
+  totals: {
+    programmes: number;
+    tasks: number;
+    energyGw: number;
+    computeExaflops: number;
+    agentQuorum: number;
+    averageTimelineDays: number;
+  };
+  verification: {
+    dependenciesResolved: boolean;
+    sentinelCoverage: boolean;
+    fallbackCoverage: boolean;
+    ownerAlignment: boolean;
+    autonomyWithinBounds: boolean;
+    timelineAligned: boolean;
+    programmeDependenciesResolved: boolean;
+    unstoppableScore: number;
+    warnings: string[];
+  };
+  programmes: Array<{
+    id: string;
+    name: string;
+    objective: string;
+    federation: string;
+    ownerSafe: string;
+    taskCount: number;
+    totalEnergyGw: number;
+    totalComputeExaflops: number;
+    totalAgentQuorum: number;
+    criticalPathDays: number;
+    timelineSlackDays: number;
+    unstoppableScore: number;
+    riskDistribution: { low: number; medium: number; high: number };
+    dependencies: string[];
+    missingDependencies: string[];
+    missingProgrammeDependencies: string[];
+    sentinelAlerts: string[];
+    ownerAlerts: string[];
+    timelineOk: boolean;
+    autonomyOk: boolean;
+  }>;
+};
+
+type MissionTelemetryArtifacts = {
+  summary: MissionTelemetrySummary;
+  mermaid: string;
+  ledger: any;
+};
+
+type FlattenedMissionTask = {
+  key: string;
+  programmeId: string;
+  node: MissionTask;
+  depth: number;
+  path: string[];
+};
+
+function sanitiseMermaidId(value: string): string {
+  const cleaned = value.replace(/[^a-zA-Z0-9_]/g, "_");
+  return cleaned.length > 0 ? cleaned : `node_${keccak256(toUtf8Bytes(value)).slice(2, 10)}`;
+}
+
+function flattenMissionTask(
+  programmeId: string,
+  task: MissionTask,
+  path: string[] = []
+): FlattenedMissionTask[] {
+  const currentPath = [...path, task.id];
+  const key = `${programmeId}:${task.id}`;
+  const entry: FlattenedMissionTask = {
+    key,
+    programmeId,
+    node: task,
+    depth: path.length,
+    path: currentPath,
+  };
+  let results: FlattenedMissionTask[] = [entry];
+  for (const child of task.children) {
+    results = results.concat(flattenMissionTask(programmeId, child, currentPath));
+  }
+  return results;
+}
+
+function resolveMissionDependency(programmeId: string, dependency: string): string {
+  if (dependency.includes(":")) {
+    const [programme, task] = dependency.split(":", 2);
+    if (programme && task) {
+      return `${programme}:${task}`;
+    }
+  }
+  return `${programmeId}:${dependency}`;
+}
+
+function detectMissionCycles(adjacency: Map<string, string[]>): string[][] {
+  const visited = new Set<string>();
+  const stack = new Set<string>();
+  const cycles: string[][] = [];
+
+  function dfs(node: string, path: string[]) {
+    if (stack.has(node)) {
+      const cycleStart = path.indexOf(node);
+      cycles.push(path.slice(cycleStart));
+      return;
+    }
+    if (visited.has(node)) {
+      return;
+    }
+    visited.add(node);
+    stack.add(node);
+    const neighbours = adjacency.get(node) ?? [];
+    for (const neighbour of neighbours) {
+      dfs(neighbour, [...path, neighbour]);
+    }
+    stack.delete(node);
+  }
+
+  adjacency.forEach((_, node) => {
+    if (!visited.has(node)) {
+      dfs(node, [node]);
+    }
+  });
+
+  return cycles;
+}
+
+function computeMissionCriticalPath(task: MissionTask): number {
+  if (task.children.length === 0) {
+    return task.durationDays;
+  }
+  const childDurations = task.children.map((child) => computeMissionCriticalPath(child));
+  return task.durationDays + Math.max(...childDurations);
+}
+
+function buildMissionMermaid(lattice: MissionLattice): string {
+  const lines: string[] = ["---", "title Mission Lattice Orchestration", "---", "flowchart TD"];
+  const dependencyEdges = new Set<string>();
+  const classAssignments: string[] = [];
+  const knownTasks = new Set<string>();
+
+  function registerTask(programmeId: string, task: MissionTask) {
+    knownTasks.add(`${programmeId}:${task.id}`);
+    task.children.forEach((child) => registerTask(programmeId, child));
+  }
+
+  lattice.programmes.forEach((programme) => registerTask(programme.id, programme.rootTask));
+
+  function formatLabel(task: MissionTask): string {
+    const energy = `${round(task.energyGw, 2)} GW`;
+    const duration = `${task.durationDays}d`;
+    return `${task.name}\\n${duration} · ${energy}`;
+  }
+
+  function addTask(programmeId: string, task: MissionTask, indent = "    "): string {
+    const key = `${programmeId}:${task.id}`;
+    const nodeId = sanitiseMermaidId(key);
+    lines.push(`${indent}${nodeId}[${formatLabel(task)}]`);
+    classAssignments.push(`class ${nodeId} risk-${task.risk};`);
+    for (const child of task.children) {
+      const childId = addTask(programmeId, child, indent);
+      lines.push(`${indent}${nodeId} --> ${childId}`);
+    }
+    for (const dependency of task.dependencies) {
+      const targetKey = resolveMissionDependency(programmeId, dependency);
+      if (knownTasks.has(targetKey)) {
+        dependencyEdges.add(`${nodeId} -.-> ${sanitiseMermaidId(targetKey)}`);
+      }
+    }
+    return nodeId;
+  }
+
+  for (const programme of lattice.programmes) {
+    const subgraphId = sanitiseMermaidId(`programme_${programme.id}`);
+    lines.push(`  subgraph ${subgraphId}[${programme.name}]`);
+    addTask(programme.id, programme.rootTask);
+    lines.push("  end");
+  }
+
+  dependencyEdges.forEach((edge) => {
+    lines.push(`  ${edge}`);
+  });
+
+  lines.push("  classDef risk-low fill:#0b3b31,stroke:#34d399,color:#ecfeff;");
+  lines.push("  classDef risk-medium fill:#1f2937,stroke:#fbbf24,color:#f8fafc;");
+  lines.push("  classDef risk-high fill:#7f1d1d,stroke:#f87171,color:#fef2f2;");
+  lines.push(...classAssignments);
+
+  return lines.join("\n");
+}
+
+function buildMissionLatticeTelemetry(lattice: MissionLattice, manifest: Manifest): MissionTelemetryArtifacts {
+  const sentinelSlugs = new Set(
+    manifest.federations.flatMap((federation) => federation.sentinels.map((sentinel) => sentinel.slug))
+  );
+  const federationSafes = new Map(
+    manifest.federations.map((federation) => [federation.slug, federation.governanceSafe.toLowerCase()])
+  );
+  const programmeIds = new Set(lattice.programmes.map((programme) => programme.id));
+
+  const nodeMap = new Map<string, FlattenedMissionTask>();
+  const nodesByProgramme = new Map<string, FlattenedMissionTask[]>();
+  for (const programme of lattice.programmes) {
+    const flattened = flattenMissionTask(programme.id, programme.rootTask);
+    nodesByProgramme.set(programme.id, flattened);
+    for (const entry of flattened) {
+      nodeMap.set(entry.key, entry);
+    }
+  }
+
+  const adjacency = new Map<string, string[]>();
+  const programmeMissingDependencies = new Map<string, string[]>();
+  const programmeSentinelAlerts = new Map<string, string[]>();
+  const programmeOwnerAlerts = new Map<string, string[]>();
+
+  for (const programme of lattice.programmes) {
+    programmeSentinelAlerts.set(programme.id, []);
+    programmeOwnerAlerts.set(programme.id, []);
+    programmeMissingDependencies.set(programme.id, []);
+  }
+
+  nodeMap.forEach((entry) => {
+    adjacency.set(entry.key, []);
+  });
+
+  const missingDependencies: string[] = [];
+  nodeMap.forEach((entry) => {
+    const deps = entry.node.dependencies ?? [];
+    for (const dependency of deps) {
+      const resolved = resolveMissionDependency(entry.programmeId, dependency);
+      if (!nodeMap.has(resolved)) {
+        missingDependencies.push(`${entry.key}→${dependency}`);
+        programmeMissingDependencies.get(entry.programmeId)?.push(`${entry.node.id}→${dependency}`);
+      } else {
+        adjacency.get(entry.key)?.push(resolved);
+      }
+    }
+  });
+
+  const cycles = detectMissionCycles(adjacency);
+
+  const programmeSummaries: MissionTelemetrySummary["programmes"] = [];
+  let totalEnergy = 0;
+  let totalCompute = 0;
+  let totalAgents = 0;
+  let totalTimeline = 0;
+
+  const warnings: string[] = [];
+  let sentinelCoverageOk = true;
+  let fallbackCoverageOk = true;
+  let ownerAlignmentOk = true;
+  let autonomyCoverageOk = true;
+  let timelineAlignedOk = true;
+  let programmeDependenciesResolvedOk = true;
+
+  const programmeUnstoppable: number[] = [];
+
+  const mermaidDiagram = buildMissionMermaid(lattice);
+
+  for (const programme of lattice.programmes) {
+    const tasks = nodesByProgramme.get(programme.id) ?? [];
+    const taskCount = tasks.length;
+    const energyGw = tasks.reduce((sum, entry) => sum + entry.node.energyGw, 0);
+    const computeExaflops = tasks.reduce((sum, entry) => sum + entry.node.computeExaflops, 0);
+    const agentQuorum = tasks.reduce((sum, entry) => sum + entry.node.agentQuorum, 0);
+    const riskDistribution = tasks.reduce(
+      (acc, entry) => {
+        acc[entry.node.risk] += 1;
+        return acc;
+      },
+      { low: 0, medium: 0, high: 0 } as { low: number; medium: number; high: number }
+    );
+
+    const missingDeps = programmeMissingDependencies.get(programme.id) ?? [];
+    const programmeCycles = cycles.filter((cycle) => cycle.some((node) => node.startsWith(`${programme.id}:`)));
+    const sentinelAlerts: string[] = [];
+    const ownerAlerts: string[] = [];
+
+    const autonomyOk = tasks.every(
+      (entry) => entry.node.autonomyBps <= manifest.dysonProgram.safety.maxAutonomyBps
+    );
+    const fallbackOk = tasks.every((entry) => entry.node.fallbackPlan.trim().length > 0);
+    const sentinelOk = tasks.every((entry) => sentinelSlugs.has(entry.node.sentinel));
+    const ownerOk = tasks.every((entry) => {
+      const expectedSafe = federationSafes.get(entry.node.federation);
+      const matches = expectedSafe === entry.node.ownerSafe;
+      if (!matches) {
+        ownerAlerts.push(`${entry.node.id} expects ${expectedSafe ?? "?"}`);
+      }
+      return matches;
+    });
+    if (!sentinelOk) {
+      sentinelCoverageOk = false;
+      tasks
+        .filter((entry) => !sentinelSlugs.has(entry.node.sentinel))
+        .forEach((entry) => {
+          sentinelAlerts.push(`${entry.node.id}→${entry.node.sentinel}`);
+        });
+    }
+    const sentinelAlertList = programmeSentinelAlerts.get(programme.id)!;
+    sentinelAlertList.push(...sentinelAlerts);
+    const ownerAlertList = programmeOwnerAlerts.get(programme.id)!;
+    ownerAlertList.push(...ownerAlerts);
+    if (!ownerOk) {
+      ownerAlignmentOk = false;
+    }
+    if (!fallbackOk) {
+      fallbackCoverageOk = false;
+    }
+    if (!autonomyOk) {
+      autonomyCoverageOk = false;
+    }
+
+    const programmeDependencies = programme.dependencies ?? [];
+    const missingProgrammeDependencies = programmeDependencies.filter((dep) => !programmeIds.has(dep));
+    if (missingProgrammeDependencies.length > 0) {
+      warnings.push(`${programme.id} missing programme dependencies ${missingProgrammeDependencies.join(", ")}`);
+      programmeDependenciesResolvedOk = false;
+    }
+
+    const criticalPathDays = computeMissionCriticalPath(programme.rootTask);
+    const timelineSlackDays = programme.timelineDays - criticalPathDays;
+    const timelineOk = timelineSlackDays >= 0;
+    if (!timelineOk) {
+      timelineAlignedOk = false;
+    }
+
+    const dependencyOk = missingDeps.length === 0 && programmeCycles.length === 0;
+    const programmeChecks = [dependencyOk, fallbackOk, sentinelOk, ownerOk, autonomyOk, timelineOk];
+    const unstoppableScore =
+      programmeChecks.reduce((sum, ok) => sum + (ok ? 1 : 0), 0) / Math.max(programmeChecks.length, 1);
+    programmeUnstoppable.push(unstoppableScore);
+
+    programmeSummaries.push({
+      id: programme.id,
+      name: programme.name,
+      objective: programme.objective,
+      federation: programme.federation,
+      ownerSafe: programme.ownerSafe,
+      taskCount,
+      totalEnergyGw: round(energyGw, 2),
+      totalComputeExaflops: round(computeExaflops, 2),
+      totalAgentQuorum: agentQuorum,
+      criticalPathDays: round(criticalPathDays, 2),
+      timelineSlackDays: round(timelineSlackDays, 2),
+      unstoppableScore: round(unstoppableScore, 4),
+      riskDistribution,
+      dependencies: programmeDependencies,
+      missingDependencies: missingDeps,
+      missingProgrammeDependencies,
+      sentinelAlerts,
+      ownerAlerts,
+      timelineOk,
+      autonomyOk,
+    });
+
+    totalEnergy += energyGw;
+    totalCompute += computeExaflops;
+    totalAgents += agentQuorum;
+    totalTimeline += programme.timelineDays;
+
+    if (programmeCycles.length > 0) {
+      warnings.push(`${programme.id} has dependency cycles: ${programmeCycles.map((cycle) => cycle.join("→")).join(" | ")}`);
+    }
+    if (timelineSlackDays < 0) {
+      warnings.push(`${programme.id} timeline deficit ${timelineSlackDays.toFixed(2)} days`);
+    }
+    if (!fallbackOk) {
+      const missingCount = tasks.filter((entry) => entry.node.fallbackPlan.trim().length === 0).length;
+      warnings.push(`${programme.id} missing fallback plans for ${missingCount} task(s)`);
+    }
+    if (!sentinelOk) {
+      warnings.push(`${programme.id} sentinel coverage gaps: ${sentinelAlerts.join(", ")}`);
+    }
+    if (!ownerOk) {
+      warnings.push(`${programme.id} owner safes mismatched: ${ownerAlerts.join(", ")}`);
+    }
+    if (!autonomyOk) {
+      warnings.push(`${programme.id} autonomy exceeds max ${manifest.dysonProgram.safety.maxAutonomyBps} bps`);
+    }
+  }
+
+  const programmesCount = lattice.programmes.length;
+  const tasksCount = nodeMap.size;
+  const unstoppableScore =
+    programmeUnstoppable.length === 0
+      ? 1
+      : programmeUnstoppable.reduce((sum, score) => sum + score, 0) / programmeUnstoppable.length;
+
+  const summary: MissionTelemetrySummary = {
+    version: lattice.version,
+    generatedAt: lattice.generatedAt,
+    totals: {
+      programmes: programmesCount,
+      tasks: tasksCount,
+      energyGw: round(totalEnergy, 2),
+      computeExaflops: round(totalCompute, 2),
+      agentQuorum: totalAgents,
+      averageTimelineDays: programmesCount === 0 ? 0 : round(totalTimeline / programmesCount, 2),
+    },
+    verification: {
+      dependenciesResolved: missingDependencies.length === 0 && cycles.length === 0,
+      sentinelCoverage: sentinelCoverageOk,
+      fallbackCoverage: fallbackCoverageOk,
+      ownerAlignment: ownerAlignmentOk,
+      autonomyWithinBounds: autonomyCoverageOk,
+      timelineAligned: timelineAlignedOk,
+      programmeDependenciesResolved: programmeDependenciesResolvedOk,
+      unstoppableScore: round(unstoppableScore, 4),
+      warnings,
+    },
+    programmes: programmeSummaries,
+  };
+
+  const ledger = {
+    version: lattice.version,
+    generatedAt: lattice.generatedAt,
+    totals: summary.totals,
+    verification: summary.verification,
+    programmes: programmeSummaries.map((programme) => ({
+      id: programme.id,
+      name: programme.name,
+      federation: programme.federation,
+      ownerSafe: programme.ownerSafe,
+      taskCount: programme.taskCount,
+      totalEnergyGw: programme.totalEnergyGw,
+      totalComputeExaflops: programme.totalComputeExaflops,
+      totalAgentQuorum: programme.totalAgentQuorum,
+      criticalPathDays: programme.criticalPathDays,
+      timelineDays: lattice.programmes.find((p) => p.id === programme.id)?.timelineDays ?? 0,
+      timelineSlackDays: programme.timelineSlackDays,
+      unstoppableScore: programme.unstoppableScore,
+      riskDistribution: programme.riskDistribution,
+      dependencies: programme.dependencies,
+      missingDependencies: programme.missingDependencies,
+      missingProgrammeDependencies: programme.missingProgrammeDependencies,
+      sentinelAlerts: programme.sentinelAlerts,
+      ownerAlerts: programme.ownerAlerts,
+      timelineOk: programme.timelineOk,
+      autonomyOk: programme.autonomyOk,
+    })),
+    dependencyCycles: cycles,
+  };
+
+  return { summary, mermaid: mermaidDiagram, ledger };
+}
 
 function computeEnergyWindowProjection(manifest: Manifest): EnergyWindowProjection {
   const perFederation: Array<{
@@ -760,6 +1254,12 @@ function loadFabricConfig(): FabricConfig {
   const raw = readFileSync(FABRIC_CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
   return FabricConfigSchema.parse(parsed);
+}
+
+function loadMissionLattice(): { lattice: MissionLattice; raw: string } {
+  const raw = readFileSync(TASK_LATTICE_CONFIG_PATH, "utf8");
+  const parsed = JSON.parse(raw);
+  return { lattice: MissionLatticeSchema.parse(parsed), raw };
 }
 
 function ensureOutputDir() {
@@ -1977,6 +2477,28 @@ function buildRunbook(
     lines.push(`* **${federation.slug.toUpperCase()}** – ${fTelemetry.exaflops.toFixed(2)} EF, ${fTelemetry.agents.toLocaleString()} agents, resilience ${(fTelemetry.resilience * 100).toFixed(2)}%.`);
   }
   lines.push("\n---\n");
+  lines.push("## Mission lattice & task hierarchy");
+  lines.push(
+    `* ${telemetry.missionLattice.totals.programmes} programmes · ${telemetry.missionLattice.totals.tasks} tasks · ${telemetry.missionLattice.totals.energyGw.toLocaleString()} GW · ${telemetry.missionLattice.totals.computeExaflops.toFixed(2)} EF.`
+  );
+  lines.push(
+    `* Unstoppable score ${(telemetry.missionLattice.verification.unstoppableScore * 100).toFixed(2)}% · dependencies resolved ${telemetry.missionLattice.verification.dependenciesResolved} · sentinel coverage ${telemetry.missionLattice.verification.sentinelCoverage}.`
+  );
+  const leadProgramme = telemetry.missionLattice.programmes.reduce(
+    (max: any, programme: any) => (programme.totalEnergyGw > max.totalEnergyGw ? programme : max),
+    telemetry.missionLattice.programmes[0]
+  );
+  if (leadProgramme) {
+    lines.push(
+      `* Lead programme ${leadProgramme.name} (${leadProgramme.federation}) — ${leadProgramme.taskCount} tasks, ${leadProgramme.totalEnergyGw} GW, unstoppable ${(leadProgramme.unstoppableScore * 100).toFixed(2)}%.`
+    );
+  }
+  if (telemetry.missionLattice.verification.warnings.length > 0) {
+    lines.push(`* ⚠ Mission advisories: ${telemetry.missionLattice.verification.warnings.join("; ")}`);
+  } else {
+    lines.push("* Mission advisories: none — autonomy, sentinel coverage, and timelines are nominal.");
+  }
+  lines.push("\n---\n");
   lines.push("## Identity lattice");
   lines.push(
     `* Root authority ${telemetry.identity.global.rootAuthority} · Merkle root ${telemetry.identity.global.identityMerkleRoot}.`
@@ -2145,6 +2667,14 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
       : "review"}).`
   );
   lines.push(
+    `* Mission unstoppable ${(telemetry.missionLattice.verification.unstoppableScore * 100).toFixed(2)}% across ${telemetry.missionLattice.totals.programmes} programmes (dependencies resolved ${telemetry.missionLattice.verification.dependenciesResolved}).`
+  );
+  if (telemetry.missionLattice.verification.warnings.length > 0) {
+    lines.push(`* Mission advisories: ${telemetry.missionLattice.verification.warnings.join("; ")}`);
+  } else {
+    lines.push("* Mission advisories: none — autonomy, sentinel, and timeline guardrails nominal.");
+  }
+  lines.push(
     `* Owner override unstoppable score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (selectors ${
       telemetry.governance.ownerProof.selectorsComplete
     }, pause ${telemetry.ownerControls.pauseCallEncoded}, resume ${telemetry.ownerControls.resumeCallEncoded}, secondary ${
@@ -2234,7 +2764,8 @@ function computeTelemetry(
   manifestHash: string,
   ownerProof: OwnerControlProof,
   energyFeeds: EnergyFeedsConfig,
-  fabric: FabricConfig
+  fabric: FabricConfig,
+  mission: MissionTelemetrySummary
 ) {
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
@@ -3001,6 +3532,7 @@ function computeTelemetry(
       secondary: ownerProof.secondaryVerification,
       tertiary: ownerProof.tertiaryVerification,
     },
+    missionLattice: mission,
     missionDirectives: manifest.missionDirectives,
     verification: {
       energyModels: {
@@ -3092,6 +3624,7 @@ function computeTelemetry(
         unmatchedFederations: fabricCoverage.unmatchedFederations,
         unmatchedShards: fabricCoverage.unmatchedShards,
       },
+      missionLattice: mission.verification,
       auditChecklistURI: manifest.verificationProtocols.auditChecklistURI,
     },
   };
@@ -3154,6 +3687,13 @@ function buildStabilityLedger(
     ownerProof.verification.selectorsComplete,
     ownerProof.verification.pauseEmbedding,
     ownerProof.verification.singleOwnerTargets,
+    telemetry.missionLattice.verification.dependenciesResolved,
+    telemetry.missionLattice.verification.sentinelCoverage,
+    telemetry.missionLattice.verification.fallbackCoverage,
+    telemetry.missionLattice.verification.ownerAlignment,
+    telemetry.missionLattice.verification.autonomyWithinBounds,
+    telemetry.missionLattice.verification.timelineAligned,
+    telemetry.missionLattice.verification.unstoppableScore >= 0.95,
     scenarioHealthy,
   ];
   const redundancyScore =
@@ -3211,6 +3751,17 @@ function buildStabilityLedger(
         ownerProof.tertiaryVerification.decodeFailures === 0,
       weight: 0.65,
       evidence: `tertiary ${(ownerProof.tertiaryVerification.unstoppableScore * 100).toFixed(1)}% · decode failures ${ownerProof.tertiaryVerification.decodeFailures}`,
+    },
+    {
+      id: "mission-lattice",
+      title: "Mission lattice unstoppable",
+      severity: "high",
+      status:
+        telemetry.missionLattice.verification.dependenciesResolved &&
+        telemetry.missionLattice.verification.sentinelCoverage &&
+        telemetry.missionLattice.verification.unstoppableScore >= 0.95,
+      weight: 0.85,
+      evidence: `unstoppable ${(telemetry.missionLattice.verification.unstoppableScore * 100).toFixed(2)}% · warnings ${telemetry.missionLattice.verification.warnings.length}`,
     },
     {
       id: "guardian-coverage",
@@ -3476,6 +4027,11 @@ function buildStabilityLedger(
           explanation: `Energy breach probability ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% across ${telemetry.energy.monteCarlo.runs} simulations (tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`,
         },
         {
+          method: "mission-lattice",
+          score: telemetry.missionLattice.verification.unstoppableScore,
+          explanation: `Mission unstoppable ${(telemetry.missionLattice.verification.unstoppableScore * 100).toFixed(2)}% · dependencies ${telemetry.missionLattice.verification.dependenciesResolved ? "resolved" : "review"} · warnings ${telemetry.missionLattice.verification.warnings.length}.`,
+        },
+        {
           method: "scenario-sweep",
           score: scenarioConfidence,
           explanation: "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors.",
@@ -3636,6 +4192,7 @@ function run() {
   const { manifest, raw } = loadManifest();
   const energyFeedsConfig = loadEnergyFeeds();
   const fabricConfig = loadFabricConfig();
+  const { lattice: missionLattice } = loadMissionLattice();
   ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
@@ -3659,13 +4216,16 @@ function run() {
   const safeBatch = buildSafeBatch(manifest, transactions);
   const manifestHash = keccak256(toUtf8Bytes(raw));
   const ownerProof = buildOwnerControlProof(manifest, transactions, manifestHash);
+  const missionTelemetry = buildMissionLatticeTelemetry(missionLattice, manifest);
+
   const telemetry = computeTelemetry(
     manifest,
     dominanceScore,
     manifestHash,
     ownerProof,
     energyFeedsConfig,
-    fabricConfig
+    fabricConfig,
+    missionTelemetry.summary
   );
   const scenarioSweep = buildScenarioSweep(manifest, telemetry);
   const telemetryWithScenarios = { ...telemetry, scenarioSweep };
@@ -3700,6 +4260,8 @@ function run() {
     null,
     2
   )}\n`;
+  const missionLedgerJson = `${JSON.stringify(missionTelemetry.ledger, null, 2)}\n`;
+
   const fabricLedgerJson = `${JSON.stringify(
     {
       coverage: telemetry.orchestrationFabric.coverage,
@@ -3727,6 +4289,7 @@ function run() {
     { suffix: "scenario-sweep.json", content: scenariosJson },
     { suffix: "monte-carlo.json", content: monteCarloJson },
     { suffix: "energy-feeds.json", content: energyFeedsJson },
+    { suffix: "task-ledger.json", content: missionLedgerJson },
     { suffix: "fabric-ledger.json", content: fabricLedgerJson },
     { suffix: "energy-schedule.json", content: energyScheduleJson },
     { suffix: "settlement-ledger.json", content: settlementJson },
@@ -3734,6 +4297,7 @@ function run() {
     { suffix: "mermaid.mmd", content: `${mermaid}\n` },
     { suffix: "orchestration-report.md", content: `${runbook}\n` },
     { suffix: "dyson.mmd", content: `${dysonTimeline}\n` },
+    { suffix: "task-hierarchy.mmd", content: `${missionTelemetry.mermaid}\n` },
     { suffix: "operator-briefing.md", content: `${operatorBriefing}\n` },
     { suffix: "owner-proof.json", content: ownerProofJson },
   ].map(({ suffix, content }) => ({
@@ -3805,6 +4369,11 @@ function run() {
       ownerProof.verification.selectorsComplete
     }, pause ${ownerProof.pauseEmbedding.pauseAll}, resume ${ownerProof.pauseEmbedding.unpauseAll}).`
   );
+  console.log(
+    `   Mission unstoppable score: ${(missionTelemetry.summary.verification.unstoppableScore * 100).toFixed(2)}% across ${
+      missionTelemetry.summary.totals.programmes
+    } programmes (dependencies resolved: ${missionTelemetry.summary.verification.dependenciesResolved}).`
+  );
   if (scenarioSweep.length > 0) {
     const scenarioNominal = scenarioSweep.filter((scenario) => scenario.status === "nominal").length;
     const scenarioWarning = scenarioSweep.filter((scenario) => scenario.status === "warning").length;
@@ -3821,6 +4390,9 @@ function run() {
   }
   if (!telemetry.manifest.planHashMatches) {
     console.log("   ⚠ Self-improvement plan hash mismatch detected.");
+  }
+  if (missionTelemetry.summary.verification.warnings.length) {
+    console.log(`   ⚠ Mission lattice advisories: ${missionTelemetry.summary.verification.warnings.join("; ")}`);
   }
 
   if (REFLECT_MODE) {
@@ -3857,6 +4429,14 @@ function run() {
       ).toFixed(2)}%)`
     );
     console.log(
+      ` - Mission unstoppable score ≥95%: ${
+        missionTelemetry.summary.verification.unstoppableScore >= 0.95
+      } (${(missionTelemetry.summary.verification.unstoppableScore * 100).toFixed(2)}%)`
+    );
+    console.log(
+      ` - Mission dependencies resolved: ${missionTelemetry.summary.verification.dependenciesResolved}`
+    );
+    console.log(
       ` - Scenario sweep stable: ${
         scenarioSweep.length === 0 ? true : scenarioSweep.every((scenario) => scenario.status !== "critical")
       }`
@@ -3869,6 +4449,8 @@ function run() {
       ownerProof.pauseEmbedding.pauseAll,
       ownerProof.pauseEmbedding.unpauseAll,
       ownerProof.verification.unstoppableScore >= 0.95,
+      missionTelemetry.summary.verification.dependenciesResolved,
+      missionTelemetry.summary.verification.unstoppableScore >= 0.95,
       telemetry.energy.tripleCheck,
       telemetry.energy.monteCarlo.withinTolerance,
       ...Object.values(telemetry.bridges).map((b: any) => b.withinFailsafe),

@@ -23,6 +23,8 @@
 * Bridge latency tolerance (120s): true
 * Settlement finality 5.23 min (max 10.00 min) · slippage threshold 75 bps.
 * Logistics corridors 3 active — avg reliability 98.50% · min buffer 14.00d · watchers 9 (nominal).
+* Mission unstoppable 77.78% across 3 programmes (dependencies resolved true).
+* Mission advisories: dyson-swarm timeline deficit -600.00 days; dyson-swarm autonomy exceeds max 7800 bps; ares-biosphere timeline deficit -220.00 days; gaia-resilience timeline deficit -240.00 days
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
 * Scenario sweep: 6/11 nominal, 4 warning, 1 critical.
   - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
