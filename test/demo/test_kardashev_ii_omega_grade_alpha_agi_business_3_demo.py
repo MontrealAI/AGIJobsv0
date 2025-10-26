@@ -75,12 +75,23 @@ class ResourceManagerTests(unittest.TestCase):
     def test_stake_and_slash_flow(self) -> None:
         manager = ResourceManager(energy_capacity=10_000, compute_capacity=10_000, base_token_supply=1_000)
         manager.ensure_account("worker", 500)
+        self.assertAlmostEqual(manager.locked_supply, 0.0)
+        self.assertAlmostEqual(manager.token_supply, 1_000)
         manager.lock_stake("worker", 100)
         self.assertEqual(manager._accounts["worker"].locked, 100)  # type: ignore[attr-defined]
+        self.assertAlmostEqual(manager.locked_supply, 100)
+        self.assertAlmostEqual(manager.token_supply, 1_000)
         manager.release_stake("worker", 60)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 40)  # type: ignore[attr-defined]
+        self.assertAlmostEqual(manager.locked_supply, 40)
+        self.assertAlmostEqual(manager.token_supply, 1_000)
         manager.slash("worker", 20)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 20)  # type: ignore[attr-defined]
+        self.assertAlmostEqual(manager.locked_supply, 20)
+        self.assertAlmostEqual(manager.token_supply, 980)
+        manager.release_stake("worker", 1_000)
+        self.assertAlmostEqual(manager.locked_supply, 0)
+        self.assertAlmostEqual(manager.token_supply, 980)
 
     def test_capacity_updates_preserve_recorded_usage(self) -> None:
         manager = ResourceManager(energy_capacity=1_000, compute_capacity=2_000, base_token_supply=5_000)
@@ -99,6 +110,8 @@ class ResourceManagerTests(unittest.TestCase):
         self.assertAlmostEqual(manager.compute_available, 1_700)
         self.assertAlmostEqual(manager.energy_price, 1.0 + max(0.0, 1.0 - 1_250 / 1_500))
         self.assertAlmostEqual(manager.compute_price, 1.0 + max(0.0, 1.0 - 1_700 / 2_500))
+        snapshot = manager.snapshot()
+        self.assertAlmostEqual(snapshot.locked_supply, manager.locked_supply)
 
 
 class MessageBusTests(unittest.IsolatedAsyncioTestCase):

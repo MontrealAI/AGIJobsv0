@@ -265,6 +265,8 @@ class Orchestrator:
                 jobs=len(list(self.job_registry.iter_jobs())),
                 energy_available=snapshot.energy_available,
                 compute_available=snapshot.compute_available,
+                token_supply=snapshot.token_supply,
+                locked_supply=snapshot.locked_supply,
             )
 
     def _rehydrate_jobs(self, serialized: Dict[str, Any]) -> List[JobRecord]:
