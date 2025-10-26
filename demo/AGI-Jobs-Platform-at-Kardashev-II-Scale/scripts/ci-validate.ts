@@ -35,6 +35,7 @@ function validateReadme() {
     "## 🔌 Energy & compute governance",
     "## ⚡ Live energy feed reconciliation",
     "## 🔋 Energy window scheduler & coverage ledger",
+    "## 🚚 Interstellar logistics lattice",
     "## 🕸️ Sharded job fabric & routing ledger",
     "## 🎛️ Mission directives & verification dashboards",
     "## 🌐 Settlement lattice & forex fabric",

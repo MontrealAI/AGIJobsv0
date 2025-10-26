@@ -204,6 +204,40 @@
     ]
   },
   {
+    "id": "logistics-demand-spike",
+    "title": "Logistics demand spike (+25%)",
+    "status": "warning",
+    "summary": "Corridors absorb spike with utilisation 104.33% and buffers 12.00d.",
+    "confidence": 0.8567164179104477,
+    "impact": "Corridor reserves sufficient; monitor watchers for sustained load.",
+    "metrics": [
+      {
+        "label": "Nominal utilisation",
+        "value": "83.46%",
+        "ok": true
+      },
+      {
+        "label": "Stressed utilisation",
+        "value": "104.33%",
+        "ok": false
+      },
+      {
+        "label": "Spare capacity",
+        "value": "332,400 tonnes/day",
+        "ok": true
+      },
+      {
+        "label": "Buffer after spike",
+        "value": "12.00 days",
+        "ok": false
+      }
+    ],
+    "recommendedActions": [
+      "Stage failover corridor encoded in manifest.failoverCorridor via Safe batch.",
+      "Increase watcher quorum on highest utilisation corridor within 12h."
+    ]
+  },
+  {
     "id": "settlement-backlog",
     "title": "Settlement backlog (+40% finality)",
     "status": "warning",

@@ -660,5 +660,111 @@
       "failsafeLatencySeconds": 540,
       "redundantCoveragePct": 0.18
     }
-  }
+  },
+  "logisticsCorridors": [
+    {
+      "id": "earth-mars-aether",
+      "name": "Aether Mass Driver",
+      "fromFederation": "earth",
+      "toFederation": "mars",
+      "transportMode": "mass-driver shuttle",
+      "capacityTonnesPerDay": 720000,
+      "utilisationPct": 0.79,
+      "averageTransitHours": 82,
+      "jitterHours": 11,
+      "reliabilityPct": 0.982,
+      "bufferDays": 16,
+      "energyPerTransitMwh": 132000,
+      "carbonIntensityKgPerMwh": 0.12,
+      "watchers": [
+        "0x9911aa22bb33cc44dd55ee66ff77889900aa11b2",
+        "0xaa22bb33cc44dd55ee66ff77889900aa11bb22cc",
+        "0xbb33cc44dd55ee66ff77889900aa11bb22cc33dd"
+      ],
+      "multiSigSafe": "0xcc44dd55ee66ff77889900aa11bb22cc33dd44ee",
+      "escrowAddress": "0xdd55ee66ff77889900aa11bb22cc33dd44ee55ff",
+      "autonomyLevelBps": 6800,
+      "dedicatedValidators": 384,
+      "failoverCorridor": "earth-orbital-solstice",
+      "lastAuditISO8601": "2025-02-06T00:00:00Z"
+    },
+    {
+      "id": "earth-orbital-solstice",
+      "name": "Solstice Sky Rail",
+      "fromFederation": "earth",
+      "toFederation": "orbital",
+      "transportMode": "laser launch array",
+      "capacityTonnesPerDay": 960000,
+      "utilisationPct": 0.86,
+      "averageTransitHours": 28,
+      "jitterHours": 5,
+      "reliabilityPct": 0.994,
+      "bufferDays": 22,
+      "energyPerTransitMwh": 168000,
+      "carbonIntensityKgPerMwh": 0.08,
+      "watchers": [
+        "0xee66ff77889900aa11bb22cc33dd44ee55ff66aa",
+        "0xff77889900aa11bb22cc33dd44ee55ff66aa77bb",
+        "0x00112233445566778899aabbccddeeff00112233"
+      ],
+      "multiSigSafe": "0x112233445566778899aabbccddeeff0011223344",
+      "escrowAddress": "0x2233445566778899aabbccddeeff001122334455",
+      "autonomyLevelBps": 6120,
+      "dedicatedValidators": 540,
+      "failoverCorridor": "mars-titan-cryo",
+      "lastAuditISO8601": "2025-02-04T00:00:00Z"
+    },
+    {
+      "id": "mars-titan-cryo",
+      "name": "Cryo Methane Chain",
+      "fromFederation": "mars",
+      "toFederation": "titan",
+      "transportMode": "cryogenic hauler fleet",
+      "capacityTonnesPerDay": 260000,
+      "utilisationPct": 0.71,
+      "averageTransitHours": 144,
+      "jitterHours": 18,
+      "reliabilityPct": 0.973,
+      "bufferDays": 12,
+      "energyPerTransitMwh": 94000,
+      "carbonIntensityKgPerMwh": 0.11,
+      "watchers": [
+        "0x33445566778899aabbccddeeff00112233445566",
+        "0x445566778899aabbccddeeff0011223344556677",
+        "0x5566778899aabbccddeeff001122334455667788"
+      ],
+      "multiSigSafe": "0x66778899aabbccddeeff00112233445566778899",
+      "escrowAddress": "0x778899aabbccddeeff00112233445566778899aa",
+      "autonomyLevelBps": 7550,
+      "dedicatedValidators": 228,
+      "failoverCorridor": "orbital-titan-halo",
+      "lastAuditISO8601": "2025-01-28T00:00:00Z"
+    },
+    {
+      "id": "orbital-titan-halo",
+      "name": "Halo Cryo Spine",
+      "fromFederation": "orbital",
+      "toFederation": "titan",
+      "transportMode": "orbital tether ferry",
+      "capacityTonnesPerDay": 340000,
+      "utilisationPct": 0.74,
+      "averageTransitHours": 118,
+      "jitterHours": 14,
+      "reliabilityPct": 0.976,
+      "bufferDays": 15,
+      "energyPerTransitMwh": 102000,
+      "carbonIntensityKgPerMwh": 0.07,
+      "watchers": [
+        "0x8899aabbccddeeff00112233445566778899aabb",
+        "0x99aabbccddeeff00112233445566778899aabbcc",
+        "0xaabbccddeeff00112233445566778899aabbccdd"
+      ],
+      "multiSigSafe": "0xbbccddeeff00112233445566778899aabbccddee",
+      "escrowAddress": "0xccddeeff00112233445566778899aabbccddeeff",
+      "autonomyLevelBps": 6980,
+      "dedicatedValidators": 256,
+      "failoverCorridor": "earth-mars-aether",
+      "lastAuditISO8601": "2025-02-10T00:00:00Z"
+    }
+  ]
 }

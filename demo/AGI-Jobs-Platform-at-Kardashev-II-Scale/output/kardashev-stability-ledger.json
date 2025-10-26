@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9102564102564102,
+    "compositeScore": 0.9137931034482757,
     "quorum": false,
     "summary": "Manual review required for 2 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9102564102564102,
+        "score": 0.9137931034482757,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.92,
+        "score": 0.9333333333333333,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -23,13 +23,18 @@
         "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
       },
       {
+        "method": "logistics-corridors",
+        "score": 1,
+        "explanation": "Corridor reliability 98.50% · min buffer 14.00d · utilisation 82.00%."
+      },
+      {
         "method": "monte-carlo",
         "score": 1,
         "explanation": "Energy breach probability 0.00% across 256 simulations (tolerance 1.00%)."
       },
       {
         "method": "scenario-sweep",
-        "score": 0.8307271039972892,
+        "score": 0.8330897688984855,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -144,6 +149,14 @@
       "evidence": "global 98.54% (threshold 95%)"
     },
     {
+      "id": "logistics-corridors",
+      "title": "Logistics corridors hold buffers",
+      "severity": "high",
+      "status": true,
+      "weight": 0.8,
+      "evidence": "avg reliability 98.50% · min buffer 14.00d · utilisation 82.00% · watchers 9"
+    },
+    {
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
       "severity": "medium",
@@ -253,7 +266,7 @@
       "severity": "critical",
       "status": false,
       "weight": 0.8,
-      "evidence": "6/10 nominal · 3 warning · 1 critical"
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "alerts": [
@@ -267,15 +280,15 @@
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
-      "evidence": "6/10 nominal · 3 warning · 1 critical"
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "scenarioSweep": {
-    "total": 10,
+    "total": 11,
     "nominal": 6,
-    "warning": 3,
+    "warning": 4,
     "critical": 1,
-    "averageConfidence": 0.8307271039972892,
+    "averageConfidence": 0.8330897688984855,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -318,6 +331,13 @@
         "status": "critical",
         "confidence": 0.8489346151683814,
         "summary": "Removing orbital 8h window drops coverage to 83.20%."
+      },
+      {
+        "id": "logistics-demand-spike",
+        "title": "Logistics demand spike (+25%)",
+        "status": "warning",
+        "confidence": 0.8567164179104477,
+        "summary": "Corridors absorb spike with utilisation 104.33% and buffers 12.00d."
       },
       {
         "id": "settlement-backlog",

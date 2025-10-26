@@ -687,5 +687,85 @@
         "0xc3d4e5f60718293a4b5c6d7e8f9012345678a9b0"
       ]
     }
+  ],
+  "logisticsCorridors": [
+    {
+      "id": "earth-mars-helios",
+      "name": "Helios Helium Lift",
+      "fromFederation": "earth",
+      "toFederation": "mars",
+      "transportMode": "fusion skiff convoy",
+      "capacityTonnesPerDay": 680000,
+      "utilisationPct": 0.82,
+      "averageTransitHours": 96,
+      "jitterHours": 10,
+      "reliabilityPct": 0.985,
+      "bufferDays": 18,
+      "energyPerTransitMwh": 125000,
+      "carbonIntensityKgPerMwh": 0.15,
+      "watchers": [
+        "0x5f1A3B7E902Bd4Df739F6E1A9cfF3b2c9c6D41E8",
+        "0x8B0cE6D93F4E2BA511c92F4B9f851e279E5B3A72",
+        "0x3Ad5C19f7fC45F3824c5e7D111C67dFd7A8c8F41"
+      ],
+      "multiSigSafe": "0x17b4C1d3F51d72B8aDE29Dda724A9131A2c6D0B4",
+      "escrowAddress": "0x412F0F0a68b401C3a4b5cEe5227F94d9F6c31b02",
+      "autonomyLevelBps": 6400,
+      "dedicatedValidators": 420,
+      "failoverCorridor": "earth-orbital-skyway",
+      "lastAuditISO8601": "2025-02-01T00:00:00Z"
+    },
+    {
+      "id": "mars-orbital-atlas",
+      "name": "Atlas Lofted Array",
+      "fromFederation": "mars",
+      "toFederation": "orbital",
+      "transportMode": "ion tether elevator",
+      "capacityTonnesPerDay": 420000,
+      "utilisationPct": 0.76,
+      "averageTransitHours": 58,
+      "jitterHours": 8,
+      "reliabilityPct": 0.978,
+      "bufferDays": 14,
+      "energyPerTransitMwh": 82000,
+      "carbonIntensityKgPerMwh": 0.05,
+      "watchers": [
+        "0x64cE3828f1AabB5B9e23d2Ff30D22Ce810B4E6D1",
+        "0x7e4F2Dc6B5cA17Bd222b8d3E2a0192A4b4fC6c54",
+        "0x219bAF2c6f7B0f3E611B4E9eDD4F0A3Ea0Bc1d2e"
+      ],
+      "multiSigSafe": "0x28f59Ce3d1A408B5f6E12aC4C33A4Dc5F4c889e2",
+      "escrowAddress": "0x6D5c81fE4edB4B3e7c412cF2b5d1f6E7289A6B41",
+      "autonomyLevelBps": 7100,
+      "dedicatedValidators": 288,
+      "failoverCorridor": "earth-orbital-skyway",
+      "lastAuditISO8601": "2025-01-18T00:00:00Z"
+    },
+    {
+      "id": "earth-orbital-skyway",
+      "name": "Skyway Stellar Rail",
+      "fromFederation": "earth",
+      "toFederation": "orbital",
+      "transportMode": "maglev launch halo",
+      "capacityTonnesPerDay": 910000,
+      "utilisationPct": 0.88,
+      "averageTransitHours": 32,
+      "jitterHours": 6,
+      "reliabilityPct": 0.992,
+      "bufferDays": 21,
+      "energyPerTransitMwh": 156000,
+      "carbonIntensityKgPerMwh": 0.09,
+      "watchers": [
+        "0x4c9E0d53eA1B6f5cA8c2B1F7E61dA84A0f9bD234",
+        "0x2F73b9dC1c4a0F2e5d7B8A7cFe21fF0D3b6F82e7",
+        "0x96d1A2B4C5E7f8a930B24d3c57d6E8219Bf12e45"
+      ],
+      "multiSigSafe": "0x51A0f5E7b19c4B7E0ad6F4B349B2F3A0C7D3a1E8",
+      "escrowAddress": "0x9F24d1b6C8E7A3b5F0a2c6d84B7E1f53Ce2b9d40",
+      "autonomyLevelBps": 6050,
+      "dedicatedValidators": 512,
+      "failoverCorridor": "mars-orbital-atlas",
+      "lastAuditISO8601": "2025-02-12T00:00:00Z"
+    }
   ]
 }
