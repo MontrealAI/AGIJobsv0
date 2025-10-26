@@ -303,6 +303,56 @@ function renderEnergySchedule(schedule, verification) {
   }
 }
 
+function renderLogistics(logistics, verification) {
+  const summary = document.querySelector("#logistics-summary");
+  if (!logistics) {
+    summary.textContent = "No logistics corridors configured.";
+    summary.classList.add("status-warn");
+    return;
+  }
+
+  const avgReliability = (verification?.averageReliabilityPct ?? 0) * 100;
+  const avgUtilisation = (verification?.averageUtilisationPct ?? 0) * 100;
+  const minBuffer = verification?.minimumBufferDays ?? 0;
+  const statusOk =
+    verification?.reliabilityOk &&
+    verification?.bufferOk &&
+    verification?.utilisationOk &&
+    verification?.watchersOk;
+
+  summary.textContent = `Average reliability ${avgReliability.toFixed(2)}% · utilisation ${avgUtilisation.toFixed(
+    2
+  )}% · buffer ${minBuffer.toFixed(2)} days`;
+  summary.classList.toggle("status-ok", !!statusOk);
+  summary.classList.toggle("status-fail", statusOk === false);
+
+  const watcherText = document.querySelector("#logistics-watchers");
+  watcherText.textContent = `Unique watchers ${logistics.aggregate.watchers.length} · capacity ${logistics.aggregate.capacityTonnesPerDay.toLocaleString()} tonnes/day`;
+
+  const list = document.querySelector("#logistics-corridors");
+  list.innerHTML = "";
+  logistics.corridors.forEach((corridor) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${corridor.name}</strong><span>${(corridor.utilisationPct * 100).toFixed(1)}% · ${(corridor.reliabilityPct * 100).toFixed(
+      2
+    )}% · buffer ${corridor.bufferDays.toFixed(1)}d</span>`;
+    const ok = corridor.utilisationOk && corridor.reliabilityOk && corridor.bufferOk && corridor.watchersOk;
+    li.classList.add(ok ? "status-ok" : "status-warn");
+    if (!ok) {
+      const issues = [];
+      if (!corridor.reliabilityOk) issues.push("reliability");
+      if (!corridor.bufferOk) issues.push("buffer");
+      if (!corridor.utilisationOk) issues.push("utilisation");
+      if (!corridor.watchersOk) issues.push("watchers");
+      const badge = document.createElement("div");
+      badge.textContent = `Attention: ${issues.join(", ")}`;
+      badge.classList.add("status-fail");
+      li.appendChild(badge);
+    }
+    list.appendChild(li);
+  });
+}
+
 function renderSettlement(settlement, verification) {
   const summary = document.querySelector("#settlement-summary");
   if (!settlement) {
@@ -523,6 +573,7 @@ async function bootstrap() {
     renderComputeFabric(telemetry.computeFabric);
     renderOrchestrationFabric(telemetry.orchestrationFabric);
     renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+    renderLogistics(telemetry.logistics, telemetry.verification.logistics);
     renderSettlement(telemetry.settlement, telemetry.verification.settlement);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);

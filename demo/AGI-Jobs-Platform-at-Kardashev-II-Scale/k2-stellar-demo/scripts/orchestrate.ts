@@ -96,6 +96,29 @@ const CapitalStreamSchema = z.object({
   domains: z.array(z.string().min(1)).min(1),
 });
 
+const LogisticsCorridorSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  fromFederation: z.string().min(1),
+  toFederation: z.string().min(1),
+  transportMode: z.string().min(1),
+  capacityTonnesPerDay: PositiveNumberSchema,
+  utilisationPct: z.number().min(0).max(1),
+  averageTransitHours: PositiveNumberSchema,
+  jitterHours: NonNegativeNumberSchema,
+  reliabilityPct: z.number().min(0).max(1),
+  bufferDays: z.number().nonnegative(),
+  energyPerTransitMwh: PositiveNumberSchema,
+  carbonIntensityKgPerMwh: NonNegativeNumberSchema,
+  watchers: z.array(AddressSchema).min(1),
+  multiSigSafe: AddressSchema,
+  escrowAddress: AddressSchema,
+  autonomyLevelBps: z.number().min(0).max(10_000),
+  dedicatedValidators: z.number().int().nonnegative(),
+  failoverCorridor: z.string().min(1),
+  lastAuditISO8601: z.string().min(1),
+});
+
 const FederationSchema = z.object({
   slug: z.string().min(1),
   name: z.string().min(1),
@@ -188,6 +211,7 @@ const ManifestSchema = z.object({
   }),
   missionDirectives: MissionDirectivesSchema,
   verificationProtocols: VerificationProtocolsSchema,
+  logisticsCorridors: z.array(LogisticsCorridorSchema).min(1),
   federations: z.array(FederationSchema).min(1),
   interplanetaryBridges: z.record(
     z.object({

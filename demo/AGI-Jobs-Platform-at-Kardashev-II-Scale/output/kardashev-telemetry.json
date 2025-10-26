@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0xa0c1060b66988cbe8a3f254d8f7697132f7b45af9d68f1cb732868a6e209db4c",
+    "hash": "0xcb043f7b9e05f2321f6e162cc77e9344b8546c8064a1726d3eeb1806f93fd2f9",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -69,12 +69,12 @@
       "runs": 256,
       "breachProbability": 0,
       "percentileGw": {
-        "p50": 235760.79008348397,
-        "p95": 251371.3536611373,
-        "p99": 255867.24135491467
+        "p50": 235082.41261617118,
+        "p95": 250346.8287682341,
+        "p99": 255892.34636856447
       },
-      "maxGw": 258033.64239481383,
-      "averageGw": 236069.87531376135,
+      "maxGw": 258746.0241487074,
+      "averageGw": 235610.50584810745,
       "withinTolerance": true,
       "tolerance": 0.01
     },
@@ -415,6 +415,139 @@
         "coverageRatio": 1,
         "windowCount": 10
       }
+    }
+  },
+  "logistics": {
+    "corridors": [
+      {
+        "id": "earth-mars-helios",
+        "name": "Helios Helium Lift",
+        "fromFederation": "earth",
+        "toFederation": "mars",
+        "transportMode": "fusion skiff convoy",
+        "capacityTonnesPerDay": 680000,
+        "utilisationPct": 0.82,
+        "averageTransitHours": 96,
+        "jitterHours": 10,
+        "reliabilityPct": 0.985,
+        "bufferDays": 18,
+        "throughputTonnesPerDay": 557600,
+        "spareCapacityTonnes": 122400,
+        "tonnesInTransit": 2230400,
+        "energyPerTransitMwh": 125000,
+        "energyPerTonne": 0.2242,
+        "carbonPerTonne": 0.0336,
+        "watchers": [
+          "0x5f1a3b7e902bd4df739f6e1a9cff3b2c9c6d41e8",
+          "0x8b0ce6d93f4e2ba511c92f4b9f851e279e5b3a72",
+          "0x3ad5c19f7fc45f3824c5e7d111c67dfd7a8c8f41"
+        ],
+        "multiSigSafe": "0x17b4c1d3f51d72b8ade29dda724a9131a2c6d0b4",
+        "escrowAddress": "0x412f0f0a68b401c3a4b5cee5227f94d9f6c31b02",
+        "autonomyLevelBps": 6400,
+        "dedicatedValidators": 420,
+        "failoverCorridor": "earth-orbital-skyway",
+        "lastAuditISO8601": "2025-02-01T00:00:00Z",
+        "utilisationOk": true,
+        "reliabilityOk": true,
+        "bufferOk": true,
+        "watchersOk": true
+      },
+      {
+        "id": "mars-orbital-atlas",
+        "name": "Atlas Lofted Array",
+        "fromFederation": "mars",
+        "toFederation": "orbital",
+        "transportMode": "ion tether elevator",
+        "capacityTonnesPerDay": 420000,
+        "utilisationPct": 0.76,
+        "averageTransitHours": 58,
+        "jitterHours": 8,
+        "reliabilityPct": 0.978,
+        "bufferDays": 14,
+        "throughputTonnesPerDay": 319200,
+        "spareCapacityTonnes": 100800,
+        "tonnesInTransit": 771400,
+        "energyPerTransitMwh": 82000,
+        "energyPerTonne": 0.2569,
+        "carbonPerTonne": 0.0128,
+        "watchers": [
+          "0x64ce3828f1aabb5b9e23d2ff30d22ce810b4e6d1",
+          "0x7e4f2dc6b5ca17bd222b8d3e2a0192a4b4fc6c54",
+          "0x219baf2c6f7b0f3e611b4e9edd4f0a3ea0bc1d2e"
+        ],
+        "multiSigSafe": "0x28f59ce3d1a408b5f6e12ac4c33a4dc5f4c889e2",
+        "escrowAddress": "0x6d5c81fe4edb4b3e7c412cf2b5d1f6e7289a6b41",
+        "autonomyLevelBps": 7100,
+        "dedicatedValidators": 288,
+        "failoverCorridor": "earth-orbital-skyway",
+        "lastAuditISO8601": "2025-01-18T00:00:00Z",
+        "utilisationOk": true,
+        "reliabilityOk": true,
+        "bufferOk": true,
+        "watchersOk": true
+      },
+      {
+        "id": "earth-orbital-skyway",
+        "name": "Skyway Stellar Rail",
+        "fromFederation": "earth",
+        "toFederation": "orbital",
+        "transportMode": "maglev launch halo",
+        "capacityTonnesPerDay": 910000,
+        "utilisationPct": 0.88,
+        "averageTransitHours": 32,
+        "jitterHours": 6,
+        "reliabilityPct": 0.992,
+        "bufferDays": 21,
+        "throughputTonnesPerDay": 800800,
+        "spareCapacityTonnes": 109200,
+        "tonnesInTransit": 1067733.33,
+        "energyPerTransitMwh": 156000,
+        "energyPerTonne": 0.1948,
+        "carbonPerTonne": 0.0175,
+        "watchers": [
+          "0x4c9e0d53ea1b6f5ca8c2b1f7e61da84a0f9bd234",
+          "0x2f73b9dc1c4a0f2e5d7b8a7cfe21ff0d3b6f82e7",
+          "0x96d1a2b4c5e7f8a930b24d3c57d6e8219bf12e45"
+        ],
+        "multiSigSafe": "0x51a0f5e7b19c4b7e0ad6f4b349b2f3a0c7d3a1e8",
+        "escrowAddress": "0x9f24d1b6c8e7a3b5f0a2c6d84b7e1f53ce2b9d40",
+        "autonomyLevelBps": 6050,
+        "dedicatedValidators": 512,
+        "failoverCorridor": "mars-orbital-atlas",
+        "lastAuditISO8601": "2025-02-12T00:00:00Z",
+        "utilisationOk": true,
+        "reliabilityOk": true,
+        "bufferOk": true,
+        "watchersOk": true
+      }
+    ],
+    "aggregate": {
+      "capacityTonnesPerDay": 2010000,
+      "throughputTonnesPerDay": 1677600,
+      "averageReliabilityPct": 0.985,
+      "averageUtilisationPct": 0.82,
+      "minimumBufferDays": 14,
+      "watchers": [
+        "0x5f1a3b7e902bd4df739f6e1a9cff3b2c9c6d41e8",
+        "0x8b0ce6d93f4e2ba511c92f4b9f851e279e5b3a72",
+        "0x3ad5c19f7fc45f3824c5e7d111c67dfd7a8c8f41",
+        "0x64ce3828f1aabb5b9e23d2ff30d22ce810b4e6d1",
+        "0x7e4f2dc6b5ca17bd222b8d3e2a0192a4b4fc6c54",
+        "0x219baf2c6f7b0f3e611b4e9edd4f0a3ea0bc1d2e",
+        "0x4c9e0d53ea1b6f5ca8c2b1f7e61da84a0f9bd234",
+        "0x2f73b9dc1c4a0f2e5d7b8a7cfe21ff0d3b6f82e7",
+        "0x96d1a2b4c5e7f8a930b24d3c57d6e8219bf12e45"
+      ],
+      "totalEnergyMwh": 363000
+    },
+    "warnings": [],
+    "verification": {
+      "reliabilityOk": true,
+      "bufferOk": true,
+      "utilisationOk": true,
+      "watchersOk": true,
+      "autonomyOk": true
     }
   },
   "compute": {
@@ -1029,9 +1162,9 @@
       "tolerance": 0.01,
       "withinTolerance": true,
       "percentileGw": {
-        "p50": 235760.79008348397,
-        "p95": 251371.3536611373,
-        "p99": 255867.24135491467
+        "p50": 235082.41261617118,
+        "p95": 250346.8287682341,
+        "p99": 255892.34636856447
       }
     },
     "energyFeeds": {
@@ -1091,6 +1224,16 @@
       "globalReliabilityPct": 0.9854,
       "deficits": [],
       "reliabilityDeficits": []
+    },
+    "logistics": {
+      "reliabilityOk": true,
+      "bufferOk": true,
+      "utilisationOk": true,
+      "watchersOk": true,
+      "autonomyOk": true,
+      "minimumBufferDays": 14,
+      "averageReliabilityPct": 0.985,
+      "averageUtilisationPct": 0.82
     },
     "compute": {
       "tolerancePct": 0.75,
@@ -1353,6 +1496,40 @@
       "recommendedActions": [
         "Trigger orbital battery discharge if coverage < threshold.",
         "Re-route Mars workloads to orbital halo until replacement window is provisioned."
+      ]
+    },
+    {
+      "id": "logistics-demand-spike",
+      "title": "Logistics demand spike (+25%)",
+      "status": "warning",
+      "summary": "Corridors absorb spike with utilisation 104.33% and buffers 12.00d.",
+      "confidence": 0.8567164179104477,
+      "impact": "Corridor reserves sufficient; monitor watchers for sustained load.",
+      "metrics": [
+        {
+          "label": "Nominal utilisation",
+          "value": "83.46%",
+          "ok": true
+        },
+        {
+          "label": "Stressed utilisation",
+          "value": "104.33%",
+          "ok": false
+        },
+        {
+          "label": "Spare capacity",
+          "value": "332,400 tonnes/day",
+          "ok": true
+        },
+        {
+          "label": "Buffer after spike",
+          "value": "12.00 days",
+          "ok": false
+        }
+      ],
+      "recommendedActions": [
+        "Stage failover corridor encoded in manifest.failoverCorridor via Safe batch.",
+        "Increase watcher quorum on highest utilisation corridor within 12h."
       ]
     },
     {

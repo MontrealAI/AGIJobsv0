@@ -22,11 +22,13 @@
 * Energy feed drift ≤ 5%: true
 * Bridge latency tolerance (120s): true
 * Settlement finality 5.23 min (max 10.00 min) · slippage threshold 75 bps.
+* Logistics corridors 3 active — avg reliability 98.50% · min buffer 14.00d · watchers 9 (nominal).
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%).
-* Scenario sweep: 6/10 nominal, 3 warning, 1 critical.
+* Scenario sweep: 6/11 nominal, 4 warning, 1 critical.
   - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
   - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.
   - Primary energy window offline: Removing orbital 8h window drops coverage to 83.20%.
+  - Logistics demand spike (+25%): Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
   - Settlement backlog (+40% finality): Settlement mesh absorbs backlog within tolerance.
 * Audit checklist: ipfs://QmKardashevAuditChecklist
 

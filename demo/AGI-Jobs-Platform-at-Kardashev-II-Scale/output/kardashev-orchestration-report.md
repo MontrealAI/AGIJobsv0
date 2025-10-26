@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0xa0c1060b66988cbe8a3f254d8f7697132f7b45af9d68f1cb732868a6e209db4c
+**Manifest hash**: 0xcb043f7b9e05f2321f6e162cc77e9344b8546c8064a1726d3eeb1806f93fd2f9
 **Dominance score**: 90.0 / 100
 
 ---
@@ -19,11 +19,19 @@
 * Utilisation: 57.62% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Demand percentiles: P95 251,371.354 GW · P99 255,867.241 GW.
+* Demand percentiles: P95 250,346.829 GW · P99 255,892.346 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.54%.
 * Energy window deficits: none — all federations meet coverage targets.
+
+---
+
+## Logistics corridors
+* 3 corridors · avg reliability 98.50% · avg utilisation 82.00% · min buffer 14.00 days.
+* Watcher coverage: 9 unique sentinels; verification ✅.
+* Capacity 2,010,000 tonnes/day · throughput 1,677,600 tonnes/day · energy 363,000 MWh.
+* Logistics advisories: none — buffers and reliability nominal.
 
 ---
 
@@ -93,6 +101,12 @@
   - Threshold: 98.00% (ok)
   - Lost capacity: 1168000.00 GW·h (check)
   - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
+* **Logistics demand spike (+25%)** — status WARNING (confidence 85.7%) · Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
+  - Nominal utilisation: 83.46% (ok)
+  - Stressed utilisation: 104.33% (check)
+  - Spare capacity: 332,400 tonnes/day (ok)
+  - Buffer after spike: 12.00 days (check)
+  - Recommended: Stage failover corridor encoded in manifest.failoverCorridor via Safe batch. · Increase watcher quorum on highest utilisation corridor within 12h.
 * **Settlement backlog (+40% finality)** — status WARNING (confidence 90.8%) · Settlement mesh absorbs backlog within tolerance.
   - Sol-Earth Safe Settlement: 7.70 min (ok)
   - Mars Credit Hub: 10.92 min (check)

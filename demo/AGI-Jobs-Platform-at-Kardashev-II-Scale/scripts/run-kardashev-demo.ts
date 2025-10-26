@@ -135,6 +135,29 @@ const CapitalStreamSchema = z.object({
   domains: z.array(z.string().min(1)).min(1),
 });
 
+const LogisticsCorridorSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  fromFederation: z.string().min(1),
+  toFederation: z.string().min(1),
+  transportMode: z.string().min(1),
+  capacityTonnesPerDay: PositiveNumberSchema,
+  utilisationPct: z.number().min(0).max(1),
+  averageTransitHours: PositiveNumberSchema,
+  jitterHours: NonNegativeNumberSchema,
+  reliabilityPct: z.number().min(0).max(1),
+  bufferDays: z.number().nonnegative(),
+  energyPerTransitMwh: PositiveNumberSchema,
+  carbonIntensityKgPerMwh: NonNegativeNumberSchema,
+  watchers: z.array(AddressSchema).min(1),
+  multiSigSafe: AddressSchema,
+  escrowAddress: AddressSchema,
+  autonomyLevelBps: z.number().min(0).max(10_000),
+  dedicatedValidators: z.number().int().nonnegative(),
+  failoverCorridor: z.string().min(1),
+  lastAuditISO8601: z.string().min(1),
+});
+
 const IdentityFederationSchema = z.object({
   slug: z.string().min(1),
   name: z.string().min(1),
@@ -316,6 +339,7 @@ const ManifestSchema = z.object({
   federations: z.array(FederationSchema).min(1),
   energyWindows: z.array(EnergyWindowSchema).min(1),
   settlementProtocols: z.array(SettlementProtocolSchema).min(1),
+  logisticsCorridors: z.array(LogisticsCorridorSchema).min(1),
   interplanetaryBridges: z.record(
     z.object({
       latencySeconds: z.number().positive(),
@@ -1087,6 +1111,12 @@ function buildMermaid(manifest: Manifest, dominanceScore: number): string {
       lines.push(`  ${nodeName} -->|${domain.autonomyLevelBps / 100}% autonomy| ${domainNode}[${domain.name}]`);
     }
   }
+  manifest.logisticsCorridors.forEach((corridor) => {
+    const fromNode = corridor.fromFederation.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
+    const toNode = corridor.toFederation.replace(/[^a-zA-Z0-9]/g, "_").toUpperCase();
+    const capacityLabel = `${(corridor.capacityTonnesPerDay / 1_000).toFixed(1)}k tpd`;
+    lines.push(`  ${fromNode} -.->|${capacityLabel}| ${toNode}`);
+  });
   lines.push(`  classDef council fill:#0f172a,stroke:#4c51bf,color:#f8fafc;`);
   lines.push(`  classDef federation fill:#111c4e,stroke:#5a67d8,color:#f8fafc;`);
   lines.push(`  classDef default fill:#0b1120,stroke:#475569,color:#f8fafc;`);
@@ -1405,7 +1435,68 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     });
   }
 
-  // Scenario 7 — Settlement backlog increases finality by 40%
+  // Scenario 7 — Logistics demand spike 25%
+  const logisticsAggregate = telemetry.logistics.aggregate;
+  if (logisticsAggregate.capacityTonnesPerDay > 0) {
+    const nominalUtilisation = logisticsAggregate.throughputTonnesPerDay / logisticsAggregate.capacityTonnesPerDay;
+    const stressedThroughput = logisticsAggregate.throughputTonnesPerDay * 1.25;
+    const stressedUtilisation = stressedThroughput / logisticsAggregate.capacityTonnesPerDay;
+    const spareCapacityTonnes = logisticsAggregate.capacityTonnesPerDay - logisticsAggregate.throughputTonnesPerDay;
+    const stressedBufferDays = Math.max(0, telemetry.verification.logistics.minimumBufferDays - 2);
+    const logisticsStatus: ScenarioStatus =
+      stressedUtilisation <= 0.9 && stressedBufferDays >= telemetry.verification.logistics.minimumBufferDays
+        ? "nominal"
+        : stressedUtilisation <= 1.05 && stressedBufferDays >= telemetry.verification.logistics.minimumBufferDays * 0.75
+        ? "warning"
+        : "critical";
+    const logisticsConfidence = normaliseConfidence(1 - Math.max(0, stressedUtilisation - 0.9));
+    scenarioResults.push({
+      id: "logistics-demand-spike",
+      title: "Logistics demand spike (+25%)",
+      status: logisticsStatus,
+      summary:
+        logisticsStatus === "critical"
+          ? `Utilisation ${(stressedUtilisation * 100).toFixed(2)}% exceeds corridor headroom; buffers fall to ${stressedBufferDays.toFixed(
+              2
+            )}d.`
+          : `Corridors absorb spike with utilisation ${(stressedUtilisation * 100).toFixed(2)}% and buffers ${stressedBufferDays.toFixed(
+              2
+            )}d.`,
+      confidence: logisticsConfidence,
+      impact:
+        logisticsStatus === "critical"
+          ? "Materials and energy shipments would stall; initiate orbital failover corridor and throttle demand."
+          : "Corridor reserves sufficient; monitor watchers for sustained load.",
+      metrics: [
+        {
+          label: "Nominal utilisation",
+          value: `${(nominalUtilisation * 100).toFixed(2)}%`,
+          ok: nominalUtilisation <= 0.9,
+        },
+        {
+          label: "Stressed utilisation",
+          value: `${(stressedUtilisation * 100).toFixed(2)}%`,
+          ok: stressedUtilisation <= 0.9,
+        },
+        {
+          label: "Spare capacity",
+          value: `${spareCapacityTonnes.toLocaleString()} tonnes/day`,
+          ok: spareCapacityTonnes > 0,
+        },
+        {
+          label: "Buffer after spike",
+          value: `${stressedBufferDays.toFixed(2)} days`,
+          ok: stressedBufferDays >= telemetry.verification.logistics.minimumBufferDays,
+        },
+      ],
+      recommendedActions: [
+        "Stage failover corridor encoded in manifest.failoverCorridor via Safe batch.",
+        "Increase watcher quorum on highest utilisation corridor within 12h.",
+      ],
+    });
+  }
+
+  // Scenario 8 — Settlement backlog increases finality by 40%
   const settlement = telemetry.settlement ?? null;
   if (settlement && settlement.protocols.length > 0) {
     const stressedProtocols = settlement.protocols.map((protocol: any) => ({
@@ -1454,7 +1545,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     });
   }
 
-  // Scenario 8 — Identity infiltration attempt (3% forged credentials)
+  // Scenario 9 — Identity infiltration attempt (3% forged credentials)
   const identityTotals = telemetry.identity.totals;
   const forgedCount = identityTotals.issuances24h * 0.03;
   const infiltrationRevocationPpm =
@@ -1504,7 +1595,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     ],
   });
 
-  // Scenario 7 — Energy feed drift spike
+  // Scenario 10 — Energy feed drift spike
   const maxFeedDeltaPct = telemetry.energy.liveFeeds.feeds.reduce(
     (max: number, feed: any) => Math.max(max, feed.deltaPct),
     0
@@ -1555,7 +1646,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     ],
   });
 
-  // Scenario 8 — Primary compute plane offline
+  // Scenario 11 — Primary compute plane offline
   const largestPlane = telemetry.computeFabric.planes.reduce(
     (max, plane) => (plane.capacityExaflops > max.capacityExaflops ? plane : max),
     telemetry.computeFabric.planes[0]
@@ -1683,6 +1774,28 @@ function buildRunbook(
   }
   if (telemetry.energy.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.energy.warnings.join("; ")}`);
+  }
+  lines.push("\n---\n");
+  lines.push("## Logistics corridors");
+  lines.push(
+    `* ${telemetry.logistics.corridors.length} corridors · avg reliability ${(telemetry.verification.logistics.averageReliabilityPct * 100).toFixed(
+      2
+    )}% · avg utilisation ${(telemetry.verification.logistics.averageUtilisationPct * 100).toFixed(2)}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(
+      2
+    )} days.`
+  );
+  lines.push(
+    `* Watcher coverage: ${telemetry.logistics.aggregate.watchers.length} unique sentinels; verification ${
+      telemetry.verification.logistics.watchersOk ? "✅" : "⚠️"
+    }.`
+  );
+  lines.push(
+    `* Capacity ${telemetry.logistics.aggregate.capacityTonnesPerDay.toLocaleString()} tonnes/day · throughput ${telemetry.logistics.aggregate.throughputTonnesPerDay.toLocaleString()} tonnes/day · energy ${telemetry.logistics.aggregate.totalEnergyMwh.toLocaleString()} MWh.`
+  );
+  if (telemetry.logistics.warnings.length > 0) {
+    lines.push(`* ⚠️ ${telemetry.logistics.warnings.join("; ")}`);
+  } else {
+    lines.push("* Logistics advisories: none — buffers and reliability nominal.");
   }
   lines.push("\n---\n");
   lines.push("## Compute & domains");
@@ -1850,6 +1963,16 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
     `* Settlement finality ${telemetry.settlement.averageFinalityMinutes.toFixed(2)} min (max ${telemetry.verification.settlement.maxToleranceMinutes.toFixed(
       2
     )} min) · slippage threshold ${telemetry.settlement.slippageThresholdBps} bps.`
+  );
+  lines.push(
+    `* Logistics corridors ${telemetry.logistics.corridors.length} active — avg reliability ${(telemetry.verification.logistics.averageReliabilityPct * 100).toFixed(
+      2
+    )}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(2)}d · watchers ${telemetry.logistics.aggregate.watchers.length} (${telemetry.verification.logistics.reliabilityOk &&
+    telemetry.verification.logistics.bufferOk &&
+    telemetry.verification.logistics.utilisationOk &&
+    telemetry.verification.logistics.watchersOk
+      ? "nominal"
+      : "review"}).`
   );
   lines.push(
     `* Owner override unstoppable score ${(telemetry.governance.ownerProof.unstoppableScore * 100).toFixed(2)}% (selectors ${
@@ -2115,6 +2238,137 @@ function computeTelemetry(
       federation: entry.federation,
       reliabilityPct: round(entry.reliabilityPct, 4),
     }));
+
+  const logisticsReliabilityThreshold = 0.97;
+  const logisticsBufferThresholdDays = 10;
+  const logisticsUtilisationCeiling = 0.92;
+  const logisticsWatcherThreshold = 2;
+
+  const logisticsCorridorsRaw = manifest.logisticsCorridors.map((corridor) => {
+    const throughputTonnesPerDay = corridor.capacityTonnesPerDay * corridor.utilisationPct;
+    const spareCapacityTonnes = corridor.capacityTonnesPerDay - throughputTonnesPerDay;
+    const transitDays = corridor.averageTransitHours / 24;
+    const tonnesInTransit = throughputTonnesPerDay * transitDays;
+    const energyPerTonne = corridor.energyPerTransitMwh / Math.max(throughputTonnesPerDay, 1);
+    const carbonPerTonne =
+      (corridor.carbonIntensityKgPerMwh * corridor.energyPerTransitMwh) / Math.max(throughputTonnesPerDay, 1);
+    const utilisationOk = corridor.utilisationPct <= logisticsUtilisationCeiling;
+    const reliabilityOk = corridor.reliabilityPct >= logisticsReliabilityThreshold;
+    const bufferOk = corridor.bufferDays >= logisticsBufferThresholdDays;
+    const watchersOk = corridor.watchers.length >= logisticsWatcherThreshold;
+    return {
+      ...corridor,
+      throughputTonnesPerDay,
+      spareCapacityTonnes,
+      transitDays,
+      tonnesInTransit,
+      energyPerTonne,
+      carbonPerTonne,
+      utilisationOk,
+      reliabilityOk,
+      bufferOk,
+      watchersOk,
+    };
+  });
+
+  const logisticsWarnings: string[] = [];
+  logisticsCorridorsRaw.forEach((corridor) => {
+    if (!corridor.reliabilityOk) {
+      logisticsWarnings.push(
+        `Reliability on ${corridor.name} ${corridor.reliabilityPct.toFixed(3)} below ${(logisticsReliabilityThreshold * 100).toFixed(
+          1
+        )}% threshold.`
+      );
+    }
+    if (!corridor.bufferOk) {
+      logisticsWarnings.push(
+        `Buffer on ${corridor.name} ${corridor.bufferDays.toFixed(1)} days below ${logisticsBufferThresholdDays} day floor.`
+      );
+    }
+    if (!corridor.utilisationOk) {
+      logisticsWarnings.push(
+        `Utilisation on ${corridor.name} ${(corridor.utilisationPct * 100).toFixed(1)}% above ${(logisticsUtilisationCeiling *
+          100
+        ).toFixed(1)}% ceiling.`
+      );
+    }
+    if (!corridor.watchersOk) {
+      logisticsWarnings.push(`Watcher quorum on ${corridor.name} below ${logisticsWatcherThreshold}.`);
+    }
+  });
+
+  const logisticsWatcherSet = new Set<string>();
+  logisticsCorridorsRaw.forEach((corridor) => {
+    corridor.watchers.forEach((watcher) => logisticsWatcherSet.add(watcher));
+  });
+
+  const logisticsAggregateCapacity = logisticsCorridorsRaw.reduce(
+    (sum, corridor) => sum + corridor.capacityTonnesPerDay,
+    0
+  );
+  const logisticsAggregateThroughput = logisticsCorridorsRaw.reduce(
+    (sum, corridor) => sum + corridor.throughputTonnesPerDay,
+    0
+  );
+  const logisticsAverageReliability =
+    logisticsCorridorsRaw.length === 0
+      ? 0
+      : logisticsCorridorsRaw.reduce((sum, corridor) => sum + corridor.reliabilityPct, 0) /
+        logisticsCorridorsRaw.length;
+  const logisticsAverageUtilisation =
+    logisticsCorridorsRaw.length === 0
+      ? 0
+      : logisticsCorridorsRaw.reduce((sum, corridor) => sum + corridor.utilisationPct, 0) /
+        logisticsCorridorsRaw.length;
+  const logisticsMinBuffer =
+    logisticsCorridorsRaw.length === 0
+      ? 0
+      : logisticsCorridorsRaw.reduce((min, corridor) => Math.min(min, corridor.bufferDays), Infinity);
+  const logisticsTotalEnergyMwh = logisticsCorridorsRaw.reduce(
+    (sum, corridor) => sum + corridor.energyPerTransitMwh,
+    0
+  );
+
+  const logisticsCorridors = logisticsCorridorsRaw.map((corridor) => ({
+    id: corridor.id,
+    name: corridor.name,
+    fromFederation: corridor.fromFederation,
+    toFederation: corridor.toFederation,
+    transportMode: corridor.transportMode,
+    capacityTonnesPerDay: round(corridor.capacityTonnesPerDay, 2),
+    utilisationPct: round(corridor.utilisationPct, 4),
+    averageTransitHours: round(corridor.averageTransitHours, 2),
+    jitterHours: round(corridor.jitterHours, 2),
+    reliabilityPct: round(corridor.reliabilityPct, 4),
+    bufferDays: round(corridor.bufferDays, 2),
+    throughputTonnesPerDay: round(corridor.throughputTonnesPerDay, 2),
+    spareCapacityTonnes: round(corridor.spareCapacityTonnes, 2),
+    tonnesInTransit: round(corridor.tonnesInTransit, 2),
+    energyPerTransitMwh: round(corridor.energyPerTransitMwh, 2),
+    energyPerTonne: round(corridor.energyPerTonne, 4),
+    carbonPerTonne: round(corridor.carbonPerTonne, 4),
+    watchers: corridor.watchers,
+    multiSigSafe: corridor.multiSigSafe,
+    escrowAddress: corridor.escrowAddress,
+    autonomyLevelBps: corridor.autonomyLevelBps,
+    dedicatedValidators: corridor.dedicatedValidators,
+    failoverCorridor: corridor.failoverCorridor,
+    lastAuditISO8601: corridor.lastAuditISO8601,
+    utilisationOk: corridor.utilisationOk,
+    reliabilityOk: corridor.reliabilityOk,
+    bufferOk: corridor.bufferOk,
+    watchersOk: corridor.watchersOk,
+  }));
+
+  const logisticsVerification = {
+    reliabilityOk: logisticsCorridorsRaw.every((corridor) => corridor.reliabilityOk),
+    bufferOk: logisticsCorridorsRaw.every((corridor) => corridor.bufferOk),
+    utilisationOk: logisticsCorridorsRaw.every((corridor) => corridor.utilisationOk),
+    watchersOk: logisticsCorridorsRaw.every((corridor) => corridor.watchersOk),
+    autonomyOk: logisticsCorridorsRaw.every(
+      (corridor) => corridor.autonomyLevelBps <= manifest.dysonProgram.safety.maxAutonomyBps
+    ),
+  };
 
   const scheduleCoverageOk = rawScheduleCoverage.every(
     (entry) => entry.coverageRatio >= scheduleCoverageThreshold
@@ -2465,6 +2719,20 @@ function computeTelemetry(
       },
       crossVerification: energyCrossVerification,
     },
+    logistics: {
+      corridors: logisticsCorridors,
+      aggregate: {
+        capacityTonnesPerDay: round(logisticsAggregateCapacity, 2),
+        throughputTonnesPerDay: round(logisticsAggregateThroughput, 2),
+        averageReliabilityPct: round(logisticsAverageReliability, 4),
+        averageUtilisationPct: round(logisticsAverageUtilisation, 4),
+        minimumBufferDays: Number.isFinite(logisticsMinBuffer) ? round(logisticsMinBuffer, 2) : 0,
+        watchers: Array.from(logisticsWatcherSet),
+        totalEnergyMwh: round(logisticsTotalEnergyMwh, 2),
+      },
+      warnings: logisticsWarnings,
+      verification: logisticsVerification,
+    },
     compute: {
       totalAgents: manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0),
       totalExaflops,
@@ -2586,6 +2854,16 @@ function computeTelemetry(
         deficits: energyScheduleDeficits,
         reliabilityDeficits: energyScheduleReliabilityDeficits,
       },
+      logistics: {
+        reliabilityOk: logisticsVerification.reliabilityOk,
+        bufferOk: logisticsVerification.bufferOk,
+        utilisationOk: logisticsVerification.utilisationOk,
+        watchersOk: logisticsVerification.watchersOk,
+        autonomyOk: logisticsVerification.autonomyOk,
+        minimumBufferDays: Number.isFinite(logisticsMinBuffer) ? round(logisticsMinBuffer, 2) : 0,
+        averageReliabilityPct: round(logisticsAverageReliability, 4),
+        averageUtilisationPct: round(logisticsAverageUtilisation, 4),
+      },
       compute: {
         tolerancePct: manifest.verificationProtocols.computeTolerancePct,
         deviationPct: computeDeviationPct,
@@ -2670,6 +2948,11 @@ function buildStabilityLedger(
     telemetry.energy.liveFeeds.allWithinTolerance,
     telemetry.verification.energySchedule.coverageOk,
     telemetry.verification.energySchedule.reliabilityOk,
+    telemetry.verification.logistics.reliabilityOk,
+    telemetry.verification.logistics.bufferOk,
+    telemetry.verification.logistics.utilisationOk,
+    telemetry.verification.logistics.watchersOk,
+    telemetry.verification.logistics.autonomyOk,
     telemetry.energy.crossVerification.consensus,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
@@ -2796,6 +3079,21 @@ function buildStabilityLedger(
       evidence: `global ${(telemetry.verification.energySchedule.globalReliabilityPct * 100).toFixed(2)}% (threshold ${
         telemetry.verification.energySchedule.thresholdReliability * 100
       }%)`,
+    },
+    {
+      id: "logistics-corridors",
+      title: "Logistics corridors hold buffers",
+      severity: "high",
+      status:
+        telemetry.verification.logistics.reliabilityOk &&
+        telemetry.verification.logistics.bufferOk &&
+        telemetry.verification.logistics.utilisationOk &&
+        telemetry.verification.logistics.watchersOk &&
+        telemetry.verification.logistics.autonomyOk,
+      weight: 0.8,
+      evidence: `avg reliability ${(telemetry.verification.logistics.averageReliabilityPct * 100).toFixed(2)}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(
+        2
+      )}d · utilisation ${(telemetry.verification.logistics.averageUtilisationPct * 100).toFixed(2)}% · watchers ${telemetry.logistics.aggregate.watchers.length}`,
     },
     {
       id: "energy-margin",
@@ -2963,6 +3261,20 @@ function buildStabilityLedger(
           method: "energy-safety-buffer",
           score: energyBufferScore,
           explanation: "Remaining Dyson thermostat buffer relative to configured safety margin.",
+        },
+        {
+          method: "logistics-corridors",
+          score:
+            telemetry.verification.logistics.reliabilityOk &&
+            telemetry.verification.logistics.bufferOk &&
+            telemetry.verification.logistics.utilisationOk &&
+            telemetry.verification.logistics.watchersOk &&
+            telemetry.verification.logistics.autonomyOk
+              ? 1
+              : 0,
+          explanation: `Corridor reliability ${(telemetry.verification.logistics.averageReliabilityPct * 100).toFixed(2)}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(
+            2
+          )}d · utilisation ${(telemetry.verification.logistics.averageUtilisationPct * 100).toFixed(2)}%.`,
         },
         {
           method: "monte-carlo",
@@ -3205,6 +3517,7 @@ function run() {
 
   const energyScheduleJson = `${JSON.stringify(telemetry.energy.schedule, null, 2)}\n`;
   const settlementJson = `${JSON.stringify(telemetry.settlement, null, 2)}\n`;
+  const logisticsJson = `${JSON.stringify(telemetry.logistics, null, 2)}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
@@ -3217,6 +3530,7 @@ function run() {
     { path: join(OUTPUT_DIR, "kardashev-fabric-ledger.json"), content: fabricLedgerJson },
     { path: join(OUTPUT_DIR, "kardashev-energy-schedule.json"), content: energyScheduleJson },
     { path: join(OUTPUT_DIR, "kardashev-settlement-ledger.json"), content: settlementJson },
+    { path: join(OUTPUT_DIR, "kardashev-logistics-ledger.json"), content: logisticsJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
