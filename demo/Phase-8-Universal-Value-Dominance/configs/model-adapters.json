@@ -1,0 +1,29 @@
+[
+  {
+    "id": "gpt-elite-256k",
+    "provider": "FrontierLabs",
+    "maxContext": 262144,
+    "costUSDPer1KTokens": 0.012,
+    "safetyScore": 0.97,
+    "latencyMs": 240,
+    "lastValidated": "2025-07-01T00:00:00Z"
+  },
+  {
+    "id": "code-savant-x",
+    "provider": "QuantumCoder",
+    "maxContext": 131072,
+    "costUSDPer1KTokens": 0.018,
+    "safetyScore": 0.95,
+    "latencyMs": 180,
+    "lastValidated": "2025-07-02T00:00:00Z"
+  },
+  {
+    "id": "sentience-alpha",
+    "provider": "OmniSentience",
+    "maxContext": 98304,
+    "costUSDPer1KTokens": 0.009,
+    "safetyScore": 0.96,
+    "latencyMs": 220,
+    "lastValidated": "2025-07-03T00:00:00Z"
+  }
+]

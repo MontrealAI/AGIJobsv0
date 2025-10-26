@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phase 8 — Universal Value Dominance Control</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Phase 8 — Universal Value Dominance</h1>
+      <p>Command the most capable AI workforce ever assembled. No Solidity. No DevOps. Just outcomes.</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>1. Load Mission Blueprint</h2>
+        <input type="file" id="jobConfig" accept="application/json" />
+        <pre id="jobPreview">Awaiting job config...</pre>
+      </section>
+
+      <section class="panel">
+        <h2>2. Governance Controls</h2>
+        <div class="control-grid">
+          <label>Budget Cap (USD)</label>
+          <input type="range" id="budgetCap" min="1000" max="10000" step="500" value="7500" />
+          <output id="budgetCapValue">$7,500</output>
+
+          <label>Global Pause</label>
+          <button id="pauseToggle" class="cta">Pause Fleet</button>
+
+          <label>Human Co-pilot</label>
+          <button id="copilotToggle" class="ghost">Require Co-pilot</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>3. Launch & Monitor</h2>
+        <button id="launch" class="primary">Launch Mission</button>
+        <div id="timeline"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Live Orchestration Graph</h2>
+        <pre id="mermaid">flowchart TD\n  Owner([Owner Console]) -->|setPolicy| GovAPI[[Governance API]]\n  GovAPI -->|pause/resume| Pauser{{Global Pause}}\n  GovAPI --> Planner[[Mission Planner]]\n  Planner --> Dev[[Code Smith]]\n  Planner --> Analyst[[Market Intelligence]]\n  Dev --> Ledger[(Checkpoint Ledger)]\n  Analyst --> Ledger\n  Ledger --> Validator[[Validator Guild]]\n  Validator --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovAPI\n  Budget{{Budget Guard}} --> GovAPI</pre>
+      </section>
+    </main>
+
+    <footer>
+      <small>Powered by AGI Jobs v0/v2 — command swarms, enforce governance, unlock universal value.</small>
+    </footer>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+
+      const jobInput = document.getElementById("jobConfig");
+      const jobPreview = document.getElementById("jobPreview");
+      const budgetCap = document.getElementById("budgetCap");
+      const budgetCapValue = document.getElementById("budgetCapValue");
+      const launchButton = document.getElementById("launch");
+      const timeline = document.getElementById("timeline");
+      const pauseToggle = document.getElementById("pauseToggle");
+      const copilotToggle = document.getElementById("copilotToggle");
+
+      let jobConfig;
+
+      jobInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        jobConfig = JSON.parse(text);
+        jobPreview.textContent = JSON.stringify(jobConfig, null, 2);
+      });
+
+      budgetCap.addEventListener("input", () => {
+        budgetCapValue.textContent = `$${Number(budgetCap.value).toLocaleString()}`;
+      });
+
+      function pushTimeline(message, tone = "info") {
+        const card = document.createElement("div");
+        card.className = `timeline-card ${tone}`;
+        card.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+        timeline.prepend(card);
+      }
+
+      launchButton.addEventListener("click", () => {
+        if (!jobConfig) {
+          pushTimeline("Please load a mission blueprint first.", "warn");
+          return;
+        }
+        pushTimeline("Dispatching mission to orchestrator...");
+        setTimeout(() => pushTimeline("Planner agent: blueprint checkpoint stored on-ledger."), 1000);
+        setTimeout(() => pushTimeline("Code Smith: governance extensions deployed, milestone escrow funded."), 2500);
+        setTimeout(() => pushTimeline("Validator Guild: milestone 1 approved, partial payout released."), 4000);
+        setTimeout(() => pushTimeline("Safety Tripwire: all clear. Budget usage at 21%."), 5500);
+      });
+
+      pauseToggle.addEventListener("click", () => {
+        const paused = pauseToggle.dataset.state === "paused";
+        if (paused) {
+          pauseToggle.dataset.state = "running";
+          pauseToggle.textContent = "Pause Fleet";
+          pushTimeline("Global pause lifted. Agents resuming execution.");
+        } else {
+          pauseToggle.dataset.state = "paused";
+          pauseToggle.textContent = "Resume Fleet";
+          pushTimeline("Global pause engaged. Agents halted and state snapshotted.", "warn");
+        }
+      });
+
+      copilotToggle.addEventListener("click", () => {
+        const required = copilotToggle.dataset.state === "required";
+        copilotToggle.dataset.state = required ? "optional" : "required";
+        copilotToggle.classList.toggle("ghost");
+        copilotToggle.classList.toggle("primary-outline");
+        pushTimeline(required ? "Human co-pilot optional." : "Human co-pilot requirement enforced.");
+      });
+    </script>
+  </body>
+</html>

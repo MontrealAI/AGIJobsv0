@@ -1,0 +1,42 @@
+%% Phase 8 Universal Value Dominance Orchestration
+flowchart TD
+  subgraph Governance
+    Owner[Owner Multisig]
+    GovAPI[[Governance API]]
+    PauseGuardian{{Pause Guardian}}
+    StakeScaler((Stake Scaler))
+  end
+
+  subgraph AI_Swarm[AI Swarm]
+    Planner[[Mission Planner Agent]]
+    Builder[[Code Smith Agent]]
+    Analyst[[Market Intel Agent]]
+    Memory[(Persistent Memory Fabric)]
+  end
+
+  subgraph Safety
+    Tripwire{{Tripwire Filters}}
+    Ledger[(Action Ledger)]
+    BudgetGuard{{Budget Guard}}
+  end
+
+  subgraph Economics
+    Escrow[(Milestone Escrow Vault)]
+    Rewards[(Adaptive Rewards)]
+    Validators[[Validator Guild]]
+  end
+
+  Owner --> GovAPI
+  GovAPI --> PauseGuardian
+  GovAPI --> StakeScaler
+  GovAPI --> Planner
+  Planner --> Builder
+  Planner --> Analyst
+  Builder --> Memory
+  Analyst --> Memory
+  Memory --> Ledger
+  Tripwire --> GovAPI
+  BudgetGuard --> GovAPI
+  Ledger --> Validators
+  Validators --> Escrow
+  Escrow --> Rewards
