@@ -41,6 +41,7 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
    - Upload `configs/job.multi-agent.json`.
    - Click **Launch Mission** — the UI hits the orchestrator REST API to instantiate planner, builder, and analyst agents plus validator oversight.
    - Observe live timeline cards for each agent, milestone payouts, and governance overrides.
+   - Review the **Dominance Scoreboard**, **Simulation Summary**, and **Owner Command Center** panels to confirm dominance score ≥ guardrail, checkpoint cadence matches the autonomy envelope, and owner levers (pause, register domain, upgrade plan) are armed.
 
 ---
 ## 3. Mid-Flight Governance (Any time)
@@ -51,6 +52,7 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
 | Suspicious output | Hit **Tripwire Pause** | Executes `PauseGuardian.pauseAll()`; monitors terminate sessions |
 | Need new model | Select adapter with higher score | Triggers `ModelRegistry.setActiveAdapter()` |
 | Human validator wants to inspect | Press **Summon Validator** | Pushes notification via attestation module & grants read token |
+| Owner wants to pause fleet | Toggle **Pause Fleet** | Executes `forwardPauseCall(pauseAll())` through system pause module |
 
 All actions are reversible in the same UI once the issue is resolved.
 
@@ -61,7 +63,10 @@ All actions are reversible in the same UI once the issue is resolved.
    - Validators approve final milestone in UI → smart contract releases escrow remainder to agents.
 2. **Archive Logs**
    - `scripts/monitors.ts` stores ledger exports under `storage/phase8/<jobId>.json`. Upload to IPFS for immutable audit trail.
-3. **Model Feedback Loop**
+3. **Governance Records & Owner Console**
+   - Collect `phase8-autonomy-simulation.json`, `phase8-mission-timeline.md`, and `phase8-owner-command-center.md` from `output/` and circulate them to guardians for attestation.
+   - Use the owner command center markdown to queue Safe transactions for any parameter refresh or pause/resume action discovered during the mission.
+4. **Model Feedback Loop**
    - Run evaluation pipeline to grade agent performance vs. cost and update adapter scores:
      ```bash
      npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/evaluation-pipeline.ts --job <jobId>

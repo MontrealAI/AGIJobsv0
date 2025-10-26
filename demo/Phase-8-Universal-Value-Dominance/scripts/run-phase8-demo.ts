@@ -20,6 +20,26 @@ const RESILIENCE_ALERT_THRESHOLD = 0.9;
 const MANAGER_ABI = ["function forwardPauseCall(bytes data)"];
 const SYSTEM_PAUSE_ABI = ["function pauseAll()", "function unpauseAll()", "function pauseModule(bytes32)", "function unpauseModule(bytes32)"];
 
+function coercePercent(
+  percentValue?: number,
+  fractionValue?: number,
+  fallbackValue?: number,
+): number {
+  if (typeof percentValue === "number" && Number.isFinite(percentValue)) {
+    return percentValue;
+  }
+  if (typeof fractionValue === "number" && Number.isFinite(fractionValue)) {
+    return fractionValue * 100;
+  }
+  if (typeof fallbackValue === "number" && Number.isFinite(fallbackValue)) {
+    if (Math.abs(fallbackValue) <= 1) {
+      return fallbackValue * 100;
+    }
+    return fallbackValue;
+  }
+  return 0;
+}
+
 function normalizeAddress(value: unknown): string {
   if (typeof value !== "string") return ZERO_ADDRESS;
   const trimmed = value.trim();
@@ -878,6 +898,53 @@ const ManifestSchema = z
 
 export type Phase8Config = z.infer<typeof ManifestSchema>;
 export type EnvironmentConfig = z.infer<typeof EnvironmentSchema>;
+
+export type SimulationEvent = {
+  offsetMinutes: number;
+  actor: string;
+  headline: string;
+  detail: string;
+  domain?: string;
+  severity?: "info" | "success" | "warn" | "critical";
+  checkpoint?: boolean;
+};
+
+export type SimulationCheckIn = {
+  name: string;
+  dueAtMinutes: number;
+  description: string;
+  delivered: boolean;
+};
+
+export type SimulationScoreboard = {
+  dominanceScore: number;
+  sentinelCoverageMinutes: number;
+  coverageAdequacyPercent: number;
+  fundedDomainRatioPercent: number;
+  autonomyEnvelopeHours: number;
+  checkpointCadenceMinutes: number;
+  aiTeamCount: number;
+  milestoneTemplates: number;
+  stakeTiers: number;
+};
+
+export type OwnerControl = {
+  label: string;
+  contract: string;
+  functionSignature: string;
+  description: string;
+  impact: string;
+};
+
+export type MissionSimulation = {
+  startedAt: string;
+  completedAt: string;
+  totalDurationMinutes: number;
+  timeline: SimulationEvent[];
+  checkIns: SimulationCheckIn[];
+  scoreboard: SimulationScoreboard;
+  ownerControls: OwnerControl[];
+};
 const SKIP_SINGLE_CALL_KEYS = new Set([
   "registerDomain",
   "registerSentinel",
@@ -1319,6 +1386,8 @@ export function computeMetrics(config: Phase8Config) {
 
   const coverageRatio = domains.length === 0 ? 0 : coverageSet.size / domains.length;
   const fundingRatio = domains.length === 0 ? 0 : fundedSet.size / domains.length;
+  const coverageRatioPercent = coverageRatio * 100;
+  const fundedDomainRatioPercent = fundingRatio * 100;
   const guardianWindowSeconds = Number(config.global?.guardianReviewWindow ?? 0);
   const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalDomainCoverageSeconds / domains.length;
 
@@ -1387,8 +1456,12 @@ export function computeMetrics(config: Phase8Config) {
     averageResilience,
     guardianCoverageMinutes,
     annualBudget,
-    coverageRatio: coverageRatio * 100,
-    fundedDomainRatio: fundingRatio * 100,
+    coverageRatio: coverageRatioPercent,
+    coverageRatioPercent,
+    coverageRatioFraction: coverageRatio,
+    fundedDomainRatio: fundedDomainRatioPercent,
+    fundedDomainRatioPercent,
+    fundedDomainRatioFraction: fundingRatio,
     cadenceHours,
     lastExecutedAt,
     dominanceScore,
@@ -1417,6 +1490,18 @@ export function computeMetrics(config: Phase8Config) {
     governanceProposalTemplateCount,
     humanPolicyControlCount,
   };
+}
+
+function getCoverageRatioPercent(metrics: ReturnType<typeof computeMetrics>): number {
+  return coercePercent(metrics.coverageRatioPercent, metrics.coverageRatioFraction, metrics.coverageRatio);
+}
+
+function getFundedDomainRatioPercent(metrics: ReturnType<typeof computeMetrics>): number {
+  return coercePercent(
+    metrics.fundedDomainRatioPercent,
+    metrics.fundedDomainRatioFraction,
+    metrics.fundedDomainRatio,
+  );
 }
 
 type MetricToleranceOverrides = Partial<
@@ -1652,6 +1737,9 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const tolerance = { ...defaultTolerance, ...overrides };
   const mismatches: string[] = [];
 
+  const coverageRatioBaseline = getCoverageRatioPercent(metrics);
+  const fundedDomainRatioBaseline = getFundedDomainRatioPercent(metrics);
+
   const comparisons: Array<{
     key: keyof typeof tolerance;
     baseline: number;
@@ -1661,8 +1749,8 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
     { key: "averageResilience", baseline: metrics.averageResilience, cross: crossCheck.averageResilience },
     { key: "guardianCoverageMinutes", baseline: metrics.guardianCoverageMinutes, cross: crossCheck.guardianCoverageMinutes },
     { key: "annualBudget", baseline: metrics.annualBudget, cross: crossCheck.annualBudget },
-    { key: "coverageRatio", baseline: metrics.coverageRatio, cross: crossCheck.coverageRatioPercent },
-    { key: "fundedDomainRatio", baseline: metrics.fundedDomainRatio, cross: crossCheck.fundedDomainRatioPercent },
+    { key: "coverageRatio", baseline: coverageRatioBaseline, cross: crossCheck.coverageRatioPercent },
+    { key: "fundedDomainRatio", baseline: fundedDomainRatioBaseline, cross: crossCheck.fundedDomainRatioPercent },
     {
       key: "averageDomainCoverageSeconds",
       baseline: metrics.averageDomainCoverageSeconds,
@@ -1750,6 +1838,288 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   }
 
   return { metrics, crossCheck };
+}
+
+function deriveOwnerControls(config: Phase8Config, managerAddress: string): OwnerControl[] {
+  const manager = managerAddress !== ZERO_ADDRESS ? managerAddress : manifestManagerAddress(config);
+  return [
+    {
+      label: "Global Pause",
+      contract: config.global?.systemPause ?? ZERO_ADDRESS,
+      functionSignature: "forwardPauseCall(pauseAll())",
+      description: "Halts every autonomous executor and freezes payouts while preserving state snapshots.",
+      impact: "Immediate fleet freeze for forensic review or guardian intervention.",
+    },
+    {
+      label: "Resume Operations",
+      contract: config.global?.systemPause ?? ZERO_ADDRESS,
+      functionSignature: "forwardPauseCall(unpauseAll())",
+      description: "Restarts all paused modules once guardians approve the recovery checklist.",
+      impact: "Restores full autonomy envelope with audit logs attached to the cycle.",
+    },
+    {
+      label: "Set Global Parameters",
+      contract: manager,
+      functionSignature: "setGlobalParameters(GlobalConfig)",
+      description: "Updates treasury routing, guardian council, drawdown guard, and manifesto hashes.",
+      impact: "Reconfigures the economic topology and guardian oversight rules in one transaction.",
+    },
+    {
+      label: "Update Guardian Council",
+      contract: manager,
+      functionSignature: "setGuardianCouncil(address)",
+      description: "Swaps the guardian multisig controlling validator slashing and emergency overrides.",
+      impact: "Hands operational authority to a new council without downtime.",
+    },
+    {
+      label: "Register or Retire Domains",
+      contract: manager,
+      functionSignature: "registerDomain(...) / removeDomain(bytes32)",
+      description: "Adds new dominions or retires existing ones with full telemetry guardrails.",
+      impact: "Expands or contracts the AGI workforce while respecting staking and safety thresholds.",
+    },
+    {
+      label: "Upgrade Self-Improvement Plan",
+      contract: manager,
+      functionSignature: "setSelfImprovementPlan(Plan)",
+      description: "Changes cadence, hashes, and reporting URIs for the self-improvement feedback loop.",
+      impact: "Directs the superintelligence to adopt new learning targets with governance approval.",
+    },
+  ];
+}
+
+export function simulateMission(
+  config: Phase8Config,
+  metrics: ReturnType<typeof computeMetrics>,
+  managerAddress: string,
+  start: Date = new Date(),
+): MissionSimulation {
+  const startTimestamp = start.getTime();
+  const base = Math.floor(startTimestamp / (60 * 1000)) * 60 * 1000;
+  const timeline: SimulationEvent[] = [];
+
+  const push = (event: SimulationEvent) => {
+    timeline.push(event);
+  };
+
+  push({
+    offsetMinutes: 0,
+    actor: "Mission Control",
+    headline: "Guardian council authorises Phase 8 launch",
+    detail: "Treasury, universal vault, and sentinel lattice synchronised for universal value dominance.",
+    severity: "success",
+  });
+
+  const autonomy = config.autonomy;
+  const checkpoints = autonomy?.progressCheckpoints ?? [];
+  let elapsed = 5;
+
+  for (const checkpoint of checkpoints) {
+    elapsed = Math.max(elapsed, checkpoint.intervalMinutes);
+    push({
+      offsetMinutes: elapsed,
+      actor: "Autonomy Engine",
+      headline: `Checkpoint — ${checkpoint.name}`,
+      detail: checkpoint.description,
+      checkpoint: true,
+      severity: "info",
+    });
+    elapsed += Math.max(5, Math.round(checkpoint.intervalMinutes * 0.2));
+  }
+
+  const aiTeams = config.aiTeams ?? [];
+  let teamOffset = 7;
+  for (const team of aiTeams) {
+    push({
+      offsetMinutes: teamOffset,
+      actor: team.name ?? team.slug ?? "AI Team",
+      headline: team.mission,
+      detail: `Cadence ${team.cadenceMinutes}m · Specialists ${team.specialists?.length ?? 0} · Protocol ${team.collaborationProtocol}`,
+      domain: (team.domains ?? [])[0],
+      severity: "success",
+    });
+    teamOffset += Math.max(10, team.cadenceMinutes ?? 10);
+  }
+
+  const tripwires = config.safety?.tripwires ?? [];
+  let sentinelOffset = Math.max(elapsed, teamOffset) + 3;
+  for (const tripwire of tripwires) {
+    push({
+      offsetMinutes: sentinelOffset,
+      actor: `Tripwire — ${tripwire.name}`,
+      headline: `Policy guard (${tripwire.severity})`,
+      detail: tripwire.trigger,
+      severity: tripwire.severity === "critical" ? "critical" : tripwire.severity === "high" ? "warn" : "info",
+    });
+    sentinelOffset += 6;
+  }
+
+  const guardianProtocols = config.guardianProtocols ?? [];
+  let guardianOffset = sentinelOffset + 4;
+  for (const protocol of guardianProtocols) {
+    push({
+      offsetMinutes: guardianOffset,
+      actor: `Guardian Protocol — ${protocol.scenario}`,
+      headline: `Severity ${protocol.severity.toUpperCase()} response ready`,
+      detail: protocol.immediateActions[0] ?? "Guardian standing orders confirmed.",
+      severity: "info",
+    });
+    guardianOffset += 8;
+  }
+
+  const milestones = config.economy?.milestoneTemplates ?? [];
+  let milestoneOffset = Math.max(guardianOffset, sentinelOffset) + 6;
+  for (const milestone of milestones) {
+    push({
+      offsetMinutes: milestoneOffset,
+      actor: `Milestone — ${milestone.name}`,
+      headline: milestone.description ?? "Milestone ready",
+      detail: `Payout ${milestone.payoutBps} bps authorised upon validator approval`,
+      severity: "success",
+    });
+    milestoneOffset += 9;
+  }
+
+  const completion = Math.max(milestoneOffset, guardianOffset, sentinelOffset, elapsed) + 15;
+  push({
+    offsetMinutes: completion,
+    actor: "Validator Guild",
+    headline: "Mission cycle completed",
+    detail: "All checkpoints, milestones, and guardian reviews logged to the knowledge graph.",
+    severity: "success",
+  });
+
+  timeline.sort((a, b) => a.offsetMinutes - b.offsetMinutes);
+
+  const checkIns: SimulationCheckIn[] = checkpoints.map((checkpoint, index) => ({
+    name: checkpoint.name,
+    dueAtMinutes: checkpoint.intervalMinutes * (index + 1),
+    description: checkpoint.description,
+    delivered: true,
+  }));
+
+  const scoreboard: SimulationScoreboard = {
+    dominanceScore: metrics.dominanceScore,
+    sentinelCoverageMinutes: metrics.guardianCoverageMinutes,
+    coverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
+    fundedDomainRatioPercent: getFundedDomainRatioPercent(metrics),
+    autonomyEnvelopeHours: metrics.sessionMaxHours ?? (autonomy?.session?.maxHours ?? 0),
+    checkpointCadenceMinutes: autonomy?.session?.checkpointCadenceMinutes ?? 0,
+    aiTeamCount: aiTeams.length,
+    milestoneTemplates: milestones.length,
+    stakeTiers: metrics.stakeTierCount,
+  };
+
+  const ownerControls = deriveOwnerControls(config, managerAddress);
+  const endTimestamp = base + completion * 60 * 1000;
+
+  return {
+    startedAt: new Date(base).toISOString(),
+    completedAt: new Date(endTimestamp).toISOString(),
+    totalDurationMinutes: completion,
+    timeline,
+    checkIns,
+    scoreboard,
+    ownerControls,
+  };
+}
+
+export function renderMissionTimeline(simulation: MissionSimulation) {
+  const lines = [
+    "# Phase 8 Mission Timeline",
+    "",
+    `Start: ${simulation.startedAt}`,
+    `Completion: ${simulation.completedAt}`,
+    `Total duration: ${simulation.totalDurationMinutes} minutes`,
+    "",
+    "## Scoreboard",
+    `- Dominance score: ${simulation.scoreboard.dominanceScore.toFixed(1)} / 100`,
+    `- Sentinel coverage: ${simulation.scoreboard.sentinelCoverageMinutes.toFixed(1)} minutes per guardian cycle`,
+    `- Coverage adequacy: ${simulation.scoreboard.coverageAdequacyPercent.toFixed(1)}%`,
+    `- Funded domain ratio: ${simulation.scoreboard.fundedDomainRatioPercent.toFixed(1)}%`,
+    `- Autonomy envelope: ${simulation.scoreboard.autonomyEnvelopeHours.toFixed(2)} hours`,
+    `- Checkpoint cadence: ${simulation.scoreboard.checkpointCadenceMinutes} minutes`,
+    `- AI teams orchestrated: ${simulation.scoreboard.aiTeamCount}`,
+    `- Milestone templates engaged: ${simulation.scoreboard.milestoneTemplates}`,
+    `- Stake tiers enforced: ${simulation.scoreboard.stakeTiers}`,
+    "",
+    "## Timeline",
+  ];
+
+  for (const event of simulation.timeline) {
+    const time = `${event.offsetMinutes.toString().padStart(4, " ")}m`;
+    const severity = (event.severity ?? "info").toUpperCase();
+    const checkpoint = event.checkpoint ? " (Checkpoint)" : "";
+    lines.push(`- [${time}] [${severity}] ${event.actor}${checkpoint} → ${event.headline}`);
+    lines.push(`  - ${event.detail}`);
+    if (event.domain) {
+      lines.push(`  - Domain focus: ${event.domain}`);
+    }
+  }
+
+  if (simulation.checkIns.length > 0) {
+    lines.push("", "## Scheduled check-ins");
+    for (const check of simulation.checkIns) {
+      lines.push(`- ${check.name}: due at ${check.dueAtMinutes} minutes → ${check.description} (delivered: ${check.delivered})`);
+    }
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+export function renderOwnerCommandCenter(
+  config: Phase8Config,
+  environment: EnvironmentConfig,
+  simulation: MissionSimulation,
+) {
+  const lines = [
+    "# Owner Command Center — Phase 8",
+    "",
+    "The contract owner can reshape every parameter of the superintelligence via the commands below.",
+    "All transactions can be queued through a Safe, timelock, or directly executed with guardian multi-signature oversight.",
+    "",
+    "## Active control surface",
+    `- Manager address (effective): ${resolveManagerAddress(config, environment.managerAddress)}`,
+    `- Guardian council: ${config.global?.guardianCouncil}`,
+    `- System pause contract: ${config.global?.systemPause}`,
+    `- Mission control registry: ${config.global?.missionControl}`,
+    `- Validator registry: ${config.global?.validatorRegistry}`,
+    "",
+    "## Authority levers",
+  ];
+
+  for (const control of simulation.ownerControls) {
+    lines.push(`- **${control.label}** — ${control.description}`);
+    lines.push(`  - Contract: ${control.contract}`);
+    lines.push(`  - Function: \`${control.functionSignature}\``);
+    lines.push(`  - Impact: ${control.impact}`);
+  }
+
+  lines.push("", "## Operational guardrails");
+  lines.push(
+    `- Sentinel coverage adequacy stands at ${simulation.scoreboard.coverageAdequacyPercent.toFixed(1)}% with ` +
+      `${simulation.scoreboard.sentinelCoverageMinutes.toFixed(1)} minutes logged per guardian window.`,
+  );
+  lines.push(
+    `- Checkpoints trigger every ${simulation.scoreboard.checkpointCadenceMinutes} minutes to enforce the autonomy threshold policy.`,
+  );
+  lines.push(
+    `- ${simulation.scoreboard.aiTeamCount} AI teams operate under encoded guardian oversight and milestone payouts.`,
+  );
+
+  lines.push("", "## Execution checklist for parameter changes");
+  lines.push("1. Generate updated manifest: `npm run demo:phase8:orchestrate`");
+  lines.push("2. Review `phase8-governance-directives.md` and obtain guardian signatures.");
+  lines.push("3. Queue Safe transaction batch from `phase8-safe-transaction-batch.json`.");
+  lines.push("4. Execute with `ci:verify-branch-protection` + `ci:verify-toolchain` to confirm CI policy compliance.");
+  lines.push("5. Publish the refreshed self-improvement plan hash to mission control.");
+
+  lines.push("", "## Emergency operations");
+  lines.push("- Use `forwardPauseCall(pauseAll())` for full stop; document the incident in the guardian console.");
+  lines.push("- Trigger sentinel rehearsals via the Guardian Console before re-enabling autonomy.");
+  lines.push("- Reference `phase8-emergency-overrides.json` for pre-approved guardian responders.");
+
+  return `${lines.join("\n")}\n`;
 }
 
 function usd(value: number) {
@@ -2086,9 +2456,12 @@ export function telemetryMarkdown(
   lines.push(`- Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`- Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
   lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
+  const coverageRatioPercent = getCoverageRatioPercent(metrics);
+  const fundedDomainRatioPercent = getFundedDomainRatioPercent(metrics);
+
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
-  lines.push(`- Domains covered by sentinels: ${metrics.coverageRatio.toFixed(1)}%`);
-  lines.push(`- Domains with capital funding: ${metrics.fundedDomainRatio.toFixed(1)}%`);
+  lines.push(`- Domains covered by sentinels: ${coverageRatioPercent.toFixed(1)}%`);
+  lines.push(`- Domains with capital funding: ${fundedDomainRatioPercent.toFixed(1)}%`);
   lines.push(
     `- Guardian response protocols: ${metrics.guardianProtocolCount} scenarios covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains`,
   );
@@ -2116,7 +2489,7 @@ export function telemetryMarkdown(
   }
   if (metrics.aiTeamCount) {
     lines.push(
-      `- Multi-agent teams: ${metrics.aiTeamCount} orchestrators covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
+    `- Multi-agent teams: ${metrics.aiTeamCount} orchestrators covering ${(metrics.aiTeamCoverageRatio * 100).toFixed(1)}% of dominions`,
     );
   }
   if (metrics.safetyTripwireCount || metrics.validatorConsoleCount) {
@@ -2395,7 +2768,7 @@ function generateOperatorRunbook(
   lines.push(`• Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`• Sentinel lattice coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes / cycle`);
   lines.push(
-    `• Domains funded: ${metrics.fundedDomainRatio.toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
+    `• Domains funded: ${getFundedDomainRatioPercent(metrics).toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
   );
   if (metrics.guardianWindowSeconds) {
     lines.push(
@@ -2544,7 +2917,7 @@ function generateSelfImprovementPlanPayload(
     generatedAt,
     dominanceScore: Number(metrics.dominanceScore.toFixed(1)),
     sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-    fundedDomainRatio: Number(metrics.fundedDomainRatio.toFixed(1)),
+    fundedDomainRatio: Number(getFundedDomainRatioPercent(metrics).toFixed(1)),
     plan: {
       uri: plan.planURI ?? "",
       hash: plan.planHash ?? "",
@@ -2817,8 +3190,8 @@ function generateDominanceScorecard(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: Number(metrics.averageResilience.toFixed(3)),
       sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-      coverageRatioPercent: Number(metrics.coverageRatio.toFixed(1)),
-      fundedDomainRatioPercent: Number(metrics.fundedDomainRatio.toFixed(1)),
+      coverageRatioPercent: Number(getCoverageRatioPercent(metrics).toFixed(1)),
+      fundedDomainRatioPercent: Number(getFundedDomainRatioPercent(metrics).toFixed(1)),
       maxAutonomyBps: metrics.maxAutonomy,
       cadenceHours: Number(metrics.cadenceHours.toFixed(2)),
       minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
@@ -3184,6 +3557,7 @@ export function writeArtifacts(
       ? environmentManager
       : manifestManager;
   const chainId = overrides.chainId ?? environment.chainId;
+  const simulation = simulateMission(config, metrics, managerAddress);
   const callManifest = {
     generatedAt,
     managerAddress,
@@ -3193,13 +3567,13 @@ export function writeArtifacts(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: metrics.averageResilience,
       guardianCoverageMinutes: metrics.guardianCoverageMinutes,
-      coverageRatio: metrics.coverageRatio,
+      coverageRatio: getCoverageRatioPercent(metrics),
       dominanceScore: metrics.dominanceScore,
       averageDomainCoverageSeconds: metrics.averageDomainCoverageSeconds,
       guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
       minDomainCoverageSeconds: metrics.minDomainCoverageSeconds,
       minimumCoverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
-      fundedDomainRatio: metrics.fundedDomainRatio,
+      fundedDomainRatio: getFundedDomainRatioPercent(metrics),
       minDomainFundingUSD: metrics.minDomainFundingUSD,
       domainFundingUSD: metrics.domainFundingMap,
       guardianProtocolCount: metrics.guardianProtocolCount,
@@ -3274,6 +3648,15 @@ export function writeArtifacts(
   const aiTeamMatrixPath = join(outputDir, "phase8-ai-team-matrix.json");
   writeFileSync(aiTeamMatrixPath, `${JSON.stringify(generateAiTeamMatrix(config, metrics, generatedAt), null, 2)}\n`);
 
+  const simulationPath = join(outputDir, "phase8-autonomy-simulation.json");
+  writeFileSync(simulationPath, `${JSON.stringify(simulation, null, 2)}\n`);
+
+  const timelinePath = join(outputDir, "phase8-mission-timeline.md");
+  writeFileSync(timelinePath, renderMissionTimeline(simulation));
+
+  const ownerCommandCenterPath = join(outputDir, "phase8-owner-command-center.md");
+  writeFileSync(ownerCommandCenterPath, renderOwnerCommandCenter(config, environment, simulation));
+
   return [
     { label: "Calldata manifest", path: callManifestPath },
     { label: "Safe transaction batch", path: safePath },
@@ -3288,6 +3671,9 @@ export function writeArtifacts(
     { label: "Emergency overrides", path: emergencyOverridesPath },
     { label: "Guardian response playbook", path: guardianPlaybookPath },
     { label: "AI team matrix", path: aiTeamMatrixPath },
+    { label: "Autonomy simulation", path: simulationPath },
+    { label: "Mission timeline", path: timelinePath },
+    { label: "Owner command center", path: ownerCommandCenterPath },
   ];
 }
 
@@ -3349,9 +3735,9 @@ export function main() {
         `Minimum coverage per domain: ${metrics.minDomainCoverageSeconds.toFixed(0)}s (requirement ${metrics.guardianWindowSeconds}s, adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%)`,
       );
     }
-    console.log(`Domains with sentinel coverage: ${metrics.coverageRatio.toFixed(1)}%`);
+    console.log(`Domains with sentinel coverage: ${getCoverageRatioPercent(metrics).toFixed(1)}%`);
     console.log(
-      `Domains funded by capital streams: ${metrics.fundedDomainRatio.toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
+      `Domains funded by capital streams: ${getFundedDomainRatioPercent(metrics).toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
     );
     console.log(
       `Guardian response protocols: ${metrics.guardianProtocolCount} covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()})`,

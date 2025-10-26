@@ -35,12 +35,27 @@
       </section>
 
       <section class="panel">
-        <h2>3. Launch & Monitor</h2>
+        <h2>3. Dominance Scoreboard</h2>
+        <div id="scoreboard" class="scoreboard"></div>
+      </section>
+
+      <section class="panel">
+        <h2>4. Launch &amp; Monitor</h2>
         <button id="launch" class="primary">Launch Mission</button>
         <div id="timeline"></div>
       </section>
 
       <section class="panel">
+        <h2>5. Simulation Summary</h2>
+        <div id="simulationSummary" class="summary-grid"></div>
+      </section>
+
+      <section class="panel">
+        <h2>6. Owner Command Center</h2>
+        <ul id="ownerControls" class="owner-controls"></ul>
+      </section>
+
+      <section class="panel wide">
         <h2>Live Orchestration Graph</h2>
         <pre id="mermaid">flowchart TD\n  Owner([Owner Console]) -->|setPolicy| GovAPI[[Governance API]]\n  GovAPI -->|pause/resume| Pauser{{Global Pause}}\n  GovAPI --> Planner[[Mission Planner]]\n  Planner --> Dev[[Code Smith]]\n  Planner --> Analyst[[Market Intelligence]]\n  Dev --> Ledger[(Checkpoint Ledger)]\n  Analyst --> Ledger\n  Ledger --> Validator[[Validator Guild]]\n  Validator --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovAPI\n  Budget{{Budget Guard}} --> GovAPI</pre>
       </section>
@@ -62,8 +77,287 @@
       const timeline = document.getElementById("timeline");
       const pauseToggle = document.getElementById("pauseToggle");
       const copilotToggle = document.getElementById("copilotToggle");
+      const scoreboardEl = document.getElementById("scoreboard");
+      const summaryEl = document.getElementById("simulationSummary");
+      const ownerControlsEl = document.getElementById("ownerControls");
 
       let jobConfig;
+      let cachedSimulation;
+
+      const formatUSD = (value) => {
+        if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+        if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+        if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+        return `$${Number(value).toLocaleString()}`;
+      };
+
+      function computeMetrics(config) {
+        const domains = config.domains ?? [];
+        const sentinels = config.sentinels ?? [];
+        const streams = config.capitalStreams ?? [];
+        const autonomy = config.autonomy?.session;
+        const totalMonthlyUSD = domains.reduce((acc, domain) => acc + Number(domain.valueFlowMonthlyUSD ?? 0), 0);
+        const averageResilience =
+          domains.length === 0
+            ? 0
+            : domains.reduce((acc, domain) => acc + Number(domain.resilienceIndex ?? 0), 0) / domains.length;
+        const domainSlugs = domains.map((domain) => String(domain.slug ?? "").toLowerCase());
+        const coverageMap = new Map();
+        for (const sentinel of sentinels) {
+          const coverage = Number(sentinel.coverageSeconds ?? 0);
+          if (!Number.isFinite(coverage) || coverage <= 0) continue;
+          const sentinelDomains = Array.from(
+            new Set((sentinel.domains ?? []).map((domain) => String(domain ?? "").toLowerCase()).filter(Boolean)),
+          );
+          const targets = sentinelDomains.length > 0 ? sentinelDomains : domainSlugs;
+          for (const target of targets) {
+            coverageMap.set(target, (coverageMap.get(target) ?? 0) + coverage);
+          }
+        }
+        const coverageValues = domainSlugs.map((slug) => coverageMap.get(slug) ?? 0);
+        const minCoverage = coverageValues.length ? Math.min(...coverageValues) : 0;
+        const coverageRatio =
+          domainSlugs.length === 0
+            ? 0
+            : (coverageValues.filter((value) => value > 0).length / domainSlugs.length) * 100;
+        const averageCoverage =
+          coverageValues.length === 0
+            ? 0
+            : coverageValues.reduce((acc, value) => acc + value, 0) / coverageValues.length;
+        const guardianWindow = Number(config.global?.guardianReviewWindow ?? 0);
+        const minimumAdequacy = guardianWindow > 0 ? (minCoverage / guardianWindow) * 100 : 0;
+        const fundedMap = new Map();
+        for (const stream of streams) {
+          const budget = Number(stream.annualBudget ?? 0);
+          if (!Number.isFinite(budget) || budget <= 0) continue;
+          const streamDomains = Array.from(
+            new Set((stream.domains ?? []).map((domain) => String(domain ?? "").toLowerCase()).filter(Boolean)),
+          );
+          const targets = streamDomains.length > 0 ? streamDomains : domainSlugs;
+          for (const target of targets) {
+            fundedMap.set(target, (fundedMap.get(target) ?? 0) + budget);
+          }
+        }
+        const fundedRatio =
+          domainSlugs.length === 0
+            ? 0
+            : (domainSlugs.filter((slug) => (fundedMap.get(slug) ?? 0) > 0).length / domainSlugs.length) * 100;
+        const maxAutonomy = domains.reduce(
+          (acc, domain) => Math.max(acc, Number(domain.autonomyLevelBps ?? 0)),
+          0,
+        );
+        const autonomyGuard = Number(config.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? maxAutonomy || 1);
+        const valueScore = totalMonthlyUSD <= 0 ? 0 : Math.min(1, totalMonthlyUSD / 500_000_000_000);
+        const resilienceScore = Math.max(0, Math.min(1, averageResilience));
+        const coverageStrength = guardianWindow > 0 ? Math.min(1, averageCoverage / guardianWindow) : 1;
+        const coverageScore = Math.min(1, (coverageRatio / 100 + coverageStrength) / 2);
+        const autonomyScore = autonomyGuard > 0 ? Math.min(1, maxAutonomy / autonomyGuard) : 1;
+        const cadenceSeconds = Number(config.selfImprovement?.plan?.cadenceSeconds ?? 0);
+        const cadenceScore = cadenceSeconds > 0 ? Math.max(0, 1 - Math.min(1, cadenceSeconds / (24 * 60 * 60))) : 0.5;
+        const dominanceScore =
+          Math.min(
+            100,
+            Math.round((0.3 * valueScore + 0.25 * resilienceScore + 0.2 * coverageScore + 0.15 * autonomyScore + 0.1 * cadenceScore) * 1000) /
+              10,
+          );
+
+        return {
+          totalMonthlyUSD,
+          averageResilience,
+          coverageMinutes: coverageValues.reduce((acc, value) => acc + value, 0) / 60,
+          coverageRatio,
+          minimumAdequacy,
+          fundedRatio,
+          dominanceScore,
+          maxAutonomy,
+          averageCoverage,
+          guardianWindow,
+          autonomySessionHours: Number(autonomy?.maxHours ?? 0),
+          checkpointCadence: Number(autonomy?.checkpointCadenceMinutes ?? 0),
+          aiTeams: config.aiTeams ?? [],
+        };
+      }
+
+      function simulateMission(config, metrics) {
+        const checkpoints = config.autonomy?.progressCheckpoints ?? [];
+        const aiTeams = config.aiTeams ?? [];
+        const tripwires = config.safety?.tripwires ?? [];
+        const guardianProtocols = config.guardianProtocols ?? [];
+        const milestones = config.economy?.milestoneTemplates ?? [];
+        const timeline = [];
+
+        const push = (offsetMinutes, actor, headline, detail, extra = {}) => {
+          timeline.push({ offsetMinutes, actor, headline, detail, ...extra });
+        };
+
+        push(0, "Mission Control", "Guardian council authorises Phase 8 launch", "Universal vault + sentinel lattice aligned", {
+          severity: "success",
+        });
+
+        let elapsed = 5;
+        for (const checkpoint of checkpoints) {
+          elapsed = Math.max(elapsed, checkpoint.intervalMinutes);
+          push(elapsed, "Autonomy Engine", `Checkpoint — ${checkpoint.name}`, checkpoint.description, {
+            severity: "info",
+            checkpoint: true,
+          });
+          elapsed += Math.max(5, Math.round(checkpoint.intervalMinutes * 0.2));
+        }
+
+        let teamOffset = 7;
+        for (const team of aiTeams) {
+          push(teamOffset, team.name ?? team.slug ?? "AI Team", team.mission, `Cadence ${team.cadenceMinutes}m · Specialists ${(team.specialists ?? []).length}`, {
+            severity: "success",
+            domain: (team.domains ?? [])[0],
+          });
+          teamOffset += Math.max(10, team.cadenceMinutes ?? 10);
+        }
+
+        let sentinelOffset = Math.max(elapsed, teamOffset) + 3;
+        for (const tripwire of tripwires) {
+          push(
+            sentinelOffset,
+            `Tripwire — ${tripwire.name}`,
+            `Policy guard (${tripwire.severity.toUpperCase()})`,
+            tripwire.trigger,
+            {
+              severity: tripwire.severity === "critical" ? "critical" : tripwire.severity === "high" ? "warn" : "info",
+            },
+          );
+          sentinelOffset += 6;
+        }
+
+        let guardianOffset = sentinelOffset + 4;
+        for (const protocol of guardianProtocols) {
+          push(
+            guardianOffset,
+            `Guardian Protocol — ${protocol.scenario}`,
+            `Severity ${protocol.severity.toUpperCase()} response ready`,
+            protocol.immediateActions?.[0] ?? "Guardian standing orders confirmed.",
+            { severity: "info" },
+          );
+          guardianOffset += 8;
+        }
+
+        let milestoneOffset = Math.max(guardianOffset, sentinelOffset) + 6;
+        for (const milestone of milestones) {
+          push(
+            milestoneOffset,
+            `Milestone — ${milestone.name}`,
+            milestone.description ?? "Milestone ready",
+            `Payout ${milestone.payoutBps} bps authorised on approval`,
+            { severity: "success" },
+          );
+          milestoneOffset += 9;
+        }
+
+        const completion = Math.max(milestoneOffset, guardianOffset, sentinelOffset, elapsed) + 15;
+        push(completion, "Validator Guild", "Mission cycle completed", "All checkpoints logged to the knowledge graph", {
+          severity: "success",
+        });
+
+        timeline.sort((a, b) => a.offsetMinutes - b.offsetMinutes);
+
+        const ownerControls = [
+          {
+            label: "Global Pause",
+            functionSignature: "forwardPauseCall(pauseAll())",
+            description: "Freeze all modules and preserve snapshots",
+          },
+          {
+            label: "Resume Operations",
+            functionSignature: "forwardPauseCall(unpauseAll())",
+            description: "Resume the autonomy envelope after review",
+          },
+          {
+            label: "Set Global Parameters",
+            functionSignature: "setGlobalParameters(GlobalConfig)",
+            description: "Refresh treasury, council, and drawdown guards",
+          },
+          {
+            label: "Register Domain",
+            functionSignature: "registerDomain(...)",
+            description: "Onboard a new economic dominion with guardrails",
+          },
+          {
+            label: "Update Self-Improvement Plan",
+            functionSignature: "setSelfImprovementPlan(Plan)",
+            description: "Change cadence and report URIs for the feedback loop",
+          },
+        ];
+
+        return {
+          timeline,
+          checkpoints,
+          ownerControls,
+          scoreboard: {
+            dominanceScore: metrics.dominanceScore,
+            sentinelCoverageMinutes: metrics.coverageMinutes,
+            coverageAdequacyPercent: metrics.minimumAdequacy,
+            fundedDomainRatioPercent: metrics.fundedRatio,
+            autonomyEnvelopeHours: metrics.autonomySessionHours,
+            checkpointCadenceMinutes: metrics.checkpointCadence,
+            aiTeamCount: aiTeams.length,
+          },
+        };
+      }
+
+      function renderScoreboard(metrics) {
+        const cards = [
+          { label: "Dominance Score", value: `${metrics.dominanceScore.toFixed(1)}` },
+          { label: "Sentinel Coverage", value: `${metrics.coverageMinutes.toFixed(1)} min` },
+          { label: "Coverage Adequacy", value: `${metrics.minimumAdequacy.toFixed(1)}%` },
+          { label: "Funded Domains", value: `${metrics.fundedRatio.toFixed(1)}%` },
+          { label: "Monthly Value", value: formatUSD(metrics.totalMonthlyUSD) },
+          { label: "Max Autonomy", value: `${metrics.maxAutonomy} bps` },
+          { label: "Checkpoint Cadence", value: `${metrics.checkpointCadence} min` },
+          { label: "AI Teams", value: `${metrics.aiTeams.length}` },
+        ];
+        scoreboardEl.innerHTML = cards
+          .map(
+            (card) => `
+              <article class="score-card">
+                <span class="score-label">${card.label}</span>
+                <span class="score-value">${card.value}</span>
+              </article>
+            `,
+          )
+          .join("");
+      }
+
+      function renderSummary(simulation) {
+        const checkpointCount = simulation.checkpoints.length;
+        summaryEl.innerHTML = `
+          <div>
+            <strong>Checkpoints:</strong>
+            <p>${checkpointCount} checkpoints enforced — next at ${
+              checkpointCount ? simulation.checkpoints[0].intervalMinutes : "N/A"
+            } min.</p>
+          </div>
+          <div>
+            <strong>Timeline horizon:</strong>
+            <p>${simulation.timeline[simulation.timeline.length - 1].offsetMinutes} minutes from launch.</p>
+          </div>
+          <div>
+            <strong>Owner levers:</strong>
+            <p>${simulation.ownerControls.length} control-plane actions ready for the owner wallet.</p>
+          </div>
+        `;
+      }
+
+      function renderOwnerControls(simulation) {
+        ownerControlsEl.innerHTML = simulation.ownerControls
+          .map(
+            (control) => `
+              <li>
+                <strong>${control.label}</strong>
+                <code>${control.functionSignature}</code>
+                <p>${control.description}</p>
+              </li>
+            `,
+          )
+          .join("");
+      }
 
       jobInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
@@ -71,6 +365,13 @@
         const text = await file.text();
         jobConfig = JSON.parse(text);
         jobPreview.textContent = JSON.stringify(jobConfig, null, 2);
+
+        const metrics = computeMetrics(jobConfig);
+        cachedSimulation = simulateMission(jobConfig, metrics);
+        renderScoreboard(metrics);
+        renderSummary(cachedSimulation);
+        renderOwnerControls(cachedSimulation);
+        updateMermaid(jobConfig);
       });
 
       budgetCap.addEventListener("input", () => {
@@ -84,16 +385,48 @@
         timeline.prepend(card);
       }
 
+      function renderTimelineFromSimulation(simulation) {
+        timeline.innerHTML = "";
+        simulation.timeline.forEach((event) => {
+          pushTimeline(`${event.actor}: ${event.headline}`, event.severity === "critical" ? "warn" : "info");
+        });
+      }
+
+      function updateMermaid(config) {
+        const lines = ["flowchart TD", "  Owner([Owner Console]) --> GovAPI[[Governance API]]", "  GovAPI --> Pauser{{Global Pause}}"];
+        for (const domain of config.domains ?? []) {
+          const slug = String(domain.slug ?? "domain").replace(/[^a-z0-9]/gi, "");
+          lines.push(`  GovAPI --> ${slug}([${domain.name ?? slug}])`);
+        }
+        lines.push("  GovAPI --> Streams[[Capital Streams]]");
+        for (const stream of config.capitalStreams ?? []) {
+          const slug = String(stream.slug ?? "stream").replace(/[^a-z0-9]/gi, "");
+          lines.push(`  Streams --> ${slug}Vault([${stream.name ?? slug}])`);
+        }
+        lines.push("  GovAPI --> Sentinels{Sentinel lattice}");
+        lines.push("  Sentinels --> Validators[[Validator Guild]]");
+        lines.push("  Validators --> Escrow[(Milestone Escrow)]");
+        lines.push("  Escrow --> Rewards[(Adaptive Rewards)]");
+        mermaid.render("phase8", lines.join("\n"), (svg) => {
+          document.getElementById("mermaid").innerHTML = svg;
+        });
+      }
+
       launchButton.addEventListener("click", () => {
         if (!jobConfig) {
           pushTimeline("Please load a mission blueprint first.", "warn");
           return;
         }
         pushTimeline("Dispatching mission to orchestrator...");
-        setTimeout(() => pushTimeline("Planner agent: blueprint checkpoint stored on-ledger."), 1000);
+        setTimeout(() => pushTimeline("Planner agent: manifest anchored on-chain."), 1000);
         setTimeout(() => pushTimeline("Code Smith: governance extensions deployed, milestone escrow funded."), 2500);
         setTimeout(() => pushTimeline("Validator Guild: milestone 1 approved, partial payout released."), 4000);
-        setTimeout(() => pushTimeline("Safety Tripwire: all clear. Budget usage at 21%."), 5500);
+        setTimeout(() => {
+          pushTimeline("Safety lattice: checkpoints passing, budget usage at 21%.", "info");
+          if (cachedSimulation) {
+            renderTimelineFromSimulation(cachedSimulation);
+          }
+        }, 5500);
       });
 
       pauseToggle.addEventListener("click", () => {

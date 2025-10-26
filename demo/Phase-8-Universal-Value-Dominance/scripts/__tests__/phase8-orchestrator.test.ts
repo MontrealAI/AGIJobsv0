@@ -19,6 +19,9 @@ const {
   telemetryMarkdown,
   mermaid,
   writeArtifacts,
+  simulateMission,
+  renderMissionTimeline,
+  renderOwnerCommandCenter,
 } = require("../run-phase8-demo");
 
 describe("Phase 8 orchestration console", () => {
@@ -142,6 +145,31 @@ describe("Phase 8 orchestration console", () => {
     for (const key of fundingKeys) {
       expect(result.metrics.domainFundingMap[key]).toBe(result.crossCheck.domainFundingMap[key]);
     }
+  });
+
+  it("produces a mission simulation timeline with sorted offsets", () => {
+    const metrics = computeMetrics(config);
+    const manager = config.global?.phase8Manager ?? config.global?.systemPause ?? "0x0000000000000000000000000000000000000000";
+    const simulation = simulateMission(config, metrics, manager, new Date("2025-01-01T00:00:00Z"));
+    expect(simulation.timeline.length).toBeGreaterThan(4);
+    expect(simulation.ownerControls.length).toBeGreaterThan(3);
+    for (let index = 1; index < simulation.timeline.length; index += 1) {
+      expect(simulation.timeline[index].offsetMinutes).toBeGreaterThanOrEqual(
+        simulation.timeline[index - 1].offsetMinutes,
+      );
+    }
+    const timelineMarkdown = renderMissionTimeline(simulation);
+    expect(timelineMarkdown).toContain("# Phase 8 Mission Timeline");
+    expect(timelineMarkdown).toContain("## Scoreboard");
+    expect(timelineMarkdown).toContain("## Timeline");
+
+    const ownerMarkdown = renderOwnerCommandCenter(
+      config,
+      { managerAddress: manager, chainId: 1 },
+      simulation,
+    );
+    expect(ownerMarkdown).toContain("Owner Command Center — Phase 8");
+    expect(ownerMarkdown).toContain("Emergency operations");
   });
 
   it("parses the manifest with strict validation", () => {
@@ -278,6 +306,10 @@ describe("Phase 8 orchestration console", () => {
         dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
         emergencyOverrides: join(tempDir, "phase8-emergency-overrides.json"),
         guardianPlaybook: join(tempDir, "phase8-guardian-response-playbook.md"),
+        aiTeamMatrix: join(tempDir, "phase8-ai-team-matrix.json"),
+        autonomySimulation: join(tempDir, "phase8-autonomy-simulation.json"),
+        missionTimeline: join(tempDir, "phase8-mission-timeline.md"),
+        ownerCommand: join(tempDir, "phase8-owner-command-center.md"),
       };
 
       expect(outputs).toEqual([
@@ -293,6 +325,10 @@ describe("Phase 8 orchestration console", () => {
         { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
         { label: "Emergency overrides", path: artifactPaths.emergencyOverrides },
         { label: "Guardian response playbook", path: artifactPaths.guardianPlaybook },
+        { label: "AI team matrix", path: artifactPaths.aiTeamMatrix },
+        { label: "Autonomy simulation", path: artifactPaths.autonomySimulation },
+        { label: "Mission timeline", path: artifactPaths.missionTimeline },
+        { label: "Owner command center", path: artifactPaths.ownerCommand },
       ]);
 
       expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
@@ -329,6 +365,19 @@ describe("Phase 8 orchestration console", () => {
       const operatorRunbook = readFileSync(artifactPaths.runbook, "utf-8");
       expect(operatorRunbook).toContain("OPERATOR RUNBOOK");
       expect(operatorRunbook).toContain("Self-improvement kernel");
+
+      const autonomySimulation = JSON.parse(readFileSync(artifactPaths.autonomySimulation, "utf-8"));
+      expect(Array.isArray(autonomySimulation.timeline)).toBe(true);
+      expect(autonomySimulation.timeline.length).toBeGreaterThan(4);
+      expect(autonomySimulation.scoreboard.dominanceScore).toBeCloseTo(metrics.dominanceScore, 1);
+
+      const missionTimeline = readFileSync(artifactPaths.missionTimeline, "utf-8");
+      expect(missionTimeline).toContain("Phase 8 Mission Timeline");
+      expect(missionTimeline).toContain("## Scoreboard");
+
+      const ownerCommand = readFileSync(artifactPaths.ownerCommand, "utf-8");
+      expect(ownerCommand).toContain("Owner Command Center — Phase 8");
+      expect(ownerCommand).toContain("Emergency operations");
 
       const planPayload = JSON.parse(readFileSync(artifactPaths.planPayload, "utf-8"));
       expect(typeof planPayload.generatedAt).toBe("string");
