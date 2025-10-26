@@ -31,6 +31,7 @@
     "slash_ratio": 0.5
   },
   "audit_log_path": "logs/omega-audit.jsonl",
+  "status_output_path": "logs/omega-status.jsonl",
   "initial_jobs": [
     {
       "title": "Planetary Dyson Swarm Expansion",

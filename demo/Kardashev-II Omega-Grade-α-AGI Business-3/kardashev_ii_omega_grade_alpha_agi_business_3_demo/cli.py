@@ -38,6 +38,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Multiplier applied to prosperity/sustainability derived compute capacity",
     )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
+    parser.add_argument(
+        "--status-output",
+        type=Path,
+        help="Optional JSONL file receiving continuous status snapshots",
+    )
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
 
@@ -52,7 +57,7 @@ async def _run_async(args: argparse.Namespace) -> None:
         if not args.config.exists():
             raise FileNotFoundError(f"Config file not found: {args.config}")
         data = json.loads(args.config.read_text(encoding="utf-8"))
-        for path_field in ("checkpoint_path", "control_channel_file", "audit_log_path"):
+        for path_field in ("checkpoint_path", "control_channel_file", "audit_log_path", "status_output_path"):
             if path_field in data and data[path_field] is not None:
                 data[path_field] = Path(data[path_field])
         if "governance" in data:
@@ -76,6 +81,7 @@ async def _run_async(args: argparse.Namespace) -> None:
         "simulation_energy_scale": args.simulation_energy_scale,
         "simulation_compute_scale": args.simulation_compute_scale,
         "audit_log_path": args.audit_log,
+        "status_output_path": args.status_output,
     }
     params.update(overrides)
 

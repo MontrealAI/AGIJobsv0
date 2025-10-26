@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,7 +19,7 @@ from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
 from .logging_config import configure_logging
 from .messaging import MessageBus
 from .resources import ResourceManager
-from .simulation import PlanetarySimulation, SyntheticEconomySim
+from .simulation import PlanetarySimulation, SimulationState, SyntheticEconomySim
 
 
 @dataclass
@@ -52,6 +53,7 @@ class OrchestratorConfig:
     control_channel_file: Path = Path("control-channel.jsonl")
     audit_log_path: Optional[Path] = None
     initial_jobs: List[Dict[str, Any]] = field(default_factory=list)
+    status_output_path: Optional[Path] = None
 
 
 class Orchestrator:
@@ -75,12 +77,19 @@ class Orchestrator:
         self.checkpoint = CheckpointManager(config.checkpoint_path)
         self.governance = GovernanceController(config.governance)
         self.simulation: Optional[PlanetarySimulation] = SyntheticEconomySim() if config.enable_simulation else None
+        self._latest_simulation_state: Optional[SimulationState] = None
         self._tasks: List[asyncio.Task] = []
         self._running = False
         self._paused = asyncio.Event()
         self._paused.set()
         self._cycle = 0
         self._stopped = asyncio.Event()
+        self._status_path = config.status_output_path
+        self._status_lock = asyncio.Lock()
+        if self._status_path is not None:
+            self._status_path.parent.mkdir(parents=True, exist_ok=True)
+            if not self._status_path.exists():
+                self._status_path.touch()
 
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
@@ -180,6 +189,7 @@ class Orchestrator:
                 {"idea": f"Dyson-swarm expansion cycle {self._cycle}"},
                 "orchestrator",
             )
+            await self._persist_status_snapshot()
             await asyncio.sleep(self.config.insight_interval_seconds)
 
     async def _simulation_loop(self) -> None:
@@ -188,6 +198,7 @@ class Orchestrator:
             await self._paused.wait()
             hours = max(0.0, float(self.config.simulation_hours_per_tick)) or 1.0
             state = self.simulation.tick(hours=hours)
+            self._latest_simulation_state = state
             prev_energy_capacity = self.resources.energy_capacity
             prev_energy_available = self.resources.energy_available
             prev_compute_capacity = self.resources.compute_capacity
@@ -250,6 +261,7 @@ class Orchestrator:
             metadata={"employer": self.config.operator_account},
         )
         await self.post_alpha_job(root_spec)
+        await self._persist_status_snapshot()
 
     async def _checkpoint_loop(self) -> None:
         while self._running:
@@ -268,6 +280,7 @@ class Orchestrator:
                 token_supply=snapshot.token_supply,
                 locked_supply=snapshot.locked_supply,
             )
+            await self._persist_status_snapshot()
 
     def _rehydrate_jobs(self, serialized: Dict[str, Any]) -> List[JobRecord]:
         records: List[JobRecord] = []
@@ -397,6 +410,7 @@ class Orchestrator:
                 self._warning("resource_overuse", job_id=job_id, error=str(exc))
         record = self.job_registry.mark_completed(job_id, summary, energy_used, compute_used)
         await self._initiate_validation(record)
+        await self._persist_status_snapshot()
 
     async def _handle_reveal(self, job_id: str, validator: str, vote: bool) -> None:
         job = self.job_registry.get_job(job_id)
@@ -404,6 +418,8 @@ class Orchestrator:
         approvals = sum(1 for v in job.validator_votes.values() if v)
         if self.governance.require_quorum(approvals):
             await self._finalize_job(job)
+        else:
+            await self._persist_status_snapshot()
 
     async def post_alpha_job(self, spec: JobSpec) -> JobRecord:
         employer = spec.metadata.get("employer", self.config.operator_account)
@@ -421,6 +437,7 @@ class Orchestrator:
             payload={"spec": spec, "job_id": record.job_id},
             publisher="orchestrator",
         )
+        await self._persist_status_snapshot()
         return record
 
     async def assign_job(self, job_id: str, agent_name: str) -> JobRecord:
@@ -435,6 +452,7 @@ class Orchestrator:
             {"job_id": job_id, "agent": agent_name},
             "orchestrator",
         )
+        await self._persist_status_snapshot()
         return job
 
     async def _schedule_deadline(self, job: JobRecord) -> None:
@@ -452,6 +470,7 @@ class Orchestrator:
                 {"job_id": job.job_id, "status": job.status.value},
                 "orchestrator",
             )
+            await self._persist_status_snapshot()
 
     async def _initiate_validation(self, job: JobRecord) -> None:
         for validator in self.config.validator_names:
@@ -483,6 +502,7 @@ class Orchestrator:
                 self.resources.release_stake(job.assigned_agent, job.stake_locked)
         self._release_validator_stake(job)
         self._info("job_finalized", job_id=job.job_id, status=job.status.value)
+        await self._persist_status_snapshot()
 
     def _release_validator_stake(self, job: JobRecord) -> None:
         if not job.validators_with_stake:
@@ -521,6 +541,7 @@ class Orchestrator:
         self._info("orchestrator_stopped")
         if self.audit:
             await self.audit.close()
+        await self._persist_status_snapshot()
         self._stopped.set()
 
     async def wait_until_stopped(self) -> None:
@@ -651,4 +672,70 @@ class Orchestrator:
             "orchestrator",
         )
         self._info("job_cancelled", job_id=job_id, reason=reason)
+        await self._persist_status_snapshot()
+
+    def _collect_status_snapshot(self) -> Dict[str, Any]:
+        jobs = list(self.job_registry.iter_jobs())
+        status_counts = Counter(job.status.value for job in jobs)
+        active_jobs = [
+            job.job_id
+            for job in jobs
+            if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}
+        ]
+        root_jobs = [job.job_id for job in jobs if job.spec.parent_id is None]
+        resource_state = self.resources.snapshot()
+        accounts = self.resources.to_serializable()
+        governance = self.governance.params
+        simulation_state: Optional[Dict[str, float]] = None
+        if self._latest_simulation_state is not None:
+            simulation_state = {
+                "energy_output_gw": self._latest_simulation_state.energy_output_gw,
+                "prosperity_index": self._latest_simulation_state.prosperity_index,
+                "sustainability_index": self._latest_simulation_state.sustainability_index,
+            }
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mission": self.config.mission_name,
+            "cycle": self._cycle,
+            "running": self._running,
+            "paused": not self._paused.is_set(),
+            "jobs": {
+                "total": len(jobs),
+                "status_counts": dict(status_counts),
+                "active_job_ids": active_jobs,
+                "root_job_ids": root_jobs,
+            },
+            "resources": {
+                "energy_available": resource_state.energy_available,
+                "compute_available": resource_state.compute_available,
+                "token_supply": resource_state.token_supply,
+                "locked_supply": resource_state.locked_supply,
+                "energy_price": self.resources.energy_price,
+                "compute_price": self.resources.compute_price,
+                "accounts": accounts,
+            },
+            "governance": {
+                "worker_stake_ratio": governance.worker_stake_ratio,
+                "validator_stake": governance.validator_stake,
+                "approvals_required": governance.approvals_required,
+                "slash_ratio": governance.slash_ratio,
+                "pause_enabled": governance.pause_enabled,
+                "validator_commit_window_seconds": governance.validator_commit_window.total_seconds(),
+                "validator_reveal_window_seconds": governance.validator_reveal_window.total_seconds(),
+            },
+            "simulation": simulation_state,
+        }
+
+    async def _persist_status_snapshot(self) -> None:
+        if self._status_path is None:
+            return
+        snapshot = self._collect_status_snapshot()
+        async with self._status_lock:
+            await asyncio.to_thread(self._append_snapshot_line, snapshot)
+
+    def _append_snapshot_line(self, payload: Dict[str, Any]) -> None:
+        assert self._status_path is not None
+        line = json.dumps(payload, sort_keys=True)
+        with self._status_path.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
 
