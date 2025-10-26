@@ -7,7 +7,7 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
 
 1. **Wallet & Funding**
    - Top up the operator wallet with ETH for gas + $AGIα for staking rewards.
-   - Assign the wallet as `OWNER_ADDRESS` in `.env` (used by the bootstrap script to exercise governance calls).
+   - Assign the wallet as `OWNER_ADDRESS` in `.env` (used by the bootstrap script to exercise governance calls) and set `PHASE8_MANAGER_ADDRESS` if the manifest does not already contain the active manager contract.
 2. **Environment**
    - `npm install`
    - `npx hardhat compile`
@@ -20,11 +20,15 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
 
 1. **Bootstrap Contracts & Services**
    ```bash
-   npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts --network mainnet
+   # Dry run: regenerate artifacts + inspect governance call plan
+   npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts
+
+   # After review: broadcast the encoded calls with the owner key
+   npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts --execute -y
    ```
-   - Deploys/updates governance extensions (pause controller, stake scaler, milestone escrow).
-   - Registers latest model adapters defined in `configs/model-adapters.json`.
-   - Seeds validator guild registry with multisig addresses from `configs/governance-policies.json`.
+   - Generates fresh governance artifacts (Safe batch, emergency overrides, runbooks) and prints the encoded call groups.
+   - Registers the latest model adapters defined in `configs/model-adapters.json` and validates governance control surface.
+   - Seeds validator guild registry with multisig addresses from `configs/governance-policies.json`, logging receipts to `output/phase8-bootstrap-history.jsonl` when executed.
 
 2. **Activate Monitoring Suite**
    ```bash

@@ -1,14 +1,14 @@
 {
-  "owner": "0xOwnerProxy",
+  "owner": "0x1111111111111111111111111111111111111111",
   "governanceCouncil": [
-    "0xCouncilMember1",
-    "0xCouncilMember2",
-    "0xCouncilMember3"
+    "0x4444444444444444444444444444444444444444",
+    "0x5555555555555555555555555555555555555555",
+    "0x6666666666666666666666666666666666666666"
   ],
   "globalPause": false,
-  "pauseGuardian": "0xPauseGuardian",
+  "pauseGuardian": "0x2222222222222222222222222222222222222222",
   "tripwireSensitivity": "HIGH",
-  "validatorGuild": "0xValidatorGuildMultisig",
+  "validatorGuild": "0x3333333333333333333333333333333333333333",
   "humanCoPilotRequired": true,
   "budgetCapUSD": 7500,
   "stakeTiers": {
