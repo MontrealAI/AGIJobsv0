@@ -318,7 +318,8 @@ function renderLogistics(logistics, verification) {
     verification?.reliabilityOk &&
     verification?.bufferOk &&
     verification?.utilisationOk &&
-    verification?.watchersOk;
+    verification?.watchersOk &&
+    verification?.autonomyOk;
 
   summary.textContent = `Average reliability ${avgReliability.toFixed(2)}% · utilisation ${avgUtilisation.toFixed(
     2
@@ -336,7 +337,12 @@ function renderLogistics(logistics, verification) {
     li.innerHTML = `<strong>${corridor.name}</strong><span>${(corridor.utilisationPct * 100).toFixed(1)}% · ${(corridor.reliabilityPct * 100).toFixed(
       2
     )}% · buffer ${corridor.bufferDays.toFixed(1)}d</span>`;
-    const ok = corridor.utilisationOk && corridor.reliabilityOk && corridor.bufferOk && corridor.watchersOk;
+    const ok =
+      corridor.utilisationOk &&
+      corridor.reliabilityOk &&
+      corridor.bufferOk &&
+      corridor.watchersOk &&
+      corridor.autonomyOk;
     li.classList.add(ok ? "status-ok" : "status-warn");
     if (!ok) {
       const issues = [];
@@ -344,6 +350,7 @@ function renderLogistics(logistics, verification) {
       if (!corridor.bufferOk) issues.push("buffer");
       if (!corridor.utilisationOk) issues.push("utilisation");
       if (!corridor.watchersOk) issues.push("watchers");
+      if (!corridor.autonomyOk) issues.push("autonomy");
       const badge = document.createElement("div");
       badge.textContent = `Attention: ${issues.join(", ")}`;
       badge.classList.add("status-fail");
