@@ -12,6 +12,7 @@
 - **Tamper-evident audit** – optional BLAKE3 (or BLAKE2b fallback) message hashing to JSONL for compliance-grade traceability.
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
 - **Resilient mission scheduler** – checkpointed event graph restarts instantly with deadlines, validation windows, and control events intact.
+- **Self-healing agent mesh** – heartbeat telemetry with automatic unresponsive detection and recovery logging keeps thousands of agents trustworthy during week-long runs.
 
 ```mermaid
 flowchart LR
@@ -51,6 +52,7 @@ flowchart LR
    - The config file contains every knob (staking ratios, validator set, worker profiles, simulation scaling) – edit JSON values and rerun to update.
    - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
    - Append `--status-output logs/omega-status.jsonl` to stream machine-readable mission snapshots for dashboards or external automations.
+   - Tune `--heartbeat-interval`, `--heartbeat-timeout`, and `--health-check-interval` live to control agent health sensitivity without restarting.
 
 3. **Live control** – stream JSON commands into `control-channel.jsonl`:
 
@@ -89,6 +91,12 @@ flowchart LR
 - Each message bus publication is canonicalised, hashed (BLAKE3 if available, BLAKE2b-256 otherwise), and written as JSONL with timestamp, topic, publisher, and digest.
 - The ledger is safe for hot-rotation; records are flushed immediately for non-technical operators tailing the file.
 - Pair with `--status-output` to obtain high-level mission snapshots (job counts, resource balances, governance settings) that external BI tools can ingest in real time.
+
+## 🩺 Agent Health Monitoring
+
+- Heartbeats are emitted every few seconds and logged into the status stream under the `agents` key.
+- Unresponsive agents trigger warning logs and surface in `omega-status.jsonl` so non-technical operators immediately see who needs attention.
+- Adjust health sensitivity at runtime via the CLI flags or control channel without restarting the orchestrator.
 
 ## 🧪 CI & Validation
 

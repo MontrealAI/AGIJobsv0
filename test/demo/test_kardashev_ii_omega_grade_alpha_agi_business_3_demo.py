@@ -452,6 +452,8 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(latest["mission"], config.mission_name)
             self.assertIn("jobs", latest)
             self.assertIn("resources", latest)
+            self.assertIn("agents", latest)
+            self.assertIn("health", latest["agents"])
 
     async def test_simulation_updates_resources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -485,6 +487,40 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             await orchestrator.shutdown()
             self.assertGreater(energy_after, 500.0)
             self.assertGreater(compute_after, 1_000.0)
+
+    async def test_agent_health_detection(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.05),
+                validator_reveal_window=timedelta(seconds=0.05),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=40,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                heartbeat_interval_seconds=5.0,
+                heartbeat_timeout_seconds=0.2,
+                health_check_interval_seconds=0.05,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.2)
+            with orchestrator._agent_lock:  # type: ignore[attr-defined]
+                agent_name = next(iter(orchestrator._agent_last_seen))  # type: ignore[attr-defined]
+                orchestrator._agent_last_seen[agent_name] = datetime.now(timezone.utc) - timedelta(seconds=1)  # type: ignore[index]
+            newly = orchestrator._detect_unresponsive_agents(  # type: ignore[attr-defined]
+                datetime.now(timezone.utc), threshold_seconds=0.2
+            )
+            self.assertTrue(any(agent == agent_name for agent, _ in newly))
+            self.assertIn(agent_name, orchestrator._unresponsive_agents)  # type: ignore[attr-defined]
+            await orchestrator.shutdown()
 
 
 if __name__ == "__main__":  # pragma: no cover
