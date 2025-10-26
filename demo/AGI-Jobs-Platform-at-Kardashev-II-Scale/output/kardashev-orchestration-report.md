@@ -45,9 +45,9 @@
 
 ## Mission lattice & task hierarchy
 * 3 programmes · 26 tasks · 2,441,200 GW · 261.90 EF.
-* Unstoppable score 77.78% · dependencies resolved true · sentinel coverage true.
-* Lead programme Dyson Swarm Expansion Programme (orbital) — 17 tasks, 2173200 GW, unstoppable 66.67%.
-* ⚠ Mission advisories: dyson-swarm timeline deficit -600.00 days; dyson-swarm autonomy exceeds max 7800 bps; ares-biosphere timeline deficit -220.00 days; gaia-resilience timeline deficit -240.00 days
+* Unstoppable score 94.44% · dependencies resolved true · sentinel coverage true.
+* Lead programme Dyson Swarm Expansion Programme (orbital) — 17 tasks, 2173200 GW, unstoppable 83.33%.
+* ⚠ Mission advisories: dyson-swarm autonomy exceeds max 7800 bps
 
 ---
 

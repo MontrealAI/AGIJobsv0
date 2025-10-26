@@ -14,7 +14,7 @@
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.8918918918918919,
+        "score": 0.918918918918919,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -34,8 +34,8 @@
       },
       {
         "method": "mission-lattice",
-        "score": 0.7778,
-        "explanation": "Mission unstoppable 77.78% · dependencies resolved · warnings 4."
+        "score": 0.9444,
+        "explanation": "Mission unstoppable 94.44% · dependencies resolved · warnings 1."
       },
       {
         "method": "scenario-sweep",
@@ -116,7 +116,7 @@
       "severity": "high",
       "status": false,
       "weight": 0.85,
-      "evidence": "unstoppable 77.78% · warnings 4"
+      "evidence": "unstoppable 94.44% · warnings 1"
     },
     {
       "id": "guardian-coverage",
@@ -300,7 +300,7 @@
       "id": "mission-lattice",
       "title": "Mission lattice unstoppable",
       "severity": "high",
-      "evidence": "unstoppable 77.78% · warnings 4"
+      "evidence": "unstoppable 94.44% · warnings 1"
     },
     {
       "id": "scenario-resilience",

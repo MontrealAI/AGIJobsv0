@@ -15,14 +15,11 @@
     "fallbackCoverage": true,
     "ownerAlignment": true,
     "autonomyWithinBounds": false,
-    "timelineAligned": false,
+    "timelineAligned": true,
     "programmeDependenciesResolved": true,
-    "unstoppableScore": 0.7778,
+    "unstoppableScore": 0.9444,
     "warnings": [
-      "dyson-swarm timeline deficit -600.00 days",
-      "dyson-swarm autonomy exceeds max 7800 bps",
-      "ares-biosphere timeline deficit -220.00 days",
-      "gaia-resilience timeline deficit -240.00 days"
+      "dyson-swarm autonomy exceeds max 7800 bps"
     ]
   },
   "programmes": [
@@ -35,10 +32,10 @@
       "totalEnergyGw": 2173200,
       "totalComputeExaflops": 187.9,
       "totalAgentQuorum": 25370000000,
-      "criticalPathDays": 1140,
+      "criticalPathDays": 540,
       "timelineDays": 540,
-      "timelineSlackDays": -600,
-      "unstoppableScore": 0.6667,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 0.8333,
       "riskDistribution": {
         "low": 5,
         "medium": 11,
@@ -49,7 +46,7 @@
       "missingProgrammeDependencies": [],
       "sentinelAlerts": [],
       "ownerAlerts": [],
-      "timelineOk": false,
+      "timelineOk": true,
       "autonomyOk": false
     },
     {
@@ -61,10 +58,10 @@
       "totalEnergyGw": 172000,
       "totalComputeExaflops": 44,
       "totalAgentQuorum": 3020000000,
-      "criticalPathDays": 640,
+      "criticalPathDays": 420,
       "timelineDays": 420,
-      "timelineSlackDays": -220,
-      "unstoppableScore": 0.8333,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 1,
       "riskDistribution": {
         "low": 1,
         "medium": 3,
@@ -77,7 +74,7 @@
       "missingProgrammeDependencies": [],
       "sentinelAlerts": [],
       "ownerAlerts": [],
-      "timelineOk": false,
+      "timelineOk": true,
       "autonomyOk": true
     },
     {
@@ -89,10 +86,10 @@
       "totalEnergyGw": 96000,
       "totalComputeExaflops": 30,
       "totalAgentQuorum": 3520000000,
-      "criticalPathDays": 605,
+      "criticalPathDays": 365,
       "timelineDays": 365,
-      "timelineSlackDays": -240,
-      "unstoppableScore": 0.8333,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 1,
       "riskDistribution": {
         "low": 1,
         "medium": 3,
@@ -105,7 +102,7 @@
       "missingProgrammeDependencies": [],
       "sentinelAlerts": [],
       "ownerAlerts": [],
-      "timelineOk": false,
+      "timelineOk": true,
       "autonomyOk": true
     }
   ],
