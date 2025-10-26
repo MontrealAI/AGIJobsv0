@@ -37,25 +37,49 @@
     "dysonYield": 488800,
     "utilisationPct": 0.5761904761904761,
     "marginPct": 0.125,
+    "thermostatMarginGw": 52500,
+    "totalDemandGw": 589.2,
+    "globalFreeEnergyGw": 419410.8,
     "warnings": [],
     "regional": [
       {
         "slug": "earth",
+        "name": "Earth Sovereign Federation",
         "availableGw": 82000,
         "storageGwh": 54000,
-        "renewablePct": 0.87
+        "renewablePct": 0.87,
+        "latencyMs": 85,
+        "demandGw": 220.79999999999998,
+        "storageReliefGw": 2250,
+        "bufferedSupplyGw": 84250,
+        "freeEnergyGw": 84029.2,
+        "deficitGw": 0
       },
       {
         "slug": "mars",
+        "name": "Mars Terraforming Compact",
         "availableGw": 24000,
         "storageGwh": 18000,
-        "renewablePct": 0.93
+        "renewablePct": 0.93,
+        "latencyMs": 820,
+        "demandGw": 73.19999999999999,
+        "storageReliefGw": 750,
+        "bufferedSupplyGw": 24750,
+        "freeEnergyGw": 24676.8,
+        "deficitGw": 0
       },
       {
         "slug": "orbital",
+        "name": "Orbital Research Halo",
         "availableGw": 136000,
         "storageGwh": 128000,
-        "renewablePct": 0.99
+        "renewablePct": 0.99,
+        "latencyMs": 42,
+        "demandGw": 295.20000000000005,
+        "storageReliefGw": 5333.333333333333,
+        "bufferedSupplyGw": 141333.33333333334,
+        "freeEnergyGw": 141038.13333333333,
+        "deficitGw": 0
       }
     ],
     "tripleCheck": true,
@@ -64,6 +88,46 @@
       "dysonProjectionGw": 488800,
       "thermostatBudgetGw": 340200,
       "withinMargin": true
+    },
+    "freeEnergy": {
+      "heuristicGwPerExaflop": 12,
+      "totalDemandGw": 589.2,
+      "bufferedFreeEnergyGw": 249744.13333333333,
+      "globalFreeEnergyGw": 419410.8,
+      "thermostatMarginGw": 52500,
+      "withinMargin": true,
+      "regional": [
+        {
+          "slug": "earth",
+          "name": "Earth Sovereign Federation",
+          "availableGw": 82000,
+          "demandGw": 220.79999999999998,
+          "storageReliefGw": 2250,
+          "bufferedSupplyGw": 84250,
+          "freeEnergyGw": 84029.2,
+          "deficitGw": 0
+        },
+        {
+          "slug": "mars",
+          "name": "Mars Terraforming Compact",
+          "availableGw": 24000,
+          "demandGw": 73.19999999999999,
+          "storageReliefGw": 750,
+          "bufferedSupplyGw": 24750,
+          "freeEnergyGw": 24676.8,
+          "deficitGw": 0
+        },
+        {
+          "slug": "orbital",
+          "name": "Orbital Research Halo",
+          "availableGw": 136000,
+          "demandGw": 295.20000000000005,
+          "storageReliefGw": 5333.333333333333,
+          "bufferedSupplyGw": 141333.33333333334,
+          "freeEnergyGw": 141038.13333333333,
+          "deficitGw": 0
+        }
+      ]
     },
     "monteCarlo": {
       "runs": 256,
@@ -303,7 +367,11 @@
         "availableGw": 82000,
         "renewablePct": 0.87,
         "storageGwh": 54000,
-        "latencyMs": 85
+        "latencyMs": 85,
+        "demandGw": 220.79999999999998,
+        "freeEnergyGw": 84029.2,
+        "bufferedSupplyGw": 84250,
+        "deficitGw": 0
       },
       "compute": {
         "agents": 2800000000,
@@ -359,7 +427,11 @@
         "availableGw": 24000,
         "renewablePct": 0.93,
         "storageGwh": 18000,
-        "latencyMs": 820
+        "latencyMs": 820,
+        "demandGw": 73.19999999999999,
+        "freeEnergyGw": 24676.8,
+        "bufferedSupplyGw": 24750,
+        "deficitGw": 0
       },
       "compute": {
         "agents": 720000000,
@@ -406,7 +478,11 @@
         "availableGw": 136000,
         "renewablePct": 0.99,
         "storageGwh": 128000,
-        "latencyMs": 42
+        "latencyMs": 42,
+        "demandGw": 295.20000000000005,
+        "freeEnergyGw": 141038.13333333333,
+        "bufferedSupplyGw": 141333.33333333334,
+        "deficitGw": 0
       },
       "compute": {
         "agents": 960000000,
@@ -534,6 +610,13 @@
       "deviationPct": 0.45008183306055416,
       "dysonProjectionExaflops": 48.88,
       "withinTolerance": true
+    },
+    "thermodynamics": {
+      "withinMargin": true,
+      "globalFreeEnergyGw": 419410.8,
+      "thermostatMarginGw": 52500,
+      "totalDemandGw": 589.2,
+      "bufferedFreeEnergyGw": 249744.13333333333
     },
     "bridges": {
       "toleranceSeconds": 120,

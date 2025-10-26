@@ -1258,7 +1258,15 @@ function buildRunbook(
   lines.push("## Energy telemetry");
   lines.push(`* Captured GW (Dyson baseline): ${telemetry.energy.capturedGw.toLocaleString()} GW.`);
   lines.push(`* Utilisation: ${(telemetry.energy.utilisationPct * 100).toFixed(2)}% (margin ${telemetry.energy.marginPct.toFixed(2)}%).`);
+  lines.push(
+    `* Free energy buffer: ${telemetry.energy.globalFreeEnergyGw.toFixed(2)} GW vs margin ${telemetry.energy.thermostatMarginGw.toFixed(2)} GW (heuristic ${telemetry.energy.freeEnergy.heuristicGwPerExaflop} GW/EF).`
+  );
   lines.push(`* Regional availability: ${telemetry.energy.regional.map((r: any) => `${r.slug} ${r.availableGw} GW`).join(" · ")}.`);
+  lines.push(
+    `* Regional free energy: ${telemetry.energy.freeEnergy.regional
+      .map((region: any) => `${region.slug} ${region.freeEnergyGw.toFixed(2)} GW${region.deficitGw > 0 ? ` (deficit ${region.deficitGw.toFixed(2)} GW)` : ""}`)
+      .join(" · ")}.`
+  );
   lines.push(
     `* Monte Carlo breach probability ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (runs ${
       telemetry.energy.monteCarlo.runs
@@ -1376,6 +1384,9 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
     }% tolerance): ${telemetry.verification.energyMonteCarlo.withinTolerance}`
   );
   lines.push(
+    `* Free energy buffer ≥ margin (${telemetry.verification.thermodynamics.thermostatMarginGw.toFixed(2)} GW): ${telemetry.verification.thermodynamics.withinMargin}`
+  );
+  lines.push(
     `* Compute deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (tolerance ${telemetry.verification.compute.tolerancePct}%): ${telemetry.verification.compute.withinTolerance}`
   );
   lines.push(
@@ -1470,22 +1481,55 @@ function computeTelemetry(
   const minimumCoverage = domainCoverages.length > 0 ? Math.min(...domainCoverages) : 0;
 
   const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
-  const regionalEnergy = manifest.federations.map((f) => ({
-    slug: f.slug,
-    availableGw: f.energy.availableGw,
-    storageGwh: f.energy.storageGwh,
-    renewablePct: f.energy.renewablePct,
-  }));
+  const energyHeuristicGwPerExaflop = 12;
+  const regionalEnergy = manifest.federations.map((f) => {
+    const demandGw = f.compute.exaflops * energyHeuristicGwPerExaflop;
+    const storageReliefGw = Math.min(f.energy.storageGwh / 24, f.energy.availableGw * 0.2);
+    const bufferedSupplyGw = f.energy.availableGw + storageReliefGw;
+    const freeEnergyGw = Math.max(0, bufferedSupplyGw - demandGw);
+    const deficitGw = Math.max(0, demandGw - bufferedSupplyGw);
+    return {
+      slug: f.slug,
+      name: f.name,
+      availableGw: f.energy.availableGw,
+      storageGwh: f.energy.storageGwh,
+      renewablePct: f.energy.renewablePct,
+      latencyMs: f.energy.latencyMs,
+      demandGw,
+      storageReliefGw,
+      bufferedSupplyGw,
+      freeEnergyGw,
+      deficitGw,
+    };
+  });
   const sumRegionalGw = regionalEnergy.reduce((sum, r) => sum + r.availableGw, 0);
   const dysonYield = manifest.dysonProgram.phases.reduce((sum, p) => sum + p.energyYieldGw, 0);
   const utilisationPct = sumRegionalGw / capturedGw;
   const marginPct = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
+  const thermostatMarginGw = capturedGw * marginPct;
+  const totalDemandGw = regionalEnergy.reduce((sum, r) => sum + r.demandGw, 0);
+  const bufferedFreeEnergyGw = regionalEnergy.reduce((sum, r) => sum + r.freeEnergyGw, 0);
+  const globalFreeEnergyGw = Math.max(0, capturedGw - totalDemandGw);
+  const freeEnergyWithinMargin = globalFreeEnergyGw >= thermostatMarginGw;
   const energyWarnings: string[] = [];
   if (utilisationPct > 1 - marginPct) {
     energyWarnings.push("Utilisation exceeds configured safety margin");
   }
   if (dysonYield < capturedGw) {
     energyWarnings.push("Dyson programme yield below captured baseline");
+  }
+  if (!Number.isFinite(globalFreeEnergyGw) || globalFreeEnergyGw < thermostatMarginGw) {
+    energyWarnings.push(
+      `Free energy buffer ${globalFreeEnergyGw.toFixed(2)} GW below thermostat margin ${thermostatMarginGw.toFixed(2)} GW`
+    );
+  }
+  const regionalDeficits = regionalEnergy.filter((region) => region.deficitGw > 0);
+  if (regionalDeficits.length > 0) {
+    energyWarnings.push(
+      `Regional deficits detected: ${regionalDeficits
+        .map((region) => `${region.slug} ${region.deficitGw.toFixed(2)} GW`)
+        .join(", ")}`
+    );
   }
 
   const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
@@ -1498,7 +1542,10 @@ function computeTelemetry(
   const thermostatBudgetGw =
     manifest.energyProtocols.stellarLattice.baselineCapturedGw * manifest.energyProtocols.thermostat.targetKelvin;
   const energyAgreementWithinMargin =
-    sumRegionalGw <= dysonYield && sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) && dysonYield >= capturedGw;
+    sumRegionalGw <= dysonYield &&
+    sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) &&
+    dysonYield >= capturedGw &&
+    globalFreeEnergyGw >= thermostatMarginGw;
 
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
@@ -1609,17 +1656,27 @@ function computeTelemetry(
   const requiredFailoverCapacity = totalPlaneCapacity * manifest.computeFabrics.failoverPolicies.quorumPct;
   const failoverWithinQuorum = failoverCapacityExaflops >= requiredFailoverCapacity;
 
-  const federationsDetail = manifest.federations.map((federation) => ({
-    slug: federation.slug,
-    name: federation.name,
-    chainId: federation.chainId,
-    governanceSafe: federation.governanceSafe,
-    energy: federation.energy,
-    compute: federation.compute,
-    domains: federation.domains.map((domain) => ({
-      slug: domain.slug,
-      name: domain.name,
-      resilience: domain.resilience,
+  const energyByFederation = new Map(regionalEnergy.map((region) => [region.slug, region]));
+
+  const federationsDetail = manifest.federations.map((federation) => {
+    const energyLedger = energyByFederation.get(federation.slug);
+    return {
+      slug: federation.slug,
+      name: federation.name,
+      chainId: federation.chainId,
+      governanceSafe: federation.governanceSafe,
+      energy: {
+        ...federation.energy,
+        demandGw: energyLedger?.demandGw ?? federation.compute.exaflops * energyHeuristicGwPerExaflop,
+        freeEnergyGw: energyLedger?.freeEnergyGw ?? 0,
+        bufferedSupplyGw: energyLedger?.bufferedSupplyGw ?? federation.energy.availableGw,
+        deficitGw: energyLedger?.deficitGw ?? 0,
+      },
+      compute: federation.compute,
+      domains: federation.domains.map((domain) => ({
+        slug: domain.slug,
+        name: domain.name,
+        resilience: domain.resilience,
       monthlyValueUSD: domain.monthlyValueUSD,
       autonomyLevelBps: domain.autonomyLevelBps,
       coverageSeconds: domain.coverageSeconds,
@@ -1632,14 +1689,15 @@ function computeTelemetry(
       sensitivityBps: sentinel.sensitivityBps,
       active: sentinel.active,
     })),
-    capitalStreams: federation.capitalStreams.map((stream) => ({
-      slug: stream.slug,
-      name: stream.name,
-      annualBudget: stream.annualBudget,
-      expansionBps: stream.expansionBps,
-      active: stream.active,
-    })),
-  }));
+      capitalStreams: federation.capitalStreams.map((stream) => ({
+        slug: stream.slug,
+        name: stream.name,
+        annualBudget: stream.annualBudget,
+        expansionBps: stream.expansionBps,
+        active: stream.active,
+      })),
+    };
+  });
 
   const latencyTolerance = manifest.verificationProtocols.bridgeLatencyToleranceSeconds;
   const bridgeCompliance = Object.entries(bridgeTelemetry).map(([name, data]) => ({
@@ -1684,14 +1742,35 @@ function computeTelemetry(
       dysonYield,
       utilisationPct,
       marginPct,
+      thermostatMarginGw,
+      totalDemandGw,
+      globalFreeEnergyGw,
       warnings: energyWarnings,
       regional: regionalEnergy,
-      tripleCheck: sumRegionalGw <= capturedGw * 1.001 && dysonYield >= capturedGw,
+      tripleCheck: sumRegionalGw <= capturedGw * 1.001 && dysonYield >= capturedGw && globalFreeEnergyGw >= thermostatMarginGw,
       models: {
         regionalSumGw: sumRegionalGw,
         dysonProjectionGw: dysonYield,
         thermostatBudgetGw,
         withinMargin: energyAgreementWithinMargin,
+      },
+      freeEnergy: {
+        heuristicGwPerExaflop: energyHeuristicGwPerExaflop,
+        totalDemandGw,
+        bufferedFreeEnergyGw,
+        globalFreeEnergyGw,
+        thermostatMarginGw,
+        withinMargin: freeEnergyWithinMargin,
+        regional: regionalEnergy.map((region) => ({
+          slug: region.slug,
+          name: region.name,
+          availableGw: region.availableGw,
+          demandGw: region.demandGw,
+          storageReliefGw: region.storageReliefGw,
+          bufferedSupplyGw: region.bufferedSupplyGw,
+          freeEnergyGw: region.freeEnergyGw,
+          deficitGw: region.deficitGw,
+        })),
       },
       monteCarlo: energyMonteCarlo,
     },
@@ -1748,8 +1827,8 @@ function computeTelemetry(
       averageCoverage,
       score: dominanceScore,
     },
-    bridges: bridgeTelemetry,
-    federations: federationsDetail,
+      bridges: bridgeTelemetry,
+      federations: federationsDetail,
     ownerControls: {
       pauseCallEncoded: ownerProof.pauseEmbedding.pauseAll,
       resumeCallEncoded: ownerProof.pauseEmbedding.unpauseAll,
@@ -1781,6 +1860,13 @@ function computeTelemetry(
         deviationPct: computeDeviationPct,
         dysonProjectionExaflops: dysonComputeEstimate,
         withinTolerance: computeWithinTolerance,
+      },
+      thermodynamics: {
+        withinMargin: freeEnergyWithinMargin,
+        globalFreeEnergyGw,
+        thermostatMarginGw,
+        totalDemandGw,
+        bufferedFreeEnergyGw,
       },
       bridges: {
         toleranceSeconds: manifest.verificationProtocols.bridgeLatencyToleranceSeconds,
@@ -1839,6 +1925,7 @@ function buildStabilityLedger(
     telemetry.energy.tripleCheck,
     telemetry.verification.energyModels.withinMargin,
     telemetry.energy.monteCarlo.withinTolerance,
+    telemetry.verification.thermodynamics.withinMargin,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
     telemetry.identity.withinQuorum,
@@ -1911,6 +1998,14 @@ function buildStabilityLedger(
       status: telemetry.energy.tripleCheck && telemetry.verification.energyModels.withinMargin,
       weight: 1.1,
       evidence: `regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW · Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW · thermostat ${telemetry.energy.models.thermostatBudgetGw.toLocaleString()} GW`,
+    },
+    {
+      id: "free-energy-buffer",
+      title: "Free energy buffer ≥ thermostat margin",
+      severity: "critical",
+      status: telemetry.verification.thermodynamics.withinMargin,
+      weight: 0.95,
+      evidence: `global free ${telemetry.verification.thermodynamics.globalFreeEnergyGw.toFixed(2)} GW · margin ${telemetry.verification.thermodynamics.thermostatMarginGw.toFixed(2)} GW`,
     },
     {
       id: "energy-monte-carlo",

@@ -37,6 +37,14 @@ function renderMetrics(telemetry) {
   document.querySelector("#coverage").textContent = `${Math.round(telemetry.governance.averageCoverageSeconds)}s coverage`;
   setStatus(document.querySelector("#coverage-status"), telemetry.governance.coverageOk);
   setStatus(document.querySelector("#energy-status"), telemetry.energy.tripleCheck && telemetry.energy.warnings.length === 0);
+  const freeEnergyText = `${formatNumber(telemetry.energy.globalFreeEnergyGw)} GW free · margin ${formatNumber(
+    telemetry.energy.thermostatMarginGw
+  )} GW`;
+  document.querySelector("#free-energy-buffer").textContent = freeEnergyText;
+  setStatus(
+    document.querySelector("#free-energy-status"),
+    telemetry.verification.thermodynamics.withinMargin
+  );
   const bridgeList = document.querySelector("#bridge-statuses");
   bridgeList.innerHTML = "";
   for (const [name, data] of Object.entries(telemetry.bridges)) {
@@ -93,6 +101,7 @@ function attachReflectionButton(telemetry) {
       { label: "Self-improvement plan hash", ok: telemetry.manifest.planHashMatches },
       { label: "Guardian coverage", ok: telemetry.governance.coverageOk },
       { label: "Energy triple check", ok: telemetry.energy.tripleCheck },
+      { label: "Free energy buffer", ok: telemetry.verification.thermodynamics.withinMargin },
       { label: "Energy Monte Carlo", ok: telemetry.energy.monteCarlo.withinTolerance },
       ...Object.entries(telemetry.bridges).map(([name, data]) => ({ label: `Bridge ${name}`, ok: data.withinFailsafe })),
     ];
@@ -143,6 +152,11 @@ function renderFederations(telemetry) {
       federation.energy.renewablePct * 100
     )}% renewable)`;
     card.appendChild(energy);
+
+    const freeEnergy = document.createElement("p");
+    const deficit = federation.energy.deficitGw > 0 ? ` · deficit ${formatNumber(federation.energy.deficitGw)} GW` : "";
+    freeEnergy.textContent = `Free energy ${formatNumber(federation.energy.freeEnergyGw)} GW${deficit}`;
+    card.appendChild(freeEnergy);
 
     const compute = document.createElement("p");
     compute.textContent = `Compute ${formatNumber(federation.compute.exaflops)} EF · Agents ${formatNumber(
