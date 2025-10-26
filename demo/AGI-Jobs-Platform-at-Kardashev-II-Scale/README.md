@@ -53,6 +53,8 @@
    * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
    * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
    * `output/kardashev-stability-ledger.json` – consensus ledger uniting deterministic, redundant, and thermodynamic checks.
+   * `output/kardashev-energy-schedule.json` – deterministic energy window coverage + reliability ledger with job cadence recommendations.
+   * `output/kardashev-settlement-ledger.json` – settlement protocol matrix covering finality, tolerance, coverage, slippage, and risk posture.
    * Console output summarising dominance scores, delta checks, and incident alerts.
 3. **Launch the holographic control surface**
    ```bash
@@ -178,6 +180,12 @@ flowchart TD
 * **UI feedback loop** – The dashboard renders a “Live energy feeds” card highlighting Δ%, latency, and feed health. Any drift beyond tolerance immediately flips the badge red, ensuring non-technical owners see energy anomalies before executing Safe payloads.
 * **Scenario rehearsal** – The new “energy-feed-drift” scenario stresses a simultaneous feed spike; mitigation guidance is embedded into the scenario sweep and operator briefing so owners can rehearse throttling or rebalancing the Dyson thermostat.
 
+## 🔋 Energy window scheduler & coverage ledger
+
+* **Deterministic coverage planning** – `output/kardashev-energy-schedule.json` lists every energy window, per-federation coverage ratio, reliability, transfer capacity, and recommended job cadence. The orchestrator replays this ledger during CI to guarantee reproducibility.
+* **Automatic deficit detection** – Loss-of-window simulation runs on every orchestrator execution; if any federation drops below the 98% coverage or 95% reliability thresholds, Safe payload generation aborts and the deficit surfaces in `kardashev-orchestration-report.md`.
+* **Operator telemetry** – The dashboard renders per-window capacity, coverage, and reliability with deficit callouts so non-technical stewards can reassign workloads, discharge batteries, or open new windows without parsing JSON.
+
 ## 🕸️ Sharded job fabric & routing ledger
 
 * **Fabric validation** – `config/fabric.json` defines regional job registries, guardian councils, and sentinel quorums. The orchestrator cross-checks shard domains and sentinels against the manifest; mismatches surface as warnings, and `output/kardashev-fabric-ledger.json` records the diff for audits.
@@ -191,6 +199,12 @@ flowchart TD
 * **Mission directives mirroring** – The UI reflects `missionDirectives.ownerPowers` and hotlines verbatim, ensuring Safe transaction order, phone numbers, and bridge failover text are always in sync with the manifest.
 * **Triple-verification badges** – Dashboard metrics highlight energy model agreement, compute deviation vs tolerance, and bridge latency tolerance; each badge flips red if the orchestrator’s cross-checks fail.
 * **Federation readiness grid** – Per-federation cards summarise chain IDs, governance Safes, energy posture, compute load, dominant domains, and sentinel coverage so governors can prioritise interventions at a glance.
+
+## 🌐 Settlement lattice & forex fabric
+
+* **Cross-chain settlement ledger** – `output/kardashev-settlement-ledger.json` enumerates finality, tolerance, coverage, slippage limits, and risk level for every settlement protocol. CI diffing ensures the dashboard and README remain in sync with the manifest.
+* **Backlog stress rehearsal** – The scenario sweep increases finality by 40% to prove forex bridges remain within tolerance; breaches block Safe batch emission and bubble up in the stability ledger.
+* **Watcher posture telemetry** – The dashboard surfaces watcher quorum, protocol risk, and per-bridge health so non-technical owners can summon treasury failovers or spin up relays without decoding calldata.
 
 ---
 
@@ -236,6 +250,8 @@ flowchart TD
 | `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
 | `output/kardashev-monte-carlo.json` | Monte Carlo summary (runs, breach probability, percentiles) validating the energy thermostat tolerance. |
 | `output/kardashev-energy-feeds.json` | Snapshot of per-federation energy feeds, tolerances, and drift calculations backing the dashboard feed badges. |
+| `output/kardashev-energy-schedule.json` | Deterministic energy window plan with per-federation coverage, reliability, and job cadence recommendations. |
+| `output/kardashev-settlement-ledger.json` | Settlement protocol ledger detailing finality, tolerance, coverage, slippage, and risk posture for forex bridges. |
 | `output/kardashev-fabric-ledger.json` | Registry shard ledger capturing domain coverage, sentinel parity, unmatched federations, and latency envelope. |
 | `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, and unstoppable control score. |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |

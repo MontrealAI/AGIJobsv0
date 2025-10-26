@@ -256,6 +256,84 @@ function renderOrchestrationFabric(orchestration) {
   });
 }
 
+function renderEnergySchedule(schedule, verification) {
+  const summary = document.querySelector("#schedule-summary");
+  if (!schedule) {
+    summary.textContent = "No energy windows configured.";
+    summary.classList.add("status-warn");
+    return;
+  }
+  const coverage = (schedule.globalCoverageRatio * 100).toFixed(2);
+  const reliability = (schedule.globalReliabilityPct * 100).toFixed(2);
+  summary.textContent = `Coverage ${coverage}% (threshold ${schedule.coverageThreshold * 100}%) · Reliability ${reliability}%`;
+  const scheduleOk = verification?.coverageOk && verification?.reliabilityOk;
+  summary.classList.toggle("status-ok", !!scheduleOk);
+  summary.classList.toggle("status-fail", scheduleOk === false);
+
+  const coverageList = document.querySelector("#schedule-coverage");
+  coverageList.innerHTML = "";
+  schedule.coverage.forEach((entry) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${entry.federation.toUpperCase()}</strong><span>${(entry.coverageRatio * 100).toFixed(2)}% · ${(entry.reliabilityPct * 100).toFixed(2)}%</span>`;
+    const ok = entry.coverageRatio >= schedule.coverageThreshold && entry.reliabilityPct >= schedule.reliabilityThreshold;
+    li.classList.add(ok ? "status-ok" : "status-fail");
+    coverageList.appendChild(li);
+  });
+
+  const windowList = document.querySelector("#energy-window-list");
+  windowList.innerHTML = "";
+  schedule.windows.forEach((window) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${window.federation}</strong> · ${window.startHourUTC}:00Z · ${window.durationHours}h · ${formatNumber(window.availableGw + window.backupGw)} GW · ${(window.coverageRatio * 100).toFixed(2)}% coverage · ${(window.reliabilityPct * 100).toFixed(2)}% reliability`;
+    const ok = window.coverageRatio >= schedule.coverageThreshold;
+    li.classList.add(ok ? "status-ok" : "status-warn");
+    windowList.appendChild(li);
+  });
+
+  const deficits = document.querySelector("#schedule-deficits");
+  if (!schedule.deficits || schedule.deficits.length === 0) {
+    deficits.textContent = "No coverage deficits detected.";
+    deficits.classList.add("status-ok");
+    deficits.classList.remove("status-fail");
+  } else {
+    deficits.textContent = `Deficits: ${schedule.deficits
+      .map((deficit) => `${deficit.federation} ${(deficit.coverageRatio * 100).toFixed(2)}% (${deficit.deficitGwH} GW·h)`).join(" · ")}`;
+    deficits.classList.add("status-fail");
+    deficits.classList.remove("status-ok");
+  }
+}
+
+function renderSettlement(settlement, verification) {
+  const summary = document.querySelector("#settlement-summary");
+  if (!settlement) {
+    summary.textContent = "No settlement protocols configured.";
+    summary.classList.add("status-warn");
+    return;
+  }
+  summary.textContent = `Average finality ${settlement.averageFinalityMinutes.toFixed(2)} min (max ${settlement.maxToleranceMinutes.toFixed(2)} min) · coverage ${(settlement.minCoveragePct * 100).toFixed(2)}%`;
+  const ok = verification?.allWithinTolerance && verification?.coverageOk && verification?.slippageOk;
+  summary.classList.toggle("status-ok", !!ok);
+  summary.classList.toggle("status-fail", ok === false);
+
+  const watchers = document.querySelector("#settlement-watchers");
+  watchers.textContent = `Watchers ${settlement.watchersOnline}/${settlement.watchers.length} · slippage threshold ${settlement.slippageThresholdBps} bps`;
+
+  const list = document.querySelector("#settlement-protocols");
+  list.innerHTML = "";
+  settlement.protocols.forEach((protocol) => {
+    const li = document.createElement("li");
+    const withinTolerance = protocol.finalityMinutes <= protocol.toleranceMinutes;
+    const withinCoverage = protocol.coveragePct >= settlement.coverageThreshold;
+    li.innerHTML = `<strong>${protocol.name}</strong><span>${protocol.finalityMinutes.toFixed(2)} / ${protocol.toleranceMinutes.toFixed(2)} min · ${(protocol.coveragePct * 100).toFixed(2)}% · risk ${protocol.riskLevel}</span>`;
+    li.classList.add(withinTolerance && withinCoverage ? "status-ok" : "status-warn");
+    if (protocol.riskLevel === "high") {
+      li.classList.remove("status-ok", "status-warn");
+      li.classList.add("status-fail");
+    }
+    list.appendChild(li);
+  });
+}
+
 function renderLedger(ledger) {
   document.querySelector("#ledger-summary").textContent = ledger.confidence.summary;
   const composite = `${(ledger.confidence.compositeScore * 100).toFixed(2)}%`;
@@ -444,6 +522,8 @@ async function bootstrap() {
     renderIdentity(telemetry.identity);
     renderComputeFabric(telemetry.computeFabric);
     renderOrchestrationFabric(telemetry.orchestrationFabric);
+    renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+    renderSettlement(telemetry.settlement, telemetry.verification.settlement);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);
     renderOwnerProof(ownerProof, telemetry);

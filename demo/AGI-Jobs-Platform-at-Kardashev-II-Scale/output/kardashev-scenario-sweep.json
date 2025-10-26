@@ -170,6 +170,69 @@
     ]
   },
   {
+    "id": "energy-window-loss",
+    "title": "Primary energy window offline",
+    "status": "critical",
+    "summary": "Removing orbital 8h window drops coverage to 83.20%.",
+    "confidence": 0.8489346151683814,
+    "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
+    "metrics": [
+      {
+        "label": "Removed window",
+        "value": "orbital @ 0h",
+        "ok": false
+      },
+      {
+        "label": "Remaining coverage",
+        "value": "83.20%",
+        "ok": false
+      },
+      {
+        "label": "Threshold",
+        "value": "98.00%",
+        "ok": true
+      },
+      {
+        "label": "Lost capacity",
+        "value": "1168000.00 GW·h",
+        "ok": false
+      }
+    ],
+    "recommendedActions": [
+      "Trigger orbital battery discharge if coverage < threshold.",
+      "Re-route Mars workloads to orbital halo until replacement window is provisioned."
+    ]
+  },
+  {
+    "id": "settlement-backlog",
+    "title": "Settlement backlog (+40% finality)",
+    "status": "warning",
+    "summary": "Settlement mesh absorbs backlog within tolerance.",
+    "confidence": 0.908,
+    "impact": "Guardian council can rely on automated settlement buffers.",
+    "metrics": [
+      {
+        "label": "Sol-Earth Safe Settlement",
+        "value": "7.70 min",
+        "ok": true
+      },
+      {
+        "label": "Mars Credit Hub",
+        "value": "10.92 min",
+        "ok": false
+      },
+      {
+        "label": "Orbital Lattice Clearing",
+        "value": "3.36 min",
+        "ok": true
+      }
+    ],
+    "recommendedActions": [
+      "Activate treasury failover to orbital credit rails.",
+      "Deploy additional watchers to reduce backlog latency."
+    ]
+  },
+  {
     "id": "identity-infiltration",
     "title": "Identity infiltration (3% forged daily credentials)",
     "status": "nominal",
