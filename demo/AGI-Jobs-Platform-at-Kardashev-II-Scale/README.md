@@ -171,6 +171,20 @@ flowchart TD
 * **Compute rollup** – All compute capacity is measured in exaFLOPs and agent counts. A reconciliation matrix confirms that per-region totals equal the Interstellar Council view and Dyson programme requirements.
 * **Probabilistic assurance** – Monte Carlo simulations (256 deterministic runs) estimate breach probability vs the 1% tolerance. Results surface in the UI and `output/kardashev-monte-carlo.json`; any breach probability above tolerance halts orchestration.
 
+## ⚡ Live energy feed reconciliation
+
+* **Triple-source telemetry** – `config/energy-feeds.json` lists per-federation solar/fusion/microwave feeds with tolerances. The orchestrator ingests the file, compares live MW readings (nominal + buffer) against manifest GW, and refuses to emit artefacts if drift exceeds the configured 5% tolerance or the 8.5% alert band.
+* **Deterministic ledger** – `output/kardashev-energy-feeds.json` captures calibration timestamps, tolerances, and per-feed deltas so guardians can diff on-chain energy oracles against the generated Safe batch.
+* **UI feedback loop** – The dashboard renders a “Live energy feeds” card highlighting Δ%, latency, and feed health. Any drift beyond tolerance immediately flips the badge red, ensuring non-technical owners see energy anomalies before executing Safe payloads.
+* **Scenario rehearsal** – The new “energy-feed-drift” scenario stresses a simultaneous feed spike; mitigation guidance is embedded into the scenario sweep and operator briefing so owners can rehearse throttling or rebalancing the Dyson thermostat.
+
+## 🕸️ Sharded job fabric & routing ledger
+
+* **Fabric validation** – `config/fabric.json` defines regional job registries, guardian councils, and sentinel quorums. The orchestrator cross-checks shard domains and sentinels against the manifest; mismatches surface as warnings, and `output/kardashev-fabric-ledger.json` records the diff for audits.
+* **Coverage telemetry** – Telemetry now includes `orchestrationFabric.coverage`, tracking domain alignment, sentinel parity, unmatched federations, and shard latency envelopes. The stability ledger adds a dedicated check so fabric drift blocks deployments.
+* **Dashboard card** – A new “Sharded registry fabric” panel visualises shard registries, latencies, and issues (e.g., missing domains or sentinel drift) with colour-coded badges so non-technical stewards can direct remediation instantly.
+* **Scenario integration** – Scenario 8 (“Primary compute plane offline”) now draws on shard coverage data, while the new fabric check feeds the unstoppable consensus score to guarantee routing health before executing multi-planet jobs.
+
 ## 🎛️ Mission directives & verification dashboards
 
 * **Operator briefing pack** – `output/kardashev-operator-briefing.md` condenses owner powers, escalation pathways, drill cadence, and verification status so non-technical stewards can sign off in under two minutes.
@@ -221,6 +235,8 @@ flowchart TD
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
 | `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
 | `output/kardashev-monte-carlo.json` | Monte Carlo summary (runs, breach probability, percentiles) validating the energy thermostat tolerance. |
+| `output/kardashev-energy-feeds.json` | Snapshot of per-federation energy feeds, tolerances, and drift calculations backing the dashboard feed badges. |
+| `output/kardashev-fabric-ledger.json` | Registry shard ledger capturing domain coverage, sentinel parity, unmatched federations, and latency envelope. |
 | `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, and unstoppable control score. |
 | `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
 | `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |

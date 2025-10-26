@@ -33,6 +33,8 @@ function validateReadme() {
     "## 🪪 Identity lattice & trust fabric",
     "## 🛰️ Compute fabric hierarchy",
     "## 🔌 Energy & compute governance",
+    "## ⚡ Live energy feed reconciliation",
+    "## 🕸️ Sharded job fabric & routing ledger",
     "## 🎛️ Mission directives & verification dashboards",
     "## 🔭 Scenario stress sweep",
     "## 🧬 Stability ledger & unstoppable consensus",

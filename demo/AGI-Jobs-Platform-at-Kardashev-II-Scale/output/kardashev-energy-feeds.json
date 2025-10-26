@@ -1,0 +1,46 @@
+{
+  "calibrationISO8601": "2025-02-28T18:00:00Z",
+  "tolerancePct": 5,
+  "driftAlertPct": 8.5,
+  "feeds": [
+    {
+      "region": "earth-grid",
+      "federationSlug": "earth",
+      "type": "solar",
+      "telemetry": "https://energy.example/earth/live",
+      "manifestGw": 82000,
+      "feedGw": 82000,
+      "deltaGw": 0,
+      "deltaPct": 0,
+      "latencyMs": 1200,
+      "withinTolerance": true,
+      "driftAlert": false
+    },
+    {
+      "region": "mars-dome",
+      "federationSlug": "mars",
+      "type": "fusion",
+      "telemetry": "https://energy.example/mars/live",
+      "manifestGw": 24000,
+      "feedGw": 24000,
+      "deltaGw": 0,
+      "deltaPct": 0,
+      "latencyMs": 720000,
+      "withinTolerance": true,
+      "driftAlert": false
+    },
+    {
+      "region": "orbital-swarm",
+      "federationSlug": "orbital",
+      "type": "microwave-solar",
+      "telemetry": "https://energy.example/orbital/live",
+      "manifestGw": 136000,
+      "feedGw": 136000,
+      "deltaGw": 0,
+      "deltaPct": 0,
+      "latencyMs": 3200,
+      "withinTolerance": true,
+      "driftAlert": false
+    }
+  ]
+}

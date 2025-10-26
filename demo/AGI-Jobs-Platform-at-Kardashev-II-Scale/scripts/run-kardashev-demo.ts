@@ -7,6 +7,8 @@ import { z } from "zod";
 
 const DEMO_ROOT = join(__dirname, "..");
 const CONFIG_PATH = join(DEMO_ROOT, "config", "kardashev-ii.manifest.json");
+const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
+const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
 
 const args = new Set(process.argv.slice(2));
@@ -293,6 +295,43 @@ const ManifestSchema = z.object({
 
 type Manifest = z.infer<typeof ManifestSchema>;
 
+const EnergyFeedSchema = z.object({
+  federationSlug: z.string().min(1),
+  region: z.string().min(1),
+  telemetry: z.string().min(1),
+  type: z.string().min(1),
+  nominalMw: NonNegativeNumberSchema,
+  bufferMw: NonNegativeNumberSchema,
+  latencyMs: NonNegativeNumberSchema,
+});
+
+const EnergyFeedsConfigSchema = z.object({
+  tolerancePct: z.number().min(0),
+  driftAlertPct: z.number().min(0).optional(),
+  calibrationISO8601: z.string().min(1),
+  feeds: z.array(EnergyFeedSchema).min(1),
+});
+
+const FabricShardSchema = z.object({
+  id: z.string().min(1),
+  jobRegistry: AddressSchema,
+  latencyMs: NonNegativeNumberSchema,
+  domains: z.array(z.string().min(1)).min(1),
+  guardianCouncil: AddressSchema,
+  sentinels: z.array(AddressSchema).min(1),
+});
+
+const FabricConfigSchema = z.object({
+  shards: z.array(FabricShardSchema).min(1),
+  knowledgeGraph: AddressSchema,
+  energyOracle: AddressSchema,
+  rewardEngine: AddressSchema,
+  phase8Manager: AddressSchema,
+});
+
+type EnergyFeedsConfig = z.infer<typeof EnergyFeedsConfigSchema>;
+type FabricConfig = z.infer<typeof FabricConfigSchema>;
+
 type OwnerControlProof = {
   manager: string;
   systemPause: string;
@@ -444,6 +483,18 @@ function loadManifest(): { manifest: Manifest; raw: string } {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
   return { manifest: ManifestSchema.parse(parsed), raw };
+}
+
+function loadEnergyFeeds(): EnergyFeedsConfig {
+  const raw = readFileSync(ENERGY_FEEDS_PATH, "utf8");
+  const parsed = JSON.parse(raw);
+  return EnergyFeedsConfigSchema.parse(parsed);
+}
+
+function loadFabricConfig(): FabricConfig {
+  const raw = readFileSync(FABRIC_CONFIG_PATH, "utf8");
+  const parsed = JSON.parse(raw);
+  return FabricConfigSchema.parse(parsed);
 }
 
 function ensureOutputDir() {
@@ -1172,7 +1223,58 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     ],
   });
 
-  // Scenario 7 — Primary compute plane offline
+  // Scenario 7 — Energy feed drift spike
+  const maxFeedDeltaPct = telemetry.energy.liveFeeds.feeds.reduce(
+    (max: number, feed: any) => Math.max(max, feed.deltaPct),
+    0
+  );
+  const feedTolerancePct = telemetry.energy.liveFeeds.tolerancePct;
+  const feedDriftThresholdPct = telemetry.energy.liveFeeds.driftAlertPct ?? feedTolerancePct * 1.5;
+  const feedStatus: ScenarioStatus =
+    maxFeedDeltaPct <= feedTolerancePct
+      ? "nominal"
+      : maxFeedDeltaPct <= feedDriftThresholdPct
+      ? "warning"
+      : "critical";
+  const feedConfidence = normaliseConfidence(
+    1 - Math.max(0, maxFeedDeltaPct - feedTolerancePct) / Math.max(feedDriftThresholdPct || feedTolerancePct, 1)
+  );
+  scenarioResults.push({
+    id: "energy-feed-drift",
+    title: "Live energy feed drift shock",
+    status: feedStatus,
+    summary:
+      feedStatus === "nominal"
+        ? "Live feeds remain within tolerance bands."
+        : `Max drift ${maxFeedDeltaPct.toFixed(2)}% (tolerance ${feedTolerancePct}%, alert ${feedDriftThresholdPct}%).`,
+    confidence: feedConfidence,
+    impact:
+      feedStatus === "critical"
+        ? "Immediate rerouting required – isolate affected plane and re-run energy oracle calibration."
+        : "Feeds drift but remain serviceable; monitor and prepare calibration update.",
+    metrics: [
+      { label: "Max drift", value: `${maxFeedDeltaPct.toFixed(2)}%`, ok: feedStatus !== "critical" },
+      { label: "Tolerance", value: `${feedTolerancePct}%`, ok: true },
+      {
+        label: "Drift alert",
+        value: `${feedDriftThresholdPct}%`,
+        ok: maxFeedDeltaPct <= feedDriftThresholdPct,
+      },
+      {
+        label: "Average latency",
+        value: `${telemetry.energy.liveFeeds.averageLatencyMs.toFixed(0)} ms`,
+        ok:
+          telemetry.energy.liveFeeds.averageLatencyMs <=
+          (manifest.dysonProgram.safety.failsafeLatencySeconds || 0) * 1000,
+      },
+    ],
+    recommendedActions: [
+      "Trigger energy oracle recalibration from mission directives.",
+      "Rebalance Dyson thermostat inputs toward the affected federation until drift subsides.",
+    ],
+  });
+
+  // Scenario 8 — Primary compute plane offline
   const largestPlane = telemetry.computeFabric.planes.reduce(
     (max, plane) => (plane.capacityExaflops > max.capacityExaflops ? plane : max),
     telemetry.computeFabric.planes[0]
@@ -1269,6 +1371,14 @@ function buildRunbook(
       telemetry.energy.monteCarlo.percentileGw.p99.toLocaleString()
     } GW.`
   );
+  lines.push(
+    `* Live feeds (≤ ${telemetry.energy.liveFeeds.tolerancePct}%): ${telemetry.energy.liveFeeds.feeds
+      .map((feed: any) => `${feed.region} Δ ${feed.deltaPct.toFixed(2)}%`)
+      .join(" · ")}.`
+  );
+  lines.push(
+    `* Feed latency: avg ${telemetry.energy.liveFeeds.averageLatencyMs.toFixed(0)} ms · max ${telemetry.energy.liveFeeds.maxLatencyMs} ms (calibrated ${telemetry.energy.liveFeeds.calibrationISO8601}).`
+  );
   if (telemetry.energy.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.energy.warnings.join("; ")}`);
   }
@@ -1310,6 +1420,23 @@ function buildRunbook(
       `* **${plane.name}** (${plane.geography}) – scheduler ${plane.scheduler}, capacity ${plane.capacityExaflops.toFixed(2)} EF, latency ${plane.latencyMs} ms, availability ${(plane.availabilityPct * 100).toFixed(2)}%, failover partner ${plane.failoverPartner}.`
     );
   });
+  lines.push(
+    `* Sharded registry fabric health — domains ${telemetry.orchestrationFabric.coverage.domainsOk ? "aligned" : "check"}, sentinels ${telemetry.orchestrationFabric.coverage.sentinelsOk ? "aligned" : "check"}, federations ${telemetry.orchestrationFabric.coverage.federationsOk ? "aligned" : "check"}.`
+  );
+  lines.push(
+    `* Fabric latency: avg ${telemetry.orchestrationFabric.coverage.averageLatencyMs.toFixed(0)} ms · max ${telemetry.orchestrationFabric.coverage.maxLatencyMs} ms.`
+  );
+  if (!telemetry.orchestrationFabric.coverage.domainsOk) {
+    const drift = telemetry.orchestrationFabric.shards
+      .filter((shard: any) => !shard.domainCoverageOk)
+      .map((shard: any) => `${shard.id}: missing ${shard.missingDomains.join("/")}`);
+    if (drift.length > 0) {
+      lines.push(`* ⚠️ Domain drift: ${drift.join(" · ")}`);
+    }
+  }
+  if (!telemetry.orchestrationFabric.coverage.federationsOk) {
+    lines.push(`* ⚠️ Unmatched federations: ${telemetry.orchestrationFabric.coverage.unmatchedFederations.join(", ")}`);
+  }
   lines.push("\n---\n");
   lines.push("## Scenario stress sweep");
   for (const scenario of scenarios) {
@@ -1379,6 +1506,9 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
     `* Compute deviation ${telemetry.verification.compute.deviationPct.toFixed(2)}% (tolerance ${telemetry.verification.compute.tolerancePct}%): ${telemetry.verification.compute.withinTolerance}`
   );
   lines.push(
+    `* Energy feed drift ≤ ${telemetry.verification.energyFeeds.tolerancePct}%: ${telemetry.verification.energyFeeds.allWithinTolerance}`
+  );
+  lines.push(
     `* Bridge latency tolerance (${telemetry.verification.bridges.toleranceSeconds}s): ${telemetry.verification.bridges.allWithinTolerance}`
   );
   lines.push(
@@ -1431,6 +1561,9 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
       `* Lead plane ${leadingPlane.name} (${leadingPlane.geography}) capacity ${leadingPlane.capacityExaflops.toFixed(2)} EF, partner ${leadingPlane.failoverPartner}.`
     );
   }
+  lines.push(
+    `* Sharded registry fabric domains ${telemetry.verification.orchestrationFabric.domainsOk ? "OK" : "⚠️"} · sentinels ${telemetry.verification.orchestrationFabric.sentinelsOk ? "OK" : "⚠️"} · federations ${telemetry.verification.orchestrationFabric.federationsOk ? "OK" : "⚠️"}.`
+  );
   lines.push("");
   lines.push("## Federation snapshot");
   telemetry.federations.forEach((federation: any) => {
@@ -1458,7 +1591,9 @@ function computeTelemetry(
   manifest: Manifest,
   dominanceScore: number,
   manifestHash: string,
-  ownerProof: OwnerControlProof
+  ownerProof: OwnerControlProof,
+  energyFeeds: EnergyFeedsConfig,
+  fabric: FabricConfig
 ) {
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
   const totalResilience = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.resilience, 0);
@@ -1494,6 +1629,48 @@ function computeTelemetry(
       `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
     );
   }
+
+  const feedComparisons = energyFeeds.feeds.map((feed) => {
+    const federation = manifest.federations.find((f) => f.slug === feed.federationSlug);
+    const manifestGw = federation ? federation.energy.availableGw : 0;
+    const feedGw = (feed.nominalMw + feed.bufferMw) / 1000;
+    const deltaGw = manifestGw - feedGw;
+    const deltaPct = manifestGw === 0 ? 0 : Math.abs(deltaGw) / Math.max(manifestGw, 1) * 100;
+    const withinTolerance = deltaPct <= energyFeeds.tolerancePct;
+    const driftThreshold = energyFeeds.driftAlertPct ?? energyFeeds.tolerancePct * 1.5;
+    const driftAlert = deltaPct >= driftThreshold;
+    if (!withinTolerance) {
+      energyWarnings.push(
+        `Energy feed ${feed.region} deviates ${deltaPct.toFixed(2)}% (tolerance ${energyFeeds.tolerancePct}%).`
+      );
+    }
+    if (driftAlert) {
+      energyWarnings.push(
+        `Energy feed ${feed.region} drift ${deltaPct.toFixed(2)}% exceeds alert ${driftThreshold}%.`
+      );
+    }
+    return {
+      region: feed.region,
+      federationSlug: feed.federationSlug,
+      type: feed.type,
+      telemetry: feed.telemetry,
+      manifestGw,
+      feedGw,
+      deltaGw,
+      deltaPct,
+      latencyMs: feed.latencyMs,
+      withinTolerance,
+      driftAlert,
+    };
+  });
+
+  const feedsWithinTolerance = feedComparisons.every((feed) => feed.withinTolerance);
+  const driftAlerts = feedComparisons.filter((feed) => feed.driftAlert);
+  const averageFeedLatencyMs =
+    feedComparisons.length === 0
+      ? 0
+      : feedComparisons.reduce((sum, feed) => sum + feed.latencyMs, 0) / feedComparisons.length;
+  const maxFeedLatencyMs = feedComparisons.reduce((max, feed) => Math.max(max, feed.latencyMs), 0);
 
   const thermostatBudgetGw =
     manifest.energyProtocols.stellarLattice.baselineCapturedGw * manifest.energyProtocols.thermostat.targetKelvin;
@@ -1648,6 +1825,57 @@ function computeTelemetry(
     withinTolerance: data.latencySeconds <= latencyTolerance,
   }));
 
+  const fabricShards = fabric.shards.map((shard) => {
+    const federation = manifest.federations.find((f) => f.slug === shard.id);
+    const manifestDomains = federation ? federation.domains.map((domain) => domain.slug) : [];
+    const matchesDomain = (domain: string) =>
+      manifestDomains.some((slug) => slug === domain || slug.endsWith(`.${domain}`));
+    const missingDomains = shard.domains.filter((domain) => !matchesDomain(domain));
+    const orphanDomains = federation
+      ? manifestDomains.filter(
+          (slug) => !shard.domains.some((domain) => slug === domain || slug.endsWith(`.${domain}`))
+        )
+      : manifestDomains;
+    const manifestSentinels = new Set((federation?.sentinels ?? []).map((sentinel) => sentinel.agent.toLowerCase()));
+    const sentinelMatches = shard.sentinels.map((address) => ({
+      address,
+      registered: manifestSentinels.has(address.toLowerCase()),
+    }));
+    const sentinelMissing = sentinelMatches.filter((entry) => !entry.registered);
+    return {
+      id: shard.id,
+      jobRegistry: shard.jobRegistry,
+      latencyMs: shard.latencyMs,
+      domains: shard.domains,
+      missingDomains,
+      orphanDomains,
+      guardianCouncil: shard.guardianCouncil,
+      sentinelMatches,
+      sentinelsOk: sentinelMissing.length === 0,
+      federationFound: Boolean(federation),
+      governanceSafe: federation?.governanceSafe ?? null,
+      domainCoverageOk: missingDomains.length === 0 && orphanDomains.length === 0,
+    };
+  });
+
+  const unmatchedFederations = manifest.federations
+    .filter((federation) => !fabric.shards.some((shard) => shard.id === federation.slug))
+    .map((federation) => federation.slug);
+  const fabricCoverage = {
+    domainsOk: fabricShards.every((shard) => shard.domainCoverageOk),
+    sentinelsOk: fabricShards.every((shard) => shard.sentinelsOk),
+    federationsOk: unmatchedFederations.length === 0,
+    unmatchedFederations,
+    unmatchedShards: fabric.shards
+      .filter((shard) => !manifest.federations.some((federation) => federation.slug === shard.id))
+      .map((shard) => shard.id),
+    averageLatencyMs:
+      fabric.shards.length === 0
+        ? 0
+        : fabric.shards.reduce((sum, shard) => sum + shard.latencyMs, 0) / fabric.shards.length,
+    maxLatencyMs: fabric.shards.reduce((max, shard) => Math.max(max, shard.latencyMs), 0),
+  };
+
   return {
     manifest: {
       version: manifest.version,
@@ -1694,6 +1922,16 @@ function computeTelemetry(
         withinMargin: energyAgreementWithinMargin,
       },
       monteCarlo: energyMonteCarlo,
+      liveFeeds: {
+        calibrationISO8601: energyFeeds.calibrationISO8601,
+        tolerancePct: energyFeeds.tolerancePct,
+        driftAlertPct: energyFeeds.driftAlertPct ?? null,
+        feeds: feedComparisons,
+        allWithinTolerance: feedsWithinTolerance,
+        driftAlerts,
+        averageLatencyMs: averageFeedLatencyMs,
+        maxLatencyMs: maxFeedLatencyMs,
+      },
     },
     compute: {
       totalAgents: manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0),
@@ -1742,6 +1980,14 @@ function computeTelemetry(
       planes: computePlanes,
       policies: manifest.computeFabrics.failoverPolicies,
     },
+    orchestrationFabric: {
+      knowledgeGraph: fabric.knowledgeGraph,
+      energyOracle: fabric.energyOracle,
+      rewardEngine: fabric.rewardEngine,
+      phase8Manager: fabric.phase8Manager,
+      shards: fabricShards,
+      coverage: fabricCoverage,
+    },
     dominance: {
       monthlyValueUSD: totalMonthlyValue,
       averageResilience,
@@ -1776,6 +2022,14 @@ function computeTelemetry(
         withinTolerance: energyMonteCarlo.withinTolerance,
         percentileGw: energyMonteCarlo.percentileGw,
       },
+      energyFeeds: {
+        tolerancePct: energyFeeds.tolerancePct,
+        driftAlertPct: energyFeeds.driftAlertPct ?? null,
+        calibrationISO8601: energyFeeds.calibrationISO8601,
+        feeds: feedComparisons,
+        allWithinTolerance: feedsWithinTolerance,
+        driftAlerts: driftAlerts.map((feed) => feed.region),
+      },
       compute: {
         tolerancePct: manifest.verificationProtocols.computeTolerancePct,
         deviationPct: computeDeviationPct,
@@ -1802,6 +2056,13 @@ function computeTelemetry(
         failoverCapacityExaflops,
         requiredFailoverCapacity,
         averageAvailabilityPct: averagePlaneAvailability,
+      },
+      orchestrationFabric: {
+        domainsOk: fabricCoverage.domainsOk,
+        sentinelsOk: fabricCoverage.sentinelsOk,
+        federationsOk: fabricCoverage.federationsOk,
+        unmatchedFederations: fabricCoverage.unmatchedFederations,
+        unmatchedShards: fabricCoverage.unmatchedShards,
       },
       auditChecklistURI: manifest.verificationProtocols.auditChecklistURI,
     },
@@ -1839,12 +2100,16 @@ function buildStabilityLedger(
     telemetry.energy.tripleCheck,
     telemetry.verification.energyModels.withinMargin,
     telemetry.energy.monteCarlo.withinTolerance,
+    telemetry.energy.liveFeeds.allWithinTolerance,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
     telemetry.identity.withinQuorum,
     telemetry.identity.latencyWithinWindow,
     telemetry.identity.revocationWithinTolerance,
     telemetry.computeFabric.failoverWithinQuorum,
+    telemetry.verification.orchestrationFabric.domainsOk,
+    telemetry.verification.orchestrationFabric.sentinelsOk,
+    telemetry.verification.orchestrationFabric.federationsOk,
     telemetry.governance.coverageOk,
     ownerProof.verification.selectorsComplete,
     ownerProof.verification.pauseEmbedding,
@@ -1921,6 +2186,16 @@ function buildStabilityLedger(
       evidence: `breach ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (runs ${telemetry.energy.monteCarlo.runs})`,
     },
     {
+      id: "energy-feeds",
+      title: "Live energy feeds within tolerance",
+      severity: "high",
+      status: telemetry.energy.liveFeeds.allWithinTolerance,
+      weight: 0.85,
+      evidence: telemetry.energy.liveFeeds.feeds
+        .map((feed: any) => `${feed.region} ${feed.deltaPct.toFixed(2)}%`)
+        .join(" · "),
+    },
+    {
       id: "energy-margin",
       title: "Dyson thermostat buffer intact",
       severity: "medium",
@@ -1975,6 +2250,21 @@ function buildStabilityLedger(
       status: telemetry.computeFabric.failoverWithinQuorum,
       weight: 0.9,
       evidence: `failover ${telemetry.computeFabric.failoverCapacityExaflops.toFixed(2)} EF vs required ${telemetry.computeFabric.requiredFailoverCapacity.toFixed(2)} EF`,
+    },
+    {
+      id: "orchestration-fabric",
+      title: "Sharded registry fabric aligned",
+      severity: "medium",
+      status:
+        telemetry.verification.orchestrationFabric.domainsOk &&
+        telemetry.verification.orchestrationFabric.sentinelsOk &&
+        telemetry.verification.orchestrationFabric.federationsOk,
+      weight: 0.75,
+      evidence: `unmatched federations: ${telemetry.verification.orchestrationFabric.unmatchedFederations.join(
+        ", "
+      ) || "0"} · unmatched shards: ${telemetry.verification.orchestrationFabric.unmatchedShards.join(
+        ", "
+      ) || "0"}`,
     },
     {
       id: "bridge-latency",
@@ -2141,6 +2431,8 @@ function writeOrCheck(path: string, content: string) {
 
 function run() {
   const { manifest, raw } = loadManifest();
+  const energyFeedsConfig = loadEnergyFeeds();
+  const fabricConfig = loadFabricConfig();
   ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
@@ -2164,7 +2456,14 @@ function run() {
   const safeBatch = buildSafeBatch(manifest, transactions);
   const manifestHash = keccak256(toUtf8Bytes(raw));
   const ownerProof = buildOwnerControlProof(manifest, transactions, manifestHash);
-  const telemetry = computeTelemetry(manifest, dominanceScore, manifestHash, ownerProof);
+  const telemetry = computeTelemetry(
+    manifest,
+    dominanceScore,
+    manifestHash,
+    ownerProof,
+    energyFeedsConfig,
+    fabricConfig
+  );
   const scenarioSweep = buildScenarioSweep(manifest, telemetry);
   const telemetryWithScenarios = { ...telemetry, scenarioSweep };
   const stabilityLedger = buildStabilityLedger(
@@ -2186,6 +2485,30 @@ function run() {
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
   const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
   const monteCarloJson = `${JSON.stringify(telemetry.energy.monteCarlo, null, 2)}\n`;
+  const energyFeedsJson = `${JSON.stringify(
+    {
+      calibrationISO8601: telemetry.energy.liveFeeds.calibrationISO8601,
+      tolerancePct: telemetry.energy.liveFeeds.tolerancePct,
+      driftAlertPct: telemetry.energy.liveFeeds.driftAlertPct,
+      feeds: telemetry.energy.liveFeeds.feeds,
+    },
+    null,
+    2
+  )}\n`;
+  const fabricLedgerJson = `${JSON.stringify(
+    {
+      coverage: telemetry.orchestrationFabric.coverage,
+      shards: telemetry.orchestrationFabric.shards,
+      contracts: {
+        knowledgeGraph: telemetry.orchestrationFabric.knowledgeGraph,
+        energyOracle: telemetry.orchestrationFabric.energyOracle,
+        rewardEngine: telemetry.orchestrationFabric.rewardEngine,
+        phase8Manager: telemetry.orchestrationFabric.phase8Manager,
+      },
+    },
+    null,
+    2
+  )}\n`;
 
   const outputs = [
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
@@ -2193,6 +2516,8 @@ function run() {
     { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
     { path: join(OUTPUT_DIR, "kardashev-scenario-sweep.json"), content: scenariosJson },
     { path: join(OUTPUT_DIR, "kardashev-monte-carlo.json"), content: monteCarloJson },
+    { path: join(OUTPUT_DIR, "kardashev-energy-feeds.json"), content: energyFeedsJson },
+    { path: join(OUTPUT_DIR, "kardashev-fabric-ledger.json"), content: fabricLedgerJson },
     { path: join(OUTPUT_DIR, "kardashev-mermaid.mmd"), content: `${mermaid}\n` },
     { path: join(OUTPUT_DIR, "kardashev-orchestration-report.md"), content: `${runbook}\n` },
     { path: join(OUTPUT_DIR, "kardashev-dyson.mmd"), content: `${dysonTimeline}\n` },
@@ -2237,6 +2562,12 @@ function run() {
   );
   console.log(
     `   Bridge latency compliance: ${telemetry.verification.bridges.allWithinTolerance} (tolerance ${telemetry.verification.bridges.toleranceSeconds}s).`
+  );
+  console.log(
+    `   Energy feed drift compliance: ${telemetry.verification.energyFeeds.allWithinTolerance} (tolerance ${telemetry.verification.energyFeeds.tolerancePct}%).`
+  );
+  console.log(
+    `   Sharded fabric coverage — domains ${telemetry.verification.orchestrationFabric.domainsOk}, sentinels ${telemetry.verification.orchestrationFabric.sentinelsOk}, federations ${telemetry.verification.orchestrationFabric.federationsOk}.`
   );
   console.log(
     `   Owner override unstoppable score: ${(ownerProof.verification.unstoppableScore * 100).toFixed(2)}% (selectors ${

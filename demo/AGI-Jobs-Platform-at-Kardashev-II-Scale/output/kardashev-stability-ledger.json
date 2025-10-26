@@ -29,7 +29,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.7929052035435014,
+        "score": 0.8187920531005637,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -112,6 +112,14 @@
       "evidence": "breach 0.00% (runs 256)"
     },
     {
+      "id": "energy-feeds",
+      "title": "Live energy feeds within tolerance",
+      "severity": "high",
+      "status": true,
+      "weight": 0.85,
+      "evidence": "earth-grid 0.00% · mars-dome 0.00% · orbital-swarm 0.00%"
+    },
+    {
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
       "severity": "medium",
@@ -168,6 +176,14 @@
       "evidence": "failover 44.50 EF vs required 42.90 EF"
     },
     {
+      "id": "orchestration-fabric",
+      "title": "Sharded registry fabric aligned",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.75,
+      "evidence": "unmatched federations: 0 · unmatched shards: 0"
+    },
+    {
       "id": "bridge-latency",
       "title": "Bridge latency ≤ tolerance",
       "severity": "high",
@@ -181,16 +197,16 @@
       "severity": "medium",
       "status": true,
       "weight": 0.8,
-      "evidence": "5/7 nominal · 2 warning · 0 critical"
+      "evidence": "6/8 nominal · 2 warning · 0 critical"
     }
   ],
   "alerts": [],
   "scenarioSweep": {
-    "total": 7,
-    "nominal": 5,
+    "total": 8,
+    "nominal": 6,
     "warning": 2,
     "critical": 0,
-    "averageConfidence": 0.7929052035435014,
+    "averageConfidence": 0.8187920531005637,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -233,6 +249,13 @@
         "status": "nominal",
         "confidence": 1,
         "summary": "Revocation network absorbs infiltration within tolerance."
+      },
+      {
+        "id": "energy-feed-drift",
+        "title": "Live energy feed drift shock",
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Live feeds remain within tolerance bands."
       },
       {
         "id": "compute-plane-failover",

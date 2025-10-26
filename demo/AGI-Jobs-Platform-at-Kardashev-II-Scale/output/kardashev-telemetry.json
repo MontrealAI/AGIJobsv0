@@ -77,6 +77,56 @@
       "averageGw": 236494.16525702746,
       "withinTolerance": true,
       "tolerance": 0.01
+    },
+    "liveFeeds": {
+      "calibrationISO8601": "2025-02-28T18:00:00Z",
+      "tolerancePct": 5,
+      "driftAlertPct": 8.5,
+      "feeds": [
+        {
+          "region": "earth-grid",
+          "federationSlug": "earth",
+          "type": "solar",
+          "telemetry": "https://energy.example/earth/live",
+          "manifestGw": 82000,
+          "feedGw": 82000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 1200,
+          "withinTolerance": true,
+          "driftAlert": false
+        },
+        {
+          "region": "mars-dome",
+          "federationSlug": "mars",
+          "type": "fusion",
+          "telemetry": "https://energy.example/mars/live",
+          "manifestGw": 24000,
+          "feedGw": 24000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 720000,
+          "withinTolerance": true,
+          "driftAlert": false
+        },
+        {
+          "region": "orbital-swarm",
+          "federationSlug": "orbital",
+          "type": "microwave-solar",
+          "telemetry": "https://energy.example/orbital/live",
+          "manifestGw": 136000,
+          "feedGw": 136000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 3200,
+          "withinTolerance": true,
+          "driftAlert": false
+        }
+      ],
+      "allWithinTolerance": true,
+      "driftAlerts": [],
+      "averageLatencyMs": 241466.66666666666,
+      "maxLatencyMs": 720000
     }
   },
   "compute": {
@@ -269,6 +319,88 @@
       "layeredHierarchies": 3,
       "auditURI": "ipfs://QmKardashevComputeAudit",
       "energyBalancing": "Dyson thermostat dispatch dynamically shifts GW budget to the active failover plane."
+    }
+  },
+  "orchestrationFabric": {
+    "knowledgeGraph": "0xea0000000000000000000000000000000000d0a1",
+    "energyOracle": "0xea0000000000000000000000000000000000d0b1",
+    "rewardEngine": "0xea0000000000000000000000000000000000d0c1",
+    "phase8Manager": "0xea0000000000000000000000000000000000d0d1",
+    "shards": [
+      {
+        "id": "earth",
+        "jobRegistry": "0xea000000000000000000000000000000000000a1",
+        "latencyMs": 40,
+        "domains": [
+          "earth.finance",
+          "earth.infrastructure"
+        ],
+        "missingDomains": [],
+        "orphanDomains": [],
+        "guardianCouncil": "0xea0000000000000000000000000000000000b0a1",
+        "sentinelMatches": [
+          {
+            "address": "0x9d7d49c1c0ce2709f50af6b456b8a2a5d23fd9a1",
+            "registered": true
+          }
+        ],
+        "sentinelsOk": true,
+        "federationFound": true,
+        "governanceSafe": "0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2",
+        "domainCoverageOk": true
+      },
+      {
+        "id": "mars",
+        "jobRegistry": "0xea000000000000000000000000000000000000b1",
+        "latencyMs": 720000,
+        "domains": [
+          "mars.terraforming"
+        ],
+        "missingDomains": [],
+        "orphanDomains": [],
+        "guardianCouncil": "0xea0000000000000000000000000000000000b0b1",
+        "sentinelMatches": [
+          {
+            "address": "0x71f3c9d8b9e7a0f3dc5b4215df9e8f531c7c2f91",
+            "registered": true
+          }
+        ],
+        "sentinelsOk": true,
+        "federationFound": true,
+        "governanceSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+        "domainCoverageOk": true
+      },
+      {
+        "id": "orbital",
+        "jobRegistry": "0xea000000000000000000000000000000000000c1",
+        "latencyMs": 1200,
+        "domains": [
+          "orbital.defense",
+          "orbital.research"
+        ],
+        "missingDomains": [],
+        "orphanDomains": [],
+        "guardianCouncil": "0xea0000000000000000000000000000000000b0c1",
+        "sentinelMatches": [
+          {
+            "address": "0x4b6d8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e",
+            "registered": true
+          }
+        ],
+        "sentinelsOk": true,
+        "federationFound": true,
+        "governanceSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+        "domainCoverageOk": true
+      }
+    ],
+    "coverage": {
+      "domainsOk": true,
+      "sentinelsOk": true,
+      "federationsOk": true,
+      "unmatchedFederations": [],
+      "unmatchedShards": [],
+      "averageLatencyMs": 240413.33333333334,
+      "maxLatencyMs": 720000
     }
   },
   "dominance": {
@@ -529,6 +661,54 @@
         "p99": 255130.15072335023
       }
     },
+    "energyFeeds": {
+      "tolerancePct": 5,
+      "driftAlertPct": 8.5,
+      "calibrationISO8601": "2025-02-28T18:00:00Z",
+      "feeds": [
+        {
+          "region": "earth-grid",
+          "federationSlug": "earth",
+          "type": "solar",
+          "telemetry": "https://energy.example/earth/live",
+          "manifestGw": 82000,
+          "feedGw": 82000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 1200,
+          "withinTolerance": true,
+          "driftAlert": false
+        },
+        {
+          "region": "mars-dome",
+          "federationSlug": "mars",
+          "type": "fusion",
+          "telemetry": "https://energy.example/mars/live",
+          "manifestGw": 24000,
+          "feedGw": 24000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 720000,
+          "withinTolerance": true,
+          "driftAlert": false
+        },
+        {
+          "region": "orbital-swarm",
+          "federationSlug": "orbital",
+          "type": "microwave-solar",
+          "telemetry": "https://energy.example/orbital/live",
+          "manifestGw": 136000,
+          "feedGw": 136000,
+          "deltaGw": 0,
+          "deltaPct": 0,
+          "latencyMs": 3200,
+          "withinTolerance": true,
+          "driftAlert": false
+        }
+      ],
+      "allWithinTolerance": true,
+      "driftAlerts": []
+    },
     "compute": {
       "tolerancePct": 0.75,
       "deviationPct": 0.45008183306055416,
@@ -566,6 +746,13 @@
       "failoverCapacityExaflops": 44.5,
       "requiredFailoverCapacity": 42.9,
       "averageAvailabilityPct": 0.9823333333333334
+    },
+    "orchestrationFabric": {
+      "domainsOk": true,
+      "sentinelsOk": true,
+      "federationsOk": true,
+      "unmatchedFederations": [],
+      "unmatchedShards": []
     },
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
   },
@@ -772,6 +959,40 @@
       "recommendedActions": [
         "Execute fallback ENS registrar policy if forged rate exceeds tolerance.",
         "Rotate identity anchors using Safe batch identity transactions."
+      ]
+    },
+    {
+      "id": "energy-feed-drift",
+      "title": "Live energy feed drift shock",
+      "status": "nominal",
+      "summary": "Live feeds remain within tolerance bands.",
+      "confidence": 1,
+      "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
+      "metrics": [
+        {
+          "label": "Max drift",
+          "value": "0.00%",
+          "ok": true
+        },
+        {
+          "label": "Tolerance",
+          "value": "5%",
+          "ok": true
+        },
+        {
+          "label": "Drift alert",
+          "value": "8.5%",
+          "ok": true
+        },
+        {
+          "label": "Average latency",
+          "value": "241467 ms",
+          "ok": false
+        }
+      ],
+      "recommendedActions": [
+        "Trigger energy oracle recalibration from mission directives.",
+        "Rebalance Dyson thermostat inputs toward the affected federation until drift subsides."
       ]
     },
     {

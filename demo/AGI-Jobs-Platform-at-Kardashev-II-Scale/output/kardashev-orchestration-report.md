@@ -20,6 +20,8 @@
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
 * Demand percentiles: P95 251,695.495 GW · P99 255,130.151 GW.
+* Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
+* Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 
 ---
 
@@ -47,6 +49,8 @@
 * **Solara Earth Core** (Earth orbit low-latency ring) – scheduler 0x2f4a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f34, capacity 38.00 EF, latency 38 ms, availability 98.60%, failover partner sol-mars.
 * **Ares Horizon Fabric** (Mars synchronous polar array) – scheduler 0x4d6e8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d61, capacity 18.50 EF, latency 112 ms, availability 97.20%, failover partner sol-orbital.
 * **Helios Orbital Halo** (Dyson swarm maintenance lattice) – scheduler 0x7e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e78, capacity 26.00 EF, latency 24 ms, availability 98.90%, failover partner sol-earth.
+* Sharded registry fabric health — domains aligned, sentinels aligned, federations aligned.
+* Fabric latency: avg 240413 ms · max 720000 ms.
 
 ---
 
@@ -87,6 +91,12 @@
   - Tolerance: 120 ppm (ok)
   - Anchors at quorum: 3/3 (ok)
   - Recommended: Execute fallback ENS registrar policy if forged rate exceeds tolerance. · Rotate identity anchors using Safe batch identity transactions.
+* **Live energy feed drift shock** — status NOMINAL (confidence 100.0%) · Live feeds remain within tolerance bands.
+  - Max drift: 0.00% (ok)
+  - Tolerance: 5% (ok)
+  - Drift alert: 8.5% (ok)
+  - Average latency: 241467 ms (check)
+  - Recommended: Trigger energy oracle recalibration from mission directives. · Rebalance Dyson thermostat inputs toward the affected federation until drift subsides.
 * **Primary compute plane offline** — status NOMINAL (confidence 100.0%) · Failover capacity 44.50 EF covers quorum.
   - Largest plane: Solara Earth Core (ok)
   - Failover capacity: 44.50 EF (ok)
