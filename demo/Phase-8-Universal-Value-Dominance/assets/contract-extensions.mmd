@@ -1,0 +1,14 @@
+%% Contract extension upgrade lattice
+flowchart TD
+  Owner[Owner Multisig] --> Manager[Phase 8 Manager]
+  Manager --> Stage{{Stage Extension}}
+  Manager --> Activate{{Activate Extension}}
+  Stage --> SentinelOrchestrator
+  Stage --> CapitalStreamRouter
+  SentinelOrchestrator -->|pauseBeforeUpgrade| SystemPause
+  SentinelOrchestrator -->|dependencies| SolarShield & ClimateHarmonizer
+  CapitalStreamRouter -->|dependencies| PlanetaryFinance & PlanetaryResilience & OrchestrationMacro
+  Stage --> GuardianSignoff{{Guardian Council Quorum}}
+  Activate --> GuardianSignoff
+  GuardianSignoff --> Ledger[(Telemetry Ledger)]
+  Ledger --> Validators[[Validator Guild]]

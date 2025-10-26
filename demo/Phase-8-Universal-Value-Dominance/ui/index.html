@@ -38,6 +38,10 @@
             <span class="stat-label">Validator Reward</span>
             <span class="stat-value" id="statValidator">—</span>
           </div>
+          <div class="stat-card">
+            <span class="stat-label">Extensions Ready</span>
+            <span class="stat-value" id="statExtensions">—</span>
+          </div>
         </div>
       </section>
 
@@ -63,7 +67,28 @@
       </section>
 
       <section class="panel">
-        <h2>4. Owner Command Console</h2>
+        <h2>4. Contract Extension Planner</h2>
+        <input type="file" id="extensionConfig" accept="application/json" />
+        <div id="extensionSummary" class="extension-summary">
+          <p>Drop <code>contract-extensions.json</code> to surface stage/activate calldata and guardian coverage.</p>
+        </div>
+        <table id="extensionTable" class="data-table">
+          <thead>
+            <tr>
+              <th>Extension</th>
+              <th>Module</th>
+              <th>Upgrade Window</th>
+              <th>Pause</th>
+              <th>Dependencies</th>
+              <th>CI Checks</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>5. Owner Command Console</h2>
         <input type="file" id="ownerConfig" accept="application/json" />
         <div id="ownerSummary" class="owner-summary">
           <p>Load <code>owner-directives.json</code> to reveal the full control surface.</p>
@@ -121,6 +146,9 @@
       const timeline = document.getElementById("timeline");
       const pauseToggle = document.getElementById("pauseToggle");
       const copilotToggle = document.getElementById("copilotToggle");
+      const extensionInput = document.getElementById("extensionConfig");
+      const extensionSummary = document.getElementById("extensionSummary");
+      const extensionTable = document.querySelector("#extensionTable tbody");
       const ownerInput = document.getElementById("ownerConfig");
       const ownerSummary = document.getElementById("ownerSummary");
       const ownerModules = document.querySelector("#ownerModules tbody");
@@ -131,9 +159,11 @@
       const statBudget = document.getElementById("statBudget");
       const statCadence = document.getElementById("statCadence");
       const statValidator = document.getElementById("statValidator");
+      const statExtensions = document.getElementById("statExtensions");
 
       let jobConfig;
       let ownerConfig;
+      let extensionConfig;
 
       function renderMermaid(diagram) {
         mermaid
@@ -169,6 +199,49 @@
         return Math.min(100, value + safety + durationScore + cadenceScore);
       }
 
+      function formatHours(value) {
+        if (!Number.isFinite(value)) return "—";
+        return `${Number(value).toFixed(1)}h`;
+      }
+
+      function formatDependencies(deps) {
+        if (!Array.isArray(deps) || deps.length === 0) return "—";
+        return deps.map((dep) => `${dep.type ?? "?"}:${dep.slug ?? "?"}`).join("<br/>");
+      }
+
+      function renderExtensions(config) {
+        if (!extensionSummary || !extensionTable || !statExtensions) return;
+        if (!config || !Array.isArray(config.extensions) || config.extensions.length === 0) {
+          extensionSummary.innerHTML = "<p>No extensions detected. Load contract-extensions.json.</p>";
+          extensionTable.innerHTML = "";
+          statExtensions.textContent = "—";
+          return;
+        }
+
+        const extensions = config.extensions;
+        const pauseCount = extensions.filter((entry) => entry.pauseBeforeUpgrade).length;
+        const windowTotal = extensions.reduce((acc, entry) => acc + Number(entry.upgradeWindowHours ?? 0), 0);
+        const avgWindow = extensions.length > 0 ? windowTotal / extensions.length : 0;
+        const pauseCoverage = extensions.length > 0 ? (pauseCount / extensions.length) * 100 : 0;
+
+        extensionSummary.innerHTML = `<p><strong>${extensions.length}</strong> extensions • Pause coverage ${pauseCoverage.toFixed(1)}% • Avg window ${avgWindow.toFixed(2)}h</p>`;
+        statExtensions.textContent = `${extensions.length}`;
+
+        extensionTable.innerHTML = "";
+        extensions.forEach((extension) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${extension.name ?? extension.slug}</td>
+            <td>${extension.module ?? "—"}</td>
+            <td>${formatHours(Number(extension.upgradeWindowHours ?? 0))}</td>
+            <td>${extension.pauseBeforeUpgrade ? "Yes" : "No"}</td>
+            <td>${formatDependencies(extension.dependencies)}</td>
+            <td>${Array.isArray(extension.ciChecks) && extension.ciChecks.length > 0 ? extension.ciChecks.join("<br/>") : "—"}</td>
+          `;
+          extensionTable.appendChild(row);
+        });
+      }
+
       jobInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -183,6 +256,30 @@
         const validatorReward = Number(jobConfig?.validators?.rewardBps ?? 0) / 100;
         statValidator.textContent = validatorReward > 0 ? `${validatorReward.toFixed(2)}%` : "—";
         pushTimeline("Mission blueprint ingested. Telemetry refreshed.");
+      });
+
+      extensionInput?.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          extensionConfig = JSON.parse(text);
+          renderExtensions(extensionConfig);
+          pushTimeline("Contract extension plan analysed. Calldata available.");
+        } catch (error) {
+          console.error("Extension config load failed", error);
+          extensionConfig = undefined;
+          if (extensionSummary) {
+            extensionSummary.innerHTML = "<p class=\"error\">Failed to parse contract extensions.</p>";
+          }
+          if (extensionTable) {
+            extensionTable.innerHTML = "";
+          }
+          if (statExtensions) {
+            statExtensions.textContent = "—";
+          }
+          pushTimeline("Contract extension manifest parsing failed.", "warn");
+        }
       });
 
       budgetCap.addEventListener("input", () => {
