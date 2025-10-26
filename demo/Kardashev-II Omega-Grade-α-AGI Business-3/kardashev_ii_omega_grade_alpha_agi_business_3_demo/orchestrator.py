@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, spawn_agent
+from .audit import AuditTrail
 from .checkpoint import CheckpointManager
 from .governance import GovernanceController, GovernanceParameters
 from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
@@ -45,6 +46,8 @@ class OrchestratorConfig:
     max_cycles: Optional[int] = None
     insight_interval_seconds: int = 30
     control_channel_file: Path = Path("control-channel.jsonl")
+    audit_log_path: Optional[Path] = None
+    initial_jobs: List[Dict[str, Any]] = field(default_factory=list)
 
 
 class Orchestrator:
@@ -55,6 +58,10 @@ class Orchestrator:
         self.log = logging.getLogger("omega.orchestrator")
         self.config = config
         self.bus = MessageBus()
+        self.audit: Optional[AuditTrail] = None
+        if config.audit_log_path:
+            self.audit = AuditTrail(config.audit_log_path)
+            self.bus.register_listener(self.audit.record_message)
         self.resources = ResourceManager(
             energy_capacity=config.energy_capacity,
             compute_capacity=config.compute_capacity,
@@ -186,6 +193,15 @@ class Orchestrator:
 
     async def _seed_jobs(self) -> None:
         if any(self.job_registry.iter_jobs()):
+            return
+        if self.config.initial_jobs:
+            for raw_spec in self.config.initial_jobs:
+                try:
+                    spec = JobSpec.from_dict(raw_spec)
+                except Exception as exc:
+                    self._error("initial_job_invalid", error=str(exc), payload=raw_spec)
+                    continue
+                await self.post_alpha_job(spec)
             return
         root_spec = JobSpec(
             title="Planetary Dyson Swarm Expansion",
@@ -466,6 +482,8 @@ class Orchestrator:
             self.resources,
         )
         self._info("orchestrator_stopped")
+        if self.audit:
+            await self.audit.close()
         self._stopped.set()
 
     async def wait_until_stopped(self) -> None:

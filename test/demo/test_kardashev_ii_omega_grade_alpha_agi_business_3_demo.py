@@ -52,6 +52,25 @@ class JobRegistryTests(unittest.TestCase):
         self.assertEqual(child.spec.parent_id, parent.job_id)
 
 
+    def test_job_spec_from_dict(self) -> None:
+        spec = JobSpec.from_dict(
+            {
+                "title": "Spec",
+                "description": "Declarative",
+                "required_skills": "alpha",
+                "reward_tokens": 123,
+                "deadline_minutes": 30,
+                "validation_window_seconds": 90,
+                "metadata": {"employer": "operator"},
+            }
+        )
+        self.assertEqual(spec.title, "Spec")
+        self.assertIn("alpha", spec.required_skills)
+        self.assertGreaterEqual((spec.deadline - datetime.now(timezone.utc)).total_seconds(), 29 * 60)
+        self.assertAlmostEqual(spec.validation_window.total_seconds(), 90)
+        self.assertEqual(spec.metadata.get("employer"), "operator")
+
+
 class ResourceManagerTests(unittest.TestCase):
     def test_stake_and_slash_flow(self) -> None:
         manager = ResourceManager(energy_capacity=10_000, compute_capacity=10_000, base_token_supply=1_000)
@@ -81,6 +100,17 @@ class MessageBusTests(unittest.IsolatedAsyncioTestCase):
             await listener_task
 
         self.assertEqual(received, ["1", "2"])
+
+    async def test_listener_hook_records_messages(self) -> None:
+        bus = MessageBus()
+        calls: list[tuple[str, str]] = []
+
+        async def listener(topic: str, payload: dict[str, str], publisher: str) -> None:
+            calls.append((topic, publisher))
+
+        bus.register_listener(listener)
+        await bus.publish("jobs:test", {"job_id": "abc"}, "tester")
+        self.assertEqual(calls, [("jobs:test", "tester")])
 
 
 class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
@@ -118,6 +148,70 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(any(job.status in {JobStatus.COMPLETED, JobStatus.FINALIZED, JobStatus.FAILED} for job in jobs))
             snapshot = json.loads(checkpoint.read_text())
             self.assertIn("jobs", snapshot)
+
+    async def test_initial_jobs_seeded_from_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.1),
+                validator_reveal_window=timedelta(seconds=0.1),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                initial_jobs=[
+                    {
+                        "title": "Synthetic Logistics",
+                        "description": "Spin up logistics mesh",
+                        "required_skills": ["supply-chain"],
+                        "reward_tokens": 200.0,
+                        "deadline_minutes": 10,
+                        "validation_window_minutes": 1,
+                        "metadata": {"employer": "operator"},
+                    }
+                ],
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.2)
+            titles = [job.spec.title for job in orchestrator.job_registry.iter_jobs()]
+            self.assertIn("Synthetic Logistics", titles)
+            await orchestrator.shutdown()
+
+    async def test_audit_trail_records_messages(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            audit = Path(tmp) / "audit.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.1),
+                validator_reveal_window=timedelta(seconds=0.1),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                audit_log_path=audit,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.3)
+            await orchestrator.shutdown()
+            ledger = [json.loads(line) for line in audit.read_text().strip().splitlines() if line.strip()]
+            self.assertTrue(ledger)
+            self.assertIn(ledger[0]["algorithm"], {"BLAKE3", "BLAKE2b-256"})
 
     async def test_control_updates_parameters(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

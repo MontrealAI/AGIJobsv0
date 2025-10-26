@@ -1,12 +1,10 @@
-"""Job graph and registry primitives for the Omega-grade demo."""
-
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Dict, Iterable, Iterator, List, Optional, Set
+from typing import Any, Dict, Iterable, Iterator, List, Mapping, Optional, Set
 
 
 class JobStatus(Enum):
@@ -50,6 +48,80 @@ class JobSpec:
             "compute_budget": self.compute_budget,
             "metadata": dict(self.metadata),
         }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any], *, now: Optional[datetime] = None) -> JobSpec:
+        """Create a :class:`JobSpec` from declarative metadata."""
+
+        base_time = now or datetime.now(timezone.utc)
+        try:
+            title = str(payload["title"])
+            description = str(payload["description"])
+            required_skills_raw = payload.get("required_skills", [])
+            if isinstance(required_skills_raw, str):
+                required_skills = [required_skills_raw]
+            elif isinstance(required_skills_raw, Iterable):
+                required_skills = [str(skill) for skill in required_skills_raw]
+            else:
+                raise TypeError("required_skills must be iterable")
+            if not required_skills:
+                raise ValueError("required_skills must not be empty")
+            reward_tokens = float(payload["reward_tokens"])
+        except KeyError as exc:  # pragma: no cover - validated by configuration tests
+            raise KeyError(f"Missing required job field: {exc.args[0]}") from exc
+
+        deadline_value = payload.get("deadline")
+        deadline: datetime
+        if isinstance(deadline_value, datetime):
+            deadline = deadline_value
+        elif isinstance(deadline_value, str):
+            deadline = datetime.fromisoformat(deadline_value)
+        else:
+            if "deadline_hours" in payload:
+                delta = timedelta(hours=float(payload["deadline_hours"]))
+            elif "deadline_minutes" in payload:
+                delta = timedelta(minutes=float(payload["deadline_minutes"]))
+            elif "deadline_seconds" in payload:
+                delta = timedelta(seconds=float(payload["deadline_seconds"]))
+            else:
+                delta = timedelta(hours=12)
+            deadline = base_time + delta
+        if deadline.tzinfo is None:
+            deadline = deadline.replace(tzinfo=timezone.utc)
+
+        if "validation_window" in payload and isinstance(payload["validation_window"], timedelta):
+            validation_window = payload["validation_window"]
+        elif "validation_window_seconds" in payload:
+            validation_window = timedelta(seconds=float(payload["validation_window_seconds"]))
+        elif "validation_window_minutes" in payload:
+            validation_window = timedelta(minutes=float(payload["validation_window_minutes"]))
+        else:
+            validation_window = timedelta(hours=float(payload.get("validation_window_hours", 1)))
+
+        parent_id = payload.get("parent_id")
+        parent_id_str = str(parent_id) if parent_id is not None else None
+        stake_required = float(payload.get("stake_required", 0.0))
+        energy_budget = float(payload.get("energy_budget", 0.0))
+        compute_budget = float(payload.get("compute_budget", 0.0))
+        metadata_value = payload.get("metadata", {})
+        if isinstance(metadata_value, Mapping):
+            metadata = dict(metadata_value)
+        else:
+            raise TypeError("metadata must be a mapping")
+
+        return cls(
+            title=title,
+            description=description,
+            required_skills=required_skills,
+            reward_tokens=reward_tokens,
+            deadline=deadline,
+            validation_window=validation_window,
+            parent_id=parent_id_str,
+            stake_required=stake_required,
+            energy_budget=energy_budget,
+            compute_budget=compute_budget,
+            metadata=metadata,
+        )
 
 
 @dataclass
@@ -165,4 +237,3 @@ class JobRegistry:
 
     def to_mapping(self) -> Dict[str, JobRecord]:
         return dict(self._jobs)
-

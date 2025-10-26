@@ -104,5 +104,18 @@ Validator Stakes: automatically rehydrated on restart
 { "action": "cancel_job", "job_id": "deadbeefcafebabe" }
       </pre>
     </section>
+
+    <section class="card">
+      <h2>Immutable Audit Trail</h2>
+      <p>Every message on the A2A mesh is hashed (BLAKE3 when the optional module is installed, BLAKE2b-256 otherwise) and appended to a JSONL ledger for provable governance.</p>
+      <pre>
+$ tail -f logs/omega-audit.jsonl
+{"timestamp": "2025-01-01T12:00:00+00:00",
+ "topic": "jobs:energy-architect",
+ "publisher": "orchestrator",
+ "digest": "54c0...",
+ "algorithm": "BLAKE3"}
+      </pre>
+    </section>
   </body>
 </html>

@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-sim", action="store_true", help="Disable the synthetic planetary simulation")
     parser.add_argument("--control", type=Path, default=Path("control-channel.jsonl"), help="Control channel file path")
     parser.add_argument("--insight-interval", type=int, default=30, help="Seconds between strategic insight broadcasts")
+    parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
 
@@ -35,8 +36,8 @@ async def _run_async(args: argparse.Namespace) -> None:
         if not args.config.exists():
             raise FileNotFoundError(f"Config file not found: {args.config}")
         data = json.loads(args.config.read_text(encoding="utf-8"))
-        for path_field in ("checkpoint_path", "control_channel_file"):
-            if path_field in data:
+        for path_field in ("checkpoint_path", "control_channel_file", "audit_log_path"):
+            if path_field in data and data[path_field] is not None:
                 data[path_field] = Path(data[path_field])
         if "governance" in data:
             gov_data = dict(data["governance"])
@@ -54,6 +55,7 @@ async def _run_async(args: argparse.Namespace) -> None:
         "enable_simulation": not args.no_sim,
         "control_channel_file": args.control,
         "insight_interval_seconds": args.insight_interval,
+        "audit_log_path": args.audit_log,
     }
     params.update(overrides)
 
