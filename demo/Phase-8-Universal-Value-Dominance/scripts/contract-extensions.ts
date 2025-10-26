@@ -199,7 +199,7 @@ export function buildExtensionPlan(manifest: Phase8Config, config: ExtensionConf
 
   for (const extension of config.extensions) {
     assertDependencies(manifest, extension);
-    const moduleId = keccak256(toUtf8Bytes(extension.module.toLowerCase()));
+    const moduleId = keccak256(toUtf8Bytes(extension.module));
     const stage = iface.encodeFunctionData("stageExtension", [
       moduleId,
       extension.implementation,
