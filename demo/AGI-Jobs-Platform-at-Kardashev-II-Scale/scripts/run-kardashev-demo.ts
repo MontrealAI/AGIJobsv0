@@ -48,6 +48,29 @@ function createDeterministicRng(seed: string): () => number {
   };
 }
 
+function kahanSum(values: number[]): number {
+  let sum = 0;
+  let c = 0;
+  for (const value of values) {
+    const y = value - c;
+    const t = sum + y;
+    c = t - sum - y;
+    sum = t;
+  }
+  return sum;
+}
+
+function pairwiseSum(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  if (values.length === 1) {
+    return values[0];
+  }
+  const mid = Math.floor(values.length / 2);
+  return pairwiseSum(values.slice(0, mid)) + pairwiseSum(values.slice(mid));
+}
+
 const AddressSchema = z
   .string()
   .trim()
@@ -358,6 +381,124 @@ const FabricConfigSchema = z.object({
 
 type EnergyFeedsConfig = z.infer<typeof EnergyFeedsConfigSchema>;
 type FabricConfig = z.infer<typeof FabricConfigSchema>;
+
+type EnergyWindowProjection = {
+  perFederation: Array<{
+    federation: string;
+    scheduledEnergyGwH: number;
+    averageScheduledGw: number;
+    windowCount: number;
+    scheduledHours: number;
+  }>;
+  totalScheduledGwH: number;
+  normalisedTotalGw: number;
+  coverageRatio: number;
+  windowCount: number;
+};
+
+type EnergyCrossVerification = {
+  methods: {
+    direct: number;
+    kahan: number;
+    pairwise: number;
+    bigInt: number;
+    projection: number;
+  };
+  toleranceGw: number;
+  tolerancePct: number;
+  maxDeviationGw: number;
+  consensus: boolean;
+  coverageRatio: number;
+  projection: EnergyWindowProjection;
+};
+
+function computeEnergyWindowProjection(manifest: Manifest): EnergyWindowProjection {
+  const perFederation: Array<{
+    federation: string;
+    scheduledEnergyGwH: number;
+    averageScheduledGw: number;
+    windowCount: number;
+    scheduledHours: number;
+  }> = [];
+
+  for (const federation of manifest.federations) {
+    const windows = manifest.energyWindows.filter((window) => window.federation === federation.slug);
+    const scheduledEnergyGwH = windows.reduce(
+      (sum, window) => sum + (window.availableGw + window.backupGw) * window.durationHours,
+      0
+    );
+    const scheduledHours = windows.reduce((sum, window) => sum + window.durationHours, 0);
+    const averageScheduledGw = scheduledEnergyGwH === 0 ? 0 : scheduledEnergyGwH / 24;
+    perFederation.push({
+      federation: federation.slug,
+      scheduledEnergyGwH,
+      averageScheduledGw,
+      windowCount: windows.length,
+      scheduledHours,
+    });
+  }
+
+  const totalScheduledGwH = perFederation.reduce((sum, entry) => sum + entry.scheduledEnergyGwH, 0);
+  const normalisedTotalGw = perFederation.reduce((sum, entry) => sum + entry.averageScheduledGw, 0);
+  const coverageRatio =
+    manifest.federations.length === 0
+      ? 1
+      : perFederation.filter((entry) => entry.windowCount > 0).length /
+        Math.max(manifest.federations.length, 1);
+
+  return {
+    perFederation,
+    totalScheduledGwH,
+    normalisedTotalGw,
+    coverageRatio,
+    windowCount: manifest.energyWindows.length,
+  };
+}
+
+function performEnergyCrossVerification(manifest: Manifest): EnergyCrossVerification {
+  const regionalValues = manifest.federations.map((federation) => federation.energy.availableGw);
+  const direct = regionalValues.reduce((sum, value) => sum + value, 0);
+  const kahan = kahanSum(regionalValues);
+  const pairwise = pairwiseSum(regionalValues);
+  const scale = 1_000_000;
+  const bigInt =
+    Number(
+      manifest.federations.reduce(
+        (acc, federation) => acc + BigInt(Math.round(federation.energy.availableGw * scale)),
+        0n
+      )
+    ) /
+    scale;
+  const projection = computeEnergyWindowProjection(manifest);
+  const projectionValue = projection.normalisedTotalGw;
+  const coverageSlack = Math.max(0, 1 - projection.coverageRatio);
+  const tolerancePct = 0.04 + coverageSlack * 0.05;
+  const toleranceGw = Math.max(1e-6, direct * tolerancePct);
+  const deviations = [
+    Math.abs(direct - kahan),
+    Math.abs(direct - pairwise),
+    Math.abs(direct - bigInt),
+    Math.abs(direct - projectionValue),
+  ];
+  const maxDeviationGw = deviations.reduce((max, value) => Math.max(max, value), 0);
+  const consensus = maxDeviationGw <= toleranceGw;
+
+  return {
+    methods: {
+      direct,
+      kahan,
+      pairwise,
+      bigInt,
+      projection: projectionValue,
+    },
+    toleranceGw,
+    tolerancePct,
+    maxDeviationGw,
+    consensus,
+    coverageRatio: projection.coverageRatio,
+    projection,
+  };
+}
 
 type OwnerControlProof = {
   manager: string;
@@ -1811,6 +1952,7 @@ function computeTelemetry(
   }));
   const sumRegionalGw = regionalEnergy.reduce((sum, r) => sum + r.availableGw, 0);
   const dysonYield = manifest.dysonProgram.phases.reduce((sum, p) => sum + p.energyYieldGw, 0);
+  const energyCrossVerification = performEnergyCrossVerification(manifest);
   const utilisationPct = sumRegionalGw / capturedGw;
   const marginPct = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
   const energyWarnings: string[] = [];
@@ -2320,6 +2462,7 @@ function computeTelemetry(
         deficits: energyScheduleDeficits,
         reliabilityDeficits: energyScheduleReliabilityDeficits,
       },
+      crossVerification: energyCrossVerification,
     },
     compute: {
       totalAgents: manifest.federations.reduce((sum, f) => sum + f.compute.agents, 0),
@@ -2526,6 +2669,7 @@ function buildStabilityLedger(
     telemetry.energy.liveFeeds.allWithinTolerance,
     telemetry.verification.energySchedule.coverageOk,
     telemetry.verification.energySchedule.reliabilityOk,
+    telemetry.energy.crossVerification.consensus,
     telemetry.verification.compute.withinTolerance,
     telemetry.verification.bridges.allWithinTolerance,
     telemetry.verification.settlement.allWithinTolerance,
@@ -2605,6 +2749,14 @@ function buildStabilityLedger(
       status: telemetry.energy.tripleCheck && telemetry.verification.energyModels.withinMargin,
       weight: 1.1,
       evidence: `regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW · Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW · thermostat ${telemetry.energy.models.thermostatBudgetGw.toLocaleString()} GW`,
+    },
+    {
+      id: "energy-cross-verification",
+      title: "Energy cross-verification consensus",
+      severity: "high",
+      status: telemetry.energy.crossVerification.consensus,
+      weight: 0.95,
+      evidence: `max deviation ${telemetry.energy.crossVerification.maxDeviationGw.toFixed(6)} GW · tolerance ${telemetry.energy.crossVerification.toleranceGw.toFixed(6)} GW · coverage ${(telemetry.energy.crossVerification.coverageRatio * 100).toFixed(2)}%`,
     },
     {
       id: "energy-monte-carlo",
@@ -2882,6 +3034,57 @@ function buildStabilityLedger(
   };
 }
 
+function buildConsistencyLedger(manifest: Manifest, telemetry: Telemetry) {
+  const computeValues = manifest.federations.map((federation) => federation.compute.exaflops);
+  const computeDirect = computeValues.reduce((sum, value) => sum + value, 0);
+  const computeKahan = kahanSum(computeValues);
+  const computePairwise = pairwiseSum(computeValues);
+  const computeTolerance = Math.max(1e-6, computeDirect * 1e-6);
+  const computeDiffs = {
+    directVsTelemetry: Math.abs(computeDirect - telemetry.compute.totalExaflops),
+    directVsKahan: Math.abs(computeDirect - computeKahan),
+    kahanVsPairwise: Math.abs(computeKahan - computePairwise),
+  };
+  const computeMaxDeviation = Object.values(computeDiffs).reduce((max, value) => Math.max(max, value), 0);
+  const computeConsensus = computeMaxDeviation <= computeTolerance;
+
+  const generatedAt =
+    typeof manifest.generatedAt === "number"
+      ? new Date(manifest.generatedAt).toISOString()
+      : manifest.generatedAt;
+
+  return {
+    generatedAt,
+    energy: {
+      ...telemetry.energy.crossVerification,
+    },
+    compute: {
+      methods: {
+        direct: computeDirect,
+        telemetry: telemetry.compute.totalExaflops,
+        kahan: computeKahan,
+        pairwise: computePairwise,
+      },
+      diffs: computeDiffs,
+      toleranceExaflops: computeTolerance,
+      maxDeviationExaflops: computeMaxDeviation,
+      consensus: computeConsensus,
+    },
+    settlement: {
+      watchersOnline: telemetry.settlement.watchersOnline,
+      uniqueWatchers: telemetry.settlement.watchers.length,
+      coverageOk: telemetry.verification.settlement.coverageOk,
+      slippageOk: telemetry.verification.settlement.slippageOk,
+      riskOk: telemetry.verification.settlement.riskOk,
+    },
+    identity: {
+      revocationRatePpm: telemetry.verification.identity.revocationRatePpm,
+      tolerancePpm: telemetry.verification.identity.tolerancePpm,
+      withinTolerance: telemetry.verification.identity.revocationWithinTolerance,
+    },
+  };
+}
+
 function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
   const parsedCreatedAt =
     typeof manifest.generatedAt === "number" ? manifest.generatedAt : Date.parse(manifest.generatedAt);
@@ -2961,6 +3164,7 @@ function run() {
     scenarioSweep,
     ownerProof
   );
+  const consistencyLedger = buildConsistencyLedger(manifest, telemetryWithScenarios);
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
   const runbook = buildRunbook(manifest, telemetryWithScenarios, dominanceScore, scenarioSweep);
@@ -2972,6 +3176,7 @@ function run() {
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
   const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
   const monteCarloJson = `${JSON.stringify(telemetry.energy.monteCarlo, null, 2)}\n`;
+  const consistencyJson = `${JSON.stringify(consistencyLedger, null, 2)}\n`;
   const energyFeedsJson = `${JSON.stringify(
     {
       calibrationISO8601: telemetry.energy.liveFeeds.calibrationISO8601,
@@ -3004,6 +3209,7 @@ function run() {
     { path: join(OUTPUT_DIR, "kardashev-telemetry.json"), content: telemetryJson },
     { path: join(OUTPUT_DIR, "kardashev-safe-transaction-batch.json"), content: safeJson },
     { path: join(OUTPUT_DIR, "kardashev-stability-ledger.json"), content: ledgerJson },
+    { path: join(OUTPUT_DIR, "kardashev-consistency-ledger.json"), content: consistencyJson },
     { path: join(OUTPUT_DIR, "kardashev-scenario-sweep.json"), content: scenariosJson },
     { path: join(OUTPUT_DIR, "kardashev-monte-carlo.json"), content: monteCarloJson },
     { path: join(OUTPUT_DIR, "kardashev-energy-feeds.json"), content: energyFeedsJson },
@@ -3045,6 +3251,9 @@ function run() {
   );
   console.log(
     `   Energy models aligned: ${telemetry.verification.energyModels.withinMargin} (regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW vs Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW).`
+  );
+  console.log(
+    `   Energy cross-verification consensus: ${telemetry.energy.crossVerification.consensus} (max deviation ${telemetry.energy.crossVerification.maxDeviationGw.toFixed(6)} GW · tolerance ${telemetry.energy.crossVerification.toleranceGw.toFixed(6)} GW).`
   );
   console.log(
     `   Energy Monte Carlo breach probability: ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`

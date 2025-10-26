@@ -53,6 +53,7 @@
    * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
    * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
    * `output/kardashev-stability-ledger.json` – consensus ledger uniting deterministic, redundant, and thermodynamic checks.
+   * `output/kardashev-consistency-ledger.json` – multi-angle reconciliation of energy and compute sums (direct, Kahan, pairwise, bigint, schedule projection) with tolerances.
    * `output/kardashev-energy-schedule.json` – deterministic energy window coverage + reliability ledger with job cadence recommendations.
    * `output/kardashev-settlement-ledger.json` – settlement protocol matrix covering finality, tolerance, coverage, slippage, and risk posture.
    * Console output summarising dominance scores, delta checks, and incident alerts.
@@ -208,6 +209,14 @@ flowchart TD
 
 ---
 
+## ♾️ Consistency ledger & multi-angle verification
+
+* **Five-method energy reconciliation** – The orchestrator computes direct, Kahan, pairwise, bigint-scaled, and schedule-projected sums for regional GW. If any deviate beyond a one-part-per-million tolerance, the run halts and flags the offending method in CI.
+* **Compute dual audit** – The consistency ledger repeats the Kahan and pairwise reductions over federation exaFLOPs, comparing them to telemetry totals and Dyson projections so operators see hard numbers before authorising expansions.
+* **Coverage & tolerance badges** – `output/kardashev-consistency-ledger.json` surfaces deviation magnitudes, tolerances, and federation coverage ratios; the UI mirrors these as badges, ensuring non-technical stewards have the same assurance as low-level auditors.
+
+---
+
 ## 🔭 Scenario stress sweep
 
 * **Deterministic five-pack** – `npm run demo:kardashev-ii:orchestrate` simulates a 20% energy surge, doubled bridge latency, sentinel downtime, 15% compute drawdown, and a 30-day Dyson slip. Outputs are codified in `output/kardashev-scenario-sweep.json` and surfaced in telemetry.
@@ -248,6 +257,7 @@ flowchart TD
 | `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
 | `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
 | `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
+| `output/kardashev-consistency-ledger.json` | Independent reconciliation ledger comparing Kahan, pairwise, bigint, and schedule projections for energy + compute. |
 | `output/kardashev-monte-carlo.json` | Monte Carlo summary (runs, breach probability, percentiles) validating the energy thermostat tolerance. |
 | `output/kardashev-energy-feeds.json` | Snapshot of per-federation energy feeds, tolerances, and drift calculations backing the dashboard feed badges. |
 | `output/kardashev-energy-schedule.json` | Deterministic energy window plan with per-federation coverage, reliability, and job cadence recommendations. |

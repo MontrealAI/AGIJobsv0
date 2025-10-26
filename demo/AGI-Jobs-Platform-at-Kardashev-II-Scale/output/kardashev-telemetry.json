@@ -372,6 +372,49 @@
       ],
       "deficits": [],
       "reliabilityDeficits": []
+    },
+    "crossVerification": {
+      "methods": {
+        "direct": 242000,
+        "kahan": 242000,
+        "pairwise": 242000,
+        "bigInt": 242000,
+        "projection": 250000
+      },
+      "toleranceGw": 9680,
+      "tolerancePct": 0.04,
+      "maxDeviationGw": 8000,
+      "consensus": true,
+      "coverageRatio": 1,
+      "projection": {
+        "perFederation": [
+          {
+            "federation": "earth",
+            "scheduledEnergyGwH": 2016000,
+            "averageScheduledGw": 84000,
+            "windowCount": 4,
+            "scheduledHours": 24
+          },
+          {
+            "federation": "mars",
+            "scheduledEnergyGwH": 632000,
+            "averageScheduledGw": 26333.333333333332,
+            "windowCount": 3,
+            "scheduledHours": 24
+          },
+          {
+            "federation": "orbital",
+            "scheduledEnergyGwH": 3352000,
+            "averageScheduledGw": 139666.66666666666,
+            "windowCount": 3,
+            "scheduledHours": 24
+          }
+        ],
+        "totalScheduledGwH": 6000000,
+        "normalisedTotalGw": 250000,
+        "coverageRatio": 1,
+        "windowCount": 10
+      }
     }
   },
   "compute": {

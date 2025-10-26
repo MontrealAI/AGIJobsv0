@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9568733153638813,
+    "compositeScore": 0.9589743589743589,
     "quorum": true,
     "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9568733153638813,
+        "score": 0.9589743589743589,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.9583333333333334,
+        "score": 0.96,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -102,6 +102,14 @@
       "status": true,
       "weight": 1.1,
       "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
+    },
+    {
+      "id": "energy-cross-verification",
+      "title": "Energy cross-verification consensus",
+      "severity": "high",
+      "status": true,
+      "weight": 0.95,
+      "evidence": "max deviation 8000.000000 GW · tolerance 9680.000000 GW · coverage 100.00%"
     },
     {
       "id": "energy-monte-carlo",
