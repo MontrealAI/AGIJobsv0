@@ -509,7 +509,7 @@
       "startHourUTC": 0,
       "durationHours": 6,
       "availableGw": 72000,
-      "backupGw": 15000,
+      "backupGw": 13000,
       "renewablePct": 0.94,
       "reliabilityPct": 0.985,
       "priorityDomains": [
@@ -523,7 +523,7 @@
       "startHourUTC": 6,
       "durationHours": 6,
       "availableGw": 70000,
-      "backupGw": 14000,
+      "backupGw": 13000,
       "renewablePct": 0.92,
       "reliabilityPct": 0.982,
       "priorityDomains": [
@@ -536,7 +536,7 @@
       "startHourUTC": 12,
       "durationHours": 6,
       "availableGw": 68000,
-      "backupGw": 15000,
+      "backupGw": 13000,
       "renewablePct": 0.91,
       "reliabilityPct": 0.979,
       "priorityDomains": [
@@ -549,7 +549,7 @@
       "startHourUTC": 18,
       "durationHours": 6,
       "availableGw": 66000,
-      "backupGw": 16000,
+      "backupGw": 13000,
       "renewablePct": 0.9,
       "reliabilityPct": 0.978,
       "priorityDomains": [
@@ -563,7 +563,7 @@
       "startHourUTC": 0,
       "durationHours": 8,
       "availableGw": 22000,
-      "backupGw": 4500,
+      "backupGw": 2500,
       "renewablePct": 0.93,
       "reliabilityPct": 0.966,
       "priorityDomains": [
@@ -576,7 +576,7 @@
       "startHourUTC": 8,
       "durationHours": 8,
       "availableGw": 21500,
-      "backupGw": 4800,
+      "backupGw": 2500,
       "renewablePct": 0.91,
       "reliabilityPct": 0.963,
       "priorityDomains": [
@@ -589,7 +589,7 @@
       "startHourUTC": 16,
       "durationHours": 8,
       "availableGw": 21000,
-      "backupGw": 5200,
+      "backupGw": 2500,
       "renewablePct": 0.9,
       "reliabilityPct": 0.959,
       "priorityDomains": [
@@ -602,7 +602,7 @@
       "startHourUTC": 0,
       "durationHours": 8,
       "availableGw": 110000,
-      "backupGw": 36000,
+      "backupGw": 31000,
       "renewablePct": 0.99,
       "reliabilityPct": 0.994,
       "priorityDomains": [
@@ -615,7 +615,7 @@
       "startHourUTC": 8,
       "durationHours": 8,
       "availableGw": 104000,
-      "backupGw": 34000,
+      "backupGw": 30500,
       "renewablePct": 0.99,
       "reliabilityPct": 0.992,
       "priorityDomains": [
@@ -628,7 +628,7 @@
       "startHourUTC": 16,
       "durationHours": 8,
       "availableGw": 102000,
-      "backupGw": 33000,
+      "backupGw": 30500,
       "renewablePct": 0.985,
       "reliabilityPct": 0.991,
       "priorityDomains": [
