@@ -11,6 +11,7 @@ class ResourceSnapshot:
     energy_available: float
     compute_available: float
     token_supply: float
+    locked_supply: float
 
 
 @dataclass
@@ -90,13 +91,23 @@ class ResourceManager:
 
     def release_stake(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
-        account.locked -= amount
-        account.tokens += amount
+        if amount <= 0:
+            return
+        release = min(amount, account.locked)
+        if release <= 0:
+            return
+        account.locked -= release
+        account.tokens += release
 
     def slash(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
-        account.locked = max(0.0, account.locked - amount)
-        self.token_supply -= amount
+        if amount <= 0:
+            return
+        penalty = min(amount, account.locked)
+        if penalty <= 0:
+            return
+        account.locked -= penalty
+        self.token_supply = max(0.0, self.token_supply - penalty)
 
     def record_usage(self, name: str, energy: float, compute: float) -> None:
         account = self.ensure_account(name)
@@ -153,6 +164,7 @@ class ResourceManager:
             energy_available=self.energy_available,
             compute_available=self.compute_available,
             token_supply=self.token_supply,
+            locked_supply=self.locked_supply,
         )
 
     def to_serializable(self) -> Dict[str, Dict[str, float]]:
@@ -172,4 +184,8 @@ class ResourceManager:
         energy_ratio = self.energy_available / max(self._base_energy_capacity, 1.0)
         self.compute_price = 1.0 + max(0.0, 1.0 - compute_ratio)
         self.energy_price = 1.0 + max(0.0, 1.0 - energy_ratio)
+
+    @property
+    def locked_supply(self) -> float:
+        return sum(account.locked for account in self._accounts.values())
 
