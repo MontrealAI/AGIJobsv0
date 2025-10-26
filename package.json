@@ -263,6 +263,7 @@
     "demo:phase6:did": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-6-Scaling-Multi-Domain-Expansion/scripts/phase6-did-audit.ts",
     "demo:phase8:orchestrate": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-8-Universal-Value-Dominance/scripts/run-phase8-demo.ts",
     "demo:phase8:ci": "ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Phase-8-Universal-Value-Dominance/scripts/validate-phase8-config.ts",
+    "demo:phase8:test": "jest --config demo/Phase-8-Universal-Value-Dominance/jest.config.cjs",
     "demo:kardashev-ii:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/run-kardashev-demo.ts",
     "demo:kardashev-ii:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/ci-validate.ts",
     "demo:kardashev-ii-stellar:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/k2-stellar-demo/scripts/orchestrate.ts",

@@ -90,6 +90,44 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
 5. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
 6. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
 
+## Generated Artifacts
+
+After running `npm run demo:phase8:orchestrate`, the demo emits a full governance flight deck in `demo/Phase-8-Universal-Value-Dominance/output/`:
+
+- `phase8-governance-calldata.json` — batched calldata for the Phase 8 manager.
+- `phase8-safe-transaction-batch.json` — importable Safe payload with simulation metadata.
+- `phase8-telemetry-report.md` — human-readable telemetry digest with dominance metrics.
+- `phase8-mermaid-diagram.mmd` — governance topology diagram matching the UI graph.
+- `phase8-orchestration-report.txt` — console-ready runbook for operators.
+- `phase8-governance-directives.md` — guardian directives for the upcoming cycle.
+- `phase8-governance-checklist.md` — sequenced checklist with verification steps.
+- `phase8-self-improvement-plan.json` — encoded plan payload for on-chain execution.
+- `phase8-cycle-report.csv` — CSV of coverage, payouts, and cadence per domain.
+- `phase8-dominance-scorecard.json` — machine-verifiable readiness metrics.
+- `phase8-emergency-overrides.json` — prebuilt pause/resume calldata for emergencies.
+- `phase8-guardian-response-playbook.md` — scenario-based guardian drill book.
+- `phase8-ai-team-matrix.json` — coverage map of every multi-agent guild.
+- `phase8-autonomy-simulation.json` — deterministic mission simulation with checkpoint cadence.
+- `phase8-mission-timeline.md` — narrative timeline mirroring the UI’s live feed.
+- `phase8-owner-command-center.md` — owner-focused control console with emergency runbook.
+
+Every artifact is referenced throughout the playbook so non-technical operators know exactly which file to open for any action.
+
+## Mission Simulation & Owner Command Center
+
+- **Autonomy simulation** — `phase8-autonomy-simulation.json` captures the full mission timeline, checkpoint SLAs, and guardian interventions. It verifies that encoded metrics (dominance score, sentinel coverage, funded domain ratio) align with the manifest.
+- **Mission timeline markdown** — `phase8-mission-timeline.md` turns the simulation into a shareable story for stakeholders, including checkpoints, milestones, and validator approvals.
+- **Owner command center** — `phase8-owner-command-center.md` enumerates every owner lever (pause, upgrade, domain registration) with precise calldata and impact statements so the platform owner retains absolute control.
+- **UI synergy** — the dashboard reads the same manifest and renders live governance controls, ensuring the non-technical operator experiences the superintelligence exactly as encoded on-chain.
+
+## Smart Contract Control Surface
+
+- **Phase 8 manager (`global.phase8Manager`)** — executes `setGlobalParameters`, `registerDomain`, and `setSelfImprovementPlan` with guardian approvals.
+- **System pause (`global.systemPause`)** — exposes `forwardPauseCall(pauseAll())` / `forwardPauseCall(unpauseAll())` for instant fleet control.
+- **Guardian council (`global.guardianCouncil`)** — multisig that approves validator rotations, tripwire rehearsals, and milestone escalations.
+- **Universal vault (`global.universalVault`)** — treasury router powering milestone escrows described in `phase8-cycle-report.csv`.
+- **Validator registry (`global.validatorRegistry`)** — anchor for mid-flight attestations and human oversight.
+
 ## Why This Matters
 
 - **Universal Value Dominance** is not a slogan—it is a governed, composable system that lets any motivated operator deploy a sovereign AGI workforce across governance, economics, and safety boundaries.

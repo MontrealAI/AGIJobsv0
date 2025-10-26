@@ -16,6 +16,9 @@ const EMERGENCY = join(OUTPUT_DIR, "phase8-emergency-overrides.json");
 const CALLDATA_MANIFEST = join(OUTPUT_DIR, "phase8-governance-calldata.json");
 const GUARDIAN_PLAYBOOK = join(OUTPUT_DIR, "phase8-guardian-response-playbook.md");
 const AI_TEAM_MATRIX = join(OUTPUT_DIR, "phase8-ai-team-matrix.json");
+const AUTONOMY_SIMULATION = join(OUTPUT_DIR, "phase8-autonomy-simulation.json");
+const MISSION_TIMELINE = join(OUTPUT_DIR, "phase8-mission-timeline.md");
+const OWNER_COMMAND_CENTER = join(OUTPUT_DIR, "phase8-owner-command-center.md");
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const SEVERITY_WEIGHTS: Record<string, number> = { critical: 1, high: 0.75, medium: 0.5, low: 0.25 };
@@ -636,6 +639,9 @@ function main() {
     "phase8-dominance-scorecard.json",
     "phase8-emergency-overrides.json",
     "phase8-guardian-response-playbook.md",
+    "phase8-autonomy-simulation.json",
+    "phase8-mission-timeline.md",
+    "phase8-owner-command-center.md",
   ];
   for (const artifact of requiredArtifacts) {
     if (!readme.includes(artifact)) {
@@ -1028,6 +1034,68 @@ function main() {
   }
   if (!guardianPlaybook.includes("Scenario") || !guardianPlaybook.includes("Immediate actions")) {
     throw new Error("Guardian playbook must document scenarios and immediate actions.");
+  }
+
+  if (!existsSync(AUTONOMY_SIMULATION)) {
+    throw new Error("Autonomy simulation missing. Run npm run demo:phase8:orchestrate to regenerate outputs.");
+  }
+  const simulationRaw = JSON.parse(readFileSync(AUTONOMY_SIMULATION, "utf-8"));
+  if (!Array.isArray(simulationRaw?.timeline) || simulationRaw.timeline.length === 0) {
+    throw new Error("Autonomy simulation must include timeline events.");
+  }
+  for (let index = 1; index < simulationRaw.timeline.length; index += 1) {
+    const current = Number(simulationRaw.timeline[index]?.offsetMinutes ?? -1);
+    const previous = Number(simulationRaw.timeline[index - 1]?.offsetMinutes ?? -1);
+    if (!Number.isFinite(current) || current < previous) {
+      throw new Error("Autonomy simulation timeline must be sorted by offsetMinutes.");
+    }
+  }
+  if (!simulationRaw?.scoreboard) {
+    throw new Error("Autonomy simulation must include scoreboard summary.");
+  }
+  const scoreboard = simulationRaw.scoreboard as Record<string, unknown>;
+  const approx = (a: number, b: number, tolerance = 0.5) => Math.abs(a - b) <= tolerance;
+  if (!approx(Number(scoreboard.dominanceScore ?? 0), telemetryMetrics.dominanceScore, 0.25)) {
+    throw new Error("Autonomy simulation dominance score must match manifest metrics.");
+  }
+  if (!approx(Number(scoreboard.sentinelCoverageMinutes ?? 0), telemetryMetrics.guardianCoverageMinutes, 0.25)) {
+    throw new Error("Autonomy simulation sentinel coverage must match manifest metrics.");
+  }
+  if (!approx(Number(scoreboard.coverageAdequacyPercent ?? 0), telemetryMetrics.minimumCoverageAdequacy * 100, 0.5)) {
+    throw new Error("Autonomy simulation coverage adequacy mismatch.");
+  }
+  if (!approx(Number(scoreboard.fundedDomainRatioPercent ?? 0), telemetryMetrics.fundedDomainRatio, 0.5)) {
+    throw new Error("Autonomy simulation funded domain ratio mismatch.");
+  }
+  if (!Array.isArray(simulationRaw.ownerControls) || simulationRaw.ownerControls.length < 3) {
+    throw new Error("Autonomy simulation must expose ownerControls array with management levers.");
+  }
+  for (const control of simulationRaw.ownerControls) {
+    if (!control?.label || !control?.functionSignature) {
+      throw new Error("Autonomy simulation ownerControls entries require label and functionSignature.");
+    }
+  }
+
+  if (!existsSync(MISSION_TIMELINE)) {
+    throw new Error("Mission timeline markdown missing. Regenerate outputs via npm run demo:phase8:orchestrate.");
+  }
+  const missionTimeline = readFileSync(MISSION_TIMELINE, "utf-8");
+  if (!missionTimeline.includes("Phase 8 Mission Timeline") || !missionTimeline.includes("## Timeline")) {
+    throw new Error("Mission timeline must include headings for overall timeline.");
+  }
+  if (!missionTimeline.includes("## Scoreboard")) {
+    throw new Error("Mission timeline must include scoreboard section.");
+  }
+
+  if (!existsSync(OWNER_COMMAND_CENTER)) {
+    throw new Error("Owner command center guide missing. Regenerate outputs via npm run demo:phase8:orchestrate.");
+  }
+  const ownerCommand = readFileSync(OWNER_COMMAND_CENTER, "utf-8");
+  if (!ownerCommand.includes("Owner Command Center — Phase 8")) {
+    throw new Error("Owner command center must include title heading.");
+  }
+  if (!ownerCommand.includes("Emergency operations") || !ownerCommand.includes("Execution checklist")) {
+    throw new Error("Owner command center must outline emergency operations and execution checklist.");
   }
 
   if (!existsSync(AI_TEAM_MATRIX)) {

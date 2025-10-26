@@ -41,6 +41,10 @@ main {
   box-shadow: 0 10px 30px rgba(5, 4, 10, 0.4);
 }
 
+.panel.wide {
+  grid-column: 1 / -1;
+}
+
 .panel h2 {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -86,6 +90,80 @@ button {
 button:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(127, 90, 240, 0.3);
+}
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.score-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: rgba(127, 90, 240, 0.12);
+  border: 1px solid rgba(127, 90, 240, 0.35);
+}
+
+.score-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.score-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.summary-grid div {
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.summary-grid strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.owner-controls {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.owner-controls li {
+  padding: 1rem;
+  border-radius: 14px;
+  background: rgba(44, 182, 125, 0.12);
+  border: 1px solid rgba(44, 182, 125, 0.35);
+}
+
+.owner-controls code {
+  display: inline-block;
+  margin: 0.3rem 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
 }
 
 .primary {
