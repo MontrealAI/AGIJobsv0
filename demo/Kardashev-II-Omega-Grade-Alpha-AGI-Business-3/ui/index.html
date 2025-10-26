@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kardashev-II Omega-Grade α-AGI Business 3 Control Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "forest" });
+    </script>
+    <style>
+      body { background: radial-gradient(circle at top, #05060f, #03040a 40%, #010108); color: #e7f5ff; }
+      header { text-align: center; padding: 2rem 0; }
+      section.card { background: rgba(8, 17, 34, 0.85); border-radius: 1.5rem; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+      h1 span { color: #6cf; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
+      .badge { background: linear-gradient(120deg, #28ffe8, #4d7bff); color: #021024; border-radius: 999px; padding: 0.5rem 1.5rem; font-weight: 700; display: inline-block; }
+      pre { background: rgba(4, 8, 18, 0.9); padding: 1rem; border-radius: 0.75rem; overflow-x: auto; }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <h1>Kardashev-II <span>Omega-Grade</span> α-AGI Business 3</h1>
+        <p class="badge">Autonomous planetary orchestration powered by AGI Jobs v0 (v2)</p>
+      </header>
+      <section class="card">
+        <h2>Mission Flow</h2>
+        <div class="mermaid">
+          graph TD
+            A[Operator Console] -->|Seeds mission| B{Omega Orchestrator}
+            B -->|Publishes jobs| C[Agent Mesh]
+            C -->|Delegation| D[Recursive Sub-Agents]
+            D -->|Compute &amp; Energy Requests| E[Planetary Resource Vault]
+            E -->|Dynamic pricing| B
+            C -->|Results &amp; attestations| F[Validator Constellation]
+            F -->|Commit &amp; Reveal| B
+            B -->|Token Rewards| G[(AGIALPHA Ledger)]
+            B -->|Telemetry| H[Planetary Simulation]
+            H -->|World feedback| B
+        </div>
+      </section>
+      <section class="card">
+        <h2>Operator Playbook</h2>
+        <div class="grid">
+          <article>
+            <h3>1. Launch</h3>
+            <p>Run <code>python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3</code> to start the orchestration loop with defaults.</p>
+          </article>
+          <article>
+            <h3>2. Command</h3>
+            <p>Send JSON commands into <code>control</code> channel (see README) to pause, resume, or emergency stop without interrupting state integrity.</p>
+          </article>
+          <article>
+            <h3>3. Audit</h3>
+            <p>Review <code>checkpoint.json</code> and structured logs for total transparency on job graph, token flows, and resource pressure.</p>
+          </article>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Live Metrics Blueprint</h2>
+        <pre>{
+  "energy_available": "Dyson-swarm GW",
+  "compute_available": "ExaFLOPs",
+  "token_price": "AGIALPHA / unit",
+  "validator_quorum": 3
+}</pre>
+      </section>
+    </main>
+  </body>
+</html>
