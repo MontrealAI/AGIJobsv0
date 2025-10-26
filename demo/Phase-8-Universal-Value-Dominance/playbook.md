@@ -36,7 +36,14 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
    ```
    - Streams checkpoints to storage, enforces autonomy check-ins, applies budget caps, and triggers tripwires.
 
-3. **Launch Multi-Agent Mission**
+3. **Materialise Owner Command Plan**
+   ```bash
+   npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/owner-console.ts --json demo/Phase-8-Universal-Value-Dominance/output/owner-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/owner-console.mmd --markdown demo/Phase-8-Universal-Value-Dominance/output/owner-briefing.md
+   ```
+   - Validates `configs/owner-directives.json`, confirms workflow enforcement, and emits JSON, Mermaid, and Markdown artefacts for the operations binder.
+   - Double-check the CLI output for `workflowExists: yes` so you know CI is enforcing the demo before merging governance changes.
+
+4. **Launch Multi-Agent Mission**
    - Open `ui/index.html` in a browser (or `npx serve` for remote).
    - Upload `configs/job.multi-agent.json`.
    - Click **Launch Mission** — the UI hits the orchestrator REST API to instantiate planner, builder, and analyst agents plus validator oversight.
@@ -51,6 +58,7 @@ This playbook lets a non-technical operator spin up a **Universal Value Dominanc
 | Suspicious output | Hit **Tripwire Pause** | Executes `PauseGuardian.pauseAll()`; monitors terminate sessions |
 | Need new model | Select adapter with higher score | Triggers `ModelRegistry.setActiveAdapter()` |
 | Human validator wants to inspect | Press **Summon Validator** | Pushes notification via attestation module & grants read token |
+| Governance change queued | Load `owner-directives.json` in Owner Console | Verifies `demo-phase-8-universal-value-dominance` workflow + call bundles before execution |
 
 All actions are reversible in the same UI once the issue is resolved.
 
@@ -82,6 +90,7 @@ All actions are reversible in the same UI once the issue is resolved.
 - Schedule `evaluation-pipeline.ts` in CI to run nightly against sandboxed jobs.
 - Pipe results into governance proposals (`contracts/governance/`) to auto-schedule adapter upgrades with quorum thresholds.
 - Publish validator performance metrics to the dashboard leaderboard to incentivize human excellence.
+- Lock branch protection to require `demo-phase-8-universal-value-dominance / phase8-demo` before merging manifests; the owner console surfaces this automatically for non-technical operators.
 
 ---
 ## 7. Appendix — Key Links

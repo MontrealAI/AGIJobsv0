@@ -278,6 +278,7 @@ describe("Phase 8 orchestration console", () => {
         dominanceScorecard: join(tempDir, "phase8-dominance-scorecard.json"),
         emergencyOverrides: join(tempDir, "phase8-emergency-overrides.json"),
         guardianPlaybook: join(tempDir, "phase8-guardian-response-playbook.md"),
+        aiTeamMatrix: join(tempDir, "phase8-ai-team-matrix.json"),
       };
 
       expect(outputs).toEqual([
@@ -293,6 +294,7 @@ describe("Phase 8 orchestration console", () => {
         { label: "Dominance scorecard", path: artifactPaths.dominanceScorecard },
         { label: "Emergency overrides", path: artifactPaths.emergencyOverrides },
         { label: "Guardian response playbook", path: artifactPaths.guardianPlaybook },
+        { label: "AI team matrix", path: artifactPaths.aiTeamMatrix },
       ]);
 
       expect(metrics.minDomainCoverageSeconds).toBeGreaterThan(0);
@@ -416,3 +418,5 @@ describe("Phase 8 orchestration console", () => {
     expect(diagnostics.some((line) => line.includes("autonomy"))).toBe(true);
   });
 });
+
+export {};

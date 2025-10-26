@@ -24,10 +24,10 @@ header h1 {
 }
 
 main {
-  width: min(1100px, 90vw);
+  width: min(1200px, 92vw);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 1.5rem;
   padding-bottom: 3rem;
 }
@@ -45,6 +45,12 @@ main {
   margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1.4rem;
+}
+
+.panel h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  letter-spacing: 0.01em;
 }
 
 pre {
@@ -86,6 +92,39 @@ button {
 button:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(127, 90, 240, 0.3);
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: rgba(10, 12, 26, 0.6);
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(245, 247, 255, 0.75);
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .primary {
@@ -132,6 +171,75 @@ button:hover {
   gap: 0.5rem;
   max-height: 320px;
   overflow-y: auto;
+}
+
+.owner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.owner-summary p {
+  margin: 0.25rem 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.data-table thead {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: top;
+}
+
+.module-name {
+  font-weight: 600;
+}
+
+.module-address {
+  color: rgba(245, 247, 255, 0.6);
+}
+
+.ci-summary {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ci-summary ul {
+  margin: 0.5rem 0 0 1.2rem;
+  padding: 0;
+}
+
+.mermaid svg {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 720px) {
+  header {
+    padding-top: 1.5rem;
+  }
+
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .owner-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 footer {

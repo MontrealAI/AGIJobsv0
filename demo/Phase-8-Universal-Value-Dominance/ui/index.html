@@ -19,6 +19,28 @@
         <pre id="jobPreview">Awaiting job config...</pre>
       </section>
 
+      <section class="panel stats">
+        <h2>Mission Telemetry</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Dominance Score</span>
+            <span class="stat-value" id="statDominance">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Budget Cap</span>
+            <span class="stat-value" id="statBudget">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Checkpoint Cadence</span>
+            <span class="stat-value" id="statCadence">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Validator Reward</span>
+            <span class="stat-value" id="statValidator">—</span>
+          </div>
+        </div>
+      </section>
+
       <section class="panel">
         <h2>2. Governance Controls</h2>
         <div class="control-grid">
@@ -41,8 +63,45 @@
       </section>
 
       <section class="panel">
+        <h2>4. Owner Command Console</h2>
+        <input type="file" id="ownerConfig" accept="application/json" />
+        <div id="ownerSummary" class="owner-summary">
+          <p>Load <code>owner-directives.json</code> to reveal the full control surface.</p>
+        </div>
+        <div class="owner-grid">
+          <div>
+            <h3>Control Surfaces</h3>
+            <table id="ownerModules" class="data-table">
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Capabilities</th>
+                  <th>Guardrails</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div>
+            <h3>Key Parameters</h3>
+            <table id="ownerParameters" class="data-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Desired</th>
+                  <th>Call</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div id="ciSummary" class="ci-summary"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
         <h2>Live Orchestration Graph</h2>
-        <pre id="mermaid">flowchart TD\n  Owner([Owner Console]) -->|setPolicy| GovAPI[[Governance API]]\n  GovAPI -->|pause/resume| Pauser{{Global Pause}}\n  GovAPI --> Planner[[Mission Planner]]\n  Planner --> Dev[[Code Smith]]\n  Planner --> Analyst[[Market Intelligence]]\n  Dev --> Ledger[(Checkpoint Ledger)]\n  Analyst --> Ledger\n  Ledger --> Validator[[Validator Guild]]\n  Validator --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovAPI\n  Budget{{Budget Guard}} --> GovAPI</pre>
+        <div id="mermaidHost" class="mermaid"></div>
       </section>
     </main>
 
@@ -52,7 +111,7 @@
 
     <script type="module">
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
 
       const jobInput = document.getElementById("jobConfig");
       const jobPreview = document.getElementById("jobPreview");
@@ -62,8 +121,53 @@
       const timeline = document.getElementById("timeline");
       const pauseToggle = document.getElementById("pauseToggle");
       const copilotToggle = document.getElementById("copilotToggle");
+      const ownerInput = document.getElementById("ownerConfig");
+      const ownerSummary = document.getElementById("ownerSummary");
+      const ownerModules = document.querySelector("#ownerModules tbody");
+      const ownerParameters = document.querySelector("#ownerParameters tbody");
+      const ciSummary = document.getElementById("ciSummary");
+      const mermaidHost = document.getElementById("mermaidHost");
+      const statDominance = document.getElementById("statDominance");
+      const statBudget = document.getElementById("statBudget");
+      const statCadence = document.getElementById("statCadence");
+      const statValidator = document.getElementById("statValidator");
 
       let jobConfig;
+      let ownerConfig;
+
+      function renderMermaid(diagram) {
+        mermaid
+          .render(`phase8-${Date.now()}`, diagram)
+          .then(({ svg }) => {
+            mermaidHost.innerHTML = svg;
+          })
+          .catch((error) => {
+            console.error("Mermaid render failed", error);
+            mermaidHost.textContent = diagram;
+          });
+      }
+
+      renderMermaid(`flowchart LR\n  Owner([Owner Console]) --> GovAPI[[Governance API]]\n  GovAPI --> Planner[[Mission Planner]]\n  GovAPI --> Validator[[Validator Guild]]\n  Planner --> Dev[[Code Smith]]\n  Planner --> Analyst[[Market Intelligence]]\n  Dev --> Ledger[(Checkpoint Ledger)]\n  Analyst --> Ledger\n  Ledger --> Validator\n  Validator --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovAPI\n  Budget{{Budget Guard}} --> GovAPI`);
+
+      function formatUSD(value) {
+        if (!Number.isFinite(value)) return "—";
+        if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
+        if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+        return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+      }
+
+      function computeDominance(job) {
+        const stake = Number(job?.economics?.stakeMultiplier ?? 1);
+        const duration = Number(job?.maxDurationMinutes ?? 0);
+        const tripwires = job?.safety?.tripwires?.length ?? 0;
+        const validators = Number(job?.validators?.rewardBps ?? 0) / 100;
+        const cadence = Number(job?.autonomy?.checkpointIntervalMinutes ?? 0);
+        const cadenceScore = cadence > 0 ? Math.min(30, (60 / cadence) * 5) : 0;
+        const value = Math.min(40, stake * 12 + validators);
+        const safety = Math.min(20, tripwires * 4);
+        const durationScore = Math.min(10, duration / 48);
+        return Math.min(100, value + safety + durationScore + cadenceScore);
+      }
 
       jobInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
@@ -71,10 +175,19 @@
         const text = await file.text();
         jobConfig = JSON.parse(text);
         jobPreview.textContent = JSON.stringify(jobConfig, null, 2);
+        const dominance = computeDominance(jobConfig);
+        statDominance.textContent = `${dominance.toFixed(1)} / 100`;
+        statBudget.textContent = formatUSD(Number(jobConfig?.economics?.maxBudgetUSD ?? 0));
+        const cadence = Number(jobConfig?.autonomy?.checkpointIntervalMinutes ?? 0);
+        statCadence.textContent = cadence > 0 ? `${cadence} min` : "—";
+        const validatorReward = Number(jobConfig?.validators?.rewardBps ?? 0) / 100;
+        statValidator.textContent = validatorReward > 0 ? `${validatorReward.toFixed(2)}%` : "—";
+        pushTimeline("Mission blueprint ingested. Telemetry refreshed.");
       });
 
       budgetCap.addEventListener("input", () => {
         budgetCapValue.textContent = `$${Number(budgetCap.value).toLocaleString()}`;
+        pushTimeline(`Budget cap adjusted to ${budgetCapValue.textContent}.`);
       });
 
       function pushTimeline(message, tone = "info") {
@@ -94,6 +207,9 @@
         setTimeout(() => pushTimeline("Code Smith: governance extensions deployed, milestone escrow funded."), 2500);
         setTimeout(() => pushTimeline("Validator Guild: milestone 1 approved, partial payout released."), 4000);
         setTimeout(() => pushTimeline("Safety Tripwire: all clear. Budget usage at 21%."), 5500);
+        if (ownerConfig) {
+          setTimeout(() => pushTimeline("Owner console: autonomy guards verified, CI gate green."), 6500);
+        }
       });
 
       pauseToggle.addEventListener("click", () => {
@@ -115,6 +231,72 @@
         copilotToggle.classList.toggle("ghost");
         copilotToggle.classList.toggle("primary-outline");
         pushTimeline(required ? "Human co-pilot optional." : "Human co-pilot requirement enforced.");
+      });
+
+      ownerInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        ownerConfig = JSON.parse(text);
+        ownerSummary.innerHTML = `
+          <p><strong>Owner:</strong> ${ownerConfig.owner}</p>
+          <p><strong>Pause Guardian:</strong> ${ownerConfig.pauseGuardian}</p>
+          <p><strong>Governance Council Seats:</strong> ${ownerConfig.governanceCouncil?.length ?? 0}</p>
+        `;
+
+        ownerModules.innerHTML = "";
+        for (const module of ownerConfig.controlSurfaces ?? []) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>
+              <div class="module-name">${module.name}</div>
+              <small class="module-address">${module.address}</small>
+            </td>
+            <td>${(module.capabilities ?? []).join(" · ")}</td>
+            <td>${(module.guardrails ?? []).join(" · ")}</td>
+          `;
+          ownerModules.appendChild(row);
+        }
+
+        ownerParameters.innerHTML = "";
+        for (const parameter of ownerConfig.parameters ?? []) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${parameter.name} <small>${parameter.unit ?? ""}</small></td>
+            <td>${parameter.desired}</td>
+            <td>${parameter.call}</td>
+          `;
+          ownerParameters.appendChild(row);
+        }
+
+        const checks = (ownerConfig.ci?.requireStatusChecks ?? []).map((check) => `<li>${check}</li>`).join("");
+        ciSummary.innerHTML = `
+          <p><strong>CI Workflow:</strong> ${ownerConfig.ci?.workflow ?? "—"}</p>
+          <ul>${checks}</ul>
+        `;
+
+        const diagram = [
+          "flowchart LR",
+          "  subgraph Owner[Owner Command Surface]",
+          "    Owner([Owner Multisig])",
+          "    Guardian{{Pause Guardian}}",
+          "  end",
+          "  subgraph Governance",
+          "    Manager[[Phase 8 Manager]]",
+          "    Validators[[Validator Registry]]",
+          "    Upgrades[[Upgrade Coordinator]]",
+          "  end",
+          "  Owner --> Manager",
+          "  Owner --> Upgrades",
+          "  Guardian --> Manager",
+          "  Guardian --> Validators",
+        ];
+        for (const module of ownerConfig.controlSurfaces ?? []) {
+          const nodeId = module.key.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20) || "Module";
+          diagram.push(`  Manager --> ${nodeId}[${module.name}]`);
+        }
+        renderMermaid(diagram.join("\n"));
+        pushTimeline("Owner directives loaded. Full command surface activated.", "info");
       });
     </script>
   </body>

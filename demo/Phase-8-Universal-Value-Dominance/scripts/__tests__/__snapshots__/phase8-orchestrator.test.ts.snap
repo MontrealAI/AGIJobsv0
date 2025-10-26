@@ -19,6 +19,12 @@ Generated: <timestamp>
 - Minimum per-domain capital coverage: $720.00B / yr
 - Self-improvement cadence: every 2.00 hours
 - Last self-improvement execution: 2023-11-14T22:20:00.000Z
+- Autonomous session envelope: 6.50 hours · 480,000 token context · checkpoints every 20 minutes (3 checkpoints)
+- Multi-agent teams: 3 orchestrators covering 100.0% of dominions
+- Safety lattice: 2 automated tripwires · 2 validator consoles
+- Economic incentives: 3 stake tiers · 3 milestone templates
+- Model adapters: 2 adapters · evaluation cadence 12.0h · 2 safety tests
+- Governance readiness: 2 proposal templates · 2 human policy controls
 
 ## Diagnostics
 - All guardrails nominal across monitored domains.
@@ -35,6 +41,51 @@ Generated: <timestamp>
 - Manifest URI: ipfs://agi-jobs/phase8/manifest.json
 - Manifest Hash: 0x3c0842c55548b2d2972b57504c6c582b7b4c8cd02b5113b122d2e825282a4b49
 - Max drawdown guard: 3200 bps
+
+## Autonomy & Multi-Agent Execution
+- Session runtime: 6.5h · context 480,000 tokens · checkpoint cadence 20 minutes
+- Memory strategy: Sentinel-notarised ledger streaming to IPFS + Redshift for post-hoc human review.
+- Persistent execution: cosmos-linux-amd64 @ registry.agi.jobs/phase8/autonomy-kernel:2025.10 (32 vCPU/256 GiB/4 TiB NVMe)
+  • Checkpoint Guardian sync: every 20 minutes — Emit deterministic digest for guardian console confirmation.
+  • Checkpoint Telemetry rollup: every 40 minutes — Commit resilience, value flow, and sentinel deltas to observability ledger.
+  • Checkpoint Budget compliance: every 60 minutes — Verify budget and autonomy guardrails before continuing execution.
+- Team Macro Coordination Nexus: Continuously balance planetary finance and climate dominions while pre-authorising guardian overrides. · cadence 30 minutes · specialists 2 · collaboration guardian-mpc-channel
+- Team Sentinel Refinery Guild: Refine anomaly detectors and route tripwire alerts with human-readable remediation plans. · cadence 15 minutes · specialists 2 · collaboration sentinel-lattice-bus
+- Team Guardian Operations Relay: Stage Safe payloads, milestone payouts, and emergency overrides for human governors in real time. · cadence 10 minutes · specialists 1 · collaboration safe-transaction-stream
+
+## Oversight & Safety
+- Autonomy threshold 240 minutes · check-ins 15 minutes · trace sampling 35%
+- Logging sinks: Guardian Console, IPFS Audit Log
+  • Tripwire Toxic output filter: llm-output:disallowed-content → pause-domain + notify guardians (critical)
+  • Tripwire Budget overspend: capital-stream > 105% monthly budget → halt stream + require human approval (high)
+- Validator consoles: Guardian Console (https://guardian.agi.jobs/phase8), Sentinel Flight Deck (https://sentinel.agi.jobs/flight-deck)
+
+## Economic Incentives
+- Stake tier Express: duration 1h · minimum stake 1000000000000000000000 · slash ×1.2
+- Stake tier Multi-hour: duration 6h · minimum stake 4000000000000000000000 · slash ×1.5
+- Stake tier Full-cycle: duration 24h · minimum stake 9000000000000000000000 · slash ×1.8
+  • Milestone Alpha Delivery: Guardian-verified prototype shipped to production sandbox. (2500 bps)
+  • Milestone Guardian Review: Validators approve telemetry, resilience, and ethics checks. (3000 bps)
+  • Milestone Autonomy Hardening: Sentinel tripwire rehearsal and human override drill completed. (4500 bps)
+- Budget caps: compute $4.50M · API $1.75M · token $1.25M
+- Reward curves: long task bonus 650 bps · validator premium 420 bps
+
+## Model Integration Layer
+- Evaluation cadence: every 12h · benchmarks phase8-governance-suite, sentinel-tripwire-pack, capital-rebalancing
+  • Adapter Sovereign-8k (AGI Jobs Frontier) — multimodal-reasoning · 512,000 tokens · $0.0065/1k tokens · strengths multi-domain-coordination, safe-autonomy
+  • Adapter Atlas-Coder (Atlas Systems) — code-generation · 320,000 tokens · $0.0042/1k tokens · strengths contract-audits, validator-tooling
+- Dynamic routing: cost-aware-dominance-optimizer · metrics latency-ms, context-utilisation, dominance-delta
+  • Safety test Alignment stress harness: every 6h
+  • Safety test Red-team jailbreak battery: every 4h
+
+## Governance & Human Collaboration
+- Governance interface: https://governance.agi.jobs/phase8
+- Validator tools: Guardian Console (https://guardian.agi.jobs/phase8), Safe Transaction Builder (https://safe.global/tx-builder)
+  • Proposal template Phase 8 parameter refresh: ETA 8h — Updates treasury, sentinel, and autonomy bounds for the next guardian cycle.
+  • Proposal template AI team onboarding: ETA 12h — Adds a new specialist guild for emergent economic domains with predefined guardrails.
+- Human-in-the-loop controls:
+  • Medical domain sign-off: requirement Licensed medical validator must co-sign autonomy above 2 hours for health-sovereign domain. — enforcement Guardian console blocks payout until human signature recorded.
+  • Emergency override rehearsal: requirement Guardian council must rehearse full pause/unpause within last 14 days before enabling >5h autonomy. — enforcement Autonomy guard refuses escalation without rehearsal certificate.
 
 ## Domains
 | Domain | Autonomy (bps) | Resilience | Heartbeat (s) | TVL cap | Monthly value | Capital coverage | Sentinels | Capital streams |
