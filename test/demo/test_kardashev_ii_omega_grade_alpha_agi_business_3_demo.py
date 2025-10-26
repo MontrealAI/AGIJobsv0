@@ -336,6 +336,38 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(operator_after, operator_before)
             await orchestrator.shutdown()
 
+    async def test_status_snapshot_stream_written(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            status = Path(tmp) / "status.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.05),
+                validator_reveal_window=timedelta(seconds=0.05),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=20,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=0.2,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                status_output_path=status,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.6)
+            await orchestrator.shutdown()
+            self.assertTrue(status.exists())
+            lines = [json.loads(line) for line in status.read_text().splitlines() if line.strip()]
+            self.assertTrue(lines)
+            latest = lines[-1]
+            self.assertEqual(latest["mission"], config.mission_name)
+            self.assertIn("jobs", latest)
+            self.assertIn("resources", latest)
+
     async def test_simulation_updates_resources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             checkpoint = Path(tmp) / "checkpoint.json"

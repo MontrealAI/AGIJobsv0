@@ -49,6 +49,7 @@ flowchart LR
    - `--cycles 0` keeps the orchestrator running indefinitely (perfect for multi-day missions).
    - The config file contains every knob (staking ratios, validator set, worker profiles, simulation scaling) – edit JSON values and rerun to update.
    - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
+   - Append `--status-output logs/omega-status.jsonl` to stream machine-readable mission snapshots for dashboards or external automations.
 
 3. **Live control** – stream JSON commands into `control-channel.jsonl`:
 
@@ -85,6 +86,7 @@ flowchart LR
 - Supply `--audit-log audit.jsonl` (or set `"audit_log_path"` in JSON config) to activate the append-only ledger.
 - Each message bus publication is canonicalised, hashed (BLAKE3 if available, BLAKE2b-256 otherwise), and written as JSONL with timestamp, topic, publisher, and digest.
 - The ledger is safe for hot-rotation; records are flushed immediately for non-technical operators tailing the file.
+- Pair with `--status-output` to obtain high-level mission snapshots (job counts, resource balances, governance settings) that external BI tools can ingest in real time.
 
 ## 🧪 CI & Validation
 
