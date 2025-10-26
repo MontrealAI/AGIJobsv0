@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top left, #1f1b2e, #05040a 65%);
+  background: radial-gradient(circle at top left, #1f1b2e, #05040a 70%);
   color: #f5f7ff;
 }
 
@@ -15,42 +15,169 @@ body {
 
 header {
   text-align: center;
-  padding: 2rem 1rem 0.5rem;
+  padding: 2.5rem 1rem 0.5rem;
 }
 
 header h1 {
-  font-size: clamp(2.5rem, 5vw, 3.5rem);
-  margin-bottom: 0.5rem;
+  font-size: clamp(2.6rem, 5vw, 3.75rem);
+  margin-bottom: 0.65rem;
+  letter-spacing: 0.04em;
+}
+
+header p {
+  margin: 0 auto;
+  max-width: 780px;
+  line-height: 1.6;
+  opacity: 0.9;
 }
 
 main {
-  width: min(1100px, 90vw);
+  width: min(1200px, 92vw);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 1.5rem;
-  padding-bottom: 3rem;
+  padding-bottom: 3.5rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 
 .panel {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 1.5rem;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(5, 4, 10, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 1.75rem;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 16px 38px rgba(5, 4, 10, 0.45);
 }
 
 .panel h2 {
   margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1.4rem;
+  margin-bottom: 1.1rem;
+  font-size: 1.45rem;
+  letter-spacing: 0.02em;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.75rem;
+  align-items: center;
+}
+
+.hero-copy p {
+  line-height: 1.65;
+}
+
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.hero-chips code {
+  background: rgba(127, 90, 240, 0.16);
+  color: #e1deff;
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba(127, 90, 240, 0.25);
+}
+
+.hero-footnote {
+  font-size: 0.9rem;
+  opacity: 0.75;
+  margin-top: 0.5rem;
+}
+
+.hero-scorecard {
+  background: linear-gradient(160deg, rgba(127, 90, 240, 0.25), rgba(44, 182, 125, 0.2));
+  border-radius: 20px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(127, 90, 240, 0.35);
+  box-shadow: inset 0 0 40px rgba(127, 90, 240, 0.25);
+}
+
+.hero-score {
+  display: block;
+  font-size: clamp(3.2rem, 6vw, 4.8rem);
+  font-weight: 700;
+}
+
+.hero-score-label {
+  display: block;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+}
+
+.hero-score-note {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 1.2rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 12px rgba(127, 90, 240, 0.08);
+}
+
+.metric-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  opacity: 0.75;
+}
+
+.metric-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.metric-bar--large {
+  height: 12px;
+}
+
+.metric-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #2cb67d, #7f5af0);
+  border-radius: 999px;
+  width: 0;
+  transition: width 0.8s ease;
 }
 
 pre {
   background: rgba(0, 0, 0, 0.35);
-  padding: 1rem;
-  border-radius: 12px;
+  padding: 1.1rem;
+  border-radius: 14px;
   font-size: 0.9rem;
   max-height: 320px;
   overflow: auto;
@@ -76,7 +203,7 @@ input[type="range"] {
 }
 
 button {
-  padding: 0.65rem 1.4rem;
+  padding: 0.7rem 1.6rem;
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -85,7 +212,7 @@ button {
 
 button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(127, 90, 240, 0.3);
+  box-shadow: 0 12px 26px rgba(127, 90, 240, 0.28);
 }
 
 .primary {
@@ -110,9 +237,15 @@ button:hover {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.panel-note {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-top: 1rem;
+}
+
 .timeline-card {
   margin-bottom: 0.75rem;
-  padding: 0.85rem 1rem;
+  padding: 0.9rem 1rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.08);
   border-left: 4px solid #7f5af0;
@@ -134,8 +267,89 @@ button:hover {
   overflow-y: auto;
 }
 
+.bullet-list {
+  list-style: none;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bullet-list li::before {
+  content: "•";
+  color: #7f5af0;
+  margin-right: 0.6rem;
+}
+
+.link-grid {
+  margin-top: 1.3rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+
+.link-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #f5f7ff;
+  font-weight: 600;
+  border: 1px solid rgba(127, 90, 240, 0.2);
+  background: rgba(127, 90, 240, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.link-card:hover {
+  transform: translateY(-2px);
+}
+
+.callout {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  padding: 1rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+.callout ol {
+  padding-left: 1.4rem;
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+
+details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+code {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+}
+
 footer {
   text-align: center;
-  padding: 1rem;
+  padding: 1.5rem 1rem 2rem;
   opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 880px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-scorecard {
+    order: -1;
+  }
 }

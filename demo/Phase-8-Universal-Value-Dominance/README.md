@@ -22,15 +22,16 @@ Phase-8-Universal-Value-Dominance/
 ├── scripts/
 │   ├── bootstrap-demo.ts         # End-to-end setup script (node + tsx)
 │   ├── monitors.ts               # Safety tripwires, logging fan-out, budget watchdogs
-│   └── evaluation-pipeline.ts    # Continuous evaluation harness for new models
+│   ├── evaluation-pipeline.ts    # Continuous evaluation harness for new models
+│   └── owner-control-console.ts  # Interactive owner console that emits multisig-ready calldata
 ├── ui/
-│   ├── index.html                # Zero-install dashboard for orchestrating & monitoring the demo
+│   ├── index.html                # Zero-install dashboard with dominance telemetry & control toggles
 │   └── styles.css
 └── assets/
     └── orchestration-flow.mmd    # Mermaid diagram rendered in docs/UI
 ```
 
-## How It Works (Executive Summary)
+## Mermaid Systems Map (Executive Summary)
 
 ```mermaid
 %%{init: {"theme": "dark", "logLevel": "debug", "flowchart": {"curve": "monotoneX"}} }%%
@@ -85,10 +86,48 @@ This graph is mirrored in the UI dashboard, giving non-technical operators a tac
 
 1. **Install deps:** `npm install`
 2. **Copy environment template:** `cp .env.example .env` and fill RPC URLs + private keys.
-3. **Run bootstrapper:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts`
-4. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
-5. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
-6. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
+3. **Bootstrap governance + registry:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts`
+4. **Emit owner command batch:** `npm run demo:phase8:owner-console` (writes `output/phase8-owner-batch.json` for your multisig/Safe)
+5. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
+6. **Activate mission:** Load `configs/job.multi-agent.json`, adjust toggles, and press **Launch Mission**.
+7. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
+
+## Owner Control Console
+
+`npm run demo:phase8:owner-console` gives the contract owner (or a delegated Safe) a guided wizard that:
+
+- Summarises the live dominance index, monthly value flow, sentinel coverage, and resilience metrics extracted from the manifest.
+- Collects updated parameters for treasury routing, guardian windows, drawdown caps, and self-improvement cadence.
+- Synthesises calldata for `setGlobalParameters`, `setSelfImprovementPlan`, and `forwardPauseCall` so operators can pause/resume instantly.
+- Outputs `output/phase8-owner-batch.json` — a deterministic sequence of transactions ready for Safe upload, Governor proposals, or direct owner execution.
+
+Each action writes a fully described payload and hashes the source manifest so auditors can confirm provenance before execution.
+
+> **Tip:** add `--auto` to the command (e.g. `npm run demo:phase8:owner-console -- --auto`) to regenerate the batch with manifest defaults — ideal for CI and quick rehearsals.
+
+## Smart Contract Surface
+
+- **Core module:** [`Phase8UniversalValueManager.sol`](../../contracts/v2/Phase8UniversalValueManager.sol) keeps the owner in charge of domains, sentinels, capital streams, and pause forwarding. Every governance action in this demo encodes calldata against that ABI.
+- **Owner levers:** the generated owner batch touches `setGlobalParameters`, `setSelfImprovementPlan`, and `forwardPauseCall`, demonstrating that the owner can rewrite parameters and halt the system instantly.
+- **Validator alignment:** validator guild, guardian council, and pause guardian addresses are surfaced in both the UI and the CLI so human operators can validate custody before signing.
+- **Upgrade readiness:** the manifest + owner console pattern keeps all parameters mutable without touching Solidity — deployers just execute the encoded transactions.
+
+## Exported Artifacts
+
+- `phase8-governance-calldata.json` — deterministic calldata manifest used for Safe/Governor execution.
+- `phase8-safe-transaction-batch.json` — pre-built Safe batch mirroring the calldata manifest.
+- `phase8-telemetry-report.md` — human-readable telemetry overview (value flow, coverage, governance).
+- `phase8-mermaid-diagram.mmd` — canonical mermaid blueprint rendered in the UI and docs.
+- `phase8-orchestration-report.txt` — operator runbook summarising orchestration output.
+- `phase8-governance-directives.md` — guardian + validator directives for the current cycle.
+- `phase8-governance-checklist.md` — execution checklist for validators/guardians.
+- `phase8-self-improvement-plan.json` — machine-readable self-improvement kernel payload.
+- `phase8-cycle-report.csv` — CSV export of economic and guardian metrics per domain.
+- `phase8-dominance-scorecard.json` — quantitative dominance metrics (score, coverage, funding).
+- `phase8-emergency-overrides.json` — guardian escalation + emergency override bundle.
+- `phase8-guardian-response-playbook.md` — guardian protocol catalogue and severity mapping.
+- `phase8-ai-team-matrix.json` — declarative roster of specialist agents per domain.
+- `phase8-owner-batch.json` — multisig-ready owner command batch generated via the owner console.
 
 ## Why This Matters
 

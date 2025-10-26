@@ -9,10 +9,110 @@
   <body>
     <header>
       <h1>Phase 8 — Universal Value Dominance</h1>
-      <p>Command the most capable AI workforce ever assembled. No Solidity. No DevOps. Just outcomes.</p>
+      <p>
+        Command a sovereign swarm of AGI workers, validators, and guardians without writing a single line of Solidity.
+        The console below turns the entire Phase 8 rollout into a set of intuitive toggles.
+      </p>
     </header>
 
     <main>
+      <section class="panel hero full-width">
+        <div class="hero-copy">
+          <h2>Universal Value Command Hub</h2>
+          <p>
+            Launch multi-hour autonomous missions, reprogram governance in seconds, and prove to stakeholders that every safety
+            tripwire is live. These controls are safe for non-technical operators while retaining full owner authority.
+          </p>
+          <div class="hero-chips">
+            <code>npm run demo:phase8:owner-console</code>
+            <code>npm run demo:phase8:orchestrate</code>
+            <code>npm run demo:phase8:ci</code>
+          </div>
+          <p class="hero-footnote">
+            Use the command chips in order. They bootstrap governance, regenerate calldata, and verify readiness end-to-end.
+          </p>
+        </div>
+        <div class="hero-scorecard">
+          <span class="hero-score" id="dominanceScore">--</span>
+          <span class="hero-score-label">Dominance Index</span>
+          <div class="metric-bar metric-bar--large">
+            <div class="metric-bar-fill" id="dominanceBar"></div>
+          </div>
+          <p class="hero-score-note" id="dominanceNarrative">
+            Awaiting manifest metrics… run the bootstrapper to pull in live intelligence.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel metrics full-width">
+        <h2>Autonomy &amp; Finance Telemetry</h2>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <span class="metric-value" id="monthlyValue">—</span>
+            <span class="metric-label">Monthly value under orchestration</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="sentinelCoverage">—</span>
+            <span class="metric-label">Sentinel coverage lattice</span>
+            <div class="metric-bar">
+              <div class="metric-bar-fill" id="coverageBar"></div>
+            </div>
+            <small id="coverageRatio">—</small>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="guardianWindow">—</span>
+            <span class="metric-label">Guardian review window</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="autonomyCap">—</span>
+            <span class="metric-label">Autonomy guard cap</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="selfImprovementCadence">—</span>
+            <span class="metric-label">Self-improvement cadence</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="missionBudget">—</span>
+            <span class="metric-label">Mission budget ceiling</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="validatorQuorum">—</span>
+            <span class="metric-label">Validator quorum</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-value" id="managerAddress">—</span>
+            <span class="metric-label">Phase 8 manager contract</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel full-width">
+        <h2>Mission Intelligence</h2>
+        <p id="manifestSummary">
+          Load the manifest to populate operational intelligence: domains, sentinel guilds, capital streams, and self-improvement
+          plans.
+        </p>
+        <ul class="bullet-list">
+          <li>
+            <strong>Owner control proxy:</strong> <span id="ownerAddress">—</span>
+          </li>
+          <li>
+            <strong>Pause guardian:</strong> <span id="pauseGuardian">—</span>
+          </li>
+          <li>
+            <strong>Validator guild multisig:</strong> <span id="validatorGuild">—</span>
+          </li>
+        </ul>
+        <div class="link-grid">
+          <a class="link-card" href="../output/phase8-governance-directives.md" target="_blank" rel="noopener">Governance directives</a>
+          <a class="link-card" href="../output/phase8-governance-checklist.md" target="_blank" rel="noopener">Validator checklist</a>
+          <a class="link-card" href="../output/phase8-orchestration-report.txt" target="_blank" rel="noopener">Orchestration report</a>
+          <a class="link-card" href="../output/phase8-dominance-scorecard.json" target="_blank" rel="noopener">Dominance scorecard</a>
+          <a class="link-card" href="../output/phase8-self-improvement-payload.json" target="_blank" rel="noopener">Self-improvement payload</a>
+          <a class="link-card" href="../output/phase8-owner-batch.json" target="_blank" rel="noopener">Owner command batch</a>
+        </div>
+      </section>
+
       <section class="panel">
         <h2>1. Load Mission Blueprint</h2>
         <input type="file" id="jobConfig" accept="application/json" />
@@ -23,7 +123,7 @@
         <h2>2. Governance Controls</h2>
         <div class="control-grid">
           <label>Budget Cap (USD)</label>
-          <input type="range" id="budgetCap" min="1000" max="10000" step="500" value="7500" />
+          <input type="range" id="budgetCap" min="1000" max="25000" step="500" value="7500" />
           <output id="budgetCapValue">$7,500</output>
 
           <label>Global Pause</label>
@@ -32,22 +132,54 @@
           <label>Human Co-pilot</label>
           <button id="copilotToggle" class="ghost">Require Co-pilot</button>
         </div>
+        <p class="panel-note">
+          Adjusting these sliders mirrors owner transactions generated by <code>npm run demo:phase8:owner-console</code>. Every
+          toggle maps to auditable calldata.
+        </p>
       </section>
 
       <section class="panel">
-        <h2>3. Launch & Monitor</h2>
+        <h2>3. Launch &amp; Monitor</h2>
         <button id="launch" class="primary">Launch Mission</button>
         <div id="timeline"></div>
       </section>
 
-      <section class="panel">
+      <section class="panel full-width">
         <h2>Live Orchestration Graph</h2>
-        <pre id="mermaid">flowchart TD\n  Owner([Owner Console]) -->|setPolicy| GovAPI[[Governance API]]\n  GovAPI -->|pause/resume| Pauser{{Global Pause}}\n  GovAPI --> Planner[[Mission Planner]]\n  Planner --> Dev[[Code Smith]]\n  Planner --> Analyst[[Market Intelligence]]\n  Dev --> Ledger[(Checkpoint Ledger)]\n  Analyst --> Ledger\n  Ledger --> Validator[[Validator Guild]]\n  Validator --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovAPI\n  Budget{{Budget Guard}} --> GovAPI</pre>
+        <pre id="mermaid">flowchart TD\n  OwnerConsole([Owner Command Console]) -->|setPolicy| GovernanceAPI[[Governance API]]\n  GovernanceAPI -->|pause/resume| GlobalPause{{System Pause}}\n  GovernanceAPI --> PhasePlanner[[Mission Planner]]\n  PhasePlanner --> DevSmith[[Code Smith]]\n  PhasePlanner --> MarketAnalyst[[Market Intelligence]]\n  DevSmith --> Ledger[(Checkpoint Ledger)]\n  MarketAnalyst --> Ledger\n  Ledger --> ValidatorGuild[[Validator Guild]]\n  ValidatorGuild --> Escrow[(Milestone Escrow)]\n  Tripwire{{Safety Tripwires}} --> GovernanceAPI\n  BudgetGuard{{Budget Guard}} --> GovernanceAPI\n  EvalEngine[[Model Evaluation Pipeline]] --> PhasePlanner\n  SelfImprove[[Self-Improvement Plan]] --> EvalEngine\n  Guardians{{Guardian Council}} --> GovernanceAPI</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Self-Improvement Programs</h2>
+        <details open>
+          <summary>Automation playbooks</summary>
+          <ul class="bullet-list" id="playbookList"></ul>
+        </details>
+        <details open>
+          <summary>Tripwire lattice</summary>
+          <ul class="bullet-list" id="tripwireList"></ul>
+        </details>
+      </section>
+
+      <section class="panel">
+        <h2>Validator / Guardian Console</h2>
+        <p>
+          Validators can join mid-flight to inspect logs, approve milestones, or pause execution. Use the generated calldata file
+          to broadcast via your preferred multisig or owner wallet.
+        </p>
+        <div class="callout">
+          <p>Recommended flow:</p>
+          <ol>
+            <li>Run <code>npm run demo:phase8:owner-console</code> to generate the owner batch.</li>
+            <li>Load <code>output/phase8-owner-batch.json</code> into your Safe, Governor, or owner proxy.</li>
+            <li>Validators review checkpoints inside <code>output/phase8-governance-directives.md</code>.</li>
+          </ol>
+        </div>
       </section>
     </main>
 
     <footer>
-      <small>Powered by AGI Jobs v0/v2 — command swarms, enforce governance, unlock universal value.</small>
+      <small>Powered by AGI Jobs v0/v2 — orchestrate universal value with auditable governance.</small>
     </footer>
 
     <script type="module">
@@ -62,8 +194,147 @@
       const timeline = document.getElementById("timeline");
       const pauseToggle = document.getElementById("pauseToggle");
       const copilotToggle = document.getElementById("copilotToggle");
+      const dominanceScore = document.getElementById("dominanceScore");
+      const dominanceBar = document.getElementById("dominanceBar");
+      const dominanceNarrative = document.getElementById("dominanceNarrative");
+      const monthlyValue = document.getElementById("monthlyValue");
+      const sentinelCoverage = document.getElementById("sentinelCoverage");
+      const coverageRatio = document.getElementById("coverageRatio");
+      const coverageBar = document.getElementById("coverageBar");
+      const guardianWindow = document.getElementById("guardianWindow");
+      const autonomyCap = document.getElementById("autonomyCap");
+      const selfImprovementCadence = document.getElementById("selfImprovementCadence");
+      const missionBudget = document.getElementById("missionBudget");
+      const validatorQuorum = document.getElementById("validatorQuorum");
+      const managerAddress = document.getElementById("managerAddress");
+      const ownerAddress = document.getElementById("ownerAddress");
+      const pauseGuardianLabel = document.getElementById("pauseGuardian");
+      const validatorGuildLabel = document.getElementById("validatorGuild");
+      const tripwireList = document.getElementById("tripwireList");
+      const playbookList = document.getElementById("playbookList");
+      const manifestSummary = document.getElementById("manifestSummary");
+
+      const usdFormatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: "compact",
+        maximumFractionDigits: 2,
+      });
+
+      const percentFormatter = new Intl.NumberFormat("en-US", {
+        style: "percent",
+        maximumFractionDigits: 1,
+      });
 
       let jobConfig;
+      let manifest;
+
+      function shorten(address) {
+        if (typeof address !== "string" || !address.startsWith("0x")) return "—";
+        return `${address.slice(0, 6)}…${address.slice(-4)}`;
+      }
+
+      function formatSeconds(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+        if (seconds < 120) return `${Math.round(seconds)}s`;
+        if (seconds < 7200) return `${Math.round(seconds / 60)} min`;
+        return `${(seconds / 3600).toFixed(1)} h`;
+      }
+
+      function formatCadence(seconds) {
+        if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+        const hours = seconds / 3600;
+        if (hours < 1) {
+          return `${Math.round(seconds / 60)} min cadence`;
+        }
+        if (hours < 24) {
+          return `${hours.toFixed(1)} h cadence`;
+        }
+        return `${(hours / 24).toFixed(1)} day cadence`;
+      }
+
+      function computeDominanceScore(stats) {
+        const valueScore = stats.totalMonthlyUSD <= 0 ? 0 : Math.min(1, stats.totalMonthlyUSD / 500_000_000_000);
+        const resilienceScore = Math.max(0, Math.min(1, stats.averageResilience));
+        const coverageScore = Math.min(1, (stats.coverageRatio + stats.coverageStrength) / 2);
+        const autonomyScore =
+          stats.autonomyGuardCapBps > 0 ? Math.min(1, stats.maxAutonomyBps / stats.autonomyGuardCapBps) : 1;
+        const cadenceScore =
+          stats.cadenceSeconds > 0 ? Math.max(0, 1 - Math.min(1, stats.cadenceSeconds / (24 * 60 * 60))) : 0.5;
+        const weighted = 0.3 * valueScore + 0.25 * resilienceScore + 0.2 * coverageScore + 0.15 * autonomyScore + 0.1 * cadenceScore;
+        return Math.min(100, Math.round(weighted * 1000) / 10);
+      }
+
+      function renderList(listElement, values) {
+        listElement.innerHTML = "";
+        values.forEach((value) => {
+          const item = document.createElement("li");
+          item.textContent = value;
+          listElement.appendChild(item);
+        });
+        if (values.length === 0) {
+          const empty = document.createElement("li");
+          empty.textContent = "No entries provided in config.";
+          listElement.appendChild(empty);
+        }
+      }
+
+      function updateManifestInsights(data) {
+        manifest = data;
+        const domains = Array.isArray(data?.domains) ? data.domains : [];
+        const sentinels = Array.isArray(data?.sentinels) ? data.sentinels : [];
+        const totalMonthlyUSD = domains.reduce((acc, domain) => acc + Number(domain?.valueFlowMonthlyUSD ?? 0), 0);
+        const averageResilience =
+          domains.length === 0 ? 0 : domains.reduce((acc, domain) => acc + Number(domain?.resilienceIndex ?? 0), 0) / domains.length;
+        const totalCoverage = sentinels.reduce((acc, sentinel) => acc + Number(sentinel?.coverageSeconds ?? 0), 0);
+        const guardianReviewWindowSeconds = Number(data?.global?.guardianReviewWindow ?? 0);
+        const coverageRatioValue = guardianReviewWindowSeconds > 0 ? totalCoverage / guardianReviewWindowSeconds : 0;
+        const averageDomainCoverageSeconds = domains.length === 0 ? 0 : totalCoverage / domains.length;
+        const maxAutonomyBps = domains.reduce((max, domain) => Math.max(max, Number(domain?.autonomyLevelBps ?? 0)), 0);
+        const autonomyGuardCapBps = Number(data?.selfImprovement?.autonomyGuards?.maxAutonomyBps ?? 0);
+        const cadenceSeconds = Number(data?.selfImprovement?.plan?.cadenceSeconds ?? 0);
+
+        const dominance = computeDominanceScore({
+          totalMonthlyUSD,
+          averageResilience,
+          coverageRatio: Math.min(1, coverageRatioValue),
+          coverageStrength:
+            guardianReviewWindowSeconds > 0
+              ? Math.min(1, averageDomainCoverageSeconds / guardianReviewWindowSeconds)
+              : 0,
+          averageDomainCoverageSeconds,
+          guardianReviewWindowSeconds,
+          maxAutonomyBps,
+          autonomyGuardCapBps: Math.max(autonomyGuardCapBps, 1),
+          cadenceSeconds,
+        });
+
+        dominanceScore.textContent = `${dominance.toFixed(1)}`;
+        dominanceBar.style.width = `${dominance}%`;
+        dominanceNarrative.textContent =
+          dominance > 85
+            ? "Dominance thresholds achieved — treasury, autonomy guards, and guardian windows are balanced."
+            : "Dominance index below target. Tune autonomy guards or expand sentinel coverage before launch.";
+
+        monthlyValue.textContent = usdFormatter.format(totalMonthlyUSD);
+        sentinelCoverage.textContent = formatSeconds(totalCoverage);
+        coverageBar.style.width = `${Math.min(100, Math.round(coverageRatioValue * 100))}%`;
+        coverageRatio.textContent = percentFormatter.format(Math.min(1, coverageRatioValue));
+        guardianWindow.textContent = formatSeconds(guardianReviewWindowSeconds);
+        autonomyCap.textContent = `${autonomyGuardCapBps.toLocaleString()} bps`;
+        selfImprovementCadence.textContent = formatCadence(cadenceSeconds);
+        managerAddress.textContent = shorten(data?.global?.phase8Manager ?? "");
+        manifestSummary.textContent = `Loaded ${domains.length} value domains, ${sentinels.length} sentinel guilds, and ${
+          Array.isArray(data?.capitalStreams) ? data.capitalStreams.length : 0
+        } capital streams.`;
+
+        if (Array.isArray(data?.selfImprovement?.playbooks)) {
+          renderList(
+            playbookList,
+            data.selfImprovement.playbooks.map((playbook) => `${playbook.name} — ${playbook.description}`),
+          );
+        }
+      }
 
       jobInput.addEventListener("change", async (event) => {
         const file = event.target.files?.[0];
@@ -71,11 +342,29 @@
         const text = await file.text();
         jobConfig = JSON.parse(text);
         jobPreview.textContent = JSON.stringify(jobConfig, null, 2);
+        pushTimeline(`Blueprint loaded for ${jobConfig.jobName ?? "Phase 8 mission"}.`, "info");
+        updateJobInsights(jobConfig);
       });
 
       budgetCap.addEventListener("input", () => {
         budgetCapValue.textContent = `$${Number(budgetCap.value).toLocaleString()}`;
       });
+
+      function updateJobInsights(config) {
+        const maxBudget = Number(config?.economics?.maxBudgetUSD ?? 0);
+        missionBudget.textContent = maxBudget > 0 ? usdFormatter.format(maxBudget) : "—";
+        const quorum = Number(config?.governance?.requiredValidatorApprovals ?? 0);
+        validatorQuorum.textContent = quorum > 0 ? `${quorum} approvals` : "—";
+        const guild = config?.validators?.guild ?? config?.governance?.validatorGuild;
+        validatorGuildLabel.textContent = guild ?? "—";
+        ownerAddress.textContent = shorten(config?.governance?.ownerProxy ?? manifest?.global?.treasury ?? "");
+        pauseGuardianLabel.textContent = shorten(config?.safety?.pauseGuardian ?? manifest?.global?.guardianCouncil ?? "");
+
+        const tripwires = new Set();
+        (config?.safety?.tripwires ?? []).forEach((item) => tripwires.add(String(item)));
+        (manifest?.selfImprovement?.guardrails?.escalationChannels ?? []).forEach((item) => tripwires.add(String(item)));
+        renderList(tripwireList, Array.from(tripwires));
+      }
 
       function pushTimeline(message, tone = "info") {
         const card = document.createElement("div");
@@ -89,11 +378,11 @@
           pushTimeline("Please load a mission blueprint first.", "warn");
           return;
         }
-        pushTimeline("Dispatching mission to orchestrator...");
+        pushTimeline("Dispatching mission to orchestrator…");
         setTimeout(() => pushTimeline("Planner agent: blueprint checkpoint stored on-ledger."), 1000);
         setTimeout(() => pushTimeline("Code Smith: governance extensions deployed, milestone escrow funded."), 2500);
         setTimeout(() => pushTimeline("Validator Guild: milestone 1 approved, partial payout released."), 4000);
-        setTimeout(() => pushTimeline("Safety Tripwire: all clear. Budget usage at 21%."), 5500);
+        setTimeout(() => pushTimeline("Safety Tripwire: all clear. Budget usage at 21%.", "info"), 5500);
       });
 
       pauseToggle.addEventListener("click", () => {
@@ -116,6 +405,25 @@
         copilotToggle.classList.toggle("primary-outline");
         pushTimeline(required ? "Human co-pilot optional." : "Human co-pilot requirement enforced.");
       });
+
+      async function bootstrapManifest() {
+        try {
+          const response = await fetch("../config/universal.value.manifest.json");
+          if (!response.ok) {
+            throw new Error(`Status ${response.status}`);
+          }
+          const data = await response.json();
+          updateManifestInsights(data);
+          pushTimeline("Manifest intelligence loaded from repo.");
+          if (jobConfig) {
+            updateJobInsights(jobConfig);
+          }
+        } catch (error) {
+          dominanceNarrative.textContent = `Unable to load manifest. Ensure the repo is served over HTTP. (${error.message})`;
+        }
+      }
+
+      bootstrapManifest();
     </script>
   </body>
 </html>
