@@ -1,0 +1,88 @@
+{
+  "log_path": "reports/orchestrator.log",
+  "state_path": "reports/orchestrator_state.json",
+  "checkpoint_interval_seconds": 15,
+  "max_concurrent_jobs": 8,
+  "resource_manager": {
+    "planetary_energy_gw": 1000000,
+    "planetary_compute_pf": 250000,
+    "token_supply": 1000000000,
+    "token_per_energy": 0.05,
+    "token_per_compute": 0.1,
+    "dynamic_inflation_threshold": 0.85,
+    "scarcity_multiplier": 1.12
+  },
+  "agents": [
+    {
+      "name": "StrategicMetaSynth",
+      "skills": ["macro-strategy", "delegation", "synthesis"],
+      "stake": 500000,
+      "energy_allowance": 1500,
+      "compute_allowance": 800
+    },
+    {
+      "name": "DysonEnergyArchitect",
+      "skills": ["energy", "infrastructure", "simulation"],
+      "stake": 350000,
+      "energy_allowance": 3500,
+      "compute_allowance": 1200
+    },
+    {
+      "name": "LiquidityIntelligence",
+      "skills": ["finance", "market-making", "tokenomics"],
+      "stake": 420000,
+      "energy_allowance": 1200,
+      "compute_allowance": 900
+    },
+    {
+      "name": "SentinelValidator",
+      "skills": ["validation", "audit", "governance"],
+      "stake": 250000,
+      "energy_allowance": 400,
+      "compute_allowance": 300
+    }
+  ],
+  "validators": {
+    "quorum": 3,
+    "commit_phase_seconds": 4,
+    "reveal_phase_seconds": 4,
+    "stake_ratio": 0.1,
+    "slash_ratio": 0.35
+  },
+  "simulation": {
+    "type": "synthetic_economy",
+    "initial_energy": 980000,
+    "initial_compute": 220000,
+    "initial_gdp": 450000000000,
+    "innovation_index": 1.12
+  },
+  "demo_jobs": [
+    {
+      "title": "Terraform Lagrange Point Dyson Swarm",
+      "reward": 2500000,
+      "deadline_hours": 12,
+      "energy_budget": 45000,
+      "compute_budget": 12000,
+      "description": "Design and coordinate construction for Dyson swarm segment leveraging lunar foundries and autonomous drones.",
+      "skills": ["energy", "infrastructure", "macro-strategy"]
+    },
+    {
+      "title": "Stellar Trade Optimization",
+      "reward": 1800000,
+      "deadline_hours": 8,
+      "energy_budget": 12000,
+      "compute_budget": 9500,
+      "description": "Rebalance multi-system liquidity pools to stabilize planetary economies under energy surpluses.",
+      "skills": ["finance", "market-making", "delegation"]
+    },
+    {
+      "title": "Singularity Governance Accord",
+      "reward": 2000000,
+      "deadline_hours": 10,
+      "energy_budget": 8000,
+      "compute_budget": 6000,
+      "description": "Draft and ratify transplanetary governance frameworks for newly awakened AGI civilizations.",
+      "skills": ["governance", "validation", "macro-strategy"]
+    }
+  ]
+}

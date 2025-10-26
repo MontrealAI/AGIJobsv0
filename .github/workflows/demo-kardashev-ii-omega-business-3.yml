@@ -1,0 +1,68 @@
+name: demo-kardashev-ii-omega-business-3
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/**'
+      - '.github/workflows/demo-kardashev-ii-omega-business-3.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/**'
+      - '.github/workflows/demo-kardashev-ii-omega-business-3.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  omega-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            pypi.org
+            files.pythonhosted.org
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Run orchestrator tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python -m pytest demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/tests
+
+      - name: Execute demo smoke run
+        run: |
+          python demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/run_demo.py run --cycles 4 --base-path demo/"Kardashev-II Omega-Grade-α-AGI Business-3"
+          test -f demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/reports/orchestrator_state.json
+          test -f demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/reports/orchestrator.log
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: omega-business-3-reports
+          path: |
+            demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/reports/
+            !demo/"Kardashev-II Omega-Grade-α-AGI Business-3"/reports/.gitkeep

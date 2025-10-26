@@ -1,0 +1,27 @@
+{
+  "mission": "Kardashev-II Omega-Grade α-AGI Business 3",
+  "objectives": [
+    "Demonstrate multi-hour autonomous orchestration with checkpoint and recovery.",
+    "Show recursive job delegation with validator oversight and staking economics.",
+    "Model planetary energy and compute resources with dynamic scarcity pricing.",
+    "Expose owner-first controls mirroring on-chain governance primitives.",
+    "Provide CI-backed assurance for every change touching the demo."
+  ],
+  "artifacts": {
+    "orchestrator": "python/omega_business3/orchestrator.py",
+    "agents": "python/omega_business3/agents.py",
+    "resource_manager": "python/omega_business3/resources.py",
+    "simulation": "python/omega_business3/simulation.py",
+    "cli": "run_demo.py",
+    "owner_console": "python/omega_business3/owner_console.py",
+    "docs": [
+      "README.md",
+      "RUNBOOK.md",
+      "OWNER-CONTROL.md"
+    ]
+  },
+  "ci_workflow": ".github/workflows/demo-kardashev-ii-omega-business-3.yml",
+  "tests": [
+    "tests/test_orchestrator.py"
+  ]
+}

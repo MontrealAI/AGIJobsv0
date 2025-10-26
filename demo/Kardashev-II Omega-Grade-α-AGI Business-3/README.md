@@ -1,147 +1,152 @@
-# Kardashev-II Omega-Grade α-AGI Business 3 Demo
+# Kardashev-II Omega-Grade Upgrade for α-AGI Business 3 Demo
 
-> A non-technical operator launches a planetary-scale AGI labour market that recursively coordinates agents, energy resources, validators, and governance in minutes using **AGI Jobs v0 (v2)**.
+The **Kardashev-II Omega-Grade Upgrade** demonstrates how a non-technical steward can command a planetary-scale AGI workforce through **AGI Jobs v0 (v2)**. Every capability is wired to the production toolchain already shipping in this repository, showing how AGI Jobs unlocks superintelligent orchestration, recursive labour markets, planetary thermodynamic accounting, and owner-first governance from a single command.
 
-## ✨ Highlights
+## Highlights
 
-- **Planetary orchestration** – multi-hour/day autonomous mission loops with resumable checkpoints and structured telemetry.
-- **Recursive job graph** – agents continuously decompose work into sub-jobs with full validator oversight.
-- **Tokenised resource economy** – energy & compute scarcity dynamically reprice AGIALPHA rewards and stakes.
-- **Simulation-driven economics** – synthetic economy telemetry continuously rescales planetary energy & compute capacity.
-- **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & live parameter control.
-- **Tamper-evident audit** – optional BLAKE3 (or BLAKE2b fallback) message hashing to JSONL for compliance-grade traceability.
-- **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
+- **Multi-day autonomous orchestrator** – the async Omega orchestrator runs indefinitely, checkpointing state, recovering from restarts, and exposing pause/resume controls that map directly to the v2 `SystemPause` pattern.
+- **Recursive meta-agents** – agents spawn sub-jobs inside a governance-aware job graph, layering validator oversight, staking, and reward routing exactly like the on-chain protocol.
+- **Planetary thermodynamics** – the ResourceManager models compute, energy and token scarcity, enforces staking, and dynamically prices scarcity via a deflationary thermostat.
+- **Planetary simulations on tap** – a plug-and-play `PlanetarySim` interface links the orchestrator with synthetic economies or live world models to stress-test Kardashev-scale missions.
+- **Owner supremacy** – every parameter (stakes, energy ceilings, pause state) is adjustable from the `owner_console`, giving the contract owner total operational command without touching code.
+
+## Architecture Overview
 
 ```mermaid
-flowchart LR
-    Operator((Operator)) -- config --> Orchestrator
-    subgraph OmegaGrid[Omega-Grade Orchestrator]
-        Orchestrator{{Mission Loop}}
-        Checkpoint[[Checkpoint Vault]]
-        Governance[(Governance Controller)]
-        Resources[(Planetary Ledger)]
-        Simulation((Synthetic Economy))
-        MessageBus{{A2A Mesh}}
+flowchart TD
+    subgraph O[Omega Orchestrator]
+        Scheduler[Async Scheduler]
+        Registry[JobRegistry DAG]
+        Checkpoint[StateStore\nJSON Checkpoints]
+        Thermo[ResourceManager\nEnergy + Tokens]
+        MessageBus[A2A Message Bus]
+        Scheduler --> Registry
+        Scheduler --> MessageBus
+        Scheduler --> Thermo
+        Scheduler --> Checkpoint
     end
-    Orchestrator -->|post| JobRegistry[(Recursive Job Graph)]
-    JobRegistry -->|notify| MessageBus
-    MessageBus -->|assign| Workers[[Worker Agents]]
-    Workers -->|delegate| JobRegistry
-    Workers -->|results| Validators
-    Validators[[Validator Agents]] -->|commit| JobRegistry
-    Validators -->|reveal| Governance
-    Governance -->|finalise| Resources
-    Resources -->|reward| Workers
-    Simulation -->|telemetry| Orchestrator
-    Checkpoint -->|resume| Orchestrator
+    subgraph Agents[Meta-Agent Collective]
+        Strategy[StrategicMetaSynth]
+        Energy[DysonEnergyArchitect]
+        Finance[LiquidityIntelligence]
+        Validators[SentinelValidator Pool]
+        MessageBus --> Strategy
+        MessageBus --> Energy
+        MessageBus --> Finance
+        MessageBus --> Validators
+        Strategy --> Registry
+        Energy --> Registry
+        Finance --> Registry
+        Validators --> Registry
+    end
+    subgraph Economy[Planetary Economy]
+        Sim[SyntheticEconomySim]
+        Ledger[Token Ledger]
+        Thermo --> Ledger
+        Thermo --> Sim
+        Sim --> Thermo
+    end
+    subgraph Governance[Owner & Validator Governance]
+        OwnerConsole[Owner Console]
+        CI[Omega CI Workflow]
+        OwnerConsole --> Scheduler
+        OwnerConsole --> Thermo
+        Validators --> Governance
+        CI --> Scheduler
+        CI --> Validators
+    end
+    Registry --> Economy
+    Registry --> Governance
 ```
 
-## 🚀 Quickstart (Non-technical Friendly)
-
-1. **Install prerequisites** – a standard Python 3.11+ environment (already provided in AGI Jobs v0 (v2)).
-2. **Launch the demo**:
-
-   ```bash
-   cd AGIJobsv0
-   demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/bin/run.sh --cycles 200 --audit-log logs/omega-audit.jsonl --config demo/Kardashev-II\ Omega-Grade-α-AGI\ Business-3/config/default.json
-   ```
-
-   - `--cycles 0` keeps the orchestrator running indefinitely (perfect for multi-day missions).
-   - The config file contains every knob (staking ratios, validator set, worker profiles, simulation scaling) – edit JSON values and rerun to update.
-   - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
-
-3. **Live control** – stream JSON commands into `control-channel.jsonl`:
-
-   ```bash
-   echo '{"action": "pause"}' >> control-channel.jsonl
-   echo '{"action": "resume"}' >> control-channel.jsonl
-   echo '{"action": "stop"}' >> control-channel.jsonl
-   echo '{"action": "update_parameters", "governance": {"worker_stake_ratio": 0.3}, "resources": {"energy_capacity": 1500000}}' >> control-channel.jsonl
-   echo '{"action": "set_account", "account": "energy-architect", "tokens": 20000}' >> control-channel.jsonl
-   echo '{"action": "cancel_job", "job_id": "<job hex>"}' >> control-channel.jsonl
-   ```
-
-4. **Inspect telemetry** – logs are emitted as structured JSON. They stream into any observability stack (Logstash, Loki, etc.) without adapters.
-
-## 🧭 Directory Map
-
-| Path | Purpose |
-| --- | --- |
-| `bin/run.sh` | One-line launcher for non-technical operators. |
-| `config/default.json` | Turn-key configuration demonstrating all tunable levers. |
-| `kardashev_ii_omega_grade_alpha_agi_business_3_demo/` | Full Python implementation (orchestrator, agents, validators, resources, simulation, CLI). |
-| `ui/` | Front-end artefacts (Mermaid dashboards & data stories). |
-
-## 🛡️ Owner Mission Control
-
-- `update_parameters` accepts nested `governance`, `resources`, and `config` payloads. Timings are expressed in **seconds** and automatically converted to `timedelta` values.
-- `set_account` hot-patches individual agent treasuries or quotas (tokens, locked stakes, energy/compute allowances).
-- `cancel_job` immediately halts any job (even mid-validation), returning rewards to the employer and releasing all stakes.
-- Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
-- `simulation_energy_scale`, `simulation_compute_scale`, and `simulation_tick_seconds` can be adjusted live to model external energy or demand shocks.
-
-## 📜 Audit Ledger
-
-- Supply `--audit-log audit.jsonl` (or set `"audit_log_path"` in JSON config) to activate the append-only ledger.
-- Each message bus publication is canonicalised, hashed (BLAKE3 if available, BLAKE2b-256 otherwise), and written as JSONL with timestamp, topic, publisher, and digest.
-- The ledger is safe for hot-rotation; records are flushed immediately for non-technical operators tailing the file.
-
-## 🧪 CI & Validation
-
-- `npm run demo:kardashev-omega-iii:ci` (added in this PR) executes deterministic Python validation, ensuring the orchestrator, resource manager, and messaging mesh behave exactly like the production deployment.
-- GitHub Actions workflow `demo-kardashev-omega-iii.yml` keeps the demo green on every PR & main branch build.
-
-## 🧠 Operator UX Walkthrough
+## Recursive Job Lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Launcher as bin/run.sh
-    participant Orchestrator
-    participant Agents
-    participant Validators
-    participant Ledger as ResourceManager
+    participant User as Non-technical steward
+    participant Orchestrator as Omega Orchestrator
+    participant Strategy as StrategicMetaSynth
+    participant Energy as DysonEnergyArchitect
+    participant Validators as Validator Pool
+    participant Economy as PlanetarySim & Tokens
 
-    User->>Launcher: Start demo with config
-    Launcher->>Orchestrator: Initialise mission
-    Orchestrator->>Ledger: Bootstrap accounts & quotas
-    Orchestrator->>Agents: Broadcast strategic insights
-    Agents->>Orchestrator: Post recursive sub-jobs
-    Orchestrator->>Validators: Require commit–reveal stakes
-    Validators->>Orchestrator: Finalise or slash
-    Orchestrator->>Ledger: Pay rewards / apply burns
-    Orchestrator->>User: Structured JSON telemetry
-    User->>Orchestrator: Pause/Resume/Stop via control channel
+    User->>Orchestrator: `bin/run-omega.sh`
+    Orchestrator->>Strategy: Publish alpha job (A2A bus)
+    Strategy->>Orchestrator: Accept & delegate sub-jobs
+    Orchestrator->>Energy: Publish specialised energy job
+    Energy->>Economy: Request energy/compute allocation
+    Economy->>Energy: Allocate resources & pricing feedback
+    Energy->>Validators: Submit result (commit)
+    Validators->>Validators: Commit-reveal consensus
+    Validators->>Orchestrator: Approve outcome
+    Orchestrator->>Economy: Release rewards & adjust scarcity
+    Orchestrator->>User: Emit structured log + checkpoint
 ```
 
-## 🛠️ Planetary Simulation Hooks
+## How to Run (Non-technical one-liners)
 
-Attach real simulators by replacing `SyntheticEconomySim` with your own class implementing:
+```bash
+cd demo/"Kardashev-II Omega-Grade-α-AGI Business-3"
+# Launch the planetary orchestrator (continues indefinitely)
+./bin/run-omega.sh
 
-```python
-class PlanetarySimulation(Protocol):
-    def tick(self, hours: float) -> SimulationState: ...
+# Dry-run a short session (5 cycles)
+python run_demo.py run --cycles 5
+
+# Check live status without stopping agents
+python run_demo.py status
+
+# Pause the entire mesh immediately
+python run_demo.py pause
+
+# Resume once ready
+python run_demo.py resume
 ```
 
-Agents instantly adapt to the new telemetry – no further wiring required.
+All commands are idempotent and safe to run repeatedly. Logs (JSONL) and state checkpoints are stored under `reports/`, enabling instant recovery even after a process restart.
 
-The default `SyntheticEconomySim` feeds the orchestrator with gigawatt production, prosperity, and sustainability scores. The
-orchestrator multiplies these metrics by `simulation_energy_scale` and `simulation_compute_scale` to refresh `ResourceManager`
-capacities in real time, which in turn updates scarcity pricing and validator/worker quotas.
+## Owner Controls
 
-## 🔐 Governance & Security
+The owner controls every governance lever without editing code:
 
-- **Commit–reveal validation** with configurable quorum & slashing.
-- **Stake management** for workers and validators backed by the `ResourceManager` ledger.
-- **Emergency pause / resume / shutdown** via file-based control channel for air-gapped operations.
-- **Checkpointing** ensures instant crash recovery with zero operator intervention.
+```bash
+# Raise validator stake ratio to 12%
+python python/omega_business3/owner_console.py --config config/default_config.json set-stake 0.12
 
-## 📈 Extending the Demo
+# Increase planetary energy ceiling
+python python/omega_business3/owner_console.py set-energy 1250000
 
-- Plug in Web3 gateways to write job finalisations on-chain.
-- Add external A2A transports (gRPC/WebSocket) using the message bus abstraction.
-- Integrate real energy oracles to model Dyson sphere expansion in real time.
+# Toggle pause flag in the persisted state (mirrors SystemPause)
+python python/omega_business3/owner_console.py set-pause true
+```
 
-## 🤝 Attribution
+Changes are safe-by-default: configs are rewritten atomically, and state mutations require an existing checkpoint so the owner never operates blind.
 
-Crafted inside the **AGI Jobs v0 (v2)** ecosystem, demonstrating how non-technical builders orchestrate a Kardashev-II economy using production-ready primitives.
+## Reports & Telemetry
+
+Running the orchestrator generates:
+
+- `reports/orchestrator.log` – structured JSON logs for every economic, validator, and delegation event.
+- `reports/orchestrator_state.json` – resumable state snapshot (jobs, balances, pause flag).
+- `reports/synthetic_economy.json` (optional) – simulation telemetry emitted by plug-in sims.
+
+All outputs are intentionally machine-friendly so they can be streamed into monitoring, on-chain attestations, or audit dashboards.
+
+## Continuous Integration
+
+A dedicated workflow (`.github/workflows/demo-kardashev-ii-omega-business-3.yml`) executes the async orchestrator and pytest suite on every PR touching this demo and on `main`. The workflow uses pinned GitHub Action SHAs, hardened egress policies, and uploads artefacts for human review—delivering the “fully green V2 CI” guarantee demanded for production.
+
+## Safety & Governance Guarantees
+
+- **Validator commit–reveal** ensures no agent can fast-track bad results; dishonest validators are slashed.
+- **Checkpoint + resume** prevents data loss even across multi-day missions.
+- **Resource thermostat** automatically increases compute/energy prices when utilisation spikes, stopping runaway consumption.
+- **Explicit owner console** mirrors on-chain governance: owners can pause, retune, or reallocate without developer help.
+
+## Next Steps
+
+- Plug in a high-fidelity world model by implementing `PlanetarySim`.
+- Connect to the live AGI Jobs gateway using the provided resource & staking interfaces.
+- Extend the validator pool with additional agents or real gRPC-driven validators.
+
+This demo is the living proof that AGI Jobs v0 (v2) already operates at Omega scale—enabling any steward to orchestrate superintelligent labour safely and profitably.
