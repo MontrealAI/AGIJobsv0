@@ -9,7 +9,8 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from threading import Lock
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple
 
 from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, spawn_agent
 from .audit import AuditTrail
@@ -55,6 +56,9 @@ class OrchestratorConfig:
     audit_log_path: Optional[Path] = None
     initial_jobs: List[Dict[str, Any]] = field(default_factory=list)
     status_output_path: Optional[Path] = None
+    heartbeat_interval_seconds: float = 5.0
+    heartbeat_timeout_seconds: float = 30.0
+    health_check_interval_seconds: float = 5.0
 
 
 class Orchestrator:
@@ -97,6 +101,11 @@ class Orchestrator:
             "validation_commit_end": self._handle_validation_commit_end_event,
             "validation_finalize": self._handle_validation_finalize_event,
         }
+        self._agent_last_seen: Dict[str, datetime] = {}
+        self._agent_roles: Dict[str, str] = {}
+        self._agent_skills: Dict[str, List[str]] = {}
+        self._unresponsive_agents: Set[str] = set()
+        self._agent_lock = Lock()
 
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
@@ -122,6 +131,8 @@ class Orchestrator:
         self._tasks.append(asyncio.create_task(self._result_listener(), name="results"))
         self._tasks.append(asyncio.create_task(self._control_listener(), name="control"))
         self._tasks.append(asyncio.create_task(self._control_file_listener(), name="control-file"))
+        self._tasks.append(asyncio.create_task(self._heartbeat_listener(), name="heartbeat-listener"))
+        self._tasks.append(asyncio.create_task(self._agent_health_loop(), name="agent-health"))
         if self.simulation:
             self._tasks.append(asyncio.create_task(self._simulation_loop(), name="simulation"))
         await self._seed_jobs()
@@ -192,21 +203,58 @@ class Orchestrator:
         tasks: List[asyncio.Task[None]] = []
         for name, efficiency in self.config.worker_specs.items():
             context = AgentContext(name=name, skills={name}, bus=self.bus, resources=self.resources)
-            agent = WorkerAgent(context, efficiency=efficiency, post_job=self.post_alpha_job)
-            tasks.append(await spawn_agent(f"worker:{name}", agent))
+            self._register_agent(name, "worker", list(context.skills))
+            agent = WorkerAgent(
+                context,
+                efficiency=efficiency,
+                post_job=self.post_alpha_job,
+                heartbeat_interval=self.config.heartbeat_interval_seconds,
+            )
+            task = await spawn_agent(f"worker:{name}", agent)
+            self._monitor_task(f"worker:{name}", task)
+            tasks.append(task)
         for name in self.config.strategist_names:
             context = AgentContext(name=name, skills={"strategy"}, bus=self.bus, resources=self.resources)
             agent = StrategistAgent(
                 context,
                 post_job=self.post_alpha_job,
                 delegation_skills=list(self.config.worker_specs.keys()),
+                heartbeat_interval=self.config.heartbeat_interval_seconds,
             )
-            tasks.append(await spawn_agent(f"strategist:{name}", agent))
+            self._register_agent(name, "strategist", list(context.skills))
+            task = await spawn_agent(f"strategist:{name}", agent)
+            self._monitor_task(f"strategist:{name}", task)
+            tasks.append(task)
         for name in self.config.validator_names:
             context = AgentContext(name=name, skills={"validation"}, bus=self.bus, resources=self.resources)
-            agent = ValidatorAgent(context, self.governance)
-            tasks.append(await spawn_agent(f"validator:{name}", agent))
+            agent = ValidatorAgent(
+                context,
+                self.governance,
+                heartbeat_interval=self.config.heartbeat_interval_seconds,
+            )
+            self._register_agent(name, "validator", list(context.skills))
+            task = await spawn_agent(f"validator:{name}", agent)
+            self._monitor_task(f"validator:{name}", task)
+            tasks.append(task)
         return tasks
+
+    def _register_agent(self, name: str, role: str, skills: List[str]) -> None:
+        now = datetime.now(timezone.utc)
+        with self._agent_lock:
+            self._agent_roles[name] = role
+            self._agent_skills[name] = list(skills)
+            self._agent_last_seen.setdefault(name, now)
+            self._unresponsive_agents.discard(name)
+
+    def _monitor_task(self, label: str, task: asyncio.Task[None]) -> None:
+        def _done_callback(completed: asyncio.Task[None]) -> None:
+            if completed.cancelled():
+                return
+            exc = completed.exception()
+            if exc is not None:
+                self._error("background_task_crashed", task=label, error=str(exc))
+
+        task.add_done_callback(_done_callback)
 
     async def _cycle_loop(self) -> None:
         while self._running:
@@ -453,6 +501,67 @@ class Orchestrator:
                     self._handle_account_adjustment(message.payload)
                 elif action == "cancel_job":
                     await self._handle_cancel_job(message.payload)
+
+    async def _heartbeat_listener(self) -> None:
+        async with self.bus.subscribe("heartbeat") as receiver:
+            while self._running:
+                message = await receiver()
+                payload = message.payload
+                agent_name = str(payload.get("agent") or message.publisher)
+                role = str(payload.get("role") or self._agent_roles.get(agent_name, "agent"))
+                skills_raw = payload.get("skills")
+                timestamp = datetime.now(timezone.utc)
+                recovered = False
+                with self._agent_lock:
+                    if isinstance(skills_raw, list):
+                        self._agent_skills[agent_name] = [str(skill) for skill in skills_raw]
+                    self._agent_roles.setdefault(agent_name, role)
+                    self._agent_last_seen[agent_name] = timestamp
+                    if agent_name in self._unresponsive_agents:
+                        self._unresponsive_agents.remove(agent_name)
+                        recovered = True
+                if recovered:
+                    self._info("agent_recovered", agent=agent_name, role=role)
+                    await self._persist_status_snapshot()
+
+    def _detect_unresponsive_agents(
+        self,
+        now: Optional[datetime] = None,
+        *,
+        threshold_seconds: Optional[float] = None,
+    ) -> List[Tuple[str, float]]:
+        current_time = now or datetime.now(timezone.utc)
+        threshold = threshold_seconds if threshold_seconds is not None else max(
+            0.2, float(self.config.heartbeat_timeout_seconds)
+        )
+        newly_unresponsive: List[Tuple[str, float]] = []
+        with self._agent_lock:
+            for agent, last_seen in list(self._agent_last_seen.items()):
+                delta = (current_time - last_seen).total_seconds()
+                if delta > threshold and agent not in self._unresponsive_agents:
+                    self._unresponsive_agents.add(agent)
+                    newly_unresponsive.append((agent, delta))
+        return newly_unresponsive
+
+    async def _agent_health_loop(self) -> None:
+        threshold_seconds = max(0.2, float(self.config.heartbeat_timeout_seconds))
+        threshold = timedelta(seconds=threshold_seconds)
+        interval = max(0.1, float(self.config.health_check_interval_seconds))
+        while self._running:
+            await self._paused.wait()
+            now = datetime.now(timezone.utc)
+            newly_unresponsive = self._detect_unresponsive_agents(
+                now, threshold_seconds=threshold_seconds
+            )
+            for agent, delta in newly_unresponsive:
+                self._warning(
+                    "agent_unresponsive",
+                    agent=agent,
+                    seconds_since_heartbeat=round(delta, 2),
+                )
+            if newly_unresponsive:
+                await self._persist_status_snapshot()
+            await asyncio.sleep(interval)
 
     async def _handle_job_result(self, payload: Dict[str, str]) -> None:
         summary = payload["summary"]
@@ -826,6 +935,29 @@ class Orchestrator:
         self._info("job_cancelled", job_id=job_id, reason=reason)
         await self._persist_status_snapshot()
 
+    def _capture_agent_snapshot(self) -> Dict[str, Any]:
+        with self._agent_lock:
+            roles = dict(self._agent_roles)
+            last_seen = {
+                agent: ts.isoformat()
+                for agent, ts in self._agent_last_seen.items()
+            }
+            skills = {agent: list(self._agent_skills.get(agent, [])) for agent in roles}
+            health = {
+                agent: ("unresponsive" if agent in self._unresponsive_agents else "healthy")
+                for agent in roles
+            }
+            unresponsive = sorted(self._unresponsive_agents)
+        return {
+            "roles": roles,
+            "skills": skills,
+            "last_seen": last_seen,
+            "health": health,
+            "unresponsive": unresponsive,
+            "heartbeat_interval_seconds": self.config.heartbeat_interval_seconds,
+            "heartbeat_timeout_seconds": self.config.heartbeat_timeout_seconds,
+        }
+
     def _collect_status_snapshot(self) -> Dict[str, Any]:
         jobs = list(self.job_registry.iter_jobs())
         status_counts = Counter(job.status.value for job in jobs)
@@ -880,6 +1012,7 @@ class Orchestrator:
                 "compute_price": self.resources.compute_price,
                 "accounts": accounts,
             },
+            "agents": self._capture_agent_snapshot(),
             "governance": {
                 "worker_stake_ratio": governance.worker_stake_ratio,
                 "validator_stake": governance.validator_stake,

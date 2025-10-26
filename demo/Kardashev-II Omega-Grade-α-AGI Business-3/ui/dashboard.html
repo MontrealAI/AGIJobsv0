@@ -72,6 +72,17 @@
 
     <section class="card">
       <h2>Resource & Token Telemetry</h2>
+    <section class="card">
+      <h2>Agent Health Telemetry</h2>
+      <pre>
+Heartbeat Interval: configurable via CLI/control channel
+Timeout Policy: unresponsive agents highlighted in omega-status.jsonl
+Roles & Skills: streamed under status['agents'] for real-time dashboards
+Escalation: warnings emitted when seconds_since_heartbeat exceeds the configured threshold
+      </pre>
+    </section>
+
+
       <pre>
 AGIALPHA Supply: dynamic
 Energy Availability: simulation-driven scarcity pricing (Dyson swarm growth × scale)

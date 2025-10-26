@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import random
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Sequence
 
 from .governance import GovernanceController
 from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
@@ -18,21 +19,26 @@ from .resources import ResourceManager
 @dataclass(slots=True)
 class AgentContext:
     name: str
-    skills: Iterable[str]
+    skills: Sequence[str]
     bus: MessageBus
     resources: ResourceManager
+
+    def __post_init__(self) -> None:
+        self.skills = tuple(self.skills)
 
 
 class AgentBase:
     """Base class providing shared behaviour."""
 
-    def __init__(self, context: AgentContext) -> None:
+    def __init__(self, context: AgentContext, *, heartbeat_interval: float = 5.0) -> None:
         self.context = context
         self._task: Optional[asyncio.Task[None]] = None
+        self._heartbeat_interval = max(0.1, float(heartbeat_interval))
+        self._heartbeat_task: Optional[asyncio.Task[None]] = None
 
     async def start(self) -> asyncio.Task[None]:
         if self._task is None:
-            self._task = asyncio.create_task(self.run(), name=f"agent:{self.context.name}")
+            self._task = asyncio.create_task(self._run_with_heartbeat(), name=f"agent:{self.context.name}")
         return self._task
 
     async def run(self) -> None:  # pragma: no cover - to be implemented by subclasses
@@ -42,12 +48,48 @@ class AgentBase:
         record: JobRecord = await post_job(spec)
         return record.job_id
 
+    async def _run_with_heartbeat(self) -> None:
+        if self._heartbeat_task is None:
+            self._heartbeat_task = asyncio.create_task(
+                self._heartbeat_loop(), name=f"heartbeat:{self.context.name}"
+            )
+        try:
+            await self.run()
+        finally:
+            if self._heartbeat_task:
+                self._heartbeat_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await self._heartbeat_task
+                self._heartbeat_task = None
+
+    async def _heartbeat_loop(self) -> None:
+        skills = list(self.context.skills)
+        payload = {
+            "agent": self.context.name,
+            "role": self.__class__.__name__,
+            "skills": skills,
+        }
+        while True:
+            await self.context.bus.publish(
+                "heartbeat",
+                {**payload, "timestamp": datetime.now(timezone.utc).isoformat()},
+                self.context.name,
+            )
+            await asyncio.sleep(self._heartbeat_interval)
+
 
 class WorkerAgent(AgentBase):
     """Task execution agents subscribing to skill channels."""
 
-    def __init__(self, context: AgentContext, efficiency: float, post_job: Callable[[JobSpec], asyncio.Future]) -> None:
-        super().__init__(context)
+    def __init__(
+        self,
+        context: AgentContext,
+        efficiency: float,
+        post_job: Callable[[JobSpec], asyncio.Future],
+        *,
+        heartbeat_interval: float = 5.0,
+    ) -> None:
+        super().__init__(context, heartbeat_interval=heartbeat_interval)
         self.efficiency = efficiency
         self.post_job = post_job
         self._assignment_events: Dict[str, asyncio.Event] = {}
@@ -134,8 +176,10 @@ class StrategistAgent(AgentBase):
         context: AgentContext,
         post_job: Callable[[JobSpec], asyncio.Future],
         delegation_skills: Optional[List[str]] = None,
+        *,
+        heartbeat_interval: float = 5.0,
     ) -> None:
-        super().__init__(context)
+        super().__init__(context, heartbeat_interval=heartbeat_interval)
         self.post_job = post_job
         self.delegation_skills = delegation_skills or ["general"]
 
@@ -159,8 +203,14 @@ class StrategistAgent(AgentBase):
 class ValidatorAgent(AgentBase):
     """Validator implementing commit-reveal logic."""
 
-    def __init__(self, context: AgentContext, governance: GovernanceController) -> None:
-        super().__init__(context)
+    def __init__(
+        self,
+        context: AgentContext,
+        governance: GovernanceController,
+        *,
+        heartbeat_interval: float = 5.0,
+    ) -> None:
+        super().__init__(context, heartbeat_interval=heartbeat_interval)
         self.governance = governance
 
     async def run(self) -> None:

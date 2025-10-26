@@ -37,6 +37,24 @@ def build_parser() -> argparse.ArgumentParser:
         default=1.0,
         help="Multiplier applied to prosperity/sustainability derived compute capacity",
     )
+    parser.add_argument(
+        "--heartbeat-interval",
+        type=float,
+        default=5.0,
+        help="Seconds between agent heartbeat broadcasts",
+    )
+    parser.add_argument(
+        "--heartbeat-timeout",
+        type=float,
+        default=30.0,
+        help="Seconds before agents are flagged as unresponsive",
+    )
+    parser.add_argument(
+        "--health-check-interval",
+        type=float,
+        default=5.0,
+        help="Seconds between orchestrator health scans",
+    )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
     parser.add_argument(
         "--status-output",
@@ -82,6 +100,9 @@ async def _run_async(args: argparse.Namespace) -> None:
         "simulation_compute_scale": args.simulation_compute_scale,
         "audit_log_path": args.audit_log,
         "status_output_path": args.status_output,
+        "heartbeat_interval_seconds": args.heartbeat_interval,
+        "heartbeat_timeout_seconds": args.heartbeat_timeout,
+        "health_check_interval_seconds": args.health_check_interval,
     }
     params.update(overrides)
 

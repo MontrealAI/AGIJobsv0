@@ -48,5 +48,8 @@
         "employer": "operator"
       }
     }
-  ]
+  ],
+  "heartbeat_interval_seconds": 5.0,
+  "heartbeat_timeout_seconds": 30.0,
+  "health_check_interval_seconds": 5.0
 }
