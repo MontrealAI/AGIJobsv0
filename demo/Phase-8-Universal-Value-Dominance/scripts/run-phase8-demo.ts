@@ -20,6 +20,26 @@ const RESILIENCE_ALERT_THRESHOLD = 0.9;
 const MANAGER_ABI = ["function forwardPauseCall(bytes data)"];
 const SYSTEM_PAUSE_ABI = ["function pauseAll()", "function unpauseAll()", "function pauseModule(bytes32)", "function unpauseModule(bytes32)"];
 
+function coercePercent(
+  percentValue?: number,
+  fractionValue?: number,
+  fallbackValue?: number,
+): number {
+  if (typeof percentValue === "number" && Number.isFinite(percentValue)) {
+    return percentValue;
+  }
+  if (typeof fractionValue === "number" && Number.isFinite(fractionValue)) {
+    return fractionValue * 100;
+  }
+  if (typeof fallbackValue === "number" && Number.isFinite(fallbackValue)) {
+    if (Math.abs(fallbackValue) <= 1) {
+      return fallbackValue * 100;
+    }
+    return fallbackValue;
+  }
+  return 0;
+}
+
 function normalizeAddress(value: unknown): string {
   if (typeof value !== "string") return ZERO_ADDRESS;
   const trimmed = value.trim();
@@ -1472,6 +1492,18 @@ export function computeMetrics(config: Phase8Config) {
   };
 }
 
+function getCoverageRatioPercent(metrics: ReturnType<typeof computeMetrics>): number {
+  return coercePercent(metrics.coverageRatioPercent, metrics.coverageRatioFraction, metrics.coverageRatio);
+}
+
+function getFundedDomainRatioPercent(metrics: ReturnType<typeof computeMetrics>): number {
+  return coercePercent(
+    metrics.fundedDomainRatioPercent,
+    metrics.fundedDomainRatioFraction,
+    metrics.fundedDomainRatio,
+  );
+}
+
 type MetricToleranceOverrides = Partial<
   Record<
     | "totalMonthlyUSD"
@@ -1705,8 +1737,8 @@ export function crossVerifyMetrics(config: Phase8Config, overrides: MetricTolera
   const tolerance = { ...defaultTolerance, ...overrides };
   const mismatches: string[] = [];
 
-  const coverageRatioBaseline = metrics.coverageRatioPercent ?? metrics.coverageRatio;
-  const fundedDomainRatioBaseline = metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio;
+  const coverageRatioBaseline = getCoverageRatioPercent(metrics);
+  const fundedDomainRatioBaseline = getFundedDomainRatioPercent(metrics);
 
   const comparisons: Array<{
     key: keyof typeof tolerance;
@@ -1970,7 +2002,7 @@ export function simulateMission(
     dominanceScore: metrics.dominanceScore,
     sentinelCoverageMinutes: metrics.guardianCoverageMinutes,
     coverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
-    fundedDomainRatioPercent: metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio,
+    fundedDomainRatioPercent: getFundedDomainRatioPercent(metrics),
     autonomyEnvelopeHours: metrics.sessionMaxHours ?? (autonomy?.session?.maxHours ?? 0),
     checkpointCadenceMinutes: autonomy?.session?.checkpointCadenceMinutes ?? 0,
     aiTeamCount: aiTeams.length,
@@ -2424,8 +2456,8 @@ export function telemetryMarkdown(
   lines.push(`- Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`- Average resilience index: ${metrics.averageResilience.toFixed(3)}`);
   lines.push(`- Universal dominance score: ${metrics.dominanceScore.toFixed(1)} / 100`);
-  const coverageRatioPercent = metrics.coverageRatioPercent ?? metrics.coverageRatio;
-  const fundedDomainRatioPercent = metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio;
+  const coverageRatioPercent = getCoverageRatioPercent(metrics);
+  const fundedDomainRatioPercent = getFundedDomainRatioPercent(metrics);
 
   lines.push(`- Sentinel coverage per guardian cycle: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes`);
   lines.push(`- Domains covered by sentinels: ${coverageRatioPercent.toFixed(1)}%`);
@@ -2736,7 +2768,7 @@ function generateOperatorRunbook(
   lines.push(`• Annual capital allocation: ${usd(metrics.annualBudget)}`);
   lines.push(`• Sentinel lattice coverage: ${metrics.guardianCoverageMinutes.toFixed(1)} minutes / cycle`);
   lines.push(
-    `• Domains funded: ${(metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
+    `• Domains funded: ${getFundedDomainRatioPercent(metrics).toFixed(1)}% · Minimum funding floor ${usd(metrics.minDomainFundingUSD)}`,
   );
   if (metrics.guardianWindowSeconds) {
     lines.push(
@@ -2885,7 +2917,7 @@ function generateSelfImprovementPlanPayload(
     generatedAt,
     dominanceScore: Number(metrics.dominanceScore.toFixed(1)),
     sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-    fundedDomainRatio: Number((metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)),
+    fundedDomainRatio: Number(getFundedDomainRatioPercent(metrics).toFixed(1)),
     plan: {
       uri: plan.planURI ?? "",
       hash: plan.planHash ?? "",
@@ -3158,8 +3190,8 @@ function generateDominanceScorecard(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: Number(metrics.averageResilience.toFixed(3)),
       sentinelCoverageMinutes: Number(metrics.guardianCoverageMinutes.toFixed(2)),
-      coverageRatioPercent: Number((metrics.coverageRatioPercent ?? metrics.coverageRatio).toFixed(1)),
-      fundedDomainRatioPercent: Number((metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)),
+      coverageRatioPercent: Number(getCoverageRatioPercent(metrics).toFixed(1)),
+      fundedDomainRatioPercent: Number(getFundedDomainRatioPercent(metrics).toFixed(1)),
       maxAutonomyBps: metrics.maxAutonomy,
       cadenceHours: Number(metrics.cadenceHours.toFixed(2)),
       minimumCoverageSeconds: Number(metrics.minDomainCoverageSeconds.toFixed(0)),
@@ -3535,13 +3567,13 @@ export function writeArtifacts(
       annualBudgetUSD: metrics.annualBudget,
       averageResilience: metrics.averageResilience,
       guardianCoverageMinutes: metrics.guardianCoverageMinutes,
-      coverageRatio: metrics.coverageRatioPercent ?? metrics.coverageRatio,
+      coverageRatio: getCoverageRatioPercent(metrics),
       dominanceScore: metrics.dominanceScore,
       averageDomainCoverageSeconds: metrics.averageDomainCoverageSeconds,
       guardianReviewWindowSeconds: metrics.guardianWindowSeconds,
       minDomainCoverageSeconds: metrics.minDomainCoverageSeconds,
       minimumCoverageAdequacyPercent: metrics.minimumCoverageAdequacy * 100,
-      fundedDomainRatio: metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio,
+      fundedDomainRatio: getFundedDomainRatioPercent(metrics),
       minDomainFundingUSD: metrics.minDomainFundingUSD,
       domainFundingUSD: metrics.domainFundingMap,
       guardianProtocolCount: metrics.guardianProtocolCount,
@@ -3703,9 +3735,9 @@ export function main() {
         `Minimum coverage per domain: ${metrics.minDomainCoverageSeconds.toFixed(0)}s (requirement ${metrics.guardianWindowSeconds}s, adequacy ${(metrics.minimumCoverageAdequacy * 100).toFixed(1)}%)`,
       );
     }
-    console.log(`Domains with sentinel coverage: ${(metrics.coverageRatioPercent ?? metrics.coverageRatio).toFixed(1)}%`);
+    console.log(`Domains with sentinel coverage: ${getCoverageRatioPercent(metrics).toFixed(1)}%`);
     console.log(
-      `Domains funded by capital streams: ${(metrics.fundedDomainRatioPercent ?? metrics.fundedDomainRatio).toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
+      `Domains funded by capital streams: ${getFundedDomainRatioPercent(metrics).toFixed(1)}% (minimum coverage ${usd(metrics.minDomainFundingUSD)} / yr)`,
     );
     console.log(
       `Guardian response protocols: ${metrics.guardianProtocolCount} covering ${metrics.guardianProtocolCoverageRatio.toFixed(1)}% of domains (severity ${describeSeverityAverage(metrics.guardianProtocolSeverityScore).toUpperCase()})`,
