@@ -206,7 +206,8 @@ button:hover {
 }
 
 .identity-list,
-.fabric-list {
+.fabric-list,
+.feed-list {
   list-style: none;
   padding: 0;
   margin: 12px 0 0 0;
@@ -216,12 +217,20 @@ button:hover {
 }
 
 .identity-list li,
-.fabric-list li {
+.fabric-list li,
+.feed-list li {
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 14px;
   padding: 12px 16px;
   line-height: 1.5;
+}
+
+.feed-list li {
+  font-family: "IBM Plex Mono", "Fira Mono", monospace;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .identity-meta,

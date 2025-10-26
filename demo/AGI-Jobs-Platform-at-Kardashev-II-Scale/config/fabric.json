@@ -2,40 +2,37 @@
   "shards": [
     {
       "id": "earth",
-      "jobRegistry": "0x000000000000000000000000000000000000eAr1",
+      "jobRegistry": "0xea000000000000000000000000000000000000a1",
       "latencyMs": 40,
-      "domains": ["finance", "health", "infrastructure"],
-      "guardianCouncil": "0x00000000000000000000000000000000000EaRdg",
+      "domains": ["earth.finance", "earth.infrastructure"],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0a1",
       "sentinels": [
-        "0x0000000000000000000000000000000000EaR51",
-        "0x0000000000000000000000000000000000EaR52"
+        "0x9d7d49c1c0ce2709f50af6b456b8a2a5d23fd9a1"
       ]
     },
     {
       "id": "mars",
-      "jobRegistry": "0x000000000000000000000000000000000000MaRS",
+      "jobRegistry": "0xea000000000000000000000000000000000000b1",
       "latencyMs": 720000,
-      "domains": ["terraforming", "resource-extraction", "biosafety"],
-      "guardianCouncil": "0x0000000000000000000000000000000000MarDG",
+      "domains": ["mars.terraforming"],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0b1",
       "sentinels": [
-        "0x0000000000000000000000000000000000Mar51",
-        "0x0000000000000000000000000000000000Mar52"
+        "0x71f3c9d8b9e7a0f3dc5b4215df9e8f531c7c2f91"
       ]
     },
     {
       "id": "orbital",
-      "jobRegistry": "0x0000000000000000000000000000000000000rb1",
+      "jobRegistry": "0xea000000000000000000000000000000000000c1",
       "latencyMs": 1200,
-      "domains": ["dyson-swarm", "astro-logistics"],
-      "guardianCouncil": "0x0000000000000000000000000000000000OrbDG",
+      "domains": ["orbital.defense", "orbital.research"],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0c1",
       "sentinels": [
-        "0x0000000000000000000000000000000000Orb51",
-        "0x0000000000000000000000000000000000Orb52"
+        "0x4b6d8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e"
       ]
     }
   ],
-  "knowledgeGraph": "0x0000000000000000000000000000000000Kn0wG",
-  "energyOracle": "0x0000000000000000000000000000000000En0rg",
-  "rewardEngine": "0x0000000000000000000000000000000000Therm",
-  "phase8Manager": "0x0000000000000000000000000000000000Ph8Mgr"
+  "knowledgeGraph": "0xea0000000000000000000000000000000000d0a1",
+  "energyOracle": "0xea0000000000000000000000000000000000d0b1",
+  "rewardEngine": "0xea0000000000000000000000000000000000d0c1",
+  "phase8Manager": "0xea0000000000000000000000000000000000d0d1"
 }

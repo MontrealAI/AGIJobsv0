@@ -70,6 +70,26 @@ function renderMetrics(telemetry) {
       ? `All bridges ≤ ${telemetry.verification.bridges.toleranceSeconds}s`
       : "Latency exceeds tolerance"
   );
+
+  const feedCompliance = telemetry.energy.liveFeeds.allWithinTolerance;
+  setStatusText(
+    document.querySelector("#energy-feed-compliance"),
+    feedCompliance,
+    feedCompliance
+      ? `Δ ≤ ${telemetry.energy.liveFeeds.tolerancePct}% across ${telemetry.energy.liveFeeds.feeds.length} feeds`
+      : `Drift > ${telemetry.energy.liveFeeds.tolerancePct}%`
+  );
+  document.querySelector("#energy-feed-latency").textContent = `Avg ${telemetry.energy.liveFeeds.averageLatencyMs.toFixed(
+    0
+  )} ms · Max ${telemetry.energy.liveFeeds.maxLatencyMs} ms`;
+  const feedList = document.querySelector("#energy-feed-list");
+  feedList.innerHTML = "";
+  telemetry.energy.liveFeeds.feeds.forEach((feed) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(2)}% Δ · ${feed.latencyMs} ms</span>`;
+    li.classList.add(feed.withinTolerance ? "status-ok" : feed.driftAlert ? "status-warn" : "status-fail");
+    feedList.appendChild(li);
+  });
 }
 
 let mermaidInitialised = false;
@@ -195,6 +215,43 @@ function renderComputeFabric(fabric) {
   fabric.planes.forEach((plane) => {
     const li = document.createElement("li");
     li.innerHTML = `<strong>${plane.name}</strong> (${plane.geography}) — ${plane.capacityExaflops.toFixed(2)} EF · energy ${plane.energyGw.toLocaleString()} GW · latency ${plane.latencyMs} ms · availability ${(plane.availabilityPct * 100).toFixed(2)}% · partner ${plane.failoverPartner}`;
+    list.appendChild(li);
+  });
+}
+
+function renderOrchestrationFabric(orchestration) {
+  if (!orchestration) return;
+  const summary = document.querySelector("#fabric-federation-summary");
+  const domainsOk = orchestration.coverage.domainsOk;
+  const sentinelsOk = orchestration.coverage.sentinelsOk;
+  const federationsOk = orchestration.coverage.federationsOk;
+  summary.textContent = `Domains ${domainsOk ? "aligned" : "review"} · Sentinels ${sentinelsOk ? "aligned" : "review"} · Federations ${federationsOk ? "aligned" : "review"}`;
+  summary.classList.toggle("status-ok", domainsOk && sentinelsOk && federationsOk);
+  summary.classList.toggle("status-fail", !(domainsOk && sentinelsOk && federationsOk));
+
+  document.querySelector("#fabric-latency-summary").textContent = `Average latency ${orchestration.coverage.averageLatencyMs.toFixed(0)} ms · max ${orchestration.coverage.maxLatencyMs} ms`;
+
+  const list = document.querySelector("#fabric-shards");
+  list.innerHTML = "";
+  orchestration.shards.forEach((shard) => {
+    const li = document.createElement("li");
+    const issues = [];
+    if (!shard.domainCoverageOk && shard.missingDomains.length > 0) {
+      issues.push(`missing domains ${shard.missingDomains.join("/")}`);
+    }
+    if (!shard.sentinelsOk) {
+      issues.push("sentinel drift");
+    }
+    if (!shard.federationFound) {
+      issues.push("no matching federation");
+    }
+    li.innerHTML = `<strong>${shard.id}</strong> — registry ${shard.jobRegistry} · latency ${shard.latencyMs} ms · domains ${shard.domains.join(", ")}`;
+    if (issues.length > 0) {
+      const issue = document.createElement("div");
+      issue.textContent = issues.join(" · ");
+      issue.classList.add("status-fail");
+      li.appendChild(issue);
+    }
     list.appendChild(li);
   });
 }
@@ -386,6 +443,7 @@ async function bootstrap() {
     renderFederations(telemetry);
     renderIdentity(telemetry.identity);
     renderComputeFabric(telemetry.computeFabric);
+    renderOrchestrationFabric(telemetry.orchestrationFabric);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);
     renderOwnerProof(ownerProof, telemetry);

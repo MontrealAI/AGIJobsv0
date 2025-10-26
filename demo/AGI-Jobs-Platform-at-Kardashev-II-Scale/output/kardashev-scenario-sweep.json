@@ -204,6 +204,40 @@
     ]
   },
   {
+    "id": "energy-feed-drift",
+    "title": "Live energy feed drift shock",
+    "status": "nominal",
+    "summary": "Live feeds remain within tolerance bands.",
+    "confidence": 1,
+    "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
+    "metrics": [
+      {
+        "label": "Max drift",
+        "value": "0.00%",
+        "ok": true
+      },
+      {
+        "label": "Tolerance",
+        "value": "5%",
+        "ok": true
+      },
+      {
+        "label": "Drift alert",
+        "value": "8.5%",
+        "ok": true
+      },
+      {
+        "label": "Average latency",
+        "value": "241467 ms",
+        "ok": false
+      }
+    ],
+    "recommendedActions": [
+      "Trigger energy oracle recalibration from mission directives.",
+      "Rebalance Dyson thermostat inputs toward the affected federation until drift subsides."
+    ]
+  },
+  {
     "id": "compute-plane-failover",
     "title": "Primary compute plane offline",
     "status": "nominal",
