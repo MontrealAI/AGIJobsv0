@@ -7,7 +7,7 @@
 - **Planetary orchestration** – multi-hour/day autonomous mission loops with resumable checkpoints and structured telemetry.
 - **Recursive job graph** – agents continuously decompose work into sub-jobs with full validator oversight.
 - **Tokenised resource economy** – energy & compute scarcity dynamically reprice AGIALPHA rewards and stakes.
-- **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & parameter control.
+- **A2A mesh & governance** – asynchronous pub/sub messaging, commit–reveal validation, pausing & live parameter control.
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
 
 ```mermaid
@@ -53,6 +53,9 @@ flowchart LR
    echo '{"action": "pause"}' >> control-channel.jsonl
    echo '{"action": "resume"}' >> control-channel.jsonl
    echo '{"action": "stop"}' >> control-channel.jsonl
+   echo '{"action": "update_parameters", "governance": {"worker_stake_ratio": 0.3}, "resources": {"energy_capacity": 1500000}}' >> control-channel.jsonl
+   echo '{"action": "set_account", "account": "energy-architect", "tokens": 20000}' >> control-channel.jsonl
+   echo '{"action": "cancel_job", "job_id": "<job hex>"}' >> control-channel.jsonl
    ```
 
 4. **Inspect telemetry** – logs are emitted as structured JSON. They stream into any observability stack (Logstash, Loki, etc.) without adapters.
@@ -65,6 +68,13 @@ flowchart LR
 | `config/default.json` | Turn-key configuration demonstrating all tunable levers. |
 | `kardashev_ii_omega_grade_alpha_agi_business_3_demo/` | Full Python implementation (orchestrator, agents, validators, resources, simulation, CLI). |
 | `ui/` | Front-end artefacts (Mermaid dashboards & data stories). |
+
+## 🛡️ Owner Mission Control
+
+- `update_parameters` accepts nested `governance`, `resources`, and `config` payloads. Timings are expressed in **seconds** and automatically converted to `timedelta` values.
+- `set_account` hot-patches individual agent treasuries or quotas (tokens, locked stakes, energy/compute allowances).
+- `cancel_job` immediately halts any job (even mid-validation), returning rewards to the employer and releasing all stakes.
+- Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
 
 ## 🧪 CI & Validation
 

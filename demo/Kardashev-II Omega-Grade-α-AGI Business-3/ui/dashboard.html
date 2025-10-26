@@ -89,5 +89,20 @@ Validator Stakes: automatically rehydrated on restart
         <li>Attach planetary simulators by swapping the <code>SyntheticEconomySim</code> implementation.</li>
       </ol>
     </section>
+
+    <section class="card">
+      <h2>Owner Command Surface</h2>
+      <pre>
+{ "action": "update_parameters",
+  "governance": { "worker_stake_ratio": 0.22, "validator_commit_window": 180 },
+  "resources": { "energy_capacity": 1500000, "accounts": [{"name": "operator", "tokens": 125000}] },
+  "config": { "checkpoint_interval_seconds": 30 }
+}
+
+{ "action": "set_account", "account": "energy-architect", "tokens": 42000 }
+
+{ "action": "cancel_job", "job_id": "deadbeefcafebabe" }
+      </pre>
+    </section>
   </body>
 </html>

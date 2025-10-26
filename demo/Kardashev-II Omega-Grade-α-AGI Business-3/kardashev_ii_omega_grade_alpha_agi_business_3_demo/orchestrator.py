@@ -320,6 +320,12 @@ class Orchestrator:
                     self.resume()
                 elif action == "stop":
                     await self.shutdown()
+                elif action == "update_parameters":
+                    self._handle_parameter_update(message.payload)
+                elif action == "set_account":
+                    self._handle_account_adjustment(message.payload)
+                elif action == "cancel_job":
+                    await self._handle_cancel_job(message.payload)
 
     async def _handle_job_result(self, payload: Dict[str, str]) -> None:
         summary = payload["summary"]
@@ -456,4 +462,124 @@ class Orchestrator:
 
     async def wait_until_stopped(self) -> None:
         await self._stopped.wait()
+
+    def _handle_parameter_update(self, payload: Dict[str, Any]) -> None:
+        updates = payload.get("governance")
+        if isinstance(updates, dict):
+            gov_updates: Dict[str, Any] = {}
+            for key in ("worker_stake_ratio", "validator_stake", "approvals_required", "slash_ratio"):
+                if key in updates:
+                    gov_updates[key] = float(updates[key]) if key != "approvals_required" else int(updates[key])
+            for key in ("validator_commit_window", "validator_reveal_window"):
+                if key in updates:
+                    gov_updates[key] = timedelta(seconds=float(updates[key]))
+            if "pause_enabled" in updates:
+                gov_updates["pause_enabled"] = bool(updates["pause_enabled"])
+            if gov_updates:
+                self.governance.update(**gov_updates)
+                self._info("governance_parameters_updated", fields=list(gov_updates.keys()))
+        resource_updates = payload.get("resources")
+        if isinstance(resource_updates, dict):
+            capacity_kwargs: Dict[str, float] = {}
+            for key in ("energy_capacity", "compute_capacity", "energy_available", "compute_available"):
+                if key in resource_updates:
+                    capacity_kwargs[key] = float(resource_updates[key])
+            if capacity_kwargs:
+                self.resources.update_capacity(**capacity_kwargs)
+            accounts = resource_updates.get("accounts")
+            adjusted_accounts = 0
+            if isinstance(accounts, list):
+                for account_spec in accounts:
+                    if not isinstance(account_spec, dict):
+                        continue
+                    name = account_spec.get("name")
+                    if not isinstance(name, str) or not name:
+                        continue
+                    adjust_kwargs: Dict[str, float] = {}
+                    for field in ("tokens", "locked", "energy_quota", "compute_quota"):
+                        if field in account_spec:
+                            adjust_kwargs[field] = float(account_spec[field])
+                    self.resources.adjust_account(name, **adjust_kwargs)
+                    adjusted_accounts += 1
+            if capacity_kwargs or adjusted_accounts:
+                self._info(
+                    "resource_parameters_updated",
+                    capacity_fields=list(capacity_kwargs.keys()),
+                    accounts=adjusted_accounts,
+                )
+        config_updates = payload.get("config")
+        if isinstance(config_updates, dict):
+            updated_fields: List[str] = []
+            for field in (
+                "insight_interval_seconds",
+                "cycle_sleep_seconds",
+                "checkpoint_interval_seconds",
+                "max_cycles",
+            ):
+                if field in config_updates:
+                    value = config_updates[field]
+                    if field == "max_cycles":
+                        numeric_value: Optional[int] = None
+                        try:
+                            if value is not None:
+                                numeric_value = int(value)
+                        except (TypeError, ValueError):
+                            numeric_value = None
+                        setattr(self.config, field, None if not numeric_value or numeric_value <= 0 else numeric_value)
+                    else:
+                        numeric = float(value)
+                        setattr(self.config, field, numeric)
+                    updated_fields.append(field)
+            if updated_fields:
+                self._info("config_parameters_updated", fields=updated_fields)
+
+    def _handle_account_adjustment(self, payload: Dict[str, Any]) -> None:
+        name = payload.get("account")
+        if not isinstance(name, str) or not name:
+            self._warning("account_update_missing_name")
+            return
+        adjust_kwargs: Dict[str, float] = {}
+        for field in ("tokens", "locked", "energy_quota", "compute_quota"):
+            if field in payload:
+                adjust_kwargs[field] = float(payload[field])
+        account = self.resources.adjust_account(name, **adjust_kwargs)
+        self._info(
+            "account_adjusted",
+            account=name,
+            tokens=account.tokens,
+            locked=account.locked,
+            energy_quota=account.energy_quota,
+            compute_quota=account.compute_quota,
+        )
+
+    async def _handle_cancel_job(self, payload: Dict[str, Any]) -> None:
+        job_id = payload.get("job_id")
+        if not isinstance(job_id, str) or not job_id:
+            self._warning("cancel_missing_job_id")
+            return
+        reason = payload.get("reason", "Operator cancelled job")
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            self._warning("cancel_unknown_job", job_id=job_id)
+            return
+        if job.status == JobStatus.FINALIZED:
+            self._warning("cancel_ignored_finalized", job_id=job_id)
+            return
+        if job.status == JobStatus.CANCELLED:
+            self._info("cancel_noop", job_id=job_id)
+            return
+        employer = str(job.spec.metadata.get("employer", self.config.operator_account))
+        self.resources.credit_tokens(employer, job.spec.reward_tokens)
+        if job.assigned_agent:
+            self.resources.release_stake(job.assigned_agent, job.stake_locked)
+        for validator in self.config.validator_names:
+            self.resources.release_stake(validator, self.governance.params.validator_stake)
+        job = self.job_registry.mark_cancelled(job_id, str(reason))
+        await self.bus.publish(
+            f"jobs:cancelled:{job_id}",
+            {"job_id": job_id, "reason": reason},
+            "orchestrator",
+        )
+        self._info("job_cancelled", job_id=job_id, reason=reason)
 
