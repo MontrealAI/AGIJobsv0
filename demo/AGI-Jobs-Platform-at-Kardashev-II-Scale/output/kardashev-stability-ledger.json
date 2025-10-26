@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9618138424821002,
-    "quorum": true,
-    "summary": "Manual review required for 1 check(s).",
+    "compositeScore": 0.9243119266055047,
+    "quorum": false,
+    "summary": "Manual review required for 2 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9618138424821002,
+        "score": 0.9243119266055047,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.9666666666666667,
+        "score": 0.918918918918919,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -31,6 +31,11 @@
         "method": "monte-carlo",
         "score": 1,
         "explanation": "Energy breach probability 0.00% across 256 simulations (tolerance 1.00%)."
+      },
+      {
+        "method": "mission-lattice",
+        "score": 0.9444,
+        "explanation": "Mission unstoppable 94.44% · dependencies resolved · warnings 1."
       },
       {
         "method": "scenario-sweep",
@@ -104,6 +109,14 @@
       "status": true,
       "weight": 0.65,
       "evidence": "tertiary 100.0% · decode failures 0"
+    },
+    {
+      "id": "mission-lattice",
+      "title": "Mission lattice unstoppable",
+      "severity": "high",
+      "status": false,
+      "weight": 0.85,
+      "evidence": "unstoppable 94.44% · warnings 1"
     },
     {
       "id": "guardian-coverage",
@@ -283,6 +296,12 @@
     }
   ],
   "alerts": [
+    {
+      "id": "mission-lattice",
+      "title": "Mission lattice unstoppable",
+      "severity": "high",
+      "evidence": "unstoppable 94.44% · warnings 1"
+    },
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",

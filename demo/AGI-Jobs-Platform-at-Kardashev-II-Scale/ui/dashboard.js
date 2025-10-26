@@ -28,6 +28,14 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
 
+function applyStatus(element, status) {
+  if (!element) return;
+  element.classList.remove("status-ok", "status-warn", "status-fail");
+  if (status) {
+    element.classList.add(status);
+  }
+}
+
 function renderMetrics(telemetry) {
   document.querySelector("#dominance-score").textContent = `${telemetry.dominance.score.toFixed(1)} / 100`;
   document.querySelector("#monthly-value").textContent = `$${formatNumber(telemetry.dominance.monthlyValueUSD / 1_000_000_000_000)}T monthly throughput`;
@@ -300,6 +308,184 @@ function renderEnergySchedule(schedule, verification) {
       .map((deficit) => `${deficit.federation} ${(deficit.coverageRatio * 100).toFixed(2)}% (${deficit.deficitGwH} GW·h)`).join(" · ")}`;
     deficits.classList.add("status-fail");
     deficits.classList.remove("status-ok");
+  }
+}
+
+function renderMissionLattice(mission) {
+  const summaryElement = document.querySelector("#mission-summary");
+  const listElement = document.querySelector("#mission-programmes");
+  const warningsElement = document.querySelector("#mission-warnings");
+
+  if (!mission) {
+    if (summaryElement) {
+      summaryElement.textContent = "Mission telemetry unavailable.";
+      applyStatus(summaryElement, "status-fail");
+    }
+    if (listElement) {
+      listElement.innerHTML = "";
+    }
+    if (warningsElement) {
+      warningsElement.textContent = "Mission lattice output not generated. Regenerate artefacts.";
+      applyStatus(warningsElement, "status-fail");
+    }
+    return;
+  }
+
+  const unstoppablePct = (mission.verification.unstoppableScore * 100).toFixed(2);
+  const summaryParts = [
+    `${mission.totals.programmes} programmes`,
+    `${mission.totals.tasks} tasks`,
+    `${formatNumber(mission.totals.energyGw)} GW energy`,
+    `${mission.totals.computeExaflops.toFixed(2)} EF compute`,
+    `Agent quorum ${formatNumber(mission.totals.agentQuorum)}`,
+    `Avg timeline ${mission.totals.averageTimelineDays.toFixed(1)}d`,
+  ];
+
+  const verificationParts = [
+    `Unstoppable ${unstoppablePct}%`,
+    mission.verification.dependenciesResolved && mission.verification.programmeDependenciesResolved
+      ? "Dependencies resolved"
+      : "Dependencies review",
+    mission.verification.sentinelCoverage && mission.verification.fallbackCoverage
+      ? "Sentinel & fallback nominal"
+      : "Coverage review",
+    mission.verification.timelineAligned && mission.verification.autonomyWithinBounds
+      ? "Timelines aligned"
+      : "Timeline/autonomy review",
+  ];
+
+  if (summaryElement) {
+    summaryElement.textContent = `${verificationParts.join(" · ")} · ${summaryParts.join(" · ")}`;
+    const summaryOk =
+      mission.verification.unstoppableScore >= 0.95 &&
+      mission.verification.dependenciesResolved &&
+      mission.verification.programmeDependenciesResolved &&
+      mission.verification.sentinelCoverage &&
+      mission.verification.fallbackCoverage &&
+      mission.verification.ownerAlignment &&
+      mission.verification.autonomyWithinBounds &&
+      mission.verification.timelineAligned;
+    const summaryWarn =
+      !summaryOk && (mission.verification.unstoppableScore >= 0.85 || mission.verification.warnings.length > 0);
+    applyStatus(summaryElement, summaryOk ? "status-ok" : summaryWarn ? "status-warn" : "status-fail");
+  }
+
+  if (listElement) {
+    listElement.innerHTML = "";
+    mission.programmes.forEach((programme) => {
+      const li = document.createElement("li");
+      li.classList.add("mission-item");
+
+      const header = document.createElement("div");
+      header.classList.add("mission-item-header");
+
+      const title = document.createElement("h3");
+      title.textContent = programme.name;
+      header.appendChild(title);
+
+      const score = document.createElement("span");
+      score.classList.add("mission-score");
+      const programmeScorePct = (programme.unstoppableScore * 100).toFixed(2);
+      score.textContent = `Unstoppable ${programmeScorePct}%`;
+      const programmeStatus =
+        programme.unstoppableScore >= 0.95 ? "status-ok" : programme.unstoppableScore >= 0.85 ? "status-warn" : "status-fail";
+      score.classList.add(programmeStatus);
+      header.appendChild(score);
+
+      li.appendChild(header);
+
+      if (programme.objective) {
+        const objective = document.createElement("p");
+        objective.classList.add("mission-objective");
+        objective.textContent = programme.objective;
+        li.appendChild(objective);
+      }
+
+      const meta = document.createElement("div");
+      meta.classList.add("mission-meta");
+      meta.innerHTML = `
+        <span>Federation ${programme.federation}</span>
+        <span>Owner safe ${programme.ownerSafe}</span>
+        <span>${programme.taskCount} tasks</span>
+        <span>${formatNumber(programme.totalEnergyGw)} GW</span>
+        <span>${programme.totalComputeExaflops.toFixed(2)} EF</span>
+        <span>Quorum ${formatNumber(programme.totalAgentQuorum)}</span>
+        <span>Critical path ${programme.criticalPathDays.toFixed(1)}d</span>
+        <span>Slack ${programme.timelineSlackDays.toFixed(2)}d</span>
+      `;
+      li.appendChild(meta);
+
+      const riskTotal =
+        programme.riskDistribution.low + programme.riskDistribution.medium + programme.riskDistribution.high;
+      const risk = document.createElement("p");
+      risk.classList.add("mission-risk");
+      if (riskTotal > 0) {
+        const lowPct = ((programme.riskDistribution.low / riskTotal) * 100).toFixed(1);
+        const medPct = ((programme.riskDistribution.medium / riskTotal) * 100).toFixed(1);
+        const highPct = ((programme.riskDistribution.high / riskTotal) * 100).toFixed(1);
+        risk.textContent = `Risk distribution — Low ${lowPct}% · Medium ${medPct}% · High ${highPct}%`;
+      } else {
+        risk.textContent = "Risk distribution — No tasks registered.";
+      }
+      li.appendChild(risk);
+
+      const flags = [];
+      if (programme.missingDependencies.length > 0) {
+        flags.push({ status: "status-fail", text: `Missing task deps: ${programme.missingDependencies.join(", ")}` });
+      }
+      if (programme.missingProgrammeDependencies.length > 0) {
+        flags.push({
+          status: "status-fail",
+          text: `Missing programme deps: ${programme.missingProgrammeDependencies.join(", ")}`,
+        });
+      }
+      if (programme.sentinelAlerts.length > 0) {
+        flags.push({ status: "status-warn", text: `Sentinel alerts: ${programme.sentinelAlerts.join(", ")}` });
+      }
+      if (programme.ownerAlerts.length > 0) {
+        flags.push({ status: "status-fail", text: `Owner safes mismatch: ${programme.ownerAlerts.join(", ")}` });
+      }
+      if (!programme.timelineOk) {
+        flags.push({ status: "status-fail", text: `Timeline deficit ${programme.timelineSlackDays.toFixed(2)}d` });
+      } else if (programme.timelineSlackDays < 14) {
+        flags.push({ status: "status-warn", text: `Timeline slack ${programme.timelineSlackDays.toFixed(2)}d` });
+      }
+      if (!programme.autonomyOk) {
+        flags.push({ status: "status-fail", text: "Autonomy exceeds bounds" });
+      }
+      if (programme.dependencies.length > 0 && programme.missingDependencies.length === 0) {
+        flags.push({ status: "status-ok", text: `Dependencies: ${programme.dependencies.join(", ")}` });
+      }
+
+      const flagContainer = document.createElement("div");
+      flagContainer.classList.add("mission-flags");
+      if (flags.length === 0) {
+        const badge = document.createElement("span");
+        badge.classList.add("mission-badge", "status-ok");
+        badge.textContent = "All invariants satisfied.";
+        flagContainer.appendChild(badge);
+      } else {
+        flags.forEach((flag) => {
+          const badge = document.createElement("span");
+          badge.classList.add("mission-badge", flag.status);
+          badge.textContent = flag.text;
+          flagContainer.appendChild(badge);
+        });
+      }
+      li.appendChild(flagContainer);
+
+      listElement.appendChild(li);
+    });
+  }
+
+  if (warningsElement) {
+    if (mission.verification.warnings.length === 0) {
+      warningsElement.textContent = "No mission advisories.";
+      applyStatus(warningsElement, "status-ok");
+    } else {
+      warningsElement.textContent = `⚠ ${mission.verification.warnings.join(" · ")}`;
+      applyStatus(warningsElement, "status-warn");
+    }
   }
 }
 
@@ -580,11 +766,17 @@ async function bootstrap() {
     renderComputeFabric(telemetry.computeFabric);
     renderOrchestrationFabric(telemetry.orchestrationFabric);
     renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+    renderMissionLattice(telemetry.missionLattice);
     renderLogistics(telemetry.logistics, telemetry.verification.logistics);
     renderSettlement(telemetry.settlement, telemetry.verification.settlement);
     renderScenarioSweep(telemetry);
     renderLedger(ledger);
     renderOwnerProof(ownerProof, telemetry);
+    await renderMermaidDiagram(
+      "./output/kardashev-task-hierarchy.mmd",
+      "mission-mermaid",
+      "mission-hierarchy-diagram"
+    );
     await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");
     await renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram");
   } catch (error) {
@@ -592,6 +784,16 @@ async function bootstrap() {
     const container = document.querySelector("#mermaid-container");
     container.textContent = `Failed to load assets: ${error}`;
     container.classList.add("status-fail");
+    const missionContainer = document.querySelector("#mission-mermaid");
+    if (missionContainer) {
+      missionContainer.textContent = "Mission hierarchy unavailable.";
+      missionContainer.classList.add("status-fail");
+    }
+    const dysonContainer = document.querySelector("#dyson-container");
+    if (dysonContainer) {
+      dysonContainer.textContent = "Dyson timeline unavailable.";
+      dysonContainer.classList.add("status-fail");
+    }
   }
 }
 
