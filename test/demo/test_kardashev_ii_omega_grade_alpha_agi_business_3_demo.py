@@ -384,6 +384,43 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertGreaterEqual(operator_after, operator_before)
             await orchestrator.shutdown()
 
+    async def test_post_alpha_job_requires_employer_budget(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.1),
+                validator_reveal_window=timedelta(seconds=0.1),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=10,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=1,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+            )
+            orchestrator = Orchestrator(config)
+            try:
+                await orchestrator.start()
+                orchestrator.config.base_agent_tokens = 0.0
+                orchestrator.resources.adjust_account("external-user", tokens=50.0)
+                spec = JobSpec(
+                    title="Overbudget Mission",
+                    description="Ensure insufficient balances are rejected",
+                    required_skills=[next(iter(orchestrator.config.worker_specs))],
+                    reward_tokens=100.0,
+                    deadline=datetime.now(timezone.utc) + timedelta(hours=1),
+                    validation_window=timedelta(minutes=10),
+                    metadata={"employer": "external-user"},
+                )
+                with self.assertRaises(ValueError):
+                    await orchestrator.post_alpha_job(spec)
+            finally:
+                await orchestrator.shutdown()
+
     async def test_status_snapshot_stream_written(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             checkpoint = Path(tmp) / "checkpoint.json"
