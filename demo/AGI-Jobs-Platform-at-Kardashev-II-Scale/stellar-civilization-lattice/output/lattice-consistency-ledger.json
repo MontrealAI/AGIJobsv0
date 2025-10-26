@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2025-04-01T00:00:00Z",
+  "energy": {
+    "methods": {
+      "direct": 277966.667,
+      "kahan": 277966.66699999996,
+      "pairwise": 277966.66699999996,
+      "bigInt": 277966.667,
+      "projection": 277966.6666666667
+    },
+    "toleranceGw": 0.277966667,
+    "tolerancePct": 0.000001,
+    "maxDeviationGw": 0.00033333332976326346,
+    "consensus": true,
+    "coverageRatio": 1,
+    "projection": {
+      "perFederation": [
+        {
+          "federation": "earth",
+          "scheduledEnergyGwH": 2016000,
+          "averageScheduledGw": 84000,
+          "windowCount": 4,
+          "scheduledHours": 24
+        },
+        {
+          "federation": "mars",
+          "scheduledEnergyGwH": 632000,
+          "averageScheduledGw": 26333.333333333332,
+          "windowCount": 3,
+          "scheduledHours": 24
+        },
+        {
+          "federation": "orbital",
+          "scheduledEnergyGwH": 3352000,
+          "averageScheduledGw": 139666.66666666666,
+          "windowCount": 3,
+          "scheduledHours": 24
+        },
+        {
+          "federation": "luna",
+          "scheduledEnergyGwH": 671200,
+          "averageScheduledGw": 27966.666666666668,
+          "windowCount": 3,
+          "scheduledHours": 24
+        }
+      ],
+      "totalScheduledGwH": 6671200,
+      "normalisedTotalGw": 277966.6666666667,
+      "coverageRatio": 1,
+      "windowCount": 13
+    }
+  },
+  "compute": {
+    "methods": {
+      "direct": 56.7,
+      "telemetry": 56.7,
+      "kahan": 56.7,
+      "pairwise": 56.7
+    },
+    "diffs": {
+      "directVsTelemetry": 0,
+      "directVsKahan": 0,
+      "kahanVsPairwise": 0
+    },
+    "toleranceExaflops": 0.0000567,
+    "maxDeviationExaflops": 0,
+    "consensus": true
+  },
+  "settlement": {
+    "watchersOnline": 12,
+    "uniqueWatchers": 12,
+    "coverageOk": true,
+    "slippageOk": true,
+    "riskOk": true
+  },
+  "identity": {
+    "revocationRatePpm": 0.3489795918367347,
+    "tolerancePpm": 120,
+    "withinTolerance": true
+  }
+}

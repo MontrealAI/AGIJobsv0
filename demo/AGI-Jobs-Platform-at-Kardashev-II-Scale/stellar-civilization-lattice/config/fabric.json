@@ -1,0 +1,58 @@
+{
+  "shards": [
+    {
+      "id": "earth",
+      "jobRegistry": "0xea000000000000000000000000000000000000a1",
+      "latencyMs": 40,
+      "domains": [
+        "earth.finance",
+        "earth.infrastructure"
+      ],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0a1",
+      "sentinels": [
+        "0x9d7d49c1c0ce2709f50af6b456b8a2a5d23fd9a1"
+      ]
+    },
+    {
+      "id": "mars",
+      "jobRegistry": "0xea000000000000000000000000000000000000b1",
+      "latencyMs": 720000,
+      "domains": [
+        "mars.terraforming"
+      ],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0b1",
+      "sentinels": [
+        "0x71f3c9d8b9e7a0f3dc5b4215df9e8f531c7c2f91"
+      ]
+    },
+    {
+      "id": "orbital",
+      "jobRegistry": "0xea000000000000000000000000000000000000c1",
+      "latencyMs": 1200,
+      "domains": [
+        "orbital.defense",
+        "orbital.research"
+      ],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0c1",
+      "sentinels": [
+        "0x4b6d8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e"
+      ]
+    },
+    {
+      "id": "luna",
+      "jobRegistry": "0xea000000000000000000000000000000000000d1",
+      "latencyMs": 1500,
+      "domains": [
+        "luna.logistics"
+      ],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0d1",
+      "sentinels": [
+        "0x1f2A3B4c5D6e7F8a9B0c1D2e3F4a5B6c7D8e9F01"
+      ]
+    }
+  ],
+  "knowledgeGraph": "0xea0000000000000000000000000000000000d0a1",
+  "energyOracle": "0xea0000000000000000000000000000000000d0b1",
+  "rewardEngine": "0xea0000000000000000000000000000000000d0c1",
+  "phase8Manager": "0xea0000000000000000000000000000000000d0d1"
+}

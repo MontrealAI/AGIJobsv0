@@ -1,0 +1,13 @@
+{
+  "runs": 256,
+  "breachProbability": 0,
+  "percentileGw": {
+    "p50": 273468.4194078833,
+    "p95": 289943.141585405,
+    "p99": 292465.8542831234
+  },
+  "maxGw": 295685.83840385685,
+  "averageGw": 273067.2076398922,
+  "withinTolerance": true,
+  "tolerance": 0.01
+}

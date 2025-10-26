@@ -1,0 +1,56 @@
+# Kardashev II Operator Briefing
+
+## Owner powers
+- **Pause & resume entire civilisation mesh** (Safe step #0) — Execute forwardPauseCall(pauseAll/unpauseAll) from the Safe batch to freeze or relaunch all federations. · Playbook: ipfs://QmKardashevPauseProtocol
+- **Upgrade governance parameters** (Safe step #1) — Use setGlobalParameters + setGuardianCouncil transactions to roll new addresses, rate limits, or manifests. · Playbook: ipfs://QmKardashevUpgradeProtocol
+- **Deploy or reconfigure a domain** (Safe step #4) — Register domains, sentinels, and capital streams in one action bundle; review autonomy levels before execution. · Playbook: ipfs://QmKardashevDomainProtocol
+
+## Escalation pathways
+* Guardians: guardian@agi.jobs · Ops: +1-800-AGI-JOBS
+* Status page: https://status.agi.jobs/kardashev
+* Bridge failover: Trigger bridge isolation routine if latency exceeds failsafe for 3 consecutive intervals.
+
+## Drill cadence
+* Pause drill every 6h · Guardian review window 12 minutes.
+* Next scheduled drill: 2025-03-02T12:00:00Z
+
+## Verification status
+* Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
+* Monte Carlo breach 0.00% (≤ 1% tolerance): true
+* Energy window coverage 100.00% (threshold 84%) · reliability 98.49%.
+* Compute deviation 0.00% (tolerance 8%): true
+* Energy feed drift ≤ 5%: true
+* Bridge latency tolerance (120s): true
+* Settlement finality 4.73 min (max 12.00 min) · slippage threshold 75 bps.
+* Logistics corridors 4 active — avg reliability 98.58% · min buffer 14.00d · watchers 12 (nominal).
+* Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%).
+* Scenario sweep: 8/11 nominal, 3 warning, 0 critical.
+  - Interplanetary bridge outage simulation: Failover latency 220s leaves 20s slack within 240s failsafe.
+  - Primary energy window offline: Coverage remains 82.49% after losing orbital 8h window.
+  - Logistics demand spike (+25%): Corridors absorb spike with utilisation 102.72% and buffers 12.00d.
+* Audit checklist: ipfs://QmKardashevAuditChecklist
+
+## Identity posture
+* 4/4 federations meeting quorum 5.
+* Revocation rate 0.35 ppm (tolerance 120 ppm); latency window 96s / 240s.
+* Identity ledger delta 0 agents vs compute registry.
+
+## Compute fabric posture
+* Failover capacity 56.90 EF vs quorum 49.35 EF; within quorum true.
+* Average plane availability 98.13% (planes 4).
+* Lead plane Solara Earth Core (Earth orbit low-latency ring) capacity 38.00 EF, partner sol-mars.
+* Sharded registry fabric domains OK · sentinels OK · federations OK.
+
+## Federation snapshot
+* **Earth Sovereign Federation** (chain 1) — Safe 0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2, energy 84000 GW, compute 18.4 EF.
+  - Lead domains: Orbital Infrastructure Directorate (512.00B/mo, resilience 94.20%) · Earth Treasury Fusion (428.00B/mo, resilience 94.80%)
+  - Sentinels: Gaia Energy Sentinel
+* **Mars Terraforming Compact** (chain 534352) — Safe 0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1, energy 26333.333 GW, compute 6.1 EF.
+  - Lead domains: Mars Terraforming Directorate (298.00B/mo, resilience 93.50%)
+  - Sentinels: Ares Habitat Guardian
+* **Orbital Research Halo** (chain 42161) — Safe 0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4, energy 139666.667 GW, compute 24.6 EF.
+  - Lead domains: Orbital Defense Shield (618.00B/mo, resilience 95.70%) · Interstellar Research Nexus (452.00B/mo, resilience 96.10%)
+  - Sentinels: Orbital Solar Shield Sentinel
+* **Luna Infrastructure Federation** (chain 1) — Safe 0x2b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c, energy 27966.667 GW, compute 7.6 EF.
+  - Lead domains: Luna Logistics Authority (168.00B/mo, resilience 93.80%)
+  - Sentinels: Selene Sentinel

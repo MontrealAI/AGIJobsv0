@@ -1,0 +1,105 @@
+{
+  "coverage": {
+    "domainsOk": true,
+    "sentinelsOk": true,
+    "federationsOk": true,
+    "unmatchedFederations": [],
+    "unmatchedShards": [],
+    "averageLatencyMs": 180685,
+    "maxLatencyMs": 720000
+  },
+  "shards": [
+    {
+      "id": "earth",
+      "jobRegistry": "0xea000000000000000000000000000000000000a1",
+      "latencyMs": 40,
+      "domains": [
+        "earth.finance",
+        "earth.infrastructure"
+      ],
+      "missingDomains": [],
+      "orphanDomains": [],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0a1",
+      "sentinelMatches": [
+        {
+          "address": "0x9d7d49c1c0ce2709f50af6b456b8a2a5d23fd9a1",
+          "registered": true
+        }
+      ],
+      "sentinelsOk": true,
+      "federationFound": true,
+      "governanceSafe": "0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2",
+      "domainCoverageOk": true
+    },
+    {
+      "id": "mars",
+      "jobRegistry": "0xea000000000000000000000000000000000000b1",
+      "latencyMs": 720000,
+      "domains": [
+        "mars.terraforming"
+      ],
+      "missingDomains": [],
+      "orphanDomains": [],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0b1",
+      "sentinelMatches": [
+        {
+          "address": "0x71f3c9d8b9e7a0f3dc5b4215df9e8f531c7c2f91",
+          "registered": true
+        }
+      ],
+      "sentinelsOk": true,
+      "federationFound": true,
+      "governanceSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+      "domainCoverageOk": true
+    },
+    {
+      "id": "orbital",
+      "jobRegistry": "0xea000000000000000000000000000000000000c1",
+      "latencyMs": 1200,
+      "domains": [
+        "orbital.defense",
+        "orbital.research"
+      ],
+      "missingDomains": [],
+      "orphanDomains": [],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0c1",
+      "sentinelMatches": [
+        {
+          "address": "0x4b6d8f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e",
+          "registered": true
+        }
+      ],
+      "sentinelsOk": true,
+      "federationFound": true,
+      "governanceSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+      "domainCoverageOk": true
+    },
+    {
+      "id": "luna",
+      "jobRegistry": "0xea000000000000000000000000000000000000d1",
+      "latencyMs": 1500,
+      "domains": [
+        "luna.logistics"
+      ],
+      "missingDomains": [],
+      "orphanDomains": [],
+      "guardianCouncil": "0xea0000000000000000000000000000000000b0d1",
+      "sentinelMatches": [
+        {
+          "address": "0x1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f01",
+          "registered": true
+        }
+      ],
+      "sentinelsOk": true,
+      "federationFound": true,
+      "governanceSafe": "0x2b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c",
+      "domainCoverageOk": true
+    }
+  ],
+  "contracts": {
+    "knowledgeGraph": "0xea0000000000000000000000000000000000d0a1",
+    "energyOracle": "0xea0000000000000000000000000000000000d0b1",
+    "rewardEngine": "0xea0000000000000000000000000000000000d0c1",
+    "phase8Manager": "0xea0000000000000000000000000000000000d0d1"
+  }
+}

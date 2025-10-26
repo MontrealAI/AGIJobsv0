@@ -1,13 +1,64 @@
 #!/usr/bin/env ts-node
 
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
-import { readFileSync } from "node:fs";
+import { join, resolve, isAbsolute } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
 
-const DEMO_ROOT = join(__dirname, "..");
+const rawArgs = process.argv.slice(2);
+
+function resolveDemoRoot(): { root: string; profile?: string; explicitRoot?: string } {
+  const defaultRoot = join(__dirname, "..");
+  const repoRoot = resolve(defaultRoot, "..", "..", "..");
+
+  let profile = process.env.KARDASHEV_DEMO_PROFILE?.trim();
+  let explicitRoot = process.env.KARDASHEV_DEMO_ROOT?.trim();
+
+  for (let i = 0; i < rawArgs.length; i += 1) {
+    const token = rawArgs[i];
+    if (token === "--profile" && rawArgs[i + 1]) {
+      profile = rawArgs[i + 1];
+      i += 1;
+    } else if (token?.startsWith("--profile=")) {
+      profile = token.split("=", 2)[1];
+    } else if (token === "--config-root" && rawArgs[i + 1]) {
+      explicitRoot = rawArgs[i + 1];
+      i += 1;
+    } else if (token?.startsWith("--config-root=")) {
+      explicitRoot = token.split("=", 2)[1];
+    }
+  }
+
+  if (profile && profile.length > 0) {
+    const candidate = resolve(defaultRoot, profile);
+    if (!existsSync(candidate)) {
+      throw new Error(`Profile directory not found: ${candidate}`);
+    }
+    return { root: candidate, profile };
+  }
+
+  if (explicitRoot && explicitRoot.length > 0) {
+    const candidate = isAbsolute(explicitRoot)
+      ? explicitRoot
+      : resolve(repoRoot, explicitRoot);
+    if (!existsSync(candidate)) {
+      throw new Error(`Config root override not found: ${candidate}`);
+    }
+    return { root: candidate, explicitRoot };
+  }
+
+  return { root: defaultRoot };
+}
+
+const { root: DEMO_ROOT, profile: PROFILE, explicitRoot: EXPLICIT_ROOT } = resolveDemoRoot();
 const ORCHESTRATOR = join(__dirname, "run-kardashev-demo.ts");
 
 function runOrchestratorCheck() {
+  const env = {
+    ...process.env,
+    ...(PROFILE ? { KARDASHEV_DEMO_PROFILE: PROFILE } : {}),
+    ...(EXPLICIT_ROOT ? { KARDASHEV_DEMO_ROOT: EXPLICIT_ROOT } : {}),
+  };
+
   const result = spawnSync(
     "npx",
     [
@@ -16,8 +67,10 @@ function runOrchestratorCheck() {
       '{"module":"commonjs"}',
       ORCHESTRATOR,
       "--check",
+      ...(PROFILE ? ["--profile", PROFILE] : []),
+      ...(EXPLICIT_ROOT ? ["--config-root", EXPLICIT_ROOT] : []),
     ],
-    { stdio: "inherit", cwd: join(__dirname, "..", "..", "..") }
+    { stdio: "inherit", cwd: join(__dirname, "..", "..", ".."), env }
   );
   if (result.status !== 0) {
     process.exit(result.status ?? 1);
