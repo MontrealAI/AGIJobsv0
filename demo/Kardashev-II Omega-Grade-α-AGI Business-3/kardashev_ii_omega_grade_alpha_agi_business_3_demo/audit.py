@@ -80,3 +80,9 @@ class AuditTrail:
             self._handle.close()
             self._finalizer.detach()
             self._closed = True
+
+    @property
+    def is_closed(self) -> bool:
+        """Return ``True`` when the audit trail is no longer writable."""
+
+        return self._closed

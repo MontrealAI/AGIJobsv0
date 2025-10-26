@@ -238,11 +238,15 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             )
             orchestrator = Orchestrator(config)
             await orchestrator.start()
+            self.assertIsNotNone(orchestrator.audit)
+            self.assertFalse(orchestrator.audit.is_closed)  # type: ignore[union-attr]
             await asyncio.sleep(0.3)
             await orchestrator.shutdown()
             ledger = [json.loads(line) for line in audit.read_text().strip().splitlines() if line.strip()]
             self.assertTrue(ledger)
             self.assertIn(ledger[0]["algorithm"], {"BLAKE3", "BLAKE2b-256"})
+            assert orchestrator.audit is not None
+            self.assertTrue(orchestrator.audit.is_closed)
 
     async def test_control_updates_parameters(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
