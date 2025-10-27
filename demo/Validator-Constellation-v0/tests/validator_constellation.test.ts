@@ -11,6 +11,7 @@ import { DEFAULT_GOVERNANCE_PARAMETERS, demoLeaves, demoSetup, demoJobBatch, bud
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
+import { deriveEntropyWitness, entropyWitnessToString, verifyEntropyWitness } from '../src/core/entropy';
 import {
   buildDemoFromOperatorState,
   createInitialOperatorState,
@@ -98,6 +99,7 @@ function orchestrateRound(): {
   leaves: EnsLeaf[];
   dishonest?: ValidatorIdentity;
   absentee?: ValidatorIdentity;
+  entropy: { onChainEntropy: Hex; recentBeacon: Hex };
 } {
   const { demo, leaves } = buildDemo();
   leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
@@ -136,7 +138,7 @@ function orchestrateRound(): {
     nonRevealValidators,
     anomalies,
   });
-  return { roundResult, leaves, dishonest, absentee };
+  return { roundResult, leaves, dishonest, absentee, entropy };
 }
 
 test('ENS policies accept alpha mirrors and reject unauthorized domains', () => {
@@ -146,7 +148,7 @@ test('ENS policies accept alpha mirrors and reject unauthorized domains', () => 
 });
 
 test('validator constellation slashes dishonest validators via commit-reveal', () => {
-  const { roundResult, dishonest, absentee } = orchestrateRound();
+  const { roundResult, dishonest, absentee, entropy } = orchestrateRound();
   const slashedAddresses = new Set(roundResult.slashingEvents.map((event) => event.validator.address));
   if (dishonest) {
     assert.ok(slashedAddresses.has(dishonest.address), 'expected dishonest validator to be slashed');
@@ -156,6 +158,17 @@ test('validator constellation slashes dishonest validators via commit-reveal', (
   }
   assert.equal(roundResult.proof.attestedJobCount, 1000);
   assert.ok(roundResult.vrfSeed.startsWith('0x'), 'expected VRF seed in report');
+  assert.equal(roundResult.vrfWitness.transcript, roundResult.vrfSeed);
+  assert.ok(
+    verifyEntropyWitness(roundResult.vrfWitness, {
+      domainId: roundResult.domainId,
+      round: roundResult.round,
+      sources: [entropy.onChainEntropy, entropy.recentBeacon],
+    }),
+    'expected entropy witness verification to succeed',
+  );
+  const witnessSummary = entropyWitnessToString(roundResult.vrfWitness);
+  assert.ok(witnessSummary.includes(roundResult.vrfWitness.keccakSeed));
   const timeline = roundResult.timeline;
   assert.equal(timeline.commitDeadlineBlock, timeline.commitStartBlock + DEFAULT_GOVERNANCE_PARAMETERS.commitPhaseBlocks);
   assert.equal(timeline.revealStartBlock, timeline.commitDeadlineBlock);
@@ -247,6 +260,12 @@ test('subgraph indexer records slashing events for transparency', () => {
   assert.ok(
     subgraphRecords.some((record) => record.payload && (record.payload as { validator?: { address?: string } }).validator?.address === roundResult.slashingEvents[0]?.validator.address),
     'expected slashing event mirrored in subgraph',
+  );
+  const vrfWitnessRecords = subgraphIndexer.filter('VRF_WITNESS');
+  assert.ok(vrfWitnessRecords.length >= 1, 'expected VRF witness telemetry');
+  assert.equal(
+    (vrfWitnessRecords[0].payload as { transcript?: string }).transcript,
+    roundResult.vrfWitness.transcript,
   );
 });
 
@@ -370,4 +389,23 @@ test('operator mermaid blueprint captures governance posture', () => {
   assert.ok(mermaid.includes('Deep Space Research Lab'));
   assert.ok(mermaid.includes('Sentinel'));
   assert.ok(formatValidatorStake('10000000000000000000').includes('ETH'));
+});
+
+test('entropy witness cross-verification detects tampering', () => {
+  const sources: Hex[] = [
+    '0x1111111111111111111111111111111111111111111111111111111111111111',
+    '0x2222222222222222222222222222222222222222222222222222222222222222',
+  ];
+  const witness = deriveEntropyWitness({ sources, domainId: 'deep-space-lab', round: 77 });
+  assert.ok(
+    verifyEntropyWitness(witness, { domainId: 'deep-space-lab', round: 77, sources }),
+    'expected witness verification to pass with canonical parameters',
+  );
+  assert.equal(witness.transcript.length > 0, true);
+  assert.ok(entropyWitnessToString(witness).includes('keccak'));
+  assert.equal(
+    verifyEntropyWitness(witness, { domainId: 'deep-space-lab', round: 78, sources }),
+    false,
+    'mismatched round should fail verification',
+  );
 });

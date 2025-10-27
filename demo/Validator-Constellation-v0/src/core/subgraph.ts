@@ -1,5 +1,5 @@
 import { eventBus } from './eventBus';
-import { SubgraphRecord } from './types';
+import { EntropyWitness, SubgraphRecord } from './types';
 
 export class SubgraphIndexer {
   private records: SubgraphRecord[] = [];
@@ -11,6 +11,12 @@ export class SubgraphIndexer {
     eventBus.on('CommitLogged', (event) => this.pushRecord('COMMIT', event));
     eventBus.on('RevealLogged', (event) => this.pushRecord('REVEAL', event));
     eventBus.on('ZkBatchFinalized', (event) => this.pushRecord('ZK_BATCH', event));
+    eventBus.on('VrfWitnessComputed', (event: EntropyWitness) =>
+      this.pushRecord('VRF_WITNESS', {
+        ...event,
+        sources: [...event.sources],
+      }),
+    );
   }
 
   private pushRecord(type: SubgraphRecord['type'], payload: Record<string, unknown>): void {

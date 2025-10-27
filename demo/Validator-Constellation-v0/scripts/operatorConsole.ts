@@ -477,6 +477,7 @@ function handleRunRound(argv: RunRoundArgs): void {
     entropyBefore.onChainEntropy,
     entropyBefore.recentBeacon,
   );
+  console.log('Entropy witness for operator round:', selection.witness);
   const voteOverrides: Record<string, VoteValue> = {};
   if (argv.dishonest && selection.committee[0]) {
     voteOverrides[selection.committee[0].address] = truthfulVote === 'APPROVE' ? 'REJECT' : 'APPROVE';
@@ -547,7 +548,7 @@ function handleRunRound(argv: RunRoundArgs): void {
     reportDir,
     roundResult,
     subgraphRecords: subgraphIndexer.list(),
-    events: [...roundResult.commits, ...roundResult.reveals],
+    events: [selection.witness, ...roundResult.commits, ...roundResult.reveals],
     context,
   });
   summaryForAction('validation-round-executed', {
@@ -555,6 +556,7 @@ function handleRunRound(argv: RunRoundArgs): void {
     attestedJobs: roundResult.proof.attestedJobCount,
     slashingEvents: roundResult.slashingEvents.length,
     sentinelAlerts: roundResult.sentinelAlerts.length,
+    vrfTranscript: roundResult.vrfWitness.transcript,
   });
   refreshStateFromDemo(state, demo, { slashingEvents: roundResult.slashingEvents });
   if (argv.mermaid) {

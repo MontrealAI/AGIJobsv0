@@ -98,6 +98,12 @@ jobs:
             if (summary.proof?.attestedJobCount !== target.expectedJobs) {
               throw new Error(`[${target.name}] proof does not attest expected job count`);
             }
+            if (!summary.vrfWitness || typeof summary.vrfWitness.transcript !== 'string') {
+              throw new Error(`[${target.name}] entropy witness transcript missing in summary`);
+            }
+            if (!Array.isArray(summary.vrfWitness.sources) || summary.vrfWitness.sources.length < 2) {
+              throw new Error(`[${target.name}] entropy witness sources malformed`);
+            }
             if (!Array.isArray(summary.slashing) || summary.slashing.length === 0) {
               throw new Error(`[${target.name}] slashing telemetry missing`);
             }
@@ -117,6 +123,9 @@ jobs:
             const subgraphRecords = JSON.parse(fs.readFileSync(subgraphPath, 'utf8'));
             if (!Array.isArray(subgraphRecords) || subgraphRecords.every((record) => record.type !== 'SLASHING')) {
               throw new Error(`[${target.name}] subgraph index missing slashing records`);
+            }
+            if (subgraphRecords.every((record) => record.type !== 'VRF_WITNESS')) {
+              throw new Error(`[${target.name}] subgraph index missing VRF witness records`);
             }
           }
           console.log('Validator constellation artifacts validated for baseline and scenario runs.');

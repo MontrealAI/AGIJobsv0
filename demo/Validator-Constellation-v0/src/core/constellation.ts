@@ -333,6 +333,7 @@ export class ValidatorConstellationDemo {
         domainId: params.jobBatch[0]?.domainId ?? this.domainIds[0],
         committee: selection.committee,
         vrfSeed: selection.seed,
+        vrfWitness: selection.witness,
         commits: commitMessages,
         reveals: revealMessages,
         voteOutcome: finalization.outcome,

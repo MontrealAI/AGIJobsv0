@@ -47,11 +47,12 @@ async function main() {
     reportDir,
     roundResult: executed.report,
     subgraphRecords: subgraphIndexer.list(),
-    events: [...executed.report.commits, ...executed.report.reveals],
+    events: [executed.report.vrfWitness, ...executed.report.commits, ...executed.report.reveals],
     context: executed.context,
   });
 
   console.log(`Scenario "${scenarioName}" executed successfully.`);
+  console.log('VRF witness transcript:', executed.report.vrfWitness.transcript);
   console.log(`Validators slashed: ${executed.report.slashingEvents.length}`);
   console.log(`Sentinel alerts: ${executed.report.sentinelAlerts.length}`);
   console.log(`Reports written to ${reportDir}`);
