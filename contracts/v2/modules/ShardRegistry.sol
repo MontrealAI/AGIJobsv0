@@ -90,7 +90,7 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
         returns (GlobalJobRef memory jobRef)
     {
         ShardInfo storage shard = _getShard(shardId);
-        if (shard.queue.paused()) revert ShardPausedError(shardId);
+        _ensureShardActive(shard, shardId);
         uint256 jobId = shard.queue.createJob(msg.sender, specHash, metadataURI);
         jobRef = GlobalJobRef({shardId: shardId, jobId: jobId});
         emit JobCreated(shardId, jobId, msg.sender, specHash, metadataURI);
@@ -99,8 +99,12 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function assignAgent(GlobalJobRef calldata jobRef, address agent) external whenNotPaused {
         (ShardInfo storage shard, IShardJobQueue.Job memory job) = _getJob(jobRef);
+        _ensureShardActive(shard, jobRef.shardId);
         if (job.employer != msg.sender) revert NotEmployer(jobRef.shardId, jobRef.jobId, msg.sender);
         if (agent == address(0)) revert NotAgent(jobRef.shardId, jobRef.jobId, agent);
+        if (job.status != IShardJobQueue.JobStatus.Created) {
+            revert InvalidStatus(jobRef.shardId, jobRef.jobId, IShardJobQueue.JobStatus.Created, job.status);
+        }
 
         shard.queue.setAgent(jobRef.jobId, agent);
         shard.queue.setStatus(jobRef.jobId, IShardJobQueue.JobStatus.Assigned);
@@ -112,6 +116,7 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function startJob(GlobalJobRef calldata jobRef) external whenNotPaused {
         (ShardInfo storage shard, IShardJobQueue.Job memory job) = _getJob(jobRef);
+        _ensureShardActive(shard, jobRef.shardId);
         if (job.agent != msg.sender) revert NotAgent(jobRef.shardId, jobRef.jobId, msg.sender);
         if (job.status != IShardJobQueue.JobStatus.Assigned) {
             revert InvalidStatus(jobRef.shardId, jobRef.jobId, IShardJobQueue.JobStatus.Assigned, job.status);
@@ -124,6 +129,7 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function submitResult(GlobalJobRef calldata jobRef, bytes32 resultHash) external whenNotPaused {
         (ShardInfo storage shard, IShardJobQueue.Job memory job) = _getJob(jobRef);
+        _ensureShardActive(shard, jobRef.shardId);
         if (job.agent != msg.sender) revert NotAgent(jobRef.shardId, jobRef.jobId, msg.sender);
         if (job.status != IShardJobQueue.JobStatus.InProgress) {
             revert InvalidStatus(jobRef.shardId, jobRef.jobId, IShardJobQueue.JobStatus.InProgress, job.status);
@@ -139,6 +145,7 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function finalizeJob(GlobalJobRef calldata jobRef, bool success) external whenNotPaused {
         (ShardInfo storage shard, IShardJobQueue.Job memory job) = _getJob(jobRef);
+        _ensureShardActive(shard, jobRef.shardId);
         if (job.employer != msg.sender) revert NotEmployer(jobRef.shardId, jobRef.jobId, msg.sender);
         if (job.status != IShardJobQueue.JobStatus.Submitted) {
             revert InvalidStatus(jobRef.shardId, jobRef.jobId, IShardJobQueue.JobStatus.Submitted, job.status);
@@ -154,6 +161,7 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function cancelJob(GlobalJobRef calldata jobRef) external whenNotPaused {
         (ShardInfo storage shard, IShardJobQueue.Job memory job) = _getJob(jobRef);
+        _ensureShardActive(shard, jobRef.shardId);
         if (job.employer != msg.sender) revert NotEmployer(jobRef.shardId, jobRef.jobId, msg.sender);
         if (
             job.status == IShardJobQueue.JobStatus.Finalized || job.status == IShardJobQueue.JobStatus.Cancelled
@@ -218,6 +226,10 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
 
     function _ensureJobExists(GlobalJobRef calldata jobRef) private view {
         _getJob(jobRef);
+    }
+
+    function _ensureShardActive(ShardInfo storage shard, bytes32 shardId) private view {
+        if (shard.queue.paused()) revert ShardPausedError(shardId);
     }
 
     function _getJob(GlobalJobRef calldata jobRef)
