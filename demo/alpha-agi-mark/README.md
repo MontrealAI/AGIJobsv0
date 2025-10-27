@@ -8,6 +8,7 @@ The α-AGI MARK demo showcases how a non-technical operator can launch a foresig
 - [Quickstart](#quickstart)
 - [Owner Controls](#owner-controls)
 - [Runbook](#runbook)
+- [CI Mission Control](#ci-mission-control)
 
 ## Architecture
 
@@ -308,3 +309,10 @@ The demo enumerates all tunable controls in the final recap:
 ## Runbook
 
 The detailed walkthrough is stored at [`runbooks/alpha-agi-mark-runbook.md`](runbooks/alpha-agi-mark-runbook.md).
+
+## CI Mission Control
+
+For a governance-grade overview of the enforced CI v2 pipeline, required status checks, and operator-facing audit cadence, read
+the [`α-AGI MARK CI v2 Mission Control`](docs/ci-mission-control.md) dossier. It maps every workflow stage with mermaid diagrams,
+lists the mandatory branch-protection contexts, and gives non-technical owners a four-step checklist to prove the demo remains
+fully green before every sovereign launch.
