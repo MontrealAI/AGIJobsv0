@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ω Upgrade v7 Mission Control</title>
+    <style>
+      body {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: radial-gradient(circle at top, #0f172a, #020617);
+        color: #e2e8f0;
+      }
+      header {
+        padding: 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #1e3a8a, #0ea5e9);
+        box-shadow: 0 4px 24px rgba(14, 165, 233, 0.35);
+      }
+      main {
+        display: grid;
+        gap: 1.5rem;
+        padding: 2rem;
+      }
+      section {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 10px 40px rgba(14, 165, 233, 0.25);
+      }
+      .mission-headline {
+        font-size: 1.6rem;
+        margin: 0 0 0.75rem;
+        color: #fde68a;
+        text-transform: none;
+      }
+      .confidence-pill {
+        display: inline-block;
+        padding: 0.35rem 0.85rem;
+        border-radius: 9999px;
+        background: rgba(56, 189, 248, 0.2);
+        border: 1px solid rgba(56, 189, 248, 0.45);
+        font-weight: 600;
+      }
+      .actions-list {
+        margin: 0.75rem 0 0;
+        padding-left: 1.5rem;
+      }
+      h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      h2 {
+        margin-top: 0;
+        font-size: 1.25rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .grid-two {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+      }
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        background: rgba(30, 58, 138, 0.35);
+        border: 1px solid rgba(14, 165, 233, 0.35);
+      }
+      .stat strong {
+        font-size: 1.75rem;
+        color: #38bdf8;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      tbody tr:hover {
+        background: rgba(56, 189, 248, 0.08);
+      }
+      pre {
+        background: rgba(15, 23, 42, 0.9);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        overflow-x: auto;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      footer {
+        text-align: center;
+        padding: 1rem;
+        color: rgba(148, 163, 184, 0.7);
+        font-size: 0.85rem;
+      }
+      .status-ok {
+        color: #22c55e;
+      }
+      .status-paused {
+        color: #f97316;
+      }
+      .status-error {
+        color: #f43f5e;
+      }
+      .mermaid {
+        background: rgba(15, 23, 42, 0.9);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+      }
+      a {
+        color: #38bdf8;
+      }
+    </style>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: false, theme: "dark" });
+
+      const telemetryUrl = "../artifacts/status/omega-upgrade-v7/telemetry-ui.json";
+      const mermaidUrl = "../artifacts/status/omega-upgrade-v7/job-graph.mmd";
+      const guardianPlanUrl = "../artifacts/status/omega-upgrade-v7/autonomy-plan.json";
+
+      async function fetchJson(path) {
+        try {
+          const response = await fetch(path, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          console.error(`Failed to load ${path}`, error);
+          return null;
+        }
+      }
+
+      async function fetchText(path) {
+        try {
+          const response = await fetch(path, { cache: "no-store" });
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.text();
+        } catch (error) {
+          console.error(`Failed to load ${path}`, error);
+          return "graph TD\n    error((Unable to render Mermaid diagram))";
+        }
+      }
+
+      function renderStats(data, plan) {
+        const statusEl = document.querySelector("#mission-status");
+        const statsEl = document.querySelector("#stats");
+        const resourceEl = document.querySelector("#resource-stats");
+        const continuityEl = document.querySelector("#continuity-stats");
+        const councilEl = document.querySelector("#council-stats");
+        const tableBody = document.querySelector("#job-table tbody");
+        const longRunEl = document.querySelector("#long-run");
+        const integrityEl = document.querySelector("#integrity-status");
+        const autonomyEl = document.querySelector("#autonomy");
+        const planEl = document.querySelector("#guardian-plan");
+        const narrativeEl = document.querySelector("#mission-summary");
+        const actionsEl = document.querySelector("#mission-actions");
+
+        if (!data) {
+          statusEl.textContent = "No telemetry captured yet.";
+          statsEl.innerHTML = "";
+          tableBody.innerHTML = "";
+          resourceEl.innerHTML = "";
+          longRunEl.innerHTML = "";
+          integrityEl.innerHTML = "";
+          autonomyEl.innerHTML = "";
+          planEl.innerHTML = "";
+          if (narrativeEl) narrativeEl.innerHTML = "";
+          if (actionsEl) actionsEl.innerHTML = "";
+          return;
+        }
+
+        const summary = data.mission_summary ?? {};
+        const jobs = data.jobs ?? {};
+        const longRun = data.long_run ?? {};
+        const resources = data.resources ?? {};
+        const autonomy = data.autonomy ?? {};
+        const guardian = autonomy.guardian ?? {};
+        const governor = autonomy.resource_governor ?? {};
+        const continuity = data.continuity ?? {};
+        const council = data.council ?? {};
+
+        statusEl.innerHTML = `
+          <strong>${data.mission ?? "Ω Mission"}</strong>
+          <span>Cycle ${data.cycle ?? 0}</span>
+          <span>Timestamp ${data.timestamp ?? "—"}</span>
+        `;
+
+        if (narrativeEl) {
+          const phase = summary.phase ?? "assessment";
+          const confidence = summary.confidence ?? 0;
+          narrativeEl.innerHTML = `
+            <div class="mission-headline">${summary.headline ?? "Mission telemetry updating"}</div>
+            <p><span class="confidence-pill">Confidence ${(confidence * 100).toFixed(1)}%</span>
+            <span style="margin-left:0.75rem;">Phase: ${phase}</span></p>
+            <p>${summary.summary ?? "Telemetry stream initialising."}</p>
+            <p><strong>Outstanding jobs:</strong> ${summary.outstanding_jobs ?? 0} ·
+            <strong>Backlog horizon:</strong> ${summary.backlog_horizon ?? 0}</p>
+          `;
+        }
+        if (actionsEl) {
+          const actions = summary.recommended_actions ?? [];
+          if (actions.length) {
+            actionsEl.innerHTML = `<ol class="actions-list">${actions
+              .map((item) => `<li>${item}</li>`)
+              .join("")}</ol>`;
+          } else {
+            actionsEl.innerHTML = "<p>Autonomous mission is fully self-managing.</p>";
+          }
+        }
+
+        statsEl.innerHTML = `
+          <div class="stat">
+            <span>Jobs Active</span>
+            <strong>${(jobs.status_counts?.in_progress ?? 0) + (jobs.status_counts?.posted ?? 0)}</strong>
+          </div>
+          <div class="stat">
+            <span>Jobs Finalized</span>
+            <strong>${jobs.status_counts?.finalized ?? 0}</strong>
+          </div>
+          <div class="stat">
+            <span>Guardian Outstanding</span>
+            <strong>${guardian.outstanding_jobs ?? 0}</strong>
+          </div>
+          <div class="stat">
+            <span>Near Deadline</span>
+            <strong>${guardian.near_deadline_jobs?.length ?? 0}</strong>
+          </div>
+        `;
+
+        resourceEl.innerHTML = `
+          <div class="stat"><span>Energy</span><strong>${Math.round(resources.energy_available ?? 0)} / ${Math.round(resources.energy_capacity ?? 0)}</strong></div>
+          <div class="stat"><span>Compute</span><strong>${Math.round(resources.compute_available ?? 0)} / ${Math.round(resources.compute_capacity ?? 0)}</strong></div>
+          <div class="stat"><span>Token Supply</span><strong>${Math.round(resources.token_supply ?? 0)}</strong></div>
+          <div class="stat"><span>Prices</span><strong>E ${resources.energy_price?.toFixed?.(2) ?? "—"} / C ${resources.compute_price?.toFixed?.(2) ?? "—"}</strong></div>
+        `;
+
+        if (continuityEl) {
+          const replicas = Array.isArray(continuity.replicas) ? continuity.replicas : [];
+          continuityEl.innerHTML = `
+            <div class="stat"><span>Replication interval</span><strong>${(continuity.interval_seconds ?? 0).toFixed?.(0)}s</strong></div>
+            <div class="stat"><span>History retention</span><strong>${continuity.history_limit ?? 0} lines</strong></div>
+            <div class="stat"><span>Replica count</span><strong>${replicas.length}</strong></div>
+            ${replicas
+              .map((replica) => `<div class="stat"><span>${replica.name}</span><strong>${replica.path}</strong></div>`)
+              .join("")}
+          `;
+        }
+
+        if (councilEl) {
+          const validators = Array.isArray(council.validators) ? council.validators : [];
+          councilEl.innerHTML = `
+            <div class="stat"><span>Validators</span><strong>${validators.length}</strong></div>
+            <div class="stat"><span>Commit window</span><strong>${(council.commit_window_seconds ?? 0).toFixed?.(0)}s</strong></div>
+            <div class="stat"><span>Reveal window</span><strong>${(council.reveal_window_seconds ?? 0).toFixed?.(0)}s</strong></div>
+            <div class="stat"><span>Roster</span><strong>${validators.join(", ") || "—"}</strong></div>
+          `;
+        }
+
+        const records = data.visible_job_records ?? [];
+        const rows = records
+          .map((record) => `
+            <tr>
+              <td>${record.job_id}</td>
+              <td>${record.title}</td>
+              <td>${record.status}</td>
+              <td>${record.assigned_agent ?? "unassigned"}</td>
+              <td>${record.deadline}</td>
+            </tr>
+          `)
+          .join("");
+        tableBody.innerHTML = rows || `<tr><td colspan="5">No active jobs.</td></tr>`;
+
+        longRunEl.innerHTML = `
+          <div><strong>Forecast horizon:</strong> ${longRun.forecast_horizon_hours ?? 0} hours</div>
+          <div><strong>Soonest deadline:</strong> ${longRun.soonest_deadline ?? "—"}</div>
+          <div><strong>Background tasks:</strong> ${longRun.active_background_tasks ?? 0}</div>
+          <div><strong>Jobs visible:</strong> ${records.length} (truncated ${data.truncated_jobs ?? 0})</div>
+        `;
+
+        const integrity = data.integrity;
+        if (integrity) {
+          const className = integrity.passed ? "status-ok" : integrity.errors?.length ? "status-error" : "status-paused";
+          integrityEl.innerHTML = `
+            <span class="${className}">Integrity checks: ${integrity.passed ? "Passed" : "Attention"}</span>
+            <pre>${JSON.stringify(integrity, null, 2)}</pre>
+          `;
+        } else {
+          integrityEl.innerHTML = "<em>No integrity report yet.</em>";
+        }
+
+        const pressure = guardian.resource_pressure ?? {};
+        autonomyEl.innerHTML = `
+          <div class="grid-two">
+            <div class="stat"><span>Paused</span><strong>${guardian.paused ? "Yes" : "No"}</strong></div>
+            <div class="stat"><span>Expedite queue</span><strong>${(guardian.expedite_jobs ?? []).length}</strong></div>
+            <div class="stat"><span>Energy pressure</span><strong>${(pressure.energy ?? 0).toFixed(2)}</strong></div>
+            <div class="stat"><span>Compute pressure</span><strong>${(pressure.compute ?? 0).toFixed(2)}</strong></div>
+            <div class="stat"><span>Token pressure</span><strong>${(pressure.token ?? 0).toFixed(2)}</strong></div>
+            <div class="stat"><span>Governor price</span><strong>E ${governor.energy_price?.toFixed?.(2) ?? "—"} / C ${governor.compute_price?.toFixed?.(2) ?? "—"}</strong></div>
+          </div>
+        `;
+
+        if (plan) {
+          planEl.innerHTML = `<pre>${JSON.stringify(plan, null, 2)}</pre>`;
+        } else {
+          planEl.innerHTML = "<em>Guardian plan not yet generated.</em>";
+        }
+      }
+
+      async function renderMermaid() {
+        const container = document.querySelector("#mermaid-diagram");
+        const code = await fetchText(mermaidUrl);
+        try {
+          const { svg } = await mermaid.render(`mermaid-${Date.now()}`, code);
+          container.innerHTML = svg;
+        } catch (error) {
+          container.innerHTML = `<pre>${code}</pre>`;
+        }
+      }
+
+      async function refresh() {
+        const telemetry = await fetchJson(telemetryUrl);
+        const plan = await fetchJson(guardianPlanUrl);
+        renderStats(telemetry, plan);
+        await renderMermaid();
+      }
+
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Ω Upgrade v7 Mission Control</h1>
+      <p>Planetary-scale α-AGI orchestration streamed from AGI Jobs v0 (v2)</p>
+    </header>
+    <main>
+      <section>
+        <h2>Mission Status</h2>
+        <div id="mission-status"></div>
+      </section>
+      <section>
+        <h2>Mission Narrative</h2>
+        <div id="mission-summary"></div>
+        <div id="mission-actions"></div>
+      </section>
+      <section>
+        <h2>Strategic Pulse</h2>
+        <div id="stats" class="grid-two"></div>
+      </section>
+      <section>
+        <h2>Planetary Resources</h2>
+        <div id="resource-stats" class="grid-two"></div>
+      </section>
+      <section>
+        <h2>Continuity Vault</h2>
+        <div id="continuity-stats" class="grid-two"></div>
+      </section>
+      <section>
+        <h2>Validator Council</h2>
+        <div id="council-stats" class="grid-two"></div>
+      </section>
+      <section>
+        <h2>Autonomy Guardian</h2>
+        <div id="autonomy"></div>
+      </section>
+      <section>
+        <h2>Job Graph</h2>
+        <div id="mermaid-diagram" class="mermaid">graph TD\n    loading((Loading job graph...))</div>
+      </section>
+      <section>
+        <h2>Long-Run Horizon</h2>
+        <div id="long-run"></div>
+      </section>
+      <section>
+        <h2>Active Jobs</h2>
+        <table id="job-table">
+          <thead>
+            <tr>
+              <th>Job ID</th>
+              <th>Title</th>
+              <th>Status</th>
+              <th>Agent</th>
+              <th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>Integrity & Governance</h2>
+        <div id="integrity-status"></div>
+      </section>
+      <section>
+        <h2>Guardian Plan of Record</h2>
+        <div id="guardian-plan"></div>
+      </section>
+    </main>
+    <footer>
+      Run via <code>bin/launch.sh</code> and serve this UI with <code>python -m http.server</code>. Telemetry updates every 5 seconds.
+    </footer>
+  </body>
+</html>
