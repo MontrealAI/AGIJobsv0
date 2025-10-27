@@ -88,15 +88,15 @@ class ResourceManagerTests(unittest.TestCase):
         manager.lock_stake("worker", 100)
         self.assertEqual(manager._accounts["worker"].locked, 100)  # type: ignore[attr-defined]
         self.assertAlmostEqual(manager.locked_supply, 100)
-        self.assertAlmostEqual(manager.token_supply, 1_000)
+        self.assertAlmostEqual(manager.token_supply, 900)
         manager.release_stake("worker", 60)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 40)  # type: ignore[attr-defined]
         self.assertAlmostEqual(manager.locked_supply, 40)
-        self.assertAlmostEqual(manager.token_supply, 1_000)
+        self.assertAlmostEqual(manager.token_supply, 960)
         manager.slash("worker", 20)
         self.assertAlmostEqual(manager._accounts["worker"].locked, 20)  # type: ignore[attr-defined]
         self.assertAlmostEqual(manager.locked_supply, 20)
-        self.assertAlmostEqual(manager.token_supply, 980)
+        self.assertAlmostEqual(manager.token_supply, 960)
         manager.release_stake("worker", 1_000)
         self.assertAlmostEqual(manager.locked_supply, 0)
         self.assertAlmostEqual(manager.token_supply, 980)
@@ -140,6 +140,17 @@ class ResourceManagerTests(unittest.TestCase):
         self.assertAlmostEqual(manager.compute_available, manager.compute_capacity)
         with self.assertRaises(ValueError):
             manager.reserve_budget("overflow", energy=500)
+
+    def test_transfer_tokens_preserves_supply(self) -> None:
+        manager = ResourceManager(energy_capacity=100, compute_capacity=100, base_token_supply=1_000)
+        manager.ensure_account("operator", 1_000)
+        manager.ensure_account("worker", 0)
+        manager.transfer_tokens("operator", "worker", 200)
+        self.assertAlmostEqual(manager.get_account("operator").tokens, 800)
+        self.assertAlmostEqual(manager.get_account("worker").tokens, 200)
+        self.assertAlmostEqual(manager.token_supply, 1_000)
+        with self.assertRaises(ValueError):
+            manager.transfer_tokens("operator", "worker", 900)
 
 
 class MessageBusTests(unittest.IsolatedAsyncioTestCase):
