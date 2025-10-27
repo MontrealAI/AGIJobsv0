@@ -18,7 +18,14 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
 
     mapping(bytes32 => ShardInfo) private _shards;
     bytes32[] private _shardIds;
-    mapping(bytes32 => GlobalJobRef[]) private _crossShardLinks;
+
+    struct LinkSet {
+        uint256 length;
+        mapping(uint256 => GlobalJobRef) values;
+        mapping(bytes32 => bool) contains;
+    }
+
+    mapping(bytes32 => LinkSet) private _crossShardLinks;
 
     constructor(address governance_) Governable(governance_) {}
 
@@ -183,23 +190,26 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
         }
 
         bytes32 key = _encodeKey(source);
-        GlobalJobRef[] storage links = _crossShardLinks[key];
-        for (uint256 i = 0; i < links.length; ++i) {
-            if (links[i].shardId == target.shardId && links[i].jobId == target.jobId) {
-                return;
-            }
+        LinkSet storage links = _crossShardLinks[key];
+        bytes32 targetKey = _encodeKey(target);
+        if (links.contains[targetKey]) {
+            return;
         }
-        links.push(GlobalJobRef({shardId: target.shardId, jobId: target.jobId}));
+
+        uint256 nextIndex = links.length;
+        links.values[nextIndex] = GlobalJobRef({shardId: target.shardId, jobId: target.jobId});
+        links.contains[targetKey] = true;
+        links.length = nextIndex + 1;
         emit CrossShardLinked(source.shardId, source.jobId, target.shardId, target.jobId);
     }
 
     /// @inheritdoc IShardRegistry
     function getLinkedJobs(GlobalJobRef calldata jobRef) external view returns (GlobalJobRef[] memory) {
         bytes32 key = _encodeKey(jobRef);
-        GlobalJobRef[] storage links = _crossShardLinks[key];
+        LinkSet storage links = _crossShardLinks[key];
         GlobalJobRef[] memory copies = new GlobalJobRef[](links.length);
         for (uint256 i = 0; i < links.length; ++i) {
-            copies[i] = links[i];
+            copies[i] = links.values[i];
         }
         return copies;
     }
