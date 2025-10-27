@@ -1,0 +1,72 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade Upgrade for α-AGI Business 3",
+  "checkpoint_interval_seconds": 45,
+  "integrity_check_interval_seconds": 45,
+  "insight_interval_seconds": 20,
+  "cycle_sleep_seconds": 0.25,
+  "max_cycles": null,
+  "resume_from_checkpoint": true,
+  "energy_capacity": 1200000.0,
+  "compute_capacity": 6000000.0,
+  "worker_specs": {
+    "energy-architect": 1.4,
+    "supply-chain": 1.2,
+    "validator-ops": 1.0,
+    "planetary-logistics": 1.6
+  },
+  "strategist_names": [
+    "macro-strategist",
+    "cosmic-planner"
+  ],
+  "validator_names": [
+    "validator-1",
+    "validator-2",
+    "validator-3",
+    "validator-4"
+  ],
+  "governance": {
+    "worker_stake_ratio": 0.15,
+    "validator_stake": 200.0,
+    "approvals_required": 3,
+    "slash_ratio": 0.35,
+    "pause_enabled": true,
+    "validator_commit_window": 900.0,
+    "validator_reveal_window": 1200.0
+  },
+  "initial_jobs": [
+    {
+      "title": "Dyson Swarm Optimization Alpha Mission",
+      "description": "Deploy recursive AGI-led build orders for a full Dyson swarm spiral.",
+      "required_skills": [
+        "energy-architect",
+        "planetary-logistics"
+      ],
+      "reward_tokens": 7500.0,
+      "deadline_hours": 24,
+      "validation_window_hours": 4,
+      "energy_budget": 95000.0,
+      "compute_budget": 185000.0,
+      "metadata": {
+        "employer": "operator",
+        "priority": "omega",
+        "category": "infrastructure"
+      }
+    },
+    {
+      "title": "Planetary Logistics Equilibrium",
+      "description": "Balance supply chains across lunar, orbital, and asteroid nodes.",
+      "required_skills": [
+        "supply-chain"
+      ],
+      "reward_tokens": 4800.0,
+      "deadline_hours": 18,
+      "validation_window_hours": 3,
+      "energy_budget": 48000.0,
+      "compute_budget": 76000.0,
+      "metadata": {
+        "employer": "macro-strategist",
+        "category": "logistics"
+      }
+    }
+  ]
+}
