@@ -215,20 +215,29 @@ class Orchestrator:
                     compute = float(payload.get("compute", 0.0))
                     self.resources.restore_reservation(reservation_id, energy, compute)
                 if not reservations_present:
+                    active_statuses = {JobStatus.POSTED, JobStatus.IN_PROGRESS}
                     for record in self.job_registry.iter_jobs():
-                        if record.reserved_energy or record.reserved_compute:
+                        if record.status in active_statuses:
+                            energy = record.reserved_energy or max(0.0, record.spec.energy_budget)
+                            compute = record.reserved_compute or max(0.0, record.spec.compute_budget)
+                            record.reserved_energy = energy
+                            record.reserved_compute = compute
+                        else:
+                            energy = record.reserved_energy
+                            compute = record.reserved_compute
+                        if energy or compute:
                             try:
                                 self.resources.reserve_budget(
                                     record.job_id,
-                                    energy=record.reserved_energy,
-                                    compute=record.reserved_compute,
+                                    energy=energy,
+                                    compute=compute,
                                 )
                             except ValueError:
                                 self._warning(
                                     "reservation_rehydrate_failed",
                                     job_id=record.job_id,
-                                    reserved_energy=record.reserved_energy,
-                                    reserved_compute=record.reserved_compute,
+                                    reserved_energy=energy,
+                                    reserved_compute=compute,
                                 )
 
     async def _ensure_job_events(self, job: JobRecord) -> None:
@@ -465,6 +474,12 @@ class Orchestrator:
             validator_votes = {
                 validator: bool(vote) for validator, vote in payload.get("validator_votes", {}).items()
             }
+            reserved_energy_payload = payload.get("reserved_energy")
+            reserved_compute_payload = payload.get("reserved_compute")
+            reserved_energy = float(reserved_energy_payload) if reserved_energy_payload is not None else 0.0
+            reserved_compute = (
+                float(reserved_compute_payload) if reserved_compute_payload is not None else 0.0
+            )
             record = JobRecord(
                 job_id=job_id,
                 spec=spec,
@@ -474,8 +489,8 @@ class Orchestrator:
                 energy_used=float(payload.get("energy_used", 0.0)),
                 compute_used=float(payload.get("compute_used", 0.0)),
                 stake_locked=float(payload.get("stake_locked", 0.0)),
-                reserved_energy=float(payload.get("reserved_energy", spec.energy_budget)),
-                reserved_compute=float(payload.get("reserved_compute", spec.compute_budget)),
+                reserved_energy=reserved_energy,
+                reserved_compute=reserved_compute,
                 result_summary=payload.get("result_summary"),
                 validator_commits=dict(payload.get("validator_commits", {})),
                 validator_votes=validator_votes,
