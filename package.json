@@ -9,7 +9,7 @@
     "compile:mainnet": "npm run compile -- --network mainnet",
     "compile:sepolia": "npm run compile -- --network sepolia",
     "lint": "npm run lint:check",
-    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs attestation/eas/test/receipt-digest.test.mjs && npx esbuild apps/onebox/test/governance-scenario.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-scenario.test.mjs && node apps/onebox/test/dist/governance-scenario.test.mjs && npx esbuild apps/onebox/test/onebox-config.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/onebox-config.test.mjs && node apps/onebox/test/dist/onebox-config.test.mjs && npx esbuild apps/onebox/test/orchestrator-health.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/orchestrator-health.test.mjs && node apps/onebox/test/dist/orchestrator-health.test.mjs && npx esbuild apps/onebox/test/query-overrides.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/query-overrides.test.mjs && node apps/onebox/test/dist/query-overrides.test.mjs && npx esbuild apps/onebox/test/governance-snapshot-summary.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-snapshot-summary.test.mjs && node apps/onebox/test/dist/governance-snapshot-summary.test.mjs && npx tsc --project apps/enterprise-portal/tsconfig.test.json && node --test apps/enterprise-portal/dist-test/test/verifyDeliverableSignature.test.js && node --test apps/onebox-static/test/auth-helpers.test.mjs && node --test demo/One-Box/test/launcher.test.cjs && node --test demo/One-Box/test/rpc.test.cjs && node --test demo/One-Box/test/diagnostics.test.cjs",
+    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs attestation/eas/test/receipt-digest.test.mjs && npx esbuild apps/onebox/test/governance-scenario.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-scenario.test.mjs && node apps/onebox/test/dist/governance-scenario.test.mjs && npx esbuild apps/onebox/test/onebox-config.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/onebox-config.test.mjs && node apps/onebox/test/dist/onebox-config.test.mjs && npx esbuild apps/onebox/test/orchestrator-health.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/orchestrator-health.test.mjs && node apps/onebox/test/dist/orchestrator-health.test.mjs && npx esbuild apps/onebox/test/query-overrides.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/query-overrides.test.mjs && node apps/onebox/test/dist/query-overrides.test.mjs && npx esbuild apps/onebox/test/governance-snapshot-summary.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-snapshot-summary.test.mjs && node apps/onebox/test/dist/governance-snapshot-summary.test.mjs && npx tsc --project apps/enterprise-portal/tsconfig.test.json && node --test apps/enterprise-portal/dist-test/test/verifyDeliverableSignature.test.js && node --test apps/onebox-static/test/auth-helpers.test.mjs && node --test demo/One-Box/test/launcher.test.cjs && node --test demo/One-Box/test/rpc.test.cjs && node --test demo/One-Box/test/diagnostics.test.cjs && npx tsx demo/Planetary-Orchestrator-Fabric-v0/test/planetary-fabric.test.ts",
     "verify:agialpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/verify-agialpha.ts",
     "wire:verify": "node scripts/run-wire-verify.js",
     "verify:wiring": "npm run wire:verify",
@@ -280,7 +280,8 @@
     "culture:analytics:dry-run": "npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/generate.analytics.ts --dry-run demo/CULTURE-v0/data/fixtures/analytics-dry-run.json",
     "culture:env:check": "node demo/CULTURE-v0/scripts/check-env.mjs demo/CULTURE-v0/.env",
     "culture:smoke": "docker compose -f demo/CULTURE-v0/docker-compose.yml --profile test up culture-smoke-tests --abort-on-container-exit --exit-code-from culture-smoke-tests",
-    "demo:kardashev": "node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs"
+    "demo:kardashev": "node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs",
+    "demo:planetary": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/bin/planetary-fabric.ts run"
   },
   "keywords": [],
   "author": "",
@@ -376,6 +377,7 @@
     "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
     "yargs": "^17.7.2",
+    "chalk": "^5.3.0",
     "zod": "^3.25.76"
   },
   "overrides": {
