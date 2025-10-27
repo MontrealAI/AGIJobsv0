@@ -1,0 +1,105 @@
+name: demo-validator-constellation
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Validator-Constellation-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-validator-constellation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/Validator-Constellation-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-validator-constellation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validator-constellation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Type-check validator constellation
+        run: npm run lint:validator-constellation
+
+      - name: Run validator constellation tests
+        run: npm run test:validator-constellation
+
+      - name: Execute validator constellation demo (CI mode)
+        run: npm run demo:validator-constellation:ci
+
+      - name: Validate validator constellation artifacts
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const reportDir = path.join('demo', 'Validator-Constellation-v0', 'reports', 'latest');
+          const summaryPath = path.join(reportDir, 'summary.json');
+          const eventsPath = path.join(reportDir, 'events.ndjson');
+          const dashboardPath = path.join(reportDir, 'dashboard.html');
+          const subgraphPath = path.join(reportDir, 'subgraph.json');
+          for (const file of [summaryPath, eventsPath, dashboardPath, subgraphPath]) {
+            if (!fs.existsSync(file)) {
+              throw new Error(`expected artifact missing: ${file}`);
+            }
+          }
+          const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+          if (summary.proof?.attestedJobCount !== 1000) {
+            throw new Error('proof does not attest expected job count');
+          }
+          if (!Array.isArray(summary.slashing) || summary.slashing.length === 0) {
+            throw new Error('slashing telemetry missing');
+          }
+          if (!Array.isArray(summary.alerts) || summary.alerts.length === 0) {
+            throw new Error('sentinel alerts missing');
+          }
+          const eventsSize = fs.statSync(eventsPath).size;
+          if (eventsSize === 0) {
+            throw new Error('events stream empty');
+          }
+          const dashboard = fs.readFileSync(dashboardPath, 'utf8');
+          ['Validator Committee', 'Sentinel Guardrail', 'mermaid'].forEach((snippet) => {
+            if (!dashboard.includes(snippet)) {
+              throw new Error(`dashboard missing snippet: ${snippet}`);
+            }
+          });
+          const subgraphRecords = JSON.parse(fs.readFileSync(subgraphPath, 'utf8'));
+          if (!Array.isArray(subgraphRecords) || subgraphRecords.every((record) => record.type !== 'SLASHING')) {
+            throw new Error('subgraph index missing slashing records');
+          }
+          console.log('Validator constellation artifacts validated.');
+          NODE
