@@ -1,0 +1,149 @@
+{
+  "shards": [
+    {
+      "id": "Shard Atlas-01",
+      "temperatureC": 19.4,
+      "health": "Nominal",
+      "load": 0.72,
+      "jobsActive": 342,
+      "latencyMs": 58,
+      "anomalies": [
+        "Adaptive routing engaged",
+        "Validator gossip stable"
+      ]
+    },
+    {
+      "id": "Shard Beacon-07",
+      "temperatureC": 23.1,
+      "health": "Nominal",
+      "load": 0.64,
+      "jobsActive": 288,
+      "latencyMs": 64,
+      "anomalies": [
+        "Thermal fan boost scheduled 21:05z"
+      ]
+    },
+    {
+      "id": "Shard Horizon-12",
+      "temperatureC": 24.8,
+      "health": "Degraded",
+      "load": 0.89,
+      "jobsActive": 417,
+      "latencyMs": 91,
+      "anomalies": [
+        "Rollback buffer at 73%",
+        "AI ethics sentinel issued amber advisory"
+      ]
+    },
+    {
+      "id": "Shard Lumen-03",
+      "temperatureC": 18.7,
+      "health": "Nominal",
+      "load": 0.51,
+      "jobsActive": 196,
+      "latencyMs": 43,
+      "anomalies": [
+        "Quantum cache refresh completed"
+      ]
+    }
+  ],
+  "marketplace": [
+    {
+      "id": "Node Saffron-Halo",
+      "operator": "Madrigal ExoSystems",
+      "specialization": "Interlingual arbitration",
+      "credibility": 0.96,
+      "slotPrice": 430,
+      "eta": "Provisioned in 8m",
+      "status": "Available"
+    },
+    {
+      "id": "Node Graphite-Spark",
+      "operator": "TeV Horizon Labs",
+      "specialization": "Tensor forge simulation",
+      "credibility": 0.92,
+      "slotPrice": 680,
+      "eta": "Negotiation window 12m",
+      "status": "Negotiating"
+    },
+    {
+      "id": "Node Prism-Echo",
+      "operator": "Aurora Guild",
+      "specialization": "Narrative QA amplification",
+      "credibility": 0.88,
+      "slotPrice": 355,
+      "eta": "Ready in 3m",
+      "status": "Queued"
+    }
+  ],
+  "jobMetrics": [
+    {
+      "label": "Jobs cleared (last cycle)",
+      "value": "1,872",
+      "delta": "+14% vs rolling avg"
+    },
+    {
+      "label": "Critical escalations auto-resolved",
+      "value": "41",
+      "delta": "92% success"
+    },
+    {
+      "label": "Marketplace fill rate",
+      "value": "97%",
+      "delta": "High demand equilibrium"
+    },
+    {
+      "label": "Governance policy sync",
+      "value": "11m",
+      "delta": "Next window 19m"
+    }
+  ],
+  "flows": {
+    "orchestrator": "flowchart LR\n  subgraph Operator\n    Intent[\"Mission Intent\\n(story-driven prompts)\"]\n  end\n  subgraph Marketplace\n    Queue>Dynamic Node Queue]\n    Auction((Credibility Auction))\n  end\n  subgraph Fabric\n    Intake{{Policy Gate}}\n    Planner[\"Job Planner\\n(shard aware)\"]\n    Router[\"Shard Router\"]\n    Telemetry[(Telemetry Lake)]\n  end\n  Intent --> Intake\n  Intake --> Planner --> Router\n  Router -->|Shard Atlas| Atlas((Shard Atlas-01))\n  Router -->|Shard Beacon| Beacon((Shard Beacon-07))\n  Router -->|Shard Horizon| Horizon((Shard Horizon-12))\n  Atlas --> Telemetry\n  Beacon --> Telemetry\n  Horizon --> Telemetry\n  Queue --> Planner\n  Auction --> Queue",
+    "upgrade": "sequenceDiagram\n  participant Owner as Owner CLI\n  participant Sentinel as Safety Sentinel\n  participant Contracts as Smart Contracts\n  participant Nodes as Marketplace Nodes\n  Owner->>Sentinel: Submit upgrade manifest\n  Sentinel-->>Owner: Risk assessment & approvals\n  Owner->>Contracts: Execute owner:upgrade queue\n  Contracts-->>Nodes: Broadcast new runtime\n  Nodes-->>Contracts: Attest policy adoption\n  Contracts-->>Owner: Emit upgrade completion event",
+    "storytelling": "journey\n  title Dawn Corridor Scenario\n  section Pre-Launch\n    Narrative briefing: 5\n    Council alignment: 4\n  section Execution\n    Marketplace onboarding: 4\n    Coordinated shard surge: 5\n  section Reflection\n    Story capture & lessons: 4"
+  },
+  "scenarios": [
+    {
+      "slug": "dawn-corridor",
+      "title": "Dawn Corridor – Coordinated shard surge",
+      "summary": "Blend narrative assets with automated shard expansion during peak diplomacy workload.",
+      "steps": [
+        "Launch npm run mission-control:ops deploy -- --network sepolia to stage the surge sandbox.",
+        "Stream marketplace negotiation script for Saffron-Halo and Graphite-Spark pairings.",
+        "Capture climax metrics and annotate the storytelling timeline via docs/orchestration/scenarios/superintelligence-playbook.md#dawn-corridor."
+      ],
+      "assets": [
+        {
+          "label": "Scenario playbook",
+          "href": "docs/orchestration/scenarios/superintelligence-playbook.md#dawn-corridor"
+        },
+        {
+          "label": "Briefing deck",
+          "href": "reports/asi-takeoff/mission-control.md"
+        }
+      ]
+    },
+    {
+      "slug": "aurora-whisper",
+      "title": "Aurora Whisper – Rapid policy harmonization",
+      "summary": "Use the policy CLI wrapper to synchronize sentiment guardrails without interrupting creative throughput.",
+      "steps": [
+        "Dry-run new policy bundle with npm run mission-control:ops -- policy apply --file policies/aurora-whisper.yaml --dry-run.",
+        "Narrate the ethics sentinel review and capture transcript in the operations log.",
+        "Commit the upgrade timestamp for the council briefing kit."
+      ],
+      "assets": [
+        {
+          "label": "Policy packet",
+          "href": "config/policies/aurora-whisper.yaml"
+        },
+        {
+          "label": "Story cues",
+          "href": "docs/orchestration/scenarios/superintelligence-playbook.md#aurora-whisper"
+        }
+      ]
+    }
+  ],
+  "tip": "Pair this dashboard with the mission control CLI npm run mission-control:ops -- --help and the non-technical tutorial under docs/orchestration/mission-control-tutorial.md for an end-to-end command center."
+}
