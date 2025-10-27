@@ -178,12 +178,58 @@ class Orchestrator:
                     for record in self.job_registry.iter_jobs():
                         await self._ensure_job_events(record)
                 self._info("state_rehydrated", job_count=len(job_records))
-                for agent, balances in snapshot.get("resources", {}).items():
+                resource_snapshot = snapshot.get("resources", {})
+                resource_accounts: Dict[str, Dict[str, Any]] = {}
+                reservations_payload: Dict[str, Any] = {}
+                reservations_present = False
+                if isinstance(resource_snapshot, dict):
+                    state_payload = resource_snapshot.get("state")
+                    if isinstance(state_payload, dict):
+                        self.resources.restore_state({k: v for k, v in state_payload.items()})
+                    accounts_payload = resource_snapshot.get("accounts")
+                    if isinstance(accounts_payload, dict):
+                        resource_accounts = accounts_payload
+                    else:
+                        resource_accounts = {
+                            name: balances
+                            for name, balances in resource_snapshot.items()
+                            if isinstance(balances, dict)
+                            and {"tokens", "locked"}.intersection(balances.keys())
+                        }
+                    reservations_payload = resource_snapshot.get("reservations", {})
+                    reservations_present = "reservations" in resource_snapshot
+                    if not isinstance(reservations_payload, dict):
+                        reservations_payload = {}
+                else:
+                    resource_accounts = {}
+                for agent, balances in resource_accounts.items():
                     account = self.resources.ensure_account(agent)
-                    account.tokens = balances["tokens"]
-                    account.locked = balances["locked"]
-                    account.energy_quota = balances["energy_quota"]
-                    account.compute_quota = balances["compute_quota"]
+                    account.tokens = float(balances.get("tokens", account.tokens))
+                    account.locked = float(balances.get("locked", account.locked))
+                    account.energy_quota = float(balances.get("energy_quota", account.energy_quota))
+                    account.compute_quota = float(balances.get("compute_quota", account.compute_quota))
+                for reservation_id, payload in reservations_payload.items():
+                    if not isinstance(payload, dict):
+                        continue
+                    energy = float(payload.get("energy", 0.0))
+                    compute = float(payload.get("compute", 0.0))
+                    self.resources.restore_reservation(reservation_id, energy, compute)
+                if not reservations_present:
+                    for record in self.job_registry.iter_jobs():
+                        if record.reserved_energy or record.reserved_compute:
+                            try:
+                                self.resources.reserve_budget(
+                                    record.job_id,
+                                    energy=record.reserved_energy,
+                                    compute=record.reserved_compute,
+                                )
+                            except ValueError:
+                                self._warning(
+                                    "reservation_rehydrate_failed",
+                                    job_id=record.job_id,
+                                    reserved_energy=record.reserved_energy,
+                                    reserved_compute=record.reserved_compute,
+                                )
 
     async def _ensure_job_events(self, job: JobRecord) -> None:
         if job.status in {JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.FINALIZED}:
@@ -428,6 +474,8 @@ class Orchestrator:
                 energy_used=float(payload.get("energy_used", 0.0)),
                 compute_used=float(payload.get("compute_used", 0.0)),
                 stake_locked=float(payload.get("stake_locked", 0.0)),
+                reserved_energy=float(payload.get("reserved_energy", spec.energy_budget)),
+                reserved_compute=float(payload.get("reserved_compute", spec.compute_budget)),
                 result_summary=payload.get("result_summary"),
                 validator_commits=dict(payload.get("validator_commits", {})),
                 validator_votes=validator_votes,
@@ -589,6 +637,9 @@ class Orchestrator:
         if record.status != JobStatus.IN_PROGRESS:
             self._warning("unexpected_result_state", job_id=job_id, status=record.status.value)
             return
+        self.resources.release_budget(job_id)
+        record.reserved_energy = 0.0
+        record.reserved_compute = 0.0
         if record.assigned_agent:
             try:
                 self.resources.record_usage(record.assigned_agent, energy_used, compute_used)
@@ -656,6 +707,9 @@ class Orchestrator:
             if job.assigned_agent:
                 slash_amount = self.governance.slash_amount(job.stake_locked)
                 self.resources.slash(job.assigned_agent, slash_amount)
+            self.resources.release_budget(job.job_id)
+            job.reserved_energy = 0.0
+            job.reserved_compute = 0.0
             await self.bus.publish(
                 f"jobs:recovery:{job.job_id}",
                 {"job_id": job.job_id, "status": job.status.value},
@@ -699,7 +753,26 @@ class Orchestrator:
         self.resources.debit_tokens(employer, spec.reward_tokens)
         spec.stake_required = stake_required
         record = self.job_registry.create_job(spec)
-        self._info("job_posted", job_id=record.job_id, title=spec.title, reward=spec.reward_tokens)
+        try:
+            self.resources.reserve_budget(
+                record.job_id,
+                energy=spec.energy_budget,
+                compute=spec.compute_budget,
+            )
+        except ValueError as exc:
+            self.job_registry.delete_job(record.job_id)
+            self.resources.credit_tokens(employer, spec.reward_tokens)
+            raise
+        record.reserved_energy = max(0.0, spec.energy_budget)
+        record.reserved_compute = max(0.0, spec.compute_budget)
+        self._info(
+            "job_posted",
+            job_id=record.job_id,
+            title=spec.title,
+            reward=spec.reward_tokens,
+            energy_budget=spec.energy_budget,
+            compute_budget=spec.compute_budget,
+        )
         deadline_event = await self.scheduler.schedule(
             "job_deadline",
             spec.deadline,
@@ -707,11 +780,13 @@ class Orchestrator:
             event_id=record.deadline_event_id,
         )
         record.deadline_event_id = deadline_event.event_id
-        await self.bus.publish(
-            topic=f"jobs:{spec.required_skills[0] if spec.required_skills else 'general'}",
-            payload={"spec": spec, "job_id": record.job_id},
-            publisher="orchestrator",
-        )
+        topics = {f"jobs:{skill}" for skill in spec.required_skills if skill}
+        if not topics:
+            topics = {"jobs:general"}
+        topics.add("jobs:general")
+        payload = {"spec": spec, "job_id": record.job_id}
+        for topic in topics:
+            await self.bus.publish(topic=topic, payload=payload, publisher="orchestrator")
         await self._persist_status_snapshot()
         return record
 
@@ -774,6 +849,10 @@ class Orchestrator:
             if job.assigned_agent:
                 self.resources.credit_tokens(job.assigned_agent, job.spec.reward_tokens)
                 self.resources.release_stake(job.assigned_agent, job.stake_locked)
+        released_energy, released_compute = self.resources.release_budget(job.job_id)
+        if released_energy or released_compute:
+            job.reserved_energy = max(0.0, job.reserved_energy - released_energy)
+            job.reserved_compute = max(0.0, job.reserved_compute - released_compute)
         await self._cancel_job_events(job, skip_event_id=skip_event_id)
         self._release_validator_stake(job)
         self._info("job_finalized", job_id=job.job_id, status=job.status.value)
@@ -944,6 +1023,9 @@ class Orchestrator:
         if job.assigned_agent:
             self.resources.release_stake(job.assigned_agent, job.stake_locked)
         self._release_validator_stake(job)
+        self.resources.release_budget(job.job_id)
+        job.reserved_energy = 0.0
+        job.reserved_compute = 0.0
         await self._cancel_job_events(job)
         job = self.job_registry.mark_cancelled(job_id, str(reason))
         await self.bus.publish(
@@ -1025,12 +1107,17 @@ class Orchestrator:
             },
             "resources": {
                 "energy_available": resource_state.energy_available,
+                "energy_capacity": resource_state.energy_capacity,
                 "compute_available": resource_state.compute_available,
+                "compute_capacity": resource_state.compute_capacity,
                 "token_supply": resource_state.token_supply,
                 "locked_supply": resource_state.locked_supply,
+                "reserved_energy": resource_state.reserved_energy,
+                "reserved_compute": resource_state.reserved_compute,
                 "energy_price": self.resources.energy_price,
                 "compute_price": self.resources.compute_price,
                 "accounts": accounts,
+                "reservations": self.resources.reservations_snapshot(),
             },
             "agents": self._capture_agent_snapshot(),
             "governance": {
@@ -1067,13 +1154,15 @@ class Orchestrator:
             "mission": self.config.mission_name,
             "cycle": self._cycle,
             "energy_available": resource_state.energy_available,
-            "energy_capacity": self.resources.energy_capacity,
+            "energy_capacity": resource_state.energy_capacity,
             "compute_available": resource_state.compute_available,
-            "compute_capacity": self.resources.compute_capacity,
+            "compute_capacity": resource_state.compute_capacity,
             "energy_price": self.resources.energy_price,
             "compute_price": self.resources.compute_price,
             "token_supply": resource_state.token_supply,
             "locked_supply": resource_state.locked_supply,
+            "reserved_energy": resource_state.reserved_energy,
+            "reserved_compute": resource_state.reserved_compute,
             "active_jobs": active,
             "finalized_jobs": finalized,
             "simulation": simulation_state,

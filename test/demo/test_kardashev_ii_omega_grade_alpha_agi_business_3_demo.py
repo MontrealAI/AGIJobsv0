@@ -120,6 +120,26 @@ class ResourceManagerTests(unittest.TestCase):
         self.assertAlmostEqual(manager.compute_price, 1.0 + max(0.0, 1.0 - 1_700 / 2_500))
         snapshot = manager.snapshot()
         self.assertAlmostEqual(snapshot.locked_supply, manager.locked_supply)
+        self.assertAlmostEqual(snapshot.energy_capacity, 1_500)
+        self.assertAlmostEqual(snapshot.compute_capacity, 2_500)
+        self.assertAlmostEqual(snapshot.reserved_energy, 0.0)
+        self.assertAlmostEqual(snapshot.reserved_compute, 0.0)
+
+    def test_reservation_lifecycle(self) -> None:
+        manager = ResourceManager(energy_capacity=100, compute_capacity=200, base_token_supply=1_000)
+        manager.reserve_budget("job-1", energy=40, compute=60)
+        self.assertAlmostEqual(manager.energy_available, 60)
+        self.assertAlmostEqual(manager.compute_available, 140)
+        manager.reserve_budget("job-1", energy=20, compute=10)
+        self.assertAlmostEqual(manager.energy_available, 80)
+        self.assertAlmostEqual(manager.compute_available, 190)
+        released = manager.release_budget("job-1")
+        self.assertAlmostEqual(released[0], 20)
+        self.assertAlmostEqual(released[1], 10)
+        self.assertAlmostEqual(manager.energy_available, manager.energy_capacity)
+        self.assertAlmostEqual(manager.compute_available, manager.compute_capacity)
+        with self.assertRaises(ValueError):
+            manager.reserve_budget("overflow", energy=500)
 
 
 class MessageBusTests(unittest.IsolatedAsyncioTestCase):
@@ -271,6 +291,14 @@ class IntegritySuiteTests(unittest.TestCase):
         self.assertNotEqual(resource_check.metrics["circulating_gap"], 0.0)
         payload = report.to_dict()
         self.assertGreaterEqual(payload["warnings"], 1)
+
+    def test_integrity_flags_orphan_reservation(self) -> None:
+        resources = ResourceManager(energy_capacity=1_000, compute_capacity=1_000, base_token_supply=100)
+        resources.reserve_budget("ghost", energy=25, compute=0)
+        report = self._make_suite(resources=resources).run()
+        resource_check = self._result(report, "resources")
+        self.assertEqual(resource_check.status, "error")
+        self.assertTrue(any("orphan_reservation" in note for note in resource_check.notes))
 
     def test_scheduler_reports_unknown_job(self) -> None:
         event = ScheduledEvent(
@@ -608,6 +636,19 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
                 simulation_hours_per_tick=6.0,
                 simulation_energy_scale=1.0,
                 simulation_compute_scale=1.0,
+                initial_jobs=[
+                    {
+                        "title": "Calibration",
+                        "description": "Bootstrap mission with minimal footprint",
+                        "required_skills": ["energy-architect"],
+                        "reward_tokens": 50.0,
+                        "deadline_minutes": 5,
+                        "validation_window_minutes": 1,
+                        "energy_budget": 0.0,
+                        "compute_budget": 0.0,
+                        "metadata": {"employer": "operator"},
+                    }
+                ],
             )
             orchestrator = Orchestrator(config)
             await orchestrator.start()

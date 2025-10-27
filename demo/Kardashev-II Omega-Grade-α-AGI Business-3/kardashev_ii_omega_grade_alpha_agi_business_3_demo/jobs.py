@@ -136,6 +136,8 @@ class JobRecord:
     energy_used: float = 0.0
     compute_used: float = 0.0
     stake_locked: float = 0.0
+    reserved_energy: float = 0.0
+    reserved_compute: float = 0.0
     result_summary: Optional[str] = None
     validator_commits: Dict[str, str] = field(default_factory=dict)
     validator_votes: Dict[str, bool] = field(default_factory=dict)
@@ -156,6 +158,8 @@ class JobRecord:
             "energy_used": self.energy_used,
             "compute_used": self.compute_used,
             "stake_locked": self.stake_locked,
+            "reserved_energy": self.reserved_energy,
+            "reserved_compute": self.reserved_compute,
             "result_summary": self.result_summary,
             "validator_commits": dict(self.validator_commits),
             "validator_votes": dict(self.validator_votes),
@@ -241,6 +245,18 @@ class JobRegistry:
         record = self.get_job(job_id)
         record.status = JobStatus.FINALIZED
         return record
+
+    def delete_job(self, job_id: str) -> None:
+        record = self._jobs.pop(job_id, None)
+        if record is None:
+            return
+        parent_id = record.spec.parent_id
+        if parent_id and parent_id in self._children:
+            children = self._children[parent_id]
+            if job_id in children:
+                children.remove(job_id)
+            if not children:
+                self._children.pop(parent_id, None)
 
     def jobs_by_status(self, status: JobStatus) -> List[JobRecord]:
         return [job for job in self._jobs.values() if job.status == status]

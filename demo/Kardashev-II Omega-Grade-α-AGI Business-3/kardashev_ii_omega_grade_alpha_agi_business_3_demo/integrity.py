@@ -208,10 +208,27 @@ class IntegritySuite:
         return CheckResult("scheduler", status, detail, metrics=metrics, notes=notes)
 
     def _check_resource_ledger(self) -> CheckResult:
-        accounts = self._resources.to_serializable()
+        snapshot = self._resources.to_serializable()
+        accounts_payload: Dict[str, Dict[str, Any]]
+        if isinstance(snapshot, dict):
+            accounts_candidate = snapshot.get("accounts", snapshot)
+            if isinstance(accounts_candidate, dict):
+                accounts_payload = {
+                    name: balances
+                    for name, balances in accounts_candidate.items()
+                    if isinstance(balances, dict)
+                }
+            else:
+                accounts_payload = {}
+            reservations_payload = snapshot.get("reservations", {})
+            if not isinstance(reservations_payload, dict):
+                reservations_payload = {}
+        else:
+            accounts_payload = {}
+            reservations_payload = {}
         total_tokens = 0.0
         negative_accounts: List[str] = []
-        for name, balances in accounts.items():
+        for name, balances in accounts_payload.items():
             tokens = float(balances.get("tokens", 0.0))
             locked = float(balances.get("locked", 0.0))
             if tokens < -1e-9 or locked < -1e-9:
@@ -222,11 +239,23 @@ class IntegritySuite:
         gap = total_tokens - circulating
         energy_available = self._resources.energy_available
         compute_available = self._resources.compute_available
+        reservations_total = sum(
+            float(payload.get("energy", 0.0)) + float(payload.get("compute", 0.0))
+            for payload in reservations_payload.values()
+            if isinstance(payload, dict)
+        )
 
         status: Severity = "ok"
         detail = "Resource ledger balanced."
         notes: List[str] = []
-        if negative_accounts or energy_available < 0 or compute_available < 0:
+        job_ids = {job.job_id for job in self._job_registry.iter_jobs()}
+        orphan_reservations = [key for key in reservations_payload if key not in job_ids]
+        if (
+            negative_accounts
+            or energy_available < 0
+            or compute_available < 0
+            or orphan_reservations
+        ):
             status = "error"
             detail = "Resource ledger contains invalid balances."
             notes.extend(negative_accounts[:5])
@@ -234,19 +263,23 @@ class IntegritySuite:
                 notes.append("energy_deficit")
             if compute_available < 0:
                 notes.append("compute_deficit")
+            if orphan_reservations:
+                notes.extend([f"orphan_reservation:{orphan_reservations[0]}"])
         elif abs(gap) > 1e-6:
             status = "warning"
             detail = "Circulating token supply does not match account balances."
             notes.append(f"gap={gap:.2f}")
 
         metrics = {
-            "accounts": len(accounts),
+            "accounts": len(accounts_payload),
             "negative_accounts": len(negative_accounts),
             "circulating_gap": gap,
             "energy_available": energy_available,
             "compute_available": compute_available,
             "token_supply": self._resources.token_supply,
             "locked_supply": self._resources.locked_supply,
+            "reservations": len(reservations_payload),
+            "reservation_budget": reservations_total,
         }
 
         return CheckResult("resources", status, detail, metrics=metrics, notes=notes)
