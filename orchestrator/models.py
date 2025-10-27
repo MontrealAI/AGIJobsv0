@@ -5,6 +5,8 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from decimal import Decimal
+from enum import Enum
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
@@ -18,6 +20,98 @@ class Attachment(BaseModel):
     name: str
     cid: Optional[str] = None
     size: Optional[int] = Field(default=None, ge=0)
+
+
+class AgentCapability(str, Enum):
+    """Enumerated capabilities an agent can advertise."""
+
+    ROUTER = "router"
+    EXECUTION = "execution"
+    VALIDATION = "validation"
+    ANALYSIS = "analysis"
+    SUPPORT = "support"
+
+
+class AgentStake(BaseModel):
+    """Stake profile attached to an agent registration."""
+
+    token: str = Field(default="AGIALPHA", min_length=1)
+    amount: Decimal = Field(default=Decimal("0"), ge=Decimal("0"))
+    slashable: bool = True
+    lock_expires_at: Optional[float] = Field(default=None, ge=0)
+    guardian: Optional[str] = Field(default=None, description="On-chain authority overseeing stake security.")
+
+
+class AgentSecurityControls(BaseModel):
+    """Operational safeguards declared by an agent operator."""
+
+    requires_kyc: bool = False
+    multisig: bool = False
+    isolation_level: Literal["none", "process", "vm", "hardware"] = "process"
+    hardware_root_of_trust: bool = False
+    compliance: List[str] = Field(default_factory=list)
+    notes: Optional[str] = None
+
+
+class AgentRegistrationIn(BaseModel):
+    """Payload used when onboarding a new agent node."""
+
+    agent_id: str = Field(..., pattern=r"^[a-zA-Z0-9._:-]{3,64}$")
+    owner: str = Field(..., min_length=2)
+    region: str = Field(..., min_length=2)
+    capabilities: List[AgentCapability] = Field(..., min_length=1)
+    stake: AgentStake
+    security: AgentSecurityControls
+    router: Optional[str] = Field(default=None, description="Preferred router binding for this agent.")
+    operator_secret: str = Field(
+        ..., min_length=8, description="Shared secret used by the node to authenticate heartbeats."
+    )
+
+
+class AgentUpdateIn(BaseModel):
+    """Partial update payload for an existing agent."""
+
+    region: Optional[str] = Field(default=None, min_length=2)
+    capabilities: Optional[List[AgentCapability]] = Field(default=None, min_length=1)
+    stake: Optional[AgentStake] = None
+    security: Optional[AgentSecurityControls] = None
+    router: Optional[str] = Field(default=None)
+    status: Optional[Literal["active", "inactive", "suspended", "offline"]] = None
+    operator_secret: Optional[str] = Field(
+        default=None, min_length=8, description="Rotate the shared secret used for heartbeats."
+    )
+
+
+class AgentHeartbeatIn(BaseModel):
+    """Heartbeat payload submitted by running agent nodes."""
+
+    router: Optional[str] = Field(default=None)
+    capabilities: Optional[List[AgentCapability]] = None
+    secret: Optional[str] = Field(default=None, min_length=8)
+
+
+class AgentStatus(BaseModel):
+    """Live registry entry summarising an onboarded agent."""
+
+    agent_id: str
+    owner: str
+    region: str
+    capabilities: List[AgentCapability] = Field(default_factory=list)
+    stake: AgentStake
+    security: AgentSecurityControls
+    router: Optional[str] = None
+    status: Literal["active", "inactive", "suspended", "offline"] = "inactive"
+    registered_at: float
+    updated_at: float
+    last_heartbeat: Optional[float] = None
+    heartbeat_lag_seconds: Optional[float] = Field(default=None, ge=0)
+
+
+class AgentListOut(BaseModel):
+    """Response wrapper for listing registered agents."""
+
+    agents: List[AgentStatus] = Field(default_factory=list)
+    total: int = 0
 
 
 class JobIntent(BaseModel):
