@@ -92,7 +92,13 @@ async def _run_async(args: argparse.Namespace) -> None:
         if not args.config.exists():
             raise FileNotFoundError(f"Config file not found: {args.config}")
         data = json.loads(args.config.read_text(encoding="utf-8"))
-        for path_field in ("checkpoint_path", "control_channel_file", "audit_log_path", "status_output_path"):
+        for path_field in (
+            "checkpoint_path",
+            "control_channel_file",
+            "audit_log_path",
+            "status_output_path",
+            "energy_oracle_path",
+        ):
             if path_field in data and data[path_field] is not None:
                 data[path_field] = Path(data[path_field])
         if "governance" in data:
