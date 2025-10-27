@@ -8,7 +8,7 @@
 - **Stake-backed agents** whose collateral is locked, released, or slashed entirely by policy-driven rules.
 - **ENS-gated participation**: agents and validators must prove identity before touching funds.
 - **Validator economies** that stream protocol-grade rewards every time progress is validated.
-- **Governance-grade pause** flow that halts value transfer instantly and resumes on demand.
+- **Dual-layer pause controls** for job-specific halts and system-wide emergency freezes.
 - **Misconduct autopsy**: deliberate slashing showcases how the platform punishes failure while refunding employers and rewarding validators.
 
 Everything is orchestrated through `npm run run:trustless-core`, which drives an end-to-end Hardhat scenario and exports artefacts for reporting.
@@ -123,11 +123,12 @@ All parameters are reconfigurable by the governance owner via simple function ca
 
 ## 🎯 Scenario timeline
 
-1. **Milestone 1** – Validators 1 & 2 approve, agent receives 83 $AGIALPHA, each validator gets 5, treasury 5, burn 2.
-2. **Global Pause** – Governance executes `pauseAll`, blocking any transfer while investigation occurs.
-3. **Milestone 2** – After `unpauseAll`, Validators 2 & 3 approve, duplicating the trustless payout cadence.
-4. **Fraud attempt** – Agent fails Milestone 3. Governance slashes 60 $AGIALPHA of stake, distributing 30 to employer, 12 to validators (4 each), 12 to treasury, and burning 6.
-5. **Employer Exit** – Employer cancels job and receives the remaining 100 $AGIALPHA escrow.
+1. **Targeted job pause** – Governance halts the specific job, proving per-job control before any milestone work.
+2. **Milestone 1** – Validators 1 & 2 approve, agent receives 83 $AGIALPHA, each validator gets 5, treasury 5, burn 2.
+3. **Global Pause** – Governance executes `pauseAll`, blocking any transfer while investigation occurs.
+4. **Milestone 2** – After `unpauseAll`, Validators 2 & 3 approve, duplicating the trustless payout cadence.
+5. **Fraud attempt** – Agent fails Milestone 3. Governance slashes 60 $AGIALPHA of stake, distributing 30 to employer, 12 to validators (4 each), 12 to treasury, and burning 6.
+6. **Employer Exit** – Employer cancels job and receives the remaining 100 $AGIALPHA escrow.
 
 ## 🧾 Artefact index
 
