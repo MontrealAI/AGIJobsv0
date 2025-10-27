@@ -168,7 +168,15 @@ function parseBigint(value: string | number | bigint, field: string): bigint {
     if (!Number.isFinite(value)) {
       throw new Error(`invalid numeric value for ${field}`);
     }
-    return BigInt(Math.trunc(value));
+    if (!Number.isInteger(value)) {
+      throw new Error(`expected integer value for ${field}`);
+    }
+    if (!Number.isSafeInteger(value)) {
+      throw new Error(
+        `unsafe numeric literal for ${field}; wrap large values in quotes to preserve precision`,
+      );
+    }
+    return BigInt(value);
   }
   const sanitized = value.replace(/_/g, '').trim();
   if (sanitized.length === 0) {
