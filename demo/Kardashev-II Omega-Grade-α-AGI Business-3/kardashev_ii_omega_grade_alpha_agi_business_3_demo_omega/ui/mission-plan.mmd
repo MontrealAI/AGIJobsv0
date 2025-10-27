@@ -1,0 +1,20 @@
+flowchart TD
+    mission_core["Launch Stellar Infrastructure Programme\nReward: 16000 tokens\nEnergy: 280000 | Compute: 450000"]
+    mission_core --> mission_energy
+    mission_energy["Deploy Dyson Foundry Nodes\nReward: 9000 tokens\nEnergy: 180000 | Compute: 240000"]
+    mission_energy --> mission_energy_design
+    mission_energy_design["Design Dyson Swarm Blueprint\nReward: 3500 tokens\nEnergy: 65000 | Compute: 120000"]
+    mission_energy --> mission_energy_fabrication
+    mission_energy_fabrication["Coordinate Fabrication Supply Web\nReward: 3200 tokens\nEnergy: 48000 | Compute: 80000"]
+    mission_core --> mission_governance
+    mission_governance["Institutionalise Validator Syndicate\nReward: 6000 tokens\nEnergy: 80000 | Compute: 120000"]
+    mission_governance --> mission_governance_stake
+    mission_governance_stake["Configure Staking Ledgers\nReward: 2200 tokens\nEnergy: 20000 | Compute: 40000"]
+    mission_governance --> mission_governance_observatory
+    mission_governance_observatory["Activate Validator Observatory\nReward: 2400 tokens\nEnergy: 22000 | Compute: 42000"]
+    mission_core --> mission_supply
+    mission_supply["Orchestrate Interplanetary Supply Corridors\nReward: 7200 tokens\nEnergy: 120000 | Compute: 200000"]
+    mission_supply --> mission_supply_resourcing
+    mission_supply_resourcing["Secure Resource Offtake Contracts\nReward: 2600 tokens\nEnergy: 42000 | Compute: 60000"]
+    mission_supply --> mission_supply_telemetry
+    mission_supply_telemetry["Deploy Telemetry Mesh\nReward: 2800 tokens\nEnergy: 38000 | Compute: 58000"]

@@ -1,0 +1,186 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade α-AGI Business 3 – Operator Empowerment",
+  "owner_account": "sovereign-operator",
+  "resources": {
+    "energy_capacity": 5000000,
+    "compute_capacity": 15000000,
+    "base_agent_tokens": 12000
+  },
+  "agents": {
+    "strategists": ["macro-strategist", "expansion-architect"],
+    "validators": ["validator-1", "validator-2", "validator-3", "validator-4"],
+    "workers": [
+      {"name": "dyson-foundry", "efficiency": 1.6},
+      {"name": "supply-chain", "efficiency": 1.3},
+      {"name": "terraforming", "efficiency": 1.15},
+      {"name": "a2a-ops", "efficiency": 1.05}
+    ]
+  },
+  "orchestrator": {
+    "checkpoint_path": "storage/checkpoint.json",
+    "status_output_path": "storage/status.jsonl",
+    "control_channel_file": "storage/control-channel.jsonl",
+    "audit_log_path": "storage/audit-log.jsonl",
+    "energy_oracle_path": "storage/energy-oracle.jsonl",
+    "checkpoint_interval_seconds": 30,
+    "insight_interval_seconds": 20,
+    "energy_oracle_interval_seconds": 180,
+    "heartbeat_interval_seconds": 5,
+    "heartbeat_timeout_seconds": 45,
+    "health_check_interval_seconds": 5,
+    "integrity_check_interval_seconds": 45,
+    "cycle_sleep_seconds": 0.5,
+    "max_cycles": 0,
+    "resume_from_checkpoint": true,
+    "enable_simulation": true,
+    "simulation": {
+      "tick_seconds": 1.0,
+      "hours_per_tick": 2.0,
+      "energy_scale": 3.0,
+      "compute_scale": 1.5
+    },
+    "governance": {
+      "worker_stake_ratio": 0.15,
+      "validator_stake": 1200,
+      "approvals_required": 3,
+      "slash_ratio": 0.35,
+      "pause_enabled": true,
+      "validator_commit_window_seconds": 900,
+      "validator_reveal_window_seconds": 600
+    }
+  },
+  "jobs": [
+    {
+      "job_id": "mission-core",
+      "title": "Launch Stellar Infrastructure Programme",
+      "description": "Mobilise AGI agents to orchestrate a Dyson-swarm expansion with full validator governance.",
+      "required_skills": ["macro-strategy", "energy-architecture"],
+      "reward_tokens": 16000,
+      "stake_required": 3200,
+      "energy_budget": 280000,
+      "compute_budget": 450000,
+      "deadline_hours": 36,
+      "validation_window_hours": 4,
+      "metadata": {"mission_phase": "alpha", "impact_score": 10},
+      "children": [
+        {
+          "job_id": "mission-energy",
+          "title": "Deploy Dyson Foundry Nodes",
+          "description": "Design, construct, and calibrate stellar collectors for immediate integration into the planetary energy ledger.",
+          "required_skills": ["energy", "manufacturing"],
+          "reward_tokens": 9000,
+          "stake_required": 1800,
+          "energy_budget": 180000,
+          "compute_budget": 240000,
+          "deadline_hours": 18,
+          "validation_window_hours": 2,
+          "metadata": {"mission_phase": "energy", "impact_score": 9},
+          "children": [
+            {
+              "job_id": "mission-energy-design",
+              "title": "Design Dyson Swarm Blueprint",
+              "required_skills": ["systems-design", "energy"],
+              "reward_tokens": 3500,
+              "stake_required": 700,
+              "energy_budget": 65000,
+              "compute_budget": 120000,
+              "deadline_hours": 6,
+              "validation_window_hours": 1.5,
+              "metadata": {"mission_phase": "design", "impact_score": 7}
+            },
+            {
+              "job_id": "mission-energy-fabrication",
+              "title": "Coordinate Fabrication Supply Web",
+              "required_skills": ["supply-chain", "automation"],
+              "reward_tokens": 3200,
+              "stake_required": 640,
+              "energy_budget": 48000,
+              "compute_budget": 80000,
+              "deadline_hours": 8,
+              "validation_window_hours": 1.5,
+              "metadata": {"mission_phase": "fabrication", "impact_score": 6}
+            }
+          ]
+        },
+        {
+          "job_id": "mission-governance",
+          "title": "Institutionalise Validator Syndicate",
+          "description": "On-board validator agents, distribute stakes, and prepare commit–reveal oversight for mission-critical jobs.",
+          "required_skills": ["governance", "compliance"],
+          "reward_tokens": 6000,
+          "stake_required": 900,
+          "energy_budget": 80000,
+          "compute_budget": 120000,
+          "deadline_hours": 12,
+          "validation_window_hours": 2,
+          "metadata": {"mission_phase": "governance", "impact_score": 8},
+          "children": [
+            {
+              "job_id": "mission-governance-stake",
+              "title": "Configure Staking Ledgers",
+              "required_skills": ["finance", "tokenomics"],
+              "reward_tokens": 2200,
+              "stake_required": 330,
+              "energy_budget": 20000,
+              "compute_budget": 40000,
+              "deadline_hours": 6,
+              "validation_window_hours": 1,
+              "metadata": {"mission_phase": "staking", "impact_score": 6}
+            },
+            {
+              "job_id": "mission-governance-observatory",
+              "title": "Activate Validator Observatory",
+              "required_skills": ["monitoring", "security"],
+              "reward_tokens": 2400,
+              "stake_required": 360,
+              "energy_budget": 22000,
+              "compute_budget": 42000,
+              "deadline_hours": 6,
+              "validation_window_hours": 1,
+              "metadata": {"mission_phase": "governance", "impact_score": 6}
+            }
+          ]
+        },
+        {
+          "job_id": "mission-supply",
+          "title": "Orchestrate Interplanetary Supply Corridors",
+          "description": "Deliver sustained logistics for energy units, compute substrates, and validator tooling across the Dyson network.",
+          "required_skills": ["logistics", "coordination"],
+          "reward_tokens": 7200,
+          "stake_required": 1200,
+          "energy_budget": 120000,
+          "compute_budget": 200000,
+          "deadline_hours": 20,
+          "validation_window_hours": 3,
+          "metadata": {"mission_phase": "logistics", "impact_score": 8},
+          "children": [
+            {
+              "job_id": "mission-supply-resourcing",
+              "title": "Secure Resource Offtake Contracts",
+              "required_skills": ["negotiation", "procurement"],
+              "reward_tokens": 2600,
+              "stake_required": 520,
+              "energy_budget": 42000,
+              "compute_budget": 60000,
+              "deadline_hours": 8,
+              "validation_window_hours": 1.5,
+              "metadata": {"mission_phase": "logistics", "impact_score": 6}
+            },
+            {
+              "job_id": "mission-supply-telemetry",
+              "title": "Deploy Telemetry Mesh",
+              "required_skills": ["telemetry", "automation"],
+              "reward_tokens": 2800,
+              "stake_required": 560,
+              "energy_budget": 38000,
+              "compute_budget": 58000,
+              "deadline_hours": 10,
+              "validation_window_hours": 1.5,
+              "metadata": {"mission_phase": "logistics", "impact_score": 6}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
