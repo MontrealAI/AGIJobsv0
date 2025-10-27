@@ -11,8 +11,10 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🤖 **Containerized Agent Marketplace** – Nodes self-register with capabilities, heartbeats, and owner-managed quotas.
 - 💾 **Crash-Proof Checkpointing** – A built-in recovery engine snapshots the entire fabric so runs resume exactly where they stopped.
 - 🛡️ **Owner Supreme Controls** – The owner can pause, update, reprioritize, or surgically reroute jobs at any moment via declarative commands.
+- 🧭 **Checkpoint Command Deck** – Owners retarget storage paths, tighten snapshot cadence, and trigger instant saves from the same schedule that drives pauses and reroutes.
 - 📈 **CI-Certified** – Dedicated workflows and tests guarantee green checks on every PR and on `main`.
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
+- 🎛️ **Owner Command Schedules** – Load declarative schedules that trigger pause/resume, shard tuning, and node lifecycle actions mid-run.
 
 ## Quickstart (Non-Technical Operator)
 
@@ -26,13 +28,14 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
    cp deployment-config/.env.example deployment-config/.env
    ```
 3. **Run the planetary fabric** (generates full reports + dashboard):
-   ```bash
-   demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh \
+  ```bash
+  demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh \
      --jobs 10000 \
      --simulate-outage "mars.gpu-helion" \
      --checkpoint-interval 30 \
-     --output-label "kardashev-kill-switch"
-   ```
+     --output-label "kardashev-kill-switch" \
+     --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
+  ```
 4. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/kardashev-kill-switch/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels.
 5. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
@@ -87,6 +90,7 @@ flowchart TD
 | --- | --- |
 | `bin/run-demo.sh` | One-command launcher for the full demo flow. |
 | `config/fabric.example.json` | Declarative definition of shards, nodes, owner policies, checkpoint schedules. |
+| `config/owner-commands.example.json` | Sample schedule of owner commands applied mid-run. |
 | `docs/architecture.md` | Deep dive into the architecture with additional diagrams, latency budgets, and ledger mapping. |
 | `docs/owner-control.md` | Owner empowerment manual with pause/update scripts and governance hooks. |
 | `docs/ci.md` | How CI guards this demo with enforced, reproducible checks. |
@@ -107,9 +111,10 @@ flowchart TD
 
 - ✅ **`summary.json`** – Throughput metrics, shard depths, failure recovery stats, deterministic seeds.
 - ✅ **`events.ndjson`** – Chronological event stream ready for ingestion into SIEM/observability stacks.
-- ✅ **`checkpoint.json`** – Final checkpoint snapshot enabling an instant resume.
+- ✅ **`checkpoint.json`** – Owner-governed snapshot reflecting any retargeted path/interval updates for instant resume.
 - ✅ **`dashboard.html`** – Rich interactive briefing with mermaid flows, tables, and callouts.
 - ✅ **`owner-script.json`** – Example governance payloads for immediate replay against the live stack.
+- ✅ **`owner-commands-executed.json`** – Ledger of scheduled, executed, skipped, and pending owner commands.
 
 ## Branch Protection & CI
 

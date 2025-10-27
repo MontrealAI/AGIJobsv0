@@ -1,0 +1,70 @@
+{
+  "commands": [
+    {
+      "tick": 120,
+      "note": "Pause the full fabric while Helios GPUs recalibrate",
+      "command": {
+        "type": "system.pause",
+        "reason": "Helios GPU thermal recalibration"
+      }
+    },
+    {
+      "tick": 150,
+      "note": "Resume once calibration completes",
+      "command": {
+        "type": "system.resume",
+        "reason": "Calibration complete"
+      }
+    },
+    {
+      "tick": 155,
+      "note": "Boost Earth queue budget to handle backlog",
+      "command": {
+        "type": "shard.update",
+        "shard": "earth",
+        "update": {
+          "maxQueue": 6400,
+          "router": {
+            "queueAlertThreshold": 3600
+          }
+        }
+      }
+    },
+    {
+      "tick": 180,
+      "note": "Introduce Helios backup GPU helion",
+      "command": {
+        "type": "node.register",
+        "reason": "Spin up reserve GPU helion",
+        "node": {
+          "id": "helios.solaris-backup",
+          "region": "helios",
+          "capacity": 20,
+          "specialties": ["gpu", "astronomy"],
+          "heartbeatIntervalSec": 9,
+          "maxConcurrency": 12
+        }
+      }
+    },
+    {
+      "tick": 220,
+      "note": "Snapshot the fabric after governance actions",
+      "command": {
+        "type": "checkpoint.save",
+        "reason": "Archive post-update state"
+      }
+    },
+    {
+      "tick": 260,
+      "note": "Tighten checkpoint cadence during solar storm",
+      "command": {
+        "type": "checkpoint.configure",
+        "reason": "Increase redundancy",
+        "update": {
+          "intervalTicks": 20,
+          "path": "demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoints/solar-storm.json"
+        }
+      }
+    }
+  ]
+}

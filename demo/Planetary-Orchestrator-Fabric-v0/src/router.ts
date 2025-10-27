@@ -103,9 +103,11 @@ function matchesPolicy(job: JobState, policy: SpilloverPolicy): boolean {
 }
 
 export class ShardRouterService {
-  private readonly policies: SpilloverPolicy[];
-  private readonly queueAlertThreshold: number;
+  private policies: SpilloverPolicy[];
+  private queueAlertThreshold: number;
   private lastSpilloverTick?: number;
+  private paused = false;
+  private lastPauseEventTick?: number;
 
   constructor(
     private readonly shard: ShardState,
@@ -113,7 +115,41 @@ export class ShardRouterService {
     private readonly getShardNodes: () => NodeState[],
     private readonly logger: InMemoryFabricLogger
   ) {
-    this.policies = [...(config.router?.spilloverPolicies ?? [])].sort((a, b) => {
+    this.policies = this.sortPolicies(config.router?.spilloverPolicies ?? []);
+    this.queueAlertThreshold = config.router?.queueAlertThreshold ?? Math.ceil(config.maxQueue * 0.75);
+  }
+
+  setPaused(paused: boolean): void {
+    if (!paused) {
+      this.lastPauseEventTick = undefined;
+    }
+    this.paused = paused;
+  }
+
+  updateQueueAlertThreshold(threshold: number): void {
+    this.queueAlertThreshold = threshold;
+    if (!this.config.router) {
+      this.config.router = { queueAlertThreshold: threshold };
+    } else {
+      this.config.router.queueAlertThreshold = threshold;
+    }
+  }
+
+  updateSpilloverPolicies(policies: SpilloverPolicy[]): void {
+    this.policies = this.sortPolicies(policies);
+    if (!this.config.router) {
+      this.config.router = { spilloverPolicies: this.policies.map((policy) => ({ ...policy })) };
+    } else {
+      this.config.router.spilloverPolicies = this.policies.map((policy) => ({ ...policy }));
+    }
+  }
+
+  updateSpilloverTargets(targets: ShardId[]): void {
+    this.config.spilloverTargets = [...targets];
+  }
+
+  private sortPolicies(policies: SpilloverPolicy[]): SpilloverPolicy[] {
+    return [...policies].sort((a, b) => {
       const thresholdDelta = a.threshold - b.threshold;
       if (thresholdDelta !== 0) {
         return thresholdDelta;
@@ -122,7 +158,6 @@ export class ShardRouterService {
       const weightB = b.weight ?? 0;
       return weightB - weightA;
     });
-    this.queueAlertThreshold = config.router?.queueAlertThreshold ?? Math.ceil(config.maxQueue * 0.75);
   }
 
   queueJob(job: JobState, reason: 'new' | 'spillover' | 'requeue'): void {
@@ -219,6 +254,19 @@ export class ShardRouterService {
   processTick(context: RouterContext): RouterTickActions {
     const actions: RouterTickActions = { assignments: [], spillovers: [], failures: [], events: [] };
     const nodes = this.getShardNodes();
+
+    if (this.paused) {
+      if (this.lastPauseEventTick !== context.tick) {
+        actions.events.push({
+          tick: context.tick,
+          type: 'shard.paused.tick',
+          message: `Shard ${this.config.id} is paused; no assignments executed`,
+          data: { shard: this.config.id },
+        });
+        this.lastPauseEventTick = context.tick;
+      }
+      return actions;
+    }
 
     for (const node of nodes) {
       if (!node.active) {
@@ -442,10 +490,15 @@ export class ShardRouterService {
       failed: this.shard.failed.size,
       status: { level: statusLevel, message },
       lastSpilloverTick: this.lastSpilloverTick,
+      paused: this.paused,
+      queueAlertThreshold: this.queueAlertThreshold,
     };
   }
 
   private computeStatus(): 'ok' | 'degraded' | 'critical' {
+    if (this.paused) {
+      return 'degraded';
+    }
     if (this.shard.queue.length > this.config.maxQueue) {
       return 'critical';
     }
@@ -456,6 +509,9 @@ export class ShardRouterService {
   }
 
   private healthMessage(level: 'ok' | 'degraded' | 'critical', currentTick: number): string {
+    if (this.paused) {
+      return `Shard ${this.config.id} paused at tick ${currentTick}`;
+    }
     if (level === 'ok') {
       return 'Shard operating within normal parameters';
     }

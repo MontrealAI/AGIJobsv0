@@ -8,6 +8,7 @@ import {
   FabricMetrics,
   JobDefinition,
   NodeDefinition,
+  OwnerCommandSchedule,
   SimulationArtifacts,
   SimulationOptions,
 } from './types';
@@ -18,6 +19,13 @@ export interface SimulationResult {
   metrics: FabricMetrics;
   artifacts: SimulationArtifacts;
   checkpointRestored: boolean;
+  executedOwnerCommands: OwnerCommandSchedule[];
+  skippedOwnerCommands: OwnerCommandSchedule[];
+  pendingOwnerCommands: OwnerCommandSchedule[];
+}
+
+function cloneSchedule(schedule: OwnerCommandSchedule): OwnerCommandSchedule {
+  return JSON.parse(JSON.stringify(schedule)) as OwnerCommandSchedule;
 }
 
 export async function runSimulation(
@@ -36,6 +44,34 @@ export async function runSimulation(
   const checkpointRestored = options.resume ? await orchestrator.restoreFromCheckpoint() : false;
   const startTick = orchestrator.currentTick;
 
+  const scheduledCommands = [...(options.ownerCommands ?? [])].sort((a, b) => a.tick - b.tick);
+  const executedCommands: OwnerCommandSchedule[] = [];
+  const skippedDueToCheckpoint: OwnerCommandSchedule[] = [];
+  let commandIndex = 0;
+
+  if (checkpointRestored) {
+    while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= startTick) {
+      skippedDueToCheckpoint.push(cloneSchedule(scheduledCommands[commandIndex]));
+      commandIndex += 1;
+    }
+  } else {
+    while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= startTick) {
+      const schedule = scheduledCommands[commandIndex];
+      await orchestrator.applyOwnerCommand(schedule.command);
+      executedCommands.push(cloneSchedule(schedule));
+      commandIndex += 1;
+    }
+  }
+
+  const applyCommandsForTick = async (tick: number): Promise<void> => {
+    while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= tick) {
+      const schedule = scheduledCommands[commandIndex];
+      await orchestrator.applyOwnerCommand(schedule.command);
+      executedCommands.push(cloneSchedule(schedule));
+      commandIndex += 1;
+    }
+  };
+
   if (options.ciMode) {
     process.stdout.write(
       `[ci-start] jobs=${options.jobs} restored=${checkpointRestored} tick=${startTick}\n`
@@ -47,25 +83,33 @@ export async function runSimulation(
   }
 
   const eventsStream = createWriteStream(join(reportDir, 'events.ndjson'), { encoding: 'utf8' });
+  const flushEvents = (): void => {
+    const events = orchestrator.fabricEvents;
+    for (const event of events) {
+      eventsStream.write(`${JSON.stringify(event)}\n`);
+    }
+  };
+
+  flushEvents();
+
   const outageTick = options.outageTick ?? DEFAULT_OUTAGE_TICK;
   const outageNodeId = options.simulateOutage;
 
   const maxTicks = Math.max(Math.ceil(options.jobs * 0.35), 200) + orchestrator.currentTick;
 
   for (let tick = orchestrator.currentTick + 1; tick <= maxTicks; tick += 1) {
+    await applyCommandsForTick(tick);
     orchestrator.processTick({ tick });
 
     if (outageNodeId && tick === outageTick) {
       orchestrator.markOutage(outageNodeId);
     }
 
-    const events = orchestrator.fabricEvents;
-    for (const event of events) {
-      eventsStream.write(`${JSON.stringify(event)}\n`);
-    }
+    flushEvents();
 
     if (tick % config.checkpoint.intervalTicks === 0) {
       await orchestrator.saveCheckpoint();
+      flushEvents();
     }
 
     if (options.ciMode && (tick === startTick + 1 || tick % 200 === 0)) {
@@ -85,6 +129,7 @@ export async function runSimulation(
   }
 
   await orchestrator.saveCheckpoint();
+  flushEvents();
   await new Promise<void>((resolve, reject) => {
     eventsStream.end((error: NodeJS.ErrnoException | null | undefined) => {
       if (error) {
@@ -103,9 +148,26 @@ export async function runSimulation(
     );
   }
 
-  const artifacts = await writeArtifacts(reportDir, config, orchestrator, checkpointPath, options);
+  const pendingCommands = scheduledCommands.slice(commandIndex).map(cloneSchedule);
 
-  return { metrics, artifacts, checkpointRestored };
+  const artifacts = await writeArtifacts(
+    reportDir,
+    config,
+    orchestrator,
+    options,
+    executedCommands,
+    skippedDueToCheckpoint,
+    pendingCommands
+  );
+
+  return {
+    metrics,
+    artifacts,
+    checkpointRestored,
+    executedOwnerCommands: executedCommands,
+    skippedOwnerCommands: skippedDueToCheckpoint,
+    pendingOwnerCommands: pendingCommands,
+  };
 }
 
 async function seedJobs(
@@ -180,13 +242,20 @@ async function writeArtifacts(
   reportDir: string,
   config: FabricConfig,
   orchestrator: PlanetaryOrchestrator,
-  checkpointPath: string,
-  options: SimulationOptions
+  options: SimulationOptions,
+  executedCommands: OwnerCommandSchedule[],
+  skippedCommands: OwnerCommandSchedule[],
+  pendingCommands: OwnerCommandSchedule[]
 ): Promise<SimulationArtifacts> {
   const metrics = orchestrator.fabricMetrics;
   const shardSnapshots = orchestrator.getShardSnapshots();
   const shardStats = orchestrator.getShardStatistics();
   const nodeSnapshots = orchestrator.getNodeSnapshots();
+  const ownerState = orchestrator.getOwnerState();
+  const checkpointConfig = orchestrator.getCheckpointConfig();
+  const rotatedCheckpointPath = checkpointConfig.path.endsWith('.json')
+    ? `${checkpointConfig.path.slice(0, -5)}.owner.json`
+    : `${checkpointConfig.path}.owner.json`;
 
   await writeShardTelemetry(reportDir, shardSnapshots, shardStats);
 
@@ -196,17 +265,37 @@ async function writeArtifacts(
     shards: shardSnapshots,
     shardStatistics: shardStats,
     nodes: nodeSnapshots,
-    checkpoint: checkpointPath,
+    checkpoint: checkpointConfig,
+    checkpointPath: checkpointConfig.path,
     options,
+    ownerState,
+    ownerCommands: {
+      source: options.ownerCommandSource,
+      scheduled: options.ownerCommands ? options.ownerCommands.map((entry) => cloneSchedule(entry)) : [],
+      executed: executedCommands,
+      skippedBeforeResume: skippedCommands,
+      pending: pendingCommands,
+    },
   };
   const summaryPath = join(reportDir, 'summary.json');
   await fs.writeFile(summaryPath, JSON.stringify(summary, null, 2), 'utf8');
+
+  const executedCommandsPath = join(reportDir, 'owner-commands-executed.json');
+  await fs.writeFile(
+    executedCommandsPath,
+    JSON.stringify({ executed: executedCommands, skipped: skippedCommands, pending: pendingCommands }, null, 2),
+    'utf8'
+  );
 
   const ownerScript = {
     pauseAll: {
       command: 'owner:system-pause',
       reason: 'Demo pause to rehearse planetary failover',
       contract: config.owner.pauseRole,
+    },
+    resumeAll: {
+      command: 'owner:system-resume',
+      reason: 'Resume global orchestration after drill',
     },
     rerouteMarsToHelios: {
       command: 'owner:reroute-shard',
@@ -219,22 +308,123 @@ async function writeArtifacts(
       shard: 'earth',
       latencyMs: 150,
     },
+    directOwnerCommands: {
+      pauseFabric: {
+        type: 'system.pause',
+        reason: 'Helios GPU thermal recalibration',
+      },
+      resumeFabric: {
+        type: 'system.resume',
+        reason: 'Calibration complete',
+      },
+      tuneEarthShard: {
+        type: 'shard.update',
+        shard: 'earth',
+        update: {
+          maxQueue: 6400,
+          router: { queueAlertThreshold: 3600 },
+        },
+      },
+      registerHeliosBackup: {
+        type: 'node.register',
+        reason: 'Spin up backup GPU helion',
+        node: {
+          id: 'helios.solaris-backup',
+          region: 'helios',
+          capacity: 20,
+          specialties: ['gpu', 'astronomy'],
+          heartbeatIntervalSec: 9,
+          maxConcurrency: 12,
+        },
+      },
+      deregisterEarthEdge: {
+        type: 'node.deregister',
+        nodeId: 'earth.edge-europa',
+        reason: 'Transition node to maintenance rotation',
+      },
+      snapshotFabric: {
+        type: 'checkpoint.save',
+        reason: 'Archive state before governance vote',
+      },
+      tightenCheckpointInterval: {
+        type: 'checkpoint.configure',
+        reason: 'Increase checkpoint cadence during solar storm',
+        update: { intervalTicks: Math.max(1, Math.floor(checkpointConfig.intervalTicks / 2)) },
+      },
+      retargetCheckpointStore: {
+        type: 'checkpoint.configure',
+        reason: 'Rotate checkpoint storage bucket',
+        update: { path: rotatedCheckpointPath },
+      },
+    },
+    commandScheduleTemplate: [
+      {
+        tick: 120,
+        note: 'Run a full-fabric pause drill during Helios calibration',
+        command: { type: 'system.pause', reason: 'Helios GPU thermal recalibration' },
+      },
+      {
+        tick: 150,
+        note: 'Resume once calibration completes',
+        command: { type: 'system.resume', reason: 'Calibration complete' },
+      },
+      {
+        tick: 155,
+        note: 'Boost Earth queue capacity for surge demand',
+        command: { type: 'shard.update', shard: 'earth', update: { maxQueue: 6400, router: { queueAlertThreshold: 3600 } } },
+      },
+      {
+        tick: 180,
+        note: 'Add Helios backup GPU node for redundancy',
+        command: {
+          type: 'node.register',
+          reason: 'Introduce backup GPU helion',
+          node: {
+            id: 'helios.solaris-backup',
+            region: 'helios',
+            capacity: 20,
+            specialties: ['gpu', 'astronomy'],
+            heartbeatIntervalSec: 9,
+            maxConcurrency: 12,
+          },
+        },
+      },
+      {
+        tick: 220,
+        note: 'Force checkpoint snapshot after governance actions',
+        command: { type: 'checkpoint.save', reason: 'Archive post-update state' },
+      },
+      {
+        tick: 260,
+        note: 'Tighten checkpoint interval during critical window',
+        command: {
+          type: 'checkpoint.configure',
+          update: { intervalTicks: Math.max(2, Math.floor(checkpointConfig.intervalTicks / 2)), path: rotatedCheckpointPath },
+          reason: 'Increase redundancy ahead of interplanetary transfer',
+        },
+      },
+    ],
   };
   const ownerScriptPath = join(reportDir, 'owner-script.json');
   await fs.writeFile(ownerScriptPath, JSON.stringify(ownerScript, null, 2), 'utf8');
 
   const dashboardPath = join(reportDir, 'dashboard.html');
-  await fs.writeFile(dashboardPath, buildDashboardHtml(summaryPath, ownerScriptPath), 'utf8');
+  await fs.writeFile(
+    dashboardPath,
+    buildDashboardHtml(summaryPath, ownerScriptPath, executedCommandsPath),
+    'utf8'
+  );
 
   return {
     summaryPath,
     eventsPath: join(reportDir, 'events.ndjson'),
     dashboardPath,
     ownerScriptPath,
+    ownerCommandsPath: executedCommandsPath,
   };
 }
 
-function buildDashboardHtml(summaryPath: string, ownerScriptPath: string): string {
+function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, executedCommandsPath: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -250,24 +440,73 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string): strin
     .metrics { display: grid; gap: 12px; }
     .metric { background: rgba(6, 12, 48, 0.9); padding: 16px; border-radius: 12px; }
     .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }
+    .note { margin-top: 8px; color: rgba(255,255,255,0.65); }
     footer { padding: 24px; text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
   </style>
   <script type="module">
+    const executedLogPath = ${JSON.stringify(executedCommandsPath)};
     async function loadData() {
       const summaryResp = await fetch('./summary.json');
       const summary = await summaryResp.json();
       document.getElementById('owner').textContent = summary.owner.name;
       const metrics = summary.metrics;
+      const ownerMetrics = summary.ownerState?.metrics ?? {
+        ownerInterventions: 0,
+        systemPauses: 0,
+        shardPauses: 0,
+      };
       document.getElementById('metrics').innerHTML =
-        '<div class="metric"><strong>Tick</strong><br />' + metrics.tick + '</div>' +
+        '<div class="metric"><strong>Tick</strong><br />' + metrics.tick.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Jobs Submitted</strong><br />' + metrics.jobsSubmitted.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Jobs Completed</strong><br />' + metrics.jobsCompleted.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Spillovers</strong><br />' + metrics.spillovers + '</div>' +
-        '<div class="metric"><strong>Reassignments</strong><br />' + metrics.reassignedAfterFailure + '</div>';
+        '<div class="metric"><strong>Spillovers</strong><br />' + metrics.spillovers.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Reassignments</strong><br />' + metrics.reassignedAfterFailure.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Owner Interventions</strong><br />' + ownerMetrics.ownerInterventions.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>System Pauses</strong><br />' + ownerMetrics.systemPauses.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Shard Pauses</strong><br />' + ownerMetrics.shardPauses.toLocaleString() + '</div>';
       document.getElementById('options').textContent = JSON.stringify(summary.options, null, 2);
+      const ownerState = summary.ownerState ?? {
+        systemPaused: false,
+        pausedShards: [],
+        checkpoint: summary.checkpoint ?? { path: summary.checkpointPath ?? 'unknown', intervalTicks: 0 },
+        metrics: ownerMetrics,
+      };
+      document.getElementById('owner-state').textContent = JSON.stringify(ownerState, null, 2);
+      const pausedShards = Array.isArray(ownerState.pausedShards) && ownerState.pausedShards.length > 0
+        ? ownerState.pausedShards.join(', ')
+        : 'None';
+      const checkpointState = ownerState.checkpoint ?? summary.checkpoint ?? {};
+      const checkpointPath = typeof checkpointState.path === 'string'
+        ? checkpointState.path
+        : summary.checkpointPath ?? 'Unknown';
+      const checkpointInterval = typeof checkpointState.intervalTicks === 'number'
+        ? checkpointState.intervalTicks
+        : summary.checkpoint?.intervalTicks ?? 'Unknown';
+      document.getElementById('owner-status').innerHTML =
+        '<div class="metric"><strong>System Paused</strong><br />' + (ownerState.systemPaused ? 'Yes' : 'No') + '</div>' +
+        '<div class="metric"><strong>Paused Shards</strong><br />' + pausedShards + '</div>' +
+        '<div class="metric"><strong>Checkpoint Path</strong><br /><code>' + checkpointPath + '</code></div>' +
+        '<div class="metric"><strong>Checkpoint Interval</strong><br />' + checkpointInterval + ' ticks</div>';
+      const ownerCommandsMeta = summary.ownerCommands ?? {};
+      const scheduledCount = Array.isArray(ownerCommandsMeta.scheduled) ? ownerCommandsMeta.scheduled.length : 0;
+      const executedCount = Array.isArray(ownerCommandsMeta.executed) ? ownerCommandsMeta.executed.length : 0;
+      const pendingCount = Array.isArray(ownerCommandsMeta.pending) ? ownerCommandsMeta.pending.length : 0;
+      const skippedCount = Array.isArray(ownerCommandsMeta.skippedBeforeResume)
+        ? ownerCommandsMeta.skippedBeforeResume.length
+        : 0;
+      document.getElementById('owner-commands-summary').innerHTML =
+        '<div class="metric"><strong>Scheduled</strong><br />' + scheduledCount.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Executed</strong><br />' + executedCount.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Pending</strong><br />' + pendingCount.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Skipped (resume)</strong><br />' + skippedCount.toLocaleString() + '</div>';
+      document.getElementById('owner-commands-source').textContent = ownerCommandsMeta.source ?? 'Inline schedule';
+      document.getElementById('owner-commands-path').textContent = executedLogPath;
       const ownerResp = await fetch('./owner-script.json');
       const ownerScripts = await ownerResp.json();
       document.getElementById('owner-script').textContent = JSON.stringify(ownerScripts, null, 2);
+      const executedResp = await fetch('./owner-commands-executed.json');
+      const executedPayload = await executedResp.json();
+      document.getElementById('owner-commands').textContent = JSON.stringify(executedPayload, null, 2);
     }
     loadData();
   </script>
@@ -301,12 +540,24 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string): strin
       <div id="metrics" class="metrics"></div>
     </section>
     <section>
+      <h2>Owner Fabric State</h2>
+      <div id="owner-status" class="metrics"></div>
+      <pre id="owner-state">Loading...</pre>
+    </section>
+    <section>
       <h2>Run Options</h2>
       <pre id="options">Loading...</pre>
     </section>
     <section>
       <h2>Owner Command Payloads</h2>
       <pre id="owner-script">Loading...</pre>
+    </section>
+    <section>
+      <h2>Owner Command Executions</h2>
+      <div id="owner-commands-summary" class="metrics"></div>
+      <p class="note">Schedule source: <span id="owner-commands-source">None</span></p>
+      <p class="note">Execution log: <code id="owner-commands-path"></code></p>
+      <pre id="owner-commands">Loading...</pre>
     </section>
   </div>
   <footer>

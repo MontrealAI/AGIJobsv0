@@ -3,7 +3,7 @@ import { resolve } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { runSimulation } from './simulation';
-import { FabricConfig, SimulationOptions } from './types';
+import { FabricConfig, OwnerCommandSchedule, SimulationOptions } from './types';
 
 function lastValue<T>(value: T | T[] | undefined): T | undefined {
   if (Array.isArray(value)) {
@@ -17,6 +17,19 @@ async function loadConfig(path: string): Promise<FabricConfig> {
   const raw = await fs.readFile(configPath, 'utf8');
   const parsed = JSON.parse(raw) as FabricConfig;
   return parsed;
+}
+
+async function loadOwnerCommandsFile(path: string): Promise<OwnerCommandSchedule[]> {
+  const commandsPath = resolve(path);
+  const raw = await fs.readFile(commandsPath, 'utf8');
+  const parsed = JSON.parse(raw) as unknown;
+  if (Array.isArray(parsed)) {
+    return parsed as OwnerCommandSchedule[];
+  }
+  if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { commands?: unknown }).commands)) {
+    return (parsed as { commands: OwnerCommandSchedule[] }).commands;
+  }
+  throw new Error('Owner command file must be an array or an object with a "commands" array.');
 }
 
 async function main(): Promise<void> {
@@ -51,6 +64,10 @@ async function main(): Promise<void> {
       type: 'string',
       describe: 'Label for generated artifacts',
     })
+    .option('owner-commands', {
+      type: 'string',
+      describe: 'Path to owner command schedule JSON',
+    })
     .option('resume', {
       type: 'boolean',
       default: false,
@@ -73,6 +90,12 @@ async function main(): Promise<void> {
     config.checkpoint.path = checkpointPath;
   }
 
+  const ownerCommandsPath = lastValue(argv['owner-commands']);
+  let ownerCommands: OwnerCommandSchedule[] | undefined;
+  if (ownerCommandsPath) {
+    ownerCommands = await loadOwnerCommandsFile(ownerCommandsPath);
+  }
+
   const options: SimulationOptions = {
     jobs: lastValue(argv.jobs) ?? 10000,
     simulateOutage: lastValue(argv['simulate-outage']),
@@ -81,6 +104,8 @@ async function main(): Promise<void> {
     checkpointPath: lastValue(argv.checkpoint),
     outputLabel: lastValue(argv['output-label']),
     ciMode: lastValue(argv.ci) ?? false,
+    ownerCommands,
+    ownerCommandSource: ownerCommandsPath,
   };
 
   const result = await runSimulation(config, options);
@@ -90,6 +115,12 @@ async function main(): Promise<void> {
     checkpointRestored: result.checkpointRestored,
     metrics: result.metrics,
     artifacts: result.artifacts,
+    ownerCommands: {
+      scheduled: ownerCommands?.length ?? 0,
+      executed: result.executedOwnerCommands.length,
+      pending: result.pendingOwnerCommands.length,
+      skippedBeforeResume: result.skippedOwnerCommands.length,
+    },
   };
   process.stdout.write(`${JSON.stringify(log, null, 2)}\n`);
 }

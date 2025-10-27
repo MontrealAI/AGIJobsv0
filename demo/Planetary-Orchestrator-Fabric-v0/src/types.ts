@@ -72,6 +72,7 @@ export interface ShardState {
   completed: Map<string, JobState>;
   failed: Map<string, JobState>;
   spilloverCount: number;
+  paused: boolean;
 }
 
 export interface FabricConfig {
@@ -102,21 +103,28 @@ export interface SimulationOptions {
   checkpointPath?: string;
   outputLabel?: string;
   ciMode?: boolean;
+  ownerCommands?: OwnerCommandSchedule[];
+  ownerCommandSource?: string;
 }
 
 export interface CheckpointData {
   tick: number;
+  systemPaused: boolean;
+  pausedShards: ShardId[];
   shards: Record<ShardId, {
     queue: JobState[];
     inFlight: JobState[];
     completed: JobState[];
     failed: JobState[];
     spilloverCount: number;
+    paused: boolean;
+    config: ShardConfig;
   }>;
   nodes: Record<string, {
     state: NodeState['active'];
     runningJobs: JobState[];
     lastHeartbeatTick: number;
+    definition: NodeDefinition;
   }>;
   metrics: FabricMetrics;
   events: FabricEvent[];
@@ -137,6 +145,9 @@ export interface FabricMetrics {
   spillovers: number;
   reassignedAfterFailure: number;
   outageHandled: boolean;
+  ownerInterventions: number;
+  systemPauses: number;
+  shardPauses: number;
 }
 
 export type RegistryEvent =
@@ -163,6 +174,8 @@ export interface RouterHealthReport {
   failed: number;
   status: HealthStatus;
   lastSpilloverTick?: number;
+  paused: boolean;
+  queueAlertThreshold: number;
 }
 
 export interface NodeHealthReport {
@@ -177,6 +190,7 @@ export interface NodeHealthReport {
 export interface FabricHealthReport {
   tick: number;
   fabric: HealthStatus;
+  systemPaused: boolean;
   shards: RouterHealthReport[];
   nodes: NodeHealthReport[];
   metrics: FabricMetrics;
@@ -192,6 +206,7 @@ export interface SimulationArtifacts {
   eventsPath: string;
   dashboardPath: string;
   ownerScriptPath: string;
+  ownerCommandsPath: string;
 }
 
 export interface FabricEvent {
@@ -199,4 +214,50 @@ export interface FabricEvent {
   type: string;
   message: string;
   data?: Record<string, unknown>;
+}
+
+export type OwnerCommand =
+  | { type: 'system.pause'; reason?: string }
+  | { type: 'system.resume'; reason?: string }
+  | { type: 'shard.pause'; shard: ShardId; reason?: string }
+  | { type: 'shard.resume'; shard: ShardId; reason?: string }
+  | {
+      type: 'shard.update';
+      shard: ShardId;
+      update: {
+        displayName?: string;
+        latencyBudgetMs?: number;
+        maxQueue?: number;
+        spilloverTargets?: ShardId[];
+        router?: {
+          queueAlertThreshold?: number;
+          spilloverPolicies?: SpilloverPolicy[];
+        };
+      };
+    }
+  | {
+      type: 'node.update';
+      nodeId: string;
+      update: {
+        capacity?: number;
+        maxConcurrency?: number;
+        specialties?: string[];
+        heartbeatIntervalSec?: number;
+        region?: ShardId;
+      };
+      reason?: string;
+    }
+  | { type: 'node.register'; node: NodeDefinition; reason?: string }
+  | { type: 'node.deregister'; nodeId: string; reason?: string }
+  | { type: 'checkpoint.save'; reason?: string }
+  | {
+      type: 'checkpoint.configure';
+      update: { intervalTicks?: number; path?: string };
+      reason?: string;
+    };
+
+export interface OwnerCommandSchedule {
+  tick: number;
+  command: OwnerCommand;
+  note?: string;
 }

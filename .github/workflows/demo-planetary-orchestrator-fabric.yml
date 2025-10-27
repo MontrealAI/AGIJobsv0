@@ -87,6 +87,9 @@ jobs:
           if (!summary.nodes || Object.keys(summary.nodes).length === 0) {
             throw new Error('summary missing node snapshots');
           }
+          if (!summary.ownerCommands || !Array.isArray(summary.ownerCommands.executed)) {
+            throw new Error('summary missing owner command metadata');
+          }
           const drop = summary.metrics.jobsSubmitted - summary.metrics.jobsCompleted;
           const dropRate = drop / summary.metrics.jobsSubmitted;
           if (dropRate > 0.02) {
@@ -105,6 +108,20 @@ jobs:
           const ownerScripts = JSON.parse(fs.readFileSync(ownerScriptPath, 'utf8'));
           if (!ownerScripts.pauseAll || !ownerScripts.rerouteMarsToHelios) {
             throw new Error('owner script missing required payloads');
+          }
+          if (!ownerScripts.directOwnerCommands || !ownerScripts.directOwnerCommands.pauseFabric) {
+            throw new Error('owner script missing direct owner commands');
+          }
+          const ownerCommandsPath = path.join(reportDir, 'owner-commands-executed.json');
+          if (!fs.existsSync(ownerCommandsPath)) {
+            throw new Error('missing owner command execution log');
+          }
+          const ownerCommandsLog = JSON.parse(fs.readFileSync(ownerCommandsPath, 'utf8'));
+          if (!Array.isArray(ownerCommandsLog.executed)) {
+            throw new Error('owner command log missing executed array');
+          }
+          if (ownerCommandsLog.executed.length !== summary.ownerCommands.executed.length) {
+            throw new Error('summary owner command counts do not match execution log');
           }
           console.log('Planetary orchestrator fabric artifacts validated.');
           NODE
