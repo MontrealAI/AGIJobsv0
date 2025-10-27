@@ -163,6 +163,10 @@ test('validator constellation slashes dishonest validators via commit-reveal', (
     timeline.revealDeadlineBlock,
     (timeline.revealStartBlock ?? 0) + DEFAULT_GOVERNANCE_PARAMETERS.revealPhaseBlocks,
   );
+  assert.ok(roundResult.audit.pass, 'audit report should pass');
+  assert.ok(roundResult.audit.crossChecks.proofIntegrity, 'audit must confirm proof integrity');
+  assert.ok(roundResult.audit.crossChecks.vrfIntegrity, 'audit must confirm VRF integrity');
+  assert.equal(roundResult.audit.metrics.attestedJobs, 1000);
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {
@@ -170,6 +174,19 @@ test('sentinel triggers domain pause on budget overrun', () => {
   assert.ok(roundResult.sentinelAlerts.length >= 1, 'expected sentinel alert');
   assert.ok(roundResult.pauseRecords.length >= 1, 'expected domain pause record');
   assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
+  assert.ok(roundResult.audit.crossChecks.sentinelIntegrity, 'audit must confirm sentinel coverage');
+});
+
+test('autonomous audit validates quorum and sentinel guardrails', () => {
+  const { roundResult } = orchestrateRound();
+  const audit = roundResult.audit;
+  assert.ok(audit.metrics.quorumAchieved, 'quorum should be achieved');
+  assert.ok(audit.crossChecks.commitIntegrity, 'commit integrity should hold');
+  assert.ok(audit.crossChecks.timelineIntegrity, 'timeline should satisfy governance window');
+  if (roundResult.sentinelAlerts.length > 0) {
+    assert.ok(audit.crossChecks.sentinelIntegrity, 'sentinel alerts must map to domain pauses');
+  }
+  assert.ok(audit.findings.every((finding) => finding.severity !== 'CRITICAL'));
 });
 
 test('governance can rotate entropy mix and ZK verifying key for ultimate owner control', () => {
@@ -220,6 +237,7 @@ test('governance can rotate entropy mix and ZK verifying key for ultimate owner 
   );
   assert.deepEqual(demo.getEntropySources(), entropyUpdate);
   assert.notDeepEqual(entropyUpdate, originalEntropy);
+  assert.ok(result.audit.pass, 'audit should pass after governance updates');
 });
 
 test('node orchestration enforces ENS lineage and blacklist controls', () => {
@@ -299,6 +317,7 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
   assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
+  assert.ok(result.audit.pass, 'audit should pass after guardrail tuning');
 });
 
 test('configuration-driven scenario empowers non-technical orchestration', () => {
@@ -316,6 +335,7 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
   assert.equal(executed.context.jobSample?.length, 8);
   assert.ok(executed.context.ownerNotes?.description);
+  assert.ok(executed.report.audit.pass, 'scenario audit should pass');
 });
 
 test('operator control tower state synchronizes sentinel pauses and slashing telemetry', () => {
@@ -361,6 +381,7 @@ test('operator control tower state synchronizes sentinel pauses and slashing tel
     assert.ok(validator, 'validator from slashing event should exist in state');
     assert.notEqual(validator?.stake, '10000000000000000000', 'stake should reflect penalty');
   }
+  assert.ok(roundResult.audit.crossChecks.vrfIntegrity, 'audit should track VRF integrity in control tower run');
 });
 
 test('operator mermaid blueprint captures governance posture', () => {

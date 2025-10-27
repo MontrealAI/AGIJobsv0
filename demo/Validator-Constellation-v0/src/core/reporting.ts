@@ -89,6 +89,11 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
     revealStartBlock: result.timeline.revealStartBlock,
     revealDeadlineBlock: result.timeline.revealDeadlineBlock,
   };
+  const audit = result.audit;
+  const auditBadge = audit.pass ? 'PASS' : 'ATTENTION';
+  const auditFindings = audit.findings
+    .map((finding) => `- [${finding.severity}] ${finding.title}`)
+    .join('\\n') || '- No findings recorded.';
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -137,6 +142,15 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
           null,
           2,
         )}</pre>
+      </section>
+      <section>
+        <h2>Autonomous Audit — ${auditBadge}</h2>
+        <div class="metric">Commit integrity: <strong>${audit.crossChecks.commitIntegrity}</strong></div>
+        <div class="metric">Proof verified: <strong>${audit.crossChecks.proofIntegrity}</strong></div>
+        <div class="metric">VRF integrity: <strong>${audit.crossChecks.vrfIntegrity}</strong></div>
+        <div class="metric">Timeline respected: <strong>${audit.crossChecks.timelineIntegrity}</strong></div>
+        <div class="metric">Quorum achieved: <strong>${audit.metrics.quorumAchieved}</strong></div>
+        <pre>${auditFindings}</pre>
       </section>
       <section>
         <h2>Node Identities</h2>
@@ -234,6 +248,7 @@ export function writeReportArtifacts(input: ArtifactInput): void {
         : undefined,
     },
     ownerNotes: context.ownerNotes ?? {},
+    audit: roundResult.audit,
   };
 
   if (context.jobSample) {

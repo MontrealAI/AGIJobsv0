@@ -54,6 +54,7 @@ async function main() {
   console.log(`Scenario "${scenarioName}" executed successfully.`);
   console.log(`Validators slashed: ${executed.report.slashingEvents.length}`);
   console.log(`Sentinel alerts: ${executed.report.sentinelAlerts.length}`);
+  console.log(`Autonomous audit status: ${executed.report.audit.pass ? 'PASS' : 'ATTENTION REQUIRED'}`);
   console.log(`Reports written to ${reportDir}`);
 }
 

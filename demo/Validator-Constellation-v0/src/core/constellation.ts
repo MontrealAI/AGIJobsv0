@@ -9,6 +9,7 @@ import { SentinelMonitor } from './sentinel';
 import { EnsAuthority } from './ensAuthority';
 import { buildMerkleRoot, EnsLeaf, generateMerkleProof } from './ens';
 import { ZkBatchProver } from './zk';
+import { auditRound } from './auditor';
 import './subgraph';
 import {
   AgentAction,
@@ -28,6 +29,7 @@ import {
   SlashingEvent,
   ValidatorIdentity,
   VoteValue,
+  OrchestrationReportPayload,
 } from './types';
 
 export interface DemoSetup {
@@ -328,7 +330,13 @@ export class ValidatorConstellationDemo {
         throw new Error('proof verification failed');
       }
       this.blockNumber = (finalization.timeline.revealDeadlineBlock ?? this.blockNumber) + 1;
-      return {
+      const pauseRecords = this.pauseController
+        .listDomains()
+        .filter((state) => state.paused && state.pauseReason)
+        .map((state) => state.pauseReason!)
+        .sort((a, b) => a.timestamp - b.timestamp);
+
+      const baseReport: OrchestrationReportPayload = {
         round: params.round,
         domainId: params.jobBatch[0]?.domainId ?? this.domainIds[0],
         committee: selection.committee,
@@ -338,13 +346,26 @@ export class ValidatorConstellationDemo {
         voteOutcome: finalization.outcome,
         proof,
         sentinelAlerts,
-        pauseRecords: this.pauseController.listDomains()
-          .filter((state) => state.paused && state.pauseReason)
-          .map((state) => state.pauseReason!)
-          .sort((a, b) => a.timestamp - b.timestamp),
+        pauseRecords,
         slashingEvents,
         nodes: this.listNodes(),
         timeline: finalization.timeline,
+      };
+
+      const audit = auditRound({
+        report: baseReport,
+        jobBatch: params.jobBatch,
+        governance: governanceParameters,
+        verifyingKey: this.zk.getVerifyingKey(),
+        activeValidators,
+        onChainEntropy: this.onChainEntropy,
+        recentBeacon: this.recentBeacon,
+        truthfulVote: params.truthfulVote,
+      });
+
+      return {
+        ...baseReport,
+        audit,
       };
     } finally {
       eventBus.off('StakeSlashed', slashingListener);
