@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from threading import Lock
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, spawn_agent
 from .audit import AuditTrail
@@ -160,12 +160,20 @@ class Orchestrator:
         self._control_path = self.config.control_channel_file
         self._control_path.parent.mkdir(parents=True, exist_ok=True)
         self._control_path.touch(exist_ok=True)
-        for worker in self.config.worker_specs:
-            self.resources.ensure_account(worker, self.config.base_agent_tokens)
-        for validator in self.config.validator_names:
-            self.resources.ensure_account(validator, self.config.base_agent_tokens / 2)
-        for strategist in self.config.strategist_names:
-            self.resources.ensure_account(strategist, self.config.base_agent_tokens)
+        self._distribute_initial_balances(
+            (
+                (worker, float(self.config.base_agent_tokens))
+                for worker in self.config.worker_specs
+            ),
+            (
+                (validator, float(self.config.base_agent_tokens) / 2.0)
+                for validator in self.config.validator_names
+            ),
+            (
+                (strategist, float(self.config.base_agent_tokens))
+                for strategist in self.config.strategist_names
+            ),
+        )
         if self.config.resume_from_checkpoint:
             snapshot = self.checkpoint.load()
             if snapshot:
@@ -239,6 +247,23 @@ class Orchestrator:
                                     reserved_energy=energy,
                                     reserved_compute=compute,
                                 )
+
+    def _distribute_initial_balances(self, *groups: Iterable[tuple[str, float]]) -> None:
+        """Seed worker, validator, and strategist accounts from the operator treasury."""
+
+        for group in groups:
+            for name, amount in group:
+                amount = float(amount)
+                self.resources.ensure_account(name)
+                if amount <= 0:
+                    continue
+                try:
+                    self.resources.transfer_tokens(self.config.operator_account, name, amount)
+                except ValueError:
+                    self._warning(
+                        "initial_distribution_insufficient", amount=amount, account=name
+                    )
+                    break
 
     async def _ensure_job_events(self, job: JobRecord) -> None:
         if job.status in {JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.FINALIZED}:

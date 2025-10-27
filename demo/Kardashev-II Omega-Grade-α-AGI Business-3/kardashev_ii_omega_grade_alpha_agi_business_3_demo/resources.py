@@ -90,11 +90,26 @@ class ResourceManager:
         account.tokens += amount
         self.token_supply += amount
 
+    def transfer_tokens(self, sender: str, recipient: str, amount: float) -> None:
+        """Move ``amount`` of tokens from ``sender`` to ``recipient``."""
+
+        amount = float(amount)
+        if amount < 0:
+            raise ValueError("Transfer amount must be non-negative")
+        if amount == 0:
+            return
+        sender_account = self.ensure_account(sender)
+        recipient_account = self.ensure_account(recipient)
+        sender_account.ensure_budget(amount)
+        sender_account.tokens -= amount
+        recipient_account.tokens += amount
+
     def lock_stake(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
         account.ensure_budget(amount)
         account.tokens -= amount
         account.locked += amount
+        self.token_supply = max(0.0, self.token_supply - amount)
 
     def release_stake(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
@@ -105,6 +120,7 @@ class ResourceManager:
             return
         account.locked -= release
         account.tokens += release
+        self.token_supply += release
 
     def slash(self, name: str, amount: float) -> None:
         account = self.ensure_account(name)
@@ -114,7 +130,6 @@ class ResourceManager:
         if penalty <= 0:
             return
         account.locked -= penalty
-        self.token_supply = max(0.0, self.token_supply - penalty)
 
     def record_usage(self, name: str, energy: float, compute: float) -> None:
         account = self.ensure_account(name)
