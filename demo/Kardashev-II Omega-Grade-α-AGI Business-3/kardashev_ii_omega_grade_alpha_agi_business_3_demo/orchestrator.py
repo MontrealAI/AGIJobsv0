@@ -20,6 +20,7 @@ from .integrity import IntegrityReport, IntegritySuite
 from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
 from .logging_config import configure_logging
 from .messaging import MessageBus
+from .oracle import EnergyOracle
 from .resources import ResourceManager
 from .scheduler import EventScheduler, ScheduledEvent
 from .simulation import PlanetarySimulation, SimulationState, SyntheticEconomySim
@@ -57,6 +58,8 @@ class OrchestratorConfig:
     audit_log_path: Optional[Path] = None
     initial_jobs: List[Dict[str, Any]] = field(default_factory=list)
     status_output_path: Optional[Path] = None
+    energy_oracle_path: Optional[Path] = None
+    energy_oracle_interval_seconds: float = 60.0
     heartbeat_interval_seconds: float = 5.0
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
@@ -100,6 +103,12 @@ class Orchestrator:
             self._status_path.parent.mkdir(parents=True, exist_ok=True)
             if not self._status_path.exists():
                 self._status_path.touch()
+        self._energy_oracle = (
+            EnergyOracle(config.energy_oracle_path)
+            if config.energy_oracle_path is not None
+            else None
+        )
+        self._energy_oracle_interval = max(1.0, float(config.energy_oracle_interval_seconds))
         self._event_handlers: Dict[str, Callable[[ScheduledEvent], Awaitable[None]]] = {
             "job_deadline": self._handle_job_deadline_event,
             "validation_commit_end": self._handle_validation_commit_end_event,
@@ -143,6 +152,8 @@ class Orchestrator:
         await self._run_integrity_suite()
         self._tasks.append(asyncio.create_task(self._integrity_loop(), name="integrity"))
         self._tasks.append(asyncio.create_task(self._cycle_loop(), name="cycles"))
+        if self._energy_oracle is not None:
+            self._tasks.append(asyncio.create_task(self._energy_oracle_loop(), name="energy-oracle"))
 
     async def _bootstrap_state(self) -> None:
         self.resources.ensure_account(self.config.operator_account, self.config.base_agent_tokens * 10)
@@ -804,6 +815,8 @@ class Orchestrator:
             self.resources,
             scheduler=self.scheduler,
         )
+        if self._energy_oracle is not None:
+            await self._energy_oracle.close()
         self._info("orchestrator_stopped")
         if self.audit:
             await self.audit.close()
@@ -1037,6 +1050,47 @@ class Orchestrator:
             },
             "integrity": integrity_state,
         }
+
+    def _collect_energy_snapshot(self) -> Dict[str, Any]:
+        resource_state = self.resources.snapshot()
+        jobs = list(self.job_registry.iter_jobs())
+        active = sum(1 for job in jobs if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS})
+        finalized = sum(1 for job in jobs if job.status == JobStatus.FINALIZED)
+        simulation_state: Optional[Dict[str, float]] = None
+        if self._latest_simulation_state is not None:
+            simulation_state = {
+                "energy_output_gw": self._latest_simulation_state.energy_output_gw,
+                "prosperity_index": self._latest_simulation_state.prosperity_index,
+                "sustainability_index": self._latest_simulation_state.sustainability_index,
+            }
+        return {
+            "mission": self.config.mission_name,
+            "cycle": self._cycle,
+            "energy_available": resource_state.energy_available,
+            "energy_capacity": self.resources.energy_capacity,
+            "compute_available": resource_state.compute_available,
+            "compute_capacity": self.resources.compute_capacity,
+            "energy_price": self.resources.energy_price,
+            "compute_price": self.resources.compute_price,
+            "token_supply": resource_state.token_supply,
+            "locked_supply": resource_state.locked_supply,
+            "active_jobs": active,
+            "finalized_jobs": finalized,
+            "simulation": simulation_state,
+        }
+
+    async def _energy_oracle_loop(self) -> None:
+        if self._energy_oracle is None:
+            return
+        interval = self._energy_oracle_interval
+        try:
+            while self._running:
+                await self._paused.wait()
+                snapshot = self._collect_energy_snapshot()
+                await self._energy_oracle.publish(snapshot)
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:  # pragma: no cover - cooperative shutdown
+            return
 
     async def _persist_status_snapshot(self) -> None:
         if self._status_path is None:

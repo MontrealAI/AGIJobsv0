@@ -14,6 +14,9 @@ from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.jobs import JobRegi
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.messaging import (
     MessageBus,
 )
+from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.oracle import (
+    EnergyOracle,
+)
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.orchestrator import (
     Orchestrator,
     OrchestratorConfig,
@@ -191,6 +194,26 @@ class SchedulerTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
         self.assertEqual(captured, ["original"])
         await restored.shutdown()
+
+
+class EnergyOracleTests(unittest.IsolatedAsyncioTestCase):
+    async def test_oracle_appends_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            oracle_path = Path(tmp) / "oracle.jsonl"
+            oracle = EnergyOracle(oracle_path)
+            payload = {
+                "mission": "Test Mission",
+                "energy_available": 42.0,
+                "compute_available": 84.0,
+            }
+            await oracle.publish(payload)
+            await oracle.close()
+            lines = [line for line in oracle_path.read_text().splitlines() if line.strip()]
+            self.assertEqual(len(lines), 1)
+            record = json.loads(lines[0])
+            self.assertEqual(record["mission"], "Test Mission")
+            self.assertIn("recorded_at", record)
+            self.assertAlmostEqual(record["energy_available"], 42.0)
 
 
 class IntegritySuiteTests(unittest.TestCase):
@@ -528,6 +551,39 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("integrity", latest)
             self.assertIsInstance(latest["integrity"], dict)
             self.assertIn("results", latest["integrity"])
+
+    async def test_energy_oracle_loop_writes_records(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / "checkpoint.json"
+            control = Path(tmp) / "control.jsonl"
+            oracle_path = Path(tmp) / "oracle.jsonl"
+            governance = GovernanceParameters(
+                validator_commit_window=timedelta(seconds=0.05),
+                validator_reveal_window=timedelta(seconds=0.05),
+                approvals_required=1,
+            )
+            config = OrchestratorConfig(
+                max_cycles=15,
+                checkpoint_path=checkpoint,
+                control_channel_file=control,
+                insight_interval_seconds=0.2,
+                checkpoint_interval_seconds=1,
+                cycle_sleep_seconds=0.05,
+                governance=governance,
+                energy_oracle_path=oracle_path,
+                energy_oracle_interval_seconds=0.1,
+            )
+            orchestrator = Orchestrator(config)
+            await orchestrator.start()
+            await asyncio.sleep(0.35)
+            await orchestrator.shutdown()
+            self.assertTrue(oracle_path.exists())
+            records = [json.loads(line) for line in oracle_path.read_text().splitlines() if line.strip()]
+            self.assertTrue(records)
+            latest = records[-1]
+            self.assertIn("energy_available", latest)
+            self.assertIn("compute_available", latest)
+            self.assertEqual(latest["mission"], config.mission_name)
 
     async def test_simulation_updates_resources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

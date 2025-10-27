@@ -35,6 +35,7 @@ class OmegaConfigPaths:
         self.status_stream = root / "status" / "mission-feed.jsonl"
         self.dashboard = root / "status" / "dashboard.json"
         self.metrics_history = root / "status" / "history.jsonl"
+        self.energy_oracle = root / "status" / "energy-oracle.jsonl"
         self.supervisor_summary = root / "status" / "supervisor.json"
         for path in (
             self.control_channel,
@@ -42,6 +43,7 @@ class OmegaConfigPaths:
             self.status_stream,
             self.dashboard,
             self.metrics_history,
+            self.energy_oracle,
             self.supervisor_summary,
         ):
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -60,6 +62,7 @@ _PATH_FIELDS = {
     "metrics_history_path",
     "owner_command_ack_path",
     "supervisor_summary_path",
+    "energy_oracle_path",
 }
 
 
@@ -73,12 +76,14 @@ def build_config(overrides: Optional[Dict[str, Any]] = None) -> OmegaOrchestrato
         "status_output_path": Path("artifacts/status/mission-feed.jsonl"),
         "status_dashboard_path": Path("artifacts/status/dashboard.json"),
         "metrics_history_path": Path("artifacts/status/history.jsonl"),
+        "energy_oracle_path": Path("artifacts/status/energy-oracle.jsonl"),
         "owner_command_ack_path": Path("artifacts/control/acknowledged-commands.jsonl"),
         "supervisor_summary_path": Path("artifacts/status/supervisor.json"),
         "control_channel_file": Path("artifacts/control/command-stream.jsonl"),
         "supervisor_interval_seconds": 15.0,
         "owner_poll_interval_seconds": 3.0,
         "mission_target_hours": 24.0,
+        "energy_oracle_interval_seconds": 60.0,
     }
     for key, value in defaults.items():
         if not overrides or key not in overrides:

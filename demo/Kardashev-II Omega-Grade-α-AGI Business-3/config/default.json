@@ -32,6 +32,8 @@
   },
   "audit_log_path": "logs/omega-audit.jsonl",
   "status_output_path": "logs/omega-status.jsonl",
+  "energy_oracle_path": "logs/omega-energy-oracle.jsonl",
+  "energy_oracle_interval_seconds": 60.0,
   "initial_jobs": [
     {
       "title": "Planetary Dyson Swarm Expansion",

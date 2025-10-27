@@ -50,6 +50,10 @@ def _command_launch(args: argparse.Namespace) -> None:
         overrides["integrity_check_interval_seconds"] = float(args.integrity_interval)
     if args.status_path is not None:
         overrides["status_output_path"] = str(args.status_path)
+    if args.energy_oracle is not None:
+        overrides["energy_oracle_path"] = str(args.energy_oracle)
+    if args.energy_oracle_interval is not None:
+        overrides["energy_oracle_interval_seconds"] = float(args.energy_oracle_interval)
     config = _load_config(args.config, overrides)
     asyncio.run(_run_orchestrator(config))
 
@@ -144,6 +148,8 @@ def main(argv: Optional[list[str]] = None) -> None:
     launch_parser.add_argument("--integrity-interval", type=float, default=None, help="Integrity check interval override")
     launch_parser.add_argument("--no-resume", action="store_true", help="Ignore previous checkpoints")
     launch_parser.add_argument("--status-path", type=Path, default=None, help="Custom status stream path")
+    launch_parser.add_argument("--energy-oracle", type=Path, default=None, help="Override energy oracle JSONL path")
+    launch_parser.add_argument("--energy-oracle-interval", type=float, default=None, help="Override energy oracle cadence in seconds")
     launch_parser.set_defaults(func=_command_launch)
 
     owner_parser = subparsers.add_parser("owner", help="Issue operator commands")

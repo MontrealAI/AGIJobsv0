@@ -67,6 +67,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional JSONL file receiving continuous status snapshots",
     )
+    parser.add_argument(
+        "--energy-oracle",
+        type=Path,
+        help="Optional JSONL file receiving energy oracle telemetry",
+    )
+    parser.add_argument(
+        "--energy-oracle-interval",
+        type=float,
+        default=60.0,
+        help="Seconds between energy oracle telemetry updates",
+    )
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
 
@@ -106,6 +117,8 @@ async def _run_async(args: argparse.Namespace) -> None:
         "simulation_compute_scale": args.simulation_compute_scale,
         "audit_log_path": args.audit_log,
         "status_output_path": args.status_output,
+        "energy_oracle_path": args.energy_oracle,
+        "energy_oracle_interval_seconds": args.energy_oracle_interval,
         "heartbeat_interval_seconds": args.heartbeat_interval,
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,
