@@ -13,6 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "ethers": "^6.11.1",
     "zod": "^3.22.4"
   }
 }
