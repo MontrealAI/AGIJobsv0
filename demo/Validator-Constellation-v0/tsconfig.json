@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./",
+    "outDir": "./dist",
+    "composite": false,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "scripts/**/*", "tests/**/*"],
+  "ts-node": {
+    "swc": false
+  }
+}

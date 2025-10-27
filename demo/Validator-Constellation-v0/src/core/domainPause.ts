@@ -1,0 +1,61 @@
+import { eventBus } from './eventBus';
+import { DomainConfig, DomainState, PauseRecord } from './types';
+
+export class DomainPauseController {
+  private readonly domains = new Map<string, DomainState>();
+
+  constructor(domains: DomainConfig[]) {
+    for (const config of domains) {
+      this.domains.set(config.id, { config, paused: false });
+    }
+  }
+
+  getState(domainId: string): DomainState {
+    const state = this.domains.get(domainId);
+    if (!state) {
+      throw new Error(`unknown domain ${domainId}`);
+    }
+    return state;
+  }
+
+  pause(domainId: string, reason: string, triggeredBy: string): PauseRecord {
+    const state = this.getState(domainId);
+    if (state.paused) {
+      return state.pauseReason!;
+    }
+    const record: PauseRecord = {
+      domainId,
+      reason,
+      triggeredBy,
+      timestamp: Date.now(),
+    };
+    state.paused = true;
+    state.pauseReason = record;
+    eventBus.emit('DomainPaused', record);
+    return record;
+  }
+
+  resume(domainId: string, triggeredBy: string): PauseRecord {
+    const state = this.getState(domainId);
+    if (!state.paused || !state.pauseReason) {
+      throw new Error('domain is not paused');
+    }
+    const record: PauseRecord = {
+      ...state.pauseReason,
+      resumedAt: Date.now(),
+      triggeredBy,
+    };
+    state.paused = false;
+    state.pauseReason = undefined;
+    eventBus.emit('DomainResumed', record);
+    return record;
+  }
+
+  listDomains(): DomainState[] {
+    return Array.from(this.domains.values()).map((state) => ({
+      config: state.config,
+      paused: state.paused,
+      pauseReason: state.pauseReason,
+    }));
+  }
+}
