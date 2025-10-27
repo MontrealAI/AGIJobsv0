@@ -1,0 +1,117 @@
+{
+  "owner": {
+    "name": "Planetary Fabric Sovereign",
+    "address": "0x0000000000000000000000000000000000000001",
+    "contact": "ops@planetary-fabric.invalid"
+  },
+  "checkpoint": {
+    "directory": "demo/Planetary-Orchestrator-Fabric-v0/state/checkpoints",
+    "intervalTicks": 50,
+    "retain": 5
+  },
+  "shards": [
+    {
+      "id": "earth",
+      "label": "Earth Continental Grid",
+      "maxQueueDepth": 3000,
+      "spilloverTargets": ["luna", "mars"],
+      "spilloverThreshold": 0.35
+    },
+    {
+      "id": "luna",
+      "label": "Luna Orbital Lattice",
+      "maxQueueDepth": 2500,
+      "spilloverTargets": ["earth", "mars"],
+      "spilloverThreshold": 0.4
+    },
+    {
+      "id": "mars",
+      "label": "Mars Frontier Array",
+      "maxQueueDepth": 2500,
+      "spilloverTargets": ["earth", "edge"],
+      "spilloverThreshold": 0.42
+    },
+    {
+      "id": "edge",
+      "label": "Helios Edge Halo",
+      "maxQueueDepth": 2000,
+      "spilloverTargets": ["earth", "mars"],
+      "spilloverThreshold": 0.3
+    }
+  ],
+  "routers": {
+    "heartbeatGraceTicks": 12,
+    "spilloverBatch": 25,
+    "maxConcurrentAssignmentsPerNode": 4
+  },
+  "nodes": [
+    {
+      "id": "EARTH-TITAN-01",
+      "shard": "earth",
+      "capabilities": ["governance", "sovereign-finance", "logistics"],
+      "maxConcurrency": 8,
+      "reliability": 0.995
+    },
+    {
+      "id": "EARTH-ATHENA-02",
+      "shard": "earth",
+      "capabilities": ["research", "governance", "validation"],
+      "maxConcurrency": 6,
+      "reliability": 0.992
+    },
+    {
+      "id": "LUNA-HYPERION-01",
+      "shard": "luna",
+      "capabilities": ["validation", "logistics"],
+      "maxConcurrency": 6,
+      "reliability": 0.994
+    },
+    {
+      "id": "MARS-ARES-01",
+      "shard": "mars",
+      "capabilities": ["terraforming", "logistics", "research"],
+      "maxConcurrency": 5,
+      "reliability": 0.991
+    },
+    {
+      "id": "MARS-ARES-02",
+      "shard": "mars",
+      "capabilities": ["terraforming", "governance"],
+      "maxConcurrency": 4,
+      "reliability": 0.989
+    },
+    {
+      "id": "EDGE-HELIOS-PRIME",
+      "shard": "edge",
+      "capabilities": ["gpu-acceleration", "research"],
+      "maxConcurrency": 10,
+      "reliability": 0.997
+    }
+  ],
+  "jobTemplates": {
+    "default": {
+      "durationTicks": 6,
+      "payout": "4200.0000 AGIA",
+      "validatorQuorum": 5,
+      "capabilities": ["research"]
+    },
+    "terraforming": {
+      "durationTicks": 8,
+      "payout": "9100.0000 AGIA",
+      "validatorQuorum": 7,
+      "capabilities": ["terraforming", "logistics"]
+    },
+    "governance": {
+      "durationTicks": 5,
+      "payout": "6300.0000 AGIA",
+      "validatorQuorum": 9,
+      "capabilities": ["governance", "validation"]
+    },
+    "lunar-relay": {
+      "durationTicks": 4,
+      "payout": "5100.0000 AGIA",
+      "validatorQuorum": 6,
+      "capabilities": ["validation", "logistics"]
+    }
+  }
+}
