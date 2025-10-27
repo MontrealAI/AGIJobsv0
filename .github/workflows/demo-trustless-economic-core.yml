@@ -42,6 +42,9 @@ jobs:
             raw.githubusercontent.com
             registry.npmjs.org
             nodejs.org
+            binaries.soliditylang.org
+            solc-bin.ethereum.org
+            solc-bin.ethereum.org.s3.amazonaws.com
 
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
