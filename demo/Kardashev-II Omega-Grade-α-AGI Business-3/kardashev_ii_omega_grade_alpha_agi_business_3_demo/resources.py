@@ -8,10 +8,16 @@ from typing import Dict
 
 @dataclass
 class ResourceSnapshot:
+    """Immutable view of planetary resource state."""
+
     energy_available: float
     compute_available: float
     token_supply: float
     locked_supply: float
+    reserved_energy: float
+    reserved_compute: float
+    energy_capacity: float
+    compute_capacity: float
 
 
 @dataclass
@@ -39,6 +45,7 @@ class ResourceManager:
         self._accounts: Dict[str, Account] = {}
         self.compute_price = 1.0
         self.energy_price = 1.0
+        self._reservations: Dict[str, tuple[float, float]] = {}
 
     @property
     def energy_capacity(self) -> float:
@@ -119,6 +126,64 @@ class ResourceManager:
         account.compute_quota += compute
         self._rebalance_prices()
 
+    def reserve_budget(self, key: str, *, energy: float = 0.0, compute: float = 0.0) -> None:
+        """Reserve planetary resources for an in-flight job.
+
+        Reservations protect energy/compute capacity for long running work so the
+        orchestrator can refuse new jobs that would oversubscribe the planet.
+        Repeated calls adjust the reservation; deltas are reconciled against the
+        remaining availability.
+        """
+
+        if not key:
+            raise ValueError("Reservation key must be provided")
+        energy = max(0.0, float(energy))
+        compute = max(0.0, float(compute))
+        current_energy, current_compute = self._reservations.get(key, (0.0, 0.0))
+        delta_energy = energy - current_energy
+        delta_compute = compute - current_compute
+        if delta_energy > 0 and delta_energy > self.energy_available:
+            raise ValueError("Insufficient energy capacity for reservation")
+        if delta_compute > 0 and delta_compute > self.compute_available:
+            raise ValueError("Insufficient compute capacity for reservation")
+        self.energy_available -= delta_energy
+        self.compute_available -= delta_compute
+        self.energy_available = min(self.energy_available, self.energy_capacity)
+        self.compute_available = min(self.compute_available, self.compute_capacity)
+        self._reservations[key] = (energy, compute)
+        self._rebalance_prices()
+
+    def release_budget(self, key: str) -> tuple[float, float]:
+        """Release a reservation, returning the freed (energy, compute)."""
+
+        energy, compute = self._reservations.pop(key, (0.0, 0.0))
+        if energy:
+            self.energy_available = min(self.energy_capacity, self.energy_available + energy)
+        if compute:
+            self.compute_available = min(self.compute_capacity, self.compute_available + compute)
+        self._rebalance_prices()
+        return energy, compute
+
+    def reservation_for(self, key: str) -> tuple[float, float]:
+        """Return the reservation tuple (energy, compute) for ``key``."""
+
+        return self._reservations.get(key, (0.0, 0.0))
+
+    def restore_reservation(self, key: str, energy: float, compute: float) -> None:
+        """Rehydrate a reservation without mutating availability."""
+
+        if not key:
+            return
+        self._reservations[key] = (max(0.0, float(energy)), max(0.0, float(compute)))
+
+    @property
+    def reserved_energy(self) -> float:
+        return sum(value[0] for value in self._reservations.values())
+
+    @property
+    def reserved_compute(self) -> float:
+        return sum(value[1] for value in self._reservations.values())
+
     def update_capacity(
         self,
         *,
@@ -135,6 +200,8 @@ class ResourceManager:
             self.energy_available = max(0.0, energy_available)
         if compute_available is not None:
             self.compute_available = max(0.0, compute_available)
+        self.energy_available = min(self.energy_available, self.energy_capacity)
+        self.compute_available = min(self.compute_available, self.compute_capacity)
         self._rebalance_prices()
 
     def adjust_account(
@@ -165,17 +232,69 @@ class ResourceManager:
             compute_available=self.compute_available,
             token_supply=self.token_supply,
             locked_supply=self.locked_supply,
+            reserved_energy=self.reserved_energy,
+            reserved_compute=self.reserved_compute,
+            energy_capacity=self.energy_capacity,
+            compute_capacity=self.compute_capacity,
         )
 
-    def to_serializable(self) -> Dict[str, Dict[str, float]]:
+    def to_serializable(self) -> Dict[str, object]:
         return {
-            name: {
-                "tokens": account.tokens,
-                "locked": account.locked,
-                "energy_quota": account.energy_quota,
-                "compute_quota": account.compute_quota,
-            }
-            for name, account in self._accounts.items()
+            "state": {
+                "energy_available": self.energy_available,
+                "compute_available": self.compute_available,
+                "energy_capacity": self.energy_capacity,
+                "compute_capacity": self.compute_capacity,
+                "token_supply": self.token_supply,
+                "energy_price": self.energy_price,
+                "compute_price": self.compute_price,
+            },
+            "accounts": {
+                name: {
+                    "tokens": account.tokens,
+                    "locked": account.locked,
+                    "energy_quota": account.energy_quota,
+                    "compute_quota": account.compute_quota,
+                }
+                for name, account in self._accounts.items()
+            },
+            "reservations": {
+                key: {"energy": values[0], "compute": values[1]}
+                for key, values in self._reservations.items()
+            },
+        }
+
+    def restore_state(self, payload: Dict[str, float]) -> None:
+        """Restore global fields from a checkpoint snapshot."""
+
+        if "energy_capacity" in payload:
+            self._base_energy_capacity = max(0.0, float(payload["energy_capacity"]))
+        if "compute_capacity" in payload:
+            self._base_compute_capacity = max(0.0, float(payload["compute_capacity"]))
+        if "energy_available" in payload:
+            self.energy_available = max(0.0, float(payload["energy_available"]))
+        else:
+            self.energy_available = min(self.energy_available, self.energy_capacity)
+        if "compute_available" in payload:
+            self.compute_available = max(0.0, float(payload["compute_available"]))
+        else:
+            self.compute_available = min(self.compute_available, self.compute_capacity)
+        if "token_supply" in payload:
+            self.token_supply = float(payload["token_supply"])
+        if "energy_price" in payload:
+            self.energy_price = max(0.0, float(payload["energy_price"]))
+        if "compute_price" in payload:
+            self.compute_price = max(0.0, float(payload["compute_price"]))
+        self.energy_available = min(self.energy_available, self.energy_capacity)
+        self.compute_available = min(self.compute_available, self.compute_capacity)
+        self._rebalance_prices()
+
+    def reservations_snapshot(self) -> Dict[str, Dict[str, float]]:
+        """Return a JSON-serialisable copy of active reservations."""
+
+        return {
+            key: {"energy": energy, "compute": compute}
+            for key, (energy, compute) in self._reservations.items()
         }
 
     def _rebalance_prices(self) -> None:
