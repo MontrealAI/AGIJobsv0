@@ -531,9 +531,9 @@ export class PlanetaryOrchestrator {
         shardPayload.failed.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
       );
       shardState.spilloverCount = shardPayload.spilloverCount;
-      shardState.paused = shardPayload.paused || this.systemPaused;
+      shardState.paused = shardPayload.paused;
       const router = this.routers.get(shardConfig.id);
-      router?.setPaused(shardState.paused);
+      router?.setPaused(this.systemPaused || shardState.paused);
     }
 
     for (const node of this.config.nodes) {
