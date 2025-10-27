@@ -1,0 +1,13 @@
+{
+  "resources": {
+    "energy_capacity": 3200000,
+    "compute_capacity": 8400000,
+    "energy_available": 2800000,
+    "compute_available": 7500000,
+    "accounts": [
+      {"name": "macro-strategist", "tokens": 150000, "locked": 0},
+      {"name": "energy-architect", "tokens": 110000, "locked": 0},
+      {"name": "validator-1", "tokens": 64000, "locked": 3200}
+    ]
+  }
+}

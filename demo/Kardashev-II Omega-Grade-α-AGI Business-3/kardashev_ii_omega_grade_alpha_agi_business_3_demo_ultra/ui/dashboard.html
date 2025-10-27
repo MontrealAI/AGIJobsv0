@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Omega Ultra Mission Control</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #101b3b, #05060a 60%);
+        color: #f5f7ff;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+      }
+      h1 {
+        margin-bottom: 0.2rem;
+        font-size: 2.4rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .subtitle {
+        opacity: 0.7;
+        margin-bottom: 2rem;
+      }
+      section {
+        margin-bottom: 2.5rem;
+      }
+      pre, code {
+        background: rgba(15, 23, 42, 0.65);
+        padding: 0.75rem;
+        border-radius: 0.75rem;
+        overflow-x: auto;
+      }
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+      }
+      @media (min-width: 960px) {
+        .grid.two {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .grid.three {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+      .card {
+        padding: 1.5rem;
+        border-radius: 1rem;
+        background: rgba(14, 23, 42, 0.65);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      th {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.75rem;
+        opacity: 0.75;
+      }
+      .mermaid {
+        background: rgba(10, 20, 40, 0.7);
+        border-radius: 1rem;
+        padding: 1rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        background: rgba(56, 189, 248, 0.25);
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        color: #c8f5ff;
+      }
+    </style>
+    <script type="module">
+      const statusPath = new URL("../../../../artifacts/status/dashboard.json", import.meta.url);
+      const historyPath = new URL("../../../../artifacts/status/history.jsonl", import.meta.url);
+      const oraclePath = new URL("../../../../artifacts/status/energy-oracle.jsonl", import.meta.url);
+
+      const elements = {
+        missionName: document.querySelector("[data-mission-name]") ?? document.body,
+        missionVision: document.querySelector("[data-mission-vision]") ?? document.body,
+        missionRuntime: document.querySelector("[data-runtime]") ?? document.body,
+        resourceTable: document.querySelector("[data-resource-table]") ?? document.body,
+        history: document.querySelector("[data-history]") ?? document.body,
+        energy: document.querySelector("[data-energy]") ?? document.body
+      };
+
+      async function loadJson(url) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return await response.json();
+        } catch (error) {
+          console.warn("Failed to load", url, error);
+          return null;
+        }
+      }
+
+      async function loadJsonLines(url, limit = 12) {
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          const lines = text.trim().split(/\n+/).slice(-limit);
+          return lines.map((line) => JSON.parse(line));
+        } catch (error) {
+          console.warn("Failed to load", url, error);
+          return [];
+        }
+      }
+
+      function renderResourceTable(snapshot) {
+        if (!snapshot) return;
+        const { energy_available, compute_available, energy_capacity, compute_capacity } = snapshot.state ?? {};
+        const rows = [
+          ["Energy Available", `${energy_available?.toLocaleString()} units`],
+          ["Energy Capacity", `${energy_capacity?.toLocaleString()} units`],
+          ["Compute Available", `${compute_available?.toLocaleString()} units`],
+          ["Compute Capacity", `${compute_capacity?.toLocaleString()} units`]
+        ];
+        elements.resourceTable.innerHTML = `
+          <table>
+            <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+            <tbody>
+              ${rows.map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      function renderHistory(entries) {
+        if (!entries.length) return;
+        elements.history.innerHTML = entries
+          .reverse()
+          .map(
+            (entry) => `
+              <article class="card">
+                <header>
+                  <div class="pill">${entry.event ?? entry.topic ?? "event"}</div>
+                  <div>${new Date(entry.timestamp ?? entry.time ?? Date.now()).toLocaleString()}</div>
+                </header>
+                <pre>${JSON.stringify(entry, null, 2)}</pre>
+              </article>
+            `
+          )
+          .join("");
+      }
+
+      function renderOracle(entries) {
+        if (!entries.length) return;
+        const latest = entries[entries.length - 1];
+        elements.energy.textContent = `Dyson Output: ${latest.energy_output_gw ?? latest.energy} GW • Sustainability Index: ${
+          latest.sustainability_index ?? "n/a"
+        }`;
+      }
+
+      async function render() {
+        const [status, history, oracle] = await Promise.all([
+          loadJson(statusPath),
+          loadJsonLines(historyPath, 9),
+          loadJsonLines(oraclePath, 3)
+        ]);
+        if (status?.mission) {
+          elements.missionName.textContent = status.mission.name ?? "Omega Ultra Mission";
+          elements.missionVision.textContent = status.mission.vision ?? "Vision uplink unavailable";
+          elements.missionRuntime.textContent = status.mission.runtime ?? "Runtime pending";
+        }
+        renderResourceTable(status?.resources);
+        renderHistory(history);
+        renderOracle(oracle);
+      }
+
+      render();
+      setInterval(render, 10_000);
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs" type="module"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1 data-mission-name>Omega Ultra Mission</h1>
+      <p class="subtitle" data-mission-vision>Loading mission vision…</p>
+      <div class="pill">Runtime: <span data-runtime>initialising…</span></div>
+    </header>
+
+    <section class="grid two">
+      <article class="card">
+        <h2>Planetary Resources</h2>
+        <div data-resource-table>Awaiting telemetry…</div>
+      </article>
+      <article class="card">
+        <h2>Energy Oracle</h2>
+        <p data-energy>Connecting to energy oracle…</p>
+      </article>
+    </section>
+
+    <section>
+      <h2>Mission Graph</h2>
+      <div class="mermaid">
+        graph LR
+          root[Dyson Swarm Expansion Blueprint]
+          root --> helios[Helios Array Deployment]
+          root --> logistics[Orbital Supply Mesh]
+          helios --> reactor[Autonomous Reactor Commissioning]
+          logistics --> governance[Validator Governance Drill]
+      </div>
+    </section>
+
+    <section>
+      <h2>Mission Feed</h2>
+      <div class="grid two" data-history>
+        <article class="card">Awaiting mission events…</article>
+      </div>
+    </section>
+  </body>
+</html>

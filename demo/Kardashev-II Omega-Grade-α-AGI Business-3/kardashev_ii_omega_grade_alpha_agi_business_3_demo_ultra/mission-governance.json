@@ -1,0 +1,10 @@
+{
+  "governance": {
+    "worker_stake_ratio": 0.18,
+    "validator_stake": 3600,
+    "approvals_required": 3,
+    "validator_commit_window": 900,
+    "validator_reveal_window": 600,
+    "slash_ratio": 0.45
+  }
+}
