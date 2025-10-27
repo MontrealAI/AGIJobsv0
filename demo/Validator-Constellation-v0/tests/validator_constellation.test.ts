@@ -8,6 +8,13 @@ import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
+import {
+  buildDemoFromOperatorState,
+  createInitialOperatorState,
+  formatValidatorStake,
+  generateOperatorMermaid,
+  refreshStateFromDemo,
+} from '../src/core/operatorState';
 import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
 import { AgentAction, Hex, VoteValue, ValidatorIdentity } from '../src/core/types';
 
@@ -237,4 +244,58 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
   assert.equal(executed.context.jobSample?.length, 8);
   assert.ok(executed.context.ownerNotes?.description);
+});
+
+test('operator control tower state synchronizes sentinel pauses and slashing telemetry', () => {
+  const state = createInitialOperatorState();
+  const demo = buildDemoFromOperatorState(state);
+  const domainId = 'deep-space-lab';
+  const agent = state.agents.find((candidate) => candidate.domainId === domainId);
+  if (!agent) {
+    throw new Error('missing control tower agent');
+  }
+  const entropy = demo.getEntropySources();
+  const selection = selectCommittee(
+    demo.listValidators(),
+    domainId,
+    9,
+    demo.getGovernance(),
+    entropy.onChainEntropy,
+    entropy.recentBeacon,
+  );
+  const jobBatch = demoJobBatch(domainId, 64);
+  const voteOverrides: Record<string, VoteValue> = selection.committee[0]
+    ? { [selection.committee[0].address]: 'REJECT' }
+    : {};
+  const nonReveal = selection.committee[1] ? [selection.committee[1].address] : [];
+  const anomalies: AgentAction[] = [
+    budgetOverrunAction(agent.ensName, agent.address, domainId, 1_800_000n, BigInt(agent.budget)),
+  ];
+  const roundResult = demo.runValidationRound({
+    round: 9,
+    truthfulVote: 'APPROVE',
+    jobBatch,
+    committeeSignature: '0x9999888877776666555544443333222211110000aaaabbbbccccddddeeeeffff',
+    voteOverrides,
+    nonRevealValidators: nonReveal,
+    anomalies,
+  });
+  refreshStateFromDemo(state, demo, { slashingEvents: roundResult.slashingEvents });
+  const domain = state.domains.find((candidate) => candidate.id === domainId);
+  assert.ok(domain?.paused, 'domain should be paused after sentinel anomaly');
+  assert.ok(roundResult.slashingEvents.length >= 1, 'round should emit slashing events');
+  for (const event of roundResult.slashingEvents) {
+    const validator = state.validators.find((candidate) => candidate.address === event.validator.address);
+    assert.ok(validator, 'validator from slashing event should exist in state');
+    assert.notEqual(validator?.stake, '10000000000000000000', 'stake should reflect penalty');
+  }
+});
+
+test('operator mermaid blueprint captures governance posture', () => {
+  const state = createInitialOperatorState();
+  const mermaid = generateOperatorMermaid(state);
+  assert.ok(mermaid.includes('Validators'));
+  assert.ok(mermaid.includes('Deep Space Research Lab'));
+  assert.ok(mermaid.includes('Sentinel'));
+  assert.ok(formatValidatorStake('10000000000000000000').includes('ETH'));
 });
