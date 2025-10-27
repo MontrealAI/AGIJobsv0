@@ -62,6 +62,8 @@ class SimulationConfig:
             raise ValueError("workloads must not be empty")
         if not self.workload_mix:
             raise ValueError("workload_mix must not be empty")
+        if self.jobs_per_tick <= 0:
+            raise ValueError("jobs_per_tick must be positive")
         for workload_name in self.workload_mix:
             if workload_name not in self.workloads:
                 raise ValueError(f"Unknown workload '{workload_name}' in mix")
