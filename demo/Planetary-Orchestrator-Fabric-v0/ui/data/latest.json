@@ -1,0 +1,149 @@
+{
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "configPath": "demo/Planetary-Orchestrator-Fabric-v0/config/fabric.manifest.json",
+  "report": {
+    "configHash": "sample",
+    "totalJobsRequested": 10000,
+    "completedJobs": 10000,
+    "failedJobs": 0,
+    "reassignments": 120,
+    "spillovers": 84,
+    "crossShardTransfers": 96,
+    "unstoppableScore": 1,
+    "averageLatencyMs": 182.34,
+    "checkpointPath": "demo/Planetary-Orchestrator-Fabric-v0/output/fabric.checkpoint.json",
+    "checkpointCreated": "2025-01-01T00:05:00.000Z",
+    "ownerControls": {
+      "pauseAll": false,
+      "maxShardLagMs": 120,
+      "allowCrossShardOverflow": true,
+      "unstoppableScoreFloor": 0.98,
+      "maxSpilloverPerCycle": 64,
+      "maxCheckpointIntervalJobs": 500
+    },
+    "shardSummaries": [
+      {
+        "id": "earth",
+        "completed": 5800,
+        "failureRate": 0.0005,
+        "spillovers": 32,
+        "crossRegionIntake": 14,
+        "maxQueueDepth": 430,
+        "routerLagMs": 12,
+        "averageLatencyMs": 172.12
+      },
+      {
+        "id": "luna",
+        "completed": 1600,
+        "failureRate": 0.001,
+        "spillovers": 18,
+        "crossRegionIntake": 22,
+        "maxQueueDepth": 250,
+        "routerLagMs": 15,
+        "averageLatencyMs": 198.44
+      },
+      {
+        "id": "mars",
+        "completed": 1800,
+        "failureRate": 0.0008,
+        "spillovers": 20,
+        "crossRegionIntake": 30,
+        "maxQueueDepth": 270,
+        "routerLagMs": 16,
+        "averageLatencyMs": 190.31
+      },
+      {
+        "id": "edge",
+        "completed": 800,
+        "failureRate": 0.0003,
+        "spillovers": 14,
+        "crossRegionIntake": 18,
+        "maxQueueDepth": 150,
+        "routerLagMs": 8,
+        "averageLatencyMs": 168.77
+      }
+    ],
+    "nodeSummaries": [
+      {
+        "id": "earth-atlas-01",
+        "shard": "earth",
+        "online": true,
+        "assignments": 3100,
+        "failures": 0,
+        "availabilityMs": 18230.12,
+        "capacity": 18,
+        "meanThroughput": 360
+      },
+      {
+        "id": "earth-atlas-02",
+        "shard": "earth",
+        "online": true,
+        "assignments": 2700,
+        "failures": 0,
+        "availabilityMs": 17822.91,
+        "capacity": 16,
+        "meanThroughput": 330
+      },
+      {
+        "id": "luna-helio-01",
+        "shard": "luna",
+        "online": true,
+        "assignments": 820,
+        "failures": 1,
+        "availabilityMs": 15991.11,
+        "capacity": 10,
+        "meanThroughput": 240
+      },
+      {
+        "id": "luna-helio-02",
+        "shard": "luna",
+        "online": true,
+        "assignments": 780,
+        "failures": 0,
+        "availabilityMs": 16112.42,
+        "capacity": 9,
+        "meanThroughput": 210
+      },
+      {
+        "id": "mars-forge-01",
+        "shard": "mars",
+        "online": true,
+        "assignments": 910,
+        "failures": 0,
+        "availabilityMs": 16991.45,
+        "capacity": 12,
+        "meanThroughput": 260
+      },
+      {
+        "id": "mars-forge-02",
+        "shard": "mars",
+        "online": true,
+        "assignments": 890,
+        "failures": 0,
+        "availabilityMs": 17123.12,
+        "capacity": 11,
+        "meanThroughput": 250
+      },
+      {
+        "id": "edge-helios-01",
+        "shard": "edge",
+        "online": true,
+        "assignments": 420,
+        "failures": 1,
+        "availabilityMs": 15321.88,
+        "capacity": 20,
+        "meanThroughput": 420
+      },
+      {
+        "id": "edge-helios-02",
+        "shard": "edge",
+        "online": true,
+        "assignments": 380,
+        "failures": 0,
+        "availabilityMs": 15023.77,
+        "capacity": 18,
+        "meanThroughput": 410
+      }
+    ]
+  }
+}

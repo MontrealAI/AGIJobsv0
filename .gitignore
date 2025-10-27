@@ -62,3 +62,7 @@ examples/agentic/runtime-agentic.jsonl
 
 apps/console/dist/
 apps/console/node_modules/
+# Planetary Orchestrator Fabric generated artefacts
+/demo/Planetary-Orchestrator-Fabric-v0/output/*.json
+!/demo/Planetary-Orchestrator-Fabric-v0/output/.gitkeep
+/demo/Planetary-Orchestrator-Fabric-v0/ui/data/fabric-ci.json
