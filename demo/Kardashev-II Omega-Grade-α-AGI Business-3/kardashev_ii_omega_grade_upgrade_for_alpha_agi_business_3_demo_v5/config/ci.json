@@ -1,0 +1,70 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade Upgrade v5 CI",
+  "checkpoint_interval_seconds": 5,
+  "integrity_check_interval_seconds": 10,
+  "insight_interval_seconds": 5,
+  "cycle_sleep_seconds": 0.05,
+  "resume_from_checkpoint": false,
+  "energy_capacity": 120000.0,
+  "compute_capacity": 220000.0,
+  "telemetry_interval_seconds": 2.0,
+  "resilience_interval_seconds": 2.0,
+  "resilience_retention_lines": 64,
+  "mermaid_max_nodes": 16,
+  "forecast_horizon_hours": 4.0,
+  "guardian_interval_seconds": 2.0,
+  "guardian_deadline_threshold_minutes": 20.0,
+  "guardian_history_lines": 256,
+  "resource_feedback_interval_seconds": 3.0,
+  "resource_target_utilization": 0.7,
+  "resource_price_floor": 0.25,
+  "resource_price_ceiling": 6.0,
+  "autonomy_price_smoothing": 0.3,
+  "storyboard_history_lines": 128,
+  "insight_history_lines": 256,
+  "state_history_lines": 256,
+  "background_task_limit": 16,
+  "delegation_max_depth": 4,
+  "delegation_retry_seconds": 12.0,
+  "validator_vote_timeout_seconds": 120.0,
+  "simulation_tick_seconds": 1.5,
+  "simulation_hours_per_tick": 0.5,
+  "worker_specs": {
+    "energy-architect": 0.5,
+    "supply-chain": 0.5
+  },
+  "strategist_names": [
+    "macro-strategist"
+  ],
+  "validator_names": [
+    "validator-1",
+    "validator-2"
+  ],
+  "governance": {
+    "worker_stake_ratio": 0.1,
+    "validator_stake": 50.0,
+    "approvals_required": 2,
+    "slash_ratio": 0.2,
+    "pause_enabled": true,
+    "validator_commit_window": 120.0,
+    "validator_reveal_window": 180.0
+  },
+  "initial_jobs": [
+    {
+      "title": "CI Dyson Spike",
+      "description": "Short CI mission for automated verification.",
+      "required_skills": [
+        "energy-architect"
+      ],
+      "reward_tokens": 800.0,
+      "deadline_minutes": 30,
+      "validation_window_minutes": 5,
+      "energy_budget": 5000.0,
+      "compute_budget": 9000.0,
+      "metadata": {
+        "employer": "operator",
+        "category": "ci"
+      }
+    }
+  ]
+}
