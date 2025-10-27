@@ -1,0 +1,66 @@
+name: demo-planetary-orchestrator-fabric
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Planetary-Orchestrator-Fabric-v0/**'
+      - '.github/workflows/demo-planetary-orchestrator-fabric.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  planetary-fabric:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Harden runner
+        uses: step-security/harden-runner@v2.13.1
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            pypi.org
+            files.pythonhosted.org
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install demo package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e demo/Planetary-Orchestrator-Fabric-v0[dev]
+
+      - name: Run planetary fabric tests
+        env:
+          PYTHONPATH: demo/Planetary-Orchestrator-Fabric-v0/src
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: pytest demo/Planetary-Orchestrator-Fabric-v0/tests
+
+      - name: Upload planetary fabric artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planetary-orchestrator-fabric-reports
+          path: |
+            reports/planetary-fabric/**
+            demo/Planetary-Orchestrator-Fabric-v0/config/*.json
+          if-no-files-found: ignore

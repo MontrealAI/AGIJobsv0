@@ -1,0 +1,9 @@
+{
+  "name": "Mission Helios Relay",
+  "description": "Demonstrates Helios GPU fleet offloading Earth backlog with humanitarian prioritisation.",
+  "job_count": 3600,
+  "completion_probability": 0.97,
+  "checkpoint_path": "reports/planetary-fabric/checkpoints/mission-helios.json",
+  "shards": ["earth", "helios", "edge"],
+  "duration_seconds": 30.0
+}
