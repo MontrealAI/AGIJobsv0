@@ -16,9 +16,12 @@ import {
   CommitMessage,
   DemoOrchestrationReport,
   DomainConfig,
+  DomainSafetyUpdate,
+  DomainState,
   GovernanceParameters,
   Hex,
   JobResult,
+  PauseRecord,
   RevealMessage,
   SentinelAlert,
   SlashingEvent,
@@ -109,6 +112,70 @@ export class ValidatorConstellationDemo {
     return [...this.validators];
   }
 
+  blacklist(address: Hex): void {
+    this.ensAuthority.ban(address);
+  }
+
+  pauseDomain(domainId: string, reason: string, triggeredBy = 'governance:manual'): PauseRecord {
+    return this.pauseController.pause(domainId, reason, triggeredBy);
+  }
+
+  resumeDomain(domainId: string, triggeredBy = 'governance:manual'): PauseRecord {
+    return this.pauseController.resume(domainId, triggeredBy);
+  }
+
+  getDomainState(domainId: string): DomainState {
+    const state = this.pauseController.getState(domainId);
+    return {
+      config: {
+        ...state.config,
+        unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+      },
+      paused: state.paused,
+      pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
+    };
+  }
+
+  updateDomainSafety(domainId: string, updates: DomainSafetyUpdate): DomainConfig {
+    const payload: Partial<Omit<DomainConfig, 'id'>> = {};
+    if (updates.humanName !== undefined) {
+      payload.humanName = updates.humanName;
+    }
+    if (updates.budgetLimit !== undefined) {
+      payload.budgetLimit = updates.budgetLimit;
+    }
+    if (updates.unsafeOpcodes !== undefined) {
+      payload.unsafeOpcodes = new Set(updates.unsafeOpcodes);
+    }
+    const updated = this.pauseController.updateConfig(domainId, payload);
+    if (updates.unsafeOpcodes) {
+      this.sentinel.updateUnsafeOpcodes(domainId, updates.unsafeOpcodes);
+    }
+    return {
+      ...updated,
+      unsafeOpcodes: new Set(updated.unsafeOpcodes),
+    };
+  }
+
+  updateSentinelConfig(updates: { budgetGraceRatio?: number }): void {
+    if (updates.budgetGraceRatio !== undefined) {
+      this.sentinel.updateBudgetGraceRatio(updates.budgetGraceRatio);
+    }
+  }
+
+  getSentinelBudgetGraceRatio(): number {
+    return this.sentinel.getBudgetGraceRatio();
+  }
+
+  setAgentBudget(ensName: string, newBudget: bigint): AgentIdentity {
+    const agent = this.findAgent(ensName);
+    if (!agent) {
+      throw new Error(`unknown agent ${ensName}`);
+    }
+    agent.budget = newBudget;
+    return { ...agent };
+  }
+
   private randomSalt(): Hex {
     return `0x${randomBytes(32).toString('hex')}`;
   }
@@ -174,10 +241,7 @@ export class ValidatorConstellationDemo {
 
       if (params.anomalies) {
         for (const anomaly of params.anomalies) {
-          const alert = this.sentinel.observe(anomaly);
-          if (alert) {
-            sentinelAlerts.push(alert);
-          }
+          this.sentinel.observe(anomaly);
         }
       }
 

@@ -94,6 +94,14 @@ function main() {
   }
   demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
 
+  const maintenancePause = demo.pauseDomain('lunar-foundry', 'Scheduled maintenance window');
+  const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
+  const updatedSafety = demo.updateDomainSafety('deep-space-lab', {
+    unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL', 'STATICCALL']),
+  });
+  demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
+  const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
+
   const jobBatch = demoJobBatch('deep-space-lab', 1000);
   const voteOverrides: Record<string, VoteValue> = {
     [leaves[1].owner]: 'REJECT',
@@ -101,7 +109,21 @@ function main() {
 
   const anomalies: AgentAction[] = [
     {
-      ...budgetOverrunAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', 1_800_000n),
+      agent: agentIdentity,
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 12_500n,
+      opcode: 'STATICCALL',
+      description: 'Unsafe opcode invoked during maintenance bypass',
+    },
+    {
+      ...budgetOverrunAction(
+        agentLeaf.ensName,
+        agentLeaf.owner as `0x${string}`,
+        'deep-space-lab',
+        1_800_000n,
+        agentIdentity.budget,
+      ),
       description: 'Overspend attempt detected by sentinel',
       metadata: { invoice: 'INV-7788' },
     },
@@ -117,6 +139,7 @@ function main() {
   });
 
   const reportDir = resolveDir('reports', 'latest');
+  const domainState = demo.getDomainState('deep-space-lab');
   writeJSON(path.join(reportDir, 'summary.json'), {
     round: roundResult.round,
     outcome: roundResult.voteOutcome,
@@ -125,6 +148,22 @@ function main() {
     alerts: roundResult.sentinelAlerts,
     slashing: roundResult.slashingEvents,
     pauseRecords: roundResult.pauseRecords,
+    governance: {
+      parameters: demo.getGovernance(),
+      sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
+      maintenance: { pause: maintenancePause, resume: maintenanceResume },
+      domainSafety: {
+        ...domainState,
+        config: {
+          ...domainState.config,
+          unsafeOpcodes: Array.from(domainState.config.unsafeOpcodes),
+        },
+      },
+      updatedSafety: {
+        ...updatedSafety,
+        unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
+      },
+    },
   });
 
   writeJSON(path.join(reportDir, 'subgraph.json'), subgraphIndexer.list());

@@ -4,7 +4,7 @@ import { assertAgentDomain, assertValidatorDomain, EnsLeaf } from '../src/core/e
 import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
 import { subgraphIndexer } from '../src/core/subgraph';
-import { VoteValue } from '../src/core/types';
+import { AgentAction, VoteValue } from '../src/core/types';
 
 function buildDemo(): {
   demo: ValidatorConstellationDemo;
@@ -78,4 +78,49 @@ test('zk batch prover finalizes 1000 jobs with a single proof', () => {
   const { roundResult } = orchestrateRound();
   assert.equal(roundResult.proof.attestedJobCount, 1000);
   assert.ok(roundResult.proof.sealedOutput.startsWith('0x'));
+});
+
+test('governance controls allow dynamic guardrail tuning for non-technical owners', () => {
+  const { demo, leaves } = buildDemo();
+  leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
+  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
+  if (!agentLeaf) {
+    throw new Error('missing agent leaf');
+  }
+  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+  const pauseRecord = demo.pauseDomain('deep-space-lab', 'manual audit');
+  assert.equal(demo.getDomainState('deep-space-lab').paused, true);
+  demo.resumeDomain('deep-space-lab');
+  assert.equal(demo.getDomainState('deep-space-lab').paused, false);
+  demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+  demo.updateSentinelConfig({ budgetGraceRatio: 0.2 });
+  const controlledAgent = demo.setAgentBudget(agentLeaf.ensName, 2_000_000n);
+  assert.equal(demo.getSentinelBudgetGraceRatio(), 0.2);
+  assert.equal(demo.findAgent(agentLeaf.ensName)?.budget, 2_000_000n);
+  assert.ok(pauseRecord.reason.includes('manual audit'));
+
+  const jobBatch = demoJobBatch('deep-space-lab', 64);
+  const anomalies: AgentAction[] = [
+    budgetOverrunAction(controlledAgent.ensName, controlledAgent.address, 'deep-space-lab', 2_100_000n, controlledAgent.budget),
+    {
+      agent: { ...controlledAgent },
+      domainId: 'deep-space-lab',
+      type: 'CALL' as const,
+      amountSpent: 1_000n,
+      opcode: 'STATICCALL',
+      description: 'runtime policy breach',
+    },
+  ];
+
+  const result = demo.runValidationRound({
+    round: 7,
+    truthfulVote: 'APPROVE',
+    jobBatch,
+    committeeSignature: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    anomalies,
+  });
+
+  const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
+  assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
+  assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
 });

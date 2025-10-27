@@ -61,4 +61,28 @@ export class SentinelMonitor {
 
     return undefined;
   }
+
+  updateBudgetGraceRatio(ratio: number): void {
+    if (!Number.isFinite(ratio) || ratio < 0) {
+      throw new Error('invalid budget grace ratio');
+    }
+    this.config.budgetGraceRatio = ratio;
+  }
+
+  getBudgetGraceRatio(): number {
+    return this.config.budgetGraceRatio;
+  }
+
+  updateUnsafeOpcodes(domainId: string, opcodes: Iterable<string>): void {
+    const normalized = Array.from(opcodes);
+    this.config.unsafeOpcodes.set(domainId, new Set(normalized));
+  }
+
+  getUnsafeOpcodes(domainId: string): Set<string> {
+    const fromConfig = this.config.unsafeOpcodes.get(domainId);
+    if (fromConfig) {
+      return new Set(fromConfig);
+    }
+    return new Set(this.getDomainConfig(domainId).unsafeOpcodes);
+  }
 }
