@@ -1,199 +1,143 @@
-import fs from 'fs';
-import path from 'path';
-import { ValidatorConstellationDemo } from '../src/core/constellation';
-import { subgraphIndexer } from '../src/core/subgraph';
-import { AgentAction, VoteValue } from '../src/core/types';
-import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
+import { ValidatorConstellationDemo, ValidatorProfile, AgentProfile, DemoConfig, JobResult, NodeProfile } from "../src";
 
-function resolveDir(...segments: string[]): string {
-  return path.join(__dirname, '..', ...segments);
-}
+const config: DemoConfig = {
+  committeeSize: 4,
+  commitPhaseMs: 10,
+  revealPhaseMs: 10,
+  quorum: 3,
+  penaltyPercentage: 15,
+  sentinelSlaMs: 100,
+  spendingLimit: 750,
+};
 
-const JSON_REPLACER = (_key: string, value: unknown) => (typeof value === 'bigint' ? value.toString() : value);
+const validators: ValidatorProfile[] = [
+  {
+    address: "0x0000000000000000000000000000000000000001",
+    ensName: "rigel.club.agi.eth",
+    stake: 5_000n * 10n ** 18n,
+    domain: "metaverse-labs",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000002",
+    ensName: "vega.club.agi.eth",
+    stake: 3_000n * 10n ** 18n,
+    domain: "metaverse-labs",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000003",
+    ensName: "antares.alpha.club.agi.eth",
+    stake: 4_000n * 10n ** 18n,
+    domain: "metaverse-labs",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000004",
+    ensName: "deneb.club.agi.eth",
+    stake: 2_500n * 10n ** 18n,
+    domain: "metaverse-labs",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000005",
+    ensName: "sirius.alpha.club.agi.eth",
+    stake: 6_500n * 10n ** 18n,
+    domain: "metaverse-labs",
+  },
+];
 
-function writeJSON(filePath: string, data: unknown) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const serialized = JSON.stringify(data, JSON_REPLACER, 2);
-  fs.writeFileSync(filePath, serialized);
-}
+const agents: AgentProfile[] = [
+  {
+    address: "0x00000000000000000000000000000000000000a1",
+    ensName: "athena.agent.agi.eth",
+    domain: "metaverse-labs",
+    budget: 500,
+  },
+  {
+    address: "0x00000000000000000000000000000000000000a2",
+    ensName: "atlas.alpha.agent.agi.eth",
+    domain: "metaverse-labs",
+    budget: 700,
+  },
+];
 
-function writeText(filePath: string, data: string) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, data, 'utf8');
-}
+const nodes: NodeProfile[] = [
+  {
+    address: "0x00000000000000000000000000000000000000b1",
+    ensName: "europa.node.agi.eth",
+    domain: "metaverse-labs",
+  },
+  {
+    address: "0x00000000000000000000000000000000000000b2",
+    ensName: "io.alpha.node.agi.eth",
+    domain: "metaverse-labs",
+  },
+];
 
-function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>) {
-  const nodeBranch =
-    roundResult.nodes.length > 0
-      ? `\n  control["Node Orchestrators\n${roundResult.nodes.map((node) => node.ensName).join('\n')}"] --> owner;`
-      : '';
-  const mermaidCommittee = `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  committee["Validator Committee\n${roundResult.committee
-    .map((v) => v.ensName)
-    .join('\n')}"] --> zk["ZK Batch Proof\n${roundResult.proof.proofId}"];\n  committee --> commits;\n  commits --> reveals;\n  reveals --> outcome["Final Outcome: ${roundResult.voteOutcome}"];${nodeBranch}`;
+const ensRecords = [
+  ...validators.map((validator) => ({ name: validator.ensName, owner: validator.address, role: "validator" as const })),
+  ...agents.map((agent) => ({ name: agent.ensName, owner: agent.address, role: "agent" as const })),
+  ...nodes.map((node) => ({ name: node.ensName, owner: node.address, role: "node" as const })),
+];
 
-  const mermaidSentinel = `sequenceDiagram\n  participant Agent as Agent Nova\n  participant Sentinel as Sentinel Guardian\n  participant Domain as Domain Controller\n  Agent->>Sentinel: Overspend transfer\n  Sentinel->>Domain: pause(deep-space-lab)\n  Domain-->>Agent: Execution Halted`;
-
-  const jobSample = demoJobBatch('deep-space-lab', 5);
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Validator Constellation Demo Dashboard</title>
-    <script type="module">
-      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-    </script>
-    <style>
-      body { font-family: 'Inter', Arial, sans-serif; background: #030712; color: #e0f2fe; margin: 0; padding: 2rem; }
-      h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-      .grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-      section { background: rgba(15, 118, 110, 0.18); border-radius: 16px; padding: 1.5rem; box-shadow: 0 0 40px rgba(14, 116, 144, 0.45); }
-      pre { background: rgba(15, 23, 42, 0.8); padding: 1rem; border-radius: 12px; overflow-x: auto; }
-      .metric { font-size: 1.2rem; margin-bottom: 0.25rem; }
-    </style>
-  </head>
-  <body>
-    <h1>Validator Constellation Guardian Deck</h1>
-    <p>This dashboard demonstrates how a non-technical operator orchestrated a full validator round, cryptographic finality, and sentinel guardrails without manual coding.</p>
-    <div class="grid">
-      <section>
-        <h2>Committee Pipeline</h2>
-        <div class="mermaid">${mermaidCommittee}</div>
-      </section>
-      <section>
-        <h2>Sentinel Guardrail</h2>
-        <div class="mermaid">${mermaidSentinel}</div>
-      </section>
-      <section>
-        <h2>Batch Metrics</h2>
-        <div class="metric">Jobs attested: <strong>${roundResult.proof.attestedJobCount}</strong></div>
-        <div class="metric">Validators slashed: <strong>${roundResult.slashingEvents.length}</strong></div>
-        <div class="metric">Alerts triggered: <strong>${roundResult.sentinelAlerts.length}</strong></div>
-        <div class="metric">Domain controllers online: <strong>${roundResult.nodes.length}</strong></div>
-        <pre>${JSON.stringify({
-          jobRoot: roundResult.proof.jobRoot,
-          witness: roundResult.proof.witnessCommitment,
-          sealedOutput: roundResult.proof.sealedOutput,
-        }, null, 2)}</pre>
-      </section>
-      <section>
-        <h2>Node Identities</h2>
-        <pre>${JSON.stringify(roundResult.nodes, null, 2)}</pre>
-      </section>
-      <section>
-        <h2>Job Sample</h2>
-        <pre>${JSON.stringify(jobSample, null, 2)}</pre>
-      </section>
-    </div>
-  </body>
-</html>`;
-  writeText(path.join(reportDir, 'dashboard.html'), html);
-}
-
-function main() {
-  const leaves = demoLeaves();
-  const setup = demoSetup(leaves);
-  const demo = new ValidatorConstellationDemo(setup);
-
-  const validatorAddresses = leaves.slice(0, 5);
-  validatorAddresses.forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
-
-  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
-  if (!agentLeaf) {
-    throw new Error('agent leaf missing');
+async function main(): Promise<void> {
+  const demo = new ValidatorConstellationDemo(config, ensRecords);
+  for (const validator of validators) {
+    demo.registerValidator(validator);
   }
-  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+  for (const agent of agents) {
+    demo.registerAgent(agent);
+  }
+  for (const node of nodes) {
+    demo.registerNode(node);
+  }
 
-  const nodeLeaves = leaves.filter((leaf) => leaf.ensName.includes('.node.agi.eth'));
-  const registeredNodes = nodeLeaves.map((leaf) => demo.registerNode(leaf.ensName, leaf.owner));
+  const seed = "0x" + "11".repeat(32);
+  const jobResults: JobResult[] = Array.from({ length: 1000 }, (_, index) => ({
+    jobId: `job-${index}`,
+    domain: "metaverse-labs",
+    vote: "approve",
+    witness: `wit-${index.toString(16).padStart(3, "0")}`,
+  }));
 
-  const maintenancePause = demo.pauseDomain('lunar-foundry', 'Scheduled maintenance window');
-  const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
-  const updatedSafety = demo.updateDomainSafety('deep-space-lab', {
-    unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL', 'STATICCALL']),
-  });
-  demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
-  const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
-
-  const jobBatch = demoJobBatch('deep-space-lab', 1000);
-  const voteOverrides: Record<string, VoteValue> = {
-    [leaves[1].owner]: 'REJECT',
-  };
-
-  const anomalies: AgentAction[] = [
-    {
-      agent: agentIdentity,
-      domainId: 'deep-space-lab',
-      type: 'CALL',
-      amountSpent: 12_500n,
-      opcode: 'STATICCALL',
-      description: 'Unsafe opcode invoked during maintenance bypass',
-    },
-    {
-      ...budgetOverrunAction(
-        agentLeaf.ensName,
-        agentLeaf.owner as `0x${string}`,
-        'deep-space-lab',
-        1_800_000n,
-        agentIdentity.budget,
-      ),
-      description: 'Overspend attempt detected by sentinel',
-      metadata: { invoice: 'INV-7788' },
-    },
-  ];
-
-  const roundResult = demo.runValidationRound({
-    round: 1,
-    truthfulVote: 'APPROVE',
-    jobBatch,
-    committeeSignature: '0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666',
-    voteOverrides,
-    anomalies,
-  });
-
-  const reportDir = resolveDir('reports', 'latest');
-  const domainState = demo.getDomainState('deep-space-lab');
-  writeJSON(path.join(reportDir, 'summary.json'), {
-    round: roundResult.round,
-    outcome: roundResult.voteOutcome,
-    committee: roundResult.committee.map((v) => ({ ens: v.ensName, stake: v.stake.toString() })),
-    nodes: {
-      registered: registeredNodes,
-      active: roundResult.nodes,
-    },
-    proof: roundResult.proof,
-    alerts: roundResult.sentinelAlerts,
-    slashing: roundResult.slashingEvents,
-    pauseRecords: roundResult.pauseRecords,
-    governance: {
-      parameters: demo.getGovernance(),
-      sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
-      maintenance: { pause: maintenancePause, resume: maintenanceResume },
-      domainSafety: {
-        ...domainState,
-        config: {
-          ...domainState.config,
-          unsafeOpcodes: Array.from(domainState.config.unsafeOpcodes),
-        },
-      },
-      updatedSafety: {
-        ...updatedSafety,
-        unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
-      },
+  const outcome = demo.runValidationRound("round-001", seed, jobResults, "approve", {
+    malicious: {
+      "0x0000000000000000000000000000000000000003": "dishonest",
+      "0x0000000000000000000000000000000000000004": "nonReveal",
     },
   });
 
-  writeJSON(path.join(reportDir, 'subgraph.json'), subgraphIndexer.list());
+  console.log("\n🚀 Validator Constellation :: Kardashev-II Sentinel Demo");
+  console.log("-----------------------------------------------");
+  console.log(`Committee members (VRF):`);
+  outcome.validators.forEach((validator, index) => {
+    console.log(`  ${index + 1}. ${validator.ensName} (${validator.address}) stake=${validator.stake}`);
+  });
 
-  const events = [...roundResult.commits, ...roundResult.reveals].map((event) => JSON.stringify(event, JSON_REPLACER));
-  writeText(path.join(reportDir, 'events.ndjson'), `${events.join('\n')}\n`);
+  console.log(`\nConsensus: ${outcome.consensus}`);
+  console.log(`Batch Proof: ${outcome.proof.batchId}`);
+  console.log(`Jobs finalised in batch: ${outcome.proof.jobs}`);
+  console.log(`Validators slashed: ${outcome.slashed.join(", ") || "None"}`);
 
-  renderDashboard(reportDir, roundResult);
+  demo.dispatchAgentAction({
+    domain: "metaverse-labs",
+    agent: agents[0].address,
+    node: nodes[0].address,
+    cost: 1200,
+    call: "fs.writeFile",
+    timestamp: Date.now(),
+  });
 
-  console.log('Validator Constellation demo executed successfully.');
-  console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
-  console.log(`Reports written to ${reportDir}`);
+  console.log("\n⚠️ Sentinel triggered: domain paused");
+  console.log(demo.pauseController.all());
+
+  console.log("\n📡 Subgraph event feed:");
+  for (const event of demo.indexer.query("ValidatorSlashed")) {
+    console.log(`  [#${event.blockNumber}] ${event.topic} ${JSON.stringify(event.data)}`);
+  }
+  for (const event of demo.indexer.query("SentinelAlert")) {
+    console.log(`  [#${event.blockNumber}] ${event.topic} ${JSON.stringify(event.data)}`);
+  }
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

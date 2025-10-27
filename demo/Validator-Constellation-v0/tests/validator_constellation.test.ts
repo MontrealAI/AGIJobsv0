@@ -1,143 +1,154 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import { assertAgentDomain, assertValidatorDomain, EnsLeaf } from '../src/core/ens';
-import { ValidatorConstellationDemo } from '../src/core/constellation';
-import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
-import { subgraphIndexer } from '../src/core/subgraph';
-import { AgentAction, VoteValue } from '../src/core/types';
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { ValidatorConstellationDemo, DemoConfig, JobResult } from "../src";
 
-function buildDemo(): {
-  demo: ValidatorConstellationDemo;
-  leaves: EnsLeaf[];
-} {
-  const leaves = demoLeaves();
-  const setup = demoSetup(leaves);
-  const demo = new ValidatorConstellationDemo(setup);
-  return { demo, leaves };
+const baseConfig: DemoConfig = {
+  committeeSize: 3,
+  commitPhaseMs: 5,
+  revealPhaseMs: 5,
+  quorum: 2,
+  penaltyPercentage: 20,
+  sentinelSlaMs: 100,
+  spendingLimit: 400,
+};
+
+const validatorRecords = [
+  {
+    address: "0x0000000000000000000000000000000000000010",
+    ensName: "orbit.club.agi.eth",
+    stake: 5_000n,
+    domain: "atlas",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000020",
+    ensName: "nova.alpha.club.agi.eth",
+    stake: 4_000n,
+    domain: "atlas",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000030",
+    ensName: "quasar.club.agi.eth",
+    stake: 3_000n,
+    domain: "atlas",
+  },
+  {
+    address: "0x0000000000000000000000000000000000000040",
+    ensName: "zenith.club.agi.eth",
+    stake: 6_000n,
+    domain: "atlas",
+  },
+];
+
+const agentRecords = [
+  {
+    address: "0x00000000000000000000000000000000000000a0",
+    ensName: "hermes.agent.agi.eth",
+    domain: "atlas",
+    budget: 300,
+  },
+];
+
+const nodeRecords = [
+  {
+    address: "0x00000000000000000000000000000000000000b0",
+    ensName: "apollo.node.agi.eth",
+    domain: "atlas",
+  },
+];
+
+function buildDemo(): ValidatorConstellationDemo {
+  const ensRecords = [
+    ...validatorRecords.map((record) => ({ name: record.ensName, owner: record.address, role: "validator" as const })),
+    ...agentRecords.map((record) => ({ name: record.ensName, owner: record.address, role: "agent" as const })),
+    ...nodeRecords.map((record) => ({ name: record.ensName, owner: record.address, role: "node" as const })),
+  ];
+  const demo = new ValidatorConstellationDemo(baseConfig, ensRecords);
+  validatorRecords.forEach((record) => demo.registerValidator(record));
+  agentRecords.forEach((record) => demo.registerAgent(record));
+  nodeRecords.forEach((record) => demo.registerNode(record));
+  return demo;
 }
 
-function orchestrateRound(): {
-  roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>;
-  leaves: EnsLeaf[];
-} {
-  const { demo, leaves } = buildDemo();
-  leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
-  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
-  if (!agentLeaf) {
-    throw new Error('missing agent leaf');
-  }
-  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
-  const jobBatch = demoJobBatch('deep-space-lab', 1000);
-  const voteOverrides: Record<string, VoteValue> = {
-    [leaves[1].owner]: 'REJECT',
-  };
-  const anomalies = [budgetOverrunAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', 1_800_000n)];
-  const roundResult = demo.runValidationRound({
-    round: 1,
-    truthfulVote: 'APPROVE',
-    jobBatch,
-    committeeSignature: '0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666',
-    voteOverrides,
-    anomalies,
-  });
-  return { roundResult, leaves };
+function buildJobs(count: number): JobResult[] {
+  return Array.from({ length: count }, (_, index) => ({
+    jobId: `job-${index}`,
+    domain: "atlas",
+    vote: "approve",
+    witness: `w-${index}`,
+  }));
 }
 
-test('ENS policies accept alpha mirrors and reject unauthorized domains', () => {
-  assert.doesNotThrow(() => assertValidatorDomain('zephyr.alpha.club.agi.eth'));
-  assert.doesNotThrow(() => assertAgentDomain('nova.alpha.agent.agi.eth'));
-  assert.throws(() => assertValidatorDomain('rogue.validator.eth'));
-});
-
-test('validator constellation slashes dishonest validators via commit-reveal', () => {
-  const { roundResult, leaves } = orchestrateRound();
-  const slashedAddresses = new Set(roundResult.slashingEvents.map((event) => event.validator.address));
-  assert.ok(slashedAddresses.has(leaves[1].owner), 'expected misbehaving validator to be slashed');
-  assert.equal(roundResult.proof.attestedJobCount, 1000);
-});
-
-test('sentinel triggers domain pause on budget overrun', () => {
-  const { roundResult } = orchestrateRound();
-  assert.ok(roundResult.sentinelAlerts.length >= 1, 'expected sentinel alert');
-  assert.ok(roundResult.pauseRecords.length >= 1, 'expected domain pause record');
-  assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
-});
-
-test('node orchestration enforces ENS lineage and blacklist controls', () => {
-  const { demo, leaves } = buildDemo();
-  const polaris = leaves.find((leaf) => leaf.ensName === 'polaris.node.agi.eth');
-  const selene = leaves.find((leaf) => leaf.ensName === 'selene.alpha.node.agi.eth');
-  if (!polaris || !selene) {
-    throw new Error('missing node leaves');
-  }
-  const registeredPolaris = demo.registerNode(polaris.ensName, polaris.owner);
-  const registeredSelene = demo.registerNode(selene.ensName, selene.owner);
-  assert.equal(registeredPolaris.ensName, 'polaris.node.agi.eth');
-  assert.equal(registeredSelene.ensName, 'selene.alpha.node.agi.eth');
-  assert.equal(demo.listNodes().length, 2);
-  assert.throws(() => demo.registerNode('rogue.node.eth', polaris.owner));
-  demo.blacklist(polaris.owner as `0x${string}`);
-  assert.throws(() => demo.registerNode(polaris.ensName, polaris.owner), /blacklisted/);
-});
-
-test('subgraph indexer records slashing events for transparency', () => {
-  subgraphIndexer.clear();
-  const { roundResult } = orchestrateRound();
-  const subgraphRecords = subgraphIndexer.filter('SLASHING');
-  assert.ok(subgraphRecords.length >= roundResult.slashingEvents.length);
-  assert.ok(
-    subgraphRecords.some((record) => record.payload && (record.payload as { validator?: { address?: string } }).validator?.address === roundResult.slashingEvents[0]?.validator.address),
-    'expected slashing event mirrored in subgraph',
+test("alpha validators satisfy ENS policy", () => {
+  const ensRecords = [
+    { name: "xenon.alpha.club.agi.eth", owner: "0x0000000000000000000000000000000000000abc", role: "validator" as const },
+  ];
+  const config = { ...baseConfig, committeeSize: 1, quorum: 1 } satisfies DemoConfig;
+  const demo = new ValidatorConstellationDemo(config, ensRecords);
+  assert.doesNotThrow(() =>
+    demo.registerValidator({
+      address: "0x0000000000000000000000000000000000000abc",
+      ensName: "xenon.alpha.club.agi.eth",
+      stake: 1_000n,
+      domain: "atlas",
+    }),
+  );
+  assert.throws(() =>
+    demo.registerValidator({
+      address: "0x0000000000000000000000000000000000000abd",
+      ensName: "unauthorised.other.eth",
+      stake: 1_000n,
+      domain: "atlas",
+    }),
   );
 });
 
-test('zk batch prover finalizes 1000 jobs with a single proof', () => {
-  const { roundResult } = orchestrateRound();
-  assert.equal(roundResult.proof.attestedJobCount, 1000);
-  assert.ok(roundResult.proof.sealedOutput.startsWith('0x'));
+test("commit-reveal slashes dishonest and non-revealing validators", () => {
+  const demo = buildDemo();
+  const jobs = buildJobs(5);
+  const outcome = demo.runValidationRound("round-test-1", "0x" + "aa".repeat(32), jobs, "approve", {
+    malicious: {
+      "0x0000000000000000000000000000000000000020": "dishonest",
+      "0x0000000000000000000000000000000000000030": "nonReveal",
+    },
+  });
+  assert.equal(outcome.consensus, "approve");
+  assert.ok(outcome.slashed.includes("0x0000000000000000000000000000000000000020"));
+  assert.ok(outcome.slashed.includes("0x0000000000000000000000000000000000000030"));
+  const slashingEvents = demo.indexer.query("ValidatorSlashed");
+  assert.equal(slashingEvents.length >= 2, true);
 });
 
-test('governance controls allow dynamic guardrail tuning for non-technical owners', () => {
-  const { demo, leaves } = buildDemo();
-  leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
-  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
-  if (!agentLeaf) {
-    throw new Error('missing agent leaf');
-  }
-  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
-  const pauseRecord = demo.pauseDomain('deep-space-lab', 'manual audit');
-  assert.equal(demo.getDomainState('deep-space-lab').paused, true);
-  demo.resumeDomain('deep-space-lab');
-  assert.equal(demo.getDomainState('deep-space-lab').paused, false);
-  demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
-  demo.updateSentinelConfig({ budgetGraceRatio: 0.2 });
-  const controlledAgent = demo.setAgentBudget(agentLeaf.ensName, 2_000_000n);
-  assert.equal(demo.getSentinelBudgetGraceRatio(), 0.2);
-  assert.equal(demo.findAgent(agentLeaf.ensName)?.budget, 2_000_000n);
-  assert.ok(pauseRecord.reason.includes('manual audit'));
+test("zk batch attestation handles 1000 jobs", () => {
+  const demo = buildDemo();
+  const jobs = buildJobs(1000);
+  const outcome = demo.runValidationRound("round-test-2", "0x" + "bb".repeat(32), jobs, "approve");
+  assert.equal(outcome.proof.jobs, 1000);
+  assert.ok(demo.zkBatcher.verify(jobs, outcome.proof, "round-test-2-proof-secret"));
+});
 
-  const jobBatch = demoJobBatch('deep-space-lab', 64);
-  const anomalies: AgentAction[] = [
-    budgetOverrunAction(controlledAgent.ensName, controlledAgent.address, 'deep-space-lab', 2_100_000n, controlledAgent.budget),
-    {
-      agent: { ...controlledAgent },
-      domainId: 'deep-space-lab',
-      type: 'CALL' as const,
-      amountSpent: 1_000n,
-      opcode: 'STATICCALL',
-      description: 'runtime policy breach',
-    },
-  ];
-
-  const result = demo.runValidationRound({
-    round: 7,
-    truthfulVote: 'APPROVE',
-    jobBatch,
-    committeeSignature: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    anomalies,
+test("sentinel pauses domain on anomaly", () => {
+  const demo = buildDemo();
+  demo.dispatchAgentAction({
+    domain: "atlas",
+    agent: agentRecords[0].address,
+    node: nodeRecords[0].address,
+    cost: 999,
+    call: "fs.writeFile",
+    timestamp: Date.now(),
   });
+  const states = demo.pauseController.all();
+  assert.equal(states.length, 1);
+  assert.equal(states[0].paused, true);
+  const alerts = demo.indexer.query("SentinelAlert");
+  assert.equal(alerts.length, 1);
+  assert.equal(alerts[0].data["monitor"], "budget-overrun");
+});
 
-  const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
-  assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
-  assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
+test("subgraph captures chronology", () => {
+  const demo = buildDemo();
+  const jobs = buildJobs(5);
+  demo.runValidationRound("round-test-3", "0x" + "cc".repeat(32), jobs, "approve");
+  const allEvents = demo.indexer.latest();
+  assert.ok(allEvents);
+  assert.ok(allEvents?.blockNumber > 0);
 });

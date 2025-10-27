@@ -1,142 +1,113 @@
 # Validator Constellation v0
 
-> A Kardashev-II ready validator superstructure that a non-technical operator can launch with a single command. This demo fuses VRF-governed commit–reveal validation, ZK batched attestations, ENS-enforced identity, automated sentinel brakes, and transparent on-chain telemetry into a single orchestrated run.
+> Kardashev-II ready validator, sentinel and ZK batching constellation built entirely through AGI Jobs v0 (v2).
 
-## Mission Deck
+This demo empowers non-technical operators to orchestrate an entire validator constellation, complete with VRF-selected committees, secure commit–reveal voting, ZK-batched attestations, sentinel guardrails and ENS-governed identities. Everything runs from a single command with auditable logs, high-stakes safety controls and subgraph friendly telemetry.
+
+## Why it matters
+
+- **Super-scaled throughput** – validate 1,000 jobs in a single zero-knowledge proof submission.
+- **Cryptographic truth** – deterministic VRF committee selection with sealed commit–reveal voting and automatic slashing.
+- **Sentinel autonomy** – anomaly detection triggers domain-scoped pauses within SLA guarantees.
+- **ENS identity compliance** – validators, agents and nodes must control approved ENS subdomains before participating.
+
+## System architecture
 
 ```mermaid
-flowchart LR
-  subgraph Governance
-    Owner["🛡️ Owner Control"] --> Params["Governance Module\n(commit blocks, quorum, penalties)"]
-    Params --> StakeManager
+flowchart TD
+  subgraph Identity
+    ENS[ENS Registry\n*.club.agi.eth\n*.alpha.*]
   end
-  subgraph Validation
-    StakeManager["Stake Manager\nBond + Slash"] --> VRF["VRF Committee Selection"]
-    VRF --> CommitReveal["Commit → Reveal"]
-    CommitReveal --> ZKBatch["ZK Batch Prover"]
+  subgraph Governance
+    VRF[VrfCommitteeSelector]
+    CR[CommitRevealRound]
+    Stake[StakeManager]
+    ZK[ZkBatchAttestor]
   end
   subgraph Safety
-    Sentinels["Sentinel Guardians"] --> DomainPause["Domain Pause Controller"]
-    DomainPause -->|alerts| Owner
+    Sentinel[Sentinel Monitors]
+    Pause[DomainPauseController]
   end
-  ENSRoot["ENS Merkle Root"] --> StakeManager
-  ENSRoot --> Sentinels
-  CommitReveal -->|events| Subgraph["Live Subgraph"]
-  ZKBatch -->|proof| Finality["Finalization"]
-  Sentinels -->|pause| Finality
+  subgraph Telemetry
+    Bus[EventBus]
+    Indexer[SubgraphIndexer]
+  end
+
+  ENS --> VRF
+  VRF --> CR
+  CR --> Stake
+  CR --> ZK
+  Sentinel --> Pause
+  Pause --> CR
+  Sentinel --> Bus
+  Stake --> Bus
+  ZK --> Bus
+  Bus --> Indexer
 ```
 
-## Why this demo matters
+## Demo capabilities
 
-* **Cryptographic truth** – deterministic VRF committee draws, salted commit–reveal voting, and automatic slashing mean hostile validators cannot game the outcome.
-* **Zero-knowledge throughput** – a single proof finalizes **1,000 jobs** at once while preserving privacy and auditability.
-* **Sentinel guardrails** – budget overruns or unsafe calls trigger autonomous domain pauses within the same round.
-* **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
-* **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
+| Capability | Outcome |
+| --- | --- |
+| Deterministic VRF | Committee assignments are unbiased and unpredictable using entropy derived from round seeds. |
+| Commit–reveal quorum | Validators commit hashed votes, reveal later and are slashed for dishonesty or non-reveals. |
+| ZK batch proofs | A 1,000-job batch proof finalises in a single attestation round. |
+| Sentinel guardrails | Budget or forbidden-call anomalies automatically pause only the affected domain. |
+| ENS enforcement | Only validators/agents controlling approved ENS subdomains can register. |
+| Subgraph visibility | Every slashing and sentinel event is index-ready for dashboards. |
 
-## Quickstart for non-technical operators
+## One-command experience
 
-1. Ensure Node.js 20.18.1 is available (`nvm use` if needed).
-2. Install dependencies (once per repo):
-   ```bash
-   npm ci
-   ```
-3. Launch the full validator constellation demo and generate the dashboard:
-   ```bash
-   npm run demo:validator-constellation
-   ```
-   The script writes human-readable reports to `demo/Validator-Constellation-v0/reports/latest/`, including a dashboard HTML file with live Mermaid diagrams.
-4. Run the deterministic validation round test suite:
-   ```bash
-   npm run test:validator-constellation
-   ```
-5. Type-check every module:
-   ```bash
-   npm run lint:validator-constellation
-   ```
-
-No smart-contract tooling, solc, or blockchain node is required. Everything is simulated end-to-end with the same primitives we deploy on-chain.
-
-## What the demo executes
-
-1. **Identity attestation** – builds an ENS Merkle tree, verifies the owner of every validator/agent subdomain, and bans imposters.
-2. **Node orchestration** – onboards production (`*.node.agi.eth`) and alpha (`*.alpha.node.agi.eth`) controllers with the same Merkle proof flow, ensuring operations teams have verifiable infrastructure custodians.
-3. **Stake orchestration** – bonds five validators with configurable stakes and records them in the Stake Manager.
-4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
-5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
-6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
-7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-8. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
-
-## Governance levers
-
-Operators can change any governance knob without code:
-
-```ts
-import { ValidatorConstellationDemo } from './src/core/constellation';
-
-const demo = new ValidatorConstellationDemo(setup);
-demo.updateGovernanceParameter('slashPenaltyBps', 2_500);
-demo.updateSentinelConfig({ budgetGraceRatio: 0.12 });
-demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
-demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
-demo.resumeDomain('deep-space-lab');
-demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
-demo.registerNode('polaris.node.agi.eth', '0xcccccccccccccccccccccccccccccccccccccccc');
-demo.registerNode('selene.alpha.node.agi.eth', '0xdddddddddddddddddddddddddddddddddddddddd');
+```bash
+npm run demo:validator-constellation
 ```
 
-All modules respond instantly (new committee sizes, quorum thresholds, penalty weights, etc.).
+The command prints:
 
-## Sentinel SLA
+1. **VRF committee members** with ENS names, addresses and stakes.
+2. **Consensus resolution** including the batch proof ID and validator slashing outcomes.
+3. **Sentinel response** showing the domain pause state triggered by an overspend + forbidden call.
+4. **Subgraph event feed** enumerating validator slashes and sentinel alerts.
+
+## Safety loop
 
 ```mermaid
 sequenceDiagram
-  participant Agent as Agent Nova
-  participant Sentinel as Sentinel Monitor
-  participant Domain as Domain Pause Controller
-  Agent->>Sentinel: Attempt 1.8M spend (budget 1.0M)
-  Sentinel->>Domain: pause("deep-space-lab")
-  Domain-->>Sentinel: Halt confirmed (timestamped)
-  Sentinel->>Agent: Alert CRITICAL (BUDGET_OVERRUN)
+  autonumber
+  participant Agent
+  participant Sentinel
+  participant Pause as DomainPause
+  participant Validators
+
+  Agent->>Sentinel: Action(cost, call)
+  Sentinel->>Pause: pause(domain, reason)
+  Pause->>Validators: block further actions
+  Validators->>Pause: resume(domain)
 ```
 
-The Sentinel guarantee: any overspend or forbidden opcode pauses the domain within the same execution round, with fully logged context for operators and auditors.
+## Extending the demo
 
-## Files of interest
+- Tune quorum, penalty, committee size or sentinel SLA in `scripts/runDemo.ts`.
+- Register additional validators/agents by appending ENS-authorised records.
+- Adjust monitors or add new checks (e.g. rate limits) via `src/sentinel/Sentinel.ts`.
+- Connect to real infrastructure by swapping the mock VRF/ENS/ZK adapters with production integrations.
 
-| Path | Description |
-| --- | --- |
-| `src/core/constellation.ts` | High-level orchestrator gluing governance, stake, sentinel, VRF, and ZK modules. |
-| `src/core/commitReveal.ts` | Deterministic commit–reveal coordinator enforcing quorum and penalties. |
-| `src/core/zk.ts` | Zero-knowledge batch prover/validator for job attestation throughput. |
-| `src/core/sentinel.ts` | Budget/unsafe call monitors issuing automatic domain pauses. |
-| `scripts/runDemo.ts` | One-command launcher that generates artifacts and dashboard. |
-| `tests/validator_constellation.test.ts` | Deterministic end-to-end tests proving every acceptance criterion. |
+## Testing
 
-## Output artifacts
+Execute the full test suite to validate every capability:
 
-After `npm run demo:validator-constellation`, inspect:
+```bash
+npm run lint:validator-constellation
+npm run test:validator-constellation
+```
 
-* `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams.
-* `reports/latest/summary.json` – committee, proof, alert, and pause telemetry.
-* `reports/latest/events.ndjson` – commit and reveal stream for auditors.
-* `reports/latest/subgraph.json` – indexed events mirroring on-chain transparency feeds.
+The tests simulate VRF committees, commit–reveal honesty guarantees, sentinel anomalies, ENS enforcement and ZK batching at 1,000-job scale.
 
-## Extending the constellation
+## Files
 
-* Add additional ENS leaves to onboard validators or agents; the Merkle builder keeps proofs consistent.
-* Adjust `sentinelGraceRatio` to tighten/relax budgets or plug in new rules (unsafe opcode catalogues, geo-fenced calls, etc.).
-* Swap in real VRF randomness (Chainlink, drand, beacon chain) without touching the committee logic.
-* Replace the simulated ZK prover with Groth16/PLONK circuits – the interface is ready for drop-in SNARK backends.
+- `scripts/runDemo.ts` – turn-key orchestrator.
+- `src/index.ts` – core demo facade wiring VRF, commit–reveal, sentinel, pause and ZK batching.
+- `src/**` – modular components ready for production hardening.
+- `tests/validator_constellation.test.ts` – high coverage, high-stakes validation specs.
 
-## Trust guarantees checklist
-
-- ✅ Slashing events mirror into the subgraph feed for real-time dashboards.
-- ✅ Committee randomness is entropy-mixed and replay-protected.
-- ✅ Only ENS-verified actors (both production and alpha namespaces) can participate.
-- ✅ Domain-scoped pause ensures other environments stay online.
-- ✅ Governance can pause, resume, or retune parameters instantly.
-- ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
-
-Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.
+Enjoy operating a validator constellation with AGI Jobs v0 (v2) as your autonomous copilot.
