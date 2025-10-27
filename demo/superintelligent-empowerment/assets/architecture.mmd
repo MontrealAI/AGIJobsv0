@@ -1,0 +1,11 @@
+%% Mermaid diagram for empowerment demo architecture
+flowchart TD
+    A[Scenario Config YAML] -->|Load| B(Demo Orchestrator)
+    B --> C{Capability Engines}
+    C -->|Synthesise narrative| D[Impact Story]
+    C -->|Quantify| E[Projected Outcomes]
+    D --> F[Console Visualization]
+    E --> G[JSON Impact Report]
+    F --> H[Storytelling Assets]
+    G --> H
+    H --> I[Community Empowerment Briefings]

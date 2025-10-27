@@ -68,3 +68,4 @@ apps/console/dist/
 apps/console/node_modules/
 demo/Trustless-Economic-Core-v0/reports/
 !demo/Trustless-Economic-Core-v0/reports/.gitkeep
+demo/superintelligent-empowerment/.venv/
