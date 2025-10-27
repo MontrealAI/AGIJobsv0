@@ -1,11 +1,18 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
-import { agentIdentities, domainIds, validatorIdentities } from '../src/config';
-import { encodeLeaf } from '../src/ens';
-import { buildMerkleTree, getProof } from '../src/merkle';
+import { agentIdentities, domainIds, validatorIdentities } from '../../src/config';
+import { encodeLeaf } from '../../src/ens';
+import { buildMerkleTree, getProof } from '../../src/merkle';
 import { getAddress } from 'ethers';
+
+export type ScenarioResult = {
+  roundId: string;
+  slashEvents: Array<{ validator: string; penalty: string; reason: string }>;
+  domainPaused: boolean;
+};
 
 function groupIdentities() {
   const mainValidators = validatorIdentities.filter((entry) => !entry.ensName.includes('.alpha.'));
@@ -16,36 +23,52 @@ function groupIdentities() {
 }
 
 function buildTree(identities: typeof validatorIdentities) {
+  if (identities.length === 0) {
+    throw new Error('identities required');
+  }
   return buildMerkleTree(identities.map((identity) => encodeLeaf(identity)));
 }
 
-function spawnHardhat(config: unknown): Promise<void> {
+const requireModule = createRequire(import.meta.url);
+
+function runHardhat(config: unknown): Promise<ScenarioResult> {
   return new Promise((resolve, reject) => {
-    const cwd = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
+    const cwd = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
     const hardhatConfig = path.join(cwd, 'hardhat.config.ts');
     const scriptPath = path.join(cwd, 'scripts', 'hardhat', 'runScenario.ts');
     const child = spawn(
       'npx',
       ['hardhat', '--config', hardhatConfig, 'run', '--network', 'hardhat', scriptPath],
       {
-        stdio: 'inherit',
         env: {
           ...process.env,
           CONSTELLATION_SCENARIO: JSON.stringify(config),
         },
+        cwd,
+        stdio: ['inherit', 'pipe', 'inherit'],
       }
     );
+    let stdout = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+      process.stdout.write(chunk);
+    });
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Hardhat execution failed with code ${code}`));
+      if (code !== 0) {
+        reject(new Error(`Hardhat scenario failed with exit code ${code}`));
+        return;
       }
+      const match = stdout.match(/Scenario report saved to (.*\.json)/);
+      if (!match) {
+        reject(new Error('Unable to locate scenario report path'));
+        return;
+      }
+      resolve(requireModule(match[1]) as ScenarioResult);
     });
   });
 }
 
-async function main(): Promise<void> {
+export async function runScenario(): Promise<ScenarioResult> {
   const { mainValidators, alphaValidators, mainAgents, alphaAgents } = groupIdentities();
   const validatorTree = buildTree(mainValidators);
   const validatorAlphaTree = buildTree(alphaValidators);
@@ -81,13 +104,5 @@ async function main(): Promise<void> {
     domain: domainIds.orbital,
   } as const;
 
-  console.log('Launching Validator Constellation scenario with config:');
-  console.log(JSON.stringify(scenario, null, 2));
-  await spawnHardhat(scenario);
-  console.log('Scenario completed successfully.');
+  return runHardhat(scenario);
 }
-
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
