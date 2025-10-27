@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
 import uuid
 from typing import Dict, Iterable, List, Optional
 
+from .checkpoint import CheckpointError, CheckpointIntegrityError, CheckpointManager
 from .events import reconcile as reconcile_receipt
 from .models import OrchestrationPlan, Receipt, RunInfo, StatusOut, Step, StepStatus
 from .scoreboard import get_scoreboard
@@ -15,12 +17,16 @@ from .tools import StepExecutor
 
 _RUNS: Dict[str, StatusOut] = {}
 _PLANS: Dict[str, OrchestrationPlan] = {}
-_LOCK = threading.Lock()
+_LOCK = threading.RLock()
 _EXECUTOR = StepExecutor()
 _STORE: RunStateStore | None = None
 _WATCHDOG_STARTED = False
 _STALL_THRESHOLD = 60.0
 _WATCHDOG_INTERVAL = 15.0
+_CHECKPOINT_MANAGER: CheckpointManager | None = None
+_CHECKPOINT_RESTORED = False
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _store() -> RunStateStore:
@@ -28,6 +34,84 @@ def _store() -> RunStateStore:
     if _STORE is None:
         _STORE = get_store()
     return _STORE
+
+
+def _ensure_checkpoint_manager() -> CheckpointManager:
+    global _CHECKPOINT_MANAGER
+    if _CHECKPOINT_MANAGER is None:
+        _CHECKPOINT_MANAGER = CheckpointManager()
+    return _CHECKPOINT_MANAGER
+
+
+def _bootstrap_from_checkpoint() -> None:
+    global _CHECKPOINT_RESTORED
+    if _CHECKPOINT_RESTORED:
+        return
+    to_resume = []
+    with _LOCK:
+        if _CHECKPOINT_RESTORED:
+            return
+        manager = _ensure_checkpoint_manager()
+        try:
+            restored = manager.restore_runtime()
+        except CheckpointIntegrityError as exc:
+            _LOGGER.error("Checkpoint integrity validation failed: %s", exc)
+            _CHECKPOINT_RESTORED = True
+            return
+        except CheckpointError as exc:
+            _LOGGER.error("Failed to restore checkpoint: %s", exc)
+            _CHECKPOINT_RESTORED = True
+            return
+        if not restored:
+            _CHECKPOINT_RESTORED = True
+            return
+        for run_id, job in restored.items():
+            _RUNS[run_id] = job.status
+            _PLANS[run_id] = job.plan
+            try:
+                _store().save(job.status)
+            except RunStateError as exc:
+                _LOGGER.warning("Failed to persist restored run %s to state store: %s", run_id, exc)
+            status = job.status
+            if status.run.state == "running" and status.current:
+                to_resume.append((run_id, job.plan, status))
+        _ensure_watchdog()
+        _CHECKPOINT_RESTORED = True
+    for run_id, plan, status in to_resume:
+        thread = threading.Thread(
+            target=_resume_run,
+            args=(plan, status, run_id),
+            daemon=True,
+            name=f"orchestrator-resume-{run_id}",
+        )
+        thread.start()
+
+
+def _checkpoint() -> CheckpointManager:
+    manager = _ensure_checkpoint_manager()
+    _bootstrap_from_checkpoint()
+    return manager
+
+
+def _snapshot_checkpoint(status: StatusOut | None = None) -> None:
+    try:
+        with _LOCK:
+            runs_copy = {run_id: run.model_copy(deep=True) for run_id, run in _RUNS.items()}
+            plans_copy = {run_id: plan.model_copy(deep=True) for run_id, plan in _PLANS.items()}
+        scoreboard_snapshot = get_scoreboard().snapshot()
+        _checkpoint().snapshot_runtime(runs_copy, plans_copy, scoreboard=scoreboard_snapshot)
+    except CheckpointError as exc:
+        message = f"Checkpoint error: {exc}"
+        if status is not None:
+            _log(status, message)
+        else:
+            _LOGGER.warning(message)
+
+
+def restore_pending_runs() -> None:
+    """Public helper to restore runs from the most recent checkpoint."""
+
+    _bootstrap_from_checkpoint()
 
 
 def _log(status: StatusOut, message: str) -> None:
@@ -76,6 +160,7 @@ def _persist(status: StatusOut) -> None:
         _store().save(status)
     except RunStateError as exc:  # pragma: no cover - persistence failures should be rare
         _log(status, f"Persistence error: {exc}")
+    _snapshot_checkpoint(status)
 
 
 def _resume_pending_steps(plan: OrchestrationPlan, status: StatusOut) -> Iterable[int]:
@@ -183,6 +268,7 @@ def _resume_run(plan: OrchestrationPlan, status: StatusOut, run_id: str) -> None
 
 def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
     del approvals
+    restore_pending_runs()
     status = _initial_status(plan)
     with _LOCK:
         _RUNS[status.run.id] = status
@@ -207,6 +293,7 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
 
 
 def get_status(run_id: str) -> StatusOut:
+    _bootstrap_from_checkpoint()
     with _LOCK:
         status = _RUNS.get(run_id)
     if status:
