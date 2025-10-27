@@ -167,9 +167,11 @@ async def build_security_context(
     if role not in _SETTINGS.allowed_roles:
         raise HTTPException(status_code=403, detail="ROLE_FORBIDDEN")
 
-    actor = actor_header or hashlib.sha256(token.encode()).hexdigest()[:16]
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
 
-    _RATE_LIMITER.check(actor)
+    actor = actor_header or token_hash[:16]
+
+    _RATE_LIMITER.check(token_hash)
 
     body = await request.body()
     request.state.raw_body = body
@@ -189,7 +191,6 @@ async def build_security_context(
         if not signature or not hmac.compare_digest(signature, expected):
             raise HTTPException(status_code=401, detail="SIGNATURE_INVALID")
 
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
     context = SecurityContext(actor=actor, role=role, token_hash=token_hash)
     request.state.security_context = context
 
