@@ -20,7 +20,7 @@ npm install
 npm run run:trustless-core
 ```
 
-The command launches a deterministic simulation on a Hardhat network:
+The command launches a deterministic simulation on a Hardhat network and emits executive-ready artefacts in `demo/Trustless-Economic-Core-v0/reports/`:
 
 1. Deploys the $AGIALPHA ERC-20 and the `TrustlessEconomicCoreDemo` contract.
 2. Registers ENS-style identities for the employer, agent, and validator council.
@@ -30,7 +30,15 @@ The command launches a deterministic simulation on a Hardhat network:
 6. Slashes the agent for milestone fraud, redistributing collateral to the employer, validators, treasury, and the burn sink.
 7. Cancels the job and refunds the final tranche to the employer.
 
-All artefacts (events, balances, burn deltas) are printed directly in the Hardhat logs so an executive can copy/paste the proof of trustless execution.
+You can re-run the deterministic unit test with `npm run test:trustless-core` for CI-grade verification.
+
+### 📦 Generated artefacts
+
+| Artefact | Purpose |
+| --- | --- |
+| `trustless-core-report.json` | Machine-readable ledger of balances, milestones, slashing distribution, and supply deltas |
+| `trustless-core-report.md` | Markdown debrief with tables + Mermaid diagram for executive briefings |
+| `trustless-core-dashboard.html` | Night-mode visual dashboard ready to forward to stakeholders |
 
 ## 🧬 Architecture (Mermaid)
 
@@ -71,6 +79,33 @@ graph TD
   E2 <-->|Cancel & Refund| Core
 ```
 
+### 🔁 Timeline sequence
+
+```mermaid
+sequenceDiagram
+  participant GOV as Governance Owner
+  participant EMP as Employer
+  participant AGT as Agent
+  participant VAL as Validator Council
+  participant TRE as Treasury
+  participant BURN as Burn Sink
+  GOV->>GOV: Deploy $AGIALPHA + demo core
+  GOV->>AGT: Register ENS + demand stake
+  AGT->>GOV: Stake 200 $AGIALPHA
+  EMP->>GOV: Escrow 3×100 $AGIALPHA
+  VAL->>GOV: Approve Milestone 1
+  GOV->>AGT: Release tranche + validator rewards
+  GOV-->>GOV: Pause all modules
+  VAL-xGOV: Milestone attempt reverted (paused)
+  GOV-->>GOV: Unpause modules
+  VAL->>GOV: Approve Milestone 2
+  GOV->>AGT: Release tranche + validator rewards
+  GOV->>AGT: Slash 60 $AGIALPHA stake
+  GOV->>EMP: Refund unused escrow + slash reward
+  GOV->>TRE: Route protocol fees + slash share
+  GOV->>BURN: Burn policy allocations
+```
+
 ## 🔢 Economic policy matrix
 
 | Parameter | Default | Purpose |
@@ -100,7 +135,10 @@ All parameters are reconfigurable by the governance owner via simple function ca
 | --- | --- |
 | Smart contract | `demo/Trustless-Economic-Core-v0/contracts/TrustlessEconomicCoreDemo.sol` |
 | Deterministic scenario test | `test/demo/trustlessEconomicCoreDemo.test.ts` |
-| One-click runner | `npm run run:trustless-core` |
+| Scenario runner | `demo/Trustless-Economic-Core-v0/scripts/runScenario.ts` (via `npm run run:trustless-core`) |
+| JSON ledger output | `demo/Trustless-Economic-Core-v0/reports/trustless-core-report.json` |
+| Markdown executive deck | `demo/Trustless-Economic-Core-v0/reports/trustless-core-report.md` |
+| HTML dashboard | `demo/Trustless-Economic-Core-v0/reports/trustless-core-dashboard.html` |
 | Economics overview | `demo/Trustless-Economic-Core-v0/README.md` (this file) |
 
 ## ♾️ Extending the demo
