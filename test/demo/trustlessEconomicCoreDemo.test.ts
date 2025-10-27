@@ -171,4 +171,79 @@ describe('TrustlessEconomicCoreDemo', function () {
     expect(await token.totalSupply()).to.equal(expectedSupply);
     expect(await token.balanceOf(await demo.getAddress())).to.equal(0);
   });
+
+  it('enforces identity registration and minimum stake requirements', async () => {
+    const { demo, employer, agent, v1, jobId } = await loadFixture(deployFixture);
+    const [, , , , , , , outsider] = await ethers.getSigners();
+
+    const impostor = v1;
+    await expect(demo.connect(impostor).depositStake(parseUnits('10'))).to.be.revertedWithCustomError(
+      demo,
+      'NotRegisteredAgent'
+    );
+
+    await expect(demo.connect(outsider).approveMilestone(jobId, 0)).to.be.revertedWithCustomError(
+      demo,
+      'NotValidator'
+    );
+
+    await expect(demo.connect(agent).withdrawStake(parseUnits('150'))).to.be.revertedWithCustomError(
+      demo,
+      'StakeLocked'
+    );
+  });
+
+  it('guards configuration and slashing controls behind governance', async () => {
+    const { demo, owner, employer, agent, v1, treasury, token, jobId, stakeAmount } = await loadFixture(deployFixture);
+
+    await expect(demo.connect(employer).setTreasury(employer.address)).to.be.revertedWithCustomError(
+      demo,
+      'OwnableUnauthorizedAccount'
+    );
+
+    await expect(demo.connect(owner).setPercentages(1000, 500, 200)).to.emit(demo, 'PercentagesUpdated');
+    await expect(demo.connect(owner).setStakeParameters(parseUnits('200'), 1000)).to.emit(
+      demo,
+      'StakeParametersUpdated'
+    );
+    await expect(demo.connect(owner).setSlashPolicy(5000, 2000, 2000, 1000)).to.emit(demo, 'SlashPolicyUpdated');
+
+    await expect(demo.connect(owner).setPercentages(9000, 1000, 1000)).to.be.revertedWithCustomError(
+      demo,
+      'InvalidPercentages'
+    );
+    await expect(demo.connect(owner).setStakeParameters(parseUnits('200'), 20_000)).to.be.revertedWithCustomError(
+      demo,
+      'InvalidPercentages'
+    );
+    await expect(demo.connect(owner).setSlashPolicy(6000, 2000, 2000, 1000)).to.be.revertedWithCustomError(
+      demo,
+      'InvalidPercentages'
+    );
+
+    await expect(demo.connect(owner).slashAgent(jobId, stakeAmount + 1n)).to.be.revertedWithCustomError(
+      demo,
+      'SlashTooHigh'
+    );
+
+    const treasuryInitial = await token.balanceOf(treasury.address);
+
+    await expect(demo.connect(owner).slashAgent(jobId, parseUnits('10')))
+      .to.emit(demo, 'AgentSlashed')
+      .withArgs(jobId, agent.address, parseUnits('10'), parseUnits('5'), parseUnits('2'), parseUnits('2'), parseUnits('1'));
+
+    await expect(demo.connect(owner).pauseAll()).to.emit(demo, 'Paused').withArgs(owner.address);
+    await expect(demo.connect(owner).unpauseAll()).to.emit(demo, 'Unpaused').withArgs(owner.address);
+
+    // validators receive pro-rata shares, treasury collects remainder + treasury share
+    const committeeLength = BigInt((await demo.getCommittee(jobId)).length);
+    const validatorShare = parseUnits('10') * 2000n / 10_000n;
+    const perValidator = validatorShare / committeeLength;
+    const remainder = validatorShare - perValidator * committeeLength;
+
+    expect(await token.balanceOf(v1.address)).to.equal(parseUnits('1000') + perValidator);
+    const treasuryAfter = await token.balanceOf(treasury.address);
+    const expectedTreasuryDelta = parseUnits('2') + remainder;
+    expect(treasuryAfter - treasuryInitial).to.equal(expectedTreasuryDelta);
+  });
 });
