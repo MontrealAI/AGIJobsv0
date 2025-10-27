@@ -1052,7 +1052,7 @@ class Orchestrator:
             handle.write(line + "\n")
 
     async def _run_integrity_suite(self) -> None:
-        report = await asyncio.to_thread(self._integrity_suite.run)
+        report = self._integrity_suite.run()
         self._last_integrity_report = report
         report_payload = report.to_dict()
         log_fields = {
