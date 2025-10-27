@@ -16,6 +16,7 @@ from .agents import AgentContext, StrategistAgent, ValidatorAgent, WorkerAgent, 
 from .audit import AuditTrail
 from .checkpoint import CheckpointManager
 from .governance import GovernanceController, GovernanceParameters
+from .integrity import IntegrityReport, IntegritySuite
 from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
 from .logging_config import configure_logging
 from .messaging import MessageBus
@@ -59,6 +60,7 @@ class OrchestratorConfig:
     heartbeat_interval_seconds: float = 5.0
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
+    integrity_check_interval_seconds: float = 30.0
 
 
 class Orchestrator:
@@ -84,6 +86,8 @@ class Orchestrator:
         self.governance = GovernanceController(config.governance)
         self.simulation: Optional[PlanetarySimulation] = SyntheticEconomySim() if config.enable_simulation else None
         self._latest_simulation_state: Optional[SimulationState] = None
+        self._integrity_suite = IntegritySuite(self.job_registry, self.resources, self.scheduler)
+        self._last_integrity_report: Optional[IntegrityReport] = None
         self._tasks: List[asyncio.Task] = []
         self._running = False
         self._paused = asyncio.Event()
@@ -136,6 +140,8 @@ class Orchestrator:
         if self.simulation:
             self._tasks.append(asyncio.create_task(self._simulation_loop(), name="simulation"))
         await self._seed_jobs()
+        await self._run_integrity_suite()
+        self._tasks.append(asyncio.create_task(self._integrity_loop(), name="integrity"))
         self._tasks.append(asyncio.create_task(self._cycle_loop(), name="cycles"))
 
     async def _bootstrap_state(self) -> None:
@@ -991,6 +997,7 @@ class Orchestrator:
                     (next_event.execute_at - datetime.now(timezone.utc)).total_seconds(),
                 ),
             }
+        integrity_state = self._last_integrity_report.to_dict() if self._last_integrity_report else None
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "mission": self.config.mission_name,
@@ -1028,6 +1035,7 @@ class Orchestrator:
                 "pending_by_type": dict(pending_counts),
                 "next_event": next_event_payload,
             },
+            "integrity": integrity_state,
         }
 
     async def _persist_status_snapshot(self) -> None:
@@ -1042,4 +1050,40 @@ class Orchestrator:
         line = json.dumps(payload, sort_keys=True)
         with self._status_path.open("a", encoding="utf-8") as handle:
             handle.write(line + "\n")
+
+    async def _run_integrity_suite(self) -> None:
+        report = self._integrity_suite.run()
+        self._last_integrity_report = report
+        report_payload = report.to_dict()
+        log_fields = {
+            "passed": report_payload["passed"],
+            "warnings": report_payload["warnings"],
+            "errors": report_payload["errors"],
+        }
+        self._info("integrity_check_completed", **log_fields)
+        for result in report.results:
+            if result.status == "error":
+                self._error(
+                    "integrity_violation",
+                    check=result.name,
+                    detail=result.detail,
+                    notes=result.notes,
+                    metrics=result.metrics,
+                )
+            elif result.status == "warning":
+                self._warning(
+                    "integrity_warning",
+                    check=result.name,
+                    detail=result.detail,
+                    notes=result.notes,
+                    metrics=result.metrics,
+                )
+        await self._persist_status_snapshot()
+
+    async def _integrity_loop(self) -> None:
+        interval = max(5.0, float(self.config.integrity_check_interval_seconds))
+        while self._running:
+            await self._paused.wait()
+            await self._run_integrity_suite()
+            await asyncio.sleep(interval)
 
