@@ -1,0 +1,18 @@
+{
+  "mission_name": "CI Kardashev-II Omega-Grade Upgrade",
+  "max_cycles": 5,
+  "resume_from_checkpoint": false,
+  "integrity_check_interval_seconds": 10,
+  "insight_interval_seconds": 5,
+  "worker_specs": {
+    "energy-architect": 0.2,
+    "supply-chain": 0.2
+  },
+  "validator_names": [
+    "validator-1",
+    "validator-2"
+  ],
+  "strategist_names": [
+    "macro-strategist"
+  ]
+}

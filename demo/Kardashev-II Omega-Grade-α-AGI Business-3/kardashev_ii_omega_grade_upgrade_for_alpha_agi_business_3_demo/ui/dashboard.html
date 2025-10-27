@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ω Kardashev-II Omega-Grade Upgrade Control Room</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #101526, #050608 60%);
+        color: #f2f6ff;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        display: grid;
+        gap: 1.5rem;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      h1 {
+        font-size: 2.4rem;
+        margin: 0;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .panel {
+        background: rgba(8, 14, 24, 0.85);
+        border-radius: 18px;
+        padding: 1.5rem;
+        border: 1px solid rgba(94, 192, 255, 0.2);
+        box-shadow: 0 18px 44px rgba(12, 26, 54, 0.6);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+      }
+      .metric-value {
+        font-size: 2.2rem;
+        font-weight: 600;
+      }
+      .metric-label {
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.75rem;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "Fira Code", "JetBrains Mono", monospace;
+        background: rgba(2, 8, 18, 0.7);
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid rgba(94, 192, 255, 0.25);
+      }
+      footer {
+        opacity: 0.7;
+        font-size: 0.85rem;
+      }
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(94, 192, 255, 0.15);
+        border: 1px solid rgba(94, 192, 255, 0.35);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Ω Kardashev-II Omega-Grade Upgrade</h1>
+        <p class="status-chip" id="status-chip">Loading Telemetry...</p>
+      </div>
+      <div>
+        <strong>Mission Insight</strong>
+        <div id="insight">—</div>
+      </div>
+    </header>
+
+    <section class="grid" id="metrics-grid"></section>
+
+    <section class="panel">
+      <h2>Latest Event</h2>
+      <pre id="latest-event">Awaiting data...</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Supervisor Summary</h2>
+      <pre id="supervisor">Awaiting data...</pre>
+    </section>
+
+    <footer>
+      Refreshes every 5 seconds. Serve this file with <code>python -m http.server</code> from the repository root to stream live mission telemetry.
+    </footer>
+
+    <script>
+      async function fetchJSON(path) {
+        const response = await fetch(path, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Unable to fetch ${path}: ${response.status}`);
+        }
+        return await response.json();
+      }
+
+      function renderMetrics(summary) {
+        const grid = document.getElementById('metrics-grid');
+        grid.innerHTML = '';
+        const metrics = [
+          { label: 'Cycle', value: summary.cycle ?? '—' },
+          { label: 'Active Jobs', value: (summary.jobs?.active?.length ?? 0).toString() },
+          { label: 'Energy Available', value: Intl.NumberFormat().format(summary.resources?.energy_available ?? 0) },
+          { label: 'Compute Available', value: Intl.NumberFormat().format(summary.resources?.compute_available ?? 0) },
+          { label: 'Token Supply', value: Intl.NumberFormat().format(summary.resources?.token_supply ?? 0) },
+          { label: 'Completion', value: `${Math.round((summary.completion_ratio ?? 0) * 100)}%` }
+        ];
+        for (const metric of metrics) {
+          const panel = document.createElement('div');
+          panel.className = 'panel';
+          panel.innerHTML = `
+            <div class="metric-value">${metric.value}</div>
+            <div class="metric-label">${metric.label}</div>
+          `;
+          grid.appendChild(panel);
+        }
+      }
+
+      function setStatusChip(summary) {
+        const chip = document.getElementById('status-chip');
+        const state = summary.paused ? 'PAUSED' : 'ACTIVE';
+        chip.textContent = `${state} · Jobs=${summary.jobs?.total ?? 0}`;
+      }
+
+      async function refresh() {
+        try {
+          const [dashboard, supervisor] = await Promise.all([
+            fetchJSON('../artifacts/status/dashboard.json'),
+            fetchJSON('../artifacts/status/supervisor.json')
+          ]);
+          document.getElementById('insight').textContent = dashboard.summary?.insight ?? '—';
+          setStatusChip(dashboard.summary ?? {});
+          renderMetrics(dashboard.summary ?? {});
+          document.getElementById('latest-event').textContent = JSON.stringify(dashboard.latest_event, null, 2);
+          document.getElementById('supervisor').textContent = JSON.stringify(supervisor, null, 2);
+        } catch (error) {
+          document.getElementById('latest-event').textContent = error.message;
+        }
+      }
+
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </body>
+</html>
