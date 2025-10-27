@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { assertAgentDomain, assertValidatorDomain, EnsLeaf } from '../src/core/ens';
@@ -7,6 +8,7 @@ import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
+import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
 import { AgentAction, Hex, VoteValue, ValidatorIdentity } from '../src/core/types';
 
 function buildDemo(): {
@@ -218,4 +220,21 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
   assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
+});
+
+test('configuration-driven scenario empowers non-technical orchestration', () => {
+  subgraphIndexer.clear();
+  const scenarioPath = path.join(__dirname, '..', 'config', 'stellar-scenario.yaml');
+  const config = loadScenarioConfig(scenarioPath);
+  const prepared = prepareScenario(config);
+  const executed = executeScenario(prepared);
+  assert.equal(executed.report.proof.attestedJobCount, 256);
+  assert.ok(executed.report.sentinelAlerts.length >= 1, 'scenario should emit sentinel alerts');
+  assert.ok(executed.report.slashingEvents.length >= 1, 'scenario should trigger slashing telemetry');
+  assert.equal(executed.context.primaryDomain.config.id, 'deep-space-lab');
+  assert.equal(executed.context.sentinelGraceRatio, 0.12);
+  assert.equal(executed.context.nodesRegistered.length, 2);
+  assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
+  assert.equal(executed.context.jobSample?.length, 8);
+  assert.ok(executed.context.ownerNotes?.description);
 });

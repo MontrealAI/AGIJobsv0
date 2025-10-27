@@ -1,6 +1,59 @@
 import { EnsLeaf } from './ens';
 import { DemoSetup } from './constellation';
-import { AgentAction, Hex, JobResult } from './types';
+import { AgentAction, DomainConfig, GovernanceParameters, Hex, JobResult } from './types';
+
+const RAW_DOMAIN_TEMPLATES: Array<{
+  id: string;
+  humanName: string;
+  budgetLimit: bigint;
+  unsafeOpcodes: string[];
+}> = [
+  {
+    id: 'deep-space-lab',
+    humanName: 'Deep Space Research Lab',
+    budgetLimit: 5_000_000n,
+    unsafeOpcodes: ['SELFDESTRUCT', 'DELEGATECALL'],
+  },
+  {
+    id: 'lunar-foundry',
+    humanName: 'Lunar Foundry',
+    budgetLimit: 2_000_000n,
+    unsafeOpcodes: ['SELFDESTRUCT'],
+  },
+];
+
+export const DEFAULT_GOVERNANCE_PARAMETERS: GovernanceParameters = {
+  committeeSize: 4,
+  commitPhaseBlocks: 3,
+  revealPhaseBlocks: 3,
+  quorumPercentage: 75,
+  slashPenaltyBps: 1500,
+  nonRevealPenaltyBps: 500,
+};
+
+export const DEFAULT_VERIFIER_KEY: Hex =
+  '0x4f8f0a1d4c0b5f6e9d1a2c3b4e5f60718293a4b5c6d7e8f90123456789abcde';
+
+export const DEFAULT_ONCHAIN_ENTROPY: Hex =
+  '0x9f1c2e3d4b5a69788766554433221100ffeeddccbbaa99887766554433221100';
+
+export const DEFAULT_BEACON_ENTROPY: Hex =
+  '0xabcdef0123456789fedcba98765432100123456789abcdef0123456789fedcba';
+
+export const DEFAULT_SENTINEL_GRACE_RATIO = 0.05;
+
+export function defaultDomains(): DomainConfig[] {
+  return RAW_DOMAIN_TEMPLATES.map((domain) => ({
+    id: domain.id,
+    humanName: domain.humanName,
+    budgetLimit: domain.budgetLimit,
+    unsafeOpcodes: new Set(domain.unsafeOpcodes),
+  }));
+}
+
+export function defaultGovernance(): GovernanceParameters {
+  return { ...DEFAULT_GOVERNANCE_PARAMETERS };
+}
 
 export function demoLeaves(): EnsLeaf[] {
   return [
@@ -18,33 +71,13 @@ export function demoLeaves(): EnsLeaf[] {
 
 export function demoSetup(leaves: EnsLeaf[]): DemoSetup {
   return {
-    domains: [
-      {
-        id: 'deep-space-lab',
-        humanName: 'Deep Space Research Lab',
-        budgetLimit: 5_000_000n,
-        unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL']),
-      },
-      {
-        id: 'lunar-foundry',
-        humanName: 'Lunar Foundry',
-        budgetLimit: 2_000_000n,
-        unsafeOpcodes: new Set(['SELFDESTRUCT']),
-      },
-    ],
-    governance: {
-      committeeSize: 4,
-      commitPhaseBlocks: 3,
-      revealPhaseBlocks: 3,
-      quorumPercentage: 75,
-      slashPenaltyBps: 1500,
-      nonRevealPenaltyBps: 500,
-    },
+    domains: defaultDomains(),
+    governance: defaultGovernance(),
     ensLeaves: leaves,
-    verifyingKey: '0x4f8f0a1d4c0b5f6e9d1a2c3b4e5f60718293a4b5c6d7e8f90123456789abcde' as Hex,
-    onChainEntropy: '0x9f1c2e3d4b5a69788766554433221100ffeeddccbbaa99887766554433221100',
-    recentBeacon: '0xabcdef0123456789fedcba98765432100123456789abcdef0123456789fedcba',
-    sentinelGraceRatio: 0.05,
+    verifyingKey: DEFAULT_VERIFIER_KEY,
+    onChainEntropy: DEFAULT_ONCHAIN_ENTROPY,
+    recentBeacon: DEFAULT_BEACON_ENTROPY,
+    sentinelGraceRatio: DEFAULT_SENTINEL_GRACE_RATIO,
   };
 }
 
