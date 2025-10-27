@@ -19,6 +19,8 @@ interface IShardJobQueue {
     struct JobParameters {
         uint256 maxReward;
         uint64 maxDuration;
+        uint32 maxOpenJobs;
+        uint32 maxActiveJobs;
     }
 
     /// @notice Snapshot of a job stored inside the queue.
@@ -38,7 +40,7 @@ interface IShardJobQueue {
     event JobStatusChanged(uint256 indexed jobId, JobStatus status);
     event JobResultRecorded(uint256 indexed jobId, bytes32 resultHash);
     event JobCompletionRecorded(uint256 indexed jobId, bool success);
-    event JobParametersUpdated(uint256 maxReward, uint64 maxDuration);
+    event JobParametersUpdated(uint256 maxReward, uint64 maxDuration, uint32 maxOpenJobs, uint32 maxActiveJobs);
 
     error NotController();
     error UnknownJob(uint256 jobId);
@@ -46,6 +48,9 @@ interface IShardJobQueue {
     error InvalidController();
     error InvalidEmployer();
     error InvalidSpecHash();
+
+    error OpenJobsQuotaExceeded(uint32 limit);
+    error ActiveJobsQuotaExceeded(uint32 limit);
 
     /// @notice Return the shard identifier served by this queue.
     function shardId() external view returns (bytes32);
@@ -90,4 +95,7 @@ interface IShardJobQueue {
 
     /// @notice Whether the queue is currently paused.
     function paused() external view returns (bool);
+
+    /// @notice Current utilisation counters for quota enforcement.
+    function getUsage() external view returns (uint32 openJobs, uint32 activeJobs);
 }

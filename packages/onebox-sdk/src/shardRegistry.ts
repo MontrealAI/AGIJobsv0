@@ -3,6 +3,7 @@ import { Contract, ContractTransactionResponse, ethers } from 'ethers';
 export const shardRegistryAbi = [
   'function listShards() view returns (bytes32[])',
   'function getShardQueue(bytes32 shardId) view returns (address)',
+  'function getShardUsage(bytes32 shardId) view returns (uint32 openJobs, uint32 activeJobs)',
   'function createJob(bytes32 shardId, bytes32 specHash, string metadataURI) returns (tuple(bytes32 shardId, uint256 jobId))',
   'function assignAgent(tuple(bytes32 shardId, uint256 jobId) jobRef, address agent)',
   'function startJob(tuple(bytes32 shardId, uint256 jobId) jobRef)',
@@ -14,7 +15,7 @@ export const shardRegistryAbi = [
   'function getJob(tuple(bytes32 shardId, uint256 jobId) jobRef) view returns (address employer, address agent, uint8 status, bytes32 specHash, bytes32 resultHash, string metadataURI, bool success)',
   'function pauseShard(bytes32 shardId)',
   'function unpauseShard(bytes32 shardId)',
-  'function setShardParameters(bytes32 shardId, tuple(uint256 maxReward, uint64 maxDuration) params)',
+  'function setShardParameters(bytes32 shardId, tuple(uint256 maxReward, uint64 maxDuration, uint32 maxOpenJobs, uint32 maxActiveJobs) params)',
   'function pause()',
   'function unpause()',
 ];
@@ -47,6 +48,8 @@ export interface JobView {
 export interface ShardParameters {
   maxReward: bigint;
   maxDuration: bigint;
+  maxOpenJobs: number;
+  maxActiveJobs: number;
 }
 
 export interface CreateJobResult {
@@ -67,6 +70,13 @@ export class ShardRegistryAdapter {
     const id = this.normalizeShardId(shardId);
     const fn = this.contract.getFunction('getShardQueue');
     return fn(id);
+  }
+
+  async getShardUsage(shardId: string): Promise<{ openJobs: number; activeJobs: number }> {
+    const id = this.normalizeShardId(shardId);
+    const fn = this.contract.getFunction('getShardUsage');
+    const [openJobs, activeJobs] = await fn(id);
+    return { openJobs: Number(openJobs), activeJobs: Number(activeJobs) };
   }
 
   async createJob(
@@ -166,7 +176,12 @@ export class ShardRegistryAdapter {
     shardId: string,
     params: ShardParameters
   ): Promise<ContractTransactionResponse> {
-    const tuple: [bigint, bigint] = [params.maxReward, params.maxDuration];
+    const tuple: [bigint, bigint, number, number] = [
+      params.maxReward,
+      params.maxDuration,
+      params.maxOpenJobs,
+      params.maxActiveJobs,
+    ];
     const fn = this.contract.getFunction('setShardParameters');
     return fn(this.normalizeShardId(shardId), tuple);
   }

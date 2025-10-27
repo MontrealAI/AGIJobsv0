@@ -68,17 +68,26 @@ async function main(): Promise<void> {
       break;
     }
     case 'set-params': {
-      const [shardValue, maxRewardRaw, maxDurationRaw] = rest;
+      const [shardValue, maxRewardRaw, maxDurationRaw, maxOpenJobsRaw, maxActiveJobsRaw] = rest;
       if (!shardValue || !maxRewardRaw || !maxDurationRaw) {
-        throw new Error('Usage: set-params <shard> <maxReward> <maxDurationSeconds>');
+        throw new Error(
+          'Usage: set-params <shard> <maxReward> <maxDurationSeconds> [maxOpenJobs] [maxActiveJobs]'
+        );
       }
       const shardId = normalizeShardId(shardValue);
       const maxReward = BigInt(maxRewardRaw);
       const maxDuration = BigInt(maxDurationRaw);
-      const tx = await registry.setShardParameters(shardId, [maxReward, maxDuration]);
+      const maxOpenJobs = maxOpenJobsRaw ? Number(maxOpenJobsRaw) : 0;
+      const maxActiveJobs = maxActiveJobsRaw ? Number(maxActiveJobsRaw) : 0;
+      const tx = await registry.setShardParameters(shardId, [
+        maxReward,
+        maxDuration,
+        maxOpenJobs,
+        maxActiveJobs,
+      ]);
       await tx.wait();
       console.log(
-        `Updated parameters for ${shardValue}: reward=${maxReward.toString()} duration=${maxDuration.toString()}`
+        `Updated parameters for ${shardValue}: reward=${maxReward.toString()} duration=${maxDuration.toString()} maxOpen=${maxOpenJobs} maxActive=${maxActiveJobs}`
       );
       break;
     }
