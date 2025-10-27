@@ -60,7 +60,7 @@ flowchart LR
 Ship entire validator rounds from a single YAML file—no coding required:
 
 ```bash
-npm run demo:validator-constellation:scenario -- \
+ npm run demo:validator-constellation:scenario -- \
   --config demo/Validator-Constellation-v0/config/stellar-scenario.yaml
 ```
 
@@ -90,6 +90,63 @@ ownerActions:
 Running the scenario creates a dedicated report folder (`reports/scenarios/<name>/`) with the same proof, sentinel, and subgraph telemetry as the baseline demo. Non-technical operators simply edit the YAML and re-run the command to retune governance levers.
 
 No smart-contract tooling, solc, or blockchain node is required. Everything is simulated end-to-end with the same primitives we deploy on-chain.
+
+### Operator Control Tower Console
+
+Non-technical owners can now steer the constellation from a persistent control tower state without touching code:
+
+```bash
+npm run demo:validator-constellation:operator-console -- status --mermaid
+```
+
+Key capabilities:
+
+* `init` – bootstrap or reset the control tower state with a pre-bonded validator set.
+* `set-governance`, `set-sentinel`, `set-domain` – live-edit quorum thresholds, penalty weights, guardrails, and unsafe opcode policies.
+* `bond-validator`, `register-agent`, `register-node` – onboard new participants with ENS-backed ownership checks.
+* `pause-domain` / `resume-domain` – trigger or lift emergency halts domain-by-domain within seconds.
+* `run-round` – execute a full validation round (with optional anomalies) and emit a full report deck under `reports/operator-console/`.
+
+Every command persists updates to `demo/Validator-Constellation-v0/reports/operator-console/operator-state.json`, making the control plane fully declarative and restartable. Each run prints a contextual summary and a live Mermaid blueprint:
+
+```mermaid
+flowchart TD
+  owner["🛡️ Owner Console"] --> governance["Governance
+committeeSize: 4
+quorum: 75%"]
+  owner --> sentinel["Sentinel
+Grace 5%"]; owner --> nodes["Domain Nodes"]
+  subgraph validators["Validators"]
+    val_andromeda["andromeda.club.agi.eth
+10 ETH
+ACTIVE"]
+    val_orion["orion.club.agi.eth
+10 ETH
+ACTIVE"]
+  end
+  governance --> validators
+  subgraph domain_deep_space_lab["Deep Space Research Lab
+Budget 5,000,000
+Paused: NO"]
+    agent_nova["nova.agent.agi.eth
+Budget 1,000,000"]
+  end
+  subgraph domain_lunar_foundry["Lunar Foundry
+Budget 2,000,000
+Paused: NO"]
+    agent_sentinel["sentinel.agent.agi.eth
+Budget 750,000"]
+  end
+  subgraph nodes["Domain Nodes"]
+    node_polaris["polaris.node.agi.eth"]
+    node_selene["selene.alpha.node.agi.eth"]
+  end
+  validators --> sentinel
+  sentinel --> domain_deep_space_lab
+  sentinel --> domain_lunar_foundry
+```
+
+The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrails automatically—operators simply choose the right command and AGI Jobs v0 (v2) performs the rest.
 
 ## What the demo executes
 
