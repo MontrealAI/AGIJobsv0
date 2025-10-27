@@ -1,242 +1,138 @@
-# Validator Constellation v0
+# 🎖️ Validator Constellation Demo (v0)
 
-> A Kardashev-II ready validator superstructure that a non-technical operator can launch with a single command. This demo fuses VRF-governed commit–reveal validation, ZK batched attestations, ENS-enforced identity, automated sentinel brakes, and transparent on-chain telemetry into a single orchestrated run.
+> A Kardashev-II ready validation lattice demonstrating how **AGI Jobs v0 (v2)** empowers non-technical operators to command a superintelligent validator fabric with cryptographic truth, zero-knowledge throughput and sentinel guardrails.
 
-## Mission Deck
+## ✨ Why this matters
 
-```mermaid
-flowchart LR
-  subgraph Governance
-    Owner["🛡️ Owner Control"] --> Params["Governance Module\n(commit blocks, quorum, penalties)"]
-    Params --> StakeManager
-  end
-  subgraph Validation
-    StakeManager["Stake Manager\nBond + Slash"] --> VRF["VRF Committee Selection"]
-    VRF --> CommitReveal["Commit → Reveal"]
-    CommitReveal --> ZKBatch["ZK Batch Prover"]
-  end
-  subgraph Safety
-    Sentinels["Sentinel Guardians"] --> DomainPause["Domain Pause Controller"]
-    DomainPause -->|alerts| Owner
-  end
-  ENSRoot["ENS Merkle Root"] --> StakeManager
-  ENSRoot --> Sentinels
-  CommitReveal -->|events| Subgraph["Live Subgraph"]
-  ZKBatch -->|proof| Finality["Finalization"]
-  Sentinels -->|pause| Finality
-```
+- **Commit–reveal validation with VRF randomness** prevents collusion and guarantees unbiased quorum selection.
+- **ZK batched attestations** finalise one thousand jobs with a single proof submission, unlocking planetary throughput.
+- **Sentinel anomaly detection + domain-scoped pause** ensures autonomous agents halt instantly when unsafe behaviour emerges.
+- **ENS-bound identities** keep every agent and validator accountable with verifiable ownership proofs.
+- **Owner-operated controls** (pause, resume, attestor rotation, identity lists) keep the business sovereign.
 
-## Why this demo matters
-
-* **Cryptographic truth** – deterministic VRF committee draws, salted commit–reveal voting, and automatic slashing mean hostile validators cannot game the outcome.
-* **Zero-knowledge throughput** – a single proof finalizes **1,000 jobs** at once while preserving privacy and auditability.
-* **Sentinel guardrails** – budget overruns or unsafe calls trigger autonomous domain pauses within the same round.
-* **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
-* **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
-* **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
-
-## Quickstart for non-technical operators
-
-1. Ensure Node.js 20.18.1 is available (`nvm use` if needed).
-2. Install dependencies (once per repo):
-   ```bash
-   npm ci
-   ```
-3. Launch the full validator constellation demo and generate the dashboard:
-   ```bash
-   npm run demo:validator-constellation
-   ```
-   The script writes human-readable reports to `demo/Validator-Constellation-v0/reports/latest/`, including a dashboard HTML file with live Mermaid diagrams.
-4. Run the deterministic validation round test suite:
-   ```bash
-   npm run test:validator-constellation
-   ```
-5. Type-check every module:
-   ```bash
-   npm run lint:validator-constellation
-   ```
-
-### Scenario-driven automation for non-technical owners
-
-Ship entire validator rounds from a single YAML file—no coding required:
-
-```bash
- npm run demo:validator-constellation:scenario -- \
-  --config demo/Validator-Constellation-v0/config/stellar-scenario.yaml
-```
-
-The sample scenario expresses governance, sentinel tuning, committee overrides, ENS identities, and anomaly injections in one declarative document:
-
-```yaml
-name: "stellar-sentinel-constellation"
-baseSetup:
-  verifyingKey: 0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed
-  governance:
-    committeeSize: 4
-    slashPenaltyBps: 2000
-domains:
-  - id: deep-space-lab
-    budgetLimit: 5000000
-validators:
-  - ens: andromeda.club.agi.eth
-    address: 0x1111111111111111111111111111111111111111
-    stake: 12000000000000000000
-ownerActions:
-  updateSentinel:
-    budgetGraceRatio: 0.12
-  updateEntropy:
-    onChainEntropy: 0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
-```
-
-Running the scenario creates a dedicated report folder (`reports/scenarios/<name>/`) with the same proof, sentinel, and subgraph telemetry as the baseline demo. Non-technical operators simply edit the YAML and re-run the command to retune governance levers.
-
-No smart-contract tooling, solc, or blockchain node is required. Everything is simulated end-to-end with the same primitives we deploy on-chain.
-
-### Operator Control Tower Console
-
-Non-technical owners can now steer the constellation from a persistent control tower state without touching code:
-
-```bash
-npm run demo:validator-constellation:operator-console -- status --mermaid
-```
-
-Key capabilities:
-
-* `init` – bootstrap or reset the control tower state with a pre-bonded validator set.
-* `set-governance`, `set-sentinel`, `set-domain` – live-edit quorum thresholds, penalty weights, guardrails, and unsafe opcode policies.
-* `bond-validator`, `register-agent`, `register-node` – onboard new participants with ENS-backed ownership checks.
-* `pause-domain` / `resume-domain` – trigger or lift emergency halts domain-by-domain within seconds.
-* `run-round` – execute a full validation round (with optional anomalies) and emit a full report deck under `reports/operator-console/`.
-
-Every command persists updates to `demo/Validator-Constellation-v0/reports/operator-console/operator-state.json`, making the control plane fully declarative and restartable. Each run prints a contextual summary and a live Mermaid blueprint:
+## 🧭 System overview
 
 ```mermaid
 flowchart TD
-  owner["🛡️ Owner Console"] --> governance["Governance
-committeeSize: 4
-quorum: 75%"]
-  owner --> sentinel["Sentinel
-Grace 5%"]; owner --> nodes["Domain Nodes"]
-  subgraph validators["Validators"]
-    val_andromeda["andromeda.club.agi.eth
-10 ETH
-ACTIVE"]
-    val_orion["orion.club.agi.eth
-10 ETH
-ACTIVE"]
-  end
-  governance --> validators
-  subgraph domain_deep_space_lab["Deep Space Research Lab
-Budget 5,000,000
-Paused: NO"]
-    agent_nova["nova.agent.agi.eth
-Budget 1,000,000"]
-  end
-  subgraph domain_lunar_foundry["Lunar Foundry
-Budget 2,000,000
-Paused: NO"]
-    agent_sentinel["sentinel.agent.agi.eth
-Budget 750,000"]
-  end
-  subgraph nodes["Domain Nodes"]
-    node_polaris["polaris.node.agi.eth"]
-    node_selene["selene.alpha.node.agi.eth"]
-  end
-  validators --> sentinel
-  sentinel --> domain_deep_space_lab
-  sentinel --> domain_lunar_foundry
+    subgraph User[Non-Technical Operator]
+        Console[Operator Console]
+        RunDemo[One-click Demo]
+    end
+
+    subgraph Chain[Validator Constellation Contracts]
+        VCD[ValidatorConstellationDemo]
+        ZK[DemoZkAttestor]
+        SEN[SentinelGuardian]
+    end
+
+    subgraph OffChain[Off-Chain Intelligence]
+        Sentinel[Sentinel Monitor]
+        Merkle[ENS Merkle Builder]
+        Scripts[Scenario Runner]
+    end
+
+    User -->|runs| RunDemo
+    RunDemo --> Scripts
+    Scripts -->|deploys & orchestrates| Chain
+    Chain -->|events| Scripts
+    Scripts -->|slash/alerts| Sentinel
+    Sentinel -->|budget anomaly| SEN
+    SEN -->|domain pause| VCD
+    VCD -->|committee selection| Validators[(ENS Validators)]
+    VCD -->|batch proof| ZK
+    ZK -->|truthful verdict| VCD
 ```
 
-The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrails automatically—operators simply choose the right command and AGI Jobs v0 (v2) performs the rest.
+## 📁 Directory layout
 
-## What the demo executes
+- `contracts/` – Solidity contracts with commit–reveal, attestor interface and sentinel circuit breaker.
+- `scripts/` – Operator-friendly automation, including `runDemo.ts`, `runScenario.ts` and an interactive console.
+- `src/` – TypeScript helpers (ENS trees, sentinel monitors) exposing the same primitives you will run in production.
+- `tests/` – Ultra-high fidelity integration test executed via `npm run test:validator-constellation`.
+- `subgraph/` – Schema + manifest for indexing validator slashing, round lifecycle and sentinel alerts.
+- `docs/` – (Reserved) drop-in space for future whitepapers or diagrams.
 
-1. **Identity attestation** – builds an ENS Merkle tree, verifies the owner of every validator/agent subdomain, and bans imposters.
-2. **Node orchestration** – onboards production (`*.node.agi.eth`) and alpha (`*.alpha.node.agi.eth`) controllers with the same Merkle proof flow, ensuring operations teams have verifiable infrastructure custodians.
-3. **Stake orchestration** – bonds five validators with configurable stakes and records them in the Stake Manager.
-4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
-5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
-6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
-7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-8. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
-9. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+## 🚀 Quickstart (non-technical friendly)
 
-## Governance levers
-
-Operators can change any governance knob without code:
-
-```ts
-import { ValidatorConstellationDemo } from './src/core/constellation';
-
-const demo = new ValidatorConstellationDemo(setup);
-demo.updateGovernanceParameter('slashPenaltyBps', 2_500);
-demo.updateSentinelConfig({ budgetGraceRatio: 0.12 });
-demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
-demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
-demo.resumeDomain('deep-space-lab');
-demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
-demo.updateEntropySources({
-  onChainEntropy: '0x0123...abcd',
-  recentBeacon: '0x9999...ffff',
-});
-demo.updateZkVerifyingKey('0xf1f2f3...0011');
-demo.getEntropySources();
-demo.registerNode('polaris.node.agi.eth', '0xcccccccccccccccccccccccccccccccccccccccc');
-demo.registerNode('selene.alpha.node.agi.eth', '0xdddddddddddddddddddddddddddddddddddddddd');
+```bash
+npm install
+npm run demo:validator-constellation
 ```
 
-All modules respond instantly (new committee sizes, quorum thresholds, penalty weights, etc.).
+The script will:
 
-## Sentinel SLA
+1. Build ENS Merkle trees for both mainnet (`*.club.agi.eth`) and alpha domains.
+2. Deploy the contracts locally with Hardhat.
+3. Register validators and agents only when their ENS proofs succeed.
+4. Run a commit–reveal round with deterministic VRF selection.
+5. Submit a ZK proof finalising 1,000 jobs at once.
+6. Trigger an automated sentinel anomaly → pause the affected domain → resume once acknowledged.
+7. Emit structured telemetry, saved under `demo/Validator-Constellation-v0/reports/`.
+
+## 🛡️ Sentinel guardrails
 
 ```mermaid
 sequenceDiagram
-  participant Agent as Agent Nova
-  participant Sentinel as Sentinel Monitor
-  participant Domain as Domain Pause Controller
-  Agent->>Sentinel: Attempt 1.8M spend (budget 1.0M)
-  Sentinel->>Domain: pause("deep-space-lab")
-  Domain-->>Sentinel: Halt confirmed (timestamped)
-  Sentinel->>Agent: Alert CRITICAL (BUDGET_OVERRUN)
+    participant Agent
+    participant Sentinel
+    participant Guardian
+    participant Constellation
+    Agent->>Sentinel: Budget overspend detected
+    Sentinel->>Guardian: raiseAlert(domain, reason, severity)
+    Guardian->>Constellation: sentinelPause(domain,...)
+    Constellation-->>Guardian: emits DomainPaused
+    Guardian-->>Operator: notify + domain locked
 ```
 
-The Sentinel guarantee: any overspend or forbidden opcode pauses the domain within the same execution round, with fully logged context for operators and auditors.
+- The owner can resume a domain instantly with `resumeDomain`.
+- Alerts are fully logged and indexable by the provided subgraph manifest.
 
-## Files of interest
+## 🔑 ENS identity enforcement
 
-| Path | Description |
-| --- | --- |
-| `src/core/constellation.ts` | High-level orchestrator gluing governance, stake, sentinel, VRF, and ZK modules. |
-| `src/core/commitReveal.ts` | Deterministic commit–reveal coordinator enforcing quorum and penalties. |
-| `src/core/zk.ts` | Zero-knowledge batch prover/validator for job attestation throughput. |
-| `src/core/sentinel.ts` | Budget/unsafe call monitors issuing automatic domain pauses. |
-| `scripts/runDemo.ts` | One-command launcher that generates artifacts and dashboard. |
-| `tests/validator_constellation.test.ts` | Deterministic end-to-end tests proving every acceptance criterion. |
+- Validators must own `*.club.agi.eth` or `*.alpha.club.agi.eth` (treated equally for testnets).
+- Agents must own `*.agent.agi.eth` or `*.alpha.agent.agi.eth`.
+- Registration requires a Merkle proof linking the caller address to the ENS node hash.
+- Identity roots are owner-rotatable via `setEnsRoots`, keeping full control with the platform operator.
 
-## Output artifacts
+## ⚙️ Owner control panel
 
-After `npm run demo:validator-constellation`, inspect:
+The contract owner can:
 
-* `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams.
-* `reports/latest/summary.json` – committee, VRF seed, proof, alert, and pause telemetry.
-* `reports/latest/events.ndjson` – commit and reveal stream for auditors.
-* `reports/latest/subgraph.json` – indexed events mirroring on-chain transparency feeds.
+- `setAttestor` – rotate to a new ZK verifier
+- `setSentinel` – plug in upgraded sentinel guardians
+- `setEnsRoots` – update identity registries atomically
+- `setCommitRevealWindows` – tune block-level timing windows
+- `pause` / `unpause` – fail-safe entire constellation
+- `resumeDomain` – reopen paused domains after incident triage
 
-## Extending the constellation
+## 📊 Subgraph manifest
 
-* Add additional ENS leaves to onboard validators or agents; the Merkle builder keeps proofs consistent.
-* Adjust `sentinelGraceRatio` to tighten/relax budgets or plug in new rules (unsafe opcode catalogues, geo-fenced calls, etc.).
-* Swap in real VRF randomness (Chainlink, drand, beacon chain) without touching the committee logic.
-* Replace the simulated ZK prover with Groth16/PLONK circuits – the interface is ready for drop-in SNARK backends.
+`subgraph/subgraph.yaml` indexes:
 
-## Trust guarantees checklist
+- `RoundStarted`
+- `VoteCommitted`
+- `VoteRevealed`
+- `RoundFinalised`
+- `ValidatorSlashed`
+- `DomainPaused` / `DomainResumed`
+- `SentinelAlert`
 
-- ✅ Slashing events mirror into the subgraph feed for real-time dashboards.
-- ✅ Committee randomness is entropy-mixed and replay-protected.
-- ✅ Only ENS-verified actors (both production and alpha namespaces) can participate.
-- ✅ Domain-scoped pause ensures other environments stay online.
-- ✅ Governance can pause, resume, or retune parameters instantly.
-- ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
-- ✅ Owners rotate VRF entropy and ZK verifying keys on demand without touching code.
+This yields real-time dashboards showing validator behaviour, penalties, and domain status.
 
-Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.
+## 🧪 Testing & CI
+
+Run the dedicated integration test:
+
+```bash
+npm run test:validator-constellation
+```
+
+All assets are prepared for inclusion in the global CI pipeline. The script compiles contracts, executes the full scenario, validates slashing, and ensures sentinel pausing works within a single run.
+
+## 📘 Further reading
+
+- `scripts/operatorConsole.ts` – Interactive CLI for mission control.
+- `scripts/runDemo.ts` – One-command automation for non-technical operators.
+- `subgraph/schema.graphql` – Entities for analytics + transparency dashboards.
+
+Happy validating! 🛰️

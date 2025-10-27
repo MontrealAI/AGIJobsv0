@@ -1,0 +1,46 @@
+type RoundStarted @entity {
+  id: ID!
+  roundId: BigInt!
+  domainId: Bytes!
+  jobsRoot: Bytes!
+  jobCount: BigInt!
+  entropy: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type RoundFinalised @entity {
+  id: ID!
+  roundId: BigInt!
+  finalOutcome: Int!
+  approvals: BigInt!
+  rejections: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type ValidatorSlashed @entity {
+  id: ID!
+  validator: Bytes!
+  penalty: BigInt!
+  reason: String!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type DomainStatus @entity {
+  id: ID!
+  paused: Boolean!
+  reason: String!
+  pauseTimestamp: BigInt!
+}
+
+type SentinelAlert @entity {
+  id: ID!
+  domainId: Bytes!
+  reason: String!
+  severity: Int!
+  reporter: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}

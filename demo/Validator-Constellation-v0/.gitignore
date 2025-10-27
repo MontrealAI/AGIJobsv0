@@ -1,2 +1,4 @@
-reports/latest/
-dist/
+artifacts/
+cache/
+reports/scenario-*.json
+typechain-types/
