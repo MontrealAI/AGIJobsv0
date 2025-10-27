@@ -6,6 +6,7 @@ import {
   CommitMessage,
   GovernanceParameters,
   RevealMessage,
+  RoundTimeline,
   ValidatorIdentity,
   VoteValue,
 } from './types';
@@ -17,6 +18,8 @@ export interface RoundState {
   reveals: Map<string, RevealMessage>;
   phase: 'COMMIT' | 'REVEAL' | 'FINALIZED';
   startedAt: number;
+  startedAtBlock: number;
+  timeline: RoundTimeline;
 }
 
 export function computeCommitment(vote: VoteValue, salt: string): string {
@@ -28,12 +31,19 @@ export class CommitRevealCoordinator {
 
   constructor(private readonly governance: GovernanceModule, private readonly stakes: StakeManager) {}
 
-  openRound(round: number, committee: ValidatorIdentity[]): RoundState {
+  openRound(
+    round: number,
+    committee: ValidatorIdentity[],
+    timeline: Pick<RoundTimeline, 'commitStartBlock' | 'commitDeadlineBlock'>,
+  ): RoundState {
     if (this.rounds.has(round)) {
       throw new Error(`round already opened: ${round}`);
     }
     if (committee.length === 0) {
       throw new Error('committee must not be empty');
+    }
+    if (timeline.commitDeadlineBlock < timeline.commitStartBlock) {
+      throw new Error('commit deadline must be greater than or equal to start block');
     }
     const map = new Map<string, ValidatorIdentity>();
     for (const validator of committee) {
@@ -46,6 +56,11 @@ export class CommitRevealCoordinator {
       reveals: new Map(),
       phase: 'COMMIT',
       startedAt: Date.now(),
+      startedAtBlock: timeline.commitStartBlock,
+      timeline: {
+        commitStartBlock: timeline.commitStartBlock,
+        commitDeadlineBlock: timeline.commitDeadlineBlock,
+      },
     };
     this.rounds.set(round, state);
     return state;
@@ -59,18 +74,32 @@ export class CommitRevealCoordinator {
     return state;
   }
 
-  beginRevealPhase(round: number): void {
+  beginRevealPhase(round: number, currentBlock: number, revealDeadlineBlock: number): void {
     const state = this.getRound(round);
     if (state.phase !== 'COMMIT') {
       throw new Error('cannot begin reveal phase from current state');
     }
+    if (currentBlock < state.timeline.commitDeadlineBlock) {
+      throw new Error('commit window still open; cannot begin reveal phase');
+    }
+    if (revealDeadlineBlock < currentBlock) {
+      throw new Error('reveal deadline must be at or after reveal start block');
+    }
     state.phase = 'REVEAL';
+    state.timeline.revealStartBlock = currentBlock;
+    state.timeline.revealDeadlineBlock = revealDeadlineBlock;
   }
 
   submitCommit(round: number, commitment: CommitMessage): void {
     const state = this.getRound(round);
     if (state.phase !== 'COMMIT') {
       throw new Error('round is not accepting commits');
+    }
+    if (commitment.submittedAtBlock < state.timeline.commitStartBlock) {
+      throw new Error('commit submitted before commit window opened');
+    }
+    if (commitment.submittedAtBlock > state.timeline.commitDeadlineBlock) {
+      throw new Error('commit window closed for this round');
     }
     if (!state.committee.has(commitment.validator.address)) {
       throw new Error('validator not part of committee');
@@ -83,6 +112,15 @@ export class CommitRevealCoordinator {
     const state = this.getRound(round);
     if (state.phase !== 'REVEAL') {
       throw new Error('round is not accepting reveals');
+    }
+    if (!state.timeline.revealStartBlock || !state.timeline.revealDeadlineBlock) {
+      throw new Error('reveal window not configured for round');
+    }
+    if (reveal.submittedAtBlock < state.timeline.revealStartBlock) {
+      throw new Error('reveal submitted before reveal window opened');
+    }
+    if (reveal.submittedAtBlock > state.timeline.revealDeadlineBlock) {
+      throw new Error('reveal window closed for this round');
     }
     if (!state.committee.has(reveal.validator.address)) {
       throw new Error('validator not part of committee');
@@ -99,14 +137,24 @@ export class CommitRevealCoordinator {
     eventBus.emit('RevealLogged', reveal);
   }
 
-  finalize(round: number, truthfulVote: VoteValue): {
+  finalize(round: number, truthfulVote: VoteValue, finalizingBlock: number): {
     outcome: VoteValue;
     governance: GovernanceParameters;
     slashed: string[];
+    timeline: RoundTimeline;
   } {
     const state = this.getRound(round);
     if (state.phase !== 'REVEAL') {
       throw new Error('round must be in reveal phase before finalize');
+    }
+    if (!state.timeline.revealStartBlock || !state.timeline.revealDeadlineBlock) {
+      throw new Error('reveal window not configured for round');
+    }
+    if (finalizingBlock < state.timeline.revealStartBlock) {
+      throw new Error('cannot finalize before reveal window opens');
+    }
+    if (finalizingBlock > state.timeline.revealDeadlineBlock) {
+      throw new Error('cannot finalize after reveal window closed');
     }
     const governance = this.governance.getParameters();
     const reveals = Array.from(state.reveals.values());
@@ -135,6 +183,7 @@ export class CommitRevealCoordinator {
       outcome,
       governance,
       slashed,
+      timeline: { ...state.timeline },
     };
   }
 }

@@ -33,6 +33,7 @@ flowchart LR
 * **Sentinel guardrails** – budget overruns or unsafe calls trigger autonomous domain pauses within the same round.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
+* **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
 
 ## Quickstart for non-technical operators
 

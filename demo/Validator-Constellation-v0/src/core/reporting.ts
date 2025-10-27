@@ -83,6 +83,12 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
   const sentinelDiagram = buildSentinelDiagram(result.domainId);
   const scenarioTitle = context.scenarioName ?? 'Validator Constellation Guardian Deck';
   const ownerNotes = context.ownerNotes && Object.keys(context.ownerNotes).length > 0 ? context.ownerNotes : undefined;
+  const timeline = {
+    commitStartBlock: result.timeline.commitStartBlock,
+    commitDeadlineBlock: result.timeline.commitDeadlineBlock,
+    revealStartBlock: result.timeline.revealStartBlock,
+    revealDeadlineBlock: result.timeline.revealDeadlineBlock,
+  };
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -152,6 +158,10 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         )}</pre>
       </section>
       <section>
+        <h2>Round Timeline</h2>
+        <pre>${JSON.stringify(timeline, null, 2)}</pre>
+      </section>
+      <section>
         <h2>Job Sample</h2>
         <pre>${JSON.stringify(jobSample, null, 2)}</pre>
       </section>
@@ -198,6 +208,7 @@ export function writeReportArtifacts(input: ArtifactInput): void {
     proof: roundResult.proof,
     alerts: roundResult.sentinelAlerts,
     slashing: roundResult.slashingEvents,
+    timeline: roundResult.timeline,
     pauseRecords: roundResult.pauseRecords,
     governance: {
       parameters: context.governance,
