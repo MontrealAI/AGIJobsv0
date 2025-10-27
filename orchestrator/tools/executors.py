@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from ..agents import AgentRegistryError, get_registry
 from ..models import Attachment, Step
 from ..moderation import ModerationReport, evaluate_step
 from ..scoreboard import get_scoreboard
@@ -252,7 +253,19 @@ class StepExecutor:
         context = step.name or step.tool or step.id
         for attempt in range(1, self.retry.attempts + 1):
             try:
-                logs = self._attempt(step, attempt)
+                assignment_logs: List[str] = []
+                if agents:
+                    try:
+                        registry = get_registry()
+                        agents, assignment_logs = registry.prepare_step(step, agents)
+                    except AgentRegistryError as exc:
+                        errors.append(str(exc))
+                        failure_logs = assignment_logs + [
+                            f"Agent registry error: {exc}.",
+                            "Unable to dispatch step without an active agent.",
+                        ]
+                        return StepResult(False, failure_logs, attempt, time.time() - start)
+                logs = assignment_logs + self._attempt(step, attempt)
                 _SCOREBOARD.record_result(agents, success=True, context=context)
                 slash_detected, descriptor = _detect_slash(logs, step)
                 if slash_detected:

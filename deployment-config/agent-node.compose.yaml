@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  agent-node:
+    container_name: agi-agent-node
+    build:
+      context: ..
+      dockerfile: deploy/docker/agent-node.Dockerfile
+    environment:
+      AGENT_ID: agent-001
+      AGENT_REGION: us-east
+      AGENT_CAPABILITIES: execution,validation
+      AGENT_ROUTER: default
+      AGENT_REGISTRY_URL: http://meta-api:8000/agents
+      AGENT_REGISTRY_OWNER_TOKEN: super-secret-token
+      AGENT_HEARTBEAT_SECRET: replace-me
+    volumes:
+      - ./agent-data:/var/lib/agent
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
