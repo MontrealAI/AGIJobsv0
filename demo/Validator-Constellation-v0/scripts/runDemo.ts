@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { subgraphIndexer } from '../src/core/subgraph';
-import { AgentAction, VoteValue } from '../src/core/types';
+import { AgentAction, Hex, VoteValue } from '../src/core/types';
 import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
 
 function resolveDir(...segments: string[]): string {
@@ -22,12 +22,21 @@ function writeText(filePath: string, data: string) {
   fs.writeFileSync(filePath, data, 'utf8');
 }
 
-function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>) {
+function renderDashboard(
+  reportDir: string,
+  roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>,
+  context: {
+    verifyingKey: Hex;
+    entropyBefore: { onChainEntropy: Hex; recentBeacon: Hex };
+    entropyAfter: { onChainEntropy: Hex; recentBeacon: Hex };
+  },
+) {
   const nodeBranch =
     roundResult.nodes.length > 0
       ? `\n  control["Node Orchestrators\n${roundResult.nodes.map((node) => node.ensName).join('\n')}"] --> owner;`
       : '';
-  const mermaidCommittee = `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  committee["Validator Committee\n${roundResult.committee
+  const vrfLabel = roundResult.vrfSeed.length > 20 ? `${roundResult.vrfSeed.slice(0, 20)}…` : roundResult.vrfSeed;
+  const mermaidCommittee = `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  randomness["VRF Seed\n${vrfLabel}"] --> committee;\n  committee["Validator Committee\n${roundResult.committee
     .map((v) => v.ensName)
     .join('\n')}"] --> zk["ZK Batch Proof\n${roundResult.proof.proofId}"];\n  committee --> commits;\n  commits --> reveals;\n  reveals --> outcome["Final Outcome: ${roundResult.voteOutcome}"];${nodeBranch}`;
 
@@ -71,6 +80,8 @@ function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorCon
         <div class="metric">Validators slashed: <strong>${roundResult.slashingEvents.length}</strong></div>
         <div class="metric">Alerts triggered: <strong>${roundResult.sentinelAlerts.length}</strong></div>
         <div class="metric">Domain controllers online: <strong>${roundResult.nodes.length}</strong></div>
+        <div class="metric">VRF seed: <strong>${roundResult.vrfSeed}</strong></div>
+        <div class="metric">ZK verifying key: <strong>${context.verifyingKey}</strong></div>
         <pre>${JSON.stringify({
           jobRoot: roundResult.proof.jobRoot,
           witness: roundResult.proof.witnessCommitment,
@@ -80,6 +91,10 @@ function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorCon
       <section>
         <h2>Node Identities</h2>
         <pre>${JSON.stringify(roundResult.nodes, null, 2)}</pre>
+      </section>
+      <section>
+        <h2>Entropy Rotation</h2>
+        <pre>${JSON.stringify({ before: context.entropyBefore, after: context.entropyAfter }, null, 2)}</pre>
       </section>
       <section>
         <h2>Job Sample</h2>
@@ -96,6 +111,8 @@ function main() {
   const setup = demoSetup(leaves);
   const demo = new ValidatorConstellationDemo(setup);
 
+  const originalEntropy = demo.getEntropySources();
+
   const validatorAddresses = leaves.slice(0, 5);
   validatorAddresses.forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
 
@@ -104,6 +121,15 @@ function main() {
     throw new Error('agent leaf missing');
   }
   demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+
+  const rotatedVerifyingKey: Hex = '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011' as Hex;
+  demo.updateZkVerifyingKey(rotatedVerifyingKey);
+  const entropyRotation = demo.updateEntropySources({
+    onChainEntropy: '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' as Hex,
+    recentBeacon: '0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210' as Hex,
+  });
+  console.log('Entropy rotation applied.', { before: originalEntropy, after: entropyRotation });
+  console.log('ZK verifying key rotated.', { verifyingKey: rotatedVerifyingKey });
 
   const nodeLeaves = leaves.filter((leaf) => leaf.ensName.includes('.node.agi.eth'));
   const registeredNodes = nodeLeaves.map((leaf) => demo.registerNode(leaf.ensName, leaf.owner));
@@ -158,6 +184,7 @@ function main() {
     round: roundResult.round,
     outcome: roundResult.voteOutcome,
     committee: roundResult.committee.map((v) => ({ ens: v.ensName, stake: v.stake.toString() })),
+    vrfSeed: roundResult.vrfSeed,
     nodes: {
       registered: registeredNodes,
       active: roundResult.nodes,
@@ -169,6 +196,11 @@ function main() {
     governance: {
       parameters: demo.getGovernance(),
       sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
+      entropy: {
+        before: originalEntropy,
+        after: entropyRotation,
+      },
+      zkVerifyingKey: demo.getZkVerifyingKey(),
       maintenance: { pause: maintenancePause, resume: maintenanceResume },
       domainSafety: {
         ...domainState,
@@ -189,7 +221,11 @@ function main() {
   const events = [...roundResult.commits, ...roundResult.reveals].map((event) => JSON.stringify(event, JSON_REPLACER));
   writeText(path.join(reportDir, 'events.ndjson'), `${events.join('\n')}\n`);
 
-  renderDashboard(reportDir, roundResult);
+  renderDashboard(reportDir, roundResult, {
+    verifyingKey: demo.getZkVerifyingKey(),
+    entropyBefore: originalEntropy,
+    entropyAfter: entropyRotation,
+  });
 
   console.log('Validator Constellation demo executed successfully.');
   console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
