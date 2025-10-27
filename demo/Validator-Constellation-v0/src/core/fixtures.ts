@@ -1,6 +1,6 @@
 import { EnsLeaf } from './ens';
 import { DemoSetup } from './constellation';
-import { AgentAction, JobResult } from './types';
+import { AgentAction, Hex, JobResult } from './types';
 
 export function demoLeaves(): EnsLeaf[] {
   return [
@@ -41,7 +41,7 @@ export function demoSetup(leaves: EnsLeaf[]): DemoSetup {
       nonRevealPenaltyBps: 500,
     },
     ensLeaves: leaves,
-    verifyingKey: '0x4f8f0a1d4c0b5f6e9d1a2c3b4e5f60718293a4b5c6d7e8f90123456789abcde',
+    verifyingKey: '0x4f8f0a1d4c0b5f6e9d1a2c3b4e5f60718293a4b5c6d7e8f90123456789abcde' as Hex,
     onChainEntropy: '0x9f1c2e3d4b5a69788766554433221100ffeeddccbbaa99887766554433221100',
     recentBeacon: '0xabcdef0123456789fedcba98765432100123456789abcdef0123456789fedcba',
     sentinelGraceRatio: 0.05,

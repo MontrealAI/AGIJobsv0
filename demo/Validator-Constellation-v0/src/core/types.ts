@@ -129,6 +129,7 @@ export interface DemoOrchestrationReport {
   round: number;
   domainId: string;
   committee: ValidatorIdentity[];
+  vrfSeed: Hex;
   commits: CommitMessage[];
   reveals: RevealMessage[];
   voteOutcome: VoteValue;

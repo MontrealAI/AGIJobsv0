@@ -34,7 +34,7 @@ export interface DemoSetup {
   domains: DomainConfig[];
   governance: GovernanceParameters;
   ensLeaves: EnsLeaf[];
-  verifyingKey: string;
+  verifyingKey: Hex;
   onChainEntropy: Hex;
   recentBeacon: Hex;
   sentinelGraceRatio: number;
@@ -58,8 +58,10 @@ export class ValidatorConstellationDemo {
   private readonly nodes: NodeIdentity[] = [];
   private readonly domainIds: string[];
   private readonly leaves: EnsLeaf[];
+  private onChainEntropy: Hex;
+  private recentBeacon: Hex;
 
-  constructor(private readonly setup: DemoSetup) {
+  constructor(setup: DemoSetup) {
     this.leaves = setup.ensLeaves;
     const merkleRoot = buildMerkleRoot(this.leaves);
     this.ensAuthority = new EnsAuthority(merkleRoot);
@@ -77,6 +79,8 @@ export class ValidatorConstellationDemo {
     this.zk = new ZkBatchProver(setup.verifyingKey);
     this.commitReveal = new CommitRevealCoordinator(this.governance, this.stakes);
     this.domainIds = setup.domains.map((domain) => domain.id);
+    this.onChainEntropy = setup.onChainEntropy;
+    this.recentBeacon = setup.recentBeacon;
   }
 
   getGovernance(): GovernanceParameters {
@@ -189,6 +193,28 @@ export class ValidatorConstellationDemo {
     return this.sentinel.getBudgetGraceRatio();
   }
 
+  updateEntropySources(entropy: { onChainEntropy?: Hex; recentBeacon?: Hex }): { onChainEntropy: Hex; recentBeacon: Hex } {
+    if (entropy.onChainEntropy) {
+      this.onChainEntropy = entropy.onChainEntropy;
+    }
+    if (entropy.recentBeacon) {
+      this.recentBeacon = entropy.recentBeacon;
+    }
+    return this.getEntropySources();
+  }
+
+  getEntropySources(): { onChainEntropy: Hex; recentBeacon: Hex } {
+    return { onChainEntropy: this.onChainEntropy, recentBeacon: this.recentBeacon };
+  }
+
+  updateZkVerifyingKey(newKey: Hex): void {
+    this.zk.setVerifyingKey(newKey);
+  }
+
+  getZkVerifyingKey(): Hex {
+    return this.zk.getVerifyingKey();
+  }
+
   setAgentBudget(ensName: string, newBudget: bigint): AgentIdentity {
     const idx = this.agents.findIndex((candidate) => candidate.ensName === ensName);
     if (idx === -1) {
@@ -210,6 +236,7 @@ export class ValidatorConstellationDemo {
     committeeSignature: Hex;
     voteOverrides?: Record<string, VoteValue>;
     anomalies?: AgentAction[];
+    nonRevealValidators?: Hex[];
   }): DemoOrchestrationReport {
     const activeValidators = this.stakes.listActive();
     const selection = selectCommittee(
@@ -217,8 +244,8 @@ export class ValidatorConstellationDemo {
       params.jobBatch[0]?.domainId ?? this.domainIds[0],
       params.round,
       this.governance.getParameters(),
-      this.setup.onChainEntropy,
-      this.setup.recentBeacon,
+      this.onChainEntropy,
+      this.recentBeacon,
     );
 
     const slashingEvents: SlashingEvent[] = [];
@@ -250,7 +277,11 @@ export class ValidatorConstellationDemo {
       }
 
       this.commitReveal.beginRevealPhase(params.round);
+      const nonRevealSet = new Set(params.nonRevealValidators ?? []);
       for (const validator of selection.committee) {
+        if (nonRevealSet.has(validator.address)) {
+          continue;
+        }
         const plan = votePlan.get(validator.address)!;
         const reveal: RevealMessage = {
           validator,
@@ -278,6 +309,7 @@ export class ValidatorConstellationDemo {
         round: params.round,
         domainId: params.jobBatch[0]?.domainId ?? this.domainIds[0],
         committee: selection.committee,
+        vrfSeed: selection.seed,
         commits: commitMessages,
         reveals: revealMessages,
         voteOutcome: finalization.outcome,

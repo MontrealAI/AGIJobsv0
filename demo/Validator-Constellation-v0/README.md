@@ -66,7 +66,8 @@ No smart-contract tooling, solc, or blockchain node is required. Everything is s
 5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
 6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
 7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-8. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+8. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
+9. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
 
 ## Governance levers
 
@@ -82,6 +83,12 @@ demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEG
 demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
 demo.resumeDomain('deep-space-lab');
 demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
+demo.updateEntropySources({
+  onChainEntropy: '0x0123...abcd',
+  recentBeacon: '0x9999...ffff',
+});
+demo.updateZkVerifyingKey('0xf1f2f3...0011');
+demo.getEntropySources();
 demo.registerNode('polaris.node.agi.eth', '0xcccccccccccccccccccccccccccccccccccccccc');
 demo.registerNode('selene.alpha.node.agi.eth', '0xdddddddddddddddddddddddddddddddddddddddd');
 ```
@@ -119,7 +126,7 @@ The Sentinel guarantee: any overspend or forbidden opcode pauses the domain with
 After `npm run demo:validator-constellation`, inspect:
 
 * `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams.
-* `reports/latest/summary.json` – committee, proof, alert, and pause telemetry.
+* `reports/latest/summary.json` – committee, VRF seed, proof, alert, and pause telemetry.
 * `reports/latest/events.ndjson` – commit and reveal stream for auditors.
 * `reports/latest/subgraph.json` – indexed events mirroring on-chain transparency feeds.
 
@@ -138,5 +145,6 @@ After `npm run demo:validator-constellation`, inspect:
 - ✅ Domain-scoped pause ensures other environments stay online.
 - ✅ Governance can pause, resume, or retune parameters instantly.
 - ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
+- ✅ Owners rotate VRF entropy and ZK verifying keys on demand without touching code.
 
 Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.

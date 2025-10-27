@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { keccak256, toUtf8Bytes } from 'ethers';
 import { assertAgentDomain, assertValidatorDomain, EnsLeaf } from '../src/core/ens';
 import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
 import { subgraphIndexer } from '../src/core/subgraph';
-import { AgentAction, VoteValue } from '../src/core/types';
+import { selectCommittee } from '../src/core/vrf';
+import { computeJobRoot } from '../src/core/zk';
+import { AgentAction, Hex, VoteValue, ValidatorIdentity } from '../src/core/types';
 
 function buildDemo(): {
   demo: ValidatorConstellationDemo;
@@ -19,6 +22,8 @@ function buildDemo(): {
 function orchestrateRound(): {
   roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>;
   leaves: EnsLeaf[];
+  dishonest?: ValidatorIdentity;
+  absentee?: ValidatorIdentity;
 } {
   const { demo, leaves } = buildDemo();
   leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
@@ -27,20 +32,37 @@ function orchestrateRound(): {
     throw new Error('missing agent leaf');
   }
   demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
-  const jobBatch = demoJobBatch('deep-space-lab', 1000);
-  const voteOverrides: Record<string, VoteValue> = {
-    [leaves[1].owner]: 'REJECT',
-  };
+  const round = 1;
+  const domainId = 'deep-space-lab';
+  const entropy = demo.getEntropySources();
+  const committeeSelection = selectCommittee(
+    demo.listValidators(),
+    domainId,
+    round,
+    demo.getGovernance(),
+    entropy.onChainEntropy,
+    entropy.recentBeacon,
+  );
+  const dishonest = committeeSelection.committee[0];
+  const absentee = committeeSelection.committee[1];
+  const voteOverrides: Record<string, VoteValue> = dishonest
+    ? {
+        [dishonest.address]: 'REJECT',
+      }
+    : {};
+  const nonRevealValidators = absentee ? [absentee.address] : [];
+  const jobBatch = demoJobBatch(domainId, 1000);
   const anomalies = [budgetOverrunAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', 1_800_000n)];
   const roundResult = demo.runValidationRound({
-    round: 1,
+    round,
     truthfulVote: 'APPROVE',
     jobBatch,
     committeeSignature: '0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666',
     voteOverrides,
+    nonRevealValidators,
     anomalies,
   });
-  return { roundResult, leaves };
+  return { roundResult, leaves, dishonest, absentee };
 }
 
 test('ENS policies accept alpha mirrors and reject unauthorized domains', () => {
@@ -50,10 +72,16 @@ test('ENS policies accept alpha mirrors and reject unauthorized domains', () => 
 });
 
 test('validator constellation slashes dishonest validators via commit-reveal', () => {
-  const { roundResult, leaves } = orchestrateRound();
+  const { roundResult, dishonest, absentee } = orchestrateRound();
   const slashedAddresses = new Set(roundResult.slashingEvents.map((event) => event.validator.address));
-  assert.ok(slashedAddresses.has(leaves[1].owner), 'expected misbehaving validator to be slashed');
+  if (dishonest) {
+    assert.ok(slashedAddresses.has(dishonest.address), 'expected dishonest validator to be slashed');
+  }
+  if (absentee) {
+    assert.ok(slashedAddresses.has(absentee.address), 'expected absentee validator to be slashed');
+  }
   assert.equal(roundResult.proof.attestedJobCount, 1000);
+  assert.ok(roundResult.vrfSeed.startsWith('0x'), 'expected VRF seed in report');
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {
@@ -61,6 +89,56 @@ test('sentinel triggers domain pause on budget overrun', () => {
   assert.ok(roundResult.sentinelAlerts.length >= 1, 'expected sentinel alert');
   assert.ok(roundResult.pauseRecords.length >= 1, 'expected domain pause record');
   assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
+});
+
+test('governance can rotate entropy mix and ZK verifying key for ultimate owner control', () => {
+  const { demo, leaves } = buildDemo();
+  leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
+  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
+  if (!agentLeaf) {
+    throw new Error('missing agent leaf');
+  }
+  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+
+  const originalEntropy = demo.getEntropySources();
+  const rotatedKey: Hex = '0xabababababababababababababababababababababababababababababababababab' as Hex;
+  demo.updateZkVerifyingKey(rotatedKey);
+  const entropyUpdate = demo.updateEntropySources({
+    onChainEntropy: '0x111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000' as Hex,
+    recentBeacon: '0xffffeeeeccccaaaabbbb9999888877776666555544443333222211110000ffff' as Hex,
+  });
+
+  const jobBatch = demoJobBatch('deep-space-lab', 8);
+  const round = 11;
+  const committeeSignature: Hex = '0x1234123412341234123412341234123412341234123412341234123412341234' as Hex;
+  const result = demo.runValidationRound({
+    round,
+    truthfulVote: 'APPROVE',
+    jobBatch,
+    committeeSignature,
+  });
+
+  const jobRoot = computeJobRoot(jobBatch);
+  const expectedWitness = keccak256(toUtf8Bytes(`${jobRoot}:${rotatedKey}`));
+  assert.equal(result.proof.witnessCommitment, expectedWitness);
+  assert.equal(demo.getZkVerifyingKey(), rotatedKey);
+
+  const selection = selectCommittee(
+    demo.listValidators(),
+    'deep-space-lab',
+    round,
+    demo.getGovernance(),
+    entropyUpdate.onChainEntropy,
+    entropyUpdate.recentBeacon,
+  );
+
+  assert.equal(result.vrfSeed, selection.seed);
+  assert.deepEqual(
+    result.committee.map((member) => member.address),
+    selection.committee.map((member) => member.address),
+  );
+  assert.deepEqual(demo.getEntropySources(), entropyUpdate);
+  assert.notDeepEqual(entropyUpdate, originalEntropy);
 });
 
 test('node orchestration enforces ENS lineage and blacklist controls', () => {

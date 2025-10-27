@@ -31,7 +31,19 @@ export function computeJobRoot(jobs: JobResult[]): Hex {
 }
 
 export class ZkBatchProver {
-  constructor(private readonly verifyingKey: string) {}
+  private verifyingKey: Hex;
+
+  constructor(initialKey: Hex) {
+    this.verifyingKey = initialKey;
+  }
+
+  setVerifyingKey(newKey: Hex): void {
+    this.verifyingKey = newKey;
+  }
+
+  getVerifyingKey(): Hex {
+    return this.verifyingKey;
+  }
 
   prove(jobs: JobResult[], committeeSignature: string): ZkBatchProof {
     const jobRoot = computeJobRoot(jobs);
