@@ -1,0 +1,102 @@
+{
+  "owner": {
+    "name": "Planetary Fabric Owner",
+    "address": "0xF4BR1C0000000000000000000000000000000WN",
+    "multisig": "0xFABR1C00000000000000000000000000000000MS",
+    "pauseRole": "SystemPause",
+    "commandDeck": [
+      "owner:pause-all",
+      "owner:update-thermostat",
+      "owner:reroute-shard",
+      "owner:set-latency-budget"
+    ]
+  },
+  "shards": [
+    {
+      "id": "earth",
+      "displayName": "Earth Hypergrid",
+      "latencyBudgetMs": 120,
+      "spilloverTargets": ["luna", "mars"],
+      "maxQueue": 6000
+    },
+    {
+      "id": "luna",
+      "displayName": "Luna Relay",
+      "latencyBudgetMs": 180,
+      "spilloverTargets": ["earth"],
+      "maxQueue": 2400
+    },
+    {
+      "id": "mars",
+      "displayName": "Mars Foundry",
+      "latencyBudgetMs": 420,
+      "spilloverTargets": ["earth", "helios"],
+      "maxQueue": 4000
+    },
+    {
+      "id": "helios",
+      "displayName": "Helios GPU Helion",
+      "latencyBudgetMs": 850,
+      "spilloverTargets": ["mars"],
+      "maxQueue": 2200
+    }
+  ],
+  "nodes": [
+    {
+      "id": "earth.core-alpha",
+      "region": "earth",
+      "capacity": 24,
+      "specialties": ["general", "finance", "compliance"],
+      "heartbeatIntervalSec": 12,
+      "maxConcurrency": 24
+    },
+    {
+      "id": "earth.edge-europa",
+      "region": "earth",
+      "capacity": 16,
+      "specialties": ["logistics", "iot", "edge"],
+      "heartbeatIntervalSec": 18,
+      "maxConcurrency": 12
+    },
+    {
+      "id": "luna.nav-station",
+      "region": "luna",
+      "capacity": 12,
+      "specialties": ["navigation", "observation"],
+      "heartbeatIntervalSec": 18,
+      "maxConcurrency": 10
+    },
+    {
+      "id": "mars.regolith-cradle",
+      "region": "mars",
+      "capacity": 18,
+      "specialties": ["manufacturing", "terraforming"],
+      "heartbeatIntervalSec": 20,
+      "maxConcurrency": 14
+    },
+    {
+      "id": "mars.gpu-helion",
+      "region": "mars",
+      "capacity": 32,
+      "specialties": ["gpu", "vision", "simulation"],
+      "heartbeatIntervalSec": 10,
+      "maxConcurrency": 20
+    },
+    {
+      "id": "helios.solaris-array",
+      "region": "helios",
+      "capacity": 28,
+      "specialties": ["gpu", "astronomy"],
+      "heartbeatIntervalSec": 9,
+      "maxConcurrency": 18
+    }
+  ],
+  "checkpoint": {
+    "path": "demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoint.json",
+    "intervalTicks": 20
+  },
+  "reporting": {
+    "directory": "demo/Planetary-Orchestrator-Fabric-v0/reports",
+    "defaultLabel": "latest"
+  }
+}

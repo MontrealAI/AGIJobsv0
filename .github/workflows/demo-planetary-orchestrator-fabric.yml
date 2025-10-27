@@ -1,0 +1,110 @@
+name: demo-planetary-orchestrator-fabric
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Planetary-Orchestrator-Fabric-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-planetary-orchestrator-fabric.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/Planetary-Orchestrator-Fabric-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-planetary-orchestrator-fabric.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  planetary-orchestrator-fabric:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Type-check planetary orchestrator fabric
+        run: npm run lint:planetary-orchestrator-fabric
+
+      - name: Run planetary orchestrator fabric tests
+        run: npm run test:planetary-orchestrator-fabric
+
+      - name: Execute planetary orchestrator fabric demo (CI mode)
+        run: npm run demo:planetary-orchestrator-fabric:ci
+
+      - name: Validate planetary orchestrator artifacts
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const reportDir = path.join('demo', 'Planetary-Orchestrator-Fabric-v0', 'reports', 'ci-latest');
+          const summaryPath = path.join(reportDir, 'summary.json');
+          const eventsPath = path.join(reportDir, 'events.ndjson');
+          const dashboardPath = path.join(reportDir, 'dashboard.html');
+          const ownerScriptPath = path.join(reportDir, 'owner-script.json');
+          for (const file of [summaryPath, eventsPath, dashboardPath, ownerScriptPath]) {
+            if (!fs.existsSync(file)) {
+              throw new Error(`expected artifact missing: ${file}`);
+            }
+          }
+          const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+          if (!summary.metrics || summary.metrics.jobsCompleted === undefined) {
+            throw new Error('summary missing metrics');
+          }
+          if (!summary.shards || Object.keys(summary.shards).length === 0) {
+            throw new Error('summary missing shard snapshots');
+          }
+          if (!summary.nodes || Object.keys(summary.nodes).length === 0) {
+            throw new Error('summary missing node snapshots');
+          }
+          const drop = summary.metrics.jobsSubmitted - summary.metrics.jobsCompleted;
+          const dropRate = drop / summary.metrics.jobsSubmitted;
+          if (dropRate > 0.02) {
+            throw new Error(`drop rate too high: ${dropRate}`);
+          }
+          const eventsSize = fs.statSync(eventsPath).size;
+          if (eventsSize === 0) {
+            throw new Error('events stream empty');
+          }
+          const dashboardHtml = fs.readFileSync(dashboardPath, 'utf8');
+          ['Mission Metrics', 'Owner Command Payloads', 'class="mermaid"'].forEach((snippet) => {
+            if (!dashboardHtml.includes(snippet)) {
+              throw new Error(`dashboard missing snippet: ${snippet}`);
+            }
+          });
+          const ownerScripts = JSON.parse(fs.readFileSync(ownerScriptPath, 'utf8'));
+          if (!ownerScripts.pauseAll || !ownerScripts.rerouteMarsToHelios) {
+            throw new Error('owner script missing required payloads');
+          }
+          console.log('Planetary orchestrator fabric artifacts validated.');
+          NODE
