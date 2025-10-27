@@ -67,6 +67,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional JSONL file receiving continuous status snapshots",
     )
+    parser.add_argument(
+        "--energy-oracle",
+        type=Path,
+        help="Optional JSONL file receiving energy oracle telemetry",
+    )
+    parser.add_argument(
+        "--energy-oracle-interval",
+        type=float,
+        default=60.0,
+        help="Seconds between energy oracle telemetry updates",
+    )
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
 
@@ -81,7 +92,13 @@ async def _run_async(args: argparse.Namespace) -> None:
         if not args.config.exists():
             raise FileNotFoundError(f"Config file not found: {args.config}")
         data = json.loads(args.config.read_text(encoding="utf-8"))
-        for path_field in ("checkpoint_path", "control_channel_file", "audit_log_path", "status_output_path"):
+        for path_field in (
+            "checkpoint_path",
+            "control_channel_file",
+            "audit_log_path",
+            "status_output_path",
+            "energy_oracle_path",
+        ):
             if path_field in data and data[path_field] is not None:
                 data[path_field] = Path(data[path_field])
         if "governance" in data:
@@ -106,6 +123,8 @@ async def _run_async(args: argparse.Namespace) -> None:
         "simulation_compute_scale": args.simulation_compute_scale,
         "audit_log_path": args.audit_log,
         "status_output_path": args.status_output,
+        "energy_oracle_path": args.energy_oracle,
+        "energy_oracle_interval_seconds": args.energy_oracle_interval,
         "heartbeat_interval_seconds": args.heartbeat_interval,
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,

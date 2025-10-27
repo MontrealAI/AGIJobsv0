@@ -53,6 +53,7 @@ flowchart LR
    - The config file contains every knob (staking ratios, validator set, worker profiles, simulation scaling) – edit JSON values and rerun to update.
    - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
    - Append `--status-output logs/omega-status.jsonl` to stream machine-readable mission snapshots for dashboards or external automations.
+   - Add `--energy-oracle logs/omega-energy-oracle.jsonl` to emit a dedicated energy & compute oracle ledger for governance systems.
    - Tune `--heartbeat-interval`, `--heartbeat-timeout`, and `--health-check-interval` live to control agent health sensitivity without restarting.
    - Adjust `--integrity-interval` (or the JSON config) to change how often autonomous integrity sweeps run.
 
@@ -94,6 +95,13 @@ flowchart LR
 - Each message bus publication is canonicalised, hashed (BLAKE3 if available, BLAKE2b-256 otherwise), and written as JSONL with timestamp, topic, publisher, and digest.
 - The ledger is safe for hot-rotation; records are flushed immediately for non-technical operators tailing the file.
 - Pair with `--status-output` to obtain high-level mission snapshots (job counts, resource balances, governance settings) that external BI tools can ingest in real time.
+
+## ⚡ Energy Oracle Telemetry
+
+- Enable the energy oracle stream via `--energy-oracle logs/omega-energy-oracle.jsonl` (or set `"energy_oracle_path"` in JSON).
+- Records include energy & compute availability, dynamic scarcity pricing, token supply, and simulation-derived Dyson swarm output.
+- The oracle is append-only JSONL, making it trivial to mirror into IPFS, blockchains, or compliance archives without extra tooling.
+- Interval defaults to 60 seconds but can be tuned live with `--energy-oracle-interval` or the control channel to match governance cadence.
 
 ## 🩺 Agent Health Monitoring
 
