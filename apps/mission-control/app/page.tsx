@@ -10,6 +10,12 @@ export const metadata: Metadata = {
 
 const tiles = [
   {
+    title: 'Orchestration Mission Console',
+    description:
+      'Monitor shard thermals, broker marketplace nodes, and rehearse narrative-driven operations with live flow diagrams.',
+    href: '/orchestration-dashboard'
+  },
+  {
     title: 'Create Book Artifact',
     description: 'Author guided knowledge artifacts with LLM co-authors and Markdown preview.',
     href: '/create-book'
