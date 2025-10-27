@@ -1,0 +1,95 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade Upgrade v2 for α-AGI Business 3",
+  "checkpoint_interval_seconds": 40,
+  "integrity_check_interval_seconds": 45,
+  "insight_interval_seconds": 18,
+  "cycle_sleep_seconds": 0.2,
+  "max_cycles": null,
+  "resume_from_checkpoint": true,
+  "energy_capacity": 1500000.0,
+  "compute_capacity": 7500000.0,
+  "telemetry_interval_seconds": 20.0,
+  "resilience_interval_seconds": 30.0,
+  "resilience_retention_lines": 2048,
+  "mermaid_max_nodes": 60,
+  "forecast_horizon_hours": 24.0,
+  "worker_specs": {
+    "energy-architect": 1.4,
+    "supply-chain": 1.2,
+    "validator-ops": 1.0,
+    "planetary-logistics": 1.6,
+    "macro-research": 1.3
+  },
+  "strategist_names": [
+    "macro-strategist",
+    "cosmic-planner",
+    "risk-governor"
+  ],
+  "validator_names": [
+    "validator-1",
+    "validator-2",
+    "validator-3",
+    "validator-4"
+  ],
+  "governance": {
+    "worker_stake_ratio": 0.18,
+    "validator_stake": 220.0,
+    "approvals_required": 3,
+    "slash_ratio": 0.35,
+    "pause_enabled": true,
+    "validator_commit_window": 900.0,
+    "validator_reveal_window": 1200.0
+  },
+  "initial_jobs": [
+    {
+      "title": "Dyson Swarm Omega Reinforcement",
+      "description": "Expand the Dyson swarm spiral with autonomous construction cells.",
+      "required_skills": [
+        "energy-architect",
+        "planetary-logistics"
+      ],
+      "reward_tokens": 8500.0,
+      "deadline_hours": 24,
+      "validation_window_hours": 4,
+      "energy_budget": 100000.0,
+      "compute_budget": 220000.0,
+      "metadata": {
+        "employer": "operator",
+        "priority": "omega",
+        "category": "infrastructure"
+      }
+    },
+    {
+      "title": "Planetary Logistics Equilibrium",
+      "description": "Balance orbital, lunar, and asteroid nodes for just-in-time supply.",
+      "required_skills": [
+        "supply-chain"
+      ],
+      "reward_tokens": 5200.0,
+      "deadline_hours": 18,
+      "validation_window_hours": 3,
+      "energy_budget": 50000.0,
+      "compute_budget": 80000.0,
+      "metadata": {
+        "employer": "macro-strategist",
+        "category": "logistics"
+      }
+    },
+    {
+      "title": "Macro Risk Forecast Grid",
+      "description": "Spin up recursive agents to monitor macro volatility and validator health.",
+      "required_skills": [
+        "macro-research"
+      ],
+      "reward_tokens": 4600.0,
+      "deadline_hours": 12,
+      "validation_window_hours": 2,
+      "energy_budget": 32000.0,
+      "compute_budget": 62000.0,
+      "metadata": {
+        "employer": "risk-governor",
+        "category": "governance"
+      }
+    }
+  ]
+}
