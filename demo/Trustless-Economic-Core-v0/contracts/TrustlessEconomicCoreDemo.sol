@@ -312,9 +312,16 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
         Job storage job = jobs[jobId];
         if (!job.exists) revert UnknownJob();
         if (msg.sender != job.employer) revert JobNotActive();
-        if (job.completed) revert JobNotActive();
+        if (job.completed || job.cancelled) revert JobNotActive();
+
+        uint256 refund = _clearRemainingMilestones(jobId);
         job.cancelled = true;
-        token.safeTransfer(job.employer, _remainingBudget(jobId));
+        job.completed = true;
+
+        if (refund > 0) {
+            token.safeTransfer(job.employer, refund);
+        }
+
         _unlockStake(jobId);
         emit JobCancelled(jobId);
     }
@@ -430,6 +437,17 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < milestones.length; i++) {
             if (!milestones[i].released) {
                 remaining += milestones[i].amount;
+            }
+        }
+    }
+
+    function _clearRemainingMilestones(uint256 jobId) private returns (uint256 refund) {
+        Milestone[] storage milestones = _milestones[jobId];
+        for (uint256 i = 0; i < milestones.length; i++) {
+            Milestone storage milestone = milestones[i];
+            if (!milestone.released && milestone.amount > 0) {
+                refund += milestone.amount;
+                milestone.amount = 0;
             }
         }
     }
