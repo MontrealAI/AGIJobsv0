@@ -1,11 +1,25 @@
 export type ShardId = string;
 
+export interface SpilloverPolicy {
+  target: ShardId;
+  threshold: number;
+  maxDrainPerTick?: number;
+  requiredSkills?: string[];
+  weight?: number;
+}
+
+export interface RouterConfig {
+  queueAlertThreshold?: number;
+  spilloverPolicies?: SpilloverPolicy[];
+}
+
 export interface ShardConfig {
   id: ShardId;
   displayName: string;
   latencyBudgetMs: number;
   spilloverTargets: ShardId[];
   maxQueue: number;
+  router?: RouterConfig;
 }
 
 export interface NodeDefinition {
@@ -105,6 +119,8 @@ export interface CheckpointData {
     lastHeartbeatTick: number;
   }>;
   metrics: FabricMetrics;
+  events: FabricEvent[];
+  deterministicLog: DeterministicReplayFrame[];
 }
 
 export interface AssignmentResult {
@@ -121,6 +137,54 @@ export interface FabricMetrics {
   spillovers: number;
   reassignedAfterFailure: number;
   outageHandled: boolean;
+}
+
+export type RegistryEvent =
+  | { type: 'job.created'; shard: ShardId; job: JobState }
+  | { type: 'job.cancelled'; shard: ShardId; jobId: string }
+  | { type: 'job.requeued'; shard: ShardId; job: JobState; origin: string }
+  | { type: 'job.spillover'; shard: ShardId; job: JobState; from: ShardId }
+  | { type: 'job.assigned'; shard: ShardId; job: JobState; nodeId: string }
+  | { type: 'job.completed'; shard: ShardId; job: JobState }
+  | { type: 'job.failed'; shard: ShardId; job: JobState; reason: string }
+  | { type: 'node.heartbeat'; shard: ShardId; nodeId: string }
+  | { type: 'node.offline'; shard: ShardId; nodeId: string; reason: string };
+
+export interface HealthStatus {
+  level: 'ok' | 'degraded' | 'critical';
+  message: string;
+}
+
+export interface RouterHealthReport {
+  shardId: ShardId;
+  queueDepth: number;
+  inFlight: number;
+  completed: number;
+  failed: number;
+  status: HealthStatus;
+  lastSpilloverTick?: number;
+}
+
+export interface NodeHealthReport {
+  nodeId: string;
+  shardId: ShardId;
+  active: boolean;
+  runningJobs: number;
+  lastHeartbeatTick: number;
+  status: HealthStatus;
+}
+
+export interface FabricHealthReport {
+  tick: number;
+  fabric: HealthStatus;
+  shards: RouterHealthReport[];
+  nodes: NodeHealthReport[];
+  metrics: FabricMetrics;
+}
+
+export interface DeterministicReplayFrame {
+  tick: number;
+  events: RegistryEvent[];
 }
 
 export interface SimulationArtifacts {

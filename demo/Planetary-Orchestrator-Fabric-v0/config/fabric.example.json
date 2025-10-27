@@ -17,28 +17,54 @@
       "displayName": "Earth Hypergrid",
       "latencyBudgetMs": 120,
       "spilloverTargets": ["luna", "mars"],
-      "maxQueue": 6000
+      "maxQueue": 6000,
+      "router": {
+        "queueAlertThreshold": 4200,
+        "spilloverPolicies": [
+          { "target": "luna", "threshold": 4500, "maxDrainPerTick": 50 },
+          { "target": "mars", "threshold": 5000, "maxDrainPerTick": 75 }
+        ]
+      }
     },
     {
       "id": "luna",
       "displayName": "Luna Relay",
       "latencyBudgetMs": 180,
       "spilloverTargets": ["earth"],
-      "maxQueue": 2400
+      "maxQueue": 2400,
+      "router": {
+        "queueAlertThreshold": 1600,
+        "spilloverPolicies": [
+          { "target": "earth", "threshold": 1800, "maxDrainPerTick": 40 }
+        ]
+      }
     },
     {
       "id": "mars",
       "displayName": "Mars Foundry",
       "latencyBudgetMs": 420,
       "spilloverTargets": ["earth", "helios"],
-      "maxQueue": 4000
+      "maxQueue": 4000,
+      "router": {
+        "queueAlertThreshold": 3000,
+        "spilloverPolicies": [
+          { "target": "earth", "threshold": 3200, "maxDrainPerTick": 30, "requiredSkills": ["manufacturing"] },
+          { "target": "helios", "threshold": 3600, "maxDrainPerTick": 30, "requiredSkills": ["gpu", "vision"] }
+        ]
+      }
     },
     {
       "id": "helios",
       "displayName": "Helios GPU Helion",
       "latencyBudgetMs": 850,
       "spilloverTargets": ["mars"],
-      "maxQueue": 2200
+      "maxQueue": 2200,
+      "router": {
+        "queueAlertThreshold": 1600,
+        "spilloverPolicies": [
+          { "target": "mars", "threshold": 1800, "maxDrainPerTick": 20 }
+        ]
+      }
     }
   ],
   "nodes": [
