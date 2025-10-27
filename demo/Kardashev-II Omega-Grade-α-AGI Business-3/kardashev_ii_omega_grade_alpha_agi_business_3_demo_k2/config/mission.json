@@ -1,0 +1,113 @@
+{
+  "name": "Kardashev-II Omega-Grade Upgrade for α-AGI Business 3 (K2)",
+  "summary": "Operator-first planetary orchestrator showing AGI Jobs v0/v2 autonomy.",
+  "narrative": "A non-technical founder configures, launches, and governs a planetary AGI labor market with one file.",
+  "control_channel": "control-channel.jsonl",
+  "status_output": "status.jsonl",
+  "autopilot": {
+    "enabled": true,
+    "checkpoint_interval_seconds": 120,
+    "mission_hours": 24.0
+  },
+  "documentation": [
+    "docs/AGIJobsv0.md",
+    "https://agi.montreal.ai"
+  ],
+  "orchestrator": {
+    "mission_name": "K2 Omega Upgrade",
+    "checkpoint_path": "checkpoint.json",
+    "checkpoint_interval_seconds": 120,
+    "resume_from_checkpoint": true,
+    "enable_simulation": true,
+    "simulation_tick_seconds": 0.5,
+    "simulation_hours_per_tick": 0.5,
+    "simulation_energy_scale": 2.5,
+    "simulation_compute_scale": 1.5,
+    "operator_account": "founder",
+    "base_agent_tokens": 100000.0,
+    "energy_capacity": 5000000.0,
+    "compute_capacity": 8000000.0,
+    "validator_names": [
+      "validator-a",
+      "validator-b",
+      "validator-c",
+      "validator-d"
+    ],
+    "worker_specs": {
+      "dyson-architect": 1.4,
+      "supply-chain": 1.2,
+      "validator-ops": 1.0,
+      "planetary-rd": 1.6
+    },
+    "strategist_names": [
+      "macro-strategist",
+      "quantum-planner"
+    ],
+    "cycle_sleep_seconds": 0.2,
+    "max_cycles": null,
+    "insight_interval_seconds": 30,
+    "control_channel_file": "control-channel.jsonl",
+    "status_output_path": "status.jsonl",
+    "audit_log_path": "audit.jsonl",
+    "initial_jobs": [
+      {
+        "title": "Dyson Swarm Launch",
+        "description": "Design and deploy the first Dyson swarm ring",
+        "required_skills": [
+          "energy",
+          "orbital"
+        ],
+        "reward_tokens": 25000.0,
+        "deadline_hours": 12,
+        "validation_window_hours": 4,
+        "stake_required": 2500.0,
+        "energy_budget": 75000.0,
+        "compute_budget": 90000.0
+      },
+      {
+        "title": "Autonomous Logistics Mesh",
+        "description": "Spin up interplanetary supply channels",
+        "required_skills": [
+          "supply",
+          "logistics"
+        ],
+        "reward_tokens": 16000.0,
+        "deadline_hours": 18,
+        "validation_window_hours": 3,
+        "stake_required": 1600.0,
+        "energy_budget": 45000.0,
+        "compute_budget": 60000.0,
+        "parent_id": "Dyson Swarm Launch"
+      },
+      {
+        "title": "Planetary Validator Guild",
+        "description": "Recruit and activate validator cohort",
+        "required_skills": [
+          "governance",
+          "security"
+        ],
+        "reward_tokens": 10000.0,
+        "deadline_hours": 6,
+        "validation_window_hours": 2,
+        "stake_required": 1000.0,
+        "energy_budget": 15000.0,
+        "compute_budget": 25000.0
+      }
+    ],
+    "energy_oracle_path": "energy-telemetry.jsonl",
+    "energy_oracle_interval_seconds": 60.0,
+    "heartbeat_interval_seconds": 5.0,
+    "heartbeat_timeout_seconds": 30.0,
+    "health_check_interval_seconds": 5.0,
+    "integrity_check_interval_seconds": 30.0,
+    "governance": {
+      "worker_stake_ratio": 0.18,
+      "validator_stake": 150.0,
+      "validator_commit_window_seconds": 180,
+      "validator_reveal_window_seconds": 240,
+      "approvals_required": 3,
+      "pause_enabled": true,
+      "slash_ratio": 0.6
+    }
+  }
+}
