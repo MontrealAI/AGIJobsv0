@@ -31,6 +31,7 @@ flowchart LR
 * **Cryptographic truth** – deterministic VRF committee draws, salted commit–reveal voting, and automatic slashing mean hostile validators cannot game the outcome.
 * **Zero-knowledge throughput** – a single proof finalizes **1,000 jobs** at once while preserving privacy and auditability.
 * **Sentinel guardrails** – budget overruns or unsafe calls trigger autonomous domain pauses within the same round.
+* **Target allowlists** – per-domain call allowlists shut down exfiltration attempts before they land on unauthorized contracts.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
 * **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
@@ -157,9 +158,10 @@ The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrail
 4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
 5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
 6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
-7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-8. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
-9. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+7. **Target allowlist enforcement** – blocks any call to unauthorized contract addresses (`UNAUTHORIZED_TARGET`) and halts the offending domain instantly.
+8. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
+9. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
+10. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
 
 ## Governance levers
 
@@ -172,6 +174,7 @@ const demo = new ValidatorConstellationDemo(setup);
 demo.updateGovernanceParameter('slashPenaltyBps', 2_500);
 demo.updateSentinelConfig({ budgetGraceRatio: 0.12 });
 demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+demo.updateDomainSafety('deep-space-lab', { allowedTargets: ['0xmission-control-safe', '0xresearch-vault'] });
 demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
 demo.resumeDomain('deep-space-lab');
 demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
@@ -238,5 +241,6 @@ After `npm run demo:validator-constellation`, inspect:
 - ✅ Governance can pause, resume, or retune parameters instantly.
 - ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
 - ✅ Owners rotate VRF entropy and ZK verifying keys on demand without touching code.
+- ✅ Domain call allowlists block unauthorized targets with instant `UNAUTHORIZED_TARGET` sentinel brakes.
 
 Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.

@@ -32,6 +32,7 @@ function formatDomainState(state: DomainState): DomainState {
     config: {
       ...state.config,
       unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+      allowedTargets: new Set(state.config.allowedTargets),
     },
     pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
   };
@@ -41,6 +42,7 @@ function cloneDomainConfig(config: DomainConfig): DomainConfig {
   return {
     ...config,
     unsafeOpcodes: new Set(config.unsafeOpcodes),
+    allowedTargets: new Set(config.allowedTargets),
   };
 }
 
@@ -83,6 +85,7 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
   const sentinelDiagram = buildSentinelDiagram(result.domainId);
   const scenarioTitle = context.scenarioName ?? 'Validator Constellation Guardian Deck';
   const ownerNotes = context.ownerNotes && Object.keys(context.ownerNotes).length > 0 ? context.ownerNotes : undefined;
+  const allowedTargets = Array.from(context.primaryDomain.config.allowedTargets);
   const timeline = {
     commitStartBlock: result.timeline.commitStartBlock,
     commitDeadlineBlock: result.timeline.commitDeadlineBlock,
@@ -158,6 +161,18 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         )}</pre>
       </section>
       <section>
+        <h2>Domain Guardrails</h2>
+        <pre>${JSON.stringify(
+          {
+            domain: context.primaryDomain.config.id,
+            unsafeOpcodes: Array.from(context.primaryDomain.config.unsafeOpcodes),
+            allowedTargets,
+          },
+          null,
+          2,
+        )}</pre>
+      </section>
+      <section>
         <h2>Round Timeline</h2>
         <pre>${JSON.stringify(timeline, null, 2)}</pre>
       </section>
@@ -224,12 +239,14 @@ export function writeReportArtifacts(input: ArtifactInput): void {
         config: {
           ...formattedDomain.config,
           unsafeOpcodes: Array.from(formattedDomain.config.unsafeOpcodes),
+          allowedTargets: Array.from(formattedDomain.config.allowedTargets),
         },
       },
       updatedSafety: updatedSafety
         ? {
             ...updatedSafety,
             unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
+            allowedTargets: Array.from(updatedSafety.allowedTargets),
           }
         : undefined,
     },

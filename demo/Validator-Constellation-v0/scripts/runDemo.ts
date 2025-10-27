@@ -2,7 +2,7 @@ import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { AgentAction, Hex, VoteValue } from '../src/core/types';
-import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
+import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction, unauthorizedTargetAction } from '../src/core/fixtures';
 import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
 import path from 'path';
 
@@ -39,6 +39,7 @@ function main() {
   const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
   const updatedSafety = demo.updateDomainSafety('deep-space-lab', {
     unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL', 'STATICCALL']),
+    allowedTargets: new Set(['0xmission-control-safe', '0xresearch-vault']),
   });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
   const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
@@ -85,6 +86,13 @@ function main() {
       description: 'Overspend attempt detected by sentinel',
       metadata: { invoice: 'INV-7788' },
     },
+    unauthorizedTargetAction(
+      agentLeaf.ensName,
+      agentLeaf.owner as `0x${string}`,
+      'deep-space-lab',
+      '0xrogue-lab-exfil',
+      agentIdentity.budget,
+    ),
   ];
 
   const roundResult = demo.runValidationRound({

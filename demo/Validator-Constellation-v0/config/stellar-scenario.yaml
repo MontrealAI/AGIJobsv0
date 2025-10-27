@@ -18,12 +18,17 @@ domains:
     unsafeOpcodes:
       - SELFDESTRUCT
       - DELEGATECALL
+    allowedTargets:
+      - 0xmission-control-safe
+      - 0xresearch-vault
   - id: orbital-yard
     humanName: "Orbital Manufacturing Yard"
     budgetLimit: 3000000
     unsafeOpcodes:
       - SELFDESTRUCT
       - STATICCALL
+    allowedTargets:
+      - 0xorbital-factory-safe
 validators:
   - ens: andromeda.club.agi.eth
     address: "0x1111111111111111111111111111111111111111"
@@ -74,6 +79,7 @@ anomalies:
     agentEns: sentinel.agent.agi.eth
     opcode: STATICCALL
     description: "Sentinel attempted a disallowed static call"
+    target: 0xrogue-orbital-process
 ownerActions:
   updateSentinel:
     budgetGraceRatio: 0.12
@@ -84,6 +90,10 @@ ownerActions:
         - DELEGATECALL
         - STATICCALL
         - CALLCODE
+      allowedTargets:
+        - 0xmission-control-safe
+        - 0xresearch-vault
+        - 0xdeepspace-audit-safe
   pauseDomains:
     - domainId: orbital-yard
       reason: "pre-flight drill"

@@ -7,7 +7,14 @@ import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { CommitRevealCoordinator, computeCommitment } from '../src/core/commitReveal';
 import { GovernanceModule } from '../src/core/governance';
 import { StakeManager } from '../src/core/stakeManager';
-import { DEFAULT_GOVERNANCE_PARAMETERS, demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
+import {
+  DEFAULT_GOVERNANCE_PARAMETERS,
+  demoLeaves,
+  demoSetup,
+  demoJobBatch,
+  budgetOverrunAction,
+  unauthorizedTargetAction,
+} from '../src/core/fixtures';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
@@ -126,7 +133,10 @@ function orchestrateRound(): {
     : {};
   const nonRevealValidators = absentee ? [absentee.address] : [];
   const jobBatch = demoJobBatch(domainId, 1000);
-  const anomalies = [budgetOverrunAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', 1_800_000n)];
+  const anomalies = [
+    budgetOverrunAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', 1_800_000n),
+    unauthorizedTargetAction(agentLeaf.ensName, agentLeaf.owner as `0x${string}`, 'deep-space-lab', '0xrogue-lab-exfil'),
+  ];
   const roundResult = demo.runValidationRound({
     round,
     truthfulVote: 'APPROVE',
@@ -268,7 +278,10 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   assert.equal(demo.getDomainState('deep-space-lab').paused, true);
   demo.resumeDomain('deep-space-lab');
   assert.equal(demo.getDomainState('deep-space-lab').paused, false);
-  demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+  demo.updateDomainSafety('deep-space-lab', {
+    unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'],
+    allowedTargets: ['0xmission-control-safe', '0xresearch-vault'],
+  });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.2 });
   const controlledAgent = demo.setAgentBudget(agentLeaf.ensName, 2_000_000n);
   assert.equal(demo.getSentinelBudgetGraceRatio(), 0.2);
@@ -286,6 +299,20 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
       opcode: 'STATICCALL',
       description: 'runtime policy breach',
     },
+    unauthorizedTargetAction(
+      controlledAgent.ensName,
+      controlledAgent.address,
+      'deep-space-lab',
+      '0xrogue-lab-exfil',
+      controlledAgent.budget,
+    ),
+    unauthorizedTargetAction(
+      controlledAgent.ensName,
+      controlledAgent.address,
+      'deep-space-lab',
+      '0xmission-control-safe',
+      controlledAgent.budget,
+    ),
   ];
 
   const result = demo.runValidationRound({
@@ -298,6 +325,7 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
 
   const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
+  assert.ok(rules.has('UNAUTHORIZED_TARGET'), 'expected unauthorized target alert when target not in allowlist');
   assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
 });
 
@@ -311,6 +339,10 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.ok(executed.report.sentinelAlerts.length >= 1, 'scenario should emit sentinel alerts');
   assert.ok(executed.report.slashingEvents.length >= 1, 'scenario should trigger slashing telemetry');
   assert.equal(executed.context.primaryDomain.config.id, 'deep-space-lab');
+  assert.ok(
+    executed.context.primaryDomain.config.allowedTargets.has('0xmission-control-safe'),
+    'primary domain should carry allowed target guardrail',
+  );
   assert.equal(executed.context.sentinelGraceRatio, 0.12);
   assert.equal(executed.context.nodesRegistered.length, 2);
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');

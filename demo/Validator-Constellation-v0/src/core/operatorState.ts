@@ -46,6 +46,7 @@ export interface OperatorDomain {
   humanName: string;
   budgetLimit: string;
   unsafeOpcodes: string[];
+  allowedTargets: string[];
   paused: boolean;
   pauseReason?: OperatorDomainPause;
 }
@@ -70,6 +71,7 @@ function cloneSetupFromState(state: OperatorState): DemoSetup {
     humanName: domain.humanName,
     budgetLimit: BigInt(domain.budgetLimit),
     unsafeOpcodes: new Set(domain.unsafeOpcodes),
+    allowedTargets: new Set(domain.allowedTargets ?? []),
   }));
   return {
     domains,
@@ -150,6 +152,7 @@ export function createInitialOperatorState(): OperatorState {
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit.toString(),
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
+    allowedTargets: Array.from(domain.allowedTargets),
     paused: false,
   }));
   return {
@@ -189,6 +192,7 @@ export function loadOperatorState(filePath: string): OperatorState {
     domains: parsed.domains.map((domain) => ({
       ...domain,
       unsafeOpcodes: [...domain.unsafeOpcodes],
+      allowedTargets: [...(domain.allowedTargets ?? [])],
       pauseReason: domain.pauseReason ? { ...domain.pauseReason } : undefined,
     })),
   };
@@ -273,6 +277,7 @@ function updateDomainsFromDemo(state: OperatorState, demo: ValidatorConstellatio
       humanName: snapshot.config.humanName,
       budgetLimit: snapshot.config.budgetLimit.toString(),
       unsafeOpcodes: Array.from(snapshot.config.unsafeOpcodes),
+      allowedTargets: Array.from(snapshot.config.allowedTargets),
       paused: snapshot.paused,
       pauseReason: snapshot.pauseReason
         ? {
@@ -342,7 +347,11 @@ export function generateOperatorMermaid(state: OperatorState): string {
   const domainBlocks = state.domains
     .map((domain) => {
       const domainId = sanitizeMermaidId(`domain_${domain.id}`);
-      const header = `${domain.humanName}\\nBudget ${formatAgentBudget(domain.budgetLimit)}\\nPaused: ${domain.paused ? 'YES' : 'NO'}`;
+      const guardrails =
+        domain.allowedTargets.length > 0
+          ? `\\nAllowed: ${domain.allowedTargets.join(', ')}`
+          : '';
+      const header = `${domain.humanName}\\nBudget ${formatAgentBudget(domain.budgetLimit)}\\nPaused: ${domain.paused ? 'YES' : 'NO'}${guardrails}`;
       const agents = state.agents
         .filter((agent) => agent.domainId === domain.id)
         .map((agent) => {
@@ -375,6 +384,7 @@ export function resetDomainsToDefault(state: OperatorState): void {
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit.toString(),
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
+    allowedTargets: Array.from(domain.allowedTargets),
     paused: false,
   }));
 }
