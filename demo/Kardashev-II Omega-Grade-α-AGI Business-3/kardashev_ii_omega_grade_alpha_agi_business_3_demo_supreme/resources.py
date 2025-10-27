@@ -122,6 +122,14 @@ class ResourceManager:
         account.credit(amount)
         self.token_supply += amount
 
+    def release_stake(self, name: str, amount: float) -> float:
+        account = self.ensure_account(name)
+        release_amount = min(amount, account.staked)
+        if release_amount <= 0:
+            return 0.0
+        account.release_stake(release_amount)
+        return release_amount
+
     def slash(self, name: str, amount: float) -> float:
         account = self.ensure_account(name)
         penalty = min(amount, account.staked)

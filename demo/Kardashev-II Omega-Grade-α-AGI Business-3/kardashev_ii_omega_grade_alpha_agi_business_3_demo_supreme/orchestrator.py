@@ -207,6 +207,8 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
             job.mark_complete(job.result_reference or "")
             reward = job.spec.reward
             self.resources.reward(job.worker or "unknown", reward)
+            employer = job.spec.employer
+            stake_released = self.resources.release_stake(employer, job.spec.stake_required)
             for validator, vote in job.validator_votes.items():
                 if vote:
                     self.resources.reward(validator, reward * 0.05)
@@ -218,6 +220,8 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
                     "job_id": job.job_id,
                     "worker": job.worker,
                     "reward": reward,
+                    "employer": employer,
+                    "stake_released": stake_released,
                     "approvals": approvals,
                     "validators": len(job.validator_votes),
                 },
@@ -228,18 +232,22 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
                     "job_id": job.job_id,
                     "worker": job.worker,
                     "reward": reward,
+                    "employer": employer,
+                    "stake_released": stake_released,
                     "approvals": approvals,
                 }
             )
             await self._refresh_mermaid_dashboard()
         else:
             job.mark_failed("validator_rejection")
-            penalty = self.resources.slash(job.worker or "unknown", job.spec.stake_required)
+            employer = job.spec.employer
+            penalty = self.resources.slash(employer, job.spec.stake_required)
             await self._log_event(
                 "job.failed",
                 {
                     "job_id": job.job_id,
                     "worker": job.worker,
+                    "employer": employer,
                     "penalty": penalty,
                     "approvals": approvals,
                 },
@@ -249,6 +257,7 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
                     "event": "failed",
                     "job_id": job.job_id,
                     "worker": job.worker,
+                    "employer": employer,
                     "penalty": penalty,
                     "approvals": approvals,
                 }
