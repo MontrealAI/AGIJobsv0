@@ -1,0 +1,157 @@
+{
+  "version": "0.1.0",
+  "description": "Planetary Orchestrator Fabric reference manifest for sharded Earth/Luna/Mars/Edge control rooms.",
+  "owner": {
+    "address": "0x8ba1f109551bD432803012645Ac136ddd64DBA72",
+    "controllerMultisig": "0x1111111111111111111111111111111111111111",
+    "controls": {
+      "pauseAll": false,
+      "maxShardLagMs": 120,
+      "allowCrossShardOverflow": true,
+      "unstoppableScoreFloor": 0.98,
+      "maxSpilloverPerCycle": 64,
+      "maxCheckpointIntervalJobs": 500
+    }
+  },
+  "jobDistribution": {
+    "earth": 0.58,
+    "luna": 0.16,
+    "mars": 0.18,
+    "edge": 0.08
+  },
+  "shards": [
+    {
+      "id": "earth",
+      "label": "Earth Orbital Control Lattice",
+      "latencyBudgetMs": 45,
+      "targetQueue": 380,
+      "overflowThreshold": 440,
+      "spilloverPeers": ["luna", "edge", "mars"]
+    },
+    {
+      "id": "luna",
+      "label": "Luna Logistics Bridge",
+      "latencyBudgetMs": 85,
+      "targetQueue": 220,
+      "overflowThreshold": 260,
+      "spilloverPeers": ["earth", "mars", "edge"]
+    },
+    {
+      "id": "mars",
+      "label": "Mars Terraforming Bureau",
+      "latencyBudgetMs": 120,
+      "targetQueue": 260,
+      "overflowThreshold": 310,
+      "spilloverPeers": ["earth", "luna", "edge"]
+    },
+    {
+      "id": "edge",
+      "label": "Helios Edge GPU Swarm",
+      "latencyBudgetMs": 32,
+      "targetQueue": 140,
+      "overflowThreshold": 180,
+      "spilloverPeers": ["earth", "mars"]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "earth-atlas-01",
+      "shard": "earth",
+      "capacity": 18,
+      "specialties": ["mission-control", "multi-modal-gpu"],
+      "meanThroughput": 360,
+      "failureProfile": {
+        "failAfterAssignments": 7200,
+        "recoveryJobs": 220
+      }
+    },
+    {
+      "id": "earth-atlas-02",
+      "shard": "earth",
+      "capacity": 16,
+      "specialties": ["mission-control", "governance"],
+      "meanThroughput": 330,
+      "failureProfile": {
+        "failAfterAssignments": 9000,
+        "recoveryJobs": 200
+      }
+    },
+    {
+      "id": "luna-helio-01",
+      "shard": "luna",
+      "capacity": 10,
+      "specialties": ["logistics", "inventory"],
+      "meanThroughput": 240,
+      "failureProfile": {
+        "failAfterAssignments": 5600,
+        "recoveryJobs": 210
+      }
+    },
+    {
+      "id": "luna-helio-02",
+      "shard": "luna",
+      "capacity": 9,
+      "specialties": ["logistics", "mission-control"],
+      "meanThroughput": 210,
+      "failureProfile": {
+        "failAfterAssignments": 6000,
+        "recoveryJobs": 210
+      }
+    },
+    {
+      "id": "mars-forge-01",
+      "shard": "mars",
+      "capacity": 12,
+      "specialties": ["terraforming", "infrastructure"],
+      "meanThroughput": 260,
+      "failureProfile": {
+        "failAfterAssignments": 6200,
+        "recoveryJobs": 240
+      }
+    },
+    {
+      "id": "mars-forge-02",
+      "shard": "mars",
+      "capacity": 11,
+      "specialties": ["terraforming", "biosphere"],
+      "meanThroughput": 250,
+      "failureProfile": {
+        "failAfterAssignments": 6800,
+        "recoveryJobs": 220
+      }
+    },
+    {
+      "id": "edge-helios-01",
+      "shard": "edge",
+      "capacity": 20,
+      "specialties": ["gpu-mega", "helios"],
+      "meanThroughput": 420,
+      "failureProfile": {
+        "failAfterAssignments": 5200,
+        "recoveryJobs": 180
+      }
+    },
+    {
+      "id": "edge-helios-02",
+      "shard": "edge",
+      "capacity": 18,
+      "specialties": ["gpu-mega", "relay"],
+      "meanThroughput": 410,
+      "failureProfile": {
+        "failAfterAssignments": 5600,
+        "recoveryJobs": 180
+      }
+    }
+  ],
+  "checkpoint": {
+    "path": "demo/Planetary-Orchestrator-Fabric-v0/output/fabric.checkpoint.json",
+    "intervalJobs": 500,
+    "retention": 3
+  },
+  "routing": {
+    "maxSpilloverBatch": 48,
+    "heartbeatIntervalMs": 28,
+    "maxMissedHeartbeats": 4,
+    "globalRebalanceWindow": 1200
+  }
+}

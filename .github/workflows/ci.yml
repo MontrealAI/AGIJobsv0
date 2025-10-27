@@ -263,6 +263,44 @@ jobs:
       - name: Validate Phase 8 manifest & UI
         run: npm run demo:phase8:ci
 
+  planetary_orchestrator_demo:
+    name: Planetary Orchestrator Fabric Demo
+    needs:
+      - lint
+      - tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Run planetary fabric verification
+        run: npm run demo:planetary-fabric:ci
+      - name: Upload planetary fabric artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: planetary-fabric-output
+          path: |
+            demo/Planetary-Orchestrator-Fabric-v0/output/fabric-ci-report.json
+            demo/Planetary-Orchestrator-Fabric-v0/ui/data/latest.json
+          if-no-files-found: warn
+
   kardashev_demo:
     name: Kardashev II readiness
     needs:
@@ -617,6 +655,7 @@ jobs:
       - foundry
       - coverage
       - phase8
+      - planetary_orchestrator_demo
       - asi_takeoff_demo
       - zenith_demo
       - agi_labor_market_demo
@@ -642,6 +681,7 @@ jobs:
             foundry: 'Foundry',
             coverage: 'Coverage thresholds',
             phase8: 'Phase 8 readiness',
+            planetary_orchestrator_demo: 'Planetary Orchestrator Fabric Demo',
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',
             agi_labor_market_demo: 'AGI Labor Market Demo',

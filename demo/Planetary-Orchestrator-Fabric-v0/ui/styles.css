@@ -1,0 +1,174 @@
+:root {
+  color-scheme: dark light;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #e2e8f0;
+}
+
+body {
+  margin: 0;
+  padding: 0 2rem 4rem;
+}
+
+header {
+  text-align: center;
+  padding: 3rem 0 1rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.75rem;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  color: #94a3b8;
+}
+
+.status-banner {
+  margin: 1.5rem auto 0;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.status-banner.ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.status-banner.warn {
+  background: rgba(251, 191, 36, 0.2);
+  color: #facc15;
+}
+
+main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.35);
+}
+
+.card.wide {
+  grid-column: span 2;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.gauge {
+  position: relative;
+  width: 260px;
+  height: 140px;
+  margin: 0 auto 1rem;
+  border-radius: 260px 260px 0 0;
+  border: 12px solid rgba(148, 163, 184, 0.2);
+  border-bottom: none;
+  overflow: hidden;
+}
+
+.gauge-needle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  height: 120px;
+  background: linear-gradient(180deg, #38bdf8, #0ea5e9);
+  transform-origin: bottom center;
+  transform: rotate(0deg);
+  transition: transform 0.6s ease-in-out;
+}
+
+.gauge-centre {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.summary {
+  text-align: center;
+  color: #cbd5f5;
+}
+
+section table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+section th,
+section td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  text-align: left;
+}
+
+section tbody tr.warn {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-pill.online {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.status-pill.offline {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.timeline li {
+  background: rgba(148, 163, 184, 0.1);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+}
+
+footer {
+  margin-top: 3rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9rem;
+}
