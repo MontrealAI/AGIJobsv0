@@ -1,5 +1,5 @@
 import { assertAgentDomain, assertNodeDomain, assertValidatorDomain, EnsProof, verifyMerkleProof } from './ens';
-import { AgentIdentity, Hex, ValidatorIdentity } from './types';
+import { AgentIdentity, Hex, NodeIdentity, ValidatorIdentity } from './types';
 
 interface AuthorizationRequest {
   ensName: string;
@@ -49,8 +49,12 @@ export class EnsAuthority {
     };
   }
 
-  authorizeNode(request: AuthorizationRequest): void {
+  authorizeNode(request: AuthorizationRequest): NodeIdentity {
     assertNodeDomain(request.ensName);
     this.assertOwnership(request);
+    return {
+      address: request.address,
+      ensName: request.ensName,
+    };
   }
 }

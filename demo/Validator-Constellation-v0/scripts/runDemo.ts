@@ -23,7 +23,13 @@ function writeText(filePath: string, data: string) {
 }
 
 function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>) {
-  const mermaidCommittee = `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  committee["Validator Committee\n${roundResult.committee.map((v) => v.ensName).join('\n')}"] --> zk["ZK Batch Proof\n${roundResult.proof.proofId}"];\n  committee --> commits;\n  commits --> reveals;\n  reveals --> outcome["Final Outcome: ${roundResult.voteOutcome}"];`;
+  const nodeBranch =
+    roundResult.nodes.length > 0
+      ? `\n  control["Node Orchestrators\n${roundResult.nodes.map((node) => node.ensName).join('\n')}"] --> owner;`
+      : '';
+  const mermaidCommittee = `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  committee["Validator Committee\n${roundResult.committee
+    .map((v) => v.ensName)
+    .join('\n')}"] --> zk["ZK Batch Proof\n${roundResult.proof.proofId}"];\n  committee --> commits;\n  commits --> reveals;\n  reveals --> outcome["Final Outcome: ${roundResult.voteOutcome}"];${nodeBranch}`;
 
   const mermaidSentinel = `sequenceDiagram\n  participant Agent as Agent Nova\n  participant Sentinel as Sentinel Guardian\n  participant Domain as Domain Controller\n  Agent->>Sentinel: Overspend transfer\n  Sentinel->>Domain: pause(deep-space-lab)\n  Domain-->>Agent: Execution Halted`;
 
@@ -64,11 +70,16 @@ function renderDashboard(reportDir: string, roundResult: ReturnType<ValidatorCon
         <div class="metric">Jobs attested: <strong>${roundResult.proof.attestedJobCount}</strong></div>
         <div class="metric">Validators slashed: <strong>${roundResult.slashingEvents.length}</strong></div>
         <div class="metric">Alerts triggered: <strong>${roundResult.sentinelAlerts.length}</strong></div>
+        <div class="metric">Domain controllers online: <strong>${roundResult.nodes.length}</strong></div>
         <pre>${JSON.stringify({
           jobRoot: roundResult.proof.jobRoot,
           witness: roundResult.proof.witnessCommitment,
           sealedOutput: roundResult.proof.sealedOutput,
         }, null, 2)}</pre>
+      </section>
+      <section>
+        <h2>Node Identities</h2>
+        <pre>${JSON.stringify(roundResult.nodes, null, 2)}</pre>
       </section>
       <section>
         <h2>Job Sample</h2>
@@ -93,6 +104,9 @@ function main() {
     throw new Error('agent leaf missing');
   }
   demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+
+  const nodeLeaves = leaves.filter((leaf) => leaf.ensName.includes('.node.agi.eth'));
+  const registeredNodes = nodeLeaves.map((leaf) => demo.registerNode(leaf.ensName, leaf.owner));
 
   const maintenancePause = demo.pauseDomain('lunar-foundry', 'Scheduled maintenance window');
   const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
@@ -144,6 +158,10 @@ function main() {
     round: roundResult.round,
     outcome: roundResult.voteOutcome,
     committee: roundResult.committee.map((v) => ({ ens: v.ensName, stake: v.stake.toString() })),
+    nodes: {
+      registered: registeredNodes,
+      active: roundResult.nodes,
+    },
     proof: roundResult.proof,
     alerts: roundResult.sentinelAlerts,
     slashing: roundResult.slashingEvents,
@@ -174,6 +192,7 @@ function main() {
   renderDashboard(reportDir, roundResult);
 
   console.log('Validator Constellation demo executed successfully.');
+  console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
   console.log(`Reports written to ${reportDir}`);
 }
 

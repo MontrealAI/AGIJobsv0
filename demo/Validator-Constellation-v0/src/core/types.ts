@@ -31,6 +31,11 @@ export interface AgentIdentity {
   budget: bigint;
 }
 
+export interface NodeIdentity {
+  address: Hex;
+  ensName: string;
+}
+
 export interface AgentAction {
   agent: AgentIdentity;
   domainId: string;
@@ -131,6 +136,7 @@ export interface DemoOrchestrationReport {
   sentinelAlerts: SentinelAlert[];
   pauseRecords: PauseRecord[];
   slashingEvents: SlashingEvent[];
+  nodes: NodeIdentity[];
 }
 
 export interface DomainState {

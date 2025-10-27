@@ -60,12 +60,13 @@ No smart-contract tooling, solc, or blockchain node is required. Everything is s
 ## What the demo executes
 
 1. **Identity attestation** – builds an ENS Merkle tree, verifies the owner of every validator/agent subdomain, and bans imposters.
-2. **Stake orchestration** – bonds five validators with configurable stakes and records them in the Stake Manager.
-3. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
-4. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
-5. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
-6. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-7. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+2. **Node orchestration** – onboards production (`*.node.agi.eth`) and alpha (`*.alpha.node.agi.eth`) controllers with the same Merkle proof flow, ensuring operations teams have verifiable infrastructure custodians.
+3. **Stake orchestration** – bonds five validators with configurable stakes and records them in the Stake Manager.
+4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
+5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
+6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
+7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
+8. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
 
 ## Governance levers
 
@@ -81,6 +82,8 @@ demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEG
 demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
 demo.resumeDomain('deep-space-lab');
 demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
+demo.registerNode('polaris.node.agi.eth', '0xcccccccccccccccccccccccccccccccccccccccc');
+demo.registerNode('selene.alpha.node.agi.eth', '0xdddddddddddddddddddddddddddddddddddddddd');
 ```
 
 All modules respond instantly (new committee sizes, quorum thresholds, penalty weights, etc.).
@@ -134,5 +137,6 @@ After `npm run demo:validator-constellation`, inspect:
 - ✅ Only ENS-verified actors (both production and alpha namespaces) can participate.
 - ✅ Domain-scoped pause ensures other environments stay online.
 - ✅ Governance can pause, resume, or retune parameters instantly.
+- ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
 
 Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.

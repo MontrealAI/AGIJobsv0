@@ -12,6 +12,7 @@ export function demoLeaves(): EnsLeaf[] {
     { ensName: 'nova.agent.agi.eth', owner: '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' },
     { ensName: 'sentinel.agent.agi.eth', owner: '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb' },
     { ensName: 'polaris.node.agi.eth', owner: '0xcccccccccccccccccccccccccccccccccccccccc' },
+    { ensName: 'selene.alpha.node.agi.eth', owner: '0xdddddddddddddddddddddddddddddddddddddddd' },
   ];
 }
 
