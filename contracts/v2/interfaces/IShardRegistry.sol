@@ -13,7 +13,13 @@ interface IShardRegistry {
 
     event ShardRegistered(bytes32 indexed shardId, address indexed queue);
     event ShardDeregistered(bytes32 indexed shardId);
-    event ShardParametersUpdated(bytes32 indexed shardId, uint256 maxReward, uint64 maxDuration);
+    event ShardParametersUpdated(
+        bytes32 indexed shardId,
+        uint256 maxReward,
+        uint64 maxDuration,
+        uint32 maxOpenJobs,
+        uint32 maxActiveJobs
+    );
     event ShardPaused(bytes32 indexed shardId);
     event ShardUnpaused(bytes32 indexed shardId);
     event JobCreated(
@@ -57,6 +63,8 @@ interface IShardRegistry {
     function listShards() external view returns (bytes32[] memory shardIds);
 
     function getShardQueue(bytes32 shardId) external view returns (address);
+
+    function getShardUsage(bytes32 shardId) external view returns (uint32 openJobs, uint32 activeJobs);
 
     function createJob(bytes32 shardId, bytes32 specHash, string calldata metadataURI)
         external

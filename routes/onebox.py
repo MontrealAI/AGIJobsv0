@@ -38,6 +38,7 @@ from orchestrator.aa import (
     AAPolicyRejection,
     AccountAbstractionExecutor,
 )
+from .security import SecurityContext, audit_event, require_security
 router = APIRouter(prefix="/onebox", tags=["onebox"])
 health_router = APIRouter(tags=["health"])
 
@@ -202,14 +203,34 @@ def _get_aa_executor() -> Optional[AccountAbstractionExecutor]:
             _AA_EXECUTOR_STATE = state
         return state if isinstance(state, AccountAbstractionExecutor) else None
 
-def require_api(auth: Optional[str] = Header(None, alias="Authorization")):
-    if not _API_TOKEN:
-        return
-    if not auth or not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail=_error_detail("AUTH_MISSING"))
-    token = auth.split(" ", 1)[1].strip()
-    if token != _API_TOKEN:
-        raise HTTPException(status_code=401, detail=_error_detail("AUTH_INVALID"))
+async def require_api(
+    request: Request,
+    auth: Optional[str] = Header(None, alias="Authorization"),
+    signature: Optional[str] = Header(None, alias="X-Signature"),
+    timestamp: Optional[str] = Header(None, alias="X-Timestamp"),
+    actor: Optional[str] = Header(None, alias="X-Actor"),
+) -> SecurityContext:
+    try:
+        return await require_security(
+            request,
+            authorization=auth,
+            signature=signature,
+            timestamp=timestamp,
+            actor_header=actor,
+            fallback_token=_API_TOKEN or None,
+        )
+    except HTTPException as exc:
+        detail = exc.detail
+        if isinstance(detail, str):
+            detail = _error_detail(detail)
+        raise HTTPException(status_code=exc.status_code, detail=detail) from exc
+
+
+def _context_from_request(request: Request) -> SecurityContext:
+    context = getattr(request.state, "security_context", None)
+    if isinstance(context, SecurityContext):
+        return context
+    return SecurityContext(actor="anonymous", role="public", token_hash="")
 
 logger = logging.getLogger(__name__)
 
@@ -1775,6 +1796,7 @@ async def plan(request: Request, req: PlanRequest):
     correlation_id = _get_correlation_id(request)
     intent_type = "unknown"
     status_code = 200
+    context = _context_from_request(request)
 
     try:
         if not req.text or not req.text.strip():
@@ -1817,6 +1839,12 @@ async def plan(request: Request, req: PlanRequest):
             receiptDigest=plan_digest,
         )
         _propagate_attestation_fields(response, plan_receipt)
+        audit_event(
+            context,
+            "onebox.plan.success",
+            intent=intent_type,
+            plan_hash=plan_hash,
+        )
         _log_event(logging.INFO, "onebox.plan.success", correlation_id, intent_type=intent_type)
         return response
 
@@ -1826,10 +1854,31 @@ async def plan(request: Request, req: PlanRequest):
         log_fields = {"intent_type": intent_type, "http_status": status_code}
         if detail and isinstance(detail, dict) and detail.get("code"):
             log_fields["error"] = detail["code"]
+            audit_event(
+                context,
+                "onebox.plan.failed",
+                intent=intent_type,
+                status=status_code,
+                error=detail["code"],
+            )
+        else:
+            audit_event(
+                context,
+                "onebox.plan.failed",
+                intent=intent_type,
+                status=status_code,
+            )
         _log_event(logging.WARNING, "onebox.plan.failed", correlation_id, **log_fields)
         raise
     except Exception as exc:
         status_code = 500
+        audit_event(
+            context,
+            "onebox.plan.error",
+            intent=intent_type,
+            status=status_code,
+            error=str(exc),
+        )
         _log_event(logging.ERROR, "onebox.plan.error", correlation_id, intent_type=intent_type, http_status=status_code, error=str(exc))
         raise
     finally:
@@ -1845,6 +1894,7 @@ async def simulate(request: Request, req: SimulateRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
+    context = _context_from_request(request)
 
     request_created_at = None
     if req.createdAt is not None:
@@ -2090,10 +2140,26 @@ async def simulate(request: Request, req: SimulateRequest):
             receiptDigest=simulation_digest,
         )
         _propagate_attestation_fields(response, simulation_receipt)
+        audit_event(
+            context,
+            "onebox.simulate.success",
+            intent=intent_type,
+            plan_hash=display_plan_hash or "",
+            blockers=len(blockers),
+            risks=len(risk_codes),
+        )
     except HTTPException as exc:
         status_code = exc.status_code
         detail = getattr(exc, "detail", None)
         log_fields: Dict[str, Any] = {"intent_type": intent_type, "http_status": status_code}
+        error_code = detail.get("code") if isinstance(detail, dict) else None
+        audit_event(
+            context,
+            "onebox.simulate.failed",
+            intent=intent_type,
+            status=status_code,
+            error=error_code,
+        )
         if status_code == 422 and isinstance(detail, dict):
             blockers_detail = detail.get("blockers")
             if isinstance(blockers_detail, list):
@@ -2108,6 +2174,13 @@ async def simulate(request: Request, req: SimulateRequest):
         raise
     except Exception as exc:
         status_code = 500
+        audit_event(
+            context,
+            "onebox.simulate.error",
+            intent=intent_type,
+            status=status_code,
+            error=str(exc),
+        )
         _log_event(
             logging.ERROR,
             "onebox.simulate.error",
@@ -2135,6 +2208,7 @@ async def execute(request: Request, req: ExecuteRequest):
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
     status_code = 200
+    context = _context_from_request(request)
 
     request_created_at = None
     if req.createdAt is not None:
@@ -2406,6 +2480,14 @@ async def execute(request: Request, req: ExecuteRequest):
             response.status = response.status or "prepared"
 
         response.ok = True
+        audit_event(
+            context,
+            "onebox.execute.success",
+            intent=intent_type,
+            mode=req.mode,
+            plan_hash=display_plan_hash,
+            job_id=getattr(response, "jobId", None),
+        )
         _log_event(logging.INFO, "onebox.execute.success", correlation_id, intent_type=intent_type)
         return response
 
@@ -2415,10 +2497,24 @@ async def execute(request: Request, req: ExecuteRequest):
         log_fields = {"intent_type": intent_type, "http_status": status_code}
         if detail and isinstance(detail, dict) and detail.get("code"):
             log_fields["error"] = detail["code"]
+        audit_event(
+            context,
+            "onebox.execute.failed",
+            intent=intent_type,
+            status=status_code,
+            error=(detail.get("code") if isinstance(detail, dict) else detail),
+        )
         _log_event(logging.WARNING, "onebox.execute.failed", correlation_id, **log_fields)
         raise
     except Exception as exc:
         status_code = 500
+        audit_event(
+            context,
+            "onebox.execute.error",
+            intent=intent_type,
+            status=status_code,
+            error=str(exc),
+        )
         _log_event(logging.ERROR, "onebox.execute.error", correlation_id, intent_type=intent_type, http_status=status_code, error=str(exc))
         raise
     finally:
@@ -2431,11 +2527,18 @@ async def status(request: Request, jobId: int):
     correlation_id = _get_correlation_id(request)
     intent_type = "check_status"
     job_id = jobId
+    context = _context_from_request(request)
 
     try:
         job = registry.functions.jobs(job_id).call()
     except Exception as e:
         logger.error("Job status retrieval failed for job %s: %s", job_id, e)
+        audit_event(
+            context,
+            "onebox.status.error",
+            job_id=job_id,
+            error=str(e),
+        )
         return StatusResponse(jobId=job_id, state="unknown")
 
     agent = None
@@ -2481,6 +2584,12 @@ async def status(request: Request, jobId: int):
         assignee=assignee,
     )
     _cache_status(response)
+    audit_event(
+        context,
+        "onebox.status.success",
+        job_id=job_id,
+        state=state_output,
+    )
     _log_event(logging.INFO, "onebox.status.success", correlation_id, intent_type=intent_type)
     return response
 

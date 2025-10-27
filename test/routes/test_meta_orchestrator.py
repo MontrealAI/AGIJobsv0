@@ -4,6 +4,11 @@ from decimal import Decimal
 
 import pytest
 
+import hashlib
+import hmac
+import json
+import time
+
 pytest.importorskip("fastapi")
 pytest.importorskip("fastapi.testclient")
 
@@ -13,6 +18,8 @@ from fastapi.testclient import TestClient
 from orchestrator.config import get_burn_fraction, get_fee_fraction
 from orchestrator.models import JobIntent, OrchestrationPlan, Step
 from routes.meta_orchestrator import router as meta_router
+import routes.onebox as onebox
+from routes.security import reload_security_settings, reset_rate_limits
 
 FEE_FRACTION = get_fee_fraction()
 BURN_FRACTION = get_burn_fraction()
@@ -111,3 +118,83 @@ def test_simulate_blocks_post_job_without_budget():
     payload = response.json()
     assert payload["detail"]["code"] == "BLOCKED"
     assert "BUDGET_REQUIRED" in payload["detail"]["blockers"]
+
+
+def test_meta_requires_token_when_configured(monkeypatch):
+    monkeypatch.setattr(onebox, "_API_TOKEN", "meta-secret")
+    reload_security_settings()
+    reset_rate_limits()
+
+    app = create_app()
+    client = TestClient(app)
+
+    resp = client.post("/onebox/plan", json={"input_text": "noop"})
+    assert resp.status_code == 401
+
+    headers = {"Authorization": "Bearer meta-secret"}
+    resp = client.post("/onebox/plan", json={"input_text": "noop"}, headers=headers)
+    assert resp.status_code == 200
+
+    monkeypatch.setattr(onebox, "_API_TOKEN", "")
+    reload_security_settings()
+    reset_rate_limits()
+
+
+def test_meta_rate_limit(monkeypatch):
+    monkeypatch.setattr(onebox, "_API_TOKEN", "rate-token")
+    monkeypatch.setenv("API_RATE_LIMIT_PER_MINUTE", "1")
+    reload_security_settings()
+    reset_rate_limits()
+
+    app = create_app()
+    client = TestClient(app)
+    headers = {"Authorization": "Bearer rate-token"}
+
+    first = client.post("/onebox/plan", json={"input_text": "noop"}, headers=headers)
+    assert first.status_code == 200
+
+    second = client.post("/onebox/plan", json={"input_text": "noop"}, headers=headers)
+    assert second.status_code == 429
+
+    monkeypatch.delenv("API_RATE_LIMIT_PER_MINUTE", raising=False)
+    monkeypatch.setattr(onebox, "_API_TOKEN", "")
+    reload_security_settings()
+    reset_rate_limits()
+
+
+def test_meta_signature_validation(monkeypatch):
+    monkeypatch.setattr(onebox, "_API_TOKEN", "sig-token")
+    monkeypatch.setenv("API_SIGNING_SECRET", "sig-secret")
+    reload_security_settings()
+    reset_rate_limits()
+
+    app = create_app()
+    client = TestClient(app)
+
+    body = json.dumps({"input_text": "secure"})
+    timestamp = str(time.time())
+    valid_signature = hmac.new(
+        b"sig-secret",
+        f"{timestamp}.{body}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    headers = {
+        "Authorization": "Bearer sig-token",
+        "Content-Type": "application/json",
+        "X-Timestamp": timestamp,
+        "X-Signature": valid_signature,
+    }
+
+    ok = client.post("/onebox/plan", content=body, headers=headers)
+    assert ok.status_code == 200
+
+    bad_headers = dict(headers)
+    bad_headers["X-Signature"] = "deadbeef"
+    denied = client.post("/onebox/plan", content=body, headers=bad_headers)
+    assert denied.status_code == 401
+
+    monkeypatch.delenv("API_SIGNING_SECRET", raising=False)
+    monkeypatch.setattr(onebox, "_API_TOKEN", "")
+    reload_security_settings()
+    reset_rate_limits()

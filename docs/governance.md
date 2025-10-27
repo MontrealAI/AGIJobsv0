@@ -1,74 +1,90 @@
-# Governance via Timelock or Multisig
+# Governance Operations & Incident Response
 
-Contracts inheriting from `Governable` expect a timelock or multisig
-address. The controller is stored as a contract interface so that direct
-EOA ownership is not possible.
+This playbook documents how the multisig or timelock that controls AGI Jobs v0
+governance can manage contract parameters and respond to operational incidents
+without touching application code.
 
-The system uses a **7 day** timelock delay so all privileged operations are
-announced before execution. During this window agents and validators can exit
-by unbonding their stake. Call `StakeManager.requestWithdraw` to start the
-unbonding process and, after the `unbondingPeriod` elapses, use
-`StakeManager.finalizeWithdraw` to retrieve tokens before the proposal is
-executed.
+## Governance surface
 
-## Deploying with a timelock
+- **System-wide pause** – `SystemPause` allows governance to freeze or resume
+  the Job Registry, Stake Manager, Validation Module, and other core services
+  with a single transaction. It validates ownership of all managed modules and
+  emits `ModulesUpdated`/`PausersUpdated` events whenever custody changes.【F:contracts/v2/SystemPause.sol†L16-L119】
+- **Shard-level quotas** – The `ShardRegistry` exposes governance-only setters
+  that forward quota updates to the individual `ShardJobQueue` contracts. Each
+  queue now enforces maximum open jobs and active (assigned/in-progress)
+  concurrency before accepting new work.【F:contracts/v2/modules/ShardRegistry.sol†L60-L74】【F:contracts/v2/modules/ShardJobQueue.sol†L55-L115】
+- **Owner configurator** – The `OwnerConfigurator` batch-forwards parameter
+  changes from a Safe/EOA and emits `ParameterUpdated` events so operator
+  dashboards and subgraphs can replay the governance log.【F:contracts/v2/admin/OwnerConfigurator.sol†L9-L105】
 
-1. Deploy an on-chain controller such as OpenZeppelin's
-   `TimelockController` or a Gnosis Safe.
-2. Note its address and use it as the final constructor argument when
-   deploying `StakeManager`, `JobRegistry`, `Thermostat`, `RewardEngineMB`
-   and any other `Governable` modules. Example using Hardhat:
-   ```javascript
-   const timelock = '0xTimelockAddress';
-   const stake = await StakeManager.deploy(
-     token,
-     minStake,
-     employerSlashPct,
-     treasurySlashPct,
-     treasury,
-     jobRegistry,
-     disputeModule,
-     timelock
-   );
+## Routine parameter changes
+
+### Update shard quotas
+
+1. Encode the desired limits (reward cap, maximum job duration, maximum open
+   jobs, maximum concurrent assignments). For example, to cap a shard at 1,000
+   reward tokens, 1 hour duration, 25 open jobs and 10 active jobs:
+
+   ```bash
+   npx hardhat run scripts/shards/manage-shards.ts -- \
+     set-params EARTH 1000 3600 25 10
    ```
-3. After deployment the timelock or multisig becomes the only account
-   capable of invoking functions marked `onlyGovernance`.
 
-## Upgrading through the timelock
+   The helper script now accepts the optional `maxOpenJobs` and `maxActiveJobs`
+   fields and logs the applied configuration so the multisig can attach the
+   transaction receipt to its minutes.【F:scripts/shards/manage-shards.ts†L45-L75】
 
-1. Encode the desired function call on the target contract (for example
-2. Submit the call to the timelock or multisig:
-   - For OpenZeppelin timelocks, use `schedule` with the target, value,
-     data, predecessor, salt and delay parameters.
-   - For multisigs like Gnosis Safe, create a transaction pointing to the
-     target contract and collect the required signatures.
-3. Once the timelock delay has passed (or sufficient signatures are
-   collected), execute the queued transaction. The timelock or multisig
-   will call the target contract and the upgrade takes effect.
+2. Confirm the queue applied the new guardrails by reading
+   `ShardRegistry.getShardUsage`. The adapter in `@agijobs/onebox-sdk` exposes a
+   convenience helper that returns the live open/active job counters so off-chain
+   monitors can alert before hitting hard limits.【F:packages/onebox-sdk/src/shardRegistry.ts†L6-L104】
 
-This flow ensures all privileged operations occur only after the
-configured delay or multi-party approval.
+3. Record the emitted `ShardParametersUpdated` event. It now includes the open
+   and active quotas alongside reward/duration for full audit coverage.【F:contracts/v2/interfaces/IShardRegistry.sol†L11-L26】
 
-## Quadratic Voting
+### Pause and resume operations
 
-`QuadraticVoting` introduces a voting mechanism where the cost of casting votes
-scales quadratically: committing `n` votes costs `n^2` governance tokens
-typically denominated in AGIALPHA. A configurable percentage of this cost is
-locked as a refundable deposit while the remainder is charged as a fee. The fee
-is sent to the configured `treasury` or burned if the treasury is unset.
-Deposits remain in the contract until the proposal is executed by the configured
-executor or the voting deadline expires. Each proposal stores a `deadline`
-timestamp supplied with the first `castVote` call. Further votes are rejected
-once the deadline passes.
+- **Single shard outage** – call `ShardRegistry.pauseShard(shardId)` to stop job
+  intake for the affected queue. Once mitigated, invoke
+  `ShardRegistry.unpauseShard(shardId)` and verify `getShardUsage` no longer
+  changes while the shard is paused.【F:contracts/v2/modules/ShardRegistry.sol†L75-L113】
+- **Full platform incident** – execute `SystemPause.pause()` to freeze the
+  entire protocol, including staking and dispute flows. Resume with
+  `SystemPause.unpause()` after postmortem approval.【F:contracts/v2/SystemPause.sol†L159-L221】
 
-After execution or once the deadline has elapsed, each voter may call
-`claimRefund` to retrieve only the locked deposit – the fee portion is always
-deducted.
+## Incident response playbooks
 
-Example: with a 50% refundable rate, voting with 4 votes costs 16 tokens. Eight
-tokens are locked as a refundable deposit and the other eight are immediately
-sent to the treasury. After `execute` **or once the deadline expires**, calling
-`claimRefund` returns the locked eight tokens but the voter permanently paid the
-eight token fee. The contract optionally calls `GovernanceReward.recordVoters`
-so rewards can be distributed based on participation.
+### API abuse or credential compromise
+
+1. Rotate the API token (or individual token/role mapping) via environment
+   variables and redeploy. The shared security guard enforces bearer tokens,
+   per-actor rate limits, optional HMAC signatures, and role allowlists for every
+   `/onebox/*` route. It emits `security.authenticated` audit events and exposes
+   helpers to reset rate limit buckets during investigations.【F:routes/security.py†L1-L188】
+2. For FastAPI services running in production, redeploy with the rotated token
+   and signing secret. Confirm requests without valid credentials fail with
+   `401` and that rate limits trigger `429` after the configured burst budget.【F:test/routes/test_meta_orchestrator.py†L112-L170】
+
+### Shard congestion or malicious workload
+
+1. Use `getShardUsage` to identify shards that are approaching quota ceilings.
+   If abuse is detected, lower `maxOpenJobs` or `maxActiveJobs` temporarily via
+   the governance script to shed load before service-level indicators degrade.【F:contracts/v2/modules/ShardJobQueue.sol†L55-L115】
+2. For severe situations, pause the shard or invoke `SystemPause` to halt all
+   new jobs. Capture emitted events and incident timestamps for the runbook.
+
+### Signature verification failures
+
+1. When HMAC validation starts failing (e.g., due to clock skew or compromised
+   secret), check the audit log for `SIGNATURE_*` errors emitted by the security
+   guard. Adjust the signature tolerance window or rotate the shared secret via
+   environment variables, then call `reload_security_settings()` to apply the
+   change without restarting unit tests or staging nodes.【F:routes/security.py†L114-L176】
+2. After rotation, use the signed request test pattern from the suite to verify
+   the new secret is accepted and invalid signatures are rejected.【F:test/routes/test_meta_orchestrator.py†L143-L170】
+
+Maintain an incident diary with the executed transactions, emitted events, and
+API responses. The expanded quota fields and audit hooks introduced in this
+release provide the evidence needed for governance disclosures and postmortems.
 

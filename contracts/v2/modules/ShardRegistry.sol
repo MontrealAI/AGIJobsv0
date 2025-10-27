@@ -63,7 +63,13 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     function setShardParameters(bytes32 shardId, IShardJobQueue.JobParameters calldata params) external onlyGovernance {
         ShardInfo storage shard = _getShard(shardId);
         shard.queue.setJobParameters(params);
-        emit ShardParametersUpdated(shardId, params.maxReward, params.maxDuration);
+        emit ShardParametersUpdated(
+            shardId,
+            params.maxReward,
+            params.maxDuration,
+            params.maxOpenJobs,
+            params.maxActiveJobs
+        );
     }
 
     /// @inheritdoc IShardRegistry
@@ -88,6 +94,12 @@ contract ShardRegistry is IShardRegistry, Governable, Pausable {
     /// @inheritdoc IShardRegistry
     function getShardQueue(bytes32 shardId) external view returns (address) {
         return address(_getShard(shardId).queue);
+    }
+
+    /// @inheritdoc IShardRegistry
+    function getShardUsage(bytes32 shardId) external view returns (uint32 openJobs, uint32 activeJobs) {
+        ShardInfo storage shard = _getShard(shardId);
+        return shard.queue.getUsage();
     }
 
     /// @inheritdoc IShardRegistry

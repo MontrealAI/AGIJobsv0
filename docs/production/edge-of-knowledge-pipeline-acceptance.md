@@ -8,7 +8,7 @@
 
 ## 1. Planner certification
 
-1. **API protection** – Confirm calls require the configured bearer token. All `/onebox/*` routes share the `require_api` guard, which validates `Authorization: Bearer <token>` whenever `ONEBOX_API_TOKEN` is set.【F:routes/onebox.py†L205-L213】
+1. **API protection** – Confirm calls require the configured bearer token, honour rate limits, and (when enabled) validate HMAC signatures. All `/onebox/*` routes share the `require_api` guard, which delegates to the shared security module for RBAC and audit logging.【F:routes/onebox.py†L205-L215】【F:routes/security.py†L1-L188】
 2. **Environment audit** – Capture the live deployment `env` (RPC URL, registry address, token decimals, IPFS credentials, gateways) and compare against the runbook. Every value is injected from environment variables, giving the owner direct override control without code edits.【F:routes/onebox.py†L44-L97】
 3. **Missing field detection** – Submit a natural-language brief via `POST /onebox/plan` (for example, “post a job for 100 AGI in 10 days”). Verify the response highlights unset parameters (`missingFields`) using `_detect_missing_fields` so the UI can request additional inputs before proceeding.【F:routes/onebox.py†L950-L963】【F:routes/onebox.py†L1627-L1667】
 4. **Receipt trail** – Inspect the emitted plan receipt digest; `_store_plan_metadata` binds the canonical `planHash` and timestamp so downstream stages can prove lineage.【F:routes/onebox.py†L918-L924】【F:routes/onebox.py†L1627-L1667】
@@ -42,7 +42,7 @@
 
 1. **Org policy store** – Ensure `storage/org-policies.json` (or the configured override) reflects your institutional caps. The `OrgPolicyStore` loader and updater write changes back to disk and fall back to environment defaults (`ORG_MAX_BUDGET_WEI`, `ORG_MAX_DEADLINE_DAYS`) so the owner can tighten or relax limits in seconds.【F:routes/onebox.py†L505-L735】
 2. **Tool allowlists** – Review `allowedTools` configuration; enforcement rejects unapproved tool invocations before execution, and admins can update the list via the same policy file or CLI helper without redeploying.【F:routes/onebox.py†L600-L645】
-3. **Credential rotation** – Rotate API tokens, relayer keys, and IPFS credentials via environment variables—no code change required. Startup guards refuse to boot without a valid `RPC_URL`, preventing accidental production outages.【F:routes/onebox.py†L44-L99】【F:routes/onebox.py†L205-L213】
+3. **Credential rotation** – Rotate API tokens, relayer keys, and IPFS credentials via environment variables—no code change required. Startup guards refuse to boot without a valid `RPC_URL`, and the shared security module reads token/signature changes on reload to keep access control consistent.【F:routes/onebox.py†L44-L107】【F:routes/security.py†L52-L188】
 4. **Tooling snapshots** – Populate `ONEBOX_TOOL_*` environment variables to embed version fingerprints in every receipt, giving the owner provable traceability for compliance audits.【F:routes/onebox.py†L737-L759】【F:routes/onebox.py†L1525-L1569】
 5. **Receipts & attestation** – Archive the pinned receipts and optional attestation references for each run; they contain the policy snapshot, signer, fees, and relevant CIDs so an owner can demonstrate full control during regulator reviews.【F:routes/onebox.py†L1525-L1624】
 

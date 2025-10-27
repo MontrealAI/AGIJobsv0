@@ -130,11 +130,17 @@ describe('ShardRegistry', function () {
 
     await registry
       .connect(owner)
-      .setShardParameters(shardEarth, [1_000n, 3600]);
+      .setShardParameters(shardEarth, [1_000n, 3600, 5, 2]);
 
     const params = await queueEarth.getJobParameters();
     expect(params.maxReward).to.equal(1_000n);
     expect(params.maxDuration).to.equal(3600);
+    expect(params.maxOpenJobs).to.equal(5);
+    expect(params.maxActiveJobs).to.equal(2);
+
+    const usage = await registry.getShardUsage(shardEarth);
+    expect(usage[0]).to.equal(0);
+    expect(usage[1]).to.equal(0);
 
     await registry.connect(owner).pause();
     await expect(
@@ -144,5 +150,88 @@ describe('ShardRegistry', function () {
     ).to.be.revertedWithCustomError(registry, 'EnforcedPause');
 
     await registry.connect(owner).unpause();
+  });
+
+  it('enforces shard job and concurrency quotas', async function () {
+    await registry
+      .connect(owner)
+      .setShardParameters(shardEarth, [1_000n, 3600, 1, 0]);
+
+    const limitedRef = await registry
+      .connect(employer)
+      .createJob.staticCall(shardEarth, specHashA, 'ipfs://open-limit');
+    await registry
+      .connect(employer)
+      .createJob(shardEarth, specHashA, 'ipfs://open-limit');
+
+    await expect(
+      registry
+        .connect(employer)
+        .createJob(shardEarth, specHashB, 'ipfs://open-limit-two')
+    )
+      .to.be.revertedWithCustomError(queueEarth, 'OpenJobsQuotaExceeded')
+      .withArgs(1);
+
+    await registry
+      .connect(employer)
+      .cancelJob([limitedRef.shardId, limitedRef.jobId]);
+
+    await registry
+      .connect(owner)
+      .setShardParameters(shardEarth, [1_000n, 3600, 2, 1]);
+
+    const firstRef = await registry
+      .connect(employer)
+      .createJob.staticCall(shardEarth, specHashA, 'ipfs://job-one');
+    await registry
+      .connect(employer)
+      .createJob(shardEarth, specHashA, 'ipfs://job-one');
+    const secondRef = await registry
+      .connect(employer)
+      .createJob.staticCall(shardEarth, specHashB, 'ipfs://job-two');
+    await registry
+      .connect(employer)
+      .createJob(shardEarth, specHashB, 'ipfs://job-two');
+
+    await registry
+      .connect(employer)
+      .assignAgent([firstRef.shardId, firstRef.jobId], agent.address);
+
+    await expect(
+      registry
+        .connect(employer)
+        .assignAgent([secondRef.shardId, secondRef.jobId], agent.address)
+    )
+      .to.be.revertedWithCustomError(queueEarth, 'ActiveJobsQuotaExceeded')
+      .withArgs(1);
+
+    await registry
+      .connect(agent)
+      .startJob([firstRef.shardId, firstRef.jobId]);
+    await registry
+      .connect(agent)
+      .submitResult([
+        firstRef.shardId,
+        firstRef.jobId,
+      ], ethers.keccak256(ethers.toUtf8Bytes('done')));
+    await registry
+      .connect(employer)
+      .finalizeJob([firstRef.shardId, firstRef.jobId], true);
+
+    const usage = await registry.getShardUsage(shardEarth);
+    expect(usage[0]).to.equal(1);
+    expect(usage[1]).to.equal(0);
+  });
+
+  it('blocks unauthorized governance calls', async function () {
+    await expect(
+      registry
+        .connect(employer)
+        .setShardParameters(shardEarth, [0n, 0, 0, 0])
+    ).to.be.revertedWithCustomError(registry, 'NotGovernance');
+
+    await expect(
+      registry.connect(employer).pauseShard(shardEarth)
+    ).to.be.revertedWithCustomError(registry, 'NotGovernance');
   });
 });

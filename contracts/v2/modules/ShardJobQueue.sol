@@ -15,6 +15,8 @@ contract ShardJobQueue is IShardJobQueue, Ownable, Pausable {
 
     mapping(uint256 => Job) private _jobs;
     JobParameters private _jobParameters;
+    uint32 private _openJobs;
+    uint32 private _activeJobs;
 
     modifier onlyController() {
         if (msg.sender != _controller) revert NotController();
@@ -57,6 +59,18 @@ contract ShardJobQueue is IShardJobQueue, Ownable, Pausable {
         if (employer == address(0)) revert InvalidEmployer();
         if (specHash == bytes32(0)) revert InvalidSpecHash();
 
+        if (_jobParameters.maxOpenJobs > 0) {
+            uint32 nextOpen = _openJobs + 1;
+            if (nextOpen > _jobParameters.maxOpenJobs) {
+                revert OpenJobsQuotaExceeded(_jobParameters.maxOpenJobs);
+            }
+            _openJobs = nextOpen;
+        } else {
+            unchecked {
+                _openJobs += 1;
+            }
+        }
+
         jobId = _nextJobId++;
         Job storage job = _jobs[jobId];
         job.employer = employer;
@@ -78,6 +92,29 @@ contract ShardJobQueue is IShardJobQueue, Ownable, Pausable {
     /// @inheritdoc IShardJobQueue
     function setStatus(uint256 jobId, JobStatus status) external onlyController {
         Job storage job = _requireJob(jobId);
+        JobStatus previous = job.status;
+
+        if (status == JobStatus.Assigned && !_isActiveStatus(previous)) {
+            uint32 nextActive = _activeJobs + 1;
+            if (_jobParameters.maxActiveJobs > 0 && nextActive > _jobParameters.maxActiveJobs) {
+                revert ActiveJobsQuotaExceeded(_jobParameters.maxActiveJobs);
+            }
+            _activeJobs = nextActive;
+        }
+
+        if (_isTerminalStatus(status) && !_isTerminalStatus(previous)) {
+            if (_openJobs > 0) {
+                unchecked {
+                    _openJobs -= 1;
+                }
+            }
+            if (_isActiveStatus(previous) && _activeJobs > 0) {
+                unchecked {
+                    _activeJobs -= 1;
+                }
+            }
+        }
+
         job.status = status;
         emit JobStatusChanged(jobId, status);
     }
@@ -106,7 +143,12 @@ contract ShardJobQueue is IShardJobQueue, Ownable, Pausable {
     /// @inheritdoc IShardJobQueue
     function setJobParameters(JobParameters calldata params) external onlyControllerOrOwner {
         _jobParameters = params;
-        emit JobParametersUpdated(params.maxReward, params.maxDuration);
+        emit JobParametersUpdated(
+            params.maxReward,
+            params.maxDuration,
+            params.maxOpenJobs,
+            params.maxActiveJobs
+        );
     }
 
     /// @inheritdoc IShardJobQueue
@@ -131,8 +173,22 @@ contract ShardJobQueue is IShardJobQueue, Ownable, Pausable {
         return Pausable.paused();
     }
 
+    /// @inheritdoc IShardJobQueue
+    function getUsage() external view returns (uint32 openJobs, uint32 activeJobs) {
+        openJobs = _openJobs;
+        activeJobs = _activeJobs;
+    }
+
     function _requireJob(uint256 jobId) private view returns (Job storage job) {
         job = _jobs[jobId];
         if (job.status == JobStatus.None) revert UnknownJob(jobId);
+    }
+
+    function _isTerminalStatus(JobStatus status) private pure returns (bool) {
+        return status == JobStatus.Finalized || status == JobStatus.Cancelled;
+    }
+
+    function _isActiveStatus(JobStatus status) private pure returns (bool) {
+        return status == JobStatus.Assigned || status == JobStatus.InProgress || status == JobStatus.Submitted;
     }
 }
