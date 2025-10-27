@@ -75,6 +75,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = subparsers.add_parser("status", help="Show the latest orchestrator status snapshot")
     status.add_argument("--limit", type=int, default=3, help="Number of entries to display")
+    status.add_argument(
+        "--run-dir",
+        type=Path,
+        help="Directory where orchestrator outputs (status, control channel) are stored",
+    )
 
     mermaid = subparsers.add_parser("mermaid", help="Render the mission job graph as Mermaid syntax")
     mermaid.add_argument(
@@ -102,6 +107,11 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="*",
         default=[],
         help="Resource adjustments expressed as key=value pairs",
+    )
+    control.add_argument(
+        "--run-dir",
+        type=Path,
+        help="Directory where orchestrator outputs (status, control channel) are stored",
     )
 
     return parser
@@ -191,7 +201,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     elif args.command == "ci":
         asyncio.run(_run_ci(plan, cycles=args.cycles))
     elif args.command == "status":
-        panel = _resolve_panel(plan)
+        panel = _resolve_panel(plan, run_dir=args.run_dir)
         snapshots = panel.recent_status(limit=args.limit)
         if not snapshots:
             print("No status snapshots available yet.")
@@ -206,7 +216,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         else:
             print(blueprint)
     elif args.command == "control":
-        panel = _resolve_panel(plan)
+        panel = _resolve_panel(plan, run_dir=args.run_dir)
         dispatched = False
         if args.pause:
             panel.pause()
