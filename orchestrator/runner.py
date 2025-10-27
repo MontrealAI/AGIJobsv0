@@ -47,21 +47,24 @@ def _bootstrap_from_checkpoint() -> None:
     global _CHECKPOINT_RESTORED
     if _CHECKPOINT_RESTORED:
         return
-    manager = _ensure_checkpoint_manager()
-    try:
-        restored = manager.restore_runtime()
-    except CheckpointIntegrityError as exc:
-        _LOGGER.error("Checkpoint integrity validation failed: %s", exc)
-        _CHECKPOINT_RESTORED = True
-        return
-    except CheckpointError as exc:
-        _LOGGER.error("Failed to restore checkpoint: %s", exc)
-        _CHECKPOINT_RESTORED = True
-        return
-    if not restored:
-        _CHECKPOINT_RESTORED = True
-        return
+    to_resume = []
     with _LOCK:
+        if _CHECKPOINT_RESTORED:
+            return
+        manager = _ensure_checkpoint_manager()
+        try:
+            restored = manager.restore_runtime()
+        except CheckpointIntegrityError as exc:
+            _LOGGER.error("Checkpoint integrity validation failed: %s", exc)
+            _CHECKPOINT_RESTORED = True
+            return
+        except CheckpointError as exc:
+            _LOGGER.error("Failed to restore checkpoint: %s", exc)
+            _CHECKPOINT_RESTORED = True
+            return
+        if not restored:
+            _CHECKPOINT_RESTORED = True
+            return
         for run_id, job in restored.items():
             _RUNS[run_id] = job.status
             _PLANS[run_id] = job.plan
@@ -69,18 +72,19 @@ def _bootstrap_from_checkpoint() -> None:
                 _store().save(job.status)
             except RunStateError as exc:
                 _LOGGER.warning("Failed to persist restored run %s to state store: %s", run_id, exc)
+            status = job.status
+            if status.run.state == "running" and status.current:
+                to_resume.append((run_id, job.plan, status))
         _ensure_watchdog()
-    for run_id, job in restored.items():
-        status = job.status
-        if status.run.state == "running" and status.current:
-            thread = threading.Thread(
-                target=_resume_run,
-                args=(job.plan, status, run_id),
-                daemon=True,
-                name=f"orchestrator-resume-{run_id}",
-            )
-            thread.start()
-    _CHECKPOINT_RESTORED = True
+        _CHECKPOINT_RESTORED = True
+    for run_id, plan, status in to_resume:
+        thread = threading.Thread(
+            target=_resume_run,
+            args=(plan, status, run_id),
+            daemon=True,
+            name=f"orchestrator-resume-{run_id}",
+        )
+        thread.start()
 
 
 def _checkpoint() -> CheckpointManager:
