@@ -228,6 +228,7 @@ async function persistArtefacts(
   markdownLines.push('  GOV->>EMP: Refund remaining escrow & slash award');
   markdownLines.push('  GOV->>TRE: Route protocol fees & slash share');
   markdownLines.push('  GOV->>BURN: Destroy economic penalties');
+  markdownLines.push('  AGT->>AGT: Withdraw released stake');
   markdownLines.push('```');
 
   const markdownPath = path.join(outputDir, 'trustless-core-report.md');
@@ -388,8 +389,11 @@ async function main() {
     jobStakeLockPct
   );
   await demo.waitForDeployment();
+  const demoAddress = await demo.getAddress();
+  labels[checksum(demoAddress)] = { role: 'Smart Contract', name: 'Trustless Core' };
+  startingBalances[checksum(demoAddress)] = await token.balanceOf(demoAddress);
   recordStep('Deploy Trustless Economic Core', labelFor(owner.address), [
-    `Contract ${await demo.getAddress()}`,
+    `Contract ${demoAddress}`,
     'Validator reward 10%, fee 5%, burn 2%, stake lock 20%.',
   ]);
 
@@ -577,12 +581,32 @@ async function main() {
     await cancelTx.wait()
   );
 
-  const addresses = [owner, employer, agent, validator1, validator2, validator3, treasury];
+  const remainingStake = await demo.agentStake(agent.address);
+  if (remainingStake > 0n) {
+    const withdrawTx = await demo.connect(agent).withdrawStake(remainingStake);
+    recordStep(
+      'Agent withdraws released collateral',
+      labelFor(agent.address),
+      [`Recovered ${formatToken(remainingStake)} $AGIALPHA stake.`],
+      await withdrawTx.wait()
+    );
+  }
+
+  const trackedAddresses = [
+    owner.address,
+    employer.address,
+    agent.address,
+    validator1.address,
+    validator2.address,
+    validator3.address,
+    treasury.address,
+    demoAddress,
+  ];
   const balanceSheet: BalanceSheet = {};
-  for (const signer of addresses) {
-    const key = checksum(signer.address);
-    const start = startingBalances[key];
-    const end = await token.balanceOf(signer.address);
+  for (const address of trackedAddresses) {
+    const key = checksum(address);
+    const start = startingBalances[key] ?? 0n;
+    const end = await token.balanceOf(address);
     balanceSheet[key] = {
       start,
       end,

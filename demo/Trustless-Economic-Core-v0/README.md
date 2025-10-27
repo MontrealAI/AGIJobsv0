@@ -10,6 +10,7 @@
 - **Validator economies** that stream protocol-grade rewards every time progress is validated.
 - **Dual-layer pause controls** for job-specific halts and system-wide emergency freezes.
 - **Misconduct autopsy**: deliberate slashing showcases how the platform punishes failure while refunding employers and rewarding validators.
+- **Zero-residual ledger** capturing the core contract’s balance so operators can prove nothing remains trapped on-chain.
 
 Everything is orchestrated through `npm run run:trustless-core`, which drives an end-to-end Hardhat scenario and exports artefacts for reporting.
 
@@ -29,6 +30,7 @@ The command launches a deterministic simulation on a Hardhat network and emits e
 5. Engages the **SystemPause** to freeze payouts mid-flight, proving governance control.
 6. Slashes the agent for milestone fraud, redistributing collateral to the employer, validators, treasury, and the burn sink.
 7. Cancels the job and refunds the final tranche to the employer.
+8. Releases the remaining agent stake so they can reclaim honest collateral instantly.
 
 You can re-run the deterministic unit test with `npm run test:trustless-core` for CI-grade verification.
 
@@ -104,6 +106,7 @@ sequenceDiagram
   GOV->>EMP: Refund unused escrow + slash reward
   GOV->>TRE: Route protocol fees + slash share
   GOV->>BURN: Burn policy allocations
+  AGT->>AGT: Withdraw released stake
 ```
 
 ## 🔢 Economic policy matrix
@@ -129,6 +132,7 @@ All parameters are reconfigurable by the governance owner via simple function ca
 4. **Milestone 2** – After `unpauseAll`, Validators 2 & 3 approve, duplicating the trustless payout cadence.
 5. **Fraud attempt** – Agent fails Milestone 3. Governance slashes 60 $AGIALPHA of stake, distributing 30 to employer, 12 to validators (4 each), 12 to treasury, and burning 6.
 6. **Employer Exit** – Employer cancels job and receives the remaining 100 $AGIALPHA escrow.
+7. **Agent stake release** – Agent withdraws 140 $AGIALPHA of unlocked collateral (60 remained slashed forever).
 
 ## 🧾 Artefact index
 

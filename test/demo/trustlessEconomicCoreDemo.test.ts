@@ -77,12 +77,13 @@ async function deployFixture() {
     jobId: Number(jobId),
     milestoneAmounts,
     committee,
+    stakeAmount,
   };
 }
 
 describe('TrustlessEconomicCoreDemo', function () {
   it('runs the Kardashev-II milestone, slashing, and pause flow', async () => {
-    const { owner, employer, agent, v1, v2, v3, treasury, token, demo, jobId } =
+    const { owner, employer, agent, v1, v2, v3, treasury, token, demo, jobId, stakeAmount } =
       await loadFixture(deployFixture);
 
     const agentInitialBalance = await token.balanceOf(agent.address);
@@ -153,5 +154,21 @@ describe('TrustlessEconomicCoreDemo', function () {
     expect(await token.balanceOf(employer.address)).to.equal(
       parseUnits('1000') - parseUnits('300') + parseUnits('30') + parseUnits('100')
     );
+
+    const remainingStake = await demo.agentStake(agent.address);
+    expect(remainingStake).to.equal(stakeAmount - parseUnits('60'));
+    await expect(demo.connect(agent).withdrawStake(remainingStake))
+      .to.emit(demo, 'StakeWithdrawn')
+      .withArgs(agent.address, remainingStake);
+    expect(await demo.agentStake(agent.address)).to.equal(0);
+    expect(await token.balanceOf(agent.address)).to.equal(
+      agentInitialBalance + parseUnits('83') * 2n + remainingStake
+    );
+
+    const mintedPerParticipant = parseUnits('1000');
+    const totalParticipants = 7n;
+    const expectedSupply = mintedPerParticipant * totalParticipants - parseUnits('10');
+    expect(await token.totalSupply()).to.equal(expectedSupply);
+    expect(await token.balanceOf(await demo.getAddress())).to.equal(0);
   });
 });
