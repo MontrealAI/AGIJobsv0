@@ -13,6 +13,7 @@
 - **Planetary simulations** – plug-in hooks for economic/energy simulators powering adaptive strategies.
 - **Resilient mission scheduler** – checkpointed event graph restarts instantly with deadlines, validation windows, and control events intact.
 - **Self-healing agent mesh** – heartbeat telemetry with automatic unresponsive detection and recovery logging keeps thousands of agents trustworthy during week-long runs.
+- **Autonomous integrity sweeps** – triple-verification of job graphs, scheduler queues, and planetary ledgers with every run streamed into the status channel.
 
 ```mermaid
 flowchart LR
@@ -53,6 +54,7 @@ flowchart LR
    - Use `--simulation-tick`, `--simulation-hours`, `--simulation-energy-scale`, and `--simulation-compute-scale` for rapid experimentation without editing files.
    - Append `--status-output logs/omega-status.jsonl` to stream machine-readable mission snapshots for dashboards or external automations.
    - Tune `--heartbeat-interval`, `--heartbeat-timeout`, and `--health-check-interval` live to control agent health sensitivity without restarting.
+   - Adjust `--integrity-interval` (or the JSON config) to change how often autonomous integrity sweeps run.
 
 3. **Live control** – stream JSON commands into `control-channel.jsonl`:
 
@@ -84,6 +86,7 @@ flowchart LR
 - Every adjustment is logged as structured JSON (`governance_parameters_updated`, `resource_parameters_updated`, `job_cancelled`) for compliance auditing.
 - `simulation_energy_scale`, `simulation_compute_scale`, and `simulation_tick_seconds` can be adjusted live to model external energy or demand shocks.
 - `scheduler` snapshots (visible via `--status-output`) expose pending deadlines & validation windows, allowing operators to time new sub-jobs or pauses precisely.
+- `integrity` records (in the same stream) provide pass/warn/fail verdicts for job graph structure, scheduler queues, and resource ledgers so owners can prove operational health instantly.
 
 ## 📜 Audit Ledger
 
@@ -152,6 +155,7 @@ capacities in real time, which in turn updates scarcity pricing and validator/wo
 
 - `scheduler.json` payloads saved inside checkpoints now persist every in-flight deadline, commit window, and finalisation timer; restarts simply resume the queue.
 - The status stream’s `scheduler` object surfaces pending counts and the next scheduled event with an ETA, enabling dashboards to highlight looming risk.
+- The adjacent `integrity` block tracks the outcome of every automated verification sweep so long-running missions can evidence compliance-grade resilience.
 
 ## 📈 Extending the Demo
 

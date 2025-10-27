@@ -55,6 +55,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=5.0,
         help="Seconds between orchestrator health scans",
     )
+    parser.add_argument(
+        "--integrity-interval",
+        type=float,
+        default=30.0,
+        help="Seconds between autonomous integrity verification sweeps",
+    )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
     parser.add_argument(
         "--status-output",
@@ -103,6 +109,7 @@ async def _run_async(args: argparse.Namespace) -> None:
         "heartbeat_interval_seconds": args.heartbeat_interval,
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,
+        "integrity_check_interval_seconds": args.integrity_interval,
     }
     params.update(overrides)
 

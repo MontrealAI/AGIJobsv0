@@ -9,6 +9,7 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.integrity import IntegritySuite
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.jobs import JobRegistry, JobSpec, JobStatus
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.messaging import (
     MessageBus,
@@ -25,6 +26,7 @@ from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.resources import (
 )
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.scheduler import (
     EventScheduler,
+    ScheduledEvent,
 )
 
 
@@ -189,6 +191,75 @@ class SchedulerTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
         self.assertEqual(captured, ["original"])
         await restored.shutdown()
+
+
+class IntegritySuiteTests(unittest.TestCase):
+    def _make_suite(
+        self,
+        registry: JobRegistry | None = None,
+        resources: ResourceManager | None = None,
+        events: list[ScheduledEvent] | None = None,
+    ) -> IntegritySuite:
+        registry = registry or JobRegistry()
+        resources = resources or ResourceManager(energy_capacity=1_000, compute_capacity=1_000, base_token_supply=100)
+
+        class _StubScheduler:
+            def __init__(self, pending: list[ScheduledEvent]) -> None:
+                self._pending = list(pending)
+
+            def pending_events(self) -> list[ScheduledEvent]:
+                return list(self._pending)
+
+            def peek_next(self) -> ScheduledEvent | None:
+                if not self._pending:
+                    return None
+                return min(self._pending, key=lambda evt: evt.execute_at)
+
+        scheduler = _StubScheduler(events or [])
+        return IntegritySuite(registry, resources, scheduler)
+
+    def _result(self, report, name: str):  # type: ignore[no-untyped-def]
+        return next(result for result in report.results if result.name == name)
+
+    def test_detects_missing_parent(self) -> None:
+        registry = JobRegistry()
+        spec = JobSpec(
+            title="orphan",
+            description="Missing parent",
+            required_skills=["alpha"],
+            reward_tokens=50.0,
+            deadline=datetime.now(timezone.utc) + timedelta(hours=1),
+            validation_window=timedelta(minutes=10),
+            parent_id="ghost",
+        )
+        registry.create_job(spec)
+        report = self._make_suite(registry=registry).run()
+        job_check = self._result(report, "job_graph")
+        self.assertEqual(job_check.status, "error")
+        self.assertFalse(report.passed)
+        self.assertGreater(job_check.metrics["missing_parents"], 0)
+
+    def test_resource_gap_emits_warning(self) -> None:
+        resources = ResourceManager(energy_capacity=1_000, compute_capacity=1_000, base_token_supply=50)
+        resources.ensure_account("operator", 100)
+        report = self._make_suite(resources=resources).run()
+        resource_check = self._result(report, "resources")
+        self.assertEqual(resource_check.status, "warning")
+        self.assertNotEqual(resource_check.metrics["circulating_gap"], 0.0)
+        payload = report.to_dict()
+        self.assertGreaterEqual(payload["warnings"], 1)
+
+    def test_scheduler_reports_unknown_job(self) -> None:
+        event = ScheduledEvent(
+            event_id="evt",
+            event_type="job_deadline",
+            execute_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+            payload={"job_id": "ghost"},
+        )
+        report = self._make_suite(events=[event]).run()
+        scheduler_check = self._result(report, "scheduler")
+        self.assertEqual(scheduler_check.status, "error")
+        self.assertGreaterEqual(scheduler_check.metrics["unknown_jobs"], 1)
 
 
 class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
@@ -454,6 +525,9 @@ class OrchestratorTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("resources", latest)
             self.assertIn("agents", latest)
             self.assertIn("health", latest["agents"])
+            self.assertIn("integrity", latest)
+            self.assertIsInstance(latest["integrity"], dict)
+            self.assertIn("results", latest["integrity"])
 
     async def test_simulation_updates_resources(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

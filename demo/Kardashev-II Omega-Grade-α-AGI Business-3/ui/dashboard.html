@@ -72,6 +72,16 @@
 
     <section class="card">
       <h2>Resource & Token Telemetry</h2>
+      <pre>
+AGIALPHA Supply: dynamic
+Energy Availability: simulation-driven scarcity pricing (Dyson swarm growth × scale)
+Compute Availability: prosperity × sustainability weighted scaling
+Validator Stakes: automatically rehydrated on restart
+Locked Stakes: escrow tracked separately from circulating supply for precise slashing economics
+Status Stream: logs/omega-status.jsonl (JSONL snapshots for dashboards & automations)
+      </pre>
+    </section>
+
     <section class="card">
       <h2>Agent Health Telemetry</h2>
       <pre>
@@ -82,14 +92,14 @@ Escalation: warnings emitted when seconds_since_heartbeat exceeds the configured
       </pre>
     </section>
 
-
+    <section class="card">
+      <h2>Integrity Sentinel</h2>
       <pre>
-AGIALPHA Supply: dynamic
-Energy Availability: simulation-driven scarcity pricing (Dyson swarm growth × scale)
-Compute Availability: prosperity × sustainability weighted scaling
-Validator Stakes: automatically rehydrated on restart
-Locked Stakes: escrow tracked separately from circulating supply for precise slashing economics
-Status Stream: logs/omega-status.jsonl (JSONL snapshots for dashboards & automations)
+Job Graph: verifies every sub-job has a valid parent and zero DAG cycles
+Scheduler Queue: detects stale deadlines or unknown job references before they trigger failures
+Resource Ledger: checks circulating supply, locked stakes, and energy/compute reserves for imbalances
+Output: structured pass/warn/fail objects under status['integrity'] with warning counts & metrics
+CLI Control: tune cadence with --integrity-interval or JSON config (default 20s)
       </pre>
     </section>
 
