@@ -1,3 +1,12 @@
+"""Monte Carlo helpers for validator/agent load simulations.
+
+The module is exercised both from the command line and the CI load-simulation
+pipeline.  Historically :func:`parameter_search` printed the sweep results but
+did not expose them for programmatic consumption.  The CI job needs to persist
+the sweep table as an artefact, so we surface a helper that returns the matrix
+of explored parameters while keeping the existing behaviour intact.
+"""
+
 import random
 from typing import List, Tuple
 
@@ -32,17 +41,30 @@ def run_simulation(
     return dissipation / iterations
 
 
-def parameter_search() -> Tuple[float, float, float]:
+def sweep_parameters(iterations: int = 1000) -> List[Tuple[float, float, float]]:
+    """Evaluate the Monte Carlo simulation across burn/fee combinations.
+
+    The sweep intentionally seeds ``random`` to keep CI runs deterministic while
+    still exploring a representative portion of the search space.  Each entry in
+    the returned list is a ``(burn_pct, fee_pct, dissipation)`` tuple.
+    """
+
     agent_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
     validator_eff = [0.5, 0.6, 0.7, 0.8, 0.9]
-    best = (0.0, 0.0, float("inf"))
+    random.seed(1337)
     results = []
     for burn in [i / 100 for i in range(0, 21, 5)]:  # 0.00 to 0.20 step 0.05
         for fee in [i / 100 for i in range(0, 11, 2)]:  # 0.00 to 0.10 step 0.02
-            avg = run_simulation(burn, fee, agent_eff, validator_eff)
+            avg = run_simulation(burn, fee, agent_eff, validator_eff, iterations=iterations)
             results.append((burn, fee, avg))
-            if avg < best[2]:
-                best = (burn, fee, avg)
+    return results
+
+
+def parameter_search(iterations: int = 1000) -> Tuple[float, float, float]:
+    """Return the lowest-dissipation point from the parameter sweep."""
+
+    results = sweep_parameters(iterations=iterations)
+    best = min(results, key=lambda entry: entry[2], default=(0.0, 0.0, float("inf")))
     print("burn_pct, fee_pct, dissipation")
     for burn, fee, avg in results:
         print(f"{burn:.2f}, {fee:.2f}, {avg:.4f}")

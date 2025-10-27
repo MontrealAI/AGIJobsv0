@@ -12,6 +12,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 ## Prerequisites
 
 - Node.js 20.18.1 LTS and npm 10+
+- Python 3.12 with `pip`
 - Run `nvm use` to select the version from `.nvmrc`.
 
 ## Continuous Integration (CI v2)
@@ -20,8 +21,12 @@ The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull reque
 
 - **Lint & static checks** – runs Prettier, ESLint and Solhint with production-safe rules to guarantee formatting and Solidity hygiene.
 - **Tests** – compiles contracts, regenerates shared constants, and executes the full Hardhat suite together with ABI drift detection.
+- **Python unit tests** – installs the FastAPI/Orchestrator toolchain from `requirements-python.txt` and runs the orchestrator, paymaster and tooling pytest modules under coverage.
+- **Python integration tests** – exercises FastAPI routers (agents, analytics, one-box health) and the meta-agentic demo suites, producing additional coverage data for the orchestrator services.
+- **Load-simulation reports** – generates deterministic Monte Carlo sweeps under `reports/load-sim/` and validates that the expected fee/burn equilibrium stays within safe bounds.
+- **Python coverage enforcement** – combines the unit and integration coverage databases, enforces an 85 % floor (see `.coveragerc`), and uploads consolidated XML artefacts.
 - **Foundry** – reuses the generated constants, installs Foundry with a warm cache, and executes high signal fuzz tests.
-- **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90% minimum, and uploads the LCOV artifact.
+- **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90 % minimum for the Hardhat suite, and uploads the LCOV artifact.
 - **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
 
 ```mermaid
@@ -37,7 +42,10 @@ flowchart LR
     Main --> Tests
     Manual --> Tests
 
-    Tests --> Foundry[Foundry]:::job --> Summary{{CI summary}}:::gate
+    Tests --> PythonUnit[Python unit tests]:::job --> PythonCoverage[Python coverage enforcement]:::job --> Summary{{CI summary}}:::gate
+    Tests --> PythonIntegration[Python integration tests]:::job --> PythonCoverage
+    Tests --> LoadSim[Load-simulation reports]:::job --> Summary
+    Tests --> Foundry[Foundry]:::job --> Summary
     Tests --> Coverage[Coverage thresholds]:::job --> Summary
     Lint --> Summary
 ```
@@ -48,12 +56,74 @@ Branch protection can now point at the `CI summary` check so that every job list
 
 Keep the enforcement proof close at hand by running a quick audit whenever GitHub updates workflow metadata or a new maintainer joins the project:
 
-1. Visit **Settings → Branches → Branch protection rules → main** and confirm the five required contexts match the workflow job names exactly: `ci (v2) / Lint & static checks`, `ci (v2) / Tests`, `ci (v2) / Foundry`, `ci (v2) / Coverage thresholds`, and `ci (v2) / CI summary`. The names must stay in lockstep with the [`ci.yml` job definitions](.github/workflows/ci.yml).
+1. Visit **Settings → Branches → Branch protection rules → main** and confirm the required contexts match the workflow job names exactly:
+   - `ci (v2) / Lint & static checks`
+   - `ci (v2) / Tests`
+   - `ci (v2) / Python unit tests`
+   - `ci (v2) / Python integration tests`
+   - `ci (v2) / Load-simulation reports`
+   - `ci (v2) / Python coverage enforcement`
+   - `ci (v2) / Foundry`
+   - `ci (v2) / Coverage thresholds`
+   - `ci (v2) / CI summary`
+   The names must stay in lockstep with the [`ci.yml` job definitions](.github/workflows/ci.yml).
 2. From the terminal, run `npm run ci:verify-branch-protection` (set `GITHUB_TOKEN` with `repo` scope first). The script prints a ✅/❌ table showing whether the contexts, ordering, and admin enforcement match the CI v2 contract. The command auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote, and accepts `--owner`, `--repo`, and `--branch` overrides when auditing forks.
 3. If you prefer GitHub CLI, run `gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'` and verify the output lists the same five contexts in order. Repeat with `gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'` to ensure administrators cannot bypass the checks.
 4. Open the latest **ci (v2)** run under **Actions** and confirm the `CI summary` job reports every upstream result. The summary gate must remain required in branch protection so non-technical reviewers see a single ✅/❌ indicator.
 
 For a printable walkthrough (including remediation steps when a context drifts), use the [CI v2 branch protection checklist](docs/ci-v2-branch-protection-checklist.md).
+
+### Local CI validation
+
+Reproduce the required checks before opening a pull request:
+
+```bash
+# Node/Hardhat suite
+npm test
+
+# Python test harness (installs FastAPI, redis, web3, etc.)
+python -m pip install -r requirements-python.txt
+
+COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc -m pytest \
+  test/paymaster \
+  test/tools \
+  test/orchestrator \
+  test/simulation
+
+COVERAGE_FILE=.coverage.integration coverage run --rcfile=.coveragerc -m pytest \
+  test/routes/test_agents.py \
+  test/routes/test_analytics.py \
+  test/routes/test_onebox_health.py \
+  test/demo \
+  demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests
+
+coverage combine .coverage.unit .coverage.integration
+coverage report --rcfile=.coveragerc
+
+python - <<'PY'
+from pathlib import Path
+import csv, json
+from simulation.montecarlo import sweep_parameters
+
+results = sweep_parameters()
+out_dir = Path("reports/load-sim")
+out_dir.mkdir(parents=True, exist_ok=True)
+csv_path = out_dir / "montecarlo.csv"
+with csv_path.open("w", newline="", encoding="utf-8") as handle:
+    writer = csv.DictWriter(handle, fieldnames=["burn_pct", "fee_pct", "avg_dissipation"])
+    writer.writeheader()
+    for burn, fee, avg in results:
+        writer.writerow({"burn_pct": burn, "fee_pct": fee, "avg_dissipation": avg})
+summary_path = out_dir / "summary.json"
+summary_path.write_text(json.dumps({
+    "iterations": 1000,
+    "results_count": len(results),
+    "best": dict(zip(["burn_pct", "fee_pct", "avg_dissipation"], min(results, key=lambda row: row[2])))
+}, indent=2) + "\n", encoding="utf-8")
+PY
+```
+
+The coverage report must stay above 85 % for the orchestrator code (`coverage report` will exit non-zero otherwise). The load-simulation snippet mirrors the CI artefact producer and leaves its CSV/JSON outputs under `reports/load-sim/` for inspection.
 
 ## Table of Contents
 

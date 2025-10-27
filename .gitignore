@@ -4,11 +4,15 @@ artifacts/
 cache/
 coverage/
 coverage.json
+.coverage
+.coverage.*
 !contracts/coverage/
 !contracts/coverage/**
 !test/coverage/
 !test/coverage/**
 reports/sbom/
+reports/load-sim/
+reports/python-coverage/
 
 .next/
 
