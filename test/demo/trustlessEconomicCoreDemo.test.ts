@@ -88,6 +88,14 @@ describe('TrustlessEconomicCoreDemo', function () {
     const agentInitialBalance = await token.balanceOf(agent.address);
     const treasuryInitialBalance = await token.balanceOf(treasury.address);
 
+    // Job-level pause and resume before approvals
+    await expect(demo.connect(owner).pauseJob(jobId)).to.emit(demo, 'JobPaused');
+    await expect(demo.connect(v1).approveMilestone(jobId, 0)).to.be.revertedWithCustomError(
+      demo,
+      'JobPausedOrCancelled'
+    );
+    await expect(demo.connect(owner).resumeJob(jobId)).to.emit(demo, 'JobResumed');
+
     // Milestone 1 approvals and release
     await expect(demo.connect(v1).approveMilestone(jobId, 0)).to.emit(
       demo,

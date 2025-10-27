@@ -36,6 +36,7 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
         uint256 lockedStake;
         uint256 currentMilestone;
         uint64 approvalThreshold;
+        bool paused;
         bool completed;
         bool cancelled;
         bool exists;
@@ -263,6 +264,7 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
         job.budget = total;
         job.lockedStake = requiredStake;
         job.approvalThreshold = threshold;
+        job.paused = false;
         job.exists = true;
 
         agentLockedStake[agent] += requiredStake;
@@ -297,14 +299,17 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
     function pauseJob(uint256 jobId) external onlyOwner {
         Job storage job = jobs[jobId];
         if (!job.exists) revert UnknownJob();
-        job.cancelled = true;
+        if (job.cancelled || job.completed) revert JobNotActive();
+        if (job.paused) revert JobNotActive();
+        job.paused = true;
         emit JobPaused(jobId);
     }
 
     function resumeJob(uint256 jobId) external onlyOwner {
         Job storage job = jobs[jobId];
         if (!job.exists) revert UnknownJob();
-        job.cancelled = false;
+        if (!job.paused) revert JobNotActive();
+        job.paused = false;
         emit JobResumed(jobId);
     }
 
@@ -315,6 +320,7 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
         if (job.completed || job.cancelled) revert JobNotActive();
 
         uint256 refund = _clearRemainingMilestones(jobId);
+        job.paused = false;
         job.cancelled = true;
         job.completed = true;
 
@@ -329,7 +335,7 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
     function approveMilestone(uint256 jobId, uint256 milestoneId) external whenNotPaused nonReentrant {
         Job storage job = jobs[jobId];
         if (!job.exists) revert UnknownJob();
-        if (job.cancelled || job.completed) revert JobPausedOrCancelled();
+        if (job.cancelled || job.completed || job.paused) revert JobPausedOrCancelled();
         if (!isJobValidator[jobId][msg.sender]) revert NotValidator();
 
         Milestone storage milestone = _milestones[jobId][milestoneId];
@@ -382,6 +388,7 @@ contract TrustlessEconomicCoreDemo is Ownable, Pausable, ReentrancyGuard {
 
         job.currentMilestone += 1;
         if (job.currentMilestone == _milestones[jobId].length) {
+            job.paused = false;
             job.completed = true;
             _unlockStake(jobId);
             emit JobCompleted(jobId);

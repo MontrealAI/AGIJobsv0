@@ -454,6 +454,32 @@ async function main() {
     createJobReceipt
   );
 
+  const pauseJobTx = await demo.connect(owner).pauseJob(jobId);
+  recordStep(
+    'Governance pauses job-specific flow',
+    labelFor(owner.address),
+    ['Milestone approvals disabled for this job only.'],
+    await pauseJobTx.wait()
+  );
+
+  try {
+    await demo.connect(validator1).approveMilestone(jobId, 0);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    recordStep('Job-level pause rejects approval', labelFor(validator1.address), [
+      'Custom error captured: JobPausedOrCancelled',
+      message.split('\n')[0],
+    ]);
+  }
+
+  const resumeJobTx = await demo.connect(owner).resumeJob(jobId);
+  recordStep(
+    'Governance resumes job-specific flow',
+    labelFor(owner.address),
+    ['Validator approvals re-enabled for the job.'],
+    await resumeJobTx.wait()
+  );
+
   async function approveMilestone(actor: typeof validator1, milestoneId: number) {
     const tx = await demo.connect(actor).approveMilestone(jobId, milestoneId);
     const receipt = await tx.wait();
