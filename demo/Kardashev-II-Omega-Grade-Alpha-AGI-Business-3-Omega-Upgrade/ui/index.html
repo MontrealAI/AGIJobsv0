@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kardashev-II Omega-Grade Upgrade Command Theatre</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #040612;
+        --panel: rgba(12, 20, 44, 0.85);
+        --accent: #2af5ff;
+        --muted: #9bb3ff;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, #0b173f, var(--bg));
+        color: #f5f9ff;
+        font-family: "Space Grotesk", sans-serif;
+        line-height: 1.6;
+        padding: 2rem;
+        display: grid;
+        gap: 2rem;
+      }
+      header {
+        backdrop-filter: blur(12px);
+        background: var(--panel);
+        padding: 2rem;
+        border-radius: 24px;
+        border: 1px solid rgba(42, 245, 255, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+      }
+      h1 {
+        margin: 0;
+        font-size: 2.75rem;
+        letter-spacing: 0.05em;
+      }
+      h2 {
+        margin-top: 0;
+        font-size: 1.4rem;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+      .panel {
+        background: var(--panel);
+        border-radius: 20px;
+        padding: 1.8rem;
+        border: 1px solid rgba(42, 245, 255, 0.25);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      .panel p, .panel li {
+        color: rgba(235, 245, 255, 0.85);
+      }
+      .mermaid {
+        background: rgba(3, 8, 22, 0.8);
+        border-radius: 16px;
+        padding: 1rem;
+        border: 1px solid rgba(42, 245, 255, 0.18);
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      code {
+        color: #7fffbf;
+        font-weight: 500;
+      }
+    </style>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Kardashev-II Omega-Grade Upgrade</h1>
+      <h2>Autonomous α-AGI Business 3 Command Theatre</h2>
+      <p>
+        Observe the living fabric of a Kardashev-II economy. Recursive job graphs, validator swarms, and planetary resource flows
+        are rendered in real time for operators steering AGI Jobs v0 (v2) missions.
+      </p>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <h2>Mission Flywheel</h2>
+        <div class="mermaid">
+          graph TD
+            A[Mission Seed] --> B{Strategist Council}
+            B -->|Delegates| C[Sub-Job Registry]
+            C --> D[Specialist Workers]
+            D --> E[Validator Mesh]
+            E --> F[Planetary Treasury]
+            F -->|Token Feedback| G[Resource Manager]
+            G --> H[Dyson Swarm Simulation]
+            H -->|Energy Surplus| B
+        </div>
+        <p>
+          Every mission begins with a strategic insight and cascades into thousands of accountable actions. Validators and the
+          treasury ensure the economy remains truthful and solvent while the simulation feeds back planetary energy output.
+        </p>
+      </article>
+
+      <article class="panel">
+        <h2>Commit–Reveal Timeline</h2>
+        <div class="mermaid">
+          timeline
+            title Validator Oversight Windows
+            section Job Lifecycle
+              Job Posted : 0
+              Worker Execution : 0.1
+              Commit Phase : 0.25
+              Reveal Phase : 0.5
+              Finalization : 0.75
+              Reward Distribution : 0.9
+        </div>
+        <p>
+          Adjustable commit and reveal windows guarantee validators can audit outcomes even on multi-hour missions. Control
+          commands from the operator can extend, pause, or fast-forward these windows in real time.
+        </p>
+      </article>
+
+      <article class="panel">
+        <h2>Operator Command Recipes</h2>
+        <ul>
+          <li><code>{"action": "pause"}</code> – freeze the entire mission while preserving state.</li>
+          <li><code>{"action": "resume"}</code> – instantly resume all delegated work.</li>
+          <li><code>{"action": "seed", "payload": {"title": "Dyson Swarm South Quadrant"}}</code> – inject a new strategic objective.</li>
+          <li><code>{"action": "govern", "payload": {"validator_quorum": 5}}</code> – update governance parameters live.</li>
+          <li><code>{"action": "stop"}</code> – drain safely, write checkpoints, and prepare for relaunch.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Planetary KPI Sparkline</h2>
+        <p>
+          Resource telemetry is written to <code>analytics.jsonl</code>. Visualize it with your preferred tooling or stream it into
+          a Grafana/Kepler board. Each frame captures energy output, compute liquidity, token supply, and validator participation
+          so you can audit progress like a planetary CFO.
+        </p>
+      </article>
+    </section>
+
+    <footer>
+      Powered by AGI Jobs v0 (v2) · Designed for non-technical planetary operators · Kardashev-II Omega-Grade Upgrade
+    </footer>
+  </body>
+</html>

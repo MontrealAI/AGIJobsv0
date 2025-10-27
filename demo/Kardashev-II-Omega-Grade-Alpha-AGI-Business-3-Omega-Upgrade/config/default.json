@@ -1,0 +1,33 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade Upgrade",
+  "checkpoint_path": "checkpoint.json",
+  "checkpoint_interval_seconds": 45,
+  "resume_from_checkpoint": true,
+  "enable_simulation": true,
+  "operator_account": "omega-operator",
+  "base_agent_tokens": 20000,
+  "energy_capacity": 5000000,
+  "compute_capacity": 20000000,
+  "validator_names": ["validator-omni-1", "validator-omni-2", "validator-omni-3", "validator-omni-4"],
+  "worker_specs": {
+    "dyson-assembler": 1.6,
+    "quantum-finance": 1.4,
+    "supply-chain": 1.3,
+    "orbital-logistics": 1.2
+  },
+  "strategist_names": ["macro-strategist", "expansion-strategist"],
+  "cycle_sleep_seconds": 0.15,
+  "insight_interval_seconds": 20,
+  "control_channel_file": "control-channel.jsonl",
+  "analytics_file": "analytics.jsonl",
+  "governance": {
+    "worker_stake_ratio": 0.15,
+    "validator_stake": 75,
+    "validator_commit_window_seconds": 180,
+    "validator_reveal_window_seconds": 180,
+    "validator_quorum": 3,
+    "failure_slash_ratio": 0.6,
+    "reward_burn_ratio": 0.03,
+    "pause_enabled": true
+  }
+}
