@@ -1,0 +1,110 @@
+{
+  "mission_name": "Kardashev-II Omega-Grade Upgrade Mission",
+  "operator_account": "omega-operator",
+  "base_agent_tokens": 1000000,
+  "energy_capacity": 1000000,
+  "compute_capacity": 500000,
+  "workers": [
+    {
+      "name": "helios-strategist",
+      "skills": ["energy", "general"],
+      "efficiency": 1.4,
+      "stake_ratio": 1.0,
+      "starting_balance": 250000
+    },
+    {
+      "name": "atlas-logistics",
+      "skills": ["logistics", "general"],
+      "efficiency": 1.2,
+      "stake_ratio": 1.1,
+      "starting_balance": 225000
+    },
+    {
+      "name": "aurora-intelligence",
+      "skills": ["research", "general"],
+      "efficiency": 1.6,
+      "stake_ratio": 0.9,
+      "starting_balance": 275000
+    }
+  ],
+  "validators": [
+    "validator-celestia",
+    "validator-hyperion",
+    "validator-nova"
+  ],
+  "validator_balance": 150000,
+  "governance": {
+    "validator_quorum": 0.66
+  },
+  "simulation": {
+    "type": "synthetic_economy",
+    "energy_output": 100000000,
+    "compute_output": 80000000,
+    "population": 8200000000,
+    "innovation_index": 1.5
+  },
+  "initial_jobs": [
+    {
+      "title": "Deploy Dyson Swarm Sector",
+      "description": "Engineer and launch a new Dyson swarm segment to amplify stellar energy capture.",
+      "reward_tokens": 500000,
+      "stake_required": 50000,
+      "energy_budget": 120000,
+      "compute_budget": 65000,
+      "deadline_s": 7200,
+      "skill": "energy",
+      "children": [
+        {
+          "title": "Antenna Calibration",
+          "description": "Calibrate phased array antennas to maximise energy throughput.",
+          "reward_tokens": 125000,
+          "stake_required": 15000,
+          "energy_budget": 32000,
+          "compute_budget": 16000,
+          "deadline_s": 3600,
+          "skill": "energy"
+        },
+        {
+          "title": "Orbital Logistics",
+          "description": "Optimise launch cadence and orbital insertion for construction materials.",
+          "reward_tokens": 90000,
+          "stake_required": 12000,
+          "energy_budget": 20000,
+          "compute_budget": 8000,
+          "deadline_s": 5400,
+          "skill": "logistics"
+        }
+      ]
+    },
+    {
+      "title": "Planetary Compute Grid Upgrade",
+      "description": "Install quantum-cooled data centres and integrate them into the planetary mesh.",
+      "reward_tokens": 420000,
+      "stake_required": 45000,
+      "energy_budget": 88000,
+      "compute_budget": 70000,
+      "deadline_s": 10800,
+      "skill": "research",
+      "children": [
+        {
+          "title": "Cryogenic Systems Commissioning",
+          "reward_tokens": 110000,
+          "stake_required": 15000,
+          "energy_budget": 24000,
+          "compute_budget": 12000,
+          "deadline_s": 3600,
+          "skill": "research"
+        },
+        {
+          "title": "Network Resilience Simulation",
+          "reward_tokens": 140000,
+          "stake_required": 18000,
+          "energy_budget": 18000,
+          "compute_budget": 18000,
+          "deadline_s": 4500,
+          "skill": "research"
+        }
+      ]
+    }
+  ]
+}
