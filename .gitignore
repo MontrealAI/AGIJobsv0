@@ -62,3 +62,5 @@ examples/agentic/runtime-agentic.jsonl
 
 apps/console/dist/
 apps/console/node_modules/
+demo/Trustless-Economic-Core-v0/reports/
+!demo/Trustless-Economic-Core-v0/reports/.gitkeep

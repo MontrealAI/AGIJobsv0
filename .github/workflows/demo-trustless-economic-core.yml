@@ -1,0 +1,124 @@
+name: demo-trustless-economic-core
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Trustless-Economic-Core-v0/**'
+      - 'test/demo/trustlessEconomicCoreDemo.test.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-trustless-economic-core.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/Trustless-Economic-Core-v0/**'
+      - 'test/demo/trustlessEconomicCoreDemo.test.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/demo-trustless-economic-core.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trustless-core-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            github.com
+            objects.githubusercontent.com
+            raw.githubusercontent.com
+            registry.npmjs.org
+            nodejs.org
+            binaries.soliditylang.org
+            solc-bin.ethereum.org
+            solc-bin.ethereum.org.s3.amazonaws.com
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Run trustless core unit test
+        run: npm run test:trustless-core
+
+      - name: Execute trustless core scenario
+        run: npm run run:trustless-core
+
+      - name: Validate trustless core artefacts
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const base = path.join('demo', 'Trustless-Economic-Core-v0', 'reports');
+          const jsonPath = path.join(base, 'trustless-core-report.json');
+          const markdownPath = path.join(base, 'trustless-core-report.md');
+          const htmlPath = path.join(base, 'trustless-core-dashboard.html');
+
+          for (const file of [jsonPath, markdownPath, htmlPath]) {
+            if (!fs.existsSync(file)) {
+              throw new Error(`expected artefact missing: ${file}`);
+            }
+          }
+
+          const summary = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          if (!summary.job || typeof summary.job.id !== 'number') {
+            throw new Error('job metadata missing from JSON artefact');
+          }
+          if (!summary.timeline || summary.timeline.length < 5) {
+            throw new Error('timeline entries missing from JSON artefact');
+          }
+          if (!summary.milestones || summary.milestones.length !== 2) {
+            throw new Error('milestone executions not captured');
+          }
+          if (!summary.supply || !summary.supply.before || !summary.supply.after) {
+            throw new Error('supply deltas missing');
+          }
+
+          const markdown = fs.readFileSync(markdownPath, 'utf8');
+          const requiredMarkdownSnippets = [
+            '# Trustless Economic Core Demo Run',
+            '## Economic Parameters',
+            '## Participant Balance Sheet',
+            '```mermaid',
+          ];
+          for (const snippet of requiredMarkdownSnippets) {
+            if (!markdown.includes(snippet)) {
+              throw new Error(`markdown artefact missing snippet: ${snippet}`);
+            }
+          }
+
+          const html = fs.readFileSync(htmlPath, 'utf8');
+          const requiredHtmlSnippets = [
+            '<title>Trustless Economic Core Demo</title>',
+            'Milestone Releases',
+            'Timeline',
+            'Network:'
+          ];
+          for (const snippet of requiredHtmlSnippets) {
+            if (!html.includes(snippet)) {
+              throw new Error(`html artefact missing snippet: ${snippet}`);
+            }
+          }
+
+          console.log(`Validated trustless core artefacts for job ${summary.job.id}.`);
+          NODE
