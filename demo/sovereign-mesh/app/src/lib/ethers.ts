@@ -1,23 +1,15 @@
 import { ethers } from "ethers";
 
-declare global {
-  interface Window {
-    ethereum?: unknown;
-  }
-}
-
 export const getProvider = () => {
-  if (!window.ethereum) {
-    throw new Error("No injected provider found");
+  const ethereum = (window as any).ethereum;
+  if (!ethereum) {
+    throw new Error("No injected provider detected");
   }
-  return new ethers.BrowserProvider(window.ethereum as ethers.Eip1193Provider);
+  return new ethers.BrowserProvider(ethereum);
 };
 
 export const getSigner = async () => {
   const provider = getProvider();
-  const accounts = await provider.send("eth_requestAccounts", []);
-  if (!accounts || accounts.length === 0) {
-    throw new Error("No account available");
-  }
+  await provider.send("eth_requestAccounts", []);
   return provider.getSigner();
 };
