@@ -372,6 +372,13 @@ export class PlanetaryOrchestrator {
         if (!router) {
           throw new Error(`Unknown shard ${event.shard}`);
         }
+        const shard = this.shards.get(event.shard);
+        if (shard) {
+          shard.inFlight.delete(event.job.id);
+        }
+        if (event.job.assignedNodeId) {
+          this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
+        }
         this.recordFabricEvent(router.requeueJob(cloneJob(event.job), this.tick, `replay-${event.origin}`));
         this.metrics.reassignedAfterFailure += 1;
         break;
