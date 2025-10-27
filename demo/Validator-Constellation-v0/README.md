@@ -76,6 +76,11 @@ import { ValidatorConstellationDemo } from './src/core/constellation';
 
 const demo = new ValidatorConstellationDemo(setup);
 demo.updateGovernanceParameter('slashPenaltyBps', 2_500);
+demo.updateSentinelConfig({ budgetGraceRatio: 0.12 });
+demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
+demo.resumeDomain('deep-space-lab');
+demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
 ```
 
 All modules respond instantly (new committee sizes, quorum thresholds, penalty weights, etc.).

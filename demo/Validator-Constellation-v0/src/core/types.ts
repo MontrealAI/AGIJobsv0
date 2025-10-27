@@ -139,6 +139,12 @@ export interface DomainState {
   pauseReason?: PauseRecord;
 }
 
+export interface DomainSafetyUpdate {
+  humanName?: string;
+  budgetLimit?: bigint;
+  unsafeOpcodes?: Iterable<string>;
+}
+
 export interface ValidatorEventBus extends EventEmitter {
   on(event: 'StakeSlashed', listener: (event: SlashingEvent) => void): this;
   on(event: 'SentinelAlert', listener: (alert: SentinelAlert) => void): this;

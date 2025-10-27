@@ -60,13 +60,19 @@ export function demoJobBatch(domainId: string, count: number): JobResult[] {
   return jobs;
 }
 
-export function budgetOverrunAction(agentEns: string, agentAddress: `0x${string}`, domainId: string, overspend: bigint): AgentAction {
+export function budgetOverrunAction(
+  agentEns: string,
+  agentAddress: `0x${string}`,
+  domainId: string,
+  overspend: bigint,
+  budget = 1_000_000n,
+): AgentAction {
   return {
     agent: {
       ensName: agentEns,
       address: agentAddress,
       domainId,
-      budget: 1_000_000n,
+      budget,
     },
     domainId,
     type: 'TRANSFER',
