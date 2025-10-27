@@ -12,6 +12,7 @@ import {
   NodeDefinition,
   NodeHealthReport,
   NodeState,
+  OwnerCommand,
   RegistryEvent,
   RouterHealthReport,
   ShardConfig,
@@ -74,6 +75,8 @@ export class PlanetaryOrchestrator {
   private pendingRegistryFrame: RegistryEvent[] = [];
   private currentRegistryFrame: RegistryEvent[] = [];
   private processingTick = false;
+  private systemPaused = false;
+  private readonly pausedShards: Set<ShardId> = new Set();
 
   constructor(
     private readonly config: FabricConfig,
@@ -91,6 +94,9 @@ export class PlanetaryOrchestrator {
       spillovers: 0,
       reassignedAfterFailure: 0,
       outageHandled: false,
+      ownerInterventions: 0,
+      systemPauses: 0,
+      shardPauses: 0,
     };
   }
 
@@ -105,6 +111,8 @@ export class PlanetaryOrchestrator {
     this.pendingRegistryFrame = [];
     this.currentRegistryFrame = [];
     this.processingTick = false;
+    this.systemPaused = false;
+    this.pausedShards.clear();
     for (const shard of this.config.shards) {
       const state = this.createShardState(shard);
       this.shards.set(shard.id, state);
@@ -138,6 +146,36 @@ export class PlanetaryOrchestrator {
     }));
   }
 
+  isSystemPaused(): boolean {
+    return this.systemPaused;
+  }
+
+  getPausedShards(): ShardId[] {
+    return Array.from(this.pausedShards);
+  }
+
+  getOwnerState(): {
+    systemPaused: boolean;
+    pausedShards: ShardId[];
+    checkpoint: { path: string; intervalTicks: number };
+    metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
+  } {
+    return {
+      systemPaused: this.systemPaused,
+      pausedShards: this.getPausedShards(),
+      checkpoint: this.getCheckpointConfig(),
+      metrics: {
+        ownerInterventions: this.metrics.ownerInterventions,
+        systemPauses: this.metrics.systemPauses,
+        shardPauses: this.metrics.shardPauses,
+      },
+    };
+  }
+
+  getCheckpointConfig(): { path: string; intervalTicks: number } {
+    return { path: this.config.checkpoint.path, intervalTicks: this.config.checkpoint.intervalTicks };
+  }
+
   getHealthReport(): FabricHealthReport {
     const shardReports: RouterHealthReport[] = Array.from(this.routers.entries()).map(([shardId, router]) =>
       router.getHealthReport(this.tick)
@@ -147,6 +185,7 @@ export class PlanetaryOrchestrator {
     return {
       tick: this.tick,
       fabric: fabricStatus,
+      systemPaused: this.systemPaused,
       shards: shardReports,
       nodes: nodeReports,
       metrics: this.fabricMetrics,
@@ -176,6 +215,266 @@ export class PlanetaryOrchestrator {
     this.recordRegistryEvent({ type: 'job.created', shard: definition.shard, job: cloneJob(job) });
   }
 
+  async applyOwnerCommand(command: OwnerCommand): Promise<FabricEvent[]> {
+    this.logger.setTick(this.tick);
+    const events: FabricEvent[] = [];
+    const push = (event: FabricEvent): void => {
+      events.push(event);
+      this.recordFabricEvent(event);
+    };
+
+    switch (command.type) {
+      case 'system.pause': {
+        const changed = !this.systemPaused;
+        if (changed) {
+          this.systemPaused = true;
+          this.metrics.systemPauses += 1;
+          for (const router of this.routers.values()) {
+            router.setPaused(true);
+          }
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.system.pause',
+          message: changed
+            ? 'Owner paused the planetary orchestrator fabric'
+            : 'Owner reaffirmed planetary orchestrator pause',
+          data: { reason: command.reason, paused: this.systemPaused },
+        });
+        break;
+      }
+      case 'system.resume': {
+        const wasPaused = this.systemPaused;
+        this.systemPaused = false;
+        for (const [shardId, router] of this.routers.entries()) {
+          const shardState = this.shards.get(shardId);
+          router.setPaused(shardState?.paused ?? false);
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.system.resume',
+          message: wasPaused
+            ? 'Owner resumed the planetary orchestrator fabric'
+            : 'Owner issued resume while system already active',
+          data: { reason: command.reason, previouslyPaused: wasPaused },
+        });
+        break;
+      }
+      case 'shard.pause': {
+        const shardState = this.shards.get(command.shard);
+        if (!shardState) {
+          throw new Error(`Unknown shard ${command.shard}`);
+        }
+        const router = this.routers.get(command.shard);
+        const changed = !shardState.paused;
+        shardState.paused = true;
+        this.pausedShards.add(command.shard);
+        router?.setPaused(true);
+        if (changed) {
+          this.metrics.shardPauses += 1;
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.shard.pause',
+          message: `Owner paused shard ${command.shard}`,
+          data: { reason: command.reason, shard: command.shard, alreadyPaused: !changed },
+        });
+        break;
+      }
+      case 'shard.resume': {
+        const shardState = this.shards.get(command.shard);
+        if (!shardState) {
+          throw new Error(`Unknown shard ${command.shard}`);
+        }
+        const router = this.routers.get(command.shard);
+        const wasPaused = shardState.paused;
+        shardState.paused = false;
+        this.pausedShards.delete(command.shard);
+        router?.setPaused(this.systemPaused);
+        push({
+          tick: this.tick,
+          type: 'owner.shard.resume',
+          message: wasPaused
+            ? `Owner resumed shard ${command.shard}`
+            : `Owner issued resume while shard ${command.shard} already active`,
+          data: { reason: command.reason, shard: command.shard, previouslyPaused: wasPaused },
+        });
+        break;
+      }
+      case 'shard.update': {
+        const shardState = this.shards.get(command.shard);
+        if (!shardState) {
+          throw new Error(`Unknown shard ${command.shard}`);
+        }
+        const router = this.routers.get(command.shard);
+        const applied: Record<string, unknown> = {};
+        if (command.update.displayName) {
+          shardState.config.displayName = command.update.displayName;
+          applied.displayName = command.update.displayName;
+        }
+        if (command.update.latencyBudgetMs !== undefined) {
+          shardState.config.latencyBudgetMs = command.update.latencyBudgetMs;
+          applied.latencyBudgetMs = command.update.latencyBudgetMs;
+        }
+        if (command.update.maxQueue !== undefined) {
+          shardState.config.maxQueue = command.update.maxQueue;
+          applied.maxQueue = command.update.maxQueue;
+        }
+        if (command.update.spilloverTargets) {
+          shardState.config.spilloverTargets = [...command.update.spilloverTargets];
+          applied.spilloverTargets = [...command.update.spilloverTargets];
+          router?.updateSpilloverTargets(shardState.config.spilloverTargets);
+        }
+        if (command.update.router) {
+          const routerConfig = shardState.config.router ?? { spilloverPolicies: [] };
+          if (command.update.router.queueAlertThreshold !== undefined) {
+            routerConfig.queueAlertThreshold = command.update.router.queueAlertThreshold;
+            applied.queueAlertThreshold = command.update.router.queueAlertThreshold;
+            router?.updateQueueAlertThreshold(command.update.router.queueAlertThreshold);
+          }
+          if (command.update.router.spilloverPolicies) {
+            routerConfig.spilloverPolicies = command.update.router.spilloverPolicies.map((policy) => ({ ...policy }));
+            applied.spilloverPolicies = routerConfig.spilloverPolicies;
+            router?.updateSpilloverPolicies(routerConfig.spilloverPolicies);
+          }
+          shardState.config.router = routerConfig;
+        }
+        this.syncShardConfigReference(command.shard, shardState.config);
+        push({
+          tick: this.tick,
+          type: 'owner.shard.update',
+          message: `Owner updated shard ${command.shard} configuration`,
+          data: { shard: command.shard, update: applied },
+        });
+        break;
+      }
+      case 'node.update': {
+        const nodeState = this.nodes.get(command.nodeId);
+        if (!nodeState) {
+          throw new Error(`Unknown node ${command.nodeId}`);
+        }
+        const configIndex = this.config.nodes.findIndex((entry) => entry.id === command.nodeId);
+        if (configIndex < 0) {
+          throw new Error(`Config missing node ${command.nodeId}`);
+        }
+        const definition = nodeState.definition;
+        const configDefinition = this.config.nodes[configIndex];
+        const applied: Record<string, unknown> = {};
+        if (command.update.capacity !== undefined) {
+          definition.capacity = command.update.capacity;
+          configDefinition.capacity = command.update.capacity;
+          applied.capacity = command.update.capacity;
+        }
+        if (command.update.maxConcurrency !== undefined) {
+          definition.maxConcurrency = command.update.maxConcurrency;
+          configDefinition.maxConcurrency = command.update.maxConcurrency;
+          applied.maxConcurrency = command.update.maxConcurrency;
+        }
+        if (command.update.specialties) {
+          definition.specialties = [...command.update.specialties];
+          configDefinition.specialties = [...command.update.specialties];
+          applied.specialties = [...command.update.specialties];
+        }
+        if (command.update.heartbeatIntervalSec !== undefined) {
+          definition.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
+          configDefinition.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
+          applied.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
+        }
+        if (command.update.region && command.update.region !== definition.region) {
+          this.requeueJobsForNode(nodeState, 'owner-node-region-update');
+          definition.region = command.update.region;
+          configDefinition.region = command.update.region;
+          applied.region = command.update.region;
+        }
+        const requiresRequeue =
+          (command.update.maxConcurrency !== undefined &&
+            nodeState.runningJobs.size > command.update.maxConcurrency) ||
+          (command.update.capacity !== undefined && nodeState.runningJobs.size > command.update.capacity);
+        if (requiresRequeue) {
+          this.requeueJobsForNode(nodeState, 'owner-node-capacity-update');
+        }
+        nodeState.lastHeartbeatTick = this.tick;
+        push({
+          tick: this.tick,
+          type: 'owner.node.update',
+          message: `Owner updated node ${command.nodeId}`,
+          data: { nodeId: command.nodeId, update: applied, reason: command.reason },
+        });
+        break;
+      }
+      case 'node.register': {
+        if (this.nodes.has(command.node.id)) {
+          throw new Error(`Node ${command.node.id} already registered`);
+        }
+        this.config.nodes.push({ ...command.node, specialties: [...command.node.specialties] });
+        const nodeState = this.createNodeState({ ...command.node, specialties: [...command.node.specialties] });
+        nodeState.lastHeartbeatTick = this.tick;
+        this.nodes.set(command.node.id, nodeState);
+        push({
+          tick: this.tick,
+          type: 'owner.node.register',
+          message: `Owner registered node ${command.node.id}`,
+          data: { node: command.node, reason: command.reason },
+        });
+        break;
+      }
+      case 'node.deregister': {
+        const nodeState = this.nodes.get(command.nodeId);
+        if (!nodeState) {
+          throw new Error(`Unknown node ${command.nodeId}`);
+        }
+        nodeState.active = false;
+        this.requeueJobsForNode(nodeState, 'owner-node-deregister');
+        this.nodes.delete(command.nodeId);
+        const configIndex = this.config.nodes.findIndex((entry) => entry.id === command.nodeId);
+        if (configIndex >= 0) {
+          this.config.nodes.splice(configIndex, 1);
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.node.deregister',
+          message: `Owner deregistered node ${command.nodeId}`,
+          data: { nodeId: command.nodeId, reason: command.reason },
+        });
+        break;
+      }
+      case 'checkpoint.save': {
+        await this.saveCheckpoint();
+        push({
+          tick: this.tick,
+          type: 'owner.checkpoint.save',
+          message: 'Owner triggered immediate checkpoint snapshot',
+          data: { reason: command.reason, checkpoint: this.getCheckpointConfig() },
+        });
+        break;
+      }
+      case 'checkpoint.configure': {
+        const applied: Record<string, unknown> = {};
+        if (command.update.intervalTicks !== undefined) {
+          this.config.checkpoint.intervalTicks = command.update.intervalTicks;
+          applied.intervalTicks = command.update.intervalTicks;
+        }
+        if (command.update.path) {
+          this.config.checkpoint.path = command.update.path;
+          this.checkpointManager.setPath(command.update.path);
+          applied.path = command.update.path;
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.checkpoint.configure',
+          message: 'Owner reconfigured checkpoint policy',
+          data: { reason: command.reason, update: applied },
+        });
+        break;
+      }
+      default:
+        throw new Error('Unsupported owner command');
+    }
+
+    this.metrics.ownerInterventions += 1;
+    return events;
+  }
+
   async saveCheckpoint(): Promise<void> {
     const payload = this.createCheckpointPayload();
     await this.checkpointManager.save(payload);
@@ -192,9 +491,28 @@ export class PlanetaryOrchestrator {
     if (!payload) {
       return false;
     }
+    for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
+      const index = this.config.shards.findIndex((entry) => entry.id === shardId);
+      if (index >= 0) {
+        this.config.shards[index] = { ...this.config.shards[index], ...shardPayload.config };
+      }
+    }
+    for (const [nodeId, nodePayload] of Object.entries(payload.nodes)) {
+      const index = this.config.nodes.findIndex((entry) => entry.id === nodeId);
+      if (index >= 0) {
+        this.config.nodes[index] = { ...this.config.nodes[index], ...nodePayload.definition };
+      } else {
+        this.config.nodes.push({ ...nodePayload.definition });
+      }
+    }
     this.initializeState();
     this.tick = payload.tick;
     this.metrics = payload.metrics;
+    this.systemPaused = payload.systemPaused;
+    this.pausedShards.clear();
+    for (const shardId of payload.pausedShards) {
+      this.pausedShards.add(shardId);
+    }
 
     for (const shardConfig of this.config.shards) {
       const shardState = this.shards.get(shardConfig.id)!;
@@ -213,6 +531,9 @@ export class PlanetaryOrchestrator {
         shardPayload.failed.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
       );
       shardState.spilloverCount = shardPayload.spilloverCount;
+      shardState.paused = shardPayload.paused;
+      const router = this.routers.get(shardConfig.id);
+      router?.setPaused(this.systemPaused || shardState.paused);
     }
 
     for (const node of this.config.nodes) {
@@ -226,6 +547,7 @@ export class PlanetaryOrchestrator {
       nodeState.runningJobs = new Map(
         nodePayload.runningJobs.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
       );
+      nodeState.definition = { ...nodePayload.definition };
     }
 
     this.events.push(...payload.events);
@@ -255,6 +577,10 @@ export class PlanetaryOrchestrator {
     this.detectStaleNodes();
 
     for (const [shardId, router] of this.routers.entries()) {
+      const shardState = this.shards.get(shardId);
+      if (shardState) {
+        router.setPaused(this.systemPaused || shardState.paused);
+      }
       const actions = router.processTick({ tick: this.tick });
       assignments.push(...actions.assignments);
       this.handleRouterEvents(actions);
@@ -633,6 +959,7 @@ export class PlanetaryOrchestrator {
       completed: new Map(),
       failed: new Map(),
       spilloverCount: 0,
+      paused: false,
     };
   }
 
@@ -699,6 +1026,9 @@ export class PlanetaryOrchestrator {
     if (shards.some((entry) => entry.status.level === 'critical') || nodes.some((entry) => entry.status.level === 'critical')) {
       return { level: 'critical', message: 'Critical conditions detected across fabric' };
     }
+    if (this.systemPaused) {
+      return { level: 'degraded', message: 'Fabric paused by owner command' };
+    }
     if (shards.some((entry) => entry.status.level === 'degraded') || nodes.some((entry) => entry.status.level === 'degraded')) {
       return { level: 'degraded', message: 'One or more components degraded' };
     }
@@ -717,6 +1047,15 @@ export class PlanetaryOrchestrator {
     }
   }
 
+  private syncShardConfigReference(shardId: ShardId, config: ShardConfig): void {
+    const index = this.config.shards.findIndex((entry) => entry.id === shardId);
+    if (index >= 0) {
+      this.config.shards[index] = config;
+    } else {
+      this.config.shards.push(config);
+    }
+  }
+
   private createCheckpointPayload(): CheckpointData {
     const shards: CheckpointData['shards'] = {};
     for (const [shardId, shard] of this.shards.entries()) {
@@ -726,6 +1065,19 @@ export class PlanetaryOrchestrator {
         completed: Array.from(shard.completed.values()).map((job) => cloneJob(job)),
         failed: Array.from(shard.failed.values()).map((job) => cloneJob(job)),
         spilloverCount: shard.spilloverCount,
+        paused: shard.paused,
+        config: {
+          ...shard.config,
+          spilloverTargets: [...shard.config.spilloverTargets],
+          router: shard.config.router
+            ? {
+                queueAlertThreshold: shard.config.router.queueAlertThreshold,
+                spilloverPolicies: shard.config.router.spilloverPolicies
+                  ? shard.config.router.spilloverPolicies.map((policy) => ({ ...policy }))
+                  : undefined,
+              }
+            : undefined,
+        },
       };
     }
     const nodes: CheckpointData['nodes'] = {};
@@ -734,10 +1086,16 @@ export class PlanetaryOrchestrator {
         state: node.active,
         runningJobs: Array.from(node.runningJobs.values()).map((job) => cloneJob(job)),
         lastHeartbeatTick: node.lastHeartbeatTick,
+        definition: {
+          ...node.definition,
+          specialties: [...node.definition.specialties],
+        },
       };
     }
     return {
       tick: this.tick,
+      systemPaused: this.systemPaused,
+      pausedShards: Array.from(this.pausedShards),
       shards,
       nodes,
       metrics: { ...this.metrics },

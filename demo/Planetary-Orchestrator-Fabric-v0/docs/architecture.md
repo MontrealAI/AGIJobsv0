@@ -68,15 +68,16 @@ Nodes register declaratively. The orchestrator enforces owner-set maximum concur
 3. **Assignment** – Nodes accept workloads up to `maxConcurrency`. Overflow triggers deterministic spillover to configured shards.
 4. **Heartbeat Audit** – The orchestrator expects heartbeats within the configured interval. Missed heartbeats mark the node unhealthy.
 5. **Failure Recovery** – Jobs running on failed nodes are re-queued in the originating shard. If backlog > `maxQueue`, spillover engages.
-6. **Checkpoint** – Every `intervalTicks` the orchestrator writes a full snapshot (shards, jobs, node health, metrics).
-7. **Owner Hooks** – Owner commands modify shard budgets, pause/resume, or inject governance payloads in real-time.
+6. **Checkpoint** – Every `intervalTicks` the orchestrator writes a full snapshot (shards, jobs, node health, metrics). Owners can tighten cadence or retarget storage live via `checkpoint.configure`.
+7. **Owner Hooks** – Owner commands modify shard budgets, pause/resume, checkpoint, or inject governance payloads in real-time.
 
 ## Persistence
 
-- **Checkpoint Ledger** (`storage/checkpoint.json`) stores deterministic snapshots.
+- **Checkpoint Ledger** (`storage/checkpoint.json` by default, owner-adjustable at runtime) stores deterministic snapshots.
 - **Event Stream** (`reports/<label>/events.ndjson`) provides chronological telemetry for observability.
 - **Summary** (`reports/<label>/summary.json`) aggregates throughput, latency, failure statistics, and deterministic seeds.
 - **Owner Scripts** (`reports/<label>/owner-script.json`) enumerates ready-to-run governance payloads.
+- **Owner Command Ledger** (`reports/<label>/owner-commands-executed.json`) records scheduled, executed, skipped, and pending owner interventions for auditability.
 
 ## Security Considerations
 
@@ -91,5 +92,6 @@ Nodes register declaratively. The orchestrator enforces owner-set maximum concur
 - **Container Backend:** Attach `src/nodeMarketplace.ts` to Kubernetes, Nomad, or bare metal by implementing the `NodeProvider` interface.
 - **Reward Engine:** Connect to `scripts/v2/rewardEngineReport.ts` for real payout calculations.
 - **Observability:** Stream `events.ndjson` into the observability stack via Fluent Bit or Loki.
+- **Owner Automation:** Populate `config/owner-commands.example.json` with production schedules so the orchestrator autonomously enforces governance policies mid-run.
 
 The architecture is tuned so a single operator—without writing a single line of code—can command a planetary intelligence fabric while retaining full custodial control.

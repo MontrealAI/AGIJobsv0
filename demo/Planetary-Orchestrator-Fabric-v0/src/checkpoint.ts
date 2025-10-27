@@ -3,7 +3,15 @@ import { dirname } from 'path';
 import { CheckpointData } from './types';
 
 export class CheckpointManager {
-  constructor(private readonly path: string) {}
+  constructor(private path: string) {}
+
+  getPath(): string {
+    return this.path;
+  }
+
+  setPath(path: string): void {
+    this.path = path;
+  }
 
   async save(data: CheckpointData): Promise<void> {
     await fs.mkdir(dirname(this.path), { recursive: true });

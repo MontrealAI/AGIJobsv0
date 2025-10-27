@@ -1,10 +1,11 @@
 import { strict as assert } from 'node:assert';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
-import { FabricConfig, JobDefinition } from '../src/types';
+import { FabricConfig, JobDefinition, OwnerCommandSchedule } from '../src/types';
+import { runSimulation } from '../src/simulation';
 
 const testConfig: FabricConfig = {
   owner: {
@@ -59,6 +60,22 @@ async function buildOrchestrator(
   const checkpointPath = join(dir, 'checkpoint.json');
   const config: FabricConfig = {
     ...configInput,
+    shards: configInput.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+      router: shard.router
+        ? {
+            queueAlertThreshold: shard.router.queueAlertThreshold,
+            spilloverPolicies: shard.router.spilloverPolicies
+              ? shard.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    })),
+    nodes: configInput.nodes.map((node) => ({
+      ...node,
+      specialties: [...node.specialties],
+    })),
     checkpoint: { ...configInput.checkpoint, path: checkpointPath },
     reporting: { ...configInput.reporting },
   };
@@ -183,6 +200,150 @@ async function testDeterministicReplay(): Promise<void> {
   await rm(checkpointPath, { force: true, recursive: true });
 }
 
+async function testOwnerCommandControls(): Promise<void> {
+  const { orchestrator, checkpointPath } = await buildOrchestrator();
+  const jobs = createJobs(6);
+  for (const job of jobs) {
+    orchestrator.submitJob(job);
+  }
+  orchestrator.processTick({ tick: 1 });
+
+  await orchestrator.applyOwnerCommand({ type: 'system.pause', reason: 'unit-test-pause' });
+  assert.ok(orchestrator.isSystemPaused(), 'system should report paused');
+  await orchestrator.applyOwnerCommand({ type: 'shard.pause', shard: 'earth', reason: 'unit-test-shard' });
+  await orchestrator.applyOwnerCommand({
+    type: 'shard.update',
+    shard: 'earth',
+    update: { maxQueue: 150, router: { queueAlertThreshold: 120 } },
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.update',
+    nodeId: 'earth.node',
+    update: { maxConcurrency: 3 },
+    reason: 'limit earth concurrency',
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.register',
+    reason: 'introduce earth backup',
+    node: {
+      id: 'earth.node.backup',
+      region: 'earth',
+      capacity: 5,
+      specialties: ['general'],
+      heartbeatIntervalSec: 10,
+      maxConcurrency: 2,
+    },
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.register',
+    reason: 'introduce mars reserve',
+    node: {
+      id: 'mars.node.reserve',
+      region: 'mars',
+      capacity: 4,
+      specialties: ['general'],
+      heartbeatIntervalSec: 10,
+      maxConcurrency: 2,
+    },
+  });
+  await orchestrator.applyOwnerCommand({ type: 'node.deregister', nodeId: 'mars.node', reason: 'rotate mars node' });
+  const rotatedCheckpointPath = join(tmpdir(), `fabric-owner-${Date.now()}.json`);
+  await orchestrator.applyOwnerCommand({
+    type: 'checkpoint.configure',
+    reason: 'tighten checkpoint cadence during drill',
+    update: { intervalTicks: 3, path: rotatedCheckpointPath },
+  });
+  orchestrator.processTick({ tick: 2 });
+  await orchestrator.applyOwnerCommand({
+    type: 'checkpoint.save',
+    reason: 'owner snapshot after configuration',
+  });
+  await orchestrator.applyOwnerCommand({ type: 'system.resume', reason: 'resume operations' });
+  await orchestrator.applyOwnerCommand({ type: 'shard.resume', shard: 'earth', reason: 'resume earth' });
+
+  const rotatedRaw = await readFile(rotatedCheckpointPath, 'utf8');
+  const rotatedCheckpoint = JSON.parse(rotatedRaw);
+  assert.equal(rotatedCheckpoint.tick, orchestrator.currentTick);
+
+  const ownerState = orchestrator.getOwnerState();
+  assert.equal(ownerState.systemPaused, false, 'system should be resumed');
+  assert.equal(ownerState.metrics.ownerInterventions, 11);
+  assert.equal(ownerState.metrics.systemPauses, 1);
+  assert.equal(ownerState.metrics.shardPauses, 1);
+  assert.deepEqual(ownerState.pausedShards, [], 'no shards should remain paused');
+  assert.equal(ownerState.checkpoint.intervalTicks, 3);
+  assert.equal(ownerState.checkpoint.path, rotatedCheckpointPath);
+
+  const nodeSnapshot = orchestrator.getNodeSnapshots();
+  assert.ok(nodeSnapshot['earth.node.backup'], 'earth backup node should be registered');
+  assert.ok(nodeSnapshot['mars.node.reserve'], 'mars reserve node should be registered');
+  assert.ok(!nodeSnapshot['mars.node'], 'original mars node should be removed');
+
+  const metrics = orchestrator.fabricMetrics;
+  assert.ok(metrics.reassignedAfterFailure >= 1, 'deregistered node should trigger reassignment');
+
+  await rm(checkpointPath, { force: true, recursive: true });
+  await rm(rotatedCheckpointPath, { force: true });
+}
+
+async function testOwnerCommandSchedule(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-schedule-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const reportingDir = join(dir, 'reports');
+  const config: FabricConfig = {
+    ...testConfig,
+    shards: testConfig.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+    })),
+    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    checkpoint: { ...testConfig.checkpoint, path: checkpointPath, intervalTicks: 3 },
+    reporting: { directory: reportingDir, defaultLabel: 'schedule' },
+  };
+  const schedule: OwnerCommandSchedule[] = [
+    { tick: 1, note: 'pause fabric', command: { type: 'system.pause', reason: 'schedule-pause' } },
+    {
+      tick: 2,
+      note: 'tune earth shard',
+      command: { type: 'shard.update', shard: 'earth', update: { router: { queueAlertThreshold: 80 } } },
+    },
+    { tick: 3, note: 'resume fabric', command: { type: 'system.resume', reason: 'schedule-resume' } },
+    {
+      tick: 4,
+      note: 'rotate checkpoint path',
+      command: {
+        type: 'checkpoint.configure',
+        update: { intervalTicks: 4, path: join(dirname(checkpointPath), 'schedule-rotated.json') },
+        reason: 'schedule rotation',
+      },
+    },
+  ];
+  const result = await runSimulation(config, {
+    jobs: 50,
+    simulateOutage: undefined,
+    outageTick: undefined,
+    resume: false,
+    checkpointPath,
+    outputLabel: 'schedule',
+    ciMode: true,
+    ownerCommands: schedule,
+    ownerCommandSource: 'unit-test-schedule',
+  });
+  assert.equal(result.executedOwnerCommands.length, schedule.length);
+  const summaryRaw = await readFile(join(reportingDir, 'schedule', 'summary.json'), 'utf8');
+  const summary = JSON.parse(summaryRaw);
+  assert.equal(summary.ownerCommands.executed.length, schedule.length);
+  assert.ok(
+    summary.ownerCommands.executed.some((entry: OwnerCommandSchedule) => entry.command.type === 'checkpoint.configure')
+  );
+  assert.equal(summary.ownerState.checkpoint.intervalTicks, 4);
+  const ownerLogRaw = await readFile(join(reportingDir, 'schedule', 'owner-commands-executed.json'), 'utf8');
+  const ownerLog = JSON.parse(ownerLogRaw);
+  assert.equal(ownerLog.executed.length, schedule.length);
+  assert.ok(ownerLog.executed.some((entry: OwnerCommandSchedule) => entry.command.type === 'checkpoint.configure'));
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function testLoadHarness(): Promise<void> {
   const loadConfig: FabricConfig = {
     ...testConfig,
@@ -240,6 +401,8 @@ async function run(): Promise<void> {
   await testCheckpointResume();
   await testCrossShardFallback();
   await testDeterministicReplay();
+  await testOwnerCommandControls();
+  await testOwnerCommandSchedule();
   await testLoadHarness();
   console.log('Planetary orchestrator fabric tests passed.');
   process.exit(0);
