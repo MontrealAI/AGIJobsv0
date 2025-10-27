@@ -54,6 +54,11 @@ function main() {
     currentEntropy.onChainEntropy,
     currentEntropy.recentBeacon,
   );
+  console.log('VRF witness derived for committee selection.', {
+    transcript: committeeSelection.witness.transcript,
+    keccakSeed: committeeSelection.witness.keccakSeed,
+    shaSeed: committeeSelection.witness.shaSeed,
+  });
   const dishonestValidator = committeeSelection.committee[0];
   const absenteeValidator = committeeSelection.committee[1];
   const voteOverrides: Record<string, VoteValue> = dishonestValidator
@@ -122,11 +127,12 @@ function main() {
     reportDir,
     roundResult,
     subgraphRecords: subgraphIndexer.list(),
-    events: [...roundResult.commits, ...roundResult.reveals],
+    events: [committeeSelection.witness, ...roundResult.commits, ...roundResult.reveals],
     context: reportContext,
   });
 
   console.log('Validator Constellation demo executed successfully.');
+  console.log('Entropy witness transcript verified:', roundResult.vrfWitness.transcript);
   console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
   console.log(`Reports written to ${reportDir}`);
 }

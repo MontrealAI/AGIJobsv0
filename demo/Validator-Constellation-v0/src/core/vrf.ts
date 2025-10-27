@@ -1,23 +1,20 @@
-import { keccak256, toUtf8Bytes } from 'ethers';
-import { GovernanceParameters, Hex, ValidatorIdentity } from './types';
+import { deriveEntropyWitness, verifyEntropyWitness } from './entropy';
+import { eventBus } from './eventBus';
+import { EntropyWitness, GovernanceParameters, Hex, ValidatorIdentity } from './types';
 
 export interface VrfSelectionResult {
   seed: Hex;
   committee: ValidatorIdentity[];
-}
-
-function mixEntropy(inputs: string[]): Hex {
-  let acc = '0x00';
-  for (const input of inputs) {
-    acc = keccak256(Buffer.concat([Buffer.from(acc.slice(2), 'hex'), Buffer.from(input.replace(/^0x/, ''), 'hex')]));
-  }
-  return acc as Hex;
+  witness: EntropyWitness;
 }
 
 function pseudoRandomIndex(seed: Hex, domain: string, round: number, modulus: number, salt: number): number {
-  const encoded = toUtf8Bytes(`${seed}:${domain}:${round}:${salt}`);
-  const hash = keccak256(encoded);
-  return Number(BigInt(hash) % BigInt(modulus));
+  const hashedSeed = deriveEntropyWitness({
+    sources: [seed],
+    domainId: `${domain}-${salt}`,
+    round,
+  }).keccakSeed;
+  return Number(BigInt(hashedSeed) % BigInt(modulus));
 }
 
 export function selectCommittee(
@@ -31,7 +28,16 @@ export function selectCommittee(
   if (validators.length < governance.committeeSize) {
     throw new Error('insufficient active validators for committee selection');
   }
-  const seed = mixEntropy([onChainEntropy, recentBeacon, keccak256(toUtf8Bytes(domainId)), keccak256(toUtf8Bytes(String(round)))]);
+  const witness = deriveEntropyWitness({
+    sources: [onChainEntropy, recentBeacon],
+    domainId,
+    round,
+  });
+  if (!verifyEntropyWitness(witness, { domainId, round, sources: [onChainEntropy, recentBeacon] })) {
+    throw new Error('entropy witness verification failed');
+  }
+  eventBus.emit('VrfWitnessComputed', witness);
+  const seed = witness.transcript;
   const selected: ValidatorIdentity[] = [];
   const used = new Set<number>();
   let salt = 0;
@@ -43,5 +49,5 @@ export function selectCommittee(
     used.add(index);
     selected.push(validators[index]);
   }
-  return { seed, committee: selected };
+  return { seed, committee: selected, witness };
 }

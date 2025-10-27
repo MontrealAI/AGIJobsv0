@@ -59,6 +59,10 @@ export interface ReportContext {
   jobSample?: JobResult[];
 }
 
+function truncateHex(value: Hex, length = 14): string {
+  return value.length > length + 2 ? `${value.slice(0, length + 2)}…` : value;
+}
+
 function buildCommitteeDiagram(result: DemoOrchestrationReport): string {
   const nodeBranch =
     result.nodes.length > 0
@@ -66,9 +70,10 @@ function buildCommitteeDiagram(result: DemoOrchestrationReport): string {
           .map((node) => node.ensName)
           .join('\\n')}"] --> owner;`
       : '';
-  const seedLabel =
-    result.vrfSeed.length > 20 ? `${result.vrfSeed.slice(0, 20)}…` : result.vrfSeed;
-  return `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  randomness["VRF Seed\\n${seedLabel}"] --> committee;\n  committee["Validator Committee\\n${result.committee
+  const seedLabel = truncateHex(result.vrfSeed, 20);
+  const keccakLabel = truncateHex(result.vrfWitness.keccakSeed, 18);
+  const shaLabel = truncateHex(result.vrfWitness.shaSeed, 18);
+  return `graph LR\n  owner["👁️ Sentinel Governor"] --> committee;\n  witness["Entropy Witness\\nkeccak: ${keccakLabel}\\nsha: ${shaLabel}"] --> randomness;\n  randomness["VRF Transcript\\n${seedLabel}"] --> committee;\n  committee["Validator Committee\\n${result.committee
     .map((v) => v.ensName)
     .join('\\n')}"] --> zk["ZK Batch Proof\\n${result.proof.proofId}"];\n  committee --> commits;\n  commits --> reveals;\n  reveals --> outcome["Final Outcome: ${result.voteOutcome}"];${nodeBranch}`;
 }
@@ -127,6 +132,8 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <div class="metric">Alerts triggered: <strong>${result.sentinelAlerts.length}</strong></div>
         <div class="metric">Domain controllers online: <strong>${result.nodes.length}</strong></div>
         <div class="metric">VRF seed: <strong>${result.vrfSeed}</strong></div>
+        <div class="metric">Entropy keccak: <strong>${result.vrfWitness.keccakSeed}</strong></div>
+        <div class="metric">Entropy sha256: <strong>${result.vrfWitness.shaSeed}</strong></div>
         <div class="metric">ZK verifying key: <strong>${context.verifyingKey}</strong></div>
         <pre>${JSON.stringify(
           {
@@ -201,6 +208,10 @@ export function writeReportArtifacts(input: ArtifactInput): void {
       stake: member.stake.toString(),
     })),
     vrfSeed: roundResult.vrfSeed,
+    vrfWitness: {
+      ...roundResult.vrfWitness,
+      sources: [...roundResult.vrfWitness.sources],
+    },
     nodes: {
       registered: context.nodesRegistered,
       active: roundResult.nodes,

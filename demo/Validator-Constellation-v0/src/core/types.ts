@@ -2,6 +2,16 @@ import { EventEmitter } from 'events';
 
 export type Hex = `0x${string}`;
 
+export interface EntropyWitness {
+  sources: Hex[];
+  domainHash: Hex;
+  roundHash: Hex;
+  keccakSeed: Hex;
+  shaSeed: Hex;
+  transcript: Hex;
+  consistencyHash: Hex;
+}
+
 export interface DomainConfig {
   id: string;
   humanName: string;
@@ -124,7 +134,7 @@ export interface SlashingEvent {
 
 export interface SubgraphRecord {
   id: string;
-  type: 'SLASHING' | 'PAUSE' | 'COMMIT' | 'REVEAL' | 'ZK_BATCH';
+  type: 'SLASHING' | 'PAUSE' | 'COMMIT' | 'REVEAL' | 'ZK_BATCH' | 'VRF_WITNESS';
   blockNumber: number;
   payload: Record<string, unknown>;
 }
@@ -134,6 +144,7 @@ export interface DemoOrchestrationReport {
   domainId: string;
   committee: ValidatorIdentity[];
   vrfSeed: Hex;
+  vrfWitness: EntropyWitness;
   commits: CommitMessage[];
   reveals: RevealMessage[];
   voteOutcome: VoteValue;
@@ -165,6 +176,7 @@ export interface ValidatorEventBus extends EventEmitter {
   on(event: 'CommitLogged', listener: (commit: CommitMessage) => void): this;
   on(event: 'RevealLogged', listener: (reveal: RevealMessage) => void): this;
   on(event: 'ZkBatchFinalized', listener: (proof: ZkBatchProof) => void): this;
+  on(event: 'VrfWitnessComputed', listener: (witness: EntropyWitness) => void): this;
 }
 
 export type GovernanceUpdatable = keyof GovernanceParameters;

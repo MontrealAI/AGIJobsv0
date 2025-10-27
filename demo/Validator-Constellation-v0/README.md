@@ -34,6 +34,7 @@ flowchart LR
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
 * **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
+* **Entropy witness cross-checks** – each committee draw now publishes dual-hash randomness witnesses (Keccak + SHA-256) so anyone can independently re-derive the transcript.
 
 ## Quickstart for non-technical operators
 
@@ -154,7 +155,7 @@ The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrail
 1. **Identity attestation** – builds an ENS Merkle tree, verifies the owner of every validator/agent subdomain, and bans imposters.
 2. **Node orchestration** – onboards production (`*.node.agi.eth`) and alpha (`*.alpha.node.agi.eth`) controllers with the same Merkle proof flow, ensuring operations teams have verifiable infrastructure custodians.
 3. **Stake orchestration** – bonds five validators with configurable stakes and records them in the Stake Manager.
-4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters.
+4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters, emitting a deterministic entropy witness (`keccak`, `sha256`, transcript) for downstream auditors.
 5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
 6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
 7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
@@ -218,7 +219,7 @@ The Sentinel guarantee: any overspend or forbidden opcode pauses the domain with
 After `npm run demo:validator-constellation`, inspect:
 
 * `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams.
-* `reports/latest/summary.json` – committee, VRF seed, proof, alert, and pause telemetry.
+* `reports/latest/summary.json` – committee, entropy witnesses (Keccak + SHA), VRF seed, proof, alert, and pause telemetry.
 * `reports/latest/events.ndjson` – commit and reveal stream for auditors.
 * `reports/latest/subgraph.json` – indexed events mirroring on-chain transparency feeds.
 
