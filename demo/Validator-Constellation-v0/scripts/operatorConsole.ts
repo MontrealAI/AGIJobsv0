@@ -555,7 +555,10 @@ function handleRunRound(argv: RunRoundArgs): void {
     attestedJobs: roundResult.proof.attestedJobCount,
     slashingEvents: roundResult.slashingEvents.length,
     sentinelAlerts: roundResult.sentinelAlerts.length,
+    auditPass: roundResult.audit.pass,
+    auditFindings: roundResult.audit.findings.length,
   });
+  console.log(`Autonomous audit status: ${roundResult.audit.pass ? 'PASS' : 'ATTENTION REQUIRED'}`);
   refreshStateFromDemo(state, demo, { slashingEvents: roundResult.slashingEvents });
   if (argv.mermaid) {
     console.log('\nMermaid Blueprint for round:');

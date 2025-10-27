@@ -128,6 +128,8 @@ function main() {
 
   console.log('Validator Constellation demo executed successfully.');
   console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
+  console.log(`Autonomous audit status: ${roundResult.audit.pass ? 'PASS' : 'ATTENTION REQUIRED'}`);
+  console.log(`Audit quorum achieved: ${roundResult.audit.metrics.quorumAchieved}`);
   console.log(`Reports written to ${reportDir}`);
 }
 

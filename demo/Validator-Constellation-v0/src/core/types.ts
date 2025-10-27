@@ -129,6 +129,46 @@ export interface SubgraphRecord {
   payload: Record<string, unknown>;
 }
 
+export type AuditFindingSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
+
+export interface AuditFinding {
+  id: string;
+  severity: AuditFindingSeverity;
+  title: string;
+  details?: Record<string, unknown>;
+}
+
+export interface AuditMetrics {
+  committeeSize: number;
+  commitCount: number;
+  revealCount: number;
+  slashingCount: number;
+  sentinelAlerts: number;
+  quorumPercentage: number;
+  quorumAchieved: boolean;
+  attestedJobs: number;
+}
+
+export interface AuditCrossChecks {
+  commitIntegrity: boolean;
+  slashingIntegrity: boolean;
+  timelineIntegrity: boolean;
+  sentinelIntegrity: boolean;
+  proofIntegrity: boolean;
+  vrfIntegrity: boolean;
+}
+
+export interface AuditReport {
+  pass: boolean;
+  findings: AuditFinding[];
+  metrics: AuditMetrics;
+  crossChecks: AuditCrossChecks;
+  summary: {
+    outcome: VoteValue;
+    majority: VoteValue;
+  };
+}
+
 export interface DemoOrchestrationReport {
   round: number;
   domainId: string;
@@ -143,6 +183,7 @@ export interface DemoOrchestrationReport {
   slashingEvents: SlashingEvent[];
   nodes: NodeIdentity[];
   timeline: RoundTimeline;
+  audit: AuditReport;
 }
 
 export interface DomainState {
@@ -179,4 +220,17 @@ export interface RoundTimeline {
   commitDeadlineBlock: number;
   revealStartBlock?: number;
   revealDeadlineBlock?: number;
+}
+
+export type OrchestrationReportPayload = Omit<DemoOrchestrationReport, 'audit'>;
+
+export interface AuditContext {
+  report: OrchestrationReportPayload;
+  jobBatch: JobResult[];
+  governance: GovernanceParameters;
+  verifyingKey: Hex;
+  activeValidators: ValidatorIdentity[];
+  onChainEntropy: Hex;
+  recentBeacon: Hex;
+  truthfulVote: VoteValue;
 }
