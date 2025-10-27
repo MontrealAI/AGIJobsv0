@@ -55,6 +55,40 @@ flowchart LR
    npm run lint:validator-constellation
    ```
 
+### Scenario-driven automation for non-technical owners
+
+Ship entire validator rounds from a single YAML file—no coding required:
+
+```bash
+npm run demo:validator-constellation:scenario -- \
+  --config demo/Validator-Constellation-v0/config/stellar-scenario.yaml
+```
+
+The sample scenario expresses governance, sentinel tuning, committee overrides, ENS identities, and anomaly injections in one declarative document:
+
+```yaml
+name: "stellar-sentinel-constellation"
+baseSetup:
+  verifyingKey: 0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed
+  governance:
+    committeeSize: 4
+    slashPenaltyBps: 2000
+domains:
+  - id: deep-space-lab
+    budgetLimit: 5000000
+validators:
+  - ens: andromeda.club.agi.eth
+    address: 0x1111111111111111111111111111111111111111
+    stake: 12000000000000000000
+ownerActions:
+  updateSentinel:
+    budgetGraceRatio: 0.12
+  updateEntropy:
+    onChainEntropy: 0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+```
+
+Running the scenario creates a dedicated report folder (`reports/scenarios/<name>/`) with the same proof, sentinel, and subgraph telemetry as the baseline demo. Non-technical operators simply edit the YAML and re-run the command to retune governance levers.
+
 No smart-contract tooling, solc, or blockchain node is required. Everything is simulated end-to-end with the same primitives we deploy on-chain.
 
 ## What the demo executes

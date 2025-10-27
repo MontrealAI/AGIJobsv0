@@ -394,6 +394,7 @@
     "run:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts run demo/Trustless-Economic-Core-v0/scripts/runScenario.ts",
     "demo:validator-constellation": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
     "demo:validator-constellation:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
+    "demo:validator-constellation:scenario": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runScenario.ts",
     "test:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts test test/demo/trustlessEconomicCoreDemo.test.ts",
     "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/validator_constellation.test.ts",
     "sbom:generate": "mkdir -p reports/sbom && npm exec -- @cyclonedx/cyclonedx-npm --output-format json --output-file reports/sbom/cyclonedx.json",

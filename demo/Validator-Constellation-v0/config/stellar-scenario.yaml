@@ -1,0 +1,105 @@
+name: "stellar-sentinel-constellation"
+description: |
+  Mission director config proving that a non-technical owner can retune governance,
+  enforce ENS identities, and unleash sentinel guardrails with a single scenario file.
+baseSetup:
+  verifyingKey: "0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed"
+  sentinelGraceRatio: 0.08
+  onChainEntropy: "0x111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+  recentBeacon: "0xffffeeeeccccaaaabbbb9999888877776666555544443333222211110000ffff"
+  governance:
+    committeeSize: 4
+    slashPenaltyBps: 2000
+    quorumPercentage: 75
+domains:
+  - id: deep-space-lab
+    humanName: "Deep Space Research Lab"
+    budgetLimit: 5000000
+    unsafeOpcodes:
+      - SELFDESTRUCT
+      - DELEGATECALL
+  - id: orbital-yard
+    humanName: "Orbital Manufacturing Yard"
+    budgetLimit: 3000000
+    unsafeOpcodes:
+      - SELFDESTRUCT
+      - STATICCALL
+validators:
+  - ens: andromeda.club.agi.eth
+    address: "0x1111111111111111111111111111111111111111"
+    stake: "12000000000000000000"
+  - ens: orion.club.agi.eth
+    address: "0x2222222222222222222222222222222222222222"
+    stake: "11000000000000000000"
+  - ens: hyperion.club.agi.eth
+    address: "0x3333333333333333333333333333333333333333"
+    stake: "9000000000000000000"
+  - ens: titan.club.agi.eth
+    address: "0x4444444444444444444444444444444444444444"
+    stake: "15000000000000000000"
+  - ens: athena.club.agi.eth
+    address: "0x5555555555555555555555555555555555555555"
+    stake: "10000000000000000000"
+agents:
+  - ens: nova.agent.agi.eth
+    address: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    domainId: deep-space-lab
+    budget: 1200000
+  - ens: sentinel.agent.agi.eth
+    address: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    domainId: orbital-yard
+    budget: 900000
+nodes:
+  - ens: polaris.node.agi.eth
+    address: "0xcccccccccccccccccccccccccccccccccccccccc"
+  - ens: selene.alpha.node.agi.eth
+    address: "0xdddddddddddddddddddddddddddddddddddddddd"
+job:
+  domainId: deep-space-lab
+  round: 42
+  truthfulVote: APPROVE
+  committeeSignature: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  count: 256
+overrides:
+  voteByEns:
+    andromeda.club.agi.eth: REJECT
+  nonRevealValidators:
+    - orion.club.agi.eth
+anomalies:
+  - kind: budget-overrun
+    agentEns: nova.agent.agi.eth
+    amount: 1800000
+    description: "Nova attempted to overspend the research grant"
+  - kind: unsafe-opcode
+    agentEns: sentinel.agent.agi.eth
+    opcode: STATICCALL
+    description: "Sentinel attempted a disallowed static call"
+ownerActions:
+  updateSentinel:
+    budgetGraceRatio: 0.12
+  updateDomainSafety:
+    - domainId: deep-space-lab
+      unsafeOpcodes:
+        - SELFDESTRUCT
+        - DELEGATECALL
+        - STATICCALL
+        - CALLCODE
+  pauseDomains:
+    - domainId: orbital-yard
+      reason: "pre-flight drill"
+  resumeDomains:
+    - domainId: orbital-yard
+      triggeredBy: governance:resume-drill
+  setAgentBudgets:
+    - ens: nova.agent.agi.eth
+      budget: 1500000
+  updateEntropy:
+    onChainEntropy: "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+    recentBeacon: "0x202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
+  updateZkKey: "0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011"
+  updateGovernance:
+    commitPhaseBlocks: 4
+    revealPhaseBlocks: 4
+context:
+  operator: "Non-technical mission director"
+  mission: "Sentinel constellation readiness"
