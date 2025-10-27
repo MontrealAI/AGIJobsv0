@@ -1047,6 +1047,8 @@ For detailed behaviour and additional modules such as `FeePool`, `TaxPolicy` and
 - [FeePool configuration guide](docs/fee-pool-configuration.md)
 - [StakeManager configuration guide](docs/stake-manager-configuration.md)
 - [PlatformRegistry operations guide](docs/platform-registry-operations.md)
+- [Mission Control tutorial for facilitators](docs/orchestration/mission-control-tutorial.md)
+- [Superintelligence orchestration playbook](docs/orchestration/scenarios/superintelligence-playbook.md)
 - [One-Box UX overview](docs/onebox-ux.md)
 - [Agent gateway example](examples/agent-gateway.js)
 
