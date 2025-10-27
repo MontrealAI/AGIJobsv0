@@ -236,6 +236,7 @@ export class ValidatorConstellationDemo {
     committeeSignature: Hex;
     voteOverrides?: Record<string, VoteValue>;
     anomalies?: AgentAction[];
+    nonRevealValidators?: Hex[];
   }): DemoOrchestrationReport {
     const activeValidators = this.stakes.listActive();
     const selection = selectCommittee(
@@ -276,7 +277,11 @@ export class ValidatorConstellationDemo {
       }
 
       this.commitReveal.beginRevealPhase(params.round);
+      const nonRevealSet = new Set(params.nonRevealValidators ?? []);
       for (const validator of selection.committee) {
+        if (nonRevealSet.has(validator.address)) {
+          continue;
+        }
         const plan = votePlan.get(validator.address)!;
         const reveal: RevealMessage = {
           validator,

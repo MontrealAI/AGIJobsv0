@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { subgraphIndexer } from '../src/core/subgraph';
+import { selectCommittee } from '../src/core/vrf';
 import { AgentAction, Hex, VoteValue } from '../src/core/types';
 import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
 
@@ -142,10 +143,27 @@ function main() {
   demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
   const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
 
-  const jobBatch = demoJobBatch('deep-space-lab', 1000);
-  const voteOverrides: Record<string, VoteValue> = {
-    [leaves[1].owner]: 'REJECT',
-  };
+  const round = 1;
+  const domainId = 'deep-space-lab';
+  const currentEntropy = demo.getEntropySources();
+  const committeeSelection = selectCommittee(
+    demo.listValidators(),
+    domainId,
+    round,
+    demo.getGovernance(),
+    currentEntropy.onChainEntropy,
+    currentEntropy.recentBeacon,
+  );
+  const dishonestValidator = committeeSelection.committee[0];
+  const absenteeValidator = committeeSelection.committee[1];
+  const voteOverrides: Record<string, VoteValue> = dishonestValidator
+    ? {
+        [dishonestValidator.address]: 'REJECT',
+      }
+    : {};
+  const nonRevealValidators = absenteeValidator ? [absenteeValidator.address] : [];
+
+  const jobBatch = demoJobBatch(domainId, 1000);
 
   const anomalies: AgentAction[] = [
     {
@@ -170,11 +188,12 @@ function main() {
   ];
 
   const roundResult = demo.runValidationRound({
-    round: 1,
+    round,
     truthfulVote: 'APPROVE',
     jobBatch,
     committeeSignature: '0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666',
     voteOverrides,
+    nonRevealValidators,
     anomalies,
   });
 
