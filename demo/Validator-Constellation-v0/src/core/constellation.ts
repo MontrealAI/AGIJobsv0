@@ -60,6 +60,7 @@ export class ValidatorConstellationDemo {
   private readonly leaves: EnsLeaf[];
   private onChainEntropy: Hex;
   private recentBeacon: Hex;
+  private blockNumber = 1;
 
   constructor(setup: DemoSetup) {
     this.leaves = setup.ensLeaves;
@@ -239,11 +240,12 @@ export class ValidatorConstellationDemo {
     nonRevealValidators?: Hex[];
   }): DemoOrchestrationReport {
     const activeValidators = this.stakes.listActive();
+    const governanceParameters = this.governance.getParameters();
     const selection = selectCommittee(
       activeValidators,
       params.jobBatch[0]?.domainId ?? this.domainIds[0],
       params.round,
-      this.governance.getParameters(),
+      governanceParameters,
       this.onChainEntropy,
       this.recentBeacon,
     );
@@ -252,6 +254,9 @@ export class ValidatorConstellationDemo {
     const sentinelAlerts: SentinelAlert[] = [];
     const commitMessages: CommitMessage[] = [];
     const revealMessages: RevealMessage[] = [];
+
+    const commitStartBlock = this.blockNumber;
+    const commitDeadlineBlock = commitStartBlock + governanceParameters.commitPhaseBlocks;
 
     const slashingListener = (event: SlashingEvent) => {
       slashingEvents.push(event);
@@ -264,19 +269,32 @@ export class ValidatorConstellationDemo {
     eventBus.on('SentinelAlert', sentinelListener);
 
     try {
-      this.commitReveal.openRound(params.round, selection.committee);
+      this.commitReveal.openRound(params.round, selection.committee, {
+        commitStartBlock,
+        commitDeadlineBlock,
+      });
       const votePlan = new Map<string, VotePlan>();
       for (const validator of selection.committee) {
         const vote = params.voteOverrides?.[validator.address] ?? params.truthfulVote;
         const salt = this.randomSalt();
         votePlan.set(validator.address, { vote, salt });
         const commitment = computeCommitment(vote, salt);
-        const commitMessage: CommitMessage = { validator, commitment: commitment as Hex, round: params.round };
+        const commitMessage: CommitMessage = {
+          validator,
+          commitment: commitment as Hex,
+          round: params.round,
+          submittedAtBlock: commitStartBlock,
+          submittedAt: Date.now(),
+        };
         this.commitReveal.submitCommit(params.round, commitMessage);
         commitMessages.push(commitMessage);
       }
 
-      this.commitReveal.beginRevealPhase(params.round);
+      this.blockNumber = commitDeadlineBlock;
+      const revealStartBlock = this.blockNumber;
+      const revealDeadlineBlock = revealStartBlock + governanceParameters.revealPhaseBlocks;
+
+      this.commitReveal.beginRevealPhase(params.round, revealStartBlock, revealDeadlineBlock);
       const nonRevealSet = new Set(params.nonRevealValidators ?? []);
       for (const validator of selection.committee) {
         if (nonRevealSet.has(validator.address)) {
@@ -288,10 +306,14 @@ export class ValidatorConstellationDemo {
           vote: plan.vote,
           salt: plan.salt,
           round: params.round,
+          submittedAtBlock: revealStartBlock,
+          submittedAt: Date.now(),
         };
         this.commitReveal.submitReveal(params.round, reveal);
         revealMessages.push(reveal);
       }
+
+      this.blockNumber = revealDeadlineBlock;
 
       if (params.anomalies) {
         for (const anomaly of params.anomalies) {
@@ -299,12 +321,13 @@ export class ValidatorConstellationDemo {
         }
       }
 
-      const finalization = this.commitReveal.finalize(params.round, params.truthfulVote);
+      const finalization = this.commitReveal.finalize(params.round, params.truthfulVote, this.blockNumber);
       const proof = this.zk.prove(params.jobBatch, params.committeeSignature);
       const verified = this.zk.verify(params.jobBatch, proof);
       if (!verified) {
         throw new Error('proof verification failed');
       }
+      this.blockNumber = (finalization.timeline.revealDeadlineBlock ?? this.blockNumber) + 1;
       return {
         round: params.round,
         domainId: params.jobBatch[0]?.domainId ?? this.domainIds[0],
@@ -321,6 +344,7 @@ export class ValidatorConstellationDemo {
           .sort((a, b) => a.timestamp - b.timestamp),
         slashingEvents,
         nodes: this.listNodes(),
+        timeline: finalization.timeline,
       };
     } finally {
       eventBus.off('StakeSlashed', slashingListener);

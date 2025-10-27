@@ -53,6 +53,8 @@ export interface CommitMessage {
   validator: ValidatorIdentity;
   commitment: Hex;
   round: number;
+  submittedAtBlock: number;
+  submittedAt: number;
 }
 
 export interface RevealMessage {
@@ -60,6 +62,8 @@ export interface RevealMessage {
   vote: VoteValue;
   salt: Hex;
   round: number;
+  submittedAtBlock: number;
+  submittedAt: number;
 }
 
 export interface JobResult {
@@ -138,6 +142,7 @@ export interface DemoOrchestrationReport {
   pauseRecords: PauseRecord[];
   slashingEvents: SlashingEvent[];
   nodes: NodeIdentity[];
+  timeline: RoundTimeline;
 }
 
 export interface DomainState {
@@ -167,4 +172,11 @@ export type GovernanceUpdatable = keyof GovernanceParameters;
 export interface GovernanceController {
   updateParameter(key: GovernanceUpdatable, value: number): void;
   getParameters(): GovernanceParameters;
+}
+
+export interface RoundTimeline {
+  commitStartBlock: number;
+  commitDeadlineBlock: number;
+  revealStartBlock?: number;
+  revealDeadlineBlock?: number;
 }

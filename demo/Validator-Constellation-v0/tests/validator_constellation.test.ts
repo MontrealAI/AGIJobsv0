@@ -4,7 +4,10 @@ import test from 'node:test';
 import { keccak256, toUtf8Bytes } from 'ethers';
 import { assertAgentDomain, assertValidatorDomain, EnsLeaf } from '../src/core/ens';
 import { ValidatorConstellationDemo } from '../src/core/constellation';
-import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
+import { CommitRevealCoordinator, computeCommitment } from '../src/core/commitReveal';
+import { GovernanceModule } from '../src/core/governance';
+import { StakeManager } from '../src/core/stakeManager';
+import { DEFAULT_GOVERNANCE_PARAMETERS, demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
@@ -27,6 +30,68 @@ function buildDemo(): {
   const demo = new ValidatorConstellationDemo(setup);
   return { demo, leaves };
 }
+
+test('commit-reveal timeline enforces governance block windows', () => {
+  const governance = new GovernanceModule(DEFAULT_GOVERNANCE_PARAMETERS);
+  const stakes = new StakeManager();
+  const coordinator = new CommitRevealCoordinator(governance, stakes);
+  const validator: ValidatorIdentity = {
+    address: '0x9999999999999999999999999999999999999999',
+    ensName: 'rigel.club.agi.eth',
+    stake: 5n,
+  };
+  stakes.registerValidator(validator);
+  const round = 42;
+  coordinator.openRound(round, [validator], { commitStartBlock: 120, commitDeadlineBlock: 124 });
+  const salt = '0xdeadbeefcafebabe' as Hex;
+  const commitment = computeCommitment('APPROVE', salt);
+  assert.throws(
+    () =>
+      coordinator.submitCommit(round, {
+        validator,
+        commitment: commitment as Hex,
+        round,
+        submittedAtBlock: 119,
+        submittedAt: Date.now(),
+      }),
+    /commit window opened/,
+  );
+  coordinator.submitCommit(round, {
+    validator,
+    commitment: commitment as Hex,
+    round,
+    submittedAtBlock: 122,
+    submittedAt: Date.now(),
+  });
+  assert.throws(() => coordinator.beginRevealPhase(round, 123, 130), /commit window still open/);
+  coordinator.beginRevealPhase(round, 124, 130);
+  assert.throws(
+    () =>
+      coordinator.submitReveal(round, {
+        validator,
+        vote: 'APPROVE',
+        salt,
+        round,
+        submittedAtBlock: 123,
+        submittedAt: Date.now(),
+      }),
+    /reveal window opened/,
+  );
+  coordinator.submitReveal(round, {
+    validator,
+    vote: 'APPROVE',
+    salt,
+    round,
+    submittedAtBlock: 125,
+    submittedAt: Date.now(),
+  });
+  assert.throws(() => coordinator.finalize(round, 'APPROVE', 131), /reveal window closed/);
+  const timelineResult = coordinator.finalize(round, 'APPROVE', 130);
+  assert.equal(timelineResult.timeline.commitStartBlock, 120);
+  assert.equal(timelineResult.timeline.commitDeadlineBlock, 124);
+  assert.equal(timelineResult.timeline.revealStartBlock, 124);
+  assert.equal(timelineResult.timeline.revealDeadlineBlock, 130);
+});
 
 function orchestrateRound(): {
   roundResult: ReturnType<ValidatorConstellationDemo['runValidationRound']>;
@@ -91,6 +156,13 @@ test('validator constellation slashes dishonest validators via commit-reveal', (
   }
   assert.equal(roundResult.proof.attestedJobCount, 1000);
   assert.ok(roundResult.vrfSeed.startsWith('0x'), 'expected VRF seed in report');
+  const timeline = roundResult.timeline;
+  assert.equal(timeline.commitDeadlineBlock, timeline.commitStartBlock + DEFAULT_GOVERNANCE_PARAMETERS.commitPhaseBlocks);
+  assert.equal(timeline.revealStartBlock, timeline.commitDeadlineBlock);
+  assert.equal(
+    timeline.revealDeadlineBlock,
+    (timeline.revealStartBlock ?? 0) + DEFAULT_GOVERNANCE_PARAMETERS.revealPhaseBlocks,
+  );
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {
