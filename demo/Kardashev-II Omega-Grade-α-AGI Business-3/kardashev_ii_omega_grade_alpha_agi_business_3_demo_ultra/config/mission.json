@@ -1,0 +1,116 @@
+{
+  "mission": {
+    "name": "Omega Ultra Dyson Acceleration",
+    "vision": "Operate an autonomous α-AGI business lattice that spins up Dyson-swarm infrastructure, planetary commerce, and validator governance without human babysitting.",
+    "runtime_hours": 96,
+    "autopilot_cycles": 0,
+    "checkpoint_rotation": 24,
+    "archive_path": "artifacts/status/archive",
+    "deadline_warning_minutes": 120,
+    "archive_interval_seconds": 120,
+    "jobs": [
+      {
+        "title": "Dyson Swarm Expansion Blueprint",
+        "description": "Draft the phase-3 Dyson swarm lattice covering heliocentric orbits with resource forecasts.",
+        "required_skills": ["strategy", "energy-architect"],
+        "reward_tokens": 125000,
+        "deadline_hours": 12,
+        "validation_window_hours": 3,
+        "energy_budget": 750000,
+        "compute_budget": 350000,
+        "metadata": {
+          "employer": "macro-strategist",
+          "priority": "critical"
+        },
+        "children": [
+          {
+            "title": "Helios Array Deployment",
+            "description": "Coordinate fabrication and launch of the Helios collector array to capture 12% additional solar throughput.",
+            "required_skills": ["energy-architect"],
+            "reward_tokens": 88000,
+            "deadline_hours": 8,
+            "validation_window_hours": 2,
+            "energy_budget": 650000,
+            "compute_budget": 210000,
+            "metadata": {
+              "employer": "energy-architect",
+              "priority": "urgent"
+            },
+            "children": [
+              {
+                "title": "Autonomous Reactor Commissioning",
+                "description": "Spin up fusion nodes to feed the Helios array using autonomous quality checks and validator oversight.",
+                "required_skills": ["validator-ops", "supply-chain"],
+                "reward_tokens": 72000,
+                "deadline_hours": 6,
+                "validation_window_hours": 2,
+                "energy_budget": 500000,
+                "compute_budget": 190000,
+                "metadata": {
+                  "employer": "validator-ops",
+                  "priority": "governed"
+                }
+              }
+            ]
+          },
+          {
+            "title": "Orbital Supply Mesh",
+            "description": "Build a mesh of orbital depots and logistics corridors for continuous AGI supply movement.",
+            "required_skills": ["supply-chain"],
+            "reward_tokens": 96000,
+            "deadline_hours": 10,
+            "validation_window_hours": 2,
+            "energy_budget": 420000,
+            "compute_budget": 160000,
+            "metadata": {
+              "employer": "supply-chain",
+              "priority": "essential"
+            },
+            "children": [
+              {
+                "title": "Validator Governance Drill",
+                "description": "Run validator simulations to stress-test commit/reveal coordination and staking economics.",
+                "required_skills": ["validation"],
+                "reward_tokens": 48000,
+                "deadline_hours": 5,
+                "validation_window_hours": 1.5,
+                "energy_budget": 220000,
+                "compute_budget": 120000,
+                "metadata": {
+                  "employer": "validator-1",
+                  "priority": "high"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "orchestrator": {
+    "mission_name": "Kardashev-II Omega-Grade Ultra Mission",
+    "base_agent_tokens": 180000.0,
+    "energy_capacity": 2500000.0,
+    "compute_capacity": 7200000.0,
+    "cycle_sleep_seconds": 0.15,
+    "insight_interval_seconds": 20,
+    "checkpoint_interval_seconds": 45,
+    "simulation_hours_per_tick": 2.0,
+    "simulation_tick_seconds": 0.75,
+    "worker_specs": {
+      "energy-architect": 1.7,
+      "supply-chain": 1.4,
+      "validator-ops": 1.1
+    },
+    "strategist_names": ["macro-strategist"],
+    "validator_names": ["validator-1", "validator-2", "validator-3", "validator-4"],
+    "governance": {
+      "worker_stake_ratio": 0.12,
+      "validator_stake": 3200,
+      "approvals_required": 3,
+      "validator_commit_window": 1200,
+      "validator_reveal_window": 900,
+      "slash_ratio": 0.35
+    }
+  }
+}
