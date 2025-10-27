@@ -38,8 +38,10 @@ export interface JobState extends JobDefinition {
   assignedNodeId?: string;
   startedTick?: number;
   completedTick?: number;
+  failedTick?: number;
   remainingTicks?: number;
   spilloverHistory: ShardId[];
+  failureReason?: string;
 }
 
 export interface NodeState {

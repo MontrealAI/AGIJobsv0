@@ -114,10 +114,45 @@ async function testCheckpointResume(): Promise<void> {
   await rm(checkpointPath, { force: true, recursive: true });
 }
 
+async function testCrossShardFallback(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-fallback-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const config: FabricConfig = {
+    owner: testConfig.owner,
+    shards: [
+      { id: 'mars', displayName: 'Mars', latencyBudgetMs: 200, spilloverTargets: ['helios'], maxQueue: 50 },
+      { id: 'helios', displayName: 'Helios', latencyBudgetMs: 400, spilloverTargets: ['mars'], maxQueue: 50 },
+    ],
+    nodes: [
+      { id: 'mars.gpu', region: 'mars', capacity: 2, specialties: ['gpu'], heartbeatIntervalSec: 9, maxConcurrency: 1 },
+      { id: 'helios.gpu', region: 'helios', capacity: 2, specialties: ['gpu'], heartbeatIntervalSec: 9, maxConcurrency: 1 },
+    ],
+    checkpoint: { path: checkpointPath, intervalTicks: 5 },
+    reporting: testConfig.reporting,
+  };
+  const orchestrator = new PlanetaryOrchestrator(config, new CheckpointManager(checkpointPath));
+  orchestrator.submitJob({
+    id: 'job-gpu',
+    shard: 'mars',
+    requiredSkills: ['gpu'],
+    estimatedDurationTicks: 2,
+    value: 5000,
+    submissionTick: 0,
+  });
+  orchestrator.markOutage('mars.gpu');
+  orchestrator.processTick({ tick: 1 });
+  orchestrator.processTick({ tick: 2 });
+  const stats = orchestrator.getShardStatistics();
+  assert.equal(stats.helios.completed, 1, 'helios shard should complete reassigned job');
+  assert.equal(orchestrator.fabricMetrics.jobsFailed, 0, 'job should be rerouted instead of failing');
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function run(): Promise<void> {
   await testBalancing();
   await testOutageRecovery();
   await testCheckpointResume();
+  await testCrossShardFallback();
   console.log('Planetary orchestrator fabric tests passed.');
   process.exit(0);
 }

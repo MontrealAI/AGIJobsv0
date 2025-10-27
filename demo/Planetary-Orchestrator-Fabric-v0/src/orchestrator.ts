@@ -233,17 +233,29 @@ export class PlanetaryOrchestrator {
         continue;
       }
       let slotsRemaining = availableSlots;
+      let rotations = 0;
       while (slotsRemaining > 0 && shard.queue.length > 0) {
         const job = shard.queue[0];
+        if (!job) {
+          break;
+        }
         if (!this.canNodeAcceptJob(node, job)) {
-          // rotate job to end to avoid starvation
+          if (!this.hasEligibleNode(shard.config.id, job)) {
+            shard.queue.shift();
+            if (!this.tryCrossShardPlacement(job, shard)) {
+              this.failJob(job, shard, 'no-eligible-nodes');
+            }
+            rotations = 0;
+            continue;
+          }
           shard.queue.push(shard.queue.shift()!);
-          const loopSafe = shard.queue[0];
-          if (loopSafe && loopSafe.id === job.id) {
+          rotations += 1;
+          if (rotations >= shard.queue.length) {
             break;
           }
           continue;
         }
+        rotations = 0;
         shard.queue.shift();
         job.status = 'assigned';
         job.assignedNodeId = node.definition.id;
@@ -262,6 +274,8 @@ export class PlanetaryOrchestrator {
       }
     }
 
+    this.reconcileShardQueue(shard);
+
     if (shard.queue.length > shard.config.maxQueue) {
       this.performSpillover(shard);
     }
@@ -276,38 +290,16 @@ export class PlanetaryOrchestrator {
   }
 
   private performSpillover(shard: ShardState): void {
-    while (shard.queue.length > shard.config.maxQueue && shard.config.spilloverTargets.length > 0) {
+    while (shard.queue.length > shard.config.maxQueue) {
       const job = shard.queue.pop();
       if (!job) {
         return;
       }
-      const targetId = this.pickSpilloverTarget(shard.config.spilloverTargets);
-      const targetShard = targetId ? this.shards.get(targetId) : undefined;
-      if (!targetShard) {
-        shard.queue.unshift(job);
-        return;
+      if (this.tryCrossShardPlacement(job, shard)) {
+        continue;
       }
-      job.spilloverHistory.push(targetShard.config.id);
-      job.shard = targetShard.config.id;
-      job.status = 'spillover';
-      targetShard.queue.push(job);
-      shard.spilloverCount += 1;
-      this.metrics.spillovers += 1;
-      this.events.push({
-        tick: this.tick,
-        type: 'job.spillover',
-        message: `Job ${job.id} spilled from ${shard.config.id} to ${targetShard.config.id}`,
-        data: { from: shard.config.id, to: targetShard.config.id, jobId: job.id },
-      });
+      this.failJob(job, shard, 'spillover-no-target');
     }
-  }
-
-  private pickSpilloverTarget(targets: ShardId[]): ShardId | undefined {
-    if (targets.length === 0) {
-      return undefined;
-    }
-    const index = this.tick % targets.length;
-    return targets[index];
   }
 
   private updateRunningJobs(): void {
@@ -381,6 +373,78 @@ export class PlanetaryOrchestrator {
     return Array.from(this.nodes.values()).filter(
       (node) => node.definition.region === shardId && node.active
     );
+  }
+
+  private reconcileShardQueue(shard: ShardState): void {
+    if (shard.queue.length === 0) {
+      return;
+    }
+    const retained: JobState[] = [];
+    while (shard.queue.length > 0) {
+      const job = shard.queue.shift()!;
+      if (this.hasEligibleNode(shard.config.id, job)) {
+        retained.push(job);
+        continue;
+      }
+      if (!this.tryCrossShardPlacement(job, shard)) {
+        this.failJob(job, shard, 'no-eligible-nodes');
+      }
+    }
+    shard.queue.push(...retained);
+  }
+
+  private hasEligibleNode(shardId: ShardId, job: JobState): boolean {
+    return this.getActiveNodesForShard(shardId).some((node) => this.canNodeAcceptJob(node, job));
+  }
+
+  private tryCrossShardPlacement(job: JobState, originShard: ShardState): boolean {
+    const preferredTargets = originShard.config.spilloverTargets ?? [];
+    const additionalTargets = Array.from(this.shards.keys()).filter(
+      (id) => id !== originShard.config.id && !preferredTargets.includes(id)
+    );
+    const candidates = [...preferredTargets, ...additionalTargets];
+
+    for (const targetId of candidates) {
+      const targetShard = this.shards.get(targetId);
+      if (!targetShard) {
+        continue;
+      }
+      if (!this.hasEligibleNode(targetId, job)) {
+        continue;
+      }
+      job.spilloverHistory.push(targetShard.config.id);
+      job.shard = targetShard.config.id;
+      job.status = 'spillover';
+      job.assignedNodeId = undefined;
+      job.failedTick = undefined;
+      job.failureReason = undefined;
+      targetShard.queue.push(job);
+      originShard.spilloverCount += 1;
+      this.metrics.spillovers += 1;
+      this.events.push({
+        tick: this.tick,
+        type: 'job.spillover',
+        message: `Job ${job.id} rerouted from ${originShard.config.id} to ${targetShard.config.id}`,
+        data: { from: originShard.config.id, to: targetShard.config.id, jobId: job.id },
+      });
+      return true;
+    }
+    return false;
+  }
+
+  private failJob(job: JobState, shard: ShardState, reason: string): void {
+    job.status = 'failed';
+    job.assignedNodeId = undefined;
+    job.failedTick = this.tick;
+    job.failureReason = reason;
+    shard.failed.set(job.id, job);
+    this.metrics.jobsFailed += 1;
+    this.events.push({
+      tick: this.tick,
+      type: 'job.failed',
+      message: `Job ${job.id} failed in shard ${shard.config.id}`,
+      data: { shard: shard.config.id, jobId: job.id, reason },
+    });
   }
 
   private createCheckpointPayload(): CheckpointData {
