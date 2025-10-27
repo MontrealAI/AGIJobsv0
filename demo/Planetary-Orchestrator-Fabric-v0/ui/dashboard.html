@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Planetary Orchestrator Fabric – Static Mission Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; background: radial-gradient(circle at top, #102a76, #050714); color: #fff; margin: 0; padding: 32px; }
+    h1 { margin-bottom: 0.5rem; }
+    .subtitle { color: rgba(255,255,255,0.7); margin-bottom: 2rem; }
+    .card-grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card { background: rgba(8, 17, 56, 0.85); padding: 24px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
+    pre { background: rgba(0,0,0,0.35); padding: 16px; border-radius: 12px; overflow-x: auto; }
+    .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }
+    footer { margin-top: 32px; text-align: center; color: rgba(255,255,255,0.6); font-size: 0.85rem; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+</head>
+<body>
+  <h1>Planetary Orchestrator Fabric Mission Console</h1>
+  <p class="subtitle">Load any generated summary from <code>reports/&lt;label&gt;/summary.json</code> to preview live mission telemetry.</p>
+  <div class="card-grid">
+    <div class="card">
+      <h2>Topology</h2>
+      <div class="mermaid">
+        flowchart TD
+          Owner[Owner Multisig] --> Ledger((Unified Ledger))
+          Ledger --> EarthShard
+          Ledger --> LunaShard
+          Ledger --> MarsShard
+          Ledger --> HeliosShard
+          EarthShard --> EarthAgents((Agents))
+          LunaShard --> LunaAgents((Agents))
+          MarsShard --> MarsAgents((Agents))
+          HeliosShard --> HeliosAgents((Agents))
+      </div>
+    </div>
+    <div class="card">
+      <h2>How to Use</h2>
+      <ol>
+        <li>Run <code>bin/run-demo.sh</code> or <code>npm run demo:planetary-orchestrator-fabric</code>.</li>
+        <li>Open the generated <code>reports/&lt;label&gt;/dashboard.html</code> for a live data view.</li>
+        <li>Load <code>owner-script.json</code> into the owner console to rehearse pause/reroute drills.</li>
+        <li>Inspect <code>events.ndjson</code> to audit the deterministic event stream.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>Owner Command Deck</h2>
+      <pre>{
+  "pauseAll": "owner:system-pause",
+  "rerouteMars": "owner:reroute-shard",
+  "adjustLatency": "owner:set-latency-budget"
+}</pre>
+    </div>
+  </div>
+  <footer>Generated assets become live once you execute the demo. This static template is safe to host or embed.</footer>
+</body>
+</html>
