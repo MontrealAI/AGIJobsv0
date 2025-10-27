@@ -21,6 +21,7 @@ import {
   GovernanceParameters,
   Hex,
   JobResult,
+  NodeIdentity,
   PauseRecord,
   RevealMessage,
   SentinelAlert,
@@ -54,6 +55,7 @@ export class ValidatorConstellationDemo {
   private readonly commitReveal: CommitRevealCoordinator;
   private readonly validators: ValidatorIdentity[] = [];
   private readonly agents: AgentIdentity[] = [];
+  private readonly nodes: NodeIdentity[] = [];
   private readonly domainIds: string[];
   private readonly leaves: EnsLeaf[];
 
@@ -94,22 +96,42 @@ export class ValidatorConstellationDemo {
     const identity = this.ensAuthority.authorizeValidator({ ensName, address, proof }, stake);
     this.validators.push(identity);
     this.stakes.registerValidator(identity);
-    return identity;
+    return { ...identity };
   }
 
   registerAgent(ensName: string, address: Hex, domainId: string, budget: bigint): AgentIdentity {
     const proof = generateMerkleProof(this.leaves, { ensName, owner: address });
     const identity = this.ensAuthority.authorizeAgent({ ensName, address, proof }, domainId, budget);
     this.agents.push(identity);
-    return identity;
+    return { ...identity };
+  }
+
+  registerNode(ensName: string, address: Hex): NodeIdentity {
+    const proof = generateMerkleProof(this.leaves, { ensName, owner: address });
+    const identity = this.ensAuthority.authorizeNode({ ensName, address, proof });
+    if (this.nodes.some((node) => node.address === identity.address)) {
+      throw new Error(`node already registered: ${identity.address}`);
+    }
+    this.nodes.push(identity);
+    return { ...identity };
   }
 
   findAgent(ensName: string): AgentIdentity | undefined {
-    return this.agents.find((agent) => agent.ensName === ensName);
+    const agent = this.agents.find((candidate) => candidate.ensName === ensName);
+    return agent ? { ...agent } : undefined;
+  }
+
+  findNode(ensName: string): NodeIdentity | undefined {
+    const node = this.nodes.find((candidate) => candidate.ensName === ensName);
+    return node ? { ...node } : undefined;
   }
 
   listValidators(): ValidatorIdentity[] {
-    return [...this.validators];
+    return this.validators.map((validator) => ({ ...validator }));
+  }
+
+  listNodes(): NodeIdentity[] {
+    return this.nodes.map((node) => ({ ...node }));
   }
 
   blacklist(address: Hex): void {
@@ -168,12 +190,13 @@ export class ValidatorConstellationDemo {
   }
 
   setAgentBudget(ensName: string, newBudget: bigint): AgentIdentity {
-    const agent = this.findAgent(ensName);
-    if (!agent) {
+    const idx = this.agents.findIndex((candidate) => candidate.ensName === ensName);
+    if (idx === -1) {
       throw new Error(`unknown agent ${ensName}`);
     }
-    agent.budget = newBudget;
-    return { ...agent };
+    const updated = { ...this.agents[idx], budget: newBudget };
+    this.agents[idx] = updated;
+    return { ...updated };
   }
 
   private randomSalt(): Hex {
@@ -265,6 +288,7 @@ export class ValidatorConstellationDemo {
           .map((state) => state.pauseReason!)
           .sort((a, b) => a.timestamp - b.timestamp),
         slashingEvents,
+        nodes: this.listNodes(),
       };
     } finally {
       eventBus.off('StakeSlashed', slashingListener);

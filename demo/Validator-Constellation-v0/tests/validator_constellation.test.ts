@@ -63,6 +63,23 @@ test('sentinel triggers domain pause on budget overrun', () => {
   assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
 });
 
+test('node orchestration enforces ENS lineage and blacklist controls', () => {
+  const { demo, leaves } = buildDemo();
+  const polaris = leaves.find((leaf) => leaf.ensName === 'polaris.node.agi.eth');
+  const selene = leaves.find((leaf) => leaf.ensName === 'selene.alpha.node.agi.eth');
+  if (!polaris || !selene) {
+    throw new Error('missing node leaves');
+  }
+  const registeredPolaris = demo.registerNode(polaris.ensName, polaris.owner);
+  const registeredSelene = demo.registerNode(selene.ensName, selene.owner);
+  assert.equal(registeredPolaris.ensName, 'polaris.node.agi.eth');
+  assert.equal(registeredSelene.ensName, 'selene.alpha.node.agi.eth');
+  assert.equal(demo.listNodes().length, 2);
+  assert.throws(() => demo.registerNode('rogue.node.eth', polaris.owner));
+  demo.blacklist(polaris.owner as `0x${string}`);
+  assert.throws(() => demo.registerNode(polaris.ensName, polaris.owner), /blacklisted/);
+});
+
 test('subgraph indexer records slashing events for transparency', () => {
   subgraphIndexer.clear();
   const { roundResult } = orchestrateRound();
