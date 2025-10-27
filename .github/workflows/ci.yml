@@ -105,6 +105,235 @@ jobs:
       - name: ABI diff check
         run: npm run abi:diff
 
+  python_unit:
+    name: Python unit tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      COVERAGE_FILE: .coverage.unit
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHON_VERSION: '3.12'
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-python.txt
+      - name: Run unit test suite
+        run: |
+          coverage run --rcfile=.coveragerc -m pytest \
+            test/paymaster \
+            test/tools \
+            test/orchestrator \
+            test/simulation
+      - name: Export unit coverage data
+        run: |
+          mkdir -p reports/python-coverage
+          coverage xml --rcfile=.coveragerc -o reports/python-coverage/unit.xml
+      - name: Upload unit coverage artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-coverage-unit
+          path: |
+            .coverage.unit
+            reports/python-coverage/unit.xml
+
+  python_integration:
+    name: Python integration tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      COVERAGE_FILE: .coverage.integration
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHON_VERSION: '3.12'
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-python.txt
+      - name: Run integration suite
+        run: |
+          coverage run --rcfile=.coveragerc -m pytest \
+            test/routes/test_agents.py \
+            test/routes/test_analytics.py \
+            test/routes/test_onebox_health.py \
+            test/demo \
+            demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests
+      - name: Export integration coverage data
+        run: |
+          mkdir -p reports/python-coverage
+          coverage xml --rcfile=.coveragerc -o reports/python-coverage/integration.xml
+      - name: Upload integration coverage artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-coverage-integration
+          path: |
+            .coverage.integration
+            reports/python-coverage/integration.xml
+
+  python_load_sim:
+    name: Load-simulation reports
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHON_VERSION: '3.12'
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-python.txt
+      - name: Run Monte Carlo load simulation
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from pathlib import Path
+
+          from simulation.montecarlo import sweep_parameters
+
+          results = sweep_parameters()
+          out_dir = Path("reports/load-sim")
+          out_dir.mkdir(parents=True, exist_ok=True)
+          csv_path = out_dir / "montecarlo.csv"
+          with csv_path.open("w", newline="", encoding="utf-8") as handle:
+              writer = csv.DictWriter(handle, fieldnames=["burn_pct", "fee_pct", "avg_dissipation"])
+              writer.writeheader()
+              for burn, fee, avg in results:
+                  writer.writerow({
+                      "burn_pct": round(burn, 4),
+                      "fee_pct": round(fee, 4),
+                      "avg_dissipation": round(avg, 6),
+                  })
+          best = min(results, key=lambda entry: entry[2])
+          summary_path = out_dir / "summary.json"
+          summary_path.write_text(
+              json.dumps(
+                  {
+                      "iterations": 1000,
+                      "results_count": len(results),
+                      "best": {
+                          "burn_pct": best[0],
+                          "fee_pct": best[1],
+                          "avg_dissipation": best[2],
+                      },
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          if best[0] > 0.15 or best[1] > 0.08:
+              raise SystemExit("Unexpected dissipation optimum detected")
+          PY
+      - name: Upload load-simulation artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-load-sim-report
+          path: reports/load-sim
+
+  python_coverage:
+    name: Python coverage enforcement
+    needs:
+      - python_unit
+      - python_integration
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PYTHON_VERSION: '3.12'
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+      - name: Install coverage tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install coverage==7.6.4
+      - name: Download unit coverage data
+        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        with:
+          name: python-coverage-unit
+          path: coverage-data/unit
+      - name: Download integration coverage data
+        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        with:
+          name: python-coverage-integration
+          path: coverage-data/integration
+      - name: Combine coverage results
+        run: |
+          coverage combine coverage-data/unit coverage-data/integration
+      - name: Enforce Python coverage threshold
+        run: |
+          mkdir -p reports/python-coverage
+          coverage report --rcfile=.coveragerc
+          coverage xml --rcfile=.coveragerc -o reports/python-coverage/combined.xml
+      - name: Upload combined coverage artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-coverage-combined
+          path: |
+            .coverage
+            reports/python-coverage/combined.xml
+
   foundry:
     name: Foundry
     needs: tests
@@ -614,6 +843,10 @@ jobs:
     needs:
       - lint
       - tests
+      - python_unit
+      - python_integration
+      - python_load_sim
+      - python_coverage
       - foundry
       - coverage
       - phase8
@@ -639,6 +872,10 @@ jobs:
           const prettyNames = {
             lint: 'Lint & static checks',
             tests: 'Tests',
+            python_unit: 'Python unit tests',
+            python_integration: 'Python integration tests',
+            python_load_sim: 'Load-simulation reports',
+            python_coverage: 'Python coverage enforcement',
             foundry: 'Foundry',
             coverage: 'Coverage thresholds',
             phase8: 'Phase 8 readiness',

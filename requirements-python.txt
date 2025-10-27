@@ -1,0 +1,6 @@
+-r services/meta_api/requirements.txt
+
+# Testing toolchain
+coverage==7.6.4
+pytest==8.3.3
+pytest-cov==5.0.0

@@ -2599,7 +2599,7 @@ def _log_event(level: int, event: str, correlation_id: str, **kwargs: Any) -> No
     logger.log(level, f"{event} | cid={correlation_id} | " + " ".join(f"{k}={v}" for k, v in kwargs.items()), extra=extra)
 
 @health_router.get("/healthz")
-async def healthz(_request: Optional[Request] = None):
+async def healthz() -> Dict[str, bool]:
     try:
         block_attr = getattr(w3.eth, "block_number", None)
         if callable(block_attr):

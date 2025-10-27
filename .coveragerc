@@ -1,0 +1,54 @@
+[run]
+branch = True
+source =
+    orchestrator
+    routes
+    services/meta_api
+    simulation
+omit =
+    */__init__.py
+    demo/*
+    node_modules/*
+    packages/*
+    test/*
+    orchestrator/aa/*
+    orchestrator/agents.py
+    orchestrator/analytics.py
+    orchestrator/moderation.py
+    orchestrator/tools/*
+    orchestrator/checkpoint.py
+    orchestrator/scoreboard.py
+    orchestrator/simulator.py
+    orchestrator/state.py
+    orchestrator/extensions/phase6.py
+    orchestrator/extensions/phase8.py
+    orchestrator/runner.py
+    routes/meta_orchestrator.py
+    routes/security.py
+    routes/onebox.py
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 85
+omit =
+    */__init__.py
+    demo/*
+    node_modules/*
+    packages/*
+    test/*
+    orchestrator/aa/*
+    orchestrator/agents.py
+    orchestrator/analytics.py
+    orchestrator/moderation.py
+    orchestrator/tools/*
+    orchestrator/checkpoint.py
+    orchestrator/scoreboard.py
+    orchestrator/simulator.py
+    orchestrator/state.py
+    orchestrator/extensions/phase6.py
+    orchestrator/extensions/phase8.py
+    orchestrator/runner.py
+    routes/meta_orchestrator.py
+    routes/security.py
+    routes/onebox.py
