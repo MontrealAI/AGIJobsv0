@@ -112,17 +112,19 @@ def _dispatch_owner_command(args: argparse.Namespace) -> None:
         config.orchestrator.owner_command_ack_path,
     )
     payload: Dict[str, Any]
-    if args.action in {"governance", "resources"}:
+    if args.action in {"pause", "resume"}:
+        payload = {"action": args.action}
+    elif args.action in {"governance", "resources"}:
         if not args.payload:
             raise UltraConfigError("--payload is required for governance/resources updates")
-        payload = _load_payload(args.payload)
-        payload.setdefault("type", args.action)
+        parameters = _load_payload(args.payload)
+        payload = {"action": "update_parameters", args.action: parameters}
     elif args.action == "cancel":
         if not args.job_id:
             raise UltraConfigError("--job-id is required for cancellation")
-        payload = {"type": "cancel", "job_id": args.job_id}
+        payload = {"action": "cancel_job", "job_id": args.job_id}
     else:
-        payload = {"type": args.action}
+        raise UltraConfigError(f"Unsupported owner action: {args.action}")
     stream.send(payload)
 
 
