@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>K2 Omega-Grade α-AGI Business 3 Control Deck</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(circle at top left, #06182a, #010409 60%);
+        color: #f5f7ff;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+      }
+      section {
+        background: rgba(4, 12, 24, 0.85);
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 18px 40px rgba(4, 12, 24, 0.55);
+        backdrop-filter: blur(10px);
+      }
+      h1, h2, h3 {
+        margin-top: 0;
+        letter-spacing: 0.02em;
+      }
+      code {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 0.15rem 0.3rem;
+        border-radius: 6px;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      .mermaid {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      .card {
+        background: rgba(8, 18, 32, 0.8);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      footer {
+        grid-column: span 2;
+        text-align: center;
+        opacity: 0.7;
+      }
+    </style>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+      document.addEventListener('DOMContentLoaded', () => {
+        const textarea = document.getElementById('mermaid-source');
+        const renderButton = document.getElementById('render');
+        renderButton.addEventListener('click', () => {
+          const diagram = textarea.value.trim();
+          const target = document.getElementById('mermaid-diagram');
+          if (!diagram) {
+            alert('Paste the output of `python -m ... mermaid` first.');
+            return;
+          }
+          target.textContent = diagram;
+          mermaid.run({ nodes: [target] });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <section>
+      <h1>🎖️ K2 Omega-Grade α-AGI Business 3</h1>
+      <p>
+        Launch, steer, and evolve a Kardashev-II labor market with the AGI Jobs v0 (v2) stack.
+        This dashboard is the operator cockpit: paste live Mermaid diagrams, brief stakeholders,
+        and follow the mission checklist.
+      </p>
+      <div class="grid">
+        <div class="card">
+          <h3>🚀 Launch</h3>
+          <code>npm run demo:kardashev-ii-omega-k2</code>
+          <p>Starts the long-running orchestrator with auto-checkpointing.</p>
+        </div>
+        <div class="card">
+          <h3>🛡️ Control</h3>
+          <code>python -m ... control --pause</code>
+          <p>Pause/resume/stop instantly. Governance and resource knobs are a command away.</p>
+        </div>
+        <div class="card">
+          <h3>📊 Telemetry</h3>
+          <code>python -m ... status</code>
+          <p>Streams JSONL snapshots with energy budgets, validator votes, and agent states.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Mermaid Blueprint</h2>
+      <p>Paste the CLI output below and click render to visualise the live job DAG.</p>
+      <textarea id="mermaid-source" rows="10" style="width:100%; border-radius:12px; padding:1rem; background:rgba(0,0,0,0.35); color:#f5f7ff; border:1px solid rgba(255,255,255,0.08);"></textarea>
+      <button id="render" style="margin-top:1rem; padding:0.6rem 1.2rem; border-radius:10px; background:#1f6feb; border:none; color:white; font-weight:600; cursor:pointer;">Render Mermaid</button>
+      <div id="mermaid-diagram" class="mermaid" style="margin-top:1.5rem;">graph TD\n    Dyson_Swarm_Launch[Dyson Swarm Launch]\n    Autonomous_Logistics_Mesh[Autonomous Logistics Mesh]\n    Planetary_Validator_Guild[Planetary Validator Guild]\n    Dyson_Swarm_Launch --> Autonomous_Logistics_Mesh</div>
+    </section>
+
+    <section>
+      <h2>Validator + Token Governance</h2>
+      <ul>
+        <li>Stake requirements adjust live via <code>--governance</code> overrides.</li>
+        <li>Commit/reveal windows default to 180s / 240s to balance speed and security.</li>
+        <li>Slashing ratio (60%) rewards honest validators while protecting employers.</li>
+        <li>Energy + compute quotas respond to mission telemetry through <code>--resources</code>.</li>
+      </ul>
+      <p>
+        Every control command is appended to <code>control-channel.jsonl</code> for auditing and replay.
+      </p>
+    </section>
+
+    <section>
+      <h2>Operator Checklist</h2>
+      <ol>
+        <li>Edit <code>config/mission.json</code> with mission-specific jobs or validator rosters.</li>
+        <li>Launch via <code>npm run demo:kardashev-ii-omega-k2</code>.</li>
+        <li>Share Mermaid blueprint with stakeholders.</li>
+        <li>Monitor <code>status.jsonl</code> & <code>energy-telemetry.jsonl</code>.</li>
+        <li>Adjust governance / resources when strategy shifts.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Powered by AGI Jobs v0 (v2): world-scale coordination, one operator.
+    </footer>
+  </body>
+</html>
