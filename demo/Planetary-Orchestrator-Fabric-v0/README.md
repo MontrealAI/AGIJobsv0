@@ -17,6 +17,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🎛️ **Owner Command Schedules** – Load declarative schedules that trigger pause/resume, shard tuning, and node lifecycle actions mid-run.
 - ♻️ **Zero-Downtime Restart Drill** – A two-stage launcher halts the orchestrator on command, resumes from checkpoint, and merges telemetry for auditors automatically.
 - 🎯 **Surgical Job Control** – Owners reroute hot jobs across shards or cancel redundant work instantly without touching code.
+- 📜 **Unified Ledger Telemetry** – A persistent planetary ledger captures shard totals, spillover flows, and audited invariants so operators can prove correctness in seconds.
 
 ## Quickstart (Non-Technical Operator)
 
@@ -55,7 +56,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
     --outage-node mars.gpu-helion
   ```
   This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
-6. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels for either run.
+6. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, planetary ledger invariants, spillover mermaid flows, and owner command panels for either run.
 7. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
@@ -138,6 +139,7 @@ flowchart TD
 - ✅ **`dashboard.html`** – Rich interactive briefing with mermaid flows, tables, and callouts.
 - ✅ **`owner-script.json`** – Example governance payloads for immediate replay against the live stack.
 - ✅ **`owner-commands-executed.json`** – Ledger of scheduled, executed, skipped, and pending owner commands.
+- ✅ **`ledger.json`** – Snapshot of the planetary ledger, including totals, spillover maps, invariant status, and an event sample for auditors.
 
 ## Branch Protection & CI
 

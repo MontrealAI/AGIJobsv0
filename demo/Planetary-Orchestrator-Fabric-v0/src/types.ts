@@ -151,6 +151,7 @@ export interface CheckpointData {
   metrics: FabricMetrics;
   events: FabricEvent[];
   deterministicLog: DeterministicReplayFrame[];
+  ledger?: LedgerCheckpoint;
 }
 
 export interface AssignmentResult {
@@ -224,12 +225,91 @@ export interface DeterministicReplayFrame {
   events: RegistryEvent[];
 }
 
+export interface LedgerShardTotals {
+  submitted: number;
+  assigned: number;
+  completed: number;
+  failed: number;
+  cancelled: number;
+  spilloversIn: number;
+  spilloversOut: number;
+  reassignments: number;
+}
+
+export interface LedgerNodeTotals {
+  shard: ShardId;
+  assignments: number;
+  completions: number;
+  failures: number;
+  reassignments: number;
+}
+
+export interface LedgerEventEntry {
+  tick: number;
+  type: string;
+  shard?: ShardId;
+  originShard?: ShardId;
+  nodeId?: string;
+  jobId?: string;
+  reason?: string;
+}
+
+export interface LedgerCheckpoint {
+  shards: Record<ShardId, LedgerShardTotals>;
+  nodes: Record<string, LedgerNodeTotals>;
+  flows: Record<string, number>;
+  events: LedgerEventEntry[];
+  totalEvents?: number;
+  ownerEvents?: number;
+  firstTick?: number;
+  lastTick?: number;
+}
+
+export interface LedgerSnapshotContext {
+  tick: number;
+  metrics: FabricMetrics;
+  queueDepthByShard: Record<ShardId, { queue: number; inFlight: number }>;
+  pendingJobs: number;
+  runningJobs: number;
+  systemPaused: boolean;
+  pausedShards: ShardId[];
+}
+
+export interface LedgerSnapshot {
+  tick: number;
+  totals: {
+    submitted: number;
+    assigned: number;
+    completed: number;
+    failed: number;
+    cancelled: number;
+    spilloversOut: number;
+    spilloversIn: number;
+    reassignments: number;
+  };
+  shards: Record<ShardId, LedgerShardTotals>;
+  nodes: Record<string, LedgerNodeTotals>;
+  flows: { from: ShardId; to: ShardId; count: number }[];
+  events: LedgerEventEntry[];
+  totalEvents: number;
+  ownerEvents: number;
+  firstTick?: number;
+  lastTick?: number;
+  pendingJobs: number;
+  runningJobs: number;
+  systemPaused: boolean;
+  pausedShards: ShardId[];
+  queueDepthByShard: Record<ShardId, { queue: number; inFlight: number }>;
+  invariants: { id: string; ok: boolean; message: string }[];
+}
+
 export interface SimulationArtifacts {
   summaryPath: string;
   eventsPath: string;
   dashboardPath: string;
   ownerScriptPath: string;
   ownerCommandsPath: string;
+  ledgerPath: string;
 }
 
 export interface RunMetadata {
@@ -342,4 +422,17 @@ export interface FabricSummary {
     metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
   };
   ownerCommands: OwnerCommandSummary;
+  ledger: {
+    totals: LedgerSnapshot['totals'];
+    shards: Record<ShardId, LedgerShardTotals>;
+    nodes: Record<string, LedgerNodeTotals>;
+    flows: { from: ShardId; to: ShardId; count: number }[];
+    invariants: LedgerSnapshot['invariants'];
+    totalEvents: number;
+    ownerEvents: number;
+    firstTick?: number;
+    lastTick?: number;
+    sampleSize: number;
+    path: string;
+  };
 }
