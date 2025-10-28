@@ -1,7 +1,7 @@
 import http from 'node:http';
 import path from 'node:path';
 import express from 'express';
-import { AlphaNode, AlphaNodeHeartbeat } from '../node';
+import { AlphaNode } from '../node';
 import { JobOpportunity } from '../ai/planner';
 import { defaultOpportunities } from '../utils/opportunities';
 
@@ -14,16 +14,12 @@ export async function startAlphaNodeServer(
   node: AlphaNode,
   options: ServerOptions
 ): Promise<{ dashboard: http.Server; metrics: http.Server }> {
-  let latestHeartbeat: AlphaNodeHeartbeat | null = null;
-
   const dashboardApp = express();
   dashboardApp.use(express.json());
 
   dashboardApp.get('/api/heartbeat', async (_req, res) => {
-    if (!latestHeartbeat) {
-      latestHeartbeat = await node.heartbeat(defaultOpportunities());
-    }
-    res.json(latestHeartbeat);
+    const heartbeat = await node.heartbeat(defaultOpportunities());
+    res.json(heartbeat);
   });
 
   dashboardApp.post('/api/plan', async (req, res) => {

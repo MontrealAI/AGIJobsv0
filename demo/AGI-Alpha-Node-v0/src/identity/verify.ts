@@ -26,11 +26,13 @@ export async function verifyNodeIdentity(
   const ensName = makeEnsName(config);
   const nodehash = computeNodehash(config);
   const expectedOwner = getAddress(config.operator.address);
+  const nameWrapperAddress = getAddress(config.contracts.ens.nameWrapper);
   const reasons = assertSubdomain(config);
 
   const resolution = await lookup.resolve(ensName);
   const owner = getAddress(resolution.owner);
-  if (owner !== expectedOwner) {
+  const isWrapped = owner === nameWrapperAddress;
+  if (!isWrapped && owner !== expectedOwner) {
     reasons.push(`ENS owner ${owner} does not match operator ${expectedOwner}`);
   }
 
@@ -39,6 +41,10 @@ export async function verifyNodeIdentity(
     if (wrapperOwner !== expectedOwner) {
       reasons.push(`NameWrapper owner ${wrapperOwner} does not match operator ${expectedOwner}`);
     }
+  } else if (isWrapped) {
+    reasons.push(
+      `Wrapped ENS names must expose wrapperOwner; ${ensName} resolved to ${nameWrapperAddress} without wrapper ownership information`
+    );
   }
 
   if (resolution.registrant) {
