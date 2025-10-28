@@ -133,6 +133,7 @@ export interface CheckpointData {
   tick: number;
   systemPaused: boolean;
   pausedShards: ShardId[];
+  reporting?: FabricConfig['reporting'];
   shards: Record<ShardId, {
     queue: JobState[];
     inFlight: JobState[];
@@ -372,6 +373,11 @@ export type OwnerCommand =
       type: 'checkpoint.configure';
       update: { intervalTicks?: number; path?: string };
       reason?: string;
+    }
+  | {
+      type: 'reporting.configure';
+      update: { directory?: string; defaultLabel?: string };
+      reason?: string;
     };
 
 export interface OwnerCommandSchedule {
@@ -420,6 +426,7 @@ export interface FabricSummary {
     pausedShards: ShardId[];
     checkpoint: { path: string; intervalTicks: number };
     metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
+    reporting: FabricConfig['reporting'];
   };
   ownerCommands: OwnerCommandSummary;
   ledger: {

@@ -174,6 +174,7 @@ export class PlanetaryOrchestrator {
     pausedShards: ShardId[];
     checkpoint: { path: string; intervalTicks: number };
     metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
+    reporting: FabricConfig['reporting'];
   } {
     return {
       systemPaused: this.systemPaused,
@@ -184,6 +185,7 @@ export class PlanetaryOrchestrator {
         systemPauses: this.metrics.systemPauses,
         shardPauses: this.metrics.shardPauses,
       },
+      reporting: { ...this.config.reporting },
     };
   }
 
@@ -574,6 +576,24 @@ export class PlanetaryOrchestrator {
         });
         break;
       }
+      case 'reporting.configure': {
+        const applied: Record<string, unknown> = {};
+        if (command.update.directory) {
+          this.config.reporting.directory = command.update.directory;
+          applied.directory = command.update.directory;
+        }
+        if (command.update.defaultLabel) {
+          this.config.reporting.defaultLabel = command.update.defaultLabel;
+          applied.defaultLabel = command.update.defaultLabel;
+        }
+        push({
+          tick: this.tick,
+          type: 'owner.reporting.configure',
+          message: 'Owner reconfigured reporting outputs',
+          data: { reason: command.reason, update: applied },
+        });
+        break;
+      }
       default:
         throw new Error('Unsupported owner command');
     }
@@ -611,6 +631,9 @@ export class PlanetaryOrchestrator {
       } else {
         this.config.nodes.push({ ...nodePayload.definition });
       }
+    }
+    if (payload.reporting) {
+      this.config.reporting = { ...payload.reporting };
     }
     this.initializeState();
     this.ledger.restore(payload.ledger);
@@ -1308,6 +1331,7 @@ export class PlanetaryOrchestrator {
       tick: this.tick,
       systemPaused: this.systemPaused,
       pausedShards: Array.from(this.pausedShards),
+      reporting: { ...this.config.reporting },
       shards,
       nodes,
       metrics: { ...this.metrics },

@@ -361,6 +361,12 @@ async function testOwnerCommandControls(): Promise<void> {
     reason: 'tighten checkpoint cadence during drill',
     update: { intervalTicks: 3, path: rotatedCheckpointPath },
   });
+  const reportingOverride = join(tmpdir(), `fabric-owner-reports-${Date.now()}`);
+  await orchestrator.applyOwnerCommand({
+    type: 'reporting.configure',
+    reason: 'redirect artifacts to governance archive',
+    update: { directory: reportingOverride, defaultLabel: 'owner-governance' },
+  });
   orchestrator.processTick({ tick: 2 });
   await orchestrator.applyOwnerCommand({
     type: 'checkpoint.save',
@@ -372,15 +378,19 @@ async function testOwnerCommandControls(): Promise<void> {
   const rotatedRaw = await readFile(rotatedCheckpointPath, 'utf8');
   const rotatedCheckpoint = JSON.parse(rotatedRaw);
   assert.equal(rotatedCheckpoint.tick, orchestrator.currentTick);
+  assert.equal(rotatedCheckpoint.reporting?.directory, reportingOverride);
+  assert.equal(rotatedCheckpoint.reporting?.defaultLabel, 'owner-governance');
 
   const ownerState = orchestrator.getOwnerState();
   assert.equal(ownerState.systemPaused, false, 'system should be resumed');
-  assert.equal(ownerState.metrics.ownerInterventions, 13);
+  assert.equal(ownerState.metrics.ownerInterventions, 14);
   assert.equal(ownerState.metrics.systemPauses, 1);
   assert.equal(ownerState.metrics.shardPauses, 1);
   assert.deepEqual(ownerState.pausedShards, [], 'no shards should remain paused');
   assert.equal(ownerState.checkpoint.intervalTicks, 3);
   assert.equal(ownerState.checkpoint.path, rotatedCheckpointPath);
+  assert.equal(ownerState.reporting.directory, reportingOverride);
+  assert.equal(ownerState.reporting.defaultLabel, 'owner-governance');
 
   const nodeSnapshot = orchestrator.getNodeSnapshots();
   assert.ok(nodeSnapshot['earth.node.backup'], 'earth backup node should be registered');
@@ -425,6 +435,18 @@ async function testOwnerCommandSchedule(): Promise<void> {
         reason: 'schedule rotation',
       },
     },
+    {
+      tick: 5,
+      note: 'retarget reporting outputs',
+      command: {
+        type: 'reporting.configure',
+        reason: 'archive artifacts in governance bucket',
+        update: {
+          directory: join(reportingDir, 'schedule', 'governance-archive'),
+          defaultLabel: 'schedule-governance',
+        },
+      },
+    },
   ];
   const result = await runSimulation(config, {
     jobs: 50,
@@ -445,6 +467,8 @@ async function testOwnerCommandSchedule(): Promise<void> {
     summary.ownerCommands.executed.some((entry: OwnerCommandSchedule) => entry.command.type === 'checkpoint.configure')
   );
   assert.equal(summary.ownerState.checkpoint.intervalTicks, 4);
+  assert.equal(summary.ownerState.reporting.directory, join(reportingDir, 'schedule', 'governance-archive'));
+  assert.equal(summary.ownerState.reporting.defaultLabel, 'schedule-governance');
   const ownerLogRaw = await readFile(join(reportingDir, 'schedule', 'owner-commands-executed.json'), 'utf8');
   const ownerLog = JSON.parse(ownerLogRaw);
   assert.equal(ownerLog.executed.length, schedule.length);
