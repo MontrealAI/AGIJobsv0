@@ -1,0 +1,37 @@
+{
+  "mesh": {
+    "protocol": "A2A-meta-conductor",
+    "sentinels": [
+      {
+        "id": "guardian-grid-validator",
+        "capabilities": ["execution", "antifragility", "chain-validation"],
+        "status": "ready",
+        "stake": 50000
+      },
+      {
+        "id": "mission-audit-sentinel",
+        "capabilities": ["compliance", "risk-monitor"],
+        "status": "ready",
+        "stake": 15000
+      },
+      {
+        "id": "alpha-treasury-autopilot",
+        "capabilities": ["treasury", "governance"],
+        "status": "ready",
+        "stake": 30000
+      },
+      {
+        "id": "sovereign-simulation-director",
+        "capabilities": ["planner", "simulation", "design"],
+        "status": "ready",
+        "stake": 25000
+      }
+    ],
+    "coordination": {
+      "quorum": 3,
+      "latency_ms": 42,
+      "last_heartbeat": "2024-07-12T10:00:00Z",
+      "owner_override": true
+    }
+  }
+}

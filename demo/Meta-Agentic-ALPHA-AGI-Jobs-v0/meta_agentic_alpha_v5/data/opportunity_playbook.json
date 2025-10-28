@@ -1,0 +1,65 @@
+{
+  "phases": [
+    {
+      "id": "identify",
+      "objective": "Surface compounding alpha",
+      "actions": [
+        "Run anomaly detection on finance, research, policy streams",
+        "Escalate >0.94 anomalies to owner console",
+        "Pre-stage mitigation playbooks"
+      ]
+    },
+    {
+      "id": "learn",
+      "objective": "Evolve models",
+      "actions": [
+        "Spin MuZero-AlphaFusion-V world model",
+        "POET evolves stressor environments",
+        "Distill new heuristics into guardian mesh"
+      ]
+    },
+    {
+      "id": "think",
+      "objective": "Meta-agentic planning",
+      "actions": [
+        "Meta-tree search with A2A-meta-conductor",
+        "Coordinate risk + treasury + execution agents",
+        "Surface 5 candidate plans with risk/ROI vectors"
+      ]
+    },
+    {
+      "id": "design",
+      "objective": "Draft deliverables",
+      "actions": [
+        "Synthesize blueprint + timeline",
+        "Generate owner-facing console panels",
+        "Codify antifragility buffers"
+      ]
+    },
+    {
+      "id": "strategise",
+      "objective": "Allocate capital",
+      "actions": [
+        "Optimise unstoppable reserve",
+        "Set guardian quorum + approvals",
+        "Define fallback liquidity routes"
+      ]
+    },
+    {
+      "id": "execute",
+      "objective": "Dispatch on-chain",
+      "actions": [
+        "Dry-run job.post + stake + commit",
+        "Render dashboard + reports",
+        "Log scoreboard and approvals"
+      ]
+    }
+  ],
+  "owner_controls": [
+    "Rebalance liquidity routes",
+    "Modify antifragility buffer",
+    "Switch bundler/paymaster",
+    "Add/Remove guardians",
+    "Pause execution"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "events": [
+    {"time": "T+0m", "event": "Owner launches Meta-Conductor demo"},
+    {"time": "T+2m", "event": "Identify mesh flags 3 alpha domains"},
+    {"time": "T+5m", "event": "World model evolves + new heuristics distilled"},
+    {"time": "T+7m", "event": "Guardian mesh votes 3/3 approvals"},
+    {"time": "T+9m", "event": "Treasury allocation optimisation complete"},
+    {"time": "T+12m", "event": "Dry-run on-chain job + staking + commit"},
+    {"time": "T+14m", "event": "Owner console + masterplan generated"}
+  ],
+  "expected_roi": 0.238,
+  "alpha_confidence": 0.972,
+  "treasury_at_risk": 0.018
+}

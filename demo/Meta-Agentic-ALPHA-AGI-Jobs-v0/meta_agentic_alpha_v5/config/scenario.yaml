@@ -1,0 +1,208 @@
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V5 — Sovereign Meta-Conductor"
+  narrative: |
+    The sovereign owner clicks once and AGI Jobs v0 (v2) composes the entire
+    alpha-creation factory: anomaly detection, world modelling, guardian mesh
+    coordination, treasury optimisation, and gasless job dispatch. Every
+    control is editable without code.
+  dashboards:
+    - title: "Sovereign Meta-Conductor Console"
+      file: "meta_agentic_alpha_v5/ui/index.html"
+    - title: "Meta-Conductor Masterplan"
+      file: "meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v5/reports/alpha_constellation.md"
+    - "meta_agentic_alpha_v5/playbooks/sovereign_controls.md"
+  agents:
+    - agent_id: "guardian-grid-validator"
+      owner: "Guardian Grid Syndicate"
+      region: "omni"
+      capabilities:
+        - execution
+        - validation
+        - analysis
+      stake_amount: "50000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-grid-validator-secret"
+    - agent_id: "sovereign-simulation-director"
+      owner: "Simulation Guild"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "25000"
+      multisig: true
+      slashable: false
+      operator_secret: "sovereign-simulation-director-secret"
+    - agent_id: "alpha-treasury-autopilot"
+      owner: "Treasury Collective"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "30000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-treasury-autopilot-secret"
+    - agent_id: "mission-audit-sentinel"
+      owner: "Audit Observatory"
+      region: "omni"
+      capabilities:
+        - validation
+        - analysis
+        - support
+      stake_amount: "15000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-audit-sentinel-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v5"
+  title: "Meta-Agentic α-AGI Jobs Demo — Sovereign Meta-Conductor"
+  narrative: |
+    A non-technical sovereign owner instructs AGI Jobs v0 (v2) to assemble a full
+    alpha-creation factory. Within one run the system ingests multi-domain signals,
+    evolves its world model, coordinates a guardian mesh, and prepares fully-governed
+    on-chain executions — all while making every control adjustable from a console.
+  owner:
+    address: "0xSOVEREIGN00000000000000000000000000000001"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000A1"
+      - "0xGUARDIAN000000000000000000000000000000B2"
+      - "0xGUARDIAN000000000000000000000000000000C3"
+      - "0xGUARDIAN000000000000000000000000000000D4"
+    approvals_required: 3
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 12
+    mission_charter: "sovereign-meta-conductor"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "18500000"
+    risk_limits:
+      max_drawdown_percent: 3.6
+      var_percent: 2.0
+      antifragility_buffer_percent: 28
+      circuit_breaker_percent: 6.2
+    liquidity_routes:
+      - "treasury/alpha-orbit"
+      - "execution/liquidity-grid"
+      - "resilience/phoenix-buffer"
+    unstoppable_reserve_percent: 22
+  gasless:
+    enabled: true
+    bundler: "meta-conductor-bundler"
+    paymaster: "account-abstraction/meta-conductor-paymaster.json"
+    session_keys:
+      - "guardian-grid-validator"
+      - "sovereign-simulation-director"
+      - "alpha-treasury-autopilot"
+      - "mission-audit-sentinel"
+      - "owner-override-switch"
+    overrideable_parameters:
+      max_fee_gwei: 23
+      preferred_network: "ethereum-mainnet"
+      failover_network: "arbitrum-one"
+
+plan:
+  budget_max: "320000"
+  approvals:
+    - "0xGUARDIAN000000000000000000000000000000A1"
+    - "0xGUARDIAN000000000000000000000000000000B2"
+    - "0xGUARDIAN000000000000000000000000000000C3"
+  steps:
+    - id: "identify-1"
+      name: "Fuse opportunity mesh"
+      kind: "plan"
+      tool: "identify.aggregate"
+      params:
+        signals: "meta_agentic_alpha_v5/data/alpha_signals.json"
+        anomaly_threshold: 0.94
+        escalate_to: "owner-console"
+        governance_matrix: "meta_agentic_alpha_v5/data/governance_matrix.json"
+    - id: "learn-1"
+      name: "Evolve world model"
+      kind: "llm"
+      tool: "simulation.evolve"
+      params:
+        curriculum: "AlphaFactory/MetaSeason-V"
+        world_model: "MuZero-AlphaFusion-V"
+        simulation_engine: "MiniWorld-POET-XL"
+        checkpoints: true
+    - id: "reason-1"
+      name: "Meta-agentic lattice search"
+      kind: "plan"
+      tool: "planning.meta-search"
+      params:
+        horizon_days: 45
+        candidate_plans: 5
+        agent_bus: "A2A-meta-conductor"
+        guardian_mesh: "meta_agentic_alpha_v5/data/guardian_mesh.json"
+    - id: "design-1"
+      name: "Draft sovereign delivery blueprint"
+      kind: "code"
+      tool: "design.blueprint"
+      params:
+        opportunity_playbook: "meta_agentic_alpha_v5/data/opportunity_playbook.json"
+        world_model: "MuZero-AlphaFusion-V"
+        antifragility_mode: "compounding"
+    - id: "strategise-1"
+      name: "Optimise treasury allocation"
+      kind: "plan"
+      tool: "treasury.optimise"
+      params:
+        liquidity_routes:
+          - "treasury/alpha-orbit"
+          - "execution/liquidity-grid"
+          - "resilience/phoenix-buffer"
+        unstoppable_reserve_percent: 22
+        guardian_quorum: 3
+        antifragility_buffer_percent: 28
+    - id: "execute-1"
+      name: "Simulate on-chain deployment"
+      kind: "chain"
+      tool: "job.post"
+      params:
+        title: "Meta-Conductor Sovereign Alpha Retrofit"
+        description: "Meta-agentic retrofits for trillion-scale alpha conversion across energy, biotech, and supply networks."
+        reward: "145000"
+        deadline_days: 18
+        attachments:
+          - "meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md"
+          - "meta_agentic_alpha_v5/reports/alpha_constellation.md"
+        treasury_account: "0xA1PHA0000000000000000000000000000C0DE"
+        fee_bps: 40
+        validator: "guardian-grid-validator"
+        dry_run: true
+    - id: "execute-2"
+      name: "Stake guardian capital"
+      kind: "chain"
+      tool: "stake.deposit"
+      params:
+        agent: "guardian-grid-validator"
+        amount: "40000"
+        token: "AGIALPHA"
+        slash_guardian: "0xDE1B000000000000000000000000000000EEF"
+        dry_run: true
+    - id: "execute-3"
+      name: "Commit validation handshake"
+      kind: "chain"
+      tool: "validator.commit"
+      params:
+        agent: "guardian-grid-validator"
+        tx_summary: "Validation handshake for Meta-Conductor job"
+        expected_profit: "220000"
+        dry_run: true
+    - id: "finalise-1"
+      name: "Emit owner intelligence deck"
+      kind: "finalize"
+      tool: "analytics.finalize"
+      params:
+        reports:
+          - "meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md"
+        dashboards:
+          - "meta_agentic_alpha_v5/ui/index.html"
+        broadcast_channels:
+          - "console"
+          - "email://owner@meta-conductor.demo"

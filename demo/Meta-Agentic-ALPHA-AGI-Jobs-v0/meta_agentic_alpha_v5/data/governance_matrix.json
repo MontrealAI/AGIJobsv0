@@ -1,0 +1,46 @@
+{
+  "controls": {
+    "treasury": {
+      "liquidity_routes": [
+        {"id": "treasury/alpha-orbit", "description": "Primary growth deployments", "max_allocation_percent": 48},
+        {"id": "execution/liquidity-grid", "description": "Execution working capital", "max_allocation_percent": 32},
+        {"id": "resilience/phoenix-buffer", "description": "Emergency antifragility reserve", "max_allocation_percent": 20}
+      ],
+      "pause_switch": true,
+      "owner_editable": true
+    },
+    "guardians": {
+      "quorum": 3,
+      "roles": [
+        {"id": "guardian-grid-validator", "duty": "on-chain validation + antifragility"},
+        {"id": "mission-audit-sentinel", "duty": "compliance + ethics"},
+        {"id": "alpha-treasury-autopilot", "duty": "treasury + risk"}
+      ]
+    },
+    "account_abstraction": {
+      "bundler": "meta-conductor-bundler",
+      "paymaster": "account-abstraction/meta-conductor-paymaster.json",
+      "session_keys": [
+        "guardian-grid-validator",
+        "sovereign-simulation-director",
+        "alpha-treasury-autopilot",
+        "mission-audit-sentinel",
+        "owner-override-switch"
+      ]
+    }
+  },
+  "risk_policies": {
+    "max_drawdown_percent": 3.6,
+    "var_percent": 2.0,
+    "antifragility_buffer_percent": 28,
+    "circuit_breaker_percent": 6.2,
+    "restart_policy": "phoenix-autoadapt"
+  },
+  "human_actions": [
+    "Toggle emergency pause",
+    "Adjust unstoppable reserve",
+    "Swap guardians",
+    "Change bundler or paymaster",
+    "Reconfigure approvals quorum"
+  ]
+}

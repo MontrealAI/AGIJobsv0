@@ -1,4 +1,4 @@
-name: "Demo: Meta-Agentic α-AGI Jobs"
+name: demo-meta-agentic-alpha-agi-jobs (v5)
 
 on:
   push:
@@ -16,19 +16,33 @@ on:
       - 'orchestrator/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: demo-meta-agentic-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    name: "Run demo harness"
-    runs-on: ubuntu-22.04
-    timeout-minutes: 25
+    name: "Run Meta-Agentic demo suite"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
 
       - name: Install dependencies
         run: |
@@ -69,9 +83,16 @@ jobs:
         run: |
           python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py --timeout 90
 
+      - name: Execute demo CLI V5
+        env:
+          META_AGENTIC_DEMO_V5_TIMEOUT: '260'
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py --timeout 105
+
       - name: Upload artefacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: meta-agentic-demo-artefacts
           path: |
@@ -79,11 +100,14 @@ jobs:
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v3.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v4.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v5.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v3/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v4/scoreboard.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v5/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v4/reports/generated/alpha_flight_synthesis.md
-            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui/
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/ui/
