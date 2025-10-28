@@ -1,0 +1,181 @@
+scenario:
+  id: "meta-agentic-alpha-v2"
+  title: "Meta-Agentic α-AGI Jobs Demo V2"
+  narrative: |
+    Demonstrates how AGI Jobs v0 (v2) empowers a non-technical owner to orchestrate a
+    self-upgrading alpha factory with full governance, account abstraction, treasury
+    automation, and antifragility guardrails.
+  owner:
+    address: "0xA1FAce00000000000000000000000000CAFEBABE"
+    guardians:
+      - "0xBEEf0000000000000000000000000000DEF1ACE"
+      - "0xACED0000000000000000000000000000FEEDC0"
+    approvals_required: 2
+    emergency_pause: true
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "2500000"
+    risk_limits:
+      max_drawdown_percent: 9.5
+      var_percent: 5.25
+      antifragility_buffer_percent: 18
+  gasless:
+    enabled: true
+    paymaster: "account-abstraction/alpha-paymaster.json"
+  dashboards:
+    - title: "Alpha Masterplan Deck"
+      file: "meta_agentic_alpha_v2/reports/alpha_masterplan.md"
+    - title: "Command Console"
+      file: "meta_agentic_alpha_v2/ui/index.html"
+  attachments:
+    - "meta_agentic_alpha_v2/reports/alpha_masterplan.md"
+
+agents:
+  - agent_id: "guardian-grid-validator"
+    owner: "Sovereign Guardian Syndicate"
+    region: "omni"
+    capabilities:
+      - execution
+      - validation
+      - oversight
+    stake_amount: "35000"
+    slashable: true
+    operator_secret: "guardian-alpha"
+  - agent_id: "alpha-portfolio-autopilot"
+    owner: "Treasury Autopilot"
+    region: "global"
+    capabilities:
+      - strategy
+      - analytics
+    stake_amount: "50000"
+    slashable: true
+    operator_secret: "autopilot-secret"
+
+phases:
+  - id: "identify"
+    label: "Identify"
+    description: "Fuse multi-domain signals and surface latent alpha anomalies."
+    weight: 1.2
+    success_metric: "signal_strength"
+    step:
+      kind: "plan"
+      tool: "identify.multi-domain"
+      params:
+        datasets:
+          finance: "data/finance/opportunity_signals.json"
+          research: "data/research/breakthroughs.json"
+          supply_chain: "data/supply/sensors.json"
+        anomaly_threshold: 0.86
+        notify_channels:
+          - "console"
+          - "slack://alpha-alerts"
+  - id: "learn"
+    label: "Out-Learn"
+    description: "Update the meta-world model using open-ended curriculum loops."
+    weight: 1.5
+    success_metric: "world_model_resilience"
+    step:
+      kind: "plan"
+      tool: "learn.world-model"
+      params:
+        curriculum: "AlphaFactory/2025Q2"
+        simulation_engine: "MiniWorld-POET"
+        world_model: "MuZero-AlphaFusion"
+        cross_domain_alignment:
+          - "finance:liquidity"
+          - "climate:carbon"
+          - "biotech:protein-folding"
+  - id: "think"
+    label: "Out-Think"
+    description: "Meta-agentic planner tree search with guardian critique loops."
+    weight: 1.8
+    success_metric: "plan_convergence"
+    step:
+      kind: "plan"
+      tool: "plan.meta-search"
+      params:
+        branching_factor: 9
+        evaluation_policy: "risk-adjusted-NPV"
+        concurrency_agents: 7
+        validation_guardrails: true
+  - id: "design"
+    label: "Out-Design"
+    description: "Creative synthesis of alpha strategy leveraging simulation feedback."
+    weight: 1.1
+    success_metric: "design_fitness"
+    step:
+      kind: "plan"
+      tool: "design.creative"
+      params:
+        designer_agent: "aether-designer-v12"
+        deliverables:
+          - "Quantum supply-chain retrofit plan"
+          - "Cross-domain liquidity protocol"
+        simulation_feedback: true
+  - id: "strategise"
+    label: "Out-Strategise"
+    description: "Autonomous portfolio management and governance calibration."
+    weight: 1.4
+    success_metric: "risk_adjusted_alpha"
+    step:
+      kind: "plan"
+      tool: "strategy.meta"
+      params:
+        treasury_token: "AGIALPHA"
+        capital_allocation:
+          superconductive_retrofit: 0.32
+          carbon_capture_program: 0.24
+          liquidity_arbitrage: 0.29
+          reserve_buffer: 0.15
+        antifragility_checks:
+          - "simulate_black_swan"
+          - "stress_var@99"
+          - "governance_backtest"
+  - id: "execute-onchain"
+    label: "Out-Execute"
+    description: "Account abstraction powered execution: job posting, staking, validation."
+    weight: 1.7
+    success_metric: "execution_integrity"
+    step:
+      kind: "chain"
+      tool: "job.bundle"
+      params:
+        job:
+          title: "Superconductive Grid Retrofit Initiative"
+          description: |
+            Turnkey procurement, installation, and validation of polymer superconductive retrofits across
+            hyperscale datacenters with waste-heat reclamation and carbon credit monetisation.
+          reward: "135000"
+          deadline_days: 28
+          attachments:
+            - "meta_agentic_alpha_v2/reports/alpha_masterplan.md"
+          treasury_account: "0xA1FAce00000000000000000000000000CAFEBABE"
+          fee_bps: 42
+          validator: "guardian-grid-validator"
+        staking:
+          validator: "guardian-grid-validator"
+          amount: "35000"
+          token: "AGIALPHA"
+          slash_guardian: "0xACED0000000000000000000000000000FEEDC0"
+        validation_commit:
+          agent: "guardian-grid-validator"
+          tx_summary: "Simulated validation commit for superconductive retrofit job"
+          expected_profit: "210000"
+          dry_run: true
+        treasury_update:
+          analyst_agent: "alpha-portfolio-autopilot"
+          post_execution_buffer_percent: 14
+
+plan:
+  approvals:
+    - "council/alpha"
+    - "owner/multisig"
+  budget:
+    max: "450000"
+    currency: "AGIALPHA"
+  antifragility:
+    circuit_breaker_threshold_percent: 7.5
+    pause_on_drawdown_percent: 10
+  confirmations:
+    - "Confirm superconducting polymer procurement plan"
+    - "Approve carbon credit issuance parameters"
