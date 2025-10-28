@@ -150,21 +150,24 @@ export class AlphaNode {
     const discovered = await this.discoverJobs(options);
     const opportunities = discovered.length > 0 ? this.toOpportunities(discovered) : defaultOpportunities();
     const plan = this.plan(opportunities);
+    const selectedJobId = plan.summary.selectedJobId;
+    const selectedJob = selectedJobId ? opportunities.find((job) => job.jobId === selectedJobId) : undefined;
     let execution: JobCycleReport | undefined;
-    if (plan.summary.selectedJobId) {
-      const executionOptions: JobActionOptions = {
-        dryRun: options?.dryRun ?? true,
-        proof: options?.proof,
-        resultUri: options?.resultUri,
-        resultHash: options?.resultHash,
-        hashAlgorithm: options?.hashAlgorithm
-      };
-      execution = await this.runJobCycle(BigInt(plan.summary.selectedJobId), executionOptions);
-      const selectedJob = opportunities.find((job) => job.jobId === plan.summary.selectedJobId);
-      this.context.metrics.updateJobExecution(selectedJob?.reward);
-    } else {
-      this.context.metrics.updateJobExecution(undefined);
+    if (selectedJobId && selectedJob) {
+      if (/^\d+$/u.test(selectedJobId)) {
+        const executionOptions: JobActionOptions = {
+          dryRun: options?.dryRun ?? true,
+          proof: options?.proof,
+          resultUri: options?.resultUri,
+          resultHash: options?.resultHash,
+          hashAlgorithm: options?.hashAlgorithm
+        };
+        execution = await this.runJobCycle(BigInt(selectedJobId), executionOptions);
+      } else {
+        this.context.logger.warn('autopilot_skipped_non_numeric_job', { selectedJobId });
+      }
     }
+    this.context.metrics.updateJobExecution(selectedJob?.reward);
     return {
       operator: this.operatorAddress,
       discovered,
