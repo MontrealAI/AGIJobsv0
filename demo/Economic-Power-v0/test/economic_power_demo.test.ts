@@ -16,10 +16,28 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.metrics.paybackHours > 0, 'Payback hours should be positive');
   assert(summary.mermaidFlow.includes('graph TD'), 'Flow mermaid diagram should be rendered');
   assert(summary.mermaidTimeline.includes('gantt'), 'Timeline mermaid diagram should be rendered');
+  assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
+  assert(summary.metrics.ownerCommandCoverage > 0.2, 'Owner command coverage should be non-trivial');
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
     assert(ownerParameters.includes(control.parameter));
   }
+
+  assert.equal(
+    summary.ownerSovereignty.pauseScript,
+    scenario.safeguards.pauseScript,
+    'Pause script should mirror scenario safeguards',
+  );
+  assert.equal(
+    summary.ownerSovereignty.resumeScript,
+    scenario.safeguards.resumeScript,
+    'Resume script should mirror scenario safeguards',
+  );
+  assert.equal(
+    summary.ownerSovereignty.circuitBreakers.length,
+    scenario.safeguards.circuitBreakers.length,
+    'Circuit breaker counts should align',
+  );
 });
 

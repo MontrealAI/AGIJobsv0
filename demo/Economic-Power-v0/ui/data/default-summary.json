@@ -1,7 +1,7 @@
 {
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
-  "generatedAt": "2025-01-01T00:00:00.000Z",
+  "generatedAt": "2025-10-28T05:33:23.409Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -17,7 +17,9 @@
     "throughputJobsPerDay": 0.87,
     "validatorConfidence": 0.9812,
     "automationScore": 0.852,
-    "riskMitigationScore": 0.912
+    "riskMitigationScore": 0.912,
+    "stabilityIndex": 0.736,
+    "ownerCommandCoverage": 0.313
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -44,6 +46,56 @@
         "target": "USDC v2",
         "script": "npm run owner:update-all",
         "description": "Owner upgrades fiat on/off-ramp adapter with improved slippage guarantees."
+      }
+    ]
+  },
+  "ownerSovereignty": {
+    "pauseScript": "npm run owner:system-pause",
+    "resumeScript": "npm run owner:update-all",
+    "responseMinutes": 9,
+    "emergencyContacts": [
+      "governance@agijobs.ai",
+      "security-operations@agijobs.ai",
+      "treasury@agijobs.ai"
+    ],
+    "circuitBreakers": [
+      {
+        "metric": "validatorConfidence",
+        "comparator": "<",
+        "threshold": 0.95,
+        "action": "npm run owner:system-pause",
+        "description": "Pause contracts if validator confidence slips below 95% to protect settlement integrity."
+      },
+      {
+        "metric": "automationScore",
+        "comparator": "<",
+        "threshold": 0.8,
+        "action": "npm run owner:parameters",
+        "description": "Recalibrate automation if orchestration coverage drops under 80%."
+      },
+      {
+        "metric": "treasuryAfterRun",
+        "comparator": "<",
+        "threshold": 1800000,
+        "action": "npm run owner:audit",
+        "description": "Trigger treasury forensic audit when buffers fall below the defensive floor."
+      }
+    ],
+    "upgradePaths": [
+      {
+        "module": "JobRegistry",
+        "script": "npm run owner:update-all",
+        "description": "Ships the hardened JobRegistry bundle with deterministic migration plan."
+      },
+      {
+        "module": "ValidationModule",
+        "script": "npm run owner:upgrade",
+        "description": "Activates the upgraded validator commit–reveal consensus parameters."
+      },
+      {
+        "module": "StakeManager",
+        "script": "npm run owner:parameters",
+        "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
     ]
   },
