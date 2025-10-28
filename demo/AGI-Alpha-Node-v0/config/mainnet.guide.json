@@ -1,0 +1,82 @@
+{
+  "operator": {
+    "address": "0x1234567890abcdef1234567890abcdef12345678",
+    "ensLabel": "your-node",
+    "ensRoot": "alpha.node.agi.eth",
+    "minimumStake": "10000",
+    "heartbeatIntervalSeconds": 900
+  },
+  "network": {
+    "name": "mainnet",
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR_API_KEY",
+    "chainId": 1
+  },
+  "contracts": {
+    "stakeManager": "0x1111111111111111111111111111111111111111",
+    "platformIncentives": "0x2222222222222222222222222222222222222222",
+    "platformRegistry": "0x3333333333333333333333333333333333333333",
+    "jobRegistry": "0x4444444444444444444444444444444444444444",
+    "feePool": "0x5555555555555555555555555555555555555555",
+    "agialphaToken": "0xA61a3B3a130a9c20768EEBF97E21515A6046a1fA",
+    "identityRegistry": "0x6666666666666666666666666666666666666666",
+    "systemPause": "0x7777777777777777777777777777777777777777",
+    "ens": {
+      "registry": "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e",
+      "nameWrapper": "0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401",
+      "publicResolver": "0x226159d592E2b063810a10Ebf6dcbADA94Ed68b8"
+    }
+  },
+  "ai": {
+    "planner": {
+      "planningHorizon": 6,
+      "explorationWeight": 1.6,
+      "curriculum": {
+        "initialDifficulty": 0.25,
+        "escalationRate": 0.15
+      }
+    },
+    "specialists": [
+      {
+        "id": "finance-alpha",
+        "description": "Hyper-rational capital allocator",
+        "capabilities": [
+          "capital-markets",
+          "staking-optimization",
+          "risk-adjusted-yield"
+        ]
+      },
+      {
+        "id": "biotech-savant",
+        "description": "Molecular design strategist",
+        "capabilities": [
+          "biotech",
+          "drug-discovery",
+          "clinical-forecasting"
+        ]
+      },
+      {
+        "id": "manufacturing-oracle",
+        "description": "Autonomous supply-chain optimizer",
+        "capabilities": [
+          "manufacturing",
+          "energy-optimization",
+          "predictive-maintenance"
+        ]
+      }
+    ],
+    "economicPolicy": {
+      "reinvestThreshold": "2500",
+      "maxGasPriceGwei": 65,
+      "rewardSplit": {
+        "operator": 0.55,
+        "treasury": 0.15,
+        "specialists": 0.3
+      }
+    }
+  },
+  "monitoring": {
+    "metricsPort": 4317,
+    "dashboardPort": 4318,
+    "logFile": "./alpha-node-operations.log"
+  }
+}

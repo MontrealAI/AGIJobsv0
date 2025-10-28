@@ -1,0 +1,15 @@
+version: '3.9'
+services:
+  alpha-node:
+    build:
+      context: ../..
+      dockerfile: demo/AGI-Alpha-Node-v0/docker/Dockerfile
+    environment:
+      - ALPHA_NODE_PRIVATE_KEY=${ALPHA_NODE_PRIVATE_KEY}
+      - ALPHA_NODE_CONFIG=/config/alpha-node.json
+    volumes:
+      - ../config:/config:ro
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+    restart: unless-stopped

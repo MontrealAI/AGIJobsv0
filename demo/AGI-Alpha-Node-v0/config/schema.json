@@ -1,0 +1,140 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AGI Alpha Node Configuration",
+  "type": "object",
+  "required": ["operator", "network", "contracts", "ai", "monitoring"],
+  "properties": {
+    "operator": {
+      "type": "object",
+      "required": ["address", "ensLabel", "ensRoot", "minimumStake", "heartbeatIntervalSeconds"],
+      "properties": {
+        "address": {
+          "type": "string",
+          "pattern": "^0x[a-fA-F0-9]{40}$"
+        },
+        "ensLabel": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ensRoot": {
+          "type": "string",
+          "pattern": "^([a-z0-9-]+\.)+[a-z]{2,}$"
+        },
+        "minimumStake": {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "heartbeatIntervalSeconds": {
+          "type": "integer",
+          "minimum": 60
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "required": ["name", "rpcUrl", "chainId"],
+      "properties": {
+        "name": {"type": "string"},
+        "rpcUrl": {"type": "string"},
+        "chainId": {"type": "integer", "minimum": 1}
+      }
+    },
+    "contracts": {
+      "type": "object",
+      "required": [
+        "stakeManager",
+        "platformIncentives",
+        "platformRegistry",
+        "jobRegistry",
+        "feePool",
+        "agialphaToken",
+        "identityRegistry",
+        "systemPause",
+        "ens"
+      ],
+      "properties": {
+        "stakeManager": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "platformIncentives": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "platformRegistry": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "jobRegistry": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "feePool": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "agialphaToken": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "identityRegistry": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "systemPause": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+        "ens": {
+          "type": "object",
+          "required": ["registry", "nameWrapper", "publicResolver"],
+          "properties": {
+            "registry": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+            "nameWrapper": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"},
+            "publicResolver": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"}
+          }
+        }
+      }
+    },
+    "ai": {
+      "type": "object",
+      "required": ["planner", "specialists", "economicPolicy"],
+      "properties": {
+        "planner": {
+          "type": "object",
+          "required": ["planningHorizon", "explorationWeight", "curriculum"],
+          "properties": {
+            "planningHorizon": {"type": "integer", "minimum": 1},
+            "explorationWeight": {"type": "number", "minimum": 0},
+            "curriculum": {
+              "type": "object",
+              "required": ["initialDifficulty", "escalationRate"],
+              "properties": {
+                "initialDifficulty": {"type": "number", "minimum": 0},
+                "escalationRate": {"type": "number", "minimum": 0}
+              }
+            }
+          }
+        },
+        "specialists": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "capabilities"],
+            "properties": {
+              "id": {"type": "string"},
+              "description": {"type": "string"},
+              "capabilities": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          }
+        },
+        "economicPolicy": {
+          "type": "object",
+          "required": ["reinvestThreshold", "maxGasPriceGwei", "rewardSplit"],
+          "properties": {
+            "reinvestThreshold": {"type": "string", "pattern": "^\\d+(\\.\\d+)?$"},
+            "maxGasPriceGwei": {"type": "number", "minimum": 0},
+            "rewardSplit": {
+              "type": "object",
+              "required": ["operator", "treasury", "specialists"],
+              "properties": {
+                "operator": {"type": "number", "minimum": 0, "maximum": 1},
+                "treasury": {"type": "number", "minimum": 0, "maximum": 1},
+                "specialists": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "monitoring": {
+      "type": "object",
+      "required": ["metricsPort", "dashboardPort", "logFile"],
+      "properties": {
+        "metricsPort": {"type": "integer", "minimum": 1},
+        "dashboardPort": {"type": "integer", "minimum": 1},
+        "logFile": {"type": "string"}
+      }
+    }
+  }
+}
