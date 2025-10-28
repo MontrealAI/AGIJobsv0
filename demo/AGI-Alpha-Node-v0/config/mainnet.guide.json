@@ -89,6 +89,15 @@
   "governance": {
     "systemPauseGuardian": "0x8888888888888888888888888888888888888888"
   },
+  "ownerControls": {
+    "stakeManager": {
+      "minStake": "15000"
+    },
+    "identityRegistry": {
+      "nodeRootEns": "alpha.node.agi.eth",
+      "nodeRootHash": "0x2d936bd2c82bc0aaa072a9d3c6d87aad1c1ec6a245f991129efb6ecc9fed57c4"
+    }
+  },
   "monitoring": {
     "metricsPort": 4317,
     "dashboardPort": 4318,

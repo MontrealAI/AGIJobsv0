@@ -435,6 +435,32 @@ yargs(hideBin(process.argv))
     }
   )
   .command(
+    'owner configure',
+    'Align owner-controlled contract parameters with the configuration',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
+        })
+        .option('execute', {
+          type: 'boolean',
+          default: false,
+          describe:
+            'Broadcast transactions instead of dry-run planning. Defaults to dry run for safety.',
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const report = await node.ownerConfigure({
+        dryRun: !Boolean(args.execute),
+      });
+      console.log(JSON.stringify(report, null, 2));
+    }
+  )
+  .command(
     'owner pause',
     'Pause all core modules via SystemPause',
     (cmd) =>

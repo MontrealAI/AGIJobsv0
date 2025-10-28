@@ -5,3 +5,4 @@ import './antifragile.test';
 import './jobs.test';
 import './reinvest.test';
 import './compliance.test';
+import './owner_control.test';

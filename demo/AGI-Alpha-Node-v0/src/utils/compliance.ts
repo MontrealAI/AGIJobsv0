@@ -6,6 +6,7 @@ import { PlanningSummary } from '../ai/planner';
 import { StressTestResult } from '../ai/antifragile';
 import { ReinvestReport } from '../blockchain/reinvest';
 import { GovernanceSnapshot } from '../blockchain/governance';
+import { OwnerControlPlan } from '../blockchain/ownerControl';
 
 export type ComplianceStatus = 'pass' | 'warn' | 'fail';
 
@@ -53,6 +54,7 @@ export interface ComplianceInputs {
   };
   readonly stress: readonly StressTestResult[];
   readonly reinvestment: ReinvestReport;
+  readonly owner: OwnerControlPlan;
 }
 
 export function computeComplianceReport(
@@ -130,6 +132,24 @@ export function computeComplianceReport(
     ),
     score: governanceScore,
     notes: governanceNotes,
+  });
+
+  const ownerActions = inputs.owner.actions.length;
+  const ownerScore = ownerActions === 0 ? 1 : clampScore(Math.max(0.2, 1 - ownerActions * 0.2));
+  const ownerNotes = [...inputs.owner.notes];
+  inputs.owner.actions.forEach((action, index) => {
+    ownerNotes.push(
+      `Action ${index + 1}: ${action.description} (call data ${action.data}).`
+    );
+  });
+  dimensions.push({
+    label: 'Owner Controls',
+    status: determineStatus(
+      ownerScore,
+      inputs.owner.actions.some((action) => action.critical)
+    ),
+    score: ownerScore,
+    notes: ownerNotes,
   });
 
   const rewardsPending = Number(inputs.rewards.pending) / 1e18;
