@@ -1,0 +1,78 @@
+{
+  "contractName": "ValidatorConstellationDemo",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "validator", "type": "address" },
+        { "indexed": false, "internalType": "string", "name": "ensName", "type": "string" },
+        { "indexed": false, "internalType": "uint256", "name": "stake", "type": "uint256" }
+      ],
+      "name": "ValidatorRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "validator", "type": "address" },
+        { "indexed": false, "internalType": "string", "name": "ensName", "type": "string" },
+        { "indexed": false, "internalType": "uint256", "name": "penalty", "type": "uint256" },
+        { "indexed": false, "internalType": "string", "name": "reason", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "jobId", "type": "string" }
+      ],
+      "name": "ValidatorSlashed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "string", "name": "jobId", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "outcome", "type": "string" },
+        { "indexed": false, "internalType": "uint256", "name": "approvals", "type": "uint256" },
+        { "indexed": false, "internalType": "uint256", "name": "rejections", "type": "uint256" },
+        { "indexed": false, "internalType": "address[]", "name": "committee", "type": "address[]" }
+      ],
+      "name": "JobFinalized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "string", "name": "domain", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "reason", "type": "string" },
+        { "indexed": false, "internalType": "address", "name": "by", "type": "address" }
+      ],
+      "name": "DomainPaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "string", "name": "domain", "type": "string" },
+        { "indexed": false, "internalType": "address", "name": "by", "type": "address" }
+      ],
+      "name": "DomainResumed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "string", "name": "domain", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "reason", "type": "string" },
+        { "indexed": false, "internalType": "string", "name": "severity", "type": "string" }
+      ],
+      "name": "SentinelAlert",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": false, "internalType": "bytes32", "name": "jobRoot", "type": "bytes32" },
+        { "indexed": false, "internalType": "string[]", "name": "jobIds", "type": "string[]" },
+        { "indexed": false, "internalType": "address", "name": "submittedBy", "type": "address" }
+      ],
+      "name": "ZKProofSubmitted",
+      "type": "event"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+type ValidatorRegistered @entity {
+  id: ID!
+  validator: Bytes!
+  ensName: String!
+  stake: BigInt!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type ValidatorSlashed @entity {
+  id: ID!
+  validator: Bytes!
+  ensName: String!
+  penalty: BigInt!
+  reason: String!
+  jobId: String!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type JobFinalized @entity {
+  id: ID!
+  jobId: String!
+  outcome: String!
+  approvals: Int!
+  rejections: Int!
+  committee: [Bytes!]!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type DomainPause @entity {
+  id: ID!
+  domain: String!
+  paused: Boolean!
+  reason: String
+  initiatedBy: Bytes
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type SentinelAlert @entity {
+  id: ID!
+  domain: String!
+  reason: String!
+  severity: String!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
+
+type ZKProofSubmitted @entity {
+  id: ID!
+  jobRoot: Bytes!
+  jobIds: [String!]!
+  submittedBy: Bytes!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+}
