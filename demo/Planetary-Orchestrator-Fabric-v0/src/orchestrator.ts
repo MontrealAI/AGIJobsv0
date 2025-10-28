@@ -1,1109 +1,525 @@
-import { CheckpointManager } from './checkpoint';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
-  AssignmentResult,
-  CheckpointData,
-  DeterministicReplayFrame,
-  FabricConfig,
+  DEFAULT_REROUTE_BUDGET,
+  NODE_TOPOLOGY,
+  OWNER_COMMAND_CATALOG,
+  SHARDS,
+} from './config';
+import {
+  buildCheckpointSnapshot,
+  CheckpointStore,
+  embedNodesIntoCheckpoint,
+} from './checkpoint';
+import { EventStream } from './eventStream';
+import { JobRegistry } from './jobRegistry';
+import { NodeMarketplace } from './nodeMarketplace';
+import { RegionalRouter } from './regionalRouter';
+import type {
   FabricEvent,
-  FabricHealthReport,
-  FabricMetrics,
-  JobDefinition,
-  JobState,
-  NodeDefinition,
-  NodeHealthReport,
-  NodeState,
-  OwnerCommand,
-  RegistryEvent,
-  RouterHealthReport,
-  ShardConfig,
+  OwnerCommandExecution,
+  ReportSummary,
+  RunConfiguration,
   ShardId,
-  ShardState,
 } from './types';
-import {
-  InMemoryFabricLogger,
-  RouterTickActions,
-  ShardRouterService,
-  SpilloverRequest,
-} from './router';
+import type {
+  NodeRuntimeState,
+  RuntimeMetrics,
+  ShardRuntimeState,
+} from './types';
 
-interface AssignmentContext {
-  tick: number;
-}
-
-function cloneJob(job: JobState): JobState {
-  return {
-    ...job,
-    spilloverHistory: [...job.spilloverHistory],
-  };
-}
-
-function cloneRegistryEvent(event: RegistryEvent): RegistryEvent {
-  switch (event.type) {
-    case 'job.created':
-      return { type: event.type, shard: event.shard, job: cloneJob(event.job) };
-    case 'job.requeued':
-      return { type: event.type, shard: event.shard, origin: event.origin, job: cloneJob(event.job) };
-    case 'job.spillover':
-      return { type: event.type, shard: event.shard, from: event.from, job: cloneJob(event.job) };
-    case 'job.assigned':
-      return { type: event.type, shard: event.shard, nodeId: event.nodeId, job: cloneJob(event.job) };
-    case 'job.completed':
-      return { type: event.type, shard: event.shard, job: cloneJob(event.job) };
-    case 'job.failed':
-      return { type: event.type, shard: event.shard, reason: event.reason, job: cloneJob(event.job) };
-    case 'node.heartbeat':
-      return { type: event.type, shard: event.shard, nodeId: event.nodeId };
-    case 'node.offline':
-      return { type: event.type, shard: event.shard, nodeId: event.nodeId, reason: event.reason };
-    case 'job.cancelled':
-      return { type: event.type, shard: event.shard, jobId: event.jobId };
-    default:
-      return event;
-  }
+interface OwnerCommandContext {
+  readonly execute: (name: string, payload?: Record<string, unknown>) => void;
+  readonly log: OwnerCommandExecution[];
 }
 
 export class PlanetaryOrchestrator {
-  private readonly shards: Map<ShardId, ShardState> = new Map();
-  private readonly nodes: Map<string, NodeState> = new Map();
-  private readonly routers: Map<ShardId, ShardRouterService> = new Map();
+  private readonly jobRegistry: JobRegistry;
+  private readonly marketplace: NodeMarketplace;
+  private readonly routers: Map<ShardId, RegionalRouter> = new Map();
+  private readonly checkpointStore: CheckpointStore;
+  private readonly eventStream: EventStream;
   private readonly events: FabricEvent[] = [];
-  private readonly logger = new InMemoryFabricLogger();
+  private readonly ownerCommandLog: OwnerCommandExecution[] = [];
+  private readonly tickBaseline: number;
+  private paused = false;
 
-  private tick = 0;
-  private metrics: FabricMetrics = PlanetaryOrchestrator.createInitialMetrics();
-  private deterministicLog: DeterministicReplayFrame[] = [];
-  private pendingRegistryFrame: RegistryEvent[] = [];
-  private currentRegistryFrame: RegistryEvent[] = [];
-  private processingTick = false;
-  private systemPaused = false;
-  private readonly pausedShards: Set<ShardId> = new Set();
-
-  constructor(
-    private readonly config: FabricConfig,
-    private readonly checkpointManager: CheckpointManager
-  ) {
-    this.initializeState();
-  }
-
-  private static createInitialMetrics(): FabricMetrics {
-    return {
-      tick: 0,
-      jobsSubmitted: 0,
-      jobsCompleted: 0,
-      jobsFailed: 0,
-      spillovers: 0,
-      reassignedAfterFailure: 0,
-      outageHandled: false,
-      ownerInterventions: 0,
-      systemPauses: 0,
-      shardPauses: 0,
-    };
-  }
-
-  private initializeState(): void {
-    this.shards.clear();
-    this.nodes.clear();
-    this.routers.clear();
-    this.tick = 0;
-    this.metrics = PlanetaryOrchestrator.createInitialMetrics();
-    this.events.length = 0;
-    this.deterministicLog = [];
-    this.pendingRegistryFrame = [];
-    this.currentRegistryFrame = [];
-    this.processingTick = false;
-    this.systemPaused = false;
-    this.pausedShards.clear();
-    for (const shard of this.config.shards) {
-      const state = this.createShardState(shard);
-      this.shards.set(shard.id, state);
-    }
-    for (const node of this.config.nodes) {
-      this.nodes.set(node.id, this.createNodeState(node));
-    }
-    for (const shard of this.config.shards) {
-      const shardState = this.shards.get(shard.id)!;
-      const router = new ShardRouterService(shardState, shard, () => this.getNodesForShard(shard.id), this.logger);
-      this.routers.set(shard.id, router);
-    }
-  }
-
-  get currentTick(): number {
-    return this.tick;
-  }
-
-  get fabricMetrics(): FabricMetrics {
-    return { ...this.metrics, tick: this.tick };
-  }
-
-  get fabricEvents(): FabricEvent[] {
-    return this.events.splice(0, this.events.length);
-  }
-
-  getDeterministicLog(): DeterministicReplayFrame[] {
-    return this.deterministicLog.map((frame) => ({
-      tick: frame.tick,
-      events: frame.events.map((entry) => cloneRegistryEvent(entry)),
-    }));
-  }
-
-  isSystemPaused(): boolean {
-    return this.systemPaused;
-  }
-
-  getPausedShards(): ShardId[] {
-    return Array.from(this.pausedShards);
-  }
-
-  getOwnerState(): {
-    systemPaused: boolean;
-    pausedShards: ShardId[];
-    checkpoint: { path: string; intervalTicks: number };
-    metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
-  } {
-    return {
-      systemPaused: this.systemPaused,
-      pausedShards: this.getPausedShards(),
-      checkpoint: this.getCheckpointConfig(),
-      metrics: {
-        ownerInterventions: this.metrics.ownerInterventions,
-        systemPauses: this.metrics.systemPauses,
-        shardPauses: this.metrics.shardPauses,
-      },
-    };
-  }
-
-  getCheckpointConfig(): { path: string; intervalTicks: number } {
-    return { path: this.config.checkpoint.path, intervalTicks: this.config.checkpoint.intervalTicks };
-  }
-
-  getHealthReport(): FabricHealthReport {
-    const shardReports: RouterHealthReport[] = Array.from(this.routers.entries()).map(([shardId, router]) =>
-      router.getHealthReport(this.tick)
+  constructor(private readonly config: RunConfiguration) {
+    this.eventStream = new EventStream(
+      config.eventsPath ??
+        join(
+          'demo',
+          'Planetary-Orchestrator-Fabric-v0',
+          'reports',
+          config.label,
+          'events.ndjson'
+        )
     );
-    const nodeReports: NodeHealthReport[] = Array.from(this.nodes.values()).map((node) => this.buildNodeHealth(node));
-    const fabricStatus = this.computeFabricStatus(shardReports, nodeReports);
-    return {
-      tick: this.tick,
-      fabric: fabricStatus,
-      systemPaused: this.systemPaused,
-      shards: shardReports,
-      nodes: nodeReports,
-      metrics: this.fabricMetrics,
-    };
-  }
-
-  submitJob(definition: JobDefinition): void {
-    this.logger.setTick(this.tick);
-    const router = this.routers.get(definition.shard);
-    if (!router) {
-      throw new Error(`Unknown shard ${definition.shard}`);
-    }
-    const job: JobState = {
-      ...definition,
-      status: 'queued',
-      spilloverHistory: [],
-      remainingTicks: definition.estimatedDurationTicks,
-    };
-    router.queueJob(job, 'new');
-    this.metrics.jobsSubmitted += 1;
-    this.recordFabricEvent({
-      tick: this.tick,
-      type: 'job.submitted',
-      message: `Job ${job.id} queued in shard ${definition.shard}`,
-      data: { shard: definition.shard, jobId: job.id },
+    this.jobRegistry = new JobRegistry((event) => this.recordEvent(event));
+    this.marketplace = new NodeMarketplace(
+      NODE_TOPOLOGY,
+      (event) => this.recordEvent(event),
+      {
+        tick: this.jobRegistry.getMetrics().tick,
+      }
+    );
+    this.checkpointStore = new CheckpointStore({
+      path:
+        config.checkpointPath ??
+        join(
+          'demo',
+          'Planetary-Orchestrator-Fabric-v0',
+          'storage',
+          `${config.label}.checkpoint.json`
+        ),
     });
-    this.recordRegistryEvent({ type: 'job.created', shard: definition.shard, job: cloneJob(job) });
+    SHARDS.forEach((shardId) => {
+      const shardState = this.jobRegistry.getShardState(shardId);
+      shardState.rerouteBudget = DEFAULT_REROUTE_BUDGET[shardId];
+      this.routers.set(
+        shardId,
+        new RegionalRouter(
+          {
+            shard: shardState,
+            overflowThreshold: config.ciMode ? 120 : 80,
+          },
+          (job, shard) => this.marketplace.allocate(job, shard),
+          (jobId, destination, origin) =>
+            this.jobRegistry.requeueJob(
+              jobId,
+              destination,
+              this.currentTick(),
+              origin
+            ),
+          (event) => this.recordEvent(event)
+        )
+      );
+    });
+    if (config.resumeFromCheckpoint) {
+      this.restoreFromCheckpoint();
+    }
+    this.tickBaseline = this.jobRegistry.getMetrics().tick;
   }
 
-  async applyOwnerCommand(command: OwnerCommand): Promise<FabricEvent[]> {
-    this.logger.setTick(this.tick);
-    const events: FabricEvent[] = [];
-    const push = (event: FabricEvent): void => {
-      events.push(event);
-      this.recordFabricEvent(event);
-    };
+  public currentTick(): number {
+    return this.jobRegistry.getMetrics().tick;
+  }
 
-    switch (command.type) {
-      case 'system.pause': {
-        const changed = !this.systemPaused;
-        if (changed) {
-          this.systemPaused = true;
-          this.metrics.systemPauses += 1;
-          for (const router of this.routers.values()) {
-            router.setPaused(true);
+  public relativeTick(): number {
+    return this.currentTick() - this.tickBaseline;
+  }
+
+  private recordEvent(event: FabricEvent): void {
+    this.events.push(event);
+    this.eventStream.write(event);
+  }
+
+  public seedInitialJobs(): void {
+    this.jobRegistry.seedJobs(this.config.jobsHighLoad, 0, this.currentTick());
+  }
+
+  public async run(
+    maxTicks?: number,
+    onTick?: (params: {
+      tick: number;
+      orchestrator: PlanetaryOrchestrator;
+    }) => void | Promise<void>
+  ): Promise<void> {
+    const targetTicks = maxTicks ?? Number.POSITIVE_INFINITY;
+    while (!this.isComplete() && this.currentTick() < targetTicks) {
+      if (!this.paused) {
+        this.dispatchAssignments();
+        this.progressAssignments();
+        this.simulateHeartbeats();
+      }
+      if (onTick) {
+        await onTick({ tick: this.currentTick(), orchestrator: this });
+      }
+      this.marketplace.updateBoosts();
+      this.jobRegistry.advanceTick();
+      await this.persistCheckpointIfNeeded();
+    }
+    await this.persistCheckpointIfNeeded(true);
+    this.eventStream.close();
+  }
+
+  public simulateOutage(nodeId: string): void {
+    const node = this.marketplace.getNode(nodeId);
+    if (!node) {
+      return;
+    }
+    node.status = 'offline';
+    node.assignments.forEach((assignment) => {
+      this.jobRegistry.requeueJob(
+        assignment.jobId,
+        node.descriptor.region,
+        this.currentTick(),
+        node.descriptor.region
+      );
+    });
+    node.assignments = [];
+  }
+
+  private dispatchAssignments(): void {
+    SHARDS.forEach((shardId) => {
+      const shardState = this.jobRegistry.getShardState(shardId);
+      if (shardState.paused) {
+        return;
+      }
+      const queueSnapshot = [...shardState.queue];
+      for (const jobId of queueSnapshot) {
+        const job = this.jobRegistry.getJob(jobId);
+        if (!job || job.status !== 'pending') {
+          continue;
+        }
+        const router = this.routers.get(shardId);
+        if (!router) {
+          continue;
+        }
+        const node = router.route(job, this.currentTick());
+        if (!node) {
+          continue;
+        }
+        this.marketplace.assign(node, job);
+        this.jobRegistry.assignJob(
+          job.id,
+          node.descriptor.id,
+          this.currentTick()
+        );
+      }
+    });
+  }
+
+  private progressAssignments(): void {
+    this.marketplace.listNodes().forEach((node) => {
+      if (node.status !== 'active' && node.status !== 'recovering') {
+        return;
+      }
+      const throughput =
+        this.marketplace.getEffectiveCapacity(node) +
+        node.descriptor.performance;
+      node.assignments.forEach((assignment) => {
+        assignment.workRemaining -= throughput;
+        const job = this.jobRegistry.getJob(assignment.jobId);
+        if (!job) {
+          return;
+        }
+        job.workRemaining = Math.max(0, assignment.workRemaining);
+        job.progress = 1 - job.workRemaining / job.workRequired;
+        assignment.progress = job.progress;
+        if (assignment.workRemaining <= 0) {
+          this.jobRegistry.completeJob(assignment.jobId, this.currentTick());
+          this.marketplace.complete(node.descriptor.id, assignment.jobId);
+        }
+      });
+      node.assignments = node.assignments.filter(
+        (assignment) => assignment.workRemaining > 0
+      );
+    });
+
+    const lostAssignments = this.marketplace.simulateReliability(
+      this.currentTick()
+    );
+    lostAssignments.forEach(({ jobIds }) => {
+      jobIds.forEach((jobId) => {
+        const job = this.jobRegistry.getJob(jobId);
+        if (job) {
+          this.jobRegistry.interruptJob(
+            jobId,
+            this.currentTick(),
+            'node-offline'
+          );
+        }
+      });
+    });
+  }
+
+  private simulateHeartbeats(): void {
+    this.marketplace.listNodes().forEach((node) => {
+      this.marketplace.heartbeat(node.descriptor.id, this.currentTick());
+    });
+  }
+
+  public isComplete(): boolean {
+    const metrics = this.jobRegistry.getMetrics();
+    return (
+      metrics.jobsCompleted + metrics.jobsFailed >= metrics.jobsSubmitted &&
+      metrics.jobsSubmitted > 0
+    );
+  }
+
+  private async persistCheckpointIfNeeded(force = false): Promise<void> {
+    if (!force && this.currentTick() % 25 !== 0) {
+      return;
+    }
+    const shardMap = new Map<ShardId, ShardRuntimeState>(
+      SHARDS.map(
+        (shard) =>
+          [shard, this.jobRegistry.getShardState(shard)] as [
+            ShardId,
+            ShardRuntimeState
+          ]
+      )
+    );
+    const snapshot = buildCheckpointSnapshot({
+      tick: this.currentTick(),
+      jobs: this.jobRegistry.exportSerializedJobs(),
+      jobsSeedCount: this.jobRegistry.getSeedCount(),
+      shardState: shardMap,
+      metrics: this.jobRegistry.getMetrics(),
+      ownerCommandLog: this.ownerCommandLog,
+      paused: this.paused,
+    });
+    const embedded = embedNodesIntoCheckpoint(
+      snapshot,
+      new Map(
+        this.marketplace.listNodes().map((node) => [node.descriptor.id, node])
+      )
+    );
+    await this.checkpointStore.save(embedded);
+  }
+
+  private restoreFromCheckpoint(): void {
+    const snapshot = this.checkpointStore.load();
+    if (!snapshot) {
+      return;
+    }
+    this.jobRegistry.adoptSnapshot({
+      jobsSeedCount: snapshot.jobsSeedCount,
+      jobs: snapshot.jobs,
+      shardQueues: snapshot.shardQueues,
+      metrics: snapshot.metrics as RuntimeMetrics,
+      shards: snapshot.shards as Record<ShardId, ShardRuntimeState>,
+    });
+    this.jobRegistry.seedJobs(0, snapshot.jobsSeedCount, snapshot.metrics.tick);
+    this.marketplace.adoptSnapshot(
+      snapshot.nodes as Record<string, NodeRuntimeState>
+    );
+    this.paused = snapshot.paused;
+    this.ownerCommandLog.push(...snapshot.ownerCommandLog);
+  }
+
+  public ownerCommands(): OwnerCommandContext {
+    return {
+      execute: (name, payload) => this.executeOwnerCommand(name, payload),
+      log: this.ownerCommandLog,
+    };
+  }
+
+  private executeOwnerCommand(
+    name: string,
+    payload?: Record<string, unknown>
+  ): void {
+    switch (name) {
+      case 'pauseFabric':
+        this.paused = true;
+        this.recordEvent({
+          type: 'orchestrator:pause',
+          tick: this.currentTick(),
+          details: { payload },
+        });
+        break;
+      case 'resumeFabric':
+        this.paused = false;
+        this.recordEvent({
+          type: 'orchestrator:resume',
+          tick: this.currentTick(),
+          details: { payload },
+        });
+        break;
+      case 'rerouteShardTo': {
+        const origin = payload?.origin as ShardId;
+        const destination = payload?.destination as ShardId;
+        const percentage = Number(payload?.percentage ?? 0);
+        if (!origin || !destination || origin === destination) {
+          throw new Error('Invalid reroute command payload.');
+        }
+        const shardState = this.jobRegistry.getShardState(origin);
+        const rerouteCount = Math.ceil(shardState.queue.length * percentage);
+        for (let i = 0; i < rerouteCount; i += 1) {
+          const jobId = shardState.queue[i];
+          if (jobId) {
+            this.jobRegistry.requeueJob(
+              jobId,
+              destination,
+              this.currentTick(),
+              origin
+            );
+            const node = this.marketplace.allocate(
+              this.jobRegistry.getJob(jobId)!,
+              destination
+            );
+            if (node) {
+              this.marketplace.spilloverHandled(node.descriptor.id);
+            }
           }
         }
-        push({
-          tick: this.tick,
-          type: 'owner.system.pause',
-          message: changed
-            ? 'Owner paused the planetary orchestrator fabric'
-            : 'Owner reaffirmed planetary orchestrator pause',
-          data: { reason: command.reason, paused: this.systemPaused },
-        });
         break;
       }
-      case 'system.resume': {
-        const wasPaused = this.systemPaused;
-        this.systemPaused = false;
-        for (const [shardId, router] of this.routers.entries()) {
-          const shardState = this.shards.get(shardId);
-          router.setPaused(shardState?.paused ?? false);
+      case 'boostNodeCapacity': {
+        const nodeId = String(payload?.nodeId ?? '');
+        const multiplier = Number(payload?.multiplier ?? 1);
+        const duration = Number(payload?.duration ?? 10);
+        if (!nodeId || Number.isNaN(multiplier) || Number.isNaN(duration)) {
+          throw new Error('Invalid boost payload.');
         }
-        push({
-          tick: this.tick,
-          type: 'owner.system.resume',
-          message: wasPaused
-            ? 'Owner resumed the planetary orchestrator fabric'
-            : 'Owner issued resume while system already active',
-          data: { reason: command.reason, previouslyPaused: wasPaused },
-        });
+        this.marketplace.applyBoost(nodeId, multiplier, duration);
         break;
       }
-      case 'shard.pause': {
-        const shardState = this.shards.get(command.shard);
-        if (!shardState) {
-          throw new Error(`Unknown shard ${command.shard}`);
+      case 'updateShardBudget': {
+        const shard = payload?.shard as ShardId;
+        const budget = Number(payload?.budget);
+        if (!shard || Number.isNaN(budget)) {
+          throw new Error('Invalid budget payload.');
         }
-        const router = this.routers.get(command.shard);
-        const changed = !shardState.paused;
-        shardState.paused = true;
-        this.pausedShards.add(command.shard);
-        router?.setPaused(true);
-        if (changed) {
-          this.metrics.shardPauses += 1;
-        }
-        push({
-          tick: this.tick,
-          type: 'owner.shard.pause',
-          message: `Owner paused shard ${command.shard}`,
-          data: { reason: command.reason, shard: command.shard, alreadyPaused: !changed },
-        });
-        break;
-      }
-      case 'shard.resume': {
-        const shardState = this.shards.get(command.shard);
-        if (!shardState) {
-          throw new Error(`Unknown shard ${command.shard}`);
-        }
-        const router = this.routers.get(command.shard);
-        const wasPaused = shardState.paused;
-        shardState.paused = false;
-        this.pausedShards.delete(command.shard);
-        router?.setPaused(this.systemPaused);
-        push({
-          tick: this.tick,
-          type: 'owner.shard.resume',
-          message: wasPaused
-            ? `Owner resumed shard ${command.shard}`
-            : `Owner issued resume while shard ${command.shard} already active`,
-          data: { reason: command.reason, shard: command.shard, previouslyPaused: wasPaused },
-        });
-        break;
-      }
-      case 'shard.update': {
-        const shardState = this.shards.get(command.shard);
-        if (!shardState) {
-          throw new Error(`Unknown shard ${command.shard}`);
-        }
-        const router = this.routers.get(command.shard);
-        const applied: Record<string, unknown> = {};
-        if (command.update.displayName) {
-          shardState.config.displayName = command.update.displayName;
-          applied.displayName = command.update.displayName;
-        }
-        if (command.update.latencyBudgetMs !== undefined) {
-          shardState.config.latencyBudgetMs = command.update.latencyBudgetMs;
-          applied.latencyBudgetMs = command.update.latencyBudgetMs;
-        }
-        if (command.update.maxQueue !== undefined) {
-          shardState.config.maxQueue = command.update.maxQueue;
-          applied.maxQueue = command.update.maxQueue;
-        }
-        if (command.update.spilloverTargets) {
-          shardState.config.spilloverTargets = [...command.update.spilloverTargets];
-          applied.spilloverTargets = [...command.update.spilloverTargets];
-          router?.updateSpilloverTargets(shardState.config.spilloverTargets);
-        }
-        if (command.update.router) {
-          const routerConfig = shardState.config.router ?? { spilloverPolicies: [] };
-          if (command.update.router.queueAlertThreshold !== undefined) {
-            routerConfig.queueAlertThreshold = command.update.router.queueAlertThreshold;
-            applied.queueAlertThreshold = command.update.router.queueAlertThreshold;
-            router?.updateQueueAlertThreshold(command.update.router.queueAlertThreshold);
-          }
-          if (command.update.router.spilloverPolicies) {
-            routerConfig.spilloverPolicies = command.update.router.spilloverPolicies.map((policy) => ({ ...policy }));
-            applied.spilloverPolicies = routerConfig.spilloverPolicies;
-            router?.updateSpilloverPolicies(routerConfig.spilloverPolicies);
-          }
-          shardState.config.router = routerConfig;
-        }
-        this.syncShardConfigReference(command.shard, shardState.config);
-        push({
-          tick: this.tick,
-          type: 'owner.shard.update',
-          message: `Owner updated shard ${command.shard} configuration`,
-          data: { shard: command.shard, update: applied },
-        });
-        break;
-      }
-      case 'node.update': {
-        const nodeState = this.nodes.get(command.nodeId);
-        if (!nodeState) {
-          throw new Error(`Unknown node ${command.nodeId}`);
-        }
-        const configIndex = this.config.nodes.findIndex((entry) => entry.id === command.nodeId);
-        if (configIndex < 0) {
-          throw new Error(`Config missing node ${command.nodeId}`);
-        }
-        const definition = nodeState.definition;
-        const configDefinition = this.config.nodes[configIndex];
-        const applied: Record<string, unknown> = {};
-        if (command.update.capacity !== undefined) {
-          definition.capacity = command.update.capacity;
-          configDefinition.capacity = command.update.capacity;
-          applied.capacity = command.update.capacity;
-        }
-        if (command.update.maxConcurrency !== undefined) {
-          definition.maxConcurrency = command.update.maxConcurrency;
-          configDefinition.maxConcurrency = command.update.maxConcurrency;
-          applied.maxConcurrency = command.update.maxConcurrency;
-        }
-        if (command.update.specialties) {
-          definition.specialties = [...command.update.specialties];
-          configDefinition.specialties = [...command.update.specialties];
-          applied.specialties = [...command.update.specialties];
-        }
-        if (command.update.heartbeatIntervalSec !== undefined) {
-          definition.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
-          configDefinition.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
-          applied.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
-        }
-        if (command.update.region && command.update.region !== definition.region) {
-          this.requeueJobsForNode(nodeState, 'owner-node-region-update');
-          definition.region = command.update.region;
-          configDefinition.region = command.update.region;
-          applied.region = command.update.region;
-        }
-        const requiresRequeue =
-          (command.update.maxConcurrency !== undefined &&
-            nodeState.runningJobs.size > command.update.maxConcurrency) ||
-          (command.update.capacity !== undefined && nodeState.runningJobs.size > command.update.capacity);
-        if (requiresRequeue) {
-          this.requeueJobsForNode(nodeState, 'owner-node-capacity-update');
-        }
-        nodeState.lastHeartbeatTick = this.tick;
-        push({
-          tick: this.tick,
-          type: 'owner.node.update',
-          message: `Owner updated node ${command.nodeId}`,
-          data: { nodeId: command.nodeId, update: applied, reason: command.reason },
-        });
-        break;
-      }
-      case 'node.register': {
-        if (this.nodes.has(command.node.id)) {
-          throw new Error(`Node ${command.node.id} already registered`);
-        }
-        this.config.nodes.push({ ...command.node, specialties: [...command.node.specialties] });
-        const nodeState = this.createNodeState({ ...command.node, specialties: [...command.node.specialties] });
-        nodeState.lastHeartbeatTick = this.tick;
-        this.nodes.set(command.node.id, nodeState);
-        push({
-          tick: this.tick,
-          type: 'owner.node.register',
-          message: `Owner registered node ${command.node.id}`,
-          data: { node: command.node, reason: command.reason },
-        });
-        break;
-      }
-      case 'node.deregister': {
-        const nodeState = this.nodes.get(command.nodeId);
-        if (!nodeState) {
-          throw new Error(`Unknown node ${command.nodeId}`);
-        }
-        nodeState.active = false;
-        this.requeueJobsForNode(nodeState, 'owner-node-deregister');
-        this.nodes.delete(command.nodeId);
-        const configIndex = this.config.nodes.findIndex((entry) => entry.id === command.nodeId);
-        if (configIndex >= 0) {
-          this.config.nodes.splice(configIndex, 1);
-        }
-        push({
-          tick: this.tick,
-          type: 'owner.node.deregister',
-          message: `Owner deregistered node ${command.nodeId}`,
-          data: { nodeId: command.nodeId, reason: command.reason },
-        });
-        break;
-      }
-      case 'checkpoint.save': {
-        await this.saveCheckpoint();
-        push({
-          tick: this.tick,
-          type: 'owner.checkpoint.save',
-          message: 'Owner triggered immediate checkpoint snapshot',
-          data: { reason: command.reason, checkpoint: this.getCheckpointConfig() },
-        });
-        break;
-      }
-      case 'checkpoint.configure': {
-        const applied: Record<string, unknown> = {};
-        if (command.update.intervalTicks !== undefined) {
-          this.config.checkpoint.intervalTicks = command.update.intervalTicks;
-          applied.intervalTicks = command.update.intervalTicks;
-        }
-        if (command.update.path) {
-          this.config.checkpoint.path = command.update.path;
-          this.checkpointManager.setPath(command.update.path);
-          applied.path = command.update.path;
-        }
-        push({
-          tick: this.tick,
-          type: 'owner.checkpoint.configure',
-          message: 'Owner reconfigured checkpoint policy',
-          data: { reason: command.reason, update: applied },
-        });
+        const shardState = this.jobRegistry.getShardState(shard);
+        shardState.rerouteBudget = budget;
         break;
       }
       default:
-        throw new Error('Unsupported owner command');
+        throw new Error(`Unknown owner command ${name}`);
     }
-
-    this.metrics.ownerInterventions += 1;
-    return events;
-  }
-
-  async saveCheckpoint(): Promise<void> {
-    const payload = this.createCheckpointPayload();
-    await this.checkpointManager.save(payload);
-    this.recordFabricEvent({
-      tick: this.tick,
-      type: 'checkpoint.saved',
-      message: 'Checkpoint persisted',
-      data: { tick: this.tick },
-    });
-  }
-
-  async restoreFromCheckpoint(): Promise<boolean> {
-    const payload = await this.checkpointManager.load();
-    if (!payload) {
-      return false;
-    }
-    for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
-      const index = this.config.shards.findIndex((entry) => entry.id === shardId);
-      if (index >= 0) {
-        this.config.shards[index] = { ...this.config.shards[index], ...shardPayload.config };
-      }
-    }
-    for (const [nodeId, nodePayload] of Object.entries(payload.nodes)) {
-      const index = this.config.nodes.findIndex((entry) => entry.id === nodeId);
-      if (index >= 0) {
-        this.config.nodes[index] = { ...this.config.nodes[index], ...nodePayload.definition };
-      } else {
-        this.config.nodes.push({ ...nodePayload.definition });
-      }
-    }
-    this.initializeState();
-    this.tick = payload.tick;
-    this.metrics = payload.metrics;
-    this.systemPaused = payload.systemPaused;
-    this.pausedShards.clear();
-    for (const shardId of payload.pausedShards) {
-      this.pausedShards.add(shardId);
-    }
-
-    for (const shardConfig of this.config.shards) {
-      const shardState = this.shards.get(shardConfig.id)!;
-      const shardPayload = payload.shards[shardConfig.id];
-      if (!shardPayload) {
-        continue;
-      }
-      shardState.queue = shardPayload.queue.map((job) => ({ ...job, spilloverHistory: [...job.spilloverHistory] }));
-      shardState.inFlight = new Map(
-        shardPayload.inFlight.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
-      );
-      shardState.completed = new Map(
-        shardPayload.completed.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
-      );
-      shardState.failed = new Map(
-        shardPayload.failed.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
-      );
-      shardState.spilloverCount = shardPayload.spilloverCount;
-      shardState.paused = shardPayload.paused;
-      const router = this.routers.get(shardConfig.id);
-      router?.setPaused(this.systemPaused || shardState.paused);
-    }
-
-    for (const node of this.config.nodes) {
-      const nodeState = this.nodes.get(node.id)!;
-      const nodePayload = payload.nodes[node.id];
-      if (!nodePayload) {
-        continue;
-      }
-      nodeState.active = nodePayload.state;
-      nodeState.lastHeartbeatTick = nodePayload.lastHeartbeatTick;
-      nodeState.runningJobs = new Map(
-        nodePayload.runningJobs.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
-      );
-      nodeState.definition = { ...nodePayload.definition };
-    }
-
-    this.events.push(...payload.events);
-    this.deterministicLog = payload.deterministicLog.map((frame) => ({
-      tick: frame.tick,
-      events: frame.events.map((event) => cloneRegistryEvent(event)),
-    }));
-
-    this.recordFabricEvent({
-      tick: this.tick,
-      type: 'checkpoint.restored',
-      message: 'Checkpoint restored successfully',
-      data: { tick: this.tick },
-    });
-    return true;
-  }
-
-  processTick(context: AssignmentContext): AssignmentResult[] {
-    this.tick = context.tick;
-    this.logger.setTick(this.tick);
-    const assignments: AssignmentResult[] = [];
-
-    this.currentRegistryFrame = [...this.pendingRegistryFrame];
-    this.pendingRegistryFrame = [];
-    this.processingTick = true;
-
-    this.detectStaleNodes();
-
-    for (const [shardId, router] of this.routers.entries()) {
-      const shardState = this.shards.get(shardId);
-      if (shardState) {
-        router.setPaused(this.systemPaused || shardState.paused);
-      }
-      const actions = router.processTick({ tick: this.tick });
-      assignments.push(...actions.assignments);
-      this.handleRouterEvents(actions);
-      this.handleAssignments(shardId, actions.assignments);
-      this.handleSpillovers(actions.spillovers);
-      this.handleFailures(shardId, actions.failures);
-    }
-
-    this.updateRunningJobs();
-
-    this.processingTick = false;
-    this.deterministicLog.push({
-      tick: this.tick,
-      events: this.currentRegistryFrame.map((event) => cloneRegistryEvent(event)),
-    });
-    this.currentRegistryFrame = [];
-
-    return assignments;
-  }
-
-  markOutage(nodeId: string): void {
-    this.logger.setTick(this.tick);
-    const node = this.nodes.get(nodeId);
-    if (!node) {
-      throw new Error(`Unknown node ${nodeId}`);
-    }
-    if (!node.active) {
-      return;
-    }
-    node.active = false;
-    this.metrics.outageHandled = true;
-    this.recordFabricEvent({
-      tick: this.tick,
-      type: 'node.outage',
-      message: `Node ${nodeId} marked offline`,
-      data: { nodeId },
-    });
-    this.recordRegistryEvent({
-      type: 'node.offline',
-      shard: node.definition.region,
-      nodeId: node.definition.id,
-      reason: 'manual-outage',
-    });
-    this.requeueJobsForNode(node, 'manual-outage');
-  }
-
-  getShardSnapshots(): Record<ShardId, { queueDepth: number; inFlight: number; completed: number }> {
-    const snapshot: Record<ShardId, { queueDepth: number; inFlight: number; completed: number }> = {};
-    for (const [shardId, shard] of this.shards.entries()) {
-      snapshot[shardId] = {
-        queueDepth: shard.queue.length,
-        inFlight: shard.inFlight.size,
-        completed: shard.completed.size,
-      };
-    }
-    return snapshot;
-  }
-
-  getNodeSnapshots(): Record<string, { active: boolean; runningJobs: number }> {
-    const snapshot: Record<string, { active: boolean; runningJobs: number }> = {};
-    for (const [nodeId, node] of this.nodes.entries()) {
-      snapshot[nodeId] = {
-        active: node.active,
-        runningJobs: node.runningJobs.size,
-      };
-    }
-    return snapshot;
-  }
-
-  getShardStatistics(): Record<ShardId, { completed: number; failed: number; spillovers: number }> {
-    const stats: Record<ShardId, { completed: number; failed: number; spillovers: number }> = {};
-    for (const [shardId, shard] of this.shards.entries()) {
-      stats[shardId] = {
-        completed: shard.completed.size,
-        failed: shard.failed.size,
-        spillovers: shard.spilloverCount,
-      };
-    }
-    return stats;
-  }
-
-  replay(frames: DeterministicReplayFrame[]): void {
-    this.initializeState();
-    const sorted = [...frames].sort((a, b) => a.tick - b.tick);
-    for (const frame of sorted) {
-      this.tick = frame.tick;
-      this.logger.setTick(this.tick);
-      this.currentRegistryFrame = [];
-      this.processingTick = true;
-      for (const event of frame.events) {
-        this.applyRegistryEvent(event);
-      }
-      this.processingTick = false;
-      this.deterministicLog.push({
-        tick: frame.tick,
-        events: frame.events.map((event) => cloneRegistryEvent(event)),
-      });
-      this.updateRunningJobs();
-    }
-  }
-
-  private applyRegistryEvent(event: RegistryEvent): void {
-    switch (event.type) {
-      case 'job.created': {
-        const router = this.routers.get(event.shard);
-        if (!router) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        router.queueJob(cloneJob(event.job), 'new');
-        this.metrics.jobsSubmitted += 1;
-        break;
-      }
-      case 'job.requeued': {
-        const router = this.routers.get(event.shard);
-        if (!router) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        const shard = this.shards.get(event.shard);
-        if (shard) {
-          shard.inFlight.delete(event.job.id);
-        }
-        if (event.job.assignedNodeId) {
-          this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
-        }
-        this.recordFabricEvent(router.requeueJob(cloneJob(event.job), this.tick, `replay-${event.origin}`));
-        this.metrics.reassignedAfterFailure += 1;
-        break;
-      }
-      case 'job.spillover': {
-        const router = this.routers.get(event.shard);
-        if (!router) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        this.recordFabricEvent(router.acceptSpillover(cloneJob(event.job), event.from, this.tick));
-        const origin = this.shards.get(event.from);
-        if (origin) {
-          origin.spilloverCount += 1;
-        }
-        this.metrics.spillovers += 1;
-        break;
-      }
-      case 'job.assigned': {
-        const shard = this.shards.get(event.shard);
-        if (!shard) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        const node = this.nodes.get(event.nodeId);
-        if (!node) {
-          throw new Error(`Unknown node ${event.nodeId}`);
-        }
-        const job = cloneJob(event.job);
-        job.status = 'assigned';
-        job.assignedNodeId = node.definition.id;
-        job.startedTick = this.tick;
-        job.remainingTicks = Math.max(job.remainingTicks ?? job.estimatedDurationTicks, 1);
-        const queueIndex = shard.queue.findIndex((entry) => entry.id === job.id);
-        if (queueIndex >= 0) {
-          shard.queue.splice(queueIndex, 1);
-        }
-        node.runningJobs.set(job.id, job);
-        shard.inFlight.set(job.id, job);
-        break;
-      }
-      case 'job.completed': {
-        const shard = this.shards.get(event.shard);
-        if (!shard) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        shard.inFlight.delete(event.job.id);
-        shard.completed.set(event.job.id, cloneJob(event.job));
-        if (event.job.assignedNodeId) {
-          this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
-        }
-        this.metrics.jobsCompleted += 1;
-        break;
-      }
-      case 'job.failed': {
-        const shard = this.shards.get(event.shard);
-        if (!shard) {
-          throw new Error(`Unknown shard ${event.shard}`);
-        }
-        shard.inFlight.delete(event.job.id);
-        shard.failed.set(event.job.id, cloneJob(event.job));
-        if (event.job.assignedNodeId) {
-          this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
-        }
-        this.metrics.jobsFailed += 1;
-        break;
-      }
-      case 'job.cancelled': {
-        const router = this.routers.get(event.shard);
-        router?.cancelJob(event.jobId, this.tick);
-        break;
-      }
-      case 'node.heartbeat': {
-        const node = this.nodes.get(event.nodeId);
-        if (node) {
-          node.lastHeartbeatTick = this.tick;
-        }
-        break;
-      }
-      case 'node.offline': {
-        const node = this.nodes.get(event.nodeId);
-        if (node) {
-          node.active = false;
-        }
-        this.metrics.outageHandled = true;
-        break;
-      }
-    }
-  }
-
-  private handleRouterEvents(actions: RouterTickActions): void {
-    for (const event of actions.events) {
-      this.recordFabricEvent(event);
-    }
-  }
-
-  private handleAssignments(shardId: ShardId, assignments: AssignmentResult[]): void {
-    const shard = this.shards.get(shardId);
-    if (!shard) {
-      return;
-    }
-    for (const assignment of assignments) {
-      const job = shard.inFlight.get(assignment.jobId);
-      if (!job) {
-        continue;
-      }
-      this.recordRegistryEvent({ type: 'job.assigned', shard: shardId, nodeId: assignment.nodeId, job: cloneJob(job) });
-    }
-  }
-
-  private handleSpillovers(requests: SpilloverRequest[]): void {
-    for (const request of requests) {
-      const targetRouter = this.routers.get(request.target);
-      const originRouter = this.routers.get(request.origin);
-      if (!originRouter) {
-        continue;
-      }
-      if (!targetRouter) {
-        request.job.shard = request.origin;
-        this.recordFabricEvent(originRouter.requeueJob(request.job, this.tick, 'spillover-target-missing'));
-        this.recordRegistryEvent({
-          type: 'job.requeued',
-          shard: request.origin,
-          origin: request.origin,
-          job: cloneJob(request.job),
-        });
-        continue;
-      }
-      const event = targetRouter.acceptSpillover(request.job, request.origin, this.tick);
-      this.recordFabricEvent(event);
-      const originShard = this.shards.get(request.origin);
-      if (originShard) {
-        originShard.spilloverCount += 1;
-      }
-      this.metrics.spillovers += 1;
-      this.recordRegistryEvent({
-        type: 'job.spillover',
-        shard: request.target,
-        from: request.origin,
-        job: cloneJob(request.job),
-      });
-    }
-  }
-
-  private handleFailures(shardId: ShardId, failures: { job: JobState; reason: string }[]): void {
-    if (failures.length === 0) {
-      return;
-    }
-    for (const entry of failures) {
-      this.metrics.jobsFailed += 1;
-      this.recordRegistryEvent({
-        type: 'job.failed',
-        shard: shardId,
-        reason: entry.reason,
-        job: cloneJob(entry.job),
-      });
-    }
-  }
-
-  private detectStaleNodes(): void {
-    for (const node of this.nodes.values()) {
-      if (!node.active) {
-        continue;
-      }
-      const tolerance = Math.ceil(node.definition.heartbeatIntervalSec / 3);
-      const delta = this.tick - node.lastHeartbeatTick;
-      if (delta > tolerance && node.runningJobs.size > 0) {
-        node.active = false;
-        this.metrics.outageHandled = true;
-        this.recordFabricEvent({
-          tick: this.tick,
-          type: 'node.heartbeat-timeout',
-          message: `Node ${node.definition.id} missed heartbeat`,
-          data: { nodeId: node.definition.id },
-        });
-        this.recordRegistryEvent({
-          type: 'node.offline',
-          shard: node.definition.region,
-          nodeId: node.definition.id,
-          reason: 'heartbeat-timeout',
-        });
-        this.requeueJobsForNode(node, 'heartbeat-timeout');
-      } else {
-        this.recordRegistryEvent({
-          type: 'node.heartbeat',
-          shard: node.definition.region,
-          nodeId: node.definition.id,
-        });
-      }
-    }
-  }
-
-  private requeueJobsForNode(node: NodeState, reason: string): void {
-    for (const [jobId, job] of node.runningJobs.entries()) {
-      const shardRouter = this.routers.get(job.shard) ?? this.routers.get(node.definition.region);
-      if (!shardRouter) {
-        continue;
-      }
-      job.status = 'queued';
-      job.assignedNodeId = undefined;
-      job.failureReason = undefined;
-      job.startedTick = undefined;
-      job.remainingTicks = Math.max(job.remainingTicks ?? job.estimatedDurationTicks, 1);
-      this.recordFabricEvent(shardRouter.requeueJob(job, this.tick, reason));
-      this.recordRegistryEvent({
-        type: 'job.requeued',
-        shard: job.shard,
-        origin: node.definition.region,
-        job: cloneJob(job),
-      });
-      const shard = this.shards.get(job.shard);
-      shard?.inFlight.delete(jobId);
-      node.runningJobs.delete(jobId);
-      this.metrics.reassignedAfterFailure += 1;
-    }
-  }
-
-  private updateRunningJobs(): void {
-    for (const [shardId, shard] of this.shards.entries()) {
-      for (const [jobId, job] of shard.inFlight.entries()) {
-        if (job.remainingTicks === undefined) {
-          job.remainingTicks = job.estimatedDurationTicks;
-        }
-        job.remainingTicks -= 1;
-        if (job.remainingTicks <= 0) {
-          job.status = 'completed';
-          job.completedTick = this.tick;
-          shard.completed.set(jobId, job);
-          shard.inFlight.delete(jobId);
-          const node = job.assignedNodeId ? this.nodes.get(job.assignedNodeId) : undefined;
-          node?.runningJobs.delete(jobId);
-          this.metrics.jobsCompleted += 1;
-          this.recordFabricEvent({
-            tick: this.tick,
-            type: 'job.completed',
-            message: `Job ${jobId} completed in shard ${shardId}`,
-            data: { shard: shardId, jobId },
-          });
-          this.recordRegistryEvent({
-            type: 'job.completed',
-            shard: shardId,
-            job: cloneJob(job),
-          });
-        }
-      }
-    }
-  }
-
-  private createShardState(config: ShardConfig): ShardState {
-    return {
-      config,
-      queue: [],
-      inFlight: new Map(),
-      completed: new Map(),
-      failed: new Map(),
-      spilloverCount: 0,
-      paused: false,
+    const command: OwnerCommandExecution = {
+      command: name,
+      payload,
+      tick: this.currentTick(),
     };
+    this.ownerCommandLog.push(command);
+    this.recordEvent({
+      type: 'owner:command',
+      tick: this.currentTick(),
+      details: { command: name, payload },
+    });
   }
 
-  private createNodeState(definition: NodeDefinition): NodeState {
-    return {
-      definition,
-      active: true,
-      runningJobs: new Map(),
-      lastHeartbeatTick: 0,
+  public generateSummary(reportDir: string): ReportSummary {
+    const metrics = this.jobRegistry.getMetrics();
+    const nodes = this.marketplace.listNodes();
+    const shards: Record<ShardId, ShardRuntimeState> = {
+      earth: this.jobRegistry.getShardState('earth'),
+      mars: this.jobRegistry.getShardState('mars'),
+      luna: this.jobRegistry.getShardState('luna'),
+      helios: this.jobRegistry.getShardState('helios'),
+      edge: this.jobRegistry.getShardState('edge'),
     };
-  }
 
-  private getNodesForShard(shardId: ShardId): NodeState[] {
-    return Array.from(this.nodes.values()).filter((node) => node.definition.region === shardId);
-  }
-
-  private buildNodeHealth(node: NodeState): NodeHealthReport {
-    const tolerance = Math.ceil(node.definition.heartbeatIntervalSec / 3);
-    const delta = this.tick - node.lastHeartbeatTick;
-    if (!node.active && node.runningJobs.size > 0) {
-      return {
-        nodeId: node.definition.id,
-        shardId: node.definition.region,
-        active: node.active,
-        runningJobs: node.runningJobs.size,
-        lastHeartbeatTick: node.lastHeartbeatTick,
-        status: { level: 'critical', message: 'Node offline with running jobs' },
-      };
-    }
-    if (!node.active) {
-      return {
-        nodeId: node.definition.id,
-        shardId: node.definition.region,
-        active: node.active,
-        runningJobs: node.runningJobs.size,
-        lastHeartbeatTick: node.lastHeartbeatTick,
-        status: { level: 'degraded', message: 'Node offline' },
-      };
-    }
-    if (delta > tolerance) {
-      return {
-        nodeId: node.definition.id,
-        shardId: node.definition.region,
-        active: node.active,
-        runningJobs: node.runningJobs.size,
-        lastHeartbeatTick: node.lastHeartbeatTick,
-        status: { level: 'degraded', message: `Heartbeat delayed by ${delta} ticks` },
-      };
-    }
-    return {
-      nodeId: node.definition.id,
-      shardId: node.definition.region,
-      active: node.active,
-      runningJobs: node.runningJobs.size,
-      lastHeartbeatTick: node.lastHeartbeatTick,
-      status: { level: 'ok', message: 'Node healthy' },
+    const summary: ReportSummary = {
+      runLabel: this.config.label,
+      metrics: {
+        tick: metrics.tick,
+        jobsSubmitted: metrics.jobsSubmitted,
+        jobsCompleted: metrics.jobsCompleted,
+        jobsFailed: metrics.jobsFailed,
+        dropRate:
+          metrics.jobsSubmitted === 0
+            ? 0
+            : (metrics.jobsSubmitted - metrics.jobsCompleted) /
+              metrics.jobsSubmitted,
+        averageLatency:
+          metrics.jobsCompleted === 0
+            ? 0
+            : metrics.totalLatency / metrics.jobsCompleted,
+        reassignments: metrics.reassignments,
+        spillovers: metrics.spillovers,
+      },
+      shards: Object.fromEntries(
+        SHARDS.map((shardId) => {
+          const shard = shards[shardId];
+          return [
+            shardId,
+            {
+              queueDepth: shard.queue.length,
+              backlogHistory: shard.backlogHistory.slice(-32),
+              jobsCompleted: shard.completed,
+              jobsFailed: shard.failed,
+              spilloversOut: shard.spilloversOut,
+              spilloversIn: shard.spilloversIn,
+              rerouteBudget: shard.rerouteBudget,
+              paused: shard.paused,
+            },
+          ];
+        })
+      ) as ReportSummary['shards'],
+      nodes: Object.fromEntries(
+        nodes.map((node) => [
+          node.descriptor.id,
+          {
+            status: node.status,
+            assignments: node.assignments.length,
+            totalCompleted: node.totalCompleted,
+            totalFailed: node.totalFailed,
+            downtimeTicks: node.downtimeTicks,
+            spilloversHandled: node.spilloversHandled,
+          },
+        ])
+      ),
+      ownerCommands: {
+        executed: [...this.ownerCommandLog],
+        catalog: OWNER_COMMAND_CATALOG.map((command) => ({
+          name: command.name,
+          description: command.description,
+          parameters: command.parameters,
+        })),
+      },
+      checkpoint: {
+        path: this.checkpointStore.path,
+        tick: metrics.tick,
+        jobsSeedCount: this.jobRegistry.getSeedCount(),
+      },
     };
-  }
 
-  private computeFabricStatus(
-    shards: RouterHealthReport[],
-    nodes: NodeHealthReport[]
-  ): FabricHealthReport['fabric'] {
-    if (shards.some((entry) => entry.status.level === 'critical') || nodes.some((entry) => entry.status.level === 'critical')) {
-      return { level: 'critical', message: 'Critical conditions detected across fabric' };
-    }
-    if (this.systemPaused) {
-      return { level: 'degraded', message: 'Fabric paused by owner command' };
-    }
-    if (shards.some((entry) => entry.status.level === 'degraded') || nodes.some((entry) => entry.status.level === 'degraded')) {
-      return { level: 'degraded', message: 'One or more components degraded' };
-    }
-    return { level: 'ok', message: 'Fabric healthy' };
-  }
-
-  private recordFabricEvent(event: FabricEvent): void {
-    this.events.push(event);
-  }
-
-  private recordRegistryEvent(event: RegistryEvent): void {
-    if (this.processingTick) {
-      this.currentRegistryFrame.push(event);
-    } else {
-      this.pendingRegistryFrame.push(event);
-    }
-  }
-
-  private syncShardConfigReference(shardId: ShardId, config: ShardConfig): void {
-    const index = this.config.shards.findIndex((entry) => entry.id === shardId);
-    if (index >= 0) {
-      this.config.shards[index] = config;
-    } else {
-      this.config.shards.push(config);
-    }
-  }
-
-  private createCheckpointPayload(): CheckpointData {
-    const shards: CheckpointData['shards'] = {};
-    for (const [shardId, shard] of this.shards.entries()) {
-      shards[shardId] = {
-        queue: shard.queue.map((job) => cloneJob(job)),
-        inFlight: Array.from(shard.inFlight.values()).map((job) => cloneJob(job)),
-        completed: Array.from(shard.completed.values()).map((job) => cloneJob(job)),
-        failed: Array.from(shard.failed.values()).map((job) => cloneJob(job)),
-        spilloverCount: shard.spilloverCount,
-        paused: shard.paused,
-        config: {
-          ...shard.config,
-          spilloverTargets: [...shard.config.spilloverTargets],
-          router: shard.config.router
-            ? {
-                queueAlertThreshold: shard.config.router.queueAlertThreshold,
-                spilloverPolicies: shard.config.router.spilloverPolicies
-                  ? shard.config.router.spilloverPolicies.map((policy) => ({ ...policy }))
-                  : undefined,
-              }
-            : undefined,
+    mkdirSync(reportDir, { recursive: true });
+    writeFileSync(
+      join(reportDir, 'summary.json'),
+      JSON.stringify(summary, null, 2),
+      'utf8'
+    );
+    writeFileSync(
+      join(reportDir, 'owner-commands-executed.json'),
+      JSON.stringify({ executed: this.ownerCommandLog }, null, 2)
+    );
+    writeFileSync(
+      join(reportDir, 'owner-script.json'),
+      JSON.stringify(
+        {
+          pauseAll: {
+            command: 'pauseFabric',
+            payload: { reason: 'Owner maintenance window' },
+          },
+          rerouteMarsToHelios: {
+            command: 'rerouteShardTo',
+            payload: {
+              origin: 'mars',
+              destination: 'helios',
+              percentage: 0.35,
+            },
+          },
+          boostHeliosArray: {
+            command: 'boostNodeCapacity',
+            payload: {
+              nodeId: 'helios.gpu-array',
+              multiplier: 1.6,
+              duration: 64,
+            },
+          },
+          directOwnerCommands: {
+            pauseFabric: {
+              command: 'pauseFabric',
+              payload: { reason: 'Circuit-breaker triggered by owner' },
+            },
+            resumeFabric: {
+              command: 'resumeFabric',
+              payload: {},
+            },
+          },
         },
-      };
-    }
-    const nodes: CheckpointData['nodes'] = {};
-    for (const [nodeId, node] of this.nodes.entries()) {
-      nodes[nodeId] = {
-        state: node.active,
-        runningJobs: Array.from(node.runningJobs.values()).map((job) => cloneJob(job)),
-        lastHeartbeatTick: node.lastHeartbeatTick,
-        definition: {
-          ...node.definition,
-          specialties: [...node.definition.specialties],
-        },
-      };
-    }
-    return {
-      tick: this.tick,
-      systemPaused: this.systemPaused,
-      pausedShards: Array.from(this.pausedShards),
-      shards,
-      nodes,
-      metrics: { ...this.metrics },
-      events: [...this.events],
-      deterministicLog: this.deterministicLog.map((frame) => ({
-        tick: frame.tick,
-        events: frame.events.map((event) => cloneRegistryEvent(event)),
-      })),
-    };
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    return summary;
   }
 }
