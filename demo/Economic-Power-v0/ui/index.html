@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Economic Power Control Deck</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>AGI Jobs Economic Power v0</h1>
+      <p>
+        Planetary-scale orchestration cockpit – load a scenario, inspect the agent mesh,
+        and execute owner-grade decisions with confidence.
+      </p>
+      <div class="actions">
+        <button id="reload-default" type="button">Reload baseline</button>
+        <label class="file-upload">
+          <input id="file-input" type="file" accept="application/json" />
+          <span>Load custom summary.json</span>
+        </label>
+      </div>
+    </header>
+
+    <main>
+      <section id="metric-cards" aria-label="Economic metrics"></section>
+
+      <section class="panel" aria-labelledby="owner-controls-heading">
+        <div class="panel-header">
+          <h2 id="owner-controls-heading">Owner command authority</h2>
+          <p>Every lever remains under the guardian multi-sig, configurable in seconds.</p>
+        </div>
+        <table id="owner-table">
+          <thead>
+            <tr>
+              <th>Parameter</th>
+              <th>Current</th>
+              <th>Target</th>
+              <th>Command</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="panel" aria-labelledby="assignment-heading">
+        <div class="panel-header">
+          <h2 id="assignment-heading">Job deployment map</h2>
+          <p>
+            The orchestration layer automatically pairs high-value jobs with elite agents and
+            validator constellations. Hover to inspect validator stakes and runtime efficiency.
+          </p>
+        </div>
+        <div class="table-wrapper">
+          <table id="assignment-table">
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Agent</th>
+                <th>Runtime (h)</th>
+                <th>Reward AGI</th>
+                <th>Reward Stable</th>
+                <th>Validator set</th>
+                <th>Confidence</th>
+                <th>Net Value</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="flow-heading">
+        <div class="panel-header">
+          <h2 id="flow-heading">Architecture flow</h2>
+          <p>Live Mermaid rendering sourced from <code>reports/flow.mmd</code>.</p>
+        </div>
+        <div class="mermaid" id="mermaid-flow"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="timeline-heading">
+        <div class="panel-header">
+          <h2 id="timeline-heading">Execution timeline</h2>
+          <p>Gantt macro for throughput and capital velocity analytics.</p>
+        </div>
+        <div class="mermaid" id="mermaid-timeline"></div>
+      </section>
+
+      <section class="panel dropzone" aria-labelledby="dropzone-heading">
+        <div class="panel-header">
+          <h2 id="dropzone-heading">Drop a summary file</h2>
+          <p>Drag &amp; drop <code>summary.json</code> to instantly visualise a new scenario.</p>
+        </div>
+        <div class="dropzone-inner">
+          <span>Drop file here</span>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Economic Power v0 • Deterministic, owner-controlled, validator-secured AGI economy.
+        <span id="generated-at"></span>
+      </p>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
