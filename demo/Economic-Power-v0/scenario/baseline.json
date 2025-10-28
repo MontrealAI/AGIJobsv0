@@ -326,5 +326,157 @@
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
     ]
+  },
+  "commandCatalog": {
+    "jobPrograms": [
+      {
+        "id": "job-ai-lab-fusion",
+        "target": "job-ai-lab-fusion",
+        "script": "npm run owner:program -- --program job-ai-lab-fusion",
+        "description": "Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator."
+      },
+      {
+        "id": "job-supply-mesh",
+        "target": "job-supply-chain",
+        "script": "npm run owner:program -- --program job-supply-chain",
+        "description": "Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment."
+      },
+      {
+        "id": "job-governance-upgrade",
+        "target": "job-governance-upgrade",
+        "script": "npm run owner:program -- --program job-governance-upgrade",
+        "description": "Authorize Sentinel assurance fabric to promote the upgraded governance module."
+      },
+      {
+        "id": "job-market-expansion",
+        "target": "job-market-expansion",
+        "script": "npm run owner:program -- --program job-market-expansion",
+        "description": "Activate Aurora omni-loop teams for immediate market penetration."
+      },
+      {
+        "id": "job-oracle-integration",
+        "target": "job-oracle-integration",
+        "script": "npm run owner:program -- --program job-oracle-integration",
+        "description": "Command Helios to ship the oracle integration spine with hardened adapters."
+      }
+    ],
+    "validatorPrograms": [
+      {
+        "id": "validator-alpha",
+        "target": "validator-alpha",
+        "script": "npm run owner:program -- --program validator-alpha",
+        "description": "Escalate Validator Alpha quorum weighting and deploy fresh attestations."
+      },
+      {
+        "id": "validator-beta",
+        "target": "validator-beta",
+        "script": "npm run owner:program -- --program validator-beta",
+        "description": "Rotate Validator Beta committees and enforce staking deltas."
+      },
+      {
+        "id": "validator-gamma",
+        "target": "validator-gamma",
+        "script": "npm run owner:program -- --program validator-gamma",
+        "description": "Deploy Gamma macro-policy validators to contested economic tasks."
+      },
+      {
+        "id": "validator-delta",
+        "target": "validator-delta",
+        "script": "npm run owner:program -- --program validator-delta",
+        "description": "Refresh Delta’s ML-evaluation pipelines with latest defence heuristics."
+      },
+      {
+        "id": "validator-epsilon",
+        "target": "validator-epsilon",
+        "script": "npm run owner:program -- --program validator-epsilon",
+        "description": "Escalate Epsilon red-team programs for adversarial fortification."
+      }
+    ],
+    "adapterPrograms": [
+      {
+        "id": "adapter-usdc-v1",
+        "target": "USDC v1",
+        "script": "npm run owner:program -- --program adapter-usdc",
+        "description": "Upgrade the USDC bridge adapter with deterministic slippage guards."
+      }
+    ],
+    "modulePrograms": [
+      {
+        "id": "module-job-registry",
+        "target": "job-registry",
+        "script": "npm run owner:program -- --program module-job-registry",
+        "description": "Promote the JobRegistry v2 deployment with zero-downtime migration."
+      },
+      {
+        "id": "module-stake-manager",
+        "target": "stake-manager",
+        "script": "npm run owner:program -- --program module-stake-manager",
+        "description": "Adjust stake thresholds and payout cadence for StakeManager."
+      },
+      {
+        "id": "module-validation",
+        "target": "validation-module",
+        "script": "npm run owner:program -- --program module-validation",
+        "description": "Roll out commit–reveal validator enhancements across ValidationModule."
+      },
+      {
+        "id": "module-reputation",
+        "target": "reputation-engine",
+        "script": "npm run owner:program -- --program module-reputation",
+        "description": "Regenerate reputation curves and publish new weighting vectors."
+      },
+      {
+        "id": "module-dispute",
+        "target": "dispute-module",
+        "script": "npm run owner:program -- --program module-dispute",
+        "description": "Commission expanded dispute juries and refresh escalation liveness timers."
+      },
+      {
+        "id": "module-certificate",
+        "target": "certificate-nft",
+        "script": "npm run owner:program -- --program module-certificate",
+        "description": "Ship upgraded CertificateNFT metadata schema for compliance provenance."
+      }
+    ],
+    "treasuryPrograms": [
+      {
+        "id": "treasury-liquidity",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-liquidity",
+        "description": "Rebalance AGI/USDC buffers and top up validator incentive pools."
+      },
+      {
+        "id": "treasury-yield",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-yield",
+        "description": "Deploy surplus treasury capital into protocol-aligned yield strategies."
+      },
+      {
+        "id": "treasury-insurance",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-insurance",
+        "description": "Activate insurance backstops for mission-critical validator cohorts."
+      }
+    ],
+    "orchestratorPrograms": [
+      {
+        "id": "orchestrator-rebalance",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-rebalance",
+        "description": "Re-weight autonomous routing priorities to maximise throughput."
+      },
+      {
+        "id": "orchestrator-pause-drill",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-pause-drill",
+        "description": "Run full-stack pause/resume drill to validate emergency readiness."
+      },
+      {
+        "id": "orchestrator-upgrade",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-upgrade",
+        "description": "Roll forward orchestrator microservices with deterministic change sets."
+      }
+    ]
   }
 }

@@ -19,14 +19,14 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
   assert.equal(
     summary.metrics.ownerCommandCoverage,
-    0.227,
-    'Owner command coverage should reflect current unscripted surfaces',
+    1,
+    'Owner command coverage should confirm total command supremacy',
   );
   assert(summary.metrics.sovereignControlScore >= 0.9, 'Sovereign control score should confirm custody');
   assert.equal(
     summary.metrics.assertionPassRate,
-    0.833,
-    'Assertion pass rate should reflect coverage warning signal',
+    1,
+    'Assertion pass rate should signal unstoppable verification deck',
   );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
@@ -74,16 +74,10 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(coverageAssertion, 'Coverage assertion should be present');
   assert.equal(
     coverageAssertion.outcome,
-    'fail',
-    'Coverage assertion should fail until command scripts are expanded',
+    'pass',
+    'Coverage assertion should pass once command catalog covers every surface',
   );
-  const otherAssertions = summary.assertions.filter(
-    (assertion) => assertion.id !== 'owner-command-dominance',
-  );
-  assert(
-    otherAssertions.every((assertion) => assertion.outcome === 'pass'),
-    'All other assertions should continue to pass',
-  );
+  assert(summary.assertions.every((assertion) => assertion.outcome === 'pass'));
 
   for (const assignment of summary.assignments) {
     assert(
@@ -114,6 +108,32 @@ test('economic power simulation produces deterministic metrics', async () => {
   );
   assert(summary.governanceLedger.alerts.length >= 1, 'Ledger should expose actionable alerts');
   const coverageAlert = summary.governanceLedger.alerts.find((alert) => alert.id === 'coverage-gap');
-  assert(coverageAlert, 'Coverage gap alert should be present for partial coverage scenarios');
+  assert(!coverageAlert, 'Coverage gap alert should be eliminated once coverage reaches 100%');
+
+  assert.equal(summary.commandCatalog.jobPrograms.length, scenario.commandCatalog.jobPrograms.length);
+  assert.equal(summary.commandCatalog.validatorPrograms.length, scenario.commandCatalog.validatorPrograms.length);
+  assert(summary.commandCatalog.treasuryPrograms.length > 0, 'Treasury programs should be catalogued');
+  assert.equal(
+    summary.ownerCommandPlan.jobPrograms.length,
+    scenario.commandCatalog.jobPrograms.length,
+  );
+  assert.equal(
+    summary.ownerCommandPlan.modulePrograms.length,
+    scenario.commandCatalog.modulePrograms.length,
+  );
+  for (const job of scenario.jobs) {
+    assert(
+      summary.commandCatalog.jobPrograms.some((program) => program.target === job.id),
+      `Command catalog should include program for job ${job.id}`,
+    );
+  }
+  for (const validator of scenario.validators) {
+    assert(
+      summary.commandCatalog.validatorPrograms.some((program) => program.target === validator.id),
+      `Command catalog should include program for validator ${validator.id}`,
+    );
+  }
+  assert(summary.ownerCommandPlan.treasuryPrograms.length > 0, 'Owner plan should list treasury programs');
+  assert(summary.ownerCommandPlan.orchestratorPrograms.length > 0, 'Owner plan should list orchestrator programs');
 });
 

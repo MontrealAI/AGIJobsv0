@@ -7,6 +7,22 @@ import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+const commandProgramSchema = z.object({
+  id: z.string(),
+  target: z.string(),
+  script: z.string(),
+  description: z.string(),
+});
+
+const commandCatalogSchema = z.object({
+  jobPrograms: z.array(commandProgramSchema),
+  validatorPrograms: z.array(commandProgramSchema),
+  adapterPrograms: z.array(commandProgramSchema),
+  modulePrograms: z.array(commandProgramSchema),
+  treasuryPrograms: z.array(commandProgramSchema),
+  orchestratorPrograms: z.array(commandProgramSchema),
+});
+
 const scenarioSchema = z.object({
   version: z.literal('1.0'),
   scenarioId: z.string(),
@@ -130,9 +146,13 @@ const scenarioSchema = z.object({
       }),
     ),
   }),
+  commandCatalog: commandCatalogSchema,
 });
 
 type Scenario = z.infer<typeof scenarioSchema>;
+
+type CommandProgram = z.infer<typeof commandProgramSchema>;
+type CommandCatalog = z.infer<typeof commandCatalogSchema>;
 
 type Assignment = {
   jobId: string;
@@ -242,6 +262,7 @@ type Summary = {
     circuitBreakers: Scenario['safeguards']['circuitBreakers'];
     upgradePaths: Scenario['safeguards']['upgradePaths'];
   };
+  commandCatalog: CommandCatalog;
   assignments: Assignment[];
   mermaidFlow: string;
   mermaidTimeline: string;
@@ -270,6 +291,12 @@ type OwnerCommandPlan = {
   parameterControls: Scenario['owner']['controls'];
   circuitBreakers: Scenario['safeguards']['circuitBreakers'];
   upgradePaths: Scenario['safeguards']['upgradePaths'];
+  jobPrograms: CommandProgram[];
+  validatorPrograms: CommandProgram[];
+  adapterPrograms: CommandProgram[];
+  modulePrograms: CommandProgram[];
+  treasuryPrograms: CommandProgram[];
+  orchestratorPrograms: CommandProgram[];
   commandCoverage: number;
   coverageNarrative: string;
 };
@@ -311,6 +338,12 @@ function buildOwnerCommandPlan(scenario: Scenario, coverage: number): OwnerComma
     parameterControls: scenario.owner.controls,
     circuitBreakers: scenario.safeguards.circuitBreakers,
     upgradePaths: scenario.safeguards.upgradePaths,
+    jobPrograms: scenario.commandCatalog.jobPrograms,
+    validatorPrograms: scenario.commandCatalog.validatorPrograms,
+    adapterPrograms: scenario.commandCatalog.adapterPrograms,
+    modulePrograms: scenario.commandCatalog.modulePrograms,
+    treasuryPrograms: scenario.commandCatalog.treasuryPrograms,
+    orchestratorPrograms: scenario.commandCatalog.orchestratorPrograms,
     commandCoverage: Number(coverage.toFixed(3)),
     coverageNarrative: coverageNarrative(coverage),
   };
@@ -353,6 +386,41 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
     return { node, edge };
   });
 
+  const jobProgramNodes = summary.ownerCommandPlan.jobPrograms.map((program, index) => {
+    const id = sanitiseId('JobProgram', program.id, index);
+    const node = `${id}["Job • ${program.target}\\n${program.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Launch| ${id}`;
+    return { node, edge };
+  });
+
+  const validatorProgramNodes = summary.ownerCommandPlan.validatorPrograms.map((program, index) => {
+    const id = sanitiseId('ValidatorProgram', program.id, index);
+    const node = `${id}["Validator • ${program.target}\\n${program.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Command| ${id}`;
+    return { node, edge };
+  });
+
+  const adapterProgramNodes = summary.ownerCommandPlan.adapterPrograms.map((program, index) => {
+    const id = sanitiseId('AdapterProgram', program.id, index);
+    const node = `${id}["Adapter • ${program.target}\\n${program.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Bridge| ${id}`;
+    return { node, edge };
+  });
+
+  const treasuryProgramNodes = summary.ownerCommandPlan.treasuryPrograms.map((program, index) => {
+    const id = sanitiseId('TreasuryProgram', program.id, index);
+    const node = `${id}["Treasury • ${program.target}\\n${program.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Fund| ${id}`;
+    return { node, edge };
+  });
+
+  const orchestratorProgramNodes = summary.ownerCommandPlan.orchestratorPrograms.map((program, index) => {
+    const id = sanitiseId('OrchestratorProgram', program.id, index);
+    const node = `${id}["Orchestrator • ${program.target}\\n${program.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Direct| ${id}`;
+    return { node, edge };
+  });
+
   const breakerNodes = summary.ownerSovereignty.circuitBreakers.map((breaker, index) => {
     const id = sanitiseId('Breaker', breaker.metric, index);
     const label = `${breaker.metric} ${breaker.comparator} ${breaker.threshold}`;
@@ -364,6 +432,11 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
   const nodes = [ownerNode, pauseNode, resumeNode, coverageNode]
     .concat(parameterNodes.map((entry) => entry.node))
     .concat(upgradeNodes.map((entry) => entry.node))
+    .concat(jobProgramNodes.map((entry) => entry.node))
+    .concat(validatorProgramNodes.map((entry) => entry.node))
+    .concat(adapterProgramNodes.map((entry) => entry.node))
+    .concat(treasuryProgramNodes.map((entry) => entry.node))
+    .concat(orchestratorProgramNodes.map((entry) => entry.node))
     .concat(moduleNodes.map((entry) => entry.node))
     .concat(breakerNodes.map((entry) => entry.node));
 
@@ -374,6 +447,11 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
   ]
     .concat(parameterNodes.map((entry) => entry.edge))
     .concat(upgradeNodes.map((entry) => entry.edge))
+    .concat(jobProgramNodes.map((entry) => entry.edge))
+    .concat(validatorProgramNodes.map((entry) => entry.edge))
+    .concat(adapterProgramNodes.map((entry) => entry.edge))
+    .concat(treasuryProgramNodes.map((entry) => entry.edge))
+    .concat(orchestratorProgramNodes.map((entry) => entry.edge))
     .concat(moduleNodes.map((entry) => entry.edge))
     .concat(breakerNodes.map((entry) => entry.edge));
 
@@ -448,6 +526,66 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
   lines.push('');
   for (const upgrade of summary.ownerCommandPlan.upgradePaths) {
     lines.push('- ' + upgrade.module + ': `' + upgrade.script + '` — ' + upgrade.description);
+  }
+  lines.push('');
+  lines.push('## Job orchestration programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.jobPrograms.length === 0) {
+    lines.push('- No job programs defined. Expand command coverage to sustain autonomy.');
+  } else {
+    for (const program of summary.ownerCommandPlan.jobPrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
+  }
+  lines.push('');
+  lines.push('## Validator sovereignty programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.validatorPrograms.length === 0) {
+    lines.push('- No validator programs defined. Authorise validator overrides immediately.');
+  } else {
+    for (const program of summary.ownerCommandPlan.validatorPrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
+  }
+  lines.push('');
+  lines.push('## Stablecoin adapter programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.adapterPrograms.length === 0) {
+    lines.push('- No adapter programs defined. Create swap/bridge runbooks for resilience.');
+  } else {
+    for (const program of summary.ownerCommandPlan.adapterPrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
+  }
+  lines.push('');
+  lines.push('## Module supremacy programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.modulePrograms.length === 0) {
+    lines.push('- No module programs defined. Map upgrade hooks to preserve sovereignty.');
+  } else {
+    for (const program of summary.ownerCommandPlan.modulePrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
+  }
+  lines.push('');
+  lines.push('## Treasury command programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.treasuryPrograms.length === 0) {
+    lines.push('- No treasury programs defined. Script liquidity and buffer maintenance.');
+  } else {
+    for (const program of summary.ownerCommandPlan.treasuryPrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
+  }
+  lines.push('');
+  lines.push('## Orchestrator command programs');
+  lines.push('');
+  if (summary.ownerCommandPlan.orchestratorPrograms.length === 0) {
+    lines.push('- No orchestrator programs defined. Provision command mesh for automation.');
+  } else {
+    for (const program of summary.ownerCommandPlan.orchestratorPrograms) {
+      lines.push('- ' + program.target + ': `' + program.script + '` — ' + program.description);
+    }
   }
   lines.push('');
   lines.push('## Capital trajectory checkpoints');
@@ -597,20 +735,124 @@ function collectCommandScripts(scenario: Scenario): string[] {
   for (const upgrade of scenario.safeguards.upgradePaths) {
     scripts.add(upgrade.script);
   }
+  for (const catalog of Object.values(scenario.commandCatalog)) {
+    for (const program of catalog) {
+      scripts.add(program.script);
+    }
+  }
   return Array.from(scripts).sort();
 }
 
+function matchesTarget(
+  program: CommandProgram,
+  id: string,
+  name?: string,
+): boolean {
+  const target = program.target.trim().toLowerCase();
+  if (target === '*' || target === 'all') {
+    return true;
+  }
+  if (target === id.toLowerCase()) {
+    return true;
+  }
+  if (name && target === name.toLowerCase()) {
+    return true;
+  }
+  return false;
+}
+
 function computeOwnerCommandCoverage(scenario: Scenario): number {
-  const scripts = collectCommandScripts(scenario);
-  const criticalSurfaces =
-    scenario.jobs.length +
-    scenario.validators.length +
-    scenario.stablecoinAdapters.length +
-    scenario.owner.controls.length +
-    scenario.modules.length +
-    2;
-  const coverage = scripts.length / Math.max(criticalSurfaces, 1);
-  return Number(Math.min(1, coverage).toFixed(3));
+  let surfaces = 0;
+  let covered = 0;
+
+  const checkCoverage = <T>(
+    items: readonly T[],
+    programs: readonly CommandProgram[],
+    getIdentifiers: (item: T) => { id: string; name?: string },
+  ) => {
+    surfaces += items.length;
+    for (const item of items) {
+      const identifiers = getIdentifiers(item);
+      const hasProgram = programs.some((program) => {
+        if (!program.script || program.script.trim().length === 0) {
+          return false;
+        }
+        return matchesTarget(program, identifiers.id, identifiers.name);
+      });
+      if (hasProgram) {
+        covered += 1;
+      }
+    }
+  };
+
+  const jobPrograms = scenario.commandCatalog.jobPrograms.length
+    ? scenario.commandCatalog.jobPrograms
+    : scenario.commandCatalog.orchestratorPrograms;
+  checkCoverage(scenario.jobs, jobPrograms, (job) => ({ id: job.id, name: job.name }));
+
+  const validatorPrograms = scenario.commandCatalog.validatorPrograms.length
+    ? scenario.commandCatalog.validatorPrograms
+    : scenario.commandCatalog.orchestratorPrograms;
+  checkCoverage(scenario.validators, validatorPrograms, (validator) => ({
+    id: validator.id,
+    name: validator.name,
+  }));
+
+  checkCoverage(scenario.stablecoinAdapters, scenario.commandCatalog.adapterPrograms, (adapter) => ({
+    id: adapter.name,
+    name: adapter.name,
+  }));
+
+  const modulePrograms: CommandProgram[] = [
+    ...scenario.commandCatalog.modulePrograms,
+    ...scenario.safeguards.upgradePaths.map((upgrade, index) => ({
+      id: `upgrade-path-${index}-${upgrade.module}`,
+      target: upgrade.module,
+      script: upgrade.script,
+      description: upgrade.description,
+    })),
+    ...scenario.modules.map((module, index) => ({
+      id: `module-upgrade-${index}-${module.id}`,
+      target: module.id,
+      script: module.upgradeScript,
+      description: module.description,
+    })),
+  ];
+  checkCoverage(scenario.modules, modulePrograms, (module) => ({
+    id: module.id,
+    name: module.name,
+  }));
+
+  checkCoverage(scenario.owner.controls, scenario.owner.controls.map((control, index) => ({
+    id: `control-${index}-${control.parameter}`,
+    target: control.parameter,
+    script: control.script,
+    description: control.description,
+  })), (control) => ({ id: control.parameter, name: control.parameter }));
+
+  // Pause and resume surfaces
+  surfaces += 2;
+  if (scenario.safeguards.pauseScript.trim().length > 0) {
+    covered += 1;
+  }
+  if (scenario.safeguards.resumeScript.trim().length > 0) {
+    covered += 1;
+  }
+
+  // Treasury command surface
+  surfaces += 1;
+  if (scenario.commandCatalog.treasuryPrograms.some((program) => program.script.trim().length > 0)) {
+    covered += 1;
+  }
+
+  // Orchestrator command surface (beyond pause/resume)
+  surfaces += 1;
+  if (scenario.commandCatalog.orchestratorPrograms.some((program) => program.script.trim().length > 0)) {
+    covered += 1;
+  }
+
+  const coverage = surfaces === 0 ? 1 : covered / surfaces;
+  return Number(Math.min(1, Math.max(0, coverage)).toFixed(3));
 }
 
 function computeSovereignControlScore(scenario: Scenario): number {
@@ -1024,6 +1266,7 @@ function synthesiseSummary(
       circuitBreakers: scenario.safeguards.circuitBreakers,
       upgradePaths: scenario.safeguards.upgradePaths,
     },
+    commandCatalog: scenario.commandCatalog,
     assignments: context.assignments,
     mermaidFlow: '',
     mermaidTimeline: '',

@@ -366,6 +366,7 @@
     "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",
     "owner:parameters": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerParameterMatrix.ts",
+    "owner:program": "node --import tsx demo/Economic-Power-v0/scripts/ownerPrograms.ts",
     "owner:plan": "node scripts/v2/run-owner-plan.js",
     "owner:plan:safe": "node scripts/v2/run-owner-plan.js --safe owner-safe-bundle.json --safe-name \"AGIJobs Owner Control Plan\"",
     "owner:pulse": "npx hardhat run --no-compile scripts/v2/ownerControlPulse.ts",

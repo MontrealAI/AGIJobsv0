@@ -117,6 +117,41 @@ function renderOwnerTable(summary) {
   }
 }
 
+function renderProgramTable(tableId, programs) {
+  const table = document.querySelector(`#${tableId} tbody`);
+  if (!table) {
+    return;
+  }
+  table.innerHTML = '';
+  if (programs.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.textContent = 'No programs defined – authorise scripts to preserve total control.';
+    row.append(cell);
+    table.append(row);
+    return;
+  }
+  for (const program of programs) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${program.target}</td>
+      <td><code>${program.script}</code></td>
+      <td>${program.description}</td>
+    `;
+    table.append(row);
+  }
+}
+
+function renderCommandCatalog(summary) {
+  renderProgramTable('catalog-jobs', summary.ownerCommandPlan.jobPrograms);
+  renderProgramTable('catalog-validators', summary.ownerCommandPlan.validatorPrograms);
+  renderProgramTable('catalog-adapters', summary.ownerCommandPlan.adapterPrograms);
+  renderProgramTable('catalog-modules', summary.ownerCommandPlan.modulePrograms);
+  renderProgramTable('catalog-treasury', summary.ownerCommandPlan.treasuryPrograms);
+  renderProgramTable('catalog-orchestrator', summary.ownerCommandPlan.orchestratorPrograms);
+}
+
 function renderAssignments(summary) {
   const tbody = document.querySelector('#assignment-table tbody');
   tbody.innerHTML = '';
@@ -518,6 +553,7 @@ function setupFileHandlers() {
 async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
   renderGovernanceLedger(summary);

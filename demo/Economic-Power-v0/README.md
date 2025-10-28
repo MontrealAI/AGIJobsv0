@@ -79,6 +79,7 @@ Additional safeguards:
 - **Emergency Pause** – `npm run owner:system-pause` halts execution globally.
 - **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
 - **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
+- **Command Catalog Supremacy** – `npm run owner:program -- --list` enumerates deterministic programs for every job, validator, adapter, module, treasury motion, and orchestrator flow.
 
 ## Interactive CLI – empowering the operator
 
@@ -88,6 +89,12 @@ Additional safeguards:
 2. **Validator quorum uplift** – command-level override to harden consensus.
 
 The CLI recalculates ROI, payback horizon, validator confidence, and writes the new telemetry set into `reports/` for the UI to ingest.
+
+## Command catalog – execute anything instantly
+
+- `npm run owner:program -- --list` – print every deterministic program with the exact `npm` command to run it.
+- `npm run owner:program -- --program job-ai-lab-fusion` – execute a specific job program (replace the id to trigger others).
+- Pass `--json` for machine-readable output to integrate with external multi-sig tooling.
 
 ## UI flight deck
 
@@ -104,6 +111,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
+- Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.
 
 Launch with:
 

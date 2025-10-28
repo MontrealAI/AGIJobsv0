@@ -2,13 +2,30 @@ graph LR
     OwnerMultiSig["Owner Multi-Sig (4-of-7)"]
     PauseCommand["Pause • npm run owner:system-pause"]
     ResumeCommand["Resume • npm run owner:update-all"]
-    CoverageGauge["Coverage 22.7%"]
+    CoverageGauge["Coverage 100.0%"]
     Parameter_0_jobDuration["jobDuration\n72 → 48\nnpm run owner:parameters"]
     Parameter_1_validatorQuorum["validatorQuorum\n3 → 5\nnpm run owner:upgrade"]
     Parameter_2_stablecoinAdapter["stablecoinAdapter\nUSDC v1 → USDC v2\nnpm run owner:update-all"]
     Upgrade_0_JobRegistry["JobRegistry Upgrade\nnpm run owner:update-all"]
     Upgrade_1_ValidationModule["ValidationModule Upgrade\nnpm run owner:upgrade"]
     Upgrade_2_StakeManager["StakeManager Upgrade\nnpm run owner:parameters"]
+    JobProgram_0_job_ai_lab_fusion["Job • job-ai-lab-fusion\nnpm run owner:program -- --program job-ai-lab-fusion"]
+    JobProgram_1_job_supply_mesh["Job • job-supply-chain\nnpm run owner:program -- --program job-supply-chain"]
+    JobProgram_2_job_governance_upgrade["Job • job-governance-upgrade\nnpm run owner:program -- --program job-governance-upgrade"]
+    JobProgram_3_job_market_expansion["Job • job-market-expansion\nnpm run owner:program -- --program job-market-expansion"]
+    JobProgram_4_job_oracle_integration["Job • job-oracle-integration\nnpm run owner:program -- --program job-oracle-integration"]
+    ValidatorProgram_0_validator_alpha["Validator • validator-alpha\nnpm run owner:program -- --program validator-alpha"]
+    ValidatorProgram_1_validator_beta["Validator • validator-beta\nnpm run owner:program -- --program validator-beta"]
+    ValidatorProgram_2_validator_gamma["Validator • validator-gamma\nnpm run owner:program -- --program validator-gamma"]
+    ValidatorProgram_3_validator_delta["Validator • validator-delta\nnpm run owner:program -- --program validator-delta"]
+    ValidatorProgram_4_validator_epsilon["Validator • validator-epsilon\nnpm run owner:program -- --program validator-epsilon"]
+    AdapterProgram_0_adapter_usdc_v1["Adapter • USDC v1\nnpm run owner:program -- --program adapter-usdc"]
+    TreasuryProgram_0_treasury_liquidity["Treasury • treasury\nnpm run owner:program -- --program treasury-liquidity"]
+    TreasuryProgram_1_treasury_yield["Treasury • treasury\nnpm run owner:program -- --program treasury-yield"]
+    TreasuryProgram_2_treasury_insurance["Treasury • treasury\nnpm run owner:program -- --program treasury-insurance"]
+    OrchestratorProgram_0_orchestrator_rebalance["Orchestrator • orchestrator\nnpm run owner:program -- --program orchestrator-rebalance"]
+    OrchestratorProgram_1_orchestrator_pause_drill["Orchestrator • orchestrator\nnpm run owner:program -- --program orchestrator-pause-drill"]
+    OrchestratorProgram_2_orchestrator_upgrade["Orchestrator • orchestrator\nnpm run owner:program -- --program orchestrator-upgrade"]
     Module_0_job_registry["JobRegistry\n0xA1000000…"]
     Module_1_stake_manager["StakeManager\n0xA1000000…"]
     Module_2_validation_module["ValidationModule\n0xA1000000…"]
@@ -27,6 +44,23 @@ graph LR
     OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry
     OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule
     OwnerMultiSig -->|Promote| Upgrade_2_StakeManager
+    OwnerMultiSig -->|Launch| JobProgram_0_job_ai_lab_fusion
+    OwnerMultiSig -->|Launch| JobProgram_1_job_supply_mesh
+    OwnerMultiSig -->|Launch| JobProgram_2_job_governance_upgrade
+    OwnerMultiSig -->|Launch| JobProgram_3_job_market_expansion
+    OwnerMultiSig -->|Launch| JobProgram_4_job_oracle_integration
+    OwnerMultiSig -->|Command| ValidatorProgram_0_validator_alpha
+    OwnerMultiSig -->|Command| ValidatorProgram_1_validator_beta
+    OwnerMultiSig -->|Command| ValidatorProgram_2_validator_gamma
+    OwnerMultiSig -->|Command| ValidatorProgram_3_validator_delta
+    OwnerMultiSig -->|Command| ValidatorProgram_4_validator_epsilon
+    OwnerMultiSig -->|Bridge| AdapterProgram_0_adapter_usdc_v1
+    OwnerMultiSig -->|Fund| TreasuryProgram_0_treasury_liquidity
+    OwnerMultiSig -->|Fund| TreasuryProgram_1_treasury_yield
+    OwnerMultiSig -->|Fund| TreasuryProgram_2_treasury_insurance
+    OwnerMultiSig -->|Direct| OrchestratorProgram_0_orchestrator_rebalance
+    OwnerMultiSig -->|Direct| OrchestratorProgram_1_orchestrator_pause_drill
+    OwnerMultiSig -->|Direct| OrchestratorProgram_2_orchestrator_upgrade
     OwnerMultiSig -->|Custody| Module_0_job_registry
     OwnerMultiSig -->|Custody| Module_1_stake_manager
     OwnerMultiSig -->|Custody| Module_2_validation_module
