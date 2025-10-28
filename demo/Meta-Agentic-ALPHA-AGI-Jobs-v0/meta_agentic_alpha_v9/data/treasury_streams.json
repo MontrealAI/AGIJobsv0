@@ -1,0 +1,34 @@
+{
+  "streams": [
+    {
+      "name": "Alpha Factory Reinforcement",
+      "cadence": "hourly",
+      "route": "treasury/alpha-orbit",
+      "amount": "52000"
+    },
+    {
+      "name": "Guardian Mesh Sustainment",
+      "cadence": "4h",
+      "route": "resilience/phoenix-buffer",
+      "amount": "37000"
+    },
+    {
+      "name": "Autopilot Liquidity",
+      "cadence": "daily",
+      "route": "execution/liquidity-grid",
+      "amount": "41000"
+    },
+    {
+      "name": "Curriculum Lab",
+      "cadence": "12h",
+      "route": "expansion/metaverse-signal",
+      "amount": "28000"
+    },
+    {
+      "name": "Opportunity Acquisition",
+      "cadence": "6h",
+      "route": "acquisition/convergence-fund",
+      "amount": "45000"
+    }
+  ]
+}

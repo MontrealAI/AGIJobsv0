@@ -56,6 +56,7 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v8.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py
 ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -81,6 +82,11 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v8.py
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v6.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v7/reports/generated/alpha_singularity_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/reports/generated/alpha_meta_sovereignty_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/ui/dashboard-data-v9.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v9.json`
 
 > ✅ Everything ships pre-configured. The CLI auto-registers the validator agent, configures checkpoints, and ensures account-abstraction-ready governance parameters.
 
@@ -184,6 +190,20 @@ sequenceDiagram
 - **CI-Aware Console:** `dashboard-data-v7.json` powers flow, sequence, Gantt, journey, and state Mermaid diagrams plus a CI enforcement panel sourced from `ci_matrix.json` and `.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml`.
 - **Generated Artefacts:** `alpha_singularity_masterplan.md`, `dashboard-data-v7.json`, and `storage/orchestrator_v7/` provide a full audit trail (checkpoint, scoreboard, registry, run JSON) for regulators and owners.
 - **Account Abstraction Ready:** Gasless execution uses the configured bundler, paymaster, and override scripts, with explicit owner levers rendered in the UI and ready-to-run CLI instructions.
+
+## 🌀 V8 Meta-Convergence Console (Brand New)
+
+- **Meta-Convergence Planner:** `meta_agentic_demo_v8.py` extends the orchestration into the meta-convergence flywheel with antifragility-weighted treasury dominion and guardian council telemetry baked into the dashboard.
+- **Owner Convergence Mandate:** Validation enforces ≥42% unstoppable reserve, ≥44% antifragility buffer, emergency pause, guardian failover mesh, and mandatory control scripts before any action executes.
+- **Meta-Convergence Artefacts:** The V8 run emits `meta_agentic_alpha_v8/ui/index.html`, `dashboard-data-v8.json`, and `alpha_meta_convergence_masterplan.md`, showcasing rich Mermaid diagrams (flow, journey, state, quadrant) for stakeholder briefings.
+- **CI Alignment:** The orchestration checks CI health and writes scoreboard snapshots under `storage/orchestrator_v8/`, proving every run is greenlit before sovereign execution proceeds.
+
+## 👑 V9 Sovereignty Console (Brand New)
+
+- **Unstoppable Sovereignty:** `meta_agentic_demo_v9.py` validates timelock + multisig + guardian quorum 5/6, unstoppable threshold ≥94%, eight session keys, ERC-4337 bundler/paymaster, and owner upgrade scripts before running.
+- **Sovereign Mission Fabric:** Mission threads, autopilot protocols, treasury streams, and CI V2 checks load directly into the Sovereignty Console UI (`meta_agentic_alpha_v9/ui/index.html`) so owners see every lever instantly.
+- **Meta-CI V2 Enforcement:** The run generates `dashboard-data-v9.json` and `alpha_meta_sovereignty_masterplan.md` with CI V2 metrics, sovereignty radar, and unstoppable command quadrants proving production readiness.
+- **Owner-First Artefacts:** `storage/latest_run_v9.json`, `storage/orchestrator_v9/scoreboard.json`, and the masterplan deck demonstrate that AGI Jobs v0 (v2) rebuilds the entire hyperstructure automatically for non-technical owners.
 
 ---
 

@@ -1,0 +1,54 @@
+{
+  "domains": [
+    {
+      "name": "Macro Alpha",
+      "probability": 0.94,
+      "confidence": 0.91,
+      "delta": 0.18
+    },
+    {
+      "name": "Supply Chain",
+      "probability": 0.92,
+      "confidence": 0.9,
+      "delta": 0.16
+    },
+    {
+      "name": "Biotech",
+      "probability": 0.9,
+      "confidence": 0.88,
+      "delta": 0.14
+    },
+    {
+      "name": "Energy",
+      "probability": 0.91,
+      "confidence": 0.89,
+      "delta": 0.17
+    },
+    {
+      "name": "Frontier Computing",
+      "probability": 0.95,
+      "confidence": 0.92,
+      "delta": 0.2
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "alpha-surge-9721",
+      "description": "Cross-chain liquidity inefficiency detected",
+      "signals": ["Macro Alpha", "Energy"],
+      "impact_score": 0.96
+    },
+    {
+      "id": "supply-thread-7710",
+      "description": "Autonomous port backlog forming",
+      "signals": ["Supply Chain"],
+      "impact_score": 0.93
+    },
+    {
+      "id": "compute-burst-5543",
+      "description": "New sovereign compute incentives",
+      "signals": ["Frontier Computing"],
+      "impact_score": 0.97
+    }
+  ]
+}

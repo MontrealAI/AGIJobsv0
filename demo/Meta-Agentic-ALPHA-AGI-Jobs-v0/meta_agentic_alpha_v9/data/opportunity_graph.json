@@ -1,0 +1,63 @@
+{
+  "nodes": [
+    {
+      "id": "macro-alpha",
+      "label": "Macro Alpha",
+      "value": 0.94,
+      "connections": ["sovereign-liquidity", "compute-expansion"]
+    },
+    {
+      "id": "sovereign-liquidity",
+      "label": "Sovereign Liquidity",
+      "value": 0.92,
+      "connections": ["guardian-mesh", "supply-signal"]
+    },
+    {
+      "id": "guardian-mesh",
+      "label": "Guardian Mesh",
+      "value": 0.9,
+      "connections": ["autopilot", "curriculum"]
+    },
+    {
+      "id": "autopilot",
+      "label": "Autopilot",
+      "value": 0.91,
+      "connections": ["curriculum", "compute-expansion"]
+    },
+    {
+      "id": "curriculum",
+      "label": "Curriculum",
+      "value": 0.93,
+      "connections": ["macro-alpha", "guardian-mesh"]
+    },
+    {
+      "id": "compute-expansion",
+      "label": "Compute Expansion",
+      "value": 0.95,
+      "connections": ["macro-alpha", "autopilot"]
+    },
+    {
+      "id": "supply-signal",
+      "label": "Supply Signal",
+      "value": 0.9,
+      "connections": ["macro-alpha", "guardian-mesh"]
+    }
+  ],
+  "insights": [
+    {
+      "id": "alpha-factory",
+      "description": "Deploy unstoppable alpha factory by coupling macro alpha and compute expansion",
+      "score": 0.97
+    },
+    {
+      "id": "guardian-telemetry",
+      "description": "Telemetry feedback loop between guardian mesh and autopilot reduces override latency",
+      "score": 0.95
+    },
+    {
+      "id": "curriculum-boost",
+      "description": "Curriculum uplift triggered by autopilot anomaly detection",
+      "score": 0.93
+    }
+  ]
+}

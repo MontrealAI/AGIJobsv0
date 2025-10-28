@@ -1,0 +1,13 @@
+{
+  "events": [
+    {"time": "00:00", "event": "Owner presses run"},
+    {"time": "00:05", "event": "Meta-agentic planner spins mission threads"},
+    {"time": "00:12", "event": "Guardian quorum validation"},
+    {"time": "00:18", "event": "4337 dry-run envelope"},
+    {"time": "00:24", "event": "Sovereignty console renders"},
+    {"time": "00:32", "event": "Autopilot threads activated"},
+    {"time": "00:40", "event": "Owner override window opens"},
+    {"time": "00:48", "event": "Treasury sovereignty rebalance"},
+    {"time": "00:55", "event": "Meta-CI V2 publishes verdict"}
+  ]
+}

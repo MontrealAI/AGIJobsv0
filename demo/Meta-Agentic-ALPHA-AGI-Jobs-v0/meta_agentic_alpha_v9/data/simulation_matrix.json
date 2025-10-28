@@ -1,0 +1,20 @@
+{
+  "world_model": {
+    "name": "MetaSovereignty-IX",
+    "autonomous": true,
+    "autonomy_layers": [
+      "Identify",
+      "Learn",
+      "Strategise",
+      "Execute",
+      "Govern"
+    ]
+  },
+  "resilience_bonus": 0.28,
+  "alpha_feedback": 0.14,
+  "risk_controls": {
+    "drawdown_limit": 0.018,
+    "circuit_breaker": 0.038,
+    "antifragility_floor": 0.46
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "threads": [
+    {
+      "id": "mission-thread-alpha-forge",
+      "title": "Alpha Forge",
+      "objective": "Spawn autonomous alpha factories across chains",
+      "status": "active"
+    },
+    {
+      "id": "mission-thread-supply-sense",
+      "title": "Supply Sense",
+      "objective": "Eliminate supply bottlenecks via predictive routing",
+      "status": "active"
+    },
+    {
+      "id": "mission-thread-governance-mesh",
+      "title": "Governance Mesh",
+      "objective": "Synchronise guardian quorum and antifragility probes",
+      "status": "ready"
+    },
+    {
+      "id": "mission-thread-autopilot",
+      "title": "Autopilot",
+      "objective": "Self-adjust autopilot velocity based on telemetry",
+      "status": "active"
+    }
+  ]
+}
