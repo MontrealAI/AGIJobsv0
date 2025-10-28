@@ -1,35 +1,14 @@
-import { promises as fs } from 'fs';
-import { resolve } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { loadFabricConfig, loadOwnerCommandSchedule } from './config-loader';
 import { runSimulation } from './simulation';
-import { FabricConfig, OwnerCommandSchedule, SimulationOptions } from './types';
+import { OwnerCommandSchedule, SimulationOptions } from './types';
 
 function lastValue<T>(value: T | T[] | undefined): T | undefined {
   if (Array.isArray(value)) {
     return value[value.length - 1];
   }
   return value;
-}
-
-async function loadConfig(path: string): Promise<FabricConfig> {
-  const configPath = resolve(path);
-  const raw = await fs.readFile(configPath, 'utf8');
-  const parsed = JSON.parse(raw) as FabricConfig;
-  return parsed;
-}
-
-async function loadOwnerCommandsFile(path: string): Promise<OwnerCommandSchedule[]> {
-  const commandsPath = resolve(path);
-  const raw = await fs.readFile(commandsPath, 'utf8');
-  const parsed = JSON.parse(raw) as unknown;
-  if (Array.isArray(parsed)) {
-    return parsed as OwnerCommandSchedule[];
-  }
-  if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { commands?: unknown }).commands)) {
-    return (parsed as { commands: OwnerCommandSchedule[] }).commands;
-  }
-  throw new Error('Owner command file must be an array or an object with a "commands" array.');
 }
 
 async function main(): Promise<void> {
@@ -89,7 +68,7 @@ async function main(): Promise<void> {
     })
     .parseAsync();
 
-  const config = await loadConfig(argv.config);
+  const config = await loadFabricConfig(argv.config);
   const checkpointInterval = lastValue(argv['checkpoint-interval']);
   if (typeof checkpointInterval === 'number') {
     config.checkpoint.intervalTicks = checkpointInterval;
@@ -102,7 +81,7 @@ async function main(): Promise<void> {
   const ownerCommandsPath = lastValue(argv['owner-commands']);
   let ownerCommands: OwnerCommandSchedule[] | undefined;
   if (ownerCommandsPath) {
-    ownerCommands = await loadOwnerCommandsFile(ownerCommandsPath);
+    ownerCommands = await loadOwnerCommandSchedule(ownerCommandsPath);
   }
 
   const options: SimulationOptions = {

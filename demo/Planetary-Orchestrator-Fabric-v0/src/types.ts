@@ -270,3 +270,47 @@ export interface OwnerCommandSchedule {
   command: OwnerCommand;
   note?: string;
 }
+
+export interface SummaryShardSnapshot {
+  queueDepth: number;
+  inFlight: number;
+  completed: number;
+}
+
+export interface SummaryShardStatistics {
+  completed: number;
+  failed: number;
+  spillovers: number;
+}
+
+export interface SummaryNodeSnapshot {
+  active: boolean;
+  runningJobs: number;
+}
+
+export interface OwnerCommandSummary {
+  source?: string;
+  scheduled: OwnerCommandSchedule[];
+  executed: OwnerCommandSchedule[];
+  skippedBeforeResume: OwnerCommandSchedule[];
+  pending: OwnerCommandSchedule[];
+}
+
+export interface FabricSummary {
+  owner: FabricConfig['owner'];
+  metrics: FabricMetrics;
+  shards: Record<ShardId, SummaryShardSnapshot>;
+  shardStatistics: Record<ShardId, SummaryShardStatistics>;
+  nodes: Record<string, SummaryNodeSnapshot>;
+  checkpoint: { path: string; intervalTicks: number };
+  checkpointPath: string;
+  options: SimulationOptions;
+  run: RunMetadata;
+  ownerState: {
+    systemPaused: boolean;
+    pausedShards: ShardId[];
+    checkpoint: { path: string; intervalTicks: number };
+    metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
+  };
+  ownerCommands: OwnerCommandSummary;
+}

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
+import { runAcceptanceSuite } from '../src/acceptance';
 import { FabricConfig, JobDefinition, OwnerCommandSchedule } from '../src/types';
 import { runSimulation } from '../src/simulation';
 
@@ -441,6 +442,63 @@ async function testStopAndResumeDrill(): Promise<void> {
   await rm(dir, { force: true, recursive: true });
 }
 
+async function testAcceptanceSuiteHarness(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-acceptance-suite-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const reportingDir = join(dir, 'reports');
+  const config: FabricConfig = cloneConfig({
+    ...testConfig,
+    shards: testConfig.shards.map((shard) => ({
+      ...shard,
+      maxQueue: Math.min(shard.maxQueue, 60),
+      router: {
+        queueAlertThreshold: 40,
+        spilloverPolicies: shard.spilloverTargets.map((target, index) => ({
+          target,
+          threshold: 45 + index * 5,
+          maxDrainPerTick: 15,
+        })),
+      },
+    })),
+    checkpoint: { ...testConfig.checkpoint, path: checkpointPath, intervalTicks: 4 },
+    reporting: { directory: reportingDir, defaultLabel: 'unit-acceptance' },
+  });
+  const schedule: OwnerCommandSchedule[] = [
+    { tick: 3, command: { type: 'system.pause', reason: 'acceptance-pause' }, note: 'pause during acceptance harness' },
+    { tick: 4, command: { type: 'system.resume', reason: 'acceptance-resume' }, note: 'resume acceptance harness' },
+  ];
+  const report = await runAcceptanceSuite({
+    config,
+    ownerCommands: schedule,
+    baseLabel: 'unit-acceptance',
+    jobsHighLoad: 240,
+    outageNodeId: 'mars.node',
+    outageTick: 5,
+    restartStopAfterTicks: 12,
+    thresholds: {
+      maxDropRate: 0.2,
+      maxFailureRate: 0.2,
+      maxShardBalanceDelta: 0.6,
+      maxShardSkewRatio: 120,
+    },
+  });
+  console.log('Acceptance harness report:', {
+    highLoadDropRate: report.highLoad.dropRate,
+    restartDropRate: report.restart.stageTwoDropRate,
+    highLoadAssertions: report.highLoad.assertions,
+    restartAssertions: report.restart.assertions,
+  });
+  assert.ok(report.overallPass, 'acceptance suite should pass with relaxed thresholds');
+  assert.equal(report.highLoad.label, 'unit-acceptance-high-load');
+  assert.ok(report.restart.stageOneRun.stoppedEarly, 'stage one should halt early');
+  assert.equal(report.restart.stageTwoRun.stoppedEarly, false, 'stage two should complete');
+  assert.ok(
+    report.restart.assertions.some((assertion) => assertion.id === 'stage-two-resumed' && assertion.passed),
+    'stage two must report checkpoint restoration'
+  );
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function testLoadHarness(): Promise<void> {
   const loadConfig: FabricConfig = {
     ...testConfig,
@@ -501,6 +559,7 @@ async function run(): Promise<void> {
   await testOwnerCommandControls();
   await testOwnerCommandSchedule();
   await testStopAndResumeDrill();
+  await testAcceptanceSuiteHarness();
   await testLoadHarness();
   console.log('Planetary orchestrator fabric tests passed.');
   process.exit(0);
