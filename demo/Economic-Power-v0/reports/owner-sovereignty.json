@@ -47,7 +47,12 @@
       "description": "Rebalances stake requirements to throttle spam and fortify incentives."
     }
   ],
+  "alertChannels": [
+    "slack://agi-ops-economic-power",
+    "pagerduty://agi-critical"
+  ],
   "stabilityIndex": 0.761,
   "ownerCommandCoverage": 1,
-  "sovereignControlScore": 1
+  "sovereignControlScore": 1,
+  "sovereignSafetyScore": 0.979
 }

@@ -63,6 +63,12 @@ const metricMap = [
     description: 'Share of smart contracts fully custodied by owner multi-sig safes.',
   },
   {
+    id: 'sovereignSafetyScore',
+    label: 'Sovereign Safety Mesh',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite readiness across pause, alerting, coverage, and scripted responses.',
+  },
+  {
     id: 'assertionPassRate',
     label: 'Assertion Pass Rate',
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
@@ -182,6 +188,49 @@ function renderSovereignty(summary) {
     <p><strong>Median response:</strong> ${summary.ownerSovereignty.responseMinutes} minutes</p>
   `;
 
+  const safetyMesh = summary.sovereignSafetyMesh || {
+    safetyScore: 0,
+    responseMinutes: 0,
+    targetResponseMinutes: 0,
+    responseScore: 0,
+    circuitBreakerScore: 0,
+    alertCoverageScore: 0,
+    coverageScore: 0,
+    scriptScore: 0,
+    alertChannels: [],
+    notes: [],
+  };
+
+  const safetyScoreEl = document.getElementById('safety-score');
+  if (safetyScoreEl) {
+    safetyScoreEl.textContent = `${(safetyMesh.safetyScore * 100).toFixed(1)}%`;
+  }
+
+  const safetyResponseEl = document.getElementById('safety-response');
+  if (safetyResponseEl) {
+    safetyResponseEl.textContent = `Response readiness: ${safetyMesh.responseMinutes} minutes (target ≤ ${safetyMesh.targetResponseMinutes} minutes)`;
+  }
+
+  const safetyTable = document.querySelector('#safety-metrics tbody');
+  if (safetyTable) {
+    safetyTable.innerHTML = '';
+    const metrics = [
+      ['Response assurance', safetyMesh.responseScore],
+      ['Circuit breaker coverage', safetyMesh.circuitBreakerScore],
+      ['Alert coverage', safetyMesh.alertCoverageScore],
+      ['Command coverage', safetyMesh.coverageScore],
+      ['Script depth', safetyMesh.scriptScore],
+    ];
+    for (const [label, value] of metrics) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${label}</td>
+        <td>${(value * 100).toFixed(1)}%</td>
+      `;
+      safetyTable.append(row);
+    }
+  }
+
   const coveragePercent = document.getElementById('coverage-percent');
   const coverageNarrative = document.getElementById('coverage-narrative');
   if (coveragePercent && coverageNarrative) {
@@ -222,6 +271,39 @@ function renderSovereignty(summary) {
     const li = document.createElement('li');
     li.textContent = contact;
     emergencyList.append(li);
+  }
+
+  const alertList = document.getElementById('alert-channels');
+  if (alertList) {
+    alertList.innerHTML = '';
+    if ((summary.ownerSovereignty.alertChannels || []).length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No alert channels configured.';
+      alertList.append(li);
+    } else {
+      for (const channel of summary.ownerSovereignty.alertChannels) {
+        const li = document.createElement('li');
+        li.textContent = channel;
+        alertList.append(li);
+      }
+    }
+  }
+
+  const safetyNotes = document.getElementById('safety-notes');
+  if (safetyNotes) {
+    safetyNotes.innerHTML = '';
+    const notes = safetyMesh.notes ?? [];
+    if (notes.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'All sovereign safety vectors locked at unstoppable thresholds.';
+      safetyNotes.append(li);
+    } else {
+      for (const note of notes) {
+        const li = document.createElement('li');
+        li.textContent = note;
+        safetyNotes.append(li);
+      }
+    }
   }
 
   const circuitBody = document.querySelector('#circuit-table tbody');

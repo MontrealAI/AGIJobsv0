@@ -44,6 +44,10 @@ test('economic power simulation produces deterministic metrics', async () => {
     );
   }
   assert(summary.metrics.sovereignControlScore >= 0.9, 'Sovereign control score should confirm custody');
+  assert(
+    summary.metrics.sovereignSafetyScore >= 0.95,
+    'Sovereign safety mesh score should confirm unstoppable readiness',
+  );
   assert.equal(
     summary.metrics.assertionPassRate,
     1,
@@ -82,11 +86,30 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.resumeScript,
     'Resume script should mirror scenario safeguards',
   );
+  assert.deepEqual(
+    summary.ownerSovereignty.alertChannels,
+    scenario.observability.alertChannels,
+    'Alert channel catalogue should mirror observability configuration',
+  );
   assert.equal(
     summary.ownerSovereignty.circuitBreakers.length,
     scenario.safeguards.circuitBreakers.length,
     'Circuit breaker counts should align',
   );
+
+  assert.equal(
+    summary.sovereignSafetyMesh.safetyScore,
+    summary.metrics.sovereignSafetyScore,
+    'Safety mesh score should align with surfaced metric',
+  );
+  assert(summary.sovereignSafetyMesh.pauseReady, 'Pause command should be production ready');
+  assert(summary.sovereignSafetyMesh.resumeReady, 'Resume command should be production ready');
+  assert(
+    summary.sovereignSafetyMesh.alertChannels.length ===
+      scenario.observability.alertChannels.length,
+    'Safety mesh should mirror configured alert channels',
+  );
+  assert(summary.sovereignSafetyMesh.notes.length === 0, 'Baseline scenario should have no outstanding safety notes');
 
   assert(summary.assertions.length >= 5, 'Should expose comprehensive assertion set');
   const coverageAssertion = summary.assertions.find(
