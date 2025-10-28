@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AGI Alpha Node Operator Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chakra-ui-css-reset@2.0.0/dist/reset.min.css" />
+    <style>
+      body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at 10% 20%, #020617, #0f172a);
+        color: #e2e8f0;
+        padding: 2rem;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+      }
+      .card {
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 24px 64px rgba(8, 47, 73, 0.35);
+      }
+      .metrics span {
+        display: block;
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+      pre {
+        background: rgba(2, 6, 23, 0.85);
+        padding: 1rem;
+        border-radius: 12px;
+        overflow: auto;
+      }
+      .mermaid {
+        background: rgba(2, 6, 23, 0.65);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+      button {
+        background: linear-gradient(135deg, #22d3ee, #6366f1);
+        border: none;
+        border-radius: 9999px;
+        color: #0f172a;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        margin-bottom: 1rem;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px rgba(99, 102, 241, 0.35);
+      }
+    </style>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+      async function fetchHeartbeat() {
+        const response = await fetch('/api/heartbeat');
+        const data = await response.json();
+        renderHeartbeat(data);
+      }
+
+      function renderHeartbeat(data) {
+        const stake = data.stakeSnapshot;
+        const rewards = data.rewards;
+        const plan = data.plan;
+        const identity = data.identity;
+        document.getElementById('stake').innerHTML = `
+          <div class="metrics">
+            <span>Stake Target</span>
+            <strong>${formatEther(stake.requiredStake)} $AGIALPHA</strong>
+          </div>
+          <div class="metrics">
+            <span>Current Stake</span>
+            <strong>${formatEther(stake.currentStake)} $AGIALPHA</strong>
+          </div>
+        `;
+        document.getElementById('rewards').innerHTML = `
+          <div class="metrics">
+            <span>Pending Rewards</span>
+            <strong>${formatEther(rewards.pending)} $AGIALPHA</strong>
+          </div>
+          <div class="metrics">
+            <span>Projected Daily Yield</span>
+            <strong>${rewards.projectedDaily} $AGIALPHA</strong>
+          </div>
+        `;
+        document.getElementById('identity').innerHTML = `
+          <div class="metrics">
+            <span>ENS</span>
+            <strong>${identity.ensName}</strong>
+          </div>
+          <div class="metrics">
+            <span>Status</span>
+            <strong>${identity.matches ? '✅ Verified' : '⚠️ Attention required'}</strong>
+          </div>
+        `;
+        document.getElementById('planning').innerHTML = `
+          <div class="metrics">
+            <span>Selected Job</span>
+            <strong>${plan.summary.selectedJobId ?? 'Waiting'}</strong>
+          </div>
+          <div class="metrics">
+            <span>Alpha Score</span>
+            <strong>${plan.summary.alphaScore.toFixed(2)}</strong>
+          </div>
+          <pre>${JSON.stringify(plan.insights, null, 2)}</pre>
+        `;
+        document.getElementById('stress').textContent = JSON.stringify(data.stress, null, 2);
+      }
+
+      function formatEther(value) {
+        const bigInt = BigInt(value);
+        return Number(bigInt) / 1e18;
+      }
+
+      document.getElementById('refresh').addEventListener('click', fetchHeartbeat);
+      fetchHeartbeat();
+    </script>
+  </head>
+  <body>
+    <h1>AGI Alpha Node Operator Console</h1>
+    <p>Command the most economically potent AGI node ever assembled. Identity locked, capital fortified, AI swarm engaged.</p>
+    <button id="refresh">Refresh Heartbeat</button>
+    <div class="grid">
+      <div class="card" id="stake"></div>
+      <div class="card" id="rewards"></div>
+      <div class="card" id="identity"></div>
+      <div class="card" id="planning"></div>
+    </div>
+    <div class="card" style="margin-top: 1.5rem;">
+      <h2>Stress Diagnostics</h2>
+      <pre id="stress"></pre>
+    </div>
+    <div class="card" style="margin-top: 1.5rem;">
+      <h2>Alpha Mesh</h2>
+      <div class="mermaid">
+        graph LR
+          Operator((Operator)) --> Dashboard
+          Dashboard --> Planner
+          Planner --> Finance[Finance Strategist]
+          Planner --> Biotech[Biotech Synthesist]
+          Planner --> Manufacturing[Manufacturing Oracle]
+          Finance --> Rewards
+          Biotech --> Rewards
+          Manufacturing --> Rewards
+          Rewards --> Treasury[(Treasury Growth)]
+      </div>
+    </div>
+  </body>
+</html>

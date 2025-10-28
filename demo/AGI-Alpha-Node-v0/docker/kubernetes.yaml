@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: agi-alpha-node
+spec:
+  serviceName: agi-alpha-node
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agi-alpha-node
+  template:
+    metadata:
+      labels:
+        app: agi-alpha-node
+    spec:
+      containers:
+        - name: alpha-node
+          image: ghcr.io/montrealai/agi-alpha-node:demo
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ALPHA_NODE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: agi-alpha-node-secrets
+                  key: privateKey
+            - name: ALPHA_NODE_CONFIG
+              value: /config/alpha-node.json
+          ports:
+            - containerPort: 4317
+              name: metrics
+            - containerPort: 4318
+              name: dashboard
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: agi-alpha-node-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agi-alpha-node
+spec:
+  selector:
+    app: agi-alpha-node
+  ports:
+    - port: 4317
+      targetPort: metrics
+      name: metrics
+    - port: 4318
+      targetPort: dashboard
+      name: dashboard
+  type: ClusterIP
