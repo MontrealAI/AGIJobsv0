@@ -47,6 +47,7 @@
       "description": "Rebalances stake requirements to throttle spam and fortify incentives."
     }
   ],
-  "stabilityIndex": 0.736,
-  "ownerCommandCoverage": 0.313
+  "stabilityIndex": 0.761,
+  "ownerCommandCoverage": 0.227,
+  "sovereignControlScore": 1
 }

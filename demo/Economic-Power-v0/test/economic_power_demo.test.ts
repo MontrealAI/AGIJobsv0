@@ -18,6 +18,7 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.mermaidTimeline.includes('gantt'), 'Timeline mermaid diagram should be rendered');
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
   assert(summary.metrics.ownerCommandCoverage > 0.2, 'Owner command coverage should be non-trivial');
+  assert(summary.metrics.sovereignControlScore >= 0.5, 'Sovereign control score should confirm custody');
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
@@ -39,5 +40,8 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.circuitBreakers.length,
     'Circuit breaker counts should align',
   );
+
+  assert(summary.deployment.modules.length > 0, 'Deployment modules should be catalogued');
+  assert(summary.deployment.modules.every((module) => module.owner === summary.ownerControl.governanceSafe));
 });
 
