@@ -19,6 +19,7 @@ import { AntifragileShell, StressTestResult } from './ai/antifragile';
 import { AlphaNodeMetrics } from './monitoring/metrics';
 import { AlphaNodeLogger } from './utils/logger';
 import { defaultOpportunities } from './utils/opportunities';
+import { reinvestRewards, ReinvestOptions, ReinvestReport } from './blockchain/reinvest';
 
 export interface AlphaNodeContext {
   readonly config: NormalisedAlphaNodeConfig;
@@ -106,6 +107,18 @@ export class AlphaNode {
     return snapshot;
   }
 
+  async reinvest(options?: ReinvestOptions): Promise<ReinvestReport> {
+    const report = await reinvestRewards(this.context.signer, this.context.config, options);
+    this.context.metrics.updateReinvestment(report, this.context.config.ai.reinvestThresholdWei);
+    this.context.logger.info('reinvestment_cycle', {
+      dryRun: report.dryRun,
+      claimed: report.claimedWei.toString(),
+      staked: report.stakedWei.toString(),
+      notes: report.notes
+    });
+    return report;
+  }
+
   async discoverJobs(options?: JobDiscoveryOptions): Promise<DiscoveredJob[]> {
     const jobs = await this.jobLifecycle.discover(options);
     this.context.metrics.updateJobDiscovery(jobs.filter((job) => job.isOpen).length);
@@ -168,12 +181,14 @@ export class AlphaNode {
       }
     }
     this.context.metrics.updateJobExecution(selectedJob?.reward);
+    const reinvestment = await this.reinvest({ dryRun: true });
     return {
       operator: this.operatorAddress,
       discovered,
       opportunities,
       plan,
-      execution
+      execution,
+      reinvestment
     };
   }
 
@@ -210,13 +225,15 @@ export class AlphaNode {
 
     const plan = this.plan(opportunities);
     const stress = this.stressTest();
+    const reinvestment = await this.reinvest({ dryRun: true });
 
     return {
       identity,
       stakeSnapshot,
       rewards,
       plan,
-      stress
+      stress,
+      reinvestment
     };
   }
 }
@@ -230,6 +247,7 @@ export interface AlphaNodeHeartbeat {
     insights: SpecialistInsight[];
   };
   readonly stress: StressTestResult[];
+  readonly reinvestment: ReinvestReport;
 }
 
 export interface AlphaNodeAutopilot {
@@ -241,4 +259,5 @@ export interface AlphaNodeAutopilot {
     insights: SpecialistInsight[];
   };
   readonly execution?: JobCycleReport;
+  readonly reinvestment: ReinvestReport;
 }

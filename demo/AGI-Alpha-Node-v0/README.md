@@ -7,6 +7,7 @@ The **AGI Alpha Node Demo** showcases how a non-technical owner can command the 
 - ✅ **Owner sovereignty** – the node operator controls every configurable parameter, may pause the platform instantly, and can rotate governance safely.
 - 🔐 **Identity assurance** – ENS subdomain ownership is verified on-chain before any capability is granted.
 - 🪙 **$AGIALPHA-native economy** – staking, rewards, slashing, and reinvestment loops are enforced through the canonical V2 contracts.
+- 🪙 **$AGIALPHA-native economy** – staking, rewards, slashing, and automatic reinvestment loops are enforced through the canonical V2 contracts.
 - 🧠 **Swarm intelligence** – a MuZero-inspired planner, economic self-optimizer, and domain specialist mesh coordinate to deliver provable alpha on every job.
 - 🚀 **One-command deployment** – Dockerised runtime, Prometheus-compatible metrics, and a self-documenting operator console drop straight into institutional stacks.
 
@@ -77,6 +78,35 @@ flowchart TD
 
 ---
 
+## Treasury Autopilot
+
+```mermaid
+sequenceDiagram
+  participant Operator
+  participant AlphaNode
+  participant FeePool
+  participant StakeManager
+  participant Metrics
+
+  Operator->>AlphaNode: treasury reinvest (optional amount)
+  AlphaNode->>FeePool: claimRewards()
+  FeePool-->>AlphaNode: Pending $AGIALPHA released
+  AlphaNode->>StakeManager: depositStake(PlatformRole, amount)
+  StakeManager-->>AlphaNode: Stake receipt + event log
+  AlphaNode->>Metrics: updateReinvestment(report)
+  Metrics-->>Operator: Prometheus dashboard + console summary
+```
+
+The reinvestment policy operates continuously:
+
+- The **dashboard heartbeat** performs a dry-run reinvestment and displays the recommended action.
+- The **`treasury reinvest` CLI** claims and restakes $AGIALPHA in one command, auto-handling token approvals.
+- **Metrics** expose the reinvest ratio (`agi_alpha_node_reinvest_readiness`) so institutional monitors can enforce policy SLAs.
+
+Every transaction honours `SystemPause` guardrails and emits structured notes so non-technical operators can audit the entire loop.
+
+---
+
 ## Directory Layout
 
 | Path | Purpose |
@@ -116,6 +146,11 @@ flowchart TD
    npm run demo:agi-alpha-node -- dashboard --config my-alpha-node.json
    ```
    The earnings view streams live $AGIALPHA inflows, slashing risk, and reinvestment recommendations.
+6. **Trigger a treasury reinvestment (dry run first)**
+   ```bash
+   npm run demo:agi-alpha-node -- treasury reinvest --dry-run --config my-alpha-node.json
+   ```
+   Remove `--dry-run` to claim and restake rewards when you are satisfied with the preview. Use `--amount 3500` to override the automatic threshold in $AGIALPHA.
 
 > **Safety rails:** All scripts honour the `SystemPause` contract. If any invariants fail (stake shortfall, ENS mismatch, validator dispute), the node pauses itself and guides the operator through remediation.
 

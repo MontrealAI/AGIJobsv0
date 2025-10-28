@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
+import { parseEther } from 'ethers';
 import { AlphaNode } from './node';
 import { startAlphaNodeServer } from './server/httpServer';
 import { defaultOpportunities } from './utils/opportunities';
@@ -55,6 +56,7 @@ yargs(hideBin(process.argv))
       await node.verifyIdentity();
       await node.stake();
       await node.collectRewards();
+      await node.reinvest({ dryRun: true });
       const servers = await startAlphaNodeServer(node, {
         dashboardPort: node.getConfig().monitoring.dashboardPort,
         metricsPort: node.getConfig().monitoring.metricsPort
@@ -136,6 +138,39 @@ yargs(hideBin(process.argv))
       const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
       const stress = node.stressTest();
       console.log(JSON.stringify(stress, null, 2));
+    }
+  )
+  .command(
+    'treasury reinvest',
+    'Claim accrued rewards and restake according to policy',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('dry-run', {
+          type: 'boolean',
+          default: false
+        })
+        .option('claim-only', {
+          type: 'boolean',
+          default: false,
+          describe: 'Claim rewards without restaking.'
+        })
+        .option('amount', {
+          type: 'string',
+          describe: 'Override reinvestment amount in $AGIALPHA (ether units).'
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const amount = typeof args.amount === 'string' ? parseEther(args.amount) : undefined;
+      const report = await node.reinvest({
+        dryRun: Boolean(args['dry-run']),
+        claimOnly: Boolean(args['claim-only']),
+        amountWei: amount
+      });
+      console.log(JSON.stringify(report, null, 2));
     }
   )
   .command(

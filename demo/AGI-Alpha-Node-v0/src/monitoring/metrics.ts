@@ -3,6 +3,7 @@ import type { StakeSnapshot } from '../blockchain/staking';
 import type { RewardSnapshot } from '../blockchain/rewards';
 import type { IdentityVerificationResult } from '../identity/types';
 import type { PlanningSummary } from '../ai/planner';
+import type { ReinvestReport } from '../blockchain/reinvest';
 
 export class AlphaNodeMetrics {
   private readonly registry = new Registry();
@@ -13,6 +14,8 @@ export class AlphaNodeMetrics {
   private readonly plannerScoreGauge: Gauge<string>;
   private readonly jobOpenGauge: Gauge<string>;
   private readonly jobRewardGauge: Gauge<string>;
+  private readonly reinvestAmountGauge: Gauge<string>;
+  private readonly reinvestReadinessGauge: Gauge<string>;
 
   constructor() {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
@@ -51,6 +54,16 @@ export class AlphaNodeMetrics {
       help: 'Reward of the selected job in $AGIALPHA (ether units).',
       registers: [this.registry]
     });
+    this.reinvestAmountGauge = new Gauge({
+      name: 'agi_alpha_node_reinvest_last_amount',
+      help: 'Amount of $AGIALPHA reinvested in the latest cycle (wei).',
+      registers: [this.registry]
+    });
+    this.reinvestReadinessGauge = new Gauge({
+      name: 'agi_alpha_node_reinvest_readiness',
+      help: 'Ratio of pending rewards to reinvest threshold.',
+      registers: [this.registry]
+    });
   }
 
   updateStake(snapshot: StakeSnapshot): void {
@@ -80,6 +93,18 @@ export class AlphaNodeMetrics {
       this.jobRewardGauge.set(reward);
     } else {
       this.jobRewardGauge.set(0);
+    }
+  }
+
+  updateReinvestment(report: ReinvestReport, threshold: bigint): void {
+    const amountEther = Number(report.stakedWei) / 1e18;
+    this.reinvestAmountGauge.set(Number.isFinite(amountEther) ? amountEther : 0);
+    if (threshold > 0n) {
+      const ratioRaw = (report.pendingWei * 1_000_000n) / threshold;
+      const ratio = Number(ratioRaw) / 1_000_000;
+      this.reinvestReadinessGauge.set(Number.isFinite(ratio) ? ratio : 0);
+    } else {
+      this.reinvestReadinessGauge.set(0);
     }
   }
 
