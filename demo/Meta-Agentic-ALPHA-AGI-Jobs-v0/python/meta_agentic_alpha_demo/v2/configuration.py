@@ -128,7 +128,7 @@ class MetaAgenticV2Configuration:
 
     @property
     def base_dir(self) -> Path:
-        return self.path.parent.parent
+        return self.path.parent.parent.parent
 
     @property
     def attachments(self) -> Iterable[str]:

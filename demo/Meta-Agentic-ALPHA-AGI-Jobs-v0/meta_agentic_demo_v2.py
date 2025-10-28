@@ -37,6 +37,8 @@ def run_cli(args: argparse.Namespace) -> int:
         "alphaReadiness": outcome.phase_scores and float(sum(score.completion_ratio for score in outcome.phase_scores) / len(outcome.phase_scores)),
         "summary": str(outcome.summary_path),
         "scoreboard": outcome.scoreboard_snapshot,
+        "dashboard": str(outcome.dashboard_path) if outcome.dashboard_path else None,
+        "report": str(outcome.report_path) if outcome.report_path else None,
     }
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
