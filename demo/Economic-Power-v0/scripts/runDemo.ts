@@ -1346,7 +1346,10 @@ function computeResilienceProfile(
   const responseLatency = Math.max(scenario.safeguards.responseMinutes, 0);
   const safeLatency = responseLatency === 0 ? 1 : responseLatency;
   const drills = scenario.resilience.drills.map((drill) => {
-    const responseScore = Math.min(1, drill.targetResponseMinutes / safeLatency);
+    const responseScore = Math.min(
+      1,
+      safeLatency / Math.max(drill.targetResponseMinutes, 1),
+    );
     const frequencyScore = Math.min(1, 72 / Math.max(drill.frequencyHours, 1));
     const readiness = Number(
       (responseScore * 0.7 + frequencyScore * 0.3).toFixed(3),
