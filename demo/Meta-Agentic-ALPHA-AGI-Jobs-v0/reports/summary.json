@@ -13,5 +13,8 @@
   "stabilityReserve": 11467974.5,
   "paybackHours": 19.309091460640076,
   "treasuryVelocity": 9.772127752566202,
+  "alphaCaptureVelocity": 575092.0673076923,
+  "ownerSovereigntyLag": 8,
+  "governanceDeterminism": 0.6666666666666666,
   "ciStatus": "green"
 }

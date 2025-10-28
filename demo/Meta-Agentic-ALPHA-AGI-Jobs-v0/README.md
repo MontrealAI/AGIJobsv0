@@ -8,6 +8,7 @@
 - **Owner supremacy baked-in** – the owner multi-sig can pause, resume, upgrade, and reallocate capital instantly using the generated command playbook and CI verifications.
 - **Non-technical friendly** – a guided CLI, self-updating dashboard, and mermaid blueprints make the system legible to any operator while keeping the underlying power uncompromised.
 - **CI enforced** – the demo surfaces the exact CI commands that keep AGI Jobs v0 (v2) branch-protected and green. Nothing ships unless governance + automation agree.
+- **Sovereign orchestration telemetry** – alpha velocity metrics, phase matrices, and the sovereign phase flow expose how each stage compounds value while remaining owner-controlled.
 
 ## Golden path – unleash the Meta-Agentic α-AGI
 
@@ -28,13 +29,15 @@ Outputs land in `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/`:
 | `architecture.mmd` | Mermaid systems graph linking owner, agents, validators, and modules. |
 | `timeline.mmd` | Gantt view of the Identify → Execute flow for each opportunity. |
 | `coordination.mmd` | Agent-to-agent + validator mesh showing real-time coordination wiring. |
+| `phase-flow.mmd` | Sovereign Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise → Out-Execute orchestration. |
+| `phase-matrix.json` | Phase force-multiplier matrix with reliability, automation support, and validator reach. |
 | `knowledge-base.json` | Opportunity knowledge graph nodes + edges for downstream analytics. |
 | `world-model.json` | Simulation curriculum, fidelity scores, and stress outcomes feeding plan selection. |
 | `execution-ledger.json` | SHA-256 checksummed execution ledger for audit and compliance. |
 | `ci-status.json` | Branch-protection guardrails (lint, tests, coverage, governance verifications). |
 | `dashboard.json` | Data model consumed by the web UI for at-a-glance monitoring. |
 
-> **Open the dashboard** – start any static server (for example, `npx http-server demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui`) and navigate to `http://localhost:8080`. The UI reads the latest `dashboard.json`, renders the metrics, and injects live Mermaid diagrams.
+> **Open the dashboard** – start any static server (for example, `npx http-server demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui`) and navigate to `http://localhost:8080`. The UI reads the latest `dashboard.json`, renders the metrics and phase matrix, and injects live Mermaid diagrams for architecture, timeline, coordination, and the sovereign phase flow.
 
 ## Architecture in one glance
 

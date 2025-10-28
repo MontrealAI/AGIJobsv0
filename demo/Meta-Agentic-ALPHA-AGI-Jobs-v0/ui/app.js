@@ -1,5 +1,6 @@
 const metricsGrid = document.getElementById('metrics-grid');
 const assignmentsBody = document.getElementById('assignments-body');
+const phasesBody = document.getElementById('phases-body');
 const governanceSafe = document.getElementById('governance-safe');
 const emergencyList = document.getElementById('emergency-list');
 const responseWindow = document.getElementById('response-window');
@@ -9,6 +10,7 @@ const ciCommands = document.getElementById('ci-commands');
 const architectureDiagram = document.getElementById('architecture-diagram');
 const timelineDiagram = document.getElementById('timeline-diagram');
 const coordinationDiagram = document.getElementById('coordination-diagram');
+const phaseFlowDiagram = document.getElementById('phase-flow-diagram');
 
 const METRIC_LABELS = {
   totalOpportunities: 'Opportunities',
@@ -25,6 +27,9 @@ const METRIC_LABELS = {
   stabilityReserve: 'Stability Reserve',
   paybackHours: 'Payback Horizon (h)',
   treasuryVelocity: 'Treasury Velocity',
+  alphaCaptureVelocity: 'Alpha Capture Velocity',
+  ownerSovereigntyLag: 'Owner Response Lag (min)',
+  governanceDeterminism: 'Governance Determinism',
 };
 
 function formatNumber(value) {
@@ -73,6 +78,12 @@ function renderMetrics(metrics) {
     figure.className = 'metric-value';
     if (key.includes('Value') || key.includes('Reserve') || key === 'capitalAtRisk') {
       figure.textContent = formatCurrency(value);
+    } else if (key === 'alphaCaptureVelocity') {
+      figure.textContent = `${formatCurrency(value)}/h`;
+    } else if (key === 'ownerSovereigntyLag') {
+      figure.textContent = `${value.toFixed(0)} min`;
+    } else if (key === 'governanceDeterminism') {
+      figure.textContent = formatPercent(value);
     } else if (typeof value === 'number' && value <= 2 && value >= 0) {
       figure.textContent = formatPercent(value);
     } else if (typeof value === 'number') {
@@ -109,6 +120,28 @@ function renderAssignments(assignments) {
   });
 }
 
+function renderPhaseMatrix(phaseMatrix) {
+  phasesBody.replaceChildren();
+  phaseMatrix.forEach((entry) => {
+    const row = document.createElement('tr');
+    const cells = [
+      entry.title,
+      entry.agents.join(', '),
+      formatPercent(entry.averageReliability),
+      formatPercent(entry.automationSupport),
+      entry.activeOpportunities.toString(),
+      entry.validatorSupport.toFixed(1),
+      formatCurrency(entry.opportunityValue),
+    ];
+    cells.forEach((value) => {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.append(cell);
+    });
+    phasesBody.append(row);
+  });
+}
+
 function renderOwnerSurface(owner, ci) {
   governanceSafe.textContent = owner.governanceSafe;
   emergencyList.replaceChildren();
@@ -137,11 +170,12 @@ function renderOwnerSurface(owner, ci) {
 
 async function hydrate() {
   try {
-    const [dashboardRes, architectureRes, timelineRes, coordinationRes] = await Promise.all([
+    const [dashboardRes, architectureRes, timelineRes, coordinationRes, phaseFlowRes] = await Promise.all([
       fetch('../reports/dashboard.json', { cache: 'no-cache' }),
       fetch('../reports/architecture.mmd', { cache: 'no-cache' }),
       fetch('../reports/timeline.mmd', { cache: 'no-cache' }),
       fetch('../reports/coordination.mmd', { cache: 'no-cache' }),
+      fetch('../reports/phase-flow.mmd', { cache: 'no-cache' }),
     ]);
 
     if (!dashboardRes.ok) {
@@ -149,18 +183,21 @@ async function hydrate() {
     }
 
     const dashboard = await dashboardRes.json();
-    const [architecture, timeline, coordination] = await Promise.all([
+    const [architecture, timeline, coordination, phaseFlow] = await Promise.all([
       architectureRes.text(),
       timelineRes.text(),
       coordinationRes.text(),
+      phaseFlowRes.text(),
     ]);
 
     renderMetrics(dashboard.metrics);
     renderAssignments(dashboard.assignments);
+    renderPhaseMatrix(dashboard.phaseMatrix);
     renderOwnerSurface(dashboard.owner, dashboard.ci);
     await renderMermaid(architectureDiagram, architecture, 'architecture');
     await renderMermaid(timelineDiagram, timeline, 'timeline');
     await renderMermaid(coordinationDiagram, coordination, 'coordination');
+    await renderMermaid(phaseFlowDiagram, phaseFlow, 'phase-flow');
   } catch (error) {
     const message = document.createElement('div');
     message.className = 'error-banner';
