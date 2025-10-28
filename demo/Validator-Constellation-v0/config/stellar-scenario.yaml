@@ -18,12 +18,19 @@ domains:
     unsafeOpcodes:
       - SELFDESTRUCT
       - DELEGATECALL
+    allowedTargets:
+      - "0xa11ce5c1e11ce000000000000000000000000000"
+      - "0xbeac0babe00000000000000000000000000000000"
+    maxCalldataBytes: 4096
   - id: orbital-yard
     humanName: "Orbital Manufacturing Yard"
     budgetLimit: 3000000
     unsafeOpcodes:
       - SELFDESTRUCT
       - STATICCALL
+    allowedTargets:
+      - "0xf0undry0ps000000000000000000000000000000"
+    maxCalldataBytes: 2048
 validators:
   - ens: andromeda.club.agi.eth
     address: "0x1111111111111111111111111111111111111111"
@@ -74,6 +81,16 @@ anomalies:
     agentEns: sentinel.agent.agi.eth
     opcode: STATICCALL
     description: "Sentinel attempted a disallowed static call"
+    calldataBytes: 8192
+  - kind: unauthorized-target
+    agentEns: nova.agent.agi.eth
+    target: "0xd15a11ee00000000000000000000000000000000"
+    description: "Nova attempted to reach an unapproved contract"
+  - kind: calldata-spike
+    agentEns: nova.agent.agi.eth
+    calldataBytes: 16384
+    description: "Nova attempted to upload an oversized payload"
+    target: "0xa11ce5c1e11ce000000000000000000000000000"
 ownerActions:
   updateSentinel:
     budgetGraceRatio: 0.12
@@ -84,6 +101,10 @@ ownerActions:
         - DELEGATECALL
         - STATICCALL
         - CALLCODE
+      allowedTargets:
+        - "0xa11ce5c1e11ce000000000000000000000000000"
+        - "0xbeac0babe00000000000000000000000000000000"
+      maxCalldataBytes: 6144
   pauseDomains:
     - domainId: orbital-yard
       reason: "pre-flight drill"

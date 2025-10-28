@@ -50,6 +50,8 @@ interface ScenarioDomainConfig {
   humanName: string;
   budgetLimit: string | number | bigint;
   unsafeOpcodes?: string[];
+  allowedTargets?: string[];
+  maxCalldataBytes?: number;
 }
 
 interface ScenarioJobConfig {
@@ -84,16 +86,47 @@ interface UnsafeOpcodeAnomaly {
   domainId?: string;
   description?: string;
   target?: string;
+  calldataBytes?: number;
 }
 
-export type ScenarioAnomaly = BudgetOverrunAnomaly | UnsafeOpcodeAnomaly;
+interface UnauthorizedTargetAnomaly {
+  kind: 'unauthorized-target';
+  agentEns: string;
+  target: string;
+  domainId?: string;
+  description?: string;
+  amount?: string | number | bigint;
+}
+
+interface CalldataSpikeAnomaly {
+  kind: 'calldata-spike';
+  agentEns: string;
+  calldataBytes: number;
+  amount?: string | number | bigint;
+  domainId?: string;
+  description?: string;
+  target?: string;
+}
+
+export type ScenarioAnomaly =
+  | BudgetOverrunAnomaly
+  | UnsafeOpcodeAnomaly
+  | UnauthorizedTargetAnomaly
+  | CalldataSpikeAnomaly;
 
 interface ScenarioOwnerActions {
   updateEntropy?: Partial<{ onChainEntropy: string | number | bigint; recentBeacon: string | number | bigint }>;
   updateZkKey?: Hex;
   updateSentinel?: { budgetGraceRatio?: number };
   updateGovernance?: Partial<GovernanceParameters>;
-  updateDomainSafety?: Array<{ domainId: string; humanName?: string; budgetLimit?: string | number | bigint; unsafeOpcodes?: string[] }>;
+  updateDomainSafety?: Array<{
+    domainId: string;
+    humanName?: string;
+    budgetLimit?: string | number | bigint;
+    unsafeOpcodes?: string[];
+    allowedTargets?: string[];
+    maxCalldataBytes?: number;
+  }>;
   pauseDomains?: Array<{ domainId: string; reason: string; triggeredBy?: string }>;
   resumeDomains?: Array<{ domainId: string; triggeredBy?: string }>;
   setAgentBudgets?: Array<{ ens: string; budget: string | number | bigint }>;
@@ -304,16 +337,46 @@ function buildAnomalies(
       });
       continue;
     }
+    if (anomaly.kind === 'unsafe-opcode') {
+      const spend =
+        anomaly.amount !== undefined ? parseBigint(anomaly.amount, `opcode spend for ${anomaly.agentEns}`) : 0n;
+      actions.push({
+        agent: { ...agent },
+        domainId: anomaly.domainId ?? agent.domainId,
+        type: 'CALL',
+        amountSpent: spend,
+        description: anomaly.description ?? `opcode ${anomaly.opcode} invocation`,
+        opcode: anomaly.opcode,
+        target: anomaly.target,
+        calldataBytes: anomaly.calldataBytes,
+        metadata: anomaly.calldataBytes ? { calldataBytes: anomaly.calldataBytes } : undefined,
+      });
+      continue;
+    }
+    if (anomaly.kind === 'unauthorized-target') {
+      const spend =
+        anomaly.amount !== undefined ? parseBigint(anomaly.amount, `target spend for ${anomaly.agentEns}`) : 0n;
+      actions.push({
+        agent: { ...agent },
+        domainId: anomaly.domainId ?? agent.domainId,
+        type: 'CALL',
+        amountSpent: spend,
+        description: anomaly.description ?? `call to ${anomaly.target}`,
+        target: anomaly.target,
+      });
+      continue;
+    }
     const spend =
-      anomaly.amount !== undefined ? parseBigint(anomaly.amount, `opcode spend for ${anomaly.agentEns}`) : 0n;
+      anomaly.amount !== undefined ? parseBigint(anomaly.amount, `calldata spend for ${anomaly.agentEns}`) : 0n;
     actions.push({
       agent: { ...agent },
       domainId: anomaly.domainId ?? agent.domainId,
       type: 'CALL',
       amountSpent: spend,
-      description: anomaly.description ?? `opcode ${anomaly.opcode} invocation`,
-      opcode: anomaly.opcode,
+      description: anomaly.description ?? 'calldata spike detected',
       target: anomaly.target,
+      calldataBytes: anomaly.calldataBytes,
+      metadata: { calldataBytes: anomaly.calldataBytes },
     });
   }
   return actions;
@@ -328,6 +391,8 @@ function materializeDomains(config?: ScenarioDomainConfig[]): DomainConfig[] {
     humanName: domain.humanName,
     budgetLimit: parseBigint(domain.budgetLimit, `budget for ${domain.id}`),
     unsafeOpcodes: new Set(domain.unsafeOpcodes ?? []),
+    allowedTargets: new Set((domain.allowedTargets ?? []).map((target) => target.toLowerCase())),
+    maxCalldataBytes: domain.maxCalldataBytes ?? 0,
   }));
 }
 
@@ -469,7 +534,13 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
 
   if (ownerActions?.updateDomainSafety) {
     for (const update of ownerActions.updateDomainSafety) {
-      const patched: { humanName?: string; budgetLimit?: bigint; unsafeOpcodes?: Iterable<string> } = {};
+      const patched: {
+        humanName?: string;
+        budgetLimit?: bigint;
+        unsafeOpcodes?: Iterable<string>;
+        allowedTargets?: Iterable<string>;
+        maxCalldataBytes?: number;
+      } = {};
       if (update.humanName !== undefined) {
         patched.humanName = update.humanName;
       }
@@ -478,6 +549,12 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
       }
       if (update.unsafeOpcodes) {
         patched.unsafeOpcodes = update.unsafeOpcodes;
+      }
+      if (update.allowedTargets) {
+        patched.allowedTargets = update.allowedTargets;
+      }
+      if (update.maxCalldataBytes !== undefined) {
+        patched.maxCalldataBytes = update.maxCalldataBytes;
       }
       const updated = demo.updateDomainSafety(update.domainId, patched);
       domainSafetyUpdates.set(update.domainId, updated);

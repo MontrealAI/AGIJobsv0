@@ -17,6 +17,8 @@ export interface DomainConfig {
   humanName: string;
   budgetLimit: bigint;
   unsafeOpcodes: Set<string>;
+  allowedTargets: Set<string>;
+  maxCalldataBytes: number;
 }
 
 export interface GovernanceParameters {
@@ -54,6 +56,7 @@ export interface AgentAction {
   description: string;
   opcode?: string;
   target?: string;
+  calldataBytes?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -166,6 +169,8 @@ export interface DomainSafetyUpdate {
   humanName?: string;
   budgetLimit?: bigint;
   unsafeOpcodes?: Iterable<string>;
+  allowedTargets?: Iterable<string>;
+  maxCalldataBytes?: number;
 }
 
 export interface ValidatorEventBus extends EventEmitter {

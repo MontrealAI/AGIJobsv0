@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { keccak256, toUtf8Bytes } from 'ethers';
 import { eventBus } from './eventBus';
 import { GovernanceModule } from './governance';
 import { StakeManager } from './stakeManager';
@@ -70,12 +71,26 @@ export class ValidatorConstellationDemo {
     this.governance = new GovernanceModule(setup.governance);
     this.pauseController = new DomainPauseController(setup.domains);
     const opcodeMap = new Map<string, Set<string>>();
+    const allowedTargetsMap = new Map<string, Set<string>>();
+    const allowedTargetHashes = new Map<string, Set<string>>();
+    const calldataLimits = new Map<string, number>();
+    const normalizeTarget = (target: string) => target.toLowerCase();
     for (const domain of setup.domains) {
       opcodeMap.set(domain.id, domain.unsafeOpcodes);
+      const normalizedTargets = new Set(Array.from(domain.allowedTargets, (target) => normalizeTarget(target)));
+      allowedTargetsMap.set(domain.id, normalizedTargets);
+      const hashedTargets = new Set(
+        Array.from(normalizedTargets, (target) => keccak256(toUtf8Bytes(target))),
+      );
+      allowedTargetHashes.set(domain.id, hashedTargets);
+      calldataLimits.set(domain.id, domain.maxCalldataBytes);
     }
     this.sentinel = new SentinelMonitor(this.pauseController, {
       budgetGraceRatio: setup.sentinelGraceRatio,
       unsafeOpcodes: opcodeMap,
+      allowedTargets: allowedTargetsMap,
+      allowedTargetHashes,
+      maxCalldataBytes: calldataLimits,
     });
     this.zk = new ZkBatchProver(setup.verifyingKey);
     this.commitReveal = new CommitRevealCoordinator(this.governance, this.stakes);
@@ -157,6 +172,7 @@ export class ValidatorConstellationDemo {
       config: {
         ...state.config,
         unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+        allowedTargets: new Set(state.config.allowedTargets),
       },
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
@@ -174,13 +190,26 @@ export class ValidatorConstellationDemo {
     if (updates.unsafeOpcodes !== undefined) {
       payload.unsafeOpcodes = new Set(updates.unsafeOpcodes);
     }
+    if (updates.allowedTargets !== undefined) {
+      payload.allowedTargets = new Set(Array.from(updates.allowedTargets, (target) => target.toLowerCase()));
+    }
+    if (updates.maxCalldataBytes !== undefined) {
+      payload.maxCalldataBytes = updates.maxCalldataBytes;
+    }
     const updated = this.pauseController.updateConfig(domainId, payload);
     if (updates.unsafeOpcodes) {
       this.sentinel.updateUnsafeOpcodes(domainId, updates.unsafeOpcodes);
     }
+    if (updates.allowedTargets) {
+      this.sentinel.updateAllowedTargets(domainId, updates.allowedTargets);
+    }
+    if (updates.maxCalldataBytes !== undefined) {
+      this.sentinel.updateMaxCalldataBytes(domainId, updates.maxCalldataBytes);
+    }
     return {
       ...updated,
       unsafeOpcodes: new Set(updated.unsafeOpcodes),
+      allowedTargets: new Set(updated.allowedTargets),
     };
   }
 
