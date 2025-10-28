@@ -33,9 +33,11 @@ flowchart LR
 * **Sentinel guardrails** – budget overruns, forbidden opcodes, unauthorized targets, or calldata floods trigger autonomous domain pauses within the same round, and the audit trail now proves the pause landed within a one-second SLA.
 * **Validator life-cycle telemetry** – every registration and ban emits dedicated events mirrored in the subgraph, so owners can watch validator health in real time.
 * **Autonomous treasury routing** – every slash feeds a governance treasury wallet, with CLI-controlled distributions and subgraph telemetry so operators can instantly route penalties to recovery vaults.
+* **Treasury flow visualization** – dashboards and owner digests embed dedicated Mermaid blueprints that show every distribution recipient and amount, so non-technical owners can audit cash movements instantly.
 * **Deterministic supply-chain allowlists** – each domain now encodes hashed ENS target allowlists and calldata ceilings so auditors can replay sentinel verdicts byte-for-byte.
 * **Selector firewalls** – domains ship with banned function selectors so the sentinel can terminate ERC-20/721 drains or other malicious call patterns the moment they appear.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
+* **Governance-controlled identity root** – owners rotate the ENS Merkle registry in one command, append validators or nodes, and surface the new root across dashboards and digests instantly.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
 * **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
 * **Entropy witness cross-checks** – each committee draw now publishes dual-hash randomness witnesses (Keccak + SHA-256) so anyone can independently re-derive the transcript.
@@ -58,8 +60,8 @@ flowchart LR
    * `round.json` – full transcript of the commit, reveal, sentinel, and slashing timeline.
    * `jobs.json` – the attested batch, ready for independent proof verification.
    * `audit.json` – cryptographic audit result with a deterministic hash you can notarize.
-   * `events.ndjson` / `subgraph.json` / `dashboard.html` – real-time telemetry, indexer feed, and control-room UI.
-   * `owner-digest.md` – mission-briefing markdown for owners with audit checklist, sentinel log, and governance posture.
+   * `events.ndjson` / `subgraph.json` / `dashboard.html` – real-time telemetry, indexer feed, and control-room UI with a live treasury routing mermaid panel.
+   * `owner-digest.md` – mission-briefing markdown for owners with audit checklist, sentinel log, governance posture, and a treasury distribution ledger.
 4. Run the deterministic validation round test suite:
    ```bash
    npm run test:validator-constellation
@@ -103,11 +105,26 @@ validators:
 ownerActions:
   updateSentinel:
     budgetGraceRatio: 0.12
+  rotateEnsRegistry:
+    mode: append
+    leaves:
+      - ens: vega.club.agi.eth
+        address: 0x8888000000000000000000000000000000008888
+      - ens: aurora.alpha.node.agi.eth
+        address: 0xaaaabbbbccccddddeeeeffff0000111122223333
   updateEntropy:
     onChainEntropy: 0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20
+  updateZkKey: 0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011
+  distributeTreasury:
+    - recipient: 0x7777000000000000000000000000000000007777
+      amount: 1000000000000000000
+    - recipient: 0x6666000000000000000000000000000000006666
+      percentageBps: 2500
 ```
 
 Running the scenario creates a dedicated report folder (`reports/scenarios/<name>/`) with the same proof, sentinel, and subgraph telemetry as the baseline demo. Non-technical operators simply edit the YAML and re-run the command to retune governance levers.
+
+Treasury instructions in the scenario automatically execute post-round distributions, and the resulting dashboard/digest surface the recipients alongside the treasury vault balance so finance teams can co-sign off-chain movements without touching code.
 
 No smart-contract tooling, solc, or blockchain node is required. Everything is simulated end-to-end with the same primitives we deploy on-chain.
 
@@ -251,7 +268,7 @@ Guardrail metadata now includes:
 
 After `npm run demo:validator-constellation`, inspect:
 
-* `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams.
+* `reports/latest/dashboard.html` – immersive control deck with Mermaid diagrams, including dedicated committee, sentinel, and treasury flow visualizations.
 * `reports/latest/summary.json` – committee, entropy witnesses (Keccak + SHA), VRF seed, proof, alert, and pause telemetry.
 * `reports/latest/events.ndjson` – commit and reveal stream for auditors.
 * `reports/latest/subgraph.json` – indexed events mirroring on-chain transparency feeds.

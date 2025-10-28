@@ -201,6 +201,31 @@ test('ENS policies accept alpha mirrors and reject unauthorized domains', () => 
   assert.throws(() => assertValidatorDomain('rogue.validator.eth'));
 });
 
+test('owner can rotate ENS registry and onboard new validators', () => {
+  const { demo, leaves } = buildDemo();
+  leaves.slice(0, 3).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
+  const originalRoot = demo.getEnsMerkleRoot();
+  const appendedLeaf = { ensName: 'vega.club.agi.eth', owner: '0x8888000000000000000000000000000000008888' as Hex };
+  const rotation = demo.rotateEnsRegistry({ leaves: [appendedLeaf] });
+  assert.notEqual(rotation.merkleRoot, originalRoot);
+  assert.ok(rotation.totalLeaves > leaves.length, 'registry should grow after rotation');
+  assert.ok(
+    demo
+      .listEnsLeaves()
+      .some((leaf) => leaf.ensName === appendedLeaf.ensName && leaf.owner === appendedLeaf.owner),
+    'appended leaf should be present after rotation',
+  );
+  demo.registerValidator(appendedLeaf.ensName, appendedLeaf.owner, 9_000_000_000_000_000_000n);
+  assert.throws(
+    () =>
+      demo.rotateEnsRegistry({
+        leaves: [{ ensName: 'rogue.club.agi.eth', owner: '0x9999000000000000000000000000000000009999' as Hex }],
+        mode: 'REPLACE',
+      }),
+    /missing active identities/,
+  );
+});
+
 test('validator constellation slashes dishonest validators via commit-reveal', () => {
   const { roundResult, dishonest, absentee, entropy } = orchestrateRound();
   const slashedAddresses = new Set(roundResult.slashingEvents.map((event) => event.validator.address));
@@ -253,6 +278,7 @@ test('round audit verifies end-to-end integrity guarantees', () => {
   assert.equal(audit.proofVerified, true);
   assert.equal(audit.entropyVerified, true);
   assert.equal(audit.sentinelSlaSatisfied, true);
+  assert.equal(audit.sentinelBlockWindowSatisfied, true);
   assert.ok(audit.auditHash.startsWith('0x'));
 });
 
@@ -276,6 +302,7 @@ test('round audit detects tampered reveal transcripts', () => {
   });
   assert.equal(tamperedAudit.commitmentsVerified, false);
   assert.ok(tamperedAudit.issues.some((issue) => issue.includes('commitment mismatch')));
+  assert.equal(tamperedAudit.sentinelBlockWindowSatisfied, true);
 });
 
 test('round audit detects sentinel SLA breaches', () => {
@@ -298,6 +325,30 @@ test('round audit detects sentinel SLA breaches', () => {
   });
   assert.equal(audit.sentinelSlaSatisfied, false);
   assert.ok(audit.issues.some((issue) => issue.includes('exceeded SLA')));
+  assert.equal(audit.sentinelBlockWindowSatisfied, true);
+});
+
+test('round audit detects sentinel block window breaches', () => {
+  const { roundResult, jobBatch, entropy } = orchestrateRound();
+  if (roundResult.pauseRecords.length === 0) {
+    throw new Error('expected pause records for block window test');
+  }
+  const tampered = structuredClone(roundResult);
+  tampered.pauseRecords = tampered.pauseRecords.map((record) => ({
+    ...record,
+    blockNumber: record.blockNumber !== undefined ? record.blockNumber + 5 : undefined,
+  }));
+  const audit = auditRound({
+    report: tampered,
+    jobBatch,
+    governance: DEFAULT_GOVERNANCE_PARAMETERS,
+    verifyingKey: DEFAULT_VERIFIER_KEY,
+    truthfulVote: 'APPROVE',
+    entropySources: entropy,
+  });
+  assert.equal(audit.sentinelBlockWindowSatisfied, false);
+  assert.ok(audit.issues.some((issue) => issue.includes('block window')));
+  assert.equal(audit.sentinelSlaSatisfied, true);
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {
@@ -305,6 +356,7 @@ test('sentinel triggers domain pause on budget overrun', () => {
   assert.ok(roundResult.sentinelAlerts.length >= 1, 'expected sentinel alert');
   assert.ok(roundResult.pauseRecords.length >= 1, 'expected domain pause record');
   assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
+  assert.equal(typeof roundResult.pauseRecords[0]?.blockNumber, 'number');
 });
 
 test('sentinel rejects unauthorized targets and oversized calldata bursts', () => {
@@ -583,8 +635,26 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
   assert.equal(executed.context.jobSample?.length, 8);
   assert.ok(executed.context.ownerNotes?.description);
+  assert.ok(executed.context.ensMerkleRoot.startsWith('0x'));
+  assert.ok(executed.context.ensRegistrySize >= executed.context.nodesRegistered.length);
+  assert.ok((executed.context.ensRegistryPreview ?? []).length >= 2);
   assert.equal(executed.context.treasury.address, DEFAULT_TREASURY_ADDRESS);
   assert.ok(executed.context.treasury.balance >= 0n);
+  assert.equal(executed.context.treasury.distributions?.length, 2);
+  const firstDistribution = executed.context.treasury.distributions?.[0];
+  const secondDistribution = executed.context.treasury.distributions?.[1];
+  assert.equal(firstDistribution?.amount.toString(), '1000000000000000000');
+  assert.equal(firstDistribution?.recipient, '0x7777000000000000000000000000000000007777');
+  assert.ok(secondDistribution && secondDistribution.amount > 0n, 'percentage distribution should be applied');
+  assert.equal(secondDistribution?.recipient, '0x6666000000000000000000000000000000006666');
+  assert.ok(
+    Array.isArray((executed.context.ownerNotes as Record<string, unknown> | undefined)?.treasuryExecuted),
+    'owner notes should record treasury execution log',
+  );
+  assert.ok(
+    Array.isArray((executed.context.ownerNotes as Record<string, unknown> | undefined)?.ensRegistry as unknown[]),
+    'owner notes should record ENS registry rotations',
+  );
   assert.ok((executed.context.updatedSafety?.maxCalldataBytes ?? 0) > 4_096);
   assert.ok(executed.context.updatedSafety?.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
   assert.ok(executed.context.updatedSafety?.forbiddenSelectors.has('0xa9059cbb'));
@@ -673,6 +743,7 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validator-owner-digest-'));
   const reportDir = path.join(tmpDir, 'report');
   const entropy = demo.getEntropySources();
+  const ensLeaves = demo.listEnsLeaves();
   const context: ReportContext = {
     verifyingKey: demo.getZkVerifyingKey(),
     entropyBefore: entropy,
@@ -684,6 +755,9 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
     ownerNotes: { origin: 'unit-test' },
     jobSample: jobBatch.slice(0, 5),
     treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: ensLeaves.length,
+    ensRegistryPreview: ensLeaves.slice(0, Math.min(10, ensLeaves.length)).map((leaf) => leaf.ensName),
   };
   writeReportArtifacts({
     reportDir,
@@ -699,9 +773,82 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
   const digest = fs.readFileSync(digestPath, 'utf8');
   assert.ok(digest.includes('Owner Mission Briefing'), 'digest should include mission briefing header');
   assert.ok(digest.includes('Sentinel Alerts'), 'digest should include sentinel section');
+  assert.ok(digest.includes('Sentinel block window'), 'digest should report sentinel block window metric');
   assert.ok(digest.includes('Governance & Audit Checklist'), 'digest should include audit checklist');
   assert.ok(digest.includes('Validator Status Movements'), 'digest should include validator status section');
   assert.ok(digest.includes('Treasury State'), 'digest should include treasury section');
+  assert.ok(digest.includes('Treasury Distributions'), 'digest should include treasury distribution section');
   assert.ok(digest.includes(roundResult.vrfWitness.transcript), 'digest should include entropy transcript');
   assert.ok(digest.includes('mermaid'), 'digest should embed mermaid blueprint for operators');
+  assert.ok(digest.includes('ENS Identity Gate'), 'digest should include identity gate section');
+  assert.ok(digest.includes(demo.getEnsMerkleRoot()), 'digest should surface the ENS merkle root');
+});
+
+test('report artifacts capture treasury distribution telemetry for downstream dashboards', () => {
+  subgraphIndexer.clear();
+  const { roundResult, demo, jobBatch } = orchestrateRound();
+  const amount = roundResult.treasuryBalanceAfter / 2n > 0n ? roundResult.treasuryBalanceAfter / 2n : roundResult.treasuryBalanceAfter;
+  const distribution = demo.distributeTreasury(
+    '0x7777000000000000000000000000000000007777',
+    amount,
+  );
+  const treasuryRecords = subgraphIndexer.filter('TREASURY');
+  assert.ok(treasuryRecords.length >= 1, 'treasury distribution should be mirrored in subgraph indexer');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validator-treasury-report-'));
+  const reportDir = path.join(tmpDir, 'report');
+  const entropy = demo.getEntropySources();
+  const ensLeaves = demo.listEnsLeaves();
+  const context: ReportContext = {
+    verifyingKey: demo.getZkVerifyingKey(),
+    entropyBefore: entropy,
+    entropyAfter: entropy,
+    governance: demo.getGovernance(),
+    sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
+    nodesRegistered: demo.listNodes(),
+    primaryDomain: demo.getDomainState(roundResult.domainId),
+    ownerNotes: { label: 'treasury-test' },
+    jobSample: jobBatch.slice(0, 2),
+    treasury: {
+      address: demo.getTreasuryAddress(),
+      balance: demo.getTreasuryBalance(),
+      distributions: [distribution],
+    },
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: ensLeaves.length,
+    ensRegistryPreview: ensLeaves.slice(0, Math.min(10, ensLeaves.length)).map((leaf) => leaf.ensName),
+  };
+
+  writeReportArtifacts({
+    reportDir,
+    roundResult,
+    subgraphRecords: subgraphIndexer.list(),
+    events: [roundResult.vrfWitness, ...roundResult.commits, ...roundResult.reveals, distribution],
+    context,
+    jobBatch,
+    truthfulVote: 'APPROVE',
+  });
+
+  const summary = JSON.parse(fs.readFileSync(path.join(reportDir, 'summary.json'), 'utf8')) as {
+    treasury?: { distributions?: Array<{ recipient: string; amountWei: string }> };
+    identity?: { merkleRoot?: string; registrySize?: number };
+  };
+  const summaryDistributions = summary.treasury?.distributions ?? [];
+  assert.equal(summaryDistributions.length, 1);
+  assert.equal(summaryDistributions[0]?.recipient, distribution.recipient);
+  assert.equal(summaryDistributions[0]?.amountWei, distribution.amount.toString());
+  assert.equal(summary.identity?.merkleRoot, demo.getEnsMerkleRoot());
+  assert.equal(summary.identity?.registrySize, ensLeaves.length);
+
+  const dashboard = fs.readFileSync(path.join(reportDir, 'dashboard.html'), 'utf8');
+  assert.ok(dashboard.includes('Treasury Routing'), 'dashboard should highlight treasury routing diagram');
+  assert.ok(dashboard.includes(distribution.recipient), 'dashboard should render distribution recipient');
+  assert.ok(dashboard.includes('Identity Gate'), 'dashboard should visualize identity gating');
+  assert.ok(dashboard.includes(demo.getEnsMerkleRoot()), 'dashboard should display the ENS root');
+
+  const digest = fs.readFileSync(path.join(reportDir, 'owner-digest.md'), 'utf8');
+  assert.ok(digest.includes('Treasury Distributions'), 'owner digest should summarize treasury actions');
+  assert.ok(
+    digest.includes(distribution.recipient),
+    'owner digest should include distribution recipient metadata',
+  );
 });

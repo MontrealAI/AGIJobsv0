@@ -55,6 +55,7 @@ export interface AgentAction {
   type: 'TRANSFER' | 'CALL' | 'DEPLOY';
   amountSpent: bigint;
   description: string;
+  blockNumber?: number;
   opcode?: string;
   target?: string;
   calldataBytes?: number;
@@ -104,6 +105,7 @@ export interface SentinelAlert {
   id: string;
   domainId: string;
   timestamp: number;
+  blockNumber?: number;
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
   rule: string;
   description: string;
@@ -119,7 +121,9 @@ export interface PauseRecord {
   reason: string;
   triggeredBy: string;
   timestamp: number;
+  blockNumber?: number;
   resumedAt?: number;
+  resumedAtBlock?: number;
 }
 
 export interface StakeAccount {

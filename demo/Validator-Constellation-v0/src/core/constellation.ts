@@ -8,7 +8,7 @@ import { CommitRevealCoordinator, computeCommitment } from './commitReveal';
 import { DomainPauseController } from './domainPause';
 import { SentinelMonitor } from './sentinel';
 import { EnsAuthority } from './ensAuthority';
-import { buildMerkleRoot, EnsLeaf, generateMerkleProof } from './ens';
+import { buildMerkleRoot, computeLeafHash, EnsLeaf, generateMerkleProof } from './ens';
 import { ZkBatchProver } from './zk';
 import './subgraph';
 import {
@@ -60,13 +60,13 @@ export class ValidatorConstellationDemo {
   private readonly agents: AgentIdentity[] = [];
   private readonly nodes: NodeIdentity[] = [];
   private readonly domainIds: string[];
-  private readonly leaves: EnsLeaf[];
+  private leaves: EnsLeaf[];
   private onChainEntropy: Hex;
   private recentBeacon: Hex;
   private blockNumber = 1;
 
   constructor(setup: DemoSetup) {
-    this.leaves = setup.ensLeaves;
+    this.leaves = setup.ensLeaves.map((leaf) => ({ ...leaf }));
     const merkleRoot = buildMerkleRoot(this.leaves);
     this.ensAuthority = new EnsAuthority(merkleRoot);
     this.stakes = new StakeManager();
@@ -103,6 +103,72 @@ export class ValidatorConstellationDemo {
     this.domainIds = setup.domains.map((domain) => domain.id);
     this.onChainEntropy = setup.onChainEntropy;
     this.recentBeacon = setup.recentBeacon;
+  }
+
+  listEnsLeaves(): EnsLeaf[] {
+    return this.leaves.map((leaf) => ({ ...leaf }));
+  }
+
+  getEnsMerkleRoot(): Hex {
+    return this.ensAuthority.getMerkleRoot();
+  }
+
+  rotateEnsRegistry(
+    input: { leaves: EnsLeaf[]; mode?: 'APPEND' | 'REPLACE' },
+  ): { merkleRoot: Hex; totalLeaves: number } {
+    const mode = input.mode ?? 'APPEND';
+    const normalizedIncoming = input.leaves.map((leaf) => ({
+      ensName: leaf.ensName.trim(),
+      owner: leaf.owner,
+    }));
+    const combined =
+      mode === 'APPEND'
+        ? [...this.listEnsLeaves(), ...normalizedIncoming]
+        : [...normalizedIncoming];
+    if (combined.length === 0) {
+      throw new Error('ENS registry cannot be rotated to an empty set');
+    }
+    const deduped = this.dedupeLeaves(combined);
+    this.assertActiveIdentitiesPresent(deduped);
+    const merkleRoot = buildMerkleRoot(deduped);
+    this.ensAuthority.updateMerkleRoot(merkleRoot);
+    this.leaves = deduped;
+    return { merkleRoot, totalLeaves: this.leaves.length };
+  }
+
+  private dedupeLeaves(leaves: EnsLeaf[]): EnsLeaf[] {
+    const map = new Map<Hex, EnsLeaf>();
+    for (const leaf of leaves) {
+      const canonical: EnsLeaf = { ensName: leaf.ensName.trim(), owner: leaf.owner };
+      const hash = computeLeafHash(canonical);
+      if (!map.has(hash)) {
+        map.set(hash, canonical);
+      }
+    }
+    return Array.from(map.values());
+  }
+
+  private assertActiveIdentitiesPresent(leaves: EnsLeaf[]): void {
+    const leafHashes = new Set(leaves.map((leaf) => computeLeafHash(leaf)));
+    const missing: string[] = [];
+    const ensure = (ensName: string, address: Hex) => {
+      const hash = computeLeafHash({ ensName, owner: address });
+      if (!leafHashes.has(hash)) {
+        missing.push(`${ensName}:${address}`);
+      }
+    };
+    for (const validator of this.validators) {
+      ensure(validator.ensName, validator.address);
+    }
+    for (const agent of this.agents) {
+      ensure(agent.ensName, agent.address);
+    }
+    for (const node of this.nodes) {
+      ensure(node.ensName, node.address);
+    }
+    if (missing.length > 0) {
+      throw new Error(`ens registry rotation missing active identities: ${missing.join(', ')}`);
+    }
   }
 
   getTreasuryBalance(): bigint {
@@ -182,11 +248,11 @@ export class ValidatorConstellationDemo {
   }
 
   pauseDomain(domainId: string, reason: string, triggeredBy = 'governance:manual'): PauseRecord {
-    return this.pauseController.pause(domainId, reason, triggeredBy);
+    return this.pauseController.pause(domainId, reason, triggeredBy, this.blockNumber);
   }
 
   resumeDomain(domainId: string, triggeredBy = 'governance:manual'): PauseRecord {
-    return this.pauseController.resume(domainId, triggeredBy);
+    return this.pauseController.resume(domainId, triggeredBy, this.blockNumber);
   }
 
   getDomainState(domainId: string): DomainState {
@@ -377,7 +443,11 @@ export class ValidatorConstellationDemo {
 
       if (params.anomalies) {
         for (const anomaly of params.anomalies) {
-          this.sentinel.observe(anomaly);
+          const action = {
+            ...anomaly,
+            blockNumber: anomaly.blockNumber ?? this.blockNumber,
+          };
+          this.sentinel.observe(action);
         }
       }
 

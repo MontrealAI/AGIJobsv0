@@ -21,7 +21,7 @@ import {
   formatAgentBudget,
 } from '../src/core/operatorState';
 import { demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
-import { writeReportArtifacts } from '../src/core/reporting';
+import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { AgentAction, GovernanceParameters, Hex, SlashingEvent, VoteValue } from '../src/core/types';
 import { selectCommittee } from '../src/core/vrf';
@@ -576,7 +576,8 @@ function handleRunRound(argv: RunRoundArgs): void {
   });
   const reportDir = path.join(DEFAULT_REPORT_BASE, argv.reportName ?? `operator-round-${round}`);
   ensureDirectory(reportDir);
-  const context = {
+  const ensLeaves = demo.listEnsLeaves();
+  const context: ReportContext = {
     verifyingKey: demo.getZkVerifyingKey(),
     entropyBefore,
     entropyAfter: demo.getEntropySources(),
@@ -600,6 +601,9 @@ function handleRunRound(argv: RunRoundArgs): void {
     },
     jobSample: jobBatch.slice(0, Math.min(jobBatch.length, 8)),
     treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: ensLeaves.length,
+    ensRegistryPreview: ensLeaves.slice(0, Math.min(12, ensLeaves.length)).map((leaf) => leaf.ensName),
   };
   writeReportArtifacts({
     reportDir,
