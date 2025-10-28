@@ -53,6 +53,7 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py
    ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -72,6 +73,10 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/ui/dashboard-data-v5.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v5/scoreboard.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v6/ui/dashboard-data-v6.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v6/scoreboard.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v6.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
 
@@ -156,6 +161,17 @@ sequenceDiagram
 - **Console Control Tower:** Guardian mesh quorum, antifragility heartbeats, and treasury dials are surfaced as owner actions within the new flight console (`storage/ui/v4/index.html`).
 - **Mermaid-Rich Artefacts:** `alpha_flight_synthesis.md` and the in-browser dashboard render advanced flowcharts, timelines, and topology diagrams powered by `dashboard-data-v4.json`.
 - **Gasless & Simulation-First:** The plan enforces `eth_call` dry-runs, account abstraction paymasters, and approvals for every dispatch step to guarantee non-technical safety.
+
+---
+
+## 🏛️ V6 Meta-Dominion Sovereign Console (Brand New)
+
+- **Meta-Agentic Dominion Planner:** Expands the planning lattice with failover guardians, alpha compounding orchestration, and an antifragility curriculum that auto-evolves from stress tests.
+- **Sovereign Command Matrix:** Validates unstoppable reserves (≥15%), circuit breakers, delegation powers, and account abstraction levers before execution begins.
+- **Owner-Only Console:** `meta_agentic_demo_v6.py` emits `dashboard-data-v6.json` + `alpha_dominion_masterplan.md`, powering a browser console with flow, sequence, and Gantt mermaid charts.
+- **Treasury Dominion Routes:** Execution routes show live allocation mixes, status indicators, and owner switches (guardian quorum override, liquidity throttle, emergency pause, etc.).
+- **Simulation Envelope:** Stress tests from `simulation_matrix.json` feed antifragility metrics, ensuring every on-chain action runs through `eth_call` dry-runs with summarised outcomes for owners.
+- **Full Sovereignty Artefacts:** Latest run payload + scoreboard snapshots land under `storage/orchestrator_v6`, demonstrating end-to-end traceability for auditors and owners.
 
 ---
 

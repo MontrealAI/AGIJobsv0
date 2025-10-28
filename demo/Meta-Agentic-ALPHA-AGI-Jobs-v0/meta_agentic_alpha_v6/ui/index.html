@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meta-Agentic α-AGI Jobs V6 — Meta-Dominion Console</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs" type="module"></script>
+  </head>
+  <body>
+    <main class="layout">
+      <header>
+        <h1>Meta-Agentic α-AGI Jobs — Meta-Dominion Console</h1>
+        <p>
+          Generated entirely by AGI Jobs v0 (v2). Every tile is sourced from
+          <code>dashboard-data-v6.json</code> after a single command executed by the owner.
+          Adjust parameters with <code>scripts/owner_controls.py</code>, rerun the V6 CLI,
+          and watch this console reshape itself.
+        </p>
+        <div class="owner-controls" id="owner-controls"></div>
+      </header>
+      <section class="panels">
+        <article>
+          <h2>Alpha Opportunity Lattice</h2>
+          <div id="alpha-domains"></div>
+        </article>
+        <article>
+          <h2>Opportunity Graph</h2>
+          <div id="opportunity-graph"></div>
+        </article>
+        <article>
+          <h2>Guardian Mesh</h2>
+          <div id="guardian-mesh"></div>
+        </article>
+        <article>
+          <h2>Treasury Dominion Routes</h2>
+          <div id="treasury"></div>
+        </article>
+        <article>
+          <h2>Simulation Envelope</h2>
+          <div id="simulations"></div>
+        </article>
+        <article>
+          <h2>Execution Timeline</h2>
+          <div id="timeline"></div>
+        </article>
+        <article class="full-span">
+          <h2>Owner Sovereignty Matrix</h2>
+          <div id="owner-sovereignty"></div>
+        </article>
+      </section>
+      <section class="mermaid-section">
+        <h2>Meta-Agentic Superstructure</h2>
+        <div class="mermaid" id="mermaid-flow"></div>
+      </section>
+      <section class="mermaid-section">
+        <h2>Guardian Coordination Sequence</h2>
+        <div class="mermaid" id="mermaid-sequence"></div>
+      </section>
+      <section class="mermaid-section">
+        <h2>Dominion Timeline</h2>
+        <div class="mermaid" id="mermaid-gantt"></div>
+      </section>
+      <footer>
+        <p>
+          Empowerment: <span id="owner-score"></span> — Antifragility:
+          <span id="antifragility"></span> — Control Surface:
+          <span id="control-surface"></span> — Alpha Compounding Index:
+          <span id="alpha-compounding"></span>
+        </p>
+        <p>All data auto-generated from `dashboard-data-v6.json`.</p>
+      </footer>
+    </main>
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

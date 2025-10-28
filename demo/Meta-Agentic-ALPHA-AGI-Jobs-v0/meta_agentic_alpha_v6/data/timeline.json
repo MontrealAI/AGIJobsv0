@@ -1,0 +1,10 @@
+{
+  "events": [
+    {"time": "T+0", "event": "Owner launches α-Dominion run"},
+    {"time": "T+0:02", "event": "Guardian mesh approvals secured"},
+    {"time": "T+0:05", "event": "World model curriculum aligned"},
+    {"time": "T+0:09", "event": "Treasury dominion lattice optimised"},
+    {"time": "T+0:12", "event": "Execution dry-run completes"},
+    {"time": "T+0:15", "event": "Owner command console refreshed"}
+  ]
+}

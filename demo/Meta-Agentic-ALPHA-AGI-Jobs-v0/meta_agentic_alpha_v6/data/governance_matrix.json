@@ -1,0 +1,25 @@
+{
+  "controls": {
+    "guardian_quorum": "3 of 4 primaries",
+    "failover_guardians": "2 hot-standby",
+    "emergency_pause": "armed",
+    "circuit_breaker": "15 minute cooldown",
+    "unstoppable_reserve": "26% of treasury",
+    "timelock_window": "90 minutes",
+    "account_abstraction": "Bundler meta-dominion-bundler, paymaster meta-dominion-paymaster.json",
+    "session_keys": "guardian-grid-validator, alpha-compounding-orchestrator, mission-audit-sentinel, owner-override-switch, treasury-override-key, simulation-director-session"
+  },
+  "human_actions": [
+    "Rotate guardian roster",
+    "Re-route unstoppable reserves",
+    "Trigger antifragility drills",
+    "Revoke & rotate session keys",
+    "Accelerate treasury compounding"
+  ],
+  "risk_policies": {
+    "antifragility_buffer_percent": 32,
+    "var_percent": 1.8,
+    "max_drawdown_percent": 3.2,
+    "circuit_breaker_percent": 5.4
+  }
+}

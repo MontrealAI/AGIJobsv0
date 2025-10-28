@@ -1,0 +1,21 @@
+{
+  "alpha-compounding-orchestrator": {
+    "losses": 0,
+    "notes": [
+      "2025-10-28T19:00Z: Activate compounding orchestrator -> win"
+    ],
+    "slashes": 0,
+    "updatedAt": 1761678052.735167,
+    "wins": 1
+  },
+  "guardian-grid-validator": {
+    "losses": 0,
+    "notes": [
+      "2025-10-28T19:00Z: Simulate job deployment -> win",
+      "2025-10-28T19:00Z: Stake guardian capital -> win"
+    ],
+    "slashes": 0,
+    "updatedAt": 1761678052.7264097,
+    "wins": 2
+  }
+}

@@ -1,0 +1,423 @@
+{
+  "generated_at": "2025-10-28T19:00:52.873510+00:00",
+  "alpha": {
+    "domains": [
+      {
+        "id": "fusion-finance",
+        "title": "Global Liquidity Dislocation",
+        "signal_strength": 0.96,
+        "alpha_projection": 740000000,
+        "execution_horizon": "T+5",
+        "drivers": [
+          "cross-venue basis",
+          "overnight repo stress",
+          "fx swap premium"
+        ]
+      },
+      {
+        "id": "bio-intelligence",
+        "title": "mRNA Cold-Chain Efficiency",
+        "signal_strength": 0.91,
+        "alpha_projection": 520000000,
+        "execution_horizon": "T+9",
+        "drivers": [
+          "logistics bottleneck",
+          "thermal drift",
+          "emerging patents"
+        ]
+      },
+      {
+        "id": "supply-autonomy",
+        "title": "Rare-Earth Supply Mesh",
+        "signal_strength": 0.93,
+        "alpha_projection": 610000000,
+        "execution_horizon": "T+7",
+        "drivers": [
+          "port congestion",
+          "policy incentives",
+          "inventory telemetry"
+        ]
+      },
+      {
+        "id": "energy-synthesis",
+        "title": "Microgrid Arbitrage",
+        "signal_strength": 0.89,
+        "alpha_projection": 480000000,
+        "execution_horizon": "T+4",
+        "drivers": [
+          "spot-volatility",
+          "demand response",
+          "grid orchestration"
+        ]
+      }
+    ],
+    "summary": {
+      "total_projection": 2350000000,
+      "dominant_domains": [
+        "fusion-finance",
+        "supply-autonomy"
+      ],
+      "confidence_interval": 0.87,
+      "synergy_index": 0.78
+    }
+  },
+  "opportunity_graph": {
+    "nodes": [
+      {
+        "id": "fusion-finance",
+        "label": "Liquidity Dislocation",
+        "alpha": 740000000,
+        "category": "finance"
+      },
+      {
+        "id": "bio-intelligence",
+        "label": "mRNA Cold-Chain",
+        "alpha": 520000000,
+        "category": "biotech"
+      },
+      {
+        "id": "supply-autonomy",
+        "label": "Rare-Earth Mesh",
+        "alpha": 610000000,
+        "category": "supply"
+      },
+      {
+        "id": "energy-synthesis",
+        "label": "Microgrid Arbitrage",
+        "alpha": 480000000,
+        "category": "energy"
+      },
+      {
+        "id": "treasury",
+        "label": "Treasury Reserve",
+        "alpha": 0,
+        "category": "treasury"
+      },
+      {
+        "id": "guardian",
+        "label": "Guardian Mesh",
+        "alpha": 0,
+        "category": "governance"
+      }
+    ],
+    "edges": [
+      {
+        "source": "fusion-finance",
+        "target": "treasury",
+        "weight": 0.92
+      },
+      {
+        "source": "bio-intelligence",
+        "target": "treasury",
+        "weight": 0.87
+      },
+      {
+        "source": "supply-autonomy",
+        "target": "treasury",
+        "weight": 0.9
+      },
+      {
+        "source": "energy-synthesis",
+        "target": "treasury",
+        "weight": 0.85
+      },
+      {
+        "source": "treasury",
+        "target": "guardian",
+        "weight": 0.95
+      },
+      {
+        "source": "guardian",
+        "target": "fusion-finance",
+        "weight": 0.88
+      },
+      {
+        "source": "guardian",
+        "target": "bio-intelligence",
+        "weight": 0.82
+      },
+      {
+        "source": "guardian",
+        "target": "supply-autonomy",
+        "weight": 0.9
+      },
+      {
+        "source": "guardian",
+        "target": "energy-synthesis",
+        "weight": 0.84
+      }
+    ],
+    "owner_controls": [
+      "Adjust guardian quorum instantly",
+      "Redirect liquidity routes",
+      "Pause/resume entire pipeline",
+      "Swap paymaster session key",
+      "Override treasury exposure"
+    ]
+  },
+  "governance": {
+    "controls": {
+      "guardian_quorum": "3 of 4 primaries",
+      "failover_guardians": "2 hot-standby",
+      "emergency_pause": "armed",
+      "circuit_breaker": "15 minute cooldown",
+      "unstoppable_reserve": "26% of treasury",
+      "timelock_window": "90 minutes",
+      "account_abstraction": "Bundler meta-dominion-bundler, paymaster meta-dominion-paymaster.json",
+      "session_keys": "guardian-grid-validator, alpha-compounding-orchestrator, mission-audit-sentinel, owner-override-switch, treasury-override-key, simulation-director-session"
+    },
+    "human_actions": [
+      "Rotate guardian roster",
+      "Re-route unstoppable reserves",
+      "Trigger antifragility drills",
+      "Revoke & rotate session keys",
+      "Accelerate treasury compounding"
+    ],
+    "risk_policies": {
+      "antifragility_buffer_percent": 32,
+      "var_percent": 1.8,
+      "max_drawdown_percent": 3.2,
+      "circuit_breaker_percent": 5.4
+    }
+  },
+  "guardian_mesh": {
+    "coordination": {
+      "quorum": 3,
+      "failover": 2,
+      "a2a_bus": "A2A-meta-dominion",
+      "latency_ms": 480,
+      "sentinel_rotation_hours": 6
+    },
+    "sentinels": [
+      {
+        "id": "guardian-grid-validator",
+        "capabilities": [
+          "execution",
+          "validation",
+          "analysis"
+        ],
+        "stake": 60000,
+        "status": "ready",
+        "address": "0xGUARDIAN000000000000000000000000000000A1"
+      },
+      {
+        "id": "mission-audit-sentinel",
+        "capabilities": [
+          "validation",
+          "analysis",
+          "support"
+        ],
+        "stake": 22000,
+        "status": "armed",
+        "address": "0xGUARDIAN000000000000000000000000000000B2"
+      },
+      {
+        "id": "alpha-treasury-autopilot",
+        "capabilities": [
+          "analysis",
+          "support"
+        ],
+        "stake": 35000,
+        "status": "live",
+        "address": "0xGUARDIAN000000000000000000000000000000C3"
+      },
+      {
+        "id": "sovereign-simulation-director",
+        "capabilities": [
+          "analysis",
+          "support"
+        ],
+        "stake": 30000,
+        "status": "monitoring",
+        "address": "0xGUARDIAN000000000000000000000000000000D4"
+      },
+      {
+        "id": "alpha-compounding-orchestrator",
+        "capabilities": [
+          "execution",
+          "analysis"
+        ],
+        "stake": 40000,
+        "status": "standby",
+        "address": "0xGUARDIAN000000000000000000000000000000E5"
+      }
+    ]
+  },
+  "execution_routes": {
+    "owner_switches": [
+      "Guardian quorum override",
+      "Liquidity throttle",
+      "Treasury circuit breaker",
+      "Emergency pause",
+      "Session key rotation"
+    ],
+    "routes": [
+      {
+        "id": "alpha-orbit",
+        "allocation_percent": 32,
+        "status": "green"
+      },
+      {
+        "id": "liquidity-grid",
+        "allocation_percent": 28,
+        "status": "green"
+      },
+      {
+        "id": "phoenix-buffer",
+        "allocation_percent": 26,
+        "status": "amber"
+      },
+      {
+        "id": "metaverse-signal",
+        "allocation_percent": 14,
+        "status": "green"
+      }
+    ],
+    "compounding_multiplier": 0.26
+  },
+  "simulations": {
+    "world_model": {
+      "version": "MuZero-AlphaDominion-VI",
+      "adaptive": true,
+      "curriculum": "AlphaFactory/MetaSeason-VI",
+      "scenarios": 48
+    },
+    "resilience_bonus": 0.22,
+    "alpha_feedback": 0.08,
+    "stress_tests": [
+      {
+        "name": "Liquidity crunch",
+        "result": "pass",
+        "owner_action": "divert alpha-orbit to phoenix-buffer"
+      },
+      {
+        "name": "Guardian outage",
+        "result": "pass",
+        "owner_action": "promote failover guardian"
+      },
+      {
+        "name": "Paymaster congestion",
+        "result": "pass",
+        "owner_action": "reroute to bundled session key"
+      }
+    ]
+  },
+  "timeline": {
+    "events": [
+      {
+        "time": "T+0",
+        "event": "Owner launches α-Dominion run"
+      },
+      {
+        "time": "T+0:02",
+        "event": "Guardian mesh approvals secured"
+      },
+      {
+        "time": "T+0:05",
+        "event": "World model curriculum aligned"
+      },
+      {
+        "time": "T+0:09",
+        "event": "Treasury dominion lattice optimised"
+      },
+      {
+        "time": "T+0:12",
+        "event": "Execution dry-run completes"
+      },
+      {
+        "time": "T+0:15",
+        "event": "Owner command console refreshed"
+      }
+    ]
+  },
+  "metrics": {
+    "alpha_probability": 0.999,
+    "alpha_compounding_index": 1.0,
+    "owner_empowerment": 1.0,
+    "antifragility_index": 0.62,
+    "control_surface_score": 1.0,
+    "step_completion_ratio": 1.0,
+    "scoreboard": {
+      "guardian-grid-validator": {
+        "wins": 2,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-10-28T19:00Z: Simulate job deployment -> win",
+          "2025-10-28T19:00Z: Stake guardian capital -> win"
+        ],
+        "updatedAt": 1761678052.7264097
+      },
+      "alpha-compounding-orchestrator": {
+        "wins": 1,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-10-28T19:00Z: Activate compounding orchestrator -> win"
+        ],
+        "updatedAt": 1761678052.735167
+      }
+    }
+  },
+  "control_surface": {
+    "score": 1.0,
+    "guardian_quorum": 3,
+    "guardian_count": 4,
+    "failover_guardian_count": 2,
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 15,
+    "unstoppable_reserve_percent": 26.0,
+    "antifragility_buffer_percent": 32.0,
+    "session_keys": [
+      "guardian-grid-validator",
+      "alpha-compounding-orchestrator",
+      "mission-audit-sentinel",
+      "owner-override-switch",
+      "treasury-override-key",
+      "simulation-director-session"
+    ],
+    "bundler": "meta-dominion-bundler",
+    "paymaster": "account-abstraction/meta-dominion-paymaster.json",
+    "delegation": {
+      "treasury": {
+        "owner_override": true,
+        "max_adjustment_percent": 8
+      },
+      "governance": {
+        "guardian_rotation": true,
+        "threshold_update": true
+      },
+      "execution": {
+        "paymaster_routing": true,
+        "relayer_selection": true
+      },
+      "emergency_override": {
+        "multisig_guard": 2,
+        "sentinel_watch": true
+      }
+    },
+    "levers": [
+      "Antifragility buffer 32.0%",
+      "Bundler meta-dominion-bundler",
+      "Circuit breaker 15 minutes",
+      "Emergency pause",
+      "Guardian quorum 3/4",
+      "Guardian quorum override",
+      "Liquidity throttle",
+      "Paymaster account-abstraction/meta-dominion-paymaster.json",
+      "Session key rotation",
+      "Treasury circuit breaker",
+      "Unstoppable reserve 26.0%"
+    ]
+  },
+  "mermaid": {
+    "flow": "graph TD\n  Owner((Sovereign Owner)) --> Identify[Identify Mesh]\n  Identify --> Learn[Open-Ended Curriculum]\n  Learn --> Think[Meta-Agentic Planner]\n  Think --> Design[Creative Forge]\n  Design --> Strategise[Treasury Dominion]\n  Strategise --> Execute[On-Chain Execution Fabric]\n  Execute --> Govern[Guardian & Timelock Grid]\n  Govern --> Owner\n  subgraph A2A Meta-Bus\n    PlannerAgent((Strategy))\n    RiskAgent((Risk))\n    TreasuryAgent((Treasury))\n    EthicsAgent((Governance))\n    GuardianAgent((Guardian Mesh))\n  end\n  Think --> A2A Meta-Bus\n  A2A Meta-Bus --> Execute\n  Execute -->|Dry-run + eth_call| Confirm{Simulation Envelope}\n  Confirm --> Execute",
+    "sequence": "sequenceDiagram\n  participant Owner as Sovereign Owner\n  participant Console as Meta-Dominion Console\n  participant Planner as Meta-Agentic Planner\n  participant Guardians as Guardian Mesh\n  participant Chain as AGI Jobs v0 (v2)\n  Owner->>Console: Launch α-Dominion run\n  Console->>Planner: Submit scenario YAML\n  Planner->>Guardians: Request approvals & antifragility check\n  Guardians->>Chain: Simulate job + stake + treasury moves\n  Chain-->>Console: Return receipts & run telemetry\n  Console-->>Owner: Render dominance dashboard + command levers",
+    "gantt": "gantt\n  title Meta-Agentic α-Dominion Timeline\n  dateFormat X\n  axisFormat %s\n  section Identify\n    Signal fusion           :done,    0, 1\n    Opportunity triage      :active,  1, 1\n  section Learn\n    Curriculum evolution    :        2, 2\n    World model alignment   :        4, 2\n  section Strategise\n    Treasury lattice        :        6, 1\n    Governance verification :        7, 1\n  section Execute\n    Dry-run simulation      :        8, 1\n    On-chain staging        :        9, 1"
+  },
+  "approvals": [
+    "0xGUARDIAN000000000000000000000000000000A1",
+    "0xGUARDIAN000000000000000000000000000000B2",
+    "0xGUARDIAN000000000000000000000000000000C3"
+  ]
+}

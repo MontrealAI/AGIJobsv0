@@ -1,0 +1,240 @@
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V6 — Meta-Dominion"
+  narrative: |
+    The sovereign owner activates α-Dominion mode. AGI Jobs v0 (v2) orchestrates
+    identify→learn→think→design→strategise→execute loops, aligning guardians,
+    treasuries, account abstraction, and antifragility levers — all without
+    the owner writing any code.
+  dashboards:
+    - title: "Meta-Dominion Console"
+      file: "meta_agentic_alpha_v6/ui/index.html"
+    - title: "Meta-Dominion Masterplan"
+      file: "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v6/reports/alpha_dominion_overview.md"
+    - "meta_agentic_alpha_v6/playbooks/owner_command_matrix.md"
+  agents:
+    - agent_id: "guardian-grid-validator"
+      owner: "Guardian Grid Syndicate"
+      region: "omni"
+      capabilities:
+        - execution
+        - validation
+        - analysis
+      stake_amount: "60000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-grid-validator-secret"
+    - agent_id: "sovereign-simulation-director"
+      owner: "Simulation Guild"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "30000"
+      multisig: true
+      slashable: false
+      operator_secret: "sovereign-simulation-director-secret"
+    - agent_id: "alpha-treasury-autopilot"
+      owner: "Treasury Collective"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "35000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-treasury-autopilot-secret"
+    - agent_id: "mission-audit-sentinel"
+      owner: "Audit Observatory"
+      region: "omni"
+      capabilities:
+        - validation
+        - analysis
+        - support
+      stake_amount: "22000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-audit-sentinel-secret"
+    - agent_id: "alpha-compounding-orchestrator"
+      owner: "Compounding Network"
+      region: "omni"
+      capabilities:
+        - execution
+        - analysis
+      stake_amount: "40000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-compounding-orchestrator-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v6"
+  title: "Meta-Agentic α-AGI Jobs Demo — Meta-Dominion"
+  narrative: |
+    α-Dominion demonstrates a sovereign owner commanding superintelligent
+    alpha generation: signal fusion, world modelling, meta-planning,
+    treasury dominion, and on-chain execution, all via AGI Jobs v0 (v2).
+  owner:
+    address: "0xSOVEREIGN00000000000000000000000000000006"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000A1"
+      - "0xGUARDIAN000000000000000000000000000000B2"
+      - "0xGUARDIAN000000000000000000000000000000C3"
+      - "0xGUARDIAN000000000000000000000000000000D4"
+    guardian_failover:
+      - "0xGUARDIAN000000000000000000000000000000E5"
+      - "0xGUARDIAN000000000000000000000000000000F6"
+    approvals_required: 3
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 15
+    delegation:
+      treasury:
+        owner_override: true
+        max_adjustment_percent: 8
+      governance:
+        guardian_rotation: true
+        threshold_update: true
+      execution:
+        paymaster_routing: true
+        relayer_selection: true
+      emergency_override:
+        multisig_guard: 2
+        sentinel_watch: true
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "21500000"
+    unstoppable_reserve_percent: 26
+    risk_limits:
+      max_drawdown_percent: 3.2
+      var_percent: 1.8
+      antifragility_buffer_percent: 32
+      circuit_breaker_percent: 5.4
+    liquidity_routes:
+      - "treasury/alpha-orbit"
+      - "execution/liquidity-grid"
+      - "resilience/phoenix-buffer"
+      - "expansion/metaverse-signal"
+  gasless:
+    enabled: true
+    bundler: "meta-dominion-bundler"
+    paymaster: "account-abstraction/meta-dominion-paymaster.json"
+    session_keys:
+      - "guardian-grid-validator"
+      - "alpha-compounding-orchestrator"
+      - "mission-audit-sentinel"
+      - "owner-override-switch"
+      - "treasury-override-key"
+      - "simulation-director-session"
+    overrideable_parameters:
+      max_fee_gwei: 19
+      preferred_network: "ethereum-mainnet"
+      failover_network: "base"
+
+plan:
+  budget_max: "420000"
+  approvals:
+    - "0xGUARDIAN000000000000000000000000000000A1"
+    - "0xGUARDIAN000000000000000000000000000000B2"
+    - "0xGUARDIAN000000000000000000000000000000C3"
+  steps:
+    - id: "identify-1"
+      name: "Synthesize multi-domain alpha signals"
+      kind: "plan"
+      tool: "identify.multi-domain"
+      params:
+        signals: "meta_agentic_alpha_v6/data/alpha_signals.json"
+        knowledge_graph: "meta_agentic_alpha_v6/data/opportunity_graph.json"
+        anomaly_threshold: 0.95
+        escalate_to: "owner-console"
+    - id: "learn-1"
+      name: "Advance world model curriculum"
+      kind: "llm"
+      tool: "simulation.curriculum"
+      params:
+        curriculum: "AlphaFactory/MetaSeason-VI"
+        world_model: "MuZero-AlphaDominion-VI"
+        simulation_engine: "MiniWorld-POET-XR"
+        checkpoints: true
+    - id: "think-1"
+      name: "Meta-agentic dominion search"
+      kind: "plan"
+      tool: "planning.meta-dominion"
+      params:
+        horizon_days: 60
+        candidate_plans: 6
+        agent_bus: "A2A-meta-dominion"
+        guardian_mesh: "meta_agentic_alpha_v6/data/guardian_mesh.json"
+    - id: "design-1"
+      name: "Forge sovereign solution architecture"
+      kind: "code"
+      tool: "design.meta-forge"
+      params:
+        opportunity_playbook: "meta_agentic_alpha_v6/data/opportunity_graph.json"
+        simulation_matrix: "meta_agentic_alpha_v6/data/simulation_matrix.json"
+        antifragility_mode: "compounding"
+    - id: "strategise-1"
+      name: "Optimise treasury dominion"
+      kind: "plan"
+      tool: "treasury.meta-optimise"
+      params:
+        liquidity_routes:
+          - "treasury/alpha-orbit"
+          - "execution/liquidity-grid"
+          - "resilience/phoenix-buffer"
+          - "expansion/metaverse-signal"
+        unstoppable_reserve_percent: 26
+        antifragility_buffer_percent: 32
+        guardian_quorum: 3
+    - id: "govern-1"
+      name: "Reinforce governance lattice"
+      kind: "plan"
+      tool: "governance.align"
+      params:
+        guardian_mesh: "meta_agentic_alpha_v6/data/guardian_mesh.json"
+        governance_matrix: "meta_agentic_alpha_v6/data/governance_matrix.json"
+        session_keys: "meta_agentic_alpha_v6/data/execution_routes.json"
+    - id: "execute-1"
+      name: "Simulate job deployment"
+      kind: "chain"
+      tool: "job.post"
+      params:
+        title: "Meta-Dominion Sovereign Alpha Acceleration"
+        description: "Deploying autonomous alpha factories across finance, supply chains, biotech, and energy."
+        reward: "185000"
+        deadline_days: 21
+        attachments:
+          - "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md"
+          - "meta_agentic_alpha_v6/reports/alpha_dominion_overview.md"
+        treasury_account: "0xA1PHA0000000000000000000000000000D0M1"
+        fee_bps: 36
+        validator: "guardian-grid-validator"
+        dry_run: true
+    - id: "execute-2"
+      name: "Stake guardian capital"
+      kind: "chain"
+      tool: "stake.deposit"
+      params:
+        agent: "guardian-grid-validator"
+        amount: "50000"
+        token: "AGIALPHA"
+        slash_guardian: "0xDE1B000000000000000000000000000000EEF"
+        dry_run: true
+    - id: "execute-3"
+      name: "Activate compounding orchestrator"
+      kind: "chain"
+      tool: "validator.commit"
+      params:
+        agent: "alpha-compounding-orchestrator"
+        tx_summary: "Compound alpha accrual across routes"
+        expected_profit: "320000"
+        dry_run: true
+    - id: "finalise-1"
+      name: "Publish owner intelligence dossier"
+      kind: "finalize"
+      tool: "analytics.finalize"
+      params:
+        timeline: "meta_agentic_alpha_v6/data/timeline.json"
+        dashboards:
+          - "meta_agentic_alpha_v6/ui/index.html"
+          - "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md"

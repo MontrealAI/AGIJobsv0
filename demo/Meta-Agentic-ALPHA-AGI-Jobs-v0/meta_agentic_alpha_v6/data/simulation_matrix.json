@@ -1,0 +1,27 @@
+{
+  "world_model": {
+    "version": "MuZero-AlphaDominion-VI",
+    "adaptive": true,
+    "curriculum": "AlphaFactory/MetaSeason-VI",
+    "scenarios": 48
+  },
+  "resilience_bonus": 0.22,
+  "alpha_feedback": 0.08,
+  "stress_tests": [
+    {
+      "name": "Liquidity crunch",
+      "result": "pass",
+      "owner_action": "divert alpha-orbit to phoenix-buffer"
+    },
+    {
+      "name": "Guardian outage",
+      "result": "pass",
+      "owner_action": "promote failover guardian"
+    },
+    {
+      "name": "Paymaster congestion",
+      "result": "pass",
+      "owner_action": "reroute to bundled session key"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "owner_switches": [
+    "Guardian quorum override",
+    "Liquidity throttle",
+    "Treasury circuit breaker",
+    "Emergency pause",
+    "Session key rotation"
+  ],
+  "routes": [
+    {"id": "alpha-orbit", "allocation_percent": 32, "status": "green"},
+    {"id": "liquidity-grid", "allocation_percent": 28, "status": "green"},
+    {"id": "phoenix-buffer", "allocation_percent": 26, "status": "amber"},
+    {"id": "metaverse-signal", "allocation_percent": 14, "status": "green"}
+  ],
+  "compounding_multiplier": 0.26
+}

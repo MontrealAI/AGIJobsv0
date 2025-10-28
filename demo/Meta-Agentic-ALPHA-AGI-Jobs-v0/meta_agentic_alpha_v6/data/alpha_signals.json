@@ -1,0 +1,42 @@
+{
+  "domains": [
+    {
+      "id": "fusion-finance",
+      "title": "Global Liquidity Dislocation",
+      "signal_strength": 0.96,
+      "alpha_projection": 740000000,
+      "execution_horizon": "T+5",
+      "drivers": ["cross-venue basis", "overnight repo stress", "fx swap premium"]
+    },
+    {
+      "id": "bio-intelligence",
+      "title": "mRNA Cold-Chain Efficiency",
+      "signal_strength": 0.91,
+      "alpha_projection": 520000000,
+      "execution_horizon": "T+9",
+      "drivers": ["logistics bottleneck", "thermal drift", "emerging patents"]
+    },
+    {
+      "id": "supply-autonomy",
+      "title": "Rare-Earth Supply Mesh",
+      "signal_strength": 0.93,
+      "alpha_projection": 610000000,
+      "execution_horizon": "T+7",
+      "drivers": ["port congestion", "policy incentives", "inventory telemetry"]
+    },
+    {
+      "id": "energy-synthesis",
+      "title": "Microgrid Arbitrage",
+      "signal_strength": 0.89,
+      "alpha_projection": 480000000,
+      "execution_horizon": "T+4",
+      "drivers": ["spot-volatility", "demand response", "grid orchestration"]
+    }
+  ],
+  "summary": {
+    "total_projection": 2350000000,
+    "dominant_domains": ["fusion-finance", "supply-autonomy"],
+    "confidence_interval": 0.87,
+    "synergy_index": 0.78
+  }
+}

@@ -1,0 +1,145 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  background: #05060f;
+  color: #f4f7ff;
+}
+
+body {
+  margin: 0;
+}
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+header {
+  background: linear-gradient(135deg, rgba(58, 97, 255, 0.35), rgba(88, 208, 255, 0.2));
+  padding: 2rem;
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(20, 30, 60, 0.4);
+}
+
+header h1 {
+  margin: 0 0 1rem;
+  font-size: 2.5rem;
+}
+
+header p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.owner-controls {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.owner-controls span {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.panels article {
+  background: rgba(15, 18, 38, 0.8);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(88, 208, 255, 0.12);
+  box-shadow: 0 12px 30px rgba(8, 12, 25, 0.45);
+}
+
+.panels article.full-span {
+  grid-column: 1 / -1;
+}
+
+.panels h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+.mermaid-section {
+  background: rgba(12, 14, 26, 0.85);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(70, 125, 255, 0.2);
+}
+
+footer {
+  font-size: 0.95rem;
+  background: rgba(10, 12, 24, 0.85);
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#alpha-domains table,
+#guardian-mesh table,
+#treasury table,
+#timeline ul,
+#simulations ul,
+#opportunity-graph ul,
+#owner-sovereignty ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+}
+
+#alpha-domains table,
+#guardian-mesh table,
+#treasury table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#alpha-domains th,
+#alpha-domains td,
+#guardian-mesh th,
+#guardian-mesh td,
+#treasury th,
+#treasury td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(88, 208, 255, 0.16);
+  border: 1px solid rgba(88, 208, 255, 0.4);
+  font-size: 0.85rem;
+}
+
+#opportunity-graph ul li {
+  margin-bottom: 0.4rem;
+}
+
+.status-green {
+  color: #6bffb5;
+}
+
+.status-amber {
+  color: #ffd76b;
+}
+
+.metric {
+  font-weight: 600;
+}
