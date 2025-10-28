@@ -1,0 +1,32 @@
+name: demo-economic-power
+
+on:
+  push:
+    paths:
+      - '.github/workflows/demo-economic-power.yml'
+      - 'demo/Economic-Power-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    paths:
+      - '.github/workflows/demo-economic-power.yml'
+      - 'demo/Economic-Power-v0/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  run-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.18.1
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Generate economic power reports
+        run: npm run demo:economic-power:ci
+      - name: Validate simulation logic
+        run: npm run test:economic-power

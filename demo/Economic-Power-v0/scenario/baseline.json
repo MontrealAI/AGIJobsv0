@@ -1,0 +1,208 @@
+{
+  "version": "1.0",
+  "scenarioId": "economic-power-v0-baseline",
+  "title": "AGIJobs Economic Power Launch",
+  "description": "Baseline configuration for the Economic Power demo showcasing modular orchestration, validator rigor, and treasury velocity.",
+  "network": {
+    "name": "Ethereum Mainnet",
+    "chainId": 1,
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR-KEY",
+    "explorer": "https://etherscan.io",
+    "deploymentRegistry": "deployment-config/mainnet.json"
+  },
+  "treasury": {
+    "agiBalance": 1250000,
+    "stablecoinBalance": 350000,
+    "operationsBuffer": 180000,
+    "ownerSafe": "0xAGIJobsOwnerSafe0000000000000000000000001"
+  },
+  "owner": {
+    "operator": "0xAGIJobsOperator00000000000000000000000000002",
+    "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
+    "threshold": 4,
+    "members": 7,
+    "controls": [
+      {
+        "parameter": "jobDuration",
+        "current": 72,
+        "target": 48,
+        "script": "npm run owner:parameters",
+        "description": "Owner reduces maximum job duration to enforce faster settlement loops and higher capital velocity."
+      },
+      {
+        "parameter": "validatorQuorum",
+        "current": 3,
+        "target": 5,
+        "script": "npm run owner:upgrade",
+        "description": "Owner increases validator quorum for premium workstreams to maintain uncompromising trust levels."
+      },
+      {
+        "parameter": "stablecoinAdapter",
+        "current": "USDC v1",
+        "target": "USDC v2",
+        "script": "npm run owner:update-all",
+        "description": "Owner upgrades fiat on/off-ramp adapter with improved slippage guarantees."
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "atlas",
+      "ens": "atlas.agent.agijobs.eth",
+      "name": "Atlas Strategic Model Forge",
+      "reputation": 97,
+      "availability": 0.92,
+      "capacity": 4,
+      "skills": ["strategy", "tokenomics", "simulation", "coordination"],
+      "specializations": ["macro-planning", "multi-agent synthesis"]
+    },
+    {
+      "id": "helios",
+      "ens": "helios.agent.agijobs.eth",
+      "name": "Helios Sovereign Build Hub",
+      "reputation": 94,
+      "availability": 0.88,
+      "capacity": 6,
+      "skills": ["engineering", "devops", "observability", "security"],
+      "specializations": ["ci/cd", "sre"]
+    },
+    {
+      "id": "aurora",
+      "ens": "aurora.agent.agijobs.eth",
+      "name": "Aurora Economic Intelligence Mesh",
+      "reputation": 92,
+      "availability": 0.96,
+      "capacity": 5,
+      "skills": ["market-analysis", "ai-orchestration", "data-science"],
+      "specializations": ["forecasting", "scenario-design"]
+    },
+    {
+      "id": "sentinel",
+      "ens": "sentinel.agent.agijobs.eth",
+      "name": "Sentinel Assurance Fabric",
+      "reputation": 95,
+      "availability": 0.9,
+      "capacity": 3,
+      "skills": ["assurance", "audit", "compliance"],
+      "specializations": ["commit-reveal", "disputes"]
+    }
+  ],
+  "validators": [
+    {
+      "id": "validator-alpha",
+      "ens": "alpha.validator.agijobs.eth",
+      "name": "Validator Alpha",
+      "reliability": 0.985,
+      "stake": 90000,
+      "competencies": ["commit-reveal", "quality-assurance"]
+    },
+    {
+      "id": "validator-beta",
+      "ens": "beta.validator.agijobs.eth",
+      "name": "Validator Beta",
+      "reliability": 0.978,
+      "stake": 87000,
+      "competencies": ["risk", "compliance"]
+    },
+    {
+      "id": "validator-gamma",
+      "ens": "gamma.validator.agijobs.eth",
+      "name": "Validator Gamma",
+      "reliability": 0.975,
+      "stake": 91000,
+      "competencies": ["economic-modeling", "policy"]
+    },
+    {
+      "id": "validator-delta",
+      "ens": "delta.validator.agijobs.eth",
+      "name": "Validator Delta",
+      "reliability": 0.972,
+      "stake": 86500,
+      "competencies": ["ml-evaluation", "security"]
+    },
+    {
+      "id": "validator-epsilon",
+      "ens": "epsilon.validator.agijobs.eth",
+      "name": "Validator Epsilon",
+      "reliability": 0.969,
+      "stake": 83000,
+      "competencies": ["inference", "red-teaming"]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "job-ai-lab-fusion",
+      "name": "AI Lab Fusion Accelerator",
+      "rewardAgi": 120000,
+      "rewardStable": 25000,
+      "economicValue": 450000,
+      "skills": ["engineering", "ai-orchestration", "devops"],
+      "executionHours": 36,
+      "validatorQuorum": 5,
+      "risk": "high"
+    },
+    {
+      "id": "job-supply-chain",
+      "name": "Autonomous Supply Mesh",
+      "rewardAgi": 80000,
+      "rewardStable": 15000,
+      "economicValue": 310000,
+      "skills": ["strategy", "coordination", "simulation"],
+      "executionHours": 30,
+      "validatorQuorum": 4,
+      "risk": "medium"
+    },
+    {
+      "id": "job-governance-upgrade",
+      "name": "Governance Upgrade Launch",
+      "rewardAgi": 65000,
+      "rewardStable": 9000,
+      "economicValue": 240000,
+      "skills": ["assurance", "audit", "security"],
+      "executionHours": 28,
+      "validatorQuorum": 5,
+      "risk": "medium"
+    },
+    {
+      "id": "job-market-expansion",
+      "name": "Market Expansion Omniloop",
+      "rewardAgi": 55000,
+      "rewardStable": 8000,
+      "economicValue": 215000,
+      "skills": ["market-analysis", "scenario-design", "coordination"],
+      "executionHours": 24,
+      "validatorQuorum": 4,
+      "risk": "medium"
+    },
+    {
+      "id": "job-oracle-integration",
+      "name": "Oracle Integration Spine",
+      "rewardAgi": 42000,
+      "rewardStable": 6000,
+      "economicValue": 180000,
+      "skills": ["engineering", "security", "devops"],
+      "executionHours": 22,
+      "validatorQuorum": 3,
+      "risk": "low"
+    }
+  ],
+  "stablecoinAdapters": [
+    {
+      "name": "USDC v1",
+      "swapFeeBps": 12,
+      "slippageBps": 25
+    }
+  ],
+  "automation": {
+    "matchingEngine": "services/matching-engine",
+    "validatorOrchestrator": "services/validator-orchestrator",
+    "notificationHub": "services/notification-hub"
+  },
+  "observability": {
+    "dashboards": [
+      "monitoring/grafana/economic-flightdeck.json",
+      "monitoring/grafana/validator-health.json"
+    ],
+    "alertChannels": ["slack://agi-ops-economic-power", "pagerduty://agi-critical"]
+  }
+}

@@ -1,0 +1,26 @@
+graph TD
+    OwnerSafe[Owner Multi-Sig\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]
+    OwnerSafe[Owner Multi-Sig\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]
+    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]
+    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]
+    Orchestrator[Economic Power Orchestrator]
+        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]
+    Job_job_supply_chain[Autonomous Supply Mesh]
+    Job_job_governance_upgrade[Governance Upgrade Launch]
+    Job_job_market_expansion[Market Expansion Omniloop]
+    Job_job_oracle_integration[Oracle Integration Spine]
+    Orchestrator -->|Posts| Job_job_ai_lab_fusion
+    Job_job_ai_lab_fusion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]
+    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]
+    Orchestrator -->|Posts| Job_job_supply_chain
+    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]
+    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]
+    Orchestrator -->|Posts| Job_job_governance_upgrade
+    Job_job_governance_upgrade -->|Executes| Agent_atlas[Atlas Strategic Model Forge]
+    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]
+    Orchestrator -->|Posts| Job_job_market_expansion
+    Job_job_market_expansion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]
+    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]
+    Orchestrator -->|Posts| Job_job_oracle_integration
+    Job_job_oracle_integration -->|Executes| Agent_atlas[Atlas Strategic Model Forge]
+    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma]

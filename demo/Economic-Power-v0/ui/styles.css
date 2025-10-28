@@ -1,0 +1,218 @@
+:root {
+  color-scheme: dark;
+  --bg: radial-gradient(circle at top left, #1b1f3b 0%, #04070f 45%, #020204 100%);
+  --accent: #6ee7ff;
+  --accent-strong: #38bdf8;
+  --card-bg: rgba(12, 16, 32, 0.75);
+  --border: rgba(94, 234, 212, 0.25);
+  --text-primary: #f9fafb;
+  --text-secondary: rgba(224, 231, 255, 0.7);
+  --font-sans: 'Inter', 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  padding: 2.5rem 5vw 1rem;
+  text-align: center;
+}
+
+header h1 {
+  margin-bottom: 0.5rem;
+  font-size: clamp(2.2rem, 4vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+header p {
+  margin: 0 auto;
+  max-width: 740px;
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+}
+
+.actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+button,
+.file-upload span {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.85), rgba(59, 130, 246, 0.85));
+  border: none;
+  border-radius: 999px;
+  padding: 0.75rem 1.75rem;
+  color: #0a101b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover,
+.file-upload span:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+}
+
+.file-upload input {
+  display: none;
+}
+
+main {
+  flex: 1;
+  padding: 0 5vw 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+#metric-cards {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.metric-card {
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: 0 25px 45px rgba(8, 20, 40, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.metric-card strong {
+  font-size: 1.9rem;
+  font-weight: 700;
+}
+
+.metric-card span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 25px 45px rgba(8, 20, 40, 0.55);
+}
+
+.panel-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.panel-header p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--text-primary);
+}
+
+thead {
+  background: rgba(94, 234, 212, 0.08);
+}
+
+thead th {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+
+tbody td {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid rgba(94, 234, 212, 0.15);
+  color: rgba(241, 245, 249, 0.9);
+}
+
+tr:hover td {
+  background: rgba(56, 189, 248, 0.07);
+}
+
+.mermaid {
+  margin-top: 1.5rem;
+  background: rgba(9, 14, 28, 0.9);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.dropzone {
+  border: 2px dashed rgba(94, 234, 212, 0.35);
+  align-items: center;
+}
+
+.dropzone-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+.dropzone.dragover {
+  background: rgba(56, 189, 248, 0.05);
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
+}
+
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  background: linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.9));
+}
+
+@media (max-width: 768px) {
+  header {
+    padding: 2rem 1.5rem 1rem;
+  }
+
+  main {
+    padding: 0 1.5rem 2.5rem;
+  }
+
+  .panel {
+    padding: 1.25rem;
+  }
+}

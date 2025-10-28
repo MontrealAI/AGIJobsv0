@@ -1,0 +1,27 @@
+{
+  "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
+  "threshold": "4-of-7",
+  "controls": [
+    {
+      "parameter": "jobDuration",
+      "current": 72,
+      "target": 48,
+      "script": "npm run owner:parameters",
+      "description": "Owner reduces maximum job duration to enforce faster settlement loops and higher capital velocity."
+    },
+    {
+      "parameter": "validatorQuorum",
+      "current": 3,
+      "target": 5,
+      "script": "npm run owner:upgrade",
+      "description": "Owner increases validator quorum for premium workstreams to maintain uncompromising trust levels."
+    },
+    {
+      "parameter": "stablecoinAdapter",
+      "current": "USDC v1",
+      "target": "USDC v2",
+      "script": "npm run owner:update-all",
+      "description": "Owner upgrades fiat on/off-ramp adapter with improved slippage guarantees."
+    }
+  ]
+}
