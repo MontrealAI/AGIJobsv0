@@ -4,13 +4,36 @@
   "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
   "treasurySafe": "0xAGIJobsOwnerSafe0000000000000000000000001",
   "threshold": 4,
-  "commandCoverage": 0.227,
-  "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks.",
+  "commandCoverage": 1,
+  "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
   "pauseScript": "npm run owner:system-pause",
   "resumeScript": "npm run owner:update-all",
   "scripts": [
     "npm run owner:audit",
     "npm run owner:parameters",
+    "npm run owner:program -- --program adapter-usdc",
+    "npm run owner:program -- --program job-ai-lab-fusion",
+    "npm run owner:program -- --program job-governance-upgrade",
+    "npm run owner:program -- --program job-market-expansion",
+    "npm run owner:program -- --program job-oracle-integration",
+    "npm run owner:program -- --program job-supply-chain",
+    "npm run owner:program -- --program module-certificate",
+    "npm run owner:program -- --program module-dispute",
+    "npm run owner:program -- --program module-job-registry",
+    "npm run owner:program -- --program module-reputation",
+    "npm run owner:program -- --program module-stake-manager",
+    "npm run owner:program -- --program module-validation",
+    "npm run owner:program -- --program orchestrator-pause-drill",
+    "npm run owner:program -- --program orchestrator-rebalance",
+    "npm run owner:program -- --program orchestrator-upgrade",
+    "npm run owner:program -- --program treasury-insurance",
+    "npm run owner:program -- --program treasury-liquidity",
+    "npm run owner:program -- --program treasury-yield",
+    "npm run owner:program -- --program validator-alpha",
+    "npm run owner:program -- --program validator-beta",
+    "npm run owner:program -- --program validator-delta",
+    "npm run owner:program -- --program validator-epsilon",
+    "npm run owner:program -- --program validator-gamma",
     "npm run owner:system-pause",
     "npm run owner:update-all",
     "npm run owner:upgrade"
@@ -92,15 +115,6 @@
     }
   ],
   "alerts": [
-    {
-      "id": "coverage-gap",
-      "severity": "warning",
-      "summary": "Command coverage below 90% – script additional surfaces to reach full control.",
-      "details": [
-        "Coverage 22.7%",
-        "Add scripts for remaining modules, validators, or adapters to close the gap."
-      ]
-    },
     {
       "id": "pending-upgrade",
       "severity": "info",

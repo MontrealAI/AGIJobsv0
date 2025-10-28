@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T15:06:06.385Z",
+  "executionTimestamp": "2025-10-28T15:43:12.044Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -21,9 +21,9 @@
     "automationScore": 0.852,
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.761,
-    "ownerCommandCoverage": 0.227,
+    "ownerCommandCoverage": 1,
     "sovereignControlScore": 1,
-    "assertionPassRate": 0.833
+    "assertionPassRate": 1
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -100,6 +100,158 @@
         "module": "StakeManager",
         "script": "npm run owner:parameters",
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
+      }
+    ]
+  },
+  "commandCatalog": {
+    "jobPrograms": [
+      {
+        "id": "job-ai-lab-fusion",
+        "target": "job-ai-lab-fusion",
+        "script": "npm run owner:program -- --program job-ai-lab-fusion",
+        "description": "Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator."
+      },
+      {
+        "id": "job-supply-mesh",
+        "target": "job-supply-chain",
+        "script": "npm run owner:program -- --program job-supply-chain",
+        "description": "Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment."
+      },
+      {
+        "id": "job-governance-upgrade",
+        "target": "job-governance-upgrade",
+        "script": "npm run owner:program -- --program job-governance-upgrade",
+        "description": "Authorize Sentinel assurance fabric to promote the upgraded governance module."
+      },
+      {
+        "id": "job-market-expansion",
+        "target": "job-market-expansion",
+        "script": "npm run owner:program -- --program job-market-expansion",
+        "description": "Activate Aurora omni-loop teams for immediate market penetration."
+      },
+      {
+        "id": "job-oracle-integration",
+        "target": "job-oracle-integration",
+        "script": "npm run owner:program -- --program job-oracle-integration",
+        "description": "Command Helios to ship the oracle integration spine with hardened adapters."
+      }
+    ],
+    "validatorPrograms": [
+      {
+        "id": "validator-alpha",
+        "target": "validator-alpha",
+        "script": "npm run owner:program -- --program validator-alpha",
+        "description": "Escalate Validator Alpha quorum weighting and deploy fresh attestations."
+      },
+      {
+        "id": "validator-beta",
+        "target": "validator-beta",
+        "script": "npm run owner:program -- --program validator-beta",
+        "description": "Rotate Validator Beta committees and enforce staking deltas."
+      },
+      {
+        "id": "validator-gamma",
+        "target": "validator-gamma",
+        "script": "npm run owner:program -- --program validator-gamma",
+        "description": "Deploy Gamma macro-policy validators to contested economic tasks."
+      },
+      {
+        "id": "validator-delta",
+        "target": "validator-delta",
+        "script": "npm run owner:program -- --program validator-delta",
+        "description": "Refresh Delta’s ML-evaluation pipelines with latest defence heuristics."
+      },
+      {
+        "id": "validator-epsilon",
+        "target": "validator-epsilon",
+        "script": "npm run owner:program -- --program validator-epsilon",
+        "description": "Escalate Epsilon red-team programs for adversarial fortification."
+      }
+    ],
+    "adapterPrograms": [
+      {
+        "id": "adapter-usdc-v1",
+        "target": "USDC v1",
+        "script": "npm run owner:program -- --program adapter-usdc",
+        "description": "Upgrade the USDC bridge adapter with deterministic slippage guards."
+      }
+    ],
+    "modulePrograms": [
+      {
+        "id": "module-job-registry",
+        "target": "job-registry",
+        "script": "npm run owner:program -- --program module-job-registry",
+        "description": "Promote the JobRegistry v2 deployment with zero-downtime migration."
+      },
+      {
+        "id": "module-stake-manager",
+        "target": "stake-manager",
+        "script": "npm run owner:program -- --program module-stake-manager",
+        "description": "Adjust stake thresholds and payout cadence for StakeManager."
+      },
+      {
+        "id": "module-validation",
+        "target": "validation-module",
+        "script": "npm run owner:program -- --program module-validation",
+        "description": "Roll out commit–reveal validator enhancements across ValidationModule."
+      },
+      {
+        "id": "module-reputation",
+        "target": "reputation-engine",
+        "script": "npm run owner:program -- --program module-reputation",
+        "description": "Regenerate reputation curves and publish new weighting vectors."
+      },
+      {
+        "id": "module-dispute",
+        "target": "dispute-module",
+        "script": "npm run owner:program -- --program module-dispute",
+        "description": "Commission expanded dispute juries and refresh escalation liveness timers."
+      },
+      {
+        "id": "module-certificate",
+        "target": "certificate-nft",
+        "script": "npm run owner:program -- --program module-certificate",
+        "description": "Ship upgraded CertificateNFT metadata schema for compliance provenance."
+      }
+    ],
+    "treasuryPrograms": [
+      {
+        "id": "treasury-liquidity",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-liquidity",
+        "description": "Rebalance AGI/USDC buffers and top up validator incentive pools."
+      },
+      {
+        "id": "treasury-yield",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-yield",
+        "description": "Deploy surplus treasury capital into protocol-aligned yield strategies."
+      },
+      {
+        "id": "treasury-insurance",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-insurance",
+        "description": "Activate insurance backstops for mission-critical validator cohorts."
+      }
+    ],
+    "orchestratorPrograms": [
+      {
+        "id": "orchestrator-rebalance",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-rebalance",
+        "description": "Re-weight autonomous routing priorities to maximise throughput."
+      },
+      {
+        "id": "orchestrator-pause-drill",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-pause-drill",
+        "description": "Run full-stack pause/resume drill to validate emergency readiness."
+      },
+      {
+        "id": "orchestrator-upgrade",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-upgrade",
+        "description": "Roll forward orchestrator microservices with deterministic change sets."
       }
     ]
   },
@@ -259,7 +411,7 @@
   ],
   "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_sentinel[Sentinel Assurance Fabric]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_aurora[Aurora Economic Intelligence Mesh]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
   "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Helios Sovereign Build Hub :active, job-ai-lab-fusion, 0.0h, 33.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 0.0h, 26.9h\n    section Governance Upgrade Launch\n      Sentinel Assurance Fabric :active, job-governance-upgrade, 0.0h, 26.3h\n    section Market Expansion Omniloop\n      Aurora Economic Intelligence Mesh :active, job-market-expansion, 0.0h, 21.9h\n    section Oracle Integration Spine\n      Helios Sovereign Build Hub :active, job-oracle-integration, 33.5h, 19.6h",
-  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 22.7%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
+  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 100.0%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    JobProgram_0_job_ai_lab_fusion[\"Job • job-ai-lab-fusion\\nnpm run owner:program -- --program job-ai-lab-fusion\"]\n    JobProgram_1_job_supply_mesh[\"Job • job-supply-chain\\nnpm run owner:program -- --program job-supply-chain\"]\n    JobProgram_2_job_governance_upgrade[\"Job • job-governance-upgrade\\nnpm run owner:program -- --program job-governance-upgrade\"]\n    JobProgram_3_job_market_expansion[\"Job • job-market-expansion\\nnpm run owner:program -- --program job-market-expansion\"]\n    JobProgram_4_job_oracle_integration[\"Job • job-oracle-integration\\nnpm run owner:program -- --program job-oracle-integration\"]\n    ValidatorProgram_0_validator_alpha[\"Validator • validator-alpha\\nnpm run owner:program -- --program validator-alpha\"]\n    ValidatorProgram_1_validator_beta[\"Validator • validator-beta\\nnpm run owner:program -- --program validator-beta\"]\n    ValidatorProgram_2_validator_gamma[\"Validator • validator-gamma\\nnpm run owner:program -- --program validator-gamma\"]\n    ValidatorProgram_3_validator_delta[\"Validator • validator-delta\\nnpm run owner:program -- --program validator-delta\"]\n    ValidatorProgram_4_validator_epsilon[\"Validator • validator-epsilon\\nnpm run owner:program -- --program validator-epsilon\"]\n    AdapterProgram_0_adapter_usdc_v1[\"Adapter • USDC v1\\nnpm run owner:program -- --program adapter-usdc\"]\n    TreasuryProgram_0_treasury_liquidity[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-liquidity\"]\n    TreasuryProgram_1_treasury_yield[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-yield\"]\n    TreasuryProgram_2_treasury_insurance[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-insurance\"]\n    OrchestratorProgram_0_orchestrator_rebalance[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-rebalance\"]\n    OrchestratorProgram_1_orchestrator_pause_drill[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-pause-drill\"]\n    OrchestratorProgram_2_orchestrator_upgrade[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-upgrade\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Launch| JobProgram_0_job_ai_lab_fusion\n    OwnerMultiSig -->|Launch| JobProgram_1_job_supply_mesh\n    OwnerMultiSig -->|Launch| JobProgram_2_job_governance_upgrade\n    OwnerMultiSig -->|Launch| JobProgram_3_job_market_expansion\n    OwnerMultiSig -->|Launch| JobProgram_4_job_oracle_integration\n    OwnerMultiSig -->|Command| ValidatorProgram_0_validator_alpha\n    OwnerMultiSig -->|Command| ValidatorProgram_1_validator_beta\n    OwnerMultiSig -->|Command| ValidatorProgram_2_validator_gamma\n    OwnerMultiSig -->|Command| ValidatorProgram_3_validator_delta\n    OwnerMultiSig -->|Command| ValidatorProgram_4_validator_epsilon\n    OwnerMultiSig -->|Bridge| AdapterProgram_0_adapter_usdc_v1\n    OwnerMultiSig -->|Fund| TreasuryProgram_0_treasury_liquidity\n    OwnerMultiSig -->|Fund| TreasuryProgram_1_treasury_yield\n    OwnerMultiSig -->|Fund| TreasuryProgram_2_treasury_insurance\n    OwnerMultiSig -->|Direct| OrchestratorProgram_0_orchestrator_rebalance\n    OwnerMultiSig -->|Direct| OrchestratorProgram_1_orchestrator_pause_drill\n    OwnerMultiSig -->|Direct| OrchestratorProgram_2_orchestrator_upgrade\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
   "ownerCommandPlan": {
     "quickActions": {
       "pause": "npm run owner:system-pause",
@@ -329,22 +481,172 @@
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
     ],
-    "commandCoverage": 0.227,
-    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks."
+    "jobPrograms": [
+      {
+        "id": "job-ai-lab-fusion",
+        "target": "job-ai-lab-fusion",
+        "script": "npm run owner:program -- --program job-ai-lab-fusion",
+        "description": "Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator."
+      },
+      {
+        "id": "job-supply-mesh",
+        "target": "job-supply-chain",
+        "script": "npm run owner:program -- --program job-supply-chain",
+        "description": "Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment."
+      },
+      {
+        "id": "job-governance-upgrade",
+        "target": "job-governance-upgrade",
+        "script": "npm run owner:program -- --program job-governance-upgrade",
+        "description": "Authorize Sentinel assurance fabric to promote the upgraded governance module."
+      },
+      {
+        "id": "job-market-expansion",
+        "target": "job-market-expansion",
+        "script": "npm run owner:program -- --program job-market-expansion",
+        "description": "Activate Aurora omni-loop teams for immediate market penetration."
+      },
+      {
+        "id": "job-oracle-integration",
+        "target": "job-oracle-integration",
+        "script": "npm run owner:program -- --program job-oracle-integration",
+        "description": "Command Helios to ship the oracle integration spine with hardened adapters."
+      }
+    ],
+    "validatorPrograms": [
+      {
+        "id": "validator-alpha",
+        "target": "validator-alpha",
+        "script": "npm run owner:program -- --program validator-alpha",
+        "description": "Escalate Validator Alpha quorum weighting and deploy fresh attestations."
+      },
+      {
+        "id": "validator-beta",
+        "target": "validator-beta",
+        "script": "npm run owner:program -- --program validator-beta",
+        "description": "Rotate Validator Beta committees and enforce staking deltas."
+      },
+      {
+        "id": "validator-gamma",
+        "target": "validator-gamma",
+        "script": "npm run owner:program -- --program validator-gamma",
+        "description": "Deploy Gamma macro-policy validators to contested economic tasks."
+      },
+      {
+        "id": "validator-delta",
+        "target": "validator-delta",
+        "script": "npm run owner:program -- --program validator-delta",
+        "description": "Refresh Delta’s ML-evaluation pipelines with latest defence heuristics."
+      },
+      {
+        "id": "validator-epsilon",
+        "target": "validator-epsilon",
+        "script": "npm run owner:program -- --program validator-epsilon",
+        "description": "Escalate Epsilon red-team programs for adversarial fortification."
+      }
+    ],
+    "adapterPrograms": [
+      {
+        "id": "adapter-usdc-v1",
+        "target": "USDC v1",
+        "script": "npm run owner:program -- --program adapter-usdc",
+        "description": "Upgrade the USDC bridge adapter with deterministic slippage guards."
+      }
+    ],
+    "modulePrograms": [
+      {
+        "id": "module-job-registry",
+        "target": "job-registry",
+        "script": "npm run owner:program -- --program module-job-registry",
+        "description": "Promote the JobRegistry v2 deployment with zero-downtime migration."
+      },
+      {
+        "id": "module-stake-manager",
+        "target": "stake-manager",
+        "script": "npm run owner:program -- --program module-stake-manager",
+        "description": "Adjust stake thresholds and payout cadence for StakeManager."
+      },
+      {
+        "id": "module-validation",
+        "target": "validation-module",
+        "script": "npm run owner:program -- --program module-validation",
+        "description": "Roll out commit–reveal validator enhancements across ValidationModule."
+      },
+      {
+        "id": "module-reputation",
+        "target": "reputation-engine",
+        "script": "npm run owner:program -- --program module-reputation",
+        "description": "Regenerate reputation curves and publish new weighting vectors."
+      },
+      {
+        "id": "module-dispute",
+        "target": "dispute-module",
+        "script": "npm run owner:program -- --program module-dispute",
+        "description": "Commission expanded dispute juries and refresh escalation liveness timers."
+      },
+      {
+        "id": "module-certificate",
+        "target": "certificate-nft",
+        "script": "npm run owner:program -- --program module-certificate",
+        "description": "Ship upgraded CertificateNFT metadata schema for compliance provenance."
+      }
+    ],
+    "treasuryPrograms": [
+      {
+        "id": "treasury-liquidity",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-liquidity",
+        "description": "Rebalance AGI/USDC buffers and top up validator incentive pools."
+      },
+      {
+        "id": "treasury-yield",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-yield",
+        "description": "Deploy surplus treasury capital into protocol-aligned yield strategies."
+      },
+      {
+        "id": "treasury-insurance",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-insurance",
+        "description": "Activate insurance backstops for mission-critical validator cohorts."
+      }
+    ],
+    "orchestratorPrograms": [
+      {
+        "id": "orchestrator-rebalance",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-rebalance",
+        "description": "Re-weight autonomous routing priorities to maximise throughput."
+      },
+      {
+        "id": "orchestrator-pause-drill",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-pause-drill",
+        "description": "Run full-stack pause/resume drill to validate emergency readiness."
+      },
+      {
+        "id": "orchestrator-upgrade",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-upgrade",
+        "description": "Roll forward orchestrator microservices with deterministic change sets."
+      }
+    ],
+    "commandCoverage": 1,
+    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface."
   },
   "assertions": [
     {
       "id": "owner-command-dominance",
       "title": "Owner multi-sig commands every economic lever",
-      "outcome": "fail",
+      "outcome": "pass",
       "severity": "critical",
-      "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
-      "metric": 0.227,
+      "summary": "Coverage exceeds 90%, ensuring deterministic owner runbooks across modules, pause hooks, and parameter updates.",
+      "metric": 1,
       "target": 0.9,
       "evidence": [
         "controls=3",
         "modules=6",
-        "coverage=0.227"
+        "coverage=1.000"
       ]
     },
     {
@@ -599,13 +901,36 @@
     "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
     "treasurySafe": "0xAGIJobsOwnerSafe0000000000000000000000001",
     "threshold": 4,
-    "commandCoverage": 0.227,
-    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks.",
+    "commandCoverage": 1,
+    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
     "pauseScript": "npm run owner:system-pause",
     "resumeScript": "npm run owner:update-all",
     "scripts": [
       "npm run owner:audit",
       "npm run owner:parameters",
+      "npm run owner:program -- --program adapter-usdc",
+      "npm run owner:program -- --program job-ai-lab-fusion",
+      "npm run owner:program -- --program job-governance-upgrade",
+      "npm run owner:program -- --program job-market-expansion",
+      "npm run owner:program -- --program job-oracle-integration",
+      "npm run owner:program -- --program job-supply-chain",
+      "npm run owner:program -- --program module-certificate",
+      "npm run owner:program -- --program module-dispute",
+      "npm run owner:program -- --program module-job-registry",
+      "npm run owner:program -- --program module-reputation",
+      "npm run owner:program -- --program module-stake-manager",
+      "npm run owner:program -- --program module-validation",
+      "npm run owner:program -- --program orchestrator-pause-drill",
+      "npm run owner:program -- --program orchestrator-rebalance",
+      "npm run owner:program -- --program orchestrator-upgrade",
+      "npm run owner:program -- --program treasury-insurance",
+      "npm run owner:program -- --program treasury-liquidity",
+      "npm run owner:program -- --program treasury-yield",
+      "npm run owner:program -- --program validator-alpha",
+      "npm run owner:program -- --program validator-beta",
+      "npm run owner:program -- --program validator-delta",
+      "npm run owner:program -- --program validator-epsilon",
+      "npm run owner:program -- --program validator-gamma",
       "npm run owner:system-pause",
       "npm run owner:update-all",
       "npm run owner:upgrade"
@@ -687,15 +1012,6 @@
       }
     ],
     "alerts": [
-      {
-        "id": "coverage-gap",
-        "severity": "warning",
-        "summary": "Command coverage below 90% – script additional surfaces to reach full control.",
-        "details": [
-          "Coverage 22.7%",
-          "Add scripts for remaining modules, validators, or adapters to close the gap."
-        ]
-      },
       {
         "id": "pending-upgrade",
         "severity": "info",
