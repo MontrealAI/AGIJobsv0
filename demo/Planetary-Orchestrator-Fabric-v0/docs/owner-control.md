@@ -78,6 +78,24 @@ node scripts/v2/ownerControlSurface.ts \
 
 - The orchestrator immediately persists the new settings and records them under `ownerState.checkpoint` and the next `checkpoint.json` artifact.
 
+### Retarget Reporting Archives
+
+Direct reports to fresh destinations mid-run without redeploying tooling:
+
+```json
+{
+  "type": "reporting.configure",
+  "reason": "Route artifacts to governance bucket",
+  "update": {
+    "directory": "demo/Planetary-Orchestrator-Fabric-v0/reports/governance-archive",
+    "defaultLabel": "governance-drill"
+  }
+}
+```
+
+- `summary.json` updates `ownerState.reporting` so dashboards and auditors immediately see the new directory/label.
+- Checkpoints persist the new settings; subsequent resumes keep writing to the chosen archive without manual edits.
+
 ### Reroute Specific Jobs
 
 ```bash

@@ -67,6 +67,18 @@
       }
     },
     {
+      "tick": 270,
+      "note": "Retarget reporting outputs to governance archive",
+      "command": {
+        "type": "reporting.configure",
+        "reason": "Stream artifacts to dedicated governance bucket",
+        "update": {
+          "directory": "demo/Planetary-Orchestrator-Fabric-v0/reports/governance-archive",
+          "defaultLabel": "governance-drill"
+        }
+      }
+    },
+    {
       "tick": 280,
       "note": "Reroute urgent Mars manufacturing job to Helios",
       "command": {

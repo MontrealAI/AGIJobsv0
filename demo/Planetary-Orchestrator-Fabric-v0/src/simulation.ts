@@ -435,6 +435,14 @@ async function writeArtifacts(
         reason: 'Rotate checkpoint storage bucket',
         update: { path: rotatedCheckpointPath },
       },
+      retargetReporting: {
+        type: 'reporting.configure',
+        reason: 'Stream artifacts to governance-grade storage',
+        update: {
+          directory: `${config.reporting.directory}/owner-retargeted`,
+          defaultLabel: `${(options.outputLabel ?? config.reporting.defaultLabel) || 'latest'}-owner`,
+        },
+      },
       rerouteMarsHotspot: {
         type: 'job.reroute',
         reason: 'Redirect precision workload to Helios GPU array',
@@ -491,6 +499,18 @@ async function writeArtifacts(
           type: 'checkpoint.configure',
           update: { intervalTicks: Math.max(2, Math.floor(checkpointConfig.intervalTicks / 2)), path: rotatedCheckpointPath },
           reason: 'Increase redundancy ahead of interplanetary transfer',
+        },
+      },
+      {
+        tick: 270,
+        note: 'Retarget reporting outputs to archival store',
+        command: {
+          type: 'reporting.configure',
+          update: {
+            directory: `${config.reporting.directory}/owner-retargeted`,
+            defaultLabel: `${(options.outputLabel ?? config.reporting.defaultLabel) || 'latest'}-owner`,
+          },
+          reason: 'Ensure governance artifacts land in dedicated bucket',
         },
       },
       {
@@ -596,6 +616,10 @@ function buildDashboardHtml(
         pausedShards: [],
         checkpoint: summary.checkpoint ?? { path: summary.checkpointPath ?? 'unknown', intervalTicks: 0 },
         metrics: ownerMetrics,
+        reporting: summary.ownerState?.reporting ?? {
+          directory: 'demo/Planetary-Orchestrator-Fabric-v0/reports',
+          defaultLabel: 'latest',
+        },
       };
       document.getElementById('owner-state').textContent = JSON.stringify(ownerState, null, 2);
       const pausedShards = Array.isArray(ownerState.pausedShards) && ownerState.pausedShards.length > 0
@@ -608,11 +632,20 @@ function buildDashboardHtml(
       const checkpointInterval = typeof checkpointState.intervalTicks === 'number'
         ? checkpointState.intervalTicks
         : summary.checkpoint?.intervalTicks ?? 'Unknown';
+      const reportingState = ownerState.reporting ?? { directory: undefined, defaultLabel: undefined };
+      const reportingDirectory = typeof reportingState.directory === 'string'
+        ? reportingState.directory
+        : 'demo/Planetary-Orchestrator-Fabric-v0/reports';
+      const reportingLabel = typeof reportingState.defaultLabel === 'string'
+        ? reportingState.defaultLabel
+        : 'latest';
       document.getElementById('owner-status').innerHTML =
         '<div class="metric"><strong>System Paused</strong><br />' + (ownerState.systemPaused ? 'Yes' : 'No') + '</div>' +
         '<div class="metric"><strong>Paused Shards</strong><br />' + pausedShards + '</div>' +
         '<div class="metric"><strong>Checkpoint Path</strong><br /><code>' + checkpointPath + '</code></div>' +
-        '<div class="metric"><strong>Checkpoint Interval</strong><br />' + checkpointInterval + ' ticks</div>';
+        '<div class="metric"><strong>Checkpoint Interval</strong><br />' + checkpointInterval + ' ticks</div>' +
+        '<div class="metric"><strong>Reporting Directory</strong><br /><code>' + reportingDirectory + '</code></div>' +
+        '<div class="metric"><strong>Default Label</strong><br />' + reportingLabel + '</div>';
       const ownerCommandsMeta = summary.ownerCommands ?? {};
       const scheduledCount = Array.isArray(ownerCommandsMeta.scheduled) ? ownerCommandsMeta.scheduled.length : 0;
       const executedCount = Array.isArray(ownerCommandsMeta.executed) ? ownerCommandsMeta.executed.length : 0;
