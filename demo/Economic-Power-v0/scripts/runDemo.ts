@@ -773,9 +773,12 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
     surfaces += items.length;
     for (const item of items) {
       const identifiers = getIdentifiers(item);
-      const hasProgram = programs.some((program) =>
-        matchesTarget(program, identifiers.id, identifiers.name),
-      );
+      const hasProgram = programs.some((program) => {
+        if (!program.script || program.script.trim().length === 0) {
+          return false;
+        }
+        return matchesTarget(program, identifiers.id, identifiers.name);
+      });
       if (hasProgram) {
         covered += 1;
       }
