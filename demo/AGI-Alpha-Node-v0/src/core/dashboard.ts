@@ -53,6 +53,7 @@ export function startDashboard(options: DashboardOptions): void {
         res.writeHead(200);
         res.end(file);
       } catch (error) {
+        logger.warn({ error, filePath }, 'Failed to serve dashboard asset');
         res.statusCode = 404;
         res.end('Asset not found');
       }

@@ -11,7 +11,8 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "types": ["node"]
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"]
   },
   "include": ["src/**/*.ts", "config/**/*.ts"],
   "exclude": ["node_modules", "dist"]
