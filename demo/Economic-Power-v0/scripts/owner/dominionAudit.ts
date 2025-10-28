@@ -9,7 +9,7 @@ import {
   type Summary,
 } from '../runDemo';
 
-const DEFAULT_SCENARIO = path.join(__dirname, '..', 'scenario', 'baseline.json');
+const DEFAULT_SCENARIO = path.join(__dirname, '..', '..', 'scenario', 'baseline.json');
 
 async function loadSummary({
   scenarioPath,
