@@ -1,64 +1,52 @@
-import path from 'path';
-import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
-import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
-import { writeReportArtifacts } from '../src/core/reporting';
-import { subgraphIndexer } from '../src/core/subgraph';
+#!/usr/bin/env ts-node
+import { ValidatorConstellation } from '../src/validatorConstellation';
+import { CommitRevealWindowConfig, DemoScenarioConfig } from '../src/types';
 
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
-}
+const config: CommitRevealWindowConfig = {
+  commitWindowSeconds: 90,
+  revealWindowSeconds: 90,
+  vrfSeed: 'constellation-scenario',
+  validatorsPerJob: 4,
+  revealQuorum: 3,
+  nonRevealPenaltyBps: 800,
+  incorrectVotePenaltyBps: 1500,
+};
+
+const scenario: DemoScenarioConfig = {
+  validators: [
+    { address: '0x300', ensName: 'apollo.club.agi.eth', domain: 'core', stake: 1_900n },
+    { address: '0x301', ensName: 'artemis.club.agi.eth', domain: 'core', stake: 1_950n },
+    { address: '0x302', ensName: 'hermes.alpha.club.agi.eth', domain: 'core', stake: 2_200n },
+    { address: '0x303', ensName: 'hera.club.agi.eth', domain: 'core', stake: 1_850n },
+  ],
+  agents: [
+    { address: '0x400', ensName: 'helios.agent.agi.eth', domain: 'core', budget: 7_500n },
+  ],
+  jobs: [
+    { jobId: 'job-21', domain: 'core', outcome: 'approved' },
+    { jobId: 'job-22', domain: 'core', outcome: 'rejected' },
+    { jobId: 'job-23', domain: 'core', outcome: 'approved' },
+    { jobId: 'job-24', domain: 'core', outcome: 'rejected' },
+  ],
+  anomalies: [
+    {
+      agent: { address: '0x400', ensName: 'helios.agent.agi.eth', domain: 'core', budget: 7_500n },
+      attemptedSpend: 9_000n,
+      maxBudget: 7_500n,
+      timestamp: Date.now(),
+    },
+  ],
+  committeeConfig: config,
+};
 
 async function main() {
-  const argv = yargs(hideBin(process.argv))
-    .option('config', {
-      type: 'string',
-      demandOption: true,
-      describe: 'Path to the scenario JSON or YAML file',
-    })
-    .option('out', {
-      type: 'string',
-      describe: 'Directory where reports will be written',
-      default: path.join(__dirname, '..', 'reports', 'scenarios'),
-    })
-    .option('name', {
-      type: 'string',
-      describe: 'Override the output folder name',
-    })
-    .strict()
-    .help()
-    .parseSync();
-
-  const scenarioPath = path.resolve(argv.config);
-  const scenarioConfig = loadScenarioConfig(scenarioPath);
-  subgraphIndexer.clear();
-  const prepared = prepareScenario(scenarioConfig);
-  const executed = executeScenario(prepared);
-
-  const scenarioName = executed.context.scenarioName ?? 'validator-constellation-scenario';
-  const slug = slugify(argv.name ?? scenarioName);
-  const reportDir = path.join(path.resolve(argv.out), slug || `scenario-${Date.now()}`);
-
-  writeReportArtifacts({
-    reportDir,
-    roundResult: executed.report,
-    subgraphRecords: subgraphIndexer.list(),
-    events: [executed.report.vrfWitness, ...executed.report.commits, ...executed.report.reveals],
-    context: executed.context,
-  });
-
-  console.log(`Scenario "${scenarioName}" executed successfully.`);
-  console.log('VRF witness transcript:', executed.report.vrfWitness.transcript);
-  console.log(`Validators slashed: ${executed.report.slashingEvents.length}`);
-  console.log(`Sentinel alerts: ${executed.report.sentinelAlerts.length}`);
-  console.log(`Reports written to ${reportDir}`);
+  const constellation = new ValidatorConstellation(config, '0xowner');
+  const report = constellation.runDemoScenario(scenario);
+  const replacer = (_key: string, value: unknown) => (typeof value === 'bigint' ? value.toString() : value);
+  console.log(JSON.stringify(report, replacer, 2));
 }
 
 main().catch((error) => {
-  console.error('Scenario execution failed:', error);
-  process.exit(1);
+  console.error(error);
+  process.exitCode = 1;
 });

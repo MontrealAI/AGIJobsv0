@@ -1,0 +1,41 @@
+specVersion: 0.0.7
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: ValidatorConstellationDemo
+    network: sepolia
+    source:
+      address: '0x0000000000000000000000000000000000000000'
+      abi: ValidatorConstellationDemo
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - ValidatorRegistered
+        - ValidatorSlashed
+        - JobFinalized
+        - DomainPause
+        - SentinelAlert
+        - ZKProofSubmitted
+      abis:
+        - name: ValidatorConstellationDemo
+          file: ./abis/ValidatorConstellationDemo.json
+      eventHandlers:
+        - event: ValidatorRegistered(indexed address,string,uint256)
+          handler: handleValidatorRegistered
+        - event: ValidatorSlashed(indexed address,string,uint256,string,string)
+          handler: handleValidatorSlashed
+        - event: JobFinalized(string,string,uint256,uint256,address[])
+          handler: handleJobFinalized
+        - event: DomainPaused(string,string,address)
+          handler: handleDomainPaused
+        - event: DomainResumed(string,address)
+          handler: handleDomainResumed
+        - event: SentinelAlert(string,string,string)
+          handler: handleSentinelAlert
+        - event: ZKProofSubmitted(bytes32,string[],address)
+          handler: handleZKProofSubmitted
+      file: ./src/mapping.ts
