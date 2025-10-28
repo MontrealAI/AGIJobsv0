@@ -1,7 +1,7 @@
 {
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
-  "generatedAt": "2025-10-28T12:57:19.375Z",
+  "generatedAt": "2025-10-28T13:40:52.782Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -13,14 +13,15 @@
     "treasuryAfterRun": 2254040,
     "roiMultiplier": 3.28,
     "netYield": 933800,
-    "paybackHours": 36.54,
-    "throughputJobsPerDay": 0.87,
+    "paybackHours": 33.48,
+    "throughputJobsPerDay": 2.26,
     "validatorConfidence": 0.9812,
     "automationScore": 0.852,
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.761,
     "ownerCommandCoverage": 0.227,
-    "sovereignControlScore": 1
+    "sovereignControlScore": 1,
+    "assertionPassRate": 0.833
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -104,12 +105,13 @@
     {
       "jobId": "job-ai-lab-fusion",
       "jobName": "AI Lab Fusion Accelerator",
-      "agentId": "atlas",
-      "agentName": "Atlas Strategic Model Forge",
-      "agentEns": "atlas.agent.agijobs.eth",
+      "agentId": "helios",
+      "agentName": "Helios Sovereign Build Hub",
+      "agentEns": "helios.agent.agijobs.eth",
       "startHour": 0,
-      "endHour": 36.54,
-      "efficiency": 0.9852216748768474,
+      "endHour": 33.480000000000004,
+      "efficiency": 1.075268817204301,
+      "skillMatch": 0.6666666666666666,
       "validatorIds": [
         "validator-alpha",
         "validator-beta",
@@ -138,9 +140,10 @@
       "agentId": "atlas",
       "agentName": "Atlas Strategic Model Forge",
       "agentEns": "atlas.agent.agijobs.eth",
-      "startHour": 36.54,
-      "endHour": 63.39,
+      "startHour": 0,
+      "endHour": 26.85,
       "efficiency": 1.1173184357541899,
+      "skillMatch": 1,
       "validatorIds": [
         "validator-alpha",
         "validator-beta",
@@ -164,12 +167,13 @@
     {
       "jobId": "job-governance-upgrade",
       "jobName": "Governance Upgrade Launch",
-      "agentId": "atlas",
-      "agentName": "Atlas Strategic Model Forge",
-      "agentEns": "atlas.agent.agijobs.eth",
-      "startHour": 63.39,
-      "endHour": 91.81,
-      "efficiency": 0.9852216748768474,
+      "agentId": "sentinel",
+      "agentName": "Sentinel Assurance Fabric",
+      "agentEns": "sentinel.agent.agijobs.eth",
+      "startHour": 0,
+      "endHour": 26.32,
+      "efficiency": 1.0638297872340425,
+      "skillMatch": 0.6666666666666666,
       "validatorIds": [
         "validator-alpha",
         "validator-beta",
@@ -195,12 +199,13 @@
     {
       "jobId": "job-market-expansion",
       "jobName": "Market Expansion Omniloop",
-      "agentId": "atlas",
-      "agentName": "Atlas Strategic Model Forge",
-      "agentEns": "atlas.agent.agijobs.eth",
-      "startHour": 91.81,
-      "endHour": 115.21000000000001,
-      "efficiency": 1.0256410256410258,
+      "agentId": "aurora",
+      "agentName": "Aurora Economic Intelligence Mesh",
+      "agentEns": "aurora.agent.agijobs.eth",
+      "startHour": 0,
+      "endHour": 21.888,
+      "efficiency": 1.0964912280701753,
+      "skillMatch": 0.8333333333333334,
       "validatorIds": [
         "validator-alpha",
         "validator-beta",
@@ -224,12 +229,13 @@
     {
       "jobId": "job-oracle-integration",
       "jobName": "Oracle Integration Spine",
-      "agentId": "atlas",
-      "agentName": "Atlas Strategic Model Forge",
-      "agentEns": "atlas.agent.agijobs.eth",
-      "startHour": 115.21000000000001,
-      "endHour": 137.54000000000002,
-      "efficiency": 0.9852216748768474,
+      "agentId": "helios",
+      "agentName": "Helios Sovereign Build Hub",
+      "agentEns": "helios.agent.agijobs.eth",
+      "startHour": 33.480000000000004,
+      "endHour": 53.06,
+      "efficiency": 1.1235955056179776,
+      "skillMatch": 1,
       "validatorIds": [
         "validator-alpha",
         "validator-beta",
@@ -249,9 +255,9 @@
       "automationLift": 0.8347050794150797
     }
   ],
-  "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
-  "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Atlas Strategic Model Forge :active, job-ai-lab-fusion, 0.0h, 36.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 36.5h, 26.9h\n    section Governance Upgrade Launch\n      Atlas Strategic Model Forge :active, job-governance-upgrade, 63.4h, 28.4h\n    section Market Expansion Omniloop\n      Atlas Strategic Model Forge :active, job-market-expansion, 91.8h, 23.4h\n    section Oracle Integration Spine\n      Atlas Strategic Model Forge :active, job-oracle-integration, 115.2h, 22.3h",
-  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 22.7%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
+  "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_sentinel[Sentinel Assurance Fabric]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_aurora[Aurora Economic Intelligence Mesh]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
+  "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Helios Sovereign Build Hub :active, job-ai-lab-fusion, 0.0h, 33.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 0.0h, 26.9h\n    section Governance Upgrade Launch\n      Sentinel Assurance Fabric :active, job-governance-upgrade, 0.0h, 26.3h\n    section Market Expansion Omniloop\n      Aurora Economic Intelligence Mesh :active, job-market-expansion, 0.0h, 21.9h\n    section Oracle Integration Spine\n      Helios Sovereign Build Hub :active, job-oracle-integration, 33.5h, 19.6h",
+  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 100.0%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
   "ownerCommandPlan": {
     "quickActions": {
       "pause": "npm run owner:system-pause",
@@ -324,13 +330,106 @@
     "commandCoverage": 0.227,
     "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks."
   },
+  "assertions": [
+    {
+      "id": "owner-command-dominance",
+      "title": "Owner multi-sig commands every economic lever",
+      "outcome": "fail",
+      "severity": "critical",
+      "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
+      "metric": 0.227,
+      "target": 0.9,
+      "evidence": [
+        "controls=3",
+        "modules=6",
+        "coverage=0.227"
+      ]
+    },
+    {
+      "id": "sovereign-custody",
+      "title": "All modules sit under governed safes",
+      "outcome": "pass",
+      "severity": "critical",
+      "summary": "Every module remains under the owner multi-sig or treasury guardian.",
+      "metric": 1,
+      "target": 1,
+      "evidence": [
+        "JobRegistry:0xAGIJobsGovernor0000000000000000000000003",
+        "StakeManager:0xAGIJobsGovernor0000000000000000000000003",
+        "ValidationModule:0xAGIJobsGovernor0000000000000000000000003",
+        "ReputationEngine:0xAGIJobsGovernor0000000000000000000000003",
+        "DisputeModule:0xAGIJobsGovernor0000000000000000000000003",
+        "CertificateNFT:0xAGIJobsGovernor0000000000000000000000003"
+      ]
+    },
+    {
+      "id": "skill-alignment",
+      "title": "Job to agent skill alignment remains above 60%",
+      "outcome": "pass",
+      "severity": "warning",
+      "summary": "All assignments meet the skill-match threshold, confirming intelligent routing.",
+      "target": 0.6,
+      "metric": 0.667,
+      "evidence": [
+        "job-ai-lab-fusion:0.67",
+        "job-supply-chain:1.00",
+        "job-governance-upgrade:0.67",
+        "job-market-expansion:0.83",
+        "job-oracle-integration:1.00"
+      ]
+    },
+    {
+      "id": "validator-strength",
+      "title": "Validator quorums and confidence exceed defensive floor",
+      "outcome": "pass",
+      "severity": "critical",
+      "summary": "Validator sets satisfy quorum requirements with >90% confidence.",
+      "target": 0.9,
+      "metric": 0.981,
+      "evidence": [
+        "job-ai-lab-fusion:quorum=5/5;confidence=0.977",
+        "job-supply-chain:quorum=4/4;confidence=0.983",
+        "job-governance-upgrade:quorum=5/5;confidence=0.979",
+        "job-market-expansion:quorum=4/4;confidence=0.985",
+        "job-oracle-integration:quorum=3/3;confidence=0.982"
+      ]
+    },
+    {
+      "id": "treasury-resilience",
+      "title": "Treasury remains solvent after every execution step",
+      "outcome": "pass",
+      "severity": "critical",
+      "summary": "Treasury balance stays positive throughout the execution timeline.",
+      "metric": 2254040,
+      "target": 0,
+      "evidence": [
+        "job-ai-lab-fusion:1570400.00",
+        "job-supply-chain:1794000.00",
+        "job-governance-upgrade:1963800.00",
+        "job-market-expansion:2119400.00",
+        "job-oracle-integration:2254040.00"
+      ]
+    },
+    {
+      "id": "automation-dominance",
+      "title": "Automation loop exceeds 82% coverage",
+      "outcome": "pass",
+      "severity": "info",
+      "summary": "Automation score surpasses the autonomy target – human intervention remains optional.",
+      "metric": 0.852,
+      "target": 0.82,
+      "evidence": [
+        "automationScore=0.852"
+      ]
+    }
+  ],
   "treasuryTrajectory": [
     {
       "step": 1,
       "jobId": "job-ai-lab-fusion",
       "jobName": "AI Lab Fusion Accelerator",
       "startHour": 0,
-      "endHour": 36.54,
+      "endHour": 33.48,
       "treasuryAfterJob": 1570400,
       "cumulativeValue": 450000,
       "cumulativeCost": 157000,
@@ -342,8 +441,8 @@
       "step": 2,
       "jobId": "job-supply-chain",
       "jobName": "Autonomous Supply Mesh",
-      "startHour": 36.54,
-      "endHour": 63.39,
+      "startHour": 0,
+      "endHour": 26.85,
       "treasuryAfterJob": 1794000,
       "cumulativeValue": 760000,
       "cumulativeCost": 260000,
@@ -355,8 +454,8 @@
       "step": 3,
       "jobId": "job-governance-upgrade",
       "jobName": "Governance Upgrade Launch",
-      "startHour": 63.39,
-      "endHour": 91.81,
+      "startHour": 0,
+      "endHour": 26.32,
       "treasuryAfterJob": 1963800,
       "cumulativeValue": 1000000,
       "cumulativeCost": 340500,
@@ -368,8 +467,8 @@
       "step": 4,
       "jobId": "job-market-expansion",
       "jobName": "Market Expansion Omniloop",
-      "startHour": 91.81,
-      "endHour": 115.21,
+      "startHour": 0,
+      "endHour": 21.89,
       "treasuryAfterJob": 2119400,
       "cumulativeValue": 1215000,
       "cumulativeCost": 409000,
@@ -381,8 +480,8 @@
       "step": 5,
       "jobId": "job-oracle-integration",
       "jobName": "Oracle Integration Spine",
-      "startHour": 115.21,
-      "endHour": 137.54,
+      "startHour": 33.48,
+      "endHour": 53.06,
       "treasuryAfterJob": 2254040,
       "cumulativeValue": 1395000,
       "cumulativeCost": 461200,

@@ -1,6 +1,6 @@
 # Owner Command Playbook
 
-Generated 10/28/2025, 12:57:19 PM (UTC)
+Generated 10/28/2025, 1:59:52 PM (UTC)
 
 Command coverage: 22.7% — Coverage below defensive target – prioritise scripting additional command hooks.
 

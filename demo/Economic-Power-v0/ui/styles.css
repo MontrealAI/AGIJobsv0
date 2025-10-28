@@ -116,6 +116,119 @@ main {
   color: var(--text-secondary);
 }
 
+.assertion-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.assertion-card {
+  background: rgba(7, 13, 26, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 20px 35px rgba(4, 10, 24, 0.55);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.assertion-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(110, 231, 255, 0.55);
+}
+
+.assertion-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.assertion-card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+.assertion-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--text-primary);
+}
+
+.severity-critical {
+  background: rgba(248, 113, 113, 0.25);
+  color: #fee2e2;
+}
+
+.severity-warning {
+  background: rgba(250, 204, 21, 0.2);
+  color: #fef3c7;
+}
+
+.severity-info {
+  background: rgba(110, 231, 255, 0.25);
+  color: #e0f2fe;
+}
+
+.assertion-status {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.assertion-status span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.25);
+}
+
+.assertion-summary {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.assertion-metric {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(191, 219, 254, 0.8);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.assertion-evidence {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.8);
+}
+
+.assertion-card.assertion-pass .assertion-status span {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.assertion-card.assertion-fail .assertion-status span {
+  background: rgba(248, 113, 113, 0.35);
+}
+
 .panel {
   background: var(--card-bg);
   border: 1px solid var(--border);

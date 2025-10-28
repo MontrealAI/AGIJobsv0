@@ -1,0 +1,93 @@
+[
+  {
+    "id": "owner-command-dominance",
+    "title": "Owner multi-sig commands every economic lever",
+    "outcome": "fail",
+    "severity": "critical",
+    "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
+    "metric": 0.227,
+    "target": 0.9,
+    "evidence": [
+      "controls=3",
+      "modules=6",
+      "coverage=0.227"
+    ]
+  },
+  {
+    "id": "sovereign-custody",
+    "title": "All modules sit under governed safes",
+    "outcome": "pass",
+    "severity": "critical",
+    "summary": "Every module remains under the owner multi-sig or treasury guardian.",
+    "metric": 1,
+    "target": 1,
+    "evidence": [
+      "JobRegistry:0xAGIJobsGovernor0000000000000000000000003",
+      "StakeManager:0xAGIJobsGovernor0000000000000000000000003",
+      "ValidationModule:0xAGIJobsGovernor0000000000000000000000003",
+      "ReputationEngine:0xAGIJobsGovernor0000000000000000000000003",
+      "DisputeModule:0xAGIJobsGovernor0000000000000000000000003",
+      "CertificateNFT:0xAGIJobsGovernor0000000000000000000000003"
+    ]
+  },
+  {
+    "id": "skill-alignment",
+    "title": "Job to agent skill alignment remains above 60%",
+    "outcome": "pass",
+    "severity": "warning",
+    "summary": "All assignments meet the skill-match threshold, confirming intelligent routing.",
+    "target": 0.6,
+    "metric": 0.667,
+    "evidence": [
+      "job-ai-lab-fusion:0.67",
+      "job-supply-chain:1.00",
+      "job-governance-upgrade:0.67",
+      "job-market-expansion:0.83",
+      "job-oracle-integration:1.00"
+    ]
+  },
+  {
+    "id": "validator-strength",
+    "title": "Validator quorums and confidence exceed defensive floor",
+    "outcome": "pass",
+    "severity": "critical",
+    "summary": "Validator sets satisfy quorum requirements with >90% confidence.",
+    "target": 0.9,
+    "metric": 0.981,
+    "evidence": [
+      "job-ai-lab-fusion:quorum=5/5;confidence=0.977",
+      "job-supply-chain:quorum=4/4;confidence=0.983",
+      "job-governance-upgrade:quorum=5/5;confidence=0.979",
+      "job-market-expansion:quorum=4/4;confidence=0.985",
+      "job-oracle-integration:quorum=3/3;confidence=0.982"
+    ]
+  },
+  {
+    "id": "treasury-resilience",
+    "title": "Treasury remains solvent after every execution step",
+    "outcome": "pass",
+    "severity": "critical",
+    "summary": "Treasury balance stays positive throughout the execution timeline.",
+    "metric": 2254040,
+    "target": 0,
+    "evidence": [
+      "job-ai-lab-fusion:1570400.00",
+      "job-supply-chain:1794000.00",
+      "job-governance-upgrade:1963800.00",
+      "job-market-expansion:2119400.00",
+      "job-oracle-integration:2254040.00"
+    ]
+  },
+  {
+    "id": "automation-dominance",
+    "title": "Automation loop exceeds 82% coverage",
+    "outcome": "pass",
+    "severity": "info",
+    "summary": "Automation score surpasses the autonomy target – human intervention remains optional.",
+    "metric": 0.852,
+    "target": 0.82,
+    "evidence": [
+      "automationScore=0.852"
+    ]
+  }
+]

@@ -139,6 +139,7 @@ type Assignment = {
   startHour: number;
   endHour: number;
   efficiency: number;
+  skillMatch: number;
   validatorIds: string[];
   validatorNames: string[];
   validatorConfidence: number;
@@ -148,6 +149,17 @@ type Assignment = {
   netValue: number;
   economicValue: number;
   automationLift: number;
+};
+
+type Assertion = {
+  id: string;
+  title: string;
+  outcome: 'pass' | 'fail';
+  severity: 'critical' | 'warning' | 'info';
+  summary: string;
+  metric?: number;
+  target?: number;
+  evidence: string[];
 };
 
 type Summary = {
@@ -173,6 +185,7 @@ type Summary = {
     stabilityIndex: number;
     ownerCommandCoverage: number;
     sovereignControlScore: number;
+    assertionPassRate: number;
   };
   ownerControl: {
     threshold: string;
@@ -193,6 +206,7 @@ type Summary = {
   mermaidTimeline: string;
   ownerCommandMermaid: string;
   ownerCommandPlan: OwnerCommandPlan;
+  assertions: Assertion[];
   treasuryTrajectory: TrajectoryEntry[];
   deployment: {
     network: Scenario['network'];
@@ -567,25 +581,35 @@ function computeAgentScore(
   job: Scenario['jobs'][number],
   state: AgentState,
 ): number {
-  const requiredSkills = job.skills.length;
-  const directMatches = job.skills.filter((skill) =>
-    (agent.skills ?? []).includes(skill),
-  ).length;
+  const requiredSkills = Math.max(job.skills.length, 1);
+  const skillSet = agent.skills ?? [];
+  const specializationSet = agent.specializations ?? [];
+  const directMatches = job.skills.filter((skill) => skillSet.includes(skill)).length;
   const specializationMatches = job.skills.filter((skill) =>
-    (agent.specializations ?? []).includes(skill),
+    specializationSet.includes(skill),
   ).length;
-  const matchRatio = requiredSkills
-    ? (directMatches + specializationMatches * 0.7) / requiredSkills
-    : 0;
+  const skillCoverage = Math.min(
+    1,
+    (directMatches + specializationMatches * 0.5) / requiredSkills,
+  );
   const availabilityScore = agent.availability;
   const reputationScore = agent.reputation / 100;
   const capacityPenalty = state.load / Math.max(agent.capacity, 1);
+  const backlogPenalty = state.availableAt
+    ? Math.min(state.availableAt / Math.max(job.executionHours, 1), 0.3)
+    : 0;
+  const zeroMatchPenalty = directMatches === 0 ? 0.45 : 0;
   const stochastic = pseudoRandom(`${agent.id}:${job.id}:match`) * 0.05;
+  if (skillCoverage === 0) {
+    return -1 + stochastic - backlogPenalty;
+  }
   return (
-    reputationScore * 0.5 +
-    availabilityScore * 0.25 +
-    matchRatio * 0.35 -
-    capacityPenalty * 0.1 +
+    skillCoverage * 0.6 +
+    reputationScore * 0.2 +
+    availabilityScore * 0.12 -
+    capacityPenalty * 0.08 -
+    backlogPenalty -
+    zeroMatchPenalty +
     stochastic
   );
 }
@@ -595,13 +619,22 @@ function selectAgent(
   scenario: Scenario,
   agentStates: Map<string, AgentState>,
 ): { agent: Scenario['agents'][number]; state: AgentState } {
-  const sorted = [...scenario.agents]
-    .map((agent) => ({ agent, state: agentStates.get(agent.id)! }))
-    .sort((a, b) =>
-      computeAgentScore(job, b.agent, b.state) -
-      computeAgentScore(job, a.agent, a.state),
-    );
-  return sorted[0];
+  let best:
+    | { agent: Scenario['agents'][number]; state: AgentState; score: number }
+    | undefined;
+  for (const agent of scenario.agents) {
+    const state = agentStates.get(agent.id);
+    if (!state) continue;
+    const score = computeAgentScore(agent, job, state);
+    if (!best || score > best.score) {
+      best = { agent, state, score };
+    }
+  }
+  if (!best) {
+    const fallbackAgent = scenario.agents[0];
+    return { agent: fallbackAgent, state: agentStates.get(fallbackAgent.id)! };
+  }
+  return { agent: best.agent, state: best.state };
 }
 
 function selectValidators(
@@ -625,10 +658,19 @@ function deriveAssignment(
   state: AgentState,
   validatorSet: ReturnType<typeof selectValidators>,
 ): Assignment {
-  const synergy = job.skills.filter((skill) => agent.skills.includes(skill)).length /
-    Math.max(job.skills.length, 1);
+  const requiredSkills = Math.max(job.skills.length, 1);
+  const skillSet = agent.skills ?? [];
+  const specializationSet = agent.specializations ?? [];
+  const directMatches = job.skills.filter((skill) => skillSet.includes(skill)).length;
+  const specializationMatches = job.skills.filter((skill) =>
+    specializationSet.includes(skill),
+  ).length;
+  const skillMatch = Math.min(
+    1,
+    (directMatches + specializationMatches * 0.5) / requiredSkills,
+  );
   const loadFactor = state.load / Math.max(agent.capacity, 1);
-  const speedMultiplier = 1 - Math.min(synergy * 0.12, 0.25) + loadFactor * 0.06;
+  const speedMultiplier = 1 - Math.min(skillMatch * 0.12, 0.25) + loadFactor * 0.06;
   const duration = job.executionHours * Math.max(speedMultiplier, 0.65);
   const start = Math.max(state.availableAt, 0);
   const end = start + duration;
@@ -647,6 +689,7 @@ function deriveAssignment(
     startHour: start,
     endHour: end,
     efficiency: 1 / Math.max(speedMultiplier, 0.65),
+    skillMatch,
     validatorIds: validatorSet.validators.map((validator) => validator.id),
     validatorNames: validatorSet.validators.map((validator) => validator.name),
     validatorConfidence: validatorSet.confidence,
@@ -766,6 +809,7 @@ function synthesiseSummary(context: SimulationContext): Summary {
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage,
       sovereignControlScore,
+      assertionPassRate: 0,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -786,6 +830,7 @@ function synthesiseSummary(context: SimulationContext): Summary {
     mermaidTimeline: '',
     ownerCommandMermaid: '',
     ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
+    assertions: [],
     treasuryTrajectory: [],
     deployment: {
       network: scenario.network,
@@ -797,6 +842,149 @@ function synthesiseSummary(context: SimulationContext): Summary {
       observability: scenario.observability,
     },
   };
+}
+
+function computeAssertions(
+  scenario: Scenario,
+  summary: Summary,
+): Assertion[] {
+  const assertions: Assertion[] = [];
+
+  const coverage = summary.metrics.ownerCommandCoverage;
+  const ownerOutcome = coverage >= 0.9 ? 'pass' : 'fail';
+  assertions.push({
+    id: 'owner-command-dominance',
+    title: 'Owner multi-sig commands every economic lever',
+    outcome: ownerOutcome,
+    severity: 'critical',
+    summary:
+      ownerOutcome === 'pass'
+        ? 'Coverage exceeds 90%, ensuring deterministic owner runbooks across modules, pause hooks, and parameter updates.'
+        : 'Coverage below 90% – authorise additional scripts before promoting to production.',
+    metric: Number(coverage.toFixed(3)),
+    target: 0.9,
+    evidence: [
+      `controls=${summary.ownerControl.controls.length}`,
+      `modules=${summary.deployment.modules.length}`,
+      `coverage=${coverage.toFixed(3)}`,
+    ],
+  });
+
+  const governanceOwners = new Set([
+    summary.ownerControl.governanceSafe.toLowerCase(),
+    scenario.owner.operator.toLowerCase(),
+    summary.deployment.treasuryOwner.toLowerCase(),
+  ]);
+  const uncontrolledModules = summary.deployment.modules.filter((module) =>
+    !governanceOwners.has(module.owner.toLowerCase()),
+  );
+  const custodyRatio =
+    (summary.deployment.modules.length - uncontrolledModules.length) /
+    Math.max(summary.deployment.modules.length, 1);
+  assertions.push({
+    id: 'sovereign-custody',
+    title: 'All modules sit under governed safes',
+    outcome: uncontrolledModules.length === 0 ? 'pass' : 'fail',
+    severity: 'critical',
+    summary:
+      uncontrolledModules.length === 0
+        ? 'Every module remains under the owner multi-sig or treasury guardian.'
+        : `Modules outside custody: ${uncontrolledModules
+            .map((module) => module.name)
+            .join(', ')}`,
+    metric: Number(custodyRatio.toFixed(3)),
+    target: 1,
+    evidence: summary.deployment.modules.map(
+      (module) => `${module.name}:${module.owner}`,
+    ),
+  });
+
+  const skillFailures = summary.assignments.filter((assignment) => assignment.skillMatch < 0.6);
+  const lowestSkillMatch = summary.assignments.reduce(
+    (acc, assignment) => Math.min(acc, assignment.skillMatch),
+    1,
+  );
+  assertions.push({
+    id: 'skill-alignment',
+    title: 'Job to agent skill alignment remains above 60%',
+    outcome: skillFailures.length === 0 ? 'pass' : 'fail',
+    severity: 'warning',
+    summary:
+      skillFailures.length === 0
+        ? 'All assignments meet the skill-match threshold, confirming intelligent routing.'
+        : `Assignments below threshold: ${skillFailures
+            .map((assignment) => assignment.jobName)
+            .join(', ')}`,
+    target: 0.6,
+    metric: Number(lowestSkillMatch.toFixed(3)),
+    evidence: summary.assignments.map(
+      (assignment) => `${assignment.jobId}:${assignment.skillMatch.toFixed(2)}`,
+    ),
+  });
+
+  const quorumBreaches = summary.assignments.filter((assignment) => {
+    const job = scenario.jobs.find((entry) => entry.id === assignment.jobId);
+    return (
+      !job ||
+      assignment.validatorIds.length < job.validatorQuorum ||
+      assignment.validatorConfidence < 0.9
+    );
+  });
+  assertions.push({
+    id: 'validator-strength',
+    title: 'Validator quorums and confidence exceed defensive floor',
+    outcome: quorumBreaches.length === 0 ? 'pass' : 'fail',
+    severity: 'critical',
+    summary:
+      quorumBreaches.length === 0
+        ? 'Validator sets satisfy quorum requirements with >90% confidence.'
+        : `Validator gaps detected on: ${quorumBreaches
+            .map((assignment) => assignment.jobName)
+            .join(', ')}`,
+    target: 0.9,
+    metric: Number(summary.metrics.validatorConfidence.toFixed(3)),
+    evidence: summary.assignments.map((assignment) => {
+      const job = scenario.jobs.find((entry) => entry.id === assignment.jobId);
+      const required = job ? job.validatorQuorum : 0;
+      return `${assignment.jobId}:quorum=${assignment.validatorIds.length}/${required};confidence=${assignment.validatorConfidence.toFixed(3)}`;
+    }),
+  });
+
+  const treasuryStress = summary.treasuryTrajectory.some(
+    (entry) => entry.treasuryAfterJob <= 0,
+  );
+  const treasuryPositive = summary.metrics.treasuryAfterRun > 0 && !treasuryStress;
+  assertions.push({
+    id: 'treasury-resilience',
+    title: 'Treasury remains solvent after every execution step',
+    outcome: treasuryPositive ? 'pass' : 'fail',
+    severity: 'critical',
+    summary: treasuryPositive
+      ? 'Treasury balance stays positive throughout the execution timeline.'
+      : 'Treasury dipped below zero – inspect capital buffers.',
+    metric: Number(summary.metrics.treasuryAfterRun.toFixed(2)),
+    target: 0,
+    evidence: summary.treasuryTrajectory.map(
+      (entry) => `${entry.jobId}:${entry.treasuryAfterJob.toFixed(2)}`,
+    ),
+  });
+
+  const automationOutcome = summary.metrics.automationScore >= 0.82 ? 'pass' : 'fail';
+  assertions.push({
+    id: 'automation-dominance',
+    title: 'Automation loop exceeds 82% coverage',
+    outcome: automationOutcome,
+    severity: 'info',
+    summary:
+      automationOutcome === 'pass'
+        ? 'Automation score surpasses the autonomy target – human intervention remains optional.'
+        : 'Automation score below guardrail – expand orchestration coverage.',
+    metric: Number(summary.metrics.automationScore.toFixed(3)),
+    target: 0.82,
+    evidence: [`automationScore=${summary.metrics.automationScore.toFixed(3)}`],
+  });
+
+  return assertions;
 }
 
 function updateNetMetrics(context: SimulationContext, assignment: Assignment): void {
@@ -909,6 +1097,16 @@ export async function runScenario(
   summary.mermaidTimeline = generateMermaidTimeline(summary);
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
   summary.treasuryTrajectory = trajectory;
+  summary.assertions = computeAssertions(workingScenario, summary);
+  const passCount = summary.assertions.filter((assertion) => assertion.outcome === 'pass').length;
+  const passRate = summary.assertions.length
+    ? passCount / summary.assertions.length
+    : 1;
+  summary.metrics.assertionPassRate = Number(passRate.toFixed(3));
+  summary.ownerCommandPlan = buildOwnerCommandPlan(
+    workingScenario,
+    summary.metrics.ownerCommandCoverage,
+  );
   return summary;
 }
 
@@ -967,6 +1165,10 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
     JSON.stringify(summary.treasuryTrajectory, null, 2),
   );
   await fs.writeFile(
+    path.join(outputDir, 'assertions.json'),
+    JSON.stringify(summary.assertions, null, 2),
+  );
+  await fs.writeFile(
     path.join(outputDir, 'owner-command-plan.md'),
     generateOwnerCommandMarkdown(summary),
   );
@@ -994,6 +1196,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'stabilityIndex',
     'ownerCommandCoverage',
     'sovereignControlScore',
+    'assertionPassRate',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {
