@@ -1,8 +1,8 @@
 # Owner Command Playbook
 
-Generated 10/28/2025, 1:41:05 PM (UTC)
+Generated 10/28/2025, 1:59:52 PM (UTC)
 
-Command coverage: 100.0% — Owner multi-sig holds deterministic runbooks for every critical surface.
+Command coverage: 22.7% — Coverage below defensive target – prioritise scripting additional command hooks.
 
 ## Quick actions
 

@@ -520,24 +520,30 @@ function computeStabilityIndex(
 }
 
 function computeOwnerCommandCoverage(scenario: Scenario): number {
-  const surfaces: boolean[] = [];
+  const scripts = new Set<string>();
   for (const control of scenario.owner.controls) {
-    surfaces.push(Boolean(control.script));
+    scripts.add(control.script);
   }
-  surfaces.push(Boolean(scenario.safeguards.pauseScript));
-  surfaces.push(Boolean(scenario.safeguards.resumeScript));
+  scripts.add(scenario.safeguards.pauseScript);
+  scripts.add(scenario.safeguards.resumeScript);
   for (const module of scenario.modules) {
-    surfaces.push(Boolean(module.upgradeScript));
+    scripts.add(module.upgradeScript);
   }
   for (const circuit of scenario.safeguards.circuitBreakers) {
-    surfaces.push(Boolean(circuit.action));
+    scripts.add(circuit.action);
   }
   for (const upgrade of scenario.safeguards.upgradePaths) {
-    surfaces.push(Boolean(upgrade.script));
+    scripts.add(upgrade.script);
   }
-  const covered = surfaces.filter(Boolean).length;
-  const coverage = covered / Math.max(surfaces.length, 1);
-  return Number(Math.min(1, Math.max(0.65, coverage)).toFixed(3));
+  const criticalSurfaces =
+    scenario.jobs.length +
+    scenario.validators.length +
+    scenario.stablecoinAdapters.length +
+    scenario.owner.controls.length +
+    scenario.modules.length +
+    2;
+  const coverage = scripts.size / Math.max(criticalSurfaces, 1);
+  return Number(Math.min(1, coverage).toFixed(3));
 }
 
 function computeSovereignControlScore(scenario: Scenario): number {

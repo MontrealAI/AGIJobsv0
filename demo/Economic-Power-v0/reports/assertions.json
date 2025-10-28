@@ -2,15 +2,15 @@
   {
     "id": "owner-command-dominance",
     "title": "Owner multi-sig commands every economic lever",
-    "outcome": "pass",
+    "outcome": "fail",
     "severity": "critical",
-    "summary": "Coverage exceeds 90%, ensuring deterministic owner runbooks across modules, pause hooks, and parameter updates.",
-    "metric": 1,
+    "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
+    "metric": 0.227,
     "target": 0.9,
     "evidence": [
       "controls=3",
       "modules=6",
-      "coverage=1.000"
+      "coverage=0.227"
     ]
   },
   {

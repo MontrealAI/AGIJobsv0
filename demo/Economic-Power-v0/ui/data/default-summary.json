@@ -19,9 +19,9 @@
     "automationScore": 0.852,
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.761,
-    "ownerCommandCoverage": 1,
+    "ownerCommandCoverage": 0.227,
     "sovereignControlScore": 1,
-    "assertionPassRate": 1
+    "assertionPassRate": 0.833
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -327,22 +327,22 @@
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
     ],
-    "commandCoverage": 1,
-    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface."
+    "commandCoverage": 0.227,
+    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks."
   },
   "assertions": [
     {
       "id": "owner-command-dominance",
       "title": "Owner multi-sig commands every economic lever",
-      "outcome": "pass",
+      "outcome": "fail",
       "severity": "critical",
-      "summary": "Coverage exceeds 90%, ensuring deterministic owner runbooks across modules, pause hooks, and parameter updates.",
-      "metric": 1,
+      "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
+      "metric": 0.227,
       "target": 0.9,
       "evidence": [
         "controls=3",
         "modules=6",
-        "coverage=1.000"
+        "coverage=0.227"
       ]
     },
     {
