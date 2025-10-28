@@ -1,0 +1,21 @@
+{
+  "alpha-compounding-director": {
+    "losses": 0,
+    "notes": [
+      "2025-10-28T20:34Z: Activate compounding director -> win"
+    ],
+    "slashes": 0,
+    "updatedAt": 1761683682.0910745,
+    "wins": 1
+  },
+  "guardian-hypermesh-validator": {
+    "losses": 0,
+    "notes": [
+      "2025-10-28T20:34Z: Simulate job deployment -> win",
+      "2025-10-28T20:34Z: Stake guardian capital -> win"
+    ],
+    "slashes": 0,
+    "updatedAt": 1761683682.0816696,
+    "wins": 2
+  }
+}

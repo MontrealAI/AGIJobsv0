@@ -1,4 +1,4 @@
-name: demo-meta-agentic-alpha-agi-jobs (v6)
+name: demo-meta-agentic-alpha-agi-jobs (v7)
 
 on:
   push:
@@ -97,6 +97,13 @@ jobs:
         run: |
           python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py --timeout 120
 
+      - name: Execute demo CLI V7
+        env:
+          META_AGENTIC_DEMO_V7_TIMEOUT: '330'
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py --timeout 135
+
       - name: Upload artefacts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -109,11 +116,13 @@ jobs:
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v4.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v5.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v6.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v7.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v3/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v4/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v5/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v6/scoreboard.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v7/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md
@@ -122,3 +131,5 @@ jobs:
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/ui/
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v6/ui/
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v7/reports/generated/alpha_singularity_masterplan.md
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v7/ui/

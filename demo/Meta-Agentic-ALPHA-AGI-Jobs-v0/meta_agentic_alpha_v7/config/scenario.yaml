@@ -1,0 +1,268 @@
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V7 — Meta-Singularity"
+  narrative: |
+    The sovereign owner ignites the Meta-Singularity console. AGI Jobs v0 (v2)
+    orchestrates identify→learn→think→design→strategise→execute loops while
+    verifying CI health, antifragility buffers, unstoppable reserves, and
+    on-chain governance hooks. Non-technical owners simply press run.
+  dashboards:
+    - title: "Meta-Singularity Console"
+      file: "meta_agentic_alpha_v7/ui/index.html"
+    - title: "Meta-Singularity Masterplan"
+      file: "meta_agentic_alpha_v7/reports/generated/alpha_singularity_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v7/reports/alpha_singularity_overview.md"
+    - "meta_agentic_alpha_v7/playbooks/owner_control_matrix.md"
+  agents:
+    - agent_id: "guardian-hypermesh-validator"
+      owner: "Guardian Hypermesh"
+      region: "omni"
+      capabilities:
+        - execution
+        - validation
+        - analysis
+      stake_amount: "70000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-hypermesh-validator-secret"
+    - agent_id: "sovereign-simulation-architect"
+      owner: "Simulation Guild"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "36000"
+      multisig: true
+      slashable: false
+      operator_secret: "sovereign-simulation-architect-secret"
+    - agent_id: "alpha-treasury-hyperpilot"
+      owner: "Treasury Collective"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "42000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-treasury-hyperpilot-secret"
+    - agent_id: "mission-audit-overwatch"
+      owner: "Audit Observatory"
+      region: "omni"
+      capabilities:
+        - validation
+        - analysis
+        - support
+      stake_amount: "28000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-audit-overwatch-secret"
+    - agent_id: "alpha-compounding-director"
+      owner: "Compounding Network"
+      region: "omni"
+      capabilities:
+        - execution
+        - analysis
+      stake_amount: "46000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-compounding-director-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v7"
+  title: "Meta-Agentic α-AGI Jobs Demo — Meta-Singularity"
+  narrative: |
+    Meta-Singularity proves that a single owner command can deploy a
+    sovereign hyperstructure: signal fusion, open-ended curriculum,
+    guardian coordination, antifragility-laced treasury dominion,
+    account abstraction, CI verification, and on-chain execution.
+  owner:
+    address: "0xSOVEREIGN00000000000000000000000000000007"
+    timelock: "0xTIMEL0CK0000000000000000000000000000007"
+    multisig: "0xMULTI500000000000000000000000000000007"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000AA"
+      - "0xGUARDIAN000000000000000000000000000000BB"
+      - "0xGUARDIAN000000000000000000000000000000CC"
+      - "0xGUARDIAN000000000000000000000000000000DD"
+      - "0xGUARDIAN000000000000000000000000000000EE"
+    guardian_failover:
+      - "0xGUARDIAN000000000000000000000000000000FF"
+      - "0xGUARDIAN000000000000000000000000000000GG"
+      - "0xGUARDIAN000000000000000000000000000000HH"
+    approvals_required: 4
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 12
+    delegation:
+      treasury:
+        owner_override: true
+        max_adjustment_percent: 10
+      governance:
+        guardian_rotation: true
+        threshold_update: true
+      execution:
+        paymaster_routing: true
+        relayer_selection: true
+      emergency_override:
+        multisig_guard: 3
+        sentinel_watch: true
+    control_scripts:
+      pause: "scripts/v2/systemPauseAction.ts"
+      resume: "scripts/v2/systemResumeAction.ts"
+      update_treasury: "scripts/v2/updateRewardEngine.ts"
+      rotate_guardians: "scripts/v2/rotateGovernance.ts"
+      upgrade_modules: "scripts/v2/updateAllModules.ts"
+    mutable_parameters:
+      job_fee_bps: 42
+      validator_bond: 85000
+      alpha_multiplier: 1.85
+      treasury_drawdown_limit: 3.0
+    guardian_playbook: "meta_agentic_alpha_v7/playbooks/owner_control_matrix.md"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "25500000"
+    unstoppable_reserve_percent: 34
+    risk_limits:
+      max_drawdown_percent: 2.8
+      var_percent: 1.4
+      antifragility_buffer_percent: 38
+      circuit_breaker_percent: 4.9
+    liquidity_routes:
+      - "treasury/alpha-orbit"
+      - "execution/liquidity-grid"
+      - "resilience/phoenix-buffer"
+      - "expansion/metaverse-signal"
+      - "acquisition/singularity-fund"
+  gasless:
+    enabled: true
+    bundler: "meta-singularity-bundler"
+    paymaster: "account-abstraction/meta-singularity-paymaster.json"
+    session_keys:
+      - "guardian-hypermesh-validator"
+      - "alpha-compounding-director"
+      - "mission-audit-overwatch"
+      - "alpha-treasury-hyperpilot"
+      - "sovereign-simulation-architect"
+      - "owner-override-switch"
+      - "treasury-override-key"
+    overrideable_parameters:
+      max_fee_gwei: 16
+      preferred_network: "ethereum-mainnet"
+      failover_network: "base"
+
+plan:
+  budget_max: "520000"
+  approvals:
+    - "0xGUARDIAN000000000000000000000000000000AA"
+    - "0xGUARDIAN000000000000000000000000000000BB"
+    - "0xGUARDIAN000000000000000000000000000000CC"
+    - "0xGUARDIAN000000000000000000000000000000DD"
+  steps:
+    - id: "identify-1"
+      name: "Synthesize multi-domain alpha signals"
+      kind: "plan"
+      tool: "identify.meta-singularity"
+      params:
+        signals: "meta_agentic_alpha_v7/data/alpha_signals.json"
+        knowledge_graph: "meta_agentic_alpha_v7/data/opportunity_graph.json"
+        anomaly_threshold: 0.97
+        escalate_to: "owner-console"
+    - id: "learn-1"
+      name: "Advance world model curriculum"
+      kind: "llm"
+      tool: "simulation.curriculum"
+      params:
+        curriculum: "AlphaFactory/MetaSeason-VII"
+        world_model: "MuZero-MetaSingularity-VII"
+        simulation_engine: "MiniWorld-POET-XR"
+        checkpoints: true
+    - id: "think-1"
+      name: "Meta-agentic hyperstructure search"
+      kind: "plan"
+      tool: "planning.meta-singularity"
+      params:
+        horizon_days: 90
+        candidate_plans: 8
+        agent_bus: "A2A-meta-singularity"
+        guardian_mesh: "meta_agentic_alpha_v7/data/guardian_mesh.json"
+    - id: "design-1"
+      name: "Forge sovereign solution architecture"
+      kind: "code"
+      tool: "design.meta-forge"
+      params:
+        opportunity_playbook: "meta_agentic_alpha_v7/data/opportunity_graph.json"
+        simulation_matrix: "meta_agentic_alpha_v7/data/simulation_matrix.json"
+        antifragility_mode: "compounding"
+    - id: "strategise-1"
+      name: "Optimise treasury dominion"
+      kind: "plan"
+      tool: "treasury.meta-optimise"
+      params:
+        liquidity_routes:
+          - "treasury/alpha-orbit"
+          - "execution/liquidity-grid"
+          - "resilience/phoenix-buffer"
+          - "expansion/metaverse-signal"
+          - "acquisition/singularity-fund"
+        unstoppable_reserve_percent: 34
+        antifragility_buffer_percent: 38
+        guardian_quorum: 4
+    - id: "govern-1"
+      name: "Reinforce governance lattice"
+      kind: "plan"
+      tool: "governance.align"
+      params:
+        guardian_mesh: "meta_agentic_alpha_v7/data/guardian_mesh.json"
+        governance_matrix: "meta_agentic_alpha_v7/data/governance_matrix.json"
+        session_keys: "meta_agentic_alpha_v7/data/execution_routes.json"
+    - id: "ci-1"
+      name: "Run CI Singularity Envelope"
+      kind: "plan"
+      tool: "ci.meta-singularity"
+      params:
+        ci_matrix: "meta_agentic_alpha_v7/data/ci_matrix.json"
+        expected_status: "green"
+    - id: "execute-1"
+      name: "Simulate job deployment"
+      kind: "chain"
+      tool: "job.post"
+      params:
+        title: "Meta-Singularity Sovereign Alpha Acceleration"
+        description: "Deploying autonomous alpha factories across finance, supply chains, biotech, energy, and policy."
+        reward: "215000"
+        deadline_days: 18
+        attachments:
+          - "meta_agentic_alpha_v7/reports/generated/alpha_singularity_masterplan.md"
+          - "meta_agentic_alpha_v7/reports/alpha_singularity_overview.md"
+        treasury_account: "0xA1PHA0000000000000000000000000000S1NG"
+        fee_bps: 42
+        validator: "guardian-hypermesh-validator"
+        dry_run: true
+    - id: "execute-2"
+      name: "Stake guardian capital"
+      kind: "chain"
+      tool: "stake.deposit"
+      params:
+        agent: "guardian-hypermesh-validator"
+        amount: "58000"
+        token: "AGIALPHA"
+        slash_guardian: "0xDE1B0000000000000000000000000000S1NG"
+        dry_run: true
+    - id: "execute-3"
+      name: "Activate compounding director"
+      kind: "chain"
+      tool: "validator.commit"
+      params:
+        agent: "alpha-compounding-director"
+        tx_summary: "Compound alpha accrual across routes"
+        expected_profit: "410000"
+        dry_run: true
+    - id: "finalise-1"
+      name: "Publish owner intelligence dossier"
+      kind: "finalize"
+      tool: "analytics.finalize"
+      params:
+        timeline: "meta_agentic_alpha_v7/data/timeline.json"
+        dashboards:
+          - "meta_agentic_alpha_v7/ui/index.html"
+          - "meta_agentic_alpha_v7/reports/generated/alpha_singularity_masterplan.md"
