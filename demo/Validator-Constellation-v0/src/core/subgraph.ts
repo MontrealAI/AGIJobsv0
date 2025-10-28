@@ -17,6 +17,7 @@ export class SubgraphIndexer {
         sources: [...event.sources],
       }),
     );
+    eventBus.on('ValidatorStatusChanged', (event) => this.pushRecord('VALIDATOR_STATUS', event));
   }
 
   private pushRecord(type: SubgraphRecord['type'], payload: Record<string, unknown>): void {

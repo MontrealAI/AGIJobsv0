@@ -7,6 +7,7 @@ import {
   SentinelAlert,
   SlashingEvent,
   ValidatorEventBus,
+  ValidatorStatusEvent,
   ZkBatchProof,
 } from './types';
 
@@ -19,6 +20,7 @@ export class ValidatorConstellationEventBus extends EventEmitter implements Vali
   emit(event: 'RevealLogged', payload: RevealMessage): boolean;
   emit(event: 'ZkBatchFinalized', payload: ZkBatchProof): boolean;
   emit(event: 'VrfWitnessComputed', payload: EntropyWitness): boolean;
+  emit(event: 'ValidatorStatusChanged', payload: ValidatorStatusEvent): boolean;
   emit(event: string, payload: unknown): boolean {
     return super.emit(event, payload);
   }

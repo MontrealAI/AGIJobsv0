@@ -135,9 +135,25 @@ export interface SlashingEvent {
   timestamp: number;
 }
 
+export interface ValidatorStatusEvent {
+  validator: ValidatorIdentity;
+  status: 'ACTIVE' | 'BANNED';
+  reason: string;
+  remainingStake: bigint;
+  timestamp: number;
+  txHash?: Hex;
+}
+
 export interface SubgraphRecord {
   id: string;
-  type: 'SLASHING' | 'PAUSE' | 'COMMIT' | 'REVEAL' | 'ZK_BATCH' | 'VRF_WITNESS';
+  type:
+    | 'SLASHING'
+    | 'PAUSE'
+    | 'COMMIT'
+    | 'REVEAL'
+    | 'ZK_BATCH'
+    | 'VRF_WITNESS'
+    | 'VALIDATOR_STATUS';
   blockNumber: number;
   payload: Record<string, unknown>;
 }
@@ -182,6 +198,7 @@ export interface ValidatorEventBus extends EventEmitter {
   on(event: 'RevealLogged', listener: (reveal: RevealMessage) => void): this;
   on(event: 'ZkBatchFinalized', listener: (proof: ZkBatchProof) => void): this;
   on(event: 'VrfWitnessComputed', listener: (witness: EntropyWitness) => void): this;
+  on(event: 'ValidatorStatusChanged', listener: (event: ValidatorStatusEvent) => void): this;
 }
 
 export type GovernanceUpdatable = keyof GovernanceParameters;
