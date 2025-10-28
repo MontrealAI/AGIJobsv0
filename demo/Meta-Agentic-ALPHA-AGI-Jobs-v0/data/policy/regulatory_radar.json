@@ -1,0 +1,18 @@
+{
+  "jurisdictions": [
+    {
+      "country": "Singapore",
+      "policy_window": "Q2 2025",
+      "action": "Green-listed carbon-negative industrial financing",
+      "implication": "Tax credits stackable with on-chain carbon attestations",
+      "confidence": 0.83
+    },
+    {
+      "country": "Canada",
+      "policy_window": "Immediate",
+      "action": "Emergency modernization grant for semicon fabs",
+      "implication": "Capital expenditure matching up to $1.2B for superconductive retrofits",
+      "confidence": 0.77
+    }
+  ]
+}

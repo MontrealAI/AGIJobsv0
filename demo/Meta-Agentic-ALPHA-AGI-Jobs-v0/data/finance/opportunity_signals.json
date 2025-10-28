@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-01-24T14:00:00Z",
+  "sources": [
+    {
+      "name": "global_liquidity_feed",
+      "anomaly_score": 0.92,
+      "summary": "Cross-exchange stETH liquidity shock detected across 5 venues with simultaneous funding rate inversion.",
+      "primary_market": "Ethereum",
+      "confidence": 0.89,
+      "supporting_metrics": {
+        "dex_spread_bps": 43,
+        "cex_inventory_delta": "-18.4%",
+        "implied_volatility_shift": 0.17
+      }
+    },
+    {
+      "name": "sovereign_yield_heatmap",
+      "anomaly_score": 0.87,
+      "summary": "Peru 10Y sovereign yield dislocation versus copper futures correlation reached 12-year divergence.",
+      "primary_market": "Sovereign Bonds",
+      "confidence": 0.78,
+      "supporting_metrics": {
+        "yield_delta_bps": 138,
+        "commodity_beta_change": -0.42,
+        "usdliquidity_inflow": "+$2.3B"
+      }
+    }
+  ]
+}
