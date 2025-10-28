@@ -15,6 +15,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 📈 **CI-Certified** – Dedicated workflows and tests guarantee green checks on every PR and on `main`.
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
 - 🎛️ **Owner Command Schedules** – Load declarative schedules that trigger pause/resume, shard tuning, and node lifecycle actions mid-run.
+- ♻️ **Zero-Downtime Restart Drill** – A two-stage launcher halts the orchestrator on command, resumes from checkpoint, and merges telemetry for auditors automatically.
 
 ## Quickstart (Non-Technical Operator)
 
@@ -36,8 +37,17 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
      --output-label "kardashev-kill-switch" \
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
-4. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/kardashev-kill-switch/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels.
-5. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
+4. **Execute the restart drill** to rehearse orchestrator kill/resume with merged telemetry:
+  ```bash
+  demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh \
+     --jobs 12000 \
+     --stop-after 200 \
+     --label "resume-drill" \
+     --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
+  ```
+  This invokes `--stop-after-ticks` under the hood, captures the checkpoint path from `summary.json`, and resumes automatically so non-technical owners see the drill succeed end-to-end.
+5. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels for either run.
+6. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
 
@@ -89,11 +99,14 @@ flowchart TD
 | Path | Purpose |
 | --- | --- |
 | `bin/run-demo.sh` | One-command launcher for the full demo flow. |
+| `bin/run-restart-drill.sh` | Two-phase orchestrator kill/resume drill that stitches checkpoint + resume artifacts. |
 | `config/fabric.example.json` | Declarative definition of shards, nodes, owner policies, checkpoint schedules. |
 | `config/owner-commands.example.json` | Sample schedule of owner commands applied mid-run. |
 | `docs/architecture.md` | Deep dive into the architecture with additional diagrams, latency budgets, and ledger mapping. |
 | `docs/owner-control.md` | Owner empowerment manual with pause/update scripts and governance hooks. |
 | `docs/ci.md` | How CI guards this demo with enforced, reproducible checks. |
+| `docs/mission-blueprint.md` | End-to-end planning dossier covering task decomposition, verification matrices, and failure analysis. |
+| `docs/restart-drill.md` | Step-by-step walkthrough of the orchestrator restart exercise and artifact interpretation. |
 | `src/` | TypeScript source powering the orchestrator, routers, checkpoint manager, and simulation engine. |
 | `tests/planetary_fabric.test.ts` | Deterministic assertions validating shard balance, failover (<2% drop), and checkpoint resume. |
 | `ui/dashboard.html` | Pre-rendered dashboard template that visualizes run artifacts without a build step. |
@@ -110,6 +123,7 @@ flowchart TD
 ## What You Get After a Run
 
 - ✅ **`summary.json`** – Throughput metrics, shard depths, failure recovery stats, deterministic seeds.
+  - Includes a `run` object showing whether the run resumed from checkpoint, stopped early, or completed.
 - ✅ **`events.ndjson`** – Chronological event stream ready for ingestion into SIEM/observability stacks.
 - ✅ **`checkpoint.json`** – Owner-governed snapshot reflecting any retargeted path/interval updates for instant resume.
 - ✅ **`dashboard.html`** – Rich interactive briefing with mermaid flows, tables, and callouts.

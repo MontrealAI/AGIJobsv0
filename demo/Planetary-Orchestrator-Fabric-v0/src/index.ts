@@ -68,6 +68,15 @@ async function main(): Promise<void> {
       type: 'string',
       describe: 'Path to owner command schedule JSON',
     })
+    .option('stop-after-ticks', {
+      type: 'number',
+      describe: 'Stop the run after the provided number of ticks (for restart drills)',
+    })
+    .option('preserve-report-on-resume', {
+      type: 'boolean',
+      default: true,
+      describe: 'Preserve existing reports when resuming from a checkpoint',
+    })
     .option('resume', {
       type: 'boolean',
       default: false,
@@ -106,6 +115,8 @@ async function main(): Promise<void> {
     ciMode: lastValue(argv.ci) ?? false,
     ownerCommands,
     ownerCommandSource: ownerCommandsPath,
+    stopAfterTicks: lastValue(argv['stop-after-ticks']),
+    preserveReportDirOnResume: lastValue(argv['preserve-report-on-resume']) ?? true,
   };
 
   const result = await runSimulation(config, options);
@@ -115,6 +126,7 @@ async function main(): Promise<void> {
     checkpointRestored: result.checkpointRestored,
     metrics: result.metrics,
     artifacts: result.artifacts,
+    run: result.run,
     ownerCommands: {
       scheduled: ownerCommands?.length ?? 0,
       executed: result.executedOwnerCommands.length,

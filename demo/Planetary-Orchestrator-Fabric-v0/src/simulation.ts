@@ -11,6 +11,7 @@ import {
   OwnerCommandSchedule,
   SimulationArtifacts,
   SimulationOptions,
+  RunMetadata,
 } from './types';
 
 const DEFAULT_OUTAGE_TICK = 120;
@@ -22,6 +23,7 @@ export interface SimulationResult {
   executedOwnerCommands: OwnerCommandSchedule[];
   skippedOwnerCommands: OwnerCommandSchedule[];
   pendingOwnerCommands: OwnerCommandSchedule[];
+  run: RunMetadata;
 }
 
 function cloneSchedule(schedule: OwnerCommandSchedule): OwnerCommandSchedule {
@@ -34,7 +36,10 @@ export async function runSimulation(
 ): Promise<SimulationResult> {
   const label = options.outputLabel ?? config.reporting.defaultLabel;
   const reportDir = join(config.reporting.directory, label);
-  await fs.rm(reportDir, { recursive: true, force: true });
+  const preserveReports = Boolean(options.resume && options.preserveReportDirOnResume !== false);
+  if (!preserveReports) {
+    await fs.rm(reportDir, { recursive: true, force: true });
+  }
   await fs.mkdir(reportDir, { recursive: true });
 
   const checkpointPath = options.checkpointPath ?? config.checkpoint.path;
@@ -43,11 +48,21 @@ export async function runSimulation(
 
   const checkpointRestored = options.resume ? await orchestrator.restoreFromCheckpoint() : false;
   const startTick = orchestrator.currentTick;
+  const stopAfterTicks = options.stopAfterTicks;
+  if (stopAfterTicks !== undefined) {
+    if (!Number.isFinite(stopAfterTicks) || stopAfterTicks <= 0) {
+      throw new Error('stop-after-ticks must be a positive number');
+    }
+  }
 
   const scheduledCommands = [...(options.ownerCommands ?? [])].sort((a, b) => a.tick - b.tick);
   const executedCommands: OwnerCommandSchedule[] = [];
   const skippedDueToCheckpoint: OwnerCommandSchedule[] = [];
   let commandIndex = 0;
+  const stopAtTick = stopAfterTicks !== undefined ? startTick + Math.ceil(stopAfterTicks) : undefined;
+  let stoppedEarly = false;
+  let stopTick: number | undefined;
+  let stopReason: string | undefined;
 
   if (checkpointRestored) {
     while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= startTick) {
@@ -74,7 +89,7 @@ export async function runSimulation(
 
   if (options.ciMode) {
     process.stdout.write(
-      `[ci-start] jobs=${options.jobs} restored=${checkpointRestored} tick=${startTick}\n`
+      `[ci-start] jobs=${options.jobs} restored=${checkpointRestored} tick=${startTick} stopAfter=${stopAfterTicks ?? 'none'}\n`
     );
   }
 
@@ -82,7 +97,10 @@ export async function runSimulation(
     await seedJobs(orchestrator, config, options.jobs);
   }
 
-  const eventsStream = createWriteStream(join(reportDir, 'events.ndjson'), { encoding: 'utf8' });
+  const eventsStream = createWriteStream(join(reportDir, 'events.ndjson'), {
+    encoding: 'utf8',
+    flags: preserveReports ? 'a' : 'w',
+  });
   const flushEvents = (): void => {
     const events = orchestrator.fabricEvents;
     for (const event of events) {
@@ -123,13 +141,44 @@ export async function runSimulation(
       );
     }
 
+    if (stopAtTick !== undefined && tick >= stopAtTick) {
+      stopTick = tick;
+      if (!allJobsSettled(orchestrator)) {
+        stoppedEarly = true;
+        stopReason = `stop-after-ticks=${Math.ceil(stopAfterTicks ?? 0)}`;
+      } else if (!stopReason) {
+        stopReason = 'completed';
+      }
+      break;
+    }
+
     if (allJobsSettled(orchestrator)) {
+      stopTick = tick;
+      stopReason = stopReason ?? 'completed';
       break;
     }
   }
 
   await orchestrator.saveCheckpoint();
   flushEvents();
+  if (stoppedEarly) {
+    const outstanding = orchestrator.getShardSnapshots();
+    const outstandingSummary: Record<string, { queue: number; inFlight: number }> = {};
+    for (const [shardId, snapshot] of Object.entries(outstanding)) {
+      outstandingSummary[shardId] = { queue: snapshot.queueDepth, inFlight: snapshot.inFlight };
+    }
+    const stopEvent = {
+      tick: orchestrator.currentTick,
+      type: 'simulation.stopped',
+      message: 'Simulation halted due to stop-after-ticks directive',
+      data: {
+        stopTick: orchestrator.currentTick,
+        directive: stopAfterTicks,
+        outstanding: outstandingSummary,
+      },
+    };
+    eventsStream.write(`${JSON.stringify(stopEvent)}\n`);
+  }
   await new Promise<void>((resolve, reject) => {
     eventsStream.end((error: NodeJS.ErrnoException | null | undefined) => {
       if (error) {
@@ -144,9 +193,18 @@ export async function runSimulation(
 
   if (options.ciMode) {
     process.stdout.write(
-      `[ci-complete] tick=${orchestrator.currentTick} submitted=${metrics.jobsSubmitted} completed=${metrics.jobsCompleted} spillovers=${metrics.spillovers}\n`
+      `[ci-complete] tick=${orchestrator.currentTick} submitted=${metrics.jobsSubmitted} completed=${metrics.jobsCompleted} spillovers=${metrics.spillovers} stoppedEarly=${stoppedEarly}\n`
     );
   }
+
+  const finalStopTick = stopTick ?? orchestrator.currentTick;
+  const finalReason = stopReason ?? (allJobsSettled(orchestrator) ? 'completed' : undefined);
+  const runMetadata: RunMetadata = {
+    checkpointRestored,
+    stoppedEarly,
+    stopTick: finalStopTick,
+    stopReason: finalReason,
+  };
 
   const pendingCommands = scheduledCommands.slice(commandIndex).map(cloneSchedule);
 
@@ -157,7 +215,8 @@ export async function runSimulation(
     options,
     executedCommands,
     skippedDueToCheckpoint,
-    pendingCommands
+    pendingCommands,
+    runMetadata
   );
 
   return {
@@ -167,6 +226,7 @@ export async function runSimulation(
     executedOwnerCommands: executedCommands,
     skippedOwnerCommands: skippedDueToCheckpoint,
     pendingOwnerCommands: pendingCommands,
+    run: runMetadata,
   };
 }
 
@@ -245,7 +305,8 @@ async function writeArtifacts(
   options: SimulationOptions,
   executedCommands: OwnerCommandSchedule[],
   skippedCommands: OwnerCommandSchedule[],
-  pendingCommands: OwnerCommandSchedule[]
+  pendingCommands: OwnerCommandSchedule[],
+  runMetadata: RunMetadata
 ): Promise<SimulationArtifacts> {
   const metrics = orchestrator.fabricMetrics;
   const shardSnapshots = orchestrator.getShardSnapshots();
@@ -268,6 +329,7 @@ async function writeArtifacts(
     checkpoint: checkpointConfig,
     checkpointPath: checkpointConfig.path,
     options,
+    run: runMetadata,
     ownerState,
     ownerCommands: {
       source: options.ownerCommandSource,
