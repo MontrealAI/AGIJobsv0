@@ -17,6 +17,7 @@ import {
   demoJobBatch,
   budgetOverrunAction,
 } from '../src/core/fixtures';
+import { eventBus } from '../src/core/eventBus';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
@@ -30,7 +31,7 @@ import {
   refreshStateFromDemo,
 } from '../src/core/operatorState';
 import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
-import { AgentAction, Hex, VoteValue, ValidatorIdentity } from '../src/core/types';
+import { AgentAction, Hex, VoteValue, ValidatorIdentity, ValidatorStatusEvent } from '../src/core/types';
 import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
 
 function buildDemo(): {
@@ -103,6 +104,42 @@ test('commit-reveal timeline enforces governance block windows', () => {
   assert.equal(timelineResult.timeline.commitDeadlineBlock, 124);
   assert.equal(timelineResult.timeline.revealStartBlock, 124);
   assert.equal(timelineResult.timeline.revealDeadlineBlock, 130);
+});
+
+test('stake manager emits validator status transitions for subgraph telemetry', () => {
+  subgraphIndexer.clear();
+  const stakes = new StakeManager();
+  const validator: ValidatorIdentity = {
+    address: '0x1234000000000000000000000000000000000000',
+    ensName: 'aurora.club.agi.eth',
+    stake: 5n,
+  };
+  const observed: ValidatorStatusEvent[] = [];
+  const handler = (event: ValidatorStatusEvent) => observed.push(event);
+  eventBus.on('ValidatorStatusChanged', handler);
+  try {
+    stakes.registerValidator(validator);
+    const slashEvent = stakes.slash(validator.address, 10_000, 'TOTAL_FAILURE');
+    assert.equal(slashEvent.penalty, 5n);
+    assert.equal(observed.length, 2);
+    assert.equal(observed[0]?.status, 'ACTIVE');
+    assert.equal(observed[0]?.reason, 'REGISTERED');
+    assert.equal(observed[1]?.status, 'BANNED');
+    assert.equal(observed[1]?.reason, 'SLASHED_TO_ZERO');
+    assert.equal(observed[1]?.remainingStake, 0n);
+    const statusRecords = subgraphIndexer.filter('VALIDATOR_STATUS');
+    assert.equal(statusRecords.length, 2);
+    assert.ok(
+      statusRecords.some((record) =>
+        (record.payload as { status?: string }).status === 'SLASHED_TO_ZERO' ||
+        (record.payload as { status?: string }).status === 'BANNED',
+      ),
+      'expected validator status change to be recorded in subgraph',
+    );
+  } finally {
+    eventBus.off('ValidatorStatusChanged', handler);
+    subgraphIndexer.clear();
+  }
 });
 
 function orchestrateRound(): {
@@ -364,6 +401,8 @@ test('subgraph indexer records slashing events for transparency', () => {
     (vrfWitnessRecords[0].payload as { transcript?: string }).transcript,
     roundResult.vrfWitness.transcript,
   );
+  const statusRecords = subgraphIndexer.filter('VALIDATOR_STATUS');
+  assert.ok(statusRecords.length >= roundResult.committee.length, 'expected validator status telemetry');
 });
 
 test('zk batch prover finalizes 1000 jobs with a single proof', () => {
@@ -572,6 +611,7 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
   assert.ok(digest.includes('Owner Mission Briefing'), 'digest should include mission briefing header');
   assert.ok(digest.includes('Sentinel Alerts'), 'digest should include sentinel section');
   assert.ok(digest.includes('Governance & Audit Checklist'), 'digest should include audit checklist');
+  assert.ok(digest.includes('Validator Status Movements'), 'digest should include validator status section');
   assert.ok(digest.includes(roundResult.vrfWitness.transcript), 'digest should include entropy transcript');
   assert.ok(digest.includes('mermaid'), 'digest should embed mermaid blueprint for operators');
 });

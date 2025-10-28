@@ -152,6 +152,37 @@ function summarizeSubgraph(records: SubgraphRecord[]): string {
     .join('\n');
 }
 
+function summarizeValidatorStatus(records: SubgraphRecord[]): string {
+  const relevant = records.filter((record) => record.type === 'VALIDATOR_STATUS');
+  if (relevant.length === 0) {
+    return '_No validator status changes were recorded._';
+  }
+  return relevant
+    .map((record, index) => {
+      const payload = record.payload as {
+        validator?: { ensName?: string; address?: string };
+        status?: string;
+        reason?: string;
+        remainingStake?: string | number | bigint;
+        timestamp?: number;
+        txHash?: string;
+      };
+      const validator = payload.validator?.ensName ?? payload.validator?.address ?? 'unknown validator';
+      const remaining =
+        typeof payload.remainingStake === 'bigint'
+          ? `${payload.remainingStake.toString()} wei`
+          : payload.remainingStake !== undefined
+            ? `${payload.remainingStake}`
+            : 'unknown stake';
+      const timestamp = payload.timestamp ? new Date(Number(payload.timestamp)).toISOString() : 'timestamp unavailable';
+      const status = payload.status ?? 'STATUS_UNKNOWN';
+      const reason = payload.reason ?? 'unspecified';
+      const txHash = payload.txHash ? ` (${payload.txHash})` : '';
+      return `${index + 1}. ${validator} → ${status} (${reason}) at ${timestamp}, remaining stake ${remaining}${txHash}`;
+    })
+    .join('\n');
+}
+
 function buildOwnerDigest(params: {
   report: DemoOrchestrationReport;
   context: ReportContext;
@@ -165,6 +196,8 @@ function buildOwnerDigest(params: {
   const slashingSummary = summarizeSlashing(report.slashingEvents);
   const committeeSummary = summarizeCommittee(report);
   const subgraphSummary = summarizeSubgraph(subgraphRecords);
+  const statusEvents = subgraphRecords.filter((record) => record.type === 'VALIDATOR_STATUS');
+  const validatorStatusSummary = summarizeValidatorStatus(subgraphRecords);
   const quorum = `${context.governance.quorumPercentage}%`; // ensure string formatting
   const revealCount = `${report.reveals.length} / ${report.committee.length}`;
   const metrics: Array<[string, string]> = [
@@ -176,6 +209,7 @@ function buildOwnerDigest(params: {
     ['Jobs attested', `${report.proof.attestedJobCount}`],
     ['Slashing events', `${report.slashingEvents.length}`],
     ['Sentinel alerts', `${report.sentinelAlerts.length}`],
+    ['Validator status events', `${statusEvents.length}`],
     ['Audit hash', audit.auditHash],
     ['Entropy transcript', report.vrfWitness.transcript],
     ['ZK verifying key', context.verifyingKey],
@@ -222,6 +256,9 @@ function buildOwnerDigest(params: {
     '',
     '## Slashing Actions',
     slashingSummary,
+    '',
+    '## Validator Status Movements',
+    validatorStatusSummary,
     '',
     '## Subgraph Telemetry Footprint',
     subgraphSummary,
@@ -394,7 +431,7 @@ export function writeReportArtifacts(input: ArtifactInput): void {
     truthfulVote,
     entropySources,
   });
-  const summary = {
+  const summary: Record<string, unknown> = {
     scenarioName: context.scenarioName ?? 'default',
     round: roundResult.round,
     outcome: roundResult.voteOutcome,
@@ -450,6 +487,38 @@ export function writeReportArtifacts(input: ArtifactInput): void {
 
   if (context.jobSample) {
     Object.assign(summary, { jobSample: context.jobSample });
+  }
+
+  const validatorStatusEvents = subgraphRecords
+    .filter((record) => record.type === 'VALIDATOR_STATUS')
+    .map((record) => {
+      const payload = record.payload as {
+        validator?: { ensName?: string; address?: string };
+        status?: string;
+        reason?: string;
+        remainingStake?: bigint | string | number;
+        timestamp?: number;
+        txHash?: string;
+      };
+      return {
+        blockNumber: record.blockNumber,
+        status: payload.status ?? 'UNKNOWN',
+        reason: payload.reason ?? 'unspecified',
+        remainingStake:
+          typeof payload.remainingStake === 'bigint'
+            ? payload.remainingStake.toString()
+            : payload.remainingStake ?? 'unknown',
+        validator: payload.validator?.ensName ?? payload.validator?.address ?? 'unknown',
+        timestamp: payload.timestamp,
+        txHash: payload.txHash,
+      };
+    });
+
+  if (validatorStatusEvents.length > 0) {
+    summary.validators = {
+      ...(summary.validators as Record<string, unknown> | undefined),
+      statusTransitions: validatorStatusEvents,
+    };
   }
 
   writeJSON(path.join(reportDir, 'summary.json'), summary);
