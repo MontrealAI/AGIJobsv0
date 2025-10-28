@@ -101,7 +101,7 @@ function describeState(state: OperatorState, mermaid = false): void {
   state.domains.forEach((domain) => {
     const pauseInfo = domain.paused && domain.pauseReason ? `paused (${domain.pauseReason.reason})` : 'active';
     console.log(
-      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'}`,
+      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'} :: allowed=${domain.allowedTargets.join(', ') || 'none'}`,
     );
   });
   console.log('\nNodes:');
@@ -259,6 +259,7 @@ type DomainArgs = ArgumentsCamelCase<
       humanName?: string;
       budgetLimit?: string;
       unsafeOpcode?: string[];
+      allowedTarget?: string[];
     }
 >;
 
@@ -270,6 +271,7 @@ function handleDomain(argv: DomainArgs): void {
     humanName?: string;
     budgetLimit?: bigint;
     unsafeOpcodes?: string[];
+    allowedTargets?: string[];
   } = {};
   if (argv.humanName) {
     updates.humanName = argv.humanName;
@@ -280,11 +282,19 @@ function handleDomain(argv: DomainArgs): void {
   if (argv.unsafeOpcode) {
     updates.unsafeOpcodes = argv.unsafeOpcode[0] === 'none' ? [] : argv.unsafeOpcode;
   }
+  if (argv.allowedTarget) {
+    updates.allowedTargets = argv.allowedTarget[0] === 'none' ? [] : argv.allowedTarget;
+  }
   const { state: updated, result } = withDemo(state, (demo) => demo.updateDomainSafety(argv.domain, updates));
+  const serializableResult = {
+    ...result,
+    unsafeOpcodes: Array.from(result.unsafeOpcodes),
+    allowedTargets: Array.from(result.allowedTargets),
+  };
   saveOperatorState(updated, statePath);
   summaryForAction('domain-updated', {
     before: domain,
-    after: result,
+    after: serializableResult,
   });
 }
 
@@ -618,7 +628,8 @@ function createCli(argv: string[]): void {
           .option('domain', { type: 'string', demandOption: true, describe: 'Domain identifier' })
           .option('human-name', { type: 'string', describe: 'Human readable name' })
           .option('budget-limit', { type: 'string', describe: 'Budget limit (wei)' })
-          .option('unsafe-opcode', { type: 'array', string: true, describe: 'Unsafe opcode list (use "none" to clear)' }),
+          .option('unsafe-opcode', { type: 'array', string: true, describe: 'Unsafe opcode list (use "none" to clear)' })
+          .option('allowed-target', { type: 'array', string: true, describe: 'Allowed target list (use "none" to clear)' }),
       handleDomain,
     )
     .command(

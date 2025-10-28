@@ -1,12 +1,33 @@
 import { eventBus } from './eventBus';
 import { DomainConfig, DomainState, PauseRecord } from './types';
 
+function normalizeOpcodes(values: Iterable<string>): Set<string> {
+  return new Set(
+    Array.from(values, (value) => value.trim().toUpperCase()).filter((value) => value.length > 0),
+  );
+}
+
+function normalizeTargets(values: Iterable<string>): Set<string> {
+  return new Set(
+    Array.from(values, (value) => value.trim().toLowerCase()).filter((value) => value.length > 0),
+  );
+}
+
+function cloneConfig(config: DomainConfig): DomainConfig {
+  return {
+    ...config,
+    unsafeOpcodes: normalizeOpcodes(config.unsafeOpcodes),
+    allowedTargets: normalizeTargets(config.allowedTargets),
+  };
+}
+
 export class DomainPauseController {
   private readonly domains = new Map<string, DomainState>();
 
   constructor(domains: DomainConfig[]) {
     for (const config of domains) {
-      this.domains.set(config.id, { config: { ...config, unsafeOpcodes: new Set(config.unsafeOpcodes) }, paused: false });
+      const cloned = cloneConfig(config);
+      this.domains.set(cloned.id, { config: cloned, paused: false });
     }
   }
 
@@ -53,7 +74,7 @@ export class DomainPauseController {
 
   listDomains(): DomainState[] {
     return Array.from(this.domains.values()).map((state) => ({
-      config: { ...state.config, unsafeOpcodes: new Set(state.config.unsafeOpcodes) },
+      config: cloneConfig(state.config),
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
     }));
@@ -62,14 +83,21 @@ export class DomainPauseController {
   updateConfig(domainId: string, updates: Partial<Omit<DomainConfig, 'id'>>): DomainConfig {
     const state = this.getState(domainId);
     const unsafeOpcodes =
-      updates.unsafeOpcodes !== undefined ? new Set(updates.unsafeOpcodes) : new Set(state.config.unsafeOpcodes);
+      updates.unsafeOpcodes !== undefined
+        ? normalizeOpcodes(updates.unsafeOpcodes)
+        : new Set(state.config.unsafeOpcodes);
+    const allowedTargets =
+      updates.allowedTargets !== undefined
+        ? normalizeTargets(updates.allowedTargets)
+        : new Set(state.config.allowedTargets);
     const updated: DomainConfig = {
       ...state.config,
       ...('humanName' in updates ? { humanName: updates.humanName! } : {}),
       ...('budgetLimit' in updates ? { budgetLimit: updates.budgetLimit! } : {}),
       unsafeOpcodes,
+      allowedTargets,
     };
     state.config = updated;
-    return updated;
+    return cloneConfig(updated);
   }
 }

@@ -17,6 +17,7 @@ export interface DomainConfig {
   humanName: string;
   budgetLimit: bigint;
   unsafeOpcodes: Set<string>;
+  allowedTargets: Set<string>;
 }
 
 export interface GovernanceParameters {
@@ -166,6 +167,7 @@ export interface DomainSafetyUpdate {
   humanName?: string;
   budgetLimit?: bigint;
   unsafeOpcodes?: Iterable<string>;
+  allowedTargets?: Iterable<string>;
 }
 
 export interface ValidatorEventBus extends EventEmitter {

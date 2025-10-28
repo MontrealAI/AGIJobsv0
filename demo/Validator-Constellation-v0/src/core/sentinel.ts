@@ -5,12 +5,21 @@ import { AgentAction, DomainConfig, Hex, SentinelAlert } from './types';
 interface SentinelConfig {
   budgetGraceRatio: number;
   unsafeOpcodes: Map<string, Set<string>>;
+  allowedTargets: Map<string, Set<string>>;
 }
 
 export class SentinelMonitor {
   private readonly spendTracker = new Map<Hex, bigint>();
 
   constructor(private readonly domainController: DomainPauseController, private readonly config: SentinelConfig) {}
+
+  private static normalizeTarget(target: string): string {
+    return target.trim().toLowerCase();
+  }
+
+  private static normalizeOpcode(opcode: string): string {
+    return opcode.trim().toUpperCase();
+  }
 
   private getDomainConfig(domainId: string): DomainConfig {
     return this.domainController.getState(domainId).config;
@@ -51,8 +60,19 @@ export class SentinelMonitor {
       });
     }
 
+    if (action.target) {
+      const normalizedTarget = SentinelMonitor.normalizeTarget(action.target);
+      const allowedTargets = this.config.allowedTargets.get(domain.id) ?? domain.allowedTargets;
+      if (allowedTargets.size > 0 && !allowedTargets.has(normalizedTarget)) {
+        return this.raiseAlert(action, 'UNAUTHORIZED_TARGET', `call target ${action.target} not on allowlist`, 'CRITICAL', {
+          target: action.target,
+          domainId: action.domainId,
+        });
+      }
+    }
+
     const unsafeOpcodes = this.config.unsafeOpcodes.get(domain.id) ?? domain.unsafeOpcodes;
-    if (action.opcode && unsafeOpcodes.has(action.opcode)) {
+    if (action.opcode && unsafeOpcodes.has(SentinelMonitor.normalizeOpcode(action.opcode))) {
       return this.raiseAlert(action, 'UNSAFE_OPCODE', `unsafe opcode ${action.opcode} invoked`, 'HIGH', {
         opcode: action.opcode,
         target: action.target,
@@ -74,7 +94,7 @@ export class SentinelMonitor {
   }
 
   updateUnsafeOpcodes(domainId: string, opcodes: Iterable<string>): void {
-    const normalized = Array.from(opcodes);
+    const normalized = Array.from(opcodes, SentinelMonitor.normalizeOpcode).filter((opcode) => opcode.length > 0);
     this.config.unsafeOpcodes.set(domainId, new Set(normalized));
   }
 
@@ -84,5 +104,18 @@ export class SentinelMonitor {
       return new Set(fromConfig);
     }
     return new Set(this.getDomainConfig(domainId).unsafeOpcodes);
+  }
+
+  updateAllowedTargets(domainId: string, targets: Iterable<string>): void {
+    const normalized = Array.from(targets, SentinelMonitor.normalizeTarget).filter((target) => target.length > 0);
+    this.config.allowedTargets.set(domainId, new Set(normalized));
+  }
+
+  getAllowedTargets(domainId: string): Set<string> {
+    const fromConfig = this.config.allowedTargets.get(domainId);
+    if (fromConfig) {
+      return new Set(fromConfig);
+    }
+    return new Set(this.getDomainConfig(domainId).allowedTargets);
   }
 }

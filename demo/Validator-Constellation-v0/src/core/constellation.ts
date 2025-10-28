@@ -70,12 +70,15 @@ export class ValidatorConstellationDemo {
     this.governance = new GovernanceModule(setup.governance);
     this.pauseController = new DomainPauseController(setup.domains);
     const opcodeMap = new Map<string, Set<string>>();
+    const targetMap = new Map<string, Set<string>>();
     for (const domain of setup.domains) {
-      opcodeMap.set(domain.id, domain.unsafeOpcodes);
+      opcodeMap.set(domain.id, new Set(domain.unsafeOpcodes));
+      targetMap.set(domain.id, new Set(Array.from(domain.allowedTargets, (target) => target.toLowerCase())));
     }
     this.sentinel = new SentinelMonitor(this.pauseController, {
       budgetGraceRatio: setup.sentinelGraceRatio,
       unsafeOpcodes: opcodeMap,
+      allowedTargets: targetMap,
     });
     this.zk = new ZkBatchProver(setup.verifyingKey);
     this.commitReveal = new CommitRevealCoordinator(this.governance, this.stakes);
@@ -157,6 +160,7 @@ export class ValidatorConstellationDemo {
       config: {
         ...state.config,
         unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+        allowedTargets: new Set(state.config.allowedTargets),
       },
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
@@ -174,13 +178,22 @@ export class ValidatorConstellationDemo {
     if (updates.unsafeOpcodes !== undefined) {
       payload.unsafeOpcodes = new Set(updates.unsafeOpcodes);
     }
+    if (updates.allowedTargets !== undefined) {
+      payload.allowedTargets = new Set(
+        Array.from(updates.allowedTargets, (target) => target.trim().toLowerCase()).filter((target) => target.length > 0),
+      );
+    }
     const updated = this.pauseController.updateConfig(domainId, payload);
     if (updates.unsafeOpcodes) {
       this.sentinel.updateUnsafeOpcodes(domainId, updates.unsafeOpcodes);
     }
+    if (payload.allowedTargets) {
+      this.sentinel.updateAllowedTargets(domainId, payload.allowedTargets);
+    }
     return {
       ...updated,
       unsafeOpcodes: new Set(updated.unsafeOpcodes),
+      allowedTargets: new Set(updated.allowedTargets),
     };
   }
 

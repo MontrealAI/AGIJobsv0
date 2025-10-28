@@ -7,18 +7,21 @@ const RAW_DOMAIN_TEMPLATES: Array<{
   humanName: string;
   budgetLimit: bigint;
   unsafeOpcodes: string[];
+  allowedTargets: string[];
 }> = [
   {
     id: 'deep-space-lab',
     humanName: 'Deep Space Research Lab',
     budgetLimit: 5_000_000n,
     unsafeOpcodes: ['SELFDESTRUCT', 'DELEGATECALL'],
+    allowedTargets: ['0xmission-control-safe', '0xresearch-vault'],
   },
   {
     id: 'lunar-foundry',
     humanName: 'Lunar Foundry',
     budgetLimit: 2_000_000n,
     unsafeOpcodes: ['SELFDESTRUCT'],
+    allowedTargets: ['0xfoundry-treasury'],
   },
 ];
 
@@ -47,7 +50,8 @@ export function defaultDomains(): DomainConfig[] {
     id: domain.id,
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit,
-    unsafeOpcodes: new Set(domain.unsafeOpcodes),
+    unsafeOpcodes: new Set(domain.unsafeOpcodes.map((opcode) => opcode.toUpperCase())),
+    allowedTargets: new Set(domain.allowedTargets.map((target) => target.toLowerCase())),
   }));
 }
 
@@ -112,5 +116,27 @@ export function budgetOverrunAction(
     type: 'TRANSFER',
     amountSpent: overspend,
     description: 'budget overrun test vector',
+  };
+}
+
+export function unauthorizedTargetAction(
+  agentEns: string,
+  agentAddress: `0x${string}`,
+  domainId: string,
+  target: string,
+  budget = 1_000_000n,
+): AgentAction {
+  return {
+    agent: {
+      ensName: agentEns,
+      address: agentAddress,
+      domainId,
+      budget,
+    },
+    domainId,
+    type: 'CALL',
+    amountSpent: 0n,
+    description: 'unauthorized target test vector',
+    target,
   };
 }

@@ -50,6 +50,7 @@ interface ScenarioDomainConfig {
   humanName: string;
   budgetLimit: string | number | bigint;
   unsafeOpcodes?: string[];
+  allowedTargets?: string[];
 }
 
 interface ScenarioJobConfig {
@@ -93,7 +94,7 @@ interface ScenarioOwnerActions {
   updateZkKey?: Hex;
   updateSentinel?: { budgetGraceRatio?: number };
   updateGovernance?: Partial<GovernanceParameters>;
-  updateDomainSafety?: Array<{ domainId: string; humanName?: string; budgetLimit?: string | number | bigint; unsafeOpcodes?: string[] }>;
+  updateDomainSafety?: Array<{ domainId: string; humanName?: string; budgetLimit?: string | number | bigint; unsafeOpcodes?: string[]; allowedTargets?: string[] }>;
   pauseDomains?: Array<{ domainId: string; reason: string; triggeredBy?: string }>;
   resumeDomains?: Array<{ domainId: string; triggeredBy?: string }>;
   setAgentBudgets?: Array<{ ens: string; budget: string | number | bigint }>;
@@ -328,6 +329,7 @@ function materializeDomains(config?: ScenarioDomainConfig[]): DomainConfig[] {
     humanName: domain.humanName,
     budgetLimit: parseBigint(domain.budgetLimit, `budget for ${domain.id}`),
     unsafeOpcodes: new Set(domain.unsafeOpcodes ?? []),
+    allowedTargets: new Set((domain.allowedTargets ?? []).map((target) => target.toLowerCase())),
   }));
 }
 
@@ -469,7 +471,12 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
 
   if (ownerActions?.updateDomainSafety) {
     for (const update of ownerActions.updateDomainSafety) {
-      const patched: { humanName?: string; budgetLimit?: bigint; unsafeOpcodes?: Iterable<string> } = {};
+      const patched: {
+        humanName?: string;
+        budgetLimit?: bigint;
+        unsafeOpcodes?: Iterable<string>;
+        allowedTargets?: Iterable<string>;
+      } = {};
       if (update.humanName !== undefined) {
         patched.humanName = update.humanName;
       }
@@ -478,6 +485,9 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
       }
       if (update.unsafeOpcodes) {
         patched.unsafeOpcodes = update.unsafeOpcodes;
+      }
+      if (update.allowedTargets) {
+        patched.allowedTargets = update.allowedTargets.map((target) => target.toLowerCase());
       }
       const updated = demo.updateDomainSafety(update.domainId, patched);
       domainSafetyUpdates.set(update.domainId, updated);
