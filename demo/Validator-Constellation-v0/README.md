@@ -49,6 +49,13 @@ flowchart LR
    npm run demo:validator-constellation
    ```
    The script writes human-readable reports to `demo/Validator-Constellation-v0/reports/latest/`, including a dashboard HTML file with live Mermaid diagrams.
+   Every run now emits a zero-trust evidence pack:
+
+   * `summary.json` – high-level owner digest plus audit verdict.
+   * `round.json` – full transcript of the commit, reveal, sentinel, and slashing timeline.
+   * `jobs.json` – the attested batch, ready for independent proof verification.
+   * `audit.json` – cryptographic audit result with a deterministic hash you can notarize.
+   * `events.ndjson` / `subgraph.json` / `dashboard.html` – real-time telemetry, indexer feed, and control-room UI.
 4. Run the deterministic validation round test suite:
    ```bash
    npm run test:validator-constellation
@@ -57,6 +64,12 @@ flowchart LR
    ```bash
    npm run lint:validator-constellation
    ```
+
+6. Run the cryptographic audit harness on any generated report directory:
+   ```bash
+   npm run demo:validator-constellation:audit-report -- --report-dir demo/Validator-Constellation-v0/reports/latest
+   ```
+   The auditor re-derives commitments, recomputes the VRF witness, verifies the ZK batch proof, and confirms sentinel-domain pause alignment. Any discrepancy exits with a non-zero status so owners can gate deployments on a provable attestation trail.
 
 ### Scenario-driven automation for non-technical owners
 

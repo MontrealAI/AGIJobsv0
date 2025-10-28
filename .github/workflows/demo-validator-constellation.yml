@@ -89,7 +89,10 @@ jobs:
             const eventsPath = path.join(target.dir, 'events.ndjson');
             const dashboardPath = path.join(target.dir, 'dashboard.html');
             const subgraphPath = path.join(target.dir, 'subgraph.json');
-            for (const file of [summaryPath, eventsPath, dashboardPath, subgraphPath]) {
+            const auditPath = path.join(target.dir, 'audit.json');
+            const jobsPath = path.join(target.dir, 'jobs.json');
+            const roundPath = path.join(target.dir, 'round.json');
+            for (const file of [summaryPath, eventsPath, dashboardPath, subgraphPath, auditPath, jobsPath, roundPath]) {
               if (!fs.existsSync(file)) {
                 throw new Error(`[${target.name}] expected artifact missing: ${file}`);
               }
@@ -110,6 +113,12 @@ jobs:
             if (!Array.isArray(summary.alerts) || summary.alerts.length === 0) {
               throw new Error(`[${target.name}] sentinel alerts missing`);
             }
+            if (!summary.audit) {
+              throw new Error(`[${target.name}] audit result missing from summary`);
+            }
+            if (summary.audit.issues?.length) {
+              throw new Error(`[${target.name}] audit reported issues: ${summary.audit.issues.join(', ')}`);
+            }
             const eventsSize = fs.statSync(eventsPath).size;
             if (eventsSize === 0) {
               throw new Error(`[${target.name}] events stream empty`);
@@ -126,6 +135,24 @@ jobs:
             }
             if (subgraphRecords.every((record) => record.type !== 'VRF_WITNESS')) {
               throw new Error(`[${target.name}] subgraph index missing VRF witness records`);
+            }
+            const auditResult = JSON.parse(fs.readFileSync(auditPath, 'utf8'));
+            if (auditResult.auditHash !== summary.audit.auditHash) {
+              throw new Error(`[${target.name}] audit hash mismatch between summary and audit.json`);
+            }
+            if (auditResult.nonRevealValidators?.length !== summary.audit.nonRevealValidators?.length) {
+              throw new Error(`[${target.name}] non-reveal validator mismatch in audit artifacts`);
+            }
+            if (auditResult.commitmentsVerified !== true || auditResult.proofVerified !== true) {
+              throw new Error(`[${target.name}] audit verification flags not set to true`);
+            }
+            const jobs = JSON.parse(fs.readFileSync(jobsPath, 'utf8'));
+            if (!Array.isArray(jobs) || jobs.length !== target.expectedJobs) {
+              throw new Error(`[${target.name}] jobs artifact has unexpected length`);
+            }
+            const round = JSON.parse(fs.readFileSync(roundPath, 'utf8'));
+            if (!Array.isArray(round.commits) || !Array.isArray(round.reveals)) {
+              throw new Error(`[${target.name}] round transcript missing commits or reveals`);
             }
           }
           console.log('Validator constellation artifacts validated for baseline and scenario runs.');
