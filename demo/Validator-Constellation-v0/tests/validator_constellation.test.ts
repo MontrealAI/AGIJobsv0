@@ -242,6 +242,7 @@ test('round audit verifies end-to-end integrity guarantees', () => {
   assert.equal(audit.commitmentsVerified, true);
   assert.equal(audit.proofVerified, true);
   assert.equal(audit.entropyVerified, true);
+  assert.equal(audit.sentinelSlaSatisfied, true);
   assert.ok(audit.auditHash.startsWith('0x'));
 });
 
@@ -265,6 +266,28 @@ test('round audit detects tampered reveal transcripts', () => {
   });
   assert.equal(tamperedAudit.commitmentsVerified, false);
   assert.ok(tamperedAudit.issues.some((issue) => issue.includes('commitment mismatch')));
+});
+
+test('round audit detects sentinel SLA breaches', () => {
+  const { roundResult, jobBatch, entropy } = orchestrateRound();
+  if (roundResult.pauseRecords.length === 0) {
+    throw new Error('expected pause records for SLA test');
+  }
+  const tampered = structuredClone(roundResult);
+  tampered.pauseRecords = tampered.pauseRecords.map((record) => ({
+    ...record,
+    timestamp: record.timestamp - 5_000,
+  }));
+  const audit = auditRound({
+    report: tampered,
+    jobBatch,
+    governance: DEFAULT_GOVERNANCE_PARAMETERS,
+    verifyingKey: DEFAULT_VERIFIER_KEY,
+    truthfulVote: 'APPROVE',
+    entropySources: entropy,
+  });
+  assert.equal(audit.sentinelSlaSatisfied, false);
+  assert.ok(audit.issues.some((issue) => issue.includes('exceeded SLA')));
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {

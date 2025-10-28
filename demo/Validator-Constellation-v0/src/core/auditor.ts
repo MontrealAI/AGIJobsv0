@@ -25,6 +25,7 @@ export interface RoundAuditResult {
   proofVerified: boolean;
   entropyVerified: boolean;
   sentinelIntegrity: boolean;
+  sentinelSlaSatisfied: boolean;
   timelineIntegrity: boolean;
   nonRevealValidators: Hex[];
   dishonestValidators: Hex[];
@@ -51,6 +52,8 @@ function stringifyForHash(result: Omit<RoundAuditResult, 'auditHash'>): string {
 export function auditRound(input: RoundAuditInput): RoundAuditResult {
   const { report, jobBatch, governance, verifyingKey, truthfulVote, entropySources } = input;
   const issues: string[] = [];
+
+  const SENTINEL_SLA_MS = 1_000;
 
   const commitMap = new Map(report.commits.map((commit) => [commit.validator.address, commit]));
   const revealMap = new Map(report.reveals.map((reveal) => [reveal.validator.address, reveal]));
@@ -146,14 +149,24 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
   }
 
   let sentinelIntegrity = true;
+  let sentinelSlaSatisfied = true;
   if (report.sentinelAlerts.length > 0) {
-    const pausedDomains = new Set(report.pauseRecords.map((record) => record.domainId));
-    const unmatched = report.sentinelAlerts.filter((alert) => !pausedDomains.has(alert.domainId));
-    if (unmatched.length > 0) {
-      sentinelIntegrity = false;
-      issues.push(
-        `sentinel alerts without domain pause: ${unmatched.map((alert) => alert.domainId).join(', ')}`,
-      );
+    const pauseByDomain = new Map(report.pauseRecords.map((record) => [record.domainId, record]));
+    for (const alert of report.sentinelAlerts) {
+      const pause = pauseByDomain.get(alert.domainId);
+      if (!pause) {
+        sentinelIntegrity = false;
+        sentinelSlaSatisfied = false;
+        issues.push(`sentinel alert without matching pause for domain ${alert.domainId}`);
+        continue;
+      }
+      const delta = Math.abs((pause.timestamp ?? 0) - alert.timestamp);
+      if (delta > SENTINEL_SLA_MS) {
+        sentinelSlaSatisfied = false;
+        issues.push(
+          `sentinel pause for ${alert.domainId} exceeded SLA (${delta}ms > ${SENTINEL_SLA_MS}ms)`,
+        );
+      }
     }
   }
 
@@ -169,6 +182,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
     proofVerified,
     entropyVerified,
     sentinelIntegrity,
+    sentinelSlaSatisfied,
     timelineIntegrity,
     nonRevealValidators,
     dishonestValidators,
