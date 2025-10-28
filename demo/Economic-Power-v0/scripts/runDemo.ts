@@ -242,6 +242,30 @@ type OwnerAutopilot = {
   commandSequence: OwnerAutopilotCommand[];
 };
 
+type OwnerDominionClassification =
+  | 'total-dominion'
+  | 'fortified'
+  | 'elevated'
+  | 'attention';
+
+type OwnerDominionReport = {
+  score: number;
+  classification: OwnerDominionClassification;
+  summary: string;
+  guardrails: string[];
+  readiness: {
+    pauseReady: boolean;
+    resumeReady: boolean;
+    responseMinutes: number;
+    coverage: number;
+    safety: number;
+    control: number;
+  };
+  coverageDetail: Record<CoverageSurface, number>;
+  signals: string[];
+  recommendedActions: string[];
+};
+
 type GlobalExpansionPhase = {
   phase: string;
   horizonHours: number;
@@ -288,6 +312,7 @@ type Summary = {
     riskMitigationScore: number;
     stabilityIndex: number;
     ownerCommandCoverage: number;
+    ownerDominionScore: number;
     sovereignControlScore: number;
     sovereignSafetyScore: number;
     assertionPassRate: number;
@@ -330,6 +355,7 @@ type Summary = {
   };
   governanceLedger: GovernanceLedger;
   ownerAutopilot: OwnerAutopilot;
+  ownerDominion: OwnerDominionReport;
   globalExpansionPlan: GlobalExpansionPhase[];
 };
 
@@ -802,6 +828,104 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       globalExpansionReadiness: summary.metrics.globalExpansionReadiness,
     },
     commandSequence: sequence,
+  };
+}
+
+function classifyOwnerDominion(
+  score: number,
+): { classification: OwnerDominionClassification; summary: string } {
+  if (score >= 0.95) {
+    return {
+      classification: 'total-dominion',
+      summary:
+        'Owner multi-sig exerts absolute dominion – every command, pause, and upgrade is scripted and rehearsed.',
+    };
+  }
+  if (score >= 0.85) {
+    return {
+      classification: 'fortified',
+      summary:
+        'Owner control fabric is fortified with high safety mesh readiness – expand guardrails to reach total dominion.',
+    };
+  }
+  if (score >= 0.7) {
+    return {
+      classification: 'elevated',
+      summary:
+        'Owner retains elevated authority – prioritise additional command scripts and safety rehearsals to harden custody.',
+    };
+  }
+  return {
+    classification: 'attention',
+    summary:
+      'Owner dominion requires immediate attention – script missing surfaces and accelerate safety drill coverage.',
+  };
+}
+
+function buildOwnerDominion(summary: Summary): OwnerDominionReport {
+  const { ownerDominionScore, ownerCommandCoverage, sovereignControlScore, sovereignSafetyScore } =
+    summary.metrics;
+  const { classification, summary: classificationSummary } = classifyOwnerDominion(ownerDominionScore);
+  const coverageDetail = summary.ownerCommandPlan.coverageDetail;
+  const guardrails = summary.ownerAutopilot.guardrails ?? [];
+  const readiness = {
+    pauseReady: summary.sovereignSafetyMesh.pauseReady,
+    resumeReady: summary.sovereignSafetyMesh.resumeReady,
+    responseMinutes: summary.sovereignSafetyMesh.responseMinutes,
+    coverage: ownerCommandCoverage,
+    safety: sovereignSafetyScore,
+    control: sovereignControlScore,
+  };
+
+  const recommendedActions: string[] = [];
+  const incompleteSurfaces = Object.entries(coverageDetail).filter(([, value]) =>
+    typeof value === 'number' ? value < 1 : false,
+  );
+  if (incompleteSurfaces.length > 0) {
+    recommendedActions.push(
+      `Script deterministic programs for ${
+        incompleteSurfaces
+          .map(([surface]) => surface)
+          .join(', ')
+      } to achieve full coverage.`,
+    );
+  }
+  if (!summary.sovereignSafetyMesh.pauseReady) {
+    recommendedActions.push('Authorise pause command in multi-sig catalog.');
+  }
+  if (!summary.sovereignSafetyMesh.resumeReady) {
+    recommendedActions.push('Define deterministic resume procedure.');
+  }
+  if (
+    summary.sovereignSafetyMesh.responseMinutes >
+    summary.sovereignSafetyMesh.targetResponseMinutes
+  ) {
+    recommendedActions.push('Shorten incident response drills to beat target response window.');
+  }
+  if (guardrails.length < 3) {
+    recommendedActions.push('Publish additional guardrails to cover treasury, validators, and orchestrator cadence.');
+  }
+  if (recommendedActions.length === 0) {
+    recommendedActions.push('Maintain autopilot cadence and periodic drills to preserve total dominion.');
+  }
+
+  const signals = [
+    `Command coverage ${(ownerCommandCoverage * 100).toFixed(1)}%`,
+    `Safety mesh ${(sovereignSafetyScore * 100).toFixed(1)}%`,
+    `Custody ${(sovereignControlScore * 100).toFixed(1)}%`,
+    `Guardrails ${guardrails.length}`,
+    `Response ${summary.sovereignSafetyMesh.responseMinutes}m`,
+  ];
+
+  return {
+    score: ownerDominionScore,
+    classification,
+    summary: classificationSummary,
+    guardrails,
+    readiness,
+    coverageDetail,
+    signals,
+    recommendedActions,
   };
 }
 
@@ -1772,6 +1896,13 @@ function synthesiseSummary(
         0.2 * sovereignSafetyMesh.safetyScore,
     ).toFixed(3),
   );
+  const ownerDominionScore = Number(
+    (
+      0.4 * ownerCoverage.value +
+      0.3 * sovereignSafetyMesh.safetyScore +
+      0.3 * sovereignControlScore
+    ).toFixed(3),
+  );
   const riskMitigationScore = Number(
     (0.82 + pseudoRandom(`risk:${scenario.scenarioId}`) * 0.12).toFixed(3),
   );
@@ -1801,6 +1932,7 @@ function synthesiseSummary(
       riskMitigationScore,
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage.value,
+      ownerDominionScore,
       sovereignControlScore,
       sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
       assertionPassRate: 0,
@@ -1867,6 +1999,23 @@ function synthesiseSummary(
         globalExpansionReadiness,
       },
       commandSequence: [],
+    },
+    ownerDominion: {
+      score: ownerDominionScore,
+      classification: classifyOwnerDominion(ownerDominionScore).classification,
+      summary: 'Owner dominion placeholder – autopilot guardrails pending synthesis.',
+      guardrails: [],
+      readiness: {
+        pauseReady: sovereignSafetyMesh.pauseReady,
+        resumeReady: sovereignSafetyMesh.resumeReady,
+        responseMinutes: sovereignSafetyMesh.responseMinutes,
+        coverage: ownerCoverage.value,
+        safety: sovereignSafetyMesh.safetyScore,
+        control: sovereignControlScore,
+      },
+      coverageDetail: ownerCoverage.detail,
+      signals: [],
+      recommendedActions: [],
     },
     globalExpansionPlan: [],
   };
@@ -2141,6 +2290,7 @@ export async function runScenario(
     analysisTimestamp,
   );
   summary.ownerAutopilot = buildOwnerAutopilot(summary, workingScenario);
+  summary.ownerDominion = buildOwnerDominion(summary);
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
   return summary;
 }
@@ -2247,6 +2397,10 @@ async function writeOutputs(
     `${generateOwnerAutopilotMermaid(summary.ownerAutopilot).trimEnd()}\n`,
   );
   await fs.writeFile(
+    path.join(outputDir, 'owner-dominion.json'),
+    JSON.stringify(summary.ownerDominion, null, 2),
+  );
+  await fs.writeFile(
     path.join(outputDir, 'global-expansion-plan.md'),
     generateGlobalExpansionMarkdown(summary),
   );
@@ -2282,6 +2436,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'automationScore',
     'stabilityIndex',
     'ownerCommandCoverage',
+    'ownerDominionScore',
     'sovereignControlScore',
     'sovereignSafetyScore',
     'assertionPassRate',

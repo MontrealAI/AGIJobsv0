@@ -51,6 +51,12 @@ const metricMap = [
     description: 'Share of critical surfaces with deterministic owner command paths.',
   },
   {
+    id: 'ownerDominionScore',
+    label: 'Owner Dominion',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite dominion index across command coverage, custody, and safety mesh readiness.',
+  },
+  {
     id: 'treasuryAfterRun',
     label: 'Treasury After Run (AGI)',
     formatter: (value) => formatNumber(value),
@@ -138,6 +144,72 @@ function renderOwnerTable(summary) {
       <td>${control.description}</td>
     `;
     tbody.append(row);
+  }
+}
+
+function renderOwnerDominion(summary) {
+  const dominion = summary.ownerDominion;
+  const scoreEl = document.getElementById('dominion-score');
+  const classificationEl = document.getElementById('dominion-classification');
+  const summaryEl = document.getElementById('dominion-summary');
+  const readinessEl = document.getElementById('dominion-readiness');
+  const guardrailList = document.getElementById('dominion-guardrails');
+  const signalsContainer = document.getElementById('dominion-signals');
+  const actionsList = document.getElementById('dominion-actions');
+
+  if (!scoreEl || !classificationEl || !summaryEl || !readinessEl || !guardrailList || !signalsContainer || !actionsList) {
+    return;
+  }
+
+  if (!dominion) {
+    scoreEl.textContent = '—';
+    classificationEl.textContent = 'Unavailable';
+    summaryEl.textContent = 'Dominion report unavailable.';
+    readinessEl.textContent = '';
+    guardrailList.innerHTML = '';
+    actionsList.innerHTML = '';
+    signalsContainer.innerHTML = '';
+    return;
+  }
+
+  scoreEl.textContent = `${(dominion.score * 100).toFixed(1)}%`;
+  const classificationLabel = dominion.classification.replace(/-/g, ' ');
+  classificationEl.textContent = classificationLabel;
+  classificationEl.className = `dominion-chip dominion-${dominion.classification}`;
+  summaryEl.textContent = dominion.summary;
+  readinessEl.textContent = `Coverage ${(dominion.readiness.coverage * 100).toFixed(1)}% • Safety ${(dominion.readiness.safety * 100).toFixed(1)}% • Custody ${(dominion.readiness.control * 100).toFixed(1)}% • Response ${dominion.readiness.responseMinutes}m`;
+
+  guardrailList.innerHTML = '';
+  if (dominion.guardrails.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No guardrails published – authorise guardrail scripts to preserve dominion.';
+    guardrailList.append(li);
+  } else {
+    for (const guardrail of dominion.guardrails) {
+      const li = document.createElement('li');
+      li.textContent = guardrail;
+      guardrailList.append(li);
+    }
+  }
+
+  signalsContainer.innerHTML = '';
+  for (const signal of dominion.signals) {
+    const span = document.createElement('span');
+    span.textContent = signal;
+    signalsContainer.append(span);
+  }
+
+  actionsList.innerHTML = '';
+  if (dominion.recommendedActions.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Dominion secure – continue automated cadence.';
+    actionsList.append(li);
+  } else {
+    for (const action of dominion.recommendedActions) {
+      const li = document.createElement('li');
+      li.textContent = action;
+      actionsList.append(li);
+    }
   }
 }
 
@@ -720,6 +792,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   const summary = await loadSummary(dataPath);
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderOwnerDominion(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
@@ -774,6 +847,7 @@ function setupFileHandlers() {
 async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderOwnerDominion(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);

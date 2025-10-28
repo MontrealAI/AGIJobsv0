@@ -23,6 +23,10 @@ test('economic power simulation produces deterministic metrics', async () => {
     1,
     'Owner command coverage should confirm total command supremacy',
   );
+  assert(
+    summary.metrics.ownerDominionScore >= 0.95,
+    'Owner dominion score should confirm total dominion control',
+  );
   const coverageDetail = summary.ownerCommandPlan.coverageDetail;
   assert(coverageDetail, 'Coverage detail should be present');
   const coverageSurfaces = [
@@ -198,6 +202,28 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.ownerAutopilot.guardrails.some((guardrail) => guardrail.includes(summary.ownerSovereignty.pauseScript)),
     'Autopilot guardrails should include pause command',
+  );
+  assert.equal(
+    summary.ownerDominion.score,
+    summary.metrics.ownerDominionScore,
+    'Owner dominion report score should mirror surfaced metric',
+  );
+  assert.equal(
+    summary.ownerDominion.classification,
+    'total-dominion',
+    'Baseline dominion classification should be total-dominion',
+  );
+  assert(
+    summary.ownerDominion.guardrails.length >= summary.ownerAutopilot.guardrails.length,
+    'Dominion guardrail list should mirror autopilot guardrails',
+  );
+  assert(
+    summary.ownerDominion.recommendedActions.length >= 1,
+    'Dominion recommendations should provide actionable guidance',
+  );
+  assert(
+    summary.ownerDominion.signals.length >= 3,
+    'Dominion signals should expose composite telemetry',
   );
   assert.equal(
     summary.ownerAutopilot.telemetry.economicDominanceIndex,
