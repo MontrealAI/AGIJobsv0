@@ -78,6 +78,31 @@ node scripts/v2/ownerControlSurface.ts \
 
 - The orchestrator immediately persists the new settings and records them under `ownerState.checkpoint` and the next `checkpoint.json` artifact.
 
+### Reroute Specific Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-reroute \
+  --job-id job-09000 \
+  --target helios \
+  --reason "Redirect precision workload to Helios GPU array"
+```
+
+- The orchestrator removes the job from its existing queue (or the active node), rewrites its spillover history, and pushes it into the target shard router.
+- `summary.json` captures the reroute under `owner.job.reroute` events alongside updated spillover metrics.
+
+### Cancel Redundant Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-cancel \
+  --job-id job-09001 \
+  --reason "Owner resolved ticket manually"
+```
+
+- The job is removed immediately, marked as cancelled, and surfaced in metrics (`jobsCancelled`) for transparent auditing.
+- Event logs emit both `owner.job.cancelled` and `job.failed` entries so replay systems retain determinism.
+
 ### Resume From Checkpoint
 
 1. Stop the orchestrator (or simulate a crash with `Ctrl+C`).
