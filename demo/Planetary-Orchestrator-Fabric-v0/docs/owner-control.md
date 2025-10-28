@@ -84,6 +84,19 @@ node scripts/v2/ownerControlSurface.ts \
 2. Run `demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh --resume --checkpoint demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoint.json`.
 3. Confirm the resume log prints `"checkpointRestored": true`.
 
+### Automated Restart Drill
+
+- Launch the full stop/resume rehearsal in one command:
+
+  ```bash
+  demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh \
+    --label "owner-drill" \
+    --stop-after 180 \
+    --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
+  ```
+- The script halts the fabric at tick `--stop-after`, extracts the new checkpoint path from `summary.json`, and resumes automatically.
+- Inspect `reports/owner-drill/summary.json.run` to verify `{ "checkpointRestored": true, "stoppedEarly": false }` after completion.
+
 ## Customizing for Production
 
 | Control | Demo Implementation | Production Hook |

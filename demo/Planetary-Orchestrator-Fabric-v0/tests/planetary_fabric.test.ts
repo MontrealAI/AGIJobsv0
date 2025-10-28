@@ -83,6 +83,30 @@ async function buildOrchestrator(
   return { orchestrator, checkpointPath };
 }
 
+function cloneConfig(configInput: FabricConfig): FabricConfig {
+  return {
+    ...configInput,
+    shards: configInput.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+      router: shard.router
+        ? {
+            queueAlertThreshold: shard.router.queueAlertThreshold,
+            spilloverPolicies: shard.router.spilloverPolicies
+              ? shard.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    })),
+    nodes: configInput.nodes.map((node) => ({
+      ...node,
+      specialties: [...node.specialties],
+    })),
+    checkpoint: { ...configInput.checkpoint },
+    reporting: { ...configInput.reporting },
+  };
+}
+
 async function testBalancing(): Promise<void> {
   const { orchestrator, checkpointPath } = await buildOrchestrator();
   const jobs = createJobs(9);
@@ -344,6 +368,79 @@ async function testOwnerCommandSchedule(): Promise<void> {
   await rm(dir, { force: true, recursive: true });
 }
 
+async function testStopAndResumeDrill(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-resume-drill-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const reportingDir = join(dir, 'reports');
+  const baseConfig: FabricConfig = {
+    ...testConfig,
+    shards: testConfig.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+      router: shard.router
+        ? {
+            queueAlertThreshold: shard.router.queueAlertThreshold ?? shard.maxQueue - 10,
+            spilloverPolicies: shard.router.spilloverPolicies
+              ? shard.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    })),
+    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    checkpoint: { ...testConfig.checkpoint, path: checkpointPath, intervalTicks: 4 },
+    reporting: { directory: reportingDir, defaultLabel: 'resume-drill' },
+  };
+
+  const schedule: OwnerCommandSchedule[] = [
+    { tick: 2, command: { type: 'system.pause', reason: 'drill-pause' }, note: 'Pause to simulate maintenance' },
+    { tick: 3, command: { type: 'system.resume', reason: 'drill-resume' }, note: 'Resume after maintenance' },
+    { tick: 4, command: { type: 'checkpoint.save', reason: 'pre-drill snapshot' }, note: 'Snapshot after pause cycle' },
+    { tick: 6, command: { type: 'checkpoint.configure', update: { intervalTicks: 3 } }, note: 'Tighten cadence mid-run' },
+  ];
+
+  const firstRun = await runSimulation(cloneConfig(baseConfig), {
+    jobs: 120,
+    simulateOutage: 'mars.node',
+    outageTick: 3,
+    checkpointPath,
+    outputLabel: 'resume-drill',
+    ownerCommands: schedule,
+    ownerCommandSource: 'resume-drill-schedule',
+    stopAfterTicks: 6,
+  });
+
+  assert.equal(firstRun.run.stoppedEarly, true, 'first run should stop early for the drill');
+  assert.equal(firstRun.run.stopReason, 'stop-after-ticks=6');
+  const preSummaryRaw = await readFile(join(reportingDir, 'resume-drill', 'summary.json'), 'utf8');
+  const preSummary = JSON.parse(preSummaryRaw);
+  assert.equal(preSummary.run.stoppedEarly, true);
+  assert.equal(preSummary.run.stopReason, 'stop-after-ticks=6');
+  assert.ok(preSummary.metrics.jobsCompleted < preSummary.metrics.jobsSubmitted);
+
+  const secondRun = await runSimulation(cloneConfig(baseConfig), {
+    jobs: 120,
+    simulateOutage: undefined,
+    checkpointPath,
+    outputLabel: 'resume-drill',
+    ownerCommands: schedule,
+    ownerCommandSource: 'resume-drill-schedule',
+    resume: true,
+  });
+
+  assert.equal(secondRun.run.checkpointRestored, true, 'resume should restore checkpoint');
+  assert.equal(secondRun.run.stoppedEarly, false, 'resumed run should complete');
+  const postSummaryRaw = await readFile(join(reportingDir, 'resume-drill', 'summary.json'), 'utf8');
+  const postSummary = JSON.parse(postSummaryRaw);
+  assert.equal(postSummary.run.stoppedEarly, false);
+  assert.equal(postSummary.run.checkpointRestored, true);
+  assert.ok(postSummary.metrics.jobsCompleted >= postSummary.metrics.jobsSubmitted);
+
+  const eventsRaw = await readFile(join(reportingDir, 'resume-drill', 'events.ndjson'), 'utf8');
+  assert.ok(eventsRaw.includes('simulation.stopped'), 'event log should contain stop directive');
+
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function testLoadHarness(): Promise<void> {
   const loadConfig: FabricConfig = {
     ...testConfig,
@@ -403,6 +500,7 @@ async function run(): Promise<void> {
   await testDeterministicReplay();
   await testOwnerCommandControls();
   await testOwnerCommandSchedule();
+  await testStopAndResumeDrill();
   await testLoadHarness();
   console.log('Planetary orchestrator fabric tests passed.');
   process.exit(0);

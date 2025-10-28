@@ -247,6 +247,7 @@
     "demo:omega-business-3:ui": "demo/LARGE-SCALE-OMEGA-BUSINESS-3/bin/omega-ui.sh",
     "demo:planetary-orchestrator-fabric": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json",
     "demo:planetary-orchestrator-fabric:ci": "npx tsx demo/Planetary-Orchestrator-Fabric-v0/src/index.ts --config demo/Planetary-Orchestrator-Fabric-v0/config/fabric.example.json --jobs 2000 --simulate-outage mars.gpu-helion --ci --output-label ci-latest",
+    "demo:planetary-orchestrator-fabric:restart": "demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh",
     "demo:omni-sovereign": "bash demo/omni-sovereign-ascension-operating-system/bin/launch.sh",
     "demo:onebox:doctor": "node demo/One-Box/bin/doctor.cjs",
     "demo:onebox:launch": "node demo/One-Box/bin/start-onebox.cjs",

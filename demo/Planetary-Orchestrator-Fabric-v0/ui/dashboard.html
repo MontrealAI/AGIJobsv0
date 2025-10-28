@@ -55,6 +55,15 @@
   "adjustLatency": "owner:set-latency-budget"
 }</pre>
     </div>
+    <div class="card">
+      <h2>Restart Drill Telemetry</h2>
+      <ul>
+        <li>Run <code>bin/run-restart-drill.sh</code> to stage a stop at <code>--stop-after</code> ticks.</li>
+        <li>Inspect <code>summary.json.run</code> for <code>checkpointRestored</code>, <code>stoppedEarly</code>, and <code>stopTick</code>.</li>
+        <li>Search <code>events.ndjson</code> for <code>"simulation.stopped"</code> to confirm the deliberate halt.</li>
+        <li>Dashboard charts reflect both pre- and post-resume metrics once the drill completes.</li>
+      </ul>
+    </div>
   </div>
   <footer>Generated assets become live once you execute the demo. This static template is safe to host or embed.</footer>
 </body>

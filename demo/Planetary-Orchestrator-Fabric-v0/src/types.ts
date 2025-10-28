@@ -105,6 +105,8 @@ export interface SimulationOptions {
   ciMode?: boolean;
   ownerCommands?: OwnerCommandSchedule[];
   ownerCommandSource?: string;
+  stopAfterTicks?: number;
+  preserveReportDirOnResume?: boolean;
 }
 
 export interface CheckpointData {
@@ -207,6 +209,13 @@ export interface SimulationArtifacts {
   dashboardPath: string;
   ownerScriptPath: string;
   ownerCommandsPath: string;
+}
+
+export interface RunMetadata {
+  checkpointRestored: boolean;
+  stoppedEarly: boolean;
+  stopTick?: number;
+  stopReason?: string;
 }
 
 export interface FabricEvent {

@@ -16,7 +16,7 @@ This demo ships with a dedicated CI workflow to guarantee that every pull reques
 1. **Checkout & Hardening** – Uses `step-security/harden-runner` to freeze outbound egress except the allowlist.
 2. **Dependency Sync** – `npm ci` ensures deterministic dependency graphs.
 3. **Type Safety** – `npx tsc --noEmit` validates the demo sources compile without generating JS.
-4. **Unit Tests** – `npm run test:planetary-orchestrator-fabric` executes deterministic simulations verifying shard balance, node failover (<2% drop), and checkpoint resume.
+4. **Unit Tests** – `npm run test:planetary-orchestrator-fabric` executes deterministic simulations verifying shard balance, node failover (<2% drop), checkpoint resume, and the automated restart drill.
 5. **Demo Execution** – `npm run demo:planetary-orchestrator-fabric:ci` runs the fabric end-to-end in CI mode, producing reports under `reports/ci-latest`.
 6. **Artifact Validation** – Node scripts ensure `summary.json`, `events.ndjson`, `dashboard.html`, and `owner-script.json` exist and contain required sections.
 
@@ -37,6 +37,8 @@ npm ci --no-audit --prefer-offline --progress=false
 npx tsc --noEmit --project demo/Planetary-Orchestrator-Fabric-v0/tsconfig.json
 npm run test:planetary-orchestrator-fabric
 npm run demo:planetary-orchestrator-fabric:ci
+# Optional: rehearse the restart drill locally
+demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh --label ci-drill
 ```
 
 ## Deliverables Captured by CI
