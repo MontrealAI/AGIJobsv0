@@ -32,7 +32,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
 
-> **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
+> **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
 ## Architecture in one glance
 
