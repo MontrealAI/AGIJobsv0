@@ -20,9 +20,13 @@ export const JSON_REPLACER = (_key: string, value: unknown) =>
 
 const WEI_PER_ETH = 10n ** 18n;
 
+function safeJSONStringify(value: unknown, space = 2): string {
+  return JSON.stringify(value, JSON_REPLACER, space);
+}
+
 function writeJSON(filePath: string, data: unknown) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const serialized = JSON.stringify(data, JSON_REPLACER, 2);
+  const serialized = safeJSONStringify(data);
   fs.writeFileSync(filePath, serialized);
 }
 
@@ -454,16 +458,12 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <h2>Identity Gate</h2>
         <div class="mermaid">${identityDiagram}</div>
         <div class="metric">Merkle root: <strong>${context.ensMerkleRoot}</strong></div>
-        <div class="metric">Registry leaves: <strong>${context.ensRegistrySize}</strong></div>
-        <pre>${JSON.stringify(
-          {
+          <div class="metric">Registry leaves: <strong>${context.ensRegistrySize}</strong></div>
+          <pre>${safeJSONStringify({
             preview: context.ensRegistryPreview ?? [],
             nodes: context.nodesRegistered.map((node) => node.ensName),
             offenders: agentNamesFromAlerts(result),
-          },
-          null,
-          2,
-        )}</pre>
+          })}</pre>
       </section>
       <section>
         <h2>Batch Metrics</h2>
@@ -478,70 +478,62 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <div class="metric">Treasury balance: <strong>${formatEth(context.treasury.balance)}</strong></div>
         <div class="metric">Treasury address: <strong>${context.treasury.address}</strong></div>
         <div class="metric">Treasury distributions: <strong>${context.treasury.distributions?.length ?? 0}</strong></div>
-        <pre>${JSON.stringify(
+        <pre>${safeJSONStringify(
           {
             jobRoot: result.proof.jobRoot,
             witness: result.proof.witnessCommitment,
             sealedOutput: result.proof.sealedOutput,
           },
-          null,
-          2,
         )}</pre>
       </section>
       <section>
         <h2>Node Identities</h2>
-        <pre>${JSON.stringify(result.nodes, null, 2)}</pre>
+        <pre>${safeJSONStringify(result.nodes)}</pre>
       </section>
       <section>
         <h2>Entropy Rotation</h2>
-        <pre>${JSON.stringify({ before: context.entropyBefore, after: context.entropyAfter }, null, 2)}</pre>
+        <pre>${safeJSONStringify({ before: context.entropyBefore, after: context.entropyAfter })}</pre>
       </section>
       <section>
         <h2>Governance Parameters</h2>
-        <pre>${JSON.stringify(
+        <pre>${safeJSONStringify(
           {
             parameters: context.governance,
             sentinelGraceRatio: context.sentinelGraceRatio,
             domainCalldataLimit: context.primaryDomain.config.maxCalldataBytes,
           },
-          null,
-          2,
         )}</pre>
       </section>
       <section>
         <h2>Round Timeline</h2>
-        <pre>${JSON.stringify(timeline, null, 2)}</pre>
+        <pre>${safeJSONStringify(timeline)}</pre>
       </section>
       <section>
         <h2>Job Sample</h2>
-        <pre>${JSON.stringify(jobSample, null, 2)}</pre>
+        <pre>${safeJSONStringify(jobSample)}</pre>
       </section>
       <section>
         <h2>Owner Notes</h2>
-        <pre>${JSON.stringify(
+        <pre>${safeJSONStringify(
           ownerNotes ?? {
             message: 'Provide scenario owner notes via context.ownerNotes',
           },
-          null,
-          2,
         )}</pre>
       </section>
       <section>
         <h2>Domain Guardrails</h2>
-        <pre>${JSON.stringify(
+        <pre>${safeJSONStringify(
           {
             unsafeOpcodes: Array.from(context.primaryDomain.config.unsafeOpcodes),
             allowedTargets: Array.from(context.primaryDomain.config.allowedTargets),
             maxCalldataBytes: context.primaryDomain.config.maxCalldataBytes,
             forbiddenSelectors: Array.from(context.primaryDomain.config.forbiddenSelectors),
           },
-          null,
-          2,
         )}</pre>
       </section>
       <section>
         <h2>Treasury Distributions</h2>
-        <pre>${JSON.stringify(
+        <pre>${safeJSONStringify(
           (context.treasury.distributions ?? []).map((event) => ({
             recipient: event.recipient,
             amountWei: event.amount.toString(),
@@ -550,8 +542,6 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
             txHash: event.txHash,
             timestamp: event.timestamp,
           })),
-          null,
-          2,
         )}</pre>
       </section>
     </div>
