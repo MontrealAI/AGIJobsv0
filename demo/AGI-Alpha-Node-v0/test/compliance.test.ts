@@ -60,6 +60,20 @@ const baseInputs: ComplianceInputs = {
       exploitationScore: 7.5,
       curriculumDifficulty: 0.75,
       consideredJobs: 3,
+      worldModelConfidence: 0.92,
+      horizonSequence: ['123', '789'],
+      horizonValue: 12.4,
+      forecasts: [
+        {
+          jobId: '123',
+          successProbability: 0.9,
+          expectedReward: 10,
+          expectedCost: 1,
+          riskAdjustedValue: 9,
+          confidence: 0.92,
+          rationale: 'High confidence forecast.',
+        },
+      ],
     },
     insights: [
       {

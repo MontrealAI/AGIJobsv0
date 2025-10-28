@@ -292,6 +292,8 @@ export class AlphaNode {
     this.context.logger.info('planning_cycle', {
       alphaScore: summary.alphaScore,
       selectedJobId: summary.selectedJobId,
+      worldModelConfidence: summary.worldModelConfidence,
+      horizonSequence: summary.horizonSequence,
       insights,
     });
     return { summary, insights };

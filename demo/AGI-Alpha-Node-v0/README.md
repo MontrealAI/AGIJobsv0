@@ -78,6 +78,31 @@ flowchart TD
 
 ---
 
+## MuZero++ World Model & Horizon Sequencer
+
+The v2 demo uplifts the planner into a **MuZero++-style world model** that continuously simulates job sequences, risk, and reward curves before any capital is deployed. The planner’s decisions are no longer single-step heuristics: every heartbeat now evaluates multi-step strategies with confidence metrics surfaced in the UI, metrics, and compliance layer.
+
+```mermaid
+stateDiagram-v2
+  [*] --> Calibrate
+  Calibrate: Initialise success prior
+  Calibrate --> Simulate: ingest ENS-aligned opportunities
+  Simulate --> Score: propagate MuZero++ rollouts
+  Score --> Sequence: maximise risk-adjusted alpha horizon
+  Sequence --> EmitPlan: expose summary + confidence + sequence value
+  EmitPlan --> [*]
+  Simulate --> Stress: feed antifragile shell with projected shocks
+  Stress --> EmitPlan
+```
+
+- 🌌 **World-model confidence** (0-1) quantifies how aggressively the node can pursue horizon plans.
+- 🧭 **Horizon sequence** projects the optimal job execution order; surfaced in the dashboard and compliance scorecard.
+- 📈 **Horizon value** gauges risk-adjusted alpha yield over the configured planning horizon (default 6 moves).
+
+Every completed job feeds back into the world model, tightening uncertainty bands and escalating the curriculum automatically.
+
+---
+
 ## Treasury Autopilot
 
 ```mermaid

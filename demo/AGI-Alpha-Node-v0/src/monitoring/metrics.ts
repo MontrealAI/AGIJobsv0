@@ -13,6 +13,8 @@ export class AlphaNodeMetrics {
   private readonly rewardGauge: Gauge<string>;
   private readonly verificationGauge: Gauge<string>;
   private readonly plannerScoreGauge: Gauge<string>;
+  private readonly worldModelConfidenceGauge: Gauge<string>;
+  private readonly horizonValueGauge: Gauge<string>;
   private readonly jobOpenGauge: Gauge<string>;
   private readonly jobRewardGauge: Gauge<string>;
   private readonly reinvestAmountGauge: Gauge<string>;
@@ -44,6 +46,16 @@ export class AlphaNodeMetrics {
     this.plannerScoreGauge = new Gauge({
       name: 'agi_alpha_node_planner_score',
       help: 'Latest MuZero++ planner alpha score (unitless).',
+      registers: [this.registry],
+    });
+    this.worldModelConfidenceGauge = new Gauge({
+      name: 'agi_alpha_node_world_model_confidence',
+      help: 'Confidence emitted by the integrated world model (0-1).',
+      registers: [this.registry],
+    });
+    this.horizonValueGauge = new Gauge({
+      name: 'agi_alpha_node_planner_horizon_value',
+      help: 'Cumulative risk-adjusted value across the planning horizon.',
       registers: [this.registry],
     });
     this.jobOpenGauge = new Gauge({
@@ -92,6 +104,8 @@ export class AlphaNodeMetrics {
 
   updatePlanning(summary: PlanningSummary): void {
     this.plannerScoreGauge.set(summary.alphaScore);
+    this.worldModelConfidenceGauge.set(summary.worldModelConfidence);
+    this.horizonValueGauge.set(summary.horizonValue);
   }
 
   updateJobDiscovery(openJobs: number): void {
