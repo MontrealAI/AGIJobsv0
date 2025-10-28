@@ -1,0 +1,80 @@
+[
+  {
+    "phase": "identify",
+    "title": "Identify",
+    "agents": [
+      "Polymath Opportunity Scout (scout.meta-agi.eth)"
+    ],
+    "averageReliability": 0.97,
+    "maxParallel": 4,
+    "activeOpportunities": 4,
+    "opportunityValue": 120460000,
+    "validatorSupport": 3,
+    "automationSupport": 0.9175
+  },
+  {
+    "phase": "outlearn",
+    "title": "Out-Learn",
+    "agents": [
+      "Self-Evolving Curriculum Forge (forge.meta-agi.eth)"
+    ],
+    "averageReliability": 0.95,
+    "maxParallel": 3,
+    "activeOpportunities": 3,
+    "opportunityValue": 97960000,
+    "validatorSupport": 3,
+    "automationSupport": 0.9233333333333333
+  },
+  {
+    "phase": "outthink",
+    "title": "Out-Think",
+    "agents": [
+      "Meta-Agentic Planner (planner.meta-agi.eth)"
+    ],
+    "averageReliability": 0.98,
+    "maxParallel": 2,
+    "activeOpportunities": 4,
+    "opportunityValue": 120460000,
+    "validatorSupport": 3,
+    "automationSupport": 0.9175
+  },
+  {
+    "phase": "outdesign",
+    "title": "Out-Design",
+    "agents": [
+      "Creative Solution Savant (designer.meta-agi.eth)"
+    ],
+    "averageReliability": 0.94,
+    "maxParallel": 3,
+    "activeOpportunities": 3,
+    "opportunityValue": 86620000,
+    "validatorSupport": 3,
+    "automationSupport": 0.91
+  },
+  {
+    "phase": "outstrategise",
+    "title": "Out-Strategise",
+    "agents": [
+      "Meta-Strategist (strategist.meta-agi.eth)"
+    ],
+    "averageReliability": 0.96,
+    "maxParallel": 2,
+    "activeOpportunities": 4,
+    "opportunityValue": 106380000,
+    "validatorSupport": 2.75,
+    "automationSupport": 0.9275
+  },
+  {
+    "phase": "outexecute",
+    "title": "Out-Execute",
+    "agents": [
+      "Autonomous Executor (executor.meta-agi.eth)"
+    ],
+    "averageReliability": 0.99,
+    "maxParallel": 5,
+    "activeOpportunities": 5,
+    "opportunityValue": 131860000,
+    "validatorSupport": 2.8,
+    "automationSupport": 0.924
+  }
+]

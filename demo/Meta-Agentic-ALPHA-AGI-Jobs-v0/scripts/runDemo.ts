@@ -179,6 +179,9 @@ type DemoSummary = {
     stabilityReserve: number;
     paybackHours: number;
     treasuryVelocity: number;
+    alphaCaptureVelocity: number;
+    ownerSovereigntyLag: number;
+    governanceDeterminism: number;
     ciStatus: Scenario['ci']['status'];
   };
   assignments: Assignment[];
@@ -195,6 +198,7 @@ type DemoSummary = {
   mermaidArchitecture: string;
   mermaidTimeline: string;
   mermaidCoordination: string;
+  mermaidPhaseFlow: string;
   ownerPlaybook: string;
   knowledgeBase: {
     opportunities: Array<{
@@ -224,6 +228,17 @@ type DemoSummary = {
     ownerApprovals: string[];
   }>;
   ci: Scenario['ci'];
+  phaseMatrix: Array<{
+    phase: Agent['kind'];
+    title: string;
+    agents: string[];
+    averageReliability: number;
+    maxParallel: number;
+    activeOpportunities: number;
+    opportunityValue: number;
+    validatorSupport: number;
+    automationSupport: number;
+  }>;
   dashboard: {
     metrics: DemoSummary['metrics'];
     assignments: Array<{
@@ -242,7 +257,26 @@ type DemoSummary = {
       commands: Scenario['owner']['commands'];
     };
     ci: Scenario['ci'];
+    phaseMatrix: DemoSummary['phaseMatrix'];
   };
+};
+
+const PHASE_SEQUENCE: Agent['kind'][] = [
+  'identify',
+  'outlearn',
+  'outthink',
+  'outdesign',
+  'outstrategise',
+  'outexecute',
+];
+
+const PHASE_LABELS: Record<Agent['kind'], string> = {
+  identify: 'Identify',
+  outlearn: 'Out-Learn',
+  outthink: 'Out-Think',
+  outdesign: 'Out-Design',
+  outstrategise: 'Out-Strategise',
+  outexecute: 'Out-Execute',
 };
 
 function getAgentsByIds(scenario: Scenario, ids: string[]): Agent[] {
@@ -308,6 +342,8 @@ function assignOpportunity(
 function computeMetrics(scenario: Scenario, assignments: Assignment[]) {
   const totalValue = assignments.reduce((sum, assignment) => sum + assignment.expectedValue, 0);
   const totalCost = assignments.reduce((sum, assignment) => sum + assignment.expectedCost, 0);
+  const totalDuration = assignments.reduce((sum, assignment) => sum + assignment.durationHours, 0);
+  const portfolioProfit = totalValue - totalCost;
   const automationCoverage =
     assignments.reduce((sum, assignment) => sum + assignment.automation, 0) / assignments.length;
   const stabilityReserve = assignments.reduce(
@@ -346,6 +382,9 @@ function computeMetrics(scenario: Scenario, assignments: Assignment[]) {
 
   const paybackHours = totalCost === 0 ? 0 : (totalCost / totalValue) * assignments.reduce((sum, a) => sum + a.durationHours, 0);
   const treasuryVelocity = totalValue === 0 ? 0 : (totalValue - totalCost) / (totalCost || 1);
+  const alphaCaptureVelocity = totalDuration === 0 ? 0 : portfolioProfit / totalDuration;
+  const ownerSovereigntyLag = scenario.owner.emergency.responseMinutes;
+  const governanceDeterminism = scenario.owner.members === 0 ? 0 : scenario.owner.threshold / scenario.owner.members;
 
   return {
     totalOpportunities: assignments.length,
@@ -362,6 +401,9 @@ function computeMetrics(scenario: Scenario, assignments: Assignment[]) {
     stabilityReserve,
     paybackHours,
     treasuryVelocity,
+    alphaCaptureVelocity,
+    ownerSovereigntyLag,
+    governanceDeterminism,
     ciStatus: scenario.ci.status,
   } as DemoSummary['metrics'];
 }
@@ -396,6 +438,47 @@ function buildKnowledgeBase(scenario: Scenario, assignments: Assignment[]): Demo
     opportunities,
     relationships,
   };
+}
+
+function buildPhaseMatrix(scenario: Scenario, assignments: Assignment[]): DemoSummary['phaseMatrix'] {
+  return PHASE_SEQUENCE.map((phase) => {
+    const phaseAgents = scenario.agents.filter((agent) => agent.kind === phase);
+    const agentIds = new Set(phaseAgents.map((agent) => agent.id));
+    const relevantAssignments = assignments.filter(
+      (assignment) =>
+        agentIds.has(assignment.leadAgent.id) ||
+        assignment.supportingAgents.some((agent) => agentIds.has(agent.id)),
+    );
+
+    const averageReliability =
+      phaseAgents.length === 0
+        ? 0
+        : phaseAgents.reduce((sum, agent) => sum + agent.reliability, 0) / phaseAgents.length;
+    const maxParallel = phaseAgents.reduce((max, agent) => Math.max(max, agent.maxParallel), 0);
+    const opportunityValue = relevantAssignments.reduce((sum, assignment) => sum + assignment.expectedValue, 0);
+    const validatorSupport =
+      relevantAssignments.length === 0
+        ? 0
+        : relevantAssignments.reduce((sum, assignment) => sum + assignment.validators.length, 0) /
+          relevantAssignments.length;
+    const automationSupport =
+      relevantAssignments.length === 0
+        ? 0
+        : relevantAssignments.reduce((sum, assignment) => sum + assignment.automation, 0) /
+          relevantAssignments.length;
+
+    return {
+      phase,
+      title: PHASE_LABELS[phase],
+      agents: phaseAgents.map((agent) => `${agent.name} (${agent.ens})`),
+      averageReliability,
+      maxParallel,
+      activeOpportunities: relevantAssignments.length,
+      opportunityValue,
+      validatorSupport,
+      automationSupport,
+    };
+  });
 }
 
 function generateArchitectureMermaid(
@@ -472,6 +555,36 @@ ${edges}
 `;
 }
 
+function generatePhaseFlowMermaid(
+  phaseMatrix: DemoSummary['phaseMatrix'],
+  metrics: DemoSummary['metrics'],
+): string {
+  const nodes = phaseMatrix
+    .map(
+      (entry) =>
+        `    ${entry.phase}[${entry.title}\\nAgents ${entry.agents.length}\\nReliability ${(entry.averageReliability * 100).toFixed(1)}%]`,
+    )
+    .join('\n');
+
+  const edges = PHASE_SEQUENCE.slice(0, -1)
+    .map((phase, index) => {
+      const nextPhase = PHASE_SEQUENCE[index + 1];
+      const nextEntry = phaseMatrix.find((entry) => entry.phase === nextPhase);
+      const label = nextEntry
+        ? `α ${(nextEntry.automationSupport * 100).toFixed(0)}% · validators ${nextEntry.validatorSupport.toFixed(1)}`
+        : 'handoff';
+      return `    ${phase} -->|${label}| ${nextPhase}`;
+    })
+    .join('\n');
+
+  return `graph LR
+${nodes}
+${edges}
+    roi[Portfolio ROI ${metrics.roiMultiplier.toFixed(2)}x\\nAlpha Velocity $${metrics.alphaCaptureVelocity.toFixed(0)}/h]
+    outexecute --> roi
+  `;
+}
+
 function buildOwnerPlaybook(summary: DemoSummary): string {
   const lines = [
     '# Meta-Agentic Owner Command Playbook',
@@ -479,6 +592,9 @@ function buildOwnerPlaybook(summary: DemoSummary): string {
     `- **Governance Safe**: ${summary.ownerControl.governanceSafe} (threshold ${summary.ownerControl.threshold} of ${summary.ownerControl.members})`,
     `- **Automation Coverage**: ${(summary.metrics.automationCoverage * 100).toFixed(1)}%`,
     `- **Sovereign Control Score**: ${(summary.metrics.sovereignControlScore * 100).toFixed(1)}%`,
+    `- **Alpha Capture Velocity**: $${summary.metrics.alphaCaptureVelocity.toFixed(0)}/h`,
+    `- **Owner Response Lag**: ${summary.metrics.ownerSovereigntyLag} minutes`,
+    `- **Governance Determinism**: ${(summary.metrics.governanceDeterminism * 100).toFixed(1)}%`,
     '',
     '## Immediate Actions',
     ...summary.ownerControl.controls.map((control) => `- \`${control.parameter}\` → ${control.description} — \`${control.script}\``),
@@ -503,6 +619,12 @@ function buildOwnerPlaybook(summary: DemoSummary): string {
     ...summary.assignments.map(
       (assignment) =>
         `- **${assignment.title}** (${assignment.domain}) – ROI ${assignment.projectedROI.toFixed(2)}x, automation ${(assignment.automation * 100).toFixed(1)}%, approvals ${assignment.ownerApprovals.join(', ')}`,
+    ),
+    '',
+    '## Phase Matrix',
+    ...summary.phaseMatrix.map(
+      (entry) =>
+        `- **${entry.title}** → ${entry.agents.length} agents, reliability ${(entry.averageReliability * 100).toFixed(1)}%, automation ${(entry.automationSupport * 100).toFixed(1)}%, opportunities ${entry.activeOpportunities}`,
     ),
   ];
 
@@ -543,6 +665,7 @@ function buildDashboard(summary: DemoSummary): DemoSummary['dashboard'] {
       commands: summary.ownerControl.controls,
     },
     ci: summary.ci,
+    phaseMatrix: summary.phaseMatrix,
   };
 }
 
@@ -567,6 +690,7 @@ export async function runScenario(
 
   const assignments = filteredOpportunities.map((opportunity) => assignOpportunity(scenario, opportunity, options));
   const metrics = computeMetrics(scenario, assignments);
+  const phaseMatrix = buildPhaseMatrix(scenario, assignments);
   const ownerControl = {
     governanceSafe: scenario.owner.governanceSafe,
     operator: scenario.owner.operator,
@@ -586,11 +710,13 @@ export async function runScenario(
     mermaidArchitecture: generateArchitectureMermaid(scenario, assignments, metrics),
     mermaidTimeline: generateTimelineMermaid(assignments),
     mermaidCoordination: generateCoordinationMermaid(assignments),
+    mermaidPhaseFlow: generatePhaseFlowMermaid(phaseMatrix, metrics),
     ownerPlaybook: '',
     knowledgeBase: buildKnowledgeBase(scenario, assignments),
     worldModel: scenario.worldModel,
     executionLedger: buildExecutionLedger(assignments),
     ci: scenario.ci,
+    phaseMatrix,
     dashboard: undefined as unknown as DemoSummary['dashboard'],
   };
 
@@ -606,6 +732,7 @@ export async function writeReports(summary: DemoSummary, outputDir: string): Pro
     ['summary.json', JSON.stringify(summary.metrics, null, 2)],
     ['owner-control.json', JSON.stringify(summary.ownerControl, null, 2)],
     ['knowledge-base.json', JSON.stringify(summary.knowledgeBase, null, 2)],
+    ['phase-matrix.json', JSON.stringify(summary.phaseMatrix, null, 2)],
     ['world-model.json', JSON.stringify(summary.worldModel, null, 2)],
     ['execution-ledger.json', JSON.stringify(summary.executionLedger, null, 2)],
     ['ci-status.json', JSON.stringify(summary.ci, null, 2)],
@@ -613,6 +740,7 @@ export async function writeReports(summary: DemoSummary, outputDir: string): Pro
     ['architecture.mmd', summary.mermaidArchitecture],
     ['timeline.mmd', summary.mermaidTimeline],
     ['coordination.mmd', summary.mermaidCoordination],
+    ['phase-flow.mmd', summary.mermaidPhaseFlow],
     ['owner-playbook.md', summary.ownerPlaybook],
   ];
 

@@ -1,0 +1,15 @@
+graph LR
+    identify[Identify\nAgents 1\nReliability 97.0%]
+    outlearn[Out-Learn\nAgents 1\nReliability 95.0%]
+    outthink[Out-Think\nAgents 1\nReliability 98.0%]
+    outdesign[Out-Design\nAgents 1\nReliability 94.0%]
+    outstrategise[Out-Strategise\nAgents 1\nReliability 96.0%]
+    outexecute[Out-Execute\nAgents 1\nReliability 99.0%]
+    identify -->|α 92% · validators 3.0| outlearn
+    outlearn -->|α 92% · validators 3.0| outthink
+    outthink -->|α 91% · validators 3.0| outdesign
+    outdesign -->|α 93% · validators 2.8| outstrategise
+    outstrategise -->|α 92% · validators 2.8| outexecute
+    roi[Portfolio ROI 10.77x\nAlpha Velocity $575092/h]
+    outexecute --> roi
+  

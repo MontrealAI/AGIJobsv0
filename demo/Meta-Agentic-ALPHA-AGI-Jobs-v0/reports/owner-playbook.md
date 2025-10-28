@@ -3,6 +3,9 @@
 - **Governance Safe**: 0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (threshold 4 of 6)
 - **Automation Coverage**: 92.4%
 - **Sovereign Control Score**: 100.0%
+- **Alpha Capture Velocity**: $575092/h
+- **Owner Response Lag**: 8 minutes
+- **Governance Determinism**: 66.7%
 
 ## Immediate Actions
 - `globalPause` → Halts all orchestrated execution within 60 seconds. — `npm run owner:system-pause -- --action pause`
@@ -36,3 +39,11 @@
 - **Bio-Innovation Discovery Loop** (biotech) – ROI 7.03x, automation 91.0%, approvals governanceSafe
 - **Infrastructure Efficiency Cascade** (infrastructure) – ROI 9.29x, automation 90.0%, approvals timelock
 - **On-Chain Governance Elevation** (governance) – ROI 8.86x, automation 95.0%, approvals timelock
+
+## Phase Matrix
+- **Identify** → 1 agents, reliability 97.0%, automation 91.8%, opportunities 4
+- **Out-Learn** → 1 agents, reliability 95.0%, automation 92.3%, opportunities 3
+- **Out-Think** → 1 agents, reliability 98.0%, automation 91.8%, opportunities 4
+- **Out-Design** → 1 agents, reliability 94.0%, automation 91.0%, opportunities 3
+- **Out-Strategise** → 1 agents, reliability 96.0%, automation 92.8%, opportunities 4
+- **Out-Execute** → 1 agents, reliability 99.0%, automation 92.4%, opportunities 5
