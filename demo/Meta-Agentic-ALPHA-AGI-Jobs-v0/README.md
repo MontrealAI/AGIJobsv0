@@ -48,18 +48,41 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
 2. **Run the orchestration**:
    ```bash
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
    ```
+   The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
    ```bash
    python -m http.server --directory demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui 9000
    ```
-   Visit `http://localhost:9000` to explore the live dashboard (Mermaid diagrams auto-render).
+   Visit `http://localhost:9000` to explore the live dashboard. All metrics, tables, and Mermaid charts load directly from the latest orchestration JSON.
 4. **Review the generated artefacts:**
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
 
 > ✅ Everything ships pre-configured. The CLI auto-registers the validator agent, configures checkpoints, and ensures account-abstraction-ready governance parameters.
+
+---
+
+## ⚙️ Owner Controls (No-Code)
+
+Adjust every mission-critical parameter using a single helper script:
+
+```bash
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/owner_controls.py \
+  --config demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/config/scenario.yaml \
+  --set plan.budget.max=550000 \
+  --set phases[execute-onchain].step.params.job.reward=150000
+```
+
+- `--show` prints a JSON summary of the current governance posture.
+- `--dry-run` previews the YAML change without writing to disk.
+- List selectors such as `phases[execute-onchain]` or `agents[id=guardian-grid-validator]` target entries by identifier so owners never touch raw indexes.
+
+All updates are idempotent, version-controlled, and reflected instantly in the UI and generated reports after the next run.
 
 ---
 
@@ -153,14 +176,14 @@ Each step is enforced by the orchestrator runtime and can be audited in the resu
 
 ## 🖥️ Grandiose UI Console
 
-The `storage/ui/index.html` dashboard renders:
+The regenerated `storage/ui/index.html` console now:
 
-- Live alpha probability updates (fetched from `latest_run.json`).
-- Governance control panel with instant alerts.
-- Execution timeline and antifragility monitor.
-- Mermaid flowchart summarising the opportunity loop.
+- Streams live alpha readiness, guardian posture, and treasury telemetry directly from `latest_run_v2.json`.
+- Autogenerates the phase table and Mermaid execution timeline using the orchestrator's phase states.
+- Exposes one-click artefact links (summary JSON, investor masterplan, console sources) for downstream teams.
+- Highlights owner levers updated via `owner_controls.py` so stakeholders instantly see configuration deltas.
 
-Serve it statically or drop it into any CDN – no dependencies besides Mermaid.js.
+Serve it statically or drop it into any CDN – the bundle is pure HTML/CSS/JS with Mermaid handled via CDN.
 
 ---
 

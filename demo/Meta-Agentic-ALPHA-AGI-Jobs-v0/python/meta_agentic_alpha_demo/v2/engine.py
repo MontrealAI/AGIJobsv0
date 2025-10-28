@@ -10,6 +10,9 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Sequence
 
+import shutil
+from textwrap import dedent
+
 from orchestrator.agents import AgentRegistryError, get_registry
 from orchestrator.models import (
     AgentCapability,
@@ -59,6 +62,8 @@ class MetaAgenticV2Outcome:
     summary_path: Path
     phase_scores: Sequence[PhaseScore]
     scoreboard_snapshot: Mapping[str, Any]
+    dashboard_path: Path | None = None
+    report_path: Path | None = None
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
@@ -217,18 +222,18 @@ def _alpha_readiness(scores: Sequence[PhaseScore]) -> float:
     return readiness
 
 
-def _write_summary(
+def _build_summary_payload(
     config: MetaAgenticV2Configuration,
     status: Any,
     plan: OrchestrationPlan,
     phase_scores: Sequence[PhaseScore],
     onboarded_agents: Sequence[str],
-) -> Path:
+) -> Dict[str, Any]:
     from orchestrator.scoreboard import get_scoreboard
 
     alpha_readiness = _alpha_readiness(phase_scores)
     scoreboard_snapshot = get_scoreboard().snapshot()
-    payload = {
+    payload: Dict[str, Any] = {
         "runId": status.run.id,
         "state": status.run.state,
         "alphaReadiness": alpha_readiness,
@@ -253,10 +258,145 @@ def _write_summary(
         "steps": [step.model_dump(mode="json") for step in plan.steps],
         "logs": status.logs,
     }
+    payload["scenario"] = {
+        "id": config.scenario.identifier,
+        "title": config.scenario.title,
+        "narrative": config.scenario.narrative,
+    }
+    return payload
+
+
+def _write_summary(
+    config: MetaAgenticV2Configuration,
+    payload: Mapping[str, Any],
+) -> Path:
     summary_path = config.base_dir / "storage" / "latest_run_v2.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return summary_path
+
+
+def _sync_console_assets(config: MetaAgenticV2Configuration) -> Path:
+    """Copy the owner console assets into the storage directory."""
+
+    source_dir = config.base_dir / "meta_agentic_alpha_v2" / "ui"
+    destination_dir = config.base_dir / "storage" / "ui"
+    destination_dir.mkdir(parents=True, exist_ok=True)
+
+    for existing in destination_dir.glob("*"):
+        if existing.is_file():
+            existing.unlink()
+        elif existing.is_dir():
+            shutil.rmtree(existing)
+
+    for entry in source_dir.glob("**/*"):
+        if entry.is_dir():
+            continue
+        relative = entry.relative_to(source_dir)
+        target = destination_dir / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(entry, target)
+
+    return destination_dir / "index.html"
+
+
+def _write_dashboard_data(
+    config: MetaAgenticV2Configuration,
+    payload: Mapping[str, Any],
+) -> Path:
+    dashboard_path = config.base_dir / "storage" / "ui" / "dashboard-data.json"
+    dashboard_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return dashboard_path
+
+
+def _render_phase_table(phase_scores: Sequence[PhaseScore]) -> str:
+    rows = ["| Phase | State | Completion | Weight | Metric |", "|-------|-------|------------|--------|--------|"]
+    for score in phase_scores:
+        rows.append(
+            f"| {score.label} | {score.state.title()} | {score.completion_ratio:.0%} | {score.weight:.2f} | {score.success_metric} |"
+        )
+    return "\n".join(rows)
+
+
+def _render_mermaid_timeline(phase_scores: Sequence[PhaseScore]) -> str:
+    lines = ["gantt", "    dateFormat  X", "    title Meta-Agentic α-AGI Jobs V2 Execution"]
+    for index, score in enumerate(phase_scores, start=1):
+        status = "done" if score.state == "completed" else "crit" if score.state == "failed" else "active"
+        lines.append(
+            f"    section {score.label}",
+        )
+        lines.append(
+            f"    {score.success_metric} :{status}, {score.phase_id}, {index}, {max(1, int(score.weight))}"
+        )
+    return "\n".join(lines)
+
+
+def _write_masterplan_report(
+    config: MetaAgenticV2Configuration,
+    payload: Mapping[str, Any],
+    phase_scores: Sequence[PhaseScore],
+) -> Path:
+    report_dir = config.base_dir / "meta_agentic_alpha_v2" / "reports" / "generated"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / "alpha_masterplan_run.md"
+
+    owner = config.owner
+    guardians = ", ".join(owner.get("guardians", [])) or "—"
+    treasury = config.treasury
+    gasless = config.gasless
+    phase_table = _render_phase_table(phase_scores)
+    mermaid = _render_mermaid_timeline(phase_scores)
+
+    content = dedent(
+        f"""
+        # Meta-Agentic α-AGI Jobs Demo V2 — Live Run Summary
+
+        ## Governance Posture
+
+        - **Owner:** {owner.get("address", "n/a")}
+        - **Guardians:** {guardians}
+        - **Approvals Required:** {owner.get("approvals_required", "n/a")}
+        - **Emergency Pause:** {"Enabled" if owner.get("emergency_pause") else "Disabled"}
+
+        ## Treasury Controls
+
+        - **Token:** {treasury.get("token", "AGIALPHA")}
+        - **Initial Balance:** {treasury.get("initial_balance", "n/a")}
+        - **Risk Limits:** Max drawdown {treasury.get("risk_limits", {}).get("max_drawdown_percent", "?")}%,
+          VaR {treasury.get("risk_limits", {}).get("var_percent", "?")}%,
+          Antifragility buffer {treasury.get("risk_limits", {}).get("antifragility_buffer_percent", "?")}%
+        - **Gasless Execution:** {"Enabled" if gasless.get("enabled") else "Disabled"}
+        - **Paymaster:** {gasless.get("paymaster", "n/a")}
+
+        ## Alpha Readiness
+
+        - **Run ID:** {payload.get("runId")}
+        - **State:** {payload.get("state")}
+        - **Alpha Readiness Score:** {payload.get("alphaReadiness"):.2%}
+        - **Participating Agents:** {", ".join(payload.get("agents", [])) or "—"}
+
+        ## Phase Telemetry
+
+        {phase_table}
+
+        ```mermaid
+        {mermaid}
+        ```
+
+        ## Pending Confirmations
+
+        {os.linesep.join(f"- {confirmation}" for confirmation in payload.get('confirmations', [])) or "- None"}
+
+        ## Execution Steps
+
+        ```json
+        {json.dumps(payload.get("steps", []), ensure_ascii=False, indent=2)}
+        ```
+        """
+    ).strip()
+
+    report_path.write_text(content, encoding="utf-8")
+    return report_path
 
 
 def run_demo(config: MetaAgenticV2Configuration, *, timeout: float = 120.0) -> MetaAgenticV2Outcome:
@@ -282,7 +422,14 @@ def run_demo(config: MetaAgenticV2Configuration, *, timeout: float = 120.0) -> M
         status = get_status(run_info.id)
 
     scores = _phase_scores(config, status)
-    summary_path = _write_summary(config, status, plan, scores, onboarded_agents)
+    summary_payload = _build_summary_payload(config, status, plan, scores, onboarded_agents)
+    dashboard_entry_path = _sync_console_assets(config)
+    report_path = _write_masterplan_report(config, summary_payload, scores)
+    summary_payload["__masterplanPath"] = str(report_path.relative_to(config.base_dir))
+    summary_payload["__dashboardPath"] = str(dashboard_entry_path.relative_to(config.base_dir))
+    summary_payload["__sourceSummaryPath"] = "storage/latest_run_v2.json"
+    summary_path = _write_summary(config, summary_payload)
+    dashboard_data_path = _write_dashboard_data(config, summary_payload)
 
     from orchestrator.scoreboard import get_scoreboard
 
@@ -293,9 +440,12 @@ def run_demo(config: MetaAgenticV2Configuration, *, timeout: float = 120.0) -> M
         summary_path=summary_path,
         phase_scores=tuple(scores),
         scoreboard_snapshot=get_scoreboard().snapshot(),
+        dashboard_path=dashboard_entry_path,
+        report_path=report_path,
         metadata={
             "attachments": [attachment.model_dump() for attachment in attachments],
             "onboarded_agents": list(onboarded_agents),
+            "dashboardDataPath": str(dashboard_data_path),
         },
     )
     return outcome

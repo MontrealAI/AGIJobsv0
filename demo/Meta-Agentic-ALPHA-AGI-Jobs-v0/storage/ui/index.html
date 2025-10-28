@@ -2,85 +2,162 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Meta-Agentic α-AGI Jobs Console</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta-Agentic α-AGI Jobs Demo V2 Command Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header>
-      <h1>Meta-Agentic α-AGI Jobs Console</h1>
-      <p class="tagline">Non-technical control plane for compounding alpha orchestration.</p>
+      <h1 data-field="scenario-title">Meta-Agentic α-AGI Jobs Demo V2</h1>
+      <p class="lead" data-field="scenario-narrative">
+        Fully-governed, antifragile AGI Jobs orchestration that any non-technical owner can deploy with a single command.
+      </p>
+      <div class="header-metrics">
+        <div>
+          <span>Run ID</span>
+          <strong data-field="run-id">—</strong>
+        </div>
+        <div>
+          <span>State</span>
+          <strong data-field="run-state">—</strong>
+        </div>
+        <div>
+          <span>Alpha Readiness</span>
+          <strong data-field="alpha-readiness">—</strong>
+        </div>
+      </div>
     </header>
 
-    <section class="grid">
-      <article class="card highlight">
-        <h2>Real-time Alpha Pulse</h2>
-        <p class="metric">Σ Alpha Probability: <strong>97.2%</strong></p>
-        <ul>
-          <li>Liquidity Shock Window: <strong>Active</strong></li>
-          <li>Policy Incentive Window: <strong>Open</strong></li>
-          <li>Research Transfer Readiness: <strong>Certified</strong></li>
+    <main>
+      <section class="grid">
+        <article class="card">
+          <h2>Owner Controls</h2>
+          <dl class="definition-grid">
+            <div>
+              <dt>Owner</dt>
+              <dd data-field="owner-address">—</dd>
+            </div>
+            <div>
+              <dt>Guardians</dt>
+              <dd data-field="owner-guardians">—</dd>
+            </div>
+            <div>
+              <dt>Approvals Required</dt>
+              <dd data-field="owner-approvals">—</dd>
+            </div>
+            <div>
+              <dt>Emergency Pause</dt>
+              <dd data-field="owner-pause">—</dd>
+            </div>
+          </dl>
+          <p class="hint">
+            Use <code>python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/owner_controls.py</code> to adjust these levers with a single
+            command.
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>Treasury Posture</h2>
+          <dl class="definition-grid">
+            <div>
+              <dt>Token</dt>
+              <dd data-field="treasury-token">—</dd>
+            </div>
+            <div>
+              <dt>Balance</dt>
+              <dd data-field="treasury-balance">—</dd>
+            </div>
+            <div>
+              <dt>Max Drawdown</dt>
+              <dd data-field="treasury-max-drawdown">—</dd>
+            </div>
+            <div>
+              <dt>VaR</dt>
+              <dd data-field="treasury-var">—</dd>
+            </div>
+            <div>
+              <dt>Antifragility Buffer</dt>
+              <dd data-field="treasury-buffer">—</dd>
+            </div>
+            <div>
+              <dt>Gasless Paymaster</dt>
+              <dd data-field="gasless-paymaster">—</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="card">
+          <h2>Governance Checklist</h2>
+          <ol data-list="confirmations">
+            <li>Awaiting execution telemetry…</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Phase Telemetry</h2>
+        <table class="phase-table">
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>State</th>
+              <th>Completion</th>
+              <th>Weight</th>
+              <th>Metric</th>
+            </tr>
+          </thead>
+          <tbody data-phase-table></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Alpha Timeline</h2>
+        <pre class="mermaid" data-field="timeline">gantt
+  dateFormat  X
+  title Awaiting orchestration results
+</pre>
+      </section>
+
+      <section class="card">
+        <h2>Execution Artefacts</h2>
+        <ul class="artefacts">
+          <li>
+            <a data-link="summary" href="#" rel="noopener" target="_blank">Summary JSON</a>
+            <span>Canonical ledger of the latest autonomous run.</span>
+          </li>
+          <li>
+            <a data-link="report" href="#" rel="noopener" target="_blank">Alpha Masterplan</a>
+            <span>Investor-grade deck synthesised from live telemetry.</span>
+          </li>
+          <li>
+            <a data-link="dashboard" href="#" rel="noopener" target="_blank">Console Source</a>
+            <span>Static assets powering this non-technical control plane.</span>
+          </li>
         </ul>
-      </article>
+      </section>
 
-      <article class="card">
-        <h2>Governance Levers</h2>
-        <p>Configure platform parameters instantly.</p>
-        <dl>
-          <dt>Stake Floor</dt>
-          <dd>50,000 AGIALPHA</dd>
-          <dt>Reward Split</dt>
-          <dd>65% performer / 35% treasury</dd>
-          <dt>Pause Guardian</dt>
-          <dd>Armed (Guardian 0xACED…FEEDC0)</dd>
-        </dl>
-        <button data-action="open-governance">Adjust Settings</button>
-      </article>
-
-      <article class="card">
-        <h2>Execution Timeline</h2>
-        <ol>
-          <li>Job posted: Superconductive Grid Retrofit Initiative</li>
-          <li>Validator staked: guardian-grid-validator</li>
-          <li>Dry-run validation commit produced</li>
-          <li>Awaiting owner confirmation: Carbon credit issuance</li>
-        </ol>
-      </article>
-
-      <article class="card">
-        <h2>Antifragility Monitor</h2>
-        <p>Dynamic stress flags across scenario lab.</p>
-        <ul>
-          <li>Black Swan Simulation &mdash; <span class="status ok">Stable</span></li>
-          <li>Stress VaR@99 &mdash; <span class="status watch">Watch</span></li>
-          <li>Liquidity Cascades &mdash; <span class="status ok">Stable</span></li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="full">
-      <h2>Opportunity Flow</h2>
-      <pre class="mermaid">
-flowchart LR
-  Signals((Anomaly Signals)) --> Learner[Out-Learn Simulation Foundry]
-  Learner --> Planner[Meta-Agentic Planner]
-  Planner --> Designer[Creative Fusion Designer]
-  Designer --> Governance[Governance + Treasury Console]
-  Governance --> Execution[AGI Jobs Execution Engine]
-  Execution --> Feedback[Monitoring + Scoreboard]
-  Feedback --> Signals
-      </pre>
-    </section>
+      <section class="card logs">
+        <h2>Run Logs</h2>
+        <details open>
+          <summary>Latest orchestrator events</summary>
+          <pre data-field="run-logs">Awaiting orchestration output…</pre>
+        </details>
+      </section>
+    </main>
 
     <footer>
-      <p>Powered by AGI Jobs v0 (v2). Engineered for sovereign-scale alpha creation.</p>
+      <p>
+        Engineered with <strong>AGI Jobs v0 (v2)</strong>. Deployable by any owner in minutes — no engineering team required.
+      </p>
     </footer>
 
-    <script type="module" src="scripts.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
-    <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({ startOnLoad: true, theme: "forest" });
-    </script>
+    <script type="module" src="dashboard.js"></script>
   </body>
 </html>
