@@ -1,0 +1,87 @@
+{
+  "governanceSafe": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "operator": "meta-agentic.owner",
+  "threshold": 4,
+  "members": 6,
+  "controls": [
+    {
+      "id": "pause-global",
+      "parameter": "globalPause",
+      "script": "npm run owner:system-pause -- --action pause",
+      "description": "Halts all orchestrated execution within 60 seconds.",
+      "category": "safety"
+    },
+    {
+      "id": "resume-global",
+      "parameter": "globalPause",
+      "script": "npm run owner:system-pause -- --action unpause",
+      "description": "Resumes orchestrated execution once safeguards are cleared.",
+      "category": "safety"
+    },
+    {
+      "id": "upgrade-surge",
+      "parameter": "moduleVersion",
+      "script": "npm run owner:update-all",
+      "description": "Applies queued upgrades to every production module.",
+      "category": "governance"
+    },
+    {
+      "id": "adjust-validators",
+      "parameter": "validatorQuorum",
+      "script": "npm run owner:upgrade -- --target validator",
+      "description": "Raises validator quorums for high-value opportunities.",
+      "category": "risk"
+    },
+    {
+      "id": "treasury-allocation",
+      "parameter": "treasuryRouting",
+      "script": "npm run owner:parameters -- --group treasury",
+      "description": "Rebalances capital between liquidity, R&D, and reserves.",
+      "category": "treasury"
+    },
+    {
+      "id": "ci-verification",
+      "parameter": "branchProtection",
+      "script": "npm run owner:verify-control",
+      "description": "Confirms CI + governance guardrails before accepting updates.",
+      "category": "compliance"
+    }
+  ],
+  "emergency": {
+    "contacts": [
+      "duty.officer@meta-agi.example",
+      "+1-800-ALPHA-247",
+      "oncall.governance@meta-agi.example"
+    ],
+    "responseMinutes": 8,
+    "playbook": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md"
+  },
+  "safeguards": {
+    "pauseScript": "npm run owner:system-pause -- --action pause",
+    "resumeScript": "npm run owner:system-pause -- --action unpause",
+    "circuitBreakers": [
+      {
+        "metric": "capitalDrawdownBps",
+        "comparator": ">=",
+        "threshold": 250,
+        "action": "npm run owner:pulse",
+        "description": "Escalate if drawdown exceeds 2.5% within 1 hour."
+      },
+      {
+        "metric": "validatorDisagreement",
+        "comparator": ">",
+        "threshold": 0.08,
+        "action": "npm run owner:upgrade-status",
+        "description": "Trigger dispute audit when validator disagreement is over 8%."
+      },
+      {
+        "metric": "automationFaults",
+        "comparator": ">",
+        "threshold": 3,
+        "action": "npm run owner:doctor",
+        "description": "Auto-open reliability response if more than three automation faults occur in 24h."
+      }
+    ]
+  },
+  "coverageScore": 0.75
+}

@@ -1,0 +1,76 @@
+[
+  {
+    "opportunityId": "opp-supply-inversion",
+    "checksum": "7699a03c6c261bec9d72e053d433eb2ed350c133f43c31d917003ba8721631cb",
+    "expectedValue": 38640000,
+    "expectedCost": 2758400,
+    "projectedROI": 14.008120649651973,
+    "validators": [
+      "validator-1",
+      "validator-2",
+      "validator-3"
+    ],
+    "ownerApprovals": [
+      "governanceSafe"
+    ]
+  },
+  {
+    "opportunityId": "opp-latent-alpha",
+    "checksum": "efc48ea14a29ef4fe76b4308a9e4ea8e2a691be0862ccc5f7f9ab112693b292e",
+    "expectedValue": 33840000,
+    "expectedCost": 2147500,
+    "projectedROI": 15.757857974388823,
+    "validators": [
+      "validator-1",
+      "validator-2",
+      "validator-3"
+    ],
+    "ownerApprovals": [
+      "timelock"
+    ]
+  },
+  {
+    "opportunityId": "opp-bio-discovery",
+    "checksum": "2809be8ddaba96cdb57cec30a4dd8a3be24674f6318172b1c81de01794569195",
+    "expectedValue": 25480000,
+    "expectedCost": 3626699.9999999995,
+    "projectedROI": 7.025670719938237,
+    "validators": [
+      "validator-1",
+      "validator-2",
+      "validator-3"
+    ],
+    "ownerApprovals": [
+      "governanceSafe"
+    ]
+  },
+  {
+    "opportunityId": "opp-infra-efficiency",
+    "checksum": "529f3b0e6471ab450d07f5edeaf1bca51acbcb5585140e8e434fb9e0cbf815d0",
+    "expectedValue": 22500000,
+    "expectedCost": 2422000,
+    "projectedROI": 9.289843104872007,
+    "validators": [
+      "validator-1",
+      "validator-2",
+      "validator-3"
+    ],
+    "ownerApprovals": [
+      "timelock"
+    ]
+  },
+  {
+    "opportunityId": "opp-governance-elevation",
+    "checksum": "521230c7a26f398b51d670604b165729894c609cc41717f62c698a0f071f4b9f",
+    "expectedValue": 11400000,
+    "expectedCost": 1286250,
+    "projectedROI": 8.862973760932945,
+    "validators": [
+      "validator-1",
+      "validator-2"
+    ],
+    "ownerApprovals": [
+      "timelock"
+    ]
+  }
+]

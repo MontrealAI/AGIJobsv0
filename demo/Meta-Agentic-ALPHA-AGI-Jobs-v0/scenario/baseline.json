@@ -1,0 +1,390 @@
+{
+  "version": "alpha-1",
+  "label": "Meta-Agentic α-AGI Jobs Demo",
+  "description": "Flagship closed-loop orchestration showing AGI Jobs v0 (v2) as a sovereign-scale economic machine with non-technical command surfaces.",
+  "network": {
+    "name": "Ethereum Mainnet (Anvil parity)",
+    "chainId": 1,
+    "rpcUrl": "http://127.0.0.1:8545",
+    "explorer": "https://etherscan.io",
+    "deploymentRegistry": "0xC0DE6A1FaB3d0000000000000000000000000000",
+    "timelock": "0x1A110C00FF1c1a77000000000000000000000000"
+  },
+  "owner": {
+    "operator": "meta-agentic.owner",
+    "governanceSafe": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "treasury": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "threshold": 4,
+    "members": 6,
+    "commands": [
+      {
+        "id": "pause-global",
+        "parameter": "globalPause",
+        "script": "npm run owner:system-pause -- --action pause",
+        "description": "Halts all orchestrated execution within 60 seconds.",
+        "category": "safety"
+      },
+      {
+        "id": "resume-global",
+        "parameter": "globalPause",
+        "script": "npm run owner:system-pause -- --action unpause",
+        "description": "Resumes orchestrated execution once safeguards are cleared.",
+        "category": "safety"
+      },
+      {
+        "id": "upgrade-surge",
+        "parameter": "moduleVersion",
+        "script": "npm run owner:update-all",
+        "description": "Applies queued upgrades to every production module.",
+        "category": "governance"
+      },
+      {
+        "id": "adjust-validators",
+        "parameter": "validatorQuorum",
+        "script": "npm run owner:upgrade -- --target validator",
+        "description": "Raises validator quorums for high-value opportunities.",
+        "category": "risk"
+      },
+      {
+        "id": "treasury-allocation",
+        "parameter": "treasuryRouting",
+        "script": "npm run owner:parameters -- --group treasury",
+        "description": "Rebalances capital between liquidity, R&D, and reserves.",
+        "category": "treasury"
+      },
+      {
+        "id": "ci-verification",
+        "parameter": "branchProtection",
+        "script": "npm run owner:verify-control",
+        "description": "Confirms CI + governance guardrails before accepting updates.",
+        "category": "compliance"
+      }
+    ],
+    "emergency": {
+      "contacts": [
+        "duty.officer@meta-agi.example",
+        "+1-800-ALPHA-247",
+        "oncall.governance@meta-agi.example"
+      ],
+      "responseMinutes": 8,
+      "playbook": "demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/owner-playbook.md"
+    }
+  },
+  "safeguards": {
+    "pauseScript": "npm run owner:system-pause -- --action pause",
+    "resumeScript": "npm run owner:system-pause -- --action unpause",
+    "circuitBreakers": [
+      {
+        "metric": "capitalDrawdownBps",
+        "comparator": ">=",
+        "threshold": 250,
+        "action": "npm run owner:pulse",
+        "description": "Escalate if drawdown exceeds 2.5% within 1 hour."
+      },
+      {
+        "metric": "validatorDisagreement",
+        "comparator": ">",
+        "threshold": 0.08,
+        "action": "npm run owner:upgrade-status",
+        "description": "Trigger dispute audit when validator disagreement is over 8%."
+      },
+      {
+        "metric": "automationFaults",
+        "comparator": ">",
+        "threshold": 3,
+        "action": "npm run owner:doctor",
+        "description": "Auto-open reliability response if more than three automation faults occur in 24h."
+      }
+    ]
+  },
+  "modules": [
+    {
+      "id": "jobRegistry",
+      "name": "AGI Job Registry",
+      "address": "0xAbC0000000000000000000000000000000000001",
+      "version": "2.2.0",
+      "owner": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "status": "active",
+      "upgradeScript": "npm run owner:update-all -- --module jobRegistry",
+      "lastAudit": "2024-11-18T00:00:00.000Z",
+      "description": "Posts jobs, enforces escrow, and routes deliverables."
+    },
+    {
+      "id": "treasuryManager",
+      "name": "Autonomous Treasury Manager",
+      "address": "0xAbC0000000000000000000000000000000000002",
+      "version": "2.2.0",
+      "owner": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "status": "active",
+      "upgradeScript": "npm run owner:update-all -- --module treasuryManager",
+      "lastAudit": "2024-11-22T00:00:00.000Z",
+      "description": "Manages $AGIALPHA liquidity, staking, and reinvestment."
+    },
+    {
+      "id": "a2aBus",
+      "name": "Agent-to-Agent Coordination Bus",
+      "address": "0xAbC0000000000000000000000000000000000003",
+      "version": "2.1.1",
+      "owner": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "status": "active",
+      "upgradeScript": "npm run owner:update-all -- --module a2aBus",
+      "lastAudit": "2024-11-10T00:00:00.000Z",
+      "description": "Coordinates ≥5 specialised agents per opportunity."
+    },
+    {
+      "id": "worldModel",
+      "name": "MuZero-Grade World Model",
+      "address": "0xAbC0000000000000000000000000000000000004",
+      "version": "1.9.0",
+      "owner": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "status": "pending-upgrade",
+      "upgradeScript": "npm run owner:update-all -- --module worldModel",
+      "lastAudit": "2024-10-12T00:00:00.000Z",
+      "description": "Predictive model backing simulation-led plan selection."
+    },
+    {
+      "id": "governance",
+      "name": "Timelock + Multisig Controller",
+      "address": "0xAbC0000000000000000000000000000000000005",
+      "version": "2.0.3",
+      "owner": "0x1A110C00FF1c1a77000000000000000000000000",
+      "status": "active",
+      "upgradeScript": "npm run owner:rotate",
+      "lastAudit": "2024-09-01T00:00:00.000Z",
+      "description": "Enforces owner approvals, timelock, and emergency pause."
+    }
+  ],
+  "agents": [
+    {
+      "id": "identify-scout",
+      "name": "Polymath Opportunity Scout",
+      "ens": "scout.meta-agi.eth",
+      "kind": "identify",
+      "capabilities": ["multi-domain-ingestion", "anomaly-detection", "graph-scouting"],
+      "reliability": 0.97,
+      "costPerHour": 180,
+      "maxParallel": 4
+    },
+    {
+      "id": "learn-forge",
+      "name": "Self-Evolving Curriculum Forge",
+      "ens": "forge.meta-agi.eth",
+      "kind": "outlearn",
+      "capabilities": ["poet-simulation", "cross-domain-transfer", "self-improvement"],
+      "reliability": 0.95,
+      "costPerHour": 220,
+      "maxParallel": 3
+    },
+    {
+      "id": "think-orchestrator",
+      "name": "Meta-Agentic Planner",
+      "ens": "planner.meta-agi.eth",
+      "kind": "outthink",
+      "capabilities": ["best-first-search", "hybrid-llm-reasoning", "multi-agent-fusion"],
+      "reliability": 0.98,
+      "costPerHour": 260,
+      "maxParallel": 2
+    },
+    {
+      "id": "design-savant",
+      "name": "Creative Solution Savant",
+      "ens": "designer.meta-agi.eth",
+      "kind": "outdesign",
+      "capabilities": ["generative-design", "simulation-feedback", "reporting"],
+      "reliability": 0.94,
+      "costPerHour": 210,
+      "maxParallel": 3
+    },
+    {
+      "id": "strategy-supreme",
+      "name": "Meta-Strategist",
+      "ens": "strategist.meta-agi.eth",
+      "kind": "outstrategise",
+      "capabilities": ["portfolio-optimization", "governance-integration", "antifragility"],
+      "reliability": 0.96,
+      "costPerHour": 240,
+      "maxParallel": 2
+    },
+    {
+      "id": "execute-autonomy",
+      "name": "Autonomous Executor",
+      "ens": "executor.meta-agi.eth",
+      "kind": "outexecute",
+      "capabilities": ["on-chain-execution", "gasless-transactions", "tool-routing"],
+      "reliability": 0.99,
+      "costPerHour": 270,
+      "maxParallel": 5
+    }
+  ],
+  "validators": [
+    {
+      "id": "validator-1",
+      "name": "Sovereign Validator A",
+      "ens": "validator-a.meta-agi.eth",
+      "stake": 150000,
+      "reliability": 0.985,
+      "competencies": ["financial-forensics", "supply-chain", "ml-audit"]
+    },
+    {
+      "id": "validator-2",
+      "name": "Sovereign Validator B",
+      "ens": "validator-b.meta-agi.eth",
+      "stake": 150000,
+      "reliability": 0.982,
+      "competencies": ["policy", "defi", "risk"]
+    },
+    {
+      "id": "validator-3",
+      "name": "Sovereign Validator C",
+      "ens": "validator-c.meta-agi.eth",
+      "stake": 150000,
+      "reliability": 0.981,
+      "competencies": ["engineering", "governance", "security"]
+    }
+  ],
+  "opportunities": [
+    {
+      "id": "opp-supply-inversion",
+      "title": "Global Supply Inversion Hedge",
+      "domain": "supply-chain",
+      "value": 42000000,
+      "cost": 3200000,
+      "risk": "medium",
+      "signalConfidence": 0.94,
+      "complexity": 0.82,
+      "durationHours": 48,
+      "validatorQuorum": 3,
+      "requiredAgents": ["identify-scout", "learn-forge", "think-orchestrator", "design-savant", "strategy-supreme", "execute-autonomy"],
+      "modules": ["jobRegistry", "treasuryManager", "a2aBus"],
+      "ownerApprovals": ["governanceSafe"],
+      "outcomes": ["12% margin recovery", "50bps working capital release"],
+      "kpis": {
+        "roi": 9.125,
+        "stability": 0.93,
+        "automation": 0.92
+      }
+    },
+    {
+      "id": "opp-latent-alpha",
+      "title": "Latent Alpha Knowledge Arbitrage",
+      "domain": "financial-markets",
+      "value": 36000000,
+      "cost": 2500000,
+      "risk": "low",
+      "signalConfidence": 0.97,
+      "complexity": 0.74,
+      "durationHours": 36,
+      "validatorQuorum": 3,
+      "requiredAgents": ["identify-scout", "learn-forge", "think-orchestrator", "strategy-supreme", "execute-autonomy"],
+      "modules": ["worldModel", "treasuryManager", "governance"],
+      "ownerApprovals": ["timelock"],
+      "outcomes": ["Alpha spread capture", "5.4x liquidity flywheel"],
+      "kpis": {
+        "roi": 10.4,
+        "stability": 0.95,
+        "automation": 0.94
+      }
+    },
+    {
+      "id": "opp-bio-discovery",
+      "title": "Bio-Innovation Discovery Loop",
+      "domain": "biotech",
+      "value": 28000000,
+      "cost": 4200000,
+      "risk": "medium",
+      "signalConfidence": 0.9,
+      "complexity": 0.88,
+      "durationHours": 60,
+      "validatorQuorum": 3,
+      "requiredAgents": ["identify-scout", "learn-forge", "think-orchestrator", "design-savant", "execute-autonomy"],
+      "modules": ["jobRegistry", "worldModel", "a2aBus"],
+      "ownerApprovals": ["governanceSafe"],
+      "outcomes": ["Novel therapeutic target", "4.5x licensing uplift"],
+      "kpis": {
+        "roi": 5.67,
+        "stability": 0.9,
+        "automation": 0.91
+      }
+    },
+    {
+      "id": "opp-infra-efficiency",
+      "title": "Infrastructure Efficiency Cascade",
+      "domain": "infrastructure",
+      "value": 25000000,
+      "cost": 2800000,
+      "risk": "low",
+      "signalConfidence": 0.95,
+      "complexity": 0.68,
+      "durationHours": 40,
+      "validatorQuorum": 3,
+      "requiredAgents": ["identify-scout", "think-orchestrator", "design-savant", "strategy-supreme", "execute-autonomy"],
+      "modules": ["treasuryManager", "a2aBus"],
+      "ownerApprovals": ["timelock"],
+      "outcomes": ["18% opex compression", "Carbon footprint -9%"],
+      "kpis": {
+        "roi": 7.14,
+        "stability": 0.96,
+        "automation": 0.9
+      }
+    },
+    {
+      "id": "opp-governance-elevation",
+      "title": "On-Chain Governance Elevation",
+      "domain": "governance",
+      "value": 12000000,
+      "cost": 1500000,
+      "risk": "low",
+      "signalConfidence": 0.98,
+      "complexity": 0.56,
+      "durationHours": 24,
+      "validatorQuorum": 3,
+      "requiredAgents": ["strategy-supreme", "execute-autonomy"],
+      "modules": ["governance", "a2aBus"],
+      "ownerApprovals": ["timelock"],
+      "outcomes": ["24/7 upgrade queue", "Owner console parity"],
+      "kpis": {
+        "roi": 6.0,
+        "stability": 0.99,
+        "automation": 0.95
+      }
+    }
+  ],
+  "worldModel": {
+    "simulations": [
+      {
+        "name": "Alpha Liquidity Stress",
+        "winRate": 0.94,
+        "profitFactor": 1.72,
+        "maxDrawdownBps": 34
+      },
+      {
+        "name": "Supply Shock Countermeasure",
+        "winRate": 0.91,
+        "profitFactor": 1.58,
+        "maxDrawdownBps": 41
+      },
+      {
+        "name": "Biotech Discovery Sprint",
+        "winRate": 0.89,
+        "profitFactor": 1.45,
+        "maxDrawdownBps": 48
+      }
+    ],
+    "curriculum": [
+      "Self-play emergent logistics",
+      "Adversarial market microstructure",
+      "Policy response forecasting"
+    ],
+    "modelFidelity": 0.93
+  },
+  "ci": {
+    "commands": [
+      "npm run lint:check",
+      "npm test",
+      "npm run coverage:check",
+      "npm run owner:verify-control",
+      "npm run ci:verify-branch-protection"
+    ],
+    "status": "green"
+  }
+}

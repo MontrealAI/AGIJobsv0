@@ -1,0 +1,10 @@
+{
+  "commands": [
+    "npm run lint:check",
+    "npm test",
+    "npm run coverage:check",
+    "npm run owner:verify-control",
+    "npm run ci:verify-branch-protection"
+  ],
+  "status": "green"
+}

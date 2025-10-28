@@ -427,7 +427,9 @@
     "webapp:e2e": "start-server-and-test \"npm --prefix apps/console run preview -- --host 0.0.0.0 --port 4173\" http://127.0.0.1:4173 \"cypress run --config-file cypress.config.ts\"",
     "webapp:lint": "npm run lint --prefix apps/console",
     "webapp:typecheck": "npm run typecheck --prefix apps/console",
-    "wire:verify": "node scripts/run-wire-verify.js"
+    "wire:verify": "node scripts/run-wire-verify.js",
+    "demo:meta-agentic-alpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/runDemo.ts",
+    "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts"
   },
   "type": "commonjs",
   "version": "1.0.0"
