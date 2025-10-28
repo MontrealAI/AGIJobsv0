@@ -1,7 +1,7 @@
 {
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
-  "generatedAt": "2025-10-28T05:33:23.409Z",
+  "generatedAt": "2025-10-28T11:41:25.810Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -19,7 +19,10 @@
     "automationScore": 0.852,
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.736,
-    "ownerCommandCoverage": 0.313
+    "ownerCommandCoverage": 0.313,
+    "capitalVelocity": 0.573,
+    "validatorUtilization": 1,
+    "treasuryRunwayDays": 30.25
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -90,7 +93,7 @@
       {
         "module": "ValidationModule",
         "script": "npm run owner:upgrade",
-        "description": "Activates the upgraded validator commit–reveal consensus parameters."
+        "description": "Activates the upgraded validator commit\u2013reveal consensus parameters."
       },
       {
         "module": "StakeManager",
@@ -249,5 +252,88 @@
     }
   ],
   "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
-  "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Atlas Strategic Model Forge :active, job-ai-lab-fusion, 0.0h, 36.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 36.5h, 26.9h\n    section Governance Upgrade Launch\n      Atlas Strategic Model Forge :active, job-governance-upgrade, 63.4h, 28.4h\n    section Market Expansion Omniloop\n      Atlas Strategic Model Forge :active, job-market-expansion, 91.8h, 23.4h\n    section Oracle Integration Spine\n      Atlas Strategic Model Forge :active, job-oracle-integration, 115.2h, 22.3h"
+  "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Atlas Strategic Model Forge :active, job-ai-lab-fusion, 0.0h, 36.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 36.5h, 26.9h\n    section Governance Upgrade Launch\n      Atlas Strategic Model Forge :active, job-governance-upgrade, 63.4h, 28.4h\n    section Market Expansion Omniloop\n      Atlas Strategic Model Forge :active, job-market-expansion, 91.8h, 23.4h\n    section Oracle Integration Spine\n      Atlas Strategic Model Forge :active, job-oracle-integration, 115.2h, 22.3h",
+  "mermaidExpansion": "graph TD\n    Mainnet[Ethereum Mainnet Treasury]\n    Mainnet -->|Bridge ops| Arbitrum_One[Arbitrum One\\nPILOT\\n1,800 jobs/day\\n$0.18 avg tx]\n    Mainnet -->|Bridge ops| Optimism[Optimism\\nREADY\\n2,200 jobs/day\\n$0.21 avg tx]\n    Mainnet -->|Bridge ops| Base[Base\\nLIVE\\n2,600 jobs/day\\n$0.16 avg tx]\n    Wave_phase_1[Testnet Beta Swarm\\nStart +0h\\nReadiness 92%]\n      Wave_phase_1 --> Objective_0_0[Simulate 500 concurrent jobs]\n      Wave_phase_1 --> Objective_0_1[Stress validator committee rotation]\n      Wave_phase_1 --> Objective_0_2[Collect latency telemetry]\n    Wave_phase_1 --> Wave_phase_2\n    Wave_phase_2[Mainnet Pilot Guild\\nStart +120h\\nReadiness 88%]\n      Wave_phase_2 --> Objective_1_0[Onboard curated Fortune 100 tasks]\n      Wave_phase_2 --> Objective_1_1[Validate fiat on-ramp flows]\n      Wave_phase_2 --> Objective_1_2[Exercise dispute escalations]\n    Wave_phase_2 --> Wave_phase_3\n    Wave_phase_3[Global Unlocked Mesh\\nStart +240h\\nReadiness 81%]\n      Wave_phase_3 --> Objective_2_0[Open participation to global agents]\n      Wave_phase_3 --> Objective_2_1[Activate cross-chain liquidity gauges]\n      Wave_phase_3 --> Objective_2_2[Launch policy observatory]",
+  "expansion": {
+    "l2Bridges": [
+      {
+        "network": "Arbitrum One",
+        "status": "pilot",
+        "throughputPerDay": 1800,
+        "txCostUsd": 0.18,
+        "operationsSafe": "0xArbitrumOpsSafe00000000000000000000001"
+      },
+      {
+        "network": "Optimism",
+        "status": "ready",
+        "throughputPerDay": 2200,
+        "txCostUsd": 0.21,
+        "operationsSafe": "0xOptimismOpsSafe0000000000000000000002"
+      },
+      {
+        "network": "Base",
+        "status": "live",
+        "throughputPerDay": 2600,
+        "txCostUsd": 0.16,
+        "operationsSafe": "0xBaseOpsSafe000000000000000000000003"
+      }
+    ],
+    "deploymentWaves": [
+      {
+        "id": "phase-1",
+        "title": "Testnet Beta Swarm",
+        "startHour": 0,
+        "readinessScore": 0.92,
+        "objectives": [
+          "Simulate 500 concurrent jobs",
+          "Stress validator committee rotation",
+          "Collect latency telemetry"
+        ]
+      },
+      {
+        "id": "phase-2",
+        "title": "Mainnet Pilot Guild",
+        "startHour": 120,
+        "readinessScore": 0.88,
+        "objectives": [
+          "Onboard curated Fortune 100 tasks",
+          "Validate fiat on-ramp flows",
+          "Exercise dispute escalations"
+        ]
+      },
+      {
+        "id": "phase-3",
+        "title": "Global Unlocked Mesh",
+        "startHour": 240,
+        "readinessScore": 0.81,
+        "objectives": [
+          "Open participation to global agents",
+          "Activate cross-chain liquidity gauges",
+          "Launch policy observatory"
+        ]
+      }
+    ],
+    "compliance": {
+      "jurisdictions": [
+        "US",
+        "EU",
+        "SG"
+      ],
+      "policies": [
+        "Automated withholding & tax memo",
+        "Validator KYC attestation registry",
+        "Real-time sanction screening"
+      ],
+      "unstoppableAccess": [
+        "Tor hidden service endpoint",
+        "IPFS pinset mirror",
+        "Arweave resilience archive"
+      ],
+      "unstoppableMirrors": [
+        "agijobs.eth",
+        "agi-jobs.limo",
+        "agi-jobs.ipns.link"
+      ]
+    }
+  }
 }

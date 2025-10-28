@@ -113,6 +113,32 @@ const scenarioSchema = z.object({
       }),
     ),
   }),
+  expansion: z.object({
+    l2Bridges: z.array(
+      z.object({
+        network: z.string(),
+        status: z.enum(['pilot', 'ready', 'live']),
+        throughputPerDay: z.number(),
+        txCostUsd: z.number(),
+        operationsSafe: z.string(),
+      }),
+    ),
+    deploymentWaves: z.array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        startHour: z.number(),
+        readinessScore: z.number(),
+        objectives: z.array(z.string()),
+      }),
+    ),
+    compliance: z.object({
+      jurisdictions: z.array(z.string()),
+      policies: z.array(z.string()),
+      unstoppableAccess: z.array(z.string()),
+      unstoppableMirrors: z.array(z.string()),
+    }),
+  }),
 });
 
 type Scenario = z.infer<typeof scenarioSchema>;
@@ -159,6 +185,9 @@ type Summary = {
     riskMitigationScore: number;
     stabilityIndex: number;
     ownerCommandCoverage: number;
+    capitalVelocity: number;
+    validatorUtilization: number;
+    treasuryRunwayDays: number;
   };
   ownerControl: {
     threshold: string;
@@ -177,6 +206,8 @@ type Summary = {
   assignments: Assignment[];
   mermaidFlow: string;
   mermaidTimeline: string;
+  mermaidExpansion: string;
+  expansion: Scenario['expansion'];
 };
 
 const DEFAULT_SCENARIO = path.join(
@@ -224,6 +255,7 @@ type SimulationContext = {
   finalHour: number;
   validatorConfidence: number;
   automationLift: number;
+  engagedValidators: Set<string>;
 };
 
 function computeStabilityIndex(
@@ -438,6 +470,29 @@ function generateMermaidTimeline(summary: Summary): string {
   return `gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n${lines}`;
 }
 
+function generateMermaidExpansion(summary: Summary): string {
+  const bridgeNodes = summary.expansion.l2Bridges
+    .map((bridge) => {
+      const id = bridge.network.replace(/[^a-zA-Z0-9]/g, '_');
+      return `    Mainnet -->|Bridge ops| ${id}[${bridge.network}\\n${bridge.status.toUpperCase()}\\n${bridge.throughputPerDay.toLocaleString()} jobs/day\\n$${bridge.txCostUsd.toFixed(2)} avg tx]`;
+    })
+    .join('\n');
+  const waveNodes = summary.expansion.deploymentWaves
+    .map((wave, index, waves) => {
+      const id = `Wave_${wave.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const node = `    ${id}[${wave.title}\\nStart +${wave.startHour}h\\nReadiness ${(wave.readinessScore * 100).toFixed(0)}%]`;
+      const objectives = wave.objectives
+        .map((objective, objectiveIndex) => `      ${id} --> Objective_${index}_${objectiveIndex}[${objective}]`)
+        .join('\n');
+      const chain = index < waves.length - 1
+        ? `\n    ${id} --> Wave_${waves[index + 1].id.replace(/[^a-zA-Z0-9]/g, '_')}`
+        : '';
+      return `${node}\n${objectives}${chain}`;
+    })
+    .join('\n');
+  return `graph TD\n    Mainnet[Ethereum Mainnet Treasury]${bridgeNodes ? `\n${bridgeNodes}` : ''}\n${waveNodes}`;
+}
+
 function synthesiseSummary(context: SimulationContext): Summary {
   const { scenario } = context;
   const assignmentConfidence =
@@ -446,6 +501,38 @@ function synthesiseSummary(context: SimulationContext): Summary {
     Math.max(context.assignments.length, 1);
   const stabilityIndex = computeStabilityIndex(scenario, context);
   const ownerCoverage = computeOwnerCommandCoverage(scenario);
+  const cycleDays = Math.max(context.finalHour, 1) / 24;
+  const burn =
+    context.totalEscrowedAgi +
+    context.totalStable +
+    context.validatorRewards +
+    context.ownerBufferContribution;
+  const treasuryAfterRun =
+    scenario.treasury.agiBalance -
+    context.validatorRewards -
+    context.totalEscrowedAgi +
+    context.cumulativeValue;
+  const capitalVelocity = Number(
+    (
+      context.cumulativeValue /
+      Math.max(context.totalEscrowedAgi + context.totalStable, 1)
+    /
+      Math.max(cycleDays, 1)
+    ).toFixed(3),
+  );
+  const validatorUtilization = Number(
+    (
+      context.engagedValidators.size /
+      Math.max(scenario.validators.length, 1)
+    ).toFixed(3),
+  );
+  const dailySpend = burn / Math.max(cycleDays, 1);
+  const treasuryRunwayDays = Number(
+    (
+      (treasuryAfterRun + scenario.treasury.operationsBuffer) /
+      Math.max(dailySpend, 1)
+    ).toFixed(2),
+  );
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
@@ -458,12 +545,7 @@ function synthesiseSummary(context: SimulationContext): Summary {
       totalStablecoinVolume: Math.round(context.totalStable),
       validatorRewardsAgi: Math.round(context.validatorRewards),
       ownerBufferContribution: Math.round(context.ownerBufferContribution),
-      treasuryAfterRun: Math.round(
-        scenario.treasury.agiBalance -
-          context.validatorRewards -
-          context.totalEscrowedAgi +
-          context.cumulativeValue,
-      ),
+      treasuryAfterRun: Math.round(treasuryAfterRun),
       roiMultiplier: Number(
         (context.cumulativeValue /
           Math.max(context.totalEscrowedAgi + context.totalStable, 1)).toFixed(2),
@@ -488,6 +570,9 @@ function synthesiseSummary(context: SimulationContext): Summary {
       ),
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage,
+      capitalVelocity,
+      validatorUtilization,
+      treasuryRunwayDays,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -506,6 +591,8 @@ function synthesiseSummary(context: SimulationContext): Summary {
     assignments: context.assignments,
     mermaidFlow: '',
     mermaidTimeline: '',
+    mermaidExpansion: '',
+    expansion: scenario.expansion,
   };
 }
 
@@ -521,6 +608,9 @@ function updateNetMetrics(context: SimulationContext, assignment: Assignment): v
   context.finalHour = Math.max(context.finalHour, assignment.endHour);
   context.validatorConfidence += assignment.validatorConfidence;
   context.automationLift += assignment.automationLift;
+  for (const validatorId of assignment.validatorIds) {
+    context.engagedValidators.add(validatorId);
+  }
   if (context.paybackHours === 0 && context.cumulativeValue >= context.cumulativeCost) {
     context.paybackHours = assignment.endHour;
   }
@@ -571,6 +661,7 @@ export async function runScenario(
     finalHour: 0,
     validatorConfidence: 0,
     automationLift: 0,
+    engagedValidators: new Set<string>(),
   };
 
   const sortedJobs = [...workingScenario.jobs].sort(
@@ -590,6 +681,7 @@ export async function runScenario(
   const summary = synthesiseSummary(context);
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
+  summary.mermaidExpansion = generateMermaidExpansion(summary);
   return summary;
 }
 
@@ -601,6 +693,7 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
   );
   await fs.writeFile(path.join(outputDir, 'flow.mmd'), summary.mermaidFlow);
   await fs.writeFile(path.join(outputDir, 'timeline.mmd'), summary.mermaidTimeline);
+  await fs.writeFile(path.join(outputDir, 'expansion.mmd'), summary.mermaidExpansion);
   const ownerMatrix = {
     governanceSafe: summary.ownerControl.governanceSafe,
     threshold: summary.ownerControl.threshold,
@@ -623,6 +716,20 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
     JSON.stringify(sovereigntyPlan, null, 2),
+  );
+  const expansionPlan = {
+    l2Bridges: summary.expansion.l2Bridges,
+    deploymentWaves: summary.expansion.deploymentWaves,
+    compliance: summary.expansion.compliance,
+    metrics: {
+      capitalVelocity: summary.metrics.capitalVelocity,
+      validatorUtilization: summary.metrics.validatorUtilization,
+      treasuryRunwayDays: summary.metrics.treasuryRunwayDays,
+    },
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'global-expansion.json'),
+    JSON.stringify(expansionPlan, null, 2),
   );
 }
 
@@ -647,6 +754,9 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'automationScore',
     'stabilityIndex',
     'ownerCommandCoverage',
+    'capitalVelocity',
+    'validatorUtilization',
+    'treasuryRunwayDays',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

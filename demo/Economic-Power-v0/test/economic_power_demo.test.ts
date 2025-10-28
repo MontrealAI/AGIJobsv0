@@ -18,6 +18,9 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.mermaidTimeline.includes('gantt'), 'Timeline mermaid diagram should be rendered');
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
   assert(summary.metrics.ownerCommandCoverage > 0.2, 'Owner command coverage should be non-trivial');
+  assert(summary.metrics.capitalVelocity > 0, 'Capital velocity should be positive');
+  assert(summary.metrics.validatorUtilization <= 1, 'Validator utilisation is capped at 100%');
+  assert(summary.metrics.treasuryRunwayDays > 0, 'Treasury runway should be positive');
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
@@ -39,5 +42,9 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.circuitBreakers.length,
     'Circuit breaker counts should align',
   );
+
+  assert(summary.expansion.l2Bridges.length > 0, 'Expansion bridges should be populated');
+  assert(summary.expansion.deploymentWaves.length > 0, 'Deployment waves should be present');
+  assert(summary.mermaidExpansion.includes('graph TD'), 'Expansion mermaid diagram should be rendered');
 });
 

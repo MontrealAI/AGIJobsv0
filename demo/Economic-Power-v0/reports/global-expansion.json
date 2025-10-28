@@ -1,0 +1,87 @@
+{
+  "l2Bridges": [
+    {
+      "network": "Arbitrum One",
+      "status": "pilot",
+      "throughputPerDay": 1800,
+      "txCostUsd": 0.18,
+      "operationsSafe": "0xArbitrumOpsSafe00000000000000000000001"
+    },
+    {
+      "network": "Optimism",
+      "status": "ready",
+      "throughputPerDay": 2200,
+      "txCostUsd": 0.21,
+      "operationsSafe": "0xOptimismOpsSafe0000000000000000000002"
+    },
+    {
+      "network": "Base",
+      "status": "live",
+      "throughputPerDay": 2600,
+      "txCostUsd": 0.16,
+      "operationsSafe": "0xBaseOpsSafe000000000000000000000003"
+    }
+  ],
+  "deploymentWaves": [
+    {
+      "id": "phase-1",
+      "title": "Testnet Beta Swarm",
+      "startHour": 0,
+      "readinessScore": 0.92,
+      "objectives": [
+        "Simulate 500 concurrent jobs",
+        "Stress validator committee rotation",
+        "Collect latency telemetry"
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Mainnet Pilot Guild",
+      "startHour": 120,
+      "readinessScore": 0.88,
+      "objectives": [
+        "Onboard curated Fortune 100 tasks",
+        "Validate fiat on-ramp flows",
+        "Exercise dispute escalations"
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Global Unlocked Mesh",
+      "startHour": 240,
+      "readinessScore": 0.81,
+      "objectives": [
+        "Open participation to global agents",
+        "Activate cross-chain liquidity gauges",
+        "Launch policy observatory"
+      ]
+    }
+  ],
+  "compliance": {
+    "jurisdictions": [
+      "US",
+      "EU",
+      "SG"
+    ],
+    "policies": [
+      "Automated withholding & tax memo",
+      "Validator KYC attestation registry",
+      "Real-time sanction screening"
+    ],
+    "unstoppableAccess": [
+      "Tor hidden service endpoint",
+      "IPFS pinset mirror",
+      "Arweave resilience archive"
+    ],
+    "unstoppableMirrors": [
+      "agijobs.eth",
+      "agi-jobs.limo",
+      "agi-jobs.ipns.link"
+    ]
+  },
+  "metrics": {
+    "capitalVelocity": 0.573,
+    "validatorUtilization": 1,
+    "treasuryRunwayDays": 30.25
+  }
+}
