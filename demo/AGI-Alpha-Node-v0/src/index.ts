@@ -2,6 +2,8 @@
 import { Command } from 'commander';
 import { config as loadEnv } from 'dotenv';
 
+import { Wallet } from 'ethers';
+
 import { AntifragileShell } from './ai/antifragileShell.js';
 import { AgentRegistry } from './ai/agentRegistry.js';
 import { PlanningEngine } from './ai/planningEngine.js';
@@ -35,6 +37,8 @@ const config = loadConfig();
 
 async function main(): Promise<void> {
   const privateKey = ensurePrivateKey(options.privateKey ?? process.env.ALPHA_NODE_PRIVATE_KEY);
+  const operatorWallet = new Wallet(privateKey);
+  const operatorAddress = operatorWallet.address;
   const ensVerifier = new EnsVerifier({
     providerUrl: options.rpc ?? 'http://localhost:8545',
     ensRoot: config.ens.rootNode,
@@ -43,7 +47,7 @@ async function main(): Promise<void> {
 
   const fqdn = options.ens ?? `demo.${config.ens.rootNode}`;
   logger.info({ fqdn }, 'Validating ENS ownership');
-  const proof = await ensVerifier.buildOwnershipProof(fqdn);
+  const proof = await ensVerifier.buildOwnershipProof(fqdn, operatorAddress);
   if (!proof.isValid && !options.simulate) {
     throw new Error(`ENS ownership check failed for ${fqdn}`);
   }
