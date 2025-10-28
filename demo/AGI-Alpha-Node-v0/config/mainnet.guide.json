@@ -72,6 +72,12 @@
         "treasury": 0.15,
         "specialists": 0.3
       }
+    },
+    "worldModel": {
+      "baselineSuccessRate": 0.72,
+      "volatility": 0.33,
+      "adaptationRate": 0.18,
+      "exploitationBias": 0.28
     }
   },
   "jobs": {

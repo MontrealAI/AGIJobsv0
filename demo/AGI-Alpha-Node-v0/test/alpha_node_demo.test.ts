@@ -7,3 +7,4 @@ import './reinvest.test';
 import './compliance.test';
 import './amounts.test';
 import './governance.test';
+import './world_model.test';

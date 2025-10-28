@@ -181,6 +181,11 @@ export function computeComplianceReport(
       ? `Selected job ${inputs.plan.summary.selectedJobId}.`
       : 'Awaiting strategic job selection.',
     `Alpha score ${inputs.plan.summary.alphaScore.toFixed(2)}.`,
+    inputs.plan.summary.horizonSequence.length > 0
+      ? `Horizon sequence → ${inputs.plan.summary.horizonSequence.join(' → ')}`
+      : 'Horizon sequence awaiting confident opportunities.',
+    `World-model confidence ${(inputs.plan.summary.worldModelConfidence * 100).toFixed(1)}%.`,
+    `Projected horizon value ${inputs.plan.summary.horizonValue.toFixed(2)} alpha units.`,
     ...insightsPreview,
   ];
   dimensions.push({

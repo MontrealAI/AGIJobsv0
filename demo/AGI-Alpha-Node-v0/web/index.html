@@ -120,6 +120,12 @@
             }</strong>
           </div>
         `;
+        const sequence =
+          plan.summary.horizonSequence.length > 0
+            ? plan.summary.horizonSequence.join(' → ')
+            : 'Awaiting intelligence loop';
+        const confidence = (plan.summary.worldModelConfidence * 100).toFixed(1);
+        const horizonValue = plan.summary.horizonValue.toFixed(2);
         document.getElementById('planning').innerHTML = `
           <div class="metrics">
             <span>Selected Job</span>
@@ -128,6 +134,18 @@
           <div class="metrics">
             <span>Alpha Score</span>
             <strong>${plan.summary.alphaScore.toFixed(2)}</strong>
+          </div>
+          <div class="metrics">
+            <span>World Model Confidence</span>
+            <strong>${confidence}%</strong>
+          </div>
+          <div class="metrics">
+            <span>Horizon Sequence</span>
+            <strong>${sequence}</strong>
+          </div>
+          <div class="metrics">
+            <span>Horizon Value</span>
+            <strong>${horizonValue}</strong>
           </div>
           <pre>${JSON.stringify(plan.insights, null, 2)}</pre>
         `;

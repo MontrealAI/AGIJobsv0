@@ -15,6 +15,20 @@ const rewardSplitSchema = z
 
 const hex32 = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 
+const worldModelSchema = z
+  .object({
+    baselineSuccessRate: z.number().min(0).max(1).default(0.72),
+    volatility: z.number().min(0).max(1).default(0.35),
+    adaptationRate: z.number().min(0).max(1).default(0.18),
+    exploitationBias: z.number().min(0).max(1).default(0.25),
+  })
+  .default({
+    baselineSuccessRate: 0.72,
+    volatility: 0.35,
+    adaptationRate: 0.18,
+    exploitationBias: 0.25,
+  });
+
 const configSchema = z.object({
   operator: z.object({
     address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
@@ -65,7 +79,8 @@ const configSchema = z.object({
       reinvestThreshold: z.string().regex(/^\d+(\.\d+)?$/),
       maxGasPriceGwei: z.number().min(0),
       rewardSplit: rewardSplitSchema
-    })
+    }),
+    worldModel: worldModelSchema
   }),
   jobs: z.object({
     discovery: z.object({
@@ -96,6 +111,7 @@ export interface NormalisedAlphaNodeConfig extends AlphaNodeConfig {
   ai: AlphaNodeConfig['ai'] & {
     reinvestThresholdWei: bigint;
     economicPolicy: AlphaNodeConfig['ai']['economicPolicy'];
+    worldModel: z.infer<typeof worldModelSchema>;
   };
   jobs: AlphaNodeConfig['jobs'] & {
     identityProof: readonly string[];
@@ -112,6 +128,7 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
     throw new Error(`Failed to parse configuration JSON (${resolved}): ${(error as Error).message}`);
   }
   const config = configSchema.parse(parsed);
+  const worldModel = worldModelSchema.parse(config.ai.worldModel ?? {});
   const minimumStakeWei = parseEther(config.operator.minimumStake);
   const reinvestThresholdWei = parseEther(config.ai.economicPolicy.reinvestThreshold);
 
@@ -126,7 +143,8 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
       economicPolicy: {
         ...config.ai.economicPolicy
       },
-      reinvestThresholdWei
+      reinvestThresholdWei,
+      worldModel
     },
     jobs: {
       ...config.jobs,

@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { NormalisedAlphaNodeConfig } from '../config';
+import { AlphaWorldModel, WorldModelForecast } from './worldModel';
 
 export interface JobOpportunity {
   readonly jobId: string;
@@ -17,6 +18,10 @@ export interface PlanningSummary {
   readonly exploitationScore: number;
   readonly curriculumDifficulty: number;
   readonly consideredJobs: number;
+  readonly worldModelConfidence: number;
+  readonly horizonSequence: readonly string[];
+  readonly horizonValue: number;
+  readonly forecasts: readonly WorldModelForecast[];
 }
 
 interface Experience {
@@ -31,11 +36,13 @@ export class AlphaPlanner {
   private readonly curriculum;
   private readonly experiences: Experience[] = [];
   private difficultyCursor: number;
+  private readonly worldModel: AlphaWorldModel;
 
   constructor(config: NormalisedAlphaNodeConfig) {
     this.config = config.ai.planner;
     this.curriculum = config.ai.planner.curriculum;
     this.difficultyCursor = this.curriculum.initialDifficulty;
+    this.worldModel = new AlphaWorldModel(config);
   }
 
   plan(opportunities: JobOpportunity[]): PlanningSummary {
@@ -47,26 +54,47 @@ export class AlphaPlanner {
         explorationScore: 0,
         exploitationScore: 0,
         curriculumDifficulty: this.difficultyCursor,
-        consideredJobs: 0
+        consideredJobs: 0,
+        worldModelConfidence: 0,
+        horizonSequence: [],
+        horizonValue: 0,
+        forecasts: [],
       };
     }
 
+    const evaluation = this.worldModel.evaluate(
+      opportunities,
+      this.config.planningHorizon
+    );
     const exploitationWeights = opportunities.map((job) => this.scoreOpportunity(job));
     const exploitationScore = Math.max(...exploitationWeights);
-    const explorationScore = this.config.explorationWeight * Math.log(1 + this.experiences.length + 1);
+    const explorationScore =
+      this.config.explorationWeight * Math.log(1 + this.experiences.length + 1);
 
-    const alphaScore = exploitationScore + explorationScore;
-    const selectedIndex = exploitationWeights.indexOf(exploitationScore);
-    const selected = opportunities[selectedIndex];
-
-    return {
-      selectedJobId: selected?.jobId ?? null,
-      alphaScore,
-      expectedValue: exploitationScore,
-      explorationScore,
+    const bestFromWorldModel = evaluation.bestForecast;
+    const combinedExploitation = Math.max(
       exploitationScore,
+      bestFromWorldModel?.riskAdjustedValue ?? 0
+    );
+
+    const alphaScore = combinedExploitation + explorationScore;
+    const selectedJobId =
+      bestFromWorldModel?.jobId ??
+      opportunities[exploitationWeights.indexOf(exploitationScore)]?.jobId ??
+      null;
+    return {
+      selectedJobId,
+      alphaScore,
+      expectedValue:
+        bestFromWorldModel?.expectedReward ?? exploitationScore ?? 0,
+      explorationScore,
+      exploitationScore: combinedExploitation,
       curriculumDifficulty: this.difficultyCursor,
-      consideredJobs: opportunities.length
+      consideredJobs: opportunities.length,
+      worldModelConfidence: bestFromWorldModel?.confidence ?? 0,
+      horizonSequence: evaluation.sequence.jobIds,
+      horizonValue: evaluation.sequence.cumulativeValue,
+      forecasts: [...evaluation.forecasts.values()],
     };
   }
 
@@ -81,6 +109,8 @@ export class AlphaPlanner {
     if (this.experiences.length > 1024) {
       this.experiences.shift();
     }
+
+    this.worldModel.recordOutcome(jobId, success, reward, difficulty);
 
     if (success) {
       this.difficultyCursor = Math.min(1, this.difficultyCursor + this.curriculum.escalationRate);
