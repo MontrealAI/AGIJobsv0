@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta-Agentic α-AGI Jobs Demo V3 Command Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <h1 data-field="scenario-title">Meta-Agentic α-AGI Jobs Demo V3</h1>
+        <p class="lead" data-field="scenario-narrative">
+          Command the sovereign alpha fabric: sense, strategise, govern, and execute multi-trillion missions with a single click.
+        </p>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <span>Run ID</span>
+          <strong data-field="run-id">—</strong>
+        </div>
+        <div class="metric">
+          <span>State</span>
+          <strong data-field="run-state">—</strong>
+        </div>
+        <div class="metric">
+          <span>Alpha Readiness</span>
+          <strong data-field="alpha-readiness">—</strong>
+        </div>
+        <div class="metric">
+          <span>Compounding Index</span>
+          <strong data-field="alpha-compounding">—</strong>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="grid">
+        <article class="card">
+          <h2>Owner Controls</h2>
+          <dl class="definition-grid">
+            <div><dt>Owner</dt><dd data-field="owner-address">—</dd></div>
+            <div><dt>Guardians</dt><dd data-field="owner-guardians">—</dd></div>
+            <div><dt>Approvals Required</dt><dd data-field="owner-approvals">—</dd></div>
+            <div><dt>Emergency Pause</dt><dd data-field="owner-pause">—</dd></div>
+            <div><dt>Delegation</dt><dd data-field="owner-delegation">—</dd></div>
+            <div><dt>Mission Charter</dt><dd data-field="owner-charter">—</dd></div>
+          </dl>
+          <p class="hint">
+            Adjust parameters instantly:
+            <code>python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/owner_controls.py --config meta_agentic_alpha_v3/config/scenario.yaml</code>
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>Treasury & Antifragility</h2>
+          <dl class="definition-grid">
+            <div><dt>Token</dt><dd data-field="treasury-token">—</dd></div>
+            <div><dt>Balance</dt><dd data-field="treasury-balance">—</dd></div>
+            <div><dt>Max Drawdown</dt><dd data-field="treasury-max-drawdown">—</dd></div>
+            <div><dt>VaR</dt><dd data-field="treasury-var">—</dd></div>
+            <div><dt>Antifragility Buffer</dt><dd data-field="treasury-buffer">—</dd></div>
+            <div><dt>Circuit Breaker</dt><dd data-field="treasury-circuit">—</dd></div>
+            <div><dt>Gasless Bundler</dt><dd data-field="gasless-bundler">—</dd></div>
+            <div><dt>Paymaster</dt><dd data-field="gasless-paymaster">—</dd></div>
+          </dl>
+        </article>
+
+        <article class="card">
+          <h2>Unstoppable Mesh</h2>
+          <dl class="definition-grid">
+            <div><dt>Hypergraph State</dt><dd data-field="hypergraph-state">—</dd></div>
+            <div><dt>Quorum</dt><dd data-field="mesh-quorum">—</dd></div>
+            <div><dt>Protocol</dt><dd data-field="mesh-protocol">—</dd></div>
+            <div><dt>Sentinel Agents</dt><dd data-field="mesh-sentinels">—</dd></div>
+            <div><dt>Safety Oracle</dt><dd data-field="safety-oracle">—</dd></div>
+            <div><dt>Halt Conditions</dt><dd data-field="halt-conditions">—</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Phase Telemetry</h2>
+        <table class="phase-table">
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>State</th>
+              <th>Completion</th>
+              <th>Weight</th>
+              <th>Metric</th>
+            </tr>
+          </thead>
+          <tbody data-phase-table></tbody>
+        </table>
+      </section>
+
+      <section class="card">
+        <h2>Alpha Timeline</h2>
+        <pre class="mermaid" data-field="timeline">gantt
+  dateFormat  X
+  title Awaiting orchestration results
+        </pre>
+      </section>
+
+      <section class="card">
+        <h2>Guardian Confirmations</h2>
+        <ol data-list="confirmations">
+          <li>Awaiting telemetry…</li>
+        </ol>
+      </section>
+
+      <section class="card artefacts">
+        <h2>Execution Artefacts</h2>
+        <ul>
+          <li>
+            <a data-link="summary" href="#" target="_blank" rel="noopener">Summary JSON</a>
+            <span>Canonical ledger for auditors and investors.</span>
+          </li>
+          <li>
+            <a data-link="report" href="#" target="_blank" rel="noopener">Meta Synthesis Deck</a>
+            <span>Auto-generated Mermaid-rich mission report.</span>
+          </li>
+          <li>
+            <a data-link="dashboard" href="#" target="_blank" rel="noopener">Console Source</a>
+            <span>Self-contained assets for redeployment.</span>
+          </li>
+        </ul>
+      </section>
+
+      <section class="card logs">
+        <h2>Run Logs</h2>
+        <details open>
+          <summary>Latest orchestrator events</summary>
+          <pre data-field="run-logs">Awaiting orchestration output…</pre>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Crafted with <strong>AGI Jobs v0 (v2)</strong>. Meta-agentic autonomy ready for
+        production-scale alpha factories.
+      </p>
+    </footer>
+
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

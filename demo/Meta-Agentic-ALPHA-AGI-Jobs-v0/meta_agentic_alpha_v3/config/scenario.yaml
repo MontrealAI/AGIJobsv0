@@ -1,0 +1,285 @@
+scenario:
+  id: "meta-agentic-alpha-v3"
+  title: "Meta-Agentic α-AGI Jobs Demo — Meta-Sovereign Alpha Fabric"
+  narrative: |
+    A non-technical owner commands AGI Jobs v0 (v2) to summon an autonomous
+    meta-agentic enterprise that continuously senses latent alpha, architects
+    execution blueprints, calibrates governance, and dispatches capital on-chain
+    with full gas abstraction and guardian failsafes. Every lever — treasury,
+    approvals, pauses, antifragility buffers — is configurable from the console.
+  owner:
+    address: "0xA1FAce00000000000000000000000000C0NTROL"
+    guardians:
+      - "0xBEEf0000000000000000000000000000DEF1ACE"
+      - "0xACED0000000000000000000000000000FEEDC0"
+      - "0x0Mn1SOvERE1GN000000000000000000001"
+    approvals_required: 3
+    emergency_pause: true
+    can_delegate_parameters: true
+    mission_charter: "meta-agentic-alpha"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "5000000"
+    risk_limits:
+      max_drawdown_percent: 6.5
+      var_percent: 3.2
+      antifragility_buffer_percent: 22
+      circuit_breaker_percent: 8.5
+    streaming_allocation:
+      identify_mesh: 0.21
+      simulation_foundry: 0.18
+      strategy_lab: 0.27
+      reserve_garrison: 0.34
+  gasless:
+    enabled: true
+    bundler: "meta-agentic-bundler"
+    paymaster: "account-abstraction/alpha-meta-paymaster.json"
+    session_keys:
+      - "guardian-grid-validator"
+      - "alpha-portfolio-autopilot"
+  dashboards:
+    - title: "Meta-Agentic Mission Deck"
+      file: "meta_agentic_alpha_v3/reports/meta_mission_deck.md"
+    - title: "Meta-Agentic Console V3"
+      file: "meta_agentic_alpha_v3/ui/index.html"
+  attachments:
+    - "meta_agentic_alpha_v3/reports/meta_mission_deck.md"
+
+mission:
+  alpha_goal: "compound-global-alpha"
+  ica_score_target: 0.94
+  antifragility_focus: "black-swan-enrichment"
+  sovereign_controls:
+    pause_switch: true
+    treasury_dials:
+      liquidity_buffer_percent: 18
+      reinvestment_percent: 42
+      emergency_diversion_percent: 9
+    guardian_circuit: "tri-sentinel"
+  opportunity_domains:
+    - finance/liquidity-arbitrage
+    - climate/carbon-bridging
+    - biotech/protein-design
+    - infrastructure/resilient-energy
+
+unstoppable:
+  hypergraph_state: "omniscient"
+  multi_agent_mesh:
+    quorum: 7
+    coordination_protocol: "A2A-meta-priority"
+    sentinel_agents:
+      - "guardian-grid-validator"
+      - "alpha-portfolio-autopilot"
+      - "omni-risk-auditor"
+      - "sovereign-governor"
+      - "treasury-allocator"
+      - "ethics-proctor"
+      - "mission-chronicle"
+  safety_net:
+    antifragility_oracle: "omega-delta-observatory"
+    halt_conditions:
+      - "variance>3σ"
+      - "losses>circuit_breaker"
+      - "guardian-veto"
+    restart_policy: "adaptive-warm-start"
+
+agents:
+  - agent_id: "guardian-grid-validator"
+    owner: "Tri-Sentinel Guardian Syndicate"
+    region: "omni"
+    capabilities:
+      - execution
+      - validation
+      - oversight
+    stake_amount: "48000"
+    slashable: true
+    requires_kyc: true
+    operator_secret: "guardian-alpha"
+  - agent_id: "alpha-portfolio-autopilot"
+    owner: "Treasury Autopilot"
+    region: "global"
+    capabilities:
+      - strategy
+      - analytics
+      - router
+    stake_amount: "88000"
+    slashable: true
+    operator_secret: "autopilot-secret"
+  - agent_id: "ethics-proctor"
+    owner: "Omni Ethics Council"
+    region: "planetary"
+    capabilities:
+      - oversight
+      - analysis
+    stake_amount: "25000"
+    slashable: false
+    operator_secret: "ethics-sentinel"
+
+phases:
+  - id: "identify"
+    label: "Identify"
+    description: "Fuse multi-domain alpha anomalies into a living opportunity graph."
+    weight: 1.6
+    success_metric: "signal_resonance"
+    step:
+      kind: "plan"
+      tool: "identify.meta-mesh"
+      params:
+        sensors:
+          finance: "data/finance/opportunity_signals.json"
+          research: "data/research/breakthroughs.json"
+          policy: "data/policy/regulatory_radar.json"
+        hypergraph_export: "storage/alpha_hypergraph.json"
+        anomaly_threshold: 0.9
+        escalation_channel: "console"
+  - id: "learn"
+    label: "Out-Learn"
+    description: "Evolve open-ended curricula with MuZero-grade world modeling."
+    weight: 1.7
+    success_metric: "world_model_sufficiency"
+    step:
+      kind: "plan"
+      tool: "learn.self-architect"
+      params:
+        curriculum: "AlphaFactory/MetaSeason"
+        simulation_engine: "MiniWorld-POET-XL"
+        world_model: "MuZero-AlphaFusion-III"
+        policy_distillation: true
+        antifragility_oracle: "omega-delta-observatory"
+  - id: "think"
+    label: "Out-Think"
+    description: "Meta-planner decomposes strategies with guardian critique loops."
+    weight: 2.2
+    success_metric: "meta_plan_strength"
+    step:
+      kind: "plan"
+      tool: "plan.meta-strategist"
+      params:
+        branching_factor: 11
+        evaluation_policy: "risk-adjusted-NPV"
+        coordination_protocol: "A2A-meta-priority"
+        guardian_veto: true
+        oversight_agent: "ethics-proctor"
+  - id: "design"
+    label: "Out-Design"
+    description: "Creative synthesis of actionable ventures with simulation feedback."
+    weight: 1.5
+    success_metric: "design_efficacy"
+    step:
+      kind: "plan"
+      tool: "design.alpha-forge"
+      params:
+        designer_agent: "aether-designer-v19"
+        deliverables:
+          - "Omni-sector liquidity vault"
+          - "Resilient energy micro-grid rollout"
+          - "Protein sequence supply mesh"
+        simulation_feedback: true
+        antifragility_backtesting: true
+  - id: "strategise"
+    label: "Out-Strategise"
+    description: "Portfolio strategist allocates capital with antifragility levers."
+    weight: 1.9
+    success_metric: "risk_adjusted_alpha"
+    step:
+      kind: "plan"
+      tool: "strategy.meta"
+      params:
+        treasury_token: "AGIALPHA"
+        capital_allocation:
+          liquidity_vault: 0.29
+          energy_microgrid: 0.26
+          protein_mesh: 0.23
+          innovation_reserve: 0.22
+        antifragility_checks:
+          - "simulate_black_swan"
+          - "stress_var@99"
+          - "guardian_resilience_playback"
+  - id: "govern"
+    label: "Out-Govern"
+    description: "Owner-controlled governance dial adjustments and circuit validation."
+    weight: 1.4
+    success_metric: "governance_integrity"
+    step:
+      kind: "plan"
+      tool: "governance.meta"
+      params:
+        approvals_required: 3
+        guardian_multisig: true
+        pause_switch: true
+        adjustable_parameters:
+          - "plan.budget.max"
+          - "phases[execute-onchain].step.params.job.reward"
+          - "treasury.risk_limits.circuit_breaker_percent"
+        timelock_seconds: 86400
+        human_console: "storage/ui/index.html"
+  - id: "execute-onchain"
+    label: "Out-Execute"
+    description: "Account abstraction & treasury autopilot commit the job bundle on-chain."
+    weight: 2.4
+    success_metric: "execution_integrity"
+    step:
+      kind: "chain"
+      tool: "job.bundle"
+      params:
+        job:
+          title: "Meta-Agentic Sovereign Liquidity Mesh"
+          description: |
+            Deploy a cross-domain alpha machine that arbitrages global liquidity
+            gaps, funds resilient energy, and accelerates biotech manufacturing.
+          reward: "225000"
+          deadline_days: 21
+          attachments:
+            - "meta_agentic_alpha_v3/reports/meta_mission_deck.md"
+          treasury_account: "0xA1FAce00000000000000000000000000C0NTROL"
+          fee_bps: 38
+          validator: "guardian-grid-validator"
+        staking:
+          validator: "guardian-grid-validator"
+          amount: "48000"
+          token: "AGIALPHA"
+          slash_guardian: "0x0Mn1SOvERE1GN000000000000000000001"
+        validation_commit:
+          agent: "guardian-grid-validator"
+          tx_summary: "Simulated validation commit for sovereign liquidity mesh"
+          expected_profit: "540000"
+          dry_run: true
+        treasury_update:
+          analyst_agent: "alpha-portfolio-autopilot"
+          post_execution_buffer_percent: 19
+        governance_ping:
+          route: "timelock"
+          confirmation_window_minutes: 120
+  - id: "feedback"
+    label: "Out-Learn-Again"
+    description: "Autonomous feedback ingestion closes the loop into future runs."
+    weight: 1.1
+    success_metric: "learning_loop_gain"
+    step:
+      kind: "plan"
+      tool: "feedback.alpha-ledger"
+      params:
+        ledger: "storage/latest_run_v3.json"
+        update_scoreboard: true
+        reinforce_agents:
+          - "alpha-portfolio-autopilot"
+          - "guardian-grid-validator"
+        spawn_new_agents: 2
+        antifragility_memory: "storage/antifragility.log"
+
+plan:
+  approvals:
+    - "council/alpha"
+    - "owner/multisig"
+    - "guardian/tri-sentinel"
+  budget:
+    max: "900000"
+    currency: "AGIALPHA"
+  antifragility:
+    circuit_breaker_threshold_percent: 6.0
+    pause_on_drawdown_percent: 7.5
+    reinvestment_buffer_percent: 25
+  confirmations:
+    - "Confirm liquidity mesh deployment parameters"
+    - "Guardian tri-sentinel approval recorded"
+    - "Owner verified mission charter update"
