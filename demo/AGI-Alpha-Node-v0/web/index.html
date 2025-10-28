@@ -76,6 +76,7 @@
         const rewards = data.rewards;
         const plan = data.plan;
         const identity = data.identity;
+        const reinvestment = data.reinvestment;
         document.getElementById('stake').innerHTML = `
           <div class="metrics">
             <span>Stake Target</span>
@@ -117,6 +118,17 @@
           </div>
           <pre>${JSON.stringify(plan.insights, null, 2)}</pre>
         `;
+        document.getElementById('treasury').innerHTML = `
+          <div class="metrics">
+            <span>Pending → Threshold</span>
+            <strong>${formatEther(reinvestment.pendingWei)} / ${formatEther(reinvestment.thresholdWei)} $AGIALPHA</strong>
+          </div>
+          <div class="metrics">
+            <span>Last Action</span>
+            <strong>${reinvestment.dryRun ? 'Dry Run' : formatEther(reinvestment.stakedWei) + ' staked'}</strong>
+          </div>
+          <pre>${JSON.stringify(reinvestment.notes, null, 2)}</pre>
+        `;
         document.getElementById('stress').textContent = JSON.stringify(data.stress, null, 2);
       }
 
@@ -138,6 +150,7 @@
       <div class="card" id="rewards"></div>
       <div class="card" id="identity"></div>
       <div class="card" id="planning"></div>
+      <div class="card" id="treasury"></div>
     </div>
     <div class="card" style="margin-top: 1.5rem;">
       <h2>Stress Diagnostics</h2>
