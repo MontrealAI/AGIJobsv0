@@ -37,6 +37,7 @@ function formatDomainState(state: DomainState): DomainState {
       ...state.config,
       unsafeOpcodes: new Set(state.config.unsafeOpcodes),
       allowedTargets: new Set(state.config.allowedTargets),
+      forbiddenSelectors: new Set(state.config.forbiddenSelectors),
     },
     pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
   };
@@ -47,6 +48,7 @@ function cloneDomainConfig(config: DomainConfig): DomainConfig {
     ...config,
     unsafeOpcodes: new Set(config.unsafeOpcodes),
     allowedTargets: new Set(config.allowedTargets),
+    forbiddenSelectors: new Set(config.forbiddenSelectors),
   };
 }
 
@@ -209,6 +211,7 @@ function buildOwnerDigest(params: {
     ['Jobs attested', `${report.proof.attestedJobCount}`],
     ['Slashing events', `${report.slashingEvents.length}`],
     ['Sentinel alerts', `${report.sentinelAlerts.length}`],
+    ['Forbidden selectors', `${context.primaryDomain.config.forbiddenSelectors.size}`],
     ['Validator status events', `${statusEvents.length}`],
     ['Audit hash', audit.auditHash],
     ['Entropy transcript', report.vrfWitness.transcript],
@@ -231,7 +234,7 @@ function buildOwnerDigest(params: {
 
   const mermaid = `flowchart TD\n  Owner["Owner Control"] --> Governance["Governance ${quorum} quorum"];\n  Governance --> Committee["Committee\\n${report.committee
     .map((member) => member.ensName)
-    .join('\\n')}"];\n  Committee --> Proof["ZK Proof\\n${report.proof.attestedJobCount} jobs"];\n  Committee --> Slashing["Slashing\\n${report.slashingEvents.length} events"];\n  Sentinel["Sentinel Monitors"] --> Alerts["Alerts\\n${report.sentinelAlerts.length}"];\n  Sentinel --> Pause["Domain Pause"];\n  Pause --> Domain["${context.primaryDomain.config.humanName}\\nBudget ${domainBudget}"];`;
+    .join('\\n')}"];\n  Committee --> Proof["ZK Proof\\n${report.proof.attestedJobCount} jobs"];\n  Committee --> Slashing["Slashing\\n${report.slashingEvents.length} events"];\n  Sentinel["Sentinel Monitors"] --> Alerts["Alerts\\n${report.sentinelAlerts.length}"];\n  Sentinel --> Pause["Domain Pause"];\n  Pause --> Domain["${context.primaryDomain.config.humanName}\\nBudget ${domainBudget}\\nSelectors ${Array.from(context.primaryDomain.config.forbiddenSelectors).length}"];`;
 
   const metricsTable = ['| Metric | Value |', '| --- | --- |', ...metrics.map(([label, value]) => `| ${label} | ${value} |`)].join('\n');
 
@@ -398,6 +401,7 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
             unsafeOpcodes: Array.from(context.primaryDomain.config.unsafeOpcodes),
             allowedTargets: Array.from(context.primaryDomain.config.allowedTargets),
             maxCalldataBytes: context.primaryDomain.config.maxCalldataBytes,
+            forbiddenSelectors: Array.from(context.primaryDomain.config.forbiddenSelectors),
           },
           null,
           2,
@@ -463,23 +467,25 @@ export function writeReportArtifacts(input: ArtifactInput): void {
       },
       zkVerifyingKey: context.verifyingKey,
       maintenance: context.maintenance,
-      domainSafety: {
-        ...formattedDomain,
-        config: {
-          ...formattedDomain.config,
-          unsafeOpcodes: Array.from(formattedDomain.config.unsafeOpcodes),
-          allowedTargets: Array.from(formattedDomain.config.allowedTargets),
-          maxCalldataBytes: formattedDomain.config.maxCalldataBytes,
+        domainSafety: {
+          ...formattedDomain,
+          config: {
+            ...formattedDomain.config,
+            unsafeOpcodes: Array.from(formattedDomain.config.unsafeOpcodes),
+            allowedTargets: Array.from(formattedDomain.config.allowedTargets),
+            maxCalldataBytes: formattedDomain.config.maxCalldataBytes,
+            forbiddenSelectors: Array.from(formattedDomain.config.forbiddenSelectors),
+          },
         },
-      },
-      updatedSafety: updatedSafety
-        ? {
-            ...updatedSafety,
-            unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
-            allowedTargets: Array.from(updatedSafety.allowedTargets),
-            maxCalldataBytes: updatedSafety.maxCalldataBytes,
-          }
-        : undefined,
+        updatedSafety: updatedSafety
+          ? {
+              ...updatedSafety,
+              unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
+              allowedTargets: Array.from(updatedSafety.allowedTargets),
+              maxCalldataBytes: updatedSafety.maxCalldataBytes,
+              forbiddenSelectors: Array.from(updatedSafety.forbiddenSelectors),
+            }
+          : undefined,
     },
     ownerNotes: context.ownerNotes ?? {},
     audit,

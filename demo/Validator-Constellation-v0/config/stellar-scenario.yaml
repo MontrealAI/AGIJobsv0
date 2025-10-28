@@ -22,6 +22,9 @@ domains:
       - "0xa11ce5c1e11ce000000000000000000000000000"
       - "0xbeac0babe00000000000000000000000000000000"
     maxCalldataBytes: 4096
+    forbiddenSelectors:
+      - "0xa9059cbb"
+      - "0x23b872dd"
   - id: orbital-yard
     humanName: "Orbital Manufacturing Yard"
     budgetLimit: 3000000
@@ -31,6 +34,8 @@ domains:
     allowedTargets:
       - "0xf0undry0ps000000000000000000000000000000"
     maxCalldataBytes: 2048
+    forbiddenSelectors:
+      - "0xd0edefb0"
 validators:
   - ens: andromeda.club.agi.eth
     address: "0x1111111111111111111111111111111111111111"
@@ -91,6 +96,11 @@ anomalies:
     calldataBytes: 16384
     description: "Nova attempted to upload an oversized payload"
     target: "0xa11ce5c1e11ce000000000000000000000000000"
+  - kind: forbidden-selector
+    agentEns: nova.agent.agi.eth
+    selector: "0xa9059cbb"
+    description: "Nova attempted to move funds via a blocked selector"
+    target: "0xa11ce5c1e11ce000000000000000000000000000"
 ownerActions:
   updateSentinel:
     budgetGraceRatio: 0.12
@@ -105,6 +115,9 @@ ownerActions:
         - "0xa11ce5c1e11ce000000000000000000000000000"
         - "0xbeac0babe00000000000000000000000000000000"
       maxCalldataBytes: 6144
+      forbiddenSelectors:
+        - "0xa9059cbb"
+        - "0x23b872dd"
   pauseDomains:
     - domainId: orbital-yard
       reason: "pre-flight drill"

@@ -33,6 +33,7 @@ flowchart LR
 * **Sentinel guardrails** – budget overruns, forbidden opcodes, unauthorized targets, or calldata floods trigger autonomous domain pauses within the same round.
 * **Validator life-cycle telemetry** – every registration and ban emits dedicated events mirrored in the subgraph, so owners can watch validator health in real time.
 * **Deterministic supply-chain allowlists** – each domain now encodes hashed ENS target allowlists and calldata ceilings so auditors can replay sentinel verdicts byte-for-byte.
+* **Selector firewalls** – domains ship with banned function selectors so the sentinel can terminate ERC-20/721 drains or other malicious call patterns the moment they appear.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
 * **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
@@ -228,6 +229,7 @@ Guardrail metadata now includes:
 
 * `UNAUTHORIZED_TARGET` – triggered with dual verification (`target` + `keccak(target)`) whenever an agent reaches outside the allowlist.
 * `CALLDATA_EXPLOSION` – activates if a call attempts to exceed the domain-specific byte ceiling; the alert bundles the observed payload size so downstream monitors can replay the decision.
+* `FORBIDDEN_SELECTOR` – blocks execution when a transaction carries a banned 4-byte selector (e.g. ERC-20 transfer or sweep opcodes) so that drained treasuries are impossible even if calldata looks safe.
 
 ## Files of interest
 

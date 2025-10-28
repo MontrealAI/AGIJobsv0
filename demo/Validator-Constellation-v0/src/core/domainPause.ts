@@ -11,6 +11,7 @@ export class DomainPauseController {
           ...config,
           unsafeOpcodes: new Set(config.unsafeOpcodes),
           allowedTargets: new Set(config.allowedTargets),
+          forbiddenSelectors: new Set(config.forbiddenSelectors),
         },
         paused: false,
       });
@@ -64,6 +65,7 @@ export class DomainPauseController {
         ...state.config,
         unsafeOpcodes: new Set(state.config.unsafeOpcodes),
         allowedTargets: new Set(state.config.allowedTargets),
+        forbiddenSelectors: new Set(state.config.forbiddenSelectors),
       },
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
@@ -78,6 +80,10 @@ export class DomainPauseController {
       updates.allowedTargets !== undefined
         ? new Set(Array.from(updates.allowedTargets, (target) => target.toLowerCase()))
         : new Set(state.config.allowedTargets);
+    const forbiddenSelectors =
+      updates.forbiddenSelectors !== undefined
+        ? new Set(Array.from(updates.forbiddenSelectors, (selector) => selector.toLowerCase()))
+        : new Set(state.config.forbiddenSelectors);
     const maxCalldataBytes = updates.maxCalldataBytes ?? state.config.maxCalldataBytes;
     const updated: DomainConfig = {
       ...state.config,
@@ -86,6 +92,7 @@ export class DomainPauseController {
       unsafeOpcodes,
       allowedTargets,
       maxCalldataBytes,
+      forbiddenSelectors,
     };
     state.config = updated;
     return updated;

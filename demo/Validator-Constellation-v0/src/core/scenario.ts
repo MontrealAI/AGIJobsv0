@@ -52,6 +52,7 @@ interface ScenarioDomainConfig {
   unsafeOpcodes?: string[];
   allowedTargets?: string[];
   maxCalldataBytes?: number;
+  forbiddenSelectors?: string[];
 }
 
 interface ScenarioJobConfig {
@@ -108,11 +109,22 @@ interface CalldataSpikeAnomaly {
   target?: string;
 }
 
+interface ForbiddenSelectorAnomaly {
+  kind: 'forbidden-selector';
+  agentEns: string;
+  selector: string;
+  amount?: string | number | bigint;
+  domainId?: string;
+  description?: string;
+  target?: string;
+}
+
 export type ScenarioAnomaly =
   | BudgetOverrunAnomaly
   | UnsafeOpcodeAnomaly
   | UnauthorizedTargetAnomaly
-  | CalldataSpikeAnomaly;
+  | CalldataSpikeAnomaly
+  | ForbiddenSelectorAnomaly;
 
 interface ScenarioOwnerActions {
   updateEntropy?: Partial<{ onChainEntropy: string | number | bigint; recentBeacon: string | number | bigint }>;
@@ -126,6 +138,7 @@ interface ScenarioOwnerActions {
     unsafeOpcodes?: string[];
     allowedTargets?: string[];
     maxCalldataBytes?: number;
+    forbiddenSelectors?: string[];
   }>;
   pauseDomains?: Array<{ domainId: string; reason: string; triggeredBy?: string }>;
   resumeDomains?: Array<{ domainId: string; triggeredBy?: string }>;
@@ -366,6 +379,21 @@ function buildAnomalies(
       });
       continue;
     }
+    if (anomaly.kind === 'forbidden-selector') {
+      const spend =
+        anomaly.amount !== undefined ? parseBigint(anomaly.amount, `selector spend for ${anomaly.agentEns}`) : 0n;
+      actions.push({
+        agent: { ...agent },
+        domainId: anomaly.domainId ?? agent.domainId,
+        type: 'CALL',
+        amountSpent: spend,
+        description: anomaly.description ?? `selector ${anomaly.selector} invocation`,
+        target: anomaly.target,
+        functionSelector: anomaly.selector,
+        metadata: { functionSelector: anomaly.selector },
+      });
+      continue;
+    }
     const spend =
       anomaly.amount !== undefined ? parseBigint(anomaly.amount, `calldata spend for ${anomaly.agentEns}`) : 0n;
     actions.push({
@@ -393,6 +421,7 @@ function materializeDomains(config?: ScenarioDomainConfig[]): DomainConfig[] {
     unsafeOpcodes: new Set(domain.unsafeOpcodes ?? []),
     allowedTargets: new Set((domain.allowedTargets ?? []).map((target) => target.toLowerCase())),
     maxCalldataBytes: domain.maxCalldataBytes ?? 0,
+    forbiddenSelectors: new Set((domain.forbiddenSelectors ?? []).map((selector) => selector.toLowerCase())),
   }));
 }
 
@@ -540,6 +569,7 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
         unsafeOpcodes?: Iterable<string>;
         allowedTargets?: Iterable<string>;
         maxCalldataBytes?: number;
+        forbiddenSelectors?: Iterable<string>;
       } = {};
       if (update.humanName !== undefined) {
         patched.humanName = update.humanName;
@@ -555,6 +585,9 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
       }
       if (update.maxCalldataBytes !== undefined) {
         patched.maxCalldataBytes = update.maxCalldataBytes;
+      }
+      if (update.forbiddenSelectors) {
+        patched.forbiddenSelectors = update.forbiddenSelectors;
       }
       const updated = demo.updateDomainSafety(update.domainId, patched);
       domainSafetyUpdates.set(update.domainId, updated);
