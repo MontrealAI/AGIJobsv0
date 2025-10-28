@@ -9,3 +9,5 @@ export * from './identity/rpcLookup';
 export * from './monitoring/metrics';
 export * from './blockchain/staking';
 export * from './blockchain/rewards';
+export * from './blockchain/governance';
+export * from './utils/compliance';

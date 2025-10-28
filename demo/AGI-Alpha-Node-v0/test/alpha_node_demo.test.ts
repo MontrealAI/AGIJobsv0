@@ -4,3 +4,4 @@ import './identity.test';
 import './antifragile.test';
 import './jobs.test';
 import './reinvest.test';
+import './compliance.test';
