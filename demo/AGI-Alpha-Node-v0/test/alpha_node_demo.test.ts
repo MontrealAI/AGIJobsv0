@@ -6,3 +6,4 @@ import './jobs.test';
 import './reinvest.test';
 import './compliance.test';
 import './amounts.test';
+import './governance.test';

@@ -1,0 +1,26 @@
+{
+  "$schema": "./governance.update.schema.json",
+  "config": {
+    "stakeManager": "0x9999999999999999999999999999999999999999",
+    "reputationEngine": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "minPlatformStake": "12500",
+    "pauser": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "pauserManager": "0xcccccccccccccccccccccccccccccccccccccccc"
+  },
+  "registrars": [
+    {
+      "address": "0xdddddddddddddddddddddddddddddddddddddddd",
+      "allowed": true
+    },
+    {
+      "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "allowed": false
+    }
+  ],
+  "blacklist": [
+    {
+      "address": "0xffffffffffffffffffffffffffffffffffffffff",
+      "status": true
+    }
+  ]
+}
