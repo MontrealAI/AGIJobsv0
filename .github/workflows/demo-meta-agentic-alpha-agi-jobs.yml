@@ -55,6 +55,13 @@ jobs:
         run: |
           python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py --timeout 60
 
+      - name: Execute demo CLI V3
+        env:
+          META_AGENTIC_DEMO_V3_TIMEOUT: '210'
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py --timeout 75
+
       - name: Upload artefacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,7 +70,10 @@ jobs:
           path: |
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v3.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v3/scoreboard.json
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md
+            demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md
             demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui/

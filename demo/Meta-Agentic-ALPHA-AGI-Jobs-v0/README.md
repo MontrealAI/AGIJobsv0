@@ -49,6 +49,7 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    ```bash
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
    ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -60,6 +61,7 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
 
@@ -121,11 +123,11 @@ sequenceDiagram
 
 ## 🛡️ Governance & Safety Guarantees
 
-- **Owner Supremacy:** Owners, guardians, approvals, and pause controls are configured directly via `governance.set` orchestration step. Contract owners can update every tunable parameter (stake floors, reward splits, validators, circuit breakers) on-demand.
-- **Timelock & Guardian Hooks:** High-impact operations (e.g., treasury reallocations) honour timelock & guardian thresholds from the scenario YAML.
+- **Owner Supremacy:** Owners, guardians, approvals, and pause controls are configured directly via `governance.set` orchestration step. Contract owners can update every tunable parameter (stake floors, reward splits, validators, circuit breakers) on-demand, including the new V3 mission dials surfaced in `meta_agentic_alpha_v3`.
+- **Timelock & Guardian Hooks:** High-impact operations (e.g., treasury reallocations) honour timelock & guardian thresholds from the scenario YAML and the V3 tri-sentinel guardian mesh.
 - **Dry-Run First:** All execution steps run in simulated mode by default, leveraging `ORCHESTRATOR_BRIDGE_MODE=python` and `eth_call` semantics.
 - **Checkpointing:** Crash-safe checkpointing ensures runs can be resumed mid-flight.
-- **Antifragile Monitoring:** Generated dashboards highlight stress scenarios and automatically update the alpha probability metric.
+- **Antifragile Monitoring:** Generated dashboards highlight stress scenarios and automatically update the alpha probability metric, now with a compounding index in the V3 console.
 
 ---
 
@@ -183,7 +185,9 @@ The regenerated `storage/ui/index.html` console now:
 - Exposes one-click artefact links (summary JSON, investor masterplan, console sources) for downstream teams.
 - Highlights owner levers updated via `owner_controls.py` so stakeholders instantly see configuration deltas.
 
-Serve it statically or drop it into any CDN – the bundle is pure HTML/CSS/JS with Mermaid handled via CDN.
+Serve it statically or drop it into any CDN – the bundle is pure HTML/CSS/JS with Mermaid handled via CDN. The
+V3 console lives under `storage/ui/v3` and adds alpha compounding telemetry, unstoppable mesh summaries, and
+guardian confirmation feeds.
 
 ---
 
