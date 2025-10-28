@@ -1,0 +1,17 @@
+{
+  "routes": [
+    {"id": "treasury/alpha-orbit", "allocation_percent": 28, "status": "active"},
+    {"id": "execution/liquidity-grid", "allocation_percent": 24, "status": "active"},
+    {"id": "resilience/phoenix-buffer", "allocation_percent": 18, "status": "active"},
+    {"id": "expansion/metaverse-signal", "allocation_percent": 15, "status": "active"},
+    {"id": "acquisition/singularity-fund", "allocation_percent": 15, "status": "active"}
+  ],
+  "owner_switches": [
+    "Activate antifragility drill",
+    "Redirect unstoppable reserve",
+    "Spawn guardian task force",
+    "Rebalance liquidity grid",
+    "Inject alpha multiplier override"
+  ],
+  "compounding_multiplier": 0.34
+}

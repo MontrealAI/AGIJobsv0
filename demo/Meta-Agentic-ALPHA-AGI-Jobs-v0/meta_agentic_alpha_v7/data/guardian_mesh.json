@@ -1,0 +1,40 @@
+{
+  "sentinels": [
+    {
+      "id": "guardian-hypermesh-validator",
+      "stake": 70000,
+      "status": "active",
+      "capabilities": ["execution", "validation", "analysis"]
+    },
+    {
+      "id": "alpha-compounding-director",
+      "stake": 46000,
+      "status": "active",
+      "capabilities": ["execution", "analysis"]
+    },
+    {
+      "id": "mission-audit-overwatch",
+      "stake": 28000,
+      "status": "active",
+      "capabilities": ["validation", "analysis", "support"]
+    },
+    {
+      "id": "alpha-treasury-hyperpilot",
+      "stake": 42000,
+      "status": "active",
+      "capabilities": ["analysis", "support"]
+    },
+    {
+      "id": "sovereign-simulation-architect",
+      "stake": 36000,
+      "status": "active",
+      "capabilities": ["analysis", "support"]
+    }
+  ],
+  "coordination": {
+    "quorum": 4,
+    "failover": 3,
+    "a2a_bus": "A2A-meta-singularity",
+    "response_slo_minutes": 6
+  }
+}

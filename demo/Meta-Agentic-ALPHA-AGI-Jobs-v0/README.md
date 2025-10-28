@@ -47,14 +47,15 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    pip install -r requirements-python.txt
    ```
 2. **Run the orchestration**:
-   ```bash
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py
-   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py
-   ```
+```bash
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py
+```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
    ```bash
@@ -172,6 +173,16 @@ sequenceDiagram
 - **Treasury Dominion Routes:** Execution routes show live allocation mixes, status indicators, and owner switches (guardian quorum override, liquidity throttle, emergency pause, etc.).
 - **Simulation Envelope:** Stress tests from `simulation_matrix.json` feed antifragility metrics, ensuring every on-chain action runs through `eth_call` dry-runs with summarised outcomes for owners.
 - **Full Sovereignty Artefacts:** Latest run payload + scoreboard snapshots land under `storage/orchestrator_v6`, demonstrating end-to-end traceability for auditors and owners.
+
+---
+
+## 🪐 V7 Meta-Singularity Console (Brand New)
+
+- **Hyperstructure Planner:** The V7 orchestration fuses identify→learn→think→design→strategise→execute loops with guardian hypermesh approvals, world-model autonomy layers, and a CI enforcement grid to guarantee green pipelines on `main` and PRs.
+- **Total Owner Override:** `meta_agentic_demo_v7.py` validates ≥5 session keys, ≥30% unstoppable reserves, ≥30% antifragility buffers, timelock + multisig addresses, and mutable parameters (fees, validator bonds, alpha multipliers) before execution.
+- **CI-Aware Console:** `dashboard-data-v7.json` powers flow, sequence, Gantt, journey, and state Mermaid diagrams plus a CI enforcement panel sourced from `ci_matrix.json` and `.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml`.
+- **Generated Artefacts:** `alpha_singularity_masterplan.md`, `dashboard-data-v7.json`, and `storage/orchestrator_v7/` provide a full audit trail (checkpoint, scoreboard, registry, run JSON) for regulators and owners.
+- **Account Abstraction Ready:** Gasless execution uses the configured bundler, paymaster, and override scripts, with explicit owner levers rendered in the UI and ready-to-run CLI instructions.
 
 ---
 

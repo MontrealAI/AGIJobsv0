@@ -1,0 +1,13 @@
+{
+  "status": "green",
+  "checks": [
+    "pytest demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/tests -q",
+    "python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py --timeout 120",
+    "npm run lint --prefix apps/console",
+    "npm run typecheck --prefix apps/console"
+  ],
+  "response_minutes": 6,
+  "last_green_commit": "HEAD",
+  "enforced_on": ["pull_request", "main"],
+  "policy": "All V2 checks must pass prior to execution"
+}
