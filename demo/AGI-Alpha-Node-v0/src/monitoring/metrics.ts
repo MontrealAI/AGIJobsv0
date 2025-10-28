@@ -4,6 +4,7 @@ import type { RewardSnapshot } from '../blockchain/rewards';
 import type { IdentityVerificationResult } from '../identity/types';
 import type { PlanningSummary } from '../ai/planner';
 import type { ReinvestReport } from '../blockchain/reinvest';
+import { ratioFromWei, weiToEtherNumber } from '../utils/amounts';
 
 export class AlphaNodeMetrics {
   private readonly registry = new Registry();
@@ -22,17 +23,17 @@ export class AlphaNodeMetrics {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
     this.stakeGauge = new Gauge({
       name: 'agi_alpha_node_stake_total',
-      help: 'Current platform stake held by the operator (wei).',
+      help: 'Current platform stake held by the operator ($AGIALPHA).',
       registers: [this.registry],
     });
     this.stakeDeficitGauge = new Gauge({
       name: 'agi_alpha_node_stake_deficit',
-      help: 'Additional stake required to satisfy platform minimums (wei).',
+      help: 'Additional stake required to satisfy platform minimums ($AGIALPHA).',
       registers: [this.registry],
     });
     this.rewardGauge = new Gauge({
       name: 'agi_alpha_node_rewards_pending',
-      help: 'Unclaimed $AGIALPHA rewards (wei).',
+      help: 'Unclaimed $AGIALPHA rewards.',
       registers: [this.registry],
     });
     this.verificationGauge = new Gauge({
@@ -57,7 +58,7 @@ export class AlphaNodeMetrics {
     });
     this.reinvestAmountGauge = new Gauge({
       name: 'agi_alpha_node_reinvest_last_amount',
-      help: 'Amount of $AGIALPHA reinvested in the latest cycle (wei).',
+      help: 'Amount of $AGIALPHA reinvested in the latest cycle.',
       registers: [this.registry],
     });
     this.reinvestReadinessGauge = new Gauge({
@@ -73,16 +74,16 @@ export class AlphaNodeMetrics {
   }
 
   updateStake(snapshot: StakeSnapshot): void {
-    this.stakeGauge.set(Number(snapshot.currentStake));
+    this.stakeGauge.set(weiToEtherNumber(snapshot.currentStake));
     const deficit =
       snapshot.requiredStake > snapshot.currentStake
         ? snapshot.requiredStake - snapshot.currentStake
         : 0n;
-    this.stakeDeficitGauge.set(Number(deficit));
+    this.stakeDeficitGauge.set(weiToEtherNumber(deficit));
   }
 
   updateRewards(snapshot: RewardSnapshot): void {
-    this.rewardGauge.set(Number(snapshot.pending));
+    this.rewardGauge.set(weiToEtherNumber(snapshot.pending));
   }
 
   updateIdentity(result: IdentityVerificationResult): void {
@@ -106,17 +107,10 @@ export class AlphaNodeMetrics {
   }
 
   updateReinvestment(report: ReinvestReport, threshold: bigint): void {
-    const amountEther = Number(report.stakedWei) / 1e18;
-    this.reinvestAmountGauge.set(
-      Number.isFinite(amountEther) ? amountEther : 0
-    );
-    if (threshold > 0n) {
-      const ratioRaw = (report.pendingWei * 1_000_000n) / threshold;
-      const ratio = Number(ratioRaw) / 1_000_000;
-      this.reinvestReadinessGauge.set(Number.isFinite(ratio) ? ratio : 0);
-    } else {
-      this.reinvestReadinessGauge.set(0);
-    }
+    const amountEther = weiToEtherNumber(report.stakedWei);
+    this.reinvestAmountGauge.set(amountEther);
+    const readiness = ratioFromWei(report.pendingWei, threshold);
+    this.reinvestReadinessGauge.set(readiness);
   }
 
   updateCompliance(score: number): void {
