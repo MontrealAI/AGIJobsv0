@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta-Agentic α-AGI Jobs Demo V2 Command Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: #05060a;
+        --fg: #edf1ff;
+        --accent: #7c5cff;
+        --muted: rgba(255, 255, 255, 0.65);
+        --card: rgba(14, 18, 33, 0.82);
+        --border: rgba(124, 92, 255, 0.45);
+      }
+      body {
+        margin: 0;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top left, rgba(124, 92, 255, 0.16), transparent 45%),
+          radial-gradient(circle at bottom right, rgba(0, 211, 255, 0.12), transparent 45%),
+          var(--bg);
+        color: var(--fg);
+      }
+      header {
+        padding: 3rem clamp(2rem, 5vw, 4rem) 2rem;
+        text-align: center;
+      }
+      h1 {
+        margin: 0 0 1rem;
+        font-size: clamp(2.5rem, 4vw, 3.5rem);
+        letter-spacing: 0.04em;
+      }
+      h2 {
+        font-size: clamp(1.4rem, 2.5vw, 2rem);
+        margin-top: 0;
+      }
+      p.lead {
+        font-size: 1.1rem;
+        max-width: 72ch;
+        margin: 0 auto;
+        color: var(--muted);
+      }
+      main {
+        padding: 0 clamp(1.5rem, 4vw, 3rem) 4rem;
+        display: grid;
+        gap: 2rem;
+      }
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      }
+      .card {
+        padding: 1.75rem;
+        background: var(--card);
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        box-shadow: 0 30px 60px -40px rgba(7, 10, 22, 0.8);
+        backdrop-filter: blur(18px);
+      }
+      .card h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+      .phases {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .phase {
+        border-radius: 14px;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, rgba(124, 92, 255, 0.22), rgba(32, 124, 255, 0.15));
+        border: 1px solid rgba(124, 92, 255, 0.35);
+        display: grid;
+        gap: 0.35rem;
+      }
+      .phase strong {
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .metrics {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+      .metric {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .metric span {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .metric strong {
+        font-size: 1.6rem;
+      }
+      .timeline {
+        margin-top: 1rem;
+      }
+      pre {
+        background: rgba(4, 8, 24, 0.72);
+        border-radius: 14px;
+        padding: 1.5rem;
+        overflow-x: auto;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      footer {
+        text-align: center;
+        padding: 3rem 1rem 4rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "dark", securityLevel: "loose" });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Meta-Agentic α-AGI Jobs Demo V2</h1>
+      <p class="lead">
+        Fully-governed, antifragile AGI Jobs orchestration that any non-technical owner can deploy with a
+        single command. Inspect phases, alpha telemetry, and governance posture at a glance.
+      </p>
+    </header>
+    <main>
+      <section class="grid">
+        <article class="card">
+          <h3>Owner Controls</h3>
+          <p>
+            Guardians <strong>0xBEEf…DEF1ACE</strong> and <strong>0xACED…FEEDC0</strong> enforce approvals. Emergency
+            pause lever <strong>enabled</strong>. Gasless execution runs through dedicated paymaster.
+          </p>
+          <div class="metrics">
+            <div class="metric">
+              <span>Treasury Balance</span>
+              <strong>2,500,000 AGIALPHA</strong>
+            </div>
+            <div class="metric">
+              <span>Antifragility Buffer</span>
+              <strong>18%</strong>
+            </div>
+            <div class="metric">
+              <span>Alpha Readiness Score</span>
+              <strong>97.5%</strong>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Execution Bundle</h3>
+          <ul>
+            <li>Post AGI Job: <em>Superconductive Grid Retrofit Initiative</em></li>
+            <li>Stake Validator: guardian-grid-validator @ 35,000 AGIALPHA</li>
+            <li>Validation Commit: dry-run gated, expected alpha 210,000</li>
+            <li>Treasury buffer recalibration by alpha-portfolio-autopilot</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Governance Prompts</h3>
+          <ol>
+            <li>Confirm superconducting polymer procurement plan.</li>
+            <li>Approve carbon credit issuance parameters.</li>
+            <li>Validate antifragility buffer post-execution (target ≥ 14%).</li>
+          </ol>
+        </article>
+      </section>
+
+      <section class="card">
+        <h3>Phase Progression</h3>
+        <div class="phases">
+          <div class="phase">
+            <strong>Identify</strong>
+            <span>Multi-domain anomaly fusion from finance, research, and supply networks.</span>
+          </div>
+          <div class="phase">
+            <strong>Out-Learn</strong>
+            <span>Curriculum evolved via MiniWorld-POET, MuZero α-fusion world model update.</span>
+          </div>
+          <div class="phase">
+            <strong>Out-Think</strong>
+            <span>Meta-tree search with 7 concurrent specialist agents and guardian critique.</span>
+          </div>
+          <div class="phase">
+            <strong>Out-Design</strong>
+            <span>Creative strategy forge generates retrofit + liquidity protocol blueprints.</span>
+          </div>
+          <div class="phase">
+            <strong>Out-Strategise</strong>
+            <span>Portfolio autopilot balances alpha lift and antifragility thresholds.</span>
+          </div>
+          <div class="phase">
+            <strong>Out-Execute</strong>
+            <span>Account abstraction bundle posts job, stakes validator, commits validation, updates treasury.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card timeline">
+        <h3>Meta-Agentic Loop</h3>
+        <div class="mermaid">
+          graph TD
+            A[Signal Intake] --> B{Meta-Agentic Planner}
+            B -->|Curated Tasks| C[AGI Jobs Orchestrator]
+            C --> D[Account Abstraction Paymaster]
+            C --> E[Treasury Autopilot]
+            D --> F[On-Chain Contracts]
+            E --> G[Capital Allocation Ledger]
+            F --> H[Execution Receipts]
+            G --> H
+            H --> I[Continuous Learning Ledger]
+            I --> B
+        </div>
+      </section>
+
+      <section class="card">
+        <h3>Dry-Run Transcript</h3>
+        <pre>
+[00:00] Bootstrapping orchestrator storage → OK
+[00:01] Register guardian-grid-validator + alpha-portfolio-autopilot → OK
+[00:02] Building governance-aware plan (budget max 450,000 AGIALPHA) → OK
+[00:03] Identify phase executed (anomaly score 0.86) → Logged
+[00:04] Out-Learn phase executed (world model resilience +0.12) → Logged
+[00:05] Out-Think meta-search complete (plan convergence 97.5%) → Logged
+[00:06] Out-Design creative synthesis produced 2 deliverables → Logged
+[00:07] Out-Strategise autopilot recalibrated buffers → Logged
+[00:08] Out-Execute bundle simulated (no gas spend) → READY FOR OWNER SIGN-OFF
+        </pre>
+      </section>
+    </main>
+    <footer>
+      Meta-Agentic α-AGI Jobs Demo V2 • Powered by AGI Jobs v0 (v2) • Designed for non-technical sovereign owners
+    </footer>
+  </body>
+</html>
