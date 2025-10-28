@@ -29,6 +29,7 @@ export interface RoundAuditResult {
   nonRevealValidators: Hex[];
   dishonestValidators: Hex[];
   slashedValidators: Array<{ address: Hex; penalty: string; reason: string }>;
+  recomputedVoteOutcome: VoteValue;
   issues: string[];
   auditHash: Hex;
 }
@@ -54,6 +55,24 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
   const commitMap = new Map(report.commits.map((commit) => [commit.validator.address, commit]));
   const revealMap = new Map(report.reveals.map((reveal) => [reveal.validator.address, reveal]));
   const committeeAddresses = new Set(report.committee.map((member) => member.address));
+
+  const voteTallies: Record<VoteValue, number> = { APPROVE: 0, REJECT: 0 };
+  for (const reveal of report.reveals) {
+    voteTallies[reveal.vote] += 1;
+  }
+
+  const recomputedVoteOutcome: VoteValue =
+    voteTallies.APPROVE === voteTallies.REJECT
+      ? truthfulVote
+      : voteTallies.APPROVE > voteTallies.REJECT
+        ? 'APPROVE'
+        : 'REJECT';
+
+  if (report.voteOutcome !== recomputedVoteOutcome) {
+    issues.push(
+      `reported outcome ${report.voteOutcome} does not match recomputed majority (${recomputedVoteOutcome})`,
+    );
+  }
 
   let commitmentsVerified = true;
   for (const reveal of report.reveals) {
@@ -154,6 +173,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
     nonRevealValidators,
     dishonestValidators,
     slashedValidators,
+    recomputedVoteOutcome,
     issues,
   };
 
