@@ -272,6 +272,21 @@ async function testOwnerCommandControls(): Promise<void> {
     },
   });
   await orchestrator.applyOwnerCommand({ type: 'node.deregister', nodeId: 'mars.node', reason: 'rotate mars node' });
+  const missingJobEvents = await orchestrator.applyOwnerCommand({
+    type: 'job.cancel',
+    jobId: 'job-nonexistent',
+    reason: 'unit-test-allow-missing',
+    allowMissing: true,
+  });
+  assert.ok(
+    missingJobEvents.some((event) => event.type === 'owner.job.missing'),
+    'allowMissing cancel should emit owner.job.missing event'
+  );
+  assert.equal(
+    orchestrator.fabricMetrics.jobsCancelled,
+    0,
+    'allowMissing cancel must not change cancellation metrics'
+  );
   orchestrator.submitJob({
     id: 'job-owner-cancel',
     shard: 'earth',
@@ -330,7 +345,7 @@ async function testOwnerCommandControls(): Promise<void> {
 
   const ownerState = orchestrator.getOwnerState();
   assert.equal(ownerState.systemPaused, false, 'system should be resumed');
-  assert.equal(ownerState.metrics.ownerInterventions, 13);
+  assert.equal(ownerState.metrics.ownerInterventions, 14);
   assert.equal(ownerState.metrics.systemPauses, 1);
   assert.equal(ownerState.metrics.shardPauses, 1);
   assert.deepEqual(ownerState.pausedShards, [], 'no shards should remain paused');

@@ -451,6 +451,15 @@ export class PlanetaryOrchestrator {
       case 'job.cancel': {
         const located = this.findJob(command.jobId);
         if (!located) {
+          if (command.allowMissing) {
+            push({
+              tick: this.tick,
+              type: 'owner.job.missing',
+              message: `Owner attempted to cancel job ${command.jobId}, but it was not found`,
+              data: { jobId: command.jobId, action: 'cancel', reason: command.reason },
+            });
+            break;
+          }
           throw new Error(`Unknown job ${command.jobId}`);
         }
         if (located.location === 'completed' || located.location === 'failed') {
@@ -496,6 +505,20 @@ export class PlanetaryOrchestrator {
       case 'job.reroute': {
         const located = this.findJob(command.jobId);
         if (!located) {
+          if (command.allowMissing) {
+            push({
+              tick: this.tick,
+              type: 'owner.job.missing',
+              message: `Owner attempted to reroute job ${command.jobId}, but it was not found`,
+              data: {
+                jobId: command.jobId,
+                action: 'reroute',
+                targetShard: command.targetShard,
+                reason: command.reason,
+              },
+            });
+            break;
+          }
           throw new Error(`Unknown job ${command.jobId}`);
         }
         if (located.location === 'completed' || located.location === 'failed') {

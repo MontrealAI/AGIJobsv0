@@ -72,6 +72,7 @@
       "command": {
         "type": "job.reroute",
         "jobId": "job-09000",
+        "allowMissing": true,
         "targetShard": "helios",
         "reason": "Owner escalation to Helios GPU helion"
       }
@@ -82,6 +83,7 @@
       "command": {
         "type": "job.cancel",
         "jobId": "job-09001",
+        "allowMissing": true,
         "reason": "Owner resolved ticket manually"
       }
     }

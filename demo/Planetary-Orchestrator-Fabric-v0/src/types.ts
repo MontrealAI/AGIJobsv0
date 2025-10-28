@@ -259,8 +259,19 @@ export type OwnerCommand =
     }
   | { type: 'node.register'; node: NodeDefinition; reason?: string }
   | { type: 'node.deregister'; nodeId: string; reason?: string }
-  | { type: 'job.cancel'; jobId: string; reason?: string }
-  | { type: 'job.reroute'; jobId: string; targetShard: ShardId; reason?: string }
+  | {
+      type: 'job.cancel';
+      jobId: string;
+      reason?: string;
+      allowMissing?: boolean;
+    }
+  | {
+      type: 'job.reroute';
+      jobId: string;
+      targetShard: ShardId;
+      reason?: string;
+      allowMissing?: boolean;
+    }
   | { type: 'checkpoint.save'; reason?: string }
   | {
       type: 'checkpoint.configure';

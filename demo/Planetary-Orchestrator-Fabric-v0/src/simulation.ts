@@ -422,11 +422,13 @@ async function writeArtifacts(
         type: 'job.reroute',
         reason: 'Redirect precision workload to Helios GPU array',
         jobId: 'job-09000',
+        allowMissing: true,
         targetShard: 'helios',
       },
       cancelEarthBacklogItem: {
         type: 'job.cancel',
         reason: 'De-duplicate resolved Earth logistics request',
+        allowMissing: true,
         jobId: 'job-09001',
       },
     },
@@ -482,6 +484,7 @@ async function writeArtifacts(
         command: {
           type: 'job.reroute',
           jobId: 'job-09000',
+          allowMissing: true,
           targetShard: 'helios',
           reason: 'Owner escalated to Helios precision array',
         },
@@ -492,6 +495,7 @@ async function writeArtifacts(
         command: {
           type: 'job.cancel',
           jobId: 'job-09001',
+          allowMissing: true,
           reason: 'Owner resolved via manual intervention',
         },
       },
