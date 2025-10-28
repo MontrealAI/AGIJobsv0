@@ -1,13 +1,13 @@
 import { CommitmentRecord, JobResult, ValidatorIdentity } from './types';
-import { keccak256, now } from './utils';
+import { keccak256 } from './utils';
 import { validatorConfig } from './config';
 
 export class CommitRevealRound {
   private commitments: CommitmentRecord[] = [];
-  private readonly epochStartSeconds: number;
+  private readonly epochStartMs: number;
 
   constructor(private readonly job: JobResult, epochStartMs: number) {
-    this.epochStartSeconds = Math.floor(epochStartMs / 1000);
+    this.epochStartMs = epochStartMs;
   }
 
   commit(validator: ValidatorIdentity, vote: 'truth' | 'fraud', salt: string): CommitmentRecord {
@@ -24,8 +24,8 @@ export class CommitRevealRound {
   }
 
   reveal(record: CommitmentRecord, vote: 'truth' | 'fraud'): CommitmentRecord {
-    const elapsedSeconds = now() - this.epochStartSeconds;
-    const withinWindow = elapsedSeconds <= validatorConfig.revealWindowSeconds;
+    const elapsedMs = Date.now() - this.epochStartMs;
+    const withinWindow = elapsedMs <= validatorConfig.revealWindowSeconds * 1000;
     if (!withinWindow) {
       throw new Error(`Reveal window elapsed for job ${this.job.jobId}.`);
     }
