@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T17:40:41.635Z",
+  "executionTimestamp": "2025-10-28T20:57:10.239Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -24,6 +24,15 @@
     "ownerCommandCoverage": 1,
     "sovereignControlScore": 1,
     "sovereignSafetyScore": 0.979,
+    "commandLatencyMinutes": 9,
+    "drillReadiness": 1,
+    "redundancyCoverage": 0.86,
+    "escalationCoverage": 1,
+    "resilienceScore": 0.958,
+    "globalReachScore": 0.947,
+    "l2ActivationScore": 0.951,
+    "liquidityCoverageScore": 0.97,
+    "expansionScore": 0.953,
     "assertionPassRate": 1
   },
   "ownerControl": {
@@ -106,6 +115,81 @@
     "alertChannels": [
       "slack://agi-ops-economic-power",
       "pagerduty://agi-critical"
+    ],
+    "drills": [
+      {
+        "id": "global-pause-drill",
+        "name": "Global Pause Drill",
+        "frequencyHours": 24,
+        "script": "npm run owner:system-pause",
+        "targetResponseMinutes": 12,
+        "description": "Simulates a planet-wide incident to validate pause and resume authority.",
+        "readiness": 1,
+        "frequencyScore": 1
+      },
+      {
+        "id": "validator-hotfix-drill",
+        "name": "Validator Hotfix Drill",
+        "frequencyHours": 48,
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "targetResponseMinutes": 15,
+        "description": "Exercises validator quorum expansion and upgrade promotion under time pressure.",
+        "readiness": 1,
+        "frequencyScore": 1
+      },
+      {
+        "id": "treasury-recovery-drill",
+        "name": "Treasury Recovery Drill",
+        "frequencyHours": 72,
+        "script": "npm run owner:audit",
+        "targetResponseMinutes": 20,
+        "description": "Runs a full treasury reconciliation, buffer refill, and reporting sequence.",
+        "readiness": 1,
+        "frequencyScore": 1
+      }
+    ],
+    "redundancies": [
+      {
+        "id": "bundler-failover",
+        "capability": "Bundler Failover Mesh",
+        "status": "ready",
+        "script": "npm run owner:update-all -- --component bundler-failover",
+        "coverage": 1,
+        "readiness": 1
+      },
+      {
+        "id": "rpc-constellation",
+        "capability": "RPC Provider Constellation",
+        "status": "ready",
+        "script": "npm run owner:program -- --program orchestrator-rpc-failover",
+        "coverage": 0.95,
+        "readiness": 0.95
+      },
+      {
+        "id": "validator-shadow",
+        "capability": "Shadow Validator Fleet",
+        "status": "deploying",
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "coverage": 0.9,
+        "readiness": 0.63
+      }
+    ],
+    "escalationMatrix": [
+      {
+        "trigger": "Validator consensus stall",
+        "response": "Escalate to validator council and execute npm run owner:system-pause",
+        "ownerContact": "security-operations@agijobs.ai"
+      },
+      {
+        "trigger": "Treasury anomaly detected",
+        "response": "Run npm run owner:audit and notify treasury guardians",
+        "ownerContact": "treasury@agijobs.ai"
+      },
+      {
+        "trigger": "Automation regression",
+        "response": "Execute npm run owner:parameters and page orchestrator command desk",
+        "ownerContact": "governance@agijobs.ai"
+      }
     ]
   },
   "commandCatalog": {
@@ -414,7 +498,7 @@
       "automationLift": 0.8347050794150797
     }
   ],
-  "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_sentinel[Sentinel Assurance Fabric]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_aurora[Aurora Economic Intelligence Mesh]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
+  "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7]\n    Orchestrator[Economic Power Orchestrator]\n    Treasury[Treasury Escrow Vault]\n    StablecoinAdapter[Stablecoin Adapter Layer]\n    ResilienceMesh[Resilience Mesh\\nDrills & Redundancy]\n    SafetyMesh[Sovereign Safety Mesh]\n        OwnerSafe -->|Configures| Orchestrator\n    OwnerSafe -->|Funds| Treasury\n    Treasury -->|Swaps| StablecoinAdapter\n    StablecoinAdapter -->|Escrow| Orchestrator\n    OwnerSafe -->|Commands| ResilienceMesh\n    ResilienceMesh -->|Escalates| SafetyMesh\n    SafetyMesh -->|Signal| OwnerSafe\n    Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_sentinel[Sentinel Assurance Fabric]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_aurora[Aurora Economic Intelligence Mesh]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]\n    Drill_0[Global Pause Drill\\nnpm run owner:system-pause]\n    ResilienceMesh -->|Run| Drill_0\n    Drill_1[Validator Hotfix Drill\\nnpm run owner:upgrade -- --module ValidationModule]\n    ResilienceMesh -->|Run| Drill_1\n    Drill_2[Treasury Recovery Drill\\nnpm run owner:audit]\n    ResilienceMesh -->|Run| Drill_2\n    Redundancy_0[Bundler Failover Mesh\\nready]\n    ResilienceMesh -->|Deploy| Redundancy_0\n    Redundancy_1[RPC Provider Constellation\\nready]\n    ResilienceMesh -->|Deploy| Redundancy_1\n    Redundancy_2[Shadow Validator Fleet\\ndeploying]\n    ResilienceMesh -->|Deploy| Redundancy_2\n",
   "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Helios Sovereign Build Hub :active, job-ai-lab-fusion, 0.0h, 33.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 0.0h, 26.9h\n    section Governance Upgrade Launch\n      Sentinel Assurance Fabric :active, job-governance-upgrade, 0.0h, 26.3h\n    section Market Expansion Omniloop\n      Aurora Economic Intelligence Mesh :active, job-market-expansion, 0.0h, 21.9h\n    section Oracle Integration Spine\n      Helios Sovereign Build Hub :active, job-oracle-integration, 33.5h, 19.6h",
   "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 100.0%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    JobProgram_0_job_ai_lab_fusion[\"Job • job-ai-lab-fusion\\nnpm run owner:program -- --program job-ai-lab-fusion\"]\n    JobProgram_1_job_supply_mesh[\"Job • job-supply-chain\\nnpm run owner:program -- --program job-supply-chain\"]\n    JobProgram_2_job_governance_upgrade[\"Job • job-governance-upgrade\\nnpm run owner:program -- --program job-governance-upgrade\"]\n    JobProgram_3_job_market_expansion[\"Job • job-market-expansion\\nnpm run owner:program -- --program job-market-expansion\"]\n    JobProgram_4_job_oracle_integration[\"Job • job-oracle-integration\\nnpm run owner:program -- --program job-oracle-integration\"]\n    ValidatorProgram_0_validator_alpha[\"Validator • validator-alpha\\nnpm run owner:program -- --program validator-alpha\"]\n    ValidatorProgram_1_validator_beta[\"Validator • validator-beta\\nnpm run owner:program -- --program validator-beta\"]\n    ValidatorProgram_2_validator_gamma[\"Validator • validator-gamma\\nnpm run owner:program -- --program validator-gamma\"]\n    ValidatorProgram_3_validator_delta[\"Validator • validator-delta\\nnpm run owner:program -- --program validator-delta\"]\n    ValidatorProgram_4_validator_epsilon[\"Validator • validator-epsilon\\nnpm run owner:program -- --program validator-epsilon\"]\n    AdapterProgram_0_adapter_usdc_v1[\"Adapter • USDC v1\\nnpm run owner:program -- --program adapter-usdc\"]\n    TreasuryProgram_0_treasury_liquidity[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-liquidity\"]\n    TreasuryProgram_1_treasury_yield[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-yield\"]\n    TreasuryProgram_2_treasury_insurance[\"Treasury • treasury\\nnpm run owner:program -- --program treasury-insurance\"]\n    OrchestratorProgram_0_orchestrator_rebalance[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-rebalance\"]\n    OrchestratorProgram_1_orchestrator_pause_drill[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-pause-drill\"]\n    OrchestratorProgram_2_orchestrator_upgrade[\"Orchestrator • orchestrator\\nnpm run owner:program -- --program orchestrator-upgrade\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Launch| JobProgram_0_job_ai_lab_fusion\n    OwnerMultiSig -->|Launch| JobProgram_1_job_supply_mesh\n    OwnerMultiSig -->|Launch| JobProgram_2_job_governance_upgrade\n    OwnerMultiSig -->|Launch| JobProgram_3_job_market_expansion\n    OwnerMultiSig -->|Launch| JobProgram_4_job_oracle_integration\n    OwnerMultiSig -->|Command| ValidatorProgram_0_validator_alpha\n    OwnerMultiSig -->|Command| ValidatorProgram_1_validator_beta\n    OwnerMultiSig -->|Command| ValidatorProgram_2_validator_gamma\n    OwnerMultiSig -->|Command| ValidatorProgram_3_validator_delta\n    OwnerMultiSig -->|Command| ValidatorProgram_4_validator_epsilon\n    OwnerMultiSig -->|Bridge| AdapterProgram_0_adapter_usdc_v1\n    OwnerMultiSig -->|Fund| TreasuryProgram_0_treasury_liquidity\n    OwnerMultiSig -->|Fund| TreasuryProgram_1_treasury_yield\n    OwnerMultiSig -->|Fund| TreasuryProgram_2_treasury_insurance\n    OwnerMultiSig -->|Direct| OrchestratorProgram_0_orchestrator_rebalance\n    OwnerMultiSig -->|Direct| OrchestratorProgram_1_orchestrator_pause_drill\n    OwnerMultiSig -->|Direct| OrchestratorProgram_2_orchestrator_upgrade\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
   "ownerCommandPlan": {
@@ -671,6 +755,244 @@
       "treasury@agijobs.ai"
     ],
     "notes": []
+  },
+  "resilienceProfile": {
+    "drills": [
+      {
+        "id": "global-pause-drill",
+        "name": "Global Pause Drill",
+        "frequencyHours": 24,
+        "script": "npm run owner:system-pause",
+        "targetResponseMinutes": 12,
+        "description": "Simulates a planet-wide incident to validate pause and resume authority.",
+        "readiness": 1,
+        "frequencyScore": 1
+      },
+      {
+        "id": "validator-hotfix-drill",
+        "name": "Validator Hotfix Drill",
+        "frequencyHours": 48,
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "targetResponseMinutes": 15,
+        "description": "Exercises validator quorum expansion and upgrade promotion under time pressure.",
+        "readiness": 1,
+        "frequencyScore": 1
+      },
+      {
+        "id": "treasury-recovery-drill",
+        "name": "Treasury Recovery Drill",
+        "frequencyHours": 72,
+        "script": "npm run owner:audit",
+        "targetResponseMinutes": 20,
+        "description": "Runs a full treasury reconciliation, buffer refill, and reporting sequence.",
+        "readiness": 1,
+        "frequencyScore": 1
+      }
+    ],
+    "redundancies": [
+      {
+        "id": "bundler-failover",
+        "capability": "Bundler Failover Mesh",
+        "status": "ready",
+        "script": "npm run owner:update-all -- --component bundler-failover",
+        "coverage": 1,
+        "readiness": 1
+      },
+      {
+        "id": "rpc-constellation",
+        "capability": "RPC Provider Constellation",
+        "status": "ready",
+        "script": "npm run owner:program -- --program orchestrator-rpc-failover",
+        "coverage": 0.95,
+        "readiness": 0.95
+      },
+      {
+        "id": "validator-shadow",
+        "capability": "Shadow Validator Fleet",
+        "status": "deploying",
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "coverage": 0.9,
+        "readiness": 0.63
+      }
+    ],
+    "escalationMatrix": [
+      {
+        "trigger": "Validator consensus stall",
+        "response": "Escalate to validator council and execute npm run owner:system-pause",
+        "ownerContact": "security-operations@agijobs.ai"
+      },
+      {
+        "trigger": "Treasury anomaly detected",
+        "response": "Run npm run owner:audit and notify treasury guardians",
+        "ownerContact": "treasury@agijobs.ai"
+      },
+      {
+        "trigger": "Automation regression",
+        "response": "Execute npm run owner:parameters and page orchestrator command desk",
+        "ownerContact": "governance@agijobs.ai"
+      }
+    ],
+    "drillReadiness": 1,
+    "redundancyCoverage": 0.86,
+    "escalationCoverage": 1,
+    "responseLatencyMinutes": 9,
+    "unstoppableScore": 0.958
+  },
+  "globalExpansion": {
+    "narrative": "Global expansion program unlocking synchronized L2 deployments, bridge liquidity, and regional agent collectives under direct owner control.",
+    "expansionScore": 0.953,
+    "globalReachScore": 0.947,
+    "l2ActivationScore": 0.951,
+    "liquidityCoverageScore": 0.97,
+    "regions": [
+      {
+        "id": "north-america",
+        "name": "North America Sovereign Launch Zone",
+        "status": "operational",
+        "activationQuarter": "Q1 2025",
+        "readiness": 0.97,
+        "throughputCapacity": 1450,
+        "validatorCoverage": 0.98,
+        "agentDensity": 0.93,
+        "command": "npm run owner:program -- --program region-north-america-scale",
+        "notes": "Anchors enterprise orchestrations in the New York and Toronto hubs with 24/7 validator watchtowers.",
+        "readinessScore": 0.975,
+        "coverageScore": 0.988
+      },
+      {
+        "id": "asia-pacific",
+        "name": "Asia-Pacific Hyperlane Mesh",
+        "status": "pilot",
+        "activationQuarter": "Q2 2025",
+        "readiness": 0.94,
+        "throughputCapacity": 1380,
+        "validatorCoverage": 0.96,
+        "agentDensity": 0.91,
+        "command": "npm run owner:program -- --program region-asia-pacific-scale",
+        "notes": "Deploys concentric agent swarms across Singapore, Tokyo, and Sydney with sovereign treasury relays.",
+        "readinessScore": 0.945,
+        "coverageScore": 0.976
+      },
+      {
+        "id": "pan-africa",
+        "name": "Pan-Africa Elevation Network",
+        "status": "staging",
+        "activationQuarter": "Q3 2025",
+        "readiness": 0.92,
+        "throughputCapacity": 1320,
+        "validatorCoverage": 0.95,
+        "agentDensity": 0.9,
+        "command": "npm run owner:program -- --program region-pan-africa-scale",
+        "notes": "Activates Lagos–Nairobi corridors with redundant stablecoin ramps and validator academies.",
+        "readinessScore": 0.921,
+        "coverageScore": 0.97
+      }
+    ],
+    "l2Deployments": [
+      {
+        "id": "arbitrum",
+        "chain": "Arbitrum One",
+        "status": "operational",
+        "finalityMinutes": 2,
+        "transactionsPerSecond": 420,
+        "coverage": 0.94,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "ValidationModule v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain arbitrum",
+        "readinessScore": 0.985,
+        "finalityScore": 1,
+        "throughputScore": 1
+      },
+      {
+        "id": "optimism",
+        "chain": "Optimism Mainnet",
+        "status": "pilot",
+        "finalityMinutes": 3,
+        "transactionsPerSecond": 380,
+        "coverage": 0.91,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "DisputeModule v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain optimism",
+        "readinessScore": 0.95,
+        "finalityScore": 1,
+        "throughputScore": 0.95
+      },
+      {
+        "id": "base",
+        "chain": "Base Mainnet",
+        "status": "staging",
+        "finalityMinutes": 4,
+        "transactionsPerSecond": 360,
+        "coverage": 0.89,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "CertificateNFT v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain base",
+        "readinessScore": 0.917,
+        "finalityScore": 1,
+        "throughputScore": 0.9
+      }
+    ],
+    "bridges": [
+      {
+        "id": "mainnet-arbitrum",
+        "source": "Ethereum Mainnet",
+        "target": "Arbitrum One",
+        "bridge": "Mainnet ↔ Arbitrum Canonical",
+        "capacityMillions": 480,
+        "slaMinutes": 8,
+        "status": "ready",
+        "command": "npm run owner:bridge -- --from mainnet --to arbitrum",
+        "reliabilityScore": 1,
+        "capacityScore": 1,
+        "latencyScore": 1
+      },
+      {
+        "id": "mainnet-optimism",
+        "source": "Ethereum Mainnet",
+        "target": "Optimism Mainnet",
+        "bridge": "Mainnet ↔ Optimism Governance Bridge",
+        "capacityMillions": 460,
+        "slaMinutes": 9,
+        "status": "ready",
+        "command": "npm run owner:bridge -- --from mainnet --to optimism",
+        "reliabilityScore": 1,
+        "capacityScore": 1,
+        "latencyScore": 1
+      },
+      {
+        "id": "arbitrum-base",
+        "source": "Arbitrum One",
+        "target": "Base Mainnet",
+        "bridge": "Arbitrum ↔ Base Liquidity Spine",
+        "capacityMillions": 340,
+        "slaMinutes": 11,
+        "status": "scaling",
+        "command": "npm run owner:bridge -- --from arbitrum --to base",
+        "reliabilityScore": 0.911,
+        "capacityScore": 0.85,
+        "latencyScore": 1
+      }
+    ],
+    "commandScripts": [
+      "npm run owner:program -- --program region-north-america-scale",
+      "npm run owner:program -- --program region-asia-pacific-scale",
+      "npm run owner:program -- --program region-pan-africa-scale",
+      "npm run owner:l2-upgrade -- --chain arbitrum",
+      "npm run owner:l2-upgrade -- --chain optimism",
+      "npm run owner:l2-upgrade -- --chain base",
+      "npm run owner:bridge -- --from mainnet --to arbitrum",
+      "npm run owner:bridge -- --from mainnet --to optimism",
+      "npm run owner:bridge -- --from arbitrum --to base"
+    ]
   },
   "assertions": [
     {
@@ -960,6 +1282,7 @@
       "npm run owner:program -- --program module-validation",
       "npm run owner:program -- --program orchestrator-pause-drill",
       "npm run owner:program -- --program orchestrator-rebalance",
+      "npm run owner:program -- --program orchestrator-rpc-failover",
       "npm run owner:program -- --program orchestrator-upgrade",
       "npm run owner:program -- --program treasury-insurance",
       "npm run owner:program -- --program treasury-liquidity",
@@ -971,7 +1294,9 @@
       "npm run owner:program -- --program validator-gamma",
       "npm run owner:system-pause",
       "npm run owner:update-all",
-      "npm run owner:upgrade"
+      "npm run owner:update-all -- --component bundler-failover",
+      "npm run owner:upgrade",
+      "npm run owner:upgrade -- --module ValidationModule"
     ],
     "modules": [
       {
@@ -1059,5 +1384,6 @@
         ]
       }
     ]
-  }
+  },
+  "globalExpansionMermaid": "graph TD\n    OwnerExpansionDesk[\"Owner Expansion Desk\"]\n    MainnetCore[\"Mainnet Treasury Core\"]\n    OwnerExpansionDesk -->|Directives| MainnetCore\n    L2_0_arbitrum[\"Arbitrum One\\nReady 98.5%\"]\n    MainnetCore -->|Arbitrum One| L2_0_arbitrum\n    L2_1_optimism[\"Optimism Mainnet\\nReady 95.0%\"]\n    MainnetCore -->|Optimism Mainnet| L2_1_optimism\n    L2_2_base[\"Base Mainnet\\nReady 91.7%\"]\n    MainnetCore -->|Base Mainnet| L2_2_base\n    Region_0_north_america[\"North America Sovereign Launch Zone\\nReady 97.5%\"]\n    L2_0_arbitrum -->|Scale| Region_0_north_america\n    Region_1_asia_pacific[\"Asia-Pacific Hyperlane Mesh\\nReady 94.5%\"]\n    L2_1_optimism -->|Scale| Region_1_asia_pacific\n    Region_2_pan_africa[\"Pan-Africa Elevation Network\\nReady 92.1%\"]\n    L2_2_base -->|Scale| Region_2_pan_africa\n    MainnetCore -->|Mainnet ↔ Arbitrum Canonical\\n100.0% reliability| L2_0_arbitrum\n    MainnetCore -->|Mainnet ↔ Optimism Governance Bridge\\n100.0% reliability| L2_1_optimism\n    L2_0_arbitrum -->|Arbitrum ↔ Base Liquidity Spine\\n91.1% reliability| L2_2_base\n    classDef ready fill:#00b894,stroke:#031521,color:#021019;\n    classDef command fill:#0984e3,stroke:#031521,color:#021019;\n    class OwnerExpansionDesk,MainnetCore command;\n    class L2_0_arbitrum ready;\n    class L2_1_optimism ready;\n    class L2_2_base ready;\n    class Region_0_north_america ready;\n    class Region_1_asia_pacific ready;\n    class Region_2_pan_africa ready;\n"
 }

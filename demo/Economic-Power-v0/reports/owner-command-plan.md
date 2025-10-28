@@ -1,6 +1,6 @@
 # Owner Command Playbook
 
-Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/28/2025, 5:42:01 PM (UTC)
+Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/28/2025, 8:57:10 PM (UTC)
 
 Command coverage: 100.0% — Owner multi-sig holds deterministic runbooks for every critical surface.
 
@@ -88,6 +88,31 @@ Command coverage: 100.0% — Owner multi-sig holds deterministic runbooks for ev
 - Step 3 • Governance Upgrade Launch: treasury 1,963,800 AGI, net yield 659,500 AGI
 - Step 4 • Market Expansion Omniloop: treasury 2,119,400 AGI, net yield 806,000 AGI
 - Step 5 • Oracle Integration Spine: treasury 2,254,040 AGI, net yield 933,800 AGI
+
+## Resilience drills and redundancy readiness
+
+- **Drill readiness:** 100.0% – response latency 9 minutes
+- **Redundancy coverage:** 86.0% – 3 redundant surfaces
+- **Escalation coverage:** 100.0% – 3 escalation paths
+- **Resilience mastery:** 95.8% unstoppable score
+
+### Drill catalogue
+
+- Global Pause Drill: every 24h via `npm run owner:system-pause` — Simulates a planet-wide incident to validate pause and resume authority. (readiness 100.0%)
+- Validator Hotfix Drill: every 48h via `npm run owner:upgrade -- --module ValidationModule` — Exercises validator quorum expansion and upgrade promotion under time pressure. (readiness 100.0%)
+- Treasury Recovery Drill: every 72h via `npm run owner:audit` — Runs a full treasury reconciliation, buffer refill, and reporting sequence. (readiness 100.0%)
+
+### Redundancy matrix
+
+- Bundler Failover Mesh: status ready, coverage 100.0% via `npm run owner:update-all -- --component bundler-failover`
+- RPC Provider Constellation: status ready, coverage 95.0% via `npm run owner:program -- --program orchestrator-rpc-failover`
+- Shadow Validator Fleet: status deploying, coverage 90.0% via `npm run owner:upgrade -- --module ValidationModule`
+
+### Escalation matrix
+
+- Validator consensus stall: Escalate to validator council and execute npm run owner:system-pause → security-operations@agijobs.ai
+- Treasury anomaly detected: Run npm run owner:audit and notify treasury guardians → treasury@agijobs.ai
+- Automation regression: Execute npm run owner:parameters and page orchestrator command desk → governance@agijobs.ai
 
 All commands are multi-sig ready and validated by deterministic CI.
 

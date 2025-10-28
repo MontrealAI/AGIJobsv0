@@ -25,6 +25,7 @@
     "npm run owner:program -- --program module-validation",
     "npm run owner:program -- --program orchestrator-pause-drill",
     "npm run owner:program -- --program orchestrator-rebalance",
+    "npm run owner:program -- --program orchestrator-rpc-failover",
     "npm run owner:program -- --program orchestrator-upgrade",
     "npm run owner:program -- --program treasury-insurance",
     "npm run owner:program -- --program treasury-liquidity",
@@ -36,7 +37,9 @@
     "npm run owner:program -- --program validator-gamma",
     "npm run owner:system-pause",
     "npm run owner:update-all",
-    "npm run owner:upgrade"
+    "npm run owner:update-all -- --component bundler-failover",
+    "npm run owner:upgrade",
+    "npm run owner:upgrade -- --module ValidationModule"
   ],
   "modules": [
     {

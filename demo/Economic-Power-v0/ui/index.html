@@ -233,6 +233,153 @@
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="resilience-heading">
+        <div class="panel-header">
+          <h2 id="resilience-heading">Resilience drill orchestration</h2>
+          <p>Documented drills, failovers, and escalation loops that keep the economy unstoppable.</p>
+        </div>
+        <div class="resilience-summary" role="group" aria-label="Resilience metrics">
+          <div class="resilience-score">
+            <span class="resilience-score-value" id="resilience-score"></span>
+            <span class="resilience-score-label">Resilience score</span>
+          </div>
+          <div class="resilience-meta">
+            <p id="resilience-latency"></p>
+            <p id="resilience-coverage"></p>
+          </div>
+        </div>
+        <div class="resilience-grid">
+          <article class="resilience-card" aria-label="Resilience drills">
+            <h3>Command drills</h3>
+            <div class="table-wrapper">
+              <table id="drill-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Frequency</th>
+                    <th>Target</th>
+                    <th>Readiness</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="resilience-card" aria-label="Resilience redundancies">
+            <h3>Failover mesh</h3>
+            <div class="table-wrapper">
+              <table id="redundancy-table">
+                <thead>
+                  <tr>
+                    <th>Capability</th>
+                    <th>Status</th>
+                    <th>Coverage</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="resilience-card" aria-label="Escalation matrix">
+            <h3>Escalation matrix</h3>
+            <ul id="escalation-list" class="escalation-list"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="expansion-heading">
+        <div class="panel-header">
+          <h2 id="expansion-heading">Global expansion mesh</h2>
+          <p id="expansion-narrative">Planetary deployment readiness across regions, L2 fleets, and sovereign liquidity bridges.</p>
+        </div>
+        <div class="expansion-summary" role="group" aria-label="Global expansion metrics">
+          <article class="expansion-card" aria-label="Expansion score">
+            <h3>Expansion score</h3>
+            <strong id="expansion-score">0%</strong>
+            <span>Composite readiness across regional, L2, and liquidity surfaces.</span>
+          </article>
+          <article class="expansion-card" aria-label="Global reach">
+            <h3>Global reach</h3>
+            <strong id="expansion-reach">0%</strong>
+            <span>Regional activation mastery across sovereign launch zones.</span>
+          </article>
+          <article class="expansion-card" aria-label="L2 activation">
+            <h3>L2 activation</h3>
+            <strong id="expansion-l2">0%</strong>
+            <span>Layer-2 deployment readiness and finality posture.</span>
+          </article>
+          <article class="expansion-card" aria-label="Liquidity coverage">
+            <h3>Liquidity coverage</h3>
+            <strong id="expansion-liquidity">0%</strong>
+            <span>Bridge capacity, SLA confidence, and cross-chain liquidity health.</span>
+          </article>
+        </div>
+        <div class="expansion-grid">
+          <article class="expansion-card table-card" aria-label="Expansion regions">
+            <h3>Regions</h3>
+            <div class="table-wrapper">
+              <table id="expansion-region-table">
+                <thead>
+                  <tr>
+                    <th>Region</th>
+                    <th>Status</th>
+                    <th>Readiness</th>
+                    <th>Throughput &amp; coverage</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="expansion-card table-card" aria-label="L2 deployments">
+            <h3>L2 deployments</h3>
+            <div class="table-wrapper">
+              <table id="expansion-l2-table">
+                <thead>
+                  <tr>
+                    <th>Chain</th>
+                    <th>Status</th>
+                    <th>Readiness</th>
+                    <th>Finality</th>
+                    <th>Throughput</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="expansion-card table-card" aria-label="Liquidity bridges">
+            <h3>Liquidity bridges</h3>
+            <div class="table-wrapper">
+              <table id="expansion-bridge-table">
+                <thead>
+                  <tr>
+                    <th>Route</th>
+                    <th>Status</th>
+                    <th>Reliability</th>
+                    <th>Capacity &amp; SLA</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+        <div class="panel-subheader">
+          <h3>Expansion network</h3>
+        </div>
+        <pre class="mermaid" id="mermaid-expansion" aria-label="Global expansion network diagram"></pre>
+        <div class="panel-subheader">
+          <h3>Command deck</h3>
+        </div>
+        <ul id="expansion-commands" class="command-list" role="list"></ul>
+      </section>
+
       <section class="panel" aria-labelledby="governance-ledger-heading">
         <div class="panel-header">
           <h2 id="governance-ledger-heading">Governance ledger</h2>

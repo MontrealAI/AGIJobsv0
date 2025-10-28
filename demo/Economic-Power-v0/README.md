@@ -32,6 +32,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-command-checklist.json` – machine-auditable coverage ledger detailing per-surface command coverage percentages for jobs, validators, adapters, modules, treasury, pause/resume, and orchestrator surfaces.
 - `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
 - `sovereign-safety-mesh.json` – composite readiness diagnostics across pause/resume readiness, alerting, scripted coverage, and circuit breaker posture.
+- `owner-resilience.json` – unstoppable drill catalogue, redundancy mesh coverage, escalation plans, and composite resilience score.
+- `global-expansion.json` – planetary deployment ledger with region readiness, L2 activations, bridge capacity, and owner command scripts.
+- `global-expansion.mmd` – mermaid network of regional launch zones, L2 meshes, and liquidity bridges orchestrated by the owner multi-sig.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
 
@@ -43,7 +46,11 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 graph TD
     Owner[Owner Multi-Sig (4-of-7)] -->|Parameter programs| Orchestrator[Economic Power Orchestrator]
     Owner -->|Treasury commands| Treasury[Treasury Escrow Vault]
+    Owner -->|Resilience drills| Resilience[Resilience Mesh]
     Treasury -->|Stablecoin swap| Adapter[Stablecoin Adapter Layer]
+    Resilience -->|Failover runbooks| Orchestrator
+    Resilience -->|Escalate| Safety[Sovereign Safety Mesh]
+    Safety -->|Signal| Owner
     Orchestrator -->|Job posts| Jobs(Job Registry Modules)
     Jobs -->|Agent selection| Agents(Autonomous Agent Mesh)
     Jobs -->|Validation| Validators(Validator Constellation)
@@ -82,6 +89,7 @@ Additional safeguards:
 - **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
 - **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
 - **Command Catalog Supremacy** – `npm run owner:program -- --list` enumerates deterministic programs for every job, validator, adapter, module, treasury motion, and orchestrator flow.
+- **Resilience Drill Matrix** – `owner-resilience.json` captures the drills, failovers, and escalation contacts with unstoppable score so the owner can rehearse responses instantly.
 
 ## Interactive CLI – empowering the operator
 
@@ -111,8 +119,10 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Capital trajectory tracker visualising treasury strength, validator confidence, and automation lift after every job.
 - Live Mermaid rendering of the architecture and timeline.
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
+- Global expansion mesh panel highlighting region readiness, L2 activations, bridge reliability, and expansion command deck backed by a live mermaid network map.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Resilience drill orchestration panel surfacing unstoppable score, command latency, drill readiness, redundancy coverage, and escalation routes.
 - Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 - Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.
@@ -130,8 +140,10 @@ Then open [http://localhost:4175](http://localhost:4175) for a full dashboard ex
 The GitHub workflow `.github/workflows/demo-economic-power.yml` enforces:
 
 1. `npm run demo:economic-power:ci` – builds fresh reports and compares metrics against the canonical baseline (±5% tolerance).
-2. `npm run test:economic-power` – validates scheduling, ROI, and owner matrix logic.
-3. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
+2. Resilience checks lock `commandLatencyMinutes`, `drillReadiness`, `redundancyCoverage`, `escalationCoverage`, and `resilienceScore` to unstoppable thresholds.
+3. Global expansion gates guard `globalReachScore`, `l2ActivationScore`, `liquidityCoverageScore`, and `expansionScore` to keep planetary scale online.
+4. `npm run test:economic-power` – validates scheduling, ROI, owner matrix logic, and confirms resilience assertions.
+5. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
 
 This guarantees a **fully green v2 CI gate**. Pull requests and `main` share identical guard-rails, preventing regressions before production promotion.
 

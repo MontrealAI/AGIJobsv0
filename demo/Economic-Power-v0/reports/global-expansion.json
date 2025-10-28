@@ -1,0 +1,157 @@
+{
+  "generatedAt": "2025-02-01T00:00:00.000Z",
+  "narrative": "Global expansion program unlocking synchronized L2 deployments, bridge liquidity, and regional agent collectives under direct owner control.",
+  "expansionScore": 0.953,
+  "globalReachScore": 0.947,
+  "l2ActivationScore": 0.951,
+  "liquidityCoverageScore": 0.97,
+  "regions": [
+    {
+      "id": "north-america",
+      "name": "North America Sovereign Launch Zone",
+      "status": "operational",
+      "activationQuarter": "Q1 2025",
+      "readiness": 0.97,
+      "throughputCapacity": 1450,
+      "validatorCoverage": 0.98,
+      "agentDensity": 0.93,
+      "command": "npm run owner:program -- --program region-north-america-scale",
+      "notes": "Anchors enterprise orchestrations in the New York and Toronto hubs with 24/7 validator watchtowers.",
+      "readinessScore": 0.975,
+      "coverageScore": 0.988
+    },
+    {
+      "id": "asia-pacific",
+      "name": "Asia-Pacific Hyperlane Mesh",
+      "status": "pilot",
+      "activationQuarter": "Q2 2025",
+      "readiness": 0.94,
+      "throughputCapacity": 1380,
+      "validatorCoverage": 0.96,
+      "agentDensity": 0.91,
+      "command": "npm run owner:program -- --program region-asia-pacific-scale",
+      "notes": "Deploys concentric agent swarms across Singapore, Tokyo, and Sydney with sovereign treasury relays.",
+      "readinessScore": 0.945,
+      "coverageScore": 0.976
+    },
+    {
+      "id": "pan-africa",
+      "name": "Pan-Africa Elevation Network",
+      "status": "staging",
+      "activationQuarter": "Q3 2025",
+      "readiness": 0.92,
+      "throughputCapacity": 1320,
+      "validatorCoverage": 0.95,
+      "agentDensity": 0.9,
+      "command": "npm run owner:program -- --program region-pan-africa-scale",
+      "notes": "Activates Lagos–Nairobi corridors with redundant stablecoin ramps and validator academies.",
+      "readinessScore": 0.921,
+      "coverageScore": 0.97
+    }
+  ],
+  "l2Deployments": [
+    {
+      "id": "arbitrum",
+      "chain": "Arbitrum One",
+      "status": "operational",
+      "finalityMinutes": 2,
+      "transactionsPerSecond": 420,
+      "coverage": 0.94,
+      "contractSet": [
+        "JobRegistry v2",
+        "StakeManager v2",
+        "ValidationModule v2"
+      ],
+      "command": "npm run owner:l2-upgrade -- --chain arbitrum",
+      "readinessScore": 0.985,
+      "finalityScore": 1,
+      "throughputScore": 1
+    },
+    {
+      "id": "optimism",
+      "chain": "Optimism Mainnet",
+      "status": "pilot",
+      "finalityMinutes": 3,
+      "transactionsPerSecond": 380,
+      "coverage": 0.91,
+      "contractSet": [
+        "JobRegistry v2",
+        "StakeManager v2",
+        "DisputeModule v2"
+      ],
+      "command": "npm run owner:l2-upgrade -- --chain optimism",
+      "readinessScore": 0.95,
+      "finalityScore": 1,
+      "throughputScore": 0.95
+    },
+    {
+      "id": "base",
+      "chain": "Base Mainnet",
+      "status": "staging",
+      "finalityMinutes": 4,
+      "transactionsPerSecond": 360,
+      "coverage": 0.89,
+      "contractSet": [
+        "JobRegistry v2",
+        "StakeManager v2",
+        "CertificateNFT v2"
+      ],
+      "command": "npm run owner:l2-upgrade -- --chain base",
+      "readinessScore": 0.917,
+      "finalityScore": 1,
+      "throughputScore": 0.9
+    }
+  ],
+  "bridges": [
+    {
+      "id": "mainnet-arbitrum",
+      "source": "Ethereum Mainnet",
+      "target": "Arbitrum One",
+      "bridge": "Mainnet ↔ Arbitrum Canonical",
+      "capacityMillions": 480,
+      "slaMinutes": 8,
+      "status": "ready",
+      "command": "npm run owner:bridge -- --from mainnet --to arbitrum",
+      "reliabilityScore": 1,
+      "capacityScore": 1,
+      "latencyScore": 1
+    },
+    {
+      "id": "mainnet-optimism",
+      "source": "Ethereum Mainnet",
+      "target": "Optimism Mainnet",
+      "bridge": "Mainnet ↔ Optimism Governance Bridge",
+      "capacityMillions": 460,
+      "slaMinutes": 9,
+      "status": "ready",
+      "command": "npm run owner:bridge -- --from mainnet --to optimism",
+      "reliabilityScore": 1,
+      "capacityScore": 1,
+      "latencyScore": 1
+    },
+    {
+      "id": "arbitrum-base",
+      "source": "Arbitrum One",
+      "target": "Base Mainnet",
+      "bridge": "Arbitrum ↔ Base Liquidity Spine",
+      "capacityMillions": 340,
+      "slaMinutes": 11,
+      "status": "scaling",
+      "command": "npm run owner:bridge -- --from arbitrum --to base",
+      "reliabilityScore": 0.911,
+      "capacityScore": 0.85,
+      "latencyScore": 1
+    }
+  ],
+  "commandScripts": [
+    "npm run owner:program -- --program region-north-america-scale",
+    "npm run owner:program -- --program region-asia-pacific-scale",
+    "npm run owner:program -- --program region-pan-africa-scale",
+    "npm run owner:l2-upgrade -- --chain arbitrum",
+    "npm run owner:l2-upgrade -- --chain optimism",
+    "npm run owner:l2-upgrade -- --chain base",
+    "npm run owner:bridge -- --from mainnet --to arbitrum",
+    "npm run owner:bridge -- --from mainnet --to optimism",
+    "npm run owner:bridge -- --from arbitrum --to base"
+  ]
+}

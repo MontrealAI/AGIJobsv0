@@ -1,10 +1,18 @@
 graph TD
-    OwnerSafe[Owner Multi-Sig\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]
-    OwnerSafe[Owner Multi-Sig\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]
-    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]
-    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]
+    OwnerSafe[Owner Multi-Sig\nThreshold 4-of-7]
     Orchestrator[Economic Power Orchestrator]
-        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]
+    Treasury[Treasury Escrow Vault]
+    StablecoinAdapter[Stablecoin Adapter Layer]
+    ResilienceMesh[Resilience Mesh\nDrills & Redundancy]
+    SafetyMesh[Sovereign Safety Mesh]
+        OwnerSafe -->|Configures| Orchestrator
+    OwnerSafe -->|Funds| Treasury
+    Treasury -->|Swaps| StablecoinAdapter
+    StablecoinAdapter -->|Escrow| Orchestrator
+    OwnerSafe -->|Commands| ResilienceMesh
+    ResilienceMesh -->|Escalates| SafetyMesh
+    SafetyMesh -->|Signal| OwnerSafe
+    Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]
     Job_job_supply_chain[Autonomous Supply Mesh]
     Job_job_governance_upgrade[Governance Upgrade Launch]
     Job_job_market_expansion[Market Expansion Omniloop]
@@ -24,3 +32,15 @@ graph TD
     Orchestrator -->|Posts| Job_job_oracle_integration
     Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]
     Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\nValidator Alpha, Validator Beta, Validator Gamma]
+    Drill_0[Global Pause Drill\nnpm run owner:system-pause]
+    ResilienceMesh -->|Run| Drill_0
+    Drill_1[Validator Hotfix Drill\nnpm run owner:upgrade -- --module ValidationModule]
+    ResilienceMesh -->|Run| Drill_1
+    Drill_2[Treasury Recovery Drill\nnpm run owner:audit]
+    ResilienceMesh -->|Run| Drill_2
+    Redundancy_0[Bundler Failover Mesh\nready]
+    ResilienceMesh -->|Deploy| Redundancy_0
+    Redundancy_1[RPC Provider Constellation\nready]
+    ResilienceMesh -->|Deploy| Redundancy_1
+    Redundancy_2[Shadow Validator Fleet\ndeploying]
+    ResilienceMesh -->|Deploy| Redundancy_2

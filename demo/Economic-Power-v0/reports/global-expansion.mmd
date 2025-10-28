@@ -1,0 +1,28 @@
+graph TD
+    OwnerExpansionDesk["Owner Expansion Desk"]
+    MainnetCore["Mainnet Treasury Core"]
+    OwnerExpansionDesk -->|Directives| MainnetCore
+    L2_0_arbitrum["Arbitrum One\nReady 98.5%"]
+    MainnetCore -->|Arbitrum One| L2_0_arbitrum
+    L2_1_optimism["Optimism Mainnet\nReady 95.0%"]
+    MainnetCore -->|Optimism Mainnet| L2_1_optimism
+    L2_2_base["Base Mainnet\nReady 91.7%"]
+    MainnetCore -->|Base Mainnet| L2_2_base
+    Region_0_north_america["North America Sovereign Launch Zone\nReady 97.5%"]
+    L2_0_arbitrum -->|Scale| Region_0_north_america
+    Region_1_asia_pacific["Asia-Pacific Hyperlane Mesh\nReady 94.5%"]
+    L2_1_optimism -->|Scale| Region_1_asia_pacific
+    Region_2_pan_africa["Pan-Africa Elevation Network\nReady 92.1%"]
+    L2_2_base -->|Scale| Region_2_pan_africa
+    MainnetCore -->|Mainnet ↔ Arbitrum Canonical\n100.0% reliability| L2_0_arbitrum
+    MainnetCore -->|Mainnet ↔ Optimism Governance Bridge\n100.0% reliability| L2_1_optimism
+    L2_0_arbitrum -->|Arbitrum ↔ Base Liquidity Spine\n91.1% reliability| L2_2_base
+    classDef ready fill:#00b894,stroke:#031521,color:#021019;
+    classDef command fill:#0984e3,stroke:#031521,color:#021019;
+    class OwnerExpansionDesk,MainnetCore command;
+    class L2_0_arbitrum ready;
+    class L2_1_optimism ready;
+    class L2_2_base ready;
+    class Region_0_north_america ready;
+    class Region_1_asia_pacific ready;
+    class Region_2_pan_africa ready;

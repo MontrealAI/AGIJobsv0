@@ -49,6 +49,42 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.metrics.sovereignSafetyScore >= 0.95,
     'Sovereign safety mesh score should confirm unstoppable readiness',
   );
+  assert(
+    summary.metrics.commandLatencyMinutes <= scenario.safeguards.responseMinutes,
+    'Command latency should not exceed configured response minutes',
+  );
+  assert(
+    summary.metrics.drillReadiness >= 0.9,
+    'Drill readiness should remain above 90%',
+  );
+  assert(
+    summary.metrics.redundancyCoverage >= 0.8,
+    'Redundancy coverage should stay above 80%',
+  );
+  assert(
+    summary.metrics.resilienceScore >= 0.9,
+    'Resilience score should confirm unstoppable posture',
+  );
+  assert(
+    summary.metrics.escalationCoverage >= 1,
+    'Escalation coverage should saturate emergency contacts',
+  );
+  assert(
+    summary.metrics.globalReachScore >= 0.9,
+    'Global reach score should confirm planetary activation',
+  );
+  assert(
+    summary.metrics.l2ActivationScore >= 0.9,
+    'L2 activation score should confirm multi-chain readiness',
+  );
+  assert(
+    summary.metrics.liquidityCoverageScore >= 0.85,
+    'Liquidity coverage score should confirm bridge capacity strength',
+  );
+  assert(
+    summary.metrics.expansionScore >= 0.9,
+    'Expansion score should confirm unstoppable planetary scale',
+  );
   assert.equal(
     summary.metrics.assertionPassRate,
     1,
@@ -97,6 +133,24 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.circuitBreakers.length,
     'Circuit breaker counts should align',
   );
+  assert.equal(
+    summary.resilienceProfile.drills.length,
+    scenario.resilience.drills.length,
+    'Resilience drills should mirror scenario configuration',
+  );
+  assert.equal(
+    summary.resilienceProfile.redundancies.length,
+    scenario.resilience.redundancies.length,
+    'Redundancy entries should mirror scenario configuration',
+  );
+  assert.equal(
+    summary.resilienceProfile.escalationMatrix.length,
+    scenario.resilience.escalationMatrix.length,
+    'Escalation matrix entries should mirror scenario configuration',
+  );
+  assert(summary.ownerSovereignty.drills.length > 0, 'Owner sovereignty drills should surface in summary');
+  assert(summary.ownerSovereignty.redundancies.length > 0, 'Owner sovereignty redundancies should surface in summary');
+  assert(summary.ownerSovereignty.escalationMatrix.length > 0, 'Owner sovereignty escalation matrix should surface in summary');
 
   assert.equal(
     summary.sovereignSafetyMesh.safetyScore,
@@ -165,6 +219,29 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert.equal(
     summary.ownerCommandPlan.modulePrograms.length,
     scenario.commandCatalog.modulePrograms.length,
+  );
+  assert.equal(
+    summary.globalExpansion.regions.length,
+    scenario.expansion.regions.length,
+    'Global expansion regions should mirror scenario configuration',
+  );
+  assert.equal(
+    summary.globalExpansion.l2Deployments.length,
+    scenario.expansion.l2Deployments.length,
+    'L2 deployment catalogue should mirror scenario configuration',
+  );
+  assert.equal(
+    summary.globalExpansion.bridges.length,
+    scenario.expansion.bridges.length,
+    'Bridge catalogue should mirror scenario configuration',
+  );
+  assert(
+    summary.globalExpansion.commandScripts.length > 0,
+    'Global expansion command scripts should surface for the owner',
+  );
+  assert(
+    summary.globalExpansionMermaid.includes('graph TD'),
+    'Global expansion mermaid diagram should render',
   );
   for (const job of scenario.jobs) {
     assert(
