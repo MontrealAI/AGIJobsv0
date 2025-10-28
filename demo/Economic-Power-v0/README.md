@@ -27,6 +27,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-control.json` – up-to-the-minute control matrix for the owner’s multi-sig.
 - `owner-sovereignty.json` – sovereign safety mesh blueprint (pause/resume drills, circuit breakers, upgrade commands, and coverage metrics).
 - `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
+- `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
+- `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
+- `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
 
@@ -92,7 +95,9 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
 - Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
+- Capital trajectory tracker visualising treasury strength, validator confidence, and automation lift after every job.
 - Live Mermaid rendering of the architecture and timeline.
+- Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
 

@@ -188,6 +188,17 @@ main {
   font-size: 0.85rem;
 }
 
+.narrative {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+#coverage-percent {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
 #emergency-contacts {
   list-style: none;
   margin: 0;
@@ -325,6 +336,11 @@ tr:hover td {
   background: rgba(9, 14, 28, 0.9);
   border-radius: 1rem;
   padding: 1.25rem;
+}
+
+#trajectory-table tbody td:nth-child(6),
+#trajectory-table tbody td:nth-child(7) {
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 .dropzone {

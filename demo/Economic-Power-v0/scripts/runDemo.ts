@@ -191,6 +191,9 @@ type Summary = {
   assignments: Assignment[];
   mermaidFlow: string;
   mermaidTimeline: string;
+  ownerCommandMermaid: string;
+  ownerCommandPlan: OwnerCommandPlan;
+  treasuryTrajectory: TrajectoryEntry[];
   deployment: {
     network: Scenario['network'];
     treasuryOwner: Scenario['treasury']['ownerSafe'];
@@ -201,6 +204,215 @@ type Summary = {
     observability: Scenario['observability'];
   };
 };
+
+type OwnerCommandPlan = {
+  quickActions: {
+    pause: string;
+    resume: string;
+    responseMinutes: number;
+  };
+  parameterControls: Scenario['owner']['controls'];
+  circuitBreakers: Scenario['safeguards']['circuitBreakers'];
+  upgradePaths: Scenario['safeguards']['upgradePaths'];
+  commandCoverage: number;
+  coverageNarrative: string;
+};
+
+type TrajectoryEntry = {
+  step: number;
+  jobId: string;
+  jobName: string;
+  startHour: number;
+  endHour: number;
+  treasuryAfterJob: number;
+  cumulativeValue: number;
+  cumulativeCost: number;
+  netYield: number;
+  validatorConfidence: number;
+  automationLift: number;
+};
+
+function coverageNarrative(coverage: number): string {
+  if (coverage >= 0.9) {
+    return 'Owner multi-sig holds deterministic runbooks for every critical surface.';
+  }
+  if (coverage >= 0.6) {
+    return 'Owner command surface is extensive; only non-critical modules remain delegated.';
+  }
+  if (coverage >= 0.4) {
+    return 'Owner coverage spans the core loop with roadmap hooks for peripheral upgrades.';
+  }
+  return 'Coverage below defensive target – prioritise scripting additional command hooks.';
+}
+
+function buildOwnerCommandPlan(scenario: Scenario, coverage: number): OwnerCommandPlan {
+  return {
+    quickActions: {
+      pause: scenario.safeguards.pauseScript,
+      resume: scenario.safeguards.resumeScript,
+      responseMinutes: scenario.safeguards.responseMinutes,
+    },
+    parameterControls: scenario.owner.controls,
+    circuitBreakers: scenario.safeguards.circuitBreakers,
+    upgradePaths: scenario.safeguards.upgradePaths,
+    commandCoverage: Number(coverage.toFixed(3)),
+    coverageNarrative: coverageNarrative(coverage),
+  };
+}
+
+function sanitiseId(prefix: string, value: string, index: number): string {
+  const safe = value.replace(/[^a-zA-Z0-9]/g, '_');
+  return `${prefix}_${index}_${safe}`;
+}
+
+function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): string {
+  const ownerNodeId = 'OwnerMultiSig';
+  const ownerNode = `${ownerNodeId}["Owner Multi-Sig (${summary.ownerControl.threshold})"]`;
+  const pauseNodeId = 'PauseCommand';
+  const resumeNodeId = 'ResumeCommand';
+  const pauseNode = `${pauseNodeId}["Pause • ${summary.ownerSovereignty.pauseScript}"]`;
+  const resumeNode = `${resumeNodeId}["Resume • ${summary.ownerSovereignty.resumeScript}"]`;
+  const coverageNodeId = 'CoverageGauge';
+  const coverageNode = `${coverageNodeId}["Coverage ${(summary.metrics.ownerCommandCoverage * 100).toFixed(1)}%"]`;
+
+  const parameterNodes = summary.ownerControl.controls.map((control, index) => {
+    const id = sanitiseId('Parameter', control.parameter, index);
+    const label = `${control.parameter}\\n${control.current} → ${control.target}`;
+    const node = `${id}["${label}\\n${control.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Run| ${id}`;
+    return { node, edge };
+  });
+
+  const upgradeNodes = summary.ownerSovereignty.upgradePaths.map((upgrade, index) => {
+    const id = sanitiseId('Upgrade', upgrade.module, index);
+    const node = `${id}["${upgrade.module} Upgrade\\n${upgrade.script}"]`;
+    const edge = `    ${ownerNodeId} -->|Promote| ${id}`;
+    return { node, edge };
+  });
+
+  const moduleNodes = scenario.modules.map((module, index) => {
+    const id = sanitiseId('Module', module.id, index);
+    const node = `${id}["${module.name}\\n${module.address.slice(0, 10)}…"]`;
+    const edge = `    ${ownerNodeId} -->|Custody| ${id}`;
+    return { node, edge };
+  });
+
+  const breakerNodes = summary.ownerSovereignty.circuitBreakers.map((breaker, index) => {
+    const id = sanitiseId('Breaker', breaker.metric, index);
+    const label = `${breaker.metric} ${breaker.comparator} ${breaker.threshold}`;
+    const node = `${id}["${label}\\n${breaker.action}"]`;
+    const edge = `    ${id} -->|Triggers| ${pauseNodeId}`;
+    return { node, edge };
+  });
+
+  const nodes = [ownerNode, pauseNode, resumeNode, coverageNode]
+    .concat(parameterNodes.map((entry) => entry.node))
+    .concat(upgradeNodes.map((entry) => entry.node))
+    .concat(moduleNodes.map((entry) => entry.node))
+    .concat(breakerNodes.map((entry) => entry.node));
+
+  const edges = [
+    `    ${ownerNodeId} -->|Verify| ${coverageNodeId}`,
+    `    ${ownerNodeId} -->|Pause| ${pauseNodeId}`,
+    `    ${ownerNodeId} -->|Resume| ${resumeNodeId}`,
+  ]
+    .concat(parameterNodes.map((entry) => entry.edge))
+    .concat(upgradeNodes.map((entry) => entry.edge))
+    .concat(moduleNodes.map((entry) => entry.edge))
+    .concat(breakerNodes.map((entry) => entry.edge));
+
+  return `graph LR\n    ${nodes.join('\n    ')}\n${edges.join('\n')}`;
+}
+
+function generateOwnerCommandMarkdown(summary: Summary): string {
+  const lines: string[] = [];
+  const formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  lines.push('# Owner Command Playbook');
+  lines.push('');
+  lines.push(
+    'Generated ' +
+      new Date(summary.generatedAt).toLocaleString('en-US', { timeZone: 'UTC' }) +
+      ' (UTC)',
+  );
+  lines.push('');
+  lines.push(
+    'Command coverage: ' +
+      (summary.ownerCommandPlan.commandCoverage * 100).toFixed(1) +
+      '% — ' +
+      summary.ownerCommandPlan.coverageNarrative,
+  );
+  lines.push('');
+  lines.push('## Quick actions');
+  lines.push('');
+  lines.push('- **Pause execution:** `' + summary.ownerCommandPlan.quickActions.pause + '`');
+  lines.push('- **Resume execution:** `' + summary.ownerCommandPlan.quickActions.resume + '`');
+  lines.push(
+    '- **Median operator response time:** ' +
+      summary.ownerCommandPlan.quickActions.responseMinutes +
+      ' minutes',
+  );
+  lines.push('');
+  lines.push('## Parameter controls');
+  lines.push('');
+  for (const control of summary.ownerCommandPlan.parameterControls) {
+    lines.push(
+      '- `' +
+        control.parameter +
+        '`: ' +
+        control.current +
+        ' → ' +
+        control.target +
+        ' via `' +
+        control.script +
+        '` — ' +
+        control.description,
+    );
+  }
+  lines.push('');
+  lines.push('## Circuit breakers');
+  lines.push('');
+  for (const breaker of summary.ownerCommandPlan.circuitBreakers) {
+    lines.push(
+      '- ' +
+        breaker.metric +
+        ' ' +
+        breaker.comparator +
+        ' ' +
+        breaker.threshold +
+        ': run `' +
+        breaker.action +
+        '` — ' +
+        breaker.description,
+    );
+  }
+  lines.push('');
+  lines.push('## Upgrade routes');
+  lines.push('');
+  for (const upgrade of summary.ownerCommandPlan.upgradePaths) {
+    lines.push('- ' + upgrade.module + ': `' + upgrade.script + '` — ' + upgrade.description);
+  }
+  lines.push('');
+  lines.push('## Capital trajectory checkpoints');
+  lines.push('');
+  for (const entry of summary.treasuryTrajectory) {
+    const treasuryFormatted = formatter.format(entry.treasuryAfterJob);
+    const netYieldFormatted = formatter.format(entry.netYield);
+    lines.push(
+      '- Step ' +
+        entry.step +
+        ' • ' +
+        entry.jobName +
+        ': treasury ' +
+        treasuryFormatted +
+        ' AGI, net yield ' +
+        netYieldFormatted +
+        ' AGI',
+    );
+  }
+  lines.push('');
+  lines.push('All commands are multi-sig ready and validated by deterministic CI.');
+  return `${lines.join('\n')}\n`;
+}
 
 const DEFAULT_SCENARIO = path.join(
   __dirname,
@@ -572,6 +784,9 @@ function synthesiseSummary(context: SimulationContext): Summary {
     assignments: context.assignments,
     mermaidFlow: '',
     mermaidTimeline: '',
+    ownerCommandMermaid: '',
+    ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
+    treasuryTrajectory: [],
     deployment: {
       network: scenario.network,
       treasuryOwner: scenario.treasury.ownerSafe,
@@ -648,6 +863,8 @@ export async function runScenario(
     automationLift: 0,
   };
 
+  const trajectory: TrajectoryEntry[] = [];
+
   const sortedJobs = [...workingScenario.jobs].sort(
     (a, b) => b.economicValue - a.economicValue,
   );
@@ -660,11 +877,38 @@ export async function runScenario(
     assignments.push(assignment);
     updateState(agentStates, agent.id, assignment.endHour);
     updateNetMetrics(context, assignment);
+
+    const treasuryAfterJob =
+      workingScenario.treasury.agiBalance -
+      context.validatorRewards -
+      context.totalEscrowedAgi +
+      context.cumulativeValue;
+    const netYield =
+      context.cumulativeValue -
+      (context.totalEscrowedAgi +
+        context.totalStable +
+        context.validatorRewards +
+        context.ownerBufferContribution);
+    trajectory.push({
+      step: trajectory.length + 1,
+      jobId: assignment.jobId,
+      jobName: assignment.jobName,
+      startHour: Number(assignment.startHour.toFixed(2)),
+      endHour: Number(assignment.endHour.toFixed(2)),
+      treasuryAfterJob: Number(treasuryAfterJob.toFixed(2)),
+      cumulativeValue: Number(context.cumulativeValue.toFixed(2)),
+      cumulativeCost: Number(context.cumulativeCost.toFixed(2)),
+      netYield: Number(netYield.toFixed(2)),
+      validatorConfidence: Number(assignment.validatorConfidence.toFixed(4)),
+      automationLift: Number(assignment.automationLift.toFixed(4)),
+    });
   }
 
   const summary = synthesiseSummary(context);
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
+  summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
+  summary.treasuryTrajectory = trajectory;
   return summary;
 }
 
@@ -713,6 +957,18 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
   await fs.writeFile(
     path.join(outputDir, 'deployment-map.json'),
     JSON.stringify(deploymentMap, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-command.mmd'),
+    `${summary.ownerCommandMermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'treasury-trajectory.json'),
+    JSON.stringify(summary.treasuryTrajectory, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-command-plan.md'),
+    generateOwnerCommandMarkdown(summary),
   );
 }
 

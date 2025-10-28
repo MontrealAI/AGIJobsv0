@@ -1,0 +1,38 @@
+graph LR
+    OwnerMultiSig["Owner Multi-Sig (4-of-7)"]
+    PauseCommand["Pause • npm run owner:system-pause"]
+    ResumeCommand["Resume • npm run owner:update-all"]
+    CoverageGauge["Coverage 22.7%"]
+    Parameter_0_jobDuration["jobDuration\n72 → 48\nnpm run owner:parameters"]
+    Parameter_1_validatorQuorum["validatorQuorum\n3 → 5\nnpm run owner:upgrade"]
+    Parameter_2_stablecoinAdapter["stablecoinAdapter\nUSDC v1 → USDC v2\nnpm run owner:update-all"]
+    Upgrade_0_JobRegistry["JobRegistry Upgrade\nnpm run owner:update-all"]
+    Upgrade_1_ValidationModule["ValidationModule Upgrade\nnpm run owner:upgrade"]
+    Upgrade_2_StakeManager["StakeManager Upgrade\nnpm run owner:parameters"]
+    Module_0_job_registry["JobRegistry\n0xA1000000…"]
+    Module_1_stake_manager["StakeManager\n0xA1000000…"]
+    Module_2_validation_module["ValidationModule\n0xA1000000…"]
+    Module_3_reputation_engine["ReputationEngine\n0xA1000000…"]
+    Module_4_dispute_module["DisputeModule\n0xA1000000…"]
+    Module_5_certificate_nft["CertificateNFT\n0xA1000000…"]
+    Breaker_0_validatorConfidence["validatorConfidence < 0.95\nnpm run owner:system-pause"]
+    Breaker_1_automationScore["automationScore < 0.8\nnpm run owner:parameters"]
+    Breaker_2_treasuryAfterRun["treasuryAfterRun < 1800000\nnpm run owner:audit"]
+    OwnerMultiSig -->|Verify| CoverageGauge
+    OwnerMultiSig -->|Pause| PauseCommand
+    OwnerMultiSig -->|Resume| ResumeCommand
+    OwnerMultiSig -->|Run| Parameter_0_jobDuration
+    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum
+    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter
+    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry
+    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule
+    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager
+    OwnerMultiSig -->|Custody| Module_0_job_registry
+    OwnerMultiSig -->|Custody| Module_1_stake_manager
+    OwnerMultiSig -->|Custody| Module_2_validation_module
+    OwnerMultiSig -->|Custody| Module_3_reputation_engine
+    OwnerMultiSig -->|Custody| Module_4_dispute_module
+    OwnerMultiSig -->|Custody| Module_5_certificate_nft
+    Breaker_0_validatorConfidence -->|Triggers| PauseCommand
+    Breaker_1_automationScore -->|Triggers| PauseCommand
+    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand

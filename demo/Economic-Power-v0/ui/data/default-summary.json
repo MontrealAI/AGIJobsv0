@@ -1,7 +1,7 @@
 {
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
-  "generatedAt": "2025-10-28T12:22:30.576Z",
+  "generatedAt": "2025-10-28T12:57:19.375Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -251,6 +251,146 @@
   ],
   "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
   "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Atlas Strategic Model Forge :active, job-ai-lab-fusion, 0.0h, 36.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 36.5h, 26.9h\n    section Governance Upgrade Launch\n      Atlas Strategic Model Forge :active, job-governance-upgrade, 63.4h, 28.4h\n    section Market Expansion Omniloop\n      Atlas Strategic Model Forge :active, job-market-expansion, 91.8h, 23.4h\n    section Oracle Integration Spine\n      Atlas Strategic Model Forge :active, job-oracle-integration, 115.2h, 22.3h",
+  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 22.7%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
+  "ownerCommandPlan": {
+    "quickActions": {
+      "pause": "npm run owner:system-pause",
+      "resume": "npm run owner:update-all",
+      "responseMinutes": 9
+    },
+    "parameterControls": [
+      {
+        "parameter": "jobDuration",
+        "current": 72,
+        "target": 48,
+        "script": "npm run owner:parameters",
+        "description": "Owner reduces maximum job duration to enforce faster settlement loops and higher capital velocity."
+      },
+      {
+        "parameter": "validatorQuorum",
+        "current": 3,
+        "target": 5,
+        "script": "npm run owner:upgrade",
+        "description": "Owner increases validator quorum for premium workstreams to maintain uncompromising trust levels."
+      },
+      {
+        "parameter": "stablecoinAdapter",
+        "current": "USDC v1",
+        "target": "USDC v2",
+        "script": "npm run owner:update-all",
+        "description": "Owner upgrades fiat on/off-ramp adapter with improved slippage guarantees."
+      }
+    ],
+    "circuitBreakers": [
+      {
+        "metric": "validatorConfidence",
+        "comparator": "<",
+        "threshold": 0.95,
+        "action": "npm run owner:system-pause",
+        "description": "Pause contracts if validator confidence slips below 95% to protect settlement integrity."
+      },
+      {
+        "metric": "automationScore",
+        "comparator": "<",
+        "threshold": 0.8,
+        "action": "npm run owner:parameters",
+        "description": "Recalibrate automation if orchestration coverage drops under 80%."
+      },
+      {
+        "metric": "treasuryAfterRun",
+        "comparator": "<",
+        "threshold": 1800000,
+        "action": "npm run owner:audit",
+        "description": "Trigger treasury forensic audit when buffers fall below the defensive floor."
+      }
+    ],
+    "upgradePaths": [
+      {
+        "module": "JobRegistry",
+        "script": "npm run owner:update-all",
+        "description": "Ships the hardened JobRegistry bundle with deterministic migration plan."
+      },
+      {
+        "module": "ValidationModule",
+        "script": "npm run owner:upgrade",
+        "description": "Activates the upgraded validator commit–reveal consensus parameters."
+      },
+      {
+        "module": "StakeManager",
+        "script": "npm run owner:parameters",
+        "description": "Rebalances stake requirements to throttle spam and fortify incentives."
+      }
+    ],
+    "commandCoverage": 0.227,
+    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks."
+  },
+  "treasuryTrajectory": [
+    {
+      "step": 1,
+      "jobId": "job-ai-lab-fusion",
+      "jobName": "AI Lab Fusion Accelerator",
+      "startHour": 0,
+      "endHour": 36.54,
+      "treasuryAfterJob": 1570400,
+      "cumulativeValue": 450000,
+      "cumulativeCost": 157000,
+      "netYield": 293000,
+      "validatorConfidence": 0.9774,
+      "automationLift": 0.8554
+    },
+    {
+      "step": 2,
+      "jobId": "job-supply-chain",
+      "jobName": "Autonomous Supply Mesh",
+      "startHour": 36.54,
+      "endHour": 63.39,
+      "treasuryAfterJob": 1794000,
+      "cumulativeValue": 760000,
+      "cumulativeCost": 260000,
+      "netYield": 500000,
+      "validatorConfidence": 0.9826,
+      "automationLift": 0.8873
+    },
+    {
+      "step": 3,
+      "jobId": "job-governance-upgrade",
+      "jobName": "Governance Upgrade Launch",
+      "startHour": 63.39,
+      "endHour": 91.81,
+      "treasuryAfterJob": 1963800,
+      "cumulativeValue": 1000000,
+      "cumulativeCost": 340500,
+      "netYield": 659500,
+      "validatorConfidence": 0.9795,
+      "automationLift": 0.8211
+    },
+    {
+      "step": 4,
+      "jobId": "job-market-expansion",
+      "jobName": "Market Expansion Omniloop",
+      "startHour": 91.81,
+      "endHour": 115.21,
+      "treasuryAfterJob": 2119400,
+      "cumulativeValue": 1215000,
+      "cumulativeCost": 409000,
+      "netYield": 806000,
+      "validatorConfidence": 0.9846,
+      "automationLift": 0.8623
+    },
+    {
+      "step": 5,
+      "jobId": "job-oracle-integration",
+      "jobName": "Oracle Integration Spine",
+      "startHour": 115.21,
+      "endHour": 137.54,
+      "treasuryAfterJob": 2254040,
+      "cumulativeValue": 1395000,
+      "cumulativeCost": 461200,
+      "netYield": 933800,
+      "validatorConfidence": 0.982,
+      "automationLift": 0.8347
+    }
+  ],
   "deployment": {
     "network": {
       "name": "Ethereum Mainnet",
