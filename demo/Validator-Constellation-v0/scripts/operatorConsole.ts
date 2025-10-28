@@ -101,7 +101,7 @@ function describeState(state: OperatorState, mermaid = false): void {
   state.domains.forEach((domain) => {
     const pauseInfo = domain.paused && domain.pauseReason ? `paused (${domain.pauseReason.reason})` : 'active';
     console.log(
-      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'} :: allowedTargets=${domain.allowedTargets.join(', ') || 'any'} :: calldata<=${domain.maxCalldataBytes}b`,
+      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'} :: selectors=${domain.forbiddenSelectors.join(', ') || 'none'} :: allowedTargets=${domain.allowedTargets.join(', ') || 'any'} :: calldata<=${domain.maxCalldataBytes}b`,
     );
   });
   console.log('\nNodes:');
@@ -259,6 +259,9 @@ type DomainArgs = ArgumentsCamelCase<
       humanName?: string;
       budgetLimit?: string;
       unsafeOpcode?: string[];
+      allowedTarget?: string[];
+      forbiddenSelector?: string[];
+      maxCalldata?: number;
     }
 >;
 
@@ -270,6 +273,9 @@ function handleDomain(argv: DomainArgs): void {
     humanName?: string;
     budgetLimit?: bigint;
     unsafeOpcodes?: string[];
+    allowedTargets?: string[];
+    forbiddenSelectors?: string[];
+    maxCalldataBytes?: number;
   } = {};
   if (argv.humanName) {
     updates.humanName = argv.humanName;
@@ -279,6 +285,18 @@ function handleDomain(argv: DomainArgs): void {
   }
   if (argv.unsafeOpcode) {
     updates.unsafeOpcodes = argv.unsafeOpcode[0] === 'none' ? [] : argv.unsafeOpcode;
+  }
+  if (argv.allowedTarget) {
+    updates.allowedTargets = argv.allowedTarget[0] === 'none' ? [] : argv.allowedTarget;
+  }
+  if (argv.forbiddenSelector) {
+    updates.forbiddenSelectors = argv.forbiddenSelector[0] === 'none' ? [] : argv.forbiddenSelector;
+  }
+  if (argv.maxCalldata !== undefined) {
+    if (argv.maxCalldata < 0) {
+      throw new Error('max-calldata must be non-negative');
+    }
+    updates.maxCalldataBytes = Math.floor(argv.maxCalldata);
   }
   const { state: updated, result } = withDemo(state, (demo) => demo.updateDomainSafety(argv.domain, updates));
   saveOperatorState(updated, statePath);
@@ -620,7 +638,14 @@ function createCli(argv: string[]): void {
           .option('domain', { type: 'string', demandOption: true, describe: 'Domain identifier' })
           .option('human-name', { type: 'string', describe: 'Human readable name' })
           .option('budget-limit', { type: 'string', describe: 'Budget limit (wei)' })
-          .option('unsafe-opcode', { type: 'array', string: true, describe: 'Unsafe opcode list (use "none" to clear)' }),
+          .option('unsafe-opcode', { type: 'array', string: true, describe: 'Unsafe opcode list (use "none" to clear)' })
+          .option('allowed-target', { type: 'array', string: true, describe: 'Allowed target list (use "none" to clear)' })
+          .option('forbidden-selector', {
+            type: 'array',
+            string: true,
+            describe: 'Forbidden selector list (use "none" to clear)',
+          })
+          .option('max-calldata', { type: 'number', describe: 'Maximum calldata bytes' }),
       handleDomain,
     )
     .command(

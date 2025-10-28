@@ -48,6 +48,7 @@ export interface OperatorDomain {
   unsafeOpcodes: string[];
   allowedTargets: string[];
   maxCalldataBytes: number;
+  forbiddenSelectors: string[];
   paused: boolean;
   pauseReason?: OperatorDomainPause;
 }
@@ -74,6 +75,7 @@ function cloneSetupFromState(state: OperatorState): DemoSetup {
     unsafeOpcodes: new Set(domain.unsafeOpcodes),
     allowedTargets: new Set(domain.allowedTargets.map((target) => target.toLowerCase())),
     maxCalldataBytes: domain.maxCalldataBytes,
+    forbiddenSelectors: new Set(domain.forbiddenSelectors.map((selector) => selector.toLowerCase())),
   }));
   return {
     domains,
@@ -156,6 +158,7 @@ export function createInitialOperatorState(): OperatorState {
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
     allowedTargets: Array.from(domain.allowedTargets),
     maxCalldataBytes: domain.maxCalldataBytes,
+    forbiddenSelectors: Array.from(domain.forbiddenSelectors),
     paused: false,
   }));
   return {
@@ -195,6 +198,7 @@ export function loadOperatorState(filePath: string): OperatorState {
     domains: parsed.domains.map((domain) => ({
       ...domain,
       unsafeOpcodes: [...domain.unsafeOpcodes],
+      forbiddenSelectors: [...(domain.forbiddenSelectors ?? [])],
       pauseReason: domain.pauseReason ? { ...domain.pauseReason } : undefined,
     })),
   };
@@ -281,6 +285,7 @@ function updateDomainsFromDemo(state: OperatorState, demo: ValidatorConstellatio
       unsafeOpcodes: Array.from(snapshot.config.unsafeOpcodes),
       allowedTargets: Array.from(snapshot.config.allowedTargets),
       maxCalldataBytes: snapshot.config.maxCalldataBytes,
+      forbiddenSelectors: Array.from(snapshot.config.forbiddenSelectors),
       paused: snapshot.paused,
       pauseReason: snapshot.pauseReason
         ? {
@@ -385,6 +390,7 @@ export function resetDomainsToDefault(state: OperatorState): void {
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
     allowedTargets: Array.from(domain.allowedTargets),
     maxCalldataBytes: domain.maxCalldataBytes,
+    forbiddenSelectors: Array.from(domain.forbiddenSelectors),
     paused: false,
   }));
 }

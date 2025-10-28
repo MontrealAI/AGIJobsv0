@@ -9,6 +9,7 @@ const RAW_DOMAIN_TEMPLATES: Array<{
   unsafeOpcodes: string[];
   allowedTargets: string[];
   maxCalldataBytes: number;
+  forbiddenSelectors: string[];
 }> = [
   {
     id: 'deep-space-lab',
@@ -20,6 +21,7 @@ const RAW_DOMAIN_TEMPLATES: Array<{
       '0xbeac0babe00000000000000000000000000000000',
     ],
     maxCalldataBytes: 4096,
+    forbiddenSelectors: ['0xa9059cbb', '0x095ea7b3'],
   },
   {
     id: 'lunar-foundry',
@@ -28,6 +30,7 @@ const RAW_DOMAIN_TEMPLATES: Array<{
     unsafeOpcodes: ['SELFDESTRUCT'],
     allowedTargets: ['0xf0undry0ps000000000000000000000000000000'],
     maxCalldataBytes: 2048,
+    forbiddenSelectors: ['0xd0edefb0'],
   },
 ];
 
@@ -59,6 +62,7 @@ export function defaultDomains(): DomainConfig[] {
     unsafeOpcodes: new Set(domain.unsafeOpcodes),
     allowedTargets: new Set(domain.allowedTargets.map((target) => target.toLowerCase())),
     maxCalldataBytes: domain.maxCalldataBytes,
+    forbiddenSelectors: new Set(domain.forbiddenSelectors.map((selector) => selector.toLowerCase())),
   }));
 }
 

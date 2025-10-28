@@ -74,6 +74,7 @@ export class ValidatorConstellationDemo {
     const allowedTargetsMap = new Map<string, Set<string>>();
     const allowedTargetHashes = new Map<string, Set<string>>();
     const calldataLimits = new Map<string, number>();
+    const selectorMap = new Map<string, Set<string>>();
     const normalizeTarget = (target: string) => target.toLowerCase();
     for (const domain of setup.domains) {
       opcodeMap.set(domain.id, domain.unsafeOpcodes);
@@ -84,6 +85,7 @@ export class ValidatorConstellationDemo {
       );
       allowedTargetHashes.set(domain.id, hashedTargets);
       calldataLimits.set(domain.id, domain.maxCalldataBytes);
+      selectorMap.set(domain.id, new Set(Array.from(domain.forbiddenSelectors, (selector) => selector.toLowerCase())));
     }
     this.sentinel = new SentinelMonitor(this.pauseController, {
       budgetGraceRatio: setup.sentinelGraceRatio,
@@ -91,6 +93,7 @@ export class ValidatorConstellationDemo {
       allowedTargets: allowedTargetsMap,
       allowedTargetHashes,
       maxCalldataBytes: calldataLimits,
+      forbiddenSelectors: selectorMap,
     });
     this.zk = new ZkBatchProver(setup.verifyingKey);
     this.commitReveal = new CommitRevealCoordinator(this.governance, this.stakes);
@@ -173,6 +176,7 @@ export class ValidatorConstellationDemo {
         ...state.config,
         unsafeOpcodes: new Set(state.config.unsafeOpcodes),
         allowedTargets: new Set(state.config.allowedTargets),
+        forbiddenSelectors: new Set(state.config.forbiddenSelectors),
       },
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
@@ -196,6 +200,9 @@ export class ValidatorConstellationDemo {
     if (updates.maxCalldataBytes !== undefined) {
       payload.maxCalldataBytes = updates.maxCalldataBytes;
     }
+    if (updates.forbiddenSelectors !== undefined) {
+      payload.forbiddenSelectors = new Set(Array.from(updates.forbiddenSelectors, (selector) => selector.toLowerCase()));
+    }
     const updated = this.pauseController.updateConfig(domainId, payload);
     if (updates.unsafeOpcodes) {
       this.sentinel.updateUnsafeOpcodes(domainId, updates.unsafeOpcodes);
@@ -206,10 +213,14 @@ export class ValidatorConstellationDemo {
     if (updates.maxCalldataBytes !== undefined) {
       this.sentinel.updateMaxCalldataBytes(domainId, updates.maxCalldataBytes);
     }
+    if (updates.forbiddenSelectors) {
+      this.sentinel.updateForbiddenSelectors(domainId, updates.forbiddenSelectors);
+    }
     return {
       ...updated,
       unsafeOpcodes: new Set(updated.unsafeOpcodes),
       allowedTargets: new Set(updated.allowedTargets),
+      forbiddenSelectors: new Set(updated.forbiddenSelectors),
     };
   }
 

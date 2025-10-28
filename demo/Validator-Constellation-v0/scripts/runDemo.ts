@@ -44,6 +44,7 @@ function main() {
       '0xbeac0babe00000000000000000000000000000000',
     ],
     maxCalldataBytes: 6144,
+    forbiddenSelectors: ['0xa9059cbb', '0x23b872dd'],
   });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
   const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
@@ -104,6 +105,16 @@ function main() {
       amountSpent: 1_000n,
       target: '0xd15a11ee00000000000000000000000000000000',
       description: 'Call routed to unauthorized contract',
+    },
+    {
+      agent: agentIdentity,
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 750n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      functionSelector: '0xa9059cbb',
+      description: 'Forbidden token transfer selector invoked',
+      metadata: { functionSelector: '0xa9059cbb' },
     },
     {
       agent: agentIdentity,

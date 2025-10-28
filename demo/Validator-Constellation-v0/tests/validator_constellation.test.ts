@@ -302,6 +302,16 @@ test('sentinel rejects unauthorized targets and oversized calldata bursts', () =
       metadata: { calldataBytes: 9_000 },
       description: 'payload flood',
     },
+    {
+      agent: { ...agent },
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 2_500n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      functionSelector: '0xa9059cbb',
+      description: 'blocked token transfer selector',
+      metadata: { functionSelector: '0xa9059cbb' },
+    },
   ];
   const result = demo.runValidationRound({
     round: 5,
@@ -313,6 +323,7 @@ test('sentinel rejects unauthorized targets and oversized calldata bursts', () =
   const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(rules.has('UNAUTHORIZED_TARGET'));
   assert.ok(rules.has('CALLDATA_EXPLOSION'));
+  assert.ok(rules.has('FORBIDDEN_SELECTOR'));
   const unauthorizedAlert = result.sentinelAlerts.find((alert) => alert.rule === 'UNAUTHORIZED_TARGET');
   assert.ok(unauthorizedAlert?.metadata?.hashedTarget);
   const expectedHash = keccak256(toUtf8Bytes('0xd15a11ee00000000000000000000000000000000'.toLowerCase()));
@@ -427,6 +438,7 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
     unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'],
     allowedTargets: ['0xa11ce5c1e11ce000000000000000000000000000', '0xbeac0babe00000000000000000000000000000000'],
     maxCalldataBytes: 8_192,
+    forbiddenSelectors: ['0xa9059cbb', '0x23b872dd'],
   });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.2 });
   const controlledAgent = demo.setAgentBudget(agentLeaf.ensName, 2_000_000n);
@@ -436,6 +448,7 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   const domainConfig = demo.getDomainState('deep-space-lab').config;
   assert.equal(domainConfig.maxCalldataBytes, 8_192);
   assert.ok(domainConfig.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
+  assert.ok(domainConfig.forbiddenSelectors.has('0xa9059cbb'));
 
   const jobBatch = demoJobBatch('deep-space-lab', 64);
   const anomalies: AgentAction[] = [
@@ -467,6 +480,16 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
       calldataBytes: 10_000,
       metadata: { calldataBytes: 10_000 },
     },
+    {
+      agent: { ...controlledAgent },
+      domainId: 'deep-space-lab',
+      type: 'CALL' as const,
+      amountSpent: 350n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      functionSelector: '0x23b872dd',
+      description: 'governance blocked selector invocation',
+      metadata: { functionSelector: '0x23b872dd' },
+    },
   ];
 
   const result = demo.runValidationRound({
@@ -481,6 +504,7 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
   assert.ok(rules.has('UNAUTHORIZED_TARGET'), 'expected unauthorized target enforcement');
   assert.ok(rules.has('CALLDATA_EXPLOSION'), 'expected calldata surge enforcement');
+  assert.ok(rules.has('FORBIDDEN_SELECTOR'), 'expected forbidden selector enforcement');
   assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
 });
 
@@ -501,9 +525,11 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.ok(executed.context.ownerNotes?.description);
   assert.ok((executed.context.updatedSafety?.maxCalldataBytes ?? 0) > 4_096);
   assert.ok(executed.context.updatedSafety?.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
+  assert.ok(executed.context.updatedSafety?.forbiddenSelectors.has('0xa9059cbb'));
   const scenarioRules = new Set(executed.report.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(scenarioRules.has('UNAUTHORIZED_TARGET'));
   assert.ok(scenarioRules.has('CALLDATA_EXPLOSION'));
+  assert.ok(scenarioRules.has('FORBIDDEN_SELECTOR'));
 });
 
 test('operator control tower state synchronizes sentinel pauses and slashing telemetry', () => {

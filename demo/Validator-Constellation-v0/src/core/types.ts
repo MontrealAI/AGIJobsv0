@@ -19,6 +19,7 @@ export interface DomainConfig {
   unsafeOpcodes: Set<string>;
   allowedTargets: Set<string>;
   maxCalldataBytes: number;
+  forbiddenSelectors: Set<string>;
 }
 
 export interface GovernanceParameters {
@@ -57,6 +58,7 @@ export interface AgentAction {
   opcode?: string;
   target?: string;
   calldataBytes?: number;
+  functionSelector?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -187,6 +189,7 @@ export interface DomainSafetyUpdate {
   unsafeOpcodes?: Iterable<string>;
   allowedTargets?: Iterable<string>;
   maxCalldataBytes?: number;
+  forbiddenSelectors?: Iterable<string>;
 }
 
 export interface ValidatorEventBus extends EventEmitter {

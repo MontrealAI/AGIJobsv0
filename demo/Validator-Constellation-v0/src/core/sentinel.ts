@@ -9,6 +9,7 @@ interface SentinelConfig {
   allowedTargets: Map<string, Set<string>>;
   allowedTargetHashes: Map<string, Set<string>>;
   maxCalldataBytes: Map<string, number>;
+  forbiddenSelectors: Map<string, Set<string>>;
 }
 
 export class SentinelMonitor {
@@ -59,6 +60,26 @@ export class SentinelMonitor {
         opcode: action.opcode,
         target: action.target,
       });
+    }
+
+    const selectors = this.config.forbiddenSelectors.get(domain.id) ?? domain.forbiddenSelectors;
+    const selector =
+      action.functionSelector ??
+      (typeof action.metadata?.functionSelector === 'string' ? (action.metadata.functionSelector as string) : undefined);
+    if (selector) {
+      const normalizedSelector = selector.toLowerCase();
+      if (selectors.has(normalizedSelector)) {
+        return this.raiseAlert(
+          action,
+          'FORBIDDEN_SELECTOR',
+          `function selector ${normalizedSelector} blocked for domain ${domain.humanName}`,
+          'CRITICAL',
+          {
+            selector: normalizedSelector,
+            configuredSelectors: Array.from(selectors),
+          },
+        );
+      }
     }
 
     if (action.target) {
@@ -145,6 +166,20 @@ export class SentinelMonitor {
     }
     const domainTargets = this.getDomainConfig(domainId).allowedTargets;
     return new Set(Array.from(domainTargets, (target) => this.normalizeTarget(target)));
+  }
+
+  updateForbiddenSelectors(domainId: string, selectors: Iterable<string>): void {
+    const normalized = Array.from(selectors, (selector) => selector.toLowerCase());
+    this.config.forbiddenSelectors.set(domainId, new Set(normalized));
+  }
+
+  getForbiddenSelectors(domainId: string): Set<string> {
+    const fromConfig = this.config.forbiddenSelectors.get(domainId);
+    if (fromConfig) {
+      return new Set(fromConfig);
+    }
+    const domainSelectors = this.getDomainConfig(domainId).forbiddenSelectors;
+    return new Set(Array.from(domainSelectors, (selector) => selector.toLowerCase()));
   }
 
   updateMaxCalldataBytes(domainId: string, limit: number): void {
