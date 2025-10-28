@@ -1,0 +1,20 @@
+[
+  {
+    "id": "FIN-001",
+    "domain": "finance",
+    "strategies": ["treasury-optimizer", "yield-strategy"],
+    "payload": {"capital_multiplier": 2.4}
+  },
+  {
+    "id": "BIO-042",
+    "domain": "biotech",
+    "strategies": ["synthesis-flow", "bio-risk-buffer"],
+    "payload": {"synthesis_efficiency": 1.8}
+  },
+  {
+    "id": "MAN-777",
+    "domain": "manufacturing",
+    "strategies": ["digital-twin", "lean-hyperloop"],
+    "payload": {"throughput": 220, "waste_reduction": 0.22}
+  }
+]

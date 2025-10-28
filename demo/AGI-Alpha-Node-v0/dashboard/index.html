@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AGI Alpha Node Command Bridge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Inter", system-ui, sans-serif;
+      background: radial-gradient(circle at top, #1f1a3a, #050208);
+      color: #eef3ff;
+    }
+    body { margin: 0; padding: 2rem; }
+    h1 { font-size: 2.4rem; margin-bottom: 0.5rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.6rem; }
+    .card {
+      background: rgba(15, 19, 48, 0.82);
+      border: 1px solid rgba(118, 144, 255, 0.3);
+      border-radius: 18px;
+      padding: 1.6rem;
+      box-shadow: 0 10px 40px rgba(25, 51, 128, 0.35);
+      backdrop-filter: blur(12px);
+    }
+    .mermaid { background: rgba(10, 12, 32, 0.8); border-radius: 12px; padding: 1rem; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+    .badge { background: linear-gradient(120deg, #5ad1ff, #9879ff); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.75rem; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: "dark" });
+
+    async function refreshStatus() {
+      const statusResponse = await fetch('http://localhost:9753/status');
+      const status = await statusResponse.json();
+      document.getElementById('compliance').innerText = (status.operations.compliance_score * 100).toFixed(1) + '%';
+      document.getElementById('ens').innerText = status.operations.ens_verified ? 'Verified' : 'Pending';
+      document.getElementById('stake').innerText = `${status.economy.staked_amount} / ${status.economy.rewards_accrued + status.economy.staked_amount}`;
+      const table = document.getElementById('jobs');
+      table.innerHTML = `
+        <tr><th>Completed</th><td>${status.operations.completed_jobs}</td></tr>
+        <tr><th>Failed</th><td>${status.operations.failed_jobs}</td></tr>
+        <tr><th>Last Job</th><td>${status.operations.last_job_id || '—'}</td></tr>`;
+    }
+
+    setInterval(refreshStatus, 3000);
+    window.addEventListener('DOMContentLoaded', refreshStatus);
+  </script>
+</head>
+<body>
+  <h1>AGI Alpha Node Command Bridge <span class="badge">HyperSovereign</span></h1>
+  <p>The fastest way for operators to command autonomous AGI wealth engines with surgical clarity.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Compliance Pulse</h2>
+      <p id="compliance">Loading…</p>
+      <p>Identity: <span id="ens">Loading…</span></p>
+      <p>Stake vs rewards: <span id="stake">Loading…</span></p>
+      <div class="mermaid">
+        graph TD
+          A[ENS Verified] --> B[Stake Active]
+          B --> C[Planner Autonomy]
+          C --> D[Rewards Claimed]
+          D --> A
+      </div>
+    </section>
+    <section class="card">
+      <h2>Mission Log</h2>
+      <table id="jobs">
+        <tr><td>Loading…</td></tr>
+      </table>
+    </section>
+    <section class="card">
+      <h2>Safety Systems</h2>
+      <ul>
+        <li>Emergency pause: operator multisig</li>
+        <li>Governance key rotation: instant</li>
+        <li>Slashing watchdog: automated</li>
+        <li>Knowledge Lake backups: redundant</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
