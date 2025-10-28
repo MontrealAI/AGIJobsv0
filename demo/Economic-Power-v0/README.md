@@ -29,6 +29,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
 - `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
 - `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
+- `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
 
@@ -102,6 +103,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 
 Launch with:
 

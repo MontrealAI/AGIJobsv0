@@ -3,6 +3,7 @@
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
   "description": "Baseline configuration for the Economic Power demo showcasing modular orchestration, validator rigor, and treasury velocity.",
+  "analysisTimestamp": "2025-02-01T00:00:00.000Z",
   "network": {
     "name": "Ethereum Mainnet",
     "chainId": 1,

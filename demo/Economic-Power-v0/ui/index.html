@@ -103,6 +103,40 @@
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="governance-ledger-heading">
+        <div class="panel-header">
+          <h2 id="governance-ledger-heading">Governance ledger</h2>
+          <p>Custody ledger, alert feed, and coverage diagnostics derived from <code>owner-governance-ledger.json</code>.</p>
+        </div>
+        <div class="governance-ledger-meta" role="group" aria-label="Governance ledger metadata">
+          <p><strong>Analysis timestamp:</strong> <span id="ledger-analysis"></span></p>
+          <p><strong>Execution timestamp:</strong> <span id="ledger-execution"></span></p>
+          <p><strong>Command coverage:</strong> <span id="ledger-coverage"></span></p>
+        </div>
+        <div class="panel-subheader">
+          <h3>Alerts</h3>
+        </div>
+        <ul id="ledger-alerts" class="alert-list" role="list"></ul>
+        <div class="panel-subheader">
+          <h3>Module custody</h3>
+        </div>
+        <div class="table-wrapper">
+          <table id="ledger-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Custody</th>
+                <th>Status</th>
+                <th>Audit lag</th>
+                <th>Upgrade command</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="deployment-heading">
         <div class="panel-header">
           <h2 id="deployment-heading">On-chain control fabric</h2>

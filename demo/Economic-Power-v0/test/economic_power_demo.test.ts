@@ -94,5 +94,26 @@ test('economic power simulation produces deterministic metrics', async () => {
 
   assert(summary.deployment.modules.length > 0, 'Deployment modules should be catalogued');
   assert(summary.deployment.modules.every((module) => module.owner === summary.ownerControl.governanceSafe));
+
+  assert(summary.analysisTimestamp.length > 0, 'Analysis timestamp should be populated');
+  assert(summary.executionTimestamp.length > 0, 'Execution timestamp should be populated');
+  assert.equal(
+    summary.governanceLedger.modules.length,
+    scenario.modules.length,
+    'Governance ledger should mirror module catalogue',
+  );
+  assert.equal(
+    summary.governanceLedger.commandCoverage,
+    summary.metrics.ownerCommandCoverage,
+    'Ledger coverage should align with summary coverage metric',
+  );
+  assert.equal(
+    summary.governanceLedger.analysisTimestamp,
+    summary.analysisTimestamp,
+    'Ledger analysis timestamp should match summary analysis window',
+  );
+  assert(summary.governanceLedger.alerts.length >= 1, 'Ledger should expose actionable alerts');
+  const coverageAlert = summary.governanceLedger.alerts.find((alert) => alert.id === 'coverage-gap');
+  assert(coverageAlert, 'Coverage gap alert should be present for partial coverage scenarios');
 });
 
