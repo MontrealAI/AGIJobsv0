@@ -46,6 +46,8 @@ export interface OperatorDomain {
   humanName: string;
   budgetLimit: string;
   unsafeOpcodes: string[];
+  allowedTargets: string[];
+  maxCalldataBytes: number;
   paused: boolean;
   pauseReason?: OperatorDomainPause;
 }
@@ -70,6 +72,8 @@ function cloneSetupFromState(state: OperatorState): DemoSetup {
     humanName: domain.humanName,
     budgetLimit: BigInt(domain.budgetLimit),
     unsafeOpcodes: new Set(domain.unsafeOpcodes),
+    allowedTargets: new Set(domain.allowedTargets.map((target) => target.toLowerCase())),
+    maxCalldataBytes: domain.maxCalldataBytes,
   }));
   return {
     domains,
@@ -150,6 +154,8 @@ export function createInitialOperatorState(): OperatorState {
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit.toString(),
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
+    allowedTargets: Array.from(domain.allowedTargets),
+    maxCalldataBytes: domain.maxCalldataBytes,
     paused: false,
   }));
   return {
@@ -273,6 +279,8 @@ function updateDomainsFromDemo(state: OperatorState, demo: ValidatorConstellatio
       humanName: snapshot.config.humanName,
       budgetLimit: snapshot.config.budgetLimit.toString(),
       unsafeOpcodes: Array.from(snapshot.config.unsafeOpcodes),
+      allowedTargets: Array.from(snapshot.config.allowedTargets),
+      maxCalldataBytes: snapshot.config.maxCalldataBytes,
       paused: snapshot.paused,
       pauseReason: snapshot.pauseReason
         ? {
@@ -375,6 +383,8 @@ export function resetDomainsToDefault(state: OperatorState): void {
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit.toString(),
     unsafeOpcodes: Array.from(domain.unsafeOpcodes),
+    allowedTargets: Array.from(domain.allowedTargets),
+    maxCalldataBytes: domain.maxCalldataBytes,
     paused: false,
   }));
 }

@@ -7,18 +7,27 @@ const RAW_DOMAIN_TEMPLATES: Array<{
   humanName: string;
   budgetLimit: bigint;
   unsafeOpcodes: string[];
+  allowedTargets: string[];
+  maxCalldataBytes: number;
 }> = [
   {
     id: 'deep-space-lab',
     humanName: 'Deep Space Research Lab',
     budgetLimit: 5_000_000n,
     unsafeOpcodes: ['SELFDESTRUCT', 'DELEGATECALL'],
+    allowedTargets: [
+      '0xa11ce5c1e11ce000000000000000000000000000',
+      '0xbeac0babe00000000000000000000000000000000',
+    ],
+    maxCalldataBytes: 4096,
   },
   {
     id: 'lunar-foundry',
     humanName: 'Lunar Foundry',
     budgetLimit: 2_000_000n,
     unsafeOpcodes: ['SELFDESTRUCT'],
+    allowedTargets: ['0xf0undry0ps000000000000000000000000000000'],
+    maxCalldataBytes: 2048,
   },
 ];
 
@@ -48,6 +57,8 @@ export function defaultDomains(): DomainConfig[] {
     humanName: domain.humanName,
     budgetLimit: domain.budgetLimit,
     unsafeOpcodes: new Set(domain.unsafeOpcodes),
+    allowedTargets: new Set(domain.allowedTargets.map((target) => target.toLowerCase())),
+    maxCalldataBytes: domain.maxCalldataBytes,
   }));
 }
 

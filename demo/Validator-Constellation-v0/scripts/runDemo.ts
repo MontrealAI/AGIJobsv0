@@ -39,6 +39,11 @@ function main() {
   const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
   const updatedSafety = demo.updateDomainSafety('deep-space-lab', {
     unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL', 'STATICCALL']),
+    allowedTargets: [
+      '0xa11ce5c1e11ce000000000000000000000000000',
+      '0xbeac0babe00000000000000000000000000000000',
+    ],
+    maxCalldataBytes: 6144,
   });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
   const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
@@ -78,6 +83,8 @@ function main() {
       amountSpent: 12_500n,
       opcode: 'STATICCALL',
       description: 'Unsafe opcode invoked during maintenance bypass',
+      calldataBytes: 8_192,
+      metadata: { calldataBytes: 8_192 },
     },
     {
       ...budgetOverrunAction(
@@ -89,6 +96,24 @@ function main() {
       ),
       description: 'Overspend attempt detected by sentinel',
       metadata: { invoice: 'INV-7788' },
+    },
+    {
+      agent: agentIdentity,
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 1_000n,
+      target: '0xd15a11ee00000000000000000000000000000000',
+      description: 'Call routed to unauthorized contract',
+    },
+    {
+      agent: agentIdentity,
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 500n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      calldataBytes: 16_384,
+      description: 'Oversized calldata surge',
+      metadata: { calldataBytes: 16_384 },
     },
   ];
 

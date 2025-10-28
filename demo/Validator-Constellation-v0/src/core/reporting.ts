@@ -32,6 +32,7 @@ function formatDomainState(state: DomainState): DomainState {
     config: {
       ...state.config,
       unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+      allowedTargets: new Set(state.config.allowedTargets),
     },
     pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
   };
@@ -41,6 +42,7 @@ function cloneDomainConfig(config: DomainConfig): DomainConfig {
   return {
     ...config,
     unsafeOpcodes: new Set(config.unsafeOpcodes),
+    allowedTargets: new Set(config.allowedTargets),
   };
 }
 
@@ -159,6 +161,7 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
           {
             parameters: context.governance,
             sentinelGraceRatio: context.sentinelGraceRatio,
+            domainCalldataLimit: context.primaryDomain.config.maxCalldataBytes,
           },
           null,
           2,
@@ -177,6 +180,18 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <pre>${JSON.stringify(
           ownerNotes ?? {
             message: 'Provide scenario owner notes via context.ownerNotes',
+          },
+          null,
+          2,
+        )}</pre>
+      </section>
+      <section>
+        <h2>Domain Guardrails</h2>
+        <pre>${JSON.stringify(
+          {
+            unsafeOpcodes: Array.from(context.primaryDomain.config.unsafeOpcodes),
+            allowedTargets: Array.from(context.primaryDomain.config.allowedTargets),
+            maxCalldataBytes: context.primaryDomain.config.maxCalldataBytes,
           },
           null,
           2,
@@ -235,12 +250,16 @@ export function writeReportArtifacts(input: ArtifactInput): void {
         config: {
           ...formattedDomain.config,
           unsafeOpcodes: Array.from(formattedDomain.config.unsafeOpcodes),
+          allowedTargets: Array.from(formattedDomain.config.allowedTargets),
+          maxCalldataBytes: formattedDomain.config.maxCalldataBytes,
         },
       },
       updatedSafety: updatedSafety
         ? {
             ...updatedSafety,
             unsafeOpcodes: Array.from(updatedSafety.unsafeOpcodes),
+            allowedTargets: Array.from(updatedSafety.allowedTargets),
+            maxCalldataBytes: updatedSafety.maxCalldataBytes,
           }
         : undefined,
     },

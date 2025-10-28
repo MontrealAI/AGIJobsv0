@@ -101,7 +101,7 @@ function describeState(state: OperatorState, mermaid = false): void {
   state.domains.forEach((domain) => {
     const pauseInfo = domain.paused && domain.pauseReason ? `paused (${domain.pauseReason.reason})` : 'active';
     console.log(
-      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'}`,
+      `  - ${domain.id} :: ${domain.humanName} :: budget=${formatAgentBudget(domain.budgetLimit)} :: ${pauseInfo} :: unsafe=${domain.unsafeOpcodes.join(', ') || 'none'} :: allowedTargets=${domain.allowedTargets.join(', ') || 'any'} :: calldata<=${domain.maxCalldataBytes}b`,
     );
   });
   console.log('\nNodes:');

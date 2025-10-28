@@ -185,6 +185,51 @@ test('sentinel triggers domain pause on budget overrun', () => {
   assert.equal(roundResult.pauseRecords[0]?.domainId, 'deep-space-lab');
 });
 
+test('sentinel rejects unauthorized targets and oversized calldata bursts', () => {
+  const { demo, leaves } = buildDemo();
+  leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
+  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
+  if (!agentLeaf) {
+    throw new Error('missing agent leaf');
+  }
+  const agent = demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
+  const jobBatch = demoJobBatch('deep-space-lab', 32);
+  const anomalies: AgentAction[] = [
+    {
+      agent: { ...agent },
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 10_000n,
+      target: '0xd15a11ee00000000000000000000000000000000',
+      description: 'rogue contract hop',
+    },
+    {
+      agent: { ...agent },
+      domainId: 'deep-space-lab',
+      type: 'CALL',
+      amountSpent: 5_000n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      calldataBytes: 9_000,
+      metadata: { calldataBytes: 9_000 },
+      description: 'payload flood',
+    },
+  ];
+  const result = demo.runValidationRound({
+    round: 5,
+    truthfulVote: 'APPROVE',
+    jobBatch,
+    committeeSignature: '0xbbbbccccddddeeeeffff0000111122223333444455556666777788889999aaaa',
+    anomalies,
+  });
+  const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
+  assert.ok(rules.has('UNAUTHORIZED_TARGET'));
+  assert.ok(rules.has('CALLDATA_EXPLOSION'));
+  const unauthorizedAlert = result.sentinelAlerts.find((alert) => alert.rule === 'UNAUTHORIZED_TARGET');
+  assert.ok(unauthorizedAlert?.metadata?.hashedTarget);
+  const expectedHash = keccak256(toUtf8Bytes('0xd15a11ee00000000000000000000000000000000'.toLowerCase()));
+  assert.equal(unauthorizedAlert?.metadata?.hashedTarget, expectedHash);
+});
+
 test('governance can rotate entropy mix and ZK verifying key for ultimate owner control', () => {
   const { demo, leaves } = buildDemo();
   leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
@@ -287,12 +332,19 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
   assert.equal(demo.getDomainState('deep-space-lab').paused, true);
   demo.resumeDomain('deep-space-lab');
   assert.equal(demo.getDomainState('deep-space-lab').paused, false);
-  demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+  demo.updateDomainSafety('deep-space-lab', {
+    unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'],
+    allowedTargets: ['0xa11ce5c1e11ce000000000000000000000000000', '0xbeac0babe00000000000000000000000000000000'],
+    maxCalldataBytes: 8_192,
+  });
   demo.updateSentinelConfig({ budgetGraceRatio: 0.2 });
   const controlledAgent = demo.setAgentBudget(agentLeaf.ensName, 2_000_000n);
   assert.equal(demo.getSentinelBudgetGraceRatio(), 0.2);
   assert.equal(demo.findAgent(agentLeaf.ensName)?.budget, 2_000_000n);
   assert.ok(pauseRecord.reason.includes('manual audit'));
+  const domainConfig = demo.getDomainState('deep-space-lab').config;
+  assert.equal(domainConfig.maxCalldataBytes, 8_192);
+  assert.ok(domainConfig.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
 
   const jobBatch = demoJobBatch('deep-space-lab', 64);
   const anomalies: AgentAction[] = [
@@ -303,7 +355,26 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
       type: 'CALL' as const,
       amountSpent: 1_000n,
       opcode: 'STATICCALL',
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
       description: 'runtime policy breach',
+    },
+    {
+      agent: { ...controlledAgent },
+      domainId: 'deep-space-lab',
+      type: 'CALL' as const,
+      amountSpent: 750n,
+      target: '0xd15a11ee00000000000000000000000000000000',
+      description: 'unauthorized target attempt',
+    },
+    {
+      agent: { ...controlledAgent },
+      domainId: 'deep-space-lab',
+      type: 'CALL' as const,
+      amountSpent: 500n,
+      target: '0xa11ce5c1e11ce000000000000000000000000000',
+      description: 'calldata burst',
+      calldataBytes: 10_000,
+      metadata: { calldataBytes: 10_000 },
     },
   ];
 
@@ -317,6 +388,8 @@ test('governance controls allow dynamic guardrail tuning for non-technical owner
 
   const rules = new Set(result.sentinelAlerts.map((alert) => alert.rule));
   assert.ok(rules.has('UNSAFE_OPCODE'), 'expected unsafe opcode alert after domain policy update');
+  assert.ok(rules.has('UNAUTHORIZED_TARGET'), 'expected unauthorized target enforcement');
+  assert.ok(rules.has('CALLDATA_EXPLOSION'), 'expected calldata surge enforcement');
   assert.ok(!rules.has('BUDGET_OVERRUN'), 'budget grace ratio update should prevent overspend alert');
 });
 
@@ -335,6 +408,11 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
   assert.equal(executed.context.jobSample?.length, 8);
   assert.ok(executed.context.ownerNotes?.description);
+  assert.ok((executed.context.updatedSafety?.maxCalldataBytes ?? 0) > 4_096);
+  assert.ok(executed.context.updatedSafety?.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
+  const scenarioRules = new Set(executed.report.sentinelAlerts.map((alert) => alert.rule));
+  assert.ok(scenarioRules.has('UNAUTHORIZED_TARGET'));
+  assert.ok(scenarioRules.has('CALLDATA_EXPLOSION'));
 });
 
 test('operator control tower state synchronizes sentinel pauses and slashing telemetry', () => {

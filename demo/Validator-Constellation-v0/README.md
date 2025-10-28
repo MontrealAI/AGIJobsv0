@@ -30,7 +30,8 @@ flowchart LR
 
 * **Cryptographic truth** – deterministic VRF committee draws, salted commit–reveal voting, and automatic slashing mean hostile validators cannot game the outcome.
 * **Zero-knowledge throughput** – a single proof finalizes **1,000 jobs** at once while preserving privacy and auditability.
-* **Sentinel guardrails** – budget overruns or unsafe calls trigger autonomous domain pauses within the same round.
+* **Sentinel guardrails** – budget overruns, forbidden opcodes, unauthorized targets, or calldata floods trigger autonomous domain pauses within the same round.
+* **Deterministic supply-chain allowlists** – each domain now encodes hashed ENS target allowlists and calldata ceilings so auditors can replay sentinel verdicts byte-for-byte.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
 * **Operator sovereignty** – one governance command updates penalties or committee size without redeploying contracts.
 * **Block-by-block accountability** – every commit, reveal, and finalization is captured with explicit block windows, letting owners audit timing SLAs and prove the protocol stayed inside governance limits.
@@ -158,9 +159,10 @@ The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrail
 4. **VRF committee draw** – derives unpredictable committee membership from mixed entropy and governance parameters, emitting a deterministic entropy witness (`keccak`, `sha256`, transcript) for downstream auditors.
 5. **Commit–reveal voting** – logs sealed commitments, enforces honest reveals, and slashes non-compliant validators.
 6. **Sentinel autonomy** – detects a synthetic overspend, issues a `BUDGET_OVERRUN` alert, and pauses the affected domain.
-7. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
-8. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
-9. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+7. **Guardrail forensics** – captures hashed target witnesses and calldata payload metrics for every sentinel escalation, enabling external replays of each shutdown decision.
+8. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
+9. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
+10. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
 
 ## Governance levers
 
@@ -172,7 +174,11 @@ import { ValidatorConstellationDemo } from './src/core/constellation';
 const demo = new ValidatorConstellationDemo(setup);
 demo.updateGovernanceParameter('slashPenaltyBps', 2_500);
 demo.updateSentinelConfig({ budgetGraceRatio: 0.12 });
-demo.updateDomainSafety('deep-space-lab', { unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'] });
+demo.updateDomainSafety('deep-space-lab', {
+  unsafeOpcodes: ['STATICCALL', 'DELEGATECALL'],
+  allowedTargets: ['0xa11ce5c1e11ce000000000000000000000000000', '0xbeac0babe00000000000000000000000000000000'],
+  maxCalldataBytes: 8192,
+});
 demo.pauseDomain('deep-space-lab', 'scheduled upgrade');
 demo.resumeDomain('deep-space-lab');
 demo.setAgentBudget('nova.agent.agi.eth', 2_000_000n);
@@ -201,7 +207,12 @@ sequenceDiagram
   Sentinel->>Agent: Alert CRITICAL (BUDGET_OVERRUN)
 ```
 
-The Sentinel guarantee: any overspend or forbidden opcode pauses the domain within the same execution round, with fully logged context for operators and auditors.
+The Sentinel guarantee: any overspend, forbidden opcode, unauthorized target, or oversized calldata burst pauses the domain within the same execution round, with fully logged context for operators and auditors.
+
+Guardrail metadata now includes:
+
+* `UNAUTHORIZED_TARGET` – triggered with dual verification (`target` + `keccak(target)`) whenever an agent reaches outside the allowlist.
+* `CALLDATA_EXPLOSION` – activates if a call attempts to exceed the domain-specific byte ceiling; the alert bundles the observed payload size so downstream monitors can replay the decision.
 
 ## Files of interest
 
@@ -239,5 +250,6 @@ After `npm run demo:validator-constellation`, inspect:
 - ✅ Governance can pause, resume, or retune parameters instantly.
 - ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
 - ✅ Owners rotate VRF entropy and ZK verifying keys on demand without touching code.
+- ✅ Sentinel alerts include hashed target witnesses and calldata measurements for external reproducibility.
 
 Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.

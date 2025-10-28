@@ -6,7 +6,14 @@ export class DomainPauseController {
 
   constructor(domains: DomainConfig[]) {
     for (const config of domains) {
-      this.domains.set(config.id, { config: { ...config, unsafeOpcodes: new Set(config.unsafeOpcodes) }, paused: false });
+      this.domains.set(config.id, {
+        config: {
+          ...config,
+          unsafeOpcodes: new Set(config.unsafeOpcodes),
+          allowedTargets: new Set(config.allowedTargets),
+        },
+        paused: false,
+      });
     }
   }
 
@@ -53,7 +60,11 @@ export class DomainPauseController {
 
   listDomains(): DomainState[] {
     return Array.from(this.domains.values()).map((state) => ({
-      config: { ...state.config, unsafeOpcodes: new Set(state.config.unsafeOpcodes) },
+      config: {
+        ...state.config,
+        unsafeOpcodes: new Set(state.config.unsafeOpcodes),
+        allowedTargets: new Set(state.config.allowedTargets),
+      },
       paused: state.paused,
       pauseReason: state.pauseReason ? { ...state.pauseReason } : undefined,
     }));
@@ -63,11 +74,18 @@ export class DomainPauseController {
     const state = this.getState(domainId);
     const unsafeOpcodes =
       updates.unsafeOpcodes !== undefined ? new Set(updates.unsafeOpcodes) : new Set(state.config.unsafeOpcodes);
+    const allowedTargets =
+      updates.allowedTargets !== undefined
+        ? new Set(Array.from(updates.allowedTargets, (target) => target.toLowerCase()))
+        : new Set(state.config.allowedTargets);
+    const maxCalldataBytes = updates.maxCalldataBytes ?? state.config.maxCalldataBytes;
     const updated: DomainConfig = {
       ...state.config,
       ...('humanName' in updates ? { humanName: updates.humanName! } : {}),
       ...('budgetLimit' in updates ? { budgetLimit: updates.budgetLimit! } : {}),
       unsafeOpcodes,
+      allowedTargets,
+      maxCalldataBytes,
     };
     state.config = updated;
     return updated;
