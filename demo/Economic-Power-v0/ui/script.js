@@ -189,6 +189,33 @@ function renderSovereignty(summary) {
     coverageNarrative.textContent = summary.ownerCommandPlan.coverageNarrative;
   }
 
+  const coverageTable = document.querySelector('#coverage-table tbody');
+  if (coverageTable) {
+    coverageTable.innerHTML = '';
+    const detail = summary.ownerCommandPlan.coverageDetail || {};
+    const labelMap = {
+      jobs: 'Job programs',
+      validators: 'Validator programs',
+      stablecoinAdapters: 'Stablecoin adapters',
+      modules: 'Protocol modules',
+      parameters: 'Parameter overrides',
+      pause: 'Emergency pause',
+      resume: 'Resume procedure',
+      treasury: 'Treasury playbooks',
+      orchestrator: 'Orchestrator mesh',
+    };
+    for (const [surface, ratio] of Object.entries(detail)) {
+      const row = document.createElement('tr');
+      const label = labelMap[surface] || surface;
+      const percent = typeof ratio === 'number' ? (ratio * 100).toFixed(1) : '—';
+      row.innerHTML = `
+        <td>${label}</td>
+        <td>${percent}%</td>
+      `;
+      coverageTable.append(row);
+    }
+  }
+
   const emergencyList = document.getElementById('emergency-contacts');
   emergencyList.innerHTML = '';
   for (const contact of summary.ownerSovereignty.emergencyContacts) {
@@ -502,6 +529,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   const summary = await loadSummary(dataPath);
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
   renderGovernanceLedger(summary);

@@ -22,6 +22,27 @@ test('economic power simulation produces deterministic metrics', async () => {
     1,
     'Owner command coverage should confirm total command supremacy',
   );
+  const coverageDetail = summary.ownerCommandPlan.coverageDetail;
+  assert(coverageDetail, 'Coverage detail should be present');
+  const coverageSurfaces = [
+    'jobs',
+    'validators',
+    'stablecoinAdapters',
+    'modules',
+    'parameters',
+    'pause',
+    'resume',
+    'treasury',
+    'orchestrator',
+  ];
+  for (const surface of coverageSurfaces) {
+    assert(surface in coverageDetail, `Coverage detail should include ${surface}`);
+    assert.equal(
+      coverageDetail[surface as keyof typeof coverageDetail],
+      1,
+      `Coverage for ${surface} should be complete`,
+    );
+  }
   assert(summary.metrics.sovereignControlScore >= 0.9, 'Sovereign control score should confirm custody');
   assert.equal(
     summary.metrics.assertionPassRate,

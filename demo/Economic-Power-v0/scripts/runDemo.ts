@@ -282,6 +282,22 @@ type Summary = {
   governanceLedger: GovernanceLedger;
 };
 
+type CoverageSurface =
+  | 'jobs'
+  | 'validators'
+  | 'stablecoinAdapters'
+  | 'modules'
+  | 'parameters'
+  | 'pause'
+  | 'resume'
+  | 'treasury'
+  | 'orchestrator';
+
+type CommandCoverage = {
+  value: number;
+  detail: Record<CoverageSurface, number>;
+};
+
 type OwnerCommandPlan = {
   quickActions: {
     pause: string;
@@ -299,6 +315,7 @@ type OwnerCommandPlan = {
   orchestratorPrograms: CommandProgram[];
   commandCoverage: number;
   coverageNarrative: string;
+  coverageDetail: Record<CoverageSurface, number>;
 };
 
 type TrajectoryEntry = {
@@ -328,7 +345,10 @@ function coverageNarrative(coverage: number): string {
   return 'Coverage below defensive target – prioritise scripting additional command hooks.';
 }
 
-function buildOwnerCommandPlan(scenario: Scenario, coverage: number): OwnerCommandPlan {
+function buildOwnerCommandPlan(
+  scenario: Scenario,
+  coverage: CommandCoverage,
+): OwnerCommandPlan {
   return {
     quickActions: {
       pause: scenario.safeguards.pauseScript,
@@ -344,8 +364,9 @@ function buildOwnerCommandPlan(scenario: Scenario, coverage: number): OwnerComma
     modulePrograms: scenario.commandCatalog.modulePrograms,
     treasuryPrograms: scenario.commandCatalog.treasuryPrograms,
     orchestratorPrograms: scenario.commandCatalog.orchestratorPrograms,
-    commandCoverage: Number(coverage.toFixed(3)),
-    coverageNarrative: coverageNarrative(coverage),
+    commandCoverage: coverage.value,
+    coverageNarrative: coverageNarrative(coverage.value),
+    coverageDetail: coverage.detail,
   };
 }
 
@@ -477,6 +498,28 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
       '% — ' +
       summary.ownerCommandPlan.coverageNarrative,
   );
+  lines.push('');
+  lines.push('## Coverage detail');
+  lines.push('');
+  const surfaceLabels: Record<CoverageSurface, string> = {
+    jobs: 'Job programs',
+    validators: 'Validator programs',
+    stablecoinAdapters: 'Stablecoin adapters',
+    modules: 'Protocol modules',
+    parameters: 'Parameter overrides',
+    pause: 'Emergency pause',
+    resume: 'Resume procedure',
+    treasury: 'Treasury playbooks',
+    orchestrator: 'Orchestrator mesh',
+  };
+  for (const [surface, ratio] of Object.entries(summary.ownerCommandPlan.coverageDetail) as [
+    CoverageSurface,
+    number,
+  ][]) {
+    lines.push(
+      `- ${surfaceLabels[surface]}: ${(ratio * 100).toFixed(1)}% coverage`,
+    );
+  }
   lines.push('');
   lines.push('## Quick actions');
   lines.push('');
@@ -761,17 +804,31 @@ function matchesTarget(
   return false;
 }
 
-function computeOwnerCommandCoverage(scenario: Scenario): number {
+function computeOwnerCommandCoverage(scenario: Scenario): CommandCoverage {
+  const detail: Record<CoverageSurface, { covered: number; total: number }> = {
+    jobs: { covered: 0, total: 0 },
+    validators: { covered: 0, total: 0 },
+    stablecoinAdapters: { covered: 0, total: 0 },
+    modules: { covered: 0, total: 0 },
+    parameters: { covered: 0, total: 0 },
+    pause: { covered: 0, total: 0 },
+    resume: { covered: 0, total: 0 },
+    treasury: { covered: 0, total: 0 },
+    orchestrator: { covered: 0, total: 0 },
+  };
+
   let surfaces = 0;
   let covered = 0;
 
-  const checkCoverage = <T>(
+  const registerCoverage = <T>(
+    surface: CoverageSurface,
     items: readonly T[],
     programs: readonly CommandProgram[],
     getIdentifiers: (item: T) => { id: string; name?: string },
   ) => {
-    surfaces += items.length;
     for (const item of items) {
+      detail[surface].total += 1;
+      surfaces += 1;
       const identifiers = getIdentifiers(item);
       const hasProgram = programs.some((program) => {
         if (!program.script || program.script.trim().length === 0) {
@@ -780,6 +837,7 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
         return matchesTarget(program, identifiers.id, identifiers.name);
       });
       if (hasProgram) {
+        detail[surface].covered += 1;
         covered += 1;
       }
     }
@@ -788,20 +846,28 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
   const jobPrograms = scenario.commandCatalog.jobPrograms.length
     ? scenario.commandCatalog.jobPrograms
     : scenario.commandCatalog.orchestratorPrograms;
-  checkCoverage(scenario.jobs, jobPrograms, (job) => ({ id: job.id, name: job.name }));
+  registerCoverage('jobs', scenario.jobs, jobPrograms, (job) => ({
+    id: job.id,
+    name: job.name,
+  }));
 
   const validatorPrograms = scenario.commandCatalog.validatorPrograms.length
     ? scenario.commandCatalog.validatorPrograms
     : scenario.commandCatalog.orchestratorPrograms;
-  checkCoverage(scenario.validators, validatorPrograms, (validator) => ({
+  registerCoverage('validators', scenario.validators, validatorPrograms, (validator) => ({
     id: validator.id,
     name: validator.name,
   }));
 
-  checkCoverage(scenario.stablecoinAdapters, scenario.commandCatalog.adapterPrograms, (adapter) => ({
-    id: adapter.name,
-    name: adapter.name,
-  }));
+  registerCoverage(
+    'stablecoinAdapters',
+    scenario.stablecoinAdapters,
+    scenario.commandCatalog.adapterPrograms,
+    (adapter) => ({
+      id: adapter.name,
+      name: adapter.name,
+    }),
+  );
 
   const modulePrograms: CommandProgram[] = [
     ...scenario.commandCatalog.modulePrograms,
@@ -818,41 +884,57 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
       description: module.description,
     })),
   ];
-  checkCoverage(scenario.modules, modulePrograms, (module) => ({
+  registerCoverage('modules', scenario.modules, modulePrograms, (module) => ({
     id: module.id,
     name: module.name,
   }));
 
-  checkCoverage(scenario.owner.controls, scenario.owner.controls.map((control, index) => ({
-    id: `control-${index}-${control.parameter}`,
-    target: control.parameter,
-    script: control.script,
-    description: control.description,
-  })), (control) => ({ id: control.parameter, name: control.parameter }));
+  registerCoverage(
+    'parameters',
+    scenario.owner.controls,
+    scenario.owner.controls.map((control, index) => ({
+      id: `control-${index}-${control.parameter}`,
+      target: control.parameter,
+      script: control.script,
+      description: control.description,
+    })),
+    (control) => ({ id: control.parameter, name: control.parameter }),
+  );
 
-  // Pause and resume surfaces
-  surfaces += 2;
-  if (scenario.safeguards.pauseScript.trim().length > 0) {
-    covered += 1;
-  }
-  if (scenario.safeguards.resumeScript.trim().length > 0) {
-    covered += 1;
-  }
+  const applyBinaryCoverage = (surface: CoverageSurface, isCovered: boolean) => {
+    detail[surface].total += 1;
+    surfaces += 1;
+    if (isCovered) {
+      detail[surface].covered += 1;
+      covered += 1;
+    }
+  };
 
-  // Treasury command surface
-  surfaces += 1;
-  if (scenario.commandCatalog.treasuryPrograms.some((program) => program.script.trim().length > 0)) {
-    covered += 1;
-  }
+  applyBinaryCoverage('pause', scenario.safeguards.pauseScript.trim().length > 0);
+  applyBinaryCoverage('resume', scenario.safeguards.resumeScript.trim().length > 0);
 
-  // Orchestrator command surface (beyond pause/resume)
-  surfaces += 1;
-  if (scenario.commandCatalog.orchestratorPrograms.some((program) => program.script.trim().length > 0)) {
-    covered += 1;
-  }
+  applyBinaryCoverage(
+    'treasury',
+    scenario.commandCatalog.treasuryPrograms.some((program) => program.script.trim().length > 0),
+  );
 
-  const coverage = surfaces === 0 ? 1 : covered / surfaces;
-  return Number(Math.min(1, Math.max(0, coverage)).toFixed(3));
+  applyBinaryCoverage(
+    'orchestrator',
+    scenario.commandCatalog.orchestratorPrograms.some((program) => program.script.trim().length > 0),
+  );
+
+  const detailRatios = Object.fromEntries(
+    (Object.keys(detail) as CoverageSurface[]).map((surface) => {
+      const value = detail[surface];
+      if (value.total === 0) {
+        return [surface, 1];
+      }
+      return [surface, Number((value.covered / value.total).toFixed(3))];
+    }),
+  ) as Record<CoverageSurface, number>;
+
+  const coverage = surfaces === 0 ? 1 : Number((covered / surfaces).toFixed(3));
+  return { value: coverage, detail: detailRatios };
 }
 
 function computeSovereignControlScore(scenario: Scenario): number {
@@ -1248,7 +1330,7 @@ function synthesiseSummary(
         (0.82 + pseudoRandom(`risk:${scenario.scenarioId}`) * 0.12).toFixed(3),
       ),
       stabilityIndex,
-      ownerCommandCoverage: ownerCoverage,
+      ownerCommandCoverage: ownerCoverage.value,
       sovereignControlScore,
       assertionPassRate: 0,
     },
@@ -1289,8 +1371,8 @@ function synthesiseSummary(
       governanceSafe: scenario.owner.governanceSafe,
       treasurySafe: scenario.treasury.ownerSafe,
       threshold: scenario.owner.threshold,
-      commandCoverage: ownerCoverage,
-      coverageNarrative: coverageNarrative(ownerCoverage),
+      commandCoverage: ownerCoverage.value,
+      coverageNarrative: coverageNarrative(ownerCoverage.value),
       pauseScript: scenario.safeguards.pauseScript,
       resumeScript: scenario.safeguards.resumeScript,
       scripts: collectCommandScripts(scenario),
@@ -1561,8 +1643,7 @@ export async function runScenario(
     ? passCount / summary.assertions.length
     : 1;
   summary.metrics.assertionPassRate = Number(passRate.toFixed(3));
-  const ownerPlan = buildOwnerCommandPlan(workingScenario, summary.metrics.ownerCommandCoverage);
-  summary.ownerCommandPlan = ownerPlan;
+  const ownerPlan = summary.ownerCommandPlan;
   summary.governanceLedger = buildGovernanceLedger(
     workingScenario,
     summary,
@@ -1641,6 +1722,17 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-command-plan.md'),
     generateOwnerCommandMarkdown(summary),
+  );
+
+  const commandChecklist = {
+    generatedAt: summary.generatedAt,
+    coverage: summary.ownerCommandPlan.commandCoverage,
+    coverageNarrative: summary.ownerCommandPlan.coverageNarrative,
+    surfaces: summary.ownerCommandPlan.coverageDetail,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'owner-command-checklist.json'),
+    JSON.stringify(commandChecklist, null, 2),
   );
 
   if (options.updateUiSummary) {

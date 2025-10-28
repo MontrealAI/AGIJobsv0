@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T15:43:00.875Z",
+  "executionTimestamp": "2025-10-28T16:59:49.680Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -632,7 +632,18 @@
       }
     ],
     "commandCoverage": 1,
-    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface."
+    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
+    "coverageDetail": {
+      "jobs": 1,
+      "validators": 1,
+      "stablecoinAdapters": 1,
+      "modules": 1,
+      "parameters": 1,
+      "pause": 1,
+      "resume": 1,
+      "treasury": 1,
+      "orchestrator": 1
+    }
   },
   "assertions": [
     {
