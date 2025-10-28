@@ -27,6 +27,7 @@ from .sentinel import (
 )
 from .demo_runner import run_validator_constellation_demo
 from .subgraph import SubgraphIndexer, IndexedEvent
+from .governance import OwnerConsole, OwnerAction
 
 __all__ = [
     "SystemConfig",
@@ -50,5 +51,7 @@ __all__ = [
     "SentinelRule",
     "SubgraphIndexer",
     "IndexedEvent",
+    "OwnerConsole",
+    "OwnerAction",
     "run_validator_constellation_demo",
 ]

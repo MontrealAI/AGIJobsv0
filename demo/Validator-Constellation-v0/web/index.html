@@ -114,8 +114,16 @@
       <article class="card">
         <h3>Operator Playbook</h3>
         <pre class="code-block"><code>$ cd demo/Validator-Constellation-v0
-$ python run_demo.py --seed mission-12 --truth true --output mission-12.json
-# Review mission-12.json for committee, slashing, pause states & proof roots.</code></pre>
+$ python run_demo.py \
+    --seed mission-12 \
+    --truth true \
+    --committee-size 3 \
+    --quorum 2 \
+    --commit-blocks 5 \
+    --reveal-blocks 6 \
+    --slash-non-reveal 0.35 \
+    --output mission-12.json
+# Review mission-12.json for committee, timelines, owner actions, slashing & pause states.</code></pre>
       </article>
       <article class="card">
         <h3>Owner Controls</h3>
@@ -198,6 +206,26 @@ $ python run_demo.py --seed mission-12 --truth true --output mission-12.json
           },
         },
         {
+          type: "ConfigUpdated",
+          payload: {
+            owner: "0x0000000000000000000000000000000000000001",
+            changes: {
+              reveal_phase_blocks: 6,
+              slash_fraction_non_reveal: 0.35,
+            },
+          },
+        },
+        {
+          type: "PhaseTransition",
+          payload: {
+            roundId: "constellation-round-1",
+            phase: "reveal",
+            reason: "committee-complete",
+            commitDeadline: 5,
+            revealDeadline: 11,
+          },
+        },
+        {
           type: "SentinelAlert",
           payload: {
             domain: "synthetic-biology",
@@ -226,6 +254,13 @@ $ python run_demo.py --seed mission-12 --truth true --output mission-12.json
             truthVotes: 2,
             totalReveals: 2,
             result: true,
+            timeline: {
+              commitStartBlock: 0,
+              commitDeadlineBlock: 5,
+              revealStartBlock: 3,
+              revealDeadlineBlock: 11,
+              finalizedAtBlock: 11,
+            },
           },
         },
       ];

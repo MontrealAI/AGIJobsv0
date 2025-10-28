@@ -18,6 +18,35 @@ def main() -> None:
         default="true",
         help="Truthful outcome for the demo round",
     )
+    parser.add_argument("--committee-size", type=int, default=None, help="Override committee size")
+    parser.add_argument("--jobs", type=int, default=None, help="Number of jobs to batch into the proof")
+    parser.add_argument("--quorum", type=int, default=None, help="Quorum required for truthful outcome")
+    parser.add_argument("--commit-blocks", type=int, default=None, help="Commit phase block window")
+    parser.add_argument("--reveal-blocks", type=int, default=None, help="Reveal phase block window")
+    parser.add_argument(
+        "--slash-non-reveal",
+        type=float,
+        default=None,
+        help="Slash fraction for non-revealing validators",
+    )
+    parser.add_argument(
+        "--slash-incorrect",
+        type=float,
+        default=None,
+        help="Slash fraction for incorrect votes",
+    )
+    parser.add_argument(
+        "--budget",
+        type=float,
+        default=1_000.0,
+        help="Sentinel budget threshold before alerts fire",
+    )
+    parser.add_argument(
+        "--owner",
+        type=str,
+        default=None,
+        help="Override the simulated contract owner address",
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -25,7 +54,27 @@ def main() -> None:
         help="Optional path to export the summary JSON",
     )
     args = parser.parse_args()
-    summary = run_validator_constellation_demo(seed=args.seed, truthful_outcome=args.truth == "true")
+    overrides = {}
+    if args.quorum is not None:
+        overrides["quorum"] = args.quorum
+    if args.commit_blocks is not None:
+        overrides["commit_phase_blocks"] = args.commit_blocks
+    if args.reveal_blocks is not None:
+        overrides["reveal_phase_blocks"] = args.reveal_blocks
+    if args.slash_non_reveal is not None:
+        overrides["slash_fraction_non_reveal"] = args.slash_non_reveal
+    if args.slash_incorrect is not None:
+        overrides["slash_fraction_incorrect_vote"] = args.slash_incorrect
+    if args.owner is not None:
+        overrides["owner_address"] = args.owner
+    summary = run_validator_constellation_demo(
+        seed=args.seed,
+        truthful_outcome=args.truth == "true",
+        committee_size=args.committee_size,
+        job_count=args.jobs,
+        config_overrides=overrides or None,
+        budget_limit=args.budget,
+    )
     data = {
         "committee": summary.committee,
         "truthfulOutcome": summary.truthful_outcome,
@@ -34,6 +83,8 @@ def main() -> None:
         "pausedDomains": summary.paused_domains,
         "batchProofRoot": summary.batch_proof_root,
         "gasSaved": summary.gas_saved,
+        "timeline": summary.timeline,
+        "ownerActions": summary.owner_actions,
     }
     print(json.dumps(data, indent=2))
     if args.output:
