@@ -129,6 +129,7 @@ flowchart TD
 - **Antifragile safety shell** – adversarial simulations run before each deployment, automatically raising the minimum test difficulty after every incident.
 - **Institutional observability** – Prometheus, OpenTelemetry, and compliance-grade action logs are enabled out of the box.
 - **Self-documenting** – every CLI command emits Markdown, JSON, and Mermaid summaries so that regulators and auditors can reconstruct the node state instantly.
+- **Trustless job autopilot** – the node now speaks directly to JobRegistry, auto-discovers ENS-gated jobs, dry-runs them by default, and can pause/resume the entire platform through SystemPause with a single command.
 
 ---
 
@@ -142,6 +143,34 @@ flowchart TD
 | `npm run demo:agi-alpha-node -- dashboard --config <file>` | Launch the operator dashboard and earnings API. |
 | `npm run demo:agi-alpha-node -- heartbeat --config <file>` | Submit a node heartbeat to PlatformRegistry and refresh Prometheus gauges. |
 | `npm run demo:agi-alpha-node -- diagnostics --config <file>` | Run antifragile stress tests and export compliance logs. |
+| `npm run demo:agi-alpha-node -- jobs discover --config <file>` | Query JobRegistry for ENS-authenticated opportunities (dry-run safe). |
+| `npm run demo:agi-alpha-node -- jobs autopilot --config <file> [--dry-run]` | Discover → plan → (optionally) execute the richest job end-to-end. |
+| `npm run demo:agi-alpha-node -- jobs submit <jobId> --result-uri <uri>` | Deliver results to JobRegistry with deterministic hashing. |
+| `npm run demo:agi-alpha-node -- owner pause --config <file>` | Invoke `SystemPause.pauseAll()` with governance safety checks. |
+| `npm run demo:agi-alpha-node -- owner resume --config <file>` | Resume execution across StakeManager, JobRegistry, FeePool, and peers. |
+
+### Trustless Job Lifecycle Flow
+
+```mermaid
+sequenceDiagram
+  participant Operator
+  participant AlphaNode
+  participant JobRegistry
+  participant SystemPause
+
+  Operator->>AlphaNode: jobs discover --limit 12
+  AlphaNode->>JobRegistry: queryFilter(JobCreated)
+  AlphaNode-->>Operator: Ranked opportunities + risk telemetry
+  Operator->>AlphaNode: jobs autopilot --dry-run
+  AlphaNode->>JobRegistry: applyForJob(selectedJob)
+  AlphaNode->>JobRegistry: submit(resultHash, resultURI)
+  AlphaNode-->>Operator: JSON execution dossier
+  alt Emergency Halt
+    Operator->>AlphaNode: owner pause
+    AlphaNode->>SystemPause: pauseAll()
+    SystemPause-->>Operator: Transaction receipt + audit log
+  end
+```
 
 All commands support `--network`, `--rpc`, and `--dry-run` flags for local testing.
 

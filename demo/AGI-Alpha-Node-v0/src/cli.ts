@@ -4,6 +4,30 @@ import yargs from 'yargs';
 import { AlphaNode } from './node';
 import { startAlphaNodeServer } from './server/httpServer';
 import { defaultOpportunities } from './utils/opportunities';
+import { pausePlatform, resumePlatform } from './blockchain/control';
+
+function parseProofOption(value: unknown): string[] | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (Array.isArray(value)) {
+    return value.map(String);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map((entry) => entry.trim()).filter(Boolean);
+  }
+  return undefined;
+}
+
+function parseJobId(jobId: unknown): bigint {
+  if (typeof jobId === 'string') {
+    return BigInt(jobId);
+  }
+  if (typeof jobId === 'number') {
+    return BigInt(jobId);
+  }
+  throw new Error('Job identifier must be provided.');
+}
 
 function requirePrivateKey(): string {
   const key = process.env.ALPHA_NODE_PRIVATE_KEY;
@@ -132,6 +156,182 @@ yargs(hideBin(process.argv))
       console.log(`Metrics http://localhost:${node.getConfig().monitoring.metricsPort}/metrics`);
       servers.dashboard.on('close', () => node.getLogger().info('dashboard_shutdown'));
       servers.metrics.on('close', () => node.getLogger().info('metrics_shutdown'));
+    }
+  )
+  .command(
+    'jobs discover',
+    'Discover open jobs and convert them into planner opportunities',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('limit', {
+          type: 'number',
+          describe: 'Maximum number of jobs to return.'
+        })
+        .option('from-block', {
+          type: 'number',
+          describe: 'Override the discovery start block.'
+        })
+        .option('to-block', {
+          type: 'number',
+          describe: 'Override the discovery end block.'
+        })
+        .option('include-completed', {
+          type: 'boolean',
+          default: false
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const jobs = await node.discoverJobs({
+        limit: args.limit as number | undefined,
+        fromBlock: args['from-block'] as number | undefined,
+        toBlock: args['to-block'] as number | undefined,
+        includeCompleted: Boolean(args['include-completed'])
+      });
+      console.log(JSON.stringify({
+        jobs,
+        opportunities: node.toOpportunities(jobs)
+      }, null, 2));
+    }
+  )
+  .command(
+    'jobs apply <jobId>',
+    'Apply for a job with the configured ENS node identity',
+    (cmd) =>
+      cmd
+        .positional('jobId', {
+          type: 'string',
+          demandOption: true
+        })
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('dry-run', {
+          type: 'boolean',
+          default: false
+        })
+        .option('proof', {
+          type: 'string',
+          describe: 'Comma-separated ENS merkle proof overrides.'
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const receipt = await node.applyForJob(parseJobId(args.jobId), {
+        dryRun: Boolean(args['dry-run']),
+        proof: parseProofOption(args.proof)
+      });
+      console.log(JSON.stringify(receipt, null, 2));
+    }
+  )
+  .command(
+    'jobs submit <jobId>',
+    'Submit job results to JobRegistry',
+    (cmd) =>
+      cmd
+        .positional('jobId', { type: 'string', demandOption: true })
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('result-uri', {
+          type: 'string',
+          describe: 'URI of the result artifact (defaults to config.jobs.execution.defaultResultUri).'
+        })
+        .option('result-hash', {
+          type: 'string',
+          describe: 'Precomputed hash of the result artifact.'
+        })
+        .option('dry-run', { type: 'boolean', default: false })
+        .option('proof', { type: 'string', describe: 'Comma-separated ENS merkle proof overrides.' })
+        .option('hash-algorithm', {
+          type: 'string',
+          choices: ['keccak256', 'sha256'] as const
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const receipt = await node.submitJob(parseJobId(args.jobId), {
+        dryRun: Boolean(args['dry-run']),
+        proof: parseProofOption(args.proof),
+        resultUri: (args['result-uri'] as string | undefined) ?? undefined,
+        resultHash: (args['result-hash'] as string | undefined) ?? undefined,
+        hashAlgorithm: (args['hash-algorithm'] as 'keccak256' | 'sha256' | undefined) ?? undefined
+      });
+      console.log(JSON.stringify(receipt, null, 2));
+    }
+  )
+  .command(
+    'jobs finalize <jobId>',
+    'Finalize a completed job and release payment',
+    (cmd) =>
+      cmd
+        .positional('jobId', { type: 'string', demandOption: true })
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('dry-run', { type: 'boolean', default: false }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const receipt = await node.finalizeJob(parseJobId(args.jobId), {
+        dryRun: Boolean(args['dry-run'])
+      });
+      console.log(JSON.stringify(receipt, null, 2));
+    }
+  )
+  .command(
+    'jobs autopilot',
+    'Full discovery → planning → execution cycle',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        })
+        .option('limit', { type: 'number' })
+        .option('dry-run', { type: 'boolean', default: false })
+        .option('result-uri', { type: 'string' })
+        .option('proof', { type: 'string' }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const report = await node.autopilot({
+        limit: args.limit as number | undefined,
+        dryRun: Boolean(args['dry-run']),
+        resultUri: args['result-uri'] as string | undefined,
+        proof: parseProofOption(args.proof)
+      });
+      console.log(JSON.stringify(report, null, 2));
+    }
+  )
+  .command(
+    'owner pause',
+    'Pause all core modules via SystemPause',
+    (cmd) =>
+      cmd.option('config', {
+        type: 'string',
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+      }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const receipt = await pausePlatform(node.getConfig(), node.getMetrics(), node.getLogger(), node.getSigner());
+      console.log(JSON.stringify(receipt, null, 2));
+    }
+  )
+  .command(
+    'owner resume',
+    'Resume all core modules via SystemPause',
+    (cmd) =>
+      cmd.option('config', {
+        type: 'string',
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+      }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const receipt = await resumePlatform(node.getConfig(), node.getMetrics(), node.getLogger(), node.getSigner());
+      console.log(JSON.stringify(receipt, null, 2));
     }
   )
   .demandCommand()

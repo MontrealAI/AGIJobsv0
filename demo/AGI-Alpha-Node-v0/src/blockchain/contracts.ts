@@ -26,7 +26,10 @@ const ERC20_ABI = new Interface([
 ]);
 
 const SYSTEM_PAUSE_ABI = new Interface([
-  'function paused() external view returns (bool)'
+  'function paused() external view returns (bool)',
+  'function pauseAll() external',
+  'function unpauseAll() external',
+  'function governance() external view returns (address)'
 ]);
 
 export type StakeManagerContract = Contract;

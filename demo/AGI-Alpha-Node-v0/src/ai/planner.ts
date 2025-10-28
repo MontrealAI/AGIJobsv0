@@ -101,7 +101,7 @@ export class AlphaPlanner {
       return 0.5;
     }
     const hash = crypto.createHash('sha256');
-    hash.update(tags.sort().join(':'));
+    hash.update([...tags].sort().join(':'));
     const digest = hash.digest();
     return (digest[0] % 100) / 100;
   }

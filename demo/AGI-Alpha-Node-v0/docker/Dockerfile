@@ -6,6 +6,8 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
+RUN npm run build:agi-alpha-node
+
 ENV NODE_ENV=production \
     ALPHA_NODE_CONFIG=/config/alpha-node.json \
     PORT=4318 \
@@ -13,5 +15,5 @@ ENV NODE_ENV=production \
 
 EXPOSE 4317 4318
 
-ENTRYPOINT ["node", "-r", "ts-node/register", "demo/AGI-Alpha-Node-v0/src/cli.ts"]
+ENTRYPOINT ["node", "demo/AGI-Alpha-Node-v0/dist/cli.js"]
 CMD ["--config", "/config/alpha-node.json"]

@@ -74,6 +74,21 @@
       }
     }
   },
+  "jobs": {
+    "discovery": {
+      "lookbackBlocks": 12000,
+      "maxJobs": 12,
+      "includeCompleted": false
+    },
+    "execution": {
+      "defaultResultUri": "ipfs://QmYourResultArtifact",
+      "resultHashAlgorithm": "keccak256"
+    },
+    "identityProof": []
+  },
+  "governance": {
+    "systemPauseGuardian": "0x8888888888888888888888888888888888888888"
+  },
   "monitoring": {
     "metricsPort": 4317,
     "dashboardPort": 4318,
