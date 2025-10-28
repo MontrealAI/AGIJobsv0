@@ -1,0 +1,49 @@
+version: 1
+metadata:
+  title: AGI Alpha Node Control Registry
+  description: Declarative configuration schema for non-technical operators.
+  documentation: https://github.com/MontrealAI/AGIJobsv0/tree/main/demo/AGI-Alpha-Node-v0
+
+fields:
+  ens:
+    description: ENS identity bindings required for activation.
+    fields:
+      rootNode:
+        type: string
+        pattern: "^[a-z0-9.-]+\.alpha\.node\.agi\.eth$"
+        required: true
+      operatorAddress:
+        type: string
+        pattern: "^0x[a-fA-F0-9]{40}$"
+        required: true
+  staking:
+    description: Staking preferences for $AGIALPHA collateral.
+    fields:
+      minimumStake:
+        type: number
+        min: 1000
+        max: 1000000
+      autocompound:
+        type: boolean
+        default: true
+  jobs:
+    description: Job policy filters.
+    fields:
+      allowedTags:
+        type: array
+        items:
+          type: string
+      maxConcurrent:
+        type: integer
+        min: 1
+        max: 64
+  resilience:
+    description: Antifragile settings controlling stress harness intensity.
+    fields:
+      enableChaos:
+        type: boolean
+        default: true
+      maxDowntimeMinutes:
+        type: integer
+        min: 5
+        max: 240
