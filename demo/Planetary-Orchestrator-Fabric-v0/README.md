@@ -46,8 +46,16 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
   This invokes `--stop-after-ticks` under the hood, captures the checkpoint path from `summary.json`, and resumes automatically so non-technical owners see the drill succeed end-to-end.
-5. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels for either run.
-6. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
+5. **Launch the acceptance autopilot** to validate Kardashev-grade readiness in one shot:
+  ```bash
+  npm run demo:planetary-orchestrator-fabric:acceptance -- \
+    --label planetary-acceptance \
+    --jobs-high-load 10000 \
+    --outage-node mars.gpu-helion
+  ```
+  This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
+6. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, mermaid system diagrams, and owner command panels for either run.
+7. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
 
