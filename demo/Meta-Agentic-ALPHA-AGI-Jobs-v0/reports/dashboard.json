@@ -1,0 +1,129 @@
+{
+  "metrics": {
+    "totalOpportunities": 5,
+    "portfolioValue": 131860000,
+    "capitalAtRisk": 12240850,
+    "roiMultiplier": 10.772127752566202,
+    "automationCoverage": 0.924,
+    "validatorConfidence": 0.9827857142857143,
+    "detectionLeadHours": 17.064,
+    "worldModelFidelity": 0.93,
+    "ownerCommandCoverage": 0.75,
+    "sovereignControlScore": 1,
+    "antifragilityIndex": 0.86448,
+    "stabilityReserve": 11467974.5,
+    "paybackHours": 19.309091460640076,
+    "treasuryVelocity": 9.772127752566202,
+    "ciStatus": "green"
+  },
+  "assignments": [
+    {
+      "opportunityId": "opp-supply-inversion",
+      "title": "Global Supply Inversion Hedge",
+      "domain": "supply-chain",
+      "projectedROI": 14.008120649651973,
+      "automation": 0.92,
+      "stability": 0.93,
+      "durationHours": 48
+    },
+    {
+      "opportunityId": "opp-latent-alpha",
+      "title": "Latent Alpha Knowledge Arbitrage",
+      "domain": "financial-markets",
+      "projectedROI": 15.757857974388823,
+      "automation": 0.94,
+      "stability": 0.95,
+      "durationHours": 36
+    },
+    {
+      "opportunityId": "opp-bio-discovery",
+      "title": "Bio-Innovation Discovery Loop",
+      "domain": "biotech",
+      "projectedROI": 7.025670719938237,
+      "automation": 0.91,
+      "stability": 0.9,
+      "durationHours": 60
+    },
+    {
+      "opportunityId": "opp-infra-efficiency",
+      "title": "Infrastructure Efficiency Cascade",
+      "domain": "infrastructure",
+      "projectedROI": 9.289843104872007,
+      "automation": 0.9,
+      "stability": 0.96,
+      "durationHours": 40
+    },
+    {
+      "opportunityId": "opp-governance-elevation",
+      "title": "On-Chain Governance Elevation",
+      "domain": "governance",
+      "projectedROI": 8.862973760932945,
+      "automation": 0.95,
+      "stability": 0.99,
+      "durationHours": 24
+    }
+  ],
+  "owner": {
+    "governanceSafe": "0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "emergencyContacts": [
+      "duty.officer@meta-agi.example",
+      "+1-800-ALPHA-247",
+      "oncall.governance@meta-agi.example"
+    ],
+    "responseMinutes": 8,
+    "commands": [
+      {
+        "id": "pause-global",
+        "parameter": "globalPause",
+        "script": "npm run owner:system-pause -- --action pause",
+        "description": "Halts all orchestrated execution within 60 seconds.",
+        "category": "safety"
+      },
+      {
+        "id": "resume-global",
+        "parameter": "globalPause",
+        "script": "npm run owner:system-pause -- --action unpause",
+        "description": "Resumes orchestrated execution once safeguards are cleared.",
+        "category": "safety"
+      },
+      {
+        "id": "upgrade-surge",
+        "parameter": "moduleVersion",
+        "script": "npm run owner:update-all",
+        "description": "Applies queued upgrades to every production module.",
+        "category": "governance"
+      },
+      {
+        "id": "adjust-validators",
+        "parameter": "validatorQuorum",
+        "script": "npm run owner:upgrade -- --target validator",
+        "description": "Raises validator quorums for high-value opportunities.",
+        "category": "risk"
+      },
+      {
+        "id": "treasury-allocation",
+        "parameter": "treasuryRouting",
+        "script": "npm run owner:parameters -- --group treasury",
+        "description": "Rebalances capital between liquidity, R&D, and reserves.",
+        "category": "treasury"
+      },
+      {
+        "id": "ci-verification",
+        "parameter": "branchProtection",
+        "script": "npm run owner:verify-control",
+        "description": "Confirms CI + governance guardrails before accepting updates.",
+        "category": "compliance"
+      }
+    ]
+  },
+  "ci": {
+    "commands": [
+      "npm run lint:check",
+      "npm test",
+      "npm run coverage:check",
+      "npm run owner:verify-control",
+      "npm run ci:verify-branch-protection"
+    ],
+    "status": "green"
+  }
+}

@@ -1,0 +1,49 @@
+graph TD
+    owner[Owner Multi-Sig\n0xF39Fd6e51aad88F6F4ce6aB8827279cffFb92266] --> orchestrator[Meta-Agentic Planner]
+    orchestrator --> treasury[Treasury Manager]
+    orchestrator --> governance[On-Chain Governance]
+    treasury --> a2aBus
+    governance --> a2aBus
+    jobRegistry[AGI Job Registry\n2.2.0]
+    treasuryManager[Autonomous Treasury Manager\n2.2.0]
+    a2aBus[Agent-to-Agent Coordination Bus\n2.1.1]
+    worldModel[MuZero-Grade World Model\n1.9.0]
+    governance[Timelock + Multisig Controller\n2.0.3]
+    execute-autonomy -->|leads| opp-supply-inversion
+    think-orchestrator -->|supports| opp-supply-inversion
+    identify-scout -->|supports| opp-supply-inversion
+    strategy-supreme -->|supports| opp-supply-inversion
+    learn-forge -->|supports| opp-supply-inversion
+    design-savant -->|supports| opp-supply-inversion
+    execute-autonomy -->|leads| opp-latent-alpha
+    think-orchestrator -->|supports| opp-latent-alpha
+    identify-scout -->|supports| opp-latent-alpha
+    strategy-supreme -->|supports| opp-latent-alpha
+    learn-forge -->|supports| opp-latent-alpha
+    execute-autonomy -->|leads| opp-bio-discovery
+    think-orchestrator -->|supports| opp-bio-discovery
+    identify-scout -->|supports| opp-bio-discovery
+    learn-forge -->|supports| opp-bio-discovery
+    design-savant -->|supports| opp-bio-discovery
+    execute-autonomy -->|leads| opp-infra-efficiency
+    think-orchestrator -->|supports| opp-infra-efficiency
+    identify-scout -->|supports| opp-infra-efficiency
+    strategy-supreme -->|supports| opp-infra-efficiency
+    design-savant -->|supports| opp-infra-efficiency
+    execute-autonomy -->|leads| opp-governance-elevation
+    strategy-supreme -->|supports| opp-governance-elevation
+    jobRegistry --> opp-supply-inversion
+    treasuryManager --> opp-supply-inversion
+    a2aBus --> opp-supply-inversion
+    worldModel --> opp-latent-alpha
+    treasuryManager --> opp-latent-alpha
+    governance --> opp-latent-alpha
+    jobRegistry --> opp-bio-discovery
+    worldModel --> opp-bio-discovery
+    a2aBus --> opp-bio-discovery
+    treasuryManager --> opp-infra-efficiency
+    a2aBus --> opp-infra-efficiency
+    governance --> opp-governance-elevation
+    a2aBus --> opp-governance-elevation
+    metrics[Metrics\nROI 10.77x\nAutomation 92.4%]
+    orchestrator --> metrics

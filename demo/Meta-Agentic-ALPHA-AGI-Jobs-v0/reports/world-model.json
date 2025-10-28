@@ -1,0 +1,28 @@
+{
+  "simulations": [
+    {
+      "name": "Alpha Liquidity Stress",
+      "winRate": 0.94,
+      "profitFactor": 1.72,
+      "maxDrawdownBps": 34
+    },
+    {
+      "name": "Supply Shock Countermeasure",
+      "winRate": 0.91,
+      "profitFactor": 1.58,
+      "maxDrawdownBps": 41
+    },
+    {
+      "name": "Biotech Discovery Sprint",
+      "winRate": 0.89,
+      "profitFactor": 1.45,
+      "maxDrawdownBps": 48
+    }
+  ],
+  "curriculum": [
+    "Self-play emergent logistics",
+    "Adversarial market microstructure",
+    "Policy response forecasting"
+  ],
+  "modelFidelity": 0.93
+}

@@ -1,0 +1,162 @@
+:root {
+  color-scheme: dark;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #040308;
+  color: #f4f7ff;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.5rem 4rem;
+  background: radial-gradient(circle at top, rgba(40, 65, 255, 0.16), transparent 65%),
+    radial-gradient(circle at bottom, rgba(147, 51, 234, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(4, 6, 20, 0.92), rgba(1, 1, 5, 1));
+}
+
+header,
+footer {
+  text-align: center;
+  padding: 2rem 0 1.5rem;
+}
+
+header h1 {
+  font-size: 2.4rem;
+  margin-bottom: 0.5rem;
+}
+
+header .tagline {
+  max-width: 60rem;
+  margin: 0 auto;
+  color: rgba(244, 247, 255, 0.75);
+}
+
+main {
+  display: grid;
+  gap: 2.5rem;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+section {
+  background: rgba(7, 12, 40, 0.6);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(88, 101, 242, 0.25);
+  border-radius: 18px;
+  padding: 1.8rem;
+  box-shadow: 0 24px 48px rgba(12, 18, 70, 0.4);
+}
+
+section h2 {
+  margin-top: 0;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+  color: rgba(129, 140, 248, 0.9);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  border-radius: 14px;
+  padding: 1rem;
+  background: rgba(15, 20, 60, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.metric-card h3 {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: rgba(196, 203, 255, 0.8);
+}
+
+.metric-value {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.assignments table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.assignments th,
+.assignments td {
+  padding: 0.75rem 0.6rem;
+  border-bottom: 1px solid rgba(148, 163, 255, 0.12);
+}
+
+.assignments tbody tr:hover {
+  background: rgba(88, 101, 242, 0.12);
+}
+
+.owner-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.owner-grid h3 {
+  margin-top: 0;
+  color: rgba(209, 213, 255, 0.9);
+}
+
+.owner-grid ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.owner-grid li {
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.owner-grid code {
+  background: rgba(59, 130, 246, 0.16);
+  border-radius: 6px;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.8rem;
+  color: rgba(191, 219, 254, 0.9);
+}
+
+.owner-grid span {
+  font-size: 0.85rem;
+  color: rgba(226, 232, 255, 0.72);
+}
+
+.mono {
+  font-family: 'Fira Code', 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+.error,
+.error-banner {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  color: #fecaca;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+footer {
+  color: rgba(244, 247, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 0 1rem 3rem;
+  }
+  header h1 {
+    font-size: 2rem;
+  }
+}

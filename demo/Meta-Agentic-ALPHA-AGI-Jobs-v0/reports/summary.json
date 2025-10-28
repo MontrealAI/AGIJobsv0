@@ -1,0 +1,17 @@
+{
+  "totalOpportunities": 5,
+  "portfolioValue": 131860000,
+  "capitalAtRisk": 12240850,
+  "roiMultiplier": 10.772127752566202,
+  "automationCoverage": 0.924,
+  "validatorConfidence": 0.9827857142857143,
+  "detectionLeadHours": 17.064,
+  "worldModelFidelity": 0.93,
+  "ownerCommandCoverage": 0.75,
+  "sovereignControlScore": 1,
+  "antifragilityIndex": 0.86448,
+  "stabilityReserve": 11467974.5,
+  "paybackHours": 19.309091460640076,
+  "treasuryVelocity": 9.772127752566202,
+  "ciStatus": "green"
+}

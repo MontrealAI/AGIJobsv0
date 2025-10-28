@@ -1,0 +1,272 @@
+{
+  "opportunities": [
+    {
+      "id": "opp-supply-inversion",
+      "title": "Global Supply Inversion Hedge",
+      "domain": "supply-chain",
+      "linkedModules": [
+        "jobRegistry",
+        "treasuryManager",
+        "a2aBus"
+      ],
+      "linkedAgents": [
+        "execute-autonomy",
+        "think-orchestrator",
+        "identify-scout",
+        "strategy-supreme",
+        "learn-forge",
+        "design-savant"
+      ],
+      "value": 38640000,
+      "risk": "medium",
+      "outcomes": [
+        "12% margin recovery",
+        "50bps working capital release"
+      ]
+    },
+    {
+      "id": "opp-latent-alpha",
+      "title": "Latent Alpha Knowledge Arbitrage",
+      "domain": "financial-markets",
+      "linkedModules": [
+        "worldModel",
+        "treasuryManager",
+        "governance"
+      ],
+      "linkedAgents": [
+        "execute-autonomy",
+        "think-orchestrator",
+        "identify-scout",
+        "strategy-supreme",
+        "learn-forge"
+      ],
+      "value": 33840000,
+      "risk": "low",
+      "outcomes": [
+        "Alpha spread capture",
+        "5.4x liquidity flywheel"
+      ]
+    },
+    {
+      "id": "opp-bio-discovery",
+      "title": "Bio-Innovation Discovery Loop",
+      "domain": "biotech",
+      "linkedModules": [
+        "jobRegistry",
+        "worldModel",
+        "a2aBus"
+      ],
+      "linkedAgents": [
+        "execute-autonomy",
+        "think-orchestrator",
+        "identify-scout",
+        "learn-forge",
+        "design-savant"
+      ],
+      "value": 25480000,
+      "risk": "medium",
+      "outcomes": [
+        "Novel therapeutic target",
+        "4.5x licensing uplift"
+      ]
+    },
+    {
+      "id": "opp-infra-efficiency",
+      "title": "Infrastructure Efficiency Cascade",
+      "domain": "infrastructure",
+      "linkedModules": [
+        "treasuryManager",
+        "a2aBus"
+      ],
+      "linkedAgents": [
+        "execute-autonomy",
+        "think-orchestrator",
+        "identify-scout",
+        "strategy-supreme",
+        "design-savant"
+      ],
+      "value": 22500000,
+      "risk": "low",
+      "outcomes": [
+        "18% opex compression",
+        "Carbon footprint -9%"
+      ]
+    },
+    {
+      "id": "opp-governance-elevation",
+      "title": "On-Chain Governance Elevation",
+      "domain": "governance",
+      "linkedModules": [
+        "governance",
+        "a2aBus"
+      ],
+      "linkedAgents": [
+        "execute-autonomy",
+        "strategy-supreme"
+      ],
+      "value": 11400000,
+      "risk": "low",
+      "outcomes": [
+        "24/7 upgrade queue",
+        "Owner console parity"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "think-orchestrator",
+      "to": "opp-supply-inversion",
+      "description": "Meta-Agentic Planner supports Global Supply Inversion Hedge"
+    },
+    {
+      "from": "identify-scout",
+      "to": "opp-supply-inversion",
+      "description": "Polymath Opportunity Scout supports Global Supply Inversion Hedge"
+    },
+    {
+      "from": "strategy-supreme",
+      "to": "opp-supply-inversion",
+      "description": "Meta-Strategist supports Global Supply Inversion Hedge"
+    },
+    {
+      "from": "learn-forge",
+      "to": "opp-supply-inversion",
+      "description": "Self-Evolving Curriculum Forge supports Global Supply Inversion Hedge"
+    },
+    {
+      "from": "design-savant",
+      "to": "opp-supply-inversion",
+      "description": "Creative Solution Savant supports Global Supply Inversion Hedge"
+    },
+    {
+      "from": "jobRegistry",
+      "to": "opp-supply-inversion",
+      "description": "Module jobRegistry powers Global Supply Inversion Hedge"
+    },
+    {
+      "from": "treasuryManager",
+      "to": "opp-supply-inversion",
+      "description": "Module treasuryManager powers Global Supply Inversion Hedge"
+    },
+    {
+      "from": "a2aBus",
+      "to": "opp-supply-inversion",
+      "description": "Module a2aBus powers Global Supply Inversion Hedge"
+    },
+    {
+      "from": "think-orchestrator",
+      "to": "opp-latent-alpha",
+      "description": "Meta-Agentic Planner supports Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "identify-scout",
+      "to": "opp-latent-alpha",
+      "description": "Polymath Opportunity Scout supports Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "strategy-supreme",
+      "to": "opp-latent-alpha",
+      "description": "Meta-Strategist supports Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "learn-forge",
+      "to": "opp-latent-alpha",
+      "description": "Self-Evolving Curriculum Forge supports Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "worldModel",
+      "to": "opp-latent-alpha",
+      "description": "Module worldModel powers Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "treasuryManager",
+      "to": "opp-latent-alpha",
+      "description": "Module treasuryManager powers Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "governance",
+      "to": "opp-latent-alpha",
+      "description": "Module governance powers Latent Alpha Knowledge Arbitrage"
+    },
+    {
+      "from": "think-orchestrator",
+      "to": "opp-bio-discovery",
+      "description": "Meta-Agentic Planner supports Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "identify-scout",
+      "to": "opp-bio-discovery",
+      "description": "Polymath Opportunity Scout supports Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "learn-forge",
+      "to": "opp-bio-discovery",
+      "description": "Self-Evolving Curriculum Forge supports Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "design-savant",
+      "to": "opp-bio-discovery",
+      "description": "Creative Solution Savant supports Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "jobRegistry",
+      "to": "opp-bio-discovery",
+      "description": "Module jobRegistry powers Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "worldModel",
+      "to": "opp-bio-discovery",
+      "description": "Module worldModel powers Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "a2aBus",
+      "to": "opp-bio-discovery",
+      "description": "Module a2aBus powers Bio-Innovation Discovery Loop"
+    },
+    {
+      "from": "think-orchestrator",
+      "to": "opp-infra-efficiency",
+      "description": "Meta-Agentic Planner supports Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "identify-scout",
+      "to": "opp-infra-efficiency",
+      "description": "Polymath Opportunity Scout supports Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "strategy-supreme",
+      "to": "opp-infra-efficiency",
+      "description": "Meta-Strategist supports Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "design-savant",
+      "to": "opp-infra-efficiency",
+      "description": "Creative Solution Savant supports Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "treasuryManager",
+      "to": "opp-infra-efficiency",
+      "description": "Module treasuryManager powers Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "a2aBus",
+      "to": "opp-infra-efficiency",
+      "description": "Module a2aBus powers Infrastructure Efficiency Cascade"
+    },
+    {
+      "from": "strategy-supreme",
+      "to": "opp-governance-elevation",
+      "description": "Meta-Strategist supports On-Chain Governance Elevation"
+    },
+    {
+      "from": "governance",
+      "to": "opp-governance-elevation",
+      "description": "Module governance powers On-Chain Governance Elevation"
+    },
+    {
+      "from": "a2aBus",
+      "to": "opp-governance-elevation",
+      "description": "Module a2aBus powers On-Chain Governance Elevation"
+    }
+  ]
+}
