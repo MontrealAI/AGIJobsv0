@@ -1,316 +1,194 @@
-export type ShardId = string;
+export type ShardId = 'earth' | 'mars' | 'luna' | 'helios' | 'edge';
 
-export interface SpilloverPolicy {
-  target: ShardId;
-  threshold: number;
-  maxDrainPerTick?: number;
-  requiredSkills?: string[];
-  weight?: number;
+export interface JobPayload {
+  readonly title: string;
+  readonly category:
+    | 'research'
+    | 'logistics'
+    | 'governance'
+    | 'infrastructure'
+    | 'science';
+  readonly energyBudget: number;
+  readonly instructions: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
-export interface RouterConfig {
-  queueAlertThreshold?: number;
-  spilloverPolicies?: SpilloverPolicy[];
-}
-
-export interface ShardConfig {
-  id: ShardId;
-  displayName: string;
-  latencyBudgetMs: number;
-  spilloverTargets: ShardId[];
-  maxQueue: number;
-  router?: RouterConfig;
-}
-
-export interface NodeDefinition {
-  id: string;
-  region: ShardId;
-  capacity: number;
-  specialties: string[];
-  heartbeatIntervalSec: number;
-  maxConcurrency: number;
-}
-
-export interface JobDefinition {
-  id: string;
-  shard: ShardId;
-  requiredSkills: string[];
-  estimatedDurationTicks: number;
-  value: number;
-  submissionTick: number;
-}
-
-export type JobStatus =
-  | "queued"
-  | "assigned"
-  | "completed"
-  | "failed"
-  | "spillover";
-
-export interface JobState extends JobDefinition {
-  status: JobStatus;
+export interface JobRecord {
+  readonly id: string;
+  readonly shard: ShardId;
+  readonly submittedAt: number;
+  readonly payload: JobPayload;
+  status: 'pending' | 'assigned' | 'completed' | 'failed';
   assignedNodeId?: string;
-  startedTick?: number;
-  completedTick?: number;
-  failedTick?: number;
-  remainingTicks?: number;
-  spilloverHistory: ShardId[];
-  failureReason?: string;
+  progress: number;
+  workRemaining: number;
+  workRequired: number;
+  completedAt?: number;
+  retries: number;
+  spilloverFrom?: ShardId;
 }
 
-export interface NodeState {
-  definition: NodeDefinition;
-  active: boolean;
-  runningJobs: Map<string, JobState>;
-  lastHeartbeatTick: number;
+export interface NodeDescriptor {
+  readonly id: string;
+  readonly region: ShardId;
+  readonly capacity: number;
+  readonly performance: number;
+  readonly reliability: number;
+  readonly specialties: ReadonlyArray<JobPayload['category']>;
 }
 
-export interface ShardState {
-  config: ShardConfig;
-  queue: JobState[];
-  inFlight: Map<string, JobState>;
-  completed: Map<string, JobState>;
-  failed: Map<string, JobState>;
-  spilloverCount: number;
+export interface ActiveAssignment {
+  readonly jobId: string;
+  progress: number;
+  workRemaining: number;
+}
+
+export interface NodeRuntimeState {
+  readonly descriptor: NodeDescriptor;
+  status: 'active' | 'offline' | 'recovering';
+  heartbeatTick: number;
+  assignments: ActiveAssignment[];
+  downtimeTicks: number;
+  totalCompleted: number;
+  totalFailed: number;
+  spilloversHandled: number;
+}
+
+export interface ShardRuntimeState {
+  readonly id: ShardId;
+  queue: string[];
+  completed: number;
+  failed: number;
+  spilloversOut: number;
+  spilloversIn: number;
+  rerouteBudget: number;
   paused: boolean;
+  backlogHistory: number[];
 }
 
-export interface FabricConfig {
-  owner: {
-    name: string;
-    address: string;
-    multisig: string;
-    pauseRole: string;
-    commandDeck: string[];
-  };
-  shards: ShardConfig[];
-  nodes: NodeDefinition[];
-  checkpoint: {
-    path: string;
-    intervalTicks: number;
-  };
-  reporting: {
-    directory: string;
-    defaultLabel: string;
-  };
-}
-
-export interface SimulationOptions {
-  jobs: number;
-  simulateOutage?: string;
-  outageTick?: number;
-  resume?: boolean;
-  checkpointPath?: string;
-  outputLabel?: string;
-  ciMode?: boolean;
-  ownerCommands?: OwnerCommandSchedule[];
-  ownerCommandSource?: string;
-  stopAfterTicks?: number;
-  preserveReportDirOnResume?: boolean;
-}
-
-export interface CheckpointData {
-  tick: number;
-  systemPaused: boolean;
-  pausedShards: ShardId[];
-  shards: Record<ShardId, {
-    queue: JobState[];
-    inFlight: JobState[];
-    completed: JobState[];
-    failed: JobState[];
-    spilloverCount: number;
-    paused: boolean;
-    config: ShardConfig;
-  }>;
-  nodes: Record<string, {
-    state: NodeState['active'];
-    runningJobs: JobState[];
-    lastHeartbeatTick: number;
-    definition: NodeDefinition;
-  }>;
-  metrics: FabricMetrics;
-  events: FabricEvent[];
-  deterministicLog: DeterministicReplayFrame[];
-}
-
-export interface AssignmentResult {
-  shardId: ShardId;
-  nodeId: string;
-  jobId: string;
-}
-
-export interface FabricMetrics {
+export interface RuntimeMetrics {
   tick: number;
   jobsSubmitted: number;
   jobsCompleted: number;
   jobsFailed: number;
+  totalLatency: number;
+  reassignments: number;
   spillovers: number;
-  reassignedAfterFailure: number;
-  outageHandled: boolean;
-  ownerInterventions: number;
-  systemPauses: number;
-  shardPauses: number;
 }
 
-export type RegistryEvent =
-  | { type: 'job.created'; shard: ShardId; job: JobState }
-  | { type: 'job.cancelled'; shard: ShardId; jobId: string }
-  | { type: 'job.requeued'; shard: ShardId; job: JobState; origin: string }
-  | { type: 'job.spillover'; shard: ShardId; job: JobState; from: ShardId }
-  | { type: 'job.assigned'; shard: ShardId; job: JobState; nodeId: string }
-  | { type: 'job.completed'; shard: ShardId; job: JobState }
-  | { type: 'job.failed'; shard: ShardId; job: JobState; reason: string }
-  | { type: 'node.heartbeat'; shard: ShardId; nodeId: string }
-  | { type: 'node.offline'; shard: ShardId; nodeId: string; reason: string };
-
-export interface HealthStatus {
-  level: 'ok' | 'degraded' | 'critical';
-  message: string;
+export interface OwnerCommandExecution {
+  readonly command: string;
+  readonly tick: number;
+  readonly payload?: Record<string, unknown>;
 }
 
-export interface RouterHealthReport {
-  shardId: ShardId;
-  queueDepth: number;
-  inFlight: number;
-  completed: number;
-  failed: number;
-  status: HealthStatus;
-  lastSpilloverTick?: number;
-  paused: boolean;
-  queueAlertThreshold: number;
+export interface OwnerCommandCatalogEntry {
+  readonly name: string;
+  readonly description: string;
+  readonly parameters: Record<string, string>;
 }
 
-export interface NodeHealthReport {
-  nodeId: string;
-  shardId: ShardId;
-  active: boolean;
-  runningJobs: number;
-  lastHeartbeatTick: number;
-  status: HealthStatus;
+export type SerializedJob = [
+  id: string,
+  shard: ShardId,
+  submittedAt: number,
+  title: string,
+  category: JobPayload['category'],
+  energyBudget: number,
+  retries: number,
+  spilloverFrom: ShardId | null
+];
+
+export interface CheckpointSnapshot {
+  readonly tick: number;
+  readonly jobs: SerializedJob[];
+  readonly jobsSeedCount: number;
+  readonly shardQueues: Record<ShardId, string[]>;
+  readonly shards: Record<ShardId, ShardRuntimeState>;
+  readonly nodes: Record<string, NodeRuntimeState>;
+  readonly metrics: RuntimeMetrics;
+  readonly ownerCommandLog: OwnerCommandExecution[];
+  readonly paused: boolean;
 }
 
-export interface FabricHealthReport {
-  tick: number;
-  fabric: HealthStatus;
-  systemPaused: boolean;
-  shards: RouterHealthReport[];
-  nodes: NodeHealthReport[];
-  metrics: FabricMetrics;
+export interface RunConfiguration {
+  readonly label: string;
+  readonly jobsHighLoad: number;
+  readonly stopAfterTicks?: number;
+  readonly outageNodeId?: string;
+  readonly restartStopAfter?: number;
+  readonly ciMode?: boolean;
+  readonly checkpointPath?: string;
+  readonly eventsPath?: string;
+  readonly resumeFromCheckpoint?: boolean;
+  readonly allowSpillover?: boolean;
+  readonly ownerCommandScriptPath?: string;
+  readonly ownerCommandExecutionPath?: string;
 }
 
-export interface DeterministicReplayFrame {
-  tick: number;
-  events: RegistryEvent[];
+export interface ReportSummary {
+  readonly runLabel: string;
+  readonly metrics: {
+    readonly tick: number;
+    readonly jobsSubmitted: number;
+    readonly jobsCompleted: number;
+    readonly jobsFailed: number;
+    readonly dropRate: number;
+    readonly averageLatency: number;
+    readonly reassignments: number;
+    readonly spillovers: number;
+  };
+  readonly shards: Record<
+    ShardId,
+    {
+      readonly queueDepth: number;
+      readonly backlogHistory: number[];
+      readonly jobsCompleted: number;
+      readonly jobsFailed: number;
+      readonly spilloversOut: number;
+      readonly spilloversIn: number;
+      readonly rerouteBudget: number;
+      readonly paused: boolean;
+    }
+  >;
+  readonly nodes: Record<
+    string,
+    {
+      readonly status: NodeRuntimeState['status'];
+      readonly assignments: number;
+      readonly totalCompleted: number;
+      readonly totalFailed: number;
+      readonly downtimeTicks: number;
+      readonly spilloversHandled: number;
+    }
+  >;
+  readonly ownerCommands: {
+    readonly executed: OwnerCommandExecution[];
+    readonly catalog: OwnerCommandCatalogEntry[];
+  };
+  readonly checkpoint: {
+    readonly path: string;
+    readonly tick: number;
+    readonly jobsSeedCount: number;
+  };
 }
 
-export interface SimulationArtifacts {
-  summaryPath: string;
-  eventsPath: string;
-  dashboardPath: string;
-  ownerScriptPath: string;
-  ownerCommandsPath: string;
-}
-
-export interface RunMetadata {
-  checkpointRestored: boolean;
-  stoppedEarly: boolean;
-  stopTick?: number;
-  stopReason?: string;
-}
+export type EventType =
+  | 'job:submitted'
+  | 'job:assigned'
+  | 'job:completed'
+  | 'job:failed'
+  | 'job:interrupted'
+  | 'node:heartbeat'
+  | 'node:offline'
+  | 'node:recovered'
+  | 'shard:spillover'
+  | 'owner:command'
+  | 'orchestrator:pause'
+  | 'orchestrator:resume';
 
 export interface FabricEvent {
-  tick: number;
-  type: string;
-  message: string;
-  data?: Record<string, unknown>;
-}
-
-export type OwnerCommand =
-  | { type: 'system.pause'; reason?: string }
-  | { type: 'system.resume'; reason?: string }
-  | { type: 'shard.pause'; shard: ShardId; reason?: string }
-  | { type: 'shard.resume'; shard: ShardId; reason?: string }
-  | {
-      type: 'shard.update';
-      shard: ShardId;
-      update: {
-        displayName?: string;
-        latencyBudgetMs?: number;
-        maxQueue?: number;
-        spilloverTargets?: ShardId[];
-        router?: {
-          queueAlertThreshold?: number;
-          spilloverPolicies?: SpilloverPolicy[];
-        };
-      };
-    }
-  | {
-      type: 'node.update';
-      nodeId: string;
-      update: {
-        capacity?: number;
-        maxConcurrency?: number;
-        specialties?: string[];
-        heartbeatIntervalSec?: number;
-        region?: ShardId;
-      };
-      reason?: string;
-    }
-  | { type: 'node.register'; node: NodeDefinition; reason?: string }
-  | { type: 'node.deregister'; nodeId: string; reason?: string }
-  | { type: 'checkpoint.save'; reason?: string }
-  | {
-      type: 'checkpoint.configure';
-      update: { intervalTicks?: number; path?: string };
-      reason?: string;
-    };
-
-export interface OwnerCommandSchedule {
-  tick: number;
-  command: OwnerCommand;
-  note?: string;
-}
-
-export interface SummaryShardSnapshot {
-  queueDepth: number;
-  inFlight: number;
-  completed: number;
-}
-
-export interface SummaryShardStatistics {
-  completed: number;
-  failed: number;
-  spillovers: number;
-}
-
-export interface SummaryNodeSnapshot {
-  active: boolean;
-  runningJobs: number;
-}
-
-export interface OwnerCommandSummary {
-  source?: string;
-  scheduled: OwnerCommandSchedule[];
-  executed: OwnerCommandSchedule[];
-  skippedBeforeResume: OwnerCommandSchedule[];
-  pending: OwnerCommandSchedule[];
-}
-
-export interface FabricSummary {
-  owner: FabricConfig['owner'];
-  metrics: FabricMetrics;
-  shards: Record<ShardId, SummaryShardSnapshot>;
-  shardStatistics: Record<ShardId, SummaryShardStatistics>;
-  nodes: Record<string, SummaryNodeSnapshot>;
-  checkpoint: { path: string; intervalTicks: number };
-  checkpointPath: string;
-  options: SimulationOptions;
-  run: RunMetadata;
-  ownerState: {
-    systemPaused: boolean;
-    pausedShards: ShardId[];
-    checkpoint: { path: string; intervalTicks: number };
-    metrics: Pick<FabricMetrics, 'ownerInterventions' | 'systemPauses' | 'shardPauses'>;
-  };
-  ownerCommands: OwnerCommandSummary;
+  readonly type: EventType;
+  readonly tick: number;
+  readonly details: Record<string, unknown>;
 }
