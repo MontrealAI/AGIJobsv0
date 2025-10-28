@@ -11,6 +11,8 @@ export class AlphaNodeMetrics {
   private readonly rewardGauge: Gauge<string>;
   private readonly verificationGauge: Gauge<string>;
   private readonly plannerScoreGauge: Gauge<string>;
+  private readonly jobOpenGauge: Gauge<string>;
+  private readonly jobRewardGauge: Gauge<string>;
 
   constructor() {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
@@ -39,6 +41,16 @@ export class AlphaNodeMetrics {
       help: 'Latest MuZero++ planner alpha score (unitless).',
       registers: [this.registry]
     });
+    this.jobOpenGauge = new Gauge({
+      name: 'agi_alpha_node_jobs_open',
+      help: 'Number of open jobs detected in the latest discovery cycle.',
+      registers: [this.registry]
+    });
+    this.jobRewardGauge = new Gauge({
+      name: 'agi_alpha_node_job_reward',
+      help: 'Reward of the selected job in $AGIALPHA (ether units).',
+      registers: [this.registry]
+    });
   }
 
   updateStake(snapshot: StakeSnapshot): void {
@@ -57,6 +69,18 @@ export class AlphaNodeMetrics {
 
   updatePlanning(summary: PlanningSummary): void {
     this.plannerScoreGauge.set(summary.alphaScore);
+  }
+
+  updateJobDiscovery(openJobs: number): void {
+    this.jobOpenGauge.set(openJobs);
+  }
+
+  updateJobExecution(reward: number | undefined): void {
+    if (typeof reward === 'number' && Number.isFinite(reward)) {
+      this.jobRewardGauge.set(reward);
+    } else {
+      this.jobRewardGauge.set(0);
+    }
   }
 
   async render(): Promise<string> {

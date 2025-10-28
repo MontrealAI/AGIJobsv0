@@ -13,6 +13,8 @@ const rewardSplitSchema = z
     message: 'Reward split must add up to 1.0'
   });
 
+const hex32 = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
+
 const configSchema = z.object({
   operator: z.object({
     address: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
@@ -65,6 +67,21 @@ const configSchema = z.object({
       rewardSplit: rewardSplitSchema
     })
   }),
+  jobs: z.object({
+    discovery: z.object({
+      lookbackBlocks: z.number().int().min(1),
+      maxJobs: z.number().int().min(1),
+      includeCompleted: z.boolean().default(false)
+    }),
+    execution: z.object({
+      defaultResultUri: z.string().url().optional(),
+      resultHashAlgorithm: z.enum(['keccak256', 'sha256']).default('keccak256')
+    }),
+    identityProof: z.array(hex32).default([])
+  }),
+  governance: z.object({
+    systemPauseGuardian: z.string().regex(/^0x[a-fA-F0-9]{40}$/)
+  }),
   monitoring: z.object({
     metricsPort: z.number().int().min(1),
     dashboardPort: z.number().int().min(1),
@@ -79,6 +96,9 @@ export interface NormalisedAlphaNodeConfig extends AlphaNodeConfig {
   ai: AlphaNodeConfig['ai'] & {
     reinvestThresholdWei: bigint;
     economicPolicy: AlphaNodeConfig['ai']['economicPolicy'];
+  };
+  jobs: AlphaNodeConfig['jobs'] & {
+    identityProof: readonly string[];
   };
 }
 
@@ -107,6 +127,10 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
         ...config.ai.economicPolicy
       },
       reinvestThresholdWei
+    },
+    jobs: {
+      ...config.jobs,
+      identityProof: config.jobs.identityProof
     }
   };
 }
