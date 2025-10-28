@@ -154,6 +154,8 @@ function main() {
     subgraphRecords: subgraphIndexer.list(),
     events: [committeeSelection.witness, ...roundResult.commits, ...roundResult.reveals],
     context: reportContext,
+    jobBatch,
+    truthfulVote: 'APPROVE',
   });
 
   console.log('Validator Constellation demo executed successfully.');

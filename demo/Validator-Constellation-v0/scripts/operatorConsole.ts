@@ -550,6 +550,8 @@ function handleRunRound(argv: RunRoundArgs): void {
     subgraphRecords: subgraphIndexer.list(),
     events: [selection.witness, ...roundResult.commits, ...roundResult.reveals],
     context,
+    jobBatch,
+    truthfulVote,
   });
   summaryForAction('validation-round-executed', {
     reportDir,
