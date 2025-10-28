@@ -130,6 +130,164 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.resilience-summary {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 1.2rem;
+  background: rgba(7, 13, 26, 0.82);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resilience-score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resilience-score-value {
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.resilience-score-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.resilience-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.resilience-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.resilience-card {
+  background: rgba(7, 13, 26, 0.78);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 22px 40px rgba(4, 12, 24, 0.58);
+}
+
+.resilience-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.expansion-summary {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.expansion-card {
+  background: rgba(6, 16, 34, 0.82);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 1.2rem;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  box-shadow: 0 24px 42px rgba(3, 9, 24, 0.55);
+}
+
+.expansion-card h3 {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.95rem;
+  color: var(--accent-strong);
+}
+
+.expansion-card strong {
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  color: var(--accent);
+}
+
+.expansion-card span {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.expansion-grid {
+  margin-top: 1.75rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.table-card .table-wrapper {
+  margin-top: 0.75rem;
+}
+
+.command-list {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.command-list li {
+  background: rgba(9, 14, 28, 0.76);
+  border: 1px solid rgba(94, 234, 212, 0.18);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.9rem;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.escalation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.escalation-list li {
+  background: rgba(15, 23, 42, 0.68);
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+
+.escalation-list strong {
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
 .catalog-card {
   background: rgba(7, 13, 26, 0.78);
   border: 1px solid rgba(59, 130, 246, 0.22);

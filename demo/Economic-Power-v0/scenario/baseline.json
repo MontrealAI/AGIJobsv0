@@ -327,6 +327,191 @@
       }
     ]
   },
+  "resilience": {
+    "drills": [
+      {
+        "id": "global-pause-drill",
+        "name": "Global Pause Drill",
+        "frequencyHours": 24,
+        "script": "npm run owner:system-pause",
+        "targetResponseMinutes": 12,
+        "description": "Simulates a planet-wide incident to validate pause and resume authority."
+      },
+      {
+        "id": "validator-hotfix-drill",
+        "name": "Validator Hotfix Drill",
+        "frequencyHours": 48,
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "targetResponseMinutes": 15,
+        "description": "Exercises validator quorum expansion and upgrade promotion under time pressure."
+      },
+      {
+        "id": "treasury-recovery-drill",
+        "name": "Treasury Recovery Drill",
+        "frequencyHours": 72,
+        "script": "npm run owner:audit",
+        "targetResponseMinutes": 20,
+        "description": "Runs a full treasury reconciliation, buffer refill, and reporting sequence."
+      }
+    ],
+    "redundancies": [
+      {
+        "id": "bundler-failover",
+        "capability": "Bundler Failover Mesh",
+        "status": "ready",
+        "script": "npm run owner:update-all -- --component bundler-failover",
+        "coverage": 1
+      },
+      {
+        "id": "rpc-constellation",
+        "capability": "RPC Provider Constellation",
+        "status": "ready",
+        "script": "npm run owner:program -- --program orchestrator-rpc-failover",
+        "coverage": 0.95
+      },
+      {
+        "id": "validator-shadow",
+        "capability": "Shadow Validator Fleet",
+        "status": "deploying",
+        "script": "npm run owner:upgrade -- --module ValidationModule",
+        "coverage": 0.9
+      }
+    ],
+    "escalationMatrix": [
+      {
+        "trigger": "Validator consensus stall",
+        "response": "Escalate to validator council and execute npm run owner:system-pause",
+        "ownerContact": "security-operations@agijobs.ai"
+      },
+      {
+        "trigger": "Treasury anomaly detected",
+        "response": "Run npm run owner:audit and notify treasury guardians",
+        "ownerContact": "treasury@agijobs.ai"
+      },
+      {
+        "trigger": "Automation regression",
+        "response": "Execute npm run owner:parameters and page orchestrator command desk",
+        "ownerContact": "governance@agijobs.ai"
+      }
+    ]
+  },
+  "expansion": {
+    "narrative": "Global expansion program unlocking synchronized L2 deployments, bridge liquidity, and regional agent collectives under direct owner control.",
+    "regions": [
+      {
+        "id": "north-america",
+        "name": "North America Sovereign Launch Zone",
+        "status": "operational",
+        "activationQuarter": "Q1 2025",
+        "readiness": 0.97,
+        "throughputCapacity": 1450,
+        "validatorCoverage": 0.98,
+        "agentDensity": 0.93,
+        "command": "npm run owner:program -- --program region-north-america-scale",
+        "notes": "Anchors enterprise orchestrations in the New York and Toronto hubs with 24/7 validator watchtowers."
+      },
+      {
+        "id": "asia-pacific",
+        "name": "Asia-Pacific Hyperlane Mesh",
+        "status": "pilot",
+        "activationQuarter": "Q2 2025",
+        "readiness": 0.94,
+        "throughputCapacity": 1380,
+        "validatorCoverage": 0.96,
+        "agentDensity": 0.91,
+        "command": "npm run owner:program -- --program region-asia-pacific-scale",
+        "notes": "Deploys concentric agent swarms across Singapore, Tokyo, and Sydney with sovereign treasury relays."
+      },
+      {
+        "id": "pan-africa",
+        "name": "Pan-Africa Elevation Network",
+        "status": "staging",
+        "activationQuarter": "Q3 2025",
+        "readiness": 0.92,
+        "throughputCapacity": 1320,
+        "validatorCoverage": 0.95,
+        "agentDensity": 0.9,
+        "command": "npm run owner:program -- --program region-pan-africa-scale",
+        "notes": "Activates Lagos–Nairobi corridors with redundant stablecoin ramps and validator academies."
+      }
+    ],
+    "bridges": [
+      {
+        "id": "mainnet-arbitrum",
+        "source": "Ethereum Mainnet",
+        "target": "Arbitrum One",
+        "bridge": "Mainnet ↔ Arbitrum Canonical",
+        "capacityMillions": 480,
+        "slaMinutes": 8,
+        "status": "ready",
+        "command": "npm run owner:bridge -- --from mainnet --to arbitrum"
+      },
+      {
+        "id": "mainnet-optimism",
+        "source": "Ethereum Mainnet",
+        "target": "Optimism Mainnet",
+        "bridge": "Mainnet ↔ Optimism Governance Bridge",
+        "capacityMillions": 460,
+        "slaMinutes": 9,
+        "status": "ready",
+        "command": "npm run owner:bridge -- --from mainnet --to optimism"
+      },
+      {
+        "id": "arbitrum-base",
+        "source": "Arbitrum One",
+        "target": "Base Mainnet",
+        "bridge": "Arbitrum ↔ Base Liquidity Spine",
+        "capacityMillions": 340,
+        "slaMinutes": 11,
+        "status": "scaling",
+        "command": "npm run owner:bridge -- --from arbitrum --to base"
+      }
+    ],
+    "l2Deployments": [
+      {
+        "id": "arbitrum",
+        "chain": "Arbitrum One",
+        "status": "operational",
+        "finalityMinutes": 2,
+        "transactionsPerSecond": 420,
+        "coverage": 0.94,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "ValidationModule v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain arbitrum"
+      },
+      {
+        "id": "optimism",
+        "chain": "Optimism Mainnet",
+        "status": "pilot",
+        "finalityMinutes": 3,
+        "transactionsPerSecond": 380,
+        "coverage": 0.91,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "DisputeModule v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain optimism"
+      },
+      {
+        "id": "base",
+        "chain": "Base Mainnet",
+        "status": "staging",
+        "finalityMinutes": 4,
+        "transactionsPerSecond": 360,
+        "coverage": 0.89,
+        "contractSet": [
+          "JobRegistry v2",
+          "StakeManager v2",
+          "CertificateNFT v2"
+        ],
+        "command": "npm run owner:l2-upgrade -- --chain base"
+      }
+    ]
+  },
   "commandCatalog": {
     "jobPrograms": [
       {

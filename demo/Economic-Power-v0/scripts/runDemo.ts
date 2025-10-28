@@ -23,6 +23,48 @@ const commandCatalogSchema = z.object({
   orchestratorPrograms: z.array(commandProgramSchema),
 });
 
+const expansionRegionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['operational', 'pilot', 'staging']),
+  activationQuarter: z.string(),
+  readiness: z.number().min(0).max(1),
+  throughputCapacity: z.number().nonnegative(),
+  validatorCoverage: z.number().min(0).max(1),
+  agentDensity: z.number().min(0).max(1),
+  command: z.string(),
+  notes: z.string(),
+});
+
+const expansionBridgeSchema = z.object({
+  id: z.string(),
+  source: z.string(),
+  target: z.string(),
+  bridge: z.string(),
+  capacityMillions: z.number().nonnegative(),
+  slaMinutes: z.number().positive(),
+  status: z.enum(['ready', 'scaling', 'monitoring']),
+  command: z.string(),
+});
+
+const expansionL2Schema = z.object({
+  id: z.string(),
+  chain: z.string(),
+  status: z.enum(['operational', 'pilot', 'staging']),
+  finalityMinutes: z.number().positive(),
+  transactionsPerSecond: z.number().positive(),
+  coverage: z.number().min(0).max(1),
+  contractSet: z.array(z.string()),
+  command: z.string(),
+});
+
+const expansionSchema = z.object({
+  narrative: z.string(),
+  regions: z.array(expansionRegionSchema),
+  bridges: z.array(expansionBridgeSchema),
+  l2Deployments: z.array(expansionL2Schema),
+});
+
 const scenarioSchema = z.object({
   version: z.literal('1.0'),
   scenarioId: z.string(),
@@ -146,6 +188,35 @@ const scenarioSchema = z.object({
       }),
     ),
   }),
+  resilience: z.object({
+    drills: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        frequencyHours: z.number().positive(),
+        script: z.string(),
+        targetResponseMinutes: z.number().positive(),
+        description: z.string(),
+      }),
+    ),
+    redundancies: z.array(
+      z.object({
+        id: z.string(),
+        capability: z.string(),
+        status: z.enum(['ready', 'deploying', 'needs-action']),
+        script: z.string(),
+        coverage: z.number().min(0).max(1),
+      }),
+    ),
+    escalationMatrix: z.array(
+      z.object({
+        trigger: z.string(),
+        response: z.string(),
+        ownerContact: z.string(),
+      }),
+    ),
+  }),
+  expansion: expansionSchema,
   commandCatalog: commandCatalogSchema,
 });
 
@@ -153,6 +224,15 @@ type Scenario = z.infer<typeof scenarioSchema>;
 
 type CommandProgram = z.infer<typeof commandProgramSchema>;
 type CommandCatalog = z.infer<typeof commandCatalogSchema>;
+
+type ExpansionPlan = z.infer<typeof expansionSchema>;
+type ExpansionRegion = z.infer<typeof expansionRegionSchema>;
+type ExpansionBridge = z.infer<typeof expansionBridgeSchema>;
+type ExpansionL2 = z.infer<typeof expansionL2Schema>;
+
+type ResilienceDrill = Scenario['resilience']['drills'][number];
+type ResilienceRedundancy = Scenario['resilience']['redundancies'][number];
+type ResilienceEscalation = Scenario['resilience']['escalationMatrix'][number];
 
 type Assignment = {
   jobId: string;
@@ -247,6 +327,15 @@ type Summary = {
     ownerCommandCoverage: number;
     sovereignControlScore: number;
     sovereignSafetyScore: number;
+    commandLatencyMinutes: number;
+    drillReadiness: number;
+    redundancyCoverage: number;
+    escalationCoverage: number;
+    resilienceScore: number;
+    globalReachScore: number;
+    l2ActivationScore: number;
+    liquidityCoverageScore: number;
+    expansionScore: number;
     assertionPassRate: number;
   };
   ownerControl: {
@@ -263,6 +352,9 @@ type Summary = {
     circuitBreakers: Scenario['safeguards']['circuitBreakers'];
     upgradePaths: Scenario['safeguards']['upgradePaths'];
     alertChannels: Scenario['observability']['alertChannels'];
+    drills: ResilienceProfile['drills'];
+    redundancies: ResilienceProfile['redundancies'];
+    escalationMatrix: ResilienceProfile['escalationMatrix'];
   };
   commandCatalog: CommandCatalog;
   assignments: Assignment[];
@@ -271,6 +363,8 @@ type Summary = {
   ownerCommandMermaid: string;
   ownerCommandPlan: OwnerCommandPlan;
   sovereignSafetyMesh: SovereignSafetyMesh;
+  resilienceProfile: ResilienceProfile;
+  globalExpansion: GlobalExpansionProfile;
   assertions: Assertion[];
   treasuryTrajectory: TrajectoryEntry[];
   deployment: {
@@ -283,6 +377,7 @@ type Summary = {
     observability: Scenario['observability'];
   };
   governanceLedger: GovernanceLedger;
+  globalExpansionMermaid: string;
 };
 
 type CoverageSurface =
@@ -335,6 +430,46 @@ type SovereignSafetyMesh = {
   alertChannels: string[];
   emergencyContacts: string[];
   notes: string[];
+};
+
+type ResilienceProfile = {
+  drills: Array<ResilienceDrill & { readiness: number; frequencyScore: number }>;
+  redundancies: Array<ResilienceRedundancy & { readiness: number }>;
+  escalationMatrix: ResilienceEscalation[];
+  drillReadiness: number;
+  redundancyCoverage: number;
+  escalationCoverage: number;
+  responseLatencyMinutes: number;
+  unstoppableScore: number;
+};
+
+type GlobalExpansionRegion = ExpansionRegion & {
+  readinessScore: number;
+  coverageScore: number;
+};
+
+type GlobalExpansionL2 = ExpansionL2 & {
+  readinessScore: number;
+  finalityScore: number;
+  throughputScore: number;
+};
+
+type GlobalExpansionBridge = ExpansionBridge & {
+  reliabilityScore: number;
+  capacityScore: number;
+  latencyScore: number;
+};
+
+type GlobalExpansionProfile = {
+  narrative: string;
+  expansionScore: number;
+  globalReachScore: number;
+  l2ActivationScore: number;
+  liquidityCoverageScore: number;
+  regions: GlobalExpansionRegion[];
+  l2Deployments: GlobalExpansionL2[];
+  bridges: GlobalExpansionBridge[];
+  commandScripts: string[];
 };
 
 type TrajectoryEntry = {
@@ -496,6 +631,79 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
     .concat(breakerNodes.map((entry) => entry.edge));
 
   return `graph LR\n    ${nodes.join('\n    ')}\n${edges.join('\n')}`;
+}
+
+function generateGlobalExpansionMermaid(
+  profile: GlobalExpansionProfile,
+): string {
+  const ownerNodeId = 'OwnerExpansionDesk';
+  const mainnetNodeId = 'MainnetCore';
+  const lines = [
+    'graph TD',
+    `    ${ownerNodeId}["Owner Expansion Desk"]`,
+    `    ${mainnetNodeId}["Mainnet Treasury Core"]`,
+    `    ${ownerNodeId} -->|Directives| ${mainnetNodeId}`,
+  ];
+
+  const nodeRegistry = new Map<string, string>();
+  nodeRegistry.set('owner', ownerNodeId);
+  nodeRegistry.set('Ethereum Mainnet', mainnetNodeId);
+
+  const l2Ordering = [...profile.l2Deployments].sort(
+    (a, b) => b.readinessScore - a.readinessScore,
+  );
+  profile.l2Deployments.forEach((deployment, index) => {
+    const id = sanitiseId('L2', deployment.id, index);
+    const label = `${deployment.chain}\\nReady ${(deployment.readinessScore * 100).toFixed(1)}%`;
+    lines.push(`    ${id}["${label}"]`);
+    lines.push(`    ${mainnetNodeId} -->|${deployment.chain}| ${id}`);
+    nodeRegistry.set(deployment.chain, id);
+  });
+
+  const effectiveL2s = l2Ordering.length > 0 ? l2Ordering : undefined;
+  profile.regions.forEach((region, index) => {
+    const id = sanitiseId('Region', region.id, index);
+    const label = `${region.name}\\nReady ${(region.readinessScore * 100).toFixed(1)}%`;
+    lines.push(`    ${id}["${label}"]`);
+    if (effectiveL2s) {
+      const anchor = effectiveL2s[index % effectiveL2s.length];
+      const anchorNode = nodeRegistry.get(anchor.chain) ?? mainnetNodeId;
+      lines.push(`    ${anchorNode} -->|Scale| ${id}`);
+    } else {
+      lines.push(`    ${mainnetNodeId} -->|Scale| ${id}`);
+    }
+  });
+
+  profile.bridges.forEach((bridge, index) => {
+    const sourceId = nodeRegistry.get(bridge.source) ?? (() => {
+      const id = sanitiseId('BridgeSource', bridge.source, index);
+      lines.push(`    ${id}["${bridge.source}"]`);
+      nodeRegistry.set(bridge.source, id);
+      return id;
+    })();
+    const targetId = nodeRegistry.get(bridge.target) ?? (() => {
+      const id = sanitiseId('BridgeTarget', bridge.target, index);
+      lines.push(`    ${id}["${bridge.target}"]`);
+      nodeRegistry.set(bridge.target, id);
+      return id;
+    })();
+    const bridgeLabel = `${bridge.bridge}\\n${(bridge.reliabilityScore * 100).toFixed(1)}% reliability`;
+    lines.push(`    ${sourceId} -->|${bridgeLabel}| ${targetId}`);
+  });
+
+  lines.push('    classDef ready fill:#00b894,stroke:#031521,color:#021019;');
+  lines.push('    classDef command fill:#0984e3,stroke:#031521,color:#021019;');
+  lines.push(`    class ${ownerNodeId},${mainnetNodeId} command;`);
+  profile.l2Deployments.forEach((deployment, index) => {
+    const id = sanitiseId('L2', deployment.id, index);
+    lines.push(`    class ${id} ready;`);
+  });
+  profile.regions.forEach((region, index) => {
+    const id = sanitiseId('Region', region.id, index);
+    lines.push(`    class ${id} ready;`);
+  });
+
+  return `${lines.join('\n')}\n`;
 }
 
 function generateOwnerCommandMarkdown(summary: Summary): string {
@@ -668,6 +876,57 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
     );
   }
   lines.push('');
+  lines.push('## Resilience drills and redundancy readiness');
+  lines.push('');
+  lines.push(
+    `- **Drill readiness:** ${(summary.resilienceProfile.drillReadiness * 100).toFixed(1)}% – response latency ${summary.resilienceProfile.responseLatencyMinutes} minutes`,
+  );
+  lines.push(
+    `- **Redundancy coverage:** ${(summary.resilienceProfile.redundancyCoverage * 100).toFixed(1)}% – ${summary.resilienceProfile.redundancies.length} redundant surfaces`,
+  );
+  lines.push(
+    `- **Escalation coverage:** ${(summary.resilienceProfile.escalationCoverage * 100).toFixed(1)}% – ${summary.resilienceProfile.escalationMatrix.length} escalation paths`,
+  );
+  lines.push(
+    `- **Resilience mastery:** ${(summary.resilienceProfile.unstoppableScore * 100).toFixed(1)}% unstoppable score`,
+  );
+  lines.push('');
+  lines.push('### Drill catalogue');
+  lines.push('');
+  if (summary.resilienceProfile.drills.length === 0) {
+    lines.push('- No drills defined – schedule incident rehearsals to maintain command mastery.');
+  } else {
+    for (const drill of summary.resilienceProfile.drills) {
+      lines.push(
+        `- ${drill.name}: every ${drill.frequencyHours}h via \`${drill.script}\` — ${drill.description} (readiness ${(drill.readiness * 100).toFixed(1)}%)`,
+      );
+    }
+  }
+  lines.push('');
+  lines.push('### Redundancy matrix');
+  lines.push('');
+  if (summary.resilienceProfile.redundancies.length === 0) {
+    lines.push('- No redundancies wired – deploy failovers to sustain unstoppable uptime.');
+  } else {
+    for (const redundancy of summary.resilienceProfile.redundancies) {
+      lines.push(
+        `- ${redundancy.capability}: status ${redundancy.status}, coverage ${(redundancy.coverage * 100).toFixed(1)}% via \`${redundancy.script}\``,
+      );
+    }
+  }
+  lines.push('');
+  lines.push('### Escalation matrix');
+  lines.push('');
+  if (summary.resilienceProfile.escalationMatrix.length === 0) {
+    lines.push('- No escalation routes defined – codify owner and council paging loops.');
+  } else {
+    for (const escalation of summary.resilienceProfile.escalationMatrix) {
+      lines.push(
+        `- ${escalation.trigger}: ${escalation.response} → ${escalation.ownerContact}`,
+      );
+    }
+  }
+  lines.push('');
   lines.push('All commands are multi-sig ready and validated by deterministic CI.');
   lines.push('');
   lines.push('## Governance ledger alerts');
@@ -796,6 +1055,12 @@ function collectCommandScripts(scenario: Scenario): string[] {
   }
   for (const upgrade of scenario.safeguards.upgradePaths) {
     scripts.add(upgrade.script);
+  }
+  for (const drill of scenario.resilience.drills) {
+    scripts.add(drill.script);
+  }
+  for (const redundancy of scenario.resilience.redundancies) {
+    scripts.add(redundancy.script);
   }
   for (const catalog of Object.values(scenario.commandCatalog)) {
     for (const program of catalog) {
@@ -1071,6 +1336,236 @@ function computeSovereignSafetyMesh(
     alertChannels: scenario.observability.alertChannels,
     emergencyContacts: scenario.safeguards.emergencyContacts,
     notes,
+  };
+}
+
+function computeResilienceProfile(
+  scenario: Scenario,
+  coverage: CommandCoverage,
+): ResilienceProfile {
+  const responseLatency = Math.max(scenario.safeguards.responseMinutes, 0);
+  const safeLatency = responseLatency === 0 ? 1 : responseLatency;
+  const drills = scenario.resilience.drills.map((drill) => {
+    const responseScore = Math.min(
+      1,
+      safeLatency / Math.max(drill.targetResponseMinutes, 1),
+    );
+    const frequencyScore = Math.min(1, 72 / Math.max(drill.frequencyHours, 1));
+    const readiness = Number(
+      (responseScore * 0.7 + frequencyScore * 0.3).toFixed(3),
+    );
+    return {
+      ...drill,
+      readiness,
+      frequencyScore: Number(frequencyScore.toFixed(3)),
+    };
+  });
+  const drillReadiness = drills.length
+    ? Number(
+        (
+          drills.reduce((acc, drill) => acc + drill.readiness, 0) /
+          Math.max(drills.length, 1)
+        ).toFixed(3),
+      )
+    : 1;
+
+  const redundancies = scenario.resilience.redundancies.map((redundancy) => {
+    const statusMultiplier =
+      redundancy.status === 'ready'
+        ? 1
+        : redundancy.status === 'deploying'
+          ? 0.7
+          : 0.35;
+    const readiness = Number(
+      Math.min(1, Math.max(0, redundancy.coverage * statusMultiplier)).toFixed(3),
+    );
+    return {
+      ...redundancy,
+      readiness,
+    };
+  });
+  const redundancyCoverage = redundancies.length
+    ? Number(
+        (
+          redundancies.reduce((acc, redundancy) => acc + redundancy.readiness, 0) /
+          Math.max(redundancies.length, 1)
+        ).toFixed(3),
+      )
+    : 1;
+
+  const escalationDenominator = Math.max(
+    scenario.safeguards.emergencyContacts.length,
+    1,
+  );
+  const escalationCoverage = Number(
+    Math.min(
+      1,
+      scenario.resilience.escalationMatrix.length / escalationDenominator,
+    ).toFixed(3),
+  );
+
+  const pauseResumeCoverage = (coverage.detail.pause + coverage.detail.resume) / 2 || 0;
+  const unstoppableScore = Number(
+    (
+      drillReadiness * 0.45 +
+      redundancyCoverage * 0.3 +
+      escalationCoverage * 0.15 +
+      Math.min(1, pauseResumeCoverage) * 0.1
+    ).toFixed(3),
+  );
+
+  return {
+    drills,
+    redundancies,
+    escalationMatrix: scenario.resilience.escalationMatrix,
+    drillReadiness,
+    redundancyCoverage,
+    escalationCoverage,
+    responseLatencyMinutes: responseLatency,
+    unstoppableScore,
+  };
+}
+
+function computeGlobalExpansionProfile(
+  scenario: Scenario,
+): GlobalExpansionProfile {
+  const expansion: ExpansionPlan = scenario.expansion;
+  const clamp = (value: number): number => Math.min(1, Math.max(0, value));
+
+  const regionStatusWeights: Record<ExpansionRegion['status'], number> = {
+    operational: 1,
+    pilot: 0.85,
+    staging: 0.7,
+  };
+  const regions: GlobalExpansionRegion[] = expansion.regions.map((region) => {
+    const throughputScore = clamp(region.throughputCapacity / 1200);
+    const validatorScore = clamp(region.validatorCoverage);
+    const agentScore = clamp(region.agentDensity);
+    const readiness = clamp(region.readiness);
+    const statusScore = regionStatusWeights[region.status];
+    const readinessScore = Number(
+      clamp(
+        throughputScore * 0.25 +
+          validatorScore * 0.25 +
+          agentScore * 0.2 +
+          readiness * 0.2 +
+          statusScore * 0.1,
+      ).toFixed(3),
+    );
+    const coverageScore = Number(
+      clamp(validatorScore * 0.6 + throughputScore * 0.4).toFixed(3),
+    );
+    return {
+      ...region,
+      readinessScore,
+      coverageScore,
+    };
+  });
+  const globalReachScore = regions.length
+    ? Number(
+        (
+          regions.reduce((acc, region) => acc + region.readinessScore, 0) /
+          Math.max(regions.length, 1)
+        ).toFixed(3),
+      )
+    : 1;
+
+  const l2StatusWeights: Record<ExpansionL2['status'], number> = {
+    operational: 1,
+    pilot: 0.85,
+    staging: 0.7,
+  };
+  const l2Deployments: GlobalExpansionL2[] = expansion.l2Deployments.map(
+    (deployment) => {
+      const finalityScore = clamp(5 / deployment.finalityMinutes);
+      const throughputScore = clamp(deployment.transactionsPerSecond / 400);
+      const statusScore = l2StatusWeights[deployment.status];
+      const coverageScore = clamp(deployment.coverage);
+      const readinessScore = Number(
+        clamp(
+          finalityScore * 0.3 +
+            throughputScore * 0.25 +
+            coverageScore * 0.25 +
+            statusScore * 0.1 +
+            0.1,
+        ).toFixed(3),
+      );
+      return {
+        ...deployment,
+        readinessScore,
+        finalityScore: Number(finalityScore.toFixed(3)),
+        throughputScore: Number(throughputScore.toFixed(3)),
+      };
+    },
+  );
+  const l2ActivationScore = l2Deployments.length
+    ? Number(
+        (
+          l2Deployments.reduce(
+            (acc, deployment) => acc + deployment.readinessScore,
+            0,
+          ) /
+          Math.max(l2Deployments.length, 1)
+        ).toFixed(3),
+      )
+    : 1;
+
+  const bridgeStatusWeights: Record<ExpansionBridge['status'], number> = {
+    ready: 1,
+    scaling: 0.88,
+    monitoring: 0.78,
+  };
+  const bridges: GlobalExpansionBridge[] = expansion.bridges.map((bridge) => {
+    const capacityScore = clamp(bridge.capacityMillions / 400);
+    const latencyScore = clamp(25 / bridge.slaMinutes);
+    const statusScore = bridgeStatusWeights[bridge.status];
+    const reliabilityScore = Number(
+      clamp(
+        capacityScore * 0.35 + latencyScore * 0.35 + statusScore * 0.3,
+      ).toFixed(3),
+    );
+    return {
+      ...bridge,
+      reliabilityScore,
+      capacityScore: Number(capacityScore.toFixed(3)),
+      latencyScore: Number(latencyScore.toFixed(3)),
+    };
+  });
+  const liquidityCoverageScore = bridges.length
+    ? Number(
+        (
+          bridges.reduce((acc, bridge) => acc + bridge.reliabilityScore, 0) /
+          Math.max(bridges.length, 1)
+        ).toFixed(3),
+      )
+    : 1;
+
+  const expansionScore = Number(
+    (
+      globalReachScore * 0.5 +
+      l2ActivationScore * 0.3 +
+      liquidityCoverageScore * 0.2
+    ).toFixed(3),
+  );
+
+  const commandScripts = Array.from(
+    new Set([
+      ...regions.map((region) => region.command),
+      ...l2Deployments.map((deployment) => deployment.command),
+      ...bridges.map((bridge) => bridge.command),
+    ]),
+  );
+
+  return {
+    narrative: expansion.narrative,
+    expansionScore,
+    globalReachScore,
+    l2ActivationScore,
+    liquidityCoverageScore,
+    regions,
+    l2Deployments,
+    bridges,
+    commandScripts,
   };
 }
 
@@ -1390,25 +1885,60 @@ function generateMermaidFlow(
   summary: Summary,
   scenario: Scenario,
 ): string {
-  const ownerNode = `OwnerSafe[Owner Multi-Sig\\nThreshold ${summary.ownerControl.threshold}]`;
-  const orchestratorNode = 'Orchestrator[Economic Power Orchestrator]';
-  const stablecoinNode = 'StablecoinAdapter[Stablecoin Adapter]';
-  const treasuryNode = 'Treasury[Treasury Escrow Vault]';
-  const nodes = summary.assignments
+  const ownerNodeId = 'OwnerSafe';
+  const orchestratorNodeId = 'Orchestrator';
+  const treasuryNodeId = 'Treasury';
+  const stablecoinNodeId = 'StablecoinAdapter';
+  const resilienceNodeId = 'ResilienceMesh';
+  const safetyNodeId = 'SafetyMesh';
+  const ownerNode = `${ownerNodeId}[Owner Multi-Sig\\nThreshold ${summary.ownerControl.threshold}]`;
+  const orchestratorNode = `${orchestratorNodeId}[Economic Power Orchestrator]`;
+  const treasuryNode = `${treasuryNodeId}[Treasury Escrow Vault]`;
+  const stablecoinNode = `${stablecoinNodeId}[Stablecoin Adapter Layer]`;
+  const resilienceNode = `${resilienceNodeId}[Resilience Mesh\\nDrills & Redundancy]`;
+  const safetyNode = `${safetyNodeId}[Sovereign Safety Mesh]`;
+
+  const jobNodes = summary.assignments
     .map(
       (assignment) =>
         `Job_${assignment.jobId.replace(/[^a-zA-Z0-9]/g, '_')}[${assignment.jobName}]`,
     )
     .join('\n    ');
-  const edges = summary.assignments
+  const jobEdges = summary.assignments
     .map((assignment) => {
       const jobNode = `Job_${assignment.jobId.replace(/[^a-zA-Z0-9]/g, '_')}`;
       const agentNode = `Agent_${assignment.agentId.replace(/[^a-zA-Z0-9]/g, '_')}[${assignment.agentName}]`;
       const validatorNode = `ValidatorSet_${assignment.jobId.replace(/[^a-zA-Z0-9]/g, '_')}[Validator Constellation\\n${assignment.validatorNames.join(', ')}]`;
-      return `    ${orchestratorNode.split('[')[0]} -->|Posts| ${jobNode}\n    ${jobNode} -->|Executes| ${agentNode}\n    ${jobNode} -->|Validates| ${validatorNode}`;
+      return `    ${orchestratorNodeId} -->|Posts| ${jobNode}\n    ${jobNode} -->|Executes| ${agentNode}\n    ${jobNode} -->|Validates| ${validatorNode}`;
     })
     .join('\n');
-  return `graph TD\n    ${ownerNode} -->|Configures| ${orchestratorNode}\n    ${ownerNode} -->|Funds| ${treasuryNode}\n    ${treasuryNode} -->|Swaps| ${stablecoinNode}\n    ${stablecoinNode} -->|Escrow| ${orchestratorNode}\n    ${orchestratorNode}\n    ${nodes ? `    ${nodes}\n` : ''}${edges}`;
+
+  const drillNodes = summary.resilienceProfile.drills
+    .map((drill, index) => {
+      const drillId = `Drill_${index}`;
+      return `    ${drillId}[${drill.name}\\n${drill.script}]\n    ${resilienceNodeId} -->|Run| ${drillId}`;
+    })
+    .join('\n');
+
+  const redundancyNodes = summary.resilienceProfile.redundancies
+    .map((redundancy, index) => {
+      const redundancyId = `Redundancy_${index}`;
+      const statusLabel = redundancy.status.replace('-', ' ');
+      return `    ${redundancyId}[${redundancy.capability}\\n${statusLabel}]\n    ${resilienceNodeId} -->|Deploy| ${redundancyId}`;
+    })
+    .join('\n');
+
+  const baseEdges = [
+    `${ownerNodeId} -->|Configures| ${orchestratorNodeId}`,
+    `${ownerNodeId} -->|Funds| ${treasuryNodeId}`,
+    `${treasuryNodeId} -->|Swaps| ${stablecoinNodeId}`,
+    `${stablecoinNodeId} -->|Escrow| ${orchestratorNodeId}`,
+    `${ownerNodeId} -->|Commands| ${resilienceNodeId}`,
+    `${resilienceNodeId} -->|Escalates| ${safetyNodeId}`,
+    `${safetyNodeId} -->|Signal| ${ownerNodeId}`,
+  ];
+
+  return `graph TD\n    ${ownerNode}\n    ${orchestratorNode}\n    ${treasuryNode}\n    ${stablecoinNode}\n    ${resilienceNode}\n    ${safetyNode}\n    ${baseEdges.map((edge) => `    ${edge}`).join('\n')}\n${jobNodes ? `    ${jobNodes}\n` : ''}${jobEdges}\n${drillNodes ? `${drillNodes}\n` : ''}${redundancyNodes ? `${redundancyNodes}\n` : ''}`;
 }
 
 function generateMermaidTimeline(summary: Summary): string {
@@ -1443,6 +1973,8 @@ function synthesiseSummary(
     ownerCoverage,
     commandScripts,
   );
+  const resilienceProfile = computeResilienceProfile(scenario, ownerCoverage);
+  const globalExpansion = computeGlobalExpansionProfile(scenario);
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
@@ -1489,6 +2021,15 @@ function synthesiseSummary(
       ownerCommandCoverage: ownerCoverage.value,
       sovereignControlScore,
       sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
+      commandLatencyMinutes: resilienceProfile.responseLatencyMinutes,
+      drillReadiness: resilienceProfile.drillReadiness,
+      redundancyCoverage: resilienceProfile.redundancyCoverage,
+      escalationCoverage: resilienceProfile.escalationCoverage,
+      resilienceScore: resilienceProfile.unstoppableScore,
+      globalReachScore: globalExpansion.globalReachScore,
+      l2ActivationScore: globalExpansion.l2ActivationScore,
+      liquidityCoverageScore: globalExpansion.liquidityCoverageScore,
+      expansionScore: globalExpansion.expansionScore,
       assertionPassRate: 0,
     },
     ownerControl: {
@@ -1505,6 +2046,9 @@ function synthesiseSummary(
       circuitBreakers: scenario.safeguards.circuitBreakers,
       upgradePaths: scenario.safeguards.upgradePaths,
       alertChannels: scenario.observability.alertChannels,
+      drills: resilienceProfile.drills,
+      redundancies: resilienceProfile.redundancies,
+      escalationMatrix: resilienceProfile.escalationMatrix,
     },
     commandCatalog: scenario.commandCatalog,
     assignments: context.assignments,
@@ -1513,6 +2057,8 @@ function synthesiseSummary(
     ownerCommandMermaid: '',
     ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
     sovereignSafetyMesh,
+    resilienceProfile,
+    globalExpansion,
     assertions: [],
     treasuryTrajectory: [],
     deployment: {
@@ -1538,6 +2084,7 @@ function synthesiseSummary(
       modules: [],
       alerts: [],
     },
+    globalExpansionMermaid: '',
   };
 }
 
@@ -1795,6 +2342,9 @@ export async function runScenario(
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
+  summary.globalExpansionMermaid = generateGlobalExpansionMermaid(
+    summary.globalExpansion,
+  );
   summary.treasuryTrajectory = trajectory;
   summary.assertions = computeAssertions(workingScenario, summary);
   const passCount = summary.assertions.filter((assertion) => assertion.outcome === 'pass').length;
@@ -1845,6 +2395,14 @@ async function writeOutputs(
     ownerCommandCoverage: summary.metrics.ownerCommandCoverage,
     sovereignControlScore: summary.metrics.sovereignControlScore,
     sovereignSafetyScore: summary.metrics.sovereignSafetyScore,
+    commandLatencyMinutes: summary.resilienceProfile.responseLatencyMinutes,
+    drillReadiness: summary.resilienceProfile.drillReadiness,
+    redundancyCoverage: summary.resilienceProfile.redundancyCoverage,
+    escalationCoverage: summary.resilienceProfile.escalationCoverage,
+    resilienceScore: summary.resilienceProfile.unstoppableScore,
+    drills: summary.resilienceProfile.drills,
+    redundancies: summary.resilienceProfile.redundancies,
+    escalationMatrix: summary.resilienceProfile.escalationMatrix,
   };
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
@@ -1871,6 +2429,26 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-governance-ledger.json'),
     JSON.stringify(summary.governanceLedger, null, 2),
+  );
+  const expansionPlan = {
+    generatedAt: summary.generatedAt,
+    narrative: summary.globalExpansion.narrative,
+    expansionScore: summary.globalExpansion.expansionScore,
+    globalReachScore: summary.globalExpansion.globalReachScore,
+    l2ActivationScore: summary.globalExpansion.l2ActivationScore,
+    liquidityCoverageScore: summary.globalExpansion.liquidityCoverageScore,
+    regions: summary.globalExpansion.regions,
+    l2Deployments: summary.globalExpansion.l2Deployments,
+    bridges: summary.globalExpansion.bridges,
+    commandScripts: summary.globalExpansion.commandScripts,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'global-expansion.json'),
+    JSON.stringify(expansionPlan, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'global-expansion.mmd'),
+    `${summary.globalExpansionMermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
     path.join(outputDir, 'treasury-trajectory.json'),
@@ -1899,6 +2477,22 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'sovereign-safety-mesh.json'),
     JSON.stringify(summary.sovereignSafetyMesh, null, 2),
+  );
+
+  const resiliencePlan = {
+    generatedAt: summary.generatedAt,
+    responseLatencyMinutes: summary.resilienceProfile.responseLatencyMinutes,
+    drillReadiness: summary.resilienceProfile.drillReadiness,
+    redundancyCoverage: summary.resilienceProfile.redundancyCoverage,
+    escalationCoverage: summary.resilienceProfile.escalationCoverage,
+    unstoppableScore: summary.resilienceProfile.unstoppableScore,
+    drills: summary.resilienceProfile.drills,
+    redundancies: summary.resilienceProfile.redundancies,
+    escalationMatrix: summary.resilienceProfile.escalationMatrix,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'owner-resilience.json'),
+    JSON.stringify(resiliencePlan, null, 2),
   );
 
   if (options.updateUiSummary) {
@@ -1930,6 +2524,15 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'ownerCommandCoverage',
     'sovereignControlScore',
     'sovereignSafetyScore',
+    'commandLatencyMinutes',
+    'drillReadiness',
+    'redundancyCoverage',
+    'escalationCoverage',
+    'resilienceScore',
+    'globalReachScore',
+    'l2ActivationScore',
+    'liquidityCoverageScore',
+    'expansionScore',
     'assertionPassRate',
   ];
   const tolerance = 0.05;

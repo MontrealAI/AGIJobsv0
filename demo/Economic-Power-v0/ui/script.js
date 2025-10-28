@@ -69,6 +69,60 @@ const metricMap = [
     description: 'Composite readiness across pause, alerting, coverage, and scripted responses.',
   },
   {
+    id: 'commandLatencyMinutes',
+    label: 'Command Latency',
+    formatter: (value) => `${value.toFixed(1)} min`,
+    description: 'Median multi-sig response time to execute emergency programs.',
+  },
+  {
+    id: 'drillReadiness',
+    label: 'Drill Readiness',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite readiness across sovereign command drills.',
+  },
+  {
+    id: 'redundancyCoverage',
+    label: 'Redundancy Coverage',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Health of failover meshes protecting the orchestration stack.',
+  },
+  {
+    id: 'escalationCoverage',
+    label: 'Escalation Coverage',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Escalation playbooks covering emergency contact surfaces.',
+  },
+  {
+    id: 'resilienceScore',
+    label: 'Resilience Score',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Overall unstoppable resilience index combining drills, redundancy, and escalation.',
+  },
+  {
+    id: 'expansionScore',
+    label: 'Expansion Score',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite readiness of the global expansion mesh.',
+  },
+  {
+    id: 'globalReachScore',
+    label: 'Global Reach',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Regional launch readiness across sovereign expansion zones.',
+  },
+  {
+    id: 'l2ActivationScore',
+    label: 'L2 Activation',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Layer-2 deployment readiness and finality posture.',
+  },
+  {
+    id: 'liquidityCoverageScore',
+    label: 'Liquidity Coverage',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Bridge capacity and SLA strength across sovereign liquidity routes.',
+  },
+  {
     id: 'assertionPassRate',
     label: 'Assertion Pass Rate',
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
@@ -332,6 +386,228 @@ function renderSovereignty(summary) {
   }
 }
 
+function renderGlobalExpansion(summary) {
+  const profile = summary.globalExpansion || {
+    expansionScore: 0,
+    globalReachScore: 0,
+    l2ActivationScore: 0,
+    liquidityCoverageScore: 0,
+    narrative: 'Global expansion profile unavailable — regenerate reports.',
+    regions: [],
+    l2Deployments: [],
+    bridges: [],
+    commandScripts: [],
+  };
+
+  const percent = (value) => `${(value * 100).toFixed(1)}%`;
+  const expansionScoreEl = document.getElementById('expansion-score');
+  if (expansionScoreEl) {
+    expansionScoreEl.textContent = percent(profile.expansionScore);
+  }
+  const reachEl = document.getElementById('expansion-reach');
+  if (reachEl) {
+    reachEl.textContent = percent(profile.globalReachScore);
+  }
+  const l2El = document.getElementById('expansion-l2');
+  if (l2El) {
+    l2El.textContent = percent(profile.l2ActivationScore);
+  }
+  const liquidityEl = document.getElementById('expansion-liquidity');
+  if (liquidityEl) {
+    liquidityEl.textContent = percent(profile.liquidityCoverageScore);
+  }
+
+  const narrativeEl = document.getElementById('expansion-narrative');
+  if (narrativeEl) {
+    narrativeEl.textContent = profile.narrative ?? '';
+  }
+
+  const regionBody = document.querySelector('#expansion-region-table tbody');
+  if (regionBody) {
+    regionBody.innerHTML = '';
+    if (profile.regions.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.textContent = 'No regions published — execute regional scale programs to unlock planetary reach.';
+      row.append(cell);
+      regionBody.append(row);
+    } else {
+      for (const region of profile.regions) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${region.name}</td>
+          <td>${region.status.replace('-', ' ')}</td>
+          <td>${percent(region.readinessScore)}</td>
+          <td>${formatNumber(region.throughputCapacity)} jobs/day • ${percent(region.coverageScore)}</td>
+          <td><code>${region.command}</code><br /><small>${region.notes}</small></td>
+        `;
+        regionBody.append(row);
+      }
+    }
+  }
+
+  const l2Body = document.querySelector('#expansion-l2-table tbody');
+  if (l2Body) {
+    l2Body.innerHTML = '';
+    if (profile.l2Deployments.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 6;
+      cell.textContent = 'No L2 deployments staged — execute L2 upgrade programs.';
+      row.append(cell);
+      l2Body.append(row);
+    } else {
+      for (const deployment of profile.l2Deployments) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${deployment.chain}</td>
+          <td>${deployment.status.replace('-', ' ')}</td>
+          <td>${percent(deployment.readinessScore)}</td>
+          <td>${deployment.finalityMinutes.toFixed(1)} min</td>
+          <td>${Math.round(deployment.transactionsPerSecond)} tps</td>
+          <td><code>${deployment.command}</code><br /><small>${deployment.contractSet.join(', ')}</small></td>
+        `;
+        l2Body.append(row);
+      }
+    }
+  }
+
+  const bridgeBody = document.querySelector('#expansion-bridge-table tbody');
+  if (bridgeBody) {
+    bridgeBody.innerHTML = '';
+    if (profile.bridges.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.textContent = 'No liquidity bridges established — authorize bridge programs to sustain global flow.';
+      row.append(cell);
+      bridgeBody.append(row);
+    } else {
+      for (const bridge of profile.bridges) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${bridge.source} → ${bridge.target}</td>
+          <td>${bridge.status}</td>
+          <td>${percent(bridge.reliabilityScore)}</td>
+          <td>${formatNumber(bridge.capacityMillions)}M • SLA ${bridge.slaMinutes} min</td>
+          <td><code>${bridge.command}</code></td>
+        `;
+        bridgeBody.append(row);
+      }
+    }
+  }
+
+  const commandList = document.getElementById('expansion-commands');
+  if (commandList) {
+    commandList.innerHTML = '';
+    if (profile.commandScripts.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No expansion commands scripted — sync command catalog.';
+      commandList.append(li);
+    } else {
+      for (const script of profile.commandScripts) {
+        const li = document.createElement('li');
+        li.innerHTML = `<code>${script}</code>`;
+        commandList.append(li);
+      }
+    }
+  }
+}
+
+function renderResilience(summary) {
+  const profile = summary.resilienceProfile || {
+    unstoppableScore: 0,
+    responseLatencyMinutes: 0,
+    drillReadiness: 0,
+    redundancyCoverage: 0,
+    escalationCoverage: 0,
+    drills: [],
+    redundancies: [],
+    escalationMatrix: [],
+  };
+
+  const scoreEl = document.getElementById('resilience-score');
+  if (scoreEl) {
+    scoreEl.textContent = `${(profile.unstoppableScore * 100).toFixed(1)}%`;
+  }
+
+  const latencyEl = document.getElementById('resilience-latency');
+  if (latencyEl) {
+    latencyEl.textContent = `Median command latency ${profile.responseLatencyMinutes.toFixed(1)} minutes`;
+  }
+
+  const coverageEl = document.getElementById('resilience-coverage');
+  if (coverageEl) {
+    coverageEl.textContent = `Drill readiness ${(profile.drillReadiness * 100).toFixed(1)}% • Redundancy ${(profile.redundancyCoverage * 100).toFixed(1)}% • Escalation ${(profile.escalationCoverage * 100).toFixed(1)}%`;
+  }
+
+  const drillBody = document.querySelector('#drill-table tbody');
+  if (drillBody) {
+    drillBody.innerHTML = '';
+    if (profile.drills.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.textContent = 'No drills configured – schedule rehearsals to maintain unstoppable readiness.';
+      row.append(cell);
+      drillBody.append(row);
+    } else {
+      for (const drill of profile.drills) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${drill.name}</td>
+          <td>${drill.frequencyHours}h</td>
+          <td>${drill.targetResponseMinutes} min</td>
+          <td>${(drill.readiness * 100).toFixed(1)}%</td>
+          <td><code>${drill.script}</code></td>
+        `;
+        drillBody.append(row);
+      }
+    }
+  }
+
+  const redundancyBody = document.querySelector('#redundancy-table tbody');
+  if (redundancyBody) {
+    redundancyBody.innerHTML = '';
+    if (profile.redundancies.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 4;
+      cell.textContent = 'No redundancies declared – deploy failover meshes immediately.';
+      row.append(cell);
+      redundancyBody.append(row);
+    } else {
+      for (const redundancy of profile.redundancies) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${redundancy.capability}</td>
+          <td>${redundancy.status.replace('-', ' ')}</td>
+          <td>${(redundancy.coverage * 100).toFixed(1)}%</td>
+          <td><code>${redundancy.script}</code></td>
+        `;
+        redundancyBody.append(row);
+      }
+    }
+  }
+
+  const escalationList = document.getElementById('escalation-list');
+  if (escalationList) {
+    escalationList.innerHTML = '';
+    if (profile.escalationMatrix.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = 'No escalation routes published – wire emergency paging loops.';
+      escalationList.append(li);
+    } else {
+      for (const escalation of profile.escalationMatrix) {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${escalation.trigger}:</strong> ${escalation.response} → <span>${escalation.ownerContact}</span>`;
+        escalationList.append(li);
+      }
+    }
+  }
+}
+
 function renderGovernanceLedger(summary) {
   const analysisEl = document.getElementById('ledger-analysis');
   const executionEl = document.getElementById('ledger-execution');
@@ -572,14 +848,19 @@ async function renderMermaid(summary) {
   const flow = document.getElementById('mermaid-flow');
   const timeline = document.getElementById('mermaid-timeline');
   const command = document.getElementById('mermaid-command');
+  const expansion = document.getElementById('mermaid-expansion');
   flow.textContent = summary.mermaidFlow;
   timeline.textContent = summary.mermaidTimeline;
   if (command) {
     command.textContent = summary.ownerCommandMermaid;
-    await mermaid.run({ nodes: [flow, timeline, command] });
-  } else {
-    await mermaid.run({ nodes: [flow, timeline] });
   }
+  if (expansion) {
+    expansion.textContent = summary.globalExpansionMermaid;
+  }
+  const nodes = [flow, timeline]
+    .concat(command ? [command] : [])
+    .concat(expansion ? [expansion] : []);
+  await mermaid.run({ nodes });
 }
 
 function updateFooter(summary) {
@@ -614,6 +895,8 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderGlobalExpansion(summary);
+  renderResilience(summary);
   renderGovernanceLedger(summary);
   renderDeployment(summary);
   renderAssertions(summary);
@@ -666,6 +949,8 @@ async function renderSummary(summary) {
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderGlobalExpansion(summary);
+  renderResilience(summary);
   renderGovernanceLedger(summary);
   renderDeployment(summary);
   renderAssertions(summary);
