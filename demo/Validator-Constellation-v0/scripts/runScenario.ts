@@ -58,6 +58,7 @@ async function main() {
   console.log(`Validators slashed: ${executed.report.slashingEvents.length}`);
   console.log(`Sentinel alerts: ${executed.report.sentinelAlerts.length}`);
   console.log(`Reports written to ${reportDir}`);
+  console.log(`Owner mission briefing available at ${path.join(reportDir, 'owner-digest.md')}`);
 }
 
 main().catch((error) => {

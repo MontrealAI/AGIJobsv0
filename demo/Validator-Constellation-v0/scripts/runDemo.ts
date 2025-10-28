@@ -162,6 +162,7 @@ function main() {
   console.log('Entropy witness transcript verified:', roundResult.vrfWitness.transcript);
   console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
   console.log(`Reports written to ${reportDir}`);
+  console.log(`Owner mission briefing available at ${path.join(reportDir, 'owner-digest.md')}`);
 }
 
 main();

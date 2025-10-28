@@ -92,10 +92,14 @@ jobs:
             const auditPath = path.join(target.dir, 'audit.json');
             const jobsPath = path.join(target.dir, 'jobs.json');
             const roundPath = path.join(target.dir, 'round.json');
+            const digestPath = path.join(target.dir, 'owner-digest.md');
             for (const file of [summaryPath, eventsPath, dashboardPath, subgraphPath, auditPath, jobsPath, roundPath]) {
               if (!fs.existsSync(file)) {
                 throw new Error(`[${target.name}] expected artifact missing: ${file}`);
               }
+            }
+            if (!fs.existsSync(digestPath)) {
+              throw new Error(`[${target.name}] owner digest missing: ${digestPath}`);
             }
             const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
             if (summary.proof?.attestedJobCount !== target.expectedJobs) {
@@ -153,6 +157,16 @@ jobs:
             const round = JSON.parse(fs.readFileSync(roundPath, 'utf8'));
             if (!Array.isArray(round.commits) || !Array.isArray(round.reveals)) {
               throw new Error(`[${target.name}] round transcript missing commits or reveals`);
+            }
+            const digest = fs.readFileSync(digestPath, 'utf8');
+            if (!digest.includes('Owner Mission Briefing')) {
+              throw new Error(`[${target.name}] owner digest missing mission briefing header`);
+            }
+            if (!digest.includes('Sentinel Alerts')) {
+              throw new Error(`[${target.name}] owner digest missing sentinel section`);
+            }
+            if (!digest.includes('mermaid')) {
+              throw new Error(`[${target.name}] owner digest missing mermaid blueprint`);
             }
           }
           console.log('Validator constellation artifacts validated for baseline and scenario runs.');
