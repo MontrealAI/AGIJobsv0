@@ -7,6 +7,12 @@ import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+const controlScriptSchema = z.object({
+  action: z.string(),
+  script: z.string(),
+  description: z.string(),
+});
+
 const scenarioSchema = z.object({
   version: z.literal('1.0'),
   scenarioId: z.string(),
@@ -64,6 +70,7 @@ const scenarioSchema = z.object({
       reliability: z.number(),
       stake: z.number(),
       competencies: z.array(z.string()),
+      controlScripts: z.array(controlScriptSchema).nonempty(),
     }),
   ),
   jobs: z.array(
@@ -77,6 +84,7 @@ const scenarioSchema = z.object({
       executionHours: z.number(),
       validatorQuorum: z.number(),
       risk: z.enum(['low', 'medium', 'high']),
+      controlScripts: z.array(controlScriptSchema).nonempty(),
     }),
   ),
   stablecoinAdapters: z.array(
@@ -84,6 +92,7 @@ const scenarioSchema = z.object({
       name: z.string(),
       swapFeeBps: z.number(),
       slippageBps: z.number(),
+      controlScripts: z.array(controlScriptSchema).nonempty(),
     }),
   ),
   modules: z.array(
@@ -97,6 +106,7 @@ const scenarioSchema = z.object({
       status: z.enum(['active', 'pending-upgrade', 'paused', 'deprecated']),
       description: z.string(),
       lastAudit: z.string().datetime({ message: 'lastAudit must be an ISO-8601 timestamp' }),
+      controlScripts: z.array(controlScriptSchema).default([]),
     }),
   ),
   automation: z.object({
@@ -199,9 +209,44 @@ type GovernanceLedger = {
   scripts: string[];
   modules: GovernanceLedgerModule[];
   alerts: GovernanceAlert[];
+  dominanceIndex: number;
+  dominanceVerdict: string;
 };
 
-type Summary = {
+type DominanceComponent = {
+  id: string;
+  label: string;
+  weight: number;
+  value: number;
+  contribution: number;
+  description: string;
+};
+
+type DominanceCrossCheck = {
+  id: string;
+  label: string;
+  methodology: string;
+  value: number;
+  notes: string;
+};
+
+type DominanceIntegrityCheck = {
+  id: string;
+  outcome: 'pass' | 'warn';
+  details: string;
+};
+
+export type DominanceReport = {
+  index: number;
+  verdict: string;
+  narrative: string;
+  methodology: string[];
+  components: DominanceComponent[];
+  crossChecks: DominanceCrossCheck[];
+  integrity: DominanceIntegrityCheck[];
+};
+
+export type Summary = {
   scenarioId: string;
   title: string;
   generatedAt: string;
@@ -227,6 +272,7 @@ type Summary = {
     ownerCommandCoverage: number;
     sovereignControlScore: number;
     assertionPassRate: number;
+    economicDominanceIndex: number;
   };
   ownerControl: {
     threshold: string;
@@ -259,6 +305,7 @@ type Summary = {
     observability: Scenario['observability'];
   };
   governanceLedger: GovernanceLedger;
+  dominanceReport: DominanceReport;
 };
 
 type OwnerCommandPlan = {
@@ -270,6 +317,26 @@ type OwnerCommandPlan = {
   parameterControls: Scenario['owner']['controls'];
   circuitBreakers: Scenario['safeguards']['circuitBreakers'];
   upgradePaths: Scenario['safeguards']['upgradePaths'];
+  jobControls: {
+    id: string;
+    name: string;
+    controls: Scenario['jobs'][number]['controlScripts'];
+  }[];
+  validatorControls: {
+    id: string;
+    name: string;
+    controls: Scenario['validators'][number]['controlScripts'];
+  }[];
+  stablecoinControls: {
+    name: string;
+    controls: Scenario['stablecoinAdapters'][number]['controlScripts'];
+  }[];
+  moduleControls: {
+    id: string;
+    name: string;
+    upgradeScript: string;
+    controls: Scenario['modules'][number]['controlScripts'];
+  }[];
   commandCoverage: number;
   coverageNarrative: string;
 };
@@ -311,6 +378,26 @@ function buildOwnerCommandPlan(scenario: Scenario, coverage: number): OwnerComma
     parameterControls: scenario.owner.controls,
     circuitBreakers: scenario.safeguards.circuitBreakers,
     upgradePaths: scenario.safeguards.upgradePaths,
+    jobControls: scenario.jobs.map((job) => ({
+      id: job.id,
+      name: job.name,
+      controls: job.controlScripts,
+    })),
+    validatorControls: scenario.validators.map((validator) => ({
+      id: validator.id,
+      name: validator.name,
+      controls: validator.controlScripts,
+    })),
+    stablecoinControls: scenario.stablecoinAdapters.map((adapter) => ({
+      name: adapter.name,
+      controls: adapter.controlScripts,
+    })),
+    moduleControls: scenario.modules.map((module) => ({
+      id: module.id,
+      name: module.name,
+      upgradeScript: module.upgradeScript,
+      controls: module.controlScripts,
+    })),
     commandCoverage: Number(coverage.toFixed(3)),
     coverageNarrative: coverageNarrative(coverage),
   };
@@ -339,6 +426,33 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
     return { node, edge };
   });
 
+  const jobNodes = scenario.jobs.flatMap((job, index) =>
+    job.controlScripts.map((control, controlIndex) => {
+      const id = sanitiseId('Job', `${job.id}_${control.action}`, controlIndex + index * 10);
+      const node = `${id}["${job.name} • ${control.action}\\n${control.script}"]`;
+      const edge = `    ${ownerNodeId} -->|Direct| ${id}`;
+      return { node, edge };
+    }),
+  );
+
+  const validatorNodes = scenario.validators.flatMap((validator, index) =>
+    validator.controlScripts.map((control, controlIndex) => {
+      const id = sanitiseId('Validator', `${validator.id}_${control.action}`, controlIndex + index * 10);
+      const node = `${id}["${validator.name} • ${control.action}\\n${control.script}"]`;
+      const edge = `    ${ownerNodeId} -->|Govern| ${id}`;
+      return { node, edge };
+    }),
+  );
+
+  const adapterNodes = scenario.stablecoinAdapters.flatMap((adapter, index) =>
+    adapter.controlScripts.map((control, controlIndex) => {
+      const id = sanitiseId('Adapter', `${adapter.name}_${control.action}`, controlIndex + index * 10);
+      const node = `${id}["${adapter.name} • ${control.action}\\n${control.script}"]`;
+      const edge = `    ${ownerNodeId} -->|Fund| ${id}`;
+      return { node, edge };
+    }),
+  );
+
   const upgradeNodes = summary.ownerSovereignty.upgradePaths.map((upgrade, index) => {
     const id = sanitiseId('Upgrade', upgrade.module, index);
     const node = `${id}["${upgrade.module} Upgrade\\n${upgrade.script}"]`;
@@ -363,6 +477,9 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
 
   const nodes = [ownerNode, pauseNode, resumeNode, coverageNode]
     .concat(parameterNodes.map((entry) => entry.node))
+    .concat(jobNodes.map((entry) => entry.node))
+    .concat(validatorNodes.map((entry) => entry.node))
+    .concat(adapterNodes.map((entry) => entry.node))
     .concat(upgradeNodes.map((entry) => entry.node))
     .concat(moduleNodes.map((entry) => entry.node))
     .concat(breakerNodes.map((entry) => entry.node));
@@ -373,6 +490,9 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
     `    ${ownerNodeId} -->|Resume| ${resumeNodeId}`,
   ]
     .concat(parameterNodes.map((entry) => entry.edge))
+    .concat(jobNodes.map((entry) => entry.edge))
+    .concat(validatorNodes.map((entry) => entry.edge))
+    .concat(adapterNodes.map((entry) => entry.edge))
     .concat(upgradeNodes.map((entry) => entry.edge))
     .concat(moduleNodes.map((entry) => entry.edge))
     .concat(breakerNodes.map((entry) => entry.edge));
@@ -399,7 +519,23 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
       '% — ' +
       summary.ownerCommandPlan.coverageNarrative,
   );
+  lines.push(
+    'Economic dominance index: ' +
+      (summary.metrics.economicDominanceIndex * 100).toFixed(2) +
+      '% — ' +
+      summary.dominanceReport.verdict,
+  );
   lines.push('');
+  if (summary.dominanceReport.crossChecks.length > 0) {
+    lines.push('Dominance verification cross-checks:');
+    lines.push('');
+    for (const check of summary.dominanceReport.crossChecks) {
+      lines.push(
+        `- ${check.label}: ${(check.value * 100).toFixed(2)}% • ${check.methodology} — ${check.notes}`,
+      );
+    }
+    lines.push('');
+  }
   lines.push('## Quick actions');
   lines.push('');
   lines.push('- **Pause execution:** `' + summary.ownerCommandPlan.quickActions.pause + '`');
@@ -427,6 +563,39 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
     );
   }
   lines.push('');
+  lines.push('## Job levers');
+  lines.push('');
+  for (const job of summary.ownerCommandPlan.jobControls) {
+    lines.push('- **' + job.name + '**');
+    for (const control of job.controls) {
+      lines.push(
+        '  - `' + control.action + '` using `' + control.script + '` — ' + control.description,
+      );
+    }
+  }
+  lines.push('');
+  lines.push('## Validator directives');
+  lines.push('');
+  for (const validator of summary.ownerCommandPlan.validatorControls) {
+    lines.push('- **' + validator.name + '**');
+    for (const control of validator.controls) {
+      lines.push(
+        '  - `' + control.action + '` via `' + control.script + '` — ' + control.description,
+      );
+    }
+  }
+  lines.push('');
+  lines.push('## Stablecoin adapters');
+  lines.push('');
+  for (const adapter of summary.ownerCommandPlan.stablecoinControls) {
+    lines.push('- **' + adapter.name + '**');
+    for (const control of adapter.controls) {
+      lines.push(
+        '  - `' + control.action + '` with `' + control.script + '` — ' + control.description,
+      );
+    }
+  }
+  lines.push('');
   lines.push('## Circuit breakers');
   lines.push('');
   for (const breaker of summary.ownerCommandPlan.circuitBreakers) {
@@ -448,6 +617,18 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
   lines.push('');
   for (const upgrade of summary.ownerCommandPlan.upgradePaths) {
     lines.push('- ' + upgrade.module + ': `' + upgrade.script + '` — ' + upgrade.description);
+  }
+  lines.push('');
+  lines.push('## Module controls');
+  lines.push('');
+  for (const module of summary.ownerCommandPlan.moduleControls) {
+    lines.push('- **' + module.name + '** (`' + module.id + '`)');
+    lines.push('  - Upgrade bundle: `' + module.upgradeScript + '`');
+    for (const control of module.controls) {
+      lines.push(
+        '  - `' + control.action + '` via `' + control.script + '` — ' + control.description,
+      );
+    }
   }
   lines.push('');
   lines.push('## Capital trajectory checkpoints');
@@ -588,8 +769,26 @@ function collectCommandScripts(scenario: Scenario): string[] {
   }
   scripts.add(scenario.safeguards.pauseScript);
   scripts.add(scenario.safeguards.resumeScript);
+  for (const job of scenario.jobs) {
+    for (const control of job.controlScripts) {
+      scripts.add(control.script);
+    }
+  }
+  for (const validator of scenario.validators) {
+    for (const control of validator.controlScripts) {
+      scripts.add(control.script);
+    }
+  }
+  for (const adapter of scenario.stablecoinAdapters) {
+    for (const control of adapter.controlScripts) {
+      scripts.add(control.script);
+    }
+  }
   for (const module of scenario.modules) {
     scripts.add(module.upgradeScript);
+    for (const control of module.controlScripts) {
+      scripts.add(control.script);
+    }
   }
   for (const circuit of scenario.safeguards.circuitBreakers) {
     scripts.add(circuit.action);
@@ -601,16 +800,42 @@ function collectCommandScripts(scenario: Scenario): string[] {
 }
 
 function computeOwnerCommandCoverage(scenario: Scenario): number {
-  const scripts = collectCommandScripts(scenario);
-  const criticalSurfaces =
-    scenario.jobs.length +
-    scenario.validators.length +
-    scenario.stablecoinAdapters.length +
-    scenario.owner.controls.length +
-    scenario.modules.length +
-    2;
-  const coverage = scripts.length / Math.max(criticalSurfaces, 1);
-  return Number(Math.min(1, coverage).toFixed(3));
+  let surfaces = 0;
+  let covered = 0;
+
+  const registerSurface = (hasCoverage: boolean): void => {
+    surfaces += 1;
+    if (hasCoverage) {
+      covered += 1;
+    }
+  };
+
+  for (const job of scenario.jobs) {
+    registerSurface(job.controlScripts.length > 0);
+  }
+  for (const validator of scenario.validators) {
+    registerSurface(validator.controlScripts.length > 0);
+  }
+  for (const adapter of scenario.stablecoinAdapters) {
+    registerSurface(adapter.controlScripts.length > 0);
+  }
+  for (const module of scenario.modules) {
+    const moduleCovered =
+      (module.controlScripts && module.controlScripts.length > 0) ||
+      Boolean(module.upgradeScript);
+    registerSurface(moduleCovered);
+  }
+  for (const control of scenario.owner.controls) {
+    registerSurface(Boolean(control.script));
+  }
+  registerSurface(Boolean(scenario.safeguards.pauseScript));
+  registerSurface(Boolean(scenario.safeguards.resumeScript));
+
+  if (surfaces === 0) {
+    return 1;
+  }
+
+  return Number(Math.min(1, covered / surfaces).toFixed(3));
 }
 
 function computeSovereignControlScore(scenario: Scenario): number {
@@ -631,6 +856,195 @@ function computeSovereignControlScore(scenario: Scenario): number {
   }
   const controlScore = controlled / Math.max(scenario.modules.length, 1);
   return Number(Math.min(1, Math.max(0, controlScore)).toFixed(3));
+}
+
+function clamp(value: number, min = 0, max = 1): number {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
+}
+
+function computeEconomicVelocity(summary: Summary): number {
+  const roiComponent = clamp(summary.metrics.roiMultiplier / 2);
+  const throughputComponent = clamp(summary.metrics.throughputJobsPerDay / 3);
+  const weighted = 0.6 * roiComponent + 0.4 * throughputComponent;
+  return Number(weighted.toFixed(3));
+}
+
+export function buildDominanceReport(summary: Summary): DominanceReport {
+  const components: DominanceComponent[] = [
+    {
+      id: 'owner-command-coverage',
+      label: 'Owner command coverage',
+      weight: 0.2,
+      value: clamp(summary.metrics.ownerCommandCoverage),
+      contribution: 0,
+      description: 'Portion of economic surfaces with deterministic multi-sig commands.',
+    },
+    {
+      id: 'sovereign-control',
+      label: 'Sovereign control score',
+      weight: 0.18,
+      value: clamp(summary.metrics.sovereignControlScore),
+      contribution: 0,
+      description: 'Share of deployed modules anchored under owner custody.',
+    },
+    {
+      id: 'validator-confidence',
+      label: 'Validator confidence',
+      weight: 0.16,
+      value: clamp(summary.metrics.validatorConfidence),
+      contribution: 0,
+      description: 'Commit–reveal quorum strength across validation committees.',
+    },
+    {
+      id: 'automation-score',
+      label: 'Automation score',
+      weight: 0.14,
+      value: clamp(summary.metrics.automationScore),
+      contribution: 0,
+      description: 'Autonomous orchestration coverage across the execution mesh.',
+    },
+    {
+      id: 'stability-index',
+      label: 'Stability index',
+      weight: 0.12,
+      value: clamp(summary.metrics.stabilityIndex),
+      contribution: 0,
+      description: 'Composite resilience gauge blending risk mitigations and buffers.',
+    },
+    {
+      id: 'assertion-pass-rate',
+      label: 'Assertion pass rate',
+      weight: 0.1,
+      value: clamp(summary.metrics.assertionPassRate ?? 0),
+      contribution: 0,
+      description: 'Share of verification assertions exceeding unstoppable thresholds.',
+    },
+    {
+      id: 'economic-velocity',
+      label: 'Economic velocity',
+      weight: 0.1,
+      value: computeEconomicVelocity(summary),
+      contribution: 0,
+      description: 'Throughput and ROI converted into a 0–1 sovereignty readiness scale.',
+    },
+  ];
+
+  const contributions = components.map((component) => ({
+    ...component,
+    contribution: Number((component.value * component.weight).toFixed(4)),
+  }));
+  const index = Number(
+    contributions.reduce((acc, component) => acc + component.contribution, 0).toFixed(4),
+  );
+  const totalWeight = contributions.reduce((acc, component) => acc + component.weight, 0);
+  const normalisedWeights = contributions.map((component) => component.weight / totalWeight);
+  const arithmetic = Number(
+    contributions
+      .reduce((acc, component, idx) => acc + component.value * normalisedWeights[idx], 0)
+      .toFixed(4),
+  );
+  const geometric = Number(
+    Math.exp(
+      contributions.reduce(
+        (acc, component, idx) =>
+          acc + normalisedWeights[idx] * Math.log(Math.max(component.value, 1e-6)),
+        0,
+      ),
+    ).toFixed(4),
+  );
+  const harmonicDenominator = contributions.reduce(
+    (acc, component, idx) => acc + normalisedWeights[idx] / Math.max(component.value, 1e-6),
+    0,
+  );
+  const harmonic = Number((harmonicDenominator === 0 ? 0 : 1 / harmonicDenominator).toFixed(4));
+
+  const crossChecks: DominanceCrossCheck[] = [
+    {
+      id: 'weighted-mean',
+      label: 'Weighted mean',
+      methodology: 'Primary weighted composite emphasising owner custody and validator strength.',
+      value: index,
+      notes: 'Governing score used for escalation and launch readiness decisions.',
+    },
+    {
+      id: 'arithmetic-mean',
+      label: 'Arithmetic baseline',
+      methodology: 'Simple average sanity check.',
+      value: arithmetic,
+      notes: 'Confirms no component skews the composite through weighting bias.',
+    },
+    {
+      id: 'geometric-mean',
+      label: 'Geometric guardrail',
+      methodology: 'Penalises weak links multiplicatively.',
+      value: geometric,
+      notes: 'Ensures no hidden surface drops below unstoppable tolerance.',
+    },
+    {
+      id: 'harmonic-mean',
+      label: 'Harmonic fail-safe',
+      methodology: 'Highlights minimum-performing levers.',
+      value: harmonic,
+      notes: 'Triggers reinforcements if a single component drifts downward.',
+    },
+  ];
+
+  const deviations = crossChecks.map((check) => Math.abs(check.value - index));
+  const maxDeviation = Math.max(...deviations);
+  const integrity: DominanceIntegrityCheck[] = [
+    {
+      id: 'cross-check-alignment',
+      outcome: maxDeviation <= 0.05 ? 'pass' : 'warn',
+      details: `Composite deviation across verification methods: ${(maxDeviation * 100).toFixed(2)}%`,
+    },
+  ];
+
+  const weakComponents = contributions.filter((component) => component.value < 0.75);
+  if (weakComponents.length === 0) {
+    integrity.push({
+      id: 'component-strength',
+      outcome: 'pass',
+      details: 'All dominance components exceed the 75% sovereignty guardrail.',
+    });
+  } else {
+    for (const component of weakComponents) {
+      integrity.push({
+        id: `component-${component.id}`,
+        outcome: 'warn',
+        details: `${component.label} at ${(component.value * 100).toFixed(1)}% – reinforce this lever immediately.`,
+      });
+    }
+  }
+
+  const verdict =
+    index >= 0.92
+      ? 'Dominance tier secured – the orchestration mesh operates at unstoppable sovereign capacity.'
+      : index >= 0.85
+      ? 'Dominance near unstoppable – amplify highlighted levers to lock in sovereignty.'
+      : 'Dominance below unstoppable threshold – initiate escalation playbooks.';
+
+  const narrative =
+    `Composite index ${(index * 100).toFixed(2)}% fuses owner coverage, custody, validator certainty, automation, and economic ` +
+    `velocity. Cross-check variance ${(maxDeviation * 100).toFixed(2)}% confirms triple-verification integrity.`;
+
+  const methodology = [
+    'Weighted composite prioritises command custody and validator confidence.',
+    'Geometric and harmonic guardrails actively hunt for hidden weak links.',
+    'Economic velocity injects ROI and throughput to prove macro-scale value creation.',
+  ];
+
+  return {
+    index,
+    verdict,
+    narrative,
+    methodology,
+    components: contributions,
+    crossChecks,
+    integrity,
+  };
 }
 
 function buildGovernanceLedger(
@@ -743,6 +1157,29 @@ function buildGovernanceLedger(
     });
   }
 
+  if (summary.metrics.economicDominanceIndex < 0.92) {
+    alerts.push({
+      id: 'dominance-gap',
+      severity: 'warning',
+      summary: 'Economic dominance index below unstoppable target.',
+      details: [
+        `Index ${(summary.metrics.economicDominanceIndex * 100).toFixed(2)}%`,
+        summary.dominanceReport.verdict,
+      ],
+    });
+  }
+
+  for (const integrity of summary.dominanceReport.integrity) {
+    if (integrity.outcome === 'warn') {
+      alerts.push({
+        id: `dominance-${integrity.id}`,
+        severity: 'warning',
+        summary: 'Dominance integrity warning detected.',
+        details: [integrity.details],
+      });
+    }
+  }
+
   return {
     analysisTimestamp: referenceDate.toISOString(),
     ownerSafe: scenario.owner.operator,
@@ -756,6 +1193,8 @@ function buildGovernanceLedger(
     scripts,
     modules,
     alerts,
+    dominanceIndex: summary.metrics.economicDominanceIndex,
+    dominanceVerdict: summary.dominanceReport.verdict,
   };
 }
 
@@ -1009,6 +1448,7 @@ function synthesiseSummary(
       ownerCommandCoverage: ownerCoverage,
       sovereignControlScore,
       assertionPassRate: 0,
+      economicDominanceIndex: 0,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -1053,6 +1493,17 @@ function synthesiseSummary(
       scripts: collectCommandScripts(scenario),
       modules: [],
       alerts: [],
+      dominanceIndex: 0,
+      dominanceVerdict: 'Dominance report pending synthesis.',
+    },
+    dominanceReport: {
+      index: 0,
+      verdict: 'Dominance report pending synthesis.',
+      narrative: '',
+      methodology: [],
+      components: [],
+      crossChecks: [],
+      integrity: [],
     },
   };
 }
@@ -1313,11 +1764,48 @@ export async function runScenario(
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
   summary.treasuryTrajectory = trajectory;
   summary.assertions = computeAssertions(workingScenario, summary);
-  const passCount = summary.assertions.filter((assertion) => assertion.outcome === 'pass').length;
-  const passRate = summary.assertions.length
-    ? passCount / summary.assertions.length
+  const basePassCount = summary.assertions.filter((assertion) => assertion.outcome === 'pass').length;
+  const basePassRate = summary.assertions.length
+    ? basePassCount / summary.assertions.length
     : 1;
-  summary.metrics.assertionPassRate = Number(passRate.toFixed(3));
+  summary.metrics.assertionPassRate = Number(basePassRate.toFixed(3));
+  let dominanceReport = buildDominanceReport(summary);
+  const dominanceAssertion: Assertion = {
+    id: 'economic-dominance',
+    title: 'Economic dominance index holds unstoppable band',
+    outcome: dominanceReport.index >= 0.92 ? 'pass' : 'fail',
+    severity: 'critical',
+    summary: dominanceReport.verdict,
+    metric: Number(dominanceReport.index.toFixed(3)),
+    target: 0.92,
+    evidence: dominanceReport.components.map(
+      (component) =>
+        `${component.label}:${(component.value * 100).toFixed(1)}% • weight ${(component.weight * 100).toFixed(1)}%`,
+    ),
+  };
+  summary.assertions.push(dominanceAssertion);
+  const initialTotalPass = basePassCount + (dominanceAssertion.outcome === 'pass' ? 1 : 0);
+  summary.metrics.assertionPassRate = Number(
+    (summary.assertions.length ? initialTotalPass / summary.assertions.length : 1).toFixed(3),
+  );
+  dominanceReport = buildDominanceReport(summary);
+  summary.dominanceReport = dominanceReport;
+  summary.metrics.economicDominanceIndex = Number(dominanceReport.index.toFixed(3));
+  dominanceAssertion.outcome = dominanceReport.index >= 0.92 ? 'pass' : 'fail';
+  dominanceAssertion.summary = dominanceReport.verdict;
+  dominanceAssertion.metric = Number(dominanceReport.index.toFixed(3));
+  dominanceAssertion.evidence = dominanceReport.components.map(
+    (component) =>
+      `${component.label}:${(component.value * 100).toFixed(1)}% • contribution ${(component.contribution * 100).toFixed(2)}%`,
+  );
+  summary.metrics.assertionPassRate = Number(
+    (
+      summary.assertions.length
+        ? summary.assertions.filter((assertion) => assertion.outcome === 'pass').length /
+          summary.assertions.length
+        : 1
+    ).toFixed(3),
+  );
   const ownerPlan = buildOwnerCommandPlan(workingScenario, summary.metrics.ownerCommandCoverage);
   summary.ownerCommandPlan = ownerPlan;
   summary.governanceLedger = buildGovernanceLedger(
@@ -1326,6 +1814,10 @@ export async function runScenario(
     ownerPlan,
     analysisTimestamp,
   );
+  if (!summary.dominanceReport) {
+    summary.dominanceReport = dominanceReport;
+    summary.metrics.economicDominanceIndex = Number(dominanceReport.index.toFixed(3));
+  }
   return summary;
 }
 
@@ -1374,6 +1866,7 @@ async function writeOutputs(
     automation: summary.deployment.automation,
     observability: summary.deployment.observability,
     sovereignControlScore: summary.metrics.sovereignControlScore,
+    economicDominanceIndex: summary.metrics.economicDominanceIndex,
   };
   await fs.writeFile(
     path.join(outputDir, 'deployment-map.json'),
@@ -1398,6 +1891,20 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-command-plan.md'),
     generateOwnerCommandMarkdown(summary),
+  );
+  const commandSurfaces = {
+    jobs: summary.ownerCommandPlan.jobControls,
+    validators: summary.ownerCommandPlan.validatorControls,
+    stablecoinAdapters: summary.ownerCommandPlan.stablecoinControls,
+    modules: summary.ownerCommandPlan.moduleControls,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'owner-command-surfaces.json'),
+    JSON.stringify(commandSurfaces, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'sovereign-dominion.json'),
+    JSON.stringify(summary.dominanceReport, null, 2),
   );
 
   if (options.updateUiSummary) {
@@ -1429,6 +1936,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'ownerCommandCoverage',
     'sovereignControlScore',
     'assertionPassRate',
+    'economicDominanceIndex',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

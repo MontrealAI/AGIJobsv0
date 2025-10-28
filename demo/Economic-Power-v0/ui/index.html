@@ -25,6 +25,54 @@
     <main>
       <section id="metric-cards" aria-label="Economic metrics"></section>
 
+      <section class="panel" aria-labelledby="dominance-heading">
+        <div class="panel-header">
+          <h2 id="dominance-heading">Economic dominance synthesis</h2>
+          <p>Triple-verified composite proving unstoppable sovereign control and value throughput.</p>
+        </div>
+        <div class="dominance-grid">
+          <article class="dominance-card" aria-label="Dominance verdict">
+            <h3>Dominance verdict</h3>
+            <p class="dominance-index" id="dominance-index">N/A</p>
+            <p id="dominance-verdict" class="narrative">Dominance data unavailable.</p>
+            <h4>Methodology</h4>
+            <ul id="dominance-methodology"></ul>
+          </article>
+          <article class="dominance-card" aria-label="Component weights">
+            <h3>Component weights</h3>
+            <div class="table-wrapper">
+              <table id="dominance-component-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Weight</th>
+                    <th>Value</th>
+                    <th>Contribution</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="dominance-card" aria-label="Cross-checks">
+            <h3>Cross-checks &amp; integrity</h3>
+            <div class="table-wrapper">
+              <table id="dominance-crosscheck-table">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th>Value</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <ul id="dominance-integrity" class="alert-list"></ul>
+          </article>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="assertion-heading">
         <div class="panel-header">
           <h2 id="assertion-heading">Economic power verification</h2>
@@ -50,6 +98,64 @@
           </thead>
           <tbody></tbody>
         </table>
+        <div class="owner-control-grid">
+          <article class="owner-card" aria-label="Job command deck">
+            <h3>Job command deck</h3>
+            <table id="job-control-table">
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Action</th>
+                  <th>Command</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+          <article class="owner-card" aria-label="Validator directives">
+            <h3>Validator directives</h3>
+            <table id="validator-control-table">
+              <thead>
+                <tr>
+                  <th>Validator</th>
+                  <th>Action</th>
+                  <th>Command</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+          <article class="owner-card" aria-label="Stablecoin adapters">
+            <h3>Stablecoin adapters</h3>
+            <table id="adapter-control-table">
+              <thead>
+                <tr>
+                  <th>Adapter</th>
+                  <th>Action</th>
+                  <th>Command</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </article>
+        </div>
+        <article class="owner-card" aria-label="Module control deck">
+          <h3>Module control deck</h3>
+          <table id="module-control-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Action</th>
+                <th>Command</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </article>
       </section>
 
       <section class="panel" aria-labelledby="sovereignty-heading">
@@ -112,6 +218,7 @@
           <p><strong>Analysis timestamp:</strong> <span id="ledger-analysis"></span></p>
           <p><strong>Execution timestamp:</strong> <span id="ledger-execution"></span></p>
           <p><strong>Command coverage:</strong> <span id="ledger-coverage"></span></p>
+          <p><strong>Dominance index:</strong> <span id="ledger-dominance"></span></p>
         </div>
         <div class="panel-subheader">
           <h3>Alerts</h3>

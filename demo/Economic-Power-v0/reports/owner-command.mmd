@@ -2,10 +2,34 @@ graph LR
     OwnerMultiSig["Owner Multi-Sig (4-of-7)"]
     PauseCommand["Pause • npm run owner:system-pause"]
     ResumeCommand["Resume • npm run owner:update-all"]
-    CoverageGauge["Coverage 22.7%"]
+    CoverageGauge["Coverage 100.0%"]
     Parameter_0_jobDuration["jobDuration\n72 → 48\nnpm run owner:parameters"]
     Parameter_1_validatorQuorum["validatorQuorum\n3 → 5\nnpm run owner:upgrade"]
     Parameter_2_stablecoinAdapter["stablecoinAdapter\nUSDC v1 → USDC v2\nnpm run owner:update-all"]
+    Job_0_job_ai_lab_fusion_expedite["AI Lab Fusion Accelerator • expedite\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite"]
+    Job_1_job_ai_lab_fusion_dispatch["AI Lab Fusion Accelerator • dispatch\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch"]
+    Job_2_job_ai_lab_fusion_escalate["AI Lab Fusion Accelerator • escalate\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate"]
+    Job_10_job_supply_chain_synchronize["Autonomous Supply Mesh • synchronize\nnpm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize"]
+    Job_11_job_supply_chain_reassign["Autonomous Supply Mesh • reassign\nnpm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign"]
+    Job_20_job_governance_upgrade_ratify["Governance Upgrade Launch • ratify\nnpm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify"]
+    Job_21_job_governance_upgrade_audit["Governance Upgrade Launch • audit\nnpm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit"]
+    Job_30_job_market_expansion_amplify["Market Expansion Omniloop • amplify\nnpm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify"]
+    Job_31_job_market_expansion_throttle["Market Expansion Omniloop • throttle\nnpm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle"]
+    Job_40_job_oracle_integration_harden["Oracle Integration Spine • harden\nnpm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden"]
+    Job_41_job_oracle_integration_failover["Oracle Integration Spine • failover\nnpm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover"]
+    Validator_0_validator_alpha_rotate["Validator Alpha • rotate\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate"]
+    Validator_1_validator_alpha_top_up["Validator Alpha • top-up\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up"]
+    Validator_2_validator_alpha_slash["Validator Alpha • slash\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action slash"]
+    Validator_10_validator_beta_rotate["Validator Beta • rotate\nnpm run demo:economic-power:command -- --surface validator:validator-beta --action rotate"]
+    Validator_11_validator_beta_top_up["Validator Beta • top-up\nnpm run demo:economic-power:command -- --surface validator:validator-beta --action top-up"]
+    Validator_20_validator_gamma_rotate["Validator Gamma • rotate\nnpm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate"]
+    Validator_21_validator_gamma_policy_brief["Validator Gamma • policy-brief\nnpm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief"]
+    Validator_30_validator_delta_rotate["Validator Delta • rotate\nnpm run demo:economic-power:command -- --surface validator:validator-delta --action rotate"]
+    Validator_31_validator_delta_patch["Validator Delta • patch\nnpm run demo:economic-power:command -- --surface validator:validator-delta --action patch"]
+    Validator_40_validator_epsilon_rotate["Validator Epsilon • rotate\nnpm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate"]
+    Validator_41_validator_epsilon_intensify["Validator Epsilon • intensify\nnpm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify"]
+    Adapter_0_USDC_v1_upgrade["USDC v1 • upgrade\nnpm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade"]
+    Adapter_1_USDC_v1_rebalance["USDC v1 • rebalance\nnpm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance"]
     Upgrade_0_JobRegistry["JobRegistry Upgrade\nnpm run owner:update-all"]
     Upgrade_1_ValidationModule["ValidationModule Upgrade\nnpm run owner:upgrade"]
     Upgrade_2_StakeManager["StakeManager Upgrade\nnpm run owner:parameters"]
@@ -24,6 +48,30 @@ graph LR
     OwnerMultiSig -->|Run| Parameter_0_jobDuration
     OwnerMultiSig -->|Run| Parameter_1_validatorQuorum
     OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter
+    OwnerMultiSig -->|Direct| Job_0_job_ai_lab_fusion_expedite
+    OwnerMultiSig -->|Direct| Job_1_job_ai_lab_fusion_dispatch
+    OwnerMultiSig -->|Direct| Job_2_job_ai_lab_fusion_escalate
+    OwnerMultiSig -->|Direct| Job_10_job_supply_chain_synchronize
+    OwnerMultiSig -->|Direct| Job_11_job_supply_chain_reassign
+    OwnerMultiSig -->|Direct| Job_20_job_governance_upgrade_ratify
+    OwnerMultiSig -->|Direct| Job_21_job_governance_upgrade_audit
+    OwnerMultiSig -->|Direct| Job_30_job_market_expansion_amplify
+    OwnerMultiSig -->|Direct| Job_31_job_market_expansion_throttle
+    OwnerMultiSig -->|Direct| Job_40_job_oracle_integration_harden
+    OwnerMultiSig -->|Direct| Job_41_job_oracle_integration_failover
+    OwnerMultiSig -->|Govern| Validator_0_validator_alpha_rotate
+    OwnerMultiSig -->|Govern| Validator_1_validator_alpha_top_up
+    OwnerMultiSig -->|Govern| Validator_2_validator_alpha_slash
+    OwnerMultiSig -->|Govern| Validator_10_validator_beta_rotate
+    OwnerMultiSig -->|Govern| Validator_11_validator_beta_top_up
+    OwnerMultiSig -->|Govern| Validator_20_validator_gamma_rotate
+    OwnerMultiSig -->|Govern| Validator_21_validator_gamma_policy_brief
+    OwnerMultiSig -->|Govern| Validator_30_validator_delta_rotate
+    OwnerMultiSig -->|Govern| Validator_31_validator_delta_patch
+    OwnerMultiSig -->|Govern| Validator_40_validator_epsilon_rotate
+    OwnerMultiSig -->|Govern| Validator_41_validator_epsilon_intensify
+    OwnerMultiSig -->|Fund| Adapter_0_USDC_v1_upgrade
+    OwnerMultiSig -->|Fund| Adapter_1_USDC_v1_rebalance
     OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry
     OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule
     OwnerMultiSig -->|Promote| Upgrade_2_StakeManager

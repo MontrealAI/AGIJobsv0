@@ -48,6 +48,6 @@
     }
   ],
   "stabilityIndex": 0.761,
-  "ownerCommandCoverage": 0.227,
+  "ownerCommandCoverage": 1,
   "sovereignControlScore": 1
 }

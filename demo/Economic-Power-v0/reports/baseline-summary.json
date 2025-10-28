@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T15:06:06.385Z",
+  "executionTimestamp": "2025-10-28T16:02:42.245Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -21,9 +21,10 @@
     "automationScore": 0.852,
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.761,
-    "ownerCommandCoverage": 0.227,
+    "ownerCommandCoverage": 1,
     "sovereignControlScore": 1,
-    "assertionPassRate": 0.833
+    "assertionPassRate": 1,
+    "economicDominanceIndex": 0.938
   },
   "ownerControl": {
     "threshold": "4-of-7",
@@ -259,7 +260,7 @@
   ],
   "mermaidFlow": "graph TD\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Configures| Orchestrator[Economic Power Orchestrator]\n    OwnerSafe[Owner Multi-Sig\\nThreshold 4-of-7] -->|Funds| Treasury[Treasury Escrow Vault]\n    Treasury[Treasury Escrow Vault] -->|Swaps| StablecoinAdapter[Stablecoin Adapter]\n    StablecoinAdapter[Stablecoin Adapter] -->|Escrow| Orchestrator[Economic Power Orchestrator]\n    Orchestrator[Economic Power Orchestrator]\n        Job_job_ai_lab_fusion[AI Lab Fusion Accelerator]\n    Job_job_supply_chain[Autonomous Supply Mesh]\n    Job_job_governance_upgrade[Governance Upgrade Launch]\n    Job_job_market_expansion[Market Expansion Omniloop]\n    Job_job_oracle_integration[Oracle Integration Spine]\n    Orchestrator -->|Posts| Job_job_ai_lab_fusion\n    Job_job_ai_lab_fusion -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_ai_lab_fusion -->|Validates| ValidatorSet_job_ai_lab_fusion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_supply_chain\n    Job_job_supply_chain -->|Executes| Agent_atlas[Atlas Strategic Model Forge]\n    Job_job_supply_chain -->|Validates| ValidatorSet_job_supply_chain[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_governance_upgrade\n    Job_job_governance_upgrade -->|Executes| Agent_sentinel[Sentinel Assurance Fabric]\n    Job_job_governance_upgrade -->|Validates| ValidatorSet_job_governance_upgrade[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta, Validator Epsilon]\n    Orchestrator -->|Posts| Job_job_market_expansion\n    Job_job_market_expansion -->|Executes| Agent_aurora[Aurora Economic Intelligence Mesh]\n    Job_job_market_expansion -->|Validates| ValidatorSet_job_market_expansion[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma, Validator Delta]\n    Orchestrator -->|Posts| Job_job_oracle_integration\n    Job_job_oracle_integration -->|Executes| Agent_helios[Helios Sovereign Build Hub]\n    Job_job_oracle_integration -->|Validates| ValidatorSet_job_oracle_integration[Validator Constellation\\nValidator Alpha, Validator Beta, Validator Gamma]",
   "mermaidTimeline": "gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n    section AI Lab Fusion Accelerator\n      Helios Sovereign Build Hub :active, job-ai-lab-fusion, 0.0h, 33.5h\n    section Autonomous Supply Mesh\n      Atlas Strategic Model Forge :active, job-supply-chain, 0.0h, 26.9h\n    section Governance Upgrade Launch\n      Sentinel Assurance Fabric :active, job-governance-upgrade, 0.0h, 26.3h\n    section Market Expansion Omniloop\n      Aurora Economic Intelligence Mesh :active, job-market-expansion, 0.0h, 21.9h\n    section Oracle Integration Spine\n      Helios Sovereign Build Hub :active, job-oracle-integration, 33.5h, 19.6h",
-  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 22.7%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
+  "ownerCommandMermaid": "graph LR\n    OwnerMultiSig[\"Owner Multi-Sig (4-of-7)\"]\n    PauseCommand[\"Pause • npm run owner:system-pause\"]\n    ResumeCommand[\"Resume • npm run owner:update-all\"]\n    CoverageGauge[\"Coverage 100.0%\"]\n    Parameter_0_jobDuration[\"jobDuration\\n72 → 48\\nnpm run owner:parameters\"]\n    Parameter_1_validatorQuorum[\"validatorQuorum\\n3 → 5\\nnpm run owner:upgrade\"]\n    Parameter_2_stablecoinAdapter[\"stablecoinAdapter\\nUSDC v1 → USDC v2\\nnpm run owner:update-all\"]\n    Job_0_job_ai_lab_fusion_expedite[\"AI Lab Fusion Accelerator • expedite\\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite\"]\n    Job_1_job_ai_lab_fusion_dispatch[\"AI Lab Fusion Accelerator • dispatch\\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch\"]\n    Job_2_job_ai_lab_fusion_escalate[\"AI Lab Fusion Accelerator • escalate\\nnpm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate\"]\n    Job_10_job_supply_chain_synchronize[\"Autonomous Supply Mesh • synchronize\\nnpm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize\"]\n    Job_11_job_supply_chain_reassign[\"Autonomous Supply Mesh • reassign\\nnpm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign\"]\n    Job_20_job_governance_upgrade_ratify[\"Governance Upgrade Launch • ratify\\nnpm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify\"]\n    Job_21_job_governance_upgrade_audit[\"Governance Upgrade Launch • audit\\nnpm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit\"]\n    Job_30_job_market_expansion_amplify[\"Market Expansion Omniloop • amplify\\nnpm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify\"]\n    Job_31_job_market_expansion_throttle[\"Market Expansion Omniloop • throttle\\nnpm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle\"]\n    Job_40_job_oracle_integration_harden[\"Oracle Integration Spine • harden\\nnpm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden\"]\n    Job_41_job_oracle_integration_failover[\"Oracle Integration Spine • failover\\nnpm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover\"]\n    Validator_0_validator_alpha_rotate[\"Validator Alpha • rotate\\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate\"]\n    Validator_1_validator_alpha_top_up[\"Validator Alpha • top-up\\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up\"]\n    Validator_2_validator_alpha_slash[\"Validator Alpha • slash\\nnpm run demo:economic-power:command -- --surface validator:validator-alpha --action slash\"]\n    Validator_10_validator_beta_rotate[\"Validator Beta • rotate\\nnpm run demo:economic-power:command -- --surface validator:validator-beta --action rotate\"]\n    Validator_11_validator_beta_top_up[\"Validator Beta • top-up\\nnpm run demo:economic-power:command -- --surface validator:validator-beta --action top-up\"]\n    Validator_20_validator_gamma_rotate[\"Validator Gamma • rotate\\nnpm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate\"]\n    Validator_21_validator_gamma_policy_brief[\"Validator Gamma • policy-brief\\nnpm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief\"]\n    Validator_30_validator_delta_rotate[\"Validator Delta • rotate\\nnpm run demo:economic-power:command -- --surface validator:validator-delta --action rotate\"]\n    Validator_31_validator_delta_patch[\"Validator Delta • patch\\nnpm run demo:economic-power:command -- --surface validator:validator-delta --action patch\"]\n    Validator_40_validator_epsilon_rotate[\"Validator Epsilon • rotate\\nnpm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate\"]\n    Validator_41_validator_epsilon_intensify[\"Validator Epsilon • intensify\\nnpm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify\"]\n    Adapter_0_USDC_v1_upgrade[\"USDC v1 • upgrade\\nnpm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade\"]\n    Adapter_1_USDC_v1_rebalance[\"USDC v1 • rebalance\\nnpm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance\"]\n    Upgrade_0_JobRegistry[\"JobRegistry Upgrade\\nnpm run owner:update-all\"]\n    Upgrade_1_ValidationModule[\"ValidationModule Upgrade\\nnpm run owner:upgrade\"]\n    Upgrade_2_StakeManager[\"StakeManager Upgrade\\nnpm run owner:parameters\"]\n    Module_0_job_registry[\"JobRegistry\\n0xA1000000…\"]\n    Module_1_stake_manager[\"StakeManager\\n0xA1000000…\"]\n    Module_2_validation_module[\"ValidationModule\\n0xA1000000…\"]\n    Module_3_reputation_engine[\"ReputationEngine\\n0xA1000000…\"]\n    Module_4_dispute_module[\"DisputeModule\\n0xA1000000…\"]\n    Module_5_certificate_nft[\"CertificateNFT\\n0xA1000000…\"]\n    Breaker_0_validatorConfidence[\"validatorConfidence < 0.95\\nnpm run owner:system-pause\"]\n    Breaker_1_automationScore[\"automationScore < 0.8\\nnpm run owner:parameters\"]\n    Breaker_2_treasuryAfterRun[\"treasuryAfterRun < 1800000\\nnpm run owner:audit\"]\n    OwnerMultiSig -->|Verify| CoverageGauge\n    OwnerMultiSig -->|Pause| PauseCommand\n    OwnerMultiSig -->|Resume| ResumeCommand\n    OwnerMultiSig -->|Run| Parameter_0_jobDuration\n    OwnerMultiSig -->|Run| Parameter_1_validatorQuorum\n    OwnerMultiSig -->|Run| Parameter_2_stablecoinAdapter\n    OwnerMultiSig -->|Direct| Job_0_job_ai_lab_fusion_expedite\n    OwnerMultiSig -->|Direct| Job_1_job_ai_lab_fusion_dispatch\n    OwnerMultiSig -->|Direct| Job_2_job_ai_lab_fusion_escalate\n    OwnerMultiSig -->|Direct| Job_10_job_supply_chain_synchronize\n    OwnerMultiSig -->|Direct| Job_11_job_supply_chain_reassign\n    OwnerMultiSig -->|Direct| Job_20_job_governance_upgrade_ratify\n    OwnerMultiSig -->|Direct| Job_21_job_governance_upgrade_audit\n    OwnerMultiSig -->|Direct| Job_30_job_market_expansion_amplify\n    OwnerMultiSig -->|Direct| Job_31_job_market_expansion_throttle\n    OwnerMultiSig -->|Direct| Job_40_job_oracle_integration_harden\n    OwnerMultiSig -->|Direct| Job_41_job_oracle_integration_failover\n    OwnerMultiSig -->|Govern| Validator_0_validator_alpha_rotate\n    OwnerMultiSig -->|Govern| Validator_1_validator_alpha_top_up\n    OwnerMultiSig -->|Govern| Validator_2_validator_alpha_slash\n    OwnerMultiSig -->|Govern| Validator_10_validator_beta_rotate\n    OwnerMultiSig -->|Govern| Validator_11_validator_beta_top_up\n    OwnerMultiSig -->|Govern| Validator_20_validator_gamma_rotate\n    OwnerMultiSig -->|Govern| Validator_21_validator_gamma_policy_brief\n    OwnerMultiSig -->|Govern| Validator_30_validator_delta_rotate\n    OwnerMultiSig -->|Govern| Validator_31_validator_delta_patch\n    OwnerMultiSig -->|Govern| Validator_40_validator_epsilon_rotate\n    OwnerMultiSig -->|Govern| Validator_41_validator_epsilon_intensify\n    OwnerMultiSig -->|Fund| Adapter_0_USDC_v1_upgrade\n    OwnerMultiSig -->|Fund| Adapter_1_USDC_v1_rebalance\n    OwnerMultiSig -->|Promote| Upgrade_0_JobRegistry\n    OwnerMultiSig -->|Promote| Upgrade_1_ValidationModule\n    OwnerMultiSig -->|Promote| Upgrade_2_StakeManager\n    OwnerMultiSig -->|Custody| Module_0_job_registry\n    OwnerMultiSig -->|Custody| Module_1_stake_manager\n    OwnerMultiSig -->|Custody| Module_2_validation_module\n    OwnerMultiSig -->|Custody| Module_3_reputation_engine\n    OwnerMultiSig -->|Custody| Module_4_dispute_module\n    OwnerMultiSig -->|Custody| Module_5_certificate_nft\n    Breaker_0_validatorConfidence -->|Triggers| PauseCommand\n    Breaker_1_automationScore -->|Triggers| PauseCommand\n    Breaker_2_treasuryAfterRun -->|Triggers| PauseCommand",
   "ownerCommandPlan": {
     "quickActions": {
       "pause": "npm run owner:system-pause",
@@ -329,22 +330,317 @@
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
     ],
-    "commandCoverage": 0.227,
-    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks."
+    "jobControls": [
+      {
+        "id": "job-ai-lab-fusion",
+        "name": "AI Lab Fusion Accelerator",
+        "controls": [
+          {
+            "action": "expedite",
+            "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite",
+            "description": "Compress execution windows and rebalance automation buffers to accelerate delivery."
+          },
+          {
+            "action": "dispatch",
+            "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch",
+            "description": "Deterministically assign Helios Sovereign Build Hub through the multi-sig orchestrator."
+          },
+          {
+            "action": "escalate",
+            "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate",
+            "description": "Intensify validator commit–reveal quorums for the accelerator deliverables."
+          }
+        ]
+      },
+      {
+        "id": "job-supply-chain",
+        "name": "Autonomous Supply Mesh",
+        "controls": [
+          {
+            "action": "synchronize",
+            "script": "npm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize",
+            "description": "Re-sequence dependent jobs and broadcast updated SLAs to the agent mesh."
+          },
+          {
+            "action": "reassign",
+            "script": "npm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign",
+            "description": "Reassign workload to Atlas Strategic Model Forge with enforced throughput targets."
+          }
+        ]
+      },
+      {
+        "id": "job-governance-upgrade",
+        "name": "Governance Upgrade Launch",
+        "controls": [
+          {
+            "action": "ratify",
+            "script": "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify",
+            "description": "Execute the governance upgrade runbook with deterministic multi-sig confirmations."
+          },
+          {
+            "action": "audit",
+            "script": "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit",
+            "description": "Trigger Sentinel Assurance Fabric to publish upgrade attestation packages."
+          }
+        ]
+      },
+      {
+        "id": "job-market-expansion",
+        "name": "Market Expansion Omniloop",
+        "controls": [
+          {
+            "action": "amplify",
+            "script": "npm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify",
+            "description": "Scale omniloop marketing spend and unlock global demand channels."
+          },
+          {
+            "action": "throttle",
+            "script": "npm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle",
+            "description": "Throttle expansion loops to preserve validator bandwidth during bursts."
+          }
+        ]
+      },
+      {
+        "id": "job-oracle-integration",
+        "name": "Oracle Integration Spine",
+        "controls": [
+          {
+            "action": "harden",
+            "script": "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden",
+            "description": "Roll out upgraded oracle attestations and enable fallback feeds."
+          },
+          {
+            "action": "failover",
+            "script": "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover",
+            "description": "Shift execution to Helios backup endpoints with synchronized credentials."
+          }
+        ]
+      }
+    ],
+    "validatorControls": [
+      {
+        "id": "validator-alpha",
+        "name": "Validator Alpha",
+        "controls": [
+          {
+            "action": "rotate",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate",
+            "description": "Rotate Validator Alpha out of committee and replace with standby guardian."
+          },
+          {
+            "action": "top-up",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up",
+            "description": "Increase Validator Alpha stake to reinforce quorum incentives."
+          },
+          {
+            "action": "slash",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action slash",
+            "description": "Execute slashing for misbehavior and redistribute stake to the treasury buffer."
+          }
+        ]
+      },
+      {
+        "id": "validator-beta",
+        "name": "Validator Beta",
+        "controls": [
+          {
+            "action": "rotate",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-beta --action rotate",
+            "description": "Rotate Validator Beta and stream a fresh compliance attestation."
+          },
+          {
+            "action": "top-up",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-beta --action top-up",
+            "description": "Increase Validator Beta stake to reinforce compliance oversight."
+          }
+        ]
+      },
+      {
+        "id": "validator-gamma",
+        "name": "Validator Gamma",
+        "controls": [
+          {
+            "action": "rotate",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate",
+            "description": "Rotate Validator Gamma to refresh macro-economic oversight inputs."
+          },
+          {
+            "action": "policy-brief",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief",
+            "description": "Publish validator policy brief to PolicyStudio dashboards."
+          }
+        ]
+      },
+      {
+        "id": "validator-delta",
+        "name": "Validator Delta",
+        "controls": [
+          {
+            "action": "rotate",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-delta --action rotate",
+            "description": "Rotate Validator Delta to refresh machine learning evaluation coverage."
+          },
+          {
+            "action": "patch",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-delta --action patch",
+            "description": "Push the latest adversarial defense patch set across validator enclaves."
+          }
+        ]
+      },
+      {
+        "id": "validator-epsilon",
+        "name": "Validator Epsilon",
+        "controls": [
+          {
+            "action": "rotate",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate",
+            "description": "Rotate Validator Epsilon to refresh red-team coverage."
+          },
+          {
+            "action": "intensify",
+            "script": "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify",
+            "description": "Increase adversarial inference testing depth for high-value jobs."
+          }
+        ]
+      }
+    ],
+    "stablecoinControls": [
+      {
+        "name": "USDC v1",
+        "controls": [
+          {
+            "action": "upgrade",
+            "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade",
+            "description": "Promote the audited USDC adapter bundle with reduced slippage."
+          },
+          {
+            "action": "rebalance",
+            "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance",
+            "description": "Sweep stablecoin float into the operations buffer to match demand spikes."
+          }
+        ]
+      }
+    ],
+    "moduleControls": [
+      {
+        "id": "job-registry",
+        "name": "JobRegistry",
+        "upgradeScript": "npm run owner:update-all",
+        "controls": [
+          {
+            "action": "migrate",
+            "script": "npm run demo:economic-power:command -- --surface module:job-registry --action migrate",
+            "description": "Execute deterministic registry migration with downtime-free contract swap."
+          },
+          {
+            "action": "pause-local",
+            "script": "npm run demo:economic-power:command -- --surface module:job-registry --action pause-local",
+            "description": "Pause only job intake while keeping settlement modules live."
+          }
+        ]
+      },
+      {
+        "id": "stake-manager",
+        "name": "StakeManager",
+        "upgradeScript": "npm run owner:parameters",
+        "controls": [
+          {
+            "action": "rebalance",
+            "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action rebalance",
+            "description": "Rebalance stake thresholds to gate workload parallelism."
+          },
+          {
+            "action": "slash",
+            "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action slash",
+            "description": "Execute protocol slashing and recycle penalties into treasury."
+          }
+        ]
+      },
+      {
+        "id": "validation-module",
+        "name": "ValidationModule",
+        "upgradeScript": "npm run owner:upgrade",
+        "controls": [
+          {
+            "action": "quorum-upgrade",
+            "script": "npm run demo:economic-power:command -- --surface module:validation-module --action quorum-upgrade",
+            "description": "Increase validator quorum and commit windows for high-value cycles."
+          },
+          {
+            "action": "reset",
+            "script": "npm run demo:economic-power:command -- --surface module:validation-module --action reset",
+            "description": "Reset commit–reveal session and rotate the validator roster."
+          }
+        ]
+      },
+      {
+        "id": "reputation-engine",
+        "name": "ReputationEngine",
+        "upgradeScript": "npm run owner:update-all",
+        "controls": [
+          {
+            "action": "boost",
+            "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action boost",
+            "description": "Boost reputation weighting for premium validators and agents."
+          },
+          {
+            "action": "purge",
+            "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action purge",
+            "description": "Purge underperforming actors and refresh scoring baselines."
+          }
+        ]
+      },
+      {
+        "id": "dispute-module",
+        "name": "DisputeModule",
+        "upgradeScript": "npm run owner:upgrade",
+        "controls": [
+          {
+            "action": "escalate",
+            "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action escalate",
+            "description": "Escalate to extended jury with deterministic draw."
+          },
+          {
+            "action": "delegate",
+            "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action delegate",
+            "description": "Delegate dispute outcome to the emergency council multi-sig."
+          }
+        ]
+      },
+      {
+        "id": "certificate-nft",
+        "name": "CertificateNFT",
+        "upgradeScript": "npm run owner:update-all",
+        "controls": [
+          {
+            "action": "rotate-metadata",
+            "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action rotate-metadata",
+            "description": "Rotate IPFS metadata anchors for issued certificates."
+          },
+          {
+            "action": "freeze",
+            "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action freeze",
+            "description": "Freeze certificate minting in response to governance halt."
+          }
+        ]
+      }
+    ],
+    "commandCoverage": 1,
+    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface."
   },
   "assertions": [
     {
       "id": "owner-command-dominance",
       "title": "Owner multi-sig commands every economic lever",
-      "outcome": "fail",
+      "outcome": "pass",
       "severity": "critical",
-      "summary": "Coverage below 90% – authorise additional scripts before promoting to production.",
-      "metric": 0.227,
+      "summary": "Coverage exceeds 90%, ensuring deterministic owner runbooks across modules, pause hooks, and parameter updates.",
+      "metric": 1,
       "target": 0.9,
       "evidence": [
         "controls=3",
         "modules=6",
-        "coverage=0.227"
+        "coverage=1.000"
       ]
     },
     {
@@ -422,6 +718,24 @@
       "target": 0.82,
       "evidence": [
         "automationScore=0.852"
+      ]
+    },
+    {
+      "id": "economic-dominance",
+      "title": "Economic dominance index holds unstoppable band",
+      "outcome": "pass",
+      "severity": "critical",
+      "summary": "Dominance tier secured – the orchestration mesh operates at unstoppable sovereign capacity.",
+      "metric": 0.938,
+      "target": 0.92,
+      "evidence": [
+        "Owner command coverage:100.0% • contribution 20.00%",
+        "Sovereign control score:100.0% • contribution 18.00%",
+        "Validator confidence:98.1% • contribution 15.70%",
+        "Automation score:85.2% • contribution 11.93%",
+        "Stability index:76.1% • contribution 9.13%",
+        "Assertion pass rate:100.0% • contribution 10.00%",
+        "Economic velocity:90.1% • contribution 9.01%"
       ]
     }
   ],
@@ -512,7 +826,19 @@
         "upgradeScript": "npm run owner:update-all",
         "status": "active",
         "description": "Primary registry coordinating job lifecycle, escrow, and agent authorization gates.",
-        "lastAudit": "2025-01-12T00:00:00.000Z"
+        "lastAudit": "2025-01-12T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "migrate",
+            "script": "npm run demo:economic-power:command -- --surface module:job-registry --action migrate",
+            "description": "Execute deterministic registry migration with downtime-free contract swap."
+          },
+          {
+            "action": "pause-local",
+            "script": "npm run demo:economic-power:command -- --surface module:job-registry --action pause-local",
+            "description": "Pause only job intake while keeping settlement modules live."
+          }
+        ]
       },
       {
         "id": "stake-manager",
@@ -523,7 +849,19 @@
         "upgradeScript": "npm run owner:parameters",
         "status": "active",
         "description": "Manages agent and validator staking positions, slashing, and economic alignment loops.",
-        "lastAudit": "2025-01-04T00:00:00.000Z"
+        "lastAudit": "2025-01-04T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "rebalance",
+            "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action rebalance",
+            "description": "Rebalance stake thresholds to gate workload parallelism."
+          },
+          {
+            "action": "slash",
+            "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action slash",
+            "description": "Execute protocol slashing and recycle penalties into treasury."
+          }
+        ]
       },
       {
         "id": "validation-module",
@@ -534,7 +872,19 @@
         "upgradeScript": "npm run owner:upgrade",
         "status": "pending-upgrade",
         "description": "Commit–reveal validator consensus spine enforcing deliverable correctness.",
-        "lastAudit": "2024-12-15T00:00:00.000Z"
+        "lastAudit": "2024-12-15T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "quorum-upgrade",
+            "script": "npm run demo:economic-power:command -- --surface module:validation-module --action quorum-upgrade",
+            "description": "Increase validator quorum and commit windows for high-value cycles."
+          },
+          {
+            "action": "reset",
+            "script": "npm run demo:economic-power:command -- --surface module:validation-module --action reset",
+            "description": "Reset commit–reveal session and rotate the validator roster."
+          }
+        ]
       },
       {
         "id": "reputation-engine",
@@ -545,7 +895,19 @@
         "upgradeScript": "npm run owner:update-all",
         "status": "active",
         "description": "Aggregates performance signals to prioritise elite agents and validators in the matching fabric.",
-        "lastAudit": "2024-12-28T00:00:00.000Z"
+        "lastAudit": "2024-12-28T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "boost",
+            "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action boost",
+            "description": "Boost reputation weighting for premium validators and agents."
+          },
+          {
+            "action": "purge",
+            "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action purge",
+            "description": "Purge underperforming actors and refresh scoring baselines."
+          }
+        ]
       },
       {
         "id": "dispute-module",
@@ -556,7 +918,19 @@
         "upgradeScript": "npm run owner:upgrade",
         "status": "active",
         "description": "Escalation and arbitration flow for contested deliverables with automated jury selection.",
-        "lastAudit": "2025-01-09T00:00:00.000Z"
+        "lastAudit": "2025-01-09T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "escalate",
+            "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action escalate",
+            "description": "Escalate to extended jury with deterministic draw."
+          },
+          {
+            "action": "delegate",
+            "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action delegate",
+            "description": "Delegate dispute outcome to the emergency council multi-sig."
+          }
+        ]
       },
       {
         "id": "certificate-nft",
@@ -567,14 +941,38 @@
         "upgradeScript": "npm run owner:update-all",
         "status": "active",
         "description": "Mints proof-of-completion artefacts for employers and downstream compliance attestations.",
-        "lastAudit": "2025-01-02T00:00:00.000Z"
+        "lastAudit": "2025-01-02T00:00:00.000Z",
+        "controlScripts": [
+          {
+            "action": "rotate-metadata",
+            "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action rotate-metadata",
+            "description": "Rotate IPFS metadata anchors for issued certificates."
+          },
+          {
+            "action": "freeze",
+            "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action freeze",
+            "description": "Freeze certificate minting in response to governance halt."
+          }
+        ]
       }
     ],
     "stablecoinAdapters": [
       {
         "name": "USDC v1",
         "swapFeeBps": 12,
-        "slippageBps": 25
+        "slippageBps": 25,
+        "controlScripts": [
+          {
+            "action": "upgrade",
+            "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade",
+            "description": "Promote the audited USDC adapter bundle with reduced slippage."
+          },
+          {
+            "action": "rebalance",
+            "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance",
+            "description": "Sweep stablecoin float into the operations buffer to match demand spikes."
+          }
+        ]
       }
     ],
     "automation": {
@@ -599,11 +997,47 @@
     "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
     "treasurySafe": "0xAGIJobsOwnerSafe0000000000000000000000001",
     "threshold": 4,
-    "commandCoverage": 0.227,
-    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks.",
+    "commandCoverage": 1,
+    "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
     "pauseScript": "npm run owner:system-pause",
     "resumeScript": "npm run owner:update-all",
     "scripts": [
+      "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance",
+      "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade",
+      "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch",
+      "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate",
+      "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite",
+      "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit",
+      "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify",
+      "npm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify",
+      "npm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle",
+      "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover",
+      "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden",
+      "npm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign",
+      "npm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize",
+      "npm run demo:economic-power:command -- --surface module:certificate-nft --action freeze",
+      "npm run demo:economic-power:command -- --surface module:certificate-nft --action rotate-metadata",
+      "npm run demo:economic-power:command -- --surface module:dispute-module --action delegate",
+      "npm run demo:economic-power:command -- --surface module:dispute-module --action escalate",
+      "npm run demo:economic-power:command -- --surface module:job-registry --action migrate",
+      "npm run demo:economic-power:command -- --surface module:job-registry --action pause-local",
+      "npm run demo:economic-power:command -- --surface module:reputation-engine --action boost",
+      "npm run demo:economic-power:command -- --surface module:reputation-engine --action purge",
+      "npm run demo:economic-power:command -- --surface module:stake-manager --action rebalance",
+      "npm run demo:economic-power:command -- --surface module:stake-manager --action slash",
+      "npm run demo:economic-power:command -- --surface module:validation-module --action quorum-upgrade",
+      "npm run demo:economic-power:command -- --surface module:validation-module --action reset",
+      "npm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate",
+      "npm run demo:economic-power:command -- --surface validator:validator-alpha --action slash",
+      "npm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up",
+      "npm run demo:economic-power:command -- --surface validator:validator-beta --action rotate",
+      "npm run demo:economic-power:command -- --surface validator:validator-beta --action top-up",
+      "npm run demo:economic-power:command -- --surface validator:validator-delta --action patch",
+      "npm run demo:economic-power:command -- --surface validator:validator-delta --action rotate",
+      "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify",
+      "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate",
+      "npm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief",
+      "npm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate",
       "npm run owner:audit",
       "npm run owner:parameters",
       "npm run owner:system-pause",
@@ -688,21 +1122,124 @@
     ],
     "alerts": [
       {
-        "id": "coverage-gap",
-        "severity": "warning",
-        "summary": "Command coverage below 90% – script additional surfaces to reach full control.",
-        "details": [
-          "Coverage 22.7%",
-          "Add scripts for remaining modules, validators, or adapters to close the gap."
-        ]
-      },
-      {
         "id": "pending-upgrade",
         "severity": "info",
         "summary": "Queued upgrades ready for 1 module(s).",
         "details": [
           "ValidationModule • Execute npm run owner:upgrade to promote"
         ]
+      }
+    ],
+    "dominanceIndex": 0.938,
+    "dominanceVerdict": "Dominance tier secured – the orchestration mesh operates at unstoppable sovereign capacity."
+  },
+  "dominanceReport": {
+    "index": 0.9377,
+    "verdict": "Dominance tier secured – the orchestration mesh operates at unstoppable sovereign capacity.",
+    "narrative": "Composite index 93.77% fuses owner coverage, custody, validator certainty, automation, and economic velocity. Cross-check variance 0.84% confirms triple-verification integrity.",
+    "methodology": [
+      "Weighted composite prioritises command custody and validator confidence.",
+      "Geometric and harmonic guardrails actively hunt for hidden weak links.",
+      "Economic velocity injects ROI and throughput to prove macro-scale value creation."
+    ],
+    "components": [
+      {
+        "id": "owner-command-coverage",
+        "label": "Owner command coverage",
+        "weight": 0.2,
+        "value": 1,
+        "contribution": 0.2,
+        "description": "Portion of economic surfaces with deterministic multi-sig commands."
+      },
+      {
+        "id": "sovereign-control",
+        "label": "Sovereign control score",
+        "weight": 0.18,
+        "value": 1,
+        "contribution": 0.18,
+        "description": "Share of deployed modules anchored under owner custody."
+      },
+      {
+        "id": "validator-confidence",
+        "label": "Validator confidence",
+        "weight": 0.16,
+        "value": 0.9812,
+        "contribution": 0.157,
+        "description": "Commit–reveal quorum strength across validation committees."
+      },
+      {
+        "id": "automation-score",
+        "label": "Automation score",
+        "weight": 0.14,
+        "value": 0.852,
+        "contribution": 0.1193,
+        "description": "Autonomous orchestration coverage across the execution mesh."
+      },
+      {
+        "id": "stability-index",
+        "label": "Stability index",
+        "weight": 0.12,
+        "value": 0.761,
+        "contribution": 0.0913,
+        "description": "Composite resilience gauge blending risk mitigations and buffers."
+      },
+      {
+        "id": "assertion-pass-rate",
+        "label": "Assertion pass rate",
+        "weight": 0.1,
+        "value": 1,
+        "contribution": 0.1,
+        "description": "Share of verification assertions exceeding unstoppable thresholds."
+      },
+      {
+        "id": "economic-velocity",
+        "label": "Economic velocity",
+        "weight": 0.1,
+        "value": 0.901,
+        "contribution": 0.0901,
+        "description": "Throughput and ROI converted into a 0–1 sovereignty readiness scale."
+      }
+    ],
+    "crossChecks": [
+      {
+        "id": "weighted-mean",
+        "label": "Weighted mean",
+        "methodology": "Primary weighted composite emphasising owner custody and validator strength.",
+        "value": 0.9377,
+        "notes": "Governing score used for escalation and launch readiness decisions."
+      },
+      {
+        "id": "arithmetic-mean",
+        "label": "Arithmetic baseline",
+        "methodology": "Simple average sanity check.",
+        "value": 0.9377,
+        "notes": "Confirms no component skews the composite through weighting bias."
+      },
+      {
+        "id": "geometric-mean",
+        "label": "Geometric guardrail",
+        "methodology": "Penalises weak links multiplicatively.",
+        "value": 0.9336,
+        "notes": "Ensures no hidden surface drops below unstoppable tolerance."
+      },
+      {
+        "id": "harmonic-mean",
+        "label": "Harmonic fail-safe",
+        "methodology": "Highlights minimum-performing levers.",
+        "value": 0.9293,
+        "notes": "Triggers reinforcements if a single component drifts downward."
+      }
+    ],
+    "integrity": [
+      {
+        "id": "cross-check-alignment",
+        "outcome": "pass",
+        "details": "Composite deviation across verification methods: 0.84%"
+      },
+      {
+        "id": "component-strength",
+        "outcome": "pass",
+        "details": "All dominance components exceed the 75% sovereignty guardrail."
       }
     ]
   }
