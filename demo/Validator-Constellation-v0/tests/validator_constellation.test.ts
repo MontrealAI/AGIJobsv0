@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { keccak256, toUtf8Bytes } from 'ethers';
@@ -29,6 +31,7 @@ import {
 } from '../src/core/operatorState';
 import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
 import { AgentAction, Hex, VoteValue, ValidatorIdentity } from '../src/core/types';
+import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
 
 function buildDemo(): {
   demo: ValidatorConstellationDemo;
@@ -109,6 +112,7 @@ function orchestrateRound(): {
   absentee?: ValidatorIdentity;
   entropy: { onChainEntropy: Hex; recentBeacon: Hex };
   jobBatch: ReturnType<typeof demoJobBatch>;
+  demo: ValidatorConstellationDemo;
 } {
   const { demo, leaves } = buildDemo();
   leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
@@ -147,7 +151,7 @@ function orchestrateRound(): {
     nonRevealValidators,
     anomalies,
   });
-  return { roundResult, leaves, dishonest, absentee, entropy, jobBatch };
+  return { roundResult, leaves, dishonest, absentee, entropy, jobBatch, demo };
 }
 
 test('ENS policies accept alpha mirrors and reject unauthorized domains', () => {
@@ -534,4 +538,40 @@ test('entropy witness cross-verification detects tampering', () => {
     false,
     'mismatched round should fail verification',
   );
+});
+
+test('owner digest summarizes governance, sentinel, and proof telemetry for non-technical operators', () => {
+  subgraphIndexer.clear();
+  const { roundResult, demo, jobBatch } = orchestrateRound();
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'validator-owner-digest-'));
+  const reportDir = path.join(tmpDir, 'report');
+  const entropy = demo.getEntropySources();
+  const context: ReportContext = {
+    verifyingKey: demo.getZkVerifyingKey(),
+    entropyBefore: entropy,
+    entropyAfter: entropy,
+    governance: demo.getGovernance(),
+    sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
+    nodesRegistered: demo.listNodes(),
+    primaryDomain: demo.getDomainState(roundResult.domainId),
+    ownerNotes: { origin: 'unit-test' },
+    jobSample: jobBatch.slice(0, 5),
+  };
+  writeReportArtifacts({
+    reportDir,
+    roundResult,
+    subgraphRecords: subgraphIndexer.list(),
+    events: [roundResult.vrfWitness, ...roundResult.commits, ...roundResult.reveals],
+    context,
+    jobBatch,
+    truthfulVote: 'APPROVE',
+  });
+  const digestPath = path.join(reportDir, 'owner-digest.md');
+  assert.ok(fs.existsSync(digestPath), 'expected owner digest to be generated');
+  const digest = fs.readFileSync(digestPath, 'utf8');
+  assert.ok(digest.includes('Owner Mission Briefing'), 'digest should include mission briefing header');
+  assert.ok(digest.includes('Sentinel Alerts'), 'digest should include sentinel section');
+  assert.ok(digest.includes('Governance & Audit Checklist'), 'digest should include audit checklist');
+  assert.ok(digest.includes(roundResult.vrfWitness.transcript), 'digest should include entropy transcript');
+  assert.ok(digest.includes('mermaid'), 'digest should embed mermaid blueprint for operators');
 });

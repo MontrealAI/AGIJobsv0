@@ -56,6 +56,7 @@ flowchart LR
    * `jobs.json` – the attested batch, ready for independent proof verification.
    * `audit.json` – cryptographic audit result with a deterministic hash you can notarize.
    * `events.ndjson` / `subgraph.json` / `dashboard.html` – real-time telemetry, indexer feed, and control-room UI.
+   * `owner-digest.md` – mission-briefing markdown for owners with audit checklist, sentinel log, and governance posture.
 4. Run the deterministic validation round test suite:
    ```bash
    npm run test:validator-constellation

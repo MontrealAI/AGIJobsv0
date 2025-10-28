@@ -17,6 +17,8 @@ import { auditRound } from './auditor';
 export const JSON_REPLACER = (_key: string, value: unknown) =>
   typeof value === 'bigint' ? value.toString() : value;
 
+const WEI_PER_ETH = 10n ** 18n;
+
 function writeJSON(filePath: string, data: unknown) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const serialized = JSON.stringify(data, JSON_REPLACER, 2);
@@ -65,6 +67,171 @@ export interface ReportContext {
 
 function truncateHex(value: Hex, length = 14): string {
   return value.length > length + 2 ? `${value.slice(0, length + 2)}…` : value;
+}
+
+function formatBigint(value: bigint): string {
+  const negative = value < 0n;
+  const absolute = negative ? -value : value;
+  const digits = absolute.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${negative ? '-' : ''}${digits}`;
+}
+
+function formatEth(value: bigint): string {
+  const negative = value < 0n;
+  const absolute = negative ? -value : value;
+  const integer = absolute / WEI_PER_ETH;
+  const remainder = absolute % WEI_PER_ETH;
+  if (remainder === 0n) {
+    return `${negative ? '-' : ''}${integer.toString()} ETH`;
+  }
+  const fractional = remainder
+    .toString()
+    .padStart(18, '0')
+    .replace(/0+$/, '')
+    .slice(0, 6);
+  const formatted = fractional.length > 0 ? `${integer.toString()}.${fractional}` : integer.toString();
+  return `${negative ? '-' : ''}${formatted} ETH`;
+}
+
+function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toISOString();
+}
+
+function summarizeAlerts(alerts: DemoOrchestrationReport['sentinelAlerts']): string {
+  if (alerts.length === 0) {
+    return '_No sentinel anomalies were detected in this round._';
+  }
+  return alerts
+    .map((alert, index) => {
+      const offender = alert.offender ? `${alert.offender.ensName} (${alert.offender.address})` : 'unknown actor';
+      return `${index + 1}. **${alert.rule}** – ${alert.description} _(severity: ${alert.severity}, offender: ${offender})_`;
+    })
+    .join('\n');
+}
+
+function summarizeSlashing(events: DemoOrchestrationReport['slashingEvents']): string {
+  if (events.length === 0) {
+    return '_No slashing events were emitted in this round._';
+  }
+  return events
+    .map((event, index) => {
+      const penalty = formatEth(event.penalty);
+      return `${index + 1}. ${event.validator.ensName} (${event.validator.address}) lost **${penalty}** for ${event.reason}.`;
+    })
+    .join('\n');
+}
+
+function summarizePauses(records: DemoOrchestrationReport['pauseRecords']): string {
+  if (records.length === 0) {
+    return '_No domain pauses were required._';
+  }
+  return records
+    .map((record, index) => {
+      const resumed = record.resumedAt ? ` → resumed at ${formatTimestamp(record.resumedAt)}` : ' → still paused';
+      return `${index + 1}. ${record.domainId} paused for "${record.reason}" at ${formatTimestamp(record.timestamp)}${resumed}.`;
+    })
+    .join('\n');
+}
+
+function summarizeCommittee(report: DemoOrchestrationReport): string {
+  return report.committee
+    .map((member) => `- ${member.ensName} — ${formatEth(member.stake)}`)
+    .join('\n');
+}
+
+function summarizeSubgraph(records: SubgraphRecord[]): string {
+  if (records.length === 0) {
+    return '_No subgraph telemetry was recorded._';
+  }
+  const typeCount = new Map<string, number>();
+  for (const record of records) {
+    typeCount.set(record.type, (typeCount.get(record.type) ?? 0) + 1);
+  }
+  return Array.from(typeCount.entries())
+    .map(([type, count]) => `- ${type}: ${count}`)
+    .join('\n');
+}
+
+function buildOwnerDigest(params: {
+  report: DemoOrchestrationReport;
+  context: ReportContext;
+  audit: ReturnType<typeof auditRound>;
+  truthfulVote: VoteValue;
+  subgraphRecords: SubgraphRecord[];
+}): string {
+  const { report, context, audit, truthfulVote, subgraphRecords } = params;
+  const pauseSummary = summarizePauses(report.pauseRecords);
+  const alertsSummary = summarizeAlerts(report.sentinelAlerts);
+  const slashingSummary = summarizeSlashing(report.slashingEvents);
+  const committeeSummary = summarizeCommittee(report);
+  const subgraphSummary = summarizeSubgraph(subgraphRecords);
+  const quorum = `${context.governance.quorumPercentage}%`; // ensure string formatting
+  const revealCount = `${report.reveals.length} / ${report.committee.length}`;
+  const metrics: Array<[string, string]> = [
+    ['Truthful vote', `\`${truthfulVote}\``],
+    ['Final outcome', `\`${report.voteOutcome}\``],
+    ['Committee size', `${report.committee.length}`],
+    ['Reveals received', revealCount],
+    ['Quorum requirement', quorum],
+    ['Jobs attested', `${report.proof.attestedJobCount}`],
+    ['Slashing events', `${report.slashingEvents.length}`],
+    ['Sentinel alerts', `${report.sentinelAlerts.length}`],
+    ['Audit hash', audit.auditHash],
+    ['Entropy transcript', report.vrfWitness.transcript],
+    ['ZK verifying key', context.verifyingKey],
+    ['Subgraph records', `${subgraphRecords.length}`],
+  ];
+
+  const checklist = [
+    ['Commitments sealed', audit.commitmentsVerified],
+    ['Quorum satisfied', audit.quorumSatisfied],
+    ['Proof verified', audit.proofVerified],
+    ['Entropy verified', audit.entropyVerified],
+    ['Sentinel integrity', audit.sentinelIntegrity],
+    ['Timeline integrity', audit.timelineIntegrity],
+  ]
+    .map(([label, ok]) => `- ${ok ? '✅' : '❌'} ${label}`)
+    .join('\n');
+
+  const domainBudget = formatBigint(context.primaryDomain.config.budgetLimit);
+
+  const mermaid = `flowchart TD\n  Owner["Owner Control"] --> Governance["Governance ${quorum} quorum"];\n  Governance --> Committee["Committee\\n${report.committee
+    .map((member) => member.ensName)
+    .join('\\n')}"];\n  Committee --> Proof["ZK Proof\\n${report.proof.attestedJobCount} jobs"];\n  Committee --> Slashing["Slashing\\n${report.slashingEvents.length} events"];\n  Sentinel["Sentinel Monitors"] --> Alerts["Alerts\\n${report.sentinelAlerts.length}"];\n  Sentinel --> Pause["Domain Pause"];\n  Pause --> Domain["${context.primaryDomain.config.humanName}\\nBudget ${domainBudget}"];`;
+
+  const metricsTable = ['| Metric | Value |', '| --- | --- |', ...metrics.map(([label, value]) => `| ${label} | ${value} |`)].join('\n');
+
+  return [
+    '# Validator Constellation – Owner Mission Briefing',
+    '',
+    `**Round ${report.round} – ${context.primaryDomain.config.humanName} (${report.domainId})**`,
+    '',
+    metricsTable,
+    '',
+    '## Governance & Audit Checklist',
+    checklist,
+    '',
+    '## Committee Stakes',
+    committeeSummary || '_No committee members registered._',
+    '',
+    '## Sentinel Alerts',
+    alertsSummary,
+    '',
+    '## Domain Pause Log',
+    pauseSummary,
+    '',
+    '## Slashing Actions',
+    slashingSummary,
+    '',
+    '## Subgraph Telemetry Footprint',
+    subgraphSummary,
+    '',
+    '```mermaid',
+    mermaid,
+    '```',
+    '',
+    '_Generated automatically by AGI Jobs v0 (v2) so non-technical owners can assert full control with cryptographic evidence._',
+  ].join('\n');
 }
 
 function buildCommitteeDiagram(result: DemoOrchestrationReport): string {
@@ -296,4 +463,13 @@ export function writeReportArtifacts(input: ArtifactInput): void {
 
   const dashboardHtml = generateDashboardHTML(roundResult, context);
   writeText(path.join(reportDir, 'dashboard.html'), dashboardHtml);
+
+  const ownerDigest = buildOwnerDigest({
+    report: roundResult,
+    context,
+    audit,
+    truthfulVote,
+    subgraphRecords,
+  });
+  writeText(path.join(reportDir, 'owner-digest.md'), ownerDigest);
 }
