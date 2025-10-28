@@ -1,0 +1,46 @@
+{
+  "coordination": {
+    "quorum": 3,
+    "failover": 2,
+    "a2a_bus": "A2A-meta-dominion",
+    "latency_ms": 480,
+    "sentinel_rotation_hours": 6
+  },
+  "sentinels": [
+    {
+      "id": "guardian-grid-validator",
+      "capabilities": ["execution", "validation", "analysis"],
+      "stake": 60000,
+      "status": "ready",
+      "address": "0xGUARDIAN000000000000000000000000000000A1"
+    },
+    {
+      "id": "mission-audit-sentinel",
+      "capabilities": ["validation", "analysis", "support"],
+      "stake": 22000,
+      "status": "armed",
+      "address": "0xGUARDIAN000000000000000000000000000000B2"
+    },
+    {
+      "id": "alpha-treasury-autopilot",
+      "capabilities": ["analysis", "support"],
+      "stake": 35000,
+      "status": "live",
+      "address": "0xGUARDIAN000000000000000000000000000000C3"
+    },
+    {
+      "id": "sovereign-simulation-director",
+      "capabilities": ["analysis", "support"],
+      "stake": 30000,
+      "status": "monitoring",
+      "address": "0xGUARDIAN000000000000000000000000000000D4"
+    },
+    {
+      "id": "alpha-compounding-orchestrator",
+      "capabilities": ["execution", "analysis"],
+      "stake": 40000,
+      "status": "standby",
+      "address": "0xGUARDIAN000000000000000000000000000000E5"
+    }
+  ]
+}

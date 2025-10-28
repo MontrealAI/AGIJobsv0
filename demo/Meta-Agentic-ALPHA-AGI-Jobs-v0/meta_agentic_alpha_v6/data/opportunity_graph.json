@@ -1,0 +1,28 @@
+{
+  "nodes": [
+    {"id": "fusion-finance", "label": "Liquidity Dislocation", "alpha": 740000000, "category": "finance"},
+    {"id": "bio-intelligence", "label": "mRNA Cold-Chain", "alpha": 520000000, "category": "biotech"},
+    {"id": "supply-autonomy", "label": "Rare-Earth Mesh", "alpha": 610000000, "category": "supply"},
+    {"id": "energy-synthesis", "label": "Microgrid Arbitrage", "alpha": 480000000, "category": "energy"},
+    {"id": "treasury", "label": "Treasury Reserve", "alpha": 0, "category": "treasury"},
+    {"id": "guardian", "label": "Guardian Mesh", "alpha": 0, "category": "governance"}
+  ],
+  "edges": [
+    {"source": "fusion-finance", "target": "treasury", "weight": 0.92},
+    {"source": "bio-intelligence", "target": "treasury", "weight": 0.87},
+    {"source": "supply-autonomy", "target": "treasury", "weight": 0.9},
+    {"source": "energy-synthesis", "target": "treasury", "weight": 0.85},
+    {"source": "treasury", "target": "guardian", "weight": 0.95},
+    {"source": "guardian", "target": "fusion-finance", "weight": 0.88},
+    {"source": "guardian", "target": "bio-intelligence", "weight": 0.82},
+    {"source": "guardian", "target": "supply-autonomy", "weight": 0.9},
+    {"source": "guardian", "target": "energy-synthesis", "weight": 0.84}
+  ],
+  "owner_controls": [
+    "Adjust guardian quorum instantly",
+    "Redirect liquidity routes",
+    "Pause/resume entire pipeline",
+    "Swap paymaster session key",
+    "Override treasury exposure"
+  ]
+}

@@ -1,0 +1,729 @@
+{
+  "created_at": 1761678052.7532187,
+  "governance": {
+    "approvals_required": 0,
+    "guardian_addresses": [],
+    "metadata": {},
+    "policy_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "source": null,
+    "updated_at": 1761678052.6598372
+  },
+  "integrity": "ff978a1d778f9dc074fc9e222e2eb9aa7fcddc417d52a34a07f7022b7e8baf8e",
+  "jobs": {
+    "abdbc6f01b5b43e6a8076b3f0ab6935b": {
+      "assigned_nodes": [],
+      "assigned_shard": null,
+      "plan": {
+        "budget": {
+          "cap": "100.00",
+          "max": "420000",
+          "token": "AGIALPHA"
+        },
+        "metadata": {
+          "demo": {
+            "agents": [
+              {
+                "agent_id": "guardian-grid-validator",
+                "capabilities": [
+                  "execution",
+                  "validation",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "guardian-grid-validator-secret",
+                "owner": "Guardian Grid Syndicate",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "60000"
+              },
+              {
+                "agent_id": "sovereign-simulation-director",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "sovereign-simulation-director-secret",
+                "owner": "Simulation Guild",
+                "region": "omni",
+                "slashable": false,
+                "stake_amount": "30000"
+              },
+              {
+                "agent_id": "alpha-treasury-autopilot",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-treasury-autopilot-secret",
+                "owner": "Treasury Collective",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "35000"
+              },
+              {
+                "agent_id": "mission-audit-sentinel",
+                "capabilities": [
+                  "validation",
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "mission-audit-sentinel-secret",
+                "owner": "Audit Observatory",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "22000"
+              },
+              {
+                "agent_id": "alpha-compounding-orchestrator",
+                "capabilities": [
+                  "execution",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-compounding-orchestrator-secret",
+                "owner": "Compounding Network",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "40000"
+              }
+            ],
+            "attachments": [
+              "meta_agentic_alpha_v6/reports/alpha_dominion_overview.md",
+              "meta_agentic_alpha_v6/playbooks/owner_command_matrix.md"
+            ],
+            "dashboards": [
+              {
+                "file": "meta_agentic_alpha_v6/ui/index.html",
+                "title": "Meta-Dominion Console"
+              },
+              {
+                "file": "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md",
+                "title": "Meta-Dominion Masterplan"
+              }
+            ],
+            "name": "Meta-Agentic α-AGI Jobs Demo V6 — Meta-Dominion",
+            "narrative": "The sovereign owner activates α-Dominion mode. AGI Jobs v0 (v2) orchestrates\nidentify→learn→think→design→strategise→execute loops, aligning guardians,\ntreasuries, account abstraction, and antifragility levers — all without\nthe owner writing any code.\n"
+          },
+          "generatedAt": 1761678052.6238182,
+          "scenario": "scenario.yaml"
+        },
+        "plan_id": "23a673876fe2fa51fb022c862a4d43e4ead5b8a7050306eb99adea9ecae49900",
+        "policies": {
+          "allowTools": [
+            "ipfs.pin",
+            "job.post",
+            "job.finalize",
+            "validator.quorum",
+            "llm.generate",
+            "code.run"
+          ],
+          "denyTools": [],
+          "orgId": null,
+          "organizationId": null,
+          "requireValidator": true,
+          "teamId": null,
+          "tenantId": null,
+          "userId": null
+        },
+        "steps": [
+          {
+            "id": "identify-1",
+            "kind": "plan",
+            "name": "Synthesize multi-domain alpha signals",
+            "needs": [],
+            "out": null,
+            "params": {
+              "anomaly_threshold": 0.95,
+              "escalate_to": "owner-console",
+              "knowledge_graph": "meta_agentic_alpha_v6/data/opportunity_graph.json",
+              "signals": "meta_agentic_alpha_v6/data/alpha_signals.json"
+            },
+            "tool": "identify.multi-domain"
+          },
+          {
+            "id": "learn-1",
+            "kind": "llm",
+            "name": "Advance world model curriculum",
+            "needs": [],
+            "out": null,
+            "params": {
+              "checkpoints": true,
+              "curriculum": "AlphaFactory/MetaSeason-VI",
+              "simulation_engine": "MiniWorld-POET-XR",
+              "world_model": "MuZero-AlphaDominion-VI"
+            },
+            "tool": "simulation.curriculum"
+          },
+          {
+            "id": "think-1",
+            "kind": "plan",
+            "name": "Meta-agentic dominion search",
+            "needs": [],
+            "out": null,
+            "params": {
+              "agent_bus": "A2A-meta-dominion",
+              "candidate_plans": 6,
+              "guardian_mesh": "meta_agentic_alpha_v6/data/guardian_mesh.json",
+              "horizon_days": 60
+            },
+            "tool": "planning.meta-dominion"
+          },
+          {
+            "id": "design-1",
+            "kind": "code",
+            "name": "Forge sovereign solution architecture",
+            "needs": [],
+            "out": null,
+            "params": {
+              "antifragility_mode": "compounding",
+              "opportunity_playbook": "meta_agentic_alpha_v6/data/opportunity_graph.json",
+              "simulation_matrix": "meta_agentic_alpha_v6/data/simulation_matrix.json"
+            },
+            "tool": "design.meta-forge"
+          },
+          {
+            "id": "strategise-1",
+            "kind": "plan",
+            "name": "Optimise treasury dominion",
+            "needs": [],
+            "out": null,
+            "params": {
+              "antifragility_buffer_percent": 32,
+              "guardian_quorum": 3,
+              "liquidity_routes": [
+                "treasury/alpha-orbit",
+                "execution/liquidity-grid",
+                "resilience/phoenix-buffer",
+                "expansion/metaverse-signal"
+              ],
+              "unstoppable_reserve_percent": 26
+            },
+            "tool": "treasury.meta-optimise"
+          },
+          {
+            "id": "govern-1",
+            "kind": "plan",
+            "name": "Reinforce governance lattice",
+            "needs": [],
+            "out": null,
+            "params": {
+              "governance_matrix": "meta_agentic_alpha_v6/data/governance_matrix.json",
+              "guardian_mesh": "meta_agentic_alpha_v6/data/guardian_mesh.json",
+              "session_keys": "meta_agentic_alpha_v6/data/execution_routes.json"
+            },
+            "tool": "governance.align"
+          },
+          {
+            "id": "execute-1",
+            "kind": "chain",
+            "name": "Simulate job deployment",
+            "needs": [],
+            "out": null,
+            "params": {
+              "attachments": [
+                "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md",
+                "meta_agentic_alpha_v6/reports/alpha_dominion_overview.md"
+              ],
+              "deadline_days": 21,
+              "description": "Deploying autonomous alpha factories across finance, supply chains, biotech, and energy.",
+              "dry_run": true,
+              "fee_bps": 36,
+              "reward": "185000",
+              "title": "Meta-Dominion Sovereign Alpha Acceleration",
+              "treasury_account": "0xA1PHA0000000000000000000000000000D0M1",
+              "validator": "guardian-grid-validator"
+            },
+            "tool": "job.post"
+          },
+          {
+            "id": "execute-2",
+            "kind": "chain",
+            "name": "Stake guardian capital",
+            "needs": [],
+            "out": null,
+            "params": {
+              "agent": "guardian-grid-validator",
+              "amount": "50000",
+              "dry_run": true,
+              "slash_guardian": "0xDE1B000000000000000000000000000000EEF",
+              "token": "AGIALPHA"
+            },
+            "tool": "stake.deposit"
+          },
+          {
+            "id": "execute-3",
+            "kind": "chain",
+            "name": "Activate compounding orchestrator",
+            "needs": [],
+            "out": null,
+            "params": {
+              "agent": "alpha-compounding-orchestrator",
+              "dry_run": true,
+              "expected_profit": "320000",
+              "tx_summary": "Compound alpha accrual across routes"
+            },
+            "tool": "validator.commit"
+          },
+          {
+            "id": "finalise-1",
+            "kind": "finalize",
+            "name": "Publish owner intelligence dossier",
+            "needs": [],
+            "out": null,
+            "params": {
+              "dashboards": [
+                "meta_agentic_alpha_v6/ui/index.html",
+                "meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md"
+              ],
+              "timeline": "meta_agentic_alpha_v6/data/timeline.json"
+            },
+            "tool": "analytics.finalize"
+          }
+        ]
+      },
+      "status": {
+        "current": null,
+        "logs": [
+          "[19:00:52] Starting Synthesize multi-domain alpha signals",
+          "[19:00:52] Synthesize multi-domain alpha signals: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Synthesize multi-domain alpha signals: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Synthesize multi-domain alpha signals: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Synthesize multi-domain alpha signals: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Synthesize multi-domain alpha signals: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Synthesize multi-domain alpha signals: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Synthesize multi-domain alpha signals: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Synthesize multi-domain alpha signals: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Synthesize multi-domain alpha signals: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Synthesize multi-domain alpha signals: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Synthesize multi-domain alpha signals: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Synthesize multi-domain alpha signals: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Synthesize multi-domain alpha signals: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Synthesize multi-domain alpha signals: • resilience index: 0.982",
+          "[19:00:52] Synthesize multi-domain alpha signals: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Synthesize multi-domain alpha signals: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Synthesize multi-domain alpha signals: • monthly value flow: $28.4B",
+          "[19:00:52] Synthesize multi-domain alpha signals: • uptime: 99.982%",
+          "[19:00:52] Synthesize multi-domain alpha signals: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Synthesize multi-domain alpha signals: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Synthesize multi-domain alpha signals: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Synthesize multi-domain alpha signals: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Synthesize multi-domain alpha signals: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Synthesize multi-domain alpha signals: No executor registered for tool `identify.multi-domain`; marking as no-op.",
+          "[19:00:52] Completed Synthesize multi-domain alpha signals",
+          "[19:00:52] Starting Advance world model curriculum",
+          "[19:00:52] Advance world model curriculum: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Advance world model curriculum: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Advance world model curriculum: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Advance world model curriculum: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Advance world model curriculum: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Advance world model curriculum: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Advance world model curriculum: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Advance world model curriculum: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Advance world model curriculum: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Advance world model curriculum: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Advance world model curriculum: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Advance world model curriculum: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Advance world model curriculum: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Advance world model curriculum: • resilience index: 0.982",
+          "[19:00:52] Advance world model curriculum: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Advance world model curriculum: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Advance world model curriculum: • monthly value flow: $28.4B",
+          "[19:00:52] Advance world model curriculum: • uptime: 99.982%",
+          "[19:00:52] Advance world model curriculum: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Advance world model curriculum: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Advance world model curriculum: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Advance world model curriculum: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Advance world model curriculum: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Advance world model curriculum: No executor registered for tool `simulation.curriculum`; marking as no-op.",
+          "[19:00:52] Completed Advance world model curriculum",
+          "[19:00:52] Starting Meta-agentic dominion search",
+          "[19:00:52] Meta-agentic dominion search: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Meta-agentic dominion search: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Meta-agentic dominion search: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Meta-agentic dominion search: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Meta-agentic dominion search: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Meta-agentic dominion search: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Meta-agentic dominion search: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Meta-agentic dominion search: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Meta-agentic dominion search: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Meta-agentic dominion search: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Meta-agentic dominion search: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Meta-agentic dominion search: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Meta-agentic dominion search: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Meta-agentic dominion search: • resilience index: 0.982",
+          "[19:00:52] Meta-agentic dominion search: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Meta-agentic dominion search: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Meta-agentic dominion search: • monthly value flow: $28.4B",
+          "[19:00:52] Meta-agentic dominion search: • uptime: 99.982%",
+          "[19:00:52] Meta-agentic dominion search: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Meta-agentic dominion search: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Meta-agentic dominion search: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Meta-agentic dominion search: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Meta-agentic dominion search: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Meta-agentic dominion search: No executor registered for tool `planning.meta-dominion`; marking as no-op.",
+          "[19:00:52] Completed Meta-agentic dominion search",
+          "[19:00:52] Starting Forge sovereign solution architecture",
+          "[19:00:52] Forge sovereign solution architecture: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Forge sovereign solution architecture: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Forge sovereign solution architecture: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Forge sovereign solution architecture: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Forge sovereign solution architecture: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Forge sovereign solution architecture: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Forge sovereign solution architecture: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Forge sovereign solution architecture: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Forge sovereign solution architecture: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Forge sovereign solution architecture: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Forge sovereign solution architecture: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Forge sovereign solution architecture: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Forge sovereign solution architecture: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Forge sovereign solution architecture: • resilience index: 0.982",
+          "[19:00:52] Forge sovereign solution architecture: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Forge sovereign solution architecture: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Forge sovereign solution architecture: • monthly value flow: $28.4B",
+          "[19:00:52] Forge sovereign solution architecture: • uptime: 99.982%",
+          "[19:00:52] Forge sovereign solution architecture: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Forge sovereign solution architecture: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Forge sovereign solution architecture: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Forge sovereign solution architecture: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Forge sovereign solution architecture: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Forge sovereign solution architecture: No executor registered for tool `design.meta-forge`; marking as no-op.",
+          "[19:00:52] Completed Forge sovereign solution architecture",
+          "[19:00:52] Starting Optimise treasury dominion",
+          "[19:00:52] Optimise treasury dominion: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Optimise treasury dominion: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Optimise treasury dominion: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Optimise treasury dominion: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Optimise treasury dominion: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Optimise treasury dominion: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Optimise treasury dominion: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Optimise treasury dominion: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Optimise treasury dominion: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Optimise treasury dominion: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Optimise treasury dominion: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Optimise treasury dominion: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Optimise treasury dominion: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Optimise treasury dominion: • resilience index: 0.982",
+          "[19:00:52] Optimise treasury dominion: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Optimise treasury dominion: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Optimise treasury dominion: • monthly value flow: $28.4B",
+          "[19:00:52] Optimise treasury dominion: • uptime: 99.982%",
+          "[19:00:52] Optimise treasury dominion: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Optimise treasury dominion: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Optimise treasury dominion: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Optimise treasury dominion: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Optimise treasury dominion: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Optimise treasury dominion: No executor registered for tool `treasury.meta-optimise`; marking as no-op.",
+          "[19:00:52] Completed Optimise treasury dominion",
+          "[19:00:52] Starting Reinforce governance lattice",
+          "[19:00:52] Reinforce governance lattice: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Reinforce governance lattice: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Reinforce governance lattice: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Reinforce governance lattice: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Reinforce governance lattice: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Reinforce governance lattice: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Reinforce governance lattice: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Reinforce governance lattice: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Reinforce governance lattice: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Reinforce governance lattice: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Reinforce governance lattice: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Reinforce governance lattice: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Reinforce governance lattice: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Reinforce governance lattice: • resilience index: 0.982",
+          "[19:00:52] Reinforce governance lattice: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Reinforce governance lattice: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Reinforce governance lattice: • monthly value flow: $28.4B",
+          "[19:00:52] Reinforce governance lattice: • uptime: 99.982%",
+          "[19:00:52] Reinforce governance lattice: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Reinforce governance lattice: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Reinforce governance lattice: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Reinforce governance lattice: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Reinforce governance lattice: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Reinforce governance lattice: No executor registered for tool `governance.align`; marking as no-op.",
+          "[19:00:52] Completed Reinforce governance lattice",
+          "[19:00:52] Starting Simulate job deployment",
+          "[19:00:52] Simulate job deployment: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Simulate job deployment: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Simulate job deployment: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Simulate job deployment: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Simulate job deployment: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Simulate job deployment: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Simulate job deployment: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Simulate job deployment: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Simulate job deployment: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Simulate job deployment: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Simulate job deployment: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Simulate job deployment: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Simulate job deployment: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Simulate job deployment: • resilience index: 0.982",
+          "[19:00:52] Simulate job deployment: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Simulate job deployment: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Simulate job deployment: • monthly value flow: $28.4B",
+          "[19:00:52] Simulate job deployment: • uptime: 99.982%",
+          "[19:00:52] Simulate job deployment: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Simulate job deployment: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Simulate job deployment: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Simulate job deployment: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Simulate job deployment: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Simulate job deployment: Dispatching intent `create_job` (attempt 1).",
+          "[19:00:52] Simulate job deployment: ↪︎ Intent `create_job` mapped to `unknown target`.",
+          "[19:00:52] Simulate job deployment: • Prepared payload: {\"params\": {\"title\": \"Meta-Dominion Sovereign Alpha Acceleration\", \"description\": \"Deploying autonomous alpha factories across finance, supply chains, biotech, and energy.\", \"reward\": \"185000\", \"deadline_days\": 21, \"attachments\": [\"meta_agentic_alpha_v6/reports/generated/alpha_dominion_masterplan.md\", \"meta_agentic_alpha_v6/reports/alpha_dominion_overview.md\"], \"treasury_account\": \"0xA1PHA0000000000000000000000000000D0M1\", \"fee_bps\": 36, \"validator\": \"guardian-grid-validator\", \"dry_run\": true}, \"metadata\": {\"tool\": \"job.post\"}}",
+          "[19:00:52] Simulate job deployment: Intent completed (logical).",
+          "[19:00:52] Completed Simulate job deployment",
+          "[19:00:52] Starting Stake guardian capital",
+          "[19:00:52] Stake guardian capital: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Stake guardian capital: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Stake guardian capital: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Stake guardian capital: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Stake guardian capital: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Stake guardian capital: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Stake guardian capital: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Stake guardian capital: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Stake guardian capital: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Stake guardian capital: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Stake guardian capital: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Stake guardian capital: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Stake guardian capital: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Stake guardian capital: • resilience index: 0.982",
+          "[19:00:52] Stake guardian capital: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Stake guardian capital: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Stake guardian capital: • monthly value flow: $28.4B",
+          "[19:00:52] Stake guardian capital: • uptime: 99.982%",
+          "[19:00:52] Stake guardian capital: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Stake guardian capital: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Stake guardian capital: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Stake guardian capital: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Stake guardian capital: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Stake guardian capital: Dispatching intent `stake` (attempt 1).",
+          "[19:00:52] Stake guardian capital: ↪︎ Intent `stake` mapped to `unknown target`.",
+          "[19:00:52] Stake guardian capital: • Prepared payload.",
+          "[19:00:52] Stake guardian capital: Intent completed (logical).",
+          "[19:00:52] Completed Stake guardian capital",
+          "[19:00:52] Starting Activate compounding orchestrator",
+          "[19:00:52] Activate compounding orchestrator: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Activate compounding orchestrator: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Activate compounding orchestrator: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Activate compounding orchestrator: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Activate compounding orchestrator: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Activate compounding orchestrator: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Activate compounding orchestrator: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Activate compounding orchestrator: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Activate compounding orchestrator: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Activate compounding orchestrator: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Activate compounding orchestrator: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Activate compounding orchestrator: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Activate compounding orchestrator: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Activate compounding orchestrator: • resilience index: 0.982",
+          "[19:00:52] Activate compounding orchestrator: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Activate compounding orchestrator: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Activate compounding orchestrator: • monthly value flow: $28.4B",
+          "[19:00:52] Activate compounding orchestrator: • uptime: 99.982%",
+          "[19:00:52] Activate compounding orchestrator: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Activate compounding orchestrator: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Activate compounding orchestrator: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Activate compounding orchestrator: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Activate compounding orchestrator: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Activate compounding orchestrator: Dispatching intent `validate` (attempt 1).",
+          "[19:00:52] Activate compounding orchestrator: ↪︎ Intent `validate` mapped to `unknown target`.",
+          "[19:00:52] Activate compounding orchestrator: • Ready to dispatch payload.",
+          "[19:00:52] Activate compounding orchestrator: Intent completed (logical).",
+          "[19:00:52] Completed Activate compounding orchestrator",
+          "[19:00:52] Starting Publish owner intelligence dossier",
+          "[19:00:52] Publish owner intelligence dossier: Phase6 runtime routed to `finance` — Sovereign Finance Hypergrid (score=95.00).",
+          "[19:00:52] Publish owner intelligence dossier: • manifest: manifest=ipfs://phase6/domains/finance.json, subgraph=https://phase6.montreal.ai/subgraphs/finance, l2=0x5555555555555555555555555555555555555555, oracle=0x6666666666666666666666666666666666666666",
+          "[19:00:52] Publish owner intelligence dossier: • heartbeat: 180s (domain 90s, global 180s)",
+          "[19:00:52] Publish owner intelligence dossier: • execution router: 0x7777777777777777777777777777777777777777",
+          "[19:00:52] Publish owner intelligence dossier: • IoT oracle router: 0x1111111111111111111111111111111111111111",
+          "[19:00:52] Publish owner intelligence dossier: • global manifest: ipfs://phase6/global-control-surface.json",
+          "[19:00:52] Publish owner intelligence dossier: • emergency levers: pause=0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1 / escalation=0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+          "[19:00:52] Publish owner intelligence dossier: • trust anchors: AGI Jobs Oversight Council Multisig, Global Neutrality Notary, …",
+          "[19:00:52] Publish owner intelligence dossier: • guard rails: treasuryBuffer=7.50% circuitBreaker=72.00% grace=300s autoPause=on",
+          "[19:00:52] Publish owner intelligence dossier: • oversight council: 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+          "[19:00:52] Publish owner intelligence dossier: • telemetry floors: resilience 93.00% automation 90.50% oversight 72.00%",
+          "[19:00:52] Publish owner intelligence dossier: • telemetry manifests: manifest=0x2613ea16baaa9a77b9aabab976b736dd81ebaeb5b209909b8aea66845a8314fa metrics=0xc18fe72d328409449dcbf4defceb1d0e1497491f1c28e2c94290e689853e9de0",
+          "[19:00:52] Publish owner intelligence dossier: • global infra mesh: EigenLayer Risk Shield AVS(active), Filecoin Saturn Compute Mesh(ready), …",
+          "[19:00:52] Publish owner intelligence dossier: • resilience index: 0.982",
+          "[19:00:52] Publish owner intelligence dossier: • telemetry: resilience 98.20% automation 94.75% compliance 96.50%",
+          "[19:00:52] Publish owner intelligence dossier: • settlement cadence: 32s / L2=yes",
+          "[19:00:52] Publish owner intelligence dossier: • monthly value flow: $28.4B",
+          "[19:00:52] Publish owner intelligence dossier: • uptime: 99.982%",
+          "[19:00:52] Publish owner intelligence dossier: • sentinel: Resilience-Index-Finance",
+          "[19:00:52] Publish owner intelligence dossier: • sentinel oracle: 0xc101010101010101010101010101010101010101",
+          "[19:00:52] Publish owner intelligence dossier: • infra mesh: Settlement:Ethereum Mainnet(anchor), Layer-2:Linea(active), Storage:Arweave(active)",
+          "[19:00:52] Publish owner intelligence dossier: • credential guard rails: Basel III Treasury Credential, Cross-Border Settlement Passport",
+          "[19:00:52] Publish owner intelligence dossier: • operations: maxActive=640 queue=1600 minStake=750.00 ETH treasuryShare=2.80% circuitBreaker=72.00% humanValidation=no",
+          "[19:00:52] Publish owner intelligence dossier: No executor registered for tool `analytics.finalize`; marking as no-op.",
+          "[19:00:52] Completed Publish owner intelligence dossier"
+        ],
+        "receipts": {
+          "cids": [],
+          "job_id": null,
+          "payouts": [],
+          "plan_id": "23a673876fe2fa51fb022c862a4d43e4ead5b8a7050306eb99adea9ecae49900",
+          "timings": {
+            "completed_at": 1761678052.751267,
+            "events": [
+              "AwaitingValidation",
+              "JobCompleted",
+              "JobCreated",
+              "ResultSubmitted",
+              "ValidationStarted"
+            ],
+            "scoreboard": {
+              "alpha-compounding-orchestrator": {
+                "losses": 0,
+                "notes": [
+                  "2025-10-28T19:00Z: Activate compounding orchestrator -> win"
+                ],
+                "slashes": 0,
+                "updatedAt": 1761678052.735167,
+                "wins": 1
+              },
+              "guardian-grid-validator": {
+                "losses": 0,
+                "notes": [
+                  "2025-10-28T19:00Z: Simulate job deployment -> win",
+                  "2025-10-28T19:00Z: Stake guardian capital -> win"
+                ],
+                "slashes": 0,
+                "updatedAt": 1761678052.7264097,
+                "wins": 2
+              }
+            },
+            "state": "succeeded"
+          },
+          "txes": []
+        },
+        "run": {
+          "completed_at": 1761678052.7511728,
+          "created_at": 1761678052.6599793,
+          "est_budget": "420000",
+          "id": "abdbc6f01b5b43e6a8076b3f0ab6935b",
+          "plan_id": "23a673876fe2fa51fb022c862a4d43e4ead5b8a7050306eb99adea9ecae49900",
+          "started_at": 1761678052.6647644,
+          "state": "succeeded"
+        },
+        "steps": [
+          {
+            "completed_at": 1761678052.6720457,
+            "id": "identify-1",
+            "kind": "plan",
+            "message": null,
+            "name": "Synthesize multi-domain alpha signals",
+            "started_at": 1761678052.6687505,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.6791325,
+            "id": "learn-1",
+            "kind": "llm",
+            "message": null,
+            "name": "Advance world model curriculum",
+            "started_at": 1761678052.6756647,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.686347,
+            "id": "think-1",
+            "kind": "plan",
+            "message": null,
+            "name": "Meta-agentic dominion search",
+            "started_at": 1761678052.6825945,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.693572,
+            "id": "design-1",
+            "kind": "code",
+            "message": null,
+            "name": "Forge sovereign solution architecture",
+            "started_at": 1761678052.690022,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.701257,
+            "id": "strategise-1",
+            "kind": "plan",
+            "message": null,
+            "name": "Optimise treasury dominion",
+            "started_at": 1761678052.6975405,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.709363,
+            "id": "govern-1",
+            "kind": "plan",
+            "message": null,
+            "name": "Reinforce governance lattice",
+            "started_at": 1761678052.7051616,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.7179532,
+            "id": "execute-1",
+            "kind": "chain",
+            "message": null,
+            "name": "Simulate job deployment",
+            "started_at": 1761678052.713549,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.7267802,
+            "id": "execute-2",
+            "kind": "chain",
+            "message": null,
+            "name": "Stake guardian capital",
+            "started_at": 1761678052.722193,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.7355342,
+            "id": "execute-3",
+            "kind": "chain",
+            "message": null,
+            "name": "Activate compounding orchestrator",
+            "started_at": 1761678052.7310128,
+            "state": "completed"
+          },
+          {
+            "completed_at": 1761678052.7462723,
+            "id": "finalise-1",
+            "kind": "finalize",
+            "message": null,
+            "name": "Publish owner intelligence dossier",
+            "started_at": 1761678052.7406774,
+            "state": "completed"
+          }
+        ]
+      },
+      "updated_at": 1761678052.7532187
+    }
+  },
+  "nodes": {},
+  "scoreboard": {
+    "alpha-compounding-orchestrator": {
+      "losses": 0,
+      "notes": [
+        "2025-10-28T19:00Z: Activate compounding orchestrator -> win"
+      ],
+      "slashes": 0,
+      "updatedAt": 1761678052.735167,
+      "wins": 1
+    },
+    "guardian-grid-validator": {
+      "losses": 0,
+      "notes": [
+        "2025-10-28T19:00Z: Simulate job deployment -> win",
+        "2025-10-28T19:00Z: Stake guardian capital -> win"
+      ],
+      "slashes": 0,
+      "updatedAt": 1761678052.7264097,
+      "wins": 2
+    }
+  },
+  "sequence": 23,
+  "shards": {},
+  "version": "orchestrator.checkpoint.v1"
+}
