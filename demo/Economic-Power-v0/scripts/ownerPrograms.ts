@@ -5,9 +5,14 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { loadScenarioFromFile } from './runDemo';
 
-const DEFAULT_SCENARIO = path.join(__dirname, '..', 'scenario', 'baseline.json');
+export const DEFAULT_SCENARIO_PATH = path.join(
+  __dirname,
+  '..',
+  'scenario',
+  'baseline.json',
+);
 
-type ProgramCategory =
+export type ProgramCategory =
   | 'job'
   | 'validator'
   | 'adapter'
@@ -15,7 +20,7 @@ type ProgramCategory =
   | 'treasury'
   | 'orchestrator';
 
-type ProgramRecord = {
+export type ProgramRecord = {
   id: string;
   target: string;
   script: string;
@@ -23,7 +28,9 @@ type ProgramRecord = {
   category: ProgramCategory;
 };
 
-function flattenPrograms(scenario: Awaited<ReturnType<typeof loadScenarioFromFile>>): ProgramRecord[] {
+export function flattenPrograms(
+  scenario: Awaited<ReturnType<typeof loadScenarioFromFile>>,
+): ProgramRecord[] {
   const catalog = scenario.commandCatalog;
   const entries: ProgramRecord[] = [];
   const pushAll = (category: ProgramCategory, programs: typeof catalog.jobPrograms) => {
@@ -46,7 +53,14 @@ function flattenPrograms(scenario: Awaited<ReturnType<typeof loadScenarioFromFil
   return entries;
 }
 
-function renderProgram(program: ProgramRecord): string {
+export async function loadPrograms(
+  scenarioPath: string = DEFAULT_SCENARIO_PATH,
+): Promise<ProgramRecord[]> {
+  const scenario = await loadScenarioFromFile(scenarioPath);
+  return flattenPrograms(scenario);
+}
+
+export function renderProgram(program: ProgramRecord): string {
   return [
     `Program: ${program.id} (${program.category})`,
     `Target: ${program.target}`,
@@ -61,7 +75,7 @@ async function main(): Promise<void> {
   const argv = await yargs(hideBin(process.argv))
     .option('scenario', {
       type: 'string',
-      default: DEFAULT_SCENARIO,
+      default: DEFAULT_SCENARIO_PATH,
       describe: 'Scenario JSON file to load command catalog from',
     })
     .option('program', {
@@ -87,8 +101,8 @@ async function main(): Promise<void> {
     .help()
     .parse();
 
-  const scenario = await loadScenarioFromFile(argv.scenario);
-  const programs = flattenPrograms(scenario);
+  const scenarioPath = String(argv.scenario);
+  const programs = await loadPrograms(scenarioPath);
 
   if (argv.list) {
     if (argv.json) {
