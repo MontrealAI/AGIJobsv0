@@ -78,6 +78,33 @@ node scripts/v2/ownerControlSurface.ts \
 
 - The orchestrator immediately persists the new settings and records them under `ownerState.checkpoint` and the next `checkpoint.json` artifact.
 
+### Reroute Specific Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-reroute \
+  --job-id job-09000 \
+  --target helios \
+  --reason "Redirect precision workload to Helios GPU array"
+```
+
+- The orchestrator removes the job from its existing queue (or the active node), rewrites its spillover history, and pushes it into the target shard router.
+- `summary.json` captures the reroute under `owner.job.reroute` events alongside updated spillover metrics.
+- **Tip for smaller drills:** Append `"allowMissing": true` in scheduled JSON payloads when the target job ID might not exist in lower-volume simulations. The command will log an `owner.job.missing` event instead of aborting the run, keeping rehearsals frictionless for non-technical operators.
+
+### Cancel Redundant Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-cancel \
+  --job-id job-09001 \
+  --reason "Owner resolved ticket manually"
+```
+
+- The job is removed immediately, marked as cancelled, and surfaced in metrics (`jobsCancelled`) for transparent auditing.
+- Event logs emit both `owner.job.cancelled` and `job.failed` entries so replay systems retain determinism.
+- Include `"allowMissing": true` in declarative schedules when you want the command deck to tolerate absent job IDs—for example, when scaling down from a 10k-job stress test to a 4k-job governance rehearsal. The orchestrator will acknowledge the request without mutating metrics, empowering operators to reuse the same schedule across mission profiles.
+
 ### Resume From Checkpoint
 
 1. Stop the orchestrator (or simulate a crash with `Ctrl+C`).

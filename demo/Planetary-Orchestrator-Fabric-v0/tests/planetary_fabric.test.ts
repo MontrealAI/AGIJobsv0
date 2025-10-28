@@ -272,6 +272,59 @@ async function testOwnerCommandControls(): Promise<void> {
     },
   });
   await orchestrator.applyOwnerCommand({ type: 'node.deregister', nodeId: 'mars.node', reason: 'rotate mars node' });
+  const missingJobEvents = await orchestrator.applyOwnerCommand({
+    type: 'job.cancel',
+    jobId: 'job-nonexistent',
+    reason: 'unit-test-allow-missing',
+    allowMissing: true,
+  });
+  assert.ok(
+    missingJobEvents.some((event) => event.type === 'owner.job.missing'),
+    'allowMissing cancel should emit owner.job.missing event'
+  );
+  assert.equal(
+    orchestrator.fabricMetrics.jobsCancelled,
+    0,
+    'allowMissing cancel must not change cancellation metrics'
+  );
+  orchestrator.submitJob({
+    id: 'job-owner-cancel',
+    shard: 'earth',
+    requiredSkills: ['general'],
+    estimatedDurationTicks: 3,
+    value: 999,
+    submissionTick: orchestrator.currentTick,
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'job.cancel',
+    jobId: 'job-owner-cancel',
+    reason: 'unit-test-cancel',
+  });
+  const metricsAfterCancel = orchestrator.fabricMetrics;
+  assert.equal(metricsAfterCancel.jobsCancelled, 1);
+  assert.ok(metricsAfterCancel.jobsFailed >= 1);
+
+  const snapshotBeforeReroute = orchestrator.getShardSnapshots();
+  orchestrator.submitJob({
+    id: 'job-owner-reroute',
+    shard: 'earth',
+    requiredSkills: ['manufacturing'],
+    estimatedDurationTicks: 4,
+    value: 1200,
+    submissionTick: orchestrator.currentTick,
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'job.reroute',
+    jobId: 'job-owner-reroute',
+    targetShard: 'mars',
+    reason: 'unit-test-reroute',
+  });
+  const snapshotAfterReroute = orchestrator.getShardSnapshots();
+  const beforeMarsQueue = snapshotBeforeReroute.mars?.queueDepth ?? 0;
+  const afterMarsQueue = snapshotAfterReroute.mars?.queueDepth ?? 0;
+  assert.equal(afterMarsQueue, beforeMarsQueue + 1);
+  const metricsAfterReroute = orchestrator.fabricMetrics;
+  assert.ok(metricsAfterReroute.spillovers >= metricsAfterCancel.spillovers + 1);
   const rotatedCheckpointPath = join(tmpdir(), `fabric-owner-${Date.now()}.json`);
   await orchestrator.applyOwnerCommand({
     type: 'checkpoint.configure',
@@ -292,7 +345,7 @@ async function testOwnerCommandControls(): Promise<void> {
 
   const ownerState = orchestrator.getOwnerState();
   assert.equal(ownerState.systemPaused, false, 'system should be resumed');
-  assert.equal(ownerState.metrics.ownerInterventions, 11);
+  assert.equal(ownerState.metrics.ownerInterventions, 14);
   assert.equal(ownerState.metrics.systemPauses, 1);
   assert.equal(ownerState.metrics.shardPauses, 1);
   assert.deepEqual(ownerState.pausedShards, [], 'no shards should remain paused');

@@ -65,6 +65,27 @@
           "path": "demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoints/solar-storm.json"
         }
       }
+    },
+    {
+      "tick": 280,
+      "note": "Reroute urgent Mars manufacturing job to Helios",
+      "command": {
+        "type": "job.reroute",
+        "jobId": "job-09000",
+        "allowMissing": true,
+        "targetShard": "helios",
+        "reason": "Owner escalation to Helios GPU helion"
+      }
+    },
+    {
+      "tick": 285,
+      "note": "Cancel redundant Earth logistics job after reroute",
+      "command": {
+        "type": "job.cancel",
+        "jobId": "job-09001",
+        "allowMissing": true,
+        "reason": "Owner resolved ticket manually"
+      }
     }
   ]
 }

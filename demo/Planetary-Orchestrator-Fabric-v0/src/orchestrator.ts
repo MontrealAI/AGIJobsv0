@@ -30,6 +30,15 @@ interface AssignmentContext {
   tick: number;
 }
 
+interface LocatedJob {
+  job: JobState;
+  shardId: ShardId;
+  shard: ShardState;
+  location: 'queue' | 'inFlight' | 'completed' | 'failed';
+  queueIndex?: number;
+  node?: NodeState;
+}
+
 function cloneJob(job: JobState): JobState {
   return {
     ...job,
@@ -56,7 +65,7 @@ function cloneRegistryEvent(event: RegistryEvent): RegistryEvent {
     case 'node.offline':
       return { type: event.type, shard: event.shard, nodeId: event.nodeId, reason: event.reason };
     case 'job.cancelled':
-      return { type: event.type, shard: event.shard, jobId: event.jobId };
+      return { type: event.type, shard: event.shard, jobId: event.jobId, reason: event.reason };
     default:
       return event;
   }
@@ -91,6 +100,7 @@ export class PlanetaryOrchestrator {
       jobsSubmitted: 0,
       jobsCompleted: 0,
       jobsFailed: 0,
+      jobsCancelled: 0,
       spillovers: 0,
       reassignedAfterFailure: 0,
       outageHandled: false,
@@ -438,6 +448,127 @@ export class PlanetaryOrchestrator {
         });
         break;
       }
+      case 'job.cancel': {
+        const located = this.findJob(command.jobId);
+        if (!located) {
+          if (command.allowMissing) {
+            push({
+              tick: this.tick,
+              type: 'owner.job.missing',
+              message: `Owner attempted to cancel job ${command.jobId}, but it was not found`,
+              data: { jobId: command.jobId, action: 'cancel', reason: command.reason },
+            });
+            break;
+          }
+          throw new Error(`Unknown job ${command.jobId}`);
+        }
+        if (located.location === 'completed' || located.location === 'failed') {
+          throw new Error(`Job ${command.jobId} is already ${located.location} and cannot be cancelled`);
+        }
+        const reason = command.reason ?? 'owner-cancelled';
+        const { job, shardId, shard, location } = located;
+        if (location === 'queue' && typeof located.queueIndex === 'number') {
+          shard.queue.splice(located.queueIndex, 1);
+        } else if (location === 'inFlight') {
+          shard.inFlight.delete(job.id);
+          if (job.assignedNodeId) {
+            this.nodes.get(job.assignedNodeId)?.runningJobs.delete(job.id);
+          }
+        }
+        job.status = 'failed';
+        job.assignedNodeId = undefined;
+        job.failureReason = reason;
+        job.failedTick = this.tick;
+        shard.failed.set(job.id, job);
+        this.metrics.jobsFailed += 1;
+        this.metrics.jobsCancelled += 1;
+        push({
+          tick: this.tick,
+          type: 'owner.job.cancelled',
+          message: `Owner cancelled job ${job.id}`,
+          data: { jobId: job.id, shard: shardId, reason, previousState: location },
+        });
+        this.recordRegistryEvent({
+          type: 'job.cancelled',
+          shard: shardId,
+          jobId: job.id,
+          reason,
+        });
+        this.recordRegistryEvent({
+          type: 'job.failed',
+          shard: shardId,
+          reason,
+          job: cloneJob(job),
+        });
+        break;
+      }
+      case 'job.reroute': {
+        const located = this.findJob(command.jobId);
+        if (!located) {
+          if (command.allowMissing) {
+            push({
+              tick: this.tick,
+              type: 'owner.job.missing',
+              message: `Owner attempted to reroute job ${command.jobId}, but it was not found`,
+              data: {
+                jobId: command.jobId,
+                action: 'reroute',
+                targetShard: command.targetShard,
+                reason: command.reason,
+              },
+            });
+            break;
+          }
+          throw new Error(`Unknown job ${command.jobId}`);
+        }
+        if (located.location === 'completed' || located.location === 'failed') {
+          throw new Error(`Job ${command.jobId} is already ${located.location} and cannot be rerouted`);
+        }
+        const targetShard = this.shards.get(command.targetShard);
+        if (!targetShard) {
+          throw new Error(`Unknown target shard ${command.targetShard}`);
+        }
+        const { job, shardId, shard, location } = located;
+        if (location === 'queue' && typeof located.queueIndex === 'number') {
+          shard.queue.splice(located.queueIndex, 1);
+        } else if (location === 'inFlight') {
+          shard.inFlight.delete(job.id);
+          if (job.assignedNodeId) {
+            this.nodes.get(job.assignedNodeId)?.runningJobs.delete(job.id);
+          }
+        }
+        job.assignedNodeId = undefined;
+        job.startedTick = undefined;
+        job.completedTick = undefined;
+        job.failedTick = undefined;
+        job.failureReason = undefined;
+        job.remainingTicks = Math.max(job.remainingTicks ?? job.estimatedDurationTicks, 1);
+        job.status = 'spillover';
+        job.shard = command.targetShard;
+        job.spilloverHistory.push(command.targetShard);
+        this.handleSpillovers([
+          {
+            job,
+            origin: shardId,
+            target: command.targetShard,
+            reason: command.reason ?? 'owner-reroute',
+          },
+        ]);
+        push({
+          tick: this.tick,
+          type: 'owner.job.reroute',
+          message: `Owner rerouted job ${job.id} from ${shardId} to ${command.targetShard}`,
+          data: {
+            jobId: job.id,
+            from: shardId,
+            to: command.targetShard,
+            reason: command.reason,
+            previousState: location,
+            spilloverHistory: [...job.spilloverHistory],
+          },
+        });
+        break;
+      }
       case 'checkpoint.save': {
         await this.saveCheckpoint();
         push({
@@ -507,7 +638,11 @@ export class PlanetaryOrchestrator {
     }
     this.initializeState();
     this.tick = payload.tick;
-    this.metrics = payload.metrics;
+    const restoredMetrics = payload.metrics ?? PlanetaryOrchestrator.createInitialMetrics();
+    this.metrics = {
+      ...PlanetaryOrchestrator.createInitialMetrics(),
+      ...restoredMetrics,
+    };
     this.systemPaused = payload.systemPaused;
     this.pausedShards.clear();
     for (const shardId of payload.pausedShards) {
@@ -650,6 +785,29 @@ export class PlanetaryOrchestrator {
     return snapshot;
   }
 
+  private findJob(jobId: string): LocatedJob | undefined {
+    for (const [shardId, shard] of this.shards.entries()) {
+      const queueIndex = shard.queue.findIndex((entry) => entry.id === jobId);
+      if (queueIndex >= 0) {
+        return { job: shard.queue[queueIndex], shardId, shard, location: 'queue', queueIndex };
+      }
+      const inFlight = shard.inFlight.get(jobId);
+      if (inFlight) {
+        const node = inFlight.assignedNodeId ? this.nodes.get(inFlight.assignedNodeId) : undefined;
+        return { job: inFlight, shardId, shard, location: 'inFlight', node };
+      }
+      const completed = shard.completed.get(jobId);
+      if (completed) {
+        return { job: completed, shardId, shard, location: 'completed' };
+      }
+      const failed = shard.failed.get(jobId);
+      if (failed) {
+        return { job: failed, shardId, shard, location: 'failed' };
+      }
+    }
+    return undefined;
+  }
+
   getShardStatistics(): Record<ShardId, { completed: number; failed: number; spillovers: number }> {
     const stats: Record<ShardId, { completed: number; failed: number; spillovers: number }> = {};
     for (const [shardId, shard] of this.shards.entries()) {
@@ -773,6 +931,7 @@ export class PlanetaryOrchestrator {
       case 'job.cancelled': {
         const router = this.routers.get(event.shard);
         router?.cancelJob(event.jobId, this.tick);
+        this.metrics.jobsCancelled += 1;
         break;
       }
       case 'node.heartbeat': {

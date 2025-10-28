@@ -144,6 +144,7 @@ export interface FabricMetrics {
   jobsSubmitted: number;
   jobsCompleted: number;
   jobsFailed: number;
+  jobsCancelled: number;
   spillovers: number;
   reassignedAfterFailure: number;
   outageHandled: boolean;
@@ -154,7 +155,7 @@ export interface FabricMetrics {
 
 export type RegistryEvent =
   | { type: 'job.created'; shard: ShardId; job: JobState }
-  | { type: 'job.cancelled'; shard: ShardId; jobId: string }
+  | { type: 'job.cancelled'; shard: ShardId; jobId: string; reason?: string }
   | { type: 'job.requeued'; shard: ShardId; job: JobState; origin: string }
   | { type: 'job.spillover'; shard: ShardId; job: JobState; from: ShardId }
   | { type: 'job.assigned'; shard: ShardId; job: JobState; nodeId: string }
@@ -258,6 +259,19 @@ export type OwnerCommand =
     }
   | { type: 'node.register'; node: NodeDefinition; reason?: string }
   | { type: 'node.deregister'; nodeId: string; reason?: string }
+  | {
+      type: 'job.cancel';
+      jobId: string;
+      reason?: string;
+      allowMissing?: boolean;
+    }
+  | {
+      type: 'job.reroute';
+      jobId: string;
+      targetShard: ShardId;
+      reason?: string;
+      allowMissing?: boolean;
+    }
   | { type: 'checkpoint.save'; reason?: string }
   | {
       type: 'checkpoint.configure';

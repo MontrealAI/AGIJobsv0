@@ -418,6 +418,19 @@ async function writeArtifacts(
         reason: 'Rotate checkpoint storage bucket',
         update: { path: rotatedCheckpointPath },
       },
+      rerouteMarsHotspot: {
+        type: 'job.reroute',
+        reason: 'Redirect precision workload to Helios GPU array',
+        jobId: 'job-09000',
+        allowMissing: true,
+        targetShard: 'helios',
+      },
+      cancelEarthBacklogItem: {
+        type: 'job.cancel',
+        reason: 'De-duplicate resolved Earth logistics request',
+        allowMissing: true,
+        jobId: 'job-09001',
+      },
     },
     commandScheduleTemplate: [
       {
@@ -463,6 +476,27 @@ async function writeArtifacts(
           type: 'checkpoint.configure',
           update: { intervalTicks: Math.max(2, Math.floor(checkpointConfig.intervalTicks / 2)), path: rotatedCheckpointPath },
           reason: 'Increase redundancy ahead of interplanetary transfer',
+        },
+      },
+      {
+        tick: 280,
+        note: 'Reroute an urgent Mars manufacturing job to Helios GPUs',
+        command: {
+          type: 'job.reroute',
+          jobId: 'job-09000',
+          allowMissing: true,
+          targetShard: 'helios',
+          reason: 'Owner escalated to Helios precision array',
+        },
+      },
+      {
+        tick: 285,
+        note: 'Cancel an obsolete Earth logistics ticket after reroute',
+        command: {
+          type: 'job.cancel',
+          jobId: 'job-09001',
+          allowMissing: true,
+          reason: 'Owner resolved via manual intervention',
         },
       },
     ],
@@ -521,6 +555,8 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, execut
         '<div class="metric"><strong>Tick</strong><br />' + metrics.tick.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Jobs Submitted</strong><br />' + metrics.jobsSubmitted.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Jobs Completed</strong><br />' + metrics.jobsCompleted.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Jobs Failed</strong><br />' + metrics.jobsFailed.toLocaleString() + '</div>' +
+        '<div class="metric"><strong>Jobs Cancelled</strong><br />' + metrics.jobsCancelled.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Spillovers</strong><br />' + metrics.spillovers.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Reassignments</strong><br />' + metrics.reassignedAfterFailure.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Owner Interventions</strong><br />' + ownerMetrics.ownerInterventions.toLocaleString() + '</div>' +

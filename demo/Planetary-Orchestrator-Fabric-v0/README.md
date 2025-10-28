@@ -16,6 +16,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
 - 🎛️ **Owner Command Schedules** – Load declarative schedules that trigger pause/resume, shard tuning, and node lifecycle actions mid-run.
 - ♻️ **Zero-Downtime Restart Drill** – A two-stage launcher halts the orchestrator on command, resumes from checkpoint, and merges telemetry for auditors automatically.
+- 🎯 **Surgical Job Control** – Owners reroute hot jobs across shards or cancel redundant work instantly without touching code, with `allowMissing` safeguards so the same command deck works for 4k rehearsal drills and 10k Kardashev load tests alike.
 
 ## Quickstart (Non-Technical Operator)
 
@@ -130,7 +131,7 @@ flowchart TD
 
 ## What You Get After a Run
 
-- ✅ **`summary.json`** – Throughput metrics, shard depths, failure recovery stats, deterministic seeds.
+- ✅ **`summary.json`** – Throughput metrics (including cancellations), shard depths, failure recovery stats, deterministic seeds.
   - Includes a `run` object showing whether the run resumed from checkpoint, stopped early, or completed.
 - ✅ **`events.ndjson`** – Chronological event stream ready for ingestion into SIEM/observability stacks.
 - ✅ **`checkpoint.json`** – Owner-governed snapshot reflecting any retargeted path/interval updates for instant resume.

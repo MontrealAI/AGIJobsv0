@@ -69,7 +69,7 @@ Nodes register declaratively. The orchestrator enforces owner-set maximum concur
 4. **Heartbeat Audit** – The orchestrator expects heartbeats within the configured interval. Missed heartbeats mark the node unhealthy.
 5. **Failure Recovery** – Jobs running on failed nodes are re-queued in the originating shard. If backlog > `maxQueue`, spillover engages.
 6. **Checkpoint** – Every `intervalTicks` the orchestrator writes a full snapshot (shards, jobs, node health, metrics). Owners can tighten cadence or retarget storage live via `checkpoint.configure`.
-7. **Owner Hooks** – Owner commands modify shard budgets, pause/resume, checkpoint, or inject governance payloads in real-time.
+7. **Owner Hooks** – Owner commands modify shard budgets, pause/resume, checkpoint, reroute individual jobs, or cancel redundant workloads in real-time.
 8. **Restart Drill Hooks** – `--stop-after-ticks` halts the orchestrator deterministically so crash/recovery rehearsals are auditable.
 
 ## Persistence
