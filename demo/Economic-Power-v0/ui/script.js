@@ -188,6 +188,83 @@ function renderSovereignty(summary) {
   }
 }
 
+function renderGovernanceLedger(summary) {
+  const analysisEl = document.getElementById('ledger-analysis');
+  const executionEl = document.getElementById('ledger-execution');
+  const coverageEl = document.getElementById('ledger-coverage');
+  const alertList = document.getElementById('ledger-alerts');
+  const tableBody = document.querySelector('#ledger-table tbody');
+
+  if (!analysisEl || !executionEl || !coverageEl || !alertList || !tableBody) {
+    return;
+  }
+
+  const ledger = summary.governanceLedger;
+  if (!ledger) {
+    analysisEl.textContent = 'N/A';
+    executionEl.textContent = 'N/A';
+    coverageEl.textContent = 'N/A';
+    alertList.innerHTML = '';
+    const li = document.createElement('li');
+    li.className = 'alert-pill alert-info';
+    li.textContent = 'Governance ledger unavailable.';
+    alertList.append(li);
+    tableBody.innerHTML = '';
+    return;
+  }
+
+  const analysisDate = new Date(ledger.analysisTimestamp);
+  analysisEl.textContent = Number.isNaN(analysisDate.getTime())
+    ? ledger.analysisTimestamp
+    : analysisDate.toLocaleString();
+
+  const executionDate = new Date(summary.executionTimestamp ?? summary.generatedAt);
+  executionEl.textContent = Number.isNaN(executionDate.getTime())
+    ? summary.executionTimestamp ?? summary.generatedAt
+    : executionDate.toLocaleString();
+
+  coverageEl.textContent = `${(ledger.commandCoverage * 100).toFixed(1)}%`;
+
+  alertList.innerHTML = '';
+  const alerts = ledger.alerts ?? [];
+  if (alerts.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'alert-pill alert-success';
+    li.textContent = 'All governance surfaces are green.';
+    alertList.append(li);
+  } else {
+    for (const alert of alerts) {
+      const li = document.createElement('li');
+      li.className = `alert-pill alert-${alert.severity}`;
+      const header = document.createElement('strong');
+      header.textContent = alert.summary;
+      const details = document.createElement('span');
+      details.textContent = alert.details.join(' • ');
+      li.append(header, details);
+      alertList.append(li);
+    }
+  }
+
+  tableBody.innerHTML = '';
+  for (const module of ledger.modules ?? []) {
+    const row = document.createElement('tr');
+    const auditLag =
+      typeof module.auditLagDays === 'number'
+        ? `${module.auditLagDays.toFixed(1)} days`
+        : 'Unknown';
+    const notes = module.notes && module.notes.length > 0 ? module.notes.join(', ') : '—';
+    row.innerHTML = `
+      <td>${module.name}</td>
+      <td>${module.custody}</td>
+      <td>${module.status.replace('-', ' ')}</td>
+      <td>${auditLag}</td>
+      <td><code>${module.upgradeScript}</code></td>
+      <td>${notes}</td>
+    `;
+    tableBody.append(row);
+  }
+}
+
 function renderDeployment(summary) {
   const deployment = summary.deployment;
   const networkEl = document.getElementById('deployment-network');
@@ -392,6 +469,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderGovernanceLedger(summary);
   renderDeployment(summary);
   renderAssertions(summary);
   renderTrajectory(summary);
@@ -442,6 +520,7 @@ async function renderSummary(summary) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderGovernanceLedger(summary);
   renderDeployment(summary);
   renderAssertions(summary);
   renderTrajectory(summary);

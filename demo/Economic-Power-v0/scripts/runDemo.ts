@@ -12,6 +12,10 @@ const scenarioSchema = z.object({
   scenarioId: z.string(),
   title: z.string(),
   description: z.string(),
+  analysisTimestamp: z
+    .string()
+    .datetime({ message: 'analysisTimestamp must be an ISO-8601 timestamp' })
+    .optional(),
   network: z.object({
     name: z.string(),
     chainId: z.number(),
@@ -162,10 +166,47 @@ type Assertion = {
   evidence: string[];
 };
 
+type GovernanceLedgerModule = {
+  id: string;
+  name: string;
+  address: string;
+  owner: string;
+  custody: 'owner-controlled' | 'external';
+  status: Scenario['modules'][number]['status'];
+  upgradeScript: string;
+  auditLagDays: number | null;
+  auditStale: boolean;
+  notes: string[];
+};
+
+type GovernanceAlert = {
+  id: string;
+  severity: 'critical' | 'warning' | 'info';
+  summary: string;
+  details: string[];
+};
+
+type GovernanceLedger = {
+  analysisTimestamp: string;
+  ownerSafe: string;
+  governanceSafe: string;
+  treasurySafe: string;
+  threshold: number;
+  commandCoverage: number;
+  coverageNarrative: string;
+  pauseScript: string;
+  resumeScript: string;
+  scripts: string[];
+  modules: GovernanceLedgerModule[];
+  alerts: GovernanceAlert[];
+};
+
 type Summary = {
   scenarioId: string;
   title: string;
   generatedAt: string;
+  analysisTimestamp: string;
+  executionTimestamp: string;
   metrics: {
     totalJobs: number;
     totalAgents: number;
@@ -217,6 +258,7 @@ type Summary = {
     automation: Scenario['automation'];
     observability: Scenario['observability'];
   };
+  governanceLedger: GovernanceLedger;
 };
 
 type OwnerCommandPlan = {
@@ -344,8 +386,10 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
   lines.push('# Owner Command Playbook');
   lines.push('');
   lines.push(
-    'Generated ' +
-      new Date(summary.generatedAt).toLocaleString('en-US', { timeZone: 'UTC' }) +
+    'Generated for analysis window ' +
+      new Date(summary.analysisTimestamp).toLocaleString('en-US', { timeZone: 'UTC' }) +
+      ' • executed ' +
+      new Date(summary.executionTimestamp).toLocaleString('en-US', { timeZone: 'UTC' }) +
       ' (UTC)',
   );
   lines.push('');
@@ -425,6 +469,29 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
   }
   lines.push('');
   lines.push('All commands are multi-sig ready and validated by deterministic CI.');
+  lines.push('');
+  lines.push('## Governance ledger alerts');
+  lines.push('');
+  if (summary.governanceLedger.alerts.length === 0) {
+    lines.push('- All governance surfaces are green.');
+  } else {
+    for (const alert of summary.governanceLedger.alerts) {
+      lines.push(
+        `- [${alert.severity.toUpperCase()}] ${alert.summary} (${alert.details.join('; ')})`,
+      );
+    }
+  }
+  lines.push('');
+  lines.push('## Custody ledger');
+  lines.push('');
+  for (const module of summary.governanceLedger.modules) {
+    const notes = module.notes.length > 0 ? ` — ${module.notes.join(', ')}` : '';
+    const auditLag =
+      module.auditLagDays === null ? 'unknown audit lag' : `${module.auditLagDays} days since audit`;
+    lines.push(
+      `- ${module.name}: ${module.custody}, status ${module.status}, ${auditLag}${notes}`,
+    );
+  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -514,7 +581,7 @@ function computeStabilityIndex(
   return Number(Math.min(0.995, Math.max(0.65, withModules)).toFixed(3));
 }
 
-function computeOwnerCommandCoverage(scenario: Scenario): number {
+function collectCommandScripts(scenario: Scenario): string[] {
   const scripts = new Set<string>();
   for (const control of scenario.owner.controls) {
     scripts.add(control.script);
@@ -530,6 +597,11 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
   for (const upgrade of scenario.safeguards.upgradePaths) {
     scripts.add(upgrade.script);
   }
+  return Array.from(scripts).sort();
+}
+
+function computeOwnerCommandCoverage(scenario: Scenario): number {
+  const scripts = collectCommandScripts(scenario);
   const criticalSurfaces =
     scenario.jobs.length +
     scenario.validators.length +
@@ -537,7 +609,7 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
     scenario.owner.controls.length +
     scenario.modules.length +
     2;
-  const coverage = scripts.size / Math.max(criticalSurfaces, 1);
+  const coverage = scripts.length / Math.max(criticalSurfaces, 1);
   return Number(Math.min(1, coverage).toFixed(3));
 }
 
@@ -559,6 +631,132 @@ function computeSovereignControlScore(scenario: Scenario): number {
   }
   const controlScore = controlled / Math.max(scenario.modules.length, 1);
   return Number(Math.min(1, Math.max(0, controlScore)).toFixed(3));
+}
+
+function buildGovernanceLedger(
+  scenario: Scenario,
+  summary: Summary,
+  ownerPlan: OwnerCommandPlan,
+  analysisTimestamp: string,
+): GovernanceLedger {
+  const scripts = collectCommandScripts(scenario);
+  const governanceOwners = new Set([
+    scenario.owner.governanceSafe.toLowerCase(),
+    scenario.owner.operator.toLowerCase(),
+    scenario.treasury.ownerSafe.toLowerCase(),
+  ]);
+  const parsedAnalysis = new Date(analysisTimestamp);
+  const referenceDate = Number.isNaN(parsedAnalysis.getTime())
+    ? new Date(summary.generatedAt)
+    : parsedAnalysis;
+
+  const modules: GovernanceLedgerModule[] = scenario.modules.map((module) => {
+    const moduleOwner = module.owner.toLowerCase();
+    const custody: GovernanceLedgerModule['custody'] = governanceOwners.has(moduleOwner)
+      ? 'owner-controlled'
+      : 'external';
+    const auditDate = new Date(module.lastAudit);
+    let auditLagDays: number | null = null;
+    if (!Number.isNaN(auditDate.getTime())) {
+      const diffMs = Math.max(referenceDate.getTime() - auditDate.getTime(), 0);
+      auditLagDays = Number((diffMs / (1000 * 60 * 60 * 24)).toFixed(1));
+    }
+    const auditStale = auditLagDays !== null && auditLagDays > 90;
+    const notes: string[] = [];
+    if (module.status === 'pending-upgrade') {
+      notes.push('Pending upgrade');
+    }
+    if (auditStale) {
+      notes.push('Audit refresh required');
+    }
+    if (custody === 'external') {
+      notes.push('Custody outside owner multi-sig');
+    }
+    return {
+      id: module.id,
+      name: module.name,
+      address: module.address,
+      owner: module.owner,
+      custody,
+      status: module.status,
+      upgradeScript: module.upgradeScript,
+      auditLagDays,
+      auditStale,
+      notes,
+    };
+  });
+
+  const alerts: GovernanceAlert[] = [];
+  if (summary.metrics.ownerCommandCoverage < 0.9) {
+    alerts.push({
+      id: 'coverage-gap',
+      severity: 'warning',
+      summary: 'Command coverage below 90% – script additional surfaces to reach full control.',
+      details: [
+        `Coverage ${(summary.metrics.ownerCommandCoverage * 100).toFixed(1)}%`,
+        'Add scripts for remaining modules, validators, or adapters to close the gap.',
+      ],
+    });
+  }
+
+  const externalModules = modules.filter((module) => module.custody === 'external');
+  if (externalModules.length > 0) {
+    alerts.push({
+      id: 'external-custody',
+      severity: 'critical',
+      summary: `External custody detected for ${externalModules.length} module(s).`,
+      details: externalModules.map((module) => `${module.name} → ${module.owner}`),
+    });
+  }
+
+  const staleModules = modules.filter((module) => module.auditStale);
+  if (staleModules.length > 0) {
+    alerts.push({
+      id: 'stale-audit',
+      severity: 'warning',
+      summary: `Audit refresh required for ${staleModules.length} module(s).`,
+      details: staleModules.map((module) => {
+        const lag = module.auditLagDays === null ? 'unknown' : `${module.auditLagDays} days`;
+        return `${module.name} • Last audit ${lag} ago`;
+      }),
+    });
+  }
+
+  const pendingUpgradeModules = modules.filter((module) => module.status === 'pending-upgrade');
+  if (pendingUpgradeModules.length > 0) {
+    alerts.push({
+      id: 'pending-upgrade',
+      severity: 'info',
+      summary: `Queued upgrades ready for ${pendingUpgradeModules.length} module(s).`,
+      details: pendingUpgradeModules.map(
+        (module) => `${module.name} • Execute ${module.upgradeScript} to promote`,
+      ),
+    });
+  }
+
+  if (summary.metrics.sovereignControlScore < 1) {
+    alerts.push({
+      id: 'sovereign-score',
+      severity: 'warning',
+      summary: 'Sovereign control score below 100% – migrate remaining modules to owner safes.',
+      details: [`Score ${(summary.metrics.sovereignControlScore * 100).toFixed(1)}%`],
+    });
+  }
+
+  return {
+    analysisTimestamp: referenceDate.toISOString(),
+    ownerSafe: scenario.owner.operator,
+    governanceSafe: scenario.owner.governanceSafe,
+    treasurySafe: scenario.treasury.ownerSafe,
+    threshold: scenario.owner.threshold,
+    commandCoverage: summary.metrics.ownerCommandCoverage,
+    coverageNarrative: ownerPlan.coverageNarrative,
+    pauseScript: scenario.safeguards.pauseScript,
+    resumeScript: scenario.safeguards.resumeScript,
+    scripts,
+    modules,
+    alerts,
+  };
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -752,7 +950,11 @@ function generateMermaidTimeline(summary: Summary): string {
   return `gantt\n    title Economic Power Execution Timeline\n    dateFormat X\n${lines}`;
 }
 
-function synthesiseSummary(context: SimulationContext): Summary {
+function synthesiseSummary(
+  context: SimulationContext,
+  analysisTimestamp: string,
+  executionTimestamp: string,
+): Summary {
   const { scenario } = context;
   const assignmentConfidence =
     context.validatorConfidence / Math.max(context.assignments.length, 1);
@@ -764,7 +966,9 @@ function synthesiseSummary(context: SimulationContext): Summary {
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
-    generatedAt: new Date().toISOString(),
+    generatedAt: analysisTimestamp,
+    analysisTimestamp,
+    executionTimestamp,
     metrics: {
       totalJobs: scenario.jobs.length,
       totalAgents: scenario.agents.length,
@@ -835,6 +1039,20 @@ function synthesiseSummary(context: SimulationContext): Summary {
       stablecoinAdapters: scenario.stablecoinAdapters,
       automation: scenario.automation,
       observability: scenario.observability,
+    },
+    governanceLedger: {
+      analysisTimestamp,
+      ownerSafe: scenario.owner.operator,
+      governanceSafe: scenario.owner.governanceSafe,
+      treasurySafe: scenario.treasury.ownerSafe,
+      threshold: scenario.owner.threshold,
+      commandCoverage: ownerCoverage,
+      coverageNarrative: coverageNarrative(ownerCoverage),
+      pauseScript: scenario.safeguards.pauseScript,
+      resumeScript: scenario.safeguards.resumeScript,
+      scripts: collectCommandScripts(scenario),
+      modules: [],
+      alerts: [],
     },
   };
 }
@@ -1087,7 +1305,9 @@ export async function runScenario(
     });
   }
 
-  const summary = synthesiseSummary(context);
+  const executionTimestamp = new Date().toISOString();
+  const analysisTimestamp = workingScenario.analysisTimestamp ?? executionTimestamp;
+  const summary = synthesiseSummary(context, analysisTimestamp, executionTimestamp);
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
@@ -1098,9 +1318,13 @@ export async function runScenario(
     ? passCount / summary.assertions.length
     : 1;
   summary.metrics.assertionPassRate = Number(passRate.toFixed(3));
-  summary.ownerCommandPlan = buildOwnerCommandPlan(
+  const ownerPlan = buildOwnerCommandPlan(workingScenario, summary.metrics.ownerCommandCoverage);
+  summary.ownerCommandPlan = ownerPlan;
+  summary.governanceLedger = buildGovernanceLedger(
     workingScenario,
-    summary.metrics.ownerCommandCoverage,
+    summary,
+    ownerPlan,
+    analysisTimestamp,
   );
   return summary;
 }
@@ -1158,6 +1382,10 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-command.mmd'),
     `${summary.ownerCommandMermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-governance-ledger.json'),
+    JSON.stringify(summary.governanceLedger, null, 2),
   );
   await fs.writeFile(
     path.join(outputDir, 'treasury-trajectory.json'),

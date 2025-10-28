@@ -444,6 +444,77 @@ tr:hover td {
   background: rgba(56, 189, 248, 0.07);
 }
 
+.governance-ledger-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.governance-ledger-meta p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.alert-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: 0 18px 32px rgba(4, 8, 20, 0.45);
+}
+
+.alert-pill strong {
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.alert-pill span {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.alert-critical {
+  border-color: rgba(248, 113, 113, 0.45);
+  background: rgba(64, 10, 22, 0.6);
+}
+
+.alert-warning {
+  border-color: rgba(250, 204, 21, 0.5);
+  background: rgba(82, 60, 7, 0.55);
+}
+
+.alert-info {
+  border-color: rgba(96, 165, 250, 0.45);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.alert-success {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(10, 36, 22, 0.55);
+}
+
+#ledger-table tbody tr:nth-child(odd) {
+  background: rgba(15, 25, 48, 0.45);
+}
+
+#ledger-table td {
+  vertical-align: top;
+}
+
 .mermaid {
   margin-top: 1.5rem;
   background: rgba(9, 14, 28, 0.9);

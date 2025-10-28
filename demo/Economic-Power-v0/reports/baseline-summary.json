@@ -1,7 +1,9 @@
 {
   "scenarioId": "economic-power-v0-baseline",
   "title": "AGIJobs Economic Power Launch",
-  "generatedAt": "2025-10-28T13:59:52.100Z",
+  "generatedAt": "2025-02-01T00:00:00.000Z",
+  "analysisTimestamp": "2025-02-01T00:00:00.000Z",
+  "executionTimestamp": "2025-10-28T15:06:06.385Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -590,5 +592,118 @@
         "pagerduty://agi-critical"
       ]
     }
+  },
+  "governanceLedger": {
+    "analysisTimestamp": "2025-02-01T00:00:00.000Z",
+    "ownerSafe": "0xAGIJobsOperator00000000000000000000000000002",
+    "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
+    "treasurySafe": "0xAGIJobsOwnerSafe0000000000000000000000001",
+    "threshold": 4,
+    "commandCoverage": 0.227,
+    "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks.",
+    "pauseScript": "npm run owner:system-pause",
+    "resumeScript": "npm run owner:update-all",
+    "scripts": [
+      "npm run owner:audit",
+      "npm run owner:parameters",
+      "npm run owner:system-pause",
+      "npm run owner:update-all",
+      "npm run owner:upgrade"
+    ],
+    "modules": [
+      {
+        "id": "job-registry",
+        "name": "JobRegistry",
+        "address": "0xA100000000000000000000000000000000000001",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "active",
+        "upgradeScript": "npm run owner:update-all",
+        "auditLagDays": 20,
+        "auditStale": false,
+        "notes": []
+      },
+      {
+        "id": "stake-manager",
+        "name": "StakeManager",
+        "address": "0xA100000000000000000000000000000000000002",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "active",
+        "upgradeScript": "npm run owner:parameters",
+        "auditLagDays": 28,
+        "auditStale": false,
+        "notes": []
+      },
+      {
+        "id": "validation-module",
+        "name": "ValidationModule",
+        "address": "0xA100000000000000000000000000000000000003",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "pending-upgrade",
+        "upgradeScript": "npm run owner:upgrade",
+        "auditLagDays": 48,
+        "auditStale": false,
+        "notes": [
+          "Pending upgrade"
+        ]
+      },
+      {
+        "id": "reputation-engine",
+        "name": "ReputationEngine",
+        "address": "0xA100000000000000000000000000000000000004",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "active",
+        "upgradeScript": "npm run owner:update-all",
+        "auditLagDays": 35,
+        "auditStale": false,
+        "notes": []
+      },
+      {
+        "id": "dispute-module",
+        "name": "DisputeModule",
+        "address": "0xA100000000000000000000000000000000000005",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "active",
+        "upgradeScript": "npm run owner:upgrade",
+        "auditLagDays": 23,
+        "auditStale": false,
+        "notes": []
+      },
+      {
+        "id": "certificate-nft",
+        "name": "CertificateNFT",
+        "address": "0xA100000000000000000000000000000000000006",
+        "owner": "0xAGIJobsGovernor0000000000000000000000003",
+        "custody": "owner-controlled",
+        "status": "active",
+        "upgradeScript": "npm run owner:update-all",
+        "auditLagDays": 30,
+        "auditStale": false,
+        "notes": []
+      }
+    ],
+    "alerts": [
+      {
+        "id": "coverage-gap",
+        "severity": "warning",
+        "summary": "Command coverage below 90% – script additional surfaces to reach full control.",
+        "details": [
+          "Coverage 22.7%",
+          "Add scripts for remaining modules, validators, or adapters to close the gap."
+        ]
+      },
+      {
+        "id": "pending-upgrade",
+        "severity": "info",
+        "summary": "Queued upgrades ready for 1 module(s).",
+        "details": [
+          "ValidationModule • Execute npm run owner:upgrade to promote"
+        ]
+      }
+    ]
   }
 }
