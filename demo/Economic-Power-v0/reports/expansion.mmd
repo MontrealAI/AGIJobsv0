@@ -1,0 +1,19 @@
+graph TD
+    Mainnet[Ethereum Mainnet Treasury]
+    Mainnet -->|Bridge ops| Arbitrum_One[Arbitrum One\nPILOT\n1,800 jobs/day\n$0.18 avg tx]
+    Mainnet -->|Bridge ops| Optimism[Optimism\nREADY\n2,200 jobs/day\n$0.21 avg tx]
+    Mainnet -->|Bridge ops| Base[Base\nLIVE\n2,600 jobs/day\n$0.16 avg tx]
+    Wave_phase_1[Testnet Beta Swarm\nStart +0h\nReadiness 92%]
+      Wave_phase_1 --> Objective_0_0[Simulate 500 concurrent jobs]
+      Wave_phase_1 --> Objective_0_1[Stress validator committee rotation]
+      Wave_phase_1 --> Objective_0_2[Collect latency telemetry]
+    Wave_phase_1 --> Wave_phase_2
+    Wave_phase_2[Mainnet Pilot Guild\nStart +120h\nReadiness 88%]
+      Wave_phase_2 --> Objective_1_0[Onboard curated Fortune 100 tasks]
+      Wave_phase_2 --> Objective_1_1[Validate fiat on-ramp flows]
+      Wave_phase_2 --> Objective_1_2[Exercise dispute escalations]
+    Wave_phase_2 --> Wave_phase_3
+    Wave_phase_3[Global Unlocked Mesh\nStart +240h\nReadiness 81%]
+      Wave_phase_3 --> Objective_2_0[Open participation to global agents]
+      Wave_phase_3 --> Objective_2_1[Activate cross-chain liquidity gauges]
+      Wave_phase_3 --> Objective_2_2[Launch policy observatory]

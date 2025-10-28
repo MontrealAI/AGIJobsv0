@@ -39,7 +39,7 @@
     {
       "module": "ValidationModule",
       "script": "npm run owner:upgrade",
-      "description": "Activates the upgraded validator commit–reveal consensus parameters."
+      "description": "Activates the upgraded validator commit\u2013reveal consensus parameters."
     },
     {
       "module": "StakeManager",

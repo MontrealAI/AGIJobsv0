@@ -24,8 +24,10 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `summary.json` – canonical metrics ledger (ROI, payback, validator confidence, automation score).
 - `flow.mmd` – architecture graph for immediate inclusion in runbooks and dashboards.
 - `timeline.mmd` – Gantt macro for orchestration cadence.
+- `expansion.mmd` – cross-chain expansion graph capturing bridge throughput and deployment waves.
 - `owner-control.json` – up-to-the-minute control matrix for the owner’s multi-sig.
 - `owner-sovereignty.json` – sovereign safety mesh blueprint (pause/resume drills, circuit breakers, upgrade commands, and coverage metrics).
+- `global-expansion.json` – structured dataset of bridge capacity, compliance posture, unstoppable mirrors, and runway metrics for analytics pipelines.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
 
@@ -89,10 +91,21 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
+- New capital velocity, validator utilisation, and treasury runway gauges so operators can reason about scale and survivability instantly.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
 - Live Mermaid rendering of the architecture and timeline.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Global expansion matrix for bridge status, deployment waves, and unstoppable access surfaces.
+
+## Global expansion oversight
+
+Every scenario now packages a `global-expansion.json` and `expansion.mmd` artefact so the owner can trace where throughput comes from, which bridges are online, and how unstoppable access is hardened. The dashboard exposes:
+
+- **Bridge posture** – throughput, average gas cost, and the operations safe responsible for each L2 ramp.
+- **Deployment waves** – readiness scoring with explicit objectives, letting the owner fast-track or pause regional launches.
+- **Unstoppable mesh** – Tor/IPFS/Arweave mirrors and jurisdictional policies surfaced for instant compliance sign-off.
+- **Runway analytics** – capital velocity, validator utilisation, and treasury runway metrics update with each run, proving the economy’s survivability.
 
 Launch with:
 
@@ -125,5 +138,6 @@ This guarantees a **fully green v2 CI gate**. Pull requests and `main` share ide
 - ✅ Owner-first command catalog for every mutable lever.
 - ✅ Observability artefacts (Mermaid, JSON, HTML dashboard).
 - ✅ Non-technical operations workflow from single command to actionable dashboard.
+- ✅ Planetary expansion dossier marrying throughput, compliance and unstoppable infrastructure.
 
 Run the loop, inspect the telemetry, execute the owner change-set, and step into an economy-scale command role.

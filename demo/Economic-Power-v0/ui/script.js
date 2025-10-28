@@ -50,6 +50,24 @@ const metricMap = [
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
     description: 'Share of critical surfaces with deterministic owner command paths.',
   },
+  {
+    id: 'capitalVelocity',
+    label: 'Capital Velocity',
+    formatter: (value) => `${value.toFixed(2)}×/day`,
+    description: 'Cycle-adjusted capital turnover across orchestrated jobs.',
+  },
+  {
+    id: 'validatorUtilization',
+    label: 'Validator Utilisation',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Share of the validator constellation actively securing work.',
+  },
+  {
+    id: 'treasuryRunwayDays',
+    label: 'Treasury Runway',
+    formatter: (value) => `${value.toFixed(1)} days`,
+    description: 'Runway combining treasury balance and operations buffer at current burn.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -163,13 +181,71 @@ function renderSovereignty(summary) {
   }
 }
 
+function renderExpansion(summary) {
+  const bridgesBody = document.querySelector('#l2-bridges-table tbody');
+  const wavesBody = document.querySelector('#waves-table tbody');
+  if (!bridgesBody || !wavesBody) {
+    return;
+  }
+  bridgesBody.innerHTML = '';
+  for (const bridge of summary.expansion.l2Bridges) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${bridge.network}</td>
+      <td>${bridge.status.toUpperCase()}</td>
+      <td>${bridge.throughputPerDay.toLocaleString('en-US')} jobs/day</td>
+      <td>$${bridge.txCostUsd.toFixed(2)}</td>
+      <td><code>${bridge.operationsSafe}</code></td>
+    `;
+    bridgesBody.append(row);
+  }
+
+  wavesBody.innerHTML = '';
+  for (const wave of summary.expansion.deploymentWaves) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${wave.title}</strong></td>
+      <td>+${wave.startHour}h</td>
+      <td>${(wave.readinessScore * 100).toFixed(1)}%</td>
+      <td>${wave.objectives.map((objective) => `<span class="objective-chip">${objective}</span>`).join('<br />')}</td>
+    `;
+    wavesBody.append(row);
+  }
+
+  const jurisdictionList = document.getElementById('jurisdiction-list');
+  const policyList = document.getElementById('policy-list');
+  const unstoppableAccess = document.getElementById('unstoppable-access');
+  const unstoppableMirrors = document.getElementById('unstoppable-mirrors');
+
+  const fillList = (element, items) => {
+    if (!element) return;
+    element.innerHTML = '';
+    for (const item of items) {
+      const li = document.createElement('li');
+      li.textContent = item;
+      element.append(li);
+    }
+  };
+
+  fillList(jurisdictionList, summary.expansion.compliance.jurisdictions);
+  fillList(policyList, summary.expansion.compliance.policies);
+  fillList(unstoppableAccess, summary.expansion.compliance.unstoppableAccess);
+  fillList(unstoppableMirrors, summary.expansion.compliance.unstoppableMirrors);
+}
+
 async function renderMermaid(summary) {
   mermaid.initialize({ startOnLoad: false, theme: 'dark' });
   const flow = document.getElementById('mermaid-flow');
   const timeline = document.getElementById('mermaid-timeline');
+  const expansion = document.getElementById('mermaid-expansion');
   flow.textContent = summary.mermaidFlow;
   timeline.textContent = summary.mermaidTimeline;
-  await mermaid.run({ nodes: [flow, timeline] });
+  if (expansion) {
+    expansion.textContent = summary.mermaidExpansion;
+    await mermaid.run({ nodes: [flow, timeline, expansion] });
+  } else {
+    await mermaid.run({ nodes: [flow, timeline] });
+  }
 }
 
 function updateFooter(summary) {
@@ -183,6 +259,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderExpansion(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
@@ -230,6 +307,7 @@ async function renderSummary(summary) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderExpansion(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
