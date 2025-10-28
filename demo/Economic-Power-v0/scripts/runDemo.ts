@@ -439,13 +439,8 @@ const DEFAULT_OUTPUT_DIR = path.join(__dirname, '..', 'reports');
 const DEFAULT_SUMMARY_FILE = path.join(DEFAULT_OUTPUT_DIR, 'summary.json');
 const DEFAULT_FLOW_FILE = path.join(DEFAULT_OUTPUT_DIR, 'flow.mmd');
 const DEFAULT_TIMELINE_FILE = path.join(DEFAULT_OUTPUT_DIR, 'timeline.mmd');
-const BASELINE_UI_SUMMARY = path.join(
-  __dirname,
-  '..',
-  'ui',
-  'data',
-  'default-summary.json',
-);
+const UI_DEFAULT_SUMMARY = path.join(__dirname, '..', 'ui', 'data', 'default-summary.json');
+const BASELINE_CI_SUMMARY = path.join(DEFAULT_OUTPUT_DIR, 'baseline-summary.json');
 
 function pseudoRandom(seed: string): number {
   const hash = crypto.createHash('sha256').update(seed).digest('hex');
@@ -1110,7 +1105,11 @@ export async function runScenario(
   return summary;
 }
 
-async function writeOutputs(summary: Summary, outputDir: string): Promise<void> {
+async function writeOutputs(
+  summary: Summary,
+  outputDir: string,
+  options: { updateUiSummary?: boolean } = {},
+): Promise<void> {
   await ensureDir(outputDir);
   await fs.writeFile(
     path.join(outputDir, 'summary.json'),
@@ -1172,6 +1171,11 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
     path.join(outputDir, 'owner-command-plan.md'),
     generateOwnerCommandMarkdown(summary),
   );
+
+  if (options.updateUiSummary) {
+    await ensureDir(path.dirname(UI_DEFAULT_SUMMARY));
+    await fs.writeFile(UI_DEFAULT_SUMMARY, JSON.stringify(summary, null, 2));
+  }
 }
 
 function compareWithBaseline(summary: Summary, baselinePath: string): void {
@@ -1241,9 +1245,9 @@ export async function main(): Promise<void> {
   const summary = await runScenario(scenario, {
     interactive: argv.interactive,
   });
-  await writeOutputs(summary, argv.output);
+  await writeOutputs(summary, argv.output, { updateUiSummary: !argv.ci });
   if (argv.ci) {
-    compareWithBaseline(summary, BASELINE_UI_SUMMARY);
+    compareWithBaseline(summary, BASELINE_CI_SUMMARY);
   }
   output.write(`\n✅ Economic Power summary written to ${argv.output}\n`);
 }
