@@ -1,0 +1,102 @@
+{
+  "network": {
+    "name": "Ethereum Mainnet",
+    "chainId": 1,
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR-KEY",
+    "explorer": "https://etherscan.io",
+    "deploymentRegistry": "deployment-config/mainnet.json"
+  },
+  "treasuryOwner": "0xAGIJobsOwnerSafe0000000000000000000000001",
+  "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
+  "modules": [
+    {
+      "id": "job-registry",
+      "name": "JobRegistry",
+      "address": "0xA100000000000000000000000000000000000001",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Primary registry coordinating job lifecycle, escrow, and agent authorization gates.",
+      "lastAudit": "2025-01-12T00:00:00.000Z"
+    },
+    {
+      "id": "stake-manager",
+      "name": "StakeManager",
+      "address": "0xA100000000000000000000000000000000000002",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:parameters",
+      "status": "active",
+      "description": "Manages agent and validator staking positions, slashing, and economic alignment loops.",
+      "lastAudit": "2025-01-04T00:00:00.000Z"
+    },
+    {
+      "id": "validation-module",
+      "name": "ValidationModule",
+      "address": "0xA100000000000000000000000000000000000003",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:upgrade",
+      "status": "pending-upgrade",
+      "description": "Commit–reveal validator consensus spine enforcing deliverable correctness.",
+      "lastAudit": "2024-12-15T00:00:00.000Z"
+    },
+    {
+      "id": "reputation-engine",
+      "name": "ReputationEngine",
+      "address": "0xA100000000000000000000000000000000000004",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Aggregates performance signals to prioritise elite agents and validators in the matching fabric.",
+      "lastAudit": "2024-12-28T00:00:00.000Z"
+    },
+    {
+      "id": "dispute-module",
+      "name": "DisputeModule",
+      "address": "0xA100000000000000000000000000000000000005",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:upgrade",
+      "status": "active",
+      "description": "Escalation and arbitration flow for contested deliverables with automated jury selection.",
+      "lastAudit": "2025-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "certificate-nft",
+      "name": "CertificateNFT",
+      "address": "0xA100000000000000000000000000000000000006",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Mints proof-of-completion artefacts for employers and downstream compliance attestations.",
+      "lastAudit": "2025-01-02T00:00:00.000Z"
+    }
+  ],
+  "stablecoinAdapters": [
+    {
+      "name": "USDC v1",
+      "swapFeeBps": 12,
+      "slippageBps": 25
+    }
+  ],
+  "automation": {
+    "matchingEngine": "services/matching-engine",
+    "validatorOrchestrator": "services/validator-orchestrator",
+    "notificationHub": "services/notification-hub"
+  },
+  "observability": {
+    "dashboards": [
+      "monitoring/grafana/economic-flightdeck.json",
+      "monitoring/grafana/validator-health.json"
+    ],
+    "alertChannels": [
+      "slack://agi-ops-economic-power",
+      "pagerduty://agi-critical"
+    ]
+  },
+  "sovereignControlScore": 1
+}

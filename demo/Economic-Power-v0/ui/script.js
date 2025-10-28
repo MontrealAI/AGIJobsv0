@@ -50,6 +50,18 @@ const metricMap = [
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
     description: 'Share of critical surfaces with deterministic owner command paths.',
   },
+  {
+    id: 'treasuryAfterRun',
+    label: 'Treasury After Run (AGI)',
+    formatter: (value) => formatNumber(value),
+    description: 'Treasury balance projected after validator rewards and payouts.',
+  },
+  {
+    id: 'sovereignControlScore',
+    label: 'Sovereign Control Score',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Share of smart contracts fully custodied by owner multi-sig safes.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -163,6 +175,97 @@ function renderSovereignty(summary) {
   }
 }
 
+function renderDeployment(summary) {
+  const deployment = summary.deployment;
+  const networkEl = document.getElementById('deployment-network');
+  const explorerEl = document.getElementById('deployment-explorer');
+  const treasuryEl = document.getElementById('deployment-treasury');
+  const governanceEl = document.getElementById('deployment-governance');
+  const scoreEl = document.getElementById('deployment-score');
+  const automationList = document.getElementById('deployment-automation');
+  const adapterList = document.getElementById('deployment-adapters');
+  const tableBody = document.querySelector('#deployment-table tbody');
+  const observabilityList = document.getElementById('deployment-observability');
+
+  if (!deployment) {
+    networkEl.textContent = 'No deployment data available';
+    explorerEl.textContent = '';
+    explorerEl.removeAttribute('href');
+    treasuryEl.textContent = 'N/A';
+    governanceEl.textContent = 'N/A';
+    scoreEl.textContent = 'N/A';
+    automationList.innerHTML = '';
+    adapterList.innerHTML = '';
+    tableBody.innerHTML = '';
+    observabilityList.innerHTML = '';
+    return;
+  }
+
+  networkEl.textContent = `${deployment.network.name} • Chain ID ${deployment.network.chainId}`;
+  const explorerLabel = deployment.network.explorer.replace(/^https?:\/\//, '');
+  explorerEl.href = deployment.network.explorer;
+  explorerEl.textContent = explorerLabel || 'Open explorer';
+  treasuryEl.textContent = deployment.treasuryOwner;
+  governanceEl.textContent = deployment.governanceSafe;
+  scoreEl.textContent = `${(summary.metrics.sovereignControlScore * 100).toFixed(1)}%`;
+
+  automationList.innerHTML = '';
+  const automationEntries = [
+    ['Matching engine', deployment.automation.matchingEngine],
+    ['Validator orchestrator', deployment.automation.validatorOrchestrator],
+    ['Notification hub', deployment.automation.notificationHub],
+  ];
+  for (const [label, value] of automationEntries) {
+    const li = document.createElement('li');
+    li.textContent = `${label}: ${value}`;
+    automationList.append(li);
+  }
+
+  adapterList.innerHTML = '';
+  for (const adapter of deployment.stablecoinAdapters) {
+    const li = document.createElement('li');
+    li.textContent = `${adapter.name} • swap ${adapter.swapFeeBps} bps • slippage ${adapter.slippageBps} bps`;
+    adapterList.append(li);
+  }
+
+  tableBody.innerHTML = '';
+  for (const module of deployment.modules) {
+    const row = document.createElement('tr');
+    const lastAudit = new Date(module.lastAudit);
+    const auditDisplay = Number.isNaN(lastAudit.getTime())
+      ? module.lastAudit
+      : lastAudit.toLocaleDateString();
+    row.innerHTML = `
+      <td>${module.name}</td>
+      <td><code>${module.address}</code></td>
+      <td>${module.version}</td>
+      <td><code>${module.owner}</code></td>
+      <td>${module.status.replace('-', ' ')}</td>
+      <td>${auditDisplay}</td>
+      <td><code>${module.upgradeScript}</code></td>
+    `;
+    const descriptionRow = document.createElement('tr');
+    const descriptionCell = document.createElement('td');
+    descriptionCell.colSpan = 7;
+    descriptionCell.className = 'module-description-cell';
+    descriptionCell.textContent = module.description;
+    descriptionRow.append(descriptionCell);
+    tableBody.append(row, descriptionRow);
+  }
+
+  observabilityList.innerHTML = '';
+  for (const dashboard of deployment.observability.dashboards) {
+    const li = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = dashboard;
+    link.textContent = dashboard;
+    link.target = '_blank';
+    link.rel = 'noreferrer noopener';
+    li.append(link);
+    observabilityList.append(li);
+  }
+}
+
 async function renderMermaid(summary) {
   mermaid.initialize({ startOnLoad: false, theme: 'dark' });
   const flow = document.getElementById('mermaid-flow');
@@ -183,6 +286,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderDeployment(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
@@ -230,6 +334,7 @@ async function renderSummary(summary) {
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
+  renderDeployment(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;

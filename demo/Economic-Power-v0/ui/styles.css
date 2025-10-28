@@ -124,6 +124,26 @@ main {
   box-shadow: 0 25px 45px rgba(8, 20, 40, 0.55);
 }
 
+.panel-subheader {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.panel-subheader h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.panel-subheader p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
 .sovereignty-grid {
   display: grid;
   gap: 1.5rem;
@@ -196,9 +216,72 @@ main {
   color: var(--text-secondary);
 }
 
+.deployment-meta {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.deployment-meta h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+}
+
+.deployment-meta p,
+.deployment-meta ul {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.deployment-meta code {
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.deployment-meta a {
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.deployment-meta a:hover {
+  text-decoration: underline;
+}
+
+.link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-list li a {
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.link-list li a:hover {
+  text-decoration: underline;
+}
+
 .table-wrapper {
   overflow-x: auto;
   margin-top: 1rem;
+}
+
+#deployment-table code {
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
 }
 
 table {
@@ -223,6 +306,14 @@ tbody td {
   padding: 0.8rem 1rem;
   border-top: 1px solid rgba(94, 234, 212, 0.15);
   color: rgba(241, 245, 249, 0.9);
+}
+
+.module-description-cell {
+  padding: 0.65rem 1rem 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-top: 1px solid rgba(94, 234, 212, 0.1);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 
 tr:hover td {

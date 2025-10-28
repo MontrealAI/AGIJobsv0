@@ -90,6 +90,61 @@
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="deployment-heading">
+        <div class="panel-header">
+          <h2 id="deployment-heading">On-chain control fabric</h2>
+          <p>
+            Full module inventory under the owner multi-sig. Verify address custody, audit freshness, and
+            upgrade readiness before executing production changes.
+          </p>
+        </div>
+        <div class="deployment-meta" role="group" aria-label="Deployment overview">
+          <div>
+            <h3>Network</h3>
+            <p id="deployment-network"></p>
+            <p>
+              <strong>Explorer:</strong>
+              <a id="deployment-explorer" href="#" target="_blank" rel="noreferrer noopener">View registry</a>
+            </p>
+          </div>
+          <div>
+            <h3>Control safes</h3>
+            <p><strong>Treasury owner:</strong> <code id="deployment-treasury"></code></p>
+            <p><strong>Governance safe:</strong> <code id="deployment-governance"></code></p>
+            <p><strong>Sovereign control score:</strong> <span id="deployment-score"></span></p>
+          </div>
+          <div>
+            <h3>Automation &amp; adapters</h3>
+            <ul id="deployment-automation"></ul>
+            <ul id="deployment-adapters"></ul>
+          </div>
+        </div>
+        <div class="panel-subheader">
+          <h3>Module custody matrix</h3>
+          <p>Every module remains under deterministic owner control with fresh security attestations.</p>
+        </div>
+        <div class="table-wrapper">
+          <table id="deployment-table">
+            <thead>
+              <tr>
+                <th>Module</th>
+                <th>Address</th>
+                <th>Version</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Last audit</th>
+                <th>Upgrade command</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="panel-subheader">
+          <h3>Observability links</h3>
+        </div>
+        <ul id="deployment-observability" class="link-list"></ul>
+      </section>
+
       <section class="panel" aria-labelledby="assignment-heading">
         <div class="panel-header">
           <h2 id="assignment-heading">Job deployment map</h2>

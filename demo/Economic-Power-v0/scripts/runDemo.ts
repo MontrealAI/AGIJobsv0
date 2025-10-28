@@ -82,6 +82,19 @@ const scenarioSchema = z.object({
       slippageBps: z.number(),
     }),
   ),
+  modules: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      address: z.string(),
+      version: z.string(),
+      owner: z.string(),
+      upgradeScript: z.string(),
+      status: z.enum(['active', 'pending-upgrade', 'paused', 'deprecated']),
+      description: z.string(),
+      lastAudit: z.string().datetime({ message: 'lastAudit must be an ISO-8601 timestamp' }),
+    }),
+  ),
   automation: z.object({
     matchingEngine: z.string(),
     validatorOrchestrator: z.string(),
@@ -159,6 +172,7 @@ type Summary = {
     riskMitigationScore: number;
     stabilityIndex: number;
     ownerCommandCoverage: number;
+    sovereignControlScore: number;
   };
   ownerControl: {
     threshold: string;
@@ -177,6 +191,15 @@ type Summary = {
   assignments: Assignment[];
   mermaidFlow: string;
   mermaidTimeline: string;
+  deployment: {
+    network: Scenario['network'];
+    treasuryOwner: Scenario['treasury']['ownerSafe'];
+    governanceSafe: Scenario['owner']['governanceSafe'];
+    modules: Scenario['modules'];
+    stablecoinAdapters: Scenario['stablecoinAdapters'];
+    automation: Scenario['automation'];
+    observability: Scenario['observability'];
+  };
 };
 
 const DEFAULT_SCENARIO = path.join(
@@ -244,13 +267,30 @@ function computeStabilityIndex(
   const breakerBonus = scenario.safeguards.circuitBreakers.length * 0.015;
   const automationBonus =
     (context.automationLift / Math.max(context.assignments.length, 1)) * 0.04;
+  const activeModules = scenario.modules.filter(
+    (module) => module.status === 'active',
+  ).length;
+  const activeRatio = activeModules / Math.max(scenario.modules.length, 1);
+  const now = Date.now();
+  const auditFreshness =
+    scenario.modules.reduce((acc, module) => {
+      const parsed = Date.parse(module.lastAudit);
+      if (Number.isNaN(parsed)) {
+        return acc;
+      }
+      const daysSince = (now - parsed) / (1000 * 60 * 60 * 24);
+      const freshness = Math.max(0, 1 - Math.min(daysSince / 180, 1));
+      return acc + freshness;
+    }, 0) / Math.max(scenario.modules.length, 1);
+  const moduleBonus = activeRatio * 0.03 + auditFreshness * 0.02;
   const base =
     0.78 +
     (averageReliability - 0.95) * 0.5 -
     averageRisk * 0.32 +
     breakerBonus +
     automationBonus;
-  return Number(Math.min(0.995, Math.max(0.65, base)).toFixed(3));
+  const withModules = base + moduleBonus;
+  return Number(Math.min(0.995, Math.max(0.65, withModules)).toFixed(3));
 }
 
 function computeOwnerCommandCoverage(scenario: Scenario): number {
@@ -260,6 +300,9 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
   }
   scripts.add(scenario.safeguards.pauseScript);
   scripts.add(scenario.safeguards.resumeScript);
+  for (const module of scenario.modules) {
+    scripts.add(module.upgradeScript);
+  }
   for (const circuit of scenario.safeguards.circuitBreakers) {
     scripts.add(circuit.action);
   }
@@ -271,9 +314,30 @@ function computeOwnerCommandCoverage(scenario: Scenario): number {
     scenario.validators.length +
     scenario.stablecoinAdapters.length +
     scenario.owner.controls.length +
+    scenario.modules.length +
     2;
   const coverage = scripts.size / Math.max(criticalSurfaces, 1);
   return Number(Math.min(1, coverage).toFixed(3));
+}
+
+function computeSovereignControlScore(scenario: Scenario): number {
+  if (scenario.modules.length === 0) {
+    return 1;
+  }
+  const governanceOwners = new Set([
+    scenario.owner.governanceSafe.toLowerCase(),
+    scenario.owner.operator.toLowerCase(),
+    scenario.treasury.ownerSafe.toLowerCase(),
+  ]);
+  let controlled = 0;
+  for (const module of scenario.modules) {
+    const moduleOwner = module.owner.toLowerCase();
+    if (governanceOwners.has(moduleOwner) && module.status !== 'deprecated') {
+      controlled += 1;
+    }
+  }
+  const controlScore = controlled / Math.max(scenario.modules.length, 1);
+  return Number(Math.min(1, Math.max(0, controlScore)).toFixed(3));
 }
 
 async function ensureDir(dir: string): Promise<void> {
@@ -446,6 +510,7 @@ function synthesiseSummary(context: SimulationContext): Summary {
     Math.max(context.assignments.length, 1);
   const stabilityIndex = computeStabilityIndex(scenario, context);
   const ownerCoverage = computeOwnerCommandCoverage(scenario);
+  const sovereignControlScore = computeSovereignControlScore(scenario);
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
@@ -488,6 +553,7 @@ function synthesiseSummary(context: SimulationContext): Summary {
       ),
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage,
+      sovereignControlScore,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -506,6 +572,15 @@ function synthesiseSummary(context: SimulationContext): Summary {
     assignments: context.assignments,
     mermaidFlow: '',
     mermaidTimeline: '',
+    deployment: {
+      network: scenario.network,
+      treasuryOwner: scenario.treasury.ownerSafe,
+      governanceSafe: scenario.owner.governanceSafe,
+      modules: scenario.modules,
+      stablecoinAdapters: scenario.stablecoinAdapters,
+      automation: scenario.automation,
+      observability: scenario.observability,
+    },
   };
 }
 
@@ -619,10 +694,25 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
     upgradePaths: summary.ownerSovereignty.upgradePaths,
     stabilityIndex: summary.metrics.stabilityIndex,
     ownerCommandCoverage: summary.metrics.ownerCommandCoverage,
+    sovereignControlScore: summary.metrics.sovereignControlScore,
   };
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
     JSON.stringify(sovereigntyPlan, null, 2),
+  );
+  const deploymentMap = {
+    network: summary.deployment.network,
+    treasuryOwner: summary.deployment.treasuryOwner,
+    governanceSafe: summary.deployment.governanceSafe,
+    modules: summary.deployment.modules,
+    stablecoinAdapters: summary.deployment.stablecoinAdapters,
+    automation: summary.deployment.automation,
+    observability: summary.deployment.observability,
+    sovereignControlScore: summary.metrics.sovereignControlScore,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'deployment-map.json'),
+    JSON.stringify(deploymentMap, null, 2),
   );
 }
 
@@ -647,6 +737,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'automationScore',
     'stabilityIndex',
     'ownerCommandCoverage',
+    'sovereignControlScore',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

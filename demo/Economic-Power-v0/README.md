@@ -26,6 +26,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `timeline.mmd` – Gantt macro for orchestration cadence.
 - `owner-control.json` – up-to-the-minute control matrix for the owner’s multi-sig.
 - `owner-sovereignty.json` – sovereign safety mesh blueprint (pause/resume drills, circuit breakers, upgrade commands, and coverage metrics).
+- `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
 
@@ -89,6 +90,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
+- Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
 - Live Mermaid rendering of the architecture and timeline.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
@@ -122,7 +124,7 @@ This guarantees a **fully green v2 CI gate**. Pull requests and `main` share ide
 
 - ✅ Modular architecture reflecting the v2 sprint blueprint.
 - ✅ Deterministic simulation and CI coverage.
-- ✅ Owner-first command catalog for every mutable lever.
+- ✅ Owner-first command catalog for every mutable lever plus sovereign custody scoring for every contract module.
 - ✅ Observability artefacts (Mermaid, JSON, HTML dashboard).
 - ✅ Non-technical operations workflow from single command to actionable dashboard.
 
