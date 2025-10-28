@@ -1,0 +1,269 @@
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V8 — Meta-Convergence"
+  narrative: |
+    The sovereign owner activates the Meta-Convergence console. AGI Jobs v0 (v2)
+    executes the identify→learn→think→design→strategise→execute continuum while
+    validating CI health, antifragility buffers, unstoppable reserves, and
+    fully sovereign owner levers. A non-technical owner presses run and the
+    hyperstructure materialises automatically.
+  dashboards:
+    - title: "Meta-Convergence Console"
+      file: "meta_agentic_alpha_v8/ui/index.html"
+    - title: "Meta-Convergence Masterplan"
+      file: "meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v8/reports/alpha_meta_convergence_overview.md"
+    - "meta_agentic_alpha_v8/playbooks/owner_command_lattice.md"
+  agents:
+    - agent_id: "guardian-meta-mesh-validator"
+      owner: "Guardian Meta-Mesh"
+      region: "omni"
+      capabilities:
+        - execution
+        - validation
+        - analysis
+      stake_amount: "78000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-meta-mesh-validator-secret"
+    - agent_id: "sovereign-simulation-architect"
+      owner: "Simulation Guild"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "42000"
+      multisig: true
+      slashable: false
+      operator_secret: "sovereign-simulation-architect-secret"
+    - agent_id: "alpha-treasury-hyperpilot"
+      owner: "Treasury Collective"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "48000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-treasury-hyperpilot-secret"
+    - agent_id: "mission-audit-overwatch"
+      owner: "Audit Observatory"
+      region: "omni"
+      capabilities:
+        - validation
+        - analysis
+        - support
+      stake_amount: "32000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-audit-overwatch-secret"
+    - agent_id: "alpha-compounding-director"
+      owner: "Compounding Network"
+      region: "omni"
+      capabilities:
+        - execution
+        - analysis
+      stake_amount: "52000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-compounding-director-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v8"
+  title: "Meta-Agentic α-AGI Jobs Demo — Meta-Convergence"
+  narrative: |
+    Meta-Convergence demonstrates that a single owner command can deploy a
+    sovereign hyperstructure: signal fusion, open-ended curriculum,
+    guardian coordination, antifragility-weighted treasury dominion,
+    account abstraction, CI verification, and on-chain execution.
+  owner:
+    address: "0xSOVEREIGN00000000000000000000000000000008"
+    timelock: "0xTIMEL0CK0000000000000000000000000000008"
+    multisig: "0xMULTI500000000000000000000000000000008"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000A1"
+      - "0xGUARDIAN000000000000000000000000000000B2"
+      - "0xGUARDIAN000000000000000000000000000000C3"
+      - "0xGUARDIAN000000000000000000000000000000D4"
+      - "0xGUARDIAN000000000000000000000000000000E5"
+    guardian_failover:
+      - "0xGUARDIAN000000000000000000000000000000F6"
+      - "0xGUARDIAN000000000000000000000000000000G7"
+      - "0xGUARDIAN000000000000000000000000000000H8"
+    approvals_required: 4
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 10
+    delegation:
+      treasury:
+        owner_override: true
+        max_adjustment_percent: 12
+      governance:
+        guardian_rotation: true
+        threshold_update: true
+      execution:
+        paymaster_routing: true
+        relayer_selection: true
+      emergency_override:
+        multisig_guard: 3
+        sentinel_watch: true
+    control_scripts:
+      pause: "scripts/v2/systemPauseAction.ts"
+      resume: "scripts/v2/systemResumeAction.ts"
+      update_treasury: "scripts/v2/updateRewardEngine.ts"
+      rotate_guardians: "scripts/v2/rotateGovernance.ts"
+      upgrade_modules: "scripts/v2/updateAllModules.ts"
+    mutable_parameters:
+      job_fee_bps: 38
+      validator_bond: 92000
+      alpha_multiplier: 2.05
+      treasury_drawdown_limit: 2.8
+    guardian_playbook: "meta_agentic_alpha_v8/playbooks/owner_command_lattice.md"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "29800000"
+    unstoppable_reserve_percent: 42
+    risk_limits:
+      max_drawdown_percent: 2.2
+      var_percent: 1.1
+      antifragility_buffer_percent: 44
+      circuit_breaker_percent: 4.2
+    liquidity_routes:
+      - "treasury/alpha-orbit"
+      - "execution/liquidity-grid"
+      - "resilience/phoenix-buffer"
+      - "expansion/metaverse-signal"
+      - "acquisition/convergence-fund"
+  gasless:
+    enabled: true
+    bundler: "meta-convergence-bundler"
+    paymaster: "account-abstraction/meta-convergence-paymaster.json"
+    session_keys:
+      - "guardian-meta-mesh-validator"
+      - "alpha-compounding-director"
+      - "mission-audit-overwatch"
+      - "alpha-treasury-hyperpilot"
+      - "sovereign-simulation-architect"
+      - "owner-override-switch"
+      - "treasury-override-key"
+    overrideable_parameters:
+      max_fee_gwei: 15
+      preferred_network: "ethereum-mainnet"
+      failover_network: "base"
+
+plan:
+  budget_max: "620000"
+  approvals:
+    - "0xGUARDIAN000000000000000000000000000000A1"
+    - "0xGUARDIAN000000000000000000000000000000B2"
+    - "0xGUARDIAN000000000000000000000000000000C3"
+    - "0xGUARDIAN000000000000000000000000000000D4"
+  steps:
+    - id: "identify-1"
+      name: "Fuse multi-domain alpha signals"
+      kind: "plan"
+      tool: "identify.meta-convergence"
+      params:
+        signals: "meta_agentic_alpha_v8/data/alpha_signals.json"
+        knowledge_graph: "meta_agentic_alpha_v8/data/opportunity_graph.json"
+        anomaly_threshold: 0.975
+        escalate_to: "owner-console"
+    - id: "learn-1"
+      name: "Advance world model curriculum"
+      kind: "llm"
+      tool: "simulation.curriculum"
+      params:
+        curriculum: "AlphaFactory/MetaSeason-VIII"
+        world_model: "MuZero-MetaConvergence-VIII"
+        simulation_engine: "MiniWorld-POET-XR"
+        checkpoints: true
+    - id: "think-1"
+      name: "Meta-agentic convergence search"
+      kind: "plan"
+      tool: "planning.meta-convergence"
+      params:
+        horizon_days: 120
+        candidate_plans: 9
+        agent_bus: "A2A-meta-convergence"
+        guardian_mesh: "meta_agentic_alpha_v8/data/guardian_mesh.json"
+    - id: "design-1"
+      name: "Forge sovereign solution architecture"
+      kind: "code"
+      tool: "design.meta-forge"
+      params:
+        opportunity_playbook: "meta_agentic_alpha_v8/data/opportunity_graph.json"
+        simulation_matrix: "meta_agentic_alpha_v8/data/simulation_matrix.json"
+        antifragility_mode: "compounding"
+    - id: "strategise-1"
+      name: "Optimise treasury dominion"
+      kind: "plan"
+      tool: "treasury.meta-optimise"
+      params:
+        liquidity_routes:
+          - "treasury/alpha-orbit"
+          - "execution/liquidity-grid"
+          - "resilience/phoenix-buffer"
+          - "expansion/metaverse-signal"
+          - "acquisition/convergence-fund"
+        unstoppable_reserve_percent: 42
+        antifragility_buffer_percent: 44
+        guardian_quorum: 4
+    - id: "govern-1"
+      name: "Reinforce governance lattice"
+      kind: "plan"
+      tool: "governance.align"
+      params:
+        guardian_mesh: "meta_agentic_alpha_v8/data/guardian_mesh.json"
+        governance_matrix: "meta_agentic_alpha_v8/data/governance_matrix.json"
+        session_keys: "meta_agentic_alpha_v8/data/execution_routes.json"
+    - id: "ci-1"
+      name: "Run CI Meta-Convergence Envelope"
+      kind: "plan"
+      tool: "ci.meta-convergence"
+      params:
+        ci_matrix: "meta_agentic_alpha_v8/data/ci_matrix.json"
+        expected_status: "green"
+    - id: "execute-1"
+      name: "Simulate job deployment"
+      kind: "chain"
+      tool: "job.post"
+      params:
+        title: "Meta-Convergence Sovereign Alpha Acceleration"
+        description: "Deploying autonomous alpha factories across finance, supply chains, biotech, energy, and policy."
+        reward: "245000"
+        deadline_days: 16
+        attachments:
+          - "meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md"
+          - "meta_agentic_alpha_v8/reports/alpha_meta_convergence_overview.md"
+        treasury_account: "0xA1PHA0000000000000000000000000000C0NV"
+        fee_bps: 38
+        validator: "guardian-meta-mesh-validator"
+        dry_run: true
+    - id: "execute-2"
+      name: "Stake guardian capital"
+      kind: "chain"
+      tool: "stake.deposit"
+      params:
+        agent: "guardian-meta-mesh-validator"
+        amount: "64000"
+        token: "AGIALPHA"
+        slash_guardian: "0xDE1B0000000000000000000000000000C0NV"
+        dry_run: true
+    - id: "execute-3"
+      name: "Activate compounding director"
+      kind: "chain"
+      tool: "validator.commit"
+      params:
+        agent: "alpha-compounding-director"
+        tx_summary: "Compound alpha accrual across routes"
+        expected_profit: "470000"
+        dry_run: true
+    - id: "finalise-1"
+      name: "Publish owner intelligence dossier"
+      kind: "finalize"
+      tool: "analytics.finalize"
+      params:
+        timeline: "meta_agentic_alpha_v8/data/timeline.json"
+        dashboards:
+          - "meta_agentic_alpha_v8/ui/index.html"
+          - "meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md"
