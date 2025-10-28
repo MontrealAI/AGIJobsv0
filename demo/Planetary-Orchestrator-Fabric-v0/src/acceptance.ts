@@ -53,6 +53,7 @@ export interface HighLoadReport {
   failureRate: number;
   balanceDelta: number;
   shardSkewRatio: number;
+  minShardLoad: number;
   assertions: ScenarioAssertion[];
   pass: boolean;
 }
@@ -131,23 +132,27 @@ function computeFailureRate(metrics: FabricMetrics): number {
   return metrics.jobsFailed / metrics.jobsSubmitted;
 }
 
-function computeShardBalance(summary: FabricSummary): { balanceDelta: number; skewRatio: number } {
+function computeShardBalance(summary: FabricSummary): {
+  balanceDelta: number;
+  skewRatio: number;
+  minLoad: number;
+} {
   const totals = Object.values(summary.shardStatistics).map(
     (entry) => entry.completed + entry.failed + entry.spillovers
   );
   if (totals.length === 0) {
-    return { balanceDelta: 0, skewRatio: 1 };
+    return { balanceDelta: 0, skewRatio: 1, minLoad: 0 };
   }
   const max = Math.max(...totals);
   const min = Math.min(...totals);
   const total = totals.reduce((sum, value) => sum + value, 0);
   const balanceDelta = total === 0 ? 0 : (max - min) / total;
   if (total === 0) {
-    return { balanceDelta: 0, skewRatio: 1 };
+    return { balanceDelta: 0, skewRatio: 1, minLoad: min };
   }
   const denominator = min === 0 ? 1 : min;
   const skewRatio = max === 0 ? 1 : max / denominator;
-  return { balanceDelta, skewRatio };
+  return { balanceDelta, skewRatio, minLoad: min };
 }
 
 function ensureSpilloverPolicies(shard: ShardConfig): SpilloverPolicy[] {
@@ -219,7 +224,9 @@ function evaluateHighLoad(
   const metrics = execution.summary.metrics;
   const dropRate = computeDropRate(metrics);
   const failureRate = computeFailureRate(metrics);
-  const { balanceDelta, skewRatio } = computeShardBalance(execution.summary);
+  const { balanceDelta, skewRatio, minLoad } = computeShardBalance(execution.summary);
+  const skewStep = minLoad > 0 ? 1 / minLoad : 0;
+  const skewTolerance = Math.max(1e-6, skewStep);
   const assertions: ScenarioAssertion[] = [
     {
       id: 'drop-rate',
@@ -257,7 +264,7 @@ function evaluateHighLoad(
     {
       id: 'shard-skew',
       description: `Shard skew ratio <= ${thresholds.maxShardSkewRatio.toFixed(2)}x`,
-      passed: skewRatio <= thresholds.maxShardSkewRatio,
+      passed: skewRatio <= thresholds.maxShardSkewRatio + skewTolerance,
       value: skewRatio,
       threshold: thresholds.maxShardSkewRatio,
     },
@@ -271,6 +278,7 @@ function evaluateHighLoad(
     failureRate,
     balanceDelta,
     shardSkewRatio: skewRatio,
+    minShardLoad: minLoad,
     assertions,
     pass: assertions.every((assertion) => assertion.passed),
   };

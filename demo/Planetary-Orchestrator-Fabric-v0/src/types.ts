@@ -58,6 +58,26 @@ export interface JobState extends JobDefinition {
   failureReason?: string;
 }
 
+export type JobLocator =
+  | {
+      kind: 'tail';
+      /**
+       * Restrict the lookup to a single shard. When omitted the locator will
+       * search every shard in the fabric.
+       */
+      shard?: ShardId;
+      /**
+       * Offset from the tail of the eligible queue. 0 selects the newest job,
+       * 1 selects the second newest, etc.
+       */
+      offset?: number;
+      /**
+       * Whether in-flight jobs should also be considered when the shard queue
+       * is shallow or empty.
+       */
+      includeInFlight?: boolean;
+    };
+
 export interface NodeState {
   definition: NodeDefinition;
   active: boolean;
@@ -144,6 +164,7 @@ export interface FabricMetrics {
   jobsSubmitted: number;
   jobsCompleted: number;
   jobsFailed: number;
+  jobsCancelled: number;
   spillovers: number;
   reassignedAfterFailure: number;
   outageHandled: boolean;
@@ -154,7 +175,7 @@ export interface FabricMetrics {
 
 export type RegistryEvent =
   | { type: 'job.created'; shard: ShardId; job: JobState }
-  | { type: 'job.cancelled'; shard: ShardId; jobId: string }
+  | { type: 'job.cancelled'; shard: ShardId; jobId: string; reason?: string }
   | { type: 'job.requeued'; shard: ShardId; job: JobState; origin: string }
   | { type: 'job.spillover'; shard: ShardId; job: JobState; from: ShardId }
   | { type: 'job.assigned'; shard: ShardId; job: JobState; nodeId: string }
@@ -258,6 +279,14 @@ export type OwnerCommand =
     }
   | { type: 'node.register'; node: NodeDefinition; reason?: string }
   | { type: 'node.deregister'; nodeId: string; reason?: string }
+  | { type: 'job.cancel'; jobId?: string; locator?: JobLocator; reason?: string }
+  | {
+      type: 'job.reroute';
+      jobId?: string;
+      locator?: JobLocator;
+      targetShard: ShardId;
+      reason?: string;
+    }
   | { type: 'checkpoint.save'; reason?: string }
   | {
       type: 'checkpoint.configure';

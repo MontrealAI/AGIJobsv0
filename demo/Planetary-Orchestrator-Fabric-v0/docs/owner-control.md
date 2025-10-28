@@ -78,6 +78,54 @@ node scripts/v2/ownerControlSurface.ts \
 
 - The orchestrator immediately persists the new settings and records them under `ownerState.checkpoint` and the next `checkpoint.json` artifact.
 
+### Reroute Specific Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-reroute \
+  --job-id job-00123 \
+  --target helios \
+  --reason "Redirect precision workload to Helios GPU array"
+```
+
+- The orchestrator removes the job from its existing queue (or the active node), rewrites its spillover history, and pushes it into the target shard router.
+- `summary.json` captures the reroute under `owner.job.reroute` events alongside updated spillover metrics.
+- Prefer the declarative job locator when you want the fabric to pick a live target automatically:
+
+  ```json
+  {
+    "type": "job.reroute",
+    "locator": { "kind": "tail", "shard": "mars", "offset": 8, "includeInFlight": true },
+    "targetShard": "helios",
+    "reason": "Owner escalated to Helios precision array"
+  }
+  ```
+
+  The locator walks the shard queue from the tail so the newest Mars jobs (or, if needed, their in-flight siblings) are selected deterministically—even when the total job count changes between runs.
+
+### Cancel Redundant Jobs
+
+```bash
+node scripts/v2/ownerControlSurface.ts \
+  --action job-cancel \
+  --job-id job-00124 \
+  --reason "Owner resolved ticket manually"
+```
+
+- The job is removed immediately, marked as cancelled, and surfaced in metrics (`jobsCancelled`) for transparent auditing.
+- Event logs emit both `owner.job.cancelled` and `job.failed` entries so replay systems retain determinism.
+- To cancel without memorising identifiers, pass a locator payload such as:
+
+  ```json
+  {
+    "type": "job.cancel",
+    "locator": { "kind": "tail", "shard": "earth", "offset": 4, "includeInFlight": true },
+    "reason": "Owner resolved ticket manually"
+  }
+  ```
+
+  This grabs the freshest Earth job (or a still-running one) so operators stay hands-off even during massive job floods.
+
 ### Resume From Checkpoint
 
 1. Stop the orchestrator (or simulate a crash with `Ctrl+C`).
