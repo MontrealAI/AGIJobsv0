@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Validator Constellation Command Deck</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #030712;
+        --fg: #f8fafc;
+        --accent: #60a5fa;
+        --accent-2: #38bdf8;
+        --card: rgba(15, 23, 42, 0.8);
+      }
+      body {
+        background: radial-gradient(circle at top, #0f172a, #030712);
+        color: var(--fg);
+        font-family: "Space Grotesk", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        text-align: center;
+        padding: 3rem 1rem 1rem;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 6vw, 3.8rem);
+        margin-bottom: 0.5rem;
+      }
+      h2 {
+        font-size: 1.6rem;
+        margin-top: 2rem;
+      }
+      p {
+        line-height: 1.6;
+        max-width: 64rem;
+        margin: 0.5rem auto;
+      }
+      .card-grid {
+        display: grid;
+        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+        margin: 2rem auto;
+        max-width: 72rem;
+        padding: 0 1.5rem;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 24px 48px rgba(14, 116, 144, 0.25);
+        backdrop-filter: blur(10px);
+      }
+      .card h3 {
+        margin-top: 0;
+      }
+      pre.code-block {
+        background: rgba(30, 41, 59, 0.7);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        overflow-x: auto;
+      }
+      footer {
+        text-align: center;
+        padding: 4rem 1rem 2rem;
+        font-size: 0.9rem;
+        color: rgba(248, 250, 252, 0.6);
+      }
+      .mermaid {
+        background: rgba(15, 23, 42, 0.6);
+        border-radius: 1rem;
+        padding: 1rem;
+        margin: 2rem auto;
+        max-width: 72rem;
+      }
+      .event-log {
+        font-family: "Fira Code", monospace;
+        font-size: 0.95rem;
+        display: grid;
+        gap: 0.6rem;
+      }
+      .event {
+        background: rgba(148, 163, 184, 0.1);
+        border-left: 3px solid var(--accent);
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+      }
+      .event strong {
+        color: var(--accent-2);
+      }
+    </style>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Validator Constellation Command Deck</h1>
+      <p>
+        A Kardashev-II ready showcase that fuses deterministic validator governance, zero-knowledge throughput, and sentinel
+        guardrails into an operator-friendly surface. Run <code>python run_demo.py</code> to stream fresh telemetry into this deck.
+      </p>
+    </header>
+
+    <section class="card-grid">
+      <article class="card">
+        <h3>Operator Playbook</h3>
+        <pre class="code-block"><code>$ cd demo/Validator-Constellation-v0
+$ python run_demo.py --seed mission-12 --truth true --output mission-12.json
+# Review mission-12.json for committee, slashing, pause states & proof roots.</code></pre>
+      </article>
+      <article class="card">
+        <h3>Owner Controls</h3>
+        <ul>
+          <li>Hot-update quorum & timings with <code>SystemConfig.update</code>.</li>
+          <li>Whitelist/blacklist ENS namespaces instantly.</li>
+          <li>Resume any paused domain via the governance dashboard.</li>
+          <li>Export audit trails for regulators with one click.</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>Proof Throughput</h3>
+        <p>
+          Batch up to <strong>1,000 jobs</strong> per proof. Gas savings reach well over 200 million units versus serialized finalisations.
+        </p>
+      </article>
+    </section>
+
+    <section class="mermaid">
+      ```mermaid
+      graph TD
+          subgraph Validation
+              VRF[VRF Committee]
+              Commit[Commit Phase]
+              Reveal[Reveal Phase]
+              Batch[ZK Batch Proof]
+          end
+          subgraph Guardrails
+              Sentinel[Sentinel Rules]
+              Pause[Domain Pause]
+          end
+          subgraph Telemetry
+              Events[Event Bus]
+              Subgraph[Subgraph Indexer]
+          end
+          VRF --> Commit --> Reveal --> Batch
+          Sentinel --> Pause
+          Pause --> Events --> Subgraph
+          Batch --> Events
+      ```
+    </section>
+
+    <section class="card-grid">
+      <article class="card">
+        <h3>Live Event Feed</h3>
+        <div id="events" class="event-log"></div>
+      </article>
+      <article class="card">
+        <h3>ENS Namespace Policy</h3>
+        <p>
+          Validators: <code>*.club.agi.eth</code> + <code>*.alpha.club.agi.eth</code><br />
+          Agents: <code>&lt;name&gt;.agent.agi.eth</code> + <code>&lt;name&gt;.alpha.agent.agi.eth</code><br />
+          Nodes: <code>&lt;name&gt;.node.agi.eth</code> + <code>&lt;name&gt;.alpha.node.agi.eth</code>
+        </p>
+        <p>Ownership proofs rely on deterministic NameWrapper-style signatures to keep the flow audit-ready.</p>
+      </article>
+    </section>
+
+    <footer>
+      Validator Constellation v0 &mdash; built with AGI Jobs v0 (v2). Deploy to production, pause domains in seconds, and finalise
+      a thousand jobs in one proof. The future of autonomous validation is now operator-ready.
+    </footer>
+
+    <script>
+      const EVENT_DATA = [
+        {
+          type: "ValidatorRegistered",
+          payload: {
+            address: "0xaa00000000000000000000000000000000000001",
+            ens: "atlas.club.agi.eth",
+            stake: 32,
+          },
+        },
+        {
+          type: "VoteCommitted",
+          payload: {
+            roundId: "constellation-round-1",
+            validator: "0xaa00000000000000000000000000000000000001",
+            block: 0,
+          },
+        },
+        {
+          type: "SentinelAlert",
+          payload: {
+            domain: "synthetic-biology",
+            reason: "Agent spend exceeded allocated budget",
+            agent: "eve.agent.agi.eth",
+          },
+        },
+        {
+          type: "DomainPaused",
+          payload: {
+            domain: "synthetic-biology",
+            reason: "Agent spend exceeded allocated budget",
+          },
+        },
+        {
+          type: "ValidatorSlashed",
+          payload: {
+            address: "0xaa00000000000000000000000000000000000003",
+            reason: "non-reveal in constellation-round-1",
+          },
+        },
+        {
+          type: "RoundFinalized",
+          payload: {
+            roundId: "constellation-round-1",
+            truthVotes: 2,
+            totalReveals: 2,
+            result: true,
+          },
+        },
+      ];
+
+      const container = document.getElementById("events");
+      EVENT_DATA.forEach((event) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "event";
+        wrapper.innerHTML = `<strong>${event.type}</strong><br />${JSON.stringify(event.payload, null, 2)}`;
+        container.appendChild(wrapper);
+      });
+    </script>
+  </body>
+</html>
