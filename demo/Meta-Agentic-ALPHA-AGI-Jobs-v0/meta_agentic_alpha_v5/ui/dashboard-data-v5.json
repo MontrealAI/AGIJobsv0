@@ -1,0 +1,286 @@
+{
+  "generated_at": "2025-10-28T18:24:51.854473+00:00",
+  "alpha": {
+    "domains": [
+      {
+        "id": "energy-ultrastorage",
+        "title": "Grid-Scale Ultra-Storage Retrofits",
+        "signal_strength": 0.97,
+        "alpha_projection": 450000000,
+        "insights": [
+          "Lithium-sulfur variant achieves 3.2x cycle life in lab trials",
+          "Three national grids tendering for emergency storage retrofits",
+          "Credit spreads imply mispriced risk on storage suppliers"
+        ],
+        "owner_actions": [
+          "Approve paymaster session key for rapid deployment",
+          "Unlock liquidity route treasury/alpha-orbit",
+          "Enable guardian override to enforce antifragility buffer"
+        ]
+      },
+      {
+        "id": "biotech-omics",
+        "title": "Longitudinal Omics Trial Factory",
+        "signal_strength": 0.95,
+        "alpha_projection": 380000000,
+        "insights": [
+          "Regulators fast-tracking at-home omics sampling",
+          "New proteomic marker discovered with 0.91 predictive power",
+          "Clinical backlog causing 6-month data monopoly window"
+        ],
+        "owner_actions": [
+          "Assign mission-audit-sentinel as compliance lead",
+          "Increase unstoppable reserve to 24%",
+          "Trigger ethics review playbook"
+        ]
+      },
+      {
+        "id": "supply-rare-earths",
+        "title": "Rare Earth Precision Supply Mesh",
+        "signal_strength": 0.93,
+        "alpha_projection": 510000000,
+        "insights": [
+          "Port digital twins reveal hidden 22% throughput capacity",
+          "Two suppliers willing to sign exclusive pricing floors",
+          "Satellite telemetry shows upcoming weather disruption"
+        ],
+        "owner_actions": [
+          "Activate sovereign-simulation-director for reroute scenario",
+          "Arm antifragility buffer with Phoenix protocol",
+          "Notify guardians of supply renegotiation"
+        ]
+      }
+    ],
+    "summary": {
+      "aggregate_signal": 0.953,
+      "compounding_index": 1.42,
+      "mission_alignment": 0.988,
+      "alpha_ready": true
+    }
+  },
+  "governance": {
+    "controls": {
+      "treasury": {
+        "liquidity_routes": [
+          {
+            "id": "treasury/alpha-orbit",
+            "description": "Primary growth deployments",
+            "max_allocation_percent": 48
+          },
+          {
+            "id": "execution/liquidity-grid",
+            "description": "Execution working capital",
+            "max_allocation_percent": 32
+          },
+          {
+            "id": "resilience/phoenix-buffer",
+            "description": "Emergency antifragility reserve",
+            "max_allocation_percent": 20
+          }
+        ],
+        "pause_switch": true,
+        "owner_editable": true
+      },
+      "guardians": {
+        "quorum": 3,
+        "roles": [
+          {
+            "id": "guardian-grid-validator",
+            "duty": "on-chain validation + antifragility"
+          },
+          {
+            "id": "mission-audit-sentinel",
+            "duty": "compliance + ethics"
+          },
+          {
+            "id": "alpha-treasury-autopilot",
+            "duty": "treasury + risk"
+          }
+        ]
+      },
+      "account_abstraction": {
+        "bundler": "meta-conductor-bundler",
+        "paymaster": "account-abstraction/meta-conductor-paymaster.json",
+        "session_keys": [
+          "guardian-grid-validator",
+          "sovereign-simulation-director",
+          "alpha-treasury-autopilot",
+          "mission-audit-sentinel",
+          "owner-override-switch"
+        ]
+      }
+    },
+    "risk_policies": {
+      "max_drawdown_percent": 3.6,
+      "var_percent": 2.0,
+      "antifragility_buffer_percent": 28,
+      "circuit_breaker_percent": 6.2,
+      "restart_policy": "phoenix-autoadapt"
+    },
+    "human_actions": [
+      "Toggle emergency pause",
+      "Adjust unstoppable reserve",
+      "Swap guardians",
+      "Change bundler or paymaster",
+      "Reconfigure approvals quorum"
+    ]
+  },
+  "guardian_mesh": {
+    "protocol": "A2A-meta-conductor",
+    "sentinels": [
+      {
+        "id": "guardian-grid-validator",
+        "capabilities": [
+          "execution",
+          "antifragility",
+          "chain-validation"
+        ],
+        "status": "ready",
+        "stake": 50000
+      },
+      {
+        "id": "mission-audit-sentinel",
+        "capabilities": [
+          "compliance",
+          "risk-monitor"
+        ],
+        "status": "ready",
+        "stake": 15000
+      },
+      {
+        "id": "alpha-treasury-autopilot",
+        "capabilities": [
+          "treasury",
+          "governance"
+        ],
+        "status": "ready",
+        "stake": 30000
+      },
+      {
+        "id": "sovereign-simulation-director",
+        "capabilities": [
+          "planner",
+          "simulation",
+          "design"
+        ],
+        "status": "ready",
+        "stake": 25000
+      }
+    ],
+    "coordination": {
+      "quorum": 3,
+      "latency_ms": 42,
+      "last_heartbeat": "2024-07-12T10:00:00Z",
+      "owner_override": true
+    }
+  },
+  "timeline": {
+    "events": [
+      {
+        "time": "T+0m",
+        "event": "Owner launches Meta-Conductor demo"
+      },
+      {
+        "time": "T+2m",
+        "event": "Identify mesh flags 3 alpha domains"
+      },
+      {
+        "time": "T+5m",
+        "event": "World model evolves + new heuristics distilled"
+      },
+      {
+        "time": "T+7m",
+        "event": "Guardian mesh votes 3/3 approvals"
+      },
+      {
+        "time": "T+9m",
+        "event": "Treasury allocation optimisation complete"
+      },
+      {
+        "time": "T+12m",
+        "event": "Dry-run on-chain job + staking + commit"
+      },
+      {
+        "time": "T+14m",
+        "event": "Owner console + masterplan generated"
+      }
+    ],
+    "expected_roi": 0.238,
+    "alpha_confidence": 0.972,
+    "treasury_at_risk": 0.018
+  },
+  "owner_controls": [
+    "Add/Remove guardians",
+    "Adjust unstoppable reserve",
+    "Change bundler or paymaster",
+    "Modify antifragility buffer",
+    "Pause execution",
+    "Rebalance liquidity routes",
+    "Reconfigure approvals quorum",
+    "Swap guardians",
+    "Switch bundler/paymaster",
+    "Toggle emergency pause"
+  ],
+  "control_surface": {
+    "score": 1.0,
+    "guardian_quorum": 3,
+    "guardian_count": 4,
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 12,
+    "unstoppable_reserve_percent": 22.0,
+    "session_keys": [
+      "guardian-grid-validator",
+      "sovereign-simulation-director",
+      "alpha-treasury-autopilot",
+      "mission-audit-sentinel",
+      "owner-override-switch"
+    ],
+    "bundler": "meta-conductor-bundler",
+    "paymaster": "account-abstraction/meta-conductor-paymaster.json",
+    "levers": [
+      "Add/Remove guardians",
+      "Adjust unstoppable reserve",
+      "Bundler meta-conductor-bundler",
+      "Change bundler or paymaster",
+      "Circuit breaker 12 min",
+      "Emergency pause switch",
+      "Guardian quorum 3/4",
+      "Modify antifragility buffer",
+      "Pause execution",
+      "Paymaster account-abstraction/meta-conductor-paymaster.json",
+      "Rebalance liquidity routes",
+      "Reconfigure approvals quorum",
+      "Swap guardians",
+      "Switch bundler/paymaster",
+      "Toggle emergency pause",
+      "Unstoppable reserve 22.0%"
+    ]
+  },
+  "mermaid": {
+    "flow": "graph LR\n  Owner((Sovereign Owner)) --> Identify\n  Identify[Identify Mesh] --> Learn[World Model]\n  Learn --> Plan[Meta-Agentic Planner]\n  Plan --> Design[Creative Forge]\n  Design --> Strategise[Treasury Optimiser]\n  Strategise --> Execute[On-Chain Pipeline]\n  Execute --> Owner\n  subgraph Guardian Mesh\n    G1[guardian-grid-validator]\n    G2[mission-audit-sentinel]\n    G3[alpha-treasury-autopilot]\n    G4[sovereign-simulation-director]\n  end\n  Owner -->|Approvals 3/3| Guardian Mesh",
+    "sequence": "sequenceDiagram\n  participant Owner as Sovereign Owner\n  participant Console as Meta-Conductor Console\n  participant Mesh as Guardian Mesh\n  participant Treasury as Treasury Optimiser\n  participant Chain as AGI Jobs v0 (v2)\n  Owner->>Console: Launch V5 orchestration\n  Console->>Mesh: Dispatch approvals & antifragility checks\n  Mesh->>Treasury: Align unstoppable reserve + liquidity routes\n  Treasury->>Chain: Simulate job.post + stake.deposit + validator.commit\n  Chain-->>Console: Dry-run receipts + scoreboard signals\n  Console-->>Owner: Masterplan + live controls"
+  },
+  "metrics": {
+    "owner_empowerment": 1.0,
+    "antifragility_index": 0.53,
+    "alpha_probability": 0.999,
+    "step_completion_ratio": 1.0,
+    "scoreboard": {
+      "guardian-grid-validator": {
+        "wins": 6,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-10-28T18:15Z: Simulate on-chain deployment -> win",
+          "2025-10-28T18:15Z: Stake guardian capital -> win",
+          "2025-10-28T18:15Z: Commit validation handshake -> win",
+          "2025-10-28T18:24Z: Simulate on-chain deployment -> win",
+          "2025-10-28T18:24Z: Stake guardian capital -> win",
+          "2025-10-28T18:24Z: Commit validation handshake -> win"
+        ],
+        "updatedAt": 1761675891.7190526
+      }
+    },
+    "control_surface_score": 1.0
+  }
+}

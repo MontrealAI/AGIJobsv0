@@ -1,0 +1,16 @@
+{
+  "guardian-grid-validator": {
+    "losses": 0,
+    "notes": [
+      "2025-10-28T18:15Z: Simulate on-chain deployment -> win",
+      "2025-10-28T18:15Z: Stake guardian capital -> win",
+      "2025-10-28T18:15Z: Commit validation handshake -> win",
+      "2025-10-28T18:24Z: Simulate on-chain deployment -> win",
+      "2025-10-28T18:24Z: Stake guardian capital -> win",
+      "2025-10-28T18:24Z: Commit validation handshake -> win"
+    ],
+    "slashes": 0,
+    "updatedAt": 1761675891.7190526,
+    "wins": 6
+  }
+}

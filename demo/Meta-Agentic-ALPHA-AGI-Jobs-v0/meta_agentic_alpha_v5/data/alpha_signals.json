@@ -1,0 +1,58 @@
+{
+  "domains": [
+    {
+      "id": "energy-ultrastorage",
+      "title": "Grid-Scale Ultra-Storage Retrofits",
+      "signal_strength": 0.97,
+      "alpha_projection": 450000000,
+      "insights": [
+        "Lithium-sulfur variant achieves 3.2x cycle life in lab trials",
+        "Three national grids tendering for emergency storage retrofits",
+        "Credit spreads imply mispriced risk on storage suppliers"
+      ],
+      "owner_actions": [
+        "Approve paymaster session key for rapid deployment",
+        "Unlock liquidity route treasury/alpha-orbit",
+        "Enable guardian override to enforce antifragility buffer"
+      ]
+    },
+    {
+      "id": "biotech-omics",
+      "title": "Longitudinal Omics Trial Factory",
+      "signal_strength": 0.95,
+      "alpha_projection": 380000000,
+      "insights": [
+        "Regulators fast-tracking at-home omics sampling",
+        "New proteomic marker discovered with 0.91 predictive power",
+        "Clinical backlog causing 6-month data monopoly window"
+      ],
+      "owner_actions": [
+        "Assign mission-audit-sentinel as compliance lead",
+        "Increase unstoppable reserve to 24%",
+        "Trigger ethics review playbook"
+      ]
+    },
+    {
+      "id": "supply-rare-earths",
+      "title": "Rare Earth Precision Supply Mesh",
+      "signal_strength": 0.93,
+      "alpha_projection": 510000000,
+      "insights": [
+        "Port digital twins reveal hidden 22% throughput capacity",
+        "Two suppliers willing to sign exclusive pricing floors",
+        "Satellite telemetry shows upcoming weather disruption"
+      ],
+      "owner_actions": [
+        "Activate sovereign-simulation-director for reroute scenario",
+        "Arm antifragility buffer with Phoenix protocol",
+        "Notify guardians of supply renegotiation"
+      ]
+    }
+  ],
+  "summary": {
+    "aggregate_signal": 0.953,
+    "compounding_index": 1.42,
+    "mission_alignment": 0.988,
+    "alpha_ready": true
+  }
+}

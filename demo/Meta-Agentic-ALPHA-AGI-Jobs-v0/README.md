@@ -14,6 +14,7 @@ This demo packages the full Meta-Agentic α-AGI Jobs experience into a one-click
 - **Out-Design:** Creative fusion agent drafts deliverables, dashboards, and antifragility playbooks.
 - **Out-Strategise:** Treasury allocator balances capital across compound opportunities under policy guardrails.
 - **Out-Execute:** Autonomous job posting, staking, validation simulation, and finalisation on AGI Jobs v0 (v2).
+- **Owner Sovereignty Matrix:** Always-on view of quorum, unstoppable reserves, circuit breakers, bundler/paymaster, and session keys so the owner can reconfigure instantly.
 
 Every step is fully auditable, checkpointed, and reversible through built-in timelocks and guardian controls.
 
@@ -51,6 +52,7 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py
    ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -58,13 +60,18 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    python -m http.server --directory demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui 9000
    ```
    Visit `http://localhost:9000` to explore the live dashboard. All metrics, tables, and Mermaid charts load directly from the latest orchestration JSON.
+   - The V5 Sovereign Meta-Conductor panel now includes a full Owner Sovereignty Matrix confirming guardian quorum, emergency pause, circuit-breakers, unstoppable reserves, bundler, paymaster, and session keys in one view.
 4. **Review the generated artefacts:**
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v4.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v5.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v4/reports/generated/alpha_flight_synthesis.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/ui/dashboard-data-v5.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v5/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
 
@@ -149,6 +156,21 @@ sequenceDiagram
 - **Console Control Tower:** Guardian mesh quorum, antifragility heartbeats, and treasury dials are surfaced as owner actions within the new flight console (`storage/ui/v4/index.html`).
 - **Mermaid-Rich Artefacts:** `alpha_flight_synthesis.md` and the in-browser dashboard render advanced flowcharts, timelines, and topology diagrams powered by `dashboard-data-v4.json`.
 - **Gasless & Simulation-First:** The plan enforces `eth_call` dry-runs, account abstraction paymasters, and approvals for every dispatch step to guarantee non-technical safety.
+
+---
+
+## 🛰️ V5 Sovereign Meta-Conductor (Brand New)
+
+- **Owner supremacy UI:** the V5 dashboard (`meta_agentic_alpha_v5/ui/index.html`) renders every guardian, treasury dial, and
+  override as clickable insight pills fed from `dashboard-data-v5.json`.
+- **Meta-Conductor masterplan:** the generated markdown deck (`meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md`)
+  fuses Mermaid diagrams, scoreboard snapshots, and alpha metrics to brief stakeholders instantly.
+- **Isolated orchestrator state:** all registries, checkpoints, and scoreboards live under `storage/orchestrator_v5/`, proving
+  multi-fabric coexistence without cross-contamination.
+- **Gasless guardianship controls:** session keys, paymaster, bundler, unstoppable reserves, and emergency pause switches remain
+  owner-editable via `scripts/owner_controls.py --config meta_agentic_alpha_v5/config/scenario.yaml`.
+- **Console-first empowerment:** `meta_agentic_demo_v5.py` prints the copy-ready `python -m http.server` command, ensuring a
+  non-technical owner can publish the console in seconds.
 
 ---
 

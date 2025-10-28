@@ -1,5 +1,8 @@
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
 
+const DASHBOARD_ROOT = new URL(".", document.baseURI);
+const DEMO_ROOT = new URL("../../", DASHBOARD_ROOT);
+
 const SUMMARY_PATH_CANDIDATES = [
   "../latest_run_v2.json",
   "../storage/latest_run_v2.json",
@@ -118,13 +121,27 @@ function linkArtefact(name, path) {
 }
 
 function resolveHref(path, fallback) {
-  if (!path) {
-    return fallback;
+  const candidate = path || fallback;
+  if (!candidate) {
+    return undefined;
   }
-  if (path.startsWith("http") || path.startsWith("./") || path.startsWith("../") || path.startsWith("/")) {
-    return path;
+
+  if (
+    candidate.startsWith("http://") ||
+    candidate.startsWith("https://") ||
+    candidate.startsWith("./") ||
+    candidate.startsWith("../") ||
+    candidate.startsWith("/")
+  ) {
+    return candidate;
   }
-  return `../${path}`;
+
+  try {
+    return new URL(candidate, DEMO_ROOT).href;
+  } catch (error) {
+    console.warn("Unable to resolve href for", candidate, error);
+    return candidate;
+  }
 }
 
 async function fetchSummary() {
