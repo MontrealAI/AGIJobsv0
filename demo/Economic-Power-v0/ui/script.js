@@ -62,6 +62,12 @@ const metricMap = [
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
     description: 'Share of smart contracts fully custodied by owner multi-sig safes.',
   },
+  {
+    id: 'assertionPassRate',
+    label: 'Assertion Pass Rate',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Share of verification assertions passing unstoppable thresholds.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -273,6 +279,73 @@ function renderDeployment(summary) {
   }
 }
 
+function renderAssertions(summary) {
+  const container = document.getElementById('assertion-grid');
+  if (!container) return;
+  container.innerHTML = '';
+  const assertions = summary.assertions ?? [];
+  for (const assertion of assertions) {
+    const card = document.createElement('article');
+    card.className = `assertion-card assertion-${assertion.outcome}`;
+    card.setAttribute('role', 'listitem');
+
+    const header = document.createElement('div');
+    header.className = 'assertion-card-header';
+
+    const title = document.createElement('h3');
+    title.textContent = assertion.title;
+    header.append(title);
+
+    const severity = document.createElement('span');
+    severity.className = `assertion-badge severity-${assertion.severity}`;
+    severity.textContent = assertion.severity.toUpperCase();
+    header.append(severity);
+
+    const status = document.createElement('p');
+    status.className = 'assertion-status';
+    const symbol = assertion.outcome === 'pass' ? '✓' : '✕';
+    status.innerHTML = `<span aria-hidden="true">${symbol}</span> ${
+      assertion.outcome === 'pass' ? 'Pass' : 'Fail'
+    }`;
+
+    const summaryText = document.createElement('p');
+    summaryText.className = 'assertion-summary';
+    summaryText.textContent = assertion.summary;
+
+    const metrics = document.createElement('p');
+    metrics.className = 'assertion-metric';
+    if (typeof assertion.metric === 'number' || typeof assertion.target === 'number') {
+      const metricValue =
+        typeof assertion.metric === 'number'
+          ? assertion.metric.toFixed(3)
+          : '—';
+      const targetValue =
+        typeof assertion.target === 'number' ? assertion.target.toFixed(3) : '—';
+      metrics.textContent = `Metric ${metricValue} • Target ${targetValue}`;
+    } else {
+      metrics.textContent = '';
+    }
+
+    const evidenceList = document.createElement('ul');
+    evidenceList.className = 'assertion-evidence';
+    const evidence = assertion.evidence ?? [];
+    for (const line of evidence.slice(0, 3)) {
+      const li = document.createElement('li');
+      li.textContent = line;
+      evidenceList.append(li);
+    }
+
+    card.append(header, status, summaryText);
+    if (metrics.textContent) {
+      card.append(metrics);
+    }
+    if (evidenceList.childElementCount > 0) {
+      card.append(evidenceList);
+    }
+    container.append(card);
+  }
+}
+
 async function renderMermaid(summary) {
   mermaid.initialize({ startOnLoad: false, theme: 'dark' });
   const flow = document.getElementById('mermaid-flow');
@@ -320,6 +393,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderAssignments(summary);
   renderSovereignty(summary);
   renderDeployment(summary);
+  renderAssertions(summary);
   renderTrajectory(summary);
   await renderMermaid(summary);
   updateFooter(summary);
@@ -369,6 +443,7 @@ async function renderSummary(summary) {
   renderAssignments(summary);
   renderSovereignty(summary);
   renderDeployment(summary);
+  renderAssertions(summary);
   renderTrajectory(summary);
   await renderMermaid(summary);
   updateFooter(summary);

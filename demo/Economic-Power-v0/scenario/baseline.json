@@ -73,7 +73,7 @@
       "reputation": 92,
       "availability": 0.96,
       "capacity": 5,
-      "skills": ["market-analysis", "ai-orchestration", "data-science"],
+      "skills": ["market-analysis", "ai-orchestration", "data-science", "coordination"],
       "specializations": ["forecasting", "scenario-design"]
     },
     {

@@ -17,15 +17,16 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.mermaidFlow.includes('graph TD'), 'Flow mermaid diagram should be rendered');
   assert(summary.mermaidTimeline.includes('gantt'), 'Timeline mermaid diagram should be rendered');
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
-  assert(summary.metrics.ownerCommandCoverage > 0.2, 'Owner command coverage should be non-trivial');
-  assert(summary.metrics.sovereignControlScore >= 0.5, 'Sovereign control score should confirm custody');
+  assert(summary.metrics.ownerCommandCoverage >= 0.95, 'Owner command coverage should confirm deterministic control');
+  assert(summary.metrics.sovereignControlScore >= 0.9, 'Sovereign control score should confirm custody');
+  assert(summary.metrics.assertionPassRate === 1, 'All verification assertions should pass');
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
     assert(ownerParameters.includes(control.parameter));
   }
 
-  assert(summary.ownerCommandPlan.commandCoverage >= 0.2, 'Owner command coverage should be recorded');
+  assert(summary.ownerCommandPlan.commandCoverage >= 0.95, 'Owner command plan coverage should reflect dominance');
   assert(summary.ownerCommandPlan.coverageNarrative.length > 0, 'Coverage narrative should be present');
   assert(summary.ownerCommandMermaid.includes('graph LR'), 'Owner command mermaid graph should render');
   assert.equal(
@@ -53,6 +54,16 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.circuitBreakers.length,
     'Circuit breaker counts should align',
   );
+
+  assert(summary.assertions.length >= 5, 'Should expose comprehensive assertion set');
+  assert(summary.assertions.every((assertion) => assertion.outcome === 'pass'));
+
+  for (const assignment of summary.assignments) {
+    assert(
+      assignment.skillMatch >= 0.5,
+      `Assignment ${assignment.jobId} should satisfy skill match threshold`,
+    );
+  }
 
   assert(summary.deployment.modules.length > 0, 'Deployment modules should be catalogued');
   assert(summary.deployment.modules.every((module) => module.owner === summary.ownerControl.governanceSafe));

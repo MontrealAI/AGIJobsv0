@@ -30,6 +30,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
 - `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
+- `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
 
@@ -92,6 +93,7 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
+- Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
 - Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
@@ -115,6 +117,7 @@ The GitHub workflow `.github/workflows/demo-economic-power.yml` enforces:
 
 1. `npm run demo:economic-power:ci` – builds fresh reports and compares metrics against the canonical baseline (±5% tolerance).
 2. `npm run test:economic-power` – validates scheduling, ROI, and owner matrix logic.
+3. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
 
 This guarantees a **fully green v2 CI gate**. Pull requests and `main` share identical guard-rails, preventing regressions before production promotion.
 
