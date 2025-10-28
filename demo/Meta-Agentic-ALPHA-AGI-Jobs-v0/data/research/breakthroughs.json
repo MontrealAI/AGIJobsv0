@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Room-temperature superconducting polymer",
+    "doi": "10.5555/alpha-polymers-2025",
+    "impact_score": 0.95,
+    "summary": "Polymer lattice enabling 310K superconductivity at ambient pressure with scalable additive manufacturing.",
+    "strategic_linkages": [
+      "Quantum datacenter cooling",
+      "Grid-loss elimination",
+      "On-chain zk-compute accelerators"
+    ]
+  },
+  {
+    "title": "Bioengineered kelp carbon capture",
+    "doi": "10.5555/kelp-capture-2025",
+    "impact_score": 0.81,
+    "summary": "CRISPR-activated kelp ecosystem doubles carbon absorption with self-regulating nutrient loops.",
+    "strategic_linkages": [
+      "Blue carbon tokenization",
+      "Climate derivatives",
+      "Eco-credit issuance"
+    ]
+  }
+]

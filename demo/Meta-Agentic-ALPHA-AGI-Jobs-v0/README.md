@@ -1,135 +1,205 @@
-# Meta-Agentic α-AGI Jobs Demo – Sovereign Economic Engine Showcase
+# Meta-Agentic α-AGI Jobs Demo 👁️✨
 
-> **Purpose** – prove that a non-technical steward can launch, supervise, and govern a world-changing economic intelligence engine with **one command** using AGI Jobs v0 (v2). Every artefact in this demo is production-grade, auditable, and ready for mainnet execution.
+> **Mission:** Empower a non-technical owner to command an α-AGI grade wealth engine – entirely through AGI Jobs v0 (v2) – and watch it identify, design, govern, and execute trillion-scale opportunities autonomously.
 
-## Why this demo is different
+This demo packages the full Meta-Agentic α-AGI Jobs experience into a one-click orchestration run. It demonstrates how a sovereign-scale operator can ingest multi-domain alpha signals, evolve world models, meta-plan, design execution blueprints, calibrate governance, and dispatch on-chain actions **without writing a single line of code**.
 
-- **Meta-agentic superstructure** – the Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise → Out-Execute loop is fully coded and emitted as executable reports. Agents, validators, and modules are orchestrated automatically.
-- **Owner supremacy baked-in** – the owner multi-sig can pause, resume, upgrade, and reallocate capital instantly using the generated command playbook and CI verifications.
-- **Non-technical friendly** – a guided CLI, self-updating dashboard, and mermaid blueprints make the system legible to any operator while keeping the underlying power uncompromised.
-- **CI enforced** – the demo surfaces the exact CI commands that keep AGI Jobs v0 (v2) branch-protected and green. Nothing ships unless governance + automation agree.
-- **Sovereign orchestration telemetry** – alpha velocity metrics, phase matrices, and the sovereign phase flow expose how each stage compounds value while remaining owner-controlled.
+---
 
-## Golden path – unleash the Meta-Agentic α-AGI
+## 🎯 Capabilities at a Glance
 
-```bash
-# from the repository root
-npm run demo:meta-agentic-alpha          # deterministic run using the baseline scenario
-npm run demo:meta-agentic-alpha -- --interactive   # guided prompts to change multipliers live
-npm run test:meta-agentic-alpha          # deterministic verification of the orchestration maths
-```
+- **Identify:** Multi-domain anomaly detection across finance, research, and policy data streams.
+- **Out-Learn:** Self-evolving curriculum powered by POET-style simulation and MuZero-inspired world modeling.
+- **Out-Think:** Meta-agentic tree search coordinating ≥5 specialised agents through the orchestrator runtime.
+- **Out-Design:** Creative fusion agent drafts deliverables, dashboards, and antifragility playbooks.
+- **Out-Strategise:** Treasury allocator balances capital across compound opportunities under policy guardrails.
+- **Out-Execute:** Autonomous job posting, staking, validation simulation, and finalisation on AGI Jobs v0 (v2).
 
-Outputs land in `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/`:
+Every step is fully auditable, checkpointed, and reversible through built-in timelocks and guardian controls.
 
-| File | Description |
-| --- | --- |
-| `summary.json` | Portfolio-level metrics (ROI, automation coverage, validator confidence, antifragility index). |
-| `owner-control.json` | Owner control matrix with every command, emergency contact, and safeguard. |
-| `owner-playbook.md` | Plain-language, copy/paste ready command playbook for the multi-sig. |
-| `architecture.mmd` | Mermaid systems graph linking owner, agents, validators, and modules. |
-| `timeline.mmd` | Gantt view of the Identify → Execute flow for each opportunity. |
-| `coordination.mmd` | Agent-to-agent + validator mesh showing real-time coordination wiring. |
-| `phase-flow.mmd` | Sovereign Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise → Out-Execute orchestration. |
-| `phase-matrix.json` | Phase force-multiplier matrix with reliability, automation support, and validator reach. |
-| `knowledge-base.json` | Opportunity knowledge graph nodes + edges for downstream analytics. |
-| `world-model.json` | Simulation curriculum, fidelity scores, and stress outcomes feeding plan selection. |
-| `execution-ledger.json` | SHA-256 checksummed execution ledger for audit and compliance. |
-| `ci-status.json` | Branch-protection guardrails (lint, tests, coverage, governance verifications). |
-| `dashboard.json` | Data model consumed by the web UI for at-a-glance monitoring. |
+---
 
-> **Open the dashboard** – start any static server (for example, `npx http-server demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui`) and navigate to `http://localhost:8080`. The UI reads the latest `dashboard.json`, renders the metrics and phase matrix, and injects live Mermaid diagrams for architecture, timeline, coordination, and the sovereign phase flow.
-
-## Architecture in one glance
-
-```mermaid
-graph TD
-    Owner[Owner Multi-Sig (4-of-6)] -->|Commands| Planner[Meta-Agentic Planner]
-    Planner -->|Capital| Treasury[Treasury Manager]
-    Planner -->|Governance hooks| Governance[Timelock + Multisig]
-    Planner -->|Simulation| WorldModel[MuZero World Model]
-    Planner -->|Opportunity feed| KnowledgeBase[Opportunity Graph]
-    Planner -->|A2A control| A2ABus[Agent-to-Agent Protocol]
-    A2ABus --> Identify[Identify Scout]
-    A2ABus --> Learn[Curriculum Forge]
-    A2ABus --> Think[Planner Core]
-    A2ABus --> Design[Creative Savant]
-    A2ABus --> Strategise[Meta Strategist]
-    A2ABus --> Execute[Autonomous Executor]
-    Execute -->|On-chain actions| Jobs[AGI Job Registry]
-    Jobs --> Validators[Validator Constellation]
-    Validators --> Observability[Observability + Telemetry]
-    Observability --> Owner
-```
-
-## Timeline of compounding value
-
-```mermaid
-gantt
-    title Identify → Execute Expansion Loop
-    dateFormat  X
-    axisFormat  %Hh
-    section Identify
-      Multi-Domain Signal Sweep     :done,    detect,        0, 18h
-    section Out-Think
-      Meta-Agentic Plan Search      :active,  plan,         6, 24h
-    section Out-Design
-      Creative Solution Drafting    :active,  design,      12, 18h
-    section Out-Strategise
-      Portfolio Allocation Council  :crit,    strategise,  18, 16h
-    section Out-Execute
-      Autonomous Execution Mesh     :active,  execute,     24, 24h
-```
-
-## Owner command power grid
-
-Every mission-critical control path is generated for the owner. The baseline coverage score is **≥75%** meaning pause, upgrade, treasury, validator quorum, and CI guardrails are all executable instantly.
-
-| Capability | Command | Outcome |
-| --- | --- | --- |
-| Emergency pause | `npm run owner:system-pause -- --action pause` | Halts execution in ≤60 seconds. |
-| Resume operations | `npm run owner:system-pause -- --action unpause` | Restarts after validations clear. |
-| Global upgrades | `npm run owner:update-all` | Applies mainnet-ready module upgrades. |
-| Validator uplift | `npm run owner:upgrade -- --target validator` | Raises validator quorum & stake thresholds. |
-| Treasury routing | `npm run owner:parameters -- --group treasury` | Rebalances capital between liquidity, reserves, R&D. |
-| CI / governance audit | `npm run owner:verify-control` | Proves branch protection + governance health before merges. |
-
-Additional safeguards:
-
-- **Antifragility** – circuit breakers for capital drawdown, validator disagreement, and automation faults auto-trigger playbooks.
-- **World-model parity** – `world-model.json` reports fidelity and stress simulation results so upgrades are evidenced.
-- **24/7 coverage** – the owner playbook lists contacts, response times, and the quick-action matrix in plain language.
-
-## Non-technical operating loop
-
-1. Run `npm run demo:meta-agentic-alpha`. All artefacts appear in `reports/`.
-2. Start the static dashboard (`npx http-server demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui`). The UI loads metrics, commands, and diagrams automatically.
-3. Review the command plan in `owner-playbook.md`. Copy/paste the desired command into your terminal or multi-sig wallet notes.
-4. For drill mode, rerun the demo with `--interactive` to try higher automation multipliers or stricter confidence floors. Reports update instantly.
-5. Before shipping changes, execute the surfaced CI commands (`npm run lint:check`, `npm test`, `npm run coverage:check`, `npm run owner:verify-control`, `npm run ci:verify-branch-protection`).
-
-## Files and directories
+## 🧭 Directory Overview
 
 ```
 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
-├── README.md
-├── reports/                # Generated artefacts (created by the script)
-├── scenario/
-│   └── baseline.json       # Production-ready scenario baseline
-├── scripts/
-│   └── runDemo.ts          # Core orchestration + report generator
-├── test/
-│   └── meta_agentic_demo.test.ts   # Deterministic verification suite
-└── ui/
-    ├── index.html
-    ├── app.js
-    └── styles.css
+├── README.md                     # You are here
+├── meta_agentic_demo.py          # CLI entry point for the orchestration run
+├── config/
+│   └── meta_agentic_scenario.yaml # Narrative + plan definition
+├── python/meta_agentic_alpha_demo/
+│   ├── __init__.py               # Public API
+│   └── engine.py                 # Execution harness
+├── data/                         # Opportunity signal snapshots
+├── reports/
+│   └── alpha_deck.md             # Human-readable alpha deck (Mermaid-rich)
+├── storage/ui/                   # Grandiose UI console (HTML/CSS/JS + Mermaid)
+└── storage/                      # Runtime artefacts, scoreboard, checkpoints, latest run JSON
 ```
 
-## Assurances for the contract owner
+---
 
-- **Full control** – all mutable parameters are surfaced with executable commands. Governance threshold, timelock, and emergency protocols are explained in plain language.
-- **Pause & resume** – deterministic pause/resume scripts are included and referenced in every report.
-- **Upgrade ready** – module upgrade scripts and audit timestamps are catalogued for immediate execution.
-- **Audit trail** – the execution ledger is hashed, and the knowledge base exposes every opportunity-module-agent linkage for compliance teams.
+## 🚀 Quickstart (Non-Technical Friendly)
 
-This demonstration proves that AGI Jobs v0 (v2) empowers any steward to direct a planet-scale economic machine with total confidence, minimal friction, and uncompromised safety.
+1. **Install prerequisites** (Python ≥3.11 recommended):
+   ```bash
+   pip install -r requirements-python.txt
+   ```
+2. **Run the orchestration**:
+   ```bash
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
+   ```
+3. **Open the console**:
+   ```bash
+   python -m http.server --directory demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui 9000
+   ```
+   Visit `http://localhost:9000` to explore the live dashboard (Mermaid diagrams auto-render).
+4. **Review the generated artefacts:**
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
+
+> ✅ Everything ships pre-configured. The CLI auto-registers the validator agent, configures checkpoints, and ensures account-abstraction-ready governance parameters.
+
+---
+
+## 🧩 System Blueprint
+
+```mermaid
+graph LR
+  A[Identify Mesh] --> B(Out-Learn Simulation Foundry)
+  B --> C{Meta-Agentic Planner}
+  C --> D[Creative Design Forge]
+  D --> E[On-Chain Governance Core]
+  E --> F[AGI Jobs Execution Engine]
+  F --> G[Telemetry + Scoreboard]
+  G --> A
+```
+
+```mermaid
+sequenceDiagram
+  participant Owner as Non-technical Owner
+  participant Console as Meta-Agentic Console
+  participant Orchestrator as AGI Jobs Orchestrator
+  participant Governance as Governance Timelock
+  participant Chain as Ethereum + AGI Jobs v0 (v2)
+  Owner->>Console: Describe desired alpha outcome
+  Console->>Orchestrator: Submit scenario YAML (zero code)
+  Orchestrator->>Orchestrator: Restore checkpoints + register agents + spin meta-plan
+  Orchestrator->>Governance: Calibrate parameters (stake floor, reward split, pause guardian)
+  Governance-->>Orchestrator: Approvals recorded (2/2 guardians)
+  Orchestrator->>Chain: Post job, stake validator, simulate commit
+  Chain-->>Orchestrator: Emit receipts, scoreboard snapshot
+  Orchestrator-->>Console: Update dashboard + latest_run.json
+  Console-->>Owner: Actionable report, antifragility alerts, controls ready
+```
+
+---
+
+## 🛡️ Governance & Safety Guarantees
+
+- **Owner Supremacy:** Owners, guardians, approvals, and pause controls are configured directly via `governance.set` orchestration step. Contract owners can update every tunable parameter (stake floors, reward splits, validators, circuit breakers) on-demand.
+- **Timelock & Guardian Hooks:** High-impact operations (e.g., treasury reallocations) honour timelock & guardian thresholds from the scenario YAML.
+- **Dry-Run First:** All execution steps run in simulated mode by default, leveraging `ORCHESTRATOR_BRIDGE_MODE=python` and `eth_call` semantics.
+- **Checkpointing:** Crash-safe checkpointing ensures runs can be resumed mid-flight.
+- **Antifragile Monitoring:** Generated dashboards highlight stress scenarios and automatically update the alpha probability metric.
+
+---
+
+## 🧠 Meta-Agentic Insights
+
+- **Self-Improving Loop:** Every run persists scoreboard deltas and logs for reinforcement. Subsequent runs learn from prior successes/failures.
+- **Agent Federation:** The orchestrator registers and coordinates specialised agents (`guardian-grid-validator` etc.) with stake-aware routing.
+- **Resource Orchestration:** Treasury risk parameters (VaR limits, exposure ceilings, circuit breakers) are codified in YAML and enforced automatically.
+- **On-Chain Ready:** Output payloads from chain-centric steps are drop-in for AGI Jobs v0 (v2) routers and the account-abstraction paymaster stack.
+
+---
+
+## ⚙️ Configuration Anatomy (`config/meta_agentic_scenario.yaml`)
+
+```yaml
+plan:
+  budget_max: "250000"
+  approvals:
+    - "council/alpha"
+    - "owner/multisig"
+  steps:
+    - id: "identify-1"
+      tool: "identify.multi-domain"
+      params:
+        datasets:
+          finance: "data/finance/opportunity_signals.json"
+          research: "data/research/breakthroughs.json"
+          policy: "data/policy/regulatory_radar.json"
+    - id: "governance-1"
+      tool: "governance.set"
+      params:
+        approvals_required: 2
+        configurable:
+          stake_floor: "50000"
+          reward_split_bps: 6500
+          pause_guardian: true
+    - id: "execution-1"
+      tool: "job.post"
+      params:
+        title: "Superconductive Grid Retrofit Initiative"
+        reward: "90000"
+        validator: "guardian-grid-validator"
+```
+
+Each step is enforced by the orchestrator runtime and can be audited in the resulting `latest_run.json`.
+
+---
+
+## 🖥️ Grandiose UI Console
+
+The `storage/ui/index.html` dashboard renders:
+
+- Live alpha probability updates (fetched from `latest_run.json`).
+- Governance control panel with instant alerts.
+- Execution timeline and antifragility monitor.
+- Mermaid flowchart summarising the opportunity loop.
+
+Serve it statically or drop it into any CDN – no dependencies besides Mermaid.js.
+
+---
+
+## ✅ Testing & CI
+
+- Unit test: `pytest demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/tests/test_meta_agentic_demo.py`
+- Workflow: `.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml` ensures CI greenness with lint + tests + orchestrator dry-run.
+- Artefact validation ensures dashboards, reports, and JSON outputs stay current.
+
+Run locally:
+```bash
+pytest demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/tests
+```
+
+---
+
+## ♻️ Iterating Scenarios
+
+1. Duplicate `config/meta_agentic_scenario.yaml` and adjust datasets, governance, or plan steps.
+2. Re-run the CLI – checkpoints, scoreboard, and UI update automatically.
+3. Extend `storage/ui/` with additional charts, or connect to live telemetry by writing to `latest_run.json`.
+
+---
+
+## 🧾 Troubleshooting
+
+- **Timeout:** Increase `--timeout` or set `META_AGENTIC_DEMO_TIMEOUT` env var if CI hardware is slower.
+- **Agent registry conflicts:** Delete `storage/orchestrator/agents/registry.json` to reset demo agents.
+- **Mermaid not rendering:** Ensure the device has internet access (CDN served). Offline mode? Replace CDN script with local bundle.
+
+---
+
+## 📈 Outcome
+
+By the end of the run you obtain:
+
+- A structured orchestration plan with checkpoints, logs, and receipts.
+- On-chain ready payloads for job posting, staking, and validation.
+- Guardian-governed control plane with antifragility analytics.
+- A premium UI + report kit to brief stakeholders instantly.
+
+This demo cements AGI Jobs v0 (v2) as the sovereign operating system for compounding economic dominance – powerful, beautiful, and completely wieldable by non-technical owners.
