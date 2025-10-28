@@ -1,0 +1,73 @@
+{
+  "domains": [
+    {
+      "id": "quantum-liquidity",
+      "title": "Quantum Liquidity Harmoniser",
+      "signal_strength": 0.986,
+      "alpha_projection": 980000000,
+      "execution_horizon": "T+4",
+      "drivers": [
+        "cross-venue dispersion",
+        "quantum swap",
+        "regime shift"
+      ]
+    },
+    {
+      "id": "bio-synthesis",
+      "title": "Bio-Synthesis Sovereign Grid",
+      "signal_strength": 0.963,
+      "alpha_projection": 720000000,
+      "execution_horizon": "T+6",
+      "drivers": [
+        "cold chain telemetry",
+        "policy window",
+        "emergent patents"
+      ]
+    },
+    {
+      "id": "logistics-autonomy",
+      "title": "Logistics Autonomy Mesh",
+      "signal_strength": 0.968,
+      "alpha_projection": 830000000,
+      "execution_horizon": "T+5",
+      "drivers": [
+        "port index",
+        "capacity arbitrage",
+        "ai routing"
+      ]
+    },
+    {
+      "id": "energy-symphony",
+      "title": "Energy Symphony Convergence",
+      "signal_strength": 0.952,
+      "alpha_projection": 660000000,
+      "execution_horizon": "T+5",
+      "drivers": [
+        "microgrid orchestration",
+        "storage delta",
+        "demand asymmetry"
+      ]
+    },
+    {
+      "id": "policy-arbitrage",
+      "title": "Policy Arbitrage Aperture",
+      "signal_strength": 0.941,
+      "alpha_projection": 510000000,
+      "execution_horizon": "T+8",
+      "drivers": [
+        "regulatory gap",
+        "subsidy unlock",
+        "governance incentives"
+      ]
+    }
+  ],
+  "summary": {
+    "total_projection": 3700000000,
+    "dominant_domains": [
+      "quantum-liquidity",
+      "logistics-autonomy"
+    ],
+    "confidence_interval": 0.92,
+    "synergy_index": 0.86
+  }
+}

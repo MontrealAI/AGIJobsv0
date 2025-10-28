@@ -1,0 +1,32 @@
+{
+  "events": [
+    {
+      "time": "T+0",
+      "event": "Owner launches Meta-Convergence CLI"
+    },
+    {
+      "time": "T+0.5",
+      "event": "Guardians stream approvals and antifragility attestations"
+    },
+    {
+      "time": "T+1",
+      "event": "World model curriculum evolves new policy + compliance scenarios"
+    },
+    {
+      "time": "T+2",
+      "event": "Meta-agentic planner selects dominant alpha routes"
+    },
+    {
+      "time": "T+3",
+      "event": "Treasury dominion recalibrated with unstoppable reserve 42%"
+    },
+    {
+      "time": "T+3.5",
+      "event": "Account abstraction dry-run validated via CI envelope"
+    },
+    {
+      "time": "T+4",
+      "event": "Owner receives convergence console + override levers"
+    }
+  ]
+}

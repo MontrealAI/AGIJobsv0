@@ -1,0 +1,111 @@
+{
+  "nodes": [
+    {
+      "id": "quantum-liquidity",
+      "label": "Quantum Liquidity Harmoniser",
+      "alpha": 980000000,
+      "category": "finance"
+    },
+    {
+      "id": "bio-synthesis",
+      "label": "Bio-Synthesis Sovereign Grid",
+      "alpha": 720000000,
+      "category": "biotech"
+    },
+    {
+      "id": "logistics-autonomy",
+      "label": "Logistics Autonomy Mesh",
+      "alpha": 830000000,
+      "category": "supply"
+    },
+    {
+      "id": "energy-symphony",
+      "label": "Energy Symphony Convergence",
+      "alpha": 660000000,
+      "category": "energy"
+    },
+    {
+      "id": "policy-arbitrage",
+      "label": "Policy Aperture",
+      "alpha": 510000000,
+      "category": "policy"
+    },
+    {
+      "id": "treasury",
+      "label": "Treasury Reserve",
+      "alpha": 0,
+      "category": "treasury"
+    },
+    {
+      "id": "guardian",
+      "label": "Guardian Meta-Mesh",
+      "alpha": 0,
+      "category": "governance"
+    }
+  ],
+  "edges": [
+    {
+      "source": "quantum-liquidity",
+      "target": "treasury",
+      "weight": 0.97
+    },
+    {
+      "source": "bio-synthesis",
+      "target": "treasury",
+      "weight": 0.93
+    },
+    {
+      "source": "logistics-autonomy",
+      "target": "treasury",
+      "weight": 0.95
+    },
+    {
+      "source": "energy-symphony",
+      "target": "treasury",
+      "weight": 0.9
+    },
+    {
+      "source": "policy-arbitrage",
+      "target": "treasury",
+      "weight": 0.88
+    },
+    {
+      "source": "treasury",
+      "target": "guardian",
+      "weight": 0.97
+    },
+    {
+      "source": "guardian",
+      "target": "quantum-liquidity",
+      "weight": 0.92
+    },
+    {
+      "source": "guardian",
+      "target": "bio-synthesis",
+      "weight": 0.89
+    },
+    {
+      "source": "guardian",
+      "target": "logistics-autonomy",
+      "weight": 0.94
+    },
+    {
+      "source": "guardian",
+      "target": "energy-symphony",
+      "weight": 0.9
+    },
+    {
+      "source": "guardian",
+      "target": "policy-arbitrage",
+      "weight": 0.87
+    }
+  ],
+  "owner_controls": [
+    "Adjust guardian quorum and failover pool",
+    "Redirect liquidity routes across alpha domains",
+    "Pause/resume entire meta-agentic hyperstructure",
+    "Swap paymaster or session key on demand",
+    "Override treasury exposure with alpha multiplier",
+    "Deploy convergence scenario templates"
+  ]
+}

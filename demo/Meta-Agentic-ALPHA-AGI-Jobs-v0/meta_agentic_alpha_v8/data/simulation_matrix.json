@@ -1,0 +1,39 @@
+{
+  "world_model": {
+    "version": "MuZero-MetaConvergence-VIII",
+    "scenarios": 168,
+    "autonomy_layers": [
+      "treasury",
+      "execution",
+      "risk",
+      "ethics",
+      "compliance"
+    ],
+    "adaptive": true,
+    "autonomous": true
+  },
+  "stress_tests": [
+    {
+      "name": "Black swan liquidity shock",
+      "result": "treasury drawdown contained at 2.1%",
+      "owner_action": "activate antifragility drill"
+    },
+    {
+      "name": "Validator compromise",
+      "result": "guardian mesh isolates node, quorum intact",
+      "owner_action": "rotate guardians"
+    },
+    {
+      "name": "Paymaster outage",
+      "result": "failover to account abstraction backup",
+      "owner_action": "swap paymaster"
+    },
+    {
+      "name": "Regulatory clampdown",
+      "result": "policy aperture reroutes liquidity",
+      "owner_action": "dispatch convergence scenario"
+    }
+  ],
+  "resilience_bonus": 0.28,
+  "alpha_feedback": 0.11
+}

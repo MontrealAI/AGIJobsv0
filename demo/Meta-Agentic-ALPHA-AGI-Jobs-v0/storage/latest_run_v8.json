@@ -1,0 +1,255 @@
+{
+  "runId": "6c1d3022c866432d96fd5d34ceaeac42",
+  "state": "succeeded",
+  "completedSteps": 11,
+  "totalSteps": 11,
+  "estimatedAlphaProbability": 0.999,
+  "governance": {},
+  "agents": [
+    "guardian-meta-mesh-validator",
+    "sovereign-simulation-architect",
+    "alpha-treasury-hyperpilot",
+    "mission-audit-overwatch",
+    "alpha-compounding-director"
+  ],
+  "scoreboard": {
+    "guardian-meta-mesh-validator": {
+      "wins": 2,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-10-28T21:04Z: Simulate job deployment -> win",
+        "2025-10-28T21:04Z: Stake guardian capital -> win"
+      ],
+      "updatedAt": 1761685450.1657746
+    },
+    "alpha-compounding-director": {
+      "wins": 1,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-10-28T21:04Z: Activate compounding director -> win"
+      ],
+      "updatedAt": 1761685450.170931
+    }
+  },
+  "logs": [
+    "[21:04:10] Starting Fuse multi-domain alpha signals",
+    "[21:04:10] Fuse multi-domain alpha signals: No executor registered for tool `identify.meta-convergence`; marking as no-op.",
+    "[21:04:10] Completed Fuse multi-domain alpha signals",
+    "[21:04:10] Starting Advance world model curriculum",
+    "[21:04:10] Advance world model curriculum: No executor registered for tool `simulation.curriculum`; marking as no-op.",
+    "[21:04:10] Completed Advance world model curriculum",
+    "[21:04:10] Starting Meta-agentic convergence search",
+    "[21:04:10] Meta-agentic convergence search: No executor registered for tool `planning.meta-convergence`; marking as no-op.",
+    "[21:04:10] Completed Meta-agentic convergence search",
+    "[21:04:10] Starting Forge sovereign solution architecture",
+    "[21:04:10] Forge sovereign solution architecture: No executor registered for tool `design.meta-forge`; marking as no-op.",
+    "[21:04:10] Completed Forge sovereign solution architecture",
+    "[21:04:10] Starting Optimise treasury dominion",
+    "[21:04:10] Optimise treasury dominion: No executor registered for tool `treasury.meta-optimise`; marking as no-op.",
+    "[21:04:10] Completed Optimise treasury dominion",
+    "[21:04:10] Starting Reinforce governance lattice",
+    "[21:04:10] Reinforce governance lattice: No executor registered for tool `governance.align`; marking as no-op.",
+    "[21:04:10] Completed Reinforce governance lattice",
+    "[21:04:10] Starting Run CI Meta-Convergence Envelope",
+    "[21:04:10] Run CI Meta-Convergence Envelope: No executor registered for tool `ci.meta-convergence`; marking as no-op.",
+    "[21:04:10] Completed Run CI Meta-Convergence Envelope",
+    "[21:04:10] Starting Simulate job deployment",
+    "[21:04:10] Simulate job deployment: Dispatching intent `create_job` (attempt 1).",
+    "[21:04:10] Simulate job deployment: ↪︎ Intent `create_job` mapped to `unknown target`.",
+    "[21:04:10] Simulate job deployment: • Prepared payload: {\"params\": {\"title\": \"Meta-Convergence Sovereign Alpha Acceleration\", \"description\": \"Deploying autonomous alpha factories across finance, supply chains, biotech, energy, and policy.\", \"reward\": \"245000\", \"deadline_days\": 16, \"attachments\": [\"meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md\", \"meta_agentic_alpha_v8/reports/alpha_meta_convergence_overview.md\"], \"treasury_account\": \"0xA1PHA0000000000000000000000000000C0NV\", \"fee_bps\": 38, \"validator\": \"guardian-meta-mesh-validator\", \"dry_run\": true}, \"metadata\": {\"tool\": \"job.post\"}}",
+    "[21:04:10] Simulate job deployment: Intent completed (logical).",
+    "[21:04:10] Completed Simulate job deployment",
+    "[21:04:10] Starting Stake guardian capital",
+    "[21:04:10] Stake guardian capital: Dispatching intent `stake` (attempt 1).",
+    "[21:04:10] Stake guardian capital: ↪︎ Intent `stake` mapped to `unknown target`.",
+    "[21:04:10] Stake guardian capital: • Prepared payload.",
+    "[21:04:10] Stake guardian capital: Intent completed (logical).",
+    "[21:04:10] Completed Stake guardian capital",
+    "[21:04:10] Starting Activate compounding director",
+    "[21:04:10] Activate compounding director: Dispatching intent `validate` (attempt 1).",
+    "[21:04:10] Activate compounding director: ↪︎ Intent `validate` mapped to `unknown target`.",
+    "[21:04:10] Activate compounding director: • Ready to dispatch payload.",
+    "[21:04:10] Activate compounding director: Intent completed (logical).",
+    "[21:04:10] Completed Activate compounding director",
+    "[21:04:10] Starting Publish owner intelligence dossier",
+    "[21:04:10] Publish owner intelligence dossier: No executor registered for tool `analytics.finalize`; marking as no-op.",
+    "[21:04:10] Completed Publish owner intelligence dossier"
+  ],
+  "steps": [
+    {
+      "id": "identify-1",
+      "name": "Fuse multi-domain alpha signals",
+      "kind": "plan",
+      "tool": "identify.meta-convergence",
+      "params": {
+        "signals": "meta_agentic_alpha_v8/data/alpha_signals.json",
+        "knowledge_graph": "meta_agentic_alpha_v8/data/opportunity_graph.json",
+        "anomaly_threshold": 0.975,
+        "escalate_to": "owner-console"
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "learn-1",
+      "name": "Advance world model curriculum",
+      "kind": "llm",
+      "tool": "simulation.curriculum",
+      "params": {
+        "curriculum": "AlphaFactory/MetaSeason-VIII",
+        "world_model": "MuZero-MetaConvergence-VIII",
+        "simulation_engine": "MiniWorld-POET-XR",
+        "checkpoints": true
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "think-1",
+      "name": "Meta-agentic convergence search",
+      "kind": "plan",
+      "tool": "planning.meta-convergence",
+      "params": {
+        "horizon_days": 120,
+        "candidate_plans": 9,
+        "agent_bus": "A2A-meta-convergence",
+        "guardian_mesh": "meta_agentic_alpha_v8/data/guardian_mesh.json"
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "design-1",
+      "name": "Forge sovereign solution architecture",
+      "kind": "code",
+      "tool": "design.meta-forge",
+      "params": {
+        "opportunity_playbook": "meta_agentic_alpha_v8/data/opportunity_graph.json",
+        "simulation_matrix": "meta_agentic_alpha_v8/data/simulation_matrix.json",
+        "antifragility_mode": "compounding"
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "strategise-1",
+      "name": "Optimise treasury dominion",
+      "kind": "plan",
+      "tool": "treasury.meta-optimise",
+      "params": {
+        "liquidity_routes": [
+          "treasury/alpha-orbit",
+          "execution/liquidity-grid",
+          "resilience/phoenix-buffer",
+          "expansion/metaverse-signal",
+          "acquisition/convergence-fund"
+        ],
+        "unstoppable_reserve_percent": 42,
+        "antifragility_buffer_percent": 44,
+        "guardian_quorum": 4
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "govern-1",
+      "name": "Reinforce governance lattice",
+      "kind": "plan",
+      "tool": "governance.align",
+      "params": {
+        "guardian_mesh": "meta_agentic_alpha_v8/data/guardian_mesh.json",
+        "governance_matrix": "meta_agentic_alpha_v8/data/governance_matrix.json",
+        "session_keys": "meta_agentic_alpha_v8/data/execution_routes.json"
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "ci-1",
+      "name": "Run CI Meta-Convergence Envelope",
+      "kind": "plan",
+      "tool": "ci.meta-convergence",
+      "params": {
+        "ci_matrix": "meta_agentic_alpha_v8/data/ci_matrix.json",
+        "expected_status": "green"
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "execute-1",
+      "name": "Simulate job deployment",
+      "kind": "chain",
+      "tool": "job.post",
+      "params": {
+        "title": "Meta-Convergence Sovereign Alpha Acceleration",
+        "description": "Deploying autonomous alpha factories across finance, supply chains, biotech, energy, and policy.",
+        "reward": "245000",
+        "deadline_days": 16,
+        "attachments": [
+          "meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md",
+          "meta_agentic_alpha_v8/reports/alpha_meta_convergence_overview.md"
+        ],
+        "treasury_account": "0xA1PHA0000000000000000000000000000C0NV",
+        "fee_bps": 38,
+        "validator": "guardian-meta-mesh-validator",
+        "dry_run": true
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "execute-2",
+      "name": "Stake guardian capital",
+      "kind": "chain",
+      "tool": "stake.deposit",
+      "params": {
+        "agent": "guardian-meta-mesh-validator",
+        "amount": "64000",
+        "token": "AGIALPHA",
+        "slash_guardian": "0xDE1B0000000000000000000000000000C0NV",
+        "dry_run": true
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "execute-3",
+      "name": "Activate compounding director",
+      "kind": "chain",
+      "tool": "validator.commit",
+      "params": {
+        "agent": "alpha-compounding-director",
+        "tx_summary": "Compound alpha accrual across routes",
+        "expected_profit": "470000",
+        "dry_run": true
+      },
+      "needs": [],
+      "out": null
+    },
+    {
+      "id": "finalise-1",
+      "name": "Publish owner intelligence dossier",
+      "kind": "finalize",
+      "tool": "analytics.finalize",
+      "params": {
+        "timeline": "meta_agentic_alpha_v8/data/timeline.json",
+        "dashboards": [
+          "meta_agentic_alpha_v8/ui/index.html",
+          "meta_agentic_alpha_v8/reports/generated/alpha_meta_convergence_masterplan.md"
+        ]
+      },
+      "needs": [],
+      "out": null
+    }
+  ],
+  "approvals": [
+    "0xGUARDIAN000000000000000000000000000000A1",
+    "0xGUARDIAN000000000000000000000000000000B2",
+    "0xGUARDIAN000000000000000000000000000000C3",
+    "0xGUARDIAN000000000000000000000000000000D4"
+  ],
+  "scenarioId": "meta-agentic-alpha-v8"
+}
