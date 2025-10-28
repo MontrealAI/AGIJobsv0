@@ -53,6 +53,7 @@ export const DEFAULT_BEACON_ENTROPY: Hex =
   '0xabcdef0123456789fedcba98765432100123456789abcdef0123456789fedcba';
 
 export const DEFAULT_SENTINEL_GRACE_RATIO = 0.05;
+export const DEFAULT_TREASURY_ADDRESS: Hex = '0x7777777777777777777777777777777777777777';
 
 export function defaultDomains(): DomainConfig[] {
   return RAW_DOMAIN_TEMPLATES.map((domain) => ({
@@ -93,6 +94,7 @@ export function demoSetup(leaves: EnsLeaf[]): DemoSetup {
     onChainEntropy: DEFAULT_ONCHAIN_ENTROPY,
     recentBeacon: DEFAULT_BEACON_ENTROPY,
     sentinelGraceRatio: DEFAULT_SENTINEL_GRACE_RATIO,
+    treasuryAddress: DEFAULT_TREASURY_ADDRESS,
   };
 }
 

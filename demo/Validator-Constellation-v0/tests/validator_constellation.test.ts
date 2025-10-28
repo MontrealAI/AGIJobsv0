@@ -12,6 +12,7 @@ import { StakeManager } from '../src/core/stakeManager';
 import {
   DEFAULT_GOVERNANCE_PARAMETERS,
   DEFAULT_VERIFIER_KEY,
+  DEFAULT_TREASURY_ADDRESS,
   demoLeaves,
   demoSetup,
   demoJobBatch,
@@ -121,6 +122,9 @@ test('stake manager emits validator status transitions for subgraph telemetry', 
     stakes.registerValidator(validator);
     const slashEvent = stakes.slash(validator.address, 10_000, 'TOTAL_FAILURE');
     assert.equal(slashEvent.penalty, 5n);
+    assert.equal(slashEvent.treasuryRecipient, stakes.getTreasuryAddress());
+    assert.equal(slashEvent.treasuryBalanceAfter, stakes.getTreasuryBalance());
+    assert.equal(stakes.getTreasuryBalance(), 5n);
     assert.equal(observed.length, 2);
     assert.equal(observed[0]?.status, 'ACTIVE');
     assert.equal(observed[0]?.reason, 'REGISTERED');
@@ -226,6 +230,12 @@ test('validator constellation slashes dishonest validators via commit-reveal', (
     timeline.revealDeadlineBlock,
     (timeline.revealStartBlock ?? 0) + DEFAULT_GOVERNANCE_PARAMETERS.revealPhaseBlocks,
   );
+  const totalPenalty = roundResult.slashingEvents.reduce((acc, event) => acc + event.penalty, 0n);
+  assert.equal(roundResult.treasuryBalanceAfter, totalPenalty);
+  for (const event of roundResult.slashingEvents) {
+    assert.equal(event.treasuryRecipient, DEFAULT_TREASURY_ADDRESS);
+    assert.ok(event.treasuryBalanceAfter >= 0n);
+  }
 });
 
 test('round audit verifies end-to-end integrity guarantees', () => {
@@ -439,6 +449,33 @@ test('subgraph indexer records slashing events for transparency', () => {
   assert.ok(statusRecords.length >= roundResult.committee.length, 'expected validator status telemetry');
 });
 
+test('treasury distributions route slashing penalties to governance ledger', () => {
+  subgraphIndexer.clear();
+  const { roundResult, demo } = orchestrateRound();
+  const totalPenalty = roundResult.slashingEvents.reduce((acc, event) => acc + event.penalty, 0n);
+  assert.ok(totalPenalty > 0n, 'expected positive treasury balance');
+  assert.equal(roundResult.treasuryBalanceAfter, totalPenalty);
+  assert.equal(demo.getTreasuryBalance(), totalPenalty);
+  const treasuryAddress = demo.getTreasuryAddress();
+  for (const event of roundResult.slashingEvents) {
+    assert.equal(event.treasuryRecipient, treasuryAddress);
+  }
+  const beforeRecords = subgraphIndexer.filter('TREASURY').length;
+  const distributionAmount = totalPenalty > 1n ? totalPenalty / 2n : totalPenalty;
+  const recipient = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' as Hex;
+  const distribution = demo.distributeTreasury(recipient, distributionAmount);
+  assert.equal(distribution.amount, distributionAmount);
+  assert.equal(distribution.recipient, recipient);
+  assert.equal(distribution.treasuryBalanceAfter, demo.getTreasuryBalance());
+  assert.equal(demo.getTreasuryBalance(), totalPenalty - distributionAmount);
+  const treasuryRecords = subgraphIndexer.filter('TREASURY');
+  assert.equal(treasuryRecords.length, beforeRecords + 1);
+  assert.ok(
+    treasuryRecords.some((record) => (record.payload as { recipient?: string }).recipient === recipient),
+    'expected treasury distribution event to be indexed',
+  );
+});
+
 test('zk batch prover finalizes 1000 jobs with a single proof', () => {
   const { roundResult } = orchestrateRound();
   assert.equal(roundResult.proof.attestedJobCount, 1000);
@@ -546,6 +583,8 @@ test('configuration-driven scenario empowers non-technical orchestration', () =>
   assert.equal(executed.context.verifyingKey, '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011');
   assert.equal(executed.context.jobSample?.length, 8);
   assert.ok(executed.context.ownerNotes?.description);
+  assert.equal(executed.context.treasury.address, DEFAULT_TREASURY_ADDRESS);
+  assert.ok(executed.context.treasury.balance >= 0n);
   assert.ok((executed.context.updatedSafety?.maxCalldataBytes ?? 0) > 4_096);
   assert.ok(executed.context.updatedSafety?.allowedTargets.has('0xa11ce5c1e11ce000000000000000000000000000'));
   assert.ok(executed.context.updatedSafety?.forbiddenSelectors.has('0xa9059cbb'));
@@ -644,6 +683,7 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
     primaryDomain: demo.getDomainState(roundResult.domainId),
     ownerNotes: { origin: 'unit-test' },
     jobSample: jobBatch.slice(0, 5),
+    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
   };
   writeReportArtifacts({
     reportDir,
@@ -661,6 +701,7 @@ test('owner digest summarizes governance, sentinel, and proof telemetry for non-
   assert.ok(digest.includes('Sentinel Alerts'), 'digest should include sentinel section');
   assert.ok(digest.includes('Governance & Audit Checklist'), 'digest should include audit checklist');
   assert.ok(digest.includes('Validator Status Movements'), 'digest should include validator status section');
+  assert.ok(digest.includes('Treasury State'), 'digest should include treasury section');
   assert.ok(digest.includes(roundResult.vrfWitness.transcript), 'digest should include entropy transcript');
   assert.ok(digest.includes('mermaid'), 'digest should embed mermaid blueprint for operators');
 });

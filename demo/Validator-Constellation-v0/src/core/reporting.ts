@@ -65,6 +65,7 @@ export interface ReportContext {
   scenarioName?: string;
   ownerNotes?: Record<string, unknown>;
   jobSample?: JobResult[];
+  treasury: { address: Hex; balance: bigint };
 }
 
 function truncateHex(value: Hex, length = 14): string {
@@ -217,6 +218,8 @@ function buildOwnerDigest(params: {
     ['Audit hash', audit.auditHash],
     ['Entropy transcript', report.vrfWitness.transcript],
     ['ZK verifying key', context.verifyingKey],
+    ['Treasury balance', formatEth(context.treasury.balance)],
+    ['Treasury address', context.treasury.address],
     ['Subgraph records', `${subgraphRecords.length}`],
   ];
 
@@ -258,6 +261,10 @@ function buildOwnerDigest(params: {
     '',
     '## Domain Pause Log',
     pauseSummary,
+    '',
+    '## Treasury State',
+    `- Address: ${context.treasury.address}`,
+    `- Balance: **${formatEth(context.treasury.balance)}**`,
     '',
     '## Slashing Actions',
     slashingSummary,
@@ -348,6 +355,8 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <div class="metric">Entropy keccak: <strong>${result.vrfWitness.keccakSeed}</strong></div>
         <div class="metric">Entropy sha256: <strong>${result.vrfWitness.shaSeed}</strong></div>
         <div class="metric">ZK verifying key: <strong>${context.verifyingKey}</strong></div>
+        <div class="metric">Treasury balance: <strong>${formatEth(context.treasury.balance)}</strong></div>
+        <div class="metric">Treasury address: <strong>${context.treasury.address}</strong></div>
         <pre>${JSON.stringify(
           {
             jobRoot: result.proof.jobRoot,
@@ -460,6 +469,12 @@ export function writeReportArtifacts(input: ArtifactInput): void {
     slashing: roundResult.slashingEvents,
     timeline: roundResult.timeline,
     pauseRecords: roundResult.pauseRecords,
+    treasury: {
+      address: context.treasury.address,
+      balanceWei: context.treasury.balance.toString(),
+      balanceEth: formatEth(context.treasury.balance),
+      balanceAfterRoundWei: roundResult.treasuryBalanceAfter.toString(),
+    },
     governance: {
       parameters: context.governance,
       sentinelGraceRatio: context.sentinelGraceRatio,

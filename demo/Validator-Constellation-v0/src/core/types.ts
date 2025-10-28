@@ -135,6 +135,17 @@ export interface SlashingEvent {
   reason: string;
   txHash: Hex;
   timestamp: number;
+  treasuryRecipient: Hex;
+  treasuryBalanceAfter: bigint;
+}
+
+export interface TreasuryDistributionEvent {
+  recipient: Hex;
+  amount: bigint;
+  treasuryAddress: Hex;
+  treasuryBalanceAfter: bigint;
+  txHash: Hex;
+  timestamp: number;
 }
 
 export interface ValidatorStatusEvent {
@@ -155,7 +166,8 @@ export interface SubgraphRecord {
     | 'REVEAL'
     | 'ZK_BATCH'
     | 'VRF_WITNESS'
-    | 'VALIDATOR_STATUS';
+    | 'VALIDATOR_STATUS'
+    | 'TREASURY';
   blockNumber: number;
   payload: Record<string, unknown>;
 }
@@ -175,6 +187,7 @@ export interface DemoOrchestrationReport {
   slashingEvents: SlashingEvent[];
   nodes: NodeIdentity[];
   timeline: RoundTimeline;
+  treasuryBalanceAfter: bigint;
 }
 
 export interface DomainState {
@@ -202,6 +215,7 @@ export interface ValidatorEventBus extends EventEmitter {
   on(event: 'ZkBatchFinalized', listener: (proof: ZkBatchProof) => void): this;
   on(event: 'VrfWitnessComputed', listener: (witness: EntropyWitness) => void): this;
   on(event: 'ValidatorStatusChanged', listener: (event: ValidatorStatusEvent) => void): this;
+  on(event: 'TreasuryDistribution', listener: (event: TreasuryDistributionEvent) => void): this;
 }
 
 export type GovernanceUpdatable = keyof GovernanceParameters;

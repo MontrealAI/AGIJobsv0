@@ -61,6 +61,8 @@ export interface OperatorState {
   sentinelGraceRatio: number;
   onChainEntropy: Hex;
   recentBeacon: Hex;
+  treasuryAddress: Hex;
+  treasuryBalance: string;
   validators: OperatorValidator[];
   agents: OperatorAgent[];
   nodes: OperatorNode[];
@@ -85,6 +87,7 @@ function cloneSetupFromState(state: OperatorState): DemoSetup {
     onChainEntropy: state.onChainEntropy,
     recentBeacon: state.recentBeacon,
     sentinelGraceRatio: state.sentinelGraceRatio,
+    treasuryAddress: state.treasuryAddress,
   };
 }
 
@@ -169,6 +172,8 @@ export function createInitialOperatorState(): OperatorState {
     sentinelGraceRatio: setup.sentinelGraceRatio,
     onChainEntropy: setup.onChainEntropy,
     recentBeacon: setup.recentBeacon,
+    treasuryAddress: setup.treasuryAddress,
+    treasuryBalance: '0',
     validators,
     agents,
     nodes,
@@ -192,6 +197,8 @@ export function loadOperatorState(filePath: string): OperatorState {
     ...parsed,
     leaves: parsed.leaves.map((leaf) => ({ ...leaf })),
     governance: { ...parsed.governance },
+    treasuryAddress: (parsed as OperatorState).treasuryAddress ?? demoSetup(demoLeaves()).treasuryAddress,
+    treasuryBalance: (parsed as OperatorState).treasuryBalance ?? '0',
     validators: parsed.validators.map((validator) => ({ ...validator })),
     agents: parsed.agents.map((agent) => ({ ...agent })),
     nodes: parsed.nodes.map((node) => ({ ...node })),
@@ -330,6 +337,8 @@ export function refreshStateFromDemo(
   state.verifyingKey = demo.getZkVerifyingKey();
   state.governance = { ...demo.getGovernance() };
   state.sentinelGraceRatio = demo.getSentinelBudgetGraceRatio();
+  state.treasuryAddress = demo.getTreasuryAddress();
+  state.treasuryBalance = demo.getTreasuryBalance().toString();
   updateAgentsFromDemo(state, demo);
   updateNodesFromDemo(state, demo);
   updateDomainsFromDemo(state, demo);

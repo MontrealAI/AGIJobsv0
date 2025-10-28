@@ -32,6 +32,7 @@ flowchart LR
 * **Zero-knowledge throughput** – a single proof finalizes **1,000 jobs** at once while preserving privacy and auditability.
 * **Sentinel guardrails** – budget overruns, forbidden opcodes, unauthorized targets, or calldata floods trigger autonomous domain pauses within the same round, and the audit trail now proves the pause landed within a one-second SLA.
 * **Validator life-cycle telemetry** – every registration and ban emits dedicated events mirrored in the subgraph, so owners can watch validator health in real time.
+* **Autonomous treasury routing** – every slash feeds a governance treasury wallet, with CLI-controlled distributions and subgraph telemetry so operators can instantly route penalties to recovery vaults.
 * **Deterministic supply-chain allowlists** – each domain now encodes hashed ENS target allowlists and calldata ceilings so auditors can replay sentinel verdicts byte-for-byte.
 * **Selector firewalls** – domains ship with banned function selectors so the sentinel can terminate ERC-20/721 drains or other malicious call patterns the moment they appear.
 * **ENS-verified identity** – only operators with approved `.club.agi.eth` or `.alpha.club.agi.eth` subdomains pass the Merkle proof gate, making impersonation impossible.
@@ -179,6 +180,7 @@ The CLI enforces ENS subdomain policy, budget ceilings, and governance guardrail
 8. **ZK batch attestation** – computes a proof for 1,000 jobs, validates it twice (prove & verify), and emits telemetry to the subgraph feed.
 9. **Entropy & proof rotation** – rotates the VRF entropy mix and ZK verifying key mid-run so owners can refresh randomness and proving assets on demand.
 10. **Transparency outputs** – writes summary JSON, NDJSON event stream, subgraph snapshots, and an immersive dashboard.
+11. **Treasury routing** – accrues every slash into a governance treasury and demonstrates a live distribution that the subgraph indexes for downstream accounting dashboards.
 
 ## Governance levers
 
@@ -206,6 +208,9 @@ demo.updateZkVerifyingKey('0xf1f2f3...0011');
 demo.getEntropySources();
 demo.registerNode('polaris.node.agi.eth', '0xcccccccccccccccccccccccccccccccccccccccc');
 demo.registerNode('selene.alpha.node.agi.eth', '0xdddddddddddddddddddddddddddddddddddddddd');
+demo.updateTreasuryAddress('0xfacefacefacefacefacefacefacefacefaceface');
+demo.distributeTreasury('0xaaaa0000aaaa0000aaaa0000aaaa0000aaaa0000', 1_000_000_000_000_000_000n);
+demo.getTreasuryBalance();
 ```
 
 All modules respond instantly (new committee sizes, quorum thresholds, penalty weights, etc.).
@@ -268,5 +273,6 @@ After `npm run demo:validator-constellation`, inspect:
 - ✅ Node orchestrators inherit the same ENS + blacklist guardrails as validators and agents.
 - ✅ Owners rotate VRF entropy and ZK verifying keys on demand without touching code.
 - ✅ Sentinel alerts include hashed target witnesses, calldata measurements, and 1-second SLA attestations for external reproducibility.
+- ✅ Treasury balances and distributions are cryptographically logged and mirrored into the subgraph for downstream accounting.
 
 Launch the demo, explore the dashboard, and experience how AGI Jobs v0 (v2) turns Kardashev-II operator control into a single command for non-technical teams.

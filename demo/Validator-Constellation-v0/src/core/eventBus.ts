@@ -6,6 +6,7 @@ import {
   RevealMessage,
   SentinelAlert,
   SlashingEvent,
+  TreasuryDistributionEvent,
   ValidatorEventBus,
   ValidatorStatusEvent,
   ZkBatchProof,
@@ -21,6 +22,7 @@ export class ValidatorConstellationEventBus extends EventEmitter implements Vali
   emit(event: 'ZkBatchFinalized', payload: ZkBatchProof): boolean;
   emit(event: 'VrfWitnessComputed', payload: EntropyWitness): boolean;
   emit(event: 'ValidatorStatusChanged', payload: ValidatorStatusEvent): boolean;
+  emit(event: 'TreasuryDistribution', payload: TreasuryDistributionEvent): boolean;
   emit(event: string, payload: unknown): boolean {
     return super.emit(event, payload);
   }
