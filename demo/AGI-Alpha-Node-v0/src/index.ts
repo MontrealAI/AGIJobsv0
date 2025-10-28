@@ -49,7 +49,11 @@ async function main(): Promise<void> {
   logger.info({ fqdn }, 'Validating ENS ownership');
   const proof = await ensVerifier.buildOwnershipProof(fqdn, operatorAddress);
   if (!proof.isValid && !options.simulate) {
-    throw new Error(`ENS ownership check failed for ${fqdn}`);
+    const ownershipError = new Error(
+      `ENS ownership check failed for ${fqdn}. Expected owner ${operatorAddress}, got ${proof.owner ?? 'unknown'}.`
+    );
+    ownershipError.name = 'EnsOwnershipError';
+    throw ownershipError;
   }
 
   const controlPlane = new ControlPlane({

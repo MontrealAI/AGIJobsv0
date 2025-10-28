@@ -1,4 +1,4 @@
-import { Interface, JsonRpcProvider, namehash } from 'ethers';
+import { Interface, JsonRpcProvider, getAddress, namehash } from 'ethers';
 
 import { createLogger } from '../utils/telemetry.js';
 
@@ -63,7 +63,31 @@ export class EnsVerifier {
   async buildOwnershipProof(fqdn: string, expectedOwner?: string | null): Promise<EnsOwnershipProof> {
     const owner = await this.ownerOf(fqdn);
     const resolverAddress = await this.resolveAddress(fqdn);
-    const isValid = Boolean(owner && resolverAddress && (!expectedOwner || owner === expectedOwner));
-    return { fqdn, owner, resolverAddress, isValid };
+
+    let normalizedOwner: string | null = null;
+    if (owner) {
+      try {
+        normalizedOwner = getAddress(owner);
+      } catch (error) {
+        logger.warn({ error, fqdn, owner }, 'Failed to normalise ENS owner address');
+      }
+    }
+
+    let normalizedExpectedOwner: string | null = null;
+    if (expectedOwner) {
+      try {
+        normalizedExpectedOwner = getAddress(expectedOwner);
+      } catch (error) {
+        logger.warn({ error, fqdn, expectedOwner }, 'Failed to normalise expected ENS owner address');
+      }
+    }
+
+    const isValid = Boolean(
+      normalizedOwner &&
+        resolverAddress &&
+        (!normalizedExpectedOwner || normalizedOwner === normalizedExpectedOwner)
+    );
+
+    return { fqdn, owner: normalizedOwner ?? owner, resolverAddress, isValid };
   }
 }
