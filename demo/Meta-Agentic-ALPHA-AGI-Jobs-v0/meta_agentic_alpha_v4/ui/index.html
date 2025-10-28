@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meta-Agentic α-AGI Jobs Demo — Alpha Flight Console</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <script src="dashboard.js" type="module" defer></script>
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <h1>Meta-Agentic α-AGI Jobs Demo</h1>
+        <p class="tagline">
+          Empowering non-technical owners to command trillion-grade alpha engines
+          with a single click.
+        </p>
+        <p class="meta">Version 4 · Meta-Agentic Alpha Flight Deck</p>
+      </div>
+      <div class="hero-metrics" id="hero-metrics">
+        <div class="metric">
+          <span class="label">Alpha Readiness</span>
+          <span class="value" data-field="alphaReadiness">—</span>
+        </div>
+        <div class="metric">
+          <span class="label">Compounding Index</span>
+          <span class="value" data-field="alphaCompoundingIndex">—</span>
+        </div>
+        <div class="metric">
+          <span class="label">Alpha Dominance</span>
+          <span class="value" data-field="alphaDominance">—</span>
+        </div>
+        <div class="metric">
+          <span class="label">Governance Alignment</span>
+          <span class="value" data-field="governanceAlignment">—</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <header>
+          <h2>Owner Command Console</h2>
+          <p>All parameters are modifiable in real time using the owner controls script.</p>
+        </header>
+        <div class="grid" id="owner-controls"></div>
+      </section>
+
+      <section class="panel">
+        <header>
+          <h2>Mission Telemetry</h2>
+          <p>Live snapshot from <code>storage/latest_run_v4.json</code>.</p>
+        </header>
+        <div class="telemetry">
+          <div>
+            <h3>Scenario</h3>
+            <dl id="scenario-details"></dl>
+            <h3>Plan</h3>
+            <dl id="plan-details"></dl>
+          </div>
+          <div>
+            <h3>Mission Domains</h3>
+            <ul id="mission-domains"></ul>
+            <h3>Guardians &amp; Confirmations</h3>
+            <ul id="guardian-list"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <header>
+          <h2>Phase Progress</h2>
+          <p>Meta-agentic pipeline status across Identify → Execute → Feedback.</p>
+        </header>
+        <table id="phase-table">
+          <thead>
+            <tr>
+              <th>Phase</th>
+              <th>State</th>
+              <th>Completion</th>
+              <th>Weight</th>
+              <th>Metric</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <header>
+          <h2>Alpha Blueprint</h2>
+          <p>Mermaid diagrams render automatically when new runs are ingested.</p>
+        </header>
+        <div class="mermaid" id="timeline-diagram"></div>
+        <div class="mermaid" id="operating-system-diagram"></div>
+        <div class="mermaid" id="owner-control-diagram"></div>
+      </section>
+
+      <section class="panel">
+        <header>
+          <h2>Console Actions</h2>
+          <p>Suggested commands for non-technical owners (copy/paste ready).</p>
+        </header>
+        <ol id="console-actions"></ol>
+      </section>
+
+      <section class="panel">
+        <header>
+          <h2>Scoreboard Snapshot</h2>
+          <p>Direct extraction from <code>storage/orchestrator_v4/scoreboard.json</code>.</p>
+        </header>
+        <pre id="scoreboard-json"></pre>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        Built entirely with AGI Jobs v0 (v2). Every switch, guardian, and mission dial is
+        owner-adjustable, demonstrating world-scale empowerment for non-technical stewards.
+      </p>
+    </footer>
+  </body>
+</html>

@@ -50,6 +50,7 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v2.py
    python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v3.py
+   python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v4.py
    ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -62,6 +63,8 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v2.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/alpha_masterplan_run.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v3/reports/generated/meta_synthesis.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v4.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v4/reports/generated/alpha_flight_synthesis.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator/scoreboard.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/alpha_deck.md`
 
@@ -137,6 +140,15 @@ sequenceDiagram
 - **Agent Federation:** The orchestrator registers and coordinates specialised agents (`guardian-grid-validator` etc.) with stake-aware routing.
 - **Resource Orchestration:** Treasury risk parameters (VaR limits, exposure ceilings, circuit breakers) are codified in YAML and enforced automatically.
 - **On-Chain Ready:** Output payloads from chain-centric steps are drop-in for AGI Jobs v0 (v2) routers and the account-abstraction paymaster stack.
+
+---
+
+## 🛫 V4 Alpha Flight Deck (New)
+
+- **Alpha Dominance Metrics:** The V4 orchestration reports alpha readiness, compounding, dominance, and governance alignment simultaneously to prove unstoppable control.
+- **Console Control Tower:** Guardian mesh quorum, antifragility heartbeats, and treasury dials are surfaced as owner actions within the new flight console (`storage/ui/v4/index.html`).
+- **Mermaid-Rich Artefacts:** `alpha_flight_synthesis.md` and the in-browser dashboard render advanced flowcharts, timelines, and topology diagrams powered by `dashboard-data-v4.json`.
+- **Gasless & Simulation-First:** The plan enforces `eth_call` dry-runs, account abstraction paymasters, and approvals for every dispatch step to guarantee non-technical safety.
 
 ---
 

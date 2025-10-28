@@ -1,0 +1,333 @@
+scenario:
+  id: "meta-agentic-alpha-v4"
+  title: "Meta-Agentic α-AGI Jobs Demo — Meta-Agentic Alpha Flight Deck"
+  narrative: |
+    A non-technical steward uses AGI Jobs v0 (v2) to command an alpha-fabric that
+    senses, plans, governs, and executes trillion-grade opportunities with one
+    click. The V4 flight deck promotes owner primacy: every guardian, treasury
+    dial, antifragility buffer, and execution throttle is adjustable from the
+    control console without touching code.
+  owner:
+    address: "0xC0NTROL0000000000000000000000000ALPHA"
+    guardians:
+      - "0xGUARD100000000000000000000000000000001"
+      - "0xGUARD200000000000000000000000000000002"
+      - "0xGUARD300000000000000000000000000000003"
+      - "0xEMERGENCYPAUSE00000000000000000000004"
+    approvals_required: 3
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 15
+    mission_charter: "meta-agentic-alpha-flight-deck"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "12000000"
+    risk_limits:
+      max_drawdown_percent: 4.5
+      var_percent: 2.4
+      antifragility_buffer_percent: 25
+      circuit_breaker_percent: 7.5
+    liquidity_routes:
+      - "dao/sovereign-reserve"
+      - "execution/treasury-pipeline"
+      - "stability/emergency-buffer"
+    unstoppable_reserve_percent: 18
+  gasless:
+    enabled: true
+    bundler: "meta-agentic-flight-bundler"
+    paymaster: "account-abstraction/alpha-flight-paymaster.json"
+    session_keys:
+      - "guardian-grid-validator"
+      - "alpha-portfolio-autopilot"
+      - "omni-risk-auditor"
+      - "mission-chronicle"
+    overrideable_parameters:
+      max_fee_gwei: 27
+      preferred_network: "ethereum-mainnet"
+  dashboards:
+    - title: "Meta-Agentic Flight Console"
+      file: "meta_agentic_alpha_v4/ui/index.html"
+    - title: "Meta-Agentic Alpha Dominion Deck"
+      file: "meta_agentic_alpha_v4/reports/alpha_dominion_manifesto.md"
+  attachments:
+    - "meta_agentic_alpha_v4/reports/alpha_dominion_manifesto.md"
+    - "meta_agentic_alpha_v4/ui/index.html"
+
+mission:
+  alpha_goal: "sovereign-alpha-synthesis"
+  ica_score_target: 0.975
+  antifragility_focus: "exploit-disorder-to-accelerate"
+  sovereign_controls:
+    pause_switch: true
+    treasury_dials:
+      liquidity_buffer_percent: 20
+      reinvestment_percent: 48
+      emergency_diversion_percent: 12
+    guardian_circuit: "quasar-hexaplex"
+  opportunity_domains:
+    - finance/liquidity-arbitrage
+    - supply-chain/rare-earths
+    - energy/ultra-storage
+    - biotech/longitudinal-omics
+    - space/synthetic-manufacturing
+
+unstoppable:
+  hypergraph_state: "omniscient"
+  multi_agent_mesh:
+    quorum: 9
+    coordination_protocol: "A2A-meta-dominion"
+    sentinel_agents:
+      - "guardian-grid-validator"
+      - "alpha-portfolio-autopilot"
+      - "omni-risk-auditor"
+      - "sovereign-governor"
+      - "treasury-allocator"
+      - "ethics-proctor"
+      - "mission-chronicle"
+      - "alpha-flight-director"
+      - "gasless-paymaster-sentinel"
+  safety_net:
+    antifragility_oracle: "omega-delta-observatory"
+    halt_conditions:
+      - "variance>2.5σ"
+      - "losses>circuit_breaker"
+      - "guardian-veto"
+      - "anomaly>hypergraph-threshold"
+    restart_policy: "adaptive-phoenix-restart"
+
+control_tower:
+  console_panels:
+    - id: "sovereign-controls"
+      label: "Sovereign Controls"
+      description: "Adjust approvals, guardians, and treasury throttles live."
+    - id: "alpha-dominion"
+      label: "Alpha Dominion"
+      description: "Track readiness, compounding, and antifragility buffers."
+    - id: "execution-pipeline"
+      label: "Execution Pipeline"
+      description: "Monitor simulation, governance, and on-chain dispatch states."
+  owner_actions:
+    - "set pause true"
+    - "set pause false"
+    - "set treasury.unstoppable_reserve_percent"
+    - "set plan.budget.max"
+    - "set plan.confirmations"
+    - "add guardian"
+    - "reroute liquidity"
+  guardian_mesh:
+    quorum: 3
+    unstoppable_pause_seconds: 45
+    antifragility_heartbeat_seconds: 60
+  compliance_matrix:
+    jurisdictions:
+      - "us"
+      - "eu"
+      - "apac"
+    auditability: "real-time"
+    proofs:
+      - "attestation/proof-of-guardian.yaml"
+      - "reports/alpha_deck.md"
+
+alpha_pipeline:
+  identify:
+    data_sources:
+      finance: "data/finance/opportunity_signals.json"
+      research: "data/research/breakthroughs.json"
+      policy: "data/policy/regulatory_radar.json"
+    anomaly_threshold: 0.92
+    escalation_channel: "owner-console"
+  learn:
+    curriculum: "AlphaFactory/MetaSeason-IV"
+    world_model: "MuZero-AlphaFusion-IV"
+    simulation_engine: "MiniWorld-POET-XL"
+    policy_distillation: true
+  design:
+    creative_agent: "meta-synthesis-forge"
+    artefacts:
+      - "reports/alpha_deck.md"
+      - "meta_agentic_alpha_v4/reports/alpha_dominion_manifesto.md"
+  strategise:
+    treasury_allocator: "treasury-allocator"
+    governance_adapter: "sovereign-governor"
+    ethics_monitor: "ethics-proctor"
+  execute:
+    orchestrator_adapter: "guardian-grid-validator"
+    paymaster: "gasless-paymaster-sentinel"
+    simulation_mode: "eth_call"
+
+agents:
+  - agent_id: "guardian-grid-validator"
+    owner: "Guardian Grid Syndicate"
+    region: "omni"
+    capabilities:
+      - execution
+      - validation
+      - oversight
+    stake_amount: "60000"
+    slashable: true
+    requires_kyc: true
+    operator_secret: "guardian-alpha-flight"
+  - agent_id: "alpha-portfolio-autopilot"
+    owner: "Alpha Portfolio Directorate"
+    region: "global"
+    capabilities:
+      - strategy
+      - analytics
+      - router
+    stake_amount: "125000"
+    slashable: true
+    operator_secret: "autopilot-flight-secret"
+  - agent_id: "omni-risk-auditor"
+    owner: "Omni Risk Observatory"
+    region: "planetary"
+    capabilities:
+      - oversight
+      - analysis
+      - support
+    stake_amount: "42000"
+    slashable: false
+    operator_secret: "risk-audit"
+  - agent_id: "alpha-flight-director"
+    owner: "Meta-Agentic Flight Directorate"
+    region: "interstellar"
+    capabilities:
+      - strategy
+      - execution
+      - oversight
+    stake_amount: "87000"
+    slashable: true
+    operator_secret: "flight-director"
+
+phases:
+  - id: "identify"
+    label: "Identify"
+    description: "Fuse multi-domain alpha anomalies into an actionable hypergraph."
+    weight: 1.8
+    success_metric: "signal_resonance"
+    step:
+      kind: "plan"
+      tool: "identify.meta-mesh"
+      params:
+        sensors:
+          finance: "data/finance/opportunity_signals.json"
+          research: "data/research/breakthroughs.json"
+          policy: "data/policy/regulatory_radar.json"
+        hypergraph_export: "storage/alpha_hypergraph_v4.json"
+        anomaly_threshold: 0.92
+        escalation_channel: "owner-console"
+  - id: "learn"
+    label: "Out-Learn"
+    description: "Evolve open-ended curricula with MuZero-grade world modeling."
+    weight: 2.0
+    success_metric: "world_model_sufficiency"
+    step:
+      kind: "plan"
+      tool: "learn.self-architect"
+      params:
+        curriculum: "AlphaFactory/MetaSeason-IV"
+        simulation_engine: "MiniWorld-POET-XL"
+        world_model: "MuZero-AlphaFusion-IV"
+        policy_distillation: true
+        antifragility_oracle: "omega-delta-observatory"
+  - id: "think"
+    label: "Out-Think"
+    description: "Meta-planner decomposes strategies with guardian critique loops."
+    weight: 2.4
+    success_metric: "meta_plan_strength"
+    step:
+      kind: "plan"
+      tool: "plan.meta-strategist"
+      params:
+        branching_factor: 13
+        evaluation_policy: "risk-adjusted-NPV"
+        coordination_protocol: "A2A-meta-dominion"
+  - id: "design"
+    label: "Out-Design"
+    description: "Creative fusion agent drafts antifragile delivery playbooks."
+    weight: 1.9
+    success_metric: "design_resonance"
+    step:
+      kind: "plan"
+      tool: "design.meta-forge"
+      params:
+        creative_agent: "meta-synthesis-forge"
+        antifragility_feedback: true
+        simulation_feedback: "simulation-foundry"
+  - id: "strategise"
+    label: "Out-Strategise"
+    description: "Alpha allocator calibrates treasury, guardians, and confirmations."
+    weight: 2.1
+    success_metric: "governance_alignment"
+    step:
+      kind: "plan"
+      tool: "strategy.meta-governor"
+      params:
+        guardian_mesh: "quasar-hexaplex"
+        treasury_allocator: "treasury-allocator"
+        ethics_monitor: "ethics-proctor"
+  - id: "govern"
+    label: "Govern"
+    description: "On-chain governance parameters enforced through tri-sentinel mesh."
+    weight: 1.6
+    success_metric: "policy_integrity"
+    step:
+      kind: "plan"
+      tool: "governance.set"
+      params:
+        approvals_required: 3
+        confirmations:
+          - "guardian-grid-validator"
+          - "sovereign-governor"
+          - "mission-chronicle"
+        pause_switch: true
+        treasury_overrides:
+          unstoppable_reserve_percent: 18
+          reinvestment_percent: 48
+  - id: "execute-onchain"
+    label: "Out-Execute"
+    description: "Account-abstraction aware execution with dry-run first guarantee."
+    weight: 2.2
+    success_metric: "execution_velocity"
+    step:
+      kind: "plan"
+      tool: "execution.meta-dispatch"
+      params:
+        dry_run: true
+        job:
+          registry: "contracts/v2/jobs/JobRegistry.json"
+          reward: 550000
+          stake_required: 120000
+        paymaster: "gasless-paymaster-sentinel"
+        relayer: "meta-agentic-flight-bundler"
+  - id: "feedback"
+    label: "Out-Feedback"
+    description: "Telemetry loops update antifragility index and owner console."
+    weight: 1.4
+    success_metric: "feedback_strength"
+    step:
+      kind: "plan"
+      tool: "feedback.meta-sentinel"
+      params:
+        scoreboard_path: "storage/orchestrator_v4/scoreboard.json"
+        antifragility_index_target: 0.88
+        owner_console: "storage/ui/v4/index.html"
+
+plan:
+  approvals:
+    - "council/alpha"
+    - "owner/multisig"
+    - "guardian-grid-validator"
+  confirmations:
+    - "treasury-allocator"
+    - "guardian-grid-validator"
+    - "mission-chronicle"
+  budget:
+    max: "750000"
+    unstoppable_buffer_percent: 18
+  antifragility:
+    guardian_mesh: "quasar-hexaplex"
+    stress_scenarios:
+      - "black-swan-liquidity-crunch"
+      - "regulatory-shift"
+      - "volatility-spike"
+    fallback_plan: "adaptive-phoenix-restart"

@@ -1,0 +1,215 @@
+:root {
+  color-scheme: dark;
+  --bg: #05060d;
+  --panel: rgba(19, 23, 43, 0.85);
+  --border: rgba(108, 126, 255, 0.35);
+  --accent: #6c7eff;
+  --accent-soft: rgba(108, 126, 255, 0.18);
+  --text: #f1f6ff;
+  --muted: rgba(216, 222, 255, 0.65);
+  --font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  background: radial-gradient(circle at top left, rgba(108, 126, 255, 0.2), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3rem 5vw;
+  gap: 2rem;
+  background: linear-gradient(135deg, rgba(108, 126, 255, 0.35), rgba(3, 8, 21, 0.9));
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(14px);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.4rem);
+  letter-spacing: 0.04em;
+}
+
+.hero .tagline {
+  margin: 0.5rem 0 0;
+  max-width: 40ch;
+  color: var(--muted);
+}
+
+.hero .meta {
+  margin-top: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  min-width: 280px;
+}
+
+.metric {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: rgba(8, 10, 22, 0.7);
+  text-align: center;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+}
+
+.metric .label {
+  display: block;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.metric .value {
+  margin-top: 0.35rem;
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #e3e9ff;
+}
+
+main {
+  display: grid;
+  gap: 2.5rem;
+  padding: 3rem 5vw 5rem;
+}
+
+.panel {
+  padding: 2.5rem;
+  background: var(--panel);
+  border-radius: 1.5rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.panel header h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: 0.03em;
+}
+
+.panel header p {
+  margin: 0.6rem 0 1.8rem;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.grid .card {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.4rem;
+  background: rgba(13, 18, 32, 0.8);
+}
+
+.grid .card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.1rem;
+}
+
+.grid .card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.grid .card ul li {
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.telemetry {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 2rem;
+}
+
+dl {
+  margin: 0;
+}
+
+dl dt {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+dl dd {
+  margin: 0 0 1rem;
+}
+
+#phase-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+#phase-table th,
+#phase-table td {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#phase-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mermaid {
+  background: rgba(6, 9, 21, 0.8);
+  border-radius: 1.2rem;
+  padding: 1.2rem;
+  margin-bottom: 1.8rem;
+  border: 1px solid var(--accent-soft);
+}
+
+ol {
+  margin: 0;
+  padding-left: 1.4rem;
+}
+
+#scoreboard-json {
+  padding: 1.4rem;
+  background: rgba(6, 9, 20, 0.9);
+  border-radius: 1rem;
+  border: 1px solid var(--accent-soft);
+  max-height: 320px;
+  overflow: auto;
+}
+
+.footer {
+  text-align: center;
+  padding: 2rem 5vw 3rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
