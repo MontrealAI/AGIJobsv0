@@ -19,14 +19,18 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
   assert.equal(
     summary.metrics.ownerCommandCoverage,
-    0.227,
-    'Owner command coverage should reflect current unscripted surfaces',
+    1,
+    'Owner command coverage should confirm total command coverage',
   );
   assert(summary.metrics.sovereignControlScore >= 0.9, 'Sovereign control score should confirm custody');
+  assert(
+    summary.metrics.economicDominanceIndex >= 0.92,
+    'Economic dominance index should stay within unstoppable threshold',
+  );
   assert.equal(
     summary.metrics.assertionPassRate,
-    0.833,
-    'Assertion pass rate should reflect coverage warning signal',
+    1,
+    'Assertion pass rate should reflect complete pass signal',
   );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
@@ -74,8 +78,8 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(coverageAssertion, 'Coverage assertion should be present');
   assert.equal(
     coverageAssertion.outcome,
-    'fail',
-    'Coverage assertion should fail until command scripts are expanded',
+    'pass',
+    'Coverage assertion should pass once command scripts cover all surfaces',
   );
   const otherAssertions = summary.assertions.filter(
     (assertion) => assertion.id !== 'owner-command-dominance',
@@ -114,6 +118,33 @@ test('economic power simulation produces deterministic metrics', async () => {
   );
   assert(summary.governanceLedger.alerts.length >= 1, 'Ledger should expose actionable alerts');
   const coverageAlert = summary.governanceLedger.alerts.find((alert) => alert.id === 'coverage-gap');
-  assert(coverageAlert, 'Coverage gap alert should be present for partial coverage scenarios');
+  assert(!coverageAlert, 'Coverage gap alert should be cleared when coverage reaches 100%');
+  const pendingUpgradeAlert = summary.governanceLedger.alerts.find((alert) => alert.id === 'pending-upgrade');
+  assert(pendingUpgradeAlert, 'Pending upgrade alert should be surfaced for queued modules');
+
+  assert(summary.ownerCommandPlan.jobControls.length === scenario.jobs.length);
+  assert(summary.ownerCommandPlan.validatorControls.length === scenario.validators.length);
+  assert(summary.ownerCommandPlan.stablecoinControls.length === scenario.stablecoinAdapters.length);
+  assert(summary.ownerCommandPlan.moduleControls.length === scenario.modules.length);
+  for (const jobControl of summary.ownerCommandPlan.jobControls) {
+    assert(jobControl.controls.length > 0, 'Each job should expose dedicated control scripts');
+  }
+
+  assert(summary.dominanceReport.components.length >= 3, 'Dominance report should expose weighted components');
+  assert(summary.dominanceReport.crossChecks.length >= 3, 'Dominance report should include multiple cross-checks');
+  assert(
+    summary.dominanceReport.integrity.every((entry) => entry.outcome === 'pass'),
+    'Dominance integrity checks should all pass for the baseline scenario',
+  );
+  assert.equal(
+    summary.governanceLedger.dominanceIndex,
+    summary.metrics.economicDominanceIndex,
+    'Governance ledger should surface economic dominance index parity',
+  );
+  assert.equal(
+    summary.governanceLedger.dominanceVerdict,
+    summary.dominanceReport.verdict,
+    'Governance ledger verdict should mirror dominance synthesis',
+  );
 });
 

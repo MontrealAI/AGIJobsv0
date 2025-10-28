@@ -51,6 +51,12 @@ const metricMap = [
     description: 'Share of critical surfaces with deterministic owner command paths.',
   },
   {
+    id: 'economicDominanceIndex',
+    label: 'Economic Dominance Index',
+    formatter: (value) => `${(value * 100).toFixed(2)}%`,
+    description: 'Triple-verified composite fusing custody, automation, and ROI velocity.',
+  },
+  {
     id: 'treasuryAfterRun',
     label: 'Treasury After Run (AGI)',
     formatter: (value) => formatNumber(value),
@@ -101,6 +107,87 @@ function renderMetricCards(summary) {
   }
 }
 
+function renderDominanceReport(summary) {
+  const report = summary.dominanceReport;
+  const indexEl = document.getElementById('dominance-index');
+  const verdictEl = document.getElementById('dominance-verdict');
+  const methodologyList = document.getElementById('dominance-methodology');
+  const componentBody = document.querySelector('#dominance-component-table tbody');
+  const crossBody = document.querySelector('#dominance-crosscheck-table tbody');
+  const integrityList = document.getElementById('dominance-integrity');
+
+  if (!indexEl || !verdictEl || !methodologyList || !componentBody || !crossBody || !integrityList) {
+    return;
+  }
+
+  if (!report) {
+    indexEl.textContent = 'N/A';
+    verdictEl.textContent = 'Dominance data unavailable.';
+    methodologyList.innerHTML = '';
+    componentBody.innerHTML = '';
+    crossBody.innerHTML = '';
+    integrityList.innerHTML = '';
+    return;
+  }
+
+  indexEl.textContent = `${(report.index * 100).toFixed(2)}%`;
+  verdictEl.textContent = report.verdict;
+
+  methodologyList.innerHTML = '';
+  for (const step of report.methodology ?? []) {
+    const li = document.createElement('li');
+    li.textContent = step;
+    methodologyList.append(li);
+  }
+
+  componentBody.innerHTML = '';
+  for (const component of report.components ?? []) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${component.label}</td>
+      <td>${(component.weight * 100).toFixed(1)}%</td>
+      <td>${(component.value * 100).toFixed(1)}%</td>
+      <td>${(component.contribution * 100).toFixed(2)}%</td>
+    `;
+    componentBody.append(row);
+  }
+
+  crossBody.innerHTML = '';
+  for (const check of report.crossChecks ?? []) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${check.label}</td>
+      <td>${(check.value * 100).toFixed(2)}%</td>
+      <td>${check.notes}</td>
+    `;
+    crossBody.append(row);
+  }
+
+  integrityList.innerHTML = '';
+  const integrity = report.integrity ?? [];
+  if (integrity.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'alert-pill alert-success';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Dominance integrity stable';
+    const span = document.createElement('span');
+    span.textContent = 'No warnings detected.';
+    li.append(strong, span);
+    integrityList.append(li);
+  } else {
+    for (const entry of integrity) {
+      const li = document.createElement('li');
+      li.className = `alert-pill ${entry.outcome === 'pass' ? 'alert-success' : 'alert-warning'}`;
+      const strong = document.createElement('strong');
+      strong.textContent = entry.outcome === 'pass' ? 'Dominance guardrail confirmed' : 'Dominance guardrail attention';
+      const span = document.createElement('span');
+      span.textContent = entry.details;
+      li.append(strong, span);
+      integrityList.append(li);
+    }
+  }
+}
+
 function renderOwnerTable(summary) {
   const tbody = document.querySelector('#owner-table tbody');
   tbody.innerHTML = '';
@@ -114,6 +201,93 @@ function renderOwnerTable(summary) {
       <td>${control.description}</td>
     `;
     tbody.append(row);
+  }
+
+  renderJobControls(summary);
+  renderValidatorControls(summary);
+  renderAdapterControls(summary);
+  renderModuleControls(summary);
+}
+
+function renderJobControls(summary) {
+  const tbody = document.querySelector('#job-control-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (const job of summary.ownerCommandPlan.jobControls ?? []) {
+    for (const control of job.controls) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${job.name}</td>
+        <td><code>${control.action}</code></td>
+        <td><code>${control.script}</code></td>
+        <td>${control.description}</td>
+      `;
+      tbody.append(row);
+    }
+  }
+}
+
+function renderValidatorControls(summary) {
+  const tbody = document.querySelector('#validator-control-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (const validator of summary.ownerCommandPlan.validatorControls ?? []) {
+    for (const control of validator.controls) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${validator.name}</td>
+        <td><code>${control.action}</code></td>
+        <td><code>${control.script}</code></td>
+        <td>${control.description}</td>
+      `;
+      tbody.append(row);
+    }
+  }
+}
+
+function renderAdapterControls(summary) {
+  const tbody = document.querySelector('#adapter-control-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (const adapter of summary.ownerCommandPlan.stablecoinControls ?? []) {
+    for (const control of adapter.controls) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${adapter.name}</td>
+        <td><code>${control.action}</code></td>
+        <td><code>${control.script}</code></td>
+        <td>${control.description}</td>
+      `;
+      tbody.append(row);
+    }
+  }
+}
+
+function renderModuleControls(summary) {
+  const tbody = document.querySelector('#module-control-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (const module of summary.ownerCommandPlan.moduleControls ?? []) {
+    if (module.upgradeScript) {
+      const upgradeRow = document.createElement('tr');
+      upgradeRow.innerHTML = `
+        <td>${module.name}</td>
+        <td><code>upgrade</code></td>
+        <td><code>${module.upgradeScript}</code></td>
+        <td>Deploy the latest verified module bundle.</td>
+      `;
+      tbody.append(upgradeRow);
+    }
+    for (const control of module.controls) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${module.name}</td>
+        <td><code>${control.action}</code></td>
+        <td><code>${control.script}</code></td>
+        <td>${control.description}</td>
+      `;
+      tbody.append(row);
+    }
   }
 }
 
@@ -192,10 +366,11 @@ function renderGovernanceLedger(summary) {
   const analysisEl = document.getElementById('ledger-analysis');
   const executionEl = document.getElementById('ledger-execution');
   const coverageEl = document.getElementById('ledger-coverage');
+  const dominanceEl = document.getElementById('ledger-dominance');
   const alertList = document.getElementById('ledger-alerts');
   const tableBody = document.querySelector('#ledger-table tbody');
 
-  if (!analysisEl || !executionEl || !coverageEl || !alertList || !tableBody) {
+  if (!analysisEl || !executionEl || !coverageEl || !dominanceEl || !alertList || !tableBody) {
     return;
   }
 
@@ -204,6 +379,7 @@ function renderGovernanceLedger(summary) {
     analysisEl.textContent = 'N/A';
     executionEl.textContent = 'N/A';
     coverageEl.textContent = 'N/A';
+    dominanceEl.textContent = 'N/A';
     alertList.innerHTML = '';
     const li = document.createElement('li');
     li.className = 'alert-pill alert-info';
@@ -224,6 +400,8 @@ function renderGovernanceLedger(summary) {
     : executionDate.toLocaleString();
 
   coverageEl.textContent = `${(ledger.commandCoverage * 100).toFixed(1)}%`;
+  dominanceEl.textContent = `${(ledger.dominanceIndex * 100).toFixed(2)}%`;
+  dominanceEl.setAttribute('title', ledger.dominanceVerdict ?? '');
 
   alertList.innerHTML = '';
   const alerts = ledger.alerts ?? [];
@@ -466,6 +644,7 @@ function renderTrajectory(summary) {
 async function bootstrap(dataPath = defaultDataPath) {
   const summary = await loadSummary(dataPath);
   renderMetricCards(summary);
+  renderDominanceReport(summary);
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
@@ -517,6 +696,7 @@ function setupFileHandlers() {
 
 async function renderSummary(summary) {
   renderMetricCards(summary);
+  renderDominanceReport(summary);
   renderOwnerTable(summary);
   renderAssignments(summary);
   renderSovereignty(summary);

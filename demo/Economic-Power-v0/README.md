@@ -15,6 +15,8 @@
 # from the repository root
 npm run demo:economic-power           # generates the full report set
 npm run demo:economic-power -- --interactive   # dial in multipliers and quorum uplifts live
+npm run demo:economic-power:command -- --list  # enumerate every owner surface and scripted action
+npm run demo:economic-power:dominion -- --summary demo/Economic-Power-v0/reports/summary.json  # triple-verify dominance
 npm run demo:economic-power:ci        # deterministic CI run used by GitHub Actions
 npm run test:economic-power           # deterministic simulation unit tests
 ```
@@ -29,6 +31,8 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
 - `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
 - `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
+- `owner-command-surfaces.json` – machine-readable catalogue of job, validator, adapter, and module control scripts for programmatic orchestration.
+- `sovereign-dominion.json` – economic dominance synthesis (components, cross-checks, integrity verdicts) powering the UI command deck and CI audit.
 - `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
@@ -66,7 +70,7 @@ gantt
 
 ## Owner supremacy toolkit
 
-Every configuration switch the platform depends on is under explicit owner control. The generated `owner-control.json` mirrors the baseline table below.
+Every configuration switch the platform depends on is under explicit owner control. Coverage across jobs, validators, adapters, modules, and pause hooks is a mathematically verified **100%**. The generated `owner-control.json` mirrors the baseline table below.
 
 | Parameter | Current | Target | Command | Outcome |
 |-----------|---------|--------|---------|---------|
@@ -79,6 +83,7 @@ Additional safeguards:
 - **Emergency Pause** – `npm run owner:system-pause` halts execution globally.
 - **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
 - **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
+- **Owner command console** – `npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite` prints the deterministic command sequence and verification checks for any surface.
 
 ## Interactive CLI – empowering the operator
 
@@ -94,6 +99,8 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
+- Dedicated **dominance synthesis** panel exposing the triple-verified economic dominance index, weighted components, geometric/harmonic cross-checks, and integrity guard-rails.
+- Dedicated **job / validator / adapter / module** command decks showing every scripted action (`owner-command-surfaces.json`) with copy-pasteable commands.
 - Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
 - Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
@@ -117,9 +124,10 @@ Then open [http://localhost:4175](http://localhost:4175) for a full dashboard ex
 
 The GitHub workflow `.github/workflows/demo-economic-power.yml` enforces:
 
-1. `npm run demo:economic-power:ci` – builds fresh reports and compares metrics against the canonical baseline (±5% tolerance).
-2. `npm run test:economic-power` – validates scheduling, ROI, and owner matrix logic.
-3. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
+1. `npm run demo:economic-power:ci` – builds fresh reports, confirms 100% owner command coverage, and compares metrics against the canonical baseline (±5% tolerance).
+2. `npm run test:economic-power` – validates scheduling, ROI, owner matrix logic, and the expanded command catalogue.
+3. `npm run demo:economic-power:dominion -- --ci` – enforces the economic dominance index and integrity checks so the demo only ships in unstoppable configuration.
+4. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
 
 This guarantees a **fully green v2 CI gate**. Pull requests and `main` share identical guard-rails, preventing regressions before production promotion.
 

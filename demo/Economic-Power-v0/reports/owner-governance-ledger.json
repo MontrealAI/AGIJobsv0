@@ -4,11 +4,47 @@
   "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
   "treasurySafe": "0xAGIJobsOwnerSafe0000000000000000000000001",
   "threshold": 4,
-  "commandCoverage": 0.227,
-  "coverageNarrative": "Coverage below defensive target – prioritise scripting additional command hooks.",
+  "commandCoverage": 1,
+  "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
   "pauseScript": "npm run owner:system-pause",
   "resumeScript": "npm run owner:update-all",
   "scripts": [
+    "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance",
+    "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade",
+    "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch",
+    "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate",
+    "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite",
+    "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit",
+    "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify",
+    "npm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify",
+    "npm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle",
+    "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover",
+    "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden",
+    "npm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign",
+    "npm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize",
+    "npm run demo:economic-power:command -- --surface module:certificate-nft --action freeze",
+    "npm run demo:economic-power:command -- --surface module:certificate-nft --action rotate-metadata",
+    "npm run demo:economic-power:command -- --surface module:dispute-module --action delegate",
+    "npm run demo:economic-power:command -- --surface module:dispute-module --action escalate",
+    "npm run demo:economic-power:command -- --surface module:job-registry --action migrate",
+    "npm run demo:economic-power:command -- --surface module:job-registry --action pause-local",
+    "npm run demo:economic-power:command -- --surface module:reputation-engine --action boost",
+    "npm run demo:economic-power:command -- --surface module:reputation-engine --action purge",
+    "npm run demo:economic-power:command -- --surface module:stake-manager --action rebalance",
+    "npm run demo:economic-power:command -- --surface module:stake-manager --action slash",
+    "npm run demo:economic-power:command -- --surface module:validation-module --action quorum-upgrade",
+    "npm run demo:economic-power:command -- --surface module:validation-module --action reset",
+    "npm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate",
+    "npm run demo:economic-power:command -- --surface validator:validator-alpha --action slash",
+    "npm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up",
+    "npm run demo:economic-power:command -- --surface validator:validator-beta --action rotate",
+    "npm run demo:economic-power:command -- --surface validator:validator-beta --action top-up",
+    "npm run demo:economic-power:command -- --surface validator:validator-delta --action patch",
+    "npm run demo:economic-power:command -- --surface validator:validator-delta --action rotate",
+    "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify",
+    "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate",
+    "npm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief",
+    "npm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate",
     "npm run owner:audit",
     "npm run owner:parameters",
     "npm run owner:system-pause",
@@ -93,15 +129,6 @@
   ],
   "alerts": [
     {
-      "id": "coverage-gap",
-      "severity": "warning",
-      "summary": "Command coverage below 90% – script additional surfaces to reach full control.",
-      "details": [
-        "Coverage 22.7%",
-        "Add scripts for remaining modules, validators, or adapters to close the gap."
-      ]
-    },
-    {
       "id": "pending-upgrade",
       "severity": "info",
       "summary": "Queued upgrades ready for 1 module(s).",
@@ -109,5 +136,7 @@
         "ValidationModule • Execute npm run owner:upgrade to promote"
       ]
     }
-  ]
+  ],
+  "dominanceIndex": 0.938,
+  "dominanceVerdict": "Dominance tier secured – the orchestration mesh operates at unstoppable sovereign capacity."
 }

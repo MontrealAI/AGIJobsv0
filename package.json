@@ -400,6 +400,8 @@
     "demo:validator-constellation:operator-console": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/operatorConsole.ts",
     "demo:economic-power": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/runDemo.ts",
     "demo:economic-power:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/runDemo.ts --ci",
+    "demo:economic-power:command": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/owner/commandCenter.ts",
+    "demo:economic-power:dominion": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/owner/dominionAudit.ts",
     "demo:validator-constellation:audit-report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/auditReport.ts",
     "test:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts test test/demo/trustlessEconomicCoreDemo.test.ts",
     "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/validator_constellation.test.ts",

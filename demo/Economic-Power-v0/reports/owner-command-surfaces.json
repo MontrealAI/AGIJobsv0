@@ -1,0 +1,297 @@
+{
+  "jobs": [
+    {
+      "id": "job-ai-lab-fusion",
+      "name": "AI Lab Fusion Accelerator",
+      "controls": [
+        {
+          "action": "expedite",
+          "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action expedite",
+          "description": "Compress execution windows and rebalance automation buffers to accelerate delivery."
+        },
+        {
+          "action": "dispatch",
+          "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action dispatch",
+          "description": "Deterministically assign Helios Sovereign Build Hub through the multi-sig orchestrator."
+        },
+        {
+          "action": "escalate",
+          "script": "npm run demo:economic-power:command -- --surface job:job-ai-lab-fusion --action escalate",
+          "description": "Intensify validator commit–reveal quorums for the accelerator deliverables."
+        }
+      ]
+    },
+    {
+      "id": "job-supply-chain",
+      "name": "Autonomous Supply Mesh",
+      "controls": [
+        {
+          "action": "synchronize",
+          "script": "npm run demo:economic-power:command -- --surface job:job-supply-chain --action synchronize",
+          "description": "Re-sequence dependent jobs and broadcast updated SLAs to the agent mesh."
+        },
+        {
+          "action": "reassign",
+          "script": "npm run demo:economic-power:command -- --surface job:job-supply-chain --action reassign",
+          "description": "Reassign workload to Atlas Strategic Model Forge with enforced throughput targets."
+        }
+      ]
+    },
+    {
+      "id": "job-governance-upgrade",
+      "name": "Governance Upgrade Launch",
+      "controls": [
+        {
+          "action": "ratify",
+          "script": "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action ratify",
+          "description": "Execute the governance upgrade runbook with deterministic multi-sig confirmations."
+        },
+        {
+          "action": "audit",
+          "script": "npm run demo:economic-power:command -- --surface job:job-governance-upgrade --action audit",
+          "description": "Trigger Sentinel Assurance Fabric to publish upgrade attestation packages."
+        }
+      ]
+    },
+    {
+      "id": "job-market-expansion",
+      "name": "Market Expansion Omniloop",
+      "controls": [
+        {
+          "action": "amplify",
+          "script": "npm run demo:economic-power:command -- --surface job:job-market-expansion --action amplify",
+          "description": "Scale omniloop marketing spend and unlock global demand channels."
+        },
+        {
+          "action": "throttle",
+          "script": "npm run demo:economic-power:command -- --surface job:job-market-expansion --action throttle",
+          "description": "Throttle expansion loops to preserve validator bandwidth during bursts."
+        }
+      ]
+    },
+    {
+      "id": "job-oracle-integration",
+      "name": "Oracle Integration Spine",
+      "controls": [
+        {
+          "action": "harden",
+          "script": "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action harden",
+          "description": "Roll out upgraded oracle attestations and enable fallback feeds."
+        },
+        {
+          "action": "failover",
+          "script": "npm run demo:economic-power:command -- --surface job:job-oracle-integration --action failover",
+          "description": "Shift execution to Helios backup endpoints with synchronized credentials."
+        }
+      ]
+    }
+  ],
+  "validators": [
+    {
+      "id": "validator-alpha",
+      "name": "Validator Alpha",
+      "controls": [
+        {
+          "action": "rotate",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action rotate",
+          "description": "Rotate Validator Alpha out of committee and replace with standby guardian."
+        },
+        {
+          "action": "top-up",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action top-up",
+          "description": "Increase Validator Alpha stake to reinforce quorum incentives."
+        },
+        {
+          "action": "slash",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-alpha --action slash",
+          "description": "Execute slashing for misbehavior and redistribute stake to the treasury buffer."
+        }
+      ]
+    },
+    {
+      "id": "validator-beta",
+      "name": "Validator Beta",
+      "controls": [
+        {
+          "action": "rotate",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-beta --action rotate",
+          "description": "Rotate Validator Beta and stream a fresh compliance attestation."
+        },
+        {
+          "action": "top-up",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-beta --action top-up",
+          "description": "Increase Validator Beta stake to reinforce compliance oversight."
+        }
+      ]
+    },
+    {
+      "id": "validator-gamma",
+      "name": "Validator Gamma",
+      "controls": [
+        {
+          "action": "rotate",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-gamma --action rotate",
+          "description": "Rotate Validator Gamma to refresh macro-economic oversight inputs."
+        },
+        {
+          "action": "policy-brief",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-gamma --action policy-brief",
+          "description": "Publish validator policy brief to PolicyStudio dashboards."
+        }
+      ]
+    },
+    {
+      "id": "validator-delta",
+      "name": "Validator Delta",
+      "controls": [
+        {
+          "action": "rotate",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-delta --action rotate",
+          "description": "Rotate Validator Delta to refresh machine learning evaluation coverage."
+        },
+        {
+          "action": "patch",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-delta --action patch",
+          "description": "Push the latest adversarial defense patch set across validator enclaves."
+        }
+      ]
+    },
+    {
+      "id": "validator-epsilon",
+      "name": "Validator Epsilon",
+      "controls": [
+        {
+          "action": "rotate",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action rotate",
+          "description": "Rotate Validator Epsilon to refresh red-team coverage."
+        },
+        {
+          "action": "intensify",
+          "script": "npm run demo:economic-power:command -- --surface validator:validator-epsilon --action intensify",
+          "description": "Increase adversarial inference testing depth for high-value jobs."
+        }
+      ]
+    }
+  ],
+  "stablecoinAdapters": [
+    {
+      "name": "USDC v1",
+      "controls": [
+        {
+          "action": "upgrade",
+          "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action upgrade",
+          "description": "Promote the audited USDC adapter bundle with reduced slippage."
+        },
+        {
+          "action": "rebalance",
+          "script": "npm run demo:economic-power:command -- --surface adapter:USDC-v1 --action rebalance",
+          "description": "Sweep stablecoin float into the operations buffer to match demand spikes."
+        }
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "id": "job-registry",
+      "name": "JobRegistry",
+      "upgradeScript": "npm run owner:update-all",
+      "controls": [
+        {
+          "action": "migrate",
+          "script": "npm run demo:economic-power:command -- --surface module:job-registry --action migrate",
+          "description": "Execute deterministic registry migration with downtime-free contract swap."
+        },
+        {
+          "action": "pause-local",
+          "script": "npm run demo:economic-power:command -- --surface module:job-registry --action pause-local",
+          "description": "Pause only job intake while keeping settlement modules live."
+        }
+      ]
+    },
+    {
+      "id": "stake-manager",
+      "name": "StakeManager",
+      "upgradeScript": "npm run owner:parameters",
+      "controls": [
+        {
+          "action": "rebalance",
+          "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action rebalance",
+          "description": "Rebalance stake thresholds to gate workload parallelism."
+        },
+        {
+          "action": "slash",
+          "script": "npm run demo:economic-power:command -- --surface module:stake-manager --action slash",
+          "description": "Execute protocol slashing and recycle penalties into treasury."
+        }
+      ]
+    },
+    {
+      "id": "validation-module",
+      "name": "ValidationModule",
+      "upgradeScript": "npm run owner:upgrade",
+      "controls": [
+        {
+          "action": "quorum-upgrade",
+          "script": "npm run demo:economic-power:command -- --surface module:validation-module --action quorum-upgrade",
+          "description": "Increase validator quorum and commit windows for high-value cycles."
+        },
+        {
+          "action": "reset",
+          "script": "npm run demo:economic-power:command -- --surface module:validation-module --action reset",
+          "description": "Reset commit–reveal session and rotate the validator roster."
+        }
+      ]
+    },
+    {
+      "id": "reputation-engine",
+      "name": "ReputationEngine",
+      "upgradeScript": "npm run owner:update-all",
+      "controls": [
+        {
+          "action": "boost",
+          "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action boost",
+          "description": "Boost reputation weighting for premium validators and agents."
+        },
+        {
+          "action": "purge",
+          "script": "npm run demo:economic-power:command -- --surface module:reputation-engine --action purge",
+          "description": "Purge underperforming actors and refresh scoring baselines."
+        }
+      ]
+    },
+    {
+      "id": "dispute-module",
+      "name": "DisputeModule",
+      "upgradeScript": "npm run owner:upgrade",
+      "controls": [
+        {
+          "action": "escalate",
+          "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action escalate",
+          "description": "Escalate to extended jury with deterministic draw."
+        },
+        {
+          "action": "delegate",
+          "script": "npm run demo:economic-power:command -- --surface module:dispute-module --action delegate",
+          "description": "Delegate dispute outcome to the emergency council multi-sig."
+        }
+      ]
+    },
+    {
+      "id": "certificate-nft",
+      "name": "CertificateNFT",
+      "upgradeScript": "npm run owner:update-all",
+      "controls": [
+        {
+          "action": "rotate-metadata",
+          "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action rotate-metadata",
+          "description": "Rotate IPFS metadata anchors for issued certificates."
+        },
+        {
+          "action": "freeze",
+          "script": "npm run demo:economic-power:command -- --surface module:certificate-nft --action freeze",
+          "description": "Freeze certificate minting in response to governance halt."
+        }
+      ]
+    }
+  ]
+}
