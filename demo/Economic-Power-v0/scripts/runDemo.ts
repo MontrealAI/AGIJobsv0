@@ -91,6 +91,28 @@ const scenarioSchema = z.object({
     dashboards: z.array(z.string()),
     alertChannels: z.array(z.string()),
   }),
+  safeguards: z.object({
+    pauseScript: z.string(),
+    resumeScript: z.string(),
+    responseMinutes: z.number().nonnegative(),
+    emergencyContacts: z.array(z.string()),
+    circuitBreakers: z.array(
+      z.object({
+        metric: z.string(),
+        comparator: z.enum(['<', '<=', '>', '>=']),
+        threshold: z.number(),
+        action: z.string(),
+        description: z.string(),
+      }),
+    ),
+    upgradePaths: z.array(
+      z.object({
+        module: z.string(),
+        script: z.string(),
+        description: z.string(),
+      }),
+    ),
+  }),
 });
 
 type Scenario = z.infer<typeof scenarioSchema>;
@@ -135,12 +157,22 @@ type Summary = {
     validatorConfidence: number;
     automationScore: number;
     riskMitigationScore: number;
+    stabilityIndex: number;
+    ownerCommandCoverage: number;
   };
   ownerControl: {
     threshold: string;
     members: number;
     governanceSafe: string;
     controls: Scenario['owner']['controls'];
+  };
+  ownerSovereignty: {
+    pauseScript: string;
+    resumeScript: string;
+    responseMinutes: number;
+    emergencyContacts: Scenario['safeguards']['emergencyContacts'];
+    circuitBreakers: Scenario['safeguards']['circuitBreakers'];
+    upgradePaths: Scenario['safeguards']['upgradePaths'];
   };
   assignments: Assignment[];
   mermaidFlow: string;
@@ -193,6 +225,56 @@ type SimulationContext = {
   validatorConfidence: number;
   automationLift: number;
 };
+
+function computeStabilityIndex(
+  scenario: Scenario,
+  context: SimulationContext,
+): number {
+  const riskWeights: Record<Scenario['jobs'][number]['risk'], number> = {
+    low: 0.18,
+    medium: 0.42,
+    high: 0.68,
+  };
+  const averageRisk =
+    scenario.jobs.reduce((acc, job) => acc + riskWeights[job.risk], 0) /
+    Math.max(scenario.jobs.length, 1);
+  const averageReliability =
+    scenario.validators.reduce((acc, validator) => acc + validator.reliability, 0) /
+    Math.max(scenario.validators.length, 1);
+  const breakerBonus = scenario.safeguards.circuitBreakers.length * 0.015;
+  const automationBonus =
+    (context.automationLift / Math.max(context.assignments.length, 1)) * 0.04;
+  const base =
+    0.78 +
+    (averageReliability - 0.95) * 0.5 -
+    averageRisk * 0.32 +
+    breakerBonus +
+    automationBonus;
+  return Number(Math.min(0.995, Math.max(0.65, base)).toFixed(3));
+}
+
+function computeOwnerCommandCoverage(scenario: Scenario): number {
+  const scripts = new Set<string>();
+  for (const control of scenario.owner.controls) {
+    scripts.add(control.script);
+  }
+  scripts.add(scenario.safeguards.pauseScript);
+  scripts.add(scenario.safeguards.resumeScript);
+  for (const circuit of scenario.safeguards.circuitBreakers) {
+    scripts.add(circuit.action);
+  }
+  for (const upgrade of scenario.safeguards.upgradePaths) {
+    scripts.add(upgrade.script);
+  }
+  const criticalSurfaces =
+    scenario.jobs.length +
+    scenario.validators.length +
+    scenario.stablecoinAdapters.length +
+    scenario.owner.controls.length +
+    2;
+  const coverage = scripts.size / Math.max(criticalSurfaces, 1);
+  return Number(Math.min(1, coverage).toFixed(3));
+}
 
 async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
@@ -362,6 +444,8 @@ function synthesiseSummary(context: SimulationContext): Summary {
     context.validatorConfidence / Math.max(context.assignments.length, 1);
   const automationScore = context.automationLift /
     Math.max(context.assignments.length, 1);
+  const stabilityIndex = computeStabilityIndex(scenario, context);
+  const ownerCoverage = computeOwnerCommandCoverage(scenario);
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
@@ -402,12 +486,22 @@ function synthesiseSummary(context: SimulationContext): Summary {
       riskMitigationScore: Number(
         (0.82 + pseudoRandom(`risk:${scenario.scenarioId}`) * 0.12).toFixed(3),
       ),
+      stabilityIndex,
+      ownerCommandCoverage: ownerCoverage,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
       members: scenario.owner.members,
       governanceSafe: scenario.owner.governanceSafe,
       controls: scenario.owner.controls,
+    },
+    ownerSovereignty: {
+      pauseScript: scenario.safeguards.pauseScript,
+      resumeScript: scenario.safeguards.resumeScript,
+      responseMinutes: scenario.safeguards.responseMinutes,
+      emergencyContacts: scenario.safeguards.emergencyContacts,
+      circuitBreakers: scenario.safeguards.circuitBreakers,
+      upgradePaths: scenario.safeguards.upgradePaths,
     },
     assignments: context.assignments,
     mermaidFlow: '',
@@ -516,6 +610,20 @@ async function writeOutputs(summary: Summary, outputDir: string): Promise<void> 
     path.join(outputDir, 'owner-control.json'),
     JSON.stringify(ownerMatrix, null, 2),
   );
+  const sovereigntyPlan = {
+    pauseScript: summary.ownerSovereignty.pauseScript,
+    resumeScript: summary.ownerSovereignty.resumeScript,
+    responseMinutes: summary.ownerSovereignty.responseMinutes,
+    emergencyContacts: summary.ownerSovereignty.emergencyContacts,
+    circuitBreakers: summary.ownerSovereignty.circuitBreakers,
+    upgradePaths: summary.ownerSovereignty.upgradePaths,
+    stabilityIndex: summary.metrics.stabilityIndex,
+    ownerCommandCoverage: summary.metrics.ownerCommandCoverage,
+  };
+  await fs.writeFile(
+    path.join(outputDir, 'owner-sovereignty.json'),
+    JSON.stringify(sovereigntyPlan, null, 2),
+  );
 }
 
 function compareWithBaseline(summary: Summary, baselinePath: string): void {
@@ -537,6 +645,8 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'throughputJobsPerDay',
     'validatorConfidence',
     'automationScore',
+    'stabilityIndex',
+    'ownerCommandCoverage',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

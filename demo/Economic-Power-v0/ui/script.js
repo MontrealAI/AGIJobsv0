@@ -38,6 +38,18 @@ const metricMap = [
     formatter: (value) => value.toFixed(3),
     description: 'Autonomous orchestration coverage for the scenario.',
   },
+  {
+    id: 'stabilityIndex',
+    label: 'Stability Index',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'System resilience combining validator strength and risk buffers.',
+  },
+  {
+    id: 'ownerCommandCoverage',
+    label: 'Owner Command Coverage',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Share of critical surfaces with deterministic owner command paths.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -109,6 +121,48 @@ function renderAssignments(summary) {
   }
 }
 
+function renderSovereignty(summary) {
+  const pauseResume = document.getElementById('pause-resume');
+  pauseResume.innerHTML = `
+    <p><strong>Pause:</strong> <code>${summary.ownerSovereignty.pauseScript}</code></p>
+    <p><strong>Resume:</strong> <code>${summary.ownerSovereignty.resumeScript}</code></p>
+    <p><strong>Median response:</strong> ${summary.ownerSovereignty.responseMinutes} minutes</p>
+  `;
+
+  const emergencyList = document.getElementById('emergency-contacts');
+  emergencyList.innerHTML = '';
+  for (const contact of summary.ownerSovereignty.emergencyContacts) {
+    const li = document.createElement('li');
+    li.textContent = contact;
+    emergencyList.append(li);
+  }
+
+  const circuitBody = document.querySelector('#circuit-table tbody');
+  circuitBody.innerHTML = '';
+  for (const circuit of summary.ownerSovereignty.circuitBreakers) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${circuit.metric}</td>
+      <td>${circuit.comparator} ${circuit.threshold}</td>
+      <td><code>${circuit.action}</code></td>
+      <td>${circuit.description}</td>
+    `;
+    circuitBody.append(row);
+  }
+
+  const upgradeBody = document.querySelector('#upgrade-table tbody');
+  upgradeBody.innerHTML = '';
+  for (const upgrade of summary.ownerSovereignty.upgradePaths) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${upgrade.module}</td>
+      <td><code>${upgrade.script}</code></td>
+      <td>${upgrade.description}</td>
+    `;
+    upgradeBody.append(row);
+  }
+}
+
 async function renderMermaid(summary) {
   mermaid.initialize({ startOnLoad: false, theme: 'dark' });
   const flow = document.getElementById('mermaid-flow');
@@ -128,6 +182,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderAssignments(summary);
+  renderSovereignty(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
@@ -174,6 +229,7 @@ async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderAssignments(summary);
+  renderSovereignty(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;

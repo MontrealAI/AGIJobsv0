@@ -124,6 +124,67 @@ main {
   box-shadow: 0 25px 45px rgba(8, 20, 40, 0.55);
 }
 
+.sovereignty-grid {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.sovereignty-card {
+  background: rgba(7, 13, 26, 0.75);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 20px 35px rgba(4, 10, 24, 0.55);
+}
+
+.sovereignty-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--accent);
+}
+
+.sovereignty-card h4 {
+  margin: 0.5rem 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+#pause-resume p {
+  margin: 0.35rem 0;
+  font-size: 0.9rem;
+}
+
+#pause-resume code,
+#circuit-table code,
+#upgrade-table code {
+  background: rgba(56, 189, 248, 0.12);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+}
+
+#emergency-contacts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+#emergency-contacts li {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(94, 234, 212, 0.2);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+}
+
 .panel-header h2 {
   margin: 0 0 0.5rem 0;
   font-weight: 600;

@@ -1,0 +1,52 @@
+{
+  "pauseScript": "npm run owner:system-pause",
+  "resumeScript": "npm run owner:update-all",
+  "responseMinutes": 9,
+  "emergencyContacts": [
+    "governance@agijobs.ai",
+    "security-operations@agijobs.ai",
+    "treasury@agijobs.ai"
+  ],
+  "circuitBreakers": [
+    {
+      "metric": "validatorConfidence",
+      "comparator": "<",
+      "threshold": 0.95,
+      "action": "npm run owner:system-pause",
+      "description": "Pause contracts if validator confidence slips below 95% to protect settlement integrity."
+    },
+    {
+      "metric": "automationScore",
+      "comparator": "<",
+      "threshold": 0.8,
+      "action": "npm run owner:parameters",
+      "description": "Recalibrate automation if orchestration coverage drops under 80%."
+    },
+    {
+      "metric": "treasuryAfterRun",
+      "comparator": "<",
+      "threshold": 1800000,
+      "action": "npm run owner:audit",
+      "description": "Trigger treasury forensic audit when buffers fall below the defensive floor."
+    }
+  ],
+  "upgradePaths": [
+    {
+      "module": "JobRegistry",
+      "script": "npm run owner:update-all",
+      "description": "Ships the hardened JobRegistry bundle with deterministic migration plan."
+    },
+    {
+      "module": "ValidationModule",
+      "script": "npm run owner:upgrade",
+      "description": "Activates the upgraded validator commit–reveal consensus parameters."
+    },
+    {
+      "module": "StakeManager",
+      "script": "npm run owner:parameters",
+      "description": "Rebalances stake requirements to throttle spam and fortify incentives."
+    }
+  ],
+  "stabilityIndex": 0.736,
+  "ownerCommandCoverage": 0.313
+}

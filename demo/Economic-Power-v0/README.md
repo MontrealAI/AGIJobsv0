@@ -25,6 +25,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `flow.mmd` – architecture graph for immediate inclusion in runbooks and dashboards.
 - `timeline.mmd` – Gantt macro for orchestration cadence.
 - `owner-control.json` – up-to-the-minute control matrix for the owner’s multi-sig.
+- `owner-sovereignty.json` – sovereign safety mesh blueprint (pause/resume drills, circuit breakers, upgrade commands, and coverage metrics).
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The dashboard autoloads the generated reports.
 
@@ -87,9 +88,11 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
+- Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
 - Live Mermaid rendering of the architecture and timeline.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
+- Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
 
 Launch with:
 
