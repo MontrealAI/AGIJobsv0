@@ -1,140 +1,92 @@
-import { ValidatorConstellationDemo } from '../src/core/constellation';
-import { subgraphIndexer } from '../src/core/subgraph';
-import { selectCommittee } from '../src/core/vrf';
-import { AgentAction, Hex, VoteValue } from '../src/core/types';
-import { demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
-import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
-import path from 'path';
+/* eslint-disable no-console */
+import chalk from 'chalk';
+import { buildSimulationInput, ValidatorConstellationSimulation } from '../src/simulation';
+import { formatWei, percentage } from '../src/utils';
 
-function main() {
-  subgraphIndexer.clear();
-  const leaves = demoLeaves();
-  const setup = demoSetup(leaves);
-  const demo = new ValidatorConstellationDemo(setup);
+async function main(): Promise<void> {
+  const epoch = 7021;
+  const input = buildSimulationInput(epoch);
+  const simulation = new ValidatorConstellationSimulation(input);
+  const report = simulation.run();
 
-  const originalEntropy = demo.getEntropySources();
+  console.log(chalk.bold.cyan('\n⚡ Validator Constellation v0 — Mission Playback'));
+  console.log(chalk.gray('==================================================='));
 
-  const validatorAddresses = leaves.slice(0, 5);
-  validatorAddresses.forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
+  console.log(chalk.bold('\n👁️  Committee Selection (VRF mix)'));
+  report.committee.forEach((validator, index) => {
+    console.log(
+      `${chalk.green(`#${index + 1}`)} ${validator.ens} ${chalk.gray(`stake: ${formatWei(validator.stake)}`)}`,
+    );
+  });
 
-  const agentLeaf = leaves.find((leaf) => leaf.ensName === 'nova.agent.agi.eth');
-  if (!agentLeaf) {
-    throw new Error('agent leaf missing');
+  console.log(chalk.bold('\n🛡️  Commit–Reveal Discipline'));
+  report.commitments.forEach((commitment) => {
+    console.log(
+      `${commitment.validator.ens.padEnd(32)} committed ${chalk.gray(commitment.commitment.slice(0, 12))}… ` +
+        `${commitment.revealed ? chalk.green('revealed ✅') : chalk.red('missed ❌')}`,
+    );
+  });
+
+  if (report.slashedValidators.length > 0) {
+    console.log(chalk.bold.red('\n⚔️  Slashing Executed'));
+    report.slashedValidators.forEach((validator) => {
+      console.log(`- ${validator.ens} => stake now ${formatWei(validator.stake)}`);
+    });
   }
-  demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
 
-  const rotatedVerifyingKey: Hex = '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011' as Hex;
-  demo.updateZkVerifyingKey(rotatedVerifyingKey);
-  const entropyRotation = demo.updateEntropySources({
-    onChainEntropy: '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' as Hex,
-    recentBeacon: '0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210' as Hex,
-  });
-  console.log('Entropy rotation applied.', { before: originalEntropy, after: entropyRotation });
-  console.log('ZK verifying key rotated.', { verifyingKey: rotatedVerifyingKey });
+  if (report.alerts.length > 0) {
+    console.log(chalk.bold.yellow('\n🚨 Sentinel Alerts'));
+    report.alerts.forEach((alert) => {
+      console.log(`${chalk.red(alert.severity.toUpperCase())} ${alert.domain}: ${alert.message}`);
+    });
+  }
 
-  const nodeLeaves = leaves.filter((leaf) => leaf.ensName.includes('.node.agi.eth'));
-  const registeredNodes = nodeLeaves.map((leaf) => demo.registerNode(leaf.ensName, leaf.owner));
+  console.log(chalk.bold.magenta('\n⏸️  Domain Pause / Resume Log'));
+  report.pausedDomains.forEach((domain) => console.log(`- Paused ${domain}`));
+  report.resumedDomains.forEach((domain) => console.log(`- Resumed ${domain}`));
 
-  const maintenancePause = demo.pauseDomain('lunar-foundry', 'Scheduled maintenance window');
-  const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
-  const updatedSafety = demo.updateDomainSafety('deep-space-lab', {
-    unsafeOpcodes: new Set(['SELFDESTRUCT', 'DELEGATECALL', 'STATICCALL']),
-  });
-  demo.updateSentinelConfig({ budgetGraceRatio: 0.07 });
-  const agentIdentity = demo.setAgentBudget(agentLeaf.ensName, 1_200_000n);
+  console.log(chalk.bold.blue('\n🧠  ZK Batch Finalization'));
+  console.log(`Proof ${report.zkBatch.proofId.slice(0, 12)}… validated ${report.zkBatch.jobs.length} jobs`);
 
-  const round = 1;
-  const domainId = 'deep-space-lab';
-  const currentEntropy = demo.getEntropySources();
-  const committeeSelection = selectCommittee(
-    demo.listValidators(),
-    domainId,
-    round,
-    demo.getGovernance(),
-    currentEntropy.onChainEntropy,
-    currentEntropy.recentBeacon,
-  );
-  console.log('VRF witness derived for committee selection.', {
-    transcript: committeeSelection.witness.transcript,
-    keccakSeed: committeeSelection.witness.keccakSeed,
-    shaSeed: committeeSelection.witness.shaSeed,
-  });
-  const dishonestValidator = committeeSelection.committee[0];
-  const absenteeValidator = committeeSelection.committee[1];
-  const voteOverrides: Record<string, VoteValue> = dishonestValidator
-    ? {
-        [dishonestValidator.address]: 'REJECT',
-      }
-    : {};
-  const nonRevealValidators = absenteeValidator ? [absenteeValidator.address] : [];
+  console.log(chalk.bold.green('\n📈  Impact Metrics'));
+  const reveals = report.reveals.length;
+  console.log(`- Reveal compliance: ${percentage(reveals, report.commitments.length)}`);
+  console.log(`- Alerts triggered: ${report.alerts.length}`);
+  console.log(`- Domains stabilized: ${report.resumedDomains.length}`);
 
-  const jobBatch = demoJobBatch(domainId, 1000);
+  console.log(chalk.gray('\nMermaid Overview:'));
+  console.log([
+    '```',
+    'flowchart LR',
+    '  subgraph VRF Committee',
+    '    A[Entropy Mix]',
+    '    B[Validator Pool]',
+    '    C[Selected Committee]',
+    '  end',
+    '  subgraph CommitReveal',
+    '    C --> D[Commit Hash]',
+    '    D --> E[Reveal Verification]',
+    '  end',
+    '  subgraph Sentinel',
+    '    F[Budget Watchers]',
+    '    G[Opcode Guards]',
+    '    H[Domain Pause]',
+    '  end',
+    '  subgraph ZKProof',
+    '    I[Job Batch]',
+    '    J[Succinct Proof]',
+    '  end',
+    '  B --> F',
+    '  F --> H',
+    '  G --> H',
+    '  E --> J',
+    '```',
+  ].join('\n'));
 
-  const anomalies: AgentAction[] = [
-    {
-      agent: agentIdentity,
-      domainId: 'deep-space-lab',
-      type: 'CALL',
-      amountSpent: 12_500n,
-      opcode: 'STATICCALL',
-      description: 'Unsafe opcode invoked during maintenance bypass',
-    },
-    {
-      ...budgetOverrunAction(
-        agentLeaf.ensName,
-        agentLeaf.owner as `0x${string}`,
-        'deep-space-lab',
-        1_800_000n,
-        agentIdentity.budget,
-      ),
-      description: 'Overspend attempt detected by sentinel',
-      metadata: { invoice: 'INV-7788' },
-    },
-  ];
-
-  const roundResult = demo.runValidationRound({
-    round,
-    truthfulVote: 'APPROVE',
-    jobBatch,
-    committeeSignature: '0x777788889999aaaabbbbccccddddeeeeffff0000111122223333444455556666',
-    voteOverrides,
-    nonRevealValidators,
-    anomalies,
-  });
-
-  const reportDir = path.join(__dirname, '..', 'reports', 'latest');
-  const domainState = demo.getDomainState('deep-space-lab');
-  const jobSample = demoJobBatch('deep-space-lab', 5);
-  const reportContext: ReportContext = {
-    verifyingKey: demo.getZkVerifyingKey(),
-    entropyBefore: originalEntropy,
-    entropyAfter: entropyRotation,
-    governance: demo.getGovernance(),
-    sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
-    nodesRegistered: registeredNodes,
-    primaryDomain: domainState,
-    updatedSafety,
-    maintenance: { pause: maintenancePause, resume: maintenanceResume },
-    scenarioName: 'Validator Constellation Guardian Deck',
-    ownerNotes: {
-      script: 'runDemo.ts baseline scenario',
-      agentBudget: agentIdentity.budget.toString(),
-    },
-    jobSample,
-  };
-
-  writeReportArtifacts({
-    reportDir,
-    roundResult,
-    subgraphRecords: subgraphIndexer.list(),
-    events: [committeeSelection.witness, ...roundResult.commits, ...roundResult.reveals],
-    context: reportContext,
-  });
-
-  console.log('Validator Constellation demo executed successfully.');
-  console.log('Entropy witness transcript verified:', roundResult.vrfWitness.transcript);
-  console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
-  console.log(`Reports written to ${reportDir}`);
+  console.log(chalk.bold.cyan('\n✅ Demo complete — AGI Jobs v0 (v2) operational.\n'));
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

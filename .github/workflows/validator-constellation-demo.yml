@@ -1,0 +1,31 @@
+name: Validator Constellation Demo CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'demo/Validator-Constellation-v0/**'
+      - '.github/workflows/validator-constellation-demo.yml'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run cinematic demo
+        run: npm run demo:validator-constellation:ci
+      - name: Run deterministic scenario
+        run: npm run demo:validator-constellation:scenario
+      - name: Execute guardrail tests
+        run: npm run test:validator-constellation
