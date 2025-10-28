@@ -87,6 +87,8 @@ function describeState(state: OperatorState, mermaid = false): void {
     onChainEntropy: state.onChainEntropy,
     recentBeacon: state.recentBeacon,
   });
+  console.log('Treasury Address:', state.treasuryAddress);
+  console.log('Treasury Balance:', formatValidatorStake(state.treasuryBalance));
   console.log('\nValidators:');
   state.validators.forEach((validator) => {
     console.log(`  - ${validator.ensName} (${validator.address}) :: ${formatValidatorStake(validator.stake)} :: ${validator.status}`);
@@ -375,6 +377,42 @@ function handleZk(argv: ZkArgs): void {
   summaryForAction('zk-verifying-key-rotated', { verifyingKey: updated.verifyingKey });
 }
 
+type TreasuryAddressArgs = ArgumentsCamelCase<{ address: string } & GlobalOptions>;
+
+function handleTreasuryAddress(argv: TreasuryAddressArgs): void {
+  const statePath = resolveStatePath(argv.state);
+  const state = loadOperatorState(statePath);
+  const address = assertHex(argv.address, 'treasury address');
+  const { state: updated } = withDemo(state, (demo) => {
+    demo.updateTreasuryAddress(address);
+  });
+  saveOperatorState(updated, statePath);
+  summaryForAction('treasury-address-updated', {
+    treasuryAddress: updated.treasuryAddress,
+    treasuryBalance: formatValidatorStake(updated.treasuryBalance),
+  });
+}
+
+type TreasuryDistributeArgs = ArgumentsCamelCase<{ recipient: string; amount: string } & GlobalOptions>;
+
+function handleTreasuryDistribute(argv: TreasuryDistributeArgs): void {
+  const statePath = resolveStatePath(argv.state);
+  const state = loadOperatorState(statePath);
+  const recipient = assertHex(argv.recipient, 'treasury recipient');
+  const amount = parseBigIntInput(argv.amount, 'treasury distribution');
+  if (amount <= 0n) {
+    throw new Error('treasury distribution must be positive');
+  }
+  const { state: updated, result } = withDemo(state, (demo) => demo.distributeTreasury(recipient, amount));
+  saveOperatorState(updated, statePath);
+  summaryForAction('treasury-distribution', {
+    recipient,
+    amount: formatValidatorStake(amount.toString()),
+    remainingTreasury: formatValidatorStake(updated.treasuryBalance),
+    txHash: result.txHash,
+  });
+}
+
 type BondValidatorArgs = ArgumentsCamelCase<{ ens: string; stake: string; address?: string } & GlobalOptions>;
 
 function handleBondValidator(argv: BondValidatorArgs): void {
@@ -561,6 +599,7 @@ function handleRunRound(argv: RunRoundArgs): void {
       },
     },
     jobSample: jobBatch.slice(0, Math.min(jobBatch.length, 8)),
+    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
   };
   writeReportArtifacts({
     reportDir,
@@ -577,6 +616,7 @@ function handleRunRound(argv: RunRoundArgs): void {
     slashingEvents: roundResult.slashingEvents.length,
     sentinelAlerts: roundResult.sentinelAlerts.length,
     vrfTranscript: roundResult.vrfWitness.transcript,
+    treasuryBalance: formatValidatorStake(state.treasuryBalance),
   });
   refreshStateFromDemo(state, demo, { slashingEvents: roundResult.slashingEvents });
   if (argv.mermaid) {
@@ -686,6 +726,21 @@ function createCli(argv: string[]): void {
       'Rotate the ZK verifying key',
       (cmd: Argv) => cmd.option('verifying-key', { type: 'string', demandOption: true, describe: 'New verifying key hex' }),
       handleZk,
+    )
+    .command(
+      'set-treasury',
+      'Update the slashing treasury address',
+      (cmd: Argv) => cmd.option('address', { type: 'string', demandOption: true, describe: 'New treasury address' }),
+      handleTreasuryAddress,
+    )
+    .command(
+      'distribute-treasury',
+      'Distribute accumulated slashing penalties',
+      (cmd: Argv) =>
+        cmd
+          .option('recipient', { type: 'string', demandOption: true, describe: 'Distribution recipient address' })
+          .option('amount', { type: 'string', demandOption: true, describe: 'Distribution amount (wei)' }),
+      handleTreasuryDistribute,
     )
     .command(
       'bond-validator',

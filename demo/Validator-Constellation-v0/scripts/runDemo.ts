@@ -157,6 +157,7 @@ function main() {
       agentBudget: agentIdentity.budget.toString(),
     },
     jobSample,
+    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
   };
 
   writeReportArtifacts({

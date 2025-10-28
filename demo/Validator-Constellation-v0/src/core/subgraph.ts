@@ -1,5 +1,5 @@
 import { eventBus } from './eventBus';
-import { EntropyWitness, SubgraphRecord } from './types';
+import { EntropyWitness, SubgraphRecord, TreasuryDistributionEvent } from './types';
 
 export class SubgraphIndexer {
   private records: SubgraphRecord[] = [];
@@ -18,6 +18,16 @@ export class SubgraphIndexer {
       }),
     );
     eventBus.on('ValidatorStatusChanged', (event) => this.pushRecord('VALIDATOR_STATUS', event));
+    eventBus.on('TreasuryDistribution', (event: TreasuryDistributionEvent) =>
+      this.pushRecord('TREASURY', {
+        recipient: event.recipient,
+        amount: event.amount.toString(),
+        treasuryAddress: event.treasuryAddress,
+        treasuryBalanceAfter: event.treasuryBalanceAfter.toString(),
+        txHash: event.txHash,
+        timestamp: event.timestamp,
+      }),
+    );
   }
 
   private pushRecord(type: SubgraphRecord['type'], payload: Record<string, unknown>): void {

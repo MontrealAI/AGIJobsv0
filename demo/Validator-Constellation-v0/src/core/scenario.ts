@@ -22,6 +22,7 @@ import {
   DEFAULT_BEACON_ENTROPY,
   DEFAULT_ONCHAIN_ENTROPY,
   DEFAULT_SENTINEL_GRACE_RATIO,
+  DEFAULT_TREASURY_ADDRESS,
   DEFAULT_VERIFIER_KEY,
   demoLeaves,
 } from './fixtures';
@@ -131,6 +132,7 @@ interface ScenarioOwnerActions {
   updateZkKey?: Hex;
   updateSentinel?: { budgetGraceRatio?: number };
   updateGovernance?: Partial<GovernanceParameters>;
+  updateTreasuryAddress?: Hex;
   updateDomainSafety?: Array<{
     domainId: string;
     humanName?: string;
@@ -154,6 +156,7 @@ export interface ScenarioConfig {
     verifyingKey?: Hex;
     onChainEntropy?: Hex;
     recentBeacon?: Hex;
+    treasuryAddress?: Hex;
   };
   domains?: ScenarioDomainConfig[];
   validators: ScenarioValidatorConfig[];
@@ -190,6 +193,7 @@ interface ScenarioContextBase {
   updatedSafety?: DomainConfig;
   primaryDomainId: string;
   nodesRegistered: NodeIdentity[];
+  treasuryAddress: Hex;
 }
 
 export interface PreparedScenario {
@@ -502,6 +506,11 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
       'baseSetup.recentBeacon',
     ),
   };
+  const treasuryAddress = normalizeHexInput(
+    config.baseSetup?.treasuryAddress ?? DEFAULT_TREASURY_ADDRESS,
+    'baseSetup.treasuryAddress',
+    20,
+  );
 
   const setup = {
     domains,
@@ -511,6 +520,7 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
     onChainEntropy: entropySources.onChainEntropy,
     recentBeacon: entropySources.recentBeacon,
     sentinelGraceRatio: sentinelGrace,
+    treasuryAddress,
   };
   const demo = new ValidatorConstellationDemo(setup);
 
@@ -559,6 +569,12 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
 
   if (ownerActions?.updateSentinel?.budgetGraceRatio !== undefined) {
     demo.updateSentinelConfig({ budgetGraceRatio: ownerActions.updateSentinel.budgetGraceRatio });
+  }
+
+  if (ownerActions?.updateTreasuryAddress) {
+    demo.updateTreasuryAddress(
+      normalizeHexInput(ownerActions.updateTreasuryAddress, 'ownerActions.updateTreasuryAddress', 20),
+    );
   }
 
   if (ownerActions?.updateDomainSafety) {
@@ -668,6 +684,7 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
     updatedSafety: domainSafetyUpdates.get(jobDomainId),
     primaryDomainId: jobDomainId,
     nodesRegistered: registeredNodes,
+    treasuryAddress: demo.getTreasuryAddress(),
   };
 
   const plan: ScenarioPlan = {
@@ -709,6 +726,7 @@ export function executeScenario(prepared: PreparedScenario): ExecutedScenario {
     scenarioName: context.scenarioName,
     ownerNotes: context.ownerNotes,
     jobSample: context.jobSample,
+    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
   };
 
   return { demo, report, context: reportContext };

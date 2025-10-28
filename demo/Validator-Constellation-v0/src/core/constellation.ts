@@ -27,6 +27,7 @@ import {
   RevealMessage,
   SentinelAlert,
   SlashingEvent,
+  TreasuryDistributionEvent,
   ValidatorIdentity,
   VoteValue,
 } from './types';
@@ -39,6 +40,7 @@ export interface DemoSetup {
   onChainEntropy: Hex;
   recentBeacon: Hex;
   sentinelGraceRatio: number;
+  treasuryAddress: Hex;
 }
 
 interface VotePlan {
@@ -68,6 +70,7 @@ export class ValidatorConstellationDemo {
     const merkleRoot = buildMerkleRoot(this.leaves);
     this.ensAuthority = new EnsAuthority(merkleRoot);
     this.stakes = new StakeManager();
+    this.stakes.setTreasuryAddress(setup.treasuryAddress);
     this.governance = new GovernanceModule(setup.governance);
     this.pauseController = new DomainPauseController(setup.domains);
     const opcodeMap = new Map<string, Set<string>>();
@@ -100,6 +103,23 @@ export class ValidatorConstellationDemo {
     this.domainIds = setup.domains.map((domain) => domain.id);
     this.onChainEntropy = setup.onChainEntropy;
     this.recentBeacon = setup.recentBeacon;
+  }
+
+  getTreasuryBalance(): bigint {
+    return this.stakes.getTreasuryBalance();
+  }
+
+  getTreasuryAddress(): Hex {
+    return this.stakes.getTreasuryAddress();
+  }
+
+  updateTreasuryAddress(address: Hex): Hex {
+    this.stakes.setTreasuryAddress(address);
+    return this.getTreasuryAddress();
+  }
+
+  distributeTreasury(recipient: Hex, amount: bigint): TreasuryDistributionEvent {
+    return this.stakes.distributeTreasury(recipient, amount);
   }
 
   getGovernance(): GovernanceParameters {
@@ -386,6 +406,7 @@ export class ValidatorConstellationDemo {
         slashingEvents,
         nodes: this.listNodes(),
         timeline: finalization.timeline,
+        treasuryBalanceAfter: this.stakes.getTreasuryBalance(),
       };
     } finally {
       eventBus.off('StakeSlashed', slashingListener);
