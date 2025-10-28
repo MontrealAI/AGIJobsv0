@@ -74,6 +74,24 @@ const metricMap = [
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
     description: 'Share of verification assertions passing unstoppable thresholds.',
   },
+  {
+    id: 'economicDominanceIndex',
+    label: 'Economic Dominance',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite dominance index fusing ROI, automation, and sovereign control.',
+  },
+  {
+    id: 'capitalVelocity',
+    label: 'Capital Velocity',
+    formatter: (value) => `${value.toFixed(2)} AGI/h`,
+    description: 'Treasury conversion rate into validated value per hour.',
+  },
+  {
+    id: 'globalExpansionReadiness',
+    label: 'Global Expansion Readiness',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Readiness index for unlocking mainnet pilots and planetary rollout.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -607,6 +625,97 @@ function renderTrajectory(summary) {
   }
 }
 
+function renderAutopilot(summary) {
+  const missionEl = document.getElementById('autopilot-mission');
+  const cadenceEl = document.getElementById('autopilot-cadence');
+  const dominanceEl = document.getElementById('autopilot-dominance');
+  const guardrailList = document.getElementById('autopilot-guardrails');
+  const tableBody = document.querySelector('#autopilot-table tbody');
+  if (!missionEl || !cadenceEl || !dominanceEl || !guardrailList || !tableBody) {
+    return;
+  }
+  const autopilot = summary.ownerAutopilot || {
+    mission: 'Autopilot unavailable',
+    cadenceHours: 0,
+    dominanceScore: 0,
+    guardrails: [],
+    telemetry: {
+      economicDominanceIndex: 0,
+      capitalVelocity: 0,
+      globalExpansionReadiness: 0,
+    },
+    commandSequence: [],
+  };
+  missionEl.textContent = autopilot.mission;
+  cadenceEl.textContent = `${autopilot.cadenceHours.toFixed(1)}h cadence`;
+  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness`;
+  guardrailList.innerHTML = '';
+  for (const guardrail of autopilot.guardrails) {
+    const li = document.createElement('li');
+    li.textContent = guardrail;
+    guardrailList.append(li);
+  }
+  tableBody.innerHTML = '';
+  if (autopilot.commandSequence.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.textContent = 'No deterministic command sequence published.';
+    row.append(cell);
+    tableBody.append(row);
+    return;
+  }
+  for (const command of autopilot.commandSequence) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${command.surface}</td>
+      <td><code>${command.script}</code></td>
+      <td>${command.objective}</td>
+    `;
+    tableBody.append(row);
+  }
+}
+
+function renderGlobalExpansion(summary) {
+  const readinessEl = document.getElementById('expansion-readiness');
+  const tableBody = document.querySelector('#expansion-table tbody');
+  if (!readinessEl || !tableBody) {
+    return;
+  }
+  readinessEl.textContent = `${(summary.metrics.globalExpansionReadiness * 100).toFixed(1)}%`;
+  tableBody.innerHTML = '';
+  const phases = summary.globalExpansionPlan || [];
+  if (phases.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 5;
+    cell.textContent = 'Expansion roadmap not yet generated.';
+    row.append(cell);
+    tableBody.append(row);
+    return;
+  }
+  for (const phase of phases) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${phase.phase}</td>
+      <td>${phase.focus}</td>
+      <td>${phase.horizonHours}h</td>
+      <td>${(phase.readiness * 100).toFixed(1)}%</td>
+      <td>${phase.commands.join(', ')}</td>
+    `;
+    tableBody.append(row);
+    if (phase.telemetryHooks?.length) {
+      const telemetryRow = document.createElement('tr');
+      const telemetryCell = document.createElement('td');
+      telemetryCell.colSpan = 5;
+      telemetryCell.className = 'expansion-telemetry';
+      telemetryCell.textContent = `Telemetry hooks: ${phase.telemetryHooks.join(', ')}`;
+      telemetryRow.append(telemetryCell);
+      tableBody.append(telemetryRow);
+    }
+  }
+}
+
 async function bootstrap(dataPath = defaultDataPath) {
   const summary = await loadSummary(dataPath);
   renderMetricCards(summary);
@@ -618,6 +727,8 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderDeployment(summary);
   renderAssertions(summary);
   renderTrajectory(summary);
+  renderAutopilot(summary);
+  renderGlobalExpansion(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
@@ -670,6 +781,8 @@ async function renderSummary(summary) {
   renderDeployment(summary);
   renderAssertions(summary);
   renderTrajectory(summary);
+  renderAutopilot(summary);
+  renderGlobalExpansion(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;

@@ -221,6 +221,49 @@ type GovernanceLedger = {
   alerts: GovernanceAlert[];
 };
 
+type OwnerAutopilotCommand = {
+  programId: string;
+  surface: CoverageSurface | 'automation';
+  script: string;
+  objective: string;
+};
+
+type OwnerAutopilot = {
+  mission: string;
+  cadenceHours: number;
+  dominanceScore: number;
+  guardrails: string[];
+  narrative: string;
+  telemetry: {
+    economicDominanceIndex: number;
+    capitalVelocity: number;
+    globalExpansionReadiness: number;
+  };
+  commandSequence: OwnerAutopilotCommand[];
+};
+
+type GlobalExpansionPhase = {
+  phase: string;
+  horizonHours: number;
+  focus: string;
+  readiness: number;
+  commands: string[];
+  telemetryHooks: string[];
+};
+
+type EconomicDominanceReport = {
+  analysisTimestamp: string;
+  executionTimestamp: string;
+  dominanceIndex: number;
+  capitalVelocity: number;
+  roiMultiplier: number;
+  automationScore: number;
+  sovereignSafetyScore: number;
+  sovereignControlScore: number;
+  summary: string;
+  recommendations: string[];
+};
+
 type Summary = {
   scenarioId: string;
   title: string;
@@ -248,6 +291,9 @@ type Summary = {
     sovereignControlScore: number;
     sovereignSafetyScore: number;
     assertionPassRate: number;
+    economicDominanceIndex: number;
+    capitalVelocity: number;
+    globalExpansionReadiness: number;
   };
   ownerControl: {
     threshold: string;
@@ -283,6 +329,8 @@ type Summary = {
     observability: Scenario['observability'];
   };
   governanceLedger: GovernanceLedger;
+  ownerAutopilot: OwnerAutopilot;
+  globalExpansionPlan: GlobalExpansionPhase[];
 };
 
 type CoverageSurface =
@@ -693,6 +741,235 @@ function generateOwnerCommandMarkdown(summary: Summary): string {
     );
   }
   return `${lines.join('\n')}\n`;
+}
+
+function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopilot {
+  const cadenceBase = summary.metrics.paybackHours /
+    Math.max(summary.metrics.totalJobs, 1);
+  const cadenceHours = Number(Math.max(6, Math.min(24, cadenceBase || 0)).toFixed(1));
+  const guardrails = [
+    `Pause • ${summary.ownerSovereignty.pauseScript}`,
+    `Resume • ${summary.ownerSovereignty.resumeScript}`,
+    ...summary.ownerSovereignty.circuitBreakers.map(
+      (breaker) =>
+        `${breaker.metric} ${breaker.comparator} ${breaker.threshold} → ${breaker.action}`,
+    ),
+  ];
+  const sequence: OwnerAutopilotCommand[] = [];
+  const surfaces: Array<{
+    surface: CoverageSurface | 'automation';
+    programs: CommandProgram[];
+  }> = [
+    { surface: 'jobs', programs: summary.ownerCommandPlan.jobPrograms },
+    { surface: 'validators', programs: summary.ownerCommandPlan.validatorPrograms },
+    { surface: 'stablecoinAdapters', programs: summary.ownerCommandPlan.adapterPrograms },
+    { surface: 'modules', programs: summary.ownerCommandPlan.modulePrograms },
+    { surface: 'treasury', programs: summary.ownerCommandPlan.treasuryPrograms },
+    { surface: 'orchestrator', programs: summary.ownerCommandPlan.orchestratorPrograms },
+  ];
+  for (const entry of surfaces) {
+    for (const program of entry.programs.slice(0, 2)) {
+      sequence.push({
+        programId: program.id,
+        surface: entry.surface,
+        script: program.script,
+        objective: program.description,
+      });
+    }
+  }
+  if (sequence.length === 0) {
+    for (const program of scenario.commandCatalog.modulePrograms.slice(0, 3)) {
+      sequence.push({
+        programId: program.id,
+        surface: 'modules',
+        script: program.script,
+        objective: program.description,
+      });
+    }
+  }
+  const narrative =
+    'Autopilot cycles every ' +
+    `${cadenceHours.toFixed(1)}h to refresh capital, validator posture, and orchestrator coverage.`;
+  return {
+    mission: 'Sustain unstoppable economic acceleration with deterministic owner oversight.',
+    cadenceHours,
+    dominanceScore: summary.metrics.economicDominanceIndex,
+    guardrails,
+    narrative,
+    telemetry: {
+      economicDominanceIndex: summary.metrics.economicDominanceIndex,
+      capitalVelocity: summary.metrics.capitalVelocity,
+      globalExpansionReadiness: summary.metrics.globalExpansionReadiness,
+    },
+    commandSequence: sequence,
+  };
+}
+
+function buildGlobalExpansionPlan(
+  summary: Summary,
+  scenario: Scenario,
+): GlobalExpansionPhase[] {
+  const readiness = summary.metrics.globalExpansionReadiness;
+  const roi = summary.metrics.roiMultiplier;
+  const validatorConfidence = summary.metrics.validatorConfidence;
+  const automationScore = summary.metrics.automationScore;
+  const commandCoverage = summary.metrics.ownerCommandCoverage;
+  const phaseOneCommands = summary.ownerCommandPlan.jobPrograms
+    .slice(0, 2)
+    .map((program) => program.script);
+  const phaseTwoCommands = summary.ownerCommandPlan.modulePrograms
+    .slice(0, 2)
+    .map((program) => program.script);
+  const phaseThreeCommands = summary.ownerCommandPlan.treasuryPrograms
+    .slice(0, 2)
+    .map((program) => program.script);
+  const basePlan: GlobalExpansionPhase[] = [
+    {
+      phase: 'Phase I – Testnet Supremacy',
+      horizonHours: 72,
+      focus: 'Execute deterministic pilots across L2 testnets and validate automation resilience.',
+      readiness: Number(Math.min(1, readiness + 0.02).toFixed(3)),
+      commands:
+        phaseOneCommands.length > 0
+          ? phaseOneCommands
+          : ['npm run demo:economic-power -- --scenario testnet'],
+      telemetryHooks: [
+        `validatorConfidence>${(validatorConfidence * 100).toFixed(1)}%`,
+        `automationScore>${automationScore.toFixed(3)}`,
+      ],
+    },
+    {
+      phase: 'Phase II – Mainnet Pilot Cohort',
+      horizonHours: 240,
+      focus: 'Promote core modules to mainnet with guardian oversight and slashing-enabled validation.',
+      readiness: Number(Math.min(1, readiness + 0.05).toFixed(3)),
+      commands:
+        phaseTwoCommands.length > 0
+          ? phaseTwoCommands
+          : [summary.ownerSovereignty.pauseScript, summary.ownerSovereignty.resumeScript],
+      telemetryHooks: [
+        `ROI>${roi.toFixed(2)}x`,
+        `coverage>${(commandCoverage * 100).toFixed(1)}%`,
+      ],
+    },
+    {
+      phase: 'Phase III – Planetary Expansion Mesh',
+      horizonHours: 720,
+      focus: 'Scale autonomous job mesh across global regions with treasury-backed liquidity surges.',
+      readiness: Number(Math.min(1, readiness + 0.08).toFixed(3)),
+      commands:
+        phaseThreeCommands.length > 0
+          ? phaseThreeCommands
+          : ['npm run owner:program -- --program orchestrator-latency-reset'],
+      telemetryHooks: [
+        `capitalVelocity>${summary.metrics.capitalVelocity.toFixed(2)}/h`,
+        `dominance>${(summary.metrics.economicDominanceIndex * 100).toFixed(1)}%`,
+      ],
+    },
+  ];
+  if (scenario.safeguards.upgradePaths.length > 0) {
+    basePlan.push({
+      phase: 'Phase IV – Governance Acceleration',
+      horizonHours: 1440,
+      focus: 'Transfer upgrade keys to community DAO with scripted multi-sig failsafes.',
+      readiness: Number(Math.min(1, readiness + 0.1).toFixed(3)),
+      commands: scenario.safeguards.upgradePaths.map((upgrade) => upgrade.script),
+      telemetryHooks: [
+        `governance-safe=${summary.ownerControl.governanceSafe}`,
+        `alerts=${summary.governanceLedger.alerts.length}`,
+      ],
+    });
+  }
+  return basePlan;
+}
+
+function buildEconomicDominanceReport(summary: Summary): EconomicDominanceReport {
+  const recommendations: string[] = [];
+  if (summary.metrics.capitalVelocity < 40) {
+    recommendations.push('Accelerate treasury cycling by executing `npm run owner:parameters` to tighten jobDuration.');
+  }
+  if (summary.metrics.economicDominanceIndex < 0.9) {
+    recommendations.push('Increase validator quorums or deploy additional automation modules to push dominance > 90%.');
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('Maintain current cadence; dominance metrics exceed unstoppable thresholds.');
+  }
+  return {
+    analysisTimestamp: summary.analysisTimestamp,
+    executionTimestamp: summary.executionTimestamp,
+    dominanceIndex: summary.metrics.economicDominanceIndex,
+    capitalVelocity: summary.metrics.capitalVelocity,
+    roiMultiplier: summary.metrics.roiMultiplier,
+    automationScore: summary.metrics.automationScore,
+    sovereignSafetyScore: summary.metrics.sovereignSafetyScore,
+    sovereignControlScore: summary.metrics.sovereignControlScore,
+    summary:
+      'Economic dominance index blends ROI, automation, sovereignty, and safety mesh readiness to evidence unstoppable scale.',
+    recommendations,
+  };
+}
+
+function generateGlobalExpansionMarkdown(summary: Summary): string {
+  const lines: string[] = [];
+  lines.push('# Global Expansion Autopilot Plan');
+  lines.push('');
+  lines.push(`Scenario: ${summary.title}`);
+  lines.push(
+    `Generated ${new Date(summary.executionTimestamp).toISOString()} • Dominance ${(summary.metrics.economicDominanceIndex * 100).toFixed(1)}%`,
+  );
+  lines.push('');
+  for (const phase of summary.globalExpansionPlan) {
+    lines.push(`## ${phase.phase}`);
+    lines.push('');
+    lines.push(`- Horizon: ${phase.horizonHours}h`);
+    lines.push(`- Focus: ${phase.focus}`);
+    lines.push(`- Readiness: ${(phase.readiness * 100).toFixed(1)}%`);
+    lines.push(`- Commands: ${phase.commands.join(', ')}`);
+    lines.push(`- Telemetry hooks: ${phase.telemetryHooks.join(', ')}`);
+    lines.push('');
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+function generateGlobalExpansionMermaid(phases: GlobalExpansionPhase[]): string {
+  const lines = phases
+    .map((phase, index) => {
+      const status = phase.readiness >= 0.9 ? 'done' : phase.readiness >= 0.75 ? 'active' : 'crit';
+      return `    ${phase.phase.replace(/[^a-zA-Z0-9]/g, '_')} :${status}, phase_${index}, ${phase.horizonHours}h`;
+    })
+    .join('\n');
+  return `gantt\n    title Global Expansion Cadence\n    dateFormat  X\n${lines}`;
+}
+
+function generateOwnerAutopilotMermaid(autopilot: OwnerAutopilot): string {
+  const header = 'graph TD';
+  const missionNode = 'Mission[Mission Control]';
+  const cadenceNode = `Cadence[Cadence ${autopilot.cadenceHours.toFixed(1)}h]`;
+  const guardrailNodes = autopilot.guardrails.map((guardrail, index) => {
+    const id = `Guardrail_${index}`;
+    return { id, label: guardrail };
+  });
+  const commandNodes = autopilot.commandSequence.map((command, index) => {
+    const id = `Command_${index}`;
+    const label = `${command.surface.toUpperCase()} • ${command.script}`;
+    return { id, label, objective: command.objective };
+  });
+  const lines: string[] = [header, `    ${missionNode} --> ${cadenceNode}`];
+  for (const guardrail of guardrailNodes) {
+    lines.push(`    ${cadenceNode.split('[')[0]} --> ${guardrail.id}[${guardrail.label}]`);
+  }
+  for (const command of commandNodes) {
+    lines.push(`    ${cadenceNode.split('[')[0]} --> ${command.id}[${command.label}]`);
+  }
+  if (commandNodes.length > 0) {
+    const objectives = commandNodes
+      .map((command) => `    ${command.id} --> Objective_${command.id}[${command.objective}]`)
+      .join('\n');
+    if (objectives) {
+      lines.push(objectives);
+    }
+  }
+  return lines.join('\n');
 }
 
 const DEFAULT_SCENARIO = path.join(
@@ -1432,8 +1709,9 @@ function synthesiseSummary(
   const { scenario } = context;
   const assignmentConfidence =
     context.validatorConfidence / Math.max(context.assignments.length, 1);
-  const automationScore = context.automationLift /
-    Math.max(context.assignments.length, 1);
+  const automationCoverageRaw =
+    context.automationLift / Math.max(context.assignments.length, 1);
+  const automationCoverage = Number(automationCoverageRaw.toFixed(3));
   const stabilityIndex = computeStabilityIndex(scenario, context);
   const ownerCoverage = computeOwnerCommandCoverage(scenario);
   const sovereignControlScore = computeSovereignControlScore(scenario);
@@ -1442,6 +1720,60 @@ function synthesiseSummary(
     scenario,
     ownerCoverage,
     commandScripts,
+  );
+  const totalEscrowedAgi = Math.round(context.totalEscrowedAgi);
+  const totalStablecoinVolume = Math.round(context.totalStable);
+  const validatorRewards = Math.round(context.validatorRewards);
+  const ownerBufferContribution = Math.round(context.ownerBufferContribution);
+  const treasuryAfterRun = Math.round(
+    scenario.treasury.agiBalance -
+      context.validatorRewards -
+      context.totalEscrowedAgi +
+      context.cumulativeValue,
+  );
+  const roiRaw =
+    context.cumulativeValue /
+    Math.max(context.totalEscrowedAgi + context.totalStable, 1);
+  const roiMultiplier = Number(roiRaw.toFixed(2));
+  const netYield = Number(
+    (
+      context.cumulativeValue -
+      (context.totalEscrowedAgi +
+        context.totalStable +
+        context.validatorRewards +
+        context.ownerBufferContribution)
+    ).toFixed(2),
+  );
+  const capitalVelocity = Number(
+    (
+      context.cumulativeValue /
+      Math.max(context.finalHour <= 0 ? 1 : context.finalHour, 1)
+    ).toFixed(2),
+  );
+  const dominanceIndex = Number(
+    Math.min(
+      1,
+      0.1 +
+        0.25 * Math.min(roiRaw / 4, 1) +
+        0.15 * automationCoverageRaw +
+        0.15 * stabilityIndex +
+        0.15 * ownerCoverage.value +
+        0.15 * sovereignControlScore +
+        0.15 * sovereignSafetyMesh.safetyScore,
+    ).toFixed(3),
+  );
+  const globalExpansionReadiness = Number(
+    Math.min(
+      1,
+      0.2 * Math.min(capitalVelocity / 40, 1) +
+        0.2 * automationCoverageRaw +
+        0.2 * ownerCoverage.value +
+        0.2 * sovereignControlScore +
+        0.2 * sovereignSafetyMesh.safetyScore,
+    ).toFixed(3),
+  );
+  const riskMitigationScore = Number(
+    (0.82 + pseudoRandom(`risk:${scenario.scenarioId}`) * 0.12).toFixed(3),
   );
   return {
     scenarioId: scenario.scenarioId,
@@ -1453,43 +1785,28 @@ function synthesiseSummary(
       totalJobs: scenario.jobs.length,
       totalAgents: scenario.agents.length,
       totalValidators: scenario.validators.length,
-      totalEscrowedAgi: Math.round(context.totalEscrowedAgi),
-      totalStablecoinVolume: Math.round(context.totalStable),
-      validatorRewardsAgi: Math.round(context.validatorRewards),
-      ownerBufferContribution: Math.round(context.ownerBufferContribution),
-      treasuryAfterRun: Math.round(
-        scenario.treasury.agiBalance -
-          context.validatorRewards -
-          context.totalEscrowedAgi +
-          context.cumulativeValue,
-      ),
-      roiMultiplier: Number(
-        (context.cumulativeValue /
-          Math.max(context.totalEscrowedAgi + context.totalStable, 1)).toFixed(2),
-      ),
-      netYield: Number(
-        (
-          context.cumulativeValue -
-          (context.totalEscrowedAgi +
-            context.totalStable +
-            context.validatorRewards +
-            context.ownerBufferContribution)
-        ).toFixed(2),
-      ),
+      totalEscrowedAgi,
+      totalStablecoinVolume,
+      validatorRewardsAgi: validatorRewards,
+      ownerBufferContribution,
+      treasuryAfterRun,
+      roiMultiplier,
+      netYield,
       paybackHours: Number(context.paybackHours.toFixed(2)),
       throughputJobsPerDay: Number(
         ((context.assignments.length / Math.max(context.finalHour, 1)) * 24).toFixed(2),
       ),
       validatorConfidence: Number(assignmentConfidence.toFixed(4)),
-      automationScore: Number(automationScore.toFixed(3)),
-      riskMitigationScore: Number(
-        (0.82 + pseudoRandom(`risk:${scenario.scenarioId}`) * 0.12).toFixed(3),
-      ),
+      automationScore: automationCoverage,
+      riskMitigationScore,
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage.value,
       sovereignControlScore,
       sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
       assertionPassRate: 0,
+      economicDominanceIndex: dominanceIndex,
+      capitalVelocity,
+      globalExpansionReadiness,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -1538,6 +1855,20 @@ function synthesiseSummary(
       modules: [],
       alerts: [],
     },
+    ownerAutopilot: {
+      mission: 'placeholder',
+      cadenceHours: 0,
+      dominanceScore: dominanceIndex,
+      guardrails: [],
+      narrative: '',
+      telemetry: {
+        economicDominanceIndex: dominanceIndex,
+        capitalVelocity,
+        globalExpansionReadiness,
+      },
+      commandSequence: [],
+    },
+    globalExpansionPlan: [],
   };
 }
 
@@ -1809,6 +2140,8 @@ export async function runScenario(
     ownerPlan,
     analysisTimestamp,
   );
+  summary.ownerAutopilot = buildOwnerAutopilot(summary, workingScenario);
+  summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
   return summary;
 }
 
@@ -1901,6 +2234,27 @@ async function writeOutputs(
     JSON.stringify(summary.sovereignSafetyMesh, null, 2),
   );
 
+  await fs.writeFile(
+    path.join(outputDir, 'economic-dominance.json'),
+    JSON.stringify(buildEconomicDominanceReport(summary), null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-autopilot.json'),
+    JSON.stringify(summary.ownerAutopilot, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-autopilot.mmd'),
+    `${generateOwnerAutopilotMermaid(summary.ownerAutopilot).trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'global-expansion-plan.md'),
+    generateGlobalExpansionMarkdown(summary),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'global-expansion.mmd'),
+    `${generateGlobalExpansionMermaid(summary.globalExpansionPlan).trimEnd()}\n`,
+  );
+
   if (options.updateUiSummary) {
     await ensureDir(path.dirname(UI_DEFAULT_SUMMARY));
     await fs.writeFile(UI_DEFAULT_SUMMARY, JSON.stringify(summary, null, 2));
@@ -1931,6 +2285,9 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'sovereignControlScore',
     'sovereignSafetyScore',
     'assertionPassRate',
+    'economicDominanceIndex',
+    'capitalVelocity',
+    'globalExpansionReadiness',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

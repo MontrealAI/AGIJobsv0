@@ -34,6 +34,11 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `sovereign-safety-mesh.json` – composite readiness diagnostics across pause/resume readiness, alerting, scripted coverage, and circuit breaker posture.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
+- `economic-dominance.json` – composite dominance index summarising ROI, capital velocity, sovereignty, safety, and automation posture with actionable recommendations.
+- `owner-autopilot.json` – cadence, guardrails, and deterministic command sequence for the owner autopilot along with telemetry mirrors.
+- `owner-autopilot.mmd` – mermaid control graph visualising cadence, guardrails, and command objectives.
+- `global-expansion-plan.md` – markdown roadmap breaking down testnet supremacy, mainnet pilot, planetary expansion, and governance acceleration phases.
+- `global-expansion.mmd` – mermaid gantt of the expansion cadence, immediately embeddable into ops dashboards.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -82,6 +87,7 @@ Additional safeguards:
 - **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
 - **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
 - **Command Catalog Supremacy** – `npm run owner:program -- --list` enumerates deterministic programs for every job, validator, adapter, module, treasury motion, and orchestrator flow.
+- **Owner Autopilot** – `owner-autopilot.json` and `owner-autopilot.mmd` provide a mission-ready cadence, guardrails, and command sequence the multi-sig can execute without additional authoring.
 
 ## Interactive CLI – empowering the operator
 
@@ -116,6 +122,8 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 - Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.
+- Owner autopilot cadence view surfacing guardrails, cadence, and mission-critical command sequences.
+- Global expansion roadmap translating `global-expansion-plan.md` into an interactive readiness tracker for planetary rollout.
 
 Launch with:
 

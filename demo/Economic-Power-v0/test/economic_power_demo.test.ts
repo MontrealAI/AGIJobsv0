@@ -54,6 +54,18 @@ test('economic power simulation produces deterministic metrics', async () => {
     1,
     'Assertion pass rate should signal unstoppable verification deck',
   );
+  assert(
+    summary.metrics.economicDominanceIndex >= 0.9,
+    'Economic dominance index should confirm unstoppable economic leverage',
+  );
+  assert(
+    summary.metrics.capitalVelocity > 0,
+    'Capital velocity should remain positive to evidence treasury acceleration',
+  );
+  assert(
+    summary.metrics.globalExpansionReadiness >= 0.9,
+    'Global expansion readiness should exceed 90% to unlock planetary rollout',
+  );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
@@ -180,5 +192,31 @@ test('economic power simulation produces deterministic metrics', async () => {
   }
   assert(summary.ownerCommandPlan.treasuryPrograms.length > 0, 'Owner plan should list treasury programs');
   assert(summary.ownerCommandPlan.orchestratorPrograms.length > 0, 'Owner plan should list orchestrator programs');
+
+  assert(summary.ownerAutopilot.commandSequence.length > 0, 'Owner autopilot should propose deterministic command sequence');
+  assert(summary.ownerAutopilot.cadenceHours >= 6, 'Owner autopilot cadence should stay within operational bounds');
+  assert(
+    summary.ownerAutopilot.guardrails.some((guardrail) => guardrail.includes(summary.ownerSovereignty.pauseScript)),
+    'Autopilot guardrails should include pause command',
+  );
+  assert.equal(
+    summary.ownerAutopilot.telemetry.economicDominanceIndex,
+    summary.metrics.economicDominanceIndex,
+    'Autopilot telemetry should mirror summary dominance metric',
+  );
+  assert.equal(
+    summary.ownerAutopilot.telemetry.globalExpansionReadiness,
+    summary.metrics.globalExpansionReadiness,
+    'Autopilot telemetry should mirror expansion readiness metric',
+  );
+  assert(summary.globalExpansionPlan.length >= 3, 'Global expansion plan should include multi-phase roadmap');
+  assert(
+    summary.globalExpansionPlan.every((phase) => phase.commands.length > 0),
+    'Every expansion phase should enumerate executable commands',
+  );
+  assert(
+    summary.globalExpansionPlan.some((phase) => phase.phase.includes('Planetary')),
+    'Expansion plan should culminate in planetary scale phase',
+  );
 });
 
