@@ -37,7 +37,8 @@
     "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
     "yargs": "^17.7.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "chalk": "^4.1.2"
   },
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain)",
   "devDependencies": {
@@ -392,12 +393,12 @@
     "reward-engine:report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/rewardEngineReport.ts",
     "reward-engine:update": "npx hardhat run scripts/v2/updateRewardEngine.ts",
     "run:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts run demo/Trustless-Economic-Core-v0/scripts/runScenario.ts",
-    "demo:validator-constellation": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
-    "demo:validator-constellation:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
-    "demo:validator-constellation:scenario": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/runScenario.ts",
-    "demo:validator-constellation:operator-console": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/operatorConsole.ts",
+    "demo:validator-constellation": "npx ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
+    "demo:validator-constellation:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true}' demo/Validator-Constellation-v0/scripts/runDemo.ts",
+    "demo:validator-constellation:scenario": "npx ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true}' demo/Validator-Constellation-v0/scripts/runScenario.ts",
+    "demo:validator-constellation:operator-console": "npx ts-node --compiler-options '{\"module\":\"commonjs\",\"esModuleInterop\":true}' demo/Validator-Constellation-v0/scripts/operatorConsole.ts",
     "test:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts test test/demo/trustlessEconomicCoreDemo.test.ts",
-    "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/validator_constellation.test.ts",
+    "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/runAll.ts",
     "sbom:generate": "mkdir -p reports/sbom && npm exec -- @cyclonedx/cyclonedx-npm --output-format json --output-file reports/sbom/cyclonedx.json",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
