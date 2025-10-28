@@ -26,6 +26,7 @@ export interface RoundAuditResult {
   entropyVerified: boolean;
   sentinelIntegrity: boolean;
   sentinelSlaSatisfied: boolean;
+  sentinelBlockWindowSatisfied: boolean;
   timelineIntegrity: boolean;
   nonRevealValidators: Hex[];
   dishonestValidators: Hex[];
@@ -54,6 +55,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
   const issues: string[] = [];
 
   const SENTINEL_SLA_MS = 1_000;
+  const SENTINEL_SLA_BLOCKS = 1;
 
   const commitMap = new Map(report.commits.map((commit) => [commit.validator.address, commit]));
   const revealMap = new Map(report.reveals.map((reveal) => [reveal.validator.address, reveal]));
@@ -150,6 +152,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
 
   let sentinelIntegrity = true;
   let sentinelSlaSatisfied = true;
+  let sentinelBlockWindowSatisfied = true;
   if (report.sentinelAlerts.length > 0) {
     const pauseByDomain = new Map(report.pauseRecords.map((record) => [record.domainId, record]));
     for (const alert of report.sentinelAlerts) {
@@ -157,6 +160,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
       if (!pause) {
         sentinelIntegrity = false;
         sentinelSlaSatisfied = false;
+        sentinelBlockWindowSatisfied = false;
         issues.push(`sentinel alert without matching pause for domain ${alert.domainId}`);
         continue;
       }
@@ -165,6 +169,29 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
         sentinelSlaSatisfied = false;
         issues.push(
           `sentinel pause for ${alert.domainId} exceeded SLA (${delta}ms > ${SENTINEL_SLA_MS}ms)`,
+        );
+      }
+      const blockDelta =
+        typeof pause.blockNumber === 'number' && typeof alert.blockNumber === 'number'
+          ? Math.abs(pause.blockNumber - alert.blockNumber)
+          : undefined;
+      if (blockDelta === undefined) {
+        sentinelBlockWindowSatisfied = false;
+        issues.push(`sentinel alert ${alert.id} missing block correlation data`);
+      } else if (blockDelta > SENTINEL_SLA_BLOCKS) {
+        sentinelBlockWindowSatisfied = false;
+        issues.push(
+          `sentinel pause for ${alert.domainId} exceeded block window (${blockDelta} blocks > ${SENTINEL_SLA_BLOCKS})`,
+        );
+      }
+      if (
+        typeof pause.resumedAtBlock === 'number' &&
+        typeof pause.blockNumber === 'number' &&
+        pause.resumedAtBlock < pause.blockNumber
+      ) {
+        sentinelBlockWindowSatisfied = false;
+        issues.push(
+          `resume block ${pause.resumedAtBlock} precedes pause block ${pause.blockNumber} for domain ${pause.domainId}`,
         );
       }
     }
@@ -183,6 +210,7 @@ export function auditRound(input: RoundAuditInput): RoundAuditResult {
     entropyVerified,
     sentinelIntegrity,
     sentinelSlaSatisfied,
+    sentinelBlockWindowSatisfied,
     timelineIntegrity,
     nonRevealValidators,
     dishonestValidators,

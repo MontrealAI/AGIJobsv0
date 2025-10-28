@@ -26,7 +26,7 @@ export class DomainPauseController {
     return state;
   }
 
-  pause(domainId: string, reason: string, triggeredBy: string): PauseRecord {
+  pause(domainId: string, reason: string, triggeredBy: string, blockNumber?: number): PauseRecord {
     const state = this.getState(domainId);
     if (state.paused) {
       return state.pauseReason!;
@@ -36,6 +36,7 @@ export class DomainPauseController {
       reason,
       triggeredBy,
       timestamp: Date.now(),
+      blockNumber,
     };
     state.paused = true;
     state.pauseReason = record;
@@ -43,7 +44,7 @@ export class DomainPauseController {
     return record;
   }
 
-  resume(domainId: string, triggeredBy: string): PauseRecord {
+  resume(domainId: string, triggeredBy: string, blockNumber?: number): PauseRecord {
     const state = this.getState(domainId);
     if (!state.paused || !state.pauseReason) {
       throw new Error('domain is not paused');
@@ -52,6 +53,7 @@ export class DomainPauseController {
       ...state.pauseReason,
       resumedAt: Date.now(),
       triggeredBy,
+      resumedAtBlock: blockNumber,
     };
     state.paused = false;
     state.pauseReason = undefined;

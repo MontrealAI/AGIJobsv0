@@ -10,6 +10,7 @@ import {
   NodeIdentity,
   PauseRecord,
   SubgraphRecord,
+  TreasuryDistributionEvent,
   VoteValue,
 } from './types';
 import { auditRound } from './auditor';
@@ -65,7 +66,10 @@ export interface ReportContext {
   scenarioName?: string;
   ownerNotes?: Record<string, unknown>;
   jobSample?: JobResult[];
-  treasury: { address: Hex; balance: bigint };
+  treasury: { address: Hex; balance: bigint; distributions?: TreasuryDistributionEvent[] };
+  ensMerkleRoot: Hex;
+  ensRegistrySize: number;
+  ensRegistryPreview?: string[];
 }
 
 function truncateHex(value: Hex, length = 14): string {
@@ -124,6 +128,21 @@ function summarizeSlashing(events: DemoOrchestrationReport['slashingEvents']): s
     .join('\n');
 }
 
+function summarizeTreasuryDistributions(
+  distributions: TreasuryDistributionEvent[] | undefined,
+): string {
+  if (!distributions || distributions.length === 0) {
+    return '_No treasury distributions were executed in this round._';
+  }
+  return distributions
+    .map((event, index) => {
+      const amount = formatEth(event.amount);
+      const timestamp = new Date(event.timestamp).toISOString();
+      return `${index + 1}. ${amount} sent to ${event.recipient} at ${timestamp} (tx: ${event.txHash}).`;
+    })
+    .join('\n');
+}
+
 function summarizePauses(records: DemoOrchestrationReport['pauseRecords']): string {
   if (records.length === 0) {
     return '_No domain pauses were required._';
@@ -131,7 +150,13 @@ function summarizePauses(records: DemoOrchestrationReport['pauseRecords']): stri
   return records
     .map((record, index) => {
       const resumed = record.resumedAt ? ` → resumed at ${formatTimestamp(record.resumedAt)}` : ' → still paused';
-      return `${index + 1}. ${record.domainId} paused for "${record.reason}" at ${formatTimestamp(record.timestamp)}${resumed}.`;
+      const blockTrail =
+        record.blockNumber !== undefined
+          ? ` (block ${record.blockNumber}${
+              record.resumedAtBlock !== undefined ? ` → ${record.resumedAtBlock}` : ''
+            })`
+          : '';
+      return `${index + 1}. ${record.domainId} paused for "${record.reason}" at ${formatTimestamp(record.timestamp)}${blockTrail}${resumed}.`;
     })
     .join('\n');
 }
@@ -197,6 +222,7 @@ function buildOwnerDigest(params: {
   const pauseSummary = summarizePauses(report.pauseRecords);
   const alertsSummary = summarizeAlerts(report.sentinelAlerts);
   const slashingSummary = summarizeSlashing(report.slashingEvents);
+  const treasurySummary = summarizeTreasuryDistributions(context.treasury.distributions);
   const committeeSummary = summarizeCommittee(report);
   const subgraphSummary = summarizeSubgraph(subgraphRecords);
   const statusEvents = subgraphRecords.filter((record) => record.type === 'VALIDATOR_STATUS');
@@ -213,11 +239,15 @@ function buildOwnerDigest(params: {
     ['Slashing events', `${report.slashingEvents.length}`],
     ['Sentinel alerts', `${report.sentinelAlerts.length}`],
     ['Sentinel SLA (≤1s)', audit.sentinelSlaSatisfied ? '✅' : '❌'],
+    ['Sentinel block window (≤1 block)', audit.sentinelBlockWindowSatisfied ? '✅' : '❌'],
     ['Forbidden selectors', `${context.primaryDomain.config.forbiddenSelectors.size}`],
     ['Validator status events', `${statusEvents.length}`],
+    ['Treasury distributions', `${context.treasury.distributions?.length ?? 0}`],
     ['Audit hash', audit.auditHash],
     ['Entropy transcript', report.vrfWitness.transcript],
     ['ZK verifying key', context.verifyingKey],
+    ['ENS merkle root', context.ensMerkleRoot],
+    ['ENS registry leaves', `${context.ensRegistrySize}`],
     ['Treasury balance', formatEth(context.treasury.balance)],
     ['Treasury address', context.treasury.address],
     ['Subgraph records', `${subgraphRecords.length}`],
@@ -237,9 +267,23 @@ function buildOwnerDigest(params: {
 
   const domainBudget = formatBigint(context.primaryDomain.config.budgetLimit);
 
+  const treasuryNodes = (context.treasury.distributions ?? [])
+    .map((event, index) => `  Treasury --> dist${index}["${formatEth(event.amount)} → ${event.recipient}"]`)
+    .join('\n');
+  const identityLabel = truncateHex(context.ensMerkleRoot, 26);
+  const identityPreview =
+    context.ensRegistryPreview && context.ensRegistryPreview.length > 0
+      ? context.ensRegistryPreview.slice(0, 4).join('\\n')
+      : 'governed';
+  const treasuryBalanceLabel = formatEth(context.treasury.balance);
+  const treasuryFlow =
+    (context.treasury.distributions?.length ?? 0) > 0
+      ? `\n  Slashing --> Treasury["Treasury Vault\\n${treasuryBalanceLabel}"]\n${treasuryNodes}`
+      : `\n  Slashing --> Treasury["Treasury Vault\\n${treasuryBalanceLabel}"]`;
+
   const mermaid = `flowchart TD\n  Owner["Owner Control"] --> Governance["Governance ${quorum} quorum"];\n  Governance --> Committee["Committee\\n${report.committee
     .map((member) => member.ensName)
-    .join('\\n')}"];\n  Committee --> Proof["ZK Proof\\n${report.proof.attestedJobCount} jobs"];\n  Committee --> Slashing["Slashing\\n${report.slashingEvents.length} events"];\n  Sentinel["Sentinel Monitors"] --> Alerts["Alerts\\n${report.sentinelAlerts.length}"];\n  Sentinel --> Pause["Domain Pause"];\n  Pause --> Domain["${context.primaryDomain.config.humanName}\\nBudget ${domainBudget}\\nSelectors ${Array.from(context.primaryDomain.config.forbiddenSelectors).length}"];`;
+    .join('\\n')}"];\n  Identity["ENS Root\\n${identityLabel}\\n${context.ensRegistrySize} leaves"] --> Committee;\n  Identity --> Registry["Identity Preview\\n${identityPreview}"];\n  Committee --> Proof["ZK Proof\\n${report.proof.attestedJobCount} jobs"];\n  Committee --> Slashing["Slashing\\n${report.slashingEvents.length} events"];${treasuryFlow}\n  Sentinel["Sentinel Monitors"] --> Alerts["Alerts\\n${report.sentinelAlerts.length}"];\n  Sentinel --> Pause["Domain Pause"];\n  Pause --> Domain["${context.primaryDomain.config.humanName}\\nBudget ${domainBudget}\\nSelectors ${Array.from(context.primaryDomain.config.forbiddenSelectors).length}"];`;
 
   const metricsTable = ['| Metric | Value |', '| --- | --- |', ...metrics.map(([label, value]) => `| ${label} | ${value} |`)].join('\n');
 
@@ -249,6 +293,13 @@ function buildOwnerDigest(params: {
     `**Round ${report.round} – ${context.primaryDomain.config.humanName} (${report.domainId})**`,
     '',
     metricsTable,
+    '',
+    '## ENS Identity Gate',
+    `- Merkle root: ${context.ensMerkleRoot}`,
+    `- Registered leaves: ${context.ensRegistrySize}`,
+    context.ensRegistryPreview && context.ensRegistryPreview.length
+      ? `- Preview: ${context.ensRegistryPreview.join(', ')}`
+      : '- Preview: _not provided_',
     '',
     '## Governance & Audit Checklist',
     checklist,
@@ -265,6 +316,9 @@ function buildOwnerDigest(params: {
     '## Treasury State',
     `- Address: ${context.treasury.address}`,
     `- Balance: **${formatEth(context.treasury.balance)}**`,
+    '',
+    '## Treasury Distributions',
+    treasurySummary,
     '',
     '## Slashing Actions',
     slashingSummary,
@@ -302,10 +356,57 @@ function buildSentinelDiagram(domainId: string): string {
   return `sequenceDiagram\n  participant Agent as Domain Agent\n  participant Sentinel as Sentinel Guardian\n  participant Domain as Domain Controller\n  Agent->>Sentinel: Overspend or unsafe call\n  Sentinel->>Domain: pause(${domainId})\n  Domain-->>Agent: Execution Halted`;
 }
 
+function buildTreasuryDiagram(result: DemoOrchestrationReport, context: ReportContext): string {
+  const distributions = context.treasury.distributions ?? [];
+  const base = `graph LR\n  slashing["Slashing Events\\n${result.slashingEvents.length}"] --> treasury["Treasury Vault\\n${formatEth(context.treasury.balance)}"]`;
+  if (distributions.length === 0) {
+    return base;
+  }
+  const flows = distributions
+    .map((event, index) => `  treasury --> dist${index}["${formatEth(event.amount)} → ${event.recipient}"]`)
+    .join('\n');
+  return `${base}\n${flows}`;
+}
+
+function buildIdentityDiagram(result: DemoOrchestrationReport, context: ReportContext): string {
+  const validatorLabel =
+    result.committee.length > 0 ? result.committee.map((member) => member.ensName).join('\\n') : 'pending';
+  const nodeLabel =
+    context.nodesRegistered.length > 0
+      ? context.nodesRegistered.map((node) => node.ensName).join('\\n')
+      : 'none registered';
+  const agentNames = Array.from(
+    new Set(
+      result.sentinelAlerts
+        .map((alert) => alert.offender?.ensName)
+        .filter((name): name is string => typeof name === 'string' && name.length > 0),
+    ),
+  );
+  const agentLabel = agentNames.length > 0 ? agentNames.join('\\n') : 'agents gated';
+  const preview =
+    context.ensRegistryPreview && context.ensRegistryPreview.length > 0
+      ? context.ensRegistryPreview.slice(0, 8).join('\\n')
+      : 'owner curated';
+  const rootLabel = truncateHex(context.ensMerkleRoot, 24);
+  return `graph LR\n  root["ENS Root\\n${rootLabel}\\n${context.ensRegistrySize} leaves"] --> preview["Preview\\n${preview}"];\n  root --> validators["Validators\\n${validatorLabel}"];\n  root --> nodes["Nodes\\n${nodeLabel}"];\n  root --> agents["Agents\\n${agentLabel}"];`;
+}
+
+function agentNamesFromAlerts(result: DemoOrchestrationReport): string[] {
+  return Array.from(
+    new Set(
+      result.sentinelAlerts
+        .map((alert) => alert.offender?.ensName)
+        .filter((name): name is string => typeof name === 'string' && name.length > 0),
+    ),
+  );
+}
+
 function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportContext): string {
   const jobSample = context.jobSample ?? [];
   const committeeDiagram = buildCommitteeDiagram(result);
   const sentinelDiagram = buildSentinelDiagram(result.domainId);
+  const treasuryDiagram = buildTreasuryDiagram(result, context);
+  const identityDiagram = buildIdentityDiagram(result, context);
   const scenarioTitle = context.scenarioName ?? 'Validator Constellation Guardian Deck';
   const ownerNotes = context.ownerNotes && Object.keys(context.ownerNotes).length > 0 ? context.ownerNotes : undefined;
   const timeline = {
@@ -346,6 +447,25 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <div class="mermaid">${sentinelDiagram}</div>
       </section>
       <section>
+        <h2>Treasury Routing</h2>
+        <div class="mermaid">${treasuryDiagram}</div>
+      </section>
+      <section>
+        <h2>Identity Gate</h2>
+        <div class="mermaid">${identityDiagram}</div>
+        <div class="metric">Merkle root: <strong>${context.ensMerkleRoot}</strong></div>
+        <div class="metric">Registry leaves: <strong>${context.ensRegistrySize}</strong></div>
+        <pre>${JSON.stringify(
+          {
+            preview: context.ensRegistryPreview ?? [],
+            nodes: context.nodesRegistered.map((node) => node.ensName),
+            offenders: agentNamesFromAlerts(result),
+          },
+          null,
+          2,
+        )}</pre>
+      </section>
+      <section>
         <h2>Batch Metrics</h2>
         <div class="metric">Jobs attested: <strong>${result.proof.attestedJobCount}</strong></div>
         <div class="metric">Validators slashed: <strong>${result.slashingEvents.length}</strong></div>
@@ -357,6 +477,7 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
         <div class="metric">ZK verifying key: <strong>${context.verifyingKey}</strong></div>
         <div class="metric">Treasury balance: <strong>${formatEth(context.treasury.balance)}</strong></div>
         <div class="metric">Treasury address: <strong>${context.treasury.address}</strong></div>
+        <div class="metric">Treasury distributions: <strong>${context.treasury.distributions?.length ?? 0}</strong></div>
         <pre>${JSON.stringify(
           {
             jobRoot: result.proof.jobRoot,
@@ -418,6 +539,21 @@ function generateDashboardHTML(result: DemoOrchestrationReport, context: ReportC
           2,
         )}</pre>
       </section>
+      <section>
+        <h2>Treasury Distributions</h2>
+        <pre>${JSON.stringify(
+          (context.treasury.distributions ?? []).map((event) => ({
+            recipient: event.recipient,
+            amountWei: event.amount.toString(),
+            amountEth: formatEth(event.amount),
+            treasuryBalanceAfter: event.treasuryBalanceAfter.toString(),
+            txHash: event.txHash,
+            timestamp: event.timestamp,
+          })),
+          null,
+          2,
+        )}</pre>
+      </section>
     </div>
   </body>
 </html>`;
@@ -464,6 +600,11 @@ export function writeReportArtifacts(input: ArtifactInput): void {
       registered: context.nodesRegistered,
       active: roundResult.nodes,
     },
+    identity: {
+      merkleRoot: context.ensMerkleRoot,
+      registrySize: context.ensRegistrySize,
+      preview: context.ensRegistryPreview ?? [],
+    },
     proof: roundResult.proof,
     alerts: roundResult.sentinelAlerts,
     slashing: roundResult.slashingEvents,
@@ -474,6 +615,14 @@ export function writeReportArtifacts(input: ArtifactInput): void {
       balanceWei: context.treasury.balance.toString(),
       balanceEth: formatEth(context.treasury.balance),
       balanceAfterRoundWei: roundResult.treasuryBalanceAfter.toString(),
+      distributions: (context.treasury.distributions ?? []).map((event) => ({
+        recipient: event.recipient,
+        amountWei: event.amount.toString(),
+        amountEth: formatEth(event.amount),
+        treasuryBalanceAfter: event.treasuryBalanceAfter.toString(),
+        txHash: event.txHash,
+        timestamp: event.timestamp,
+      })),
     },
     governance: {
       parameters: context.governance,

@@ -29,11 +29,19 @@ export class SentinelMonitor {
     return this.domainController.getState(domainId).config;
   }
 
-  private raiseAlert(action: AgentAction, rule: string, description: string, severity: 'CRITICAL' | 'HIGH', metadata?: Record<string, unknown>): SentinelAlert {
+  private raiseAlert(
+    action: AgentAction,
+    rule: string,
+    description: string,
+    severity: 'CRITICAL' | 'HIGH',
+    metadata: Record<string, unknown> | undefined,
+    blockNumber?: number,
+  ): SentinelAlert {
     const alert: SentinelAlert = {
       id: `${rule}-${Date.now()}`,
       domainId: action.domainId,
       timestamp: Date.now(),
+      blockNumber,
       rule,
       description,
       severity,
@@ -44,11 +52,17 @@ export class SentinelMonitor {
       metadata,
     };
     eventBus.emit('SentinelAlert', alert);
-    this.domainController.pause(action.domainId, description, `sentinel:${rule}`);
+    this.domainController.pause(action.domainId, description, `sentinel:${rule}`, blockNumber);
     return alert;
   }
 
   observe(action: AgentAction): SentinelAlert | undefined {
+    const blockNumber =
+      typeof action.blockNumber === 'number'
+        ? action.blockNumber
+        : typeof action.metadata?.blockNumber === 'number'
+          ? Number(action.metadata.blockNumber)
+          : undefined;
     const domain = this.getDomainConfig(action.domainId);
     const previous = this.spendTracker.get(action.agent.address) ?? 0n;
     const updated = previous + action.amountSpent;
@@ -59,7 +73,7 @@ export class SentinelMonitor {
       return this.raiseAlert(action, 'UNSAFE_OPCODE', `unsafe opcode ${action.opcode} invoked`, 'HIGH', {
         opcode: action.opcode,
         target: action.target,
-      });
+      }, blockNumber);
     }
 
     const selectors = this.config.forbiddenSelectors.get(domain.id) ?? domain.forbiddenSelectors;
@@ -78,6 +92,7 @@ export class SentinelMonitor {
             selector: normalizedSelector,
             configuredSelectors: Array.from(selectors),
           },
+          blockNumber,
         );
       }
     }
@@ -95,7 +110,7 @@ export class SentinelMonitor {
             normalizedTarget,
             hashedTarget,
             allowedTargets: Array.from(allowed),
-          });
+          }, blockNumber);
         }
       }
     }
@@ -111,7 +126,7 @@ export class SentinelMonitor {
         return this.raiseAlert(action, 'CALLDATA_EXPLOSION', `calldata size ${calldataBytes}b exceeds limit`, 'HIGH', {
           calldataBytes,
           threshold,
-        });
+        }, blockNumber);
       }
     }
 
@@ -122,7 +137,7 @@ export class SentinelMonitor {
         spent: updated.toString(),
         budget: action.agent.budget.toString(),
         grace: grace.toString(),
-      });
+      }, blockNumber);
     }
 
     return undefined;

@@ -23,6 +23,20 @@ function main() {
   }
   demo.registerAgent(agentLeaf.ensName, agentLeaf.owner, 'deep-space-lab', 1_000_000n);
 
+  const registryRotation = demo.rotateEnsRegistry({
+    leaves: [
+      { ensName: 'vega.club.agi.eth', owner: '0x8888000000000000000000000000000000008888' as Hex },
+      { ensName: 'aurora.alpha.node.agi.eth', owner: '0xaaaabbbbccccddddeeeeffff0000111122223333' as Hex },
+    ],
+  });
+  console.log('ENS registry rotated.', registryRotation);
+
+  const vegaValidator = demo.registerValidator(
+    'vega.club.agi.eth',
+    '0x8888000000000000000000000000000000008888' as Hex,
+    12_000_000_000_000_000_000n,
+  );
+
   const rotatedVerifyingKey: Hex = '0xf1f2f3f4f5f6f7f8f9fafbfcfdfeff00112233445566778899aabbccddeeff0011' as Hex;
   demo.updateZkVerifyingKey(rotatedVerifyingKey);
   const entropyRotation = demo.updateEntropySources({
@@ -34,6 +48,8 @@ function main() {
 
   const nodeLeaves = leaves.filter((leaf) => leaf.ensName.includes('.node.agi.eth'));
   const registeredNodes = nodeLeaves.map((leaf) => demo.registerNode(leaf.ensName, leaf.owner));
+  const auroraNode = demo.registerNode('aurora.alpha.node.agi.eth', '0xaaaabbbbccccddddeeeeffff0000111122223333' as Hex);
+  registeredNodes.push(auroraNode);
 
   const maintenancePause = demo.pauseDomain('lunar-foundry', 'Scheduled maintenance window');
   const maintenanceResume = demo.resumeDomain('lunar-foundry', 'governance:maintenance-complete');
@@ -138,9 +154,30 @@ function main() {
     anomalies,
   });
 
+  const treasuryDistributions = [] as ReturnType<typeof demo.distributeTreasury>[];
+  if (roundResult.treasuryBalanceAfter > 0n) {
+    const firstAmount = roundResult.treasuryBalanceAfter / 2n > 0n ? roundResult.treasuryBalanceAfter / 2n : roundResult.treasuryBalanceAfter;
+    const firstDistribution = demo.distributeTreasury(
+      '0x9999000000000000000000000000000000009999',
+      firstAmount,
+    );
+    treasuryDistributions.push(firstDistribution);
+    const remaining = demo.getTreasuryBalance();
+    if (remaining > 0n) {
+      const secondAmount = remaining / 2n > 0n ? remaining / 2n : remaining;
+      const secondDistribution = demo.distributeTreasury(
+        '0x8888000000000000000000000000000000008888',
+        secondAmount,
+      );
+      treasuryDistributions.push(secondDistribution);
+    }
+  }
+
   const reportDir = path.join(__dirname, '..', 'reports', 'latest');
   const domainState = demo.getDomainState('deep-space-lab');
   const jobSample = demoJobBatch('deep-space-lab', 5);
+  const ensLeaves = demo.listEnsLeaves();
+  const ensPreview = ensLeaves.slice(0, Math.min(12, ensLeaves.length)).map((leaf) => leaf.ensName);
   const reportContext: ReportContext = {
     verifyingKey: demo.getZkVerifyingKey(),
     entropyBefore: originalEntropy,
@@ -155,16 +192,36 @@ function main() {
     ownerNotes: {
       script: 'runDemo.ts baseline scenario',
       agentBudget: agentIdentity.budget.toString(),
+      treasuryDistributions: treasuryDistributions.map((event) => ({
+        recipient: event.recipient,
+        amount: event.amount.toString(),
+      })),
+      ensRegistry: registryRotation,
+      newValidator: vegaValidator,
     },
     jobSample,
-    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
+    treasury: {
+      address: demo.getTreasuryAddress(),
+      balance: demo.getTreasuryBalance(),
+      distributions: treasuryDistributions,
+    },
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: ensLeaves.length,
+    ensRegistryPreview: ensPreview,
   };
 
   writeReportArtifacts({
     reportDir,
     roundResult,
     subgraphRecords: subgraphIndexer.list(),
-    events: [committeeSelection.witness, ...roundResult.commits, ...roundResult.reveals],
+    events: [
+      registryRotation,
+      vegaValidator,
+      committeeSelection.witness,
+      ...roundResult.commits,
+      ...roundResult.reveals,
+      ...treasuryDistributions,
+    ],
     context: reportContext,
     jobBatch,
     truthfulVote: 'APPROVE',
@@ -173,6 +230,13 @@ function main() {
   console.log('Validator Constellation demo executed successfully.');
   console.log('Entropy witness transcript verified:', roundResult.vrfWitness.transcript);
   console.log(`Nodes registered: ${registeredNodes.map((node) => node.ensName).join(', ')}`);
+  if (treasuryDistributions.length > 0) {
+    console.log(
+      `Treasury distributions executed: ${treasuryDistributions
+        .map((event) => `${event.amount.toString()} wei to ${event.recipient}`)
+        .join('; ')}`,
+    );
+  }
   console.log(`Reports written to ${reportDir}`);
   console.log(`Owner mission briefing available at ${path.join(reportDir, 'owner-digest.md')}`);
 }

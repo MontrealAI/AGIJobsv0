@@ -12,6 +12,7 @@ import {
   JobResult,
   NodeIdentity,
   PauseRecord,
+  TreasuryDistributionEvent,
   ValidatorIdentity,
   VoteValue,
 } from './types';
@@ -127,6 +128,13 @@ export type ScenarioAnomaly =
   | CalldataSpikeAnomaly
   | ForbiddenSelectorAnomaly;
 
+interface ScenarioTreasuryDistributionAction {
+  recipient: Hex;
+  amount?: string | number | bigint;
+  percentageBps?: number;
+  note?: string;
+}
+
 interface ScenarioOwnerActions {
   updateEntropy?: Partial<{ onChainEntropy: string | number | bigint; recentBeacon: string | number | bigint }>;
   updateZkKey?: Hex;
@@ -145,6 +153,11 @@ interface ScenarioOwnerActions {
   pauseDomains?: Array<{ domainId: string; reason: string; triggeredBy?: string }>;
   resumeDomains?: Array<{ domainId: string; triggeredBy?: string }>;
   setAgentBudgets?: Array<{ ens: string; budget: string | number | bigint }>;
+  distributeTreasury?: ScenarioTreasuryDistributionAction[];
+  rotateEnsRegistry?: {
+    leaves: Array<{ ens: string; address: Hex }>;
+    mode?: 'APPEND' | 'REPLACE' | string;
+  };
 }
 
 export interface ScenarioConfig {
@@ -194,12 +207,20 @@ interface ScenarioContextBase {
   primaryDomainId: string;
   nodesRegistered: NodeIdentity[];
   treasuryAddress: Hex;
+  ensMerkleRoot: Hex;
+  ensRegistrySize: number;
+  ensRegistryPreview: string[];
+}
+
+interface PreparedOwnerActions {
+  treasuryDistributions: Array<{ recipient: Hex; amount?: bigint; percentageBps?: number; note?: string }>;
 }
 
 export interface PreparedScenario {
   demo: ValidatorConstellationDemo;
   plan: ScenarioPlan;
   context: ScenarioContextBase;
+  ownerActions: PreparedOwnerActions;
 }
 
 export interface ExecutedScenario {
@@ -485,7 +506,7 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
   if (!config.validators || config.validators.length === 0) {
     throw new Error('scenario must specify at least one validator');
   }
-  const ensLeaves = collectLeaves(config);
+  const registryLeaves = collectLeaves(config);
   const domains = materializeDomains(config.domains);
   const governance = mergeGovernance(config.baseSetup?.governance);
   const sentinelGrace =
@@ -515,7 +536,7 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
   const setup = {
     domains,
     governance,
-    ensLeaves,
+    ensLeaves: registryLeaves,
     verifyingKey,
     onChainEntropy: entropySources.onChainEntropy,
     recentBeacon: entropySources.recentBeacon,
@@ -555,10 +576,17 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
 
   const maintenanceRecords = new Map<string, { pause?: PauseRecord; resume?: PauseRecord }>();
   const domainSafetyUpdates = new Map<string, DomainConfig>();
+  const identityRotations: Array<{
+    merkleRoot: Hex;
+    totalLeaves: number;
+    mode: 'APPEND' | 'REPLACE';
+    leaves: string[];
+  }> = [];
 
   const baseEntropy = demo.getEntropySources();
 
   const ownerActions = config.ownerActions;
+  const preparedActions: PreparedOwnerActions = { treasuryDistributions: [] };
   if (ownerActions?.updateGovernance) {
     for (const [key, value] of Object.entries(ownerActions.updateGovernance)) {
       if (value !== undefined) {
@@ -610,10 +638,62 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
     }
   }
 
+  if (ownerActions?.rotateEnsRegistry) {
+    const leaves = ownerActions.rotateEnsRegistry.leaves ?? [];
+    if (leaves.length === 0) {
+      throw new Error('ownerActions.rotateEnsRegistry.leaves must contain at least one entry');
+    }
+    const normalizedLeaves = leaves.map((leaf, index) => ({
+      ensName: leaf.ens,
+      owner: normalizeHexInput(leaf.address, `ownerActions.rotateEnsRegistry.leaves[${index}]`, 20),
+    }));
+    const modeRaw = ownerActions.rotateEnsRegistry.mode ?? 'APPEND';
+    const mode = typeof modeRaw === 'string' && modeRaw.toUpperCase() === 'REPLACE' ? 'REPLACE' : 'APPEND';
+    const rotation = demo.rotateEnsRegistry({ leaves: normalizedLeaves, mode });
+    identityRotations.push({
+      merkleRoot: rotation.merkleRoot,
+      totalLeaves: rotation.totalLeaves,
+      mode,
+      leaves: normalizedLeaves.map((leaf) => leaf.ensName),
+    });
+  }
+
   if (ownerActions?.setAgentBudgets) {
     for (const change of ownerActions.setAgentBudgets) {
       const updated = demo.setAgentBudget(change.ens, parseBigint(change.budget, `${change.ens} budget override`));
       agentMap.set(normalizeEns(updated.ensName), updated);
+    }
+  }
+
+  if (ownerActions?.distributeTreasury) {
+    for (const [index, distribution] of ownerActions.distributeTreasury.entries()) {
+      const recipient = normalizeHexInput(
+        distribution.recipient,
+        `ownerActions.distributeTreasury[${index}].recipient`,
+        20,
+      );
+      let amount: bigint | undefined;
+      if (distribution.amount !== undefined) {
+        amount = parseBigint(distribution.amount, `ownerActions.distributeTreasury[${index}].amount`);
+      }
+      let percentageBps: number | undefined;
+      if (distribution.percentageBps !== undefined) {
+        if (
+          typeof distribution.percentageBps !== 'number' ||
+          Number.isNaN(distribution.percentageBps) ||
+          distribution.percentageBps < 0 ||
+          distribution.percentageBps > 10_000
+        ) {
+          throw new Error('percentageBps must be between 0 and 10,000');
+        }
+        percentageBps = Math.floor(distribution.percentageBps);
+      }
+      preparedActions.treasuryDistributions.push({
+        recipient,
+        amount,
+        percentageBps,
+        note: distribution.note,
+      });
     }
   }
 
@@ -667,6 +747,20 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
   const voteOverrides = resolveVoteOverrides(config.overrides, validatorMap);
   const nonRevealValidators = resolveNonReveal(config.overrides, validatorMap);
 
+  const finalEnsLeaves = demo.listEnsLeaves();
+  const ensPreview = finalEnsLeaves.slice(0, Math.min(12, finalEnsLeaves.length)).map((leaf) => leaf.ensName);
+  const ownerNotesBase: Record<string, unknown> = {
+    description: config.description,
+    context: config.context,
+    overrides: config.overrides,
+    treasuryPlan: ownerActions?.distributeTreasury,
+  };
+  if (identityRotations.length > 0) {
+    ownerNotesBase.ensRegistry = identityRotations;
+  }
+  ownerNotesBase.ensMerkleRoot = demo.getEnsMerkleRoot();
+  ownerNotesBase.ensRegistrySize = finalEnsLeaves.length;
+
   const context: ScenarioContextBase = {
     verifyingKey: demo.getZkVerifyingKey(),
     entropyBefore: baseEntropy,
@@ -675,16 +769,15 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
     sentinelGraceRatio: demo.getSentinelBudgetGraceRatio(),
     maintenance: maintenanceRecords.get(jobDomainId),
     scenarioName: config.name ?? 'Validator Constellation Scenario',
-    ownerNotes: {
-      description: config.description,
-      context: config.context,
-      overrides: config.overrides,
-    },
+    ownerNotes: ownerNotesBase,
     jobSample: jobBatch.slice(0, Math.min(8, jobBatch.length)),
     updatedSafety: domainSafetyUpdates.get(jobDomainId),
     primaryDomainId: jobDomainId,
     nodesRegistered: registeredNodes,
     treasuryAddress: demo.getTreasuryAddress(),
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: finalEnsLeaves.length,
+    ensRegistryPreview: ensPreview,
   };
 
   const plan: ScenarioPlan = {
@@ -697,11 +790,11 @@ export function prepareScenario(config: ScenarioConfig): PreparedScenario {
     anomalies,
   };
 
-  return { demo, plan, context };
+  return { demo, plan, context, ownerActions: preparedActions };
 }
 
 export function executeScenario(prepared: PreparedScenario): ExecutedScenario {
-  const { demo, plan, context } = prepared;
+  const { demo, plan, context, ownerActions } = prepared;
   const report = demo.runValidationRound({
     round: plan.round,
     truthfulVote: plan.truthfulVote,
@@ -712,7 +805,33 @@ export function executeScenario(prepared: PreparedScenario): ExecutedScenario {
     anomalies: plan.anomalies,
   });
 
+  const distributionEvents: TreasuryDistributionEvent[] = [];
+  for (const distribution of ownerActions.treasuryDistributions) {
+    const currentBalance = demo.getTreasuryBalance();
+    if (currentBalance <= 0n) {
+      break;
+    }
+    let desired = distribution.amount ?? 0n;
+    if (!distribution.amount && distribution.percentageBps !== undefined) {
+      desired = (currentBalance * BigInt(distribution.percentageBps)) / 10_000n;
+    }
+    if (desired <= 0n) {
+      continue;
+    }
+    const capped = desired > currentBalance ? currentBalance : desired;
+    if (capped <= 0n) {
+      continue;
+    }
+    const event = demo.distributeTreasury(distribution.recipient, capped);
+    distributionEvents.push(event);
+  }
+
   const primaryDomain = demo.getDomainState(context.primaryDomainId);
+  const ensLeaves = demo.listEnsLeaves();
+  const ensPreview =
+    context.ensRegistryPreview && context.ensRegistryPreview.length > 0
+      ? context.ensRegistryPreview
+      : ensLeaves.slice(0, Math.min(12, ensLeaves.length)).map((leaf) => leaf.ensName);
   const reportContext: ReportContext = {
     verifyingKey: demo.getZkVerifyingKey(),
     entropyBefore: context.entropyBefore,
@@ -726,8 +845,28 @@ export function executeScenario(prepared: PreparedScenario): ExecutedScenario {
     scenarioName: context.scenarioName,
     ownerNotes: context.ownerNotes,
     jobSample: context.jobSample,
-    treasury: { address: demo.getTreasuryAddress(), balance: demo.getTreasuryBalance() },
+    treasury: {
+      address: demo.getTreasuryAddress(),
+      balance: demo.getTreasuryBalance(),
+      distributions: distributionEvents,
+    },
+    ensMerkleRoot: demo.getEnsMerkleRoot(),
+    ensRegistrySize: ensLeaves.length,
+    ensRegistryPreview: ensPreview,
   };
+
+  if (distributionEvents.length > 0) {
+    reportContext.ownerNotes = {
+      ...(reportContext.ownerNotes ?? {}),
+      treasuryExecuted: distributionEvents.map((event, index) => ({
+        index,
+        recipient: event.recipient,
+        amount: event.amount.toString(),
+        txHash: event.txHash,
+        note: ownerActions.treasuryDistributions[index]?.note,
+      })),
+    };
+  }
 
   return { demo, report, context: reportContext };
 }

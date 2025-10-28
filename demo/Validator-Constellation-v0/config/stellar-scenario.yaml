@@ -118,6 +118,13 @@ ownerActions:
       forbiddenSelectors:
         - "0xa9059cbb"
         - "0x23b872dd"
+  rotateEnsRegistry:
+    mode: append
+    leaves:
+      - ens: vega.club.agi.eth
+        address: "0x8888000000000000000000000000000000008888"
+      - ens: aurora.alpha.node.agi.eth
+        address: "0xaaaabbbbccccddddeeeeffff0000111122223333"
   pauseDomains:
     - domainId: orbital-yard
       reason: "pre-flight drill"
@@ -134,6 +141,13 @@ ownerActions:
   updateGovernance:
     commitPhaseBlocks: 4
     revealPhaseBlocks: 4
+  distributeTreasury:
+    - recipient: "0x7777000000000000000000000000000000007777"
+      amount: "1000000000000000000"
+      note: "Seed incident response vault"
+    - recipient: "0x6666000000000000000000000000000000006666"
+      percentageBps: 2500
+      note: "Allocate 25% to insurance buffer"
 context:
   operator: "Non-technical mission director"
   mission: "Sentinel constellation readiness"
