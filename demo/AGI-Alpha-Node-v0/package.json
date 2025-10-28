@@ -1,0 +1,48 @@
+{
+  "name": "agi-alpha-node-demo",
+  "version": "0.1.0",
+  "description": "Grandiose production-grade AGI Alpha Node demo built on AGI Jobs v0/v2.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc -p tsconfig.json",
+    "start": "node --enable-source-maps dist/index.js",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint src tests scripts",
+    "format": "prettier --write \"src/**/*.ts\" \"config/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ci": "npm run lint && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "dependencies": {
+    "@types/node": "20.14.9",
+    "commander": "11.1.0",
+    "dotenv": "16.4.5",
+    "ethers": "6.13.2",
+    "js-yaml": "4.1.0",
+    "mermaid": "10.9.1",
+    "ora": "7.0.1",
+    "pino": "9.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "20.14.9",
+    "@typescript-eslint/eslint-plugin": "7.13.1",
+    "@typescript-eslint/parser": "7.13.1",
+    "@vitest/coverage-v8": "1.6.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-import": "2.29.1",
+    "prettier": "3.3.2",
+    "rimraf": "5.0.5",
+    "ts-node": "10.9.2",
+    "tslib": "2.6.2",
+    "typescript": "5.4.5",
+    "vitest": "1.6.0",
+    "tsx": "4.15.7"
+  }
+}

@@ -1,0 +1,26 @@
+version: '3.9'
+services:
+  alpha-node:
+    build: ..
+    environment:
+      - ALPHA_NODE_RPC=${ALPHA_NODE_RPC:-http://anvil:8545}
+      - ALPHA_NODE_PRIVATE_KEY=${ALPHA_NODE_PRIVATE_KEY:-0x0123456789012345678901234567890123456789012345678901234567890123}
+      - ALPHA_NODE_ENS=${ALPHA_NODE_ENS:-demo.alpha.node.agi.eth}
+    ports:
+      - '8443:8443'
+      - '9464:9464'
+    depends_on:
+      - anvil
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ['anvil', '-p', '8545', '--chain-id', '1']
+  grafana:
+    image: grafana/grafana-oss:10.4.3
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=alpha
+    volumes:
+      - grafana-data:/var/lib/grafana
+volumes:
+  grafana-data:

@@ -1,0 +1,36 @@
+name: demo-agi-alpha-node
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'demo/AGI-Alpha-Node-v0/**'
+      - '.github/workflows/demo-agi-alpha-node.yml'
+
+jobs:
+  demo-agi-alpha-node-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: demo/AGI-Alpha-Node-v0/package-lock.json
+
+      - name: Install dependencies
+        working-directory: demo/AGI-Alpha-Node-v0
+        run: npm ci
+
+      - name: Run demo CI
+        working-directory: demo/AGI-Alpha-Node-v0
+        env:
+          NODE_ENV: test
+        run: npm run ci

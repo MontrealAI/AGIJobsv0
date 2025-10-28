@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGI Alpha Node Command Deck</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>AGI Alpha Node Command Deck</h1>
+      <p>Live intelligence orchestration, ENS-secured, $AGIALPHA-fuelled.</p>
+    </header>
+
+    <section class="grid">
+      <article>
+        <h2>Live Flow</h2>
+        <div class="mermaid" id="flowchart">
+          graph LR
+            ENS[ENS Verified Identity] --> Stake[$AGIALPHA Stake]
+            Stake --> Mesh[Job Orchestration Mesh]
+            Mesh --> Swarm[Swarm Intelligence]
+            Swarm --> Rewards[$AGIALPHA Rewards]
+            Rewards --> Reinvest[Autonomous Reinvestment]
+            Reinvest --> Stake
+        </div>
+      </article>
+
+      <article>
+        <h2>Financial Pulse</h2>
+        <div class="cards" id="finance-cards">
+          <div class="card"><span class="label">Stake Balance</span><span id="stakeBalance">0</span></div>
+          <div class="card"><span class="label">Rewards Claimed</span><span id="rewardsClaimed">0</span></div>
+          <div class="card"><span class="label">Jobs Completed</span><span id="jobsCompleted">0</span></div>
+          <div class="card"><span class="label">Jobs Failed</span><span id="jobsFailed">0</span></div>
+        </div>
+      </article>
+
+      <article>
+        <h2>Event Stream</h2>
+        <ul id="eventLog"></ul>
+      </article>
+    </section>
+
+    <script>
+      const eventLog = document.getElementById('eventLog');
+      const metrics = {
+        stakeBalance: document.getElementById('stakeBalance'),
+        rewardsClaimed: document.getElementById('rewardsClaimed'),
+        jobsCompleted: document.getElementById('jobsCompleted'),
+        jobsFailed: document.getElementById('jobsFailed')
+      };
+
+      function appendEvent(event) {
+        const item = document.createElement('li');
+        item.textContent = `[${new Date().toLocaleTimeString()}] ${event.type}`;
+        eventLog.prepend(item);
+      }
+
+      const source = new EventSource('/events');
+      source.onmessage = (message) => {
+        const event = JSON.parse(message.data);
+        appendEvent(event);
+        if (event.type === 'finance-update') {
+          metrics.stakeBalance.textContent = event.payload.balance;
+          metrics.rewardsClaimed.textContent = event.payload.rewards;
+        }
+        if (event.type === 'job-completed') {
+          metrics.jobsCompleted.textContent = Number(metrics.jobsCompleted.textContent) + 1;
+        }
+        if (event.type === 'job-failed') {
+          metrics.jobsFailed.textContent = Number(metrics.jobsFailed.textContent) + 1;
+        }
+      };
+    </script>
+  </body>
+</html>
