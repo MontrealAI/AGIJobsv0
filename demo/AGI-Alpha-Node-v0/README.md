@@ -188,6 +188,7 @@ The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk 
 - **Institutional observability** – Prometheus, OpenTelemetry, and compliance-grade action logs are enabled out of the box.
 - **Self-documenting** – every CLI command emits Markdown, JSON, and Mermaid summaries so that regulators and auditors can reconstruct the node state instantly.
 - **Trustless job autopilot** – the node now speaks directly to JobRegistry, auto-discovers ENS-gated jobs, dry-runs them by default, and can pause/resume the entire platform through SystemPause with a single command.
+- **Manifest-driven governance** – owners feed declarative JSON manifests into `owner configure` to atomically update min stakes, pauser roles, registrars, and blacklist controls with multisig-ready calldata.
 
 ---
 
@@ -207,6 +208,7 @@ The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk 
 | `npm run demo:agi-alpha-node -- jobs submit <jobId> --result-uri <uri>`     | Deliver results to JobRegistry with deterministic hashing.                     |
 | `npm run demo:agi-alpha-node -- owner pause --config <file>`                | Invoke `SystemPause.pauseAll()` with governance safety checks.                 |
 | `npm run demo:agi-alpha-node -- owner resume --config <file>`               | Resume execution across StakeManager, JobRegistry, FeePool, and peers.         |
+| `npm run demo:agi-alpha-node -- owner configure --config <file> --update <manifest>` | Apply PlatformRegistry governance updates from a declarative manifest. |
 
 ### Trustless Job Lifecycle Flow
 
@@ -232,6 +234,16 @@ sequenceDiagram
 ```
 
 All commands support `--network`, `--rpc`, and `--dry-run` flags for local testing.
+
+### Governance Update Manifests
+
+- Start from [`config/governance.update.guide.json`](config/governance.update.guide.json) (validated by [`governance.update.schema.json`](config/governance.update.schema.json)).
+- Edit the declarative manifest to adjust min stake thresholds, pauser delegates, registrar permissions, or blacklist status.
+- Preview the calldata without touching the chain:
+  ```bash
+  npm run demo:agi-alpha-node -- owner configure --config my-alpha-node.json --update my-governance-update.json --dry-run
+  ```
+- Feed the same manifest to a multisig or signer to execute the update automatically. Add `--calldata-only` to print the encoded payload for off-chain orchestration tools.
 
 ---
 

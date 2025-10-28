@@ -6,6 +6,7 @@ import { AlphaNode } from './node';
 import { startAlphaNodeServer } from './server/httpServer';
 import { defaultOpportunities } from './utils/opportunities';
 import { pausePlatform, resumePlatform } from './blockchain/control';
+import { loadGovernanceUpdate } from './blockchain/governance';
 
 function parseProofOption(value: unknown): string[] | undefined {
   if (!value) {
@@ -476,6 +477,46 @@ yargs(hideBin(process.argv))
         node.getSigner()
       );
       console.log(JSON.stringify(receipt, null, 2));
+    }
+  )
+  .command(
+    'owner configure',
+    'Apply PlatformRegistry configuration updates from a JSON manifest',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
+        })
+        .option('update', {
+          type: 'string',
+          demandOption: true,
+          describe: 'Path to the governance update manifest JSON file.',
+        })
+        .option('dry-run', {
+          type: 'boolean',
+          default: false,
+        })
+        .option('calldata-only', {
+          type: 'boolean',
+          default: false,
+          describe: 'Print multisig-ready calldata and skip transaction broadcast.',
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const update = await loadGovernanceUpdate(args.update as string);
+      const dryRun = Boolean(args['dry-run'] || args['calldata-only']);
+      const report = await node.updateGovernance(update, { dryRun });
+      const output = args['calldata-only']
+        ? {
+            ...report,
+            notes: [...report.notes, 'Calldata-only output requested.'],
+          }
+        : report;
+      console.log(JSON.stringify(output, null, 2));
     }
   )
   .demandCommand()

@@ -14,7 +14,13 @@ import {
   StakeSnapshot,
 } from './blockchain/staking';
 import { fetchRewardSnapshot, RewardSnapshot } from './blockchain/rewards';
-import { fetchGovernanceSnapshot } from './blockchain/governance';
+import {
+  fetchGovernanceSnapshot,
+  applyGovernanceUpdate,
+  PlatformConfigurationUpdate,
+  GovernanceActionOptions,
+  GovernanceActionReport,
+} from './blockchain/governance';
 import {
   createJobLifecycle,
   DiscoveredJob,
@@ -357,6 +363,24 @@ export class AlphaNode {
       })),
     });
 
+    return report;
+  }
+
+  async updateGovernance(
+    update: PlatformConfigurationUpdate,
+    options?: GovernanceActionOptions
+  ): Promise<GovernanceActionReport> {
+    const report = await applyGovernanceUpdate(
+      this.context.signer,
+      this.context.config,
+      update,
+      options
+    );
+    this.context.logger.info('governance_update', {
+      dryRun: report.dryRun,
+      summary: report.summary,
+      notes: report.notes,
+    });
     return report;
   }
 }

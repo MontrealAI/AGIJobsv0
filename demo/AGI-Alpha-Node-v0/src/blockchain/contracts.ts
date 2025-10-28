@@ -15,7 +15,9 @@ const PLATFORM_REGISTRY_ABI = new Interface([
   'function registered(address operator) external view returns (bool)',
   'function minPlatformStake() external view returns (uint256)',
   'function stakeManager() external view returns (address)',
-  'function blacklist(address operator) external view returns (bool)'
+  'function blacklist(address operator) external view returns (bool)',
+  'function owner() external view returns (address)',
+  'function applyConfiguration((bool setStakeManager,address stakeManager,bool setReputationEngine,address reputationEngine,bool setMinPlatformStake,uint256 minPlatformStake,bool setPauser,address pauser,bool setPauserManager,address pauserManager),(address registrar,bool allowed)[],(address operator,bool status)[]) external'
 ]);
 
 const ERC20_ABI = new Interface([
