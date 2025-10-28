@@ -246,6 +246,7 @@ type Summary = {
     stabilityIndex: number;
     ownerCommandCoverage: number;
     sovereignControlScore: number;
+    sovereignSafetyScore: number;
     assertionPassRate: number;
   };
   ownerControl: {
@@ -261,6 +262,7 @@ type Summary = {
     emergencyContacts: Scenario['safeguards']['emergencyContacts'];
     circuitBreakers: Scenario['safeguards']['circuitBreakers'];
     upgradePaths: Scenario['safeguards']['upgradePaths'];
+    alertChannels: Scenario['observability']['alertChannels'];
   };
   commandCatalog: CommandCatalog;
   assignments: Assignment[];
@@ -268,6 +270,7 @@ type Summary = {
   mermaidTimeline: string;
   ownerCommandMermaid: string;
   ownerCommandPlan: OwnerCommandPlan;
+  sovereignSafetyMesh: SovereignSafetyMesh;
   assertions: Assertion[];
   treasuryTrajectory: TrajectoryEntry[];
   deployment: {
@@ -316,6 +319,22 @@ type OwnerCommandPlan = {
   commandCoverage: number;
   coverageNarrative: string;
   coverageDetail: Record<CoverageSurface, number>;
+};
+
+type SovereignSafetyMesh = {
+  pauseReady: boolean;
+  resumeReady: boolean;
+  targetResponseMinutes: number;
+  responseMinutes: number;
+  responseScore: number;
+  circuitBreakerScore: number;
+  alertCoverageScore: number;
+  coverageScore: number;
+  scriptScore: number;
+  safetyScore: number;
+  alertChannels: string[];
+  emergencyContacts: string[];
+  notes: string[];
 };
 
 type TrajectoryEntry = {
@@ -957,6 +976,104 @@ function computeSovereignControlScore(scenario: Scenario): number {
   return Number(Math.min(1, Math.max(0, controlScore)).toFixed(3));
 }
 
+function computeSovereignSafetyMesh(
+  scenario: Scenario,
+  coverage: CommandCoverage,
+  commandScripts: string[],
+): SovereignSafetyMesh {
+  const pauseReady = scenario.safeguards.pauseScript.trim().length > 0;
+  const resumeReady = scenario.safeguards.resumeScript.trim().length > 0;
+  const targetResponseMinutes = 15;
+  const responseMinutes = Math.max(scenario.safeguards.responseMinutes, 0);
+  const responseScoreBase =
+    responseMinutes <= targetResponseMinutes
+      ? 1
+      : 1 - (responseMinutes - targetResponseMinutes) / (targetResponseMinutes * 2 || 1);
+  const responseScore = Number(Math.max(0.4, Math.min(1, responseScoreBase)).toFixed(3));
+
+  const circuitBreakerScore = Number(
+    (
+      scenario.safeguards.circuitBreakers.length === 0
+        ? 0.5
+        : Math.min(1, 0.7 + scenario.safeguards.circuitBreakers.length * 0.08)
+    ).toFixed(3),
+  );
+
+  const alertCoverageScore = Number(
+    (
+      scenario.observability.alertChannels.length === 0
+        ? 0.5
+        : Math.min(1, 0.75 + scenario.observability.alertChannels.length * 0.08)
+    ).toFixed(3),
+  );
+
+  const coverageSurfaces: CoverageSurface[] = [
+    'pause',
+    'resume',
+    'treasury',
+    'modules',
+    'parameters',
+  ];
+  const coverageScore = Number(
+    (
+      coverageSurfaces.reduce((acc, surface) => acc + (coverage.detail[surface] ?? 0), 0) /
+      Math.max(coverageSurfaces.length, 1)
+    ).toFixed(3),
+  );
+
+  const scriptScoreBase = commandScripts.length / 20;
+  const numericScriptScore = Number(
+    Math.min(1, Math.max(0.4, scriptScoreBase)).toFixed(3),
+  );
+
+  const safetyScoreRaw =
+    ((pauseReady ? 1 : 0.5) +
+      (resumeReady ? 1 : 0.5) +
+      responseScore +
+      circuitBreakerScore +
+      alertCoverageScore +
+      coverageScore +
+      numericScriptScore) /
+    7;
+  const safetyScore = Number(Math.min(1, Math.max(0, safetyScoreRaw)).toFixed(3));
+
+  const notes: string[] = [];
+  if (!pauseReady) {
+    notes.push('Authorise an emergency pause script before production.');
+  }
+  if (!resumeReady) {
+    notes.push('Define a deterministic resume command for incident recovery.');
+  }
+  if (responseMinutes > targetResponseMinutes) {
+    notes.push('Response window exceeds defensive target – shorten multi-sig paging runbook.');
+  }
+  if (scenario.safeguards.circuitBreakers.length === 0) {
+    notes.push('Add at least one circuit breaker to guard treasury velocity.');
+  }
+  if (scenario.observability.alertChannels.length === 0) {
+    notes.push('Configure alert channels to broadcast incidents instantly.');
+  }
+  if (coverageScore < 1) {
+    notes.push('Expand command coverage to reach absolute custody on every surface.');
+  }
+
+  return {
+    pauseReady,
+    resumeReady,
+    targetResponseMinutes,
+    responseMinutes,
+    responseScore,
+    circuitBreakerScore,
+    alertCoverageScore,
+    coverageScore,
+    scriptScore: numericScriptScore,
+    safetyScore,
+    alertChannels: scenario.observability.alertChannels,
+    emergencyContacts: scenario.safeguards.emergencyContacts,
+    notes,
+  };
+}
+
 function buildGovernanceLedger(
   scenario: Scenario,
   summary: Summary,
@@ -1064,6 +1181,39 @@ function buildGovernanceLedger(
       severity: 'warning',
       summary: 'Sovereign control score below 100% – migrate remaining modules to owner safes.',
       details: [`Score ${(summary.metrics.sovereignControlScore * 100).toFixed(1)}%`],
+    });
+  }
+
+  if (summary.sovereignSafetyMesh.safetyScore < 0.95) {
+    alerts.push({
+      id: 'safety-mesh',
+      severity: summary.sovereignSafetyMesh.safetyScore < 0.85 ? 'critical' : 'warning',
+      summary: 'Sovereign safety mesh requires reinforcement to hit unstoppable thresholds.',
+      details: [
+        `Score ${(summary.sovereignSafetyMesh.safetyScore * 100).toFixed(1)}%`,
+        ...summary.sovereignSafetyMesh.notes,
+      ],
+    });
+  }
+
+  if (!summary.sovereignSafetyMesh.pauseReady || !summary.sovereignSafetyMesh.resumeReady) {
+    alerts.push({
+      id: 'pause-resume-gap',
+      severity: 'critical',
+      summary: 'Pause/resume scripts missing – define deterministic runbooks immediately.',
+      details: [
+        `Pause ready: ${summary.sovereignSafetyMesh.pauseReady ? 'yes' : 'no'}`,
+        `Resume ready: ${summary.sovereignSafetyMesh.resumeReady ? 'yes' : 'no'}`,
+      ],
+    });
+  }
+
+  if (summary.sovereignSafetyMesh.alertChannels.length === 0) {
+    alerts.push({
+      id: 'alert-channel-gap',
+      severity: 'warning',
+      summary: 'No alert channels configured for incident broadcast.',
+      details: ['Configure PagerDuty, Slack, SMS, or equivalent notification routes.'],
     });
   }
 
@@ -1287,6 +1437,12 @@ function synthesiseSummary(
   const stabilityIndex = computeStabilityIndex(scenario, context);
   const ownerCoverage = computeOwnerCommandCoverage(scenario);
   const sovereignControlScore = computeSovereignControlScore(scenario);
+  const commandScripts = collectCommandScripts(scenario);
+  const sovereignSafetyMesh = computeSovereignSafetyMesh(
+    scenario,
+    ownerCoverage,
+    commandScripts,
+  );
   return {
     scenarioId: scenario.scenarioId,
     title: scenario.title,
@@ -1332,6 +1488,7 @@ function synthesiseSummary(
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage.value,
       sovereignControlScore,
+      sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
       assertionPassRate: 0,
     },
     ownerControl: {
@@ -1347,6 +1504,7 @@ function synthesiseSummary(
       emergencyContacts: scenario.safeguards.emergencyContacts,
       circuitBreakers: scenario.safeguards.circuitBreakers,
       upgradePaths: scenario.safeguards.upgradePaths,
+      alertChannels: scenario.observability.alertChannels,
     },
     commandCatalog: scenario.commandCatalog,
     assignments: context.assignments,
@@ -1354,6 +1512,7 @@ function synthesiseSummary(
     mermaidTimeline: '',
     ownerCommandMermaid: '',
     ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
+    sovereignSafetyMesh,
     assertions: [],
     treasuryTrajectory: [],
     deployment: {
@@ -1375,7 +1534,7 @@ function synthesiseSummary(
       coverageNarrative: coverageNarrative(ownerCoverage.value),
       pauseScript: scenario.safeguards.pauseScript,
       resumeScript: scenario.safeguards.resumeScript,
-      scripts: collectCommandScripts(scenario),
+      scripts: commandScripts,
       modules: [],
       alerts: [],
     },
@@ -1681,9 +1840,11 @@ async function writeOutputs(
     emergencyContacts: summary.ownerSovereignty.emergencyContacts,
     circuitBreakers: summary.ownerSovereignty.circuitBreakers,
     upgradePaths: summary.ownerSovereignty.upgradePaths,
+    alertChannels: summary.ownerSovereignty.alertChannels,
     stabilityIndex: summary.metrics.stabilityIndex,
     ownerCommandCoverage: summary.metrics.ownerCommandCoverage,
     sovereignControlScore: summary.metrics.sovereignControlScore,
+    sovereignSafetyScore: summary.metrics.sovereignSafetyScore,
   };
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
@@ -1735,6 +1896,11 @@ async function writeOutputs(
     JSON.stringify(commandChecklist, null, 2),
   );
 
+  await fs.writeFile(
+    path.join(outputDir, 'sovereign-safety-mesh.json'),
+    JSON.stringify(summary.sovereignSafetyMesh, null, 2),
+  );
+
   if (options.updateUiSummary) {
     await ensureDir(path.dirname(UI_DEFAULT_SUMMARY));
     await fs.writeFile(UI_DEFAULT_SUMMARY, JSON.stringify(summary, null, 2));
@@ -1763,6 +1929,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'stabilityIndex',
     'ownerCommandCoverage',
     'sovereignControlScore',
+    'sovereignSafetyScore',
     'assertionPassRate',
   ];
   const tolerance = 0.05;

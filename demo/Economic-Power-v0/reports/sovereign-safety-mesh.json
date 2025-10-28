@@ -1,0 +1,22 @@
+{
+  "pauseReady": true,
+  "resumeReady": true,
+  "targetResponseMinutes": 15,
+  "responseMinutes": 9,
+  "responseScore": 1,
+  "circuitBreakerScore": 0.94,
+  "alertCoverageScore": 0.91,
+  "coverageScore": 1,
+  "scriptScore": 1,
+  "safetyScore": 0.979,
+  "alertChannels": [
+    "slack://agi-ops-economic-power",
+    "pagerduty://agi-critical"
+  ],
+  "emergencyContacts": [
+    "governance@agijobs.ai",
+    "security-operations@agijobs.ai",
+    "treasury@agijobs.ai"
+  ],
+  "notes": []
+}

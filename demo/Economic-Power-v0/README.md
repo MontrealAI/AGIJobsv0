@@ -31,6 +31,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
 - `owner-command-checklist.json` – machine-auditable coverage ledger detailing per-surface command coverage percentages for jobs, validators, adapters, modules, treasury, pause/resume, and orchestrator surfaces.
 - `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
+- `sovereign-safety-mesh.json` – composite readiness diagnostics across pause/resume readiness, alerting, scripted coverage, and circuit breaker posture.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
 
@@ -112,6 +113,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 - Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.
 
@@ -145,7 +147,7 @@ This guarantees a **fully green v2 CI gate**. Pull requests and `main` share ide
 - ✅ Modular architecture reflecting the v2 sprint blueprint.
 - ✅ Deterministic simulation and CI coverage.
 - ✅ Owner-first command catalog for every mutable lever plus sovereign custody scoring for every contract module.
-- ✅ Observability artefacts (Mermaid, JSON, HTML dashboard).
+- ✅ Observability artefacts (Mermaid, JSON, HTML dashboard) plus sovereign safety diagnostics for instant incident readiness reviews.
 - ✅ Non-technical operations workflow from single command to actionable dashboard.
 
 Run the loop, inspect the telemetry, execute the owner change-set, and step into an economy-scale command role.

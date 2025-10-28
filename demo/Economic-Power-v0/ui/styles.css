@@ -442,6 +442,60 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+#safety-metrics {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0 1rem;
+}
+
+#safety-metrics th,
+#safety-metrics td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+  text-align: left;
+}
+
+#safety-metrics th {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: rgba(190, 242, 255, 0.9);
+}
+
+#safety-metrics td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#alert-channels,
+#safety-notes {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+#alert-channels li,
+#safety-notes li {
+  list-style: none;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+#alert-channels li::before {
+  content: '⚡';
+  position: absolute;
+  left: 0;
+}
+
+#safety-notes li::before {
+  content: '✳️';
+  position: absolute;
+  left: 0;
+}
+
 #deployment-table code {
   background: rgba(56, 189, 248, 0.12);
   padding: 0.15rem 0.35rem;

@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T16:59:49.680Z",
+  "executionTimestamp": "2025-10-28T17:40:41.635Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -23,6 +23,7 @@
     "stabilityIndex": 0.761,
     "ownerCommandCoverage": 1,
     "sovereignControlScore": 1,
+    "sovereignSafetyScore": 0.979,
     "assertionPassRate": 1
   },
   "ownerControl": {
@@ -101,6 +102,10 @@
         "script": "npm run owner:parameters",
         "description": "Rebalances stake requirements to throttle spam and fortify incentives."
       }
+    ],
+    "alertChannels": [
+      "slack://agi-ops-economic-power",
+      "pagerduty://agi-critical"
     ]
   },
   "commandCatalog": {
@@ -644,6 +649,28 @@
       "treasury": 1,
       "orchestrator": 1
     }
+  },
+  "sovereignSafetyMesh": {
+    "pauseReady": true,
+    "resumeReady": true,
+    "targetResponseMinutes": 15,
+    "responseMinutes": 9,
+    "responseScore": 1,
+    "circuitBreakerScore": 0.94,
+    "alertCoverageScore": 0.91,
+    "coverageScore": 1,
+    "scriptScore": 1,
+    "safetyScore": 0.979,
+    "alertChannels": [
+      "slack://agi-ops-economic-power",
+      "pagerduty://agi-critical"
+    ],
+    "emergencyContacts": [
+      "governance@agijobs.ai",
+      "security-operations@agijobs.ai",
+      "treasury@agijobs.ai"
+    ],
+    "notes": []
   },
   "assertions": [
     {

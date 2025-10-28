@@ -161,6 +161,22 @@
             <h3>Immediate actions</h3>
             <div id="pause-resume"></div>
             <p>
+              <strong>Safety mesh score:</strong>
+              <span id="safety-score"></span>
+            </p>
+            <p id="safety-response"></p>
+            <div class="table-wrapper">
+              <table id="safety-metrics" aria-label="Safety mesh diagnostics">
+                <thead>
+                  <tr>
+                    <th>Dimension</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <p>
               <strong>Command coverage:</strong>
               <span id="coverage-percent"></span>
             </p>
@@ -178,6 +194,10 @@
             </div>
             <h4>Emergency contacts</h4>
             <ul id="emergency-contacts"></ul>
+            <h4>Alert channels</h4>
+            <ul id="alert-channels"></ul>
+            <h4>Safety notes</h4>
+            <ul id="safety-notes" class="note-list"></ul>
           </article>
           <article class="sovereignty-card" aria-label="Circuit breakers">
             <h3>Circuit breakers</h3>
