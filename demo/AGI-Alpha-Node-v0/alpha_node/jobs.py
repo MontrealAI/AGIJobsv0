@@ -29,10 +29,16 @@ class TaskHarvester:
         return data
 
     def next_job(self) -> Optional[Dict[str, object]]:
+        if not self._jobs:
+            LOGGER.info("No jobs available to harvest")
+            return None
         try:
             job = next(self._iterator)
         except StopIteration:
             if not self.loop:
+                return None
+            if not self._jobs:
+                LOGGER.info("No jobs available to harvest")
                 return None
             self._iterator = iter(self._jobs)
             job = next(self._iterator)

@@ -33,9 +33,10 @@ class ComplianceEngine:
     def evaluate(self) -> ComplianceScore:
         snapshot = self.state.snapshot()
         identity = 1.0 if snapshot["operations"]["ens_verified"] else 0.0
-        staking = min(snapshot["economy"]["staked_amount"] / self.required_stake, 1.0)
+        stake_requirement = self.required_stake or 1
+        staking = min(snapshot["economy"]["staked_amount"] / stake_requirement, 1.0)
         governance = 1.0 if not snapshot["governance"]["paused"] else 0.5
-        economic = min(1.0, snapshot["economy"]["rewards_accrued"] / (self.required_stake or 1))
+        economic = min(1.0, snapshot["economy"]["rewards_accrued"] / stake_requirement)
         antifragile = 1.0 if snapshot["economy"]["slashed_amount"] == 0 else 0.3
         strategic = min(1.0, snapshot["operations"]["completed_jobs"] / 5)
         dimensions = {
