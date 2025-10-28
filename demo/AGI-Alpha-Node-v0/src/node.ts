@@ -38,6 +38,13 @@ import {
   AlphaNodeComplianceReport,
   computeComplianceReport,
 } from './utils/compliance';
+import {
+  applyOwnerControls,
+  OwnerControlExecutionReport,
+  OwnerControlOptions,
+  OwnerControlPlan,
+  planOwnerControls,
+} from './blockchain/ownerControl';
 
 export interface AlphaNodeContext {
   readonly config: NormalisedAlphaNodeConfig;
@@ -96,6 +103,38 @@ export class AlphaNode {
 
   getSigner(): Wallet {
     return this.context.signer;
+  }
+
+  async ownerControlPlan(): Promise<OwnerControlPlan> {
+    const plan = await planOwnerControls(
+      this.context.signer,
+      this.context.config
+    );
+    this.context.metrics.updateOwnerAlignment(plan.actions.length === 0);
+    this.context.logger.info('owner_control_plan', {
+      actions: plan.actions.length,
+      notes: plan.notes,
+    });
+    return plan;
+  }
+
+  async ownerConfigure(
+    options?: OwnerControlOptions
+  ): Promise<OwnerControlExecutionReport> {
+    const report = await applyOwnerControls(
+      this.context.signer,
+      this.context.config,
+      options
+    );
+    this.context.metrics.updateOwnerAlignment(
+      report.remainingActions.length === 0
+    );
+    this.context.logger.info('owner_control_execute', {
+      dryRun: report.dryRun,
+      executed: report.executed.length,
+      remaining: report.remainingActions.length,
+    });
+    return report;
   }
 
   async verifyIdentity(): Promise<IdentityVerificationResult> {
@@ -263,6 +302,7 @@ export class AlphaNode {
     }
     this.context.metrics.updateJobExecution(selectedJob?.reward);
     const reinvestment = await this.reinvest({ dryRun: true });
+    const ownerPlan = await this.ownerControlPlan();
     return {
       operator: this.operatorAddress,
       discovered,
@@ -270,6 +310,7 @@ export class AlphaNode {
       plan,
       execution,
       reinvestment,
+      ownerPlan,
     };
   }
 
@@ -311,6 +352,7 @@ export class AlphaNode {
     const plan = this.plan(opportunities);
     const stress = this.stressTest();
     const reinvestment = await this.reinvest({ dryRun: true });
+    const ownerPlan = await this.ownerControlPlan();
 
     return {
       identity,
@@ -319,6 +361,7 @@ export class AlphaNode {
       plan,
       stress,
       reinvestment,
+      ownerPlan,
     };
   }
 
@@ -336,6 +379,7 @@ export class AlphaNode {
     const plan = this.plan(jobs);
     const stress = this.stressTest();
     const reinvestment = await this.reinvest({ dryRun: true });
+    const ownerPlan = await this.ownerControlPlan();
 
     const report = computeComplianceReport({
       identity,
@@ -345,6 +389,7 @@ export class AlphaNode {
       plan,
       stress,
       reinvestment,
+      owner: ownerPlan,
     });
 
     this.context.metrics.updateCompliance(report.score);
@@ -371,6 +416,7 @@ export interface AlphaNodeHeartbeat {
   };
   readonly stress: StressTestResult[];
   readonly reinvestment: ReinvestReport;
+  readonly ownerPlan: OwnerControlPlan;
 }
 
 export interface AlphaNodeAutopilot {
@@ -383,6 +429,7 @@ export interface AlphaNodeAutopilot {
   };
   readonly execution?: JobCycleReport;
   readonly reinvestment: ReinvestReport;
+  readonly ownerPlan?: OwnerControlPlan;
 }
 
 export type { AlphaNodeComplianceReport } from './utils/compliance';

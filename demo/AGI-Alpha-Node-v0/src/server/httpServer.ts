@@ -27,6 +27,11 @@ export async function startAlphaNodeServer(
     res.json(report);
   });
 
+  dashboardApp.get('/api/owner-plan', async (_req, res) => {
+    const plan = await node.ownerControlPlan();
+    res.json(plan);
+  });
+
   dashboardApp.post('/api/plan', async (req, res) => {
     const jobs = (req.body?.jobs ?? []) as JobOpportunity[];
     const plan = node.plan(jobs);

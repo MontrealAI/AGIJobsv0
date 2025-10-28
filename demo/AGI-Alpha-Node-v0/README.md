@@ -125,6 +125,7 @@ pie showData
 - Run `npm run demo:agi-alpha-node -- compliance --config <file>` to print the machine-readable scorecard.
 - Open the Operator Console (`npm run demo:agi-alpha-node -- dashboard ...`) to view the score in real time, including detailed notes per dimension.
 - Monitor `agi_alpha_node_compliance_score` in Prometheus to enforce institutional SLAs or trigger automated playbooks.
+- Inspect `agi_alpha_node_owner_alignment` to confirm the owner-governed parameters match the desired policy or trigger governance remediation.
 
 The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk (e.g. blacklisting) produces a hard failure, while soft drifts (e.g. paused state) trigger alerts without interrupting operations. This ensures the operator can demonstrate proactive control to regulators, auditors, and institutional partners.
 
@@ -174,6 +175,11 @@ The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk 
    npm run demo:agi-alpha-node -- treasury reinvest --dry-run --config my-alpha-node.json
    ```
    Remove `--dry-run` to claim and restake rewards when you are satisfied with the preview. Use `--amount 3500` to override the automatic threshold in $AGIALPHA.
+7. **Sync owner-governed parameters**
+   ```bash
+   npm run demo:agi-alpha-node -- owner configure --config my-alpha-node.json
+   ```
+   The command defaults to a dry run. Append `--execute` once you are ready to broadcast the multisig-grade transactions that align StakeManager and IdentityRegistry with your configuration.
 
 > **Safety rails:** All scripts honour the `SystemPause` contract. If any invariants fail (stake shortfall, ENS mismatch, validator dispute), the node pauses itself and guides the operator through remediation.
 
@@ -188,6 +194,7 @@ The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk 
 - **Institutional observability** – Prometheus, OpenTelemetry, and compliance-grade action logs are enabled out of the box.
 - **Self-documenting** – every CLI command emits Markdown, JSON, and Mermaid summaries so that regulators and auditors can reconstruct the node state instantly.
 - **Trustless job autopilot** – the node now speaks directly to JobRegistry, auto-discovers ENS-gated jobs, dry-runs them by default, and can pause/resume the entire platform through SystemPause with a single command.
+- **Owner dominion alignment** – `owner configure` continuously reconciles StakeManager and IdentityRegistry parameters with your JSON policy, emits call data for audit trails, and surfaces an `agi_alpha_node_owner_alignment` metric.
 
 ---
 
@@ -205,6 +212,7 @@ The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk 
 | `npm run demo:agi-alpha-node -- jobs discover --config <file>`              | Query JobRegistry for ENS-authenticated opportunities (dry-run safe).          |
 | `npm run demo:agi-alpha-node -- jobs autopilot --config <file> [--dry-run]` | Discover → plan → (optionally) execute the richest job end-to-end.             |
 | `npm run demo:agi-alpha-node -- jobs submit <jobId> --result-uri <uri>`     | Deliver results to JobRegistry with deterministic hashing.                     |
+| `npm run demo:agi-alpha-node -- owner configure --config <file> [--execute]`| Align owner-governed contract parameters; defaults to safe dry-run planning.    |
 | `npm run demo:agi-alpha-node -- owner pause --config <file>`                | Invoke `SystemPause.pauseAll()` with governance safety checks.                 |
 | `npm run demo:agi-alpha-node -- owner resume --config <file>`               | Resume execution across StakeManager, JobRegistry, FeePool, and peers.         |
 

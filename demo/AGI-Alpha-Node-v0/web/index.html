@@ -88,6 +88,12 @@
         const plan = data.plan;
         const identity = data.identity;
         const reinvestment = data.reinvestment;
+        const ownerPlan = data.ownerPlan ?? {
+          actions: [],
+          notes: [],
+          desired: {},
+          current: {},
+        };
         document.getElementById('stake').innerHTML = `
           <div class="metrics">
             <span>Stake Target</span>
@@ -153,6 +159,31 @@
           null,
           2
         );
+        const ownerStatus = ownerPlan.actions.length === 0
+          ? '✅ Parameters aligned'
+          : ownerPlan.actions.some((action) => action.critical)
+          ? '🚨 Critical owner action required'
+          : '⚠️ Owner action recommended';
+        document.getElementById('owner').innerHTML = `
+          <div class="metrics">
+            <span>Owner Alignment</span>
+            <strong>${ownerStatus}</strong>
+          </div>
+          <div class="metrics">
+            <span>Actions Pending</span>
+            <strong>${ownerPlan.actions.length}</strong>
+          </div>
+          <pre>${JSON.stringify(
+            ownerPlan.actions.map((action) => ({
+              target: action.target,
+              method: action.method,
+              critical: action.critical,
+            })),
+            null,
+            2
+          )}</pre>
+          <pre>${JSON.stringify(ownerPlan.notes, null, 2)}</pre>
+        `;
       }
 
       function renderCompliance(report) {
@@ -207,6 +238,7 @@
       <div class="card" id="planning"></div>
       <div class="card" id="treasury"></div>
       <div class="card" id="compliance"></div>
+      <div class="card" id="owner"></div>
     </div>
     <div class="card" style="margin-top: 1.5rem">
       <h2>Stress Diagnostics</h2>

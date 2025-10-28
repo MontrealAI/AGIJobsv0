@@ -5,6 +5,19 @@ import {
   ComplianceInputs,
 } from '../src/utils/compliance';
 
+const ownerAlignedPlan = {
+  current: {
+    minStakeWei: (5_000_000_000_000_000_000n).toString(),
+    nodeRootHash: '0x2d936bd2c82bc0aaa072a9d3c6d87aad1c1ec6a245f991129efb6ecc9fed57c4',
+  },
+  desired: {
+    minStakeWei: (5_000_000_000_000_000_000n).toString(),
+    nodeRootHash: '0x2d936bd2c82bc0aaa072a9d3c6d87aad1c1ec6a245f991129efb6ecc9fed57c4',
+  },
+  actions: [],
+  notes: ['All owner-governed parameters aligned with configuration.'],
+} as const;
+
 const baseInputs: ComplianceInputs = {
   identity: {
     matches: true,
@@ -82,6 +95,7 @@ const baseInputs: ComplianceInputs = {
     stakedWei: 4_000_000_000_000_000_000n,
     notes: ['Reinvested successfully.'],
   },
+  owner: ownerAlignedPlan,
 };
 
 test('compliance report generates high score for healthy node', () => {
@@ -107,6 +121,21 @@ test('governance risk downgrades scorecard', () => {
       operatorIsGovernance: false,
       operatorBlacklisted: true,
       governance: '0x0000000000000000000000000000000000000002',
+    },
+    owner: {
+      ...ownerAlignedPlan,
+      actions: [
+        {
+          target: 'identityRegistry',
+          method: 'setNodeRootNode',
+          description: 'Rotate IdentityRegistry node root to safe guardian.',
+          current: ownerAlignedPlan.current.nodeRootHash ?? '0x0',
+          desired: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          data: '0xdeadbeef',
+          critical: true,
+        },
+      ],
+      notes: ['Owner action required to restore node root authority.'],
     },
   });
   const governance = riskyReport.dimensions.find(

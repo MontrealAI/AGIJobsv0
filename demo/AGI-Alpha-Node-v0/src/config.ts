@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
-import { parseEther } from 'ethers';
+import { parseEther, namehash } from 'ethers';
 
 const rewardSplitSchema = z
   .object({
@@ -14,6 +14,37 @@ const rewardSplitSchema = z
   });
 
 const hex32 = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
+
+const ownerControlsSchema = z
+  .object({
+    stakeManager: z
+      .object({
+        minStake: z.string().regex(/^\d+(\.\d+)?$/).optional()
+      })
+      .optional(),
+    identityRegistry: z
+      .object({
+        nodeRootEns: z.string().min(3).optional(),
+        nodeRootHash: z
+          .string()
+          .regex(/^0x[a-fA-F0-9]{64}$/)
+          .optional(),
+      })
+      .superRefine((value, ctx) => {
+        if (!value) {
+          return;
+        }
+        if (!value.nodeRootEns && !value.nodeRootHash) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'Provide either nodeRootEns or nodeRootHash for owner identity controls.',
+          });
+        }
+      })
+      .optional(),
+  })
+  .optional();
 
 const configSchema = z.object({
   operator: z.object({
@@ -82,6 +113,7 @@ const configSchema = z.object({
   governance: z.object({
     systemPauseGuardian: z.string().regex(/^0x[a-fA-F0-9]{40}$/)
   }),
+  ownerControls: ownerControlsSchema,
   monitoring: z.object({
     metricsPort: z.number().int().min(1),
     dashboardPort: z.number().int().min(1),
@@ -100,6 +132,16 @@ export interface NormalisedAlphaNodeConfig extends AlphaNodeConfig {
   jobs: AlphaNodeConfig['jobs'] & {
     identityProof: readonly string[];
   };
+  ownerControls?: {
+    stakeManager?: {
+      minStake?: string;
+      minStakeWei?: bigint;
+    };
+    identityRegistry?: {
+      nodeRootEns?: string;
+      nodeRootHash?: string;
+    };
+  };
 }
 
 export async function loadAlphaNodeConfig(configPath: string): Promise<NormalisedAlphaNodeConfig> {
@@ -114,6 +156,28 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
   const config = configSchema.parse(parsed);
   const minimumStakeWei = parseEther(config.operator.minimumStake);
   const reinvestThresholdWei = parseEther(config.ai.economicPolicy.reinvestThreshold);
+
+  let ownerControls: NormalisedAlphaNodeConfig['ownerControls'];
+  if (config.ownerControls) {
+    ownerControls = {};
+    if (config.ownerControls.stakeManager?.minStake) {
+      ownerControls.stakeManager = {
+        minStake: config.ownerControls.stakeManager.minStake,
+        minStakeWei: parseEther(config.ownerControls.stakeManager.minStake),
+      };
+    }
+    if (config.ownerControls.identityRegistry) {
+      const desiredHash =
+        config.ownerControls.identityRegistry.nodeRootHash ??
+        (config.ownerControls.identityRegistry.nodeRootEns
+          ? namehash(config.ownerControls.identityRegistry.nodeRootEns)
+          : undefined);
+      ownerControls.identityRegistry = {
+        nodeRootEns: config.ownerControls.identityRegistry.nodeRootEns,
+        nodeRootHash: desiredHash,
+      };
+    }
+  }
 
   return {
     ...config,
@@ -131,7 +195,8 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
     jobs: {
       ...config.jobs,
       identityProof: config.jobs.identityProof
-    }
+    },
+    ownerControls
   };
 }
 

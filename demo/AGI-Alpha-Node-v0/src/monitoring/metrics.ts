@@ -17,6 +17,7 @@ export class AlphaNodeMetrics {
   private readonly reinvestAmountGauge: Gauge<string>;
   private readonly reinvestReadinessGauge: Gauge<string>;
   private readonly complianceGauge: Gauge<string>;
+  private readonly ownerAlignmentGauge: Gauge<string>;
 
   constructor() {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
@@ -70,6 +71,11 @@ export class AlphaNodeMetrics {
       help: 'Composite compliance score across governance, staking, and intelligence (0-1).',
       registers: [this.registry],
     });
+    this.ownerAlignmentGauge = new Gauge({
+      name: 'agi_alpha_node_owner_alignment',
+      help: 'Owner configuration alignment (1 = parameters aligned, 0 = drift detected).',
+      registers: [this.registry],
+    });
   }
 
   updateStake(snapshot: StakeSnapshot): void {
@@ -121,6 +127,10 @@ export class AlphaNodeMetrics {
 
   updateCompliance(score: number): void {
     this.complianceGauge.set(score);
+  }
+
+  updateOwnerAlignment(aligned: boolean): void {
+    this.ownerAlignmentGauge.set(aligned ? 1 : 0);
   }
 
   async render(): Promise<string> {

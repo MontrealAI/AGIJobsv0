@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "AGI Alpha Node Configuration",
   "type": "object",
-  "required": ["operator", "network", "contracts", "ai", "monitoring"],
+  "required": ["operator", "network", "contracts", "ai", "governance", "monitoring"],
   "properties": {
     "operator": {
       "type": "object",
@@ -124,6 +124,38 @@
               }
             }
           }
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "required": ["systemPauseGuardian"],
+      "properties": {
+        "systemPauseGuardian": {"type": "string", "pattern": "^0x[a-fA-F0-9]{40}$"}
+      }
+    },
+    "ownerControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stakeManager": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "minStake": {"type": "string", "pattern": "^\\d+(\\.\\d+)?$"}
+          }
+        },
+        "identityRegistry": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "nodeRootEns": {"type": "string", "minLength": 3},
+            "nodeRootHash": {"type": "string", "pattern": "^0x[a-fA-F0-9]{64}$"}
+          },
+          "anyOf": [
+            {"required": ["nodeRootEns"]},
+            {"required": ["nodeRootHash"]}
+          ]
         }
       }
     },

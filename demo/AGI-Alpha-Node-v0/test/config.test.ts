@@ -15,4 +15,13 @@ test('loads and normalises alpha node config', async () => {
   assert.equal(config.jobs.execution.resultHashAlgorithm, 'keccak256');
   assert.equal(config.jobs.identityProof.length, 0);
   assert.equal(config.governance.systemPauseGuardian, '0x8888888888888888888888888888888888888888');
+  assert(config.ownerControls);
+  assert.equal(
+    config.ownerControls?.stakeManager?.minStakeWei,
+    BigInt('15000') * 10n ** 18n
+  );
+  assert.equal(
+    config.ownerControls?.identityRegistry?.nodeRootHash,
+    '0x2d936bd2c82bc0aaa072a9d3c6d87aad1c1ec6a245f991129efb6ecc9fed57c4'
+  );
 });
