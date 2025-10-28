@@ -1,4 +1,5 @@
 import { CheckpointManager } from './checkpoint';
+import { PlanetaryLedger } from './ledger';
 import {
   AssignmentResult,
   CheckpointData,
@@ -10,6 +11,7 @@ import {
   JobLocator,
   JobDefinition,
   JobState,
+  LedgerSnapshot,
   NodeDefinition,
   NodeHealthReport,
   NodeState,
@@ -78,6 +80,7 @@ export class PlanetaryOrchestrator {
   private readonly routers: Map<ShardId, ShardRouterService> = new Map();
   private readonly events: FabricEvent[] = [];
   private readonly logger = new InMemoryFabricLogger();
+  private readonly ledger = new PlanetaryLedger();
 
   private tick = 0;
   private metrics: FabricMetrics = PlanetaryOrchestrator.createInitialMetrics();
@@ -124,6 +127,7 @@ export class PlanetaryOrchestrator {
     this.processingTick = false;
     this.systemPaused = false;
     this.pausedShards.clear();
+    this.ledger.reset();
     for (const shard of this.config.shards) {
       const state = this.createShardState(shard);
       this.shards.set(shard.id, state);
@@ -609,6 +613,7 @@ export class PlanetaryOrchestrator {
       }
     }
     this.initializeState();
+    this.ledger.restore(payload.ledger);
     this.tick = payload.tick;
     const restoredMetrics = payload.metrics
       ? { ...PlanetaryOrchestrator.createInitialMetrics(), ...payload.metrics }
@@ -754,6 +759,28 @@ export class PlanetaryOrchestrator {
       };
     }
     return snapshot;
+  }
+
+  getLedgerSnapshot(): LedgerSnapshot {
+    const shardSnapshots = this.getShardSnapshots();
+    const queueDepthByShard: Record<ShardId, { queue: number; inFlight: number }> = {};
+    let pendingJobs = 0;
+    let runningJobs = 0;
+    for (const [shardId, snapshot] of Object.entries(shardSnapshots)) {
+      const id = shardId as ShardId;
+      queueDepthByShard[id] = { queue: snapshot.queueDepth, inFlight: snapshot.inFlight };
+      pendingJobs += snapshot.queueDepth + snapshot.inFlight;
+      runningJobs += snapshot.inFlight;
+    }
+    return this.ledger.snapshot({
+      tick: this.tick,
+      metrics: this.fabricMetrics,
+      queueDepthByShard,
+      pendingJobs,
+      runningJobs,
+      systemPaused: this.systemPaused,
+      pausedShards: this.getPausedShards(),
+    });
   }
 
   private resolveJobCommandTarget(
@@ -1220,9 +1247,11 @@ export class PlanetaryOrchestrator {
 
   private recordFabricEvent(event: FabricEvent): void {
     this.events.push(event);
+    this.ledger.recordFabricEvent(event);
   }
 
   private recordRegistryEvent(event: RegistryEvent): void {
+    this.ledger.recordRegistryEvent(event, this.tick);
     if (this.processingTick) {
       this.currentRegistryFrame.push(event);
     } else {
@@ -1287,6 +1316,7 @@ export class PlanetaryOrchestrator {
         tick: frame.tick,
         events: frame.events.map((event) => cloneRegistryEvent(event)),
       })),
+      ledger: this.ledger.serialize(),
     };
   }
 }

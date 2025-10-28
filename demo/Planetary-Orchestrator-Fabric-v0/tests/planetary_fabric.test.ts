@@ -199,6 +199,51 @@ async function testCrossShardFallback(): Promise<void> {
   await rm(dir, { force: true, recursive: true });
 }
 
+async function testLedgerAccounting(): Promise<void> {
+  const { orchestrator, checkpointPath } = await buildOrchestrator();
+  const jobs = createJobs(15);
+  for (const job of jobs) {
+    orchestrator.submitJob(job);
+  }
+  for (let tick = 1; tick <= 10; tick += 1) {
+    orchestrator.processTick({ tick });
+  }
+  const ledger = orchestrator.getLedgerSnapshot();
+  const metrics = orchestrator.fabricMetrics;
+  assert.equal(ledger.totals.submitted, metrics.jobsSubmitted, 'ledger should track submissions');
+  assert.equal(ledger.totals.completed, metrics.jobsCompleted, 'ledger should track completions');
+  assert.equal(ledger.totals.failed, metrics.jobsFailed, 'ledger should track failures');
+  assert.equal(ledger.totals.cancelled, metrics.jobsCancelled, 'ledger should track cancellations');
+  assert.equal(ledger.totals.spilloversOut, metrics.spillovers, 'ledger should track spillovers');
+  assert.equal(ledger.totals.reassignments, metrics.reassignedAfterFailure, 'ledger should track reassignments');
+  assert.ok(ledger.invariants.every((entry) => entry.ok), 'ledger invariants should all pass');
+  assert.ok(ledger.events.length > 0, 'ledger should retain event history');
+  await rm(checkpointPath, { force: true, recursive: true });
+}
+
+async function testLedgerCheckpointPersistence(): Promise<void> {
+  const { orchestrator, checkpointPath } = await buildOrchestrator();
+  const jobs = createJobs(9);
+  for (const job of jobs) {
+    orchestrator.submitJob(job);
+  }
+  for (let tick = 1; tick <= 6; tick += 1) {
+    orchestrator.processTick({ tick });
+  }
+  await orchestrator.saveCheckpoint();
+  const beforeLedger = orchestrator.getLedgerSnapshot();
+  const restoreConfig = cloneConfig(testConfig);
+  restoreConfig.checkpoint.path = checkpointPath;
+  const restored = new PlanetaryOrchestrator(restoreConfig, new CheckpointManager(checkpointPath));
+  const restoredFromCheckpoint = await restored.restoreFromCheckpoint();
+  assert.ok(restoredFromCheckpoint, 'checkpoint should restore ledger state');
+  const afterLedger = restored.getLedgerSnapshot();
+  assert.deepEqual(afterLedger.totals, beforeLedger.totals, 'ledger totals should persist across restore');
+  assert.equal(afterLedger.invariants.length, beforeLedger.invariants.length, 'invariant count should persist');
+  assert.equal(afterLedger.events.length, beforeLedger.events.length, 'event history sample should persist');
+  await rm(checkpointPath, { force: true, recursive: true });
+}
+
 async function testDeterministicReplay(): Promise<void> {
   const { orchestrator, checkpointPath } = await buildOrchestrator();
   const jobs = createJobs(12);
@@ -593,6 +638,8 @@ async function run(): Promise<void> {
   await testOutageRecovery();
   await testCheckpointResume();
   await testCrossShardFallback();
+  await testLedgerAccounting();
+  await testLedgerCheckpointPersistence();
   await testDeterministicReplay();
   await testOwnerCommandControls();
   await testOwnerCommandSchedule();

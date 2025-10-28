@@ -75,7 +75,8 @@ jobs:
           const eventsPath = path.join(reportDir, 'events.ndjson');
           const dashboardPath = path.join(reportDir, 'dashboard.html');
           const ownerScriptPath = path.join(reportDir, 'owner-script.json');
-          for (const file of [summaryPath, eventsPath, dashboardPath, ownerScriptPath]) {
+          const ledgerPath = path.join(reportDir, 'ledger.json');
+          for (const file of [summaryPath, eventsPath, dashboardPath, ownerScriptPath, ledgerPath]) {
             if (!fs.existsSync(file)) {
               throw new Error(`expected artifact missing: ${file}`);
             }
@@ -125,6 +126,27 @@ jobs:
           }
           if (ownerCommandsLog.executed.length !== summary.ownerCommands.executed.length) {
             throw new Error('summary owner command counts do not match execution log');
+          }
+          if (!summary.ledger || !summary.ledger.totals) {
+            throw new Error('summary missing ledger metadata');
+          }
+          if (summary.ledger.path !== './ledger.json') {
+            throw new Error(`ledger path unexpected: ${summary.ledger.path}`);
+          }
+          const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
+          ['submitted', 'completed', 'failed', 'cancelled', 'spilloversOut', 'reassignments'].forEach((key) => {
+            if (ledger.totals[key] !== summary.ledger.totals[key]) {
+              throw new Error(`ledger total mismatch for ${key}`);
+            }
+          });
+          if (!Array.isArray(ledger.invariants) || ledger.invariants.length === 0) {
+            throw new Error('ledger invariants missing');
+          }
+          if (!ledger.invariants.every((entry) => entry.ok)) {
+            throw new Error('ledger invariants reported a failure');
+          }
+          if (!Array.isArray(ledger.events) || ledger.events.length === 0) {
+            throw new Error('ledger event sample missing');
           }
           console.log('Planetary orchestrator fabric artifacts validated.');
           NODE

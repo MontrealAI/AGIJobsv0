@@ -317,8 +317,12 @@ async function writeArtifacts(
   const rotatedCheckpointPath = checkpointConfig.path.endsWith('.json')
     ? `${checkpointConfig.path.slice(0, -5)}.owner.json`
     : `${checkpointConfig.path}.owner.json`;
+  const ledgerSnapshot = orchestrator.getLedgerSnapshot();
 
   await writeShardTelemetry(reportDir, shardSnapshots, shardStats);
+
+  const ledgerPath = join(reportDir, 'ledger.json');
+  await fs.writeFile(ledgerPath, JSON.stringify(ledgerSnapshot, null, 2), 'utf8');
 
   const summary = {
     owner: config.owner,
@@ -337,6 +341,19 @@ async function writeArtifacts(
       executed: executedCommands,
       skippedBeforeResume: skippedCommands,
       pending: pendingCommands,
+    },
+    ledger: {
+      totals: ledgerSnapshot.totals,
+      shards: ledgerSnapshot.shards,
+      nodes: ledgerSnapshot.nodes,
+      flows: ledgerSnapshot.flows,
+      invariants: ledgerSnapshot.invariants,
+      totalEvents: ledgerSnapshot.totalEvents ?? ledgerSnapshot.events.length,
+      ownerEvents: ledgerSnapshot.ownerEvents ?? 0,
+      firstTick: ledgerSnapshot.firstTick,
+      lastTick: ledgerSnapshot.lastTick,
+      sampleSize: ledgerSnapshot.events.length,
+      path: './ledger.json',
     },
   };
   const summaryPath = join(reportDir, 'summary.json');
@@ -503,7 +520,7 @@ async function writeArtifacts(
   const dashboardPath = join(reportDir, 'dashboard.html');
   await fs.writeFile(
     dashboardPath,
-    buildDashboardHtml(summaryPath, ownerScriptPath, executedCommandsPath),
+    buildDashboardHtml(summaryPath, ownerScriptPath, executedCommandsPath, ledgerPath),
     'utf8'
   );
 
@@ -513,10 +530,16 @@ async function writeArtifacts(
     dashboardPath,
     ownerScriptPath,
     ownerCommandsPath: executedCommandsPath,
+    ledgerPath,
   };
 }
 
-function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, executedCommandsPath: string): string {
+function buildDashboardHtml(
+  summaryPath: string,
+  ownerScriptPath: string,
+  executedCommandsPath: string,
+  ledgerPath: string
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -531,12 +554,21 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, execut
     pre { white-space: pre-wrap; word-wrap: break-word; background: rgba(5, 7, 20, 0.85); padding: 16px; border-radius: 12px; }
     .metrics { display: grid; gap: 12px; }
     .metric { background: rgba(6, 12, 48, 0.9); padding: 16px; border-radius: 12px; }
+    .metric.ok { border-left: 4px solid #1dd1a1; }
+    .metric.warn { border-left: 4px solid #f6b93b; }
+    .metric.critical { border-left: 4px solid #ff6b6b; }
     .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }
     .note { margin-top: 8px; color: rgba(255,255,255,0.65); }
     footer { padding: 24px; text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
   </style>
   <script type="module">
     const executedLogPath = ${JSON.stringify(executedCommandsPath)};
+    const ledgerAssetPath = ${JSON.stringify(ledgerPath)};
+    function renderMermaid() {
+      if (window.mermaid && typeof window.mermaid.init === 'function') {
+        window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+      }
+    }
     async function loadData() {
       const summaryResp = await fetch('./summary.json');
       const summary = await summaryResp.json();
@@ -601,6 +633,75 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, execut
       const executedResp = await fetch('./owner-commands-executed.json');
       const executedPayload = await executedResp.json();
       document.getElementById('owner-commands').textContent = JSON.stringify(executedPayload, null, 2);
+      try {
+        const ledgerResp = await fetch('./ledger.json');
+        if (!ledgerResp.ok) {
+          throw new Error('ledger fetch failed');
+        }
+        const ledger = await ledgerResp.json();
+        document.getElementById('ledger-path').textContent = ledgerAssetPath;
+        const totals = ledger.totals ?? {};
+        document.getElementById('ledger-metrics').innerHTML =
+          '<div class="metric"><strong>Jobs Submitted</strong><br />' + (totals.submitted ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Assignments</strong><br />' + (totals.assigned ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Completed</strong><br />' + (totals.completed ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Failed</strong><br />' + (totals.failed ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Cancelled</strong><br />' + (totals.cancelled ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Spillovers Out</strong><br />' + (totals.spilloversOut ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Spillovers In</strong><br />' + (totals.spilloversIn ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Reassignments</strong><br />' + (totals.reassignments ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Pending Jobs</strong><br />' + (ledger.pendingJobs ?? 0).toLocaleString() + '</div>' +
+          '<div class="metric"><strong>Running Jobs</strong><br />' + (ledger.runningJobs ?? 0).toLocaleString() + '</div>';
+        const invariantHtml = Array.isArray(ledger.invariants) && ledger.invariants.length > 0
+          ? ledger.invariants
+              .map((entry) => {
+                const statusClass = entry.ok ? 'ok' : 'critical';
+                const statusLabel = entry.ok ? 'Aligned' : 'Investigate';
+                return (
+                  '<div class="metric ' +
+                  statusClass +
+                  '"><strong>' +
+                  entry.id +
+                  '</strong><br />' +
+                  statusLabel +
+                  '<br />' +
+                  entry.message +
+                  '</div>'
+                );
+              })
+              .join('')
+          : '<div class="metric ok">Ledger invariants nominal.</div>';
+        document.getElementById('ledger-invariants').innerHTML = invariantHtml;
+        const flows = Array.isArray(ledger.flows) ? ledger.flows : [];
+        const flowSummary = flows.length > 0 ? flows : [{ from: 'retained', to: 'retained', count: 0 }];
+        document.getElementById('ledger-flows').textContent = JSON.stringify(flowSummary, null, 2);
+        const flowDiagramLines = ['flowchart LR'];
+        for (const flow of flowSummary) {
+          flowDiagramLines.push(
+            String(flow.from).replace(/[^a-zA-Z0-9]/g, '_') +
+              ' -->|' +
+              Number(flow.count).toLocaleString() +
+              '| ' +
+              String(flow.to).replace(/[^a-zA-Z0-9]/g, '_')
+          );
+        }
+        document.getElementById('ledger-flow-mermaid').textContent = flowDiagramLines.join('\n');
+        const events = Array.isArray(ledger.events) ? ledger.events : [];
+        const eventSummary = {
+          totalEvents: ledger.totalEvents ?? events.length,
+          ownerEvents: ledger.ownerEvents ?? 0,
+          sampleSize: events.length,
+          sample: events.slice(-12),
+        };
+        document.getElementById('ledger-events').textContent = JSON.stringify(eventSummary, null, 2);
+        renderMermaid();
+      } catch (error) {
+        document.getElementById('ledger-metrics').innerHTML =
+          '<div class="metric critical">Unable to load ledger telemetry: ' + error + '</div>';
+        document.getElementById('ledger-invariants').innerHTML = '';
+        document.getElementById('ledger-flows').textContent = '';
+        document.getElementById('ledger-events').textContent = '';
+      }
     }
     loadData();
   </script>
@@ -652,6 +753,21 @@ function buildDashboardHtml(summaryPath: string, ownerScriptPath: string, execut
       <p class="note">Schedule source: <span id="owner-commands-source">None</span></p>
       <p class="note">Execution log: <code id="owner-commands-path"></code></p>
       <pre id="owner-commands">Loading...</pre>
+    </section>
+    <section>
+      <h2>Global Ledger Synopsis</h2>
+      <div id="ledger-metrics" class="metrics"></div>
+      <p class="note">Ledger artifact: <code id="ledger-path"></code></p>
+      <div id="ledger-invariants" class="metrics"></div>
+    </section>
+    <section>
+      <h2>Spillover Cartography</h2>
+      <div id="ledger-flow-mermaid" class="mermaid">flowchart LR\n  placeholder -->|0| placeholder</div>
+      <pre id="ledger-flows">Loading...</pre>
+    </section>
+    <section>
+      <h2>Ledger Event Pulse</h2>
+      <pre id="ledger-events">Loading...</pre>
     </section>
   </div>
   <footer>
