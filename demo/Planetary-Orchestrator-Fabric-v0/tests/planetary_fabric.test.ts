@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
@@ -404,6 +404,74 @@ async function testOwnerCommandControls(): Promise<void> {
   await rm(rotatedCheckpointPath, { force: true });
 }
 
+async function testReportingRetarget(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-reporting-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const initialReportingDir = join(dir, 'reports-initial');
+  const retargetedReportingDir = join(dir, 'reports-retargeted');
+  const config: FabricConfig = {
+    ...testConfig,
+    shards: testConfig.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+      router: shard.router
+        ? {
+            queueAlertThreshold: shard.router.queueAlertThreshold ?? Math.ceil(shard.maxQueue * 0.75),
+            spilloverPolicies: shard.router.spilloverPolicies
+              ? shard.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    })),
+    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    checkpoint: { ...testConfig.checkpoint, path: checkpointPath },
+    reporting: { directory: initialReportingDir, defaultLabel: 'initial-label' },
+  };
+
+  const schedule: OwnerCommandSchedule[] = [
+    {
+      tick: 1,
+      note: 'retarget reporting outputs',
+      command: {
+        type: 'reporting.configure',
+        reason: 'unit-test-retarget',
+        update: { directory: retargetedReportingDir, defaultLabel: 'owner-elevated' },
+      },
+    },
+  ];
+
+  const result = await runSimulation(config, {
+    jobs: 24,
+    simulateOutage: undefined,
+    outageTick: undefined,
+    resume: false,
+    checkpointPath,
+    ownerCommands: schedule,
+    ownerCommandSource: 'unit-test-reporting-retarget',
+  });
+
+  const summaryRaw = await readFile(result.artifacts.summaryPath, 'utf8');
+  const summary = JSON.parse(summaryRaw);
+  assert.equal(summary.ownerState.reporting.directory, retargetedReportingDir);
+  assert.equal(summary.ownerState.reporting.defaultLabel, 'owner-elevated');
+  assert.ok(
+    result.artifacts.summaryPath.includes(join(retargetedReportingDir, 'owner-elevated')),
+    'summary should live under retargeted directory'
+  );
+  const eventsStats = await stat(result.artifacts.eventsPath);
+  assert.ok(eventsStats.size > 0, 'events file should exist in retargeted directory');
+
+  let initialDirExists = true;
+  try {
+    await stat(join(initialReportingDir, 'initial-label'));
+  } catch {
+    initialDirExists = false;
+  }
+  assert.equal(initialDirExists, false, 'initial reporting directory should be rotated away after retarget');
+
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function testOwnerCommandSchedule(): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), 'fabric-schedule-'));
   const checkpointPath = join(dir, 'checkpoint.json');
@@ -460,7 +528,8 @@ async function testOwnerCommandSchedule(): Promise<void> {
     ownerCommandSource: 'unit-test-schedule',
   });
   assert.equal(result.executedOwnerCommands.length, schedule.length);
-  const summaryRaw = await readFile(join(reportingDir, 'schedule', 'summary.json'), 'utf8');
+  const reportRoot = dirname(result.artifacts.summaryPath);
+  const summaryRaw = await readFile(result.artifacts.summaryPath, 'utf8');
   const summary = JSON.parse(summaryRaw);
   assert.equal(summary.ownerCommands.executed.length, schedule.length);
   assert.ok(
@@ -469,7 +538,7 @@ async function testOwnerCommandSchedule(): Promise<void> {
   assert.equal(summary.ownerState.checkpoint.intervalTicks, 4);
   assert.equal(summary.ownerState.reporting.directory, join(reportingDir, 'schedule', 'governance-archive'));
   assert.equal(summary.ownerState.reporting.defaultLabel, 'schedule-governance');
-  const ownerLogRaw = await readFile(join(reportingDir, 'schedule', 'owner-commands-executed.json'), 'utf8');
+  const ownerLogRaw = await readFile(join(reportRoot, 'owner-commands-executed.json'), 'utf8');
   const ownerLog = JSON.parse(ownerLogRaw);
   assert.equal(ownerLog.executed.length, schedule.length);
   assert.ok(ownerLog.executed.some((entry: OwnerCommandSchedule) => entry.command.type === 'checkpoint.configure'));
@@ -666,6 +735,7 @@ async function run(): Promise<void> {
   await testLedgerCheckpointPersistence();
   await testDeterministicReplay();
   await testOwnerCommandControls();
+  await testReportingRetarget();
   await testOwnerCommandSchedule();
   await testStopAndResumeDrill();
   await testAcceptanceSuiteHarness();
