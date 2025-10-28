@@ -14,7 +14,6 @@ function mergeDeep<T extends Record<string, unknown>>(target: T, source: ConfigI
   for (const key of Object.keys(source)) {
     const sourceValue = source[key];
     if (sourceValue && typeof sourceValue === 'object' && !Array.isArray(sourceValue)) {
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
       const targetValue = (target as Record<string, unknown>)[key] ?? {};
       (target as Record<string, unknown>)[key] = mergeDeep(
         targetValue as Record<string, unknown>,
