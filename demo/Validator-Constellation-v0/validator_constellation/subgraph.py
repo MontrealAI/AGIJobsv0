@@ -24,7 +24,16 @@ class SubgraphIndexer:
         self.event_bus.subscribe(self._handle_event)
 
     def _handle_event(self, event: Event) -> None:
-        if event.type in {"ValidatorSlashed", "DomainPaused", "SentinelAlert", "RoundFinalized"}:
+        indexed_types = {
+            "ValidatorSlashed",
+            "DomainPaused",
+            "DomainResumed",
+            "SentinelAlert",
+            "RoundFinalized",
+            "PhaseTransition",
+            "ConfigUpdated",
+        }
+        if event.type in indexed_types:
             self.events.append(
                 IndexedEvent(
                     type=event.type,
@@ -38,3 +47,6 @@ class SubgraphIndexer:
             if event.type == event_type:
                 return event
         return None
+
+    def all(self, event_type: str) -> List[IndexedEvent]:
+        return [event for event in self.events if event.type == event_type]

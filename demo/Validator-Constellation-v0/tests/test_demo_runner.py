@@ -11,3 +11,6 @@ def test_demo_runner_summary():
     assert summary.gas_saved > 0
     assert summary.batch_proof_root
     assert summary.indexed_events >= 1
+    assert summary.timeline
+    assert summary.timeline.get("commitDeadlineBlock") is not None
+    assert summary.owner_actions
