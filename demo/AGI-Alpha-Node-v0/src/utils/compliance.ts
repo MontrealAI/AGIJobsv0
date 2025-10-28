@@ -6,6 +6,7 @@ import { PlanningSummary } from '../ai/planner';
 import { StressTestResult } from '../ai/antifragile';
 import { ReinvestReport } from '../blockchain/reinvest';
 import { GovernanceSnapshot } from '../blockchain/governance';
+import { ratioFromWei, weiToEtherNumber } from './amounts';
 
 export type ComplianceStatus = 'pass' | 'warn' | 'fail';
 
@@ -132,12 +133,11 @@ export function computeComplianceReport(
     notes: governanceNotes,
   });
 
-  const rewardsPending = Number(inputs.rewards.pending) / 1e18;
-  const reinvestRatio =
-    inputs.reinvestment.thresholdWei > 0n
-      ? Number(inputs.reinvestment.pendingWei) /
-        Number(inputs.reinvestment.thresholdWei)
-      : 0;
+  const rewardsPending = weiToEtherNumber(inputs.rewards.pending);
+  const reinvestRatio = ratioFromWei(
+    inputs.reinvestment.pendingWei,
+    inputs.reinvestment.thresholdWei
+  );
   const economyScore = clampScore(
     Math.min(rewardsPending / 10, 1) * 0.4 + Math.min(reinvestRatio, 1) * 0.6
   );
