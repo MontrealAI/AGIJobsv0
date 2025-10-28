@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runAcceptanceSuite } from '../src/acceptance';
-import { FabricConfig, JobDefinition, OwnerCommandSchedule } from '../src/types';
+import { FabricConfig, JobDefinition, OwnerCommandSchedule, ShardId } from '../src/types';
 import { runSimulation } from '../src/simulation';
 
 const testConfig: FabricConfig = {
@@ -652,8 +652,8 @@ async function testAcceptanceSuiteHarness(): Promise<void> {
     outageTick: 5,
     restartStopAfterTicks: 12,
     thresholds: {
-      maxDropRate: 0.2,
-      maxFailureRate: 0.2,
+      maxDropRate: 0.02,
+      maxFailureRate: 0.02,
       maxShardBalanceDelta: 0.6,
       maxShardSkewRatio: 120,
     },
@@ -708,18 +708,40 @@ async function testLoadHarness(): Promise<void> {
       orchestrator.markOutage('earth.node');
     }
   }
+  for (let tick = 901; tick <= 1600; tick += 1) {
+    const snapshots = orchestrator.getShardSnapshots();
+    const settled = Object.values(snapshots).every(
+      (snapshot) => snapshot.queueDepth === 0 && snapshot.inFlight === 0
+    );
+    if (settled) {
+      break;
+    }
+    orchestrator.processTick({ tick });
+  }
   const metrics = orchestrator.fabricMetrics;
   assert.equal(metrics.jobsSubmitted, totalJobs);
   console.log('Load harness metrics snapshot:', metrics);
+  const dropRate = (metrics.jobsSubmitted - metrics.jobsCompleted) / totalJobs;
+  assert.ok(dropRate < 0.02, 'drop rate should stay below 2%');
   assert.ok(metrics.jobsFailed / totalJobs < 0.01, 'failure rate should stay below 1%');
   assert.ok(metrics.reassignedAfterFailure > 0, 'load harness should trigger failover');
   const stats = orchestrator.getShardStatistics();
-  const totals = Object.values(stats).map((entry) => entry.completed + entry.failed + entry.spillovers);
-  console.log('Shard totals snapshot:', totals);
-  const max = Math.max(...totals);
-  const min = Math.min(...totals);
+  const nodeSnapshots = orchestrator.getNodeSnapshots();
+  const activeShards = new Set<ShardId>();
+  for (const node of loadConfig.nodes) {
+    const snapshot = nodeSnapshots[node.id];
+    if (snapshot?.active) {
+      activeShards.add(node.region);
+    }
+  }
+  const completionsByShard = Object.entries(stats)
+    .filter(([shardId]) => activeShards.has(shardId))
+    .map(([, entry]) => entry.completed);
+  console.log('Shard completion snapshot:', completionsByShard);
+  const max = Math.max(...completionsByShard);
+  const min = Math.min(...completionsByShard);
   const skewRatio = max / Math.max(min, 1);
-  assert.ok(skewRatio <= 2, `shard load skew should remain within 2x (observed ${skewRatio.toFixed(2)})`);
+  assert.ok(skewRatio <= 2, `shard completion skew should remain within 2x (observed ${skewRatio.toFixed(2)})`);
   const health = orchestrator.getHealthReport();
   assert.notEqual(health.fabric.level, 'critical', 'fabric should remain healthy after load test');
   console.log('Load test summary:', { metrics, fabric: health.fabric });

@@ -17,6 +17,7 @@ import {
 } from './types';
 
 const DEFAULT_OUTAGE_TICK = 120;
+const AVERAGE_JOB_DURATION_TICKS = 3;
 
 export interface SimulationResult {
   metrics: FabricMetrics;
@@ -177,6 +178,21 @@ class ReportOutputManager {
   }
 }
 
+function estimateMaxTicks(config: FabricConfig, jobs: number, startTick: number): number {
+  const totalJobs = Math.max(1, jobs);
+  const totalWork = totalJobs * AVERAGE_JOB_DURATION_TICKS;
+  const globalSlots = config.nodes.reduce((sum, node) => {
+    const slots = Math.min(node.capacity, node.maxConcurrency);
+    if (!Number.isFinite(slots) || slots <= 0) {
+      return sum;
+    }
+    return sum + slots;
+  }, 0);
+  const estimatedTicks = globalSlots > 0 ? Math.ceil(totalWork / globalSlots) : totalWork;
+  const headroom = Math.max(estimatedTicks * 3, Math.ceil(totalJobs * 0.4), 400);
+  return startTick + headroom;
+}
+
 export async function runSimulation(
   config: FabricConfig,
   options: SimulationOptions
@@ -251,15 +267,17 @@ export async function runSimulation(
     );
   }
 
+  const totalJobs = Math.max(1, options.jobs);
+
   if (!checkpointRestored) {
-    await seedJobs(orchestrator, config, options.jobs);
+    await seedJobs(orchestrator, config, totalJobs);
   }
   await flushEvents();
 
   const outageTick = options.outageTick ?? DEFAULT_OUTAGE_TICK;
   const outageNodeId = options.simulateOutage;
 
-  const maxTicks = Math.max(Math.ceil(options.jobs * 0.35), 200) + orchestrator.currentTick;
+  const maxTicks = estimateMaxTicks(config, totalJobs, startTick);
 
   for (let tick = orchestrator.currentTick + 1; tick <= maxTicks; tick += 1) {
     await applyCommandsForTick(tick);

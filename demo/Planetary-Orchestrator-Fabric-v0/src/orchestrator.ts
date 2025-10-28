@@ -1048,11 +1048,34 @@ export class PlanetaryOrchestrator {
 
   private handleSpillovers(requests: SpilloverRequest[]): void {
     for (const request of requests) {
-      const targetRouter = this.routers.get(request.target);
       const originRouter = this.routers.get(request.origin);
       if (!originRouter) {
         continue;
       }
+
+      const preferredTargets: ShardId[] = [request.target];
+      if (typeof originRouter.getSpilloverTargets === 'function') {
+        for (const candidate of originRouter.getSpilloverTargets()) {
+          if (!preferredTargets.includes(candidate)) {
+            preferredTargets.push(candidate);
+          }
+        }
+      }
+
+      const viableTarget = this.selectViableSpilloverTarget(request.job, request.origin, preferredTargets);
+      if (!viableTarget) {
+        request.job.shard = request.origin;
+        this.recordFabricEvent(originRouter.requeueJob(request.job, this.tick, 'spillover-no-active-target'));
+        this.recordRegistryEvent({
+          type: 'job.requeued',
+          shard: request.origin,
+          origin: request.origin,
+          job: cloneJob(request.job),
+        });
+        continue;
+      }
+
+      const targetRouter = this.routers.get(viableTarget);
       if (!targetRouter) {
         request.job.shard = request.origin;
         this.recordFabricEvent(originRouter.requeueJob(request.job, this.tick, 'spillover-target-missing'));
@@ -1064,6 +1087,12 @@ export class PlanetaryOrchestrator {
         });
         continue;
       }
+
+      request.job.shard = viableTarget;
+      if (!request.job.spilloverHistory.includes(viableTarget)) {
+        request.job.spilloverHistory.push(viableTarget);
+      }
+
       const event = targetRouter.acceptSpillover(request.job, request.origin, this.tick);
       this.recordFabricEvent(event);
       const originShard = this.shards.get(request.origin);
@@ -1073,7 +1102,7 @@ export class PlanetaryOrchestrator {
       this.metrics.spillovers += 1;
       this.recordRegistryEvent({
         type: 'job.spillover',
-        shard: request.target,
+        shard: viableTarget,
         from: request.origin,
         job: cloneJob(request.job),
       });
@@ -1207,6 +1236,59 @@ export class PlanetaryOrchestrator {
 
   private getNodesForShard(shardId: ShardId): NodeState[] {
     return Array.from(this.nodes.values()).filter((node) => node.definition.region === shardId);
+  }
+
+  private nodeSupportsJob(node: NodeState, job: JobState): boolean {
+    return job.requiredSkills.every(
+      (skill) =>
+        node.definition.specialties.includes(skill) || node.definition.specialties.includes('general')
+    );
+  }
+
+  private hasActiveEligibleNode(shardId: ShardId, job: JobState): boolean {
+    const shard = this.shards.get(shardId);
+    if (!shard || shard.paused || this.pausedShards.has(shardId)) {
+      return false;
+    }
+    return this.getNodesForShard(shardId).some((node) => node.active && this.nodeSupportsJob(node, job));
+  }
+
+  private selectViableSpilloverTarget(
+    job: JobState,
+    origin: ShardId,
+    preferred: ShardId[]
+  ): ShardId | undefined {
+    const seen = new Set<ShardId>();
+    const evaluate = (candidate: ShardId): ShardId | undefined => {
+      if (seen.has(candidate)) {
+        return undefined;
+      }
+      seen.add(candidate);
+      return this.hasActiveEligibleNode(candidate, job) ? candidate : undefined;
+    };
+
+    for (const candidate of preferred) {
+      const result = evaluate(candidate);
+      if (result) {
+        return result;
+      }
+    }
+
+    for (const shardId of this.shards.keys()) {
+      if (shardId === origin) {
+        continue;
+      }
+      const result = evaluate(shardId);
+      if (result) {
+        return result;
+      }
+    }
+
+    if (!seen.has(origin) && this.hasActiveEligibleNode(origin, job)) {
+      return origin;
+    }
+
+    return undefined;
   }
 
   private buildNodeHealth(node: NodeState): NodeHealthReport {
