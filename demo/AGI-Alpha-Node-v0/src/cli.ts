@@ -15,7 +15,10 @@ function parseProofOption(value: unknown): string[] | undefined {
     return value.map(String);
   }
   if (typeof value === 'string') {
-    return value.split(',').map((entry) => entry.trim()).filter(Boolean);
+    return value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
   }
   return undefined;
 }
@@ -49,26 +52,41 @@ yargs(hideBin(process.argv))
       cmd.option('config', {
         type: 'string',
         describe: 'Path to the alpha node config JSON file.',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       await node.verifyIdentity();
       await node.stake();
       await node.collectRewards();
       await node.reinvest({ dryRun: true });
       const servers = await startAlphaNodeServer(node, {
         dashboardPort: node.getConfig().monitoring.dashboardPort,
-        metricsPort: node.getConfig().monitoring.metricsPort
+        metricsPort: node.getConfig().monitoring.metricsPort,
       });
       node.getLogger().info('bootstrap_complete', {
         dashboardPort: node.getConfig().monitoring.dashboardPort,
-        metricsPort: node.getConfig().monitoring.metricsPort
+        metricsPort: node.getConfig().monitoring.metricsPort,
       });
-      console.log(`Alpha Node live → dashboard http://localhost:${node.getConfig().monitoring.dashboardPort}`);
-      console.log(`Metrics exposed at http://localhost:${node.getConfig().monitoring.metricsPort}/metrics`);
-      servers.dashboard.on('close', () => node.getLogger().info('dashboard_shutdown'));
-      servers.metrics.on('close', () => node.getLogger().info('metrics_shutdown'));
+      console.log(
+        `Alpha Node live → dashboard http://localhost:${
+          node.getConfig().monitoring.dashboardPort
+        }`
+      );
+      console.log(
+        `Metrics exposed at http://localhost:${
+          node.getConfig().monitoring.metricsPort
+        }/metrics`
+      );
+      servers.dashboard.on('close', () =>
+        node.getLogger().info('dashboard_shutdown')
+      );
+      servers.metrics.on('close', () =>
+        node.getLogger().info('metrics_shutdown')
+      );
     }
   )
   .command(
@@ -77,10 +95,13 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const result = await node.verifyIdentity();
       console.log(JSON.stringify(result, null, 2));
     }
@@ -92,22 +113,25 @@ yargs(hideBin(process.argv))
       cmd
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('dry-run', {
           type: 'boolean',
-          default: false
+          default: false,
         })
         .option('no-ack', {
           type: 'boolean',
           default: false,
-          describe: 'Skip tax acknowledgement helper.'
+          describe: 'Skip tax acknowledgement helper.',
         }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const report = await node.stake({
         dryRun: Boolean(args['dry-run']),
-        acknowledgeTax: !Boolean(args['no-ack'])
+        acknowledgeTax: !Boolean(args['no-ack']),
       });
       console.log(JSON.stringify(report, null, 2));
     }
@@ -118,10 +142,13 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const heartbeat = await node.heartbeat(defaultOpportunities());
       console.log(JSON.stringify(heartbeat, null, 2));
     }
@@ -132,10 +159,13 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const stress = node.stressTest();
       console.log(JSON.stringify(stress, null, 2));
     }
@@ -147,29 +177,50 @@ yargs(hideBin(process.argv))
       cmd
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('dry-run', {
           type: 'boolean',
-          default: false
+          default: false,
         })
         .option('claim-only', {
           type: 'boolean',
           default: false,
-          describe: 'Claim rewards without restaking.'
+          describe: 'Claim rewards without restaking.',
         })
         .option('amount', {
           type: 'string',
-          describe: 'Override reinvestment amount in $AGIALPHA (ether units).'
+          describe: 'Override reinvestment amount in $AGIALPHA (ether units).',
         }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
-      const amount = typeof args.amount === 'string' ? parseEther(args.amount) : undefined;
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const amount =
+        typeof args.amount === 'string' ? parseEther(args.amount) : undefined;
       const report = await node.reinvest({
         dryRun: Boolean(args['dry-run']),
         claimOnly: Boolean(args['claim-only']),
-        amountWei: amount
+        amountWei: amount,
       });
+      console.log(JSON.stringify(report, null, 2));
+    }
+  )
+  .command(
+    'compliance',
+    'Produce a governance-grade compliance scorecard',
+    (cmd) =>
+      cmd.option('config', {
+        type: 'string',
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
+      }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const report = await node.complianceAudit();
       console.log(JSON.stringify(report, null, 2));
     }
   )
@@ -179,18 +230,33 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const servers = await startAlphaNodeServer(node, {
         dashboardPort: node.getConfig().monitoring.dashboardPort,
-        metricsPort: node.getConfig().monitoring.metricsPort
+        metricsPort: node.getConfig().monitoring.metricsPort,
       });
-      console.log(`Dashboard http://localhost:${node.getConfig().monitoring.dashboardPort}`);
-      console.log(`Metrics http://localhost:${node.getConfig().monitoring.metricsPort}/metrics`);
-      servers.dashboard.on('close', () => node.getLogger().info('dashboard_shutdown'));
-      servers.metrics.on('close', () => node.getLogger().info('metrics_shutdown'));
+      console.log(
+        `Dashboard http://localhost:${
+          node.getConfig().monitoring.dashboardPort
+        }`
+      );
+      console.log(
+        `Metrics http://localhost:${
+          node.getConfig().monitoring.metricsPort
+        }/metrics`
+      );
+      servers.dashboard.on('close', () =>
+        node.getLogger().info('dashboard_shutdown')
+      );
+      servers.metrics.on('close', () =>
+        node.getLogger().info('metrics_shutdown')
+      );
     }
   )
   .command(
@@ -200,36 +266,45 @@ yargs(hideBin(process.argv))
       cmd
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('limit', {
           type: 'number',
-          describe: 'Maximum number of jobs to return.'
+          describe: 'Maximum number of jobs to return.',
         })
         .option('from-block', {
           type: 'number',
-          describe: 'Override the discovery start block.'
+          describe: 'Override the discovery start block.',
         })
         .option('to-block', {
           type: 'number',
-          describe: 'Override the discovery end block.'
+          describe: 'Override the discovery end block.',
         })
         .option('include-completed', {
           type: 'boolean',
-          default: false
+          default: false,
         }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const jobs = await node.discoverJobs({
         limit: args.limit as number | undefined,
         fromBlock: args['from-block'] as number | undefined,
         toBlock: args['to-block'] as number | undefined,
-        includeCompleted: Boolean(args['include-completed'])
+        includeCompleted: Boolean(args['include-completed']),
       });
-      console.log(JSON.stringify({
-        jobs,
-        opportunities: node.toOpportunities(jobs)
-      }, null, 2));
+      console.log(
+        JSON.stringify(
+          {
+            jobs,
+            opportunities: node.toOpportunities(jobs),
+          },
+          null,
+          2
+        )
+      );
     }
   )
   .command(
@@ -239,25 +314,28 @@ yargs(hideBin(process.argv))
       cmd
         .positional('jobId', {
           type: 'string',
-          demandOption: true
+          demandOption: true,
         })
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('dry-run', {
           type: 'boolean',
-          default: false
+          default: false,
         })
         .option('proof', {
           type: 'string',
-          describe: 'Comma-separated ENS merkle proof overrides.'
+          describe: 'Comma-separated ENS merkle proof overrides.',
         }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const receipt = await node.applyForJob(parseJobId(args.jobId), {
         dryRun: Boolean(args['dry-run']),
-        proof: parseProofOption(args.proof)
+        proof: parseProofOption(args.proof),
       });
       console.log(JSON.stringify(receipt, null, 2));
     }
@@ -270,30 +348,39 @@ yargs(hideBin(process.argv))
         .positional('jobId', { type: 'string', demandOption: true })
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('result-uri', {
           type: 'string',
-          describe: 'URI of the result artifact (defaults to config.jobs.execution.defaultResultUri).'
+          describe:
+            'URI of the result artifact (defaults to config.jobs.execution.defaultResultUri).',
         })
         .option('result-hash', {
           type: 'string',
-          describe: 'Precomputed hash of the result artifact.'
+          describe: 'Precomputed hash of the result artifact.',
         })
         .option('dry-run', { type: 'boolean', default: false })
-        .option('proof', { type: 'string', describe: 'Comma-separated ENS merkle proof overrides.' })
+        .option('proof', {
+          type: 'string',
+          describe: 'Comma-separated ENS merkle proof overrides.',
+        })
         .option('hash-algorithm', {
           type: 'string',
-          choices: ['keccak256', 'sha256'] as const
+          choices: ['keccak256', 'sha256'] as const,
         }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const receipt = await node.submitJob(parseJobId(args.jobId), {
         dryRun: Boolean(args['dry-run']),
         proof: parseProofOption(args.proof),
         resultUri: (args['result-uri'] as string | undefined) ?? undefined,
         resultHash: (args['result-hash'] as string | undefined) ?? undefined,
-        hashAlgorithm: (args['hash-algorithm'] as 'keccak256' | 'sha256' | undefined) ?? undefined
+        hashAlgorithm:
+          (args['hash-algorithm'] as 'keccak256' | 'sha256' | undefined) ??
+          undefined,
       });
       console.log(JSON.stringify(receipt, null, 2));
     }
@@ -306,13 +393,16 @@ yargs(hideBin(process.argv))
         .positional('jobId', { type: 'string', demandOption: true })
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('dry-run', { type: 'boolean', default: false }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const receipt = await node.finalizeJob(parseJobId(args.jobId), {
-        dryRun: Boolean(args['dry-run'])
+        dryRun: Boolean(args['dry-run']),
       });
       console.log(JSON.stringify(receipt, null, 2));
     }
@@ -324,19 +414,22 @@ yargs(hideBin(process.argv))
       cmd
         .option('config', {
           type: 'string',
-          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
         })
         .option('limit', { type: 'number' })
         .option('dry-run', { type: 'boolean', default: false })
         .option('result-uri', { type: 'string' })
         .option('proof', { type: 'string' }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
       const report = await node.autopilot({
         limit: args.limit as number | undefined,
         dryRun: Boolean(args['dry-run']),
         resultUri: args['result-uri'] as string | undefined,
-        proof: parseProofOption(args.proof)
+        proof: parseProofOption(args.proof),
       });
       console.log(JSON.stringify(report, null, 2));
     }
@@ -347,11 +440,19 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
-      const receipt = await pausePlatform(node.getConfig(), node.getMetrics(), node.getLogger(), node.getSigner());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const receipt = await pausePlatform(
+        node.getConfig(),
+        node.getMetrics(),
+        node.getLogger(),
+        node.getSigner()
+      );
       console.log(JSON.stringify(receipt, null, 2));
     }
   )
@@ -361,11 +462,19 @@ yargs(hideBin(process.argv))
     (cmd) =>
       cmd.option('config', {
         type: 'string',
-        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
+        default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
       }),
     async (args) => {
-      const node = await AlphaNode.fromConfig(args.config as string, requirePrivateKey());
-      const receipt = await resumePlatform(node.getConfig(), node.getMetrics(), node.getLogger(), node.getSigner());
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      const receipt = await resumePlatform(
+        node.getConfig(),
+        node.getMetrics(),
+        node.getLogger(),
+        node.getSigner()
+      );
       console.log(JSON.stringify(receipt, null, 2));
     }
   )

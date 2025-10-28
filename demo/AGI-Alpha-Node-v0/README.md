@@ -6,10 +6,10 @@ The **AGI Alpha Node Demo** showcases how a non-technical owner can command the 
 
 - ✅ **Owner sovereignty** – the node operator controls every configurable parameter, may pause the platform instantly, and can rotate governance safely.
 - 🔐 **Identity assurance** – ENS subdomain ownership is verified on-chain before any capability is granted.
-- 🪙 **$AGIALPHA-native economy** – staking, rewards, slashing, and reinvestment loops are enforced through the canonical V2 contracts.
 - 🪙 **$AGIALPHA-native economy** – staking, rewards, slashing, and automatic reinvestment loops are enforced through the canonical V2 contracts.
 - 🧠 **Swarm intelligence** – a MuZero-inspired planner, economic self-optimizer, and domain specialist mesh coordinate to deliver provable alpha on every job.
 - 🚀 **One-command deployment** – Dockerised runtime, Prometheus-compatible metrics, and a self-documenting operator console drop straight into institutional stacks.
+- 🧾 **Governance-grade compliance** – automated scorecards fuse ENS proofs, staking telemetry, pause authority, and antifragile stress drills in real time.
 
 This demo lives entirely inside `demo/AGI-Alpha-Node-v0/` so operators can audit, extend, and deploy without touching the rest of the monorepo.
 
@@ -107,16 +107,39 @@ Every transaction honours `SystemPause` guardrails and emits structured notes so
 
 ---
 
+## Compliance Scorecard
+
+The Alpha Node now ships with a **governance-grade compliance scorecard**. It fuses ENS identity checks, stake telemetry, governance controls, antifragile stress drills, and strategic intelligence into a single composite rating surfaced in the CLI, REST API, Prometheus metrics, and dashboard UI.
+
+```mermaid
+pie showData
+  title Alpha Node Compliance Fusion
+  "Identity & ENS" : 20
+  "Staking & Activation" : 20
+  "Governance & Safety" : 20
+  "Economic Engine" : 15
+  "Antifragile Shell" : 15
+  "Strategic Intelligence" : 10
+```
+
+- Run `npm run demo:agi-alpha-node -- compliance --config <file>` to print the machine-readable scorecard.
+- Open the Operator Console (`npm run demo:agi-alpha-node -- dashboard ...`) to view the score in real time, including detailed notes per dimension.
+- Monitor `agi_alpha_node_compliance_score` in Prometheus to enforce institutional SLAs or trigger automated playbooks.
+
+The scorecard defaults to optimistic-but-skeptical scoring. Any governance risk (e.g. blacklisting) produces a hard failure, while soft drifts (e.g. paused state) trigger alerts without interrupting operations. This ensures the operator can demonstrate proactive control to regulators, auditors, and institutional partners.
+
+---
+
 ## Directory Layout
 
-| Path | Purpose |
-|------|---------|
-| `config/` | JSON + schema definitions for operator, network, and AI mesh configuration. |
-| `scripts/` | One-command automation flows (ENS bootstrapping, staking, activation, diagnostics). |
-| `src/` | TypeScript implementation of the Alpha Node core. Organized into blockchain, identity, AI, monitoring, and utility modules. |
-| `docker/` | Container definitions for one-click deployments (Docker & Kubernetes). |
-| `web/` | Static dashboard assets for non-technical operators (auto-served by the node). |
-| `test/` | Deterministic unit + integration tests verifying planning, config validation, and antifragile safety shell scenarios. |
+| Path       | Purpose                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `config/`  | JSON + schema definitions for operator, network, and AI mesh configuration.                                                 |
+| `scripts/` | One-command automation flows (ENS bootstrapping, staking, activation, diagnostics).                                         |
+| `src/`     | TypeScript implementation of the Alpha Node core. Organized into blockchain, identity, AI, monitoring, and utility modules. |
+| `docker/`  | Container definitions for one-click deployments (Docker & Kubernetes).                                                      |
+| `web/`     | Static dashboard assets for non-technical operators (auto-served by the node).                                              |
+| `test/`    | Deterministic unit + integration tests verifying planning, config validation, and antifragile safety shell scenarios.       |
 
 ---
 
@@ -170,19 +193,20 @@ Every transaction honours `SystemPause` guardrails and emits structured notes so
 
 ## Command Reference
 
-| Command | Description |
-|---------|-------------|
-| `npm run demo:agi-alpha-node -- --config <file>` | Full bootstrap: identity verification → staking → AI mesh launch → monitoring. |
-| `npm run demo:agi-alpha-node -- verify --config <file>` | Identity-only verification with ENS + NameWrapper audit logs. |
-| `npm run demo:agi-alpha-node -- stake --config <file>` | Stake & activation workflow via `PlatformIncentives.stakeAndActivate`. |
-| `npm run demo:agi-alpha-node -- dashboard --config <file>` | Launch the operator dashboard and earnings API. |
-| `npm run demo:agi-alpha-node -- heartbeat --config <file>` | Submit a node heartbeat to PlatformRegistry and refresh Prometheus gauges. |
-| `npm run demo:agi-alpha-node -- diagnostics --config <file>` | Run antifragile stress tests and export compliance logs. |
-| `npm run demo:agi-alpha-node -- jobs discover --config <file>` | Query JobRegistry for ENS-authenticated opportunities (dry-run safe). |
-| `npm run demo:agi-alpha-node -- jobs autopilot --config <file> [--dry-run]` | Discover → plan → (optionally) execute the richest job end-to-end. |
-| `npm run demo:agi-alpha-node -- jobs submit <jobId> --result-uri <uri>` | Deliver results to JobRegistry with deterministic hashing. |
-| `npm run demo:agi-alpha-node -- owner pause --config <file>` | Invoke `SystemPause.pauseAll()` with governance safety checks. |
-| `npm run demo:agi-alpha-node -- owner resume --config <file>` | Resume execution across StakeManager, JobRegistry, FeePool, and peers. |
+| Command                                                                     | Description                                                                    |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `npm run demo:agi-alpha-node -- --config <file>`                            | Full bootstrap: identity verification → staking → AI mesh launch → monitoring. |
+| `npm run demo:agi-alpha-node -- verify --config <file>`                     | Identity-only verification with ENS + NameWrapper audit logs.                  |
+| `npm run demo:agi-alpha-node -- stake --config <file>`                      | Stake & activation workflow via `PlatformIncentives.stakeAndActivate`.         |
+| `npm run demo:agi-alpha-node -- dashboard --config <file>`                  | Launch the operator dashboard and earnings API.                                |
+| `npm run demo:agi-alpha-node -- heartbeat --config <file>`                  | Submit a node heartbeat to PlatformRegistry and refresh Prometheus gauges.     |
+| `npm run demo:agi-alpha-node -- compliance --config <file>`                 | Produce the composite compliance scorecard (JSON + Prometheus export).         |
+| `npm run demo:agi-alpha-node -- diagnostics --config <file>`                | Run antifragile stress tests and export compliance logs.                       |
+| `npm run demo:agi-alpha-node -- jobs discover --config <file>`              | Query JobRegistry for ENS-authenticated opportunities (dry-run safe).          |
+| `npm run demo:agi-alpha-node -- jobs autopilot --config <file> [--dry-run]` | Discover → plan → (optionally) execute the richest job end-to-end.             |
+| `npm run demo:agi-alpha-node -- jobs submit <jobId> --result-uri <uri>`     | Deliver results to JobRegistry with deterministic hashing.                     |
+| `npm run demo:agi-alpha-node -- owner pause --config <file>`                | Invoke `SystemPause.pauseAll()` with governance safety checks.                 |
+| `npm run demo:agi-alpha-node -- owner resume --config <file>`               | Resume execution across StakeManager, JobRegistry, FeePool, and peers.         |
 
 ### Trustless Job Lifecycle Flow
 
@@ -228,6 +252,7 @@ All commands support `--network`, `--rpc`, and `--dry-run` flags for local testi
 3. **Kubernetes (optional)** – `docker/kubernetes.yaml` describes a production-ready StatefulSet with secrets, network policies, and horizontal scaling hooks.
 
 The container exposes:
+
 - `4317/tcp` – OpenTelemetry metrics.
 - `4318/tcp` – Operator dashboard & API.
 
@@ -266,6 +291,7 @@ This suite covers config validation, world-model convergence, antifragile shell 
 ## Support
 
 If anything fails, run `npm run demo:agi-alpha-node -- diagnostics`. The output includes:
+
 - Mermaid diagrams of the current state.
 - Suggested remediation runbooks.
 - Links into AGI Jobs v0/v2 documentation for deeper dives.

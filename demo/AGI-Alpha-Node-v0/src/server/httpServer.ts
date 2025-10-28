@@ -22,6 +22,11 @@ export async function startAlphaNodeServer(
     res.json(heartbeat);
   });
 
+  dashboardApp.get('/api/compliance', async (_req, res) => {
+    const report = await node.complianceAudit(defaultOpportunities());
+    res.json(report);
+  });
+
   dashboardApp.post('/api/plan', async (req, res) => {
     const jobs = (req.body?.jobs ?? []) as JobOpportunity[];
     const plan = node.plan(jobs);
@@ -42,4 +47,3 @@ export async function startAlphaNodeServer(
 
   return { dashboard: dashboardServer, metrics: metricsServer };
 }
-

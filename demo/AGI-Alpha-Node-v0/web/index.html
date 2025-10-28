@@ -4,10 +4,14 @@
     <meta charset="utf-8" />
     <title>AGI Alpha Node Operator Console</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chakra-ui-css-reset@2.0.0/dist/reset.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/chakra-ui-css-reset@2.0.0/dist/reset.min.css"
+    />
     <style>
       body {
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+          'Segoe UI', sans-serif;
         background: radial-gradient(circle at 10% 20%, #020617, #0f172a);
         color: #e2e8f0;
         padding: 2rem;
@@ -66,9 +70,16 @@
       mermaid.initialize({ startOnLoad: true, theme: 'dark' });
 
       async function fetchHeartbeat() {
-        const response = await fetch('/api/heartbeat');
-        const data = await response.json();
-        renderHeartbeat(data);
+        const [heartbeatResponse, complianceResponse] = await Promise.all([
+          fetch('/api/heartbeat'),
+          fetch('/api/compliance'),
+        ]);
+        const [heartbeat, compliance] = await Promise.all([
+          heartbeatResponse.json(),
+          complianceResponse.json(),
+        ]);
+        renderHeartbeat(heartbeat);
+        renderCompliance(compliance);
       }
 
       function renderHeartbeat(data) {
@@ -104,7 +115,9 @@
           </div>
           <div class="metrics">
             <span>Status</span>
-            <strong>${identity.matches ? '✅ Verified' : '⚠️ Attention required'}</strong>
+            <strong>${
+              identity.matches ? '✅ Verified' : '⚠️ Attention required'
+            }</strong>
           </div>
         `;
         document.getElementById('planning').innerHTML = `
@@ -121,15 +134,52 @@
         document.getElementById('treasury').innerHTML = `
           <div class="metrics">
             <span>Pending → Threshold</span>
-            <strong>${formatEther(reinvestment.pendingWei)} / ${formatEther(reinvestment.thresholdWei)} $AGIALPHA</strong>
+            <strong>${formatEther(reinvestment.pendingWei)} / ${formatEther(
+          reinvestment.thresholdWei
+        )} $AGIALPHA</strong>
           </div>
           <div class="metrics">
             <span>Last Action</span>
-            <strong>${reinvestment.dryRun ? 'Dry Run' : formatEther(reinvestment.stakedWei) + ' staked'}</strong>
+            <strong>${
+              reinvestment.dryRun
+                ? 'Dry Run'
+                : formatEther(reinvestment.stakedWei) + ' staked'
+            }</strong>
           </div>
           <pre>${JSON.stringify(reinvestment.notes, null, 2)}</pre>
         `;
-        document.getElementById('stress').textContent = JSON.stringify(data.stress, null, 2);
+        document.getElementById('stress').textContent = JSON.stringify(
+          data.stress,
+          null,
+          2
+        );
+      }
+
+      function renderCompliance(report) {
+        const score = (report.score * 100).toFixed(1);
+        const listItems = report.dimensions
+          .map(
+            (dimension) => `
+              <li>
+                <strong>${
+                  dimension.label
+                }</strong> — ${dimension.status.toUpperCase()} (${(
+              dimension.score * 100
+            ).toFixed(0)}%)
+                <ul>
+                  ${dimension.notes.map((note) => `<li>${note}</li>`).join('')}
+                </ul>
+              </li>
+            `
+          )
+          .join('');
+        document.getElementById('compliance').innerHTML = `
+          <div class="metrics">
+            <span>Composite Score</span>
+            <strong>${score}%</strong>
+          </div>
+          <ol>${listItems}</ol>
+        `;
       }
 
       function formatEther(value) {
@@ -137,13 +187,18 @@
         return Number(bigInt) / 1e18;
       }
 
-      document.getElementById('refresh').addEventListener('click', fetchHeartbeat);
+      document
+        .getElementById('refresh')
+        .addEventListener('click', fetchHeartbeat);
       fetchHeartbeat();
     </script>
   </head>
   <body>
     <h1>AGI Alpha Node Operator Console</h1>
-    <p>Command the most economically potent AGI node ever assembled. Identity locked, capital fortified, AI swarm engaged.</p>
+    <p>
+      Command the most economically potent AGI node ever assembled. Identity
+      locked, capital fortified, AI swarm engaged.
+    </p>
     <button id="refresh">Refresh Heartbeat</button>
     <div class="grid">
       <div class="card" id="stake"></div>
@@ -151,24 +206,20 @@
       <div class="card" id="identity"></div>
       <div class="card" id="planning"></div>
       <div class="card" id="treasury"></div>
+      <div class="card" id="compliance"></div>
     </div>
-    <div class="card" style="margin-top: 1.5rem;">
+    <div class="card" style="margin-top: 1.5rem">
       <h2>Stress Diagnostics</h2>
       <pre id="stress"></pre>
     </div>
-    <div class="card" style="margin-top: 1.5rem;">
+    <div class="card" style="margin-top: 1.5rem">
       <h2>Alpha Mesh</h2>
       <div class="mermaid">
-        graph LR
-          Operator((Operator)) --> Dashboard
-          Dashboard --> Planner
-          Planner --> Finance[Finance Strategist]
-          Planner --> Biotech[Biotech Synthesist]
-          Planner --> Manufacturing[Manufacturing Oracle]
-          Finance --> Rewards
-          Biotech --> Rewards
-          Manufacturing --> Rewards
-          Rewards --> Treasury[(Treasury Growth)]
+        graph LR Operator((Operator)) --> Dashboard Dashboard --> Planner
+        Planner --> Finance[Finance Strategist] Planner --> Biotech[Biotech
+        Synthesist] Planner --> Manufacturing[Manufacturing Oracle] Finance -->
+        Rewards Biotech --> Rewards Manufacturing --> Rewards Rewards -->
+        Treasury[(Treasury Growth)]
       </div>
     </div>
   </body>
