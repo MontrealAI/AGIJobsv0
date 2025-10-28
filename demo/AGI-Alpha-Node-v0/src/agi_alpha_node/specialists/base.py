@@ -29,7 +29,7 @@ class Specialist(abc.ABC):
         raise NotImplementedError
 
     def _confidence_from_history(self, metric: str, default: float = 0.7) -> float:
-        history = [entry[metric] for entry in self.knowledge.filter(domain=self.domain, metric=metric)]
+        history = [entry["value"] for entry in self.knowledge.filter(domain=self.domain, metric=metric)]
         return statistics.fmean(history) if history else default
 
     def _record_outcome(self, outcome: SpecialistOutcome) -> None:
