@@ -53,6 +53,11 @@
           <article class="sovereignty-card" aria-label="Pause and resume playbooks">
             <h3>Immediate actions</h3>
             <div id="pause-resume"></div>
+            <p>
+              <strong>Command coverage:</strong>
+              <span id="coverage-percent"></span>
+            </p>
+            <p id="coverage-narrative" class="narrative"></p>
             <h4>Emergency contacts</h4>
             <ul id="emergency-contacts"></ul>
           </article>
@@ -186,6 +191,37 @@
           <p>Gantt macro for throughput and capital velocity analytics.</p>
         </div>
         <div class="mermaid" id="mermaid-timeline"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="command-mermaid-heading">
+        <div class="panel-header">
+          <h2 id="command-mermaid-heading">Owner command graph</h2>
+          <p>Deterministic map of multi-sig authority across modules and emergency actions.</p>
+        </div>
+        <div class="mermaid" id="mermaid-command"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="trajectory-heading">
+        <div class="panel-header">
+          <h2 id="trajectory-heading">Capital trajectory</h2>
+          <p>Track treasury strength, validator confidence, and automation lift after every job.</p>
+        </div>
+        <div class="table-wrapper">
+          <table id="trajectory-table">
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Job</th>
+                <th>Window (h)</th>
+                <th>Treasury (AGI)</th>
+                <th>Net Yield (AGI)</th>
+                <th>Validator Confidence</th>
+                <th>Automation Lift</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </section>
 
       <section class="panel dropzone" aria-labelledby="dropzone-heading">

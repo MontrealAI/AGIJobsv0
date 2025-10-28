@@ -25,6 +25,19 @@ test('economic power simulation produces deterministic metrics', async () => {
     assert(ownerParameters.includes(control.parameter));
   }
 
+  assert(summary.ownerCommandPlan.commandCoverage >= 0.2, 'Owner command coverage should be recorded');
+  assert(summary.ownerCommandPlan.coverageNarrative.length > 0, 'Coverage narrative should be present');
+  assert(summary.ownerCommandMermaid.includes('graph LR'), 'Owner command mermaid graph should render');
+  assert.equal(
+    summary.treasuryTrajectory.length,
+    summary.assignments.length,
+    'Treasury trajectory should include one entry per assignment',
+  );
+  for (const entry of summary.treasuryTrajectory) {
+    assert(entry.treasuryAfterJob > 0, 'Treasury levels should remain positive');
+    assert(entry.validatorConfidence > 0.9, 'Validator confidence checkpoints should stay high');
+  }
+
   assert.equal(
     summary.ownerSovereignty.pauseScript,
     scenario.safeguards.pauseScript,

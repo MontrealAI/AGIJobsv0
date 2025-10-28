@@ -141,6 +141,13 @@ function renderSovereignty(summary) {
     <p><strong>Median response:</strong> ${summary.ownerSovereignty.responseMinutes} minutes</p>
   `;
 
+  const coveragePercent = document.getElementById('coverage-percent');
+  const coverageNarrative = document.getElementById('coverage-narrative');
+  if (coveragePercent && coverageNarrative) {
+    coveragePercent.textContent = `${(summary.ownerCommandPlan.commandCoverage * 100).toFixed(1)}%`;
+    coverageNarrative.textContent = summary.ownerCommandPlan.coverageNarrative;
+  }
+
   const emergencyList = document.getElementById('emergency-contacts');
   emergencyList.innerHTML = '';
   for (const contact of summary.ownerSovereignty.emergencyContacts) {
@@ -270,14 +277,40 @@ async function renderMermaid(summary) {
   mermaid.initialize({ startOnLoad: false, theme: 'dark' });
   const flow = document.getElementById('mermaid-flow');
   const timeline = document.getElementById('mermaid-timeline');
+  const command = document.getElementById('mermaid-command');
   flow.textContent = summary.mermaidFlow;
   timeline.textContent = summary.mermaidTimeline;
-  await mermaid.run({ nodes: [flow, timeline] });
+  if (command) {
+    command.textContent = summary.ownerCommandMermaid;
+    await mermaid.run({ nodes: [flow, timeline, command] });
+  } else {
+    await mermaid.run({ nodes: [flow, timeline] });
+  }
 }
 
 function updateFooter(summary) {
   const footer = document.getElementById('generated-at');
   footer.textContent = `• Generated at ${new Date(summary.generatedAt).toLocaleString()}`;
+}
+
+function renderTrajectory(summary) {
+  const tbody = document.querySelector('#trajectory-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (const entry of summary.treasuryTrajectory || []) {
+    const row = document.createElement('tr');
+    const windowHours = (entry.endHour - entry.startHour).toFixed(1);
+    row.innerHTML = `
+      <td>${entry.step}</td>
+      <td>${entry.jobName}</td>
+      <td>${windowHours}</td>
+      <td>${formatNumber(entry.treasuryAfterJob)}</td>
+      <td>${formatNumber(entry.netYield)}</td>
+      <td>${(entry.validatorConfidence * 100).toFixed(2)}%</td>
+      <td>${(entry.automationLift * 100).toFixed(2)}%</td>
+    `;
+    tbody.append(row);
+  }
 }
 
 async function bootstrap(dataPath = defaultDataPath) {
@@ -287,6 +320,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderAssignments(summary);
   renderSovereignty(summary);
   renderDeployment(summary);
+  renderTrajectory(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
@@ -335,6 +369,7 @@ async function renderSummary(summary) {
   renderAssignments(summary);
   renderSovereignty(summary);
   renderDeployment(summary);
+  renderTrajectory(summary);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
