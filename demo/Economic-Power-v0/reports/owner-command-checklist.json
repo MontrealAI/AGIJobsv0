@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2025-02-01T00:00:00.000Z",
+  "coverage": 1,
+  "coverageNarrative": "Owner multi-sig holds deterministic runbooks for every critical surface.",
+  "surfaces": {
+    "jobs": 1,
+    "validators": 1,
+    "stablecoinAdapters": 1,
+    "modules": 1,
+    "parameters": 1,
+    "pause": 1,
+    "resume": 1,
+    "treasury": 1,
+    "orchestrator": 1
+  }
+}

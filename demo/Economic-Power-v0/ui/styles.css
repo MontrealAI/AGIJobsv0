@@ -427,6 +427,21 @@ main {
   margin-top: 1rem;
 }
 
+#coverage-table {
+  min-width: 320px;
+  margin-top: 0.75rem;
+}
+
+#coverage-table th,
+#coverage-table td {
+  text-align: left;
+}
+
+#coverage-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 #deployment-table code {
   background: rgba(56, 189, 248, 0.12);
   padding: 0.15rem 0.35rem;

@@ -1,8 +1,20 @@
 # Owner Command Playbook
 
-Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/28/2025, 3:43:28 PM (UTC)
+Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/28/2025, 5:00:29 PM (UTC)
 
 Command coverage: 100.0% — Owner multi-sig holds deterministic runbooks for every critical surface.
+
+## Coverage detail
+
+- Job programs: 100.0% coverage
+- Validator programs: 100.0% coverage
+- Stablecoin adapters: 100.0% coverage
+- Protocol modules: 100.0% coverage
+- Parameter overrides: 100.0% coverage
+- Emergency pause: 100.0% coverage
+- Resume procedure: 100.0% coverage
+- Treasury playbooks: 100.0% coverage
+- Orchestrator mesh: 100.0% coverage
 
 ## Quick actions
 

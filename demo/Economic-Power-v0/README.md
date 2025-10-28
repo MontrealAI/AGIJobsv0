@@ -29,6 +29,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
 - `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
 - `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
+- `owner-command-checklist.json` – machine-auditable coverage ledger detailing per-surface command coverage percentages for jobs, validators, adapters, modules, treasury, pause/resume, and orchestrator surfaces.
 - `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
@@ -103,6 +104,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
 - Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
+- Command coverage detail table translating `owner-command-checklist.json` into per-surface readiness so non-technical operators can see exactly which levers are scripted.
 - Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
 - Capital trajectory tracker visualising treasury strength, validator confidence, and automation lift after every job.
