@@ -1,0 +1,73 @@
+{
+  "guardians": [
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000A9",
+      "role": "Primary",
+      "weight": 1.0,
+      "capabilities": ["treasury", "execution", "governance"],
+      "latency_ms": 180
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000B9",
+      "role": "Primary",
+      "weight": 0.98,
+      "capabilities": ["governance", "ci"],
+      "latency_ms": 190
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000C9",
+      "role": "Primary",
+      "weight": 0.97,
+      "capabilities": ["treasury", "risk"],
+      "latency_ms": 185
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000D9",
+      "role": "Primary",
+      "weight": 0.96,
+      "capabilities": ["treasury", "execution"],
+      "latency_ms": 188
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000E9",
+      "role": "Primary",
+      "weight": 0.95,
+      "capabilities": ["governance", "autopilot"],
+      "latency_ms": 182
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000F9",
+      "role": "Primary",
+      "weight": 0.95,
+      "capabilities": ["treasury", "curriculum"],
+      "latency_ms": 184
+    }
+  ],
+  "failover": [
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000G9",
+      "capabilities": ["treasury", "execution"],
+      "activation_ms": 220
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000H9",
+      "capabilities": ["governance", "ci"],
+      "activation_ms": 230
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000I9",
+      "capabilities": ["autopilot", "curriculum"],
+      "activation_ms": 225
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000J9",
+      "capabilities": ["treasury", "risk"],
+      "activation_ms": 228
+    }
+  ],
+  "quorum": {
+    "required": 5,
+    "total": 10,
+    "response_ms": 186
+  }
+}

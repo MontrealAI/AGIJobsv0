@@ -1,0 +1,25 @@
+{
+  "controls": {
+    "guardian_rotation": "active",
+    "session_key_rotation": "scheduled",
+    "owner_pause": "armed",
+    "owner_resume": "armed",
+    "treasury_override": "enabled",
+    "module_upgrade_queue": "green",
+    "ci_status": "green",
+    "owner_script_hotfix": "available"
+  },
+  "owner_actions": [
+    "Trigger emergency pause",
+    "Issue treasury override",
+    "Rotate guardians",
+    "Upgrade modules with CI check",
+    "Issue antifragility drill",
+    "Dispatch convergence scenario"
+  ],
+  "timelock": {
+    "address": "0xTIMEL0CK0000000000000000000000000000008",
+    "delay_seconds": 64800,
+    "queued_actions": 4
+  }
+}

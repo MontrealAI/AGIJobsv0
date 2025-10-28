@@ -1,0 +1,331 @@
+{
+  "generated_at": "2024-01-01T00:00:00Z",
+  "alpha": {
+    "domains": [
+      {
+        "name": "Macro Alpha",
+        "probability": 0.94,
+        "confidence": 0.91,
+        "delta": 0.18
+      },
+      {
+        "name": "Supply Chain",
+        "probability": 0.92,
+        "confidence": 0.9,
+        "delta": 0.16
+      },
+      {
+        "name": "Biotech",
+        "probability": 0.9,
+        "confidence": 0.88,
+        "delta": 0.14
+      }
+    ],
+    "anomalies": [
+      {
+        "id": "alpha-surge-9721",
+        "description": "Cross-chain liquidity inefficiency detected",
+        "signals": [
+          "Macro Alpha",
+          "Energy"
+        ],
+        "impact_score": 0.96
+      }
+    ]
+  },
+  "opportunity_graph": {
+    "nodes": [
+      {
+        "id": "macro-alpha",
+        "label": "Macro Alpha",
+        "value": 0.94,
+        "connections": [
+          "sovereign-liquidity",
+          "compute-expansion"
+        ]
+      }
+    ],
+    "insights": [
+      {
+        "id": "alpha-factory",
+        "description": "Deploy unstoppable alpha factory",
+        "score": 0.97
+      }
+    ]
+  },
+  "guardian_mesh": {
+    "guardians": [
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000A9",
+        "role": "Primary",
+        "weight": 1.0,
+        "capabilities": [
+          "treasury",
+          "execution",
+          "governance"
+        ],
+        "latency_ms": 180
+      }
+    ],
+    "failover": [
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000G9",
+        "capabilities": [
+          "treasury",
+          "execution"
+        ],
+        "activation_ms": 220
+      }
+    ],
+    "quorum": {
+      "required": 5,
+      "total": 10,
+      "response_ms": 186
+    }
+  },
+  "treasury_streams": {
+    "streams": [
+      {
+        "name": "Alpha Factory Reinforcement",
+        "cadence": "hourly",
+        "route": "treasury/alpha-orbit",
+        "amount": "52000"
+      }
+    ]
+  },
+  "autopilot": {
+    "modes": [
+      {
+        "id": "treasury_balancer",
+        "title": "Treasury Balancer",
+        "description": "Continuously rebalance sovereign reserves",
+        "status": "active"
+      }
+    ],
+    "safety": {
+      "session_keys": 8,
+      "max_spend": "250000",
+      "circuit_breaker_minutes": 8
+    }
+  },
+  "mission_threads": {
+    "threads": [
+      {
+        "id": "mission-thread-alpha-forge",
+        "title": "Alpha Forge",
+        "objective": "Spawn autonomous alpha factories",
+        "status": "active"
+      }
+    ]
+  },
+  "simulations": {
+    "world_model": {
+      "name": "MetaSovereignty-IX",
+      "autonomy_layers": [
+        "Identify",
+        "Execute"
+      ],
+      "autonomous": true
+    },
+    "resilience_bonus": 0.28,
+    "alpha_feedback": 0.14,
+    "risk_controls": {
+      "drawdown_limit": 0.018,
+      "circuit_breaker": 0.038,
+      "antifragility_floor": 0.46
+    }
+  },
+  "timeline": [],
+  "ci_v2": {
+    "status": "green",
+    "checks": [
+      {
+        "name": "pytest",
+        "status": "pass"
+      },
+      {
+        "name": "orchestrator-ci",
+        "status": "pass"
+      }
+    ],
+    "response_minutes": 6
+  },
+  "metrics": {
+    "alpha_probability": 0.94,
+    "alpha_compounding_index": 0.98,
+    "owner_empowerment": 0.9,
+    "antifragility_index": 0.88,
+    "control_surface_score": 0.92,
+    "unstoppable_readiness": 0.93,
+    "automation_aperture": 0.9,
+    "capital_flywheel_index": 0.94,
+    "convergence_velocity": 0.91,
+    "guardian_resilience": 0.9,
+    "response_minutes": 6,
+    "step_completion_ratio": 1.0,
+    "scoreboard": {},
+    "sovereignty_index": 0.92,
+    "autopilot_mastery": 0.9,
+    "meta_ci_health": 0.91,
+    "alpha_forge_velocity": 0.9,
+    "owner_command_latency_seconds": 7,
+    "owner_approval_speed_minutes": 2
+  },
+  "control_surface": {
+    "score": 0.92,
+    "guardian_quorum": 5,
+    "guardian_count": 6,
+    "failover_guardian_count": 4,
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 8,
+    "unstoppable_reserve_percent": 48,
+    "antifragility_buffer_percent": 46,
+    "session_keys": [
+      "guardian-meta-mesh-v9",
+      "alpha-compounding-director",
+      "mission-audit-overwatch",
+      "alpha-treasury-hyperpilot",
+      "sovereign-simulation-architect",
+      "autopilot-dominion-weaver",
+      "owner-override-switch",
+      "treasury-override-key"
+    ],
+    "bundler": "sovereignty-bundler",
+    "paymaster": "account-abstraction/sovereignty-paymaster.json",
+    "delegation": {
+      "treasury": {
+        "owner_override": true,
+        "max_adjustment_percent": 15
+      },
+      "governance": {
+        "guardian_rotation": true,
+        "threshold_update": true
+      },
+      "execution": {
+        "paymaster_routing": true,
+        "relayer_selection": true
+      },
+      "emergency_override": {
+        "multisig_guard": 4,
+        "sentinel_watch": true
+      }
+    },
+    "control_scripts": {
+      "pause": "scripts/v3/systemPauseAction.ts",
+      "resume": "scripts/v3/systemResumeAction.ts",
+      "update_treasury": "scripts/v3/updateRewardEngine.ts",
+      "rotate_guardians": "scripts/v3/rotateGovernance.ts",
+      "upgrade_modules": "scripts/v3/updateAllModules.ts",
+      "emergency_shutdown": "scripts/v3/emergencyShutdown.ts"
+    },
+    "upgrade_scripts": {
+      "redeploy_modules": "scripts/v3/redeployModules.ts",
+      "instantiate_new_domain": "scripts/v3/instantiateNewDomain.ts",
+      "bootstrap_guardian_mesh": "scripts/v3/bootstrapGuardianMesh.ts"
+    },
+    "mutable_parameters": {
+      "job_fee_bps": 32,
+      "validator_bond": 112000,
+      "alpha_multiplier": 2.44,
+      "treasury_drawdown_limit": 2.2,
+      "guardian_stake_floor": 72000,
+      "autopilot_velocity": 1.2
+    },
+    "timelock": "0xTIMEL0CK0000000000000000000000000000009",
+    "multisig": "0xMULTI500000000000000000000000000000009",
+    "levers": [
+      "Trigger unstoppable pause",
+      "Rotate guardians",
+      "Rebalance treasury streams"
+    ],
+    "sovereign_domains": [
+      "treasury-dominion",
+      "guardian-meta-mesh",
+      "execution-fabric"
+    ],
+    "mission_threads": [
+      "mission-thread-alpha-forge",
+      "mission-thread-supply-sense",
+      "mission-thread-governance-mesh"
+    ],
+    "unstoppable_initiatives": [
+      "Auto-orchestrate new alpha factories",
+      "Regenerate curriculum from market anomalies"
+    ],
+    "telemetry_channels": [
+      "sovereignty-console",
+      "guardian-meta-mesh",
+      "treasury-signal-grid"
+    ],
+    "autopilot_modes": {
+      "treasury_balancer": "tools/autopilot/treasuryBalancer.json"
+    },
+    "owner_prompts": [
+      "Review sovereign metrics",
+      "Trigger unstoppable override"
+    ],
+    "unstoppable_switches": {
+      "unstoppable_pause": "scripts/v3/unstoppablePause.ts",
+      "unstoppable_resume": "scripts/v3/unstoppableResume.ts",
+      "unstoppable_rebalance": "scripts/v3/unstoppableRebalance.ts"
+    },
+    "unstoppable_threshold": 0.94
+  },
+  "sovereignty": {
+    "owner_controls": [
+      "Pause / resume unstoppable fabric"
+    ],
+    "governance_safeguards": {
+      "timelock": "0xTIMEL0CK0000000000000000000000000000009",
+      "multisig": "0xMULTI500000000000000000000000000000009",
+      "guardian_quorum": 5,
+      "emergency_pause": true,
+      "failover_guardians": 4
+    },
+    "treasury_resilience": {
+      "unstoppable_reserve_percent": 48,
+      "antifragility_buffer_percent": 46,
+      "owner_override_limit_percent": 15,
+      "streams": 5
+    }
+  },
+  "unstoppable_matrix": {
+    "command_latency_seconds": 7,
+    "owner_approval_speed_minutes": 2,
+    "autonomy_levels": [
+      "Identify",
+      "Execute"
+    ],
+    "failsafe": {
+      "emergency_pause": true,
+      "circuit_breaker_minutes": 8,
+      "guardian_override_required": 5
+    }
+  },
+  "mermaid": {
+    "flow_v9": "graph TD; Owner-->Identify; Identify-->Learn; Learn-->Think; Think-->Design; Design-->Strategise; Strategise-->Execute; Execute-->Govern; Govern-->Owner",
+    "radar": "radarChart\n  title Sovereign Capability Radar\n  axes Automation, Resilience, Empowerment, Velocity, Stewardship\n  dataset Owner\n    data 0.90, 0.90, 0.92, 0.91, 0.91",
+    "sequence_v9": "sequenceDiagram\n  participant Owner\n  participant Console\n  participant Planner\n  Owner->>Console: Run V9 CLI\n  Console->>Planner: Submit sovereignty scenario\n  Planner->>Console: Render unstoppable console",
+    "gantt_v9": "gantt\n  title Sovereignty Timeline\n  dateFormat X\n  axisFormat %s\n  section Execute\n    Dry run :done, 0, 1\n    Launch console :active, 1, 1",
+    "journey_v9": "journey\n  title Owner Empowerment\n  section Sovereign Console\n    Launch CLI: 5: owner\n    Review dashboard: 5: owner",
+    "state_v9": "stateDiagram-v2\n  [*] --> Identify\n  Identify --> Execute\n  Execute --> SovereignReview\n  SovereignReview --> [*]",
+    "quadrant_v9": "quadrantChart\n  title Sovereign Command Quadrant\n  x-axis Automation <---> Human Oversight\n  y-axis Passive <---> Proactive\n  \"Owner Override Mesh\" : 0.40 : 0.88\n  \"Guardian Meta-Mesh\" : -0.10 : 0.92"
+  },
+  "command_matrix": {
+    "mission_threads": [
+      "mission-thread-alpha-forge",
+      "mission-thread-supply-sense"
+    ],
+    "unstoppable_initiatives": [
+      "Auto-orchestrate new alpha factories",
+      "Deploy unstoppable liquidity mesh"
+    ],
+    "telemetry_channels": [
+      "sovereignty-console",
+      "guardian-meta-mesh"
+    ],
+    "autopilot_modes": {
+      "treasury_balancer": "tools/autopilot/treasuryBalancer.json"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "owner_controls": [
+    "Pause / resume unstoppable fabric",
+    "Rotate guardians and failover",
+    "Rebalance treasury reserves",
+    "Upgrade modules",
+    "Launch new mission threads",
+    "Escalate CI enforcement"
+  ],
+  "governance_safeguards": {
+    "timelock": "0xTIMEL0CK0000000000000000000000000000009",
+    "multisig": "0xMULTI500000000000000000000000000000009",
+    "guardian_quorum": 5,
+    "emergency_pause": true,
+    "failover_guardians": 4
+  },
+  "treasury_resilience": {
+    "unstoppable_reserve_percent": 48,
+    "antifragility_buffer_percent": 46,
+    "owner_override_limit_percent": 15,
+    "streams": 5
+  }
+}

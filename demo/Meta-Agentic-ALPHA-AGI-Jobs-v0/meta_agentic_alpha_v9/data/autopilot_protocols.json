@@ -1,0 +1,33 @@
+{
+  "modes": [
+    {
+      "id": "treasury_balancer",
+      "title": "Treasury Balancer",
+      "description": "Continuously rebalance sovereign reserves",
+      "status": "active"
+    },
+    {
+      "id": "guardian_rotation",
+      "title": "Guardian Rotation",
+      "description": "Rotate guardians and failovers based on telemetry",
+      "status": "ready"
+    },
+    {
+      "id": "alpha_signal_routing",
+      "title": "Alpha Signal Routing",
+      "description": "Route new alpha signals into mission threads",
+      "status": "active"
+    },
+    {
+      "id": "curriculum_uplift",
+      "title": "Curriculum Uplift",
+      "description": "Autonomously escalate curriculum difficulty",
+      "status": "active"
+    }
+  ],
+  "safety": {
+    "session_keys": 8,
+    "max_spend": "250000",
+    "circuit_breaker_minutes": 8
+  }
+}

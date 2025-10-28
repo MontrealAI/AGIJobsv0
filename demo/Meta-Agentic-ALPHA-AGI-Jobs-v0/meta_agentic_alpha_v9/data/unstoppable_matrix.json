@@ -1,0 +1,18 @@
+{
+  "command_latency_seconds": 7,
+  "owner_approval_speed_minutes": 2,
+  "autonomy_levels": [
+    "Identify",
+    "Learn",
+    "Think",
+    "Design",
+    "Strategise",
+    "Execute",
+    "Govern"
+  ],
+  "failsafe": {
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 8,
+    "guardian_override_required": 5
+  }
+}

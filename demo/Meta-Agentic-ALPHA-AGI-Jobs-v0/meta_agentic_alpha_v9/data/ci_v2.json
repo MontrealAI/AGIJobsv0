@@ -1,0 +1,13 @@
+{
+  "status": "green",
+  "checks": [
+    {"name": "pytest", "status": "pass"},
+    {"name": "orchestrator-ci", "status": "pass"},
+    {"name": "foundry", "status": "pass"},
+    {"name": "static-analysis", "status": "pass"},
+    {"name": "fuzzing", "status": "pass"},
+    {"name": "scorecard", "status": "pass"},
+    {"name": "governance-invariants", "status": "pass"}
+  ],
+  "response_minutes": 6
+}

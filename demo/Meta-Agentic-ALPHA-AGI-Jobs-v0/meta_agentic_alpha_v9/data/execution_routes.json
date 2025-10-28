@@ -1,0 +1,29 @@
+{
+  "routes": [
+    {
+      "name": "Meta-Sovereign Job Deployment",
+      "contracts": ["JobRegistry", "StakeManager"],
+      "gas_model": "erc4337",
+      "status": "ready"
+    },
+    {
+      "name": "Treasury Sovereignty",
+      "contracts": ["TreasuryController", "FeePool"],
+      "gas_model": "erc4337",
+      "status": "ready"
+    },
+    {
+      "name": "Guardian Override",
+      "contracts": ["GuardianCouncil", "Timelock"],
+      "gas_model": "meta-tx",
+      "status": "armed"
+    }
+  ],
+  "owner_switches": [
+    "Trigger unstoppable pause",
+    "Rotate guardians",
+    "Rebalance treasury streams",
+    "Escalate CI enforcement"
+  ],
+  "compounding_multiplier": 0.42
+}
