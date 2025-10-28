@@ -610,7 +610,10 @@ export class PlanetaryOrchestrator {
     }
     this.initializeState();
     this.tick = payload.tick;
-    this.metrics = payload.metrics;
+    const restoredMetrics = payload.metrics
+      ? { ...PlanetaryOrchestrator.createInitialMetrics(), ...payload.metrics }
+      : PlanetaryOrchestrator.createInitialMetrics();
+    this.metrics = restoredMetrics;
     this.systemPaused = payload.systemPaused;
     this.pausedShards.clear();
     for (const shardId of payload.pausedShards) {
