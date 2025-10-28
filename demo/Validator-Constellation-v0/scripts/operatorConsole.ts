@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 import Table from "cli-table3";
 import chalk from "chalk";
+import { formatEther } from "ethers";
 import { runDemoOrchestration } from "../src/demoOrchestrator";
 
 async function main() {
@@ -34,6 +35,38 @@ async function main() {
   }
   console.log("\nSentinel Alerts");
   console.log(alertsTable.toString());
+
+  const config = result.configuration;
+  const governanceTable = new Table({ head: ["Parameter", "Value"] });
+  governanceTable.push(
+    [
+      "Quorum",
+      `${config.governance.quorum} / ${config.governance.committeeSize}`,
+    ],
+    ["Commit deadline", `${config.governance.commitDeadlineSeconds}s`],
+    ["Reveal deadline", `${config.governance.revealDeadlineSeconds}s`],
+    [
+      "Non-reveal slash",
+      `${(config.governance.nonRevealSlashBps / 100).toFixed(2)}%`,
+    ],
+    [
+      "Dishonest slash",
+      `${(config.governance.dishonestSlashBps / 100).toFixed(2)}%`,
+    ],
+    ["Sentinel SLA", `${config.sentinelPauseSlaSeconds}s`],
+    ["Round seed", config.roundSeed],
+    ["Jobs / batch", `${config.jobCount}`]
+  );
+
+  console.log("\nGovernance Controls");
+  console.log(governanceTable.toString());
+
+  const budgetsTable = new Table({ head: ["Domain", "Budget (ETH)"] });
+  for (const [domain, budgetWei] of Object.entries(config.domainBudgets)) {
+    budgetsTable.push([domain, formatEther(BigInt(budgetWei))]);
+  }
+  console.log("\nDomain Budgets");
+  console.log(budgetsTable.toString());
 
   console.log("\nRecent Events (tail 5)");
   const events = result.eventLog.slice(-5);

@@ -30,3 +30,30 @@ export const domainBudgets: Record<Domain, bigint> = {
 
 export const allowlistSnapshot = defaultAllowlist;
 export const allowlistFingerprint = defaultAllowlistFingerprint;
+
+export function resolveGovernanceParameters(
+  overrides?: Partial<GovernanceParameters>
+): GovernanceParameters {
+  return {
+    ...governanceDefaults,
+    ...overrides,
+  };
+}
+
+export function resolveDomainBudgets(
+  overrides?: Partial<Record<Domain, bigint>>
+): Record<Domain, bigint> {
+  const merged: Record<Domain, bigint> = { ...domainBudgets };
+  if (!overrides) {
+    return merged;
+  }
+  for (const [domain, budget] of Object.entries(overrides) as [
+    Domain,
+    bigint
+  ][]) {
+    if (typeof budget === "bigint") {
+      merged[domain] = budget;
+    }
+  }
+  return merged;
+}

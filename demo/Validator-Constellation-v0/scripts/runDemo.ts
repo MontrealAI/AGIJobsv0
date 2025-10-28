@@ -1,5 +1,6 @@
 #!/usr/bin/env ts-node
 import chalk from "chalk";
+import { formatEther } from "ethers";
 import { runDemoOrchestration } from "../src/demoOrchestrator";
 import { allowlistFingerprint } from "../src/config/defaults";
 
@@ -41,6 +42,37 @@ async function main() {
     }
   } else {
     console.log(chalk.green("Sentinel: all domains healthy"));
+  }
+
+  const config = result.configuration;
+  console.log(chalk.cyan(`\nGovernance controls`));
+  console.log(
+    `  Quorum: ${config.governance.quorum} of ${config.governance.committeeSize}`
+  );
+  console.log(
+    `  Commit deadline: ${config.governance.commitDeadlineSeconds}s`
+  );
+  console.log(
+    `  Reveal deadline: ${config.governance.revealDeadlineSeconds}s`
+  );
+  const nonRevealPercent = (
+    config.governance.nonRevealSlashBps / 100
+  ).toFixed(2);
+  const dishonestPercent = (
+    config.governance.dishonestSlashBps / 100
+  ).toFixed(2);
+  console.log(`  Non-reveal slash: ${nonRevealPercent}%`);
+  console.log(`  Dishonest slash: ${dishonestPercent}%`);
+  console.log(
+    `  Sentinel pause SLA: ${config.sentinelPauseSlaSeconds}s`
+  );
+  console.log(`  Round seed: ${config.roundSeed}`);
+  console.log(`  Jobs per batch proof: ${config.jobCount}`);
+
+  console.log(chalk.cyan(`\nDomain budgets`));
+  for (const [domain, budgetWei] of Object.entries(config.domainBudgets)) {
+    const formatted = formatEther(BigInt(budgetWei));
+    console.log(`  • ${domain}: ${formatted} ETH`);
   }
 
   console.log(chalk.gray("\nEvent feed exported to operator console."));

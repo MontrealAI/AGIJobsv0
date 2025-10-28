@@ -22,6 +22,7 @@ async function main() {
     },
     sentinelAlerts: result.sentinelAlerts,
     eventLogTail: result.eventLog.slice(-20),
+    configuration: result.configuration,
   };
 
   const outPath = resolve(process.cwd(), "validator-constellation-audit.json");

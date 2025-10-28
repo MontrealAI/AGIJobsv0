@@ -63,6 +63,36 @@ Every stage can be replayed, inspected, and audited with structured reports that
 
 All scripts accept `--config` for custom JSON payloads so operators can tweak parameters without touching code.
 
+### Owner-Controlled Overrides
+
+Non-technical operators can override governance thresholds, budgets, and randomness without editing source files.
+Create a scenario file such as:
+
+```json
+{
+  "governance": {
+    "quorum": 3,
+    "committeeSize": 4,
+    "nonRevealSlashBps": 450,
+    "sentinelPauseSlaSeconds": 3
+  },
+  "domainBudgets": {
+    "deep-research": "7500000000000000000000"
+  },
+  "jobCount": 256,
+  "roundSeed": "0xfeedface"
+}
+```
+
+Run the scenario with:
+
+```bash
+npm run demo:validator-constellation:scenario -- --config scenario.json
+```
+
+The orchestration engine reflects these overrides in CLI output, audit reports, and the operator console, demonstrating full gov
+ernance control without code changes.
+
 ## Non-Technical Operator Journey
 
 1. **Identity Verification**: The demo confirms ENS control via Merkle proofs anchored to the `club.agi.eth` / `alpha.club.agi.eth` roots for validators and the `.agent.agi.eth` / `.node.agi.eth` namespaces for agents.

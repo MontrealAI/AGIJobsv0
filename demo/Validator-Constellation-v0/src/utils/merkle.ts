@@ -6,7 +6,7 @@ export function hashLeaf(data: string): Hex {
   const buffer = data.startsWith("0x")
     ? Buffer.from(data.slice(2), "hex")
     : Buffer.from(data, "utf8");
-  return keccak256(buffer);
+  return keccak256(buffer) as Hex;
 }
 
 export function hashPair(a: Hex, b: Hex): Hex {
@@ -15,7 +15,7 @@ export function hashPair(a: Hex, b: Hex): Hex {
     Buffer.from(left.slice(2), "hex"),
     Buffer.from(right.slice(2), "hex"),
   ]);
-  return keccak256(buffer);
+  return keccak256(buffer) as Hex;
 }
 
 export class MerkleTree {

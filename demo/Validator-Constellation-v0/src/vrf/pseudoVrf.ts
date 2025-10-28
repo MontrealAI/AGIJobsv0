@@ -1,8 +1,13 @@
-import { keccak256, Wallet, verifyMessage } from "ethers";
+import { keccak256, verifyMessage } from "ethers";
 
 export interface PseudoVrfProof {
   readonly proof: string;
   readonly output: string;
+}
+
+export interface SigningWallet {
+  readonly address: string;
+  signMessage(message: Uint8Array): Promise<string>;
 }
 
 function deriveMessage(roundId: string, entropy: string): string {
@@ -10,7 +15,7 @@ function deriveMessage(roundId: string, entropy: string): string {
 }
 
 export async function evaluatePseudoVrf(
-  wallet: Wallet,
+  wallet: SigningWallet,
   roundId: string,
   entropy: string
 ): Promise<PseudoVrfProof> {

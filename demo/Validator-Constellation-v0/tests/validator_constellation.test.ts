@@ -18,6 +18,7 @@ import { BudgetOverrunMonitor, UnsafeCallMonitor } from "../src/sentinel/monitor
 import { Sentinel } from "../src/sentinel/sentinel";
 import { DomainPauseManager } from "../src/sentinel/domainPauseManager";
 import { domainBudgets } from "../src/config/defaults";
+import { runDemoOrchestration } from "../src/demoOrchestrator";
 
 const identities = deriveAllIdentities();
 const validators = identities.filter((identity) => identity.role === "validator");
@@ -172,4 +173,33 @@ test("sentinel pauses offending domain", () => {
   assert.equal(pauseManager.isPaused(validators[0].domain), true);
   const alertEvents = indexer.getEvents("SentinelAlert");
   assert.equal(alertEvents.length, 1);
+});
+
+test("owner overrides propagate through orchestration", async () => {
+  const overrides = {
+    governanceOverrides: {
+      quorum: 3,
+      committeeSize: 4,
+      nonRevealSlashBps: 450,
+      sentinelPauseSlaSeconds: 3,
+    },
+    domainBudgetOverrides: {
+      "deep-research": 7_500n * 10n ** 18n,
+    },
+    jobCount: 256,
+    roundSeed: "0xfeedface",
+  } as const;
+
+  const result = await runDemoOrchestration(overrides);
+
+  assert.equal(result.committee.length, 4);
+  assert.equal(result.configuration.governance.quorum, 3);
+  assert.equal(result.configuration.governance.nonRevealSlashBps, 450);
+  assert.equal(result.configuration.sentinelPauseSlaSeconds, 3);
+  assert.equal(result.configuration.jobCount, 256);
+  assert.equal(result.configuration.roundSeed, "0xfeedface");
+  assert.equal(
+    result.configuration.domainBudgets["deep-research"],
+    (7_500n * 10n ** 18n).toString()
+  );
 });

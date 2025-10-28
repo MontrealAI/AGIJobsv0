@@ -23,14 +23,15 @@ export function digestJobResults(results: readonly JobResult[]): string {
 }
 
 export class ZkBatchAggregator {
-  private readonly privateKey: bigint;
+  private readonly privateKey: Uint8Array;
   private readonly publicKey: Uint8Array;
   readonly publicKeyHex: string;
 
   constructor(privateKeyHex?: string) {
-    this.privateKey = privateKeyHex
-      ? BigInt(`0x${privateKeyHex.replace(/^0x/, "")}`)
+    const privateKeyBytes = privateKeyHex
+      ? Buffer.from(privateKeyHex.replace(/^0x/, "").padStart(64, "0"), "hex")
       : bls.utils.randomPrivateKey();
+    this.privateKey = new Uint8Array(privateKeyBytes);
     this.publicKey = bls.getPublicKey(this.privateKey);
     this.publicKeyHex = `0x${Buffer.from(this.publicKey).toString("hex")}`;
   }
@@ -40,10 +41,8 @@ export class ZkBatchAggregator {
       throw new Error("Cannot create proof for empty batch");
     }
     const digest = digestJobResults(results);
-    const signature = bls.sign(
-      Buffer.from(digest.slice(2), "hex"),
-      this.privateKey
-    );
+    const messageBytes = Buffer.from(digest.slice(2), "hex");
+    const signature = bls.sign(messageBytes, this.privateKey);
     return {
       batchId,
       batchSize: results.length,
