@@ -1,0 +1,74 @@
+# Operator configuration for the AGI Alpha Node demo.
+# Copy this file to operator.yaml and customise the values for your deployment.
+
+version: 1
+network:
+  chain_id: 1                      # Ethereum mainnet (1) by default
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_PROJECT_ID"
+  confirmations_required: 2
+  ens_registry: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+
+operator:
+  ens_domain: "demo.alpha.node.agi.eth"
+  operator_address: "0x1111111111111111111111111111111111111111"
+  governance_address: "0x2222222222222222222222222222222222222222"
+  stake_controller_address: "0x3333333333333333333333333333333333333333"
+  pause_authority_address: "0x4444444444444444444444444444444444444444"
+  contact_email: "ops@example.com"
+
+wallet:
+  keystore_path: "~/.agi-alpha-node/keystore.json"
+  keystore_password_env: "AGI_ALPHA_NODE_KEYSTORE_PASSWORD"
+
+contracts:
+  stake_manager: "0x5555555555555555555555555555555555555555"
+  fee_pool: "0x6666666666666666666666666666666666666666"
+  platform_incentives: "0x7777777777777777777777777777777777777777"
+  job_router: "0x8888888888888888888888888888888888888888"
+  job_registry: "0x9999999999999999999999999999999999999999"
+  identity_registry: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  platform_registry: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  system_pause: "0xcccccccccccccccccccccccccccccccccccccccc"
+
+staking:
+  minimum_stake: "10000"
+  currency_symbol: "$AGIALPHA"
+  auto_reinvest: true
+
+planner:
+  horizon: 12
+  exploration_bias: 0.35
+  exploitation_bias: 0.65
+  reward_decay: 0.92
+  risk_tolerance: 0.7
+
+specialists:
+  finance:
+    enabled: true
+  biotech:
+    enabled: true
+  manufacturing:
+    enabled: true
+
+knowledge_lake:
+  storage_path: "demo/AGI-Alpha-Node-v0/state/knowledge.jsonl"
+  retention_days: 365
+  max_entries: 50000
+
+orchestrator:
+  concurrent_jobs: 3
+  antifragility_interval_minutes: 30
+
+observability:
+  dashboard_port: 8055
+  metrics_port: 9095
+  log_path: "demo/AGI-Alpha-Node-v0/state/logs/agi-alpha-node.log"
+
+compliance:
+  antifragility_drill_interval_hours: 6
+  minimum_compliance_score: 0.88
+
+safety:
+  enable_auto_pause: true
+  slashing_threshold: 0.05
+

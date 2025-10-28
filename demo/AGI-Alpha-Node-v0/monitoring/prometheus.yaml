@@ -1,0 +1,6 @@
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: "agi-alpha-node"
+    static_configs:
+      - targets: ["agi-alpha-node:9095"]

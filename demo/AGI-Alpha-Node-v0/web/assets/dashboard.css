@@ -1,0 +1,128 @@
+:root {
+  color-scheme: dark;
+  --bg: #070f2b;
+  --panel: #161e3d;
+  --accent: #4f46e5;
+  --accent-2: #22d3ee;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at top, rgba(79, 70, 229, 0.3), transparent 55%), var(--bg);
+  color: var(--text);
+}
+
+.hero {
+  padding: 3rem;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.85), rgba(34, 211, 238, 0.55));
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45);
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero p {
+  max-width: 60ch;
+  margin: 0 auto;
+  color: var(--text);
+}
+
+.badges {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(7, 15, 43, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge-ens {
+  background: linear-gradient(120deg, #22d3ee, #2563eb);
+}
+
+.badge-stake {
+  background: linear-gradient(120deg, #34d399, #10b981);
+}
+
+.badge-governance {
+  background: linear-gradient(120deg, #f59e0b, #ef4444);
+}
+
+main {
+  display: grid;
+  gap: 2rem;
+  padding: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.panel {
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 24px;
+  padding: 2rem;
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  box-shadow: 0 30px 60px rgba(7, 15, 43, 0.5);
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: var(--accent-2);
+}
+
+.metrics {
+  display: grid;
+  gap: 1rem;
+}
+
+.metric-card {
+  background: rgba(7, 15, 43, 0.6);
+  border-radius: 18px;
+  padding: 1.25rem;
+  border: 1px solid rgba(79, 70, 229, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.metric-title {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+pre {
+  background: rgba(7, 15, 43, 0.7);
+  padding: 1.5rem;
+  border-radius: 18px;
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  max-height: 320px;
+  overflow: auto;
+  color: var(--muted);
+}
+
+footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+}
