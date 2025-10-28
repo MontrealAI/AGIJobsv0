@@ -1,10 +1,12 @@
 import { promises as fs } from 'fs';
-import { createWriteStream } from 'fs';
-import { join } from 'path';
+import { createWriteStream, WriteStream } from 'fs';
+import { once } from 'events';
+import { dirname, join } from 'path';
 import { CheckpointManager } from './checkpoint';
 import { PlanetaryOrchestrator } from './orchestrator';
 import {
   FabricConfig,
+  FabricEvent,
   FabricMetrics,
   JobDefinition,
   NodeDefinition,
@@ -30,22 +32,159 @@ function cloneSchedule(schedule: OwnerCommandSchedule): OwnerCommandSchedule {
   return JSON.parse(JSON.stringify(schedule)) as OwnerCommandSchedule;
 }
 
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await fs.access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+class ReportOutputManager {
+  private eventsStream?: WriteStream;
+  private eventsFilePath!: string;
+  private currentBaseDir: string;
+  private currentLabel: string;
+  private readonly preserveReports: boolean;
+  private readonly explicitLabel: boolean;
+
+  private constructor(
+    baseDirectory: string,
+    label: string,
+    preserveReports: boolean,
+    explicitLabel: boolean
+  ) {
+    this.currentBaseDir = baseDirectory;
+    this.currentLabel = label;
+    this.preserveReports = preserveReports;
+    this.explicitLabel = explicitLabel;
+  }
+
+  static async create(config: FabricConfig, options: SimulationOptions): Promise<ReportOutputManager> {
+    const label = options.outputLabel ?? config.reporting.defaultLabel;
+    const preserve = Boolean(options.resume && options.preserveReportDirOnResume !== false);
+    const manager = new ReportOutputManager(config.reporting.directory, label, preserve, options.outputLabel !== undefined);
+    await manager.retarget(config.reporting.directory, label, { initial: true });
+    return manager;
+  }
+
+  get reportDir(): string {
+    return join(this.currentBaseDir, this.currentLabel);
+  }
+
+  get eventsPath(): string {
+    return this.eventsFilePath;
+  }
+
+  get label(): string {
+    return this.currentLabel;
+  }
+
+  async appendEvents(events: FabricEvent[]): Promise<void> {
+    if (!this.eventsStream || events.length === 0) {
+      return;
+    }
+    for (const event of events) {
+      const ok = this.eventsStream.write(`${JSON.stringify(event)}\n`);
+      if (!ok) {
+        await once(this.eventsStream, 'drain');
+      }
+    }
+  }
+
+  async finalize(): Promise<void> {
+    await this.closeEventsStream();
+  }
+
+  async syncTo(reporting: FabricConfig['reporting']): Promise<void> {
+    const targetBase = reporting.directory;
+    const targetLabel = this.explicitLabel ? this.currentLabel : reporting.defaultLabel;
+    if (targetBase === this.currentBaseDir && targetLabel === this.currentLabel) {
+      return;
+    }
+    await this.retarget(targetBase, targetLabel);
+  }
+
+  private async retarget(
+    baseDir: string,
+    label: string,
+    options: { initial?: boolean } = {}
+  ): Promise<void> {
+    const { initial = false } = options;
+    const targetLabel = this.explicitLabel ? this.currentLabel : label;
+    const newDir = join(baseDir, targetLabel);
+    const oldDir = this.reportDir;
+
+    if (!initial && newDir === oldDir && targetLabel === this.currentLabel && baseDir === this.currentBaseDir) {
+      return;
+    }
+
+    if (!initial) {
+      await this.closeEventsStream();
+    }
+
+    if (initial) {
+      if (!this.preserveReports) {
+        await fs.rm(newDir, { recursive: true, force: true });
+      }
+      await fs.mkdir(newDir, { recursive: true });
+    } else {
+      const oldExists = await pathExists(oldDir);
+      const newParent = dirname(newDir);
+      await fs.mkdir(newParent, { recursive: true });
+      if (!this.preserveReports && (await pathExists(newDir))) {
+        await fs.rm(newDir, { recursive: true, force: true });
+      }
+      if (oldExists && newDir !== oldDir) {
+        const oldParent = dirname(oldDir);
+        const tempDir = await fs.mkdtemp(join(oldParent, '.report-rotate-'));
+        await fs.rename(oldDir, tempDir);
+        await fs.mkdir(newParent, { recursive: true });
+        await fs.rename(tempDir, newDir);
+      } else {
+        const newExists = await pathExists(newDir);
+        if (!newExists) {
+          await fs.mkdir(newDir, { recursive: true });
+        }
+      }
+    }
+
+    this.currentBaseDir = baseDir;
+    if (!this.explicitLabel) {
+      this.currentLabel = label;
+    }
+    this.eventsFilePath = join(newDir, 'events.ndjson');
+    const initialWrite = initial && !this.preserveReports;
+    const flags = initialWrite ? 'w' : 'a';
+    this.eventsStream = createWriteStream(this.eventsFilePath, { encoding: 'utf8', flags });
+  }
+
+  private async closeEventsStream(): Promise<void> {
+    if (!this.eventsStream) {
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      this.eventsStream!.end((error: NodeJS.ErrnoException | null | undefined) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+    this.eventsStream = undefined;
+  }
+}
+
 export async function runSimulation(
   config: FabricConfig,
   options: SimulationOptions
 ): Promise<SimulationResult> {
-  const label = options.outputLabel ?? config.reporting.defaultLabel;
-  const reportDir = join(config.reporting.directory, label);
-  const preserveReports = Boolean(options.resume && options.preserveReportDirOnResume !== false);
-  if (!preserveReports) {
-    await fs.rm(reportDir, { recursive: true, force: true });
-  }
-  await fs.mkdir(reportDir, { recursive: true });
-
   const checkpointPath = options.checkpointPath ?? config.checkpoint.path;
   const checkpointManager = new CheckpointManager(checkpointPath);
   const orchestrator = new PlanetaryOrchestrator(config, checkpointManager);
-
+  const reportManager = await ReportOutputManager.create(config, options);
   const checkpointRestored = options.resume ? await orchestrator.restoreFromCheckpoint() : false;
   const startTick = orchestrator.currentTick;
   const stopAfterTicks = options.stopAfterTicks;
@@ -54,6 +193,18 @@ export async function runSimulation(
       throw new Error('stop-after-ticks must be a positive number');
     }
   }
+
+  const flushEvents = async (): Promise<void> => {
+    const events = orchestrator.fabricEvents;
+    if (events.length > 0) {
+      await reportManager.appendEvents(events);
+    }
+  };
+
+  if (checkpointRestored) {
+    await flushEvents();
+  }
+  await reportManager.syncTo(orchestrator.getOwnerState().reporting);
 
   const scheduledCommands = [...(options.ownerCommands ?? [])].sort((a, b) => a.tick - b.tick);
   const executedCommands: OwnerCommandSchedule[] = [];
@@ -64,6 +215,15 @@ export async function runSimulation(
   let stopTick: number | undefined;
   let stopReason: string | undefined;
 
+  const executeCommand = async (schedule: OwnerCommandSchedule): Promise<void> => {
+    await orchestrator.applyOwnerCommand(schedule.command);
+    executedCommands.push(cloneSchedule(schedule));
+    await flushEvents();
+    if (schedule.command.type === 'reporting.configure') {
+      await reportManager.syncTo(orchestrator.getOwnerState().reporting);
+    }
+  };
+
   if (checkpointRestored) {
     while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= startTick) {
       skippedDueToCheckpoint.push(cloneSchedule(scheduledCommands[commandIndex]));
@@ -72,8 +232,7 @@ export async function runSimulation(
   } else {
     while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= startTick) {
       const schedule = scheduledCommands[commandIndex];
-      await orchestrator.applyOwnerCommand(schedule.command);
-      executedCommands.push(cloneSchedule(schedule));
+      await executeCommand(schedule);
       commandIndex += 1;
     }
   }
@@ -81,8 +240,7 @@ export async function runSimulation(
   const applyCommandsForTick = async (tick: number): Promise<void> => {
     while (commandIndex < scheduledCommands.length && scheduledCommands[commandIndex].tick <= tick) {
       const schedule = scheduledCommands[commandIndex];
-      await orchestrator.applyOwnerCommand(schedule.command);
-      executedCommands.push(cloneSchedule(schedule));
+      await executeCommand(schedule);
       commandIndex += 1;
     }
   };
@@ -96,19 +254,7 @@ export async function runSimulation(
   if (!checkpointRestored) {
     await seedJobs(orchestrator, config, options.jobs);
   }
-
-  const eventsStream = createWriteStream(join(reportDir, 'events.ndjson'), {
-    encoding: 'utf8',
-    flags: preserveReports ? 'a' : 'w',
-  });
-  const flushEvents = (): void => {
-    const events = orchestrator.fabricEvents;
-    for (const event of events) {
-      eventsStream.write(`${JSON.stringify(event)}\n`);
-    }
-  };
-
-  flushEvents();
+  await flushEvents();
 
   const outageTick = options.outageTick ?? DEFAULT_OUTAGE_TICK;
   const outageNodeId = options.simulateOutage;
@@ -118,16 +264,16 @@ export async function runSimulation(
   for (let tick = orchestrator.currentTick + 1; tick <= maxTicks; tick += 1) {
     await applyCommandsForTick(tick);
     orchestrator.processTick({ tick });
+    await flushEvents();
 
     if (outageNodeId && tick === outageTick) {
       orchestrator.markOutage(outageNodeId);
+      await flushEvents();
     }
-
-    flushEvents();
 
     if (tick % config.checkpoint.intervalTicks === 0) {
       await orchestrator.saveCheckpoint();
-      flushEvents();
+      await flushEvents();
     }
 
     if (options.ciMode && (tick === startTick + 1 || tick % 200 === 0)) {
@@ -160,7 +306,7 @@ export async function runSimulation(
   }
 
   await orchestrator.saveCheckpoint();
-  flushEvents();
+  await flushEvents();
   if (stoppedEarly) {
     const outstanding = orchestrator.getShardSnapshots();
     const outstandingSummary: Record<string, { queue: number; inFlight: number }> = {};
@@ -177,17 +323,9 @@ export async function runSimulation(
         outstanding: outstandingSummary,
       },
     };
-    eventsStream.write(`${JSON.stringify(stopEvent)}\n`);
+    await reportManager.appendEvents([stopEvent]);
   }
-  await new Promise<void>((resolve, reject) => {
-    eventsStream.end((error: NodeJS.ErrnoException | null | undefined) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-      resolve();
-    });
-  });
+  await reportManager.finalize();
 
   const metrics = orchestrator.fabricMetrics;
 
@@ -208,8 +346,10 @@ export async function runSimulation(
 
   const pendingCommands = scheduledCommands.slice(commandIndex).map(cloneSchedule);
 
+  const reportDir = reportManager.reportDir;
   const artifacts = await writeArtifacts(
     reportDir,
+    reportManager.eventsPath,
     config,
     orchestrator,
     options,
@@ -300,6 +440,7 @@ function allJobsSettled(orchestrator: PlanetaryOrchestrator): boolean {
 
 async function writeArtifacts(
   reportDir: string,
+  eventsPath: string,
   config: FabricConfig,
   orchestrator: PlanetaryOrchestrator,
   options: SimulationOptions,
@@ -546,7 +687,7 @@ async function writeArtifacts(
 
   return {
     summaryPath,
-    eventsPath: join(reportDir, 'events.ndjson'),
+    eventsPath,
     dashboardPath,
     ownerScriptPath,
     ownerCommandsPath: executedCommandsPath,
