@@ -7,11 +7,19 @@ import { ValidatorConstellationDemo } from '../src/core/constellation';
 import { CommitRevealCoordinator, computeCommitment } from '../src/core/commitReveal';
 import { GovernanceModule } from '../src/core/governance';
 import { StakeManager } from '../src/core/stakeManager';
-import { DEFAULT_GOVERNANCE_PARAMETERS, demoLeaves, demoSetup, demoJobBatch, budgetOverrunAction } from '../src/core/fixtures';
+import {
+  DEFAULT_GOVERNANCE_PARAMETERS,
+  DEFAULT_VERIFIER_KEY,
+  demoLeaves,
+  demoSetup,
+  demoJobBatch,
+  budgetOverrunAction,
+} from '../src/core/fixtures';
 import { subgraphIndexer } from '../src/core/subgraph';
 import { selectCommittee } from '../src/core/vrf';
 import { computeJobRoot } from '../src/core/zk';
 import { deriveEntropyWitness, entropyWitnessToString, verifyEntropyWitness } from '../src/core/entropy';
+import { auditRound } from '../src/core/auditor';
 import {
   buildDemoFromOperatorState,
   createInitialOperatorState,
@@ -100,6 +108,7 @@ function orchestrateRound(): {
   dishonest?: ValidatorIdentity;
   absentee?: ValidatorIdentity;
   entropy: { onChainEntropy: Hex; recentBeacon: Hex };
+  jobBatch: ReturnType<typeof demoJobBatch>;
 } {
   const { demo, leaves } = buildDemo();
   leaves.slice(0, 5).forEach((leaf) => demo.registerValidator(leaf.ensName, leaf.owner, 10_000_000_000_000_000_000n));
@@ -138,7 +147,7 @@ function orchestrateRound(): {
     nonRevealValidators,
     anomalies,
   });
-  return { roundResult, leaves, dishonest, absentee, entropy };
+  return { roundResult, leaves, dishonest, absentee, entropy, jobBatch };
 }
 
 test('ENS policies accept alpha mirrors and reject unauthorized domains', () => {
@@ -176,6 +185,45 @@ test('validator constellation slashes dishonest validators via commit-reveal', (
     timeline.revealDeadlineBlock,
     (timeline.revealStartBlock ?? 0) + DEFAULT_GOVERNANCE_PARAMETERS.revealPhaseBlocks,
   );
+});
+
+test('round audit verifies end-to-end integrity guarantees', () => {
+  const { roundResult, jobBatch, entropy } = orchestrateRound();
+  const audit = auditRound({
+    report: roundResult,
+    jobBatch,
+    governance: DEFAULT_GOVERNANCE_PARAMETERS,
+    verifyingKey: DEFAULT_VERIFIER_KEY,
+    truthfulVote: 'APPROVE',
+    entropySources: entropy,
+  });
+  assert.equal(audit.issues.length, 0, `expected clean audit, got ${audit.issues.join(', ')}`);
+  assert.equal(audit.commitmentsVerified, true);
+  assert.equal(audit.proofVerified, true);
+  assert.equal(audit.entropyVerified, true);
+  assert.ok(audit.auditHash.startsWith('0x'));
+});
+
+test('round audit detects tampered reveal transcripts', () => {
+  const { roundResult, jobBatch, entropy } = orchestrateRound();
+  const tampered = structuredClone(roundResult);
+  if (tampered.reveals.length === 0) {
+    throw new Error('expected reveals for audit tampering test');
+  }
+  tampered.reveals[0] = {
+    ...tampered.reveals[0],
+    salt: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef' as Hex,
+  };
+  const tamperedAudit = auditRound({
+    report: tampered,
+    jobBatch,
+    governance: DEFAULT_GOVERNANCE_PARAMETERS,
+    verifyingKey: DEFAULT_VERIFIER_KEY,
+    truthfulVote: 'APPROVE',
+    entropySources: entropy,
+  });
+  assert.equal(tamperedAudit.commitmentsVerified, false);
+  assert.ok(tamperedAudit.issues.some((issue) => issue.includes('commitment mismatch')));
 });
 
 test('sentinel triggers domain pause on budget overrun', () => {

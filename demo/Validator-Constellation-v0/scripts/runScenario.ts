@@ -49,6 +49,8 @@ async function main() {
     subgraphRecords: subgraphIndexer.list(),
     events: [executed.report.vrfWitness, ...executed.report.commits, ...executed.report.reveals],
     context: executed.context,
+    jobBatch: prepared.plan.jobBatch,
+    truthfulVote: prepared.plan.truthfulVote,
   });
 
   console.log(`Scenario "${scenarioName}" executed successfully.`);

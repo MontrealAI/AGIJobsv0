@@ -10,7 +10,9 @@ import {
   NodeIdentity,
   PauseRecord,
   SubgraphRecord,
+  VoteValue,
 } from './types';
+import { auditRound } from './auditor';
 
 export const JSON_REPLACER = (_key: string, value: unknown) =>
   typeof value === 'bigint' ? value.toString() : value;
@@ -208,16 +210,28 @@ export interface ArtifactInput {
   subgraphRecords: SubgraphRecord[];
   events: unknown[];
   context: ReportContext;
+  jobBatch: JobResult[];
+  truthfulVote: VoteValue;
 }
 
 export function writeReportArtifacts(input: ArtifactInput): void {
-  const { reportDir, roundResult, subgraphRecords, events, context } = input;
+  const { reportDir, roundResult, subgraphRecords, events, context, jobBatch, truthfulVote } = input;
   const formattedDomain = formatDomainState(context.primaryDomain);
   const updatedSafety = context.updatedSafety ? cloneDomainConfig(context.updatedSafety) : undefined;
+  const entropySources = context.entropyAfter ?? context.entropyBefore;
+  const audit = auditRound({
+    report: roundResult,
+    jobBatch,
+    governance: context.governance,
+    verifyingKey: context.verifyingKey,
+    truthfulVote,
+    entropySources,
+  });
   const summary = {
     scenarioName: context.scenarioName ?? 'default',
     round: roundResult.round,
     outcome: roundResult.voteOutcome,
+    truthfulVote,
     committee: roundResult.committee.map((member) => ({
       ens: member.ensName,
       stake: member.stake.toString(),
@@ -264,6 +278,7 @@ export function writeReportArtifacts(input: ArtifactInput): void {
         : undefined,
     },
     ownerNotes: context.ownerNotes ?? {},
+    audit,
   };
 
   if (context.jobSample) {
@@ -272,6 +287,9 @@ export function writeReportArtifacts(input: ArtifactInput): void {
 
   writeJSON(path.join(reportDir, 'summary.json'), summary);
   writeJSON(path.join(reportDir, 'subgraph.json'), subgraphRecords);
+  writeJSON(path.join(reportDir, 'audit.json'), audit);
+  writeJSON(path.join(reportDir, 'jobs.json'), jobBatch);
+  writeJSON(path.join(reportDir, 'round.json'), roundResult);
 
   const ndjson = events.map((event) => JSON.stringify(event, JSON_REPLACER)).join('\n');
   writeText(path.join(reportDir, 'events.ndjson'), ndjson ? `${ndjson}\n` : '');
