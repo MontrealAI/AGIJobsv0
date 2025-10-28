@@ -211,6 +211,7 @@ function buildOwnerDigest(params: {
     ['Jobs attested', `${report.proof.attestedJobCount}`],
     ['Slashing events', `${report.slashingEvents.length}`],
     ['Sentinel alerts', `${report.sentinelAlerts.length}`],
+    ['Sentinel SLA (≤1s)', audit.sentinelSlaSatisfied ? '✅' : '❌'],
     ['Forbidden selectors', `${context.primaryDomain.config.forbiddenSelectors.size}`],
     ['Validator status events', `${statusEvents.length}`],
     ['Audit hash', audit.auditHash],
@@ -225,6 +226,7 @@ function buildOwnerDigest(params: {
     ['Proof verified', audit.proofVerified],
     ['Entropy verified', audit.entropyVerified],
     ['Sentinel integrity', audit.sentinelIntegrity],
+    ['Sentinel SLA met', audit.sentinelSlaSatisfied],
     ['Timeline integrity', audit.timelineIntegrity],
   ]
     .map(([label, ok]) => `- ${ok ? '✅' : '❌'} ${label}`)

@@ -65,6 +65,7 @@ async function main() {
   console.log('Entropy verified:', audit.entropyVerified);
   console.log('Quorum satisfied:', audit.quorumSatisfied);
   console.log('Sentinel integrity:', audit.sentinelIntegrity);
+  console.log('Sentinel SLA respected:', audit.sentinelSlaSatisfied);
   console.log('Timeline integrity:', audit.timelineIntegrity);
   console.log('Non-reveal validators:', audit.nonRevealValidators);
   console.log('Dishonest validators:', audit.dishonestValidators);
