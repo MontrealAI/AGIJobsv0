@@ -1,0 +1,47 @@
+[ens]
+domain = "demo.alpha.node.agi.eth"
+owner_address = "0x000000000000000000000000000000000000dEaD"
+provider_url = ""
+expected_resolver = ""
+
+[governance]
+governance_address = "0x1111111111111111111111111111111111111111"
+emergency_multisig = "0x2222222222222222222222222222222222222222"
+auto_transfer_on_boot = true
+
+[stake]
+asset_symbol = "$AGIALPHA"
+minimum_stake = 10000
+restake_threshold = 150
+reward_address = "0x3333333333333333333333333333333333333333"
+
+[jobs]
+polling_interval_seconds = 2.0
+job_source = "jobs.json"
+
+[knowledge]
+storage_path = "knowledge.json"
+snapshot_interval = 100
+
+[metrics]
+listen_host = "0.0.0.0"
+listen_port = 9101
+
+[dashboard]
+listen_host = "0.0.0.0"
+listen_port = 8081
+
+[planner]
+horizon = 64
+exploration_constant = 1.7
+exploitation_bias = 1.3
+risk_aversion = 0.2
+
+[specialists]
+finance_model = "Fermion-Finance-9000"
+biotech_model = "GenesisBio-Omnissynth"
+manufacturing_model = "MidasForge-Prime"
+
+[compliance]
+antifragility_target = 0.8
+strategic_alpha_target = 0.9

@@ -1,32 +1,25 @@
-name: demo-agi-alpha-node
+name: Demo AGI Alpha Node
 
 on:
-  push:
-    paths:
-      - '.github/workflows/demo-agi-alpha-node.yml'
-      - 'demo/AGI-Alpha-Node-v0/**'
-      - 'package.json'
-      - 'package-lock.json'
   pull_request:
     paths:
-      - '.github/workflows/demo-agi-alpha-node.yml'
       - 'demo/AGI-Alpha-Node-v0/**'
-      - 'package.json'
-      - 'package-lock.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'demo/AGI-Alpha-Node-v0/**'
 
 jobs:
-  validate-alpha-node-demo:
+  tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: 20.18.1
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Type-check production build
-        run: npm run build:agi-alpha-node
-      - name: Run AGI Alpha Node demo tests
-        run: npm run test:agi-alpha-node
+          python-version: '3.11'
+      - name: Install pytest
+        run: python -m pip install --upgrade pip pytest
+      - name: Run demo tests
+        run: PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/AGI-Alpha-Node-v0/tests

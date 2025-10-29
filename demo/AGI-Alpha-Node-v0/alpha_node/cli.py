@@ -1,185 +1,190 @@
-"""Typer CLI for the Alpha Node demo."""
+"""Command line interface for the AGI Alpha Node demo."""
 from __future__ import annotations
 
-import asyncio
+import argparse
 import json
-import logging
+from dataclasses import asdict
 from pathlib import Path
-from typing import Optional
+from typing import Any
 
-import typer
-from rich.console import Console
-from rich.table import Table
-from web3 import Web3
-
-from .compliance import ComplianceScorecard
-from .config import AlphaNodeConfig, find_config
-from .economy import StakeManagerClient
+from .compliance import ComplianceEngine
+from .config import AlphaNodeConfig
 from .ens import ENSVerifier
-from .governance import SystemPauseManager
-from .jobs import TaskHarvester
+from .governance import GovernanceController
+from .jobs import JobRegistry, TaskHarvester
 from .knowledge import KnowledgeLake
-from .metrics import MetricsExporter
-from .orchestrator import Orchestrator
+from .metrics import MetricsServer
+from .orchestrator import AlphaOrchestrator, build_specialists
 from .planner import MuZeroPlanner
-
-console = Console()
-app = typer.Typer(add_completion=False, help="Launch and operate the AGI Alpha Node demo")
-logging.basicConfig(level=logging.INFO)
+from .stake import StakeManager
+from .state import StateStore
 
 
-@app.command()
-def bootstrap(config: Optional[str] = typer.Option(None, help="Path to config file")) -> None:
-    """Bootstrap ENS verification, governance, and staking."""
-    cfg = find_config(config)
-    web3 = Web3(Web3.HTTPProvider(cfg.identity.rpc_url))
-    if not web3.is_connected():
-        raise typer.Exit(code=1)
-
-    console.rule("[bold cyan]Identity Verification")
-    verifier = ENSVerifier(cfg.identity.rpc_url)
-    result = verifier.verify(cfg.identity.ens_domain, cfg.identity.operator_address)
-    if not result.verified:
-        console.print(f"[bold red]ENS verification failed:[/] {result.error}")
-        raise typer.Exit(code=2)
-    console.print(f"[bold green]ENS verified:[/] {cfg.identity.ens_domain} -> {result.resolved_owner}")
-
-    console.rule("[bold cyan]Governance")
-    manager = SystemPauseManager(web3, Path(cfg.storage.logs_path).with_suffix(".governance.json"))
-    state = manager.bootstrap(cfg.identity.operator_address, cfg.identity.governance_address, cfg.security.pause_contract)
-    console.print(f"[bold green]Governance ready:[/] owner {state.owner}, governance {state.governance_address}")
-
-    console.rule("[bold cyan]Economy")
-    stake_client = StakeManagerClient(
-        web3,
-        cfg.staking.stake_manager_address,
-        cfg.staking.min_stake_wei,
-        [token.__dict__ for token in cfg.staking.reward_tokens],
-    )
-    status = stake_client.deposit(cfg.staking.min_stake_wei, cfg.identity.operator_address)
-    console.print(f"[bold green]Stake activated:[/] {status.staked_wei} wei staked")
-
-
-@app.command()
-def status(config: Optional[str] = typer.Option(None, help="Path to config file")) -> None:
-    """Show current compliance scorecard."""
-    cfg = find_config(config)
-    web3 = Web3(Web3.HTTPProvider(cfg.identity.rpc_url))
-    manager = SystemPauseManager(web3, Path(cfg.storage.logs_path).with_suffix(".governance.json"))
-    state = manager.load()
-
-    knowledge = KnowledgeLake(cfg.storage.knowledge_path)
-    stake_client = StakeManagerClient(
-        web3,
-        cfg.staking.stake_manager_address,
-        cfg.staking.min_stake_wei,
-        [token.__dict__ for token in cfg.staking.reward_tokens],
-    )
-    status = stake_client.status()
-    verifier = ENSVerifier(cfg.identity.rpc_url)
-    ens_result = verifier.verify(cfg.identity.ens_domain, cfg.identity.operator_address)
-    compliance = ComplianceScorecard().evaluate(
-        ens_result=ens_result,
-        stake_status=status,
-        governance=state,
-        planner_trend=0.9,
-        antifragility_checks={"drill": True, "pause_resume": not state.paused},
-    )
-
-    table = Table(title="AGI Alpha Node Compliance")
-    table.add_column("Dimension", style="cyan")
-    table.add_column("Score", style="green")
-    for dimension, value in compliance.__dict__.items():
-        if dimension == "total":
-            continue
-        table.add_row(dimension.replace("_", " ").title(), f"{value:.3f}")
-    table.add_row("Total", f"{compliance.total:.3f}")
-    console.print(table)
-
-
-@app.command()
-def run(config: Optional[str] = typer.Option(None, help="Path to config file")) -> None:
-    """Run orchestrator loop with dashboard and metrics."""
-    cfg = find_config(config)
-    web3 = Web3(Web3.HTTPProvider(cfg.identity.rpc_url))
-    if not web3.is_connected():
-        console.print("[bold red]Unable to connect to RPC provider")
-        raise typer.Exit(code=1)
-
-    knowledge = KnowledgeLake(cfg.storage.knowledge_path)
-    planner = MuZeroPlanner(
-        depth=cfg.planner.search_depth,
-        exploration_constant=cfg.planner.exploration_constant,
-        learning_rate=cfg.planner.learning_rate,
+def load_environment(config_path: Path) -> dict[str, Any]:
+    config = AlphaNodeConfig.load(config_path)
+    base_dir = config_path.parent
+    state_store = StateStore(base_dir / "state.json")
+    ledger_path = base_dir / "stake_ledger.csv"
+    stake_manager = StakeManager(config.stake, state_store, ledger_path)
+    ens_registry = base_dir / "ens_registry.csv"
+    ens_verifier = ENSVerifier(config.ens, ens_registry)
+    governance = GovernanceController(config.governance, state_store)
+    knowledge_path = (base_dir / config.knowledge.storage_path).resolve()
+    knowledge = KnowledgeLake(knowledge_path, state_store)
+    planner = MuZeroPlanner(config.planner)
+    specialists = build_specialists(config.specialists)
+    orchestrator = AlphaOrchestrator(
+        planner=planner,
         knowledge=knowledge,
+        specialists=specialists,
+        store=state_store,
     )
-    orchestrator = Orchestrator(planner, knowledge)
-    harvester = TaskHarvester(web3, cfg.jobs.job_router_address, poll_interval=cfg.jobs.poll_interval_seconds)
-    stake_client = StakeManagerClient(
-        web3,
-        cfg.staking.stake_manager_address,
-        cfg.staking.min_stake_wei,
-        [token.__dict__ for token in cfg.staking.reward_tokens],
+    job_registry = JobRegistry((base_dir / config.jobs.job_source).resolve())
+    harvester = TaskHarvester(job_registry, state_store)
+    compliance = ComplianceEngine(config.compliance, state_store, stake_manager)
+    return {
+        "config": config,
+        "state_store": state_store,
+        "stake_manager": stake_manager,
+        "ens_verifier": ens_verifier,
+        "governance": governance,
+        "knowledge": knowledge,
+        "orchestrator": orchestrator,
+        "harvester": harvester,
+        "compliance": compliance,
+    }
+
+
+def cmd_bootstrap(env: dict[str, Any]) -> None:
+    stake_manager: StakeManager = env["stake_manager"]
+    stake_manager.deposit(env["config"].stake.minimum_stake)
+    ens_result = env["ens_verifier"].verify()
+    report = env["compliance"].evaluate(ens_result)
+    print(json.dumps(asdict(report), indent=2))
+
+
+def cmd_status(env: dict[str, Any]) -> None:
+    state = env["state_store"].read()
+    print(json.dumps(asdict(state), indent=2))
+
+
+def cmd_run(env: dict[str, Any]) -> None:
+    env["governance"].resume_all("auto")
+    jobs = list(env["harvester"].harvest())
+    report = env["orchestrator"].run(jobs)
+    env["stake_manager"].accrue_rewards(
+        sum(result.projected_reward for result in report.specialist_outputs.values()) * 0.05
     )
-    metrics = MetricsExporter(cfg.metrics.prometheus_port)
-    metrics.start()
-
-    async def loop() -> None:
-        completed = 0
-        ens = ENSVerifier(cfg.identity.rpc_url)
-        async for job in harvester.stream():
-            jobs = [job.to_planner_dict()]
-            outcome = orchestrator.execute(jobs)
-            completed += 1
-            stake_client.accrue_rewards(int(outcome.result.reward_estimate * 1e18))
-            status = stake_client.status()
-            compliance = ComplianceScorecard().evaluate(
-                ens_result=ens.verify(cfg.identity.ens_domain, cfg.identity.operator_address),
-                stake_status=status,
-                governance=SystemPauseManager(web3, Path(cfg.storage.logs_path).with_suffix(".governance.json")).load(),
-                planner_trend=min(1.0, 0.7 + completed * 0.02),
-                antifragility_checks={"drill": completed % 5 != 0, "pause_resume": True},
-            )
-            metrics.update_compliance(compliance.total)
-            metrics.update_stake(status.staked_wei)
-            metrics.update_rewards(status.rewards_wei)
-            metrics.increment_completions(completed)
-            console.print(
-                {
-                    "job_id": outcome.plan.job_id,
-                    "expected_reward": outcome.plan.expected_reward,
-                    "specialist": outcome.result.specialist,
-                    "compliance": compliance.total,
-                }
-            )
-
-    try:
-        asyncio.run(loop())
-    except KeyboardInterrupt:
-        console.print("[bold yellow]Shutting down Alpha Node")
-    finally:
-        harvester.stop()
-        metrics.stop()
+    ens_result = env["ens_verifier"].verify()
+    compliance_report = env["compliance"].evaluate(ens_result)
+    payload = {
+        "decisions": [asdict(decision) for decision in report.decisions],
+        "specialists": {k: asdict(v) for k, v in report.specialist_outputs.items()},
+        "compliance": compliance_report.overall,
+    }
+    print(json.dumps(payload, indent=2))
 
 
-@app.command()
-def export(config: Optional[str] = typer.Option(None, help="Path to config file")) -> None:
-    """Export knowledge lake to JSON for audit."""
-    cfg = find_config(config)
-    knowledge = KnowledgeLake(cfg.storage.knowledge_path)
-    entries = knowledge.latest(50)
-    payload = [
+def cmd_pause(env: dict[str, Any]) -> None:
+    status = env["governance"].pause_all("operator request")
+    print(json.dumps(asdict(status), indent=2))
+
+
+def cmd_resume(env: dict[str, Any]) -> None:
+    status = env["governance"].resume_all("operator request")
+    print(json.dumps(asdict(status), indent=2))
+
+
+def cmd_stake_deposit(env: dict[str, Any], amount: float) -> None:
+    event = env["stake_manager"].deposit(amount)
+    print(json.dumps(asdict(event), indent=2))
+
+
+def cmd_compliance(env: dict[str, Any]) -> None:
+    report = env["compliance"].evaluate(env["ens_verifier"].verify())
+    print(json.dumps(
         {
-            "topic": entry.topic,
-            "content": entry.content,
-            "tags": entry.tags,
-            "confidence": entry.confidence,
-            "created_at": entry.created_at.isoformat(),
-        }
-        for entry in entries
-    ]
-    console.print(json.dumps(payload, indent=2))
+            "overall": report.overall,
+            "dimensions": {k: asdict(v) for k, v in report.dimensions.items()},
+        },
+        indent=2,
+    ))
 
 
-if __name__ == "__main__":
-    app()
+def cmd_metrics(env: dict[str, Any]) -> None:  # pragma: no cover - server loop
+    server = MetricsServer(
+        env["config"].metrics.listen_host,
+        env["config"].metrics.listen_port,
+        env["state_store"],
+    )
+    print(
+        f"Starting metrics server on {env['config'].metrics.listen_host}:{env['config'].metrics.listen_port}"
+    )
+    server.start()
+    server.join()
+
+
+def cmd_dashboard(env: dict[str, Any]) -> None:
+    state = env["state_store"].read()
+    ens_result = env["ens_verifier"].verify()
+    report = env["compliance"].evaluate(ens_result)
+    payload = {
+        "state": asdict(state),
+        "compliance": {
+            "overall": report.overall,
+            "dimensions": {k: asdict(v) for k, v in report.dimensions.items()},
+        },
+    }
+    print(json.dumps(payload, indent=2))
+
+
+def cmd_rotate_governance(env: dict[str, Any], address: str) -> None:
+    status = env["governance"].rotate_governance(address)
+    print(json.dumps(asdict(status), indent=2))
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="AGI Alpha Node Demo Controller")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path(__file__).resolve().parent.parent / "config.toml",
+        help="Path to configuration file",
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("bootstrap")
+    sub.add_parser("status")
+    sub.add_parser("run")
+    sub.add_parser("pause")
+    sub.add_parser("resume")
+    sub.add_parser("compliance")
+    sub.add_parser("metrics")
+    sub.add_parser("dashboard")
+    rotate = sub.add_parser("rotate-governance")
+    rotate.add_argument("--address", required=True)
+    stake = sub.add_parser("stake-deposit")
+    stake.add_argument("--amount", type=float, required=True)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    env = load_environment(args.config)
+    command_map = {
+        "bootstrap": cmd_bootstrap,
+        "status": cmd_status,
+        "run": cmd_run,
+        "pause": cmd_pause,
+        "resume": cmd_resume,
+        "compliance": cmd_compliance,
+        "metrics": cmd_metrics,
+        "dashboard": cmd_dashboard,
+        "rotate-governance": lambda env: cmd_rotate_governance(env, args.address),
+        "stake-deposit": lambda env: cmd_stake_deposit(env, args.amount),
+    }
+    command_map[args.command](env)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()

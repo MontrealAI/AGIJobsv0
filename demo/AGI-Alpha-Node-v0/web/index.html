@@ -1,56 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>AGI Alpha Node Mission Control</title>
-    <link rel="stylesheet" href="assets/dashboard.css" />
-  </head>
-  <body>
-    <header class="hero">
-      <h1>AGI Alpha Node Mission Control</h1>
-      <p>The institutional cockpit for the most economically potent autonomous system ever deployed.</p>
-      <div class="badges">
-        <span class="badge badge-ens" id="ens-status">ENS Verified</span>
-        <span class="badge badge-stake" id="stake-status">Stake Secure</span>
-        <span class="badge badge-governance" id="governance-status">Governance Green</span>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGI Alpha Node Command Deck</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>AGI Alpha Node Command Deck</h1>
+    <p>Paste the JSON from <code>python -m alpha_node.cli dashboard</code> to project live state.</p>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <h2>Economic Singularity Engine</h2>
+        <p>The Alpha Node fuses ENS sovereignty, $AGIALPHA economics, and AGI intelligence to deliver autonomous wealth compounding.</p>
+        <button id="loadButton">Load Dashboard JSON</button>
+        <input type="file" id="fileInput" accept="application/json" hidden />
       </div>
-    </header>
+      <div class="hero-visual">
+        <pre id="mermaidDiagram" class="mermaid">
+flowchart TD
+    A[ENS Sovereign Identity]
+    B[$AGIALPHA Treasury]
+    C[MuZero++ Planner]
+    D[Specialist Swarm]
+    E[Knowledge Lake]
+    F[Compliance Radar]
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> C
+        </pre>
+      </div>
+    </section>
 
-    <main>
-      <section class="panel">
-        <h2>Live Metrics</h2>
-        <div class="metrics" id="metrics"></div>
-      </section>
+    <section class="metrics-grid">
+      <article>
+        <h3>Stake Locked</h3>
+        <p id="stakeLocked">–</p>
+      </article>
+      <article>
+        <h3>Total Rewards</h3>
+        <p id="totalRewards">–</p>
+      </article>
+      <article>
+        <h3>Antifragility Index</h3>
+        <p id="antifragilityIndex">–</p>
+      </article>
+      <article>
+        <h3>Strategic Alpha</h3>
+        <p id="strategicAlpha">–</p>
+      </article>
+      <article>
+        <h3>Compliance Score</h3>
+        <p id="complianceScore">–</p>
+      </article>
+      <article>
+        <h3>Active Jobs</h3>
+        <p id="activeJobs">–</p>
+      </article>
+    </section>
 
-      <section class="panel">
-        <h2>Strategic Flow</h2>
-        <div class="mermaid" id="mermaid-diagram">
-          graph TD
-            A[ENS Verification] --> B[Stake Manager]
-            B --> C[Planner Economic Engine]
-            C --> D{Specialist Swarm}
-            D --> E[Finance Strategist]
-            D --> F[Biotech Synthesist]
-            D --> G[Manufacturing Optimizer]
-            E --> H[Rewards & Reinvestment]
-            F --> H
-            G --> H
-            H --> I[Governance Multisig]
-            I --> J[Institutional Treasury]
-        </div>
-      </section>
+    <section class="chart-section">
+      <canvas id="complianceChart" width="400" height="400"></canvas>
+    </section>
 
-      <section class="panel">
-        <h2>Antifragility Drill Log</h2>
-        <pre id="drill-log">Loading drills…</pre>
-      </section>
-    </main>
+    <section class="audit-section">
+      <h2>Governance Audit Trail</h2>
+      <ul id="auditLog"></ul>
+    </section>
+  </main>
 
-    <footer>
-      <p>Powered by AGI Jobs v0 (v2). Designed for non-technical operators to command a superintelligent economy.</p>
-    </footer>
+  <footer>
+    <p>Powered by AGI Jobs v0 (v2) • Built for decisive institutional operators.</p>
+  </footer>
 
-    <script src="assets/mermaid.min.js"></script>
-    <script src="assets/dashboard.js"></script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script src="app.js"></script>
+</body>
 </html>

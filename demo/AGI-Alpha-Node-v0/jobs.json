@@ -1,0 +1,32 @@
+[
+  {
+    "job_id": "FIN-001",
+    "domain": "finance",
+    "reward": 125000,
+    "stake_required": 8000,
+    "duration_hours": 12,
+    "success_probability": 0.88,
+    "impact_score": 9.5,
+    "client": "Quantum Macro Fund"
+  },
+  {
+    "job_id": "BIO-101",
+    "domain": "biotech",
+    "reward": 98000,
+    "stake_required": 6000,
+    "duration_hours": 20,
+    "success_probability": 0.74,
+    "impact_score": 8.3,
+    "client": "Atlas Genomics"
+  },
+  {
+    "job_id": "MFG-404",
+    "domain": "manufacturing",
+    "reward": 142000,
+    "stake_required": 9000,
+    "duration_hours": 30,
+    "success_probability": 0.67,
+    "impact_score": 9.1,
+    "client": "Helios Robotics"
+  }
+]
