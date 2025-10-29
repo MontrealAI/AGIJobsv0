@@ -1,6 +1,7 @@
 """High-level runtime facade for the AGI Alpha Node demo."""
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
@@ -63,6 +64,7 @@ class AlphaNode:
         )
         self._metrics_running = False
         self._last_compliance: Optional[ComplianceReport] = None
+        self._last_autopilot: Optional[dict] = None
 
     # ------------------------------------------------------------------
     def bootstrap(self) -> ComplianceReport:
@@ -70,7 +72,30 @@ class AlphaNode:
 
         if self.config.stake.minimum_stake:
             self.stake_manager.deposit(float(self.config.stake.minimum_stake))
-        report = self.compliance.evaluate(self.ens_verifier.verify())
+        return self.activate(auto_top_up=False)
+
+    # ------------------------------------------------------------------
+    def activate(self, *, auto_top_up: bool = True) -> ComplianceReport:
+        """Ensure ENS verification passes and the minimum stake is locked."""
+
+        ens_result = self.ens_verifier.verify()
+        if not ens_result.verified:
+            raise ValueError(
+                "ENS verification failed; ensure the domain resolves to the operator address"
+            )
+
+        state = self.state_store.read()
+        required = float(self.config.stake.minimum_stake)
+        locked = float(state.stake_locked)
+        deficit = max(0.0, required - locked)
+        if deficit > 0:
+            if not auto_top_up:
+                raise ValueError(
+                    f"Stake below minimum by {deficit:.2f} {self.config.stake.asset_symbol}"
+                )
+            self.stake_manager.deposit(deficit)
+
+        report = self.compliance.evaluate(ens_result)
         self._last_compliance = report
         return report
 
@@ -119,9 +144,66 @@ class AlphaNode:
         return self.stake_manager.restake_rewards()
 
     # ------------------------------------------------------------------
+    def update_stake_policy(
+        self, *, minimum_stake: Optional[float] = None, restake_threshold: Optional[float] = None
+    ) -> dict[str, float]:
+        if minimum_stake is not None:
+            self.config.stake.minimum_stake = float(minimum_stake)
+            self.stake_manager.settings.minimum_stake = float(minimum_stake)
+        if restake_threshold is not None:
+            self.config.stake.restake_threshold = float(restake_threshold)
+            self.stake_manager.settings.restake_threshold = float(restake_threshold)
+        return {
+            "minimum_stake": float(self.config.stake.minimum_stake),
+            "restake_threshold": float(self.config.stake.restake_threshold),
+        }
+
+    # ------------------------------------------------------------------
     def run_safety_drill(self) -> None:
         self.pause("drill")
         self.resume("drill-complete")
+
+    # ------------------------------------------------------------------
+    def autopilot(
+        self,
+        *,
+        cycles: int = 3,
+        restake: bool = True,
+        safety_interval: int = 2,
+    ) -> dict[str, object]:
+        """Execute repeated cycles with optional restaking and safety drills."""
+
+        executed: list[dict[str, object]] = []
+        safety_drills = 0
+        for cycle in range(1, cycles + 1):
+            report = self.run_once()
+            if report:
+                executed.append(
+                    {
+                        "cycle": cycle,
+                        "decisions": [asdict(item) for item in report.decisions],
+                        "specialists": {k: asdict(v) for k, v in report.specialist_outputs.items()},
+                    }
+                )
+                self.state_store.append_audit(
+                    f"autopilot-cycle-{cycle}: executed {len(report.decisions)} decisions"
+                )
+                if restake:
+                    self.claim_rewards()
+            if safety_interval and cycle % safety_interval == 0:
+                self.run_safety_drill()
+                safety_drills += 1
+
+        compliance = self.compliance_report()
+        payload = {
+            "cycles": cycles,
+            "executed_cycles": len(executed),
+            "safety_drills": safety_drills,
+            "reports": executed,
+            "compliance": asdict(compliance),
+        }
+        self._last_autopilot = payload
+        return payload
 
     # ------------------------------------------------------------------
     def compliance_report(self) -> ComplianceReport:
@@ -132,6 +214,24 @@ class AlphaNode:
     # ------------------------------------------------------------------
     def state_snapshot(self) -> NodeState:
         return self.state_store.read()
+
+    # ------------------------------------------------------------------
+    def dashboard_payload(self) -> dict[str, object]:
+        report = self.compliance_report()
+        ens_result = self.ens_verifier.verify()
+        stake_events = [asdict(event) for event in self.stake_manager.events()]
+        payload: dict[str, object] = {
+            "state": asdict(self.state_store.read()),
+            "compliance": {
+                "overall": report.overall,
+                "dimensions": {k: asdict(v) for k, v in report.dimensions.items()},
+            },
+            "ens": asdict(ens_result),
+            "stake_ledger": stake_events,
+        }
+        if self._last_autopilot is not None:
+            payload["autopilot"] = self._last_autopilot
+        return payload
 
     # ------------------------------------------------------------------
     def start_metrics(self) -> None:  # pragma: no cover - network IO

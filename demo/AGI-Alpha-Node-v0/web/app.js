@@ -24,12 +24,16 @@ function handleFile(event) {
 function renderDashboard(data) {
   const state = data.state;
   const compliance = data.compliance;
+  const ens = data.ens || {};
   document.getElementById('stakeLocked').textContent = formatNumber(state.stake_locked);
   document.getElementById('totalRewards').textContent = formatNumber(state.total_rewards);
   document.getElementById('antifragilityIndex').textContent = state.antifragility_index.toFixed(2);
   document.getElementById('strategicAlpha').textContent = state.strategic_alpha_index.toFixed(2);
   document.getElementById('activeJobs').textContent = state.active_jobs;
   document.getElementById('complianceScore').textContent = compliance.overall.toFixed(2);
+  document.getElementById('ensDomain').textContent = ens.domain || '–';
+  document.getElementById('ensOwner').textContent = ens.owner || '–';
+  document.getElementById('ensSource').textContent = ens.source || '–';
 
   const labels = [];
   const values = [];
@@ -39,6 +43,8 @@ function renderDashboard(data) {
   });
   drawRadarChart(labels, values);
   renderAudit(state.audit_log || []);
+  renderStakeLedger(data.stake_ledger || []);
+  renderAutopilot(data.autopilot);
 }
 
 function drawRadarChart(labels, values) {
@@ -83,6 +89,60 @@ function renderAudit(entries) {
     const li = document.createElement('li');
     li.textContent = entry;
     container.appendChild(li);
+  });
+}
+
+function renderStakeLedger(events) {
+  const tableBody = document.getElementById('stakeLedger');
+  tableBody.innerHTML = '';
+  if (!Array.isArray(events) || events.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = 'No stake events recorded yet.';
+    row.appendChild(cell);
+    tableBody.appendChild(row);
+    return;
+  }
+  events.forEach((event) => {
+    const row = document.createElement('tr');
+    appendCell(row, event.event || '—');
+    appendCell(row, formatNumber(event.amount || 0));
+    appendCell(row, formatNumber(event.total_locked || 0));
+    appendCell(row, event.timestamp || '—');
+    tableBody.appendChild(row);
+  });
+}
+
+function appendCell(row, value) {
+  const cell = document.createElement('td');
+  cell.textContent = value;
+  row.appendChild(cell);
+}
+
+function renderAutopilot(autopilot) {
+  const summary = document.getElementById('autopilotSummary');
+  const container = document.getElementById('autopilotReports');
+  container.innerHTML = '';
+  if (!autopilot) {
+    summary.textContent = 'No autopilot execution detected yet.';
+    return;
+  }
+  summary.textContent = `Executed ${autopilot.executed_cycles}/${autopilot.cycles} cycles with ${autopilot.safety_drills} safety drills.`;
+  (autopilot.reports || []).forEach((report) => {
+    const card = document.createElement('article');
+    const heading = document.createElement('h3');
+    heading.textContent = `Cycle ${report.cycle}`;
+    card.appendChild(heading);
+
+    const decisionList = document.createElement('ul');
+    (report.decisions || []).forEach((decision) => {
+      const li = document.createElement('li');
+      li.textContent = `${decision.job_id}: expected ${formatNumber(decision.expected_value)} | confidence ${(decision.confidence * 100).toFixed(1)}%`;
+      decisionList.appendChild(li);
+    });
+    card.appendChild(decisionList);
+    container.appendChild(card);
   });
 }
 

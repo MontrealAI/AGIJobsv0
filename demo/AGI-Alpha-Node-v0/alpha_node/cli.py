@@ -5,142 +5,138 @@ import argparse
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from .compliance import ComplianceEngine
 from .config import AlphaNodeConfig
-from .ens import ENSVerifier
-from .governance import GovernanceController
-from .jobs import JobRegistry, TaskHarvester
-from .knowledge import KnowledgeLake
-from .metrics import MetricsServer
-from .orchestrator import AlphaOrchestrator, build_specialists
-from .planner import MuZeroPlanner
-from .stake import StakeManager
-from .state import StateStore
+from .node import AlphaNode
 
 
-def load_environment(config_path: Path) -> dict[str, Any]:
+def load_node(config_path: Path) -> AlphaNode:
     config = AlphaNodeConfig.load(config_path)
     base_dir = config_path.parent
-    state_store = StateStore(base_dir / "state.json")
-    ledger_path = base_dir / "stake_ledger.csv"
-    stake_manager = StakeManager(config.stake, state_store, ledger_path)
-    ens_registry = base_dir / "ens_registry.csv"
-    ens_verifier = ENSVerifier(config.ens, ens_registry)
-    governance = GovernanceController(config.governance, state_store)
-    knowledge_path = (base_dir / config.knowledge.storage_path).resolve()
-    knowledge = KnowledgeLake(knowledge_path, state_store)
-    planner = MuZeroPlanner(config.planner)
-    specialists = build_specialists(config.specialists)
-    orchestrator = AlphaOrchestrator(
-        planner=planner,
-        knowledge=knowledge,
-        specialists=specialists,
-        store=state_store,
-    )
-    job_registry = JobRegistry((base_dir / config.jobs.job_source).resolve())
-    harvester = TaskHarvester(job_registry, state_store)
-    compliance = ComplianceEngine(config.compliance, state_store, stake_manager)
-    return {
-        "config": config,
-        "state_store": state_store,
-        "stake_manager": stake_manager,
-        "ens_verifier": ens_verifier,
-        "governance": governance,
-        "knowledge": knowledge,
-        "orchestrator": orchestrator,
-        "harvester": harvester,
-        "compliance": compliance,
-    }
+    return AlphaNode(config, base_path=base_dir)
 
 
-def cmd_bootstrap(env: dict[str, Any]) -> None:
-    stake_manager: StakeManager = env["stake_manager"]
-    stake_manager.deposit(env["config"].stake.minimum_stake)
-    ens_result = env["ens_verifier"].verify()
-    report = env["compliance"].evaluate(ens_result)
-    print(json.dumps(asdict(report), indent=2))
+def dump(payload: Any) -> None:
+    print(json.dumps(payload, indent=2, sort_keys=True))
 
 
-def cmd_status(env: dict[str, Any]) -> None:
-    state = env["state_store"].read()
-    print(json.dumps(asdict(state), indent=2))
+def cmd_bootstrap(node: AlphaNode, _args: argparse.Namespace) -> None:
+    report = node.bootstrap()
+    dump(asdict(report))
 
 
-def cmd_run(env: dict[str, Any]) -> None:
-    env["governance"].resume_all("auto")
-    jobs = list(env["harvester"].harvest())
-    report = env["orchestrator"].run(jobs)
-    env["stake_manager"].accrue_rewards(
-        sum(result.projected_reward for result in report.specialist_outputs.values()) * 0.05
-    )
-    ens_result = env["ens_verifier"].verify()
-    compliance_report = env["compliance"].evaluate(ens_result)
+def cmd_activate(node: AlphaNode, args: argparse.Namespace) -> None:
+    report = node.activate(auto_top_up=not args.no_top_up)
+    dump(asdict(report))
+
+
+def cmd_status(node: AlphaNode, _args: argparse.Namespace) -> None:
+    dump(asdict(node.state_snapshot()))
+
+
+def cmd_run(node: AlphaNode, _args: argparse.Namespace) -> None:
+    report = node.run_once()
+    if report is None:
+        dump({"status": "no-jobs"})
+        return
     payload = {
-        "decisions": [asdict(decision) for decision in report.decisions],
-        "specialists": {k: asdict(v) for k, v in report.specialist_outputs.items()},
-        "compliance": compliance_report.overall,
+        "decisions": [asdict(item) for item in report.decisions],
+        "specialists": {key: asdict(value) for key, value in report.specialist_outputs.items()},
+        "compliance": asdict(node.last_compliance) if node.last_compliance else None,
     }
-    print(json.dumps(payload, indent=2))
+    dump(payload)
 
 
-def cmd_pause(env: dict[str, Any]) -> None:
-    status = env["governance"].pause_all("operator request")
-    print(json.dumps(asdict(status), indent=2))
-
-
-def cmd_resume(env: dict[str, Any]) -> None:
-    status = env["governance"].resume_all("operator request")
-    print(json.dumps(asdict(status), indent=2))
-
-
-def cmd_stake_deposit(env: dict[str, Any], amount: float) -> None:
-    event = env["stake_manager"].deposit(amount)
-    print(json.dumps(asdict(event), indent=2))
-
-
-def cmd_compliance(env: dict[str, Any]) -> None:
-    report = env["compliance"].evaluate(env["ens_verifier"].verify())
-    print(json.dumps(
-        {
-            "overall": report.overall,
-            "dimensions": {k: asdict(v) for k, v in report.dimensions.items()},
-        },
-        indent=2,
-    ))
-
-
-def cmd_metrics(env: dict[str, Any]) -> None:  # pragma: no cover - server loop
-    server = MetricsServer(
-        env["config"].metrics.listen_host,
-        env["config"].metrics.listen_port,
-        env["state_store"],
+def cmd_autopilot(node: AlphaNode, args: argparse.Namespace) -> None:
+    payload = node.autopilot(
+        cycles=args.cycles,
+        restake=not args.no_restake,
+        safety_interval=args.safety_interval,
     )
+    dump(payload)
+
+
+def cmd_pause(node: AlphaNode, _args: argparse.Namespace) -> None:
+    dump(asdict(node.pause("operator-request")))
+
+
+def cmd_resume(node: AlphaNode, _args: argparse.Namespace) -> None:
+    dump(asdict(node.resume("operator-request")))
+
+
+def cmd_rotate_governance(node: AlphaNode, args: argparse.Namespace) -> None:
+    dump(asdict(node.update_governance(args.address)))
+
+
+def cmd_stake_deposit(node: AlphaNode, args: argparse.Namespace) -> None:
+    dump(asdict(node.stake(args.amount)))
+
+
+def cmd_stake_withdraw(node: AlphaNode, args: argparse.Namespace) -> None:
+    dump(asdict(node.withdraw(args.amount)))
+
+
+def cmd_compliance(node: AlphaNode, _args: argparse.Namespace) -> None:
+    dump(asdict(node.compliance_report()))
+
+
+def cmd_claim_rewards(node: AlphaNode, _args: argparse.Namespace) -> None:
+    event = node.claim_rewards()
+    if event is None:
+        dump({"status": "threshold-not-met"})
+    else:
+        dump(asdict(event))
+
+
+def cmd_update_stake_policy(node: AlphaNode, args: argparse.Namespace) -> None:
+    payload = node.update_stake_policy(
+        minimum_stake=args.minimum_stake,
+        restake_threshold=args.restake_threshold,
+    )
+    dump(payload)
+
+
+def cmd_safety_drill(node: AlphaNode, _args: argparse.Namespace) -> None:
+    node.run_safety_drill()
+    dump(asdict(node.state_snapshot()))
+
+
+def cmd_metrics(node: AlphaNode, _args: argparse.Namespace) -> None:  # pragma: no cover - blocking call
+    node.start_metrics()
     print(
-        f"Starting metrics server on {env['config'].metrics.listen_host}:{env['config'].metrics.listen_port}"
+        f"Metrics server running on {node.config.metrics.listen_host}:{node.config.metrics.listen_port}"
     )
-    server.start()
-    server.join()
+    try:
+        node.metrics.join()
+    except KeyboardInterrupt:  # pragma: no cover - interactive command
+        pass
+    finally:
+        node.shutdown()
 
 
-def cmd_dashboard(env: dict[str, Any]) -> None:
-    state = env["state_store"].read()
-    ens_result = env["ens_verifier"].verify()
-    report = env["compliance"].evaluate(ens_result)
-    payload = {
-        "state": asdict(state),
-        "compliance": {
-            "overall": report.overall,
-            "dimensions": {k: asdict(v) for k, v in report.dimensions.items()},
-        },
-    }
-    print(json.dumps(payload, indent=2))
+def cmd_dashboard(node: AlphaNode, _args: argparse.Namespace) -> None:
+    dump(node.dashboard_payload())
 
 
-def cmd_rotate_governance(env: dict[str, Any], address: str) -> None:
-    status = env["governance"].rotate_governance(address)
-    print(json.dumps(asdict(status), indent=2))
+COMMANDS: dict[str, Callable[[AlphaNode, argparse.Namespace], None]] = {
+    "bootstrap": cmd_bootstrap,
+    "activate": cmd_activate,
+    "status": cmd_status,
+    "run": cmd_run,
+    "autopilot": cmd_autopilot,
+    "pause": cmd_pause,
+    "resume": cmd_resume,
+    "rotate-governance": cmd_rotate_governance,
+    "stake-deposit": cmd_stake_deposit,
+    "stake-withdraw": cmd_stake_withdraw,
+    "compliance": cmd_compliance,
+    "claim-rewards": cmd_claim_rewards,
+    "update-stake-policy": cmd_update_stake_policy,
+    "safety-drill": cmd_safety_drill,
+    "metrics": cmd_metrics,
+    "dashboard": cmd_dashboard,
+}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -153,37 +149,45 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("bootstrap")
+    activate = sub.add_parser("activate")
+    activate.add_argument("--no-top-up", action="store_true", help="Fail instead of auto-depositing stake")
     sub.add_parser("status")
     sub.add_parser("run")
+    autopilot = sub.add_parser("autopilot")
+    autopilot.add_argument("--cycles", type=int, default=3)
+    autopilot.add_argument("--safety-interval", type=int, default=2)
+    autopilot.add_argument("--no-restake", action="store_true")
     sub.add_parser("pause")
     sub.add_parser("resume")
-    sub.add_parser("compliance")
-    sub.add_parser("metrics")
-    sub.add_parser("dashboard")
     rotate = sub.add_parser("rotate-governance")
     rotate.add_argument("--address", required=True)
     stake = sub.add_parser("stake-deposit")
     stake.add_argument("--amount", type=float, required=True)
+    withdraw = sub.add_parser("stake-withdraw")
+    withdraw.add_argument("--amount", type=float, required=True)
+    sub.add_parser("compliance")
+    sub.add_parser("claim-rewards")
+    update_policy = sub.add_parser("update-stake-policy")
+    update_policy.add_argument("--minimum-stake", type=float)
+    update_policy.add_argument("--restake-threshold", type=float)
+    sub.add_parser("safety-drill")
+    sub.add_parser("metrics")
+    sub.add_parser("dashboard")
     return parser
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    env = load_environment(args.config)
-    command_map = {
-        "bootstrap": cmd_bootstrap,
-        "status": cmd_status,
-        "run": cmd_run,
-        "pause": cmd_pause,
-        "resume": cmd_resume,
-        "compliance": cmd_compliance,
-        "metrics": cmd_metrics,
-        "dashboard": cmd_dashboard,
-        "rotate-governance": lambda env: cmd_rotate_governance(env, args.address),
-        "stake-deposit": lambda env: cmd_stake_deposit(env, args.amount),
-    }
-    command_map[args.command](env)
+    node = load_node(args.config)
+    try:
+        COMMANDS[args.command](node, args)
+    except ValueError as exc:
+        dump({"error": str(exc)})
+        raise SystemExit(1) from exc
+    finally:
+        if args.command != "metrics":
+            node.shutdown()
 
 
 if __name__ == "__main__":  # pragma: no cover

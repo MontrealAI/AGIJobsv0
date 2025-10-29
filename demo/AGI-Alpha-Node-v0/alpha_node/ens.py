@@ -38,6 +38,16 @@ class ENSVerifier:
         self.offline_registry = offline_registry
 
     def verify(self) -> ENSVerificationResult:
+        suffix = (self.settings.required_suffix or "").lower()
+        if suffix and not self.settings.domain.lower().endswith(suffix):
+            return ENSVerificationResult(
+                domain=self.settings.domain,
+                owner=self.settings.owner_address,
+                resolver=None,
+                verified=False,
+                source="suffix-mismatch",
+            )
+
         if self.settings.provider_url and Web3 is not None:
             try:
                 return self._verify_on_chain()

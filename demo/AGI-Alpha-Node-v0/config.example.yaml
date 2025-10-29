@@ -1,6 +1,7 @@
 identity:
   ens_domain: demo.alpha.node.agi.eth
   owner_address: "0x1234567890abcdef1234567890abcdef12345678"
+  required_suffix: ".alpha.node.agi.eth"
 
 governance:
   governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
