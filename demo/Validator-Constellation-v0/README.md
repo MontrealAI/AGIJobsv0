@@ -50,6 +50,87 @@ You can also run the package directly:
 python -m validator_constellation
 ```
 
+### 🌌 Hyperdrive Orchestrator (TypeScript kernel)
+
+Prefer to feel the power of AGI Jobs v0 (v2) through a zero-dependency Node.js workflow? A parallel **TypeScript superstructure** now lives in `src/`. It mirrors the Python experience with deterministic VRF committees, commit–reveal truth, ZK batching, sentinel guardrails, and governance retuning hooks—all runnable with two commands:
+
+```bash
+npm install
+npx ts-node demo/Validator-Constellation-v0/src/demoRunner.ts
+```
+
+The script prints a JSON envelope capturing the validation verdict, consolidated ZK batch proof, sentinel alerts, paused domains, and slashing log—ready for dashboards or subgraphs.
+
+Run the focused Jest suite to watch the validator constellation flex every capability (VRF randomness, batching 1,000 jobs, sentinel pausing within one block, ENS enforcement, owner-driven retuning):
+
+```bash
+npx jest demo/Validator-Constellation-v0/tests/validatorConstellation.test.ts
+```
+
+#### TypeScript System Atlas
+
+```mermaid
+flowchart LR
+    User[Non-technical Visionary]
+    subgraph DemoKernel[Validator Constellation Kernel]
+        VRF[VRF Committee Oracle]
+        CommitReveal[Commit-Reveal Engine]
+        ZK[ZK Batch Verifier]
+        Sentinel[Sentinel Monitors]
+        Pause[Domain Pause Manager]
+        Stake[Stake & Slash Manager]
+        ENS[ENS Ownership Registry]
+    end
+    Agents[Agent & Node Fleet]
+    Jobs[Autonomous Job Streams]
+    Subgraph[(Subgraph / Monitoring Stack)]
+
+    User --> ENS --> Stake --> VRF --> CommitReveal --> ZK --> Jobs
+    Jobs --> ZK
+    CommitReveal --> Stake
+    Stake --> Subgraph
+    Sentinel --> Pause --> Agents
+    Sentinel --> Stake
+    Pause -. domain flags .-> Subgraph
+```
+
+#### Sentinel Autonomy (Sequence)
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant Sentinel
+    participant Pause
+    participant Operator
+
+    Agent->>Sentinel: Attempt overspend / unsafe call
+    Sentinel->>Pause: Trigger domain-specific pause
+    Sentinel->>Operator: Emit alert with ENS + reason
+    Operator->>Pause: Investigate & resume when safe
+```
+
+#### TypeScript Code Map
+
+```
+demo/Validator-Constellation-v0/
+├── src/
+│   ├── commitReveal.ts        # VRF-backed commit–reveal rounds
+│   ├── demoRunner.ts          # Non-technical launcher printing JSON telemetry
+│   ├── domainPause.ts         # Domain-scoped circuit breaker
+│   ├── ens.ts                 # ENS namespace + ownership registry
+│   ├── orchestrator.ts        # High-level integration & owner controls
+│   ├── sentinel.ts            # Automated guardrails & alert retention
+│   ├── staking.ts             # Stake management + slashing log
+│   ├── types.ts               # Shared data contracts
+│   ├── vrf.ts                 # Deterministic VRF entropy mixer
+│   └── zkBatch.ts             # ZK batching façade
+└── tests/
+    └── validatorConstellation.test.ts
+        # Jest assurance matrix (VRF, ZK, sentinel, ENS, owner retuning)
+```
+
+These Node.js assets coexist with the Python toolchain—choose whichever surface best empowers your operators. Both orchestrations generate compatible outputs, making downstream monitoring and governance workflows interchangeable.
+
 ## 🧠 System architecture (Mermaid)
 
 ```mermaid
