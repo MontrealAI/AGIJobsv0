@@ -227,9 +227,22 @@ def run_loop(ctx: click.Context, once: bool) -> None:
                 reward=1000.0,
                 reinvestment_rate=config.jobs.default_reinvestment_rate,
             )
-            orchestrator.execute(job)
+            result = orchestrator.execute(job)
             metrics.add_rewards(config.staking.token_symbol, job.reward)
             metrics.increment_specialist(job.job_type)
+            blockchain.submit_job_result(
+                job.job_id,
+                {"status": result.status, "summary": result.planner_rationale},
+            )
+            LOGGER.info(
+                "Submitted job result",
+                extra={
+                    "job_id": job.job_id,
+                    "status": result.status,
+                    "reinvested": result.reinvested,
+                    "distributed": result.distributed,
+                },
+            )
         metrics.set_active_jobs(0)
         if once:
             break
