@@ -55,8 +55,15 @@ export class ValidationOrchestrator {
   }
 
   public executeJob(jobId: string, agent: { profile: { ensName: string; domain: Domain; budgetLimit: bigint; address: `0x${string}` } }, success: boolean, cost: bigint, actionSignature: string) {
-    if (this.domainController.isPaused(agent.profile.domain)) {
-      throw new Error(`Domain ${agent.profile.domain} paused`);
+    const job = this.ledger.getJob(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+    if (agent.profile.domain !== job.domain) {
+      throw new Error(`Agent domain ${agent.profile.domain} is not authorized for job domain ${job.domain}`);
+    }
+    if (this.domainController.isPaused(job.domain)) {
+      throw new Error(`Domain ${job.domain} paused`);
     }
     const outcome = this.ledger.executeJob(jobId, agent.profile, success, cost);
     this.sentinel.monitor(outcome, agent.profile, actionSignature);

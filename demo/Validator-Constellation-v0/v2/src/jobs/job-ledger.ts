@@ -19,6 +19,10 @@ export class JobLedger {
     this.jobs.set(job.jobId, job);
   }
 
+  public getJob(jobId: string) {
+    return this.jobs.get(jobId);
+  }
+
   public executeJob(jobId: string, agent: AgentProfile, success: boolean, cost: bigint) {
     const job = this.jobs.get(jobId);
     if (!job) {
