@@ -27,7 +27,13 @@ from .sentinel import (
     PauseRecord,
     DomainState,
 )
-from .demo_runner import DemoSummary, run_validator_constellation_demo, summary_to_dict, write_web_artifacts
+from .demo_runner import (
+    DemoSummary,
+    run_validator_constellation_demo,
+    run_validator_constellation_scenario,
+    summary_to_dict,
+    write_web_artifacts,
+)
 from .subgraph import SubgraphIndexer, IndexedEvent
 from .governance import OwnerConsole, OwnerAction
 
@@ -61,4 +67,5 @@ __all__ = [
     "summary_to_dict",
     "write_web_artifacts",
     "run_validator_constellation_demo",
+    "run_validator_constellation_scenario",
 ]

@@ -35,6 +35,9 @@ class SubgraphIndexer:
             "DomainSafetyUpdated",
             "DomainRegistered",
             "SentinelConfigUpdated",
+            "TreasuryDistributed",
+            "EntropyUpdated",
+            "OwnerActionRecorded",
         }
         if event.type in indexed_types:
             self.events.append(
