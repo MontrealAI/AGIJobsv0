@@ -145,41 +145,49 @@ export class SentinelMonitor {
         normalizedTargets.add(metadataTarget);
       }
 
-      const hashedSet = this.getAllowedTargetHashes(domain.id, allowed);
-      const hashCandidates = new Set<string>();
-      for (const target of normalizedTargets) {
-        const [withPrefix, withoutPrefix] = this.hashVariants(target);
-        hashCandidates.add(withPrefix);
-        hashCandidates.add(withoutPrefix);
-      }
       const [metadataHashWithPrefix, metadataHashWithoutPrefix] = this.normalizeHashInput(
         (action.metadata?.targetHash as string | undefined) ??
           (action.metadata?.target_hash as string | undefined),
       );
-      if (metadataHashWithPrefix) {
-        hashCandidates.add(metadataHashWithPrefix);
-      }
-      if (metadataHashWithoutPrefix) {
-        hashCandidates.add(metadataHashWithoutPrefix);
-      }
+      const hasTargetInfo =
+        normalizedTargets.size > 0 || metadataHashWithPrefix !== undefined || metadataHashWithoutPrefix !== undefined;
 
-      const rawMatch = normalizedTargets.size > 0 && Array.from(normalizedTargets).some((target) => allowed.has(target));
-      const hashedMatch = hashCandidates.size > 0 && Array.from(hashCandidates).some((candidate) => hashedSet.has(candidate));
+      if (hasTargetInfo) {
+        const hashedSet = this.getAllowedTargetHashes(domain.id, allowed);
+        const hashCandidates = new Set<string>();
+        for (const target of normalizedTargets) {
+          const [withPrefix, withoutPrefix] = this.hashVariants(target);
+          hashCandidates.add(withPrefix);
+          hashCandidates.add(withoutPrefix);
+        }
+        if (metadataHashWithPrefix) {
+          hashCandidates.add(metadataHashWithPrefix);
+        }
+        if (metadataHashWithoutPrefix) {
+          hashCandidates.add(metadataHashWithoutPrefix);
+        }
 
-      if (!rawMatch && !hashedMatch) {
-        return this.raiseAlert(
-          action,
-          'UNAUTHORIZED_TARGET',
-          `target ${action.target ?? action.metadata?.target ?? action.metadata?.targetHash ?? action.metadata?.target_hash} is not authorized`,
-          'CRITICAL',
-          {
-            target: action.target,
-            normalizedTargets: Array.from(normalizedTargets),
-            candidateHashes: Array.from(hashCandidates),
-            allowedTargets: Array.from(allowed),
-          },
-          blockNumber,
-        );
+        const rawMatch = normalizedTargets.size > 0 && Array.from(normalizedTargets).some((target) => allowed.has(target));
+        const hashedMatch =
+          hashCandidates.size > 0 && Array.from(hashCandidates).some((candidate) => hashedSet.has(candidate));
+
+        if (!rawMatch && !hashedMatch) {
+          return this.raiseAlert(
+            action,
+            'UNAUTHORIZED_TARGET',
+            `target ${
+              action.target ?? action.metadata?.target ?? action.metadata?.targetHash ?? action.metadata?.target_hash
+            } is not authorized`,
+            'CRITICAL',
+            {
+              target: action.target,
+              normalizedTargets: Array.from(normalizedTargets),
+              candidateHashes: Array.from(hashCandidates),
+              allowedTargets: Array.from(allowed),
+            },
+            blockNumber,
+          );
+        }
       }
     }
 
