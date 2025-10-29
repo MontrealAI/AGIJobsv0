@@ -1,0 +1,44 @@
+graph LR
+    DeploymentConfig["Config mainnet\nChain 1"]
+    DeploymentOwner["Owner Multi-Sig\n0xAGIJobsG…"]
+    DeploymentSafety["Safety Mesh\nResponse 9m"]
+    DeploymentObservability["Observability\nDashboards 2 • Alerts 2"]
+    DeploymentScore["Integrity 99.8%\nimmutable dominion"]
+    DeploymentConfig -->|Defaults| DeploymentOwner
+    DeploymentOwner -->|Custody| DeploymentSafety
+    DeploymentOwner -->|Telemetry| DeploymentObservability
+    DeploymentOwner --> DeploymentScore
+    IntegrityModule_0_job_registry["JobRegistry\nactive"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_0_job_registry
+    DeploymentConfig --> IntegrityModule_0_job_registry
+    class IntegrityModule_0_job_registry module-active;
+    IntegrityModule_1_stake_manager["StakeManager\nactive"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_1_stake_manager
+    DeploymentConfig --> IntegrityModule_1_stake_manager
+    class IntegrityModule_1_stake_manager module-active;
+    IntegrityModule_2_validation_module["ValidationModule\npending upgrade"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_2_validation_module
+    DeploymentConfig --> IntegrityModule_2_validation_module
+    class IntegrityModule_2_validation_module module-pending;
+    IntegrityModule_3_reputation_engine["ReputationEngine\nactive"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_3_reputation_engine
+    DeploymentConfig --> IntegrityModule_3_reputation_engine
+    class IntegrityModule_3_reputation_engine module-active;
+    IntegrityModule_4_dispute_module["DisputeModule\nactive"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_4_dispute_module
+    DeploymentConfig --> IntegrityModule_4_dispute_module
+    class IntegrityModule_4_dispute_module module-active;
+    IntegrityModule_5_certificate_nft["CertificateNFT\nactive"]
+    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_5_certificate_nft
+    DeploymentConfig --> IntegrityModule_5_certificate_nft
+    class IntegrityModule_5_certificate_nft module-active;
+    classDef module-active fill:#0f172a,stroke:#0f172a,color:#38bdf8;
+    classDef module-pending fill:#1f2937,stroke:#f59e0b,color:#fef3c7;
+    classDef module-paused fill:#7f1d1d,stroke:#b91c1c,color:#fee2e2;
+    classDef module-deprecated fill:#374151,stroke:#4b5563,color:#d1d5db;
+    classDef config-root fill:#312e81,stroke:#4338ca,color:#e0e7ff;
+    classDef owner-root fill:#0f766e,stroke:#0d9488,color:#ecfdf5;
+    classDef score-root fill:#581c87,stroke:#7e22ce,color:#ede9fe;
+    class DeploymentConfig config-root;
+    class DeploymentOwner owner-root;
+    class DeploymentScore score-root;

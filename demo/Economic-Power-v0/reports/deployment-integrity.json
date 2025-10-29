@@ -1,0 +1,120 @@
+{
+  "analysisTimestamp": "2025-02-01T00:00:00.000Z",
+  "configPath": "/workspace/AGIJobsv0/deployment-config/mainnet.json",
+  "network": {
+    "name": "Ethereum Mainnet",
+    "chainId": 1,
+    "explorer": "https://etherscan.io"
+  },
+  "score": 0.998,
+  "classification": "immutable-dominion",
+  "summary": "Deployment lattice anchored to Ethereum mainnet with immutable owner custody, fresh audits, and rehearsed safety mesh.",
+  "coverage": {
+    "chainId": 1,
+    "jobDuration": 1,
+    "moduleCustody": 1,
+    "moduleStatus": 0.983,
+    "auditFreshness": 1,
+    "ownerCommand": 1,
+    "sovereignControl": 1,
+    "pauseReadiness": 1,
+    "observability": 1,
+    "validatorResponse": 1
+  },
+  "checks": [
+    {
+      "id": "chain-alignment",
+      "label": "Mainnet chain alignment",
+      "status": "pass",
+      "actual": "Scenario 1 vs Config 1",
+      "expected": "1",
+      "impact": "Ensures orchestration targets the same mainnet deployment registry as production contracts."
+    },
+    {
+      "id": "job-duration",
+      "label": "Job duration compliance",
+      "status": "pass",
+      "actual": "5/5 jobs ≤ 48.0h",
+      "expected": "≤ 48.0h window",
+      "impact": "Protects validator commitment windows and treasury velocity."
+    },
+    {
+      "id": "module-custody",
+      "label": "Module custody control",
+      "status": "pass",
+      "actual": "6/6 modules under owner custody",
+      "expected": "All modules owned by 0xAGIJobsGovernor0000000000000000000000003",
+      "impact": "Guarantees every production contract remains under owner multi-sig authority."
+    },
+    {
+      "id": "module-status",
+      "label": "Module upgrade posture",
+      "status": "pass",
+      "actual": "1 module upgrades pending",
+      "expected": "Active or staged upgrades",
+      "impact": "Verifies upgrade sequencing and prevents stale modules from powering production flows."
+    },
+    {
+      "id": "audit-freshness",
+      "label": "Audit freshness",
+      "status": "pass",
+      "actual": "6/6 module audits within the freshness target",
+      "expected": "All audits within 120 days",
+      "impact": "Confirms auditors have recently reviewed every immutable module."
+    },
+    {
+      "id": "owner-command",
+      "label": "Owner command coverage",
+      "status": "pass",
+      "actual": "Coverage 100.0%",
+      "expected": "≥ 95% owner command coverage",
+      "impact": "Demonstrates the owner multi-sig can orchestrate every surface without developer intervention."
+    },
+    {
+      "id": "sovereign-control",
+      "label": "Sovereign control score",
+      "status": "pass",
+      "actual": "Custody 100.0%",
+      "expected": "≥ 95% custody control",
+      "impact": "Ensures treasury and core modules remain under explicit owner safe authority."
+    },
+    {
+      "id": "pause-readiness",
+      "label": "Pause and resume readiness",
+      "status": "pass",
+      "actual": "Pause ready • Resume ready",
+      "expected": "Immediate pause and resume",
+      "impact": "Confirms the owner multi-sig can freeze and restore contracts on demand."
+    },
+    {
+      "id": "observability",
+      "label": "Observability coverage",
+      "status": "pass",
+      "actual": "Dashboards 2 • Alerts 2",
+      "expected": "≥2 dashboards and ≥2 alert channels",
+      "impact": "Guarantees monitoring can surface anomalies across the economic mesh instantly."
+    },
+    {
+      "id": "validator-response",
+      "label": "Validator response alignment",
+      "status": "pass",
+      "actual": "Response 9m vs target ≤ 15.0m",
+      "expected": "≤ 15.0 minutes",
+      "impact": "Keeps commit–reveal cycles within deterministic response windows."
+    }
+  ],
+  "recommendations": [
+    "Maintain immutable custody cadence and refresh module audits on the existing schedule."
+  ],
+  "notes": [
+    "Owner multi-sig: 0xAGIJobsGovernor0000000000000000000000003",
+    "Treasury safe: 0xAGIJobsOwnerSafe0000000000000000000000001",
+    "Longest job window: 36.0h",
+    "Validator quorum max: 5",
+    "Deployment config: /workspace/AGIJobsv0/deployment-config/mainnet.json",
+    "Secure max job: 24.0h",
+    "Commit window: 1.0m",
+    "Reveal window: 1.0m"
+  ],
+  "mermaid": "graph LR\n    DeploymentConfig[\"Config mainnet\\nChain 1\"]\n    DeploymentOwner[\"Owner Multi-Sig\\n0xAGIJobsG…\"]\n    DeploymentSafety[\"Safety Mesh\\nResponse 9m\"]\n    DeploymentObservability[\"Observability\\nDashboards 2 • Alerts 2\"]\n    DeploymentScore[\"Integrity 99.8%\\nimmutable dominion\"]\n    DeploymentConfig -->|Defaults| DeploymentOwner\n    DeploymentOwner -->|Custody| DeploymentSafety\n    DeploymentOwner -->|Telemetry| DeploymentObservability\n    DeploymentOwner --> DeploymentScore\n    IntegrityModule_0_job_registry[\"JobRegistry\\nactive\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_0_job_registry\n    DeploymentConfig --> IntegrityModule_0_job_registry\n    class IntegrityModule_0_job_registry module-active;\n    IntegrityModule_1_stake_manager[\"StakeManager\\nactive\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_1_stake_manager\n    DeploymentConfig --> IntegrityModule_1_stake_manager\n    class IntegrityModule_1_stake_manager module-active;\n    IntegrityModule_2_validation_module[\"ValidationModule\\npending upgrade\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_2_validation_module\n    DeploymentConfig --> IntegrityModule_2_validation_module\n    class IntegrityModule_2_validation_module module-pending;\n    IntegrityModule_3_reputation_engine[\"ReputationEngine\\nactive\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_3_reputation_engine\n    DeploymentConfig --> IntegrityModule_3_reputation_engine\n    class IntegrityModule_3_reputation_engine module-active;\n    IntegrityModule_4_dispute_module[\"DisputeModule\\nactive\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_4_dispute_module\n    DeploymentConfig --> IntegrityModule_4_dispute_module\n    class IntegrityModule_4_dispute_module module-active;\n    IntegrityModule_5_certificate_nft[\"CertificateNFT\\nactive\"]\n    DeploymentOwner -->|0xAGIJobsG…| IntegrityModule_5_certificate_nft\n    DeploymentConfig --> IntegrityModule_5_certificate_nft\n    class IntegrityModule_5_certificate_nft module-active;\n    classDef module-active fill:#0f172a,stroke:#0f172a,color:#38bdf8;\n    classDef module-pending fill:#1f2937,stroke:#f59e0b,color:#fef3c7;\n    classDef module-paused fill:#7f1d1d,stroke:#b91c1c,color:#fee2e2;\n    classDef module-deprecated fill:#374151,stroke:#4b5563,color:#d1d5db;\n    classDef config-root fill:#312e81,stroke:#4338ca,color:#e0e7ff;\n    classDef owner-root fill:#0f766e,stroke:#0d9488,color:#ecfdf5;\n    classDef score-root fill:#581c87,stroke:#7e22ce,color:#ede9fe;\n    class DeploymentConfig config-root;\n    class DeploymentOwner owner-root;\n    class DeploymentScore score-root;\n"
+}

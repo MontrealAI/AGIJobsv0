@@ -939,6 +939,157 @@ main {
   text-decoration: underline;
 }
 
+.deployment-integrity-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.integrity-card {
+  background: rgba(7, 13, 26, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 24px 45px rgba(6, 12, 26, 0.55);
+}
+
+.integrity-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(125, 211, 252, 0.95);
+}
+
+.integrity-score {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.integrity-chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: rgba(224, 231, 255, 0.95);
+}
+
+.integrity-chip.integrity-immutable-dominion {
+  background: rgba(34, 197, 94, 0.28);
+  border-color: rgba(34, 197, 94, 0.55);
+  color: #ecfdf5;
+}
+
+.integrity-chip.integrity-fortified {
+  background: rgba(59, 130, 246, 0.26);
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #dbeafe;
+}
+
+.integrity-chip.integrity-reinforced {
+  background: rgba(250, 204, 21, 0.26);
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #fef3c7;
+}
+
+.integrity-chip.integrity-attention {
+  background: rgba(248, 113, 113, 0.26);
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fee2e2;
+}
+
+.integrity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.integrity-list li {
+  padding-left: 1.25rem;
+  position: relative;
+}
+
+.integrity-list li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  color: rgba(125, 211, 252, 0.75);
+}
+
+#integrity-coverage,
+#integrity-checks {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#integrity-coverage th,
+#integrity-coverage td,
+#integrity-checks th,
+#integrity-checks td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.16);
+  text-align: left;
+}
+
+#integrity-coverage th,
+#integrity-checks th {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(190, 242, 255, 0.85);
+}
+
+#integrity-coverage td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#integrity-checks td:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.integrity-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.integrity-status.integrity-pass {
+  background: rgba(34, 197, 94, 0.22);
+  color: #86efac;
+}
+
+.integrity-status.integrity-attention {
+  background: rgba(248, 113, 113, 0.22);
+  color: #fca5a5;
+}
+
 .link-list {
   list-style: none;
   margin: 0;

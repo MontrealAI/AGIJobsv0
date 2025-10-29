@@ -518,6 +518,62 @@
         <ul id="deployment-observability" class="link-list"></ul>
       </section>
 
+      <section class="panel" aria-labelledby="deployment-integrity-heading">
+        <div class="panel-header">
+          <h2 id="deployment-integrity-heading">Deployment integrity verification</h2>
+          <p>
+            Validates alignment between scenario parameters and the mainnet deployment registry so the owner multi-sig can
+            prove immutable custody at a glance.
+          </p>
+        </div>
+        <div class="deployment-integrity-grid">
+          <article class="integrity-card" aria-label="Integrity score">
+            <h3>Integrity status</h3>
+            <p id="integrity-score" class="integrity-score">—</p>
+            <span id="integrity-classification" class="integrity-chip">Awaiting data</span>
+            <p id="integrity-summary" class="narrative"></p>
+            <ul id="integrity-notes" class="integrity-list"></ul>
+          </article>
+          <article class="integrity-card" aria-label="Coverage metrics">
+            <h3>Coverage</h3>
+            <div class="table-wrapper">
+              <table id="integrity-coverage" aria-label="Deployment integrity coverage table">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Coverage</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="integrity-card" aria-label="Verification checks">
+            <h3>Verification checks</h3>
+            <div class="table-wrapper">
+              <table id="integrity-checks" aria-label="Deployment integrity checks table">
+                <thead>
+                  <tr>
+                    <th>Check</th>
+                    <th>Status</th>
+                    <th>Actual</th>
+                    <th>Expected</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+        <div class="mermaid-wrapper">
+          <div
+            id="mermaid-deployment-integrity"
+            class="mermaid"
+            aria-label="Deployment integrity mermaid diagram"
+          ></div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="assignment-heading">
         <div class="panel-header">
           <h2 id="assignment-heading">Job deployment map</h2>
