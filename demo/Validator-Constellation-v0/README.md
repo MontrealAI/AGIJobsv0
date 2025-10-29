@@ -33,6 +33,7 @@ Expected highlights printed to terminal:
 - Batched proof covering 1,000 jobs
 - Sentinel alert triggered on an unsafe spend and domain pause recorded
 - Live event log excerpt, mirroring what the subgraph exposes to dashboards
+- Owner console actions including VRF rotation, stake retuning, and targeted domain pauses
 
 ### Explore Variations
 
@@ -64,6 +65,14 @@ flowchart TD
         K[Job Results x1000] --> L[ZK Batch Attestor]
         L --> M[On-Chain ValidationModule]
         M --> G
+    end
+    subgraph Owner Command Matrix
+        N[Owner Console]
+        N -->|Rotate Seed| B
+        N -->|Tune Quorum| C
+        N -->|Raise Minimum Stake| E
+        N -->|Re-arm Sentinel| I
+        N -->|Manual Pause| J
     end
 ```
 
@@ -112,6 +121,23 @@ including `CommitteeSelected`, `VoteCommitted`, `VoteRevealed`,
   round—slashing penalties automatically scale with stake sizes.
 - **Threshold Management**: Configure sentinel thresholds to tighten or relax
   autonomy as mission parameters evolve.
+- **Instant Parameter Rotation**: Update VRF entropy, quorum, committee size,
+  and sentinel budget limits live via the owner console, with every change
+  mirrored into the subgraph feed for auditing.
+- **Targeted Manual Pauses**: Operators can initiate controlled pauses in any
+  domain (`DemoOrchestrator.pause_domain`) and annotate the reason in the event
+  stream, demonstrating fine-grained dominion over the constellation.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Autonomy
+    Autonomy --> Alert: Sentinel detects anomaly
+    Alert --> Pause: Domain paused automatically
+    Pause --> OwnerReview: Owner console triages incident
+    OwnerReview --> ParameterHardening: Update quorum, stake floors, sentinel limit
+    ParameterHardening --> Resume: Domain resumed once conditions satisfied
+    Resume --> Autonomy
+```
 
 ## Running the Test Suite
 
