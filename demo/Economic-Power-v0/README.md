@@ -38,6 +38,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-safe-transactions.json` – pre-encoded Safe transactions (to/data/value) covering job registry, stake manager, and validation module control surfaces.
 - `owner-safe-transactions.mmd` – mermaid execution graph wiring each safe to its target modules, highlighting coverage and custody.
 - `owner-safe-transactions.md` – operator-friendly walkthrough of every encoded transaction with prerequisites, CLI command, and custody posture.
+- `layer2-readiness.json` – layer-2 readiness dossier quantifying bridge guardrails, monitoring, playbooks, and readiness factors for the expansion mesh.
+- `layer2-readiness.mmd` – mermaid readiness lattice wiring owner authority to bridge, sequencer, watcher mesh, and encoded playbooks.
+- `layer2-readiness.md` – operator briefing translating the readiness dossier into actionable guardrails, playbooks, and recommended escalations.
 - `economic-dominance.json` – composite dominance index summarising ROI, capital velocity, sovereignty, safety, and automation posture with actionable recommendations.
 - `owner-autopilot.json` – cadence, guardrails, and deterministic command sequence for the owner autopilot along with telemetry mirrors.
 - `owner-autopilot.mmd` – mermaid control graph visualising cadence, guardrails, and command objectives.
@@ -142,6 +145,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
 - Multi-sig execution kit visualising safe transaction coverage, CLI payloads, and the ownership graph generated in `owner-safe-transactions.*`.
+- Layer-2 readiness theatre revealing bridge guardrails, watcher coverage, monitoring feeds, encoded playbooks, and recommended escalations from the new readiness dossier.
 - Control drill readiness cockpit surfacing per-surface rehearsal status, command catalogues, and recommended owner actions.
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.

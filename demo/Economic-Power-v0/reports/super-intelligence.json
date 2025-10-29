@@ -1,5 +1,5 @@
 {
-  "index": 0.9682,
+  "index": 0.9632,
   "classification": "transcendent-dominion",
   "narrative": "The owner multi-sig directs a civilisation-scale AGI lattice with unstoppable command authority, capital velocity, and risk absorption.",
   "drivers": [
@@ -7,12 +7,14 @@
     "Owner supremacy 99.7% with guardrail coverage 100.0% keeping every lever under direct command.",
     "Sovereign safety 97.9% across 2 alert channels and 3 emergency contacts.",
     "Automation mesh 85.2% orchestrating agents without human delay.",
-    "Shock resilience 98.0% ensuring capital velocity persists under failure scenarios."
+    "Shock resilience 98.0% ensuring capital velocity persists under failure scenarios.",
+    "Layer-2 readiness 91.0% protecting Arbitrum One with 3 watcher(s) and 3 encoded playbooks."
   ],
   "commandAssurance": [
     "Command coverage 100.0% across 9 sovereign surfaces.",
     "Program supremacy guarantees 100.0% treasury control and 100.0% orchestrator automation.",
-    "Global expansion readiness 96.6% unlocks immediate replication across jurisdictions."
+    "Global expansion readiness 96.6% unlocks immediate replication across jurisdictions.",
+    "Layer-2 mission-ready with settlement 12m and watchers Watchtower Core Ops, Validator Nexus Cooperative, Guardian Mesh ready for owner execution."
   ],
   "telemetry": {
     "economicDominanceIndex": 0.994,
@@ -20,7 +22,8 @@
     "sovereignSafetyScore": 0.979,
     "automationScore": 0.852,
     "shockResilienceScore": 0.98,
-    "globalExpansionReadiness": 0.966
+    "globalExpansionReadiness": 0.966,
+    "layer2ReadinessScore": 0.91
   },
-  "mermaid": "graph LR\n  EconomicDominance[\"Economic Dominance 99.4%\"] --> Apex[\"Superintelligence 96.8%\"]\n  OwnerSupremacy[\"Owner Supremacy 99.7%\"] --> Apex\n  SovereignSafety[\"Sovereign Safety 97.9%\"] --> Apex\n  Automation[\"Automation 85.2%\"] --> Apex\n  ShockResilience[\"Shock Resilience 98.0%\"] --> Apex\n  GlobalExpansion[\"Global Expansion 96.6%\"] --> Apex\n"
+  "mermaid": "graph LR\n  EconomicDominance[\"Economic Dominance 99.4%\"] --> Apex[\"Superintelligence 96.3%\"]\n  OwnerSupremacy[\"Owner Supremacy 99.7%\"] --> Apex\n  SovereignSafety[\"Sovereign Safety 97.9%\"] --> Apex\n  Automation[\"Automation 85.2%\"] --> Apex\n  ShockResilience[\"Shock Resilience 98.0%\"] --> Apex\n  GlobalExpansion[\"Global Expansion 96.6%\"] --> Apex\n  Layer2[\"Layer-2 91.0%\"] --> Apex\n"
 }

@@ -169,6 +169,7 @@ export function renderAutopilotBrief(brief: AutopilotBrief): string {
   lines.push(
     `- Global expansion readiness: ${formatPercent(brief.telemetry.globalExpansionReadiness)}`,
   );
+  lines.push(`- Layer-2 readiness: ${formatPercent(brief.telemetry.layer2ReadinessScore)}`);
   lines.push(`- Shock resilience: ${formatPercent(brief.telemetry.shockResilienceScore)}`);
   lines.push('');
 

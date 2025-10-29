@@ -101,6 +101,15 @@
       "delta": 0,
       "tolerance": 0.001,
       "passed": true
+    },
+    {
+      "metric": "layer2ReadinessScore",
+      "description": "Layer-2 readiness derived from scenario factors",
+      "expected": 0.91,
+      "actual": 0.91,
+      "delta": 0,
+      "tolerance": 0.001,
+      "passed": true
     }
   ],
   "coverage": [
@@ -180,7 +189,7 @@
     "passed": true
   },
   "notes": [
-    "Metrics cross-check: PASS (11/11 within tolerance)",
+    "Metrics cross-check: PASS (12/12 within tolerance)",
     "Assignments cross-check: PASS – every job captured exactly once.",
     "Owner coverage cross-check: PASS – recomputed coverage aligns with command plan."
   ]

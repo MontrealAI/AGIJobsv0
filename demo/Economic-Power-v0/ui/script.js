@@ -133,6 +133,12 @@ const metricMap = [
     description: 'Readiness index for unlocking mainnet pilots and planetary rollout.',
   },
   {
+    id: 'layer2ReadinessScore',
+    label: 'Layer-2 Readiness',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite readiness score for the layer-2 expansion mesh.',
+  },
+  {
     id: 'shockResilienceScore',
     label: 'Shock Resilience',
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
@@ -333,6 +339,121 @@ function renderSafeTransactions(summary) {
         <td><code>${tx.safeCliCommand}</code></td>
       `;
       tableBody.append(row);
+    }
+  }
+}
+
+function renderLayer2Readiness(summary) {
+  const panel = document.getElementById('layer2-panel');
+  if (!panel) return;
+  const readiness = summary.layer2Readiness;
+  if (!readiness) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  const statusEl = document.getElementById('layer2-status');
+  const settlementEl = document.getElementById('layer2-settlement');
+  const commentaryEl = document.getElementById('layer2-commentary');
+  if (statusEl) {
+    statusEl.textContent = `${(readiness.readinessScore * 100).toFixed(1)}% • ${readiness.classification.replace(/-/g, ' ')}`;
+  }
+  if (settlementEl) {
+    settlementEl.textContent = readiness.settlementSummary;
+  }
+  if (commentaryEl) {
+    commentaryEl.textContent = readiness.commentary;
+  }
+  const watchersEl = document.getElementById('layer2-watchers');
+  if (watchersEl) {
+    watchersEl.innerHTML = '';
+    const watchers = readiness.bridge.watchers.length
+      ? readiness.bridge.watchers
+      : ['No watchers configured.'];
+    for (const watcher of watchers) {
+      const li = document.createElement('li');
+      li.textContent = watcher;
+      watchersEl.append(li);
+    }
+  }
+  const monitoringEl = document.getElementById('layer2-monitoring');
+  if (monitoringEl) {
+    monitoringEl.innerHTML = '';
+    const entries = [];
+    for (const dashboard of readiness.monitoring.dashboards || []) {
+      entries.push(`Dashboard: ${dashboard}`);
+    }
+    for (const alert of readiness.monitoring.alerts || []) {
+      entries.push(`Alert: ${alert}`);
+    }
+    if (entries.length === 0) {
+      entries.push('No monitoring endpoints configured.');
+    }
+    for (const entry of entries) {
+      const li = document.createElement('li');
+      li.textContent = entry;
+      monitoringEl.append(li);
+    }
+  }
+  const guardrailsEl = document.getElementById('layer2-guardrails');
+  if (guardrailsEl) {
+    guardrailsEl.innerHTML = '';
+    const guardrails = readiness.guardrails.length ? readiness.guardrails : ['No guardrails defined.'];
+    for (const guardrail of guardrails) {
+      const li = document.createElement('li');
+      li.textContent = guardrail;
+      guardrailsEl.append(li);
+    }
+  }
+  const playbooksEl = document.getElementById('layer2-playbooks');
+  if (playbooksEl) {
+    playbooksEl.innerHTML = '';
+    const playbooks = readiness.playbooks.length
+      ? readiness.playbooks
+      : [{ name: 'No playbooks encoded', script: '', objective: 'Author deterministic playbooks.' }];
+    for (const playbook of playbooks) {
+      const li = document.createElement('li');
+      if (playbook.script) {
+        li.innerHTML = `<strong>${playbook.name}</strong> — <code>${playbook.script}</code> (${playbook.objective})`;
+      } else {
+        li.textContent = playbook.name;
+      }
+      playbooksEl.append(li);
+    }
+  }
+  const actionsEl = document.getElementById('layer2-actions');
+  if (actionsEl) {
+    actionsEl.innerHTML = '';
+    const actions = readiness.recommendedActions.length
+      ? readiness.recommendedActions
+      : ['No actions required.'];
+    for (const action of actions) {
+      const li = document.createElement('li');
+      li.textContent = action;
+      actionsEl.append(li);
+    }
+  }
+  const factorsBody = document.getElementById('layer2-factors');
+  if (factorsBody) {
+    factorsBody.innerHTML = '';
+    if (readiness.readinessFactors.length === 0) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 4;
+      cell.textContent = 'No readiness factors provided.';
+      row.append(cell);
+      factorsBody.append(row);
+    } else {
+      for (const factor of readiness.readinessFactors) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${factor.label}</td>
+          <td>${(factor.weight * 100).toFixed(1)}%</td>
+          <td>${(factor.contribution * 100).toFixed(1)}%</td>
+          <td>${factor.status.toUpperCase()}</td>
+        `;
+        factorsBody.append(row);
+      }
     }
   }
 }
@@ -1546,6 +1667,7 @@ async function renderDashboard(summary, verification) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderSafeTransactions(summary);
+  renderLayer2Readiness(summary);
   renderOwnerSupremacy(summary);
   renderControlDrills(summary);
   renderSuperIntelligence(summary);

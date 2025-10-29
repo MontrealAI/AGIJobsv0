@@ -9,19 +9,27 @@
     "automationScore < 0.8 → npm run owner:parameters",
     "treasuryAfterRun < 1800000 → npm run owner:audit",
     "Control drills 100.0% (total-control)",
-    "Safe transaction coverage 100.0% across 6 encoded actions"
+    "Safe transaction coverage 100.0% across 6 encoded actions",
+    "Layer-2 readiness 91.0% • Settlements confirm on L1 in 12 minutes with 3 watcher(s)."
   ],
   "narrative": "Autopilot cycles every 6.7h to refresh capital, validator posture, and orchestrator coverage while preserving 98.0% shock resilience (impregnable).",
   "telemetry": {
     "economicDominanceIndex": 0.994,
     "capitalVelocity": 26290.99,
     "globalExpansionReadiness": 0.966,
-    "superIntelligenceIndex": 0.9682,
+    "superIntelligenceIndex": 0.9632,
     "shockResilienceScore": 0.98,
     "deploymentIntegrityScore": 0.998,
-    "ownerSafeTransactionCoverage": 1
+    "ownerSafeTransactionCoverage": 1,
+    "layer2ReadinessScore": 0.91
   },
   "commandSequence": [
+    {
+      "programId": "bridge-pause",
+      "surface": "orchestrator",
+      "script": "npm run owner:program -- --program bridge-emergency-pause",
+      "objective": "Pause rollup bridge on anomaly and route settlements back to mainnet."
+    },
     {
       "programId": "job-registry-duration",
       "surface": "modules",

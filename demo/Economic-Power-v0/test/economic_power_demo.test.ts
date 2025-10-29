@@ -131,6 +131,25 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.metrics.globalExpansionReadiness >= 0.9,
     'Global expansion readiness should exceed 90% to unlock planetary rollout',
   );
+  assert(summary.layer2Readiness, 'Layer-2 readiness dossier should be generated');
+  assert(
+    summary.metrics.layer2ReadinessScore >= 0.9,
+    'Layer-2 readiness score should evidence unstoppable L2 posture',
+  );
+  assert.equal(
+    summary.layer2Readiness?.classification,
+    'mission-ready',
+    'Layer-2 readiness classification should report mission-ready status',
+  );
+  assert(summary.layer2Readiness?.mermaid.includes('graph TD'));
+  assert(
+    summary.layer2Readiness?.playbooks.length && summary.layer2Readiness.playbooks.length >= 1,
+    'Layer-2 readiness should enumerate encoded playbooks',
+  );
+  assert(
+    summary.layer2Readiness?.recommendedActions.length,
+    'Layer-2 readiness should surface recommended actions for the owner multi-sig',
+  );
   assert(
     summary.metrics.shockResilienceScore >= 0.95,
     'Shock resilience score should confirm impregnable defence posture',
@@ -148,6 +167,11 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.superIntelligence.commandAssurance.length >= 3,
     'Command assurances should enumerate decisive owner programs',
+  );
+  assert.equal(
+    summary.ownerAutopilot.telemetry.layer2ReadinessScore,
+    summary.metrics.layer2ReadinessScore,
+    'Owner autopilot telemetry should expose layer-2 readiness score',
   );
 
   assert(
