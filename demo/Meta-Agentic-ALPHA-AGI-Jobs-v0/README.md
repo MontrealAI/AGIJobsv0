@@ -22,7 +22,7 @@ Every step is fully auditable, checkpointed, and reversible through built-in tim
 
 ## 🧭 Directory Overview
 
-```
+````
 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/
 ├── README.md                     # You are here
 ├── meta_agentic_demo.py          # CLI entry point for the orchestration run
@@ -60,6 +60,19 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v10.py
 ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
+
+### 🌐 Meta-Agentic Prime Demo (New)
+Run the ultra-polished Prime experience tailored for non-technical owners. It layers an iconic HTML dashboard, Markdown dossier, and JSON summary on top of the existing mission suite.
+
+```bash
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo/run_prime_demo.py \
+  --report demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/prime_run.json \
+  --markdown demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/prime_run.md \
+  --dashboard demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui/prime_dashboard.html
+```
+
+Use `--override` to adjust parameters on the fly, e.g. `--override owner.risk_limit=0.08 --override owner.paused=false`.
+
 3. **Open the console**:
    ```bash
    python -m http.server --directory demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui 9000
