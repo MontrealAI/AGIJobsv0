@@ -78,6 +78,29 @@ flowchart TD
 
 ---
 
+## World-Model Projection Engine
+
+The Alpha Node now ships with a deterministic MuZero++ inspired world-model that stress-tests every strategic option before the operator even clicks **enter**. Hundreds of Monte Carlo rollouts simulate reward, risk, and volatility across the configured planning horizon, ensuring the node only pursues missions that compound $AGIALPHA over the long term.
+
+```mermaid
+stateDiagram-v2
+  [*] --> SampleJobs: Weighted job sampling
+  SampleJobs --> SimulateTrajectory: Deterministic RNG
+  SimulateTrajectory --> EvaluateReturn: Discounted cashflow
+  EvaluateReturn --> RiskLedger: Downside tracking
+  RiskLedger --> PercentileEngine: VaR & CVaR
+  PercentileEngine --> PolicySynthesis: Risk-adjusted policy
+  PolicySynthesis --> [*]
+```
+
+- 📈 **Expected Return** – Discounted reward forecast across the horizon.
+- 🛡️ **Downside Risk** – Probability of negative outcomes with Value-at-Risk & Conditional VaR for institutional sign-off.
+- 🧭 **Strategic Policy** – The planner blends alpha-score + world-model analytics to pick the economically dominant mission every cycle.
+
+The operator dashboard, Prometheus metrics, and compliance reports all expose these projections so even non-technical teams can audit and trust the AGI swarm’s decisions.
+
+---
+
 ## Treasury Autopilot
 
 ```mermaid

@@ -35,6 +35,13 @@
         "escalationRate": 0.15
       }
     },
+    "worldModel": {
+      "horizon": 5,
+      "simulations": 256,
+      "discountFactor": 0.92,
+      "riskAversion": 0.35,
+      "seed": 1337
+    },
     "specialists": [
       {
         "id": "finance-alpha",

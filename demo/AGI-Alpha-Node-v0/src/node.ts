@@ -38,6 +38,7 @@ import {
   AlphaNodeComplianceReport,
   computeComplianceReport,
 } from './utils/compliance';
+import { AlphaWorldModel, WorldModelProjection } from './ai/worldModel';
 
 export interface AlphaNodeContext {
   readonly config: NormalisedAlphaNodeConfig;
@@ -53,6 +54,7 @@ export class AlphaNode {
   private readonly antifragileShell = new AntifragileShell();
   private readonly jobLifecycle: ReturnType<typeof createJobLifecycle>;
   private readonly operatorAddress: string;
+  private readonly worldModel: AlphaWorldModel;
 
   constructor(private readonly context: AlphaNodeContext) {
     this.planner = new AlphaPlanner(context.config);
@@ -62,6 +64,7 @@ export class AlphaNode {
       config: context.config,
     });
     this.operatorAddress = context.signer.address;
+    this.worldModel = new AlphaWorldModel(context.config);
   }
 
   static async fromConfig(
@@ -276,19 +279,26 @@ export class AlphaNode {
   plan(opportunities: JobOpportunity[]): {
     summary: PlanningSummary;
     insights: SpecialistInsight[];
+    worldModel: WorldModelProjection;
   } {
     const summary = this.planner.plan(opportunities);
     const tags =
       opportunities.find((job) => job.jobId === summary.selectedJobId)?.tags ??
       [];
     const insights = this.orchestrator.dispatch(tags);
+    const worldModel = this.worldModel.project(
+      opportunities,
+      summary.selectedJobId
+    );
     this.context.metrics.updatePlanning(summary);
+    this.context.metrics.updateWorldModel(worldModel);
     this.context.logger.info('planning_cycle', {
       alphaScore: summary.alphaScore,
       selectedJobId: summary.selectedJobId,
       insights,
+      worldModel,
     });
-    return { summary, insights };
+    return { summary, insights, worldModel };
   }
 
   stressTest(): StressTestResult[] {
@@ -368,6 +378,7 @@ export interface AlphaNodeHeartbeat {
   readonly plan: {
     summary: PlanningSummary;
     insights: SpecialistInsight[];
+    worldModel: WorldModelProjection;
   };
   readonly stress: StressTestResult[];
   readonly reinvestment: ReinvestReport;
@@ -380,6 +391,7 @@ export interface AlphaNodeAutopilot {
   readonly plan: {
     summary: PlanningSummary;
     insights: SpecialistInsight[];
+    worldModel: WorldModelProjection;
   };
   readonly execution?: JobCycleReport;
   readonly reinvestment: ReinvestReport;

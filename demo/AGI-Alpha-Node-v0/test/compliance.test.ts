@@ -69,6 +69,44 @@ const baseInputs: ComplianceInputs = {
         recommendedAction: 'engage',
       },
     ],
+    worldModel: {
+      expectedReturn: 22.5,
+      downsideRisk: 0.12,
+      volatility: 8.4,
+      valueAtRisk: 3.1,
+      conditionalValueAtRisk: 1.8,
+      percentile10: 3.1,
+      percentile50: 24.2,
+      percentile90: 38.4,
+      bestPath: {
+        totalReturn: 44.1,
+        steps: [
+          {
+            step: 0,
+            jobId: 'alpha',
+            success: true,
+            baseReward: 12,
+            adjustedReturn: 12,
+            cumulativeReturn: 12,
+          },
+        ],
+      },
+      worstPath: {
+        totalReturn: -2.1,
+        steps: [
+          {
+            step: 0,
+            jobId: 'omega',
+            success: false,
+            baseReward: 9,
+            adjustedReturn: -2.1,
+            cumulativeReturn: -2.1,
+          },
+        ],
+      },
+      simulations: 256,
+      horizon: 5,
+    },
   },
   stress: [
     { id: 'scenario-a', passed: true, severity: 3, notes: 'Nominal.' },

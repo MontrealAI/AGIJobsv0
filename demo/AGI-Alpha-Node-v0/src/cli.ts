@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { promises as fs } from 'node:fs';
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
 import { parseEther } from 'ethers';
@@ -432,6 +433,78 @@ yargs(hideBin(process.argv))
         proof: parseProofOption(args.proof),
       });
       console.log(JSON.stringify(report, null, 2));
+    }
+  )
+  .command(
+    'plan world-model',
+    'Run the MuZero++ world-model projection across job opportunities',
+    (cmd) =>
+      cmd
+        .option('config', {
+          type: 'string',
+          default: 'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json',
+        })
+        .option('opportunities', {
+          type: 'string',
+          describe:
+            'Path to a JSON file containing an array of job opportunities.',
+        })
+        .option('limit', {
+          type: 'number',
+          describe: 'Maximum number of jobs to pull from discovery.',
+        })
+        .option('include-completed', {
+          type: 'boolean',
+          default: false,
+        }),
+    async (args) => {
+      const node = await AlphaNode.fromConfig(
+        args.config as string,
+        requirePrivateKey()
+      );
+      let opportunities = defaultOpportunities();
+      if (typeof args.opportunities === 'string') {
+        const raw = await fs.readFile(args.opportunities, 'utf8');
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (error) {
+          throw new Error(
+            `Failed to parse opportunities JSON: ${(error as Error).message}`
+          );
+        }
+        if (Array.isArray(parsed)) {
+          opportunities = parsed as any;
+        } else if (parsed && typeof parsed === 'object' && 'opportunities' in parsed) {
+          opportunities = (parsed as any).opportunities;
+        } else {
+          throw new Error(
+            'Opportunities JSON must be an array or an object with an "opportunities" field.'
+          );
+        }
+      } else {
+        const discovered = await node.discoverJobs({
+          limit: args.limit as number | undefined,
+          includeCompleted: Boolean(args['include-completed']),
+        });
+        const discoveredOpportunities = node.toOpportunities(discovered);
+        if (discoveredOpportunities.length > 0) {
+          opportunities = discoveredOpportunities;
+        }
+      }
+      const plan = node.plan(opportunities);
+      console.log(
+        JSON.stringify(
+          {
+            opportunities,
+            projection: plan.worldModel,
+            planner: plan.summary,
+            insights: plan.insights,
+          },
+          null,
+          2
+        )
+      );
     }
   )
   .command(

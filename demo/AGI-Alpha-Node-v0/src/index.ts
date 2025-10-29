@@ -3,6 +3,7 @@ export * from './node';
 export * from './ai/planner';
 export * from './ai/orchestrator';
 export * from './ai/antifragile';
+export * from './ai/worldModel';
 export * from './identity/types';
 export * from './identity/verify';
 export * from './identity/rpcLookup';

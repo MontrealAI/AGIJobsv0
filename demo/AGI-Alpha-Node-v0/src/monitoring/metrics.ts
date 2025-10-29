@@ -5,6 +5,7 @@ import type { IdentityVerificationResult } from '../identity/types';
 import type { PlanningSummary } from '../ai/planner';
 import type { ReinvestReport } from '../blockchain/reinvest';
 import { ratioFromWei, weiToEtherNumber } from '../utils/amounts';
+import type { WorldModelProjection } from '../ai/worldModel';
 
 export class AlphaNodeMetrics {
   private readonly registry = new Registry();
@@ -18,6 +19,9 @@ export class AlphaNodeMetrics {
   private readonly reinvestAmountGauge: Gauge<string>;
   private readonly reinvestReadinessGauge: Gauge<string>;
   private readonly complianceGauge: Gauge<string>;
+  private readonly worldModelReturnGauge: Gauge<string>;
+  private readonly worldModelRiskGauge: Gauge<string>;
+  private readonly worldModelVolatilityGauge: Gauge<string>;
 
   constructor() {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
@@ -71,6 +75,21 @@ export class AlphaNodeMetrics {
       help: 'Composite compliance score across governance, staking, and intelligence (0-1).',
       registers: [this.registry],
     });
+    this.worldModelReturnGauge = new Gauge({
+      name: 'agi_alpha_node_world_model_expected_return',
+      help: 'Expected discounted return from the world-model simulation.',
+      registers: [this.registry],
+    });
+    this.worldModelRiskGauge = new Gauge({
+      name: 'agi_alpha_node_world_model_downside_risk',
+      help: 'Probability that the world-model simulation produces a negative return.',
+      registers: [this.registry],
+    });
+    this.worldModelVolatilityGauge = new Gauge({
+      name: 'agi_alpha_node_world_model_volatility',
+      help: 'Standard deviation of the world-model return distribution.',
+      registers: [this.registry],
+    });
   }
 
   updateStake(snapshot: StakeSnapshot): void {
@@ -115,6 +134,12 @@ export class AlphaNodeMetrics {
 
   updateCompliance(score: number): void {
     this.complianceGauge.set(score);
+  }
+
+  updateWorldModel(projection: WorldModelProjection): void {
+    this.worldModelReturnGauge.set(projection.expectedReturn);
+    this.worldModelRiskGauge.set(projection.downsideRisk);
+    this.worldModelVolatilityGauge.set(projection.volatility);
   }
 
   async render(): Promise<string> {

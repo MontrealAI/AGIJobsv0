@@ -11,6 +11,9 @@ test('loads and normalises alpha node config', async () => {
   assert.equal(typeof config.operator.minimumStakeWei, 'bigint');
   assert.equal(typeof config.ai.reinvestThresholdWei, 'bigint');
   assert(config.ai.economicPolicy.rewardSplit.operator + config.ai.economicPolicy.rewardSplit.treasury + config.ai.economicPolicy.rewardSplit.specialists - 1 < 1e-6);
+  assert.equal(config.ai.worldModel.horizon, 5);
+  assert.equal(config.ai.worldModel.simulations, 256);
+  assert.equal(config.ai.worldModel.seed, 1337);
   assert.equal(config.jobs.discovery.lookbackBlocks, 12000);
   assert.equal(config.jobs.execution.resultHashAlgorithm, 'keccak256');
   assert.equal(config.jobs.identityProof.length, 0);

@@ -131,6 +131,26 @@
           </div>
           <pre>${JSON.stringify(plan.insights, null, 2)}</pre>
         `;
+        document.getElementById('world-model').innerHTML = `
+          <div class="metrics">
+            <span>Expected Return</span>
+            <strong>${plan.worldModel.expectedReturn.toFixed(2)} $AGIALPHA</strong>
+          </div>
+          <div class="metrics">
+            <span>Downside Risk</span>
+            <strong>${(plan.worldModel.downsideRisk * 100).toFixed(1)}%</strong>
+          </div>
+          <div class="metrics">
+            <span>Volatility</span>
+            <strong>${plan.worldModel.volatility.toFixed(2)}</strong>
+          </div>
+          <pre>${JSON.stringify({
+            valueAtRisk: plan.worldModel.valueAtRisk,
+            conditionalVaR: plan.worldModel.conditionalValueAtRisk,
+            percentile10: plan.worldModel.percentile10,
+            percentile90: plan.worldModel.percentile90,
+          }, null, 2)}</pre>
+        `;
         document.getElementById('treasury').innerHTML = `
           <div class="metrics">
             <span>Pending → Threshold</span>
@@ -205,6 +225,7 @@
       <div class="card" id="rewards"></div>
       <div class="card" id="identity"></div>
       <div class="card" id="planning"></div>
+      <div class="card" id="world-model"></div>
       <div class="card" id="treasury"></div>
       <div class="card" id="compliance"></div>
     </div>

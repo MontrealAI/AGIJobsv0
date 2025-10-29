@@ -3,6 +3,7 @@ import { StakeSnapshot } from '../blockchain/staking';
 import { RewardSnapshot } from '../blockchain/rewards';
 import { SpecialistInsight } from '../ai/orchestrator';
 import { PlanningSummary } from '../ai/planner';
+import { WorldModelProjection } from '../ai/worldModel';
 import { StressTestResult } from '../ai/antifragile';
 import { ReinvestReport } from '../blockchain/reinvest';
 import { GovernanceSnapshot } from '../blockchain/governance';
@@ -51,6 +52,7 @@ export interface ComplianceInputs {
   readonly plan: {
     readonly summary: PlanningSummary;
     readonly insights: readonly SpecialistInsight[];
+    readonly worldModel: WorldModelProjection;
   };
   readonly stress: readonly StressTestResult[];
   readonly reinvestment: ReinvestReport;
@@ -172,6 +174,14 @@ export function computeComplianceReport(
 
   const plannerScore = clampScore(inputs.plan.summary.alphaScore / 10);
   const hasJob = Boolean(inputs.plan.summary.selectedJobId);
+  const worldModel = inputs.plan.worldModel;
+  const returnScore = clampScore(
+    worldModel.expectedReturn /
+      (Math.abs(worldModel.expectedReturn) + worldModel.volatility + 1)
+  );
+  const riskScore = clampScore(1 - worldModel.downsideRisk);
+  const worldModelScore = clampScore(0.5 * returnScore + 0.5 * riskScore);
+  const intelligenceScore = clampScore((plannerScore + worldModelScore) / 2);
   const insightsPreview = inputs.plan.insights.slice(0, 3).map((insight) => {
     const confidencePct = Math.round(insight.confidence * 100);
     return `${insight.specialistId} (${confidencePct}%): ${insight.recommendedAction} – ${insight.contribution}`;
@@ -181,12 +191,18 @@ export function computeComplianceReport(
       ? `Selected job ${inputs.plan.summary.selectedJobId}.`
       : 'Awaiting strategic job selection.',
     `Alpha score ${inputs.plan.summary.alphaScore.toFixed(2)}.`,
+    `World-model expected return ${worldModel.expectedReturn.toFixed(2)} $AGIALPHA.`,
+    `Downside risk ${(worldModel.downsideRisk * 100).toFixed(1)}%.`,
+    `Value-at-risk (10th percentile) ${worldModel.valueAtRisk.toFixed(2)} $AGIALPHA.`,
     ...insightsPreview,
   ];
   dimensions.push({
     label: 'Strategic Intelligence',
-    status: determineStatus(plannerScore, !hasJob),
-    score: plannerScore,
+    status: determineStatus(
+      intelligenceScore,
+      !hasJob || worldModel.downsideRisk > 0.6
+    ),
+    score: intelligenceScore,
     notes: intelligenceNotes,
   });
 

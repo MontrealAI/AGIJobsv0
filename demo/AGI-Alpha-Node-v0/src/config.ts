@@ -65,6 +65,13 @@ const configSchema = z.object({
       reinvestThreshold: z.string().regex(/^\d+(\.\d+)?$/),
       maxGasPriceGwei: z.number().min(0),
       rewardSplit: rewardSplitSchema
+    }),
+    worldModel: z.object({
+      horizon: z.number().int().min(1).max(64),
+      simulations: z.number().int().min(1).max(4096),
+      discountFactor: z.number().min(0).max(1),
+      riskAversion: z.number().min(0).max(1),
+      seed: z.number().int().min(1).max(0xffffffff).optional()
     })
   }),
   jobs: z.object({
@@ -96,6 +103,7 @@ export interface NormalisedAlphaNodeConfig extends AlphaNodeConfig {
   ai: AlphaNodeConfig['ai'] & {
     reinvestThresholdWei: bigint;
     economicPolicy: AlphaNodeConfig['ai']['economicPolicy'];
+    worldModel: AlphaNodeConfig['ai']['worldModel'] & { seed: number };
   };
   jobs: AlphaNodeConfig['jobs'] & {
     identityProof: readonly string[];
@@ -114,6 +122,10 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
   const config = configSchema.parse(parsed);
   const minimumStakeWei = parseEther(config.operator.minimumStake);
   const reinvestThresholdWei = parseEther(config.ai.economicPolicy.reinvestThreshold);
+  const worldModel = {
+    ...config.ai.worldModel,
+    seed: config.ai.worldModel.seed ?? 1337
+  };
 
   return {
     ...config,
@@ -126,7 +138,8 @@ export async function loadAlphaNodeConfig(configPath: string): Promise<Normalise
       economicPolicy: {
         ...config.ai.economicPolicy
       },
-      reinvestThresholdWei
+      reinvestThresholdWei,
+      worldModel
     },
     jobs: {
       ...config.jobs,
