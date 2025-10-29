@@ -7,14 +7,15 @@
     "Resume • npm run owner:update-all",
     "validatorConfidence < 0.95 → npm run owner:system-pause",
     "automationScore < 0.8 → npm run owner:parameters",
-    "treasuryAfterRun < 1800000 → npm run owner:audit"
+    "treasuryAfterRun < 1800000 → npm run owner:audit",
+    "Control drills 100.0% (total-control)"
   ],
   "narrative": "Autopilot cycles every 6.7h to refresh capital, validator posture, and orchestrator coverage while preserving 98.0% shock resilience (impregnable).",
   "telemetry": {
     "economicDominanceIndex": 0.994,
     "capitalVelocity": 26290.99,
     "globalExpansionReadiness": 0.966,
-    "superIntelligenceIndex": 0.9681,
+    "superIntelligenceIndex": 0.9682,
     "shockResilienceScore": 0.98
   },
   "commandSequence": [

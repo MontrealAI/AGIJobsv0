@@ -5,6 +5,7 @@ graph TD
     Cadence --> Guardrail_2[validatorConfidence < 0.95 → npm run owner:system-pause]
     Cadence --> Guardrail_3[automationScore < 0.8 → npm run owner:parameters]
     Cadence --> Guardrail_4[treasuryAfterRun < 1800000 → npm run owner:audit]
+    Cadence --> Guardrail_5[Control drills 100.0% (total-control)]
     Cadence --> Command_0[JOBS • npm run owner:program -- --program job-ai-lab-fusion]
     Cadence --> Command_1[JOBS • npm run owner:program -- --program job-supply-chain]
     Cadence --> Command_2[VALIDATORS • npm run owner:program -- --program validator-alpha]
