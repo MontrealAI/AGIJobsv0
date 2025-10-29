@@ -18,6 +18,7 @@ export class AlphaNodeMetrics {
   private readonly reinvestAmountGauge: Gauge<string>;
   private readonly reinvestReadinessGauge: Gauge<string>;
   private readonly complianceGauge: Gauge<string>;
+  private readonly plannerCurriculumGauge: Gauge<string>;
 
   constructor() {
     this.registry.setDefaultLabels({ component: 'agi-alpha-node' });
@@ -44,6 +45,11 @@ export class AlphaNodeMetrics {
     this.plannerScoreGauge = new Gauge({
       name: 'agi_alpha_node_planner_score',
       help: 'Latest MuZero++ planner alpha score (unitless).',
+      registers: [this.registry],
+    });
+    this.plannerCurriculumGauge = new Gauge({
+      name: 'agi_alpha_node_planner_curriculum_target',
+      help: 'Current planner curriculum difficulty target (0-1).',
       registers: [this.registry],
     });
     this.jobOpenGauge = new Gauge({
@@ -92,6 +98,7 @@ export class AlphaNodeMetrics {
 
   updatePlanning(summary: PlanningSummary): void {
     this.plannerScoreGauge.set(summary.alphaScore);
+    this.plannerCurriculumGauge.set(summary.curriculumDifficulty);
   }
 
   updateJobDiscovery(openJobs: number): void {
