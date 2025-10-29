@@ -240,6 +240,20 @@ class ConversionSimulation:
                 ]
             )
             status = self.sentinel.evaluate(entry, telemetry)
+            self.telemetry.emit(
+                [
+                    TelemetryEvent(
+                        event_type="SentinelStatus",
+                        payload={
+                            "healthy": status.healthy,
+                            "paused": status.paused,
+                            "reason": status.reason,
+                            "roi": self.ledger.roi,
+                            "total_cost": self.ledger.total_cost,
+                        },
+                    )
+                ]
+            )
             if status.paused:
                 break
             snapshot = self.thermostat.update()
