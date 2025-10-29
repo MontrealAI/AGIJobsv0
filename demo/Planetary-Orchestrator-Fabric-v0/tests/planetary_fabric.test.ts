@@ -243,6 +243,74 @@ async function testCheckpointResume(): Promise<void> {
   await rm(checkpointPath, { force: true, recursive: true });
 }
 
+async function testCheckpointRestoresDynamicTopology(): Promise<void> {
+  const { orchestrator, checkpointPath } = await buildOrchestrator();
+  const dynamicShard: ShardConfig = {
+    id: 'edge-dynamic',
+    displayName: 'Dynamic Edge Surge',
+    latencyBudgetMs: 160,
+    spilloverTargets: ['earth'],
+    maxQueue: 80,
+  };
+  await orchestrator.applyOwnerCommand({ type: 'shard.register', shard: dynamicShard, reason: 'dynamic-edge-spinup' });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.register',
+    reason: 'dynamic-edge-node',
+    node: {
+      id: 'edge.node-dynamic',
+      region: dynamicShard.id,
+      capacity: 4,
+      specialties: ['general'],
+      heartbeatIntervalSec: 8,
+      maxConcurrency: 2,
+    },
+  });
+  orchestrator.submitJob({
+    id: 'edge-dynamic-job-001',
+    shard: dynamicShard.id,
+    requiredSkills: ['general'],
+    estimatedDurationTicks: 5,
+    value: 500,
+    submissionTick: 0,
+  });
+  orchestrator.processTick({ tick: 1 });
+  await orchestrator.saveCheckpoint();
+
+  const restoredConfig = cloneConfig(testConfig);
+  restoredConfig.checkpoint.path = checkpointPath;
+  const restored = new PlanetaryOrchestrator(restoredConfig, new CheckpointManager(checkpointPath));
+  const restoredFromCheckpoint = await restored.restoreFromCheckpoint();
+  assert.ok(restoredFromCheckpoint, 'restored orchestrator should detect checkpoint');
+
+  const shardSnapshots = restored.getShardSnapshots();
+  const dynamicSnapshot = shardSnapshots[dynamicShard.id];
+  assert.ok(dynamicSnapshot, 'dynamic shard should be restored from checkpoint');
+  assert.ok(
+    (dynamicSnapshot.queueDepth ?? 0) + (dynamicSnapshot.inFlight ?? 0) >= 1,
+    'dynamic shard should retain queued or in-flight work'
+  );
+  const nodeSnapshots = restored.getNodeSnapshots();
+  assert.ok(nodeSnapshots['edge.node-dynamic'], 'dynamic node should be restored from checkpoint');
+
+  await restored.applyOwnerCommand({
+    type: 'node.deregister',
+    nodeId: 'edge.node-dynamic',
+    reason: 'retire-dynamic-node',
+  });
+  await restored.applyOwnerCommand({
+    type: 'shard.deregister',
+    shard: dynamicShard.id,
+    reason: 'retire-dynamic-shard',
+    redistribution: { mode: 'spillover', targetShard: 'earth' },
+  });
+  const postSnapshots = restored.getShardSnapshots();
+  assert.equal(postSnapshots[dynamicShard.id], undefined, 'dynamic shard should be removable after restore');
+  const postNodeSnapshots = restored.getNodeSnapshots();
+  assert.equal(postNodeSnapshots['edge.node-dynamic'], undefined, 'dynamic node should be removable after restore');
+
+  await rm(checkpointPath, { force: true, recursive: true });
+}
+
 async function testCrossShardFallback(): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), 'fabric-fallback-'));
   const checkpointPath = join(dir, 'checkpoint.json');
@@ -1097,6 +1165,7 @@ async function run(): Promise<void> {
   await testBalancing();
   await testOutageRecovery();
   await testCheckpointResume();
+  await testCheckpointRestoresDynamicTopology();
   await testCrossShardFallback();
   await testLedgerAccounting();
   await testLedgerCheckpointPersistence();

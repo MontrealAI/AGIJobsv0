@@ -914,12 +914,18 @@ export class PlanetaryOrchestrator {
     if (!payload) {
       return false;
     }
+    const payloadShardIds = new Set(Object.keys(payload.shards));
     for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
+      const updatedConfig = PlanetaryOrchestrator.cloneShardConfig(shardPayload.config);
       const index = this.config.shards.findIndex((entry) => entry.id === shardId);
       if (index >= 0) {
-        this.config.shards[index] = { ...this.config.shards[index], ...shardPayload.config };
+        this.config.shards[index] = updatedConfig;
+      } else {
+        this.config.shards.push(updatedConfig);
       }
     }
+    this.config.shards = this.config.shards.filter((entry) => payloadShardIds.has(entry.id));
+    const payloadNodeIds = new Set(Object.keys(payload.nodes));
     for (const [nodeId, nodePayload] of Object.entries(payload.nodes)) {
       const index = this.config.nodes.findIndex((entry) => entry.id === nodeId);
       if (index >= 0) {
@@ -931,6 +937,7 @@ export class PlanetaryOrchestrator {
         this.config.nodes.push(cloneNodeDefinition(nodePayload.definition));
       }
     }
+    this.config.nodes = this.config.nodes.filter((entry) => payloadNodeIds.has(entry.id));
     if (payload.reporting) {
       this.config.reporting = { ...payload.reporting };
     }
