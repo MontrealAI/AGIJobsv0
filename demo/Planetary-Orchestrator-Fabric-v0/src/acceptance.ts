@@ -167,13 +167,18 @@ function ensureSpilloverPolicies(shard: ShardConfig): SpilloverPolicy[] {
   }));
 }
 
-function tuneConfigForAcceptance(base: FabricConfig, checkpointPath: string): FabricConfig {
+function tuneConfigForAcceptance(base: FabricConfig, checkpointPath: string, jobsHighLoad: number): FabricConfig {
   const tuned = cloneFabricConfig(base);
   tuned.checkpoint.path = checkpointPath;
+
+  const shardCount = Math.max(1, tuned.shards.length);
+  const jobsPerShard = Math.max(1, Math.ceil(jobsHighLoad / shardCount));
+  const baselineQueueCapacity = Math.max(50, jobsPerShard * 2);
+
   tuned.shards = tuned.shards.map((shard) => {
-    const tunedMaxQueue = Math.max(50, Math.floor(shard.maxQueue * 0.75));
-    const queueAlert = Math.max(20, Math.floor(tunedMaxQueue * 0.6));
-    return {
+    const tunedMaxQueue = Math.max(shard.maxQueue, baselineQueueCapacity);
+    const queueAlert = Math.max(25, Math.floor(tunedMaxQueue * 0.55));
+    const tunedShard: ShardConfig = {
       ...shard,
       maxQueue: tunedMaxQueue,
       router: {
@@ -181,12 +186,26 @@ function tuneConfigForAcceptance(base: FabricConfig, checkpointPath: string): Fa
         spilloverPolicies: ensureSpilloverPolicies({ ...shard, maxQueue: tunedMaxQueue }),
       },
     };
+    return tunedShard;
   });
-  tuned.nodes = tuned.nodes.map((node) => ({
-    ...node,
-    capacity: Math.max(1, Math.floor(node.capacity * 0.7)),
-    maxConcurrency: Math.max(1, Math.floor(node.maxConcurrency * 0.6)),
-  }));
+
+  const nodeCount = Math.max(1, tuned.nodes.length);
+  const targetConcurrency = Math.max(
+    12,
+    Math.ceil(jobsHighLoad / (nodeCount * 16)),
+    Math.ceil(jobsPerShard / 24)
+  );
+
+  tuned.nodes = tuned.nodes.map((node) => {
+    const concurrency = Math.max(node.maxConcurrency, targetConcurrency);
+    const capacity = Math.max(node.capacity, concurrency + Math.ceil(concurrency * 0.25));
+    return {
+      ...node,
+      capacity,
+      maxConcurrency: concurrency,
+    };
+  });
+
   return tuned;
 }
 
@@ -378,9 +397,9 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
   const highLoadCheckpoint = buildCheckpointPath(options.config.checkpoint.path, `${baseLabel}-high-load`);
   const restartCheckpoint = buildCheckpointPath(options.config.checkpoint.path, `${baseLabel}-restart`);
 
-  const highLoadConfig = tuneConfigForAcceptance(options.config, highLoadCheckpoint);
-  const restartConfigStageOne = tuneConfigForAcceptance(options.config, restartCheckpoint);
-  const restartConfigStageTwo = tuneConfigForAcceptance(options.config, restartCheckpoint);
+  const highLoadConfig = tuneConfigForAcceptance(options.config, highLoadCheckpoint, jobsHighLoad);
+  const restartConfigStageOne = tuneConfigForAcceptance(options.config, restartCheckpoint, jobsHighLoad);
+  const restartConfigStageTwo = tuneConfigForAcceptance(options.config, restartCheckpoint, jobsHighLoad);
 
   const highLoadExecution = await executeScenario({
     config: highLoadConfig,

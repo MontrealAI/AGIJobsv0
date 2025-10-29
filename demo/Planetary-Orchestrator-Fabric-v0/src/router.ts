@@ -148,6 +148,10 @@ export class ShardRouterService {
     this.config.spilloverTargets = [...targets];
   }
 
+  getSpilloverTargets(): ShardId[] {
+    return [...this.config.spilloverTargets];
+  }
+
   private sortPolicies(policies: SpilloverPolicy[]): SpilloverPolicy[] {
     return [...policies].sort((a, b) => {
       const thresholdDelta = a.threshold - b.threshold;
