@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 import yaml
@@ -22,7 +22,7 @@ from trm_demo.sentinel import Sentinel, SentinelConfig
 from trm_demo.subgraph import SubgraphConfig, SubgraphLogger
 from trm_demo.thermostat import Thermostat, ThermostatConfig
 from trm_demo.ui import render_summary
-from trm_demo.utils import CandidateProfile, generate_candidate
+from trm_demo.utils import generate_candidate
 
 
 def _load_yaml(path: Path) -> dict:
