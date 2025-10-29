@@ -16,6 +16,7 @@ import {
 import { composeActionId, composeStateId, loadRewardConfig, calculateReward } from './rewardComposer';
 import { DeterministicRandom } from './random';
 import { ExperienceTrainer } from './trainer';
+import { performAudit } from './audit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -135,7 +136,7 @@ function createBaselineSummary(
   agents: AgentProfile[],
   random: DeterministicRandom,
   rewardConfig: Awaited<ReturnType<typeof loadRewardConfig>>,
-): SimulationRunSummary {
+): { summary: SimulationRunSummary; experiences: ExperienceRecord[] } {
   let completedJobs = 0;
   let failedJobs = 0;
   let grossMerchandiseValue = 0;
@@ -192,19 +193,22 @@ function createBaselineSummary(
   const sustainabilityScore = Math.max(0, 1 - sustainabilityPenalty / Math.max(totalJobs, 1));
 
   return {
-    label: 'Experience-Native Baseline',
-    totalJobs,
-    completedJobs,
-    failedJobs,
-    grossMerchandiseValue,
-    totalRewardPaid,
-    averageLatencyHours,
-    averageCost,
-    averageRating,
-    roi,
-    successRate: completedJobs / totalJobs,
-    sustainabilityScore,
-    timeline,
+    summary: {
+      label: 'Experience-Native Baseline',
+      totalJobs,
+      completedJobs,
+      failedJobs,
+      grossMerchandiseValue,
+      totalRewardPaid,
+      averageLatencyHours,
+      averageCost,
+      averageRating,
+      roi,
+      successRate: completedJobs / totalJobs,
+      sustainabilityScore,
+      timeline,
+    },
+    experiences,
   };
 }
 
@@ -435,22 +439,22 @@ export async function runExperienceDemo(
   const random = new DeterministicRandom(scenario.deterministicSeed);
   const { jobs } = expandJobs(scenario, random);
   const baselineRandom = new DeterministicRandom(`${scenario.deterministicSeed}-baseline`);
-  const baselineSummary = createBaselineSummary(jobs, scenario.agents, baselineRandom, rewardConfig);
+  const baseline = createBaselineSummary(jobs, scenario.agents, baselineRandom, rewardConfig);
   const rlRandom = new DeterministicRandom(`${scenario.deterministicSeed}-rl`);
   const rl = aggregateSummary(jobs, scenario.agents, rlRandom, config, ownerControls, rewardConfig);
 
   const improvement = {
-    gmvDelta: rl.summary.grossMerchandiseValue - baselineSummary.grossMerchandiseValue,
+    gmvDelta: rl.summary.grossMerchandiseValue - baseline.summary.grossMerchandiseValue,
     gmvLiftPct:
-      (rl.summary.grossMerchandiseValue - baselineSummary.grossMerchandiseValue) /
-      Math.max(baselineSummary.grossMerchandiseValue, 1),
-    roiDelta: rl.summary.roi - baselineSummary.roi,
-    successRateDelta: rl.summary.successRate - baselineSummary.successRate,
-    avgLatencyDelta: rl.summary.averageLatencyHours - baselineSummary.averageLatencyHours,
+      (rl.summary.grossMerchandiseValue - baseline.summary.grossMerchandiseValue) /
+      Math.max(baseline.summary.grossMerchandiseValue, 1),
+    roiDelta: rl.summary.roi - baseline.summary.roi,
+    successRateDelta: rl.summary.successRate - baseline.summary.successRate,
+    avgLatencyDelta: rl.summary.averageLatencyHours - baseline.summary.averageLatencyHours,
   };
 
   const report: SimulationReport = {
-    baseline: baselineSummary,
+    baseline: baseline.summary,
     rlEnhanced: rl.summary,
     improvement,
     experienceLogSample: rl.experiences.slice(-25),
@@ -469,11 +473,17 @@ export async function runExperienceDemo(
       },
       actionableMermaid: '',
     },
+    audit: {
+      status: 'pass',
+      generatedAt: new Date(0).toISOString(),
+      sections: [],
+    },
   };
 
   report.mermaidFlow = buildMermaidFlow(report, scenario);
   report.mermaidValueStream = buildMermaidValueStream(report);
   report.ownerConsole = buildOwnerConsole(report);
+  report.audit = performAudit({ baseline, rl, ownerControls });
 
   return report;
 }

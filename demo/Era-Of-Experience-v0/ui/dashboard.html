@@ -52,6 +52,30 @@
           li.textContent = item;
           actions.append(li);
         });
+
+        const auditStatus = document.querySelector('#audit-status');
+        auditStatus.textContent = `Status: ${report.audit.status.toUpperCase()} (generated ${report.audit.generatedAt})`;
+        const auditList = document.querySelector('#audit-sections');
+        report.audit.sections.forEach((section) => {
+          const sectionItem = document.createElement('li');
+          const title = document.createElement('strong');
+          title.textContent = `${section.name}: ${section.status.toUpperCase()}`;
+          sectionItem.append(title);
+          if (section.notes.length === 0) {
+            const ok = document.createElement('div');
+            ok.textContent = 'No deviations detected.';
+            sectionItem.append(ok);
+          } else {
+            const notes = document.createElement('ul');
+            section.notes.forEach((note) => {
+              const noteItem = document.createElement('li');
+              noteItem.textContent = note;
+              notes.append(noteItem);
+            });
+            sectionItem.append(notes);
+          }
+          auditList.append(sectionItem);
+        });
       }
 
       bootstrap().catch((error) => {
@@ -106,6 +130,11 @@
       <section>
         <h2>Recommended Actions</h2>
         <ul id="actions"></ul>
+      </section>
+      <section>
+        <h2>Triple-Audit Confidence</h2>
+        <p id="audit-status">Awaiting verification...</p>
+        <ul id="audit-sections"></ul>
       </section>
     </main>
   </body>
