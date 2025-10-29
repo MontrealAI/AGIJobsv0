@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 from .baseline import GreedyBaselineSimulator
 from .config_loader import ConfigError, DemoConfig, load_config
 from .engine import HGMEngine
+from .lineage import MermaidOptions, mermaid_from_snapshots
 from .metrics import EconomicSnapshot, RunSummary
 from .orchestrator import HGMDemoOrchestrator
 from .sentinel import Sentinel
@@ -98,7 +99,7 @@ def run_hgm_demo(
     config: DemoConfig,
     rng: random.Random,
     output_dir: Path,
-) -> tuple[RunSummary, Path]:
+) -> tuple[RunSummary, Path, Path | None]:
     engine = build_engine(config, rng)
     thermostat = build_thermostat(config, engine)
     sentinel = build_sentinel(config, engine)
@@ -134,7 +135,15 @@ def run_hgm_demo(
     report_interval = int(simulation_cfg.get("report_interval", 10))
     summary = orchestrator.run(total_steps=total_steps, report_interval=report_interval)
     timeline_path = write_timeline(orchestrator.timeline.snapshots, output_dir)
-    return summary, timeline_path
+    mermaid_path: Path | None = None
+    if orchestrator.timeline.snapshots:
+        final_snapshot = orchestrator.timeline.last
+        mermaid_text = mermaid_from_snapshots(
+            final_snapshot.agents,
+            options=MermaidOptions(highlight_agent=summary.best_agent_id),
+        )
+        mermaid_path = write_mermaid(mermaid_text, output_dir)
+    return summary, timeline_path, mermaid_path
 
 
 def run_baseline(config: DemoConfig, rng: random.Random) -> RunSummary:
@@ -163,6 +172,13 @@ def write_timeline(snapshots: List[EconomicSnapshot], output_dir: Path) -> Path:
     payload: List[Dict[str, Any]] = [asdict(snapshot) for snapshot in snapshots]
     path = output_dir / "timeline.json"
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return path
+
+
+def write_mermaid(diagram: str, output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / "lineage.mmd"
+    path.write_text(diagram, encoding="utf-8")
     return path
 
 
@@ -315,7 +331,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if guided_mode:
         _print_guided_banner(args.output_dir, pace_ms)
     rng = random.Random(seed)
-    hgm_summary, timeline_path = run_hgm_demo(config, rng, args.output_dir)
+    hgm_summary, timeline_path, mermaid_path = run_hgm_demo(config, rng, args.output_dir)
     baseline_rng = random.Random(seed + 1)
     baseline_summary = run_baseline(config, baseline_rng)
     table = print_summary_table(hgm_summary, baseline_summary)
@@ -325,6 +341,17 @@ def main(argv: Sequence[str] | None = None) -> None:
     print(f"Tabular summary saved to {text_path}")
     if timeline_path.exists():
         print(f"Timeline saved to {timeline_path}")
+    if mermaid_path is not None and mermaid_path.exists():
+        print(f"Mermaid lineage saved to {mermaid_path}")
+    if hgm_summary.best_agent_id:
+        quality = (
+            "?"
+            if hgm_summary.best_agent_quality is None
+            else f"{hgm_summary.best_agent_quality:.3f}"
+        )
+        print(
+            f"Best-belief agent: {hgm_summary.best_agent_id} with estimated quality {quality}"
+        )
 
 
 if __name__ == "__main__":

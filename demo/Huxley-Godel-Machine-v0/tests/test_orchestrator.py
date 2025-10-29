@@ -75,3 +75,28 @@ def test_latency_overrides_allow_zero_duration() -> None:
 
     assert orchestrator._evaluation_duration() == 0
     assert orchestrator._expansion_duration() == 1
+
+
+def test_orchestrator_records_agent_snapshots() -> None:
+    engine = _build_engine()
+    thermostat = _build_thermostat(engine)
+    sentinel = _build_sentinel(engine)
+    orchestrator = HGMDemoOrchestrator(
+        engine=engine,
+        thermostat=thermostat,
+        sentinel=sentinel,
+        rng=random.Random(2),
+        success_value=120.0,
+        evaluation_cost=10.0,
+        expansion_cost=20.0,
+        mutation_std=0.15,
+        quality_bounds=(0.0, 1.0),
+    )
+
+    summary = orchestrator.run(total_steps=30, report_interval=10)
+    assert orchestrator.timeline.snapshots, "timeline should capture snapshots"
+    final_snapshot = orchestrator.timeline.last
+    assert final_snapshot.agents, "agent snapshots should be recorded"
+    agent_ids = {agent.agent_id for agent in final_snapshot.agents}
+    if summary.best_agent_id is not None:
+        assert summary.best_agent_id in agent_ids

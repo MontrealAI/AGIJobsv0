@@ -7,6 +7,7 @@ import math
 import random
 
 from .engine import ActionType, HGMEngine
+from .lineage import capture_agent_snapshots
 from .metrics import EconomicSnapshot, RunSummary, Timeline
 from .sentinel import Sentinel
 from .thermostat import Thermostat
@@ -59,6 +60,9 @@ class HGMDemoOrchestrator:
             self._process_completed(step)
             self._schedule_until_blocked(step)
             roi = self._compute_roi()
+            agents = capture_agent_snapshots(self.engine)
+            best_agent = self.engine.best_agent()
+            best_agent_id = best_agent.agent_id if best_agent is not None else None
             snapshot = EconomicSnapshot(
                 step=step,
                 gmv=self.gmv,
@@ -66,6 +70,8 @@ class HGMDemoOrchestrator:
                 successes=self.successes,
                 failures=self.failures,
                 roi=roi,
+                agents=agents,
+                best_agent_id=best_agent_id,
             )
             self.timeline.append(snapshot)
             self.thermostat.observe(snapshot)
@@ -76,6 +82,9 @@ class HGMDemoOrchestrator:
                 self._emit_progress(step)
         final_roi = self._compute_roi()
         profit = self.gmv - self.cost
+        final_best = self.engine.best_agent()
+        best_agent_id = final_best.agent_id if final_best is not None else None
+        best_agent_quality = final_best.quality if final_best is not None else None
         return RunSummary(
             strategy="HGM",
             gmv=self.gmv,
@@ -85,6 +94,8 @@ class HGMDemoOrchestrator:
             roi=final_roi,
             profit=profit,
             steps=len(self.timeline.snapshots),
+            best_agent_id=best_agent_id,
+            best_agent_quality=best_agent_quality,
         )
 
     # ------------------------------------------------------------------

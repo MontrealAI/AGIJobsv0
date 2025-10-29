@@ -78,6 +78,11 @@ Mermaid diagrams:
 Open the page locally (double-click or serve via any static file server) to share
 an operator-friendly narrative of the entire experience.
 
+The Observatory section on the same page can ingest the generated
+`timeline.json` and render a live Mermaid lineage plus ROI cards. Drag and
+drop the file or press **Load latest run from reports** to auto-populate the
+visualisation with the newest artefacts.
+
 ## 🧭 Architecture atlas
 
 ```mermaid
@@ -139,6 +144,9 @@ python demo/Huxley-Godel-Machine-v0/run_demo.py \
 - `summary.json` captures ROI lift, GMV, and profit deltas for BI tooling.
 - `timeline.json` records every decision for plotting or compliance review.
 - `summary.txt` mirrors the table for quick sharing.
+- `lineage.mmd` encodes a Mermaid diagram of the entire agent tree, with the
+  best-belief agent highlighted for instant re-use in docs, dashboards, or the
+  Observatory UI.
 
 ## ✅ CI smoke tests for non-technical reviewers
 
