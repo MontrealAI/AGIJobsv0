@@ -7,6 +7,7 @@
 - **Instant sovereign activation.** ENS ownership checks ensure only the rightful operator can unleash the node.
 - **Institutional governance.** Emergency pause, governance rotation, and audit trails keep the operator in command.
 - **Autonomous alpha extraction.** A MuZero-inspired planner directs a trio of domain specialists across finance, biotech, and manufacturing.
+- **MuZero++ world model.** Monte-Carlo tree search with curriculum mastery constantly reprioritises work for exponential alpha growth.
 - **Compounding intelligence.** Every completed mission enriches the shared Knowledge Lake, accelerating future wins.
 - **Observability by default.** Real-time metrics, compliance scoring, and a beautiful dashboard reveal the node’s economic pulse.
 
@@ -28,6 +29,21 @@ flowchart TD
     M --> N[Prometheus Metrics]
     M --> O[Operator Console]
 ```
+
+### MuZero++ Planning Core
+
+```mermaid
+stateDiagram-v2
+    [*] --> Seed: Seed opportunities using deterministic entropy
+    Seed --> Simulate: Run curriculum-weighted simulations
+    Simulate --> Select: Upper-confidence bound selection
+    Select --> Update: Blend experience + curriculum targets
+    Update --> Simulate: Iterate until horizon satisfied
+    Select --> Execute: Dispatch specialist swarm
+    Execute --> [*]
+```
+
+The planner now executes hundreds of deterministic Monte-Carlo rollouts per cycle, blending historical job outcomes with specialist synergy analytics to guarantee the operator always pursues the highest compounding payoff.
 
 ## Directory Layout
 
@@ -99,6 +115,7 @@ Open `dashboard/index.html` for an immersive, real-time view fed by the `/status
 - Stake vs. requirement gauge.
 - Specialist win-rates.
 - Governance safety checklist.
+- MuZero++ curriculum target vs. observed job difficulty.
 
 ## Prometheus Metrics
 
@@ -108,6 +125,7 @@ The exporter publishes production-grade gauges and counters:
 agi_alpha_node_compliance_score 0.92
 agi_alpha_node_completed_jobs 42
 agi_alpha_node_rewards_accrued 1280
+agi_alpha_node_planner_curriculum_target 0.73
 ```
 
 Point any Prometheus instance to `http://localhost:9753/metrics` and alert on thresholds instantly.

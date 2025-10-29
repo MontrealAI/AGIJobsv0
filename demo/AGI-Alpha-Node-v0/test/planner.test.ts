@@ -25,7 +25,21 @@ test('planner favours higher alpha opportunities', async () => {
 test('planner curriculum escalates after success', async () => {
   const planner = await makePlanner();
   const base = planner.plan([]).curriculumDifficulty;
-  planner.recordOutcome('test', true, 100, 0.6);
+  planner.recordOutcome('test', true, 100, 0.6, ['capital-markets']);
   const next = planner.plan([]).curriculumDifficulty;
   assert(next >= base);
+});
+
+test('planner leverages domain experience to prioritise aligned jobs', async () => {
+  const planner = await makePlanner();
+  planner.recordOutcome('finance-alpha', true, 24, 0.55, ['capital-markets']);
+  planner.recordOutcome('bio-miss', false, 20, 0.55, ['biotech']);
+
+  const jobs: JobOpportunity[] = [
+    { jobId: 'finance-new', reward: 14, difficulty: 0.5, risk: 0.25, tags: ['capital-markets'] },
+    { jobId: 'biotech-new', reward: 16, difficulty: 0.5, risk: 0.25, tags: ['biotech'] }
+  ];
+
+  const result = planner.plan(jobs);
+  assert.equal(result.selectedJobId, 'finance-new');
 });
