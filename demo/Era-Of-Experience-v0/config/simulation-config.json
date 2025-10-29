@@ -1,0 +1,10 @@
+{
+  "horizon": 240,
+  "epsilon": 0.15,
+  "learningRate": 0.18,
+  "discountFactor": 0.85,
+  "bufferSize": 2048,
+  "batchSize": 64,
+  "checkpointsToKeep": 4,
+  "ownerControlsPath": "demo/Era-Of-Experience-v0/config/owner-controls.json"
+}

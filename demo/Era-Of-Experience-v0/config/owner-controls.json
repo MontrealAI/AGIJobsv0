@@ -1,0 +1,9 @@
+{
+  "exploration": 0.15,
+  "paused": false,
+  "rewardOverrides": {
+    "successBonus": 4.0,
+    "failurePenalty": -6.0
+  },
+  "notes": "Initial configuration aligns with Silver & Sutton's experience-native mandate: continuous learning active with measured exploration."
+}

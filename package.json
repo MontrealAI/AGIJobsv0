@@ -386,7 +386,7 @@
     "pause:test": "npx hardhat run --no-compile scripts/v2/pauseTest.ts",
     "platform:registry:inspect": "npx hardhat run scripts/v2/inspectPlatformRegistry.ts",
     "platform:registry:update": "npx hardhat run scripts/v2/updatePlatformRegistry.ts",
-    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs attestation/eas/test/receipt-digest.test.mjs && npx esbuild apps/onebox/test/governance-scenario.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-scenario.test.mjs && node apps/onebox/test/dist/governance-scenario.test.mjs && npx esbuild apps/onebox/test/onebox-config.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/onebox-config.test.mjs && node apps/onebox/test/dist/onebox-config.test.mjs && npx esbuild apps/onebox/test/orchestrator-health.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/orchestrator-health.test.mjs && node apps/onebox/test/dist/orchestrator-health.test.mjs && npx esbuild apps/onebox/test/query-overrides.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/query-overrides.test.mjs && node apps/onebox/test/dist/query-overrides.test.mjs && npx esbuild apps/onebox/test/governance-snapshot-summary.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-snapshot-summary.test.mjs && node apps/onebox/test/dist/governance-snapshot-summary.test.mjs && npx tsc --project apps/enterprise-portal/tsconfig.test.json && node --test apps/enterprise-portal/dist-test/test/verifyDeliverableSignature.test.js && node --test apps/onebox-static/test/auth-helpers.test.mjs && node --test demo/One-Box/test/launcher.test.cjs && node --test demo/One-Box/test/rpc.test.cjs && node --test demo/One-Box/test/diagnostics.test.cjs",
+    "pretest": "npx tsc --skipLibCheck scripts/constants.ts && node --test apps/onebox/test/error-catalog.test.mjs attestation/eas/test/receipt-digest.test.mjs && npx esbuild apps/onebox/test/governance-scenario.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-scenario.test.mjs && node apps/onebox/test/dist/governance-scenario.test.mjs && npx esbuild apps/onebox/test/onebox-config.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/onebox-config.test.mjs && node apps/onebox/test/dist/onebox-config.test.mjs && npx esbuild apps/onebox/test/orchestrator-health.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/orchestrator-health.test.mjs && node apps/onebox/test/dist/orchestrator-health.test.mjs && npx esbuild apps/onebox/test/query-overrides.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/query-overrides.test.mjs && node apps/onebox/test/dist/query-overrides.test.mjs && npx esbuild apps/onebox/test/governance-snapshot-summary.test.ts --bundle --platform=node --format=esm --target=es2022 --outfile=apps/onebox/test/dist/governance-snapshot-summary.test.mjs && node apps/onebox/test/dist/governance-snapshot-summary.test.mjs && npx tsc --project apps/enterprise-portal/tsconfig.test.json && node --test apps/enterprise-portal/dist-test/test/verifyDeliverableSignature.test.js && node --test apps/onebox-static/test/auth-helpers.test.mjs && node --test demo/One-Box/test/launcher.test.cjs && node --test demo/One-Box/test/rpc.test.cjs && node --test demo/One-Box/test/diagnostics.test.cjs && node --import tsx demo/Era-Of-Experience-v0/test/era_of_experience_demo.test.ts",
     "pulse:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateEmpowermentPulse.ts",
     "release:manifest": "node scripts/release/generate-manifest.js",
     "release:manifest:summary": "node scripts/release/render-manifest-summary.js",
@@ -402,6 +402,7 @@
     "demo:validator-constellation:operator-console": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/operatorConsole.ts",
     "demo:economic-power": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/runDemo.ts",
     "demo:economic-power:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Economic-Power-v0/scripts/runDemo.ts --ci",
+    "demo:era-of-experience": "node --import tsx demo/Era-Of-Experience-v0/scripts/runDemo.ts",
     "build:agi-alpha-node": "tsc --project demo/AGI-Alpha-Node-v0/tsconfig.build.json",
     "demo:agi-alpha-node": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Alpha-Node-v0/src/cli.ts",
     "demo:agi-alpha-node:prod": "npm run build:agi-alpha-node && node demo/AGI-Alpha-Node-v0/dist/cli.js",
@@ -410,6 +411,7 @@
     "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/validator_constellation.test.ts",
     "test:economic-power": "node --import tsx demo/Economic-Power-v0/test/economic_power_demo.test.ts",
     "test:agi-alpha-node": "node --import tsx demo/AGI-Alpha-Node-v0/test/alpha_node_demo.test.ts",
+    "test:era-of-experience": "node --import tsx demo/Era-Of-Experience-v0/test/era_of_experience_demo.test.ts",
     "sbom:generate": "mkdir -p reports/sbom && npm exec -- @cyclonedx/cyclonedx-npm --output-format json --output-file reports/sbom/cyclonedx.json",
     "security:audit": "audit-ci --config ./audit-ci.json",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
@@ -435,7 +437,8 @@
     "webapp:typecheck": "npm run typecheck --prefix apps/console",
     "wire:verify": "node scripts/run-wire-verify.js",
     "demo:meta-agentic-alpha": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scripts/runDemo.ts",
-    "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts"
+    "test:meta-agentic-alpha": "node --import tsx demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/test/meta_agentic_demo.test.ts",
+    "owner:era-of-experience:controls": "node --import tsx demo/Era-Of-Experience-v0/scripts/updateOwnerControls.ts"
   },
   "type": "commonjs",
   "version": "1.0.0"
