@@ -19,6 +19,19 @@ open demo/Huxley-Godel-Machine-v0/web/index.html  # optional interactive dashboa
 
 The script produces console analytics, `artifacts/hgm_run.json`, and `artifacts/summary.txt`. The web dashboard automatically visualizes the newest run.
 
+### Live parameter overrides (no JSON editing required)
+
+The contract owner can now retune the machine directly from the CLI:
+
+```bash
+python demo/Huxley-Godel-Machine-v0/run_demo.py \
+  --set engine.tau=2.6 \
+  --set sentinel.min_roi=1.35 \
+  --set simulation.evaluation_latency=[0.0,0.0]
+```
+
+Each `--set section.key=value` instruction auto-coerces to the existing type, supporting scalars, lists, and booleans. Overrides work alongside custom JSON config files, so every safety rail and economic knob stays under instant human control.
+
 ## System architecture at a glance
 
 ```mermaid
@@ -59,6 +72,19 @@ flowchart TD
     H -->|ROI dip| K[Risk-off mode]
     J --> C
     K --> C
+```
+
+```mermaid
+sequenceDiagram
+    participant Owner as Contract Owner
+    participant CLI as run_demo.py --set
+    participant Loader as Config Loader
+    participant Engine as HGM Engine
+
+    Owner->>CLI: Issue overrides (--set ...)
+    CLI->>Loader: Parse & coerce values
+    Loader->>Engine: Inject refreshed parameters
+    Engine-->>Owner: Telemetry + safeguarded execution
 ```
 
 ## Configuration power tools

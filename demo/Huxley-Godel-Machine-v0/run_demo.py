@@ -8,7 +8,7 @@ from pathlib import Path
 import random
 
 from hgm_demo.baseline import GreedyBaseline
-from hgm_demo.config import Config, load_config, load_default_config
+from hgm_demo.config import Config, load_config_with_overrides
 from hgm_demo.engine import EngineParameters, HGMEngine
 from hgm_demo.orchestrator import AdaptiveOrchestrator, OrchestratorSettings
 from hgm_demo.sentinel import Sentinel, SentinelSettings
@@ -138,13 +138,27 @@ def main() -> None:
         help="Optional path to a configuration JSON file",
     )
     parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="PATH=VALUE",
+        help=(
+            "Override configuration values without editing JSON. "
+            "For example: --set engine.tau=2.4 --set sentinel.min_roi=1.2"
+        ),
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path("demo/Huxley-Godel-Machine-v0/artifacts"),
         help="Directory where run artifacts will be stored",
     )
     args = parser.parse_args()
-    config = load_default_config() if args.config is None else load_config(args.config)
+    try:
+        config = load_config_with_overrides(args.config, args.overrides)
+    except ValueError as exc:
+        parser.error(str(exc))
     args.output_dir.mkdir(parents=True, exist_ok=True)
     telemetry = DemoTelemetry()
     asyncio.run(_run_hgm(config, telemetry, output_dir=args.output_dir))
