@@ -1,0 +1,187 @@
+{
+  "version": "1.0",
+  "generatedAt": "2025-02-01T00:00:00.000Z",
+  "status": "pass",
+  "metrics": [
+    {
+      "metric": "totalEscrowedAgi",
+      "description": "Aggregate AGI escrow derived from assignments",
+      "expected": 362000,
+      "actual": 362000,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "totalStablecoinVolume",
+      "description": "Stablecoin commitments derived from assignments",
+      "expected": 63000,
+      "actual": 63000,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "validatorRewardsAgi",
+      "description": "Validator reward pool at 8% share",
+      "expected": 28960,
+      "actual": 28960,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "ownerBufferContribution",
+      "description": "Owner buffer contribution at 2% share",
+      "expected": 7240,
+      "actual": 7240,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "treasuryAfterRun",
+      "description": "Treasury position after execution",
+      "expected": 2254040,
+      "actual": 2254040,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "roiMultiplier",
+      "description": "Return on investment multiplier",
+      "expected": 3.28,
+      "actual": 3.28,
+      "delta": 0,
+      "tolerance": 0.01,
+      "passed": true
+    },
+    {
+      "metric": "netYield",
+      "description": "Net economic yield in AGI",
+      "expected": 933800,
+      "actual": 933800,
+      "delta": 0,
+      "tolerance": 0.5,
+      "passed": true
+    },
+    {
+      "metric": "paybackHours",
+      "description": "Hours until capital payback",
+      "expected": 33.48,
+      "actual": 33.48,
+      "delta": 0,
+      "tolerance": 0.05,
+      "passed": true
+    },
+    {
+      "metric": "throughputJobsPerDay",
+      "description": "Job throughput per 24h window",
+      "expected": 2.26,
+      "actual": 2.26,
+      "delta": 0,
+      "tolerance": 0.05,
+      "passed": true
+    },
+    {
+      "metric": "capitalVelocity",
+      "description": "Capital velocity in AGI per hour",
+      "expected": 26291,
+      "actual": 26291,
+      "delta": 0,
+      "tolerance": 0.1,
+      "passed": true
+    },
+    {
+      "metric": "ownerCommandCoverage",
+      "description": "Owner command coverage value",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "tolerance": 0.001,
+      "passed": true
+    }
+  ],
+  "coverage": [
+    {
+      "surface": "jobs",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "validators",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "stablecoinAdapters",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "modules",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "parameters",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "pause",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "resume",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "treasury",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    },
+    {
+      "surface": "orchestrator",
+      "expected": 1,
+      "actual": 1,
+      "delta": 0,
+      "passed": true
+    }
+  ],
+  "assignments": {
+    "expectedJobs": 5,
+    "assignments": 5,
+    "uniqueJobs": 5,
+    "uniqueAgents": 4,
+    "uniqueValidators": 5,
+    "jobCoverage": 1,
+    "agentCoverage": 1,
+    "validatorCoverage": 1,
+    "passed": true
+  },
+  "notes": [
+    "Metrics cross-check: PASS (11/11 within tolerance)",
+    "Assignments cross-check: PASS – every job captured exactly once.",
+    "Owner coverage cross-check: PASS – recomputed coverage aligns with command plan."
+  ]
+}

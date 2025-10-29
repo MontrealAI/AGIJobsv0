@@ -485,6 +485,7 @@ type DeterministicProof = {
   superIntelligenceHash: string;
   deploymentIntegrityHash: string;
   ownerSafeTransactionsHash: string;
+  crossValidationHash: string;
 };
 
 type DeterministicVerification = {
@@ -579,6 +580,7 @@ export type Summary = {
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
   ownerSafeTransactions: OwnerSafeTransactionsReport;
+  crossValidation: CrossValidationReport;
 };
 
 type SummaryWithSnapshot = Summary & {
@@ -601,6 +603,46 @@ type CoverageSurface =
 type CommandCoverage = {
   value: number;
   detail: Record<CoverageSurface, number>;
+};
+
+type CrossValidationMetricCheck = {
+  metric: string;
+  description: string;
+  expected: number;
+  actual: number;
+  delta: number;
+  tolerance: number;
+  passed: boolean;
+};
+
+type CrossValidationCoverageCheck = {
+  surface: CoverageSurface;
+  expected: number;
+  actual: number;
+  delta: number;
+  passed: boolean;
+};
+
+type CrossValidationAssignmentsCheck = {
+  expectedJobs: number;
+  assignments: number;
+  uniqueJobs: number;
+  uniqueAgents: number;
+  uniqueValidators: number;
+  jobCoverage: number;
+  agentCoverage: number;
+  validatorCoverage: number;
+  passed: boolean;
+};
+
+type CrossValidationReport = {
+  version: '1.0';
+  generatedAt: string;
+  status: 'pass' | 'attention';
+  metrics: CrossValidationMetricCheck[];
+  coverage: CrossValidationCoverageCheck[];
+  assignments: CrossValidationAssignmentsCheck;
+  notes: string[];
 };
 
 type OwnerCommandPlan = {
@@ -2559,6 +2601,14 @@ function pseudoRandom(seed: string): number {
   return int / max;
 }
 
+function roundTo(value: number, decimals: number): number {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
 type AgentState = {
   availableAt: number;
   load: number;
@@ -4089,6 +4139,25 @@ function synthesiseSummary(
       mermaid: 'graph LR\n',
       recommendedActions: [],
     },
+    crossValidation: {
+      version: '1.0',
+      generatedAt: analysisTimestamp,
+      status: 'attention',
+      metrics: [],
+      coverage: [],
+      assignments: {
+        expectedJobs: scenario.jobs.length,
+        assignments: 0,
+        uniqueJobs: 0,
+        uniqueAgents: 0,
+        uniqueValidators: 0,
+        jobCoverage: 0,
+        agentCoverage: 0,
+        validatorCoverage: 0,
+        passed: false,
+      },
+      notes: ['Cross-validation pending computation.'],
+    },
   };
 }
 
@@ -4286,6 +4355,259 @@ function updateNetMetrics(context: SimulationContext, assignment: Assignment): v
   }
 }
 
+type AggregateMetrics = {
+  totalEscrowedAgi: number;
+  totalStablecoinVolume: number;
+  validatorRewardsAgi: number;
+  ownerBufferContribution: number;
+  treasuryAfterRun: number;
+  roiMultiplier: number;
+  netYield: number;
+  paybackHours: number;
+  throughputJobsPerDay: number;
+  capitalVelocity: number;
+};
+
+function recomputeAggregateMetrics(summary: Summary, scenario: Scenario): AggregateMetrics {
+  let totalEscrowedAgi = 0;
+  let totalStable = 0;
+  let validatorRewards = 0;
+  let ownerBuffer = 0;
+  let cumulativeValue = 0;
+  let cumulativeCost = 0;
+  let finalHour = 0;
+  let paybackHours = 0;
+  for (const assignment of summary.assignments) {
+    totalEscrowedAgi += assignment.rewardAgi;
+    totalStable += assignment.rewardStable;
+    const validatorReward = assignment.rewardAgi * 0.08;
+    const ownerContribution = assignment.rewardAgi * 0.02;
+    validatorRewards += validatorReward;
+    ownerBuffer += ownerContribution;
+    cumulativeValue += assignment.economicValue;
+    cumulativeCost += assignment.rewardAgi + assignment.rewardStable + validatorReward + ownerContribution;
+    finalHour = Math.max(finalHour, assignment.endHour);
+    if (paybackHours === 0 && cumulativeValue >= cumulativeCost) {
+      paybackHours = assignment.endHour;
+    }
+  }
+  const treasuryAfterRun = Math.round(
+    scenario.treasury.agiBalance - validatorRewards - totalEscrowedAgi + cumulativeValue,
+  );
+  const roiMultiplier = Number(
+    (cumulativeValue / Math.max(totalEscrowedAgi + totalStable, 1)).toFixed(2),
+  );
+  const netYield = Number(
+    (
+      cumulativeValue -
+      (totalEscrowedAgi + totalStable + validatorRewards + ownerBuffer)
+    ).toFixed(2),
+  );
+  const throughputJobsPerDay = Number(
+    ((summary.assignments.length / Math.max(finalHour, 1)) * 24).toFixed(2),
+  );
+  const capitalVelocity = Number(
+    (cumulativeValue / Math.max(finalHour <= 0 ? 1 : finalHour, 1)).toFixed(2),
+  );
+  return {
+    totalEscrowedAgi: Math.round(totalEscrowedAgi),
+    totalStablecoinVolume: Math.round(totalStable),
+    validatorRewardsAgi: Math.round(validatorRewards),
+    ownerBufferContribution: Math.round(ownerBuffer),
+    treasuryAfterRun,
+    roiMultiplier,
+    netYield,
+    paybackHours: Number(paybackHours.toFixed(2)),
+    throughputJobsPerDay,
+    capitalVelocity,
+  };
+}
+
+function buildMetricCheck(
+  metric: string,
+  description: string,
+  expected: number,
+  actual: number,
+  tolerance: number,
+): CrossValidationMetricCheck {
+  const precision = Math.abs(expected) > 10000 || Math.abs(actual) > 10000 ? 0 : 3;
+  const roundedExpected = roundTo(expected, precision);
+  const roundedActual = roundTo(actual, precision);
+  const delta = roundTo(roundedActual - roundedExpected, 3);
+  return {
+    metric,
+    description,
+    expected: roundedExpected,
+    actual: roundedActual,
+    delta,
+    tolerance,
+    passed: Math.abs(delta) <= tolerance,
+  };
+}
+
+function buildCoverageChecks(
+  summary: Summary,
+  scenario: Scenario,
+): CrossValidationCoverageCheck[] {
+  const recomputed = computeOwnerCommandCoverage(scenario);
+  const surfaces = Object.keys(summary.ownerCommandPlan.coverageDetail) as CoverageSurface[];
+  return surfaces.map((surface) => {
+    const expected = summary.ownerCommandPlan.coverageDetail[surface] ?? 0;
+    const actual = recomputed.detail[surface] ?? 0;
+    const delta = roundTo(actual - expected, 3);
+    return {
+      surface,
+      expected: roundTo(expected, 3),
+      actual: roundTo(actual, 3),
+      delta,
+      passed: Math.abs(delta) <= 0.001,
+    };
+  });
+}
+
+function crossValidateSummary(summary: Summary, scenario: Scenario): CrossValidationReport {
+  const aggregates = recomputeAggregateMetrics(summary, scenario);
+  const metrics: CrossValidationMetricCheck[] = [
+    buildMetricCheck(
+      'totalEscrowedAgi',
+      'Aggregate AGI escrow derived from assignments',
+      aggregates.totalEscrowedAgi,
+      summary.metrics.totalEscrowedAgi,
+      0.5,
+    ),
+    buildMetricCheck(
+      'totalStablecoinVolume',
+      'Stablecoin commitments derived from assignments',
+      aggregates.totalStablecoinVolume,
+      summary.metrics.totalStablecoinVolume,
+      0.5,
+    ),
+    buildMetricCheck(
+      'validatorRewardsAgi',
+      'Validator reward pool at 8% share',
+      aggregates.validatorRewardsAgi,
+      summary.metrics.validatorRewardsAgi,
+      0.5,
+    ),
+    buildMetricCheck(
+      'ownerBufferContribution',
+      'Owner buffer contribution at 2% share',
+      aggregates.ownerBufferContribution,
+      summary.metrics.ownerBufferContribution,
+      0.5,
+    ),
+    buildMetricCheck(
+      'treasuryAfterRun',
+      'Treasury position after execution',
+      aggregates.treasuryAfterRun,
+      summary.metrics.treasuryAfterRun,
+      0.5,
+    ),
+    buildMetricCheck(
+      'roiMultiplier',
+      'Return on investment multiplier',
+      aggregates.roiMultiplier,
+      summary.metrics.roiMultiplier,
+      0.01,
+    ),
+    buildMetricCheck(
+      'netYield',
+      'Net economic yield in AGI',
+      aggregates.netYield,
+      summary.metrics.netYield,
+      0.5,
+    ),
+    buildMetricCheck(
+      'paybackHours',
+      'Hours until capital payback',
+      aggregates.paybackHours,
+      summary.metrics.paybackHours,
+      0.05,
+    ),
+    buildMetricCheck(
+      'throughputJobsPerDay',
+      'Job throughput per 24h window',
+      aggregates.throughputJobsPerDay,
+      summary.metrics.throughputJobsPerDay,
+      0.05,
+    ),
+    buildMetricCheck(
+      'capitalVelocity',
+      'Capital velocity in AGI per hour',
+      aggregates.capitalVelocity,
+      summary.metrics.capitalVelocity,
+      0.1,
+    ),
+    buildMetricCheck(
+      'ownerCommandCoverage',
+      'Owner command coverage value',
+      computeOwnerCommandCoverage(scenario).value,
+      summary.metrics.ownerCommandCoverage,
+      0.001,
+    ),
+  ];
+
+  const expectedJobs = scenario.jobs.length;
+  const assignmentsCount = summary.assignments.length;
+  const uniqueJobs = new Set(summary.assignments.map((assignment) => assignment.jobId)).size;
+  const uniqueAgents = new Set(summary.assignments.map((assignment) => assignment.agentId)).size;
+  const validatorSet = new Set<string>();
+  for (const assignment of summary.assignments) {
+    for (const validator of assignment.validatorIds) {
+      validatorSet.add(validator);
+    }
+  }
+  const jobCoverage = expectedJobs > 0 ? uniqueJobs / expectedJobs : 1;
+  const agentCoverage = scenario.agents.length > 0 ? uniqueAgents / scenario.agents.length : 1;
+  const validatorCoverage =
+    scenario.validators.length > 0 ? validatorSet.size / scenario.validators.length : 1;
+  const assignmentsPassed =
+    assignmentsCount === expectedJobs && uniqueJobs === expectedJobs && expectedJobs > 0;
+  const assignments: CrossValidationAssignmentsCheck = {
+    expectedJobs,
+    assignments: assignmentsCount,
+    uniqueJobs,
+    uniqueAgents,
+    uniqueValidators: validatorSet.size,
+    jobCoverage: roundTo(jobCoverage, 3),
+    agentCoverage: roundTo(agentCoverage, 3),
+    validatorCoverage: roundTo(validatorCoverage, 3),
+    passed: assignmentsPassed,
+  };
+
+  const coverageChecks = buildCoverageChecks(summary, scenario);
+  const metricsPassed = metrics.every((check) => check.passed);
+  const coveragePassed = coverageChecks.every((check) => check.passed);
+  const status: CrossValidationReport['status'] =
+    metricsPassed && coveragePassed && assignments.passed ? 'pass' : 'attention';
+  const notes: string[] = [];
+  notes.push(
+    metricsPassed
+      ? `Metrics cross-check: PASS (${metrics.filter((check) => check.passed).length}/${metrics.length} within tolerance)`
+      : 'Metrics cross-check: ATTENTION – investigate metric divergence.',
+  );
+  notes.push(
+    assignments.passed
+      ? 'Assignments cross-check: PASS – every job captured exactly once.'
+      : 'Assignments cross-check: ATTENTION – job coverage mismatch detected.',
+  );
+  notes.push(
+    coveragePassed
+      ? 'Owner coverage cross-check: PASS – recomputed coverage aligns with command plan.'
+      : 'Owner coverage cross-check: ATTENTION – recomputed coverage diverges from published plan.',
+  );
+
+  return {
+    version: '1.0',
+    generatedAt: summary.generatedAt,
+    status,
+    metrics,
+    coverage: coverageChecks,
+    assignments,
+    notes,
+  };
+}
+
 export async function runScenario(
   scenario: Scenario,
   options: {
@@ -4396,6 +4718,7 @@ export async function runScenario(
   summary.metrics.ownerSafeTransactionCoverage = Number(
     summary.ownerSafeTransactions.coverage.toFixed(3),
   );
+  summary.crossValidation = crossValidateSummary(summary, workingScenario);
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
@@ -4468,6 +4791,7 @@ const DETERMINISTIC_FIELDS: Array<keyof DeterministicProof> = [
   'superIntelligenceHash',
   'deploymentIntegrityHash',
   'ownerSafeTransactionsHash',
+  'crossValidationHash',
 ];
 
 export function buildDeterministicProof(summary: Summary): DeterministicProof {
@@ -4516,6 +4840,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
       assertions: summary.assertions,
       treasuryTrajectory: summary.treasuryTrajectory,
       ownerSafeTransactions: summary.ownerSafeTransactions,
+      crossValidation: summary.crossValidation,
     }),
     metricsHash: hashObject(summary.metrics),
     assignmentsHash: hashObject(assignmentsProjection),
@@ -4528,6 +4853,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
     superIntelligenceHash: hashObject(summary.superIntelligence),
     deploymentIntegrityHash: hashObject(summary.deploymentIntegrity),
     ownerSafeTransactionsHash: hashObject(summary.ownerSafeTransactions),
+    crossValidationHash: hashObject(summary.crossValidation),
   };
   return proof;
 }
@@ -4651,6 +4977,10 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'assertions.json'),
     JSON.stringify(summary.assertions, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'cross-validation.json'),
+    JSON.stringify(summary.crossValidation, null, 2),
   );
   await fs.writeFile(
     path.join(outputDir, 'owner-command-plan.md'),

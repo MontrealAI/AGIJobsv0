@@ -3,8 +3,8 @@
   "scenarioId": "economic-power-v0-baseline",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
   "generatedAt": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-29T18:01:56.378Z",
-  "summaryHash": "2345b3c3389241c9d28e223ae44f162a7f300aa66cb68a675f344c56e343e27c",
+  "executionTimestamp": "2025-10-29T20:11:12.346Z",
+  "summaryHash": "6768689a0978b016e9b47114a2e003067cdf1c404d1cf2076a6f7c9b3d5c1af3",
   "metricsHash": "f96fadec9df2b9d80a7faa0e6d29a102506cfe2978227bfc4f8a8bd6faf676cd",
   "assignmentsHash": "d87b8b92c996cea3c93d854964242154ea38cd96e8aa2418d005c0c5e845def6",
   "commandCoverageHash": "6f79ff1d64ea9cc89e6acf7b3a7214667be2cb0653f8273fb003d6c123a16ded",
@@ -15,5 +15,6 @@
   "sovereignSafetyMeshHash": "f3a1f06ec804ab8688982a5a76ad7d7c14ef9e3ec3ead8c661b50c104597e8a8",
   "superIntelligenceHash": "e6c022f0558a81deac88a85f8c4e8271eff4e75bf281be2686c5c49edba5feb4",
   "deploymentIntegrityHash": "3e2168a027f70501295f334e1678aed7abd9c1f739f7a7123a444925eeab289e",
-  "ownerSafeTransactionsHash": "668065480483c4cb5b3f15adab8a672157c3d7622aa817614aa0927c378c5007"
+  "ownerSafeTransactionsHash": "668065480483c4cb5b3f15adab8a672157c3d7622aa817614aa0927c378c5007",
+  "crossValidationHash": "a97f4ebf44d995562d9daaf8c768e23b31a411164750444ba6036282980fddef"
 }
