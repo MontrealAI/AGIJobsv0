@@ -1,7 +1,6 @@
 """Web3 client factory and helpers."""
 from __future__ import annotations
 
-import functools
 import logging
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -20,7 +19,6 @@ class Web3Config:
     request_kwargs: Optional[Dict[str, Any]] = None
 
 
-@functools.lru_cache(maxsize=4)
 def get_web3(config: Web3Config) -> Web3:
     logger.debug("Initialising Web3 client", extra={"rpc_url": config.rpc_url, "chain_id": config.chain_id})
     provider = HTTPProvider(config.rpc_url, request_kwargs=config.request_kwargs)
