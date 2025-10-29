@@ -1,166 +1,102 @@
+"""Planner ↔ specialist orchestration."""
+
 from __future__ import annotations
 
-import json
-import threading
+import logging
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
-from .blockchain import BlockchainClient, BlockchainState
-from .compliance import ComplianceEngine, ComplianceReport
-from .config import Config
-from .governance import GovernanceController
-from .jobs import JobManager
+from rich.console import Console
+from rich.table import Table
+
+from .config import AlphaNodeConfig
 from .knowledge import KnowledgeLake
-from .logging_utils import configure_logging, json_log
-from .metrics import MetricsRegistry, MetricsServer
-from .planner import Planner
-from .safety import AntifragilityDrillRunner, SafetyController
-from .scheduler import RepeatingTask
-from .specialists import BiotechSpecialist, FinanceSpecialist, ManufacturingSpecialist, Specialist
+from .planner import MuZeroPlanner, PlanResult
+from .safety import SafetyManager
+from .specialists import SpecialistAgent, SpecialistContext, load_specialist
+from .staking import StakeManagerClient
+from .task_router import Job, TaskHarvester
+
+LOGGER = logging.getLogger("agi_alpha_node")
 
 
 @dataclass
-class OrchestratorComponents:
-    blockchain: BlockchainClient
-    knowledge: KnowledgeLake
-    planner: Planner
-    specialists: Dict[str, Specialist]
-    job_manager: JobManager
-    metrics: MetricsRegistry
-    metrics_server: MetricsServer
-    safety_controller: SafetyController
-    antifragility_runner: AntifragilityDrillRunner
-    governance: GovernanceController
-    compliance_engine: ComplianceEngine
+class ExecutionResult:
+    job: Job
+    specialist_outputs: Dict[str, Dict[str, str]]
+    expected_reward: float
 
 
 class Orchestrator:
-    def __init__(self, config: Config, state_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        config: AlphaNodeConfig,
+        knowledge: KnowledgeLake,
+        stake_client: StakeManagerClient,
+        safety: SafetyManager,
+        console: Console | None = None,
+    ):
         self.config = config
-        self.state_path = state_path or Path("demo/AGI-Alpha-Node-v0/state")
-        self.state_path.mkdir(parents=True, exist_ok=True)
-        self.components = self._build_components()
-        self._cycle_task = RepeatingTask(60, self.run_cycle, "agi-cycle")
-        self._drill_task = RepeatingTask(
-            self.config.orchestrator.antifragility_interval_minutes * 60,
-            self._run_antifragility,
-            "agi-antifragility",
-        )
-        self._lock = threading.Lock()
-        self._latest_drill: Dict[str, object] = {"drills": []}
+        self.knowledge = knowledge
+        self.stake_client = stake_client
+        self.safety = safety
+        self.console = console or Console()
+        self.harvester = TaskHarvester(config.jobs)
+        self.specialists: Dict[str, SpecialistAgent] = {}
+        self._planner = MuZeroPlanner(config.planner, knowledge)
 
-    def _write_json(self, name: str, payload: Dict[str, object]) -> None:
-        path = self.state_path / name
-        path.write_text(json.dumps(payload, indent=2))
+    def load_specialists(self) -> None:
+        for spec_config in self.config.specialists:
+            cls = load_specialist(spec_config.class_path)
+            specialist = cls(capabilities=spec_config.capabilities)
+            self.specialists[spec_config.name] = specialist
+            LOGGER.info(
+                "Specialist loaded",
+                extra={"event": "specialist_loaded", "data": {"name": spec_config.name}},
+            )
 
-    def _run_antifragility(self) -> None:
-        result = self.components.antifragility_runner.run_all()
-        self._latest_drill = result
-        self._write_json("antifragility.json", result)
-
-    def _build_components(self) -> OrchestratorComponents:
-        configure_logging(self.config.observability.log_path)
-        knowledge = KnowledgeLake(
-            storage_path=self.config.knowledge_lake.storage_path,
-            retention_days=self.config.knowledge_lake.retention_days,
-            max_entries=self.config.knowledge_lake.max_entries,
-        )
-        metrics = MetricsRegistry()
-        blockchain = BlockchainClient(self.config, BlockchainState())
-        planner = Planner(config=self.config.planner, knowledge=knowledge, metrics=metrics)
-        specialists: Dict[str, Specialist] = {}
-        if self.config.specialists.finance.enabled:
-            specialists["finance"] = FinanceSpecialist(knowledge)
-        if self.config.specialists.biotech.enabled:
-            specialists["biotech"] = BiotechSpecialist(knowledge)
-        if self.config.specialists.manufacturing.enabled:
-            specialists["manufacturing"] = ManufacturingSpecialist(knowledge)
-        job_manager = JobManager(self.config, blockchain, planner, specialists, metrics)
-        metrics_server = MetricsServer(metrics, self.config.observability.metrics_port)
-        safety_controller = SafetyController(self.config, blockchain)
-        antifragility_runner = AntifragilityDrillRunner(self.config, blockchain)
-        governance = GovernanceController(self.config, blockchain)
-        compliance_engine = ComplianceEngine(
-            config=self.config,
-            blockchain=blockchain,
-            job_manager=job_manager,
-            planner=planner,
-            knowledge=knowledge,
-        )
-        metrics_server.start()
-        json_log("orchestrator_bootstrap", specialists=list(specialists))
-        return OrchestratorComponents(
-            blockchain=blockchain,
-            knowledge=knowledge,
-            planner=planner,
-            specialists=specialists,
-            job_manager=job_manager,
-            metrics=metrics,
-            metrics_server=metrics_server,
-            safety_controller=safety_controller,
-            antifragility_runner=antifragility_runner,
-            governance=governance,
-            compliance_engine=compliance_engine,
-        )
-
-    def run_cycle(self) -> None:
-        with self._lock:
-            self.components.safety_controller.enforce()
-            outcomes = self.components.job_manager.execute_cycle()
-            total_reward = sum(outcome.reward for outcome in outcomes)
-            self.components.metrics.inc_counter("agi_alpha_node_cycles", 1)
-            self.components.metrics.set_gauge("agi_alpha_node_total_reward", total_reward)
-            json_log("orchestrator_cycle", total_reward=total_reward, jobs=[o.job_id for o in outcomes])
-            status_payload = self.status()
-            self._write_json("status.json", status_payload)
-            if not self._latest_drill["drills"]:
-                self._write_json("antifragility.json", self._latest_drill)
-
-    def start(self) -> None:
-        json_log("orchestrator_start")
-        self._run_antifragility()
-        self.run_cycle()
-        self._cycle_task.start()
-        self._drill_task.start()
-
-    def stop(self) -> None:
-        json_log("orchestrator_stop")
-        self._cycle_task.stop()
-        self._drill_task.stop()
-        self.components.metrics_server.stop()
-
-    def status(self) -> Dict[str, object]:
-        snapshot = self.components.safety_controller.collect_snapshot()
+    def capability_scores(self) -> Dict[str, float]:
         return {
-            "ens_verified": snapshot.ens_verified,
-            "stake_sufficient": snapshot.stake_sufficient,
-            "paused": snapshot.paused,
-            "governance_address": snapshot.governance_address,
-            "active_jobs": self.components.job_manager.active_jobs(),
-            "risk_tolerance": self.components.planner.config.risk_tolerance,
+            name: min(1.0, 0.6 + 0.05 * len(self.knowledge.search(name)))
+            for name in self.specialists
         }
 
-    def run_compliance(self) -> ComplianceReport:
-        with self._lock:
-            report = self.components.compliance_engine.run()
-            self._write_json(
-                "compliance.json",
-                {
-                    "overall_score": report.overall_score,
-                    "dimensions": [
-                        {"name": d.name, "score": d.score, "rationale": d.rationale}
-                        for d in report.dimensions
-                    ],
-                },
+    def run_cycle(self) -> ExecutionResult:
+        self.safety.ensure_active()
+        status = self.stake_client.current_status()
+        if not status.is_active:
+            if self.config.safety.pause_on_slash_risk:
+                self.safety.pause("Stake below minimum")
+            raise RuntimeError("Insufficient stake to activate node")
+        capability_scores = self.capability_scores()
+        jobs = self.harvester.eligible_jobs(capability_scores)
+        plan = self._planner.plan(jobs)
+        outputs = self._execute_specialists(plan.job)
+        self._render_cycle(plan, outputs)
+        return ExecutionResult(plan.job, outputs, plan.expected_reward)
+
+    def _execute_specialists(self, job: Job) -> Dict[str, Dict[str, str]]:
+        context = SpecialistContext(knowledge=self.knowledge, planner_goal=self.config.planner.economic_goal)
+        results: Dict[str, Dict[str, str]] = {}
+        for name, specialist in self.specialists.items():
+            if job.domain != name:
+                continue
+            results[name] = specialist.solve(job.payload, context)
+            LOGGER.info(
+                "Specialist completed job",
+                extra={"event": "specialist_complete", "data": {"name": name, "job": job.job_id}},
             )
-            return report
+        return results
 
-    def governance(self) -> GovernanceController:
-        return self.components.governance
+    def _render_cycle(self, plan: PlanResult, outputs: Dict[str, Dict[str, str]]) -> None:
+        table = Table(title=f"Execution Summary • Job {plan.job.job_id}")
+        table.add_column("Specialist")
+        table.add_column("Key Outputs")
+        for name, data in outputs.items():
+            summary = ", ".join(f"{k}: {v}" for k, v in data.items())
+            table.add_row(name, summary)
+        table.add_row("expected_reward", f"{plan.expected_reward:.2f}")
+        self.console.print(table)
 
-    def metrics_snapshot(self) -> str:
-        return self.components.metrics.render()
 
-
-__all__ = ["Orchestrator", "OrchestratorComponents"]
+__all__ = ["Orchestrator", "ExecutionResult"]

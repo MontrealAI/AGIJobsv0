@@ -1,50 +1,52 @@
-identity:
-  ens_domain: demo.alpha.node.agi.eth
-  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
+# Example configuration for the AGI Alpha Node demo
+# Copy to your own file and adjust values before running `agi-alpha-node bootstrap`
 
-governance:
-  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+ens:
+  name: "atlas.alpha.node.agi.eth"
+  operator_address: "0x000000000000000000000000000000000000dEaD"
+  provider_url: "https://mainnet.infura.io/v3/YOUR_KEY"
+  fallback_registry_file: "./data/mock_ens_registry.json"
 
-economy:
-  stake_threshold: 1000
+staking:
+  stake_manager_address: "0x0000000000000000000000000000000000000001"
+  minimum_stake: 10000
+  auto_reinvest: true
 
-network:
-  rpc_url: "https://mainnet.infura.io/v3/YOUR_API_KEY"
+jobs:
+  router_address: "0x0000000000000000000000000000000000000002"
+  registry_address: "0x0000000000000000000000000000000000000003"
+  poll_interval_seconds: 30
+  eligibility_threshold: 0.75
 
-contracts:
-  job_registry: "0x0000000000000000000000000000000000000001"
-  stake_manager: "0x0000000000000000000000000000000000000002"
-  incentives: "0x0000000000000000000000000000000000000003"
-  treasury: "0x0000000000000000000000000000000000000004"
-
-storage:
-  knowledge_lake: "./storage/knowledge.json"
-  log_file: "./logs/alpha_node.log"
-
-observability:
-  enable_prometheus: true
-  enable_dashboard: true
-  metrics_port: 9753
-  dashboard_port: 8088
-
-runtime:
-  job_poll_interval: 2.5
-  planning_horizon: 4
-  exploration_bias: 1.2
+planner:
+  horizon: 5
+  exploration_constant: 1.1
+  risk_aversion: 0.2
+  economic_goal: "maximize_compounded_rewards"
 
 specialists:
   - name: finance
-    model: "finance-strategist-v1"
-    risk_limit: 3.5
-    description: "Treasury liquidity orchestration"
-    enabled: true
+    class_path: agi_alpha_node.specialists.finance:FinanceStrategist
+    capabilities: ["hedging", "yield_farming", "treasury_management"]
   - name: biotech
-    model: "biotech-synthesist-v1"
-    risk_limit: 2.0
-    description: "Molecular discovery and synthesis"
-    enabled: true
+    class_path: agi_alpha_node.specialists.biotech:BiotechSynthesist
+    capabilities: ["drug_discovery", "protein_design"]
   - name: manufacturing
-    model: "manufacturing-optimizer-v1"
-    risk_limit: 1.5
-    description: "Digital twin optimization"
-    enabled: true
+    class_path: agi_alpha_node.specialists.manufacturing:ManufacturingOptimizer
+    capabilities: ["supply_chain", "process_control"]
+
+knowledge_lake:
+  database_path: ./storage/knowledge.db
+  embedding_dimension: 16
+
+metrics:
+  prometheus_port: 9109
+  dashboard_port: 8080
+  log_file: ./logs/agi-alpha-node.jsonl
+
+safety:
+  enable_automatic_pause: true
+  pause_on_failed_ens: true
+  pause_on_slash_risk: true
+  drill_interval_minutes: 60
+

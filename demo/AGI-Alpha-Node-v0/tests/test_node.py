@@ -1,61 +1,65 @@
 from pathlib import Path
 
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.node import AlphaNode
+from agi_alpha_node.config import AlphaNodeConfig
+from agi_alpha_node.knowledge import KnowledgeLake
+from agi_alpha_node.orchestrator import Orchestrator
+from agi_alpha_node.safety import SafetyManager
+from agi_alpha_node.staking import StakeManagerClient
 
 
 def _write_config(tmp_path: Path) -> Path:
     config_path = tmp_path / "config.yaml"
     config_path.write_text(
         """
-identity:
-  ens_domain: demo.alpha.node.agi.eth
-  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
-
-governance:
-  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
-
-economy:
-  stake_threshold: 1
-
-network:
-  rpc_url: ""
-
-contracts:
-  job_registry: "0x1"
-  stake_manager: "0x2"
-  incentives: "0x3"
-  treasury: "0x4"
-
-storage:
-  knowledge_lake: "storage/knowledge.json"
-  log_file: "logs/alpha.log"
-
-observability:
-  enable_prometheus: false
-  enable_dashboard: false
-
+ens:
+  name: demo.alpha.node.agi.eth
+  operator_address: "0x0000000000000000000000000000000000000001"
+  fallback_registry_file: "ens.json"
+staking:
+  stake_manager_address: "0x1"
+  minimum_stake: 1
+jobs:
+  router_address: "0x2"
+  registry_address: "0x3"
+planner:
+  horizon: 2
+  exploration_constant: 1.1
+  risk_aversion: 0.2
 specialists:
   - name: finance
-    model: "demo"
-    risk_limit: 1.0
-    description: "Demo finance"
-    enabled: true
+    class_path: agi_alpha_node.specialists.finance:FinanceStrategist
+    capabilities: ["hedging"]
+knowledge_lake:
+  database_path: knowledge/alpha.db
+metrics:
+  prometheus_port: 9109
+  dashboard_port: 8080
+safety:
+  enable_automatic_pause: true
+  pause_on_failed_ens: false
+  pause_on_slash_risk: true
+  drill_interval_minutes: 60
 """,
         encoding="utf-8",
     )
-    (tmp_path / "storage").mkdir()
-    (tmp_path / "logs").mkdir()
+    (tmp_path / "knowledge").mkdir()
     return config_path
 
 
-def test_alpha_node_run_once(tmp_path: Path) -> None:
+def test_orchestrator_run_cycle(tmp_path: Path, monkeypatch) -> None:
     config_path = _write_config(tmp_path)
     ens_cache = tmp_path / "ens.json"
-    ens_cache.write_text("{\"demo.alpha.node.agi.eth\": \"0x1234567890abcdef1234567890abcdef12345678\"}", encoding="utf-8")
+    ens_cache.write_text("{\"demo.alpha.node.agi.eth\": \"0x0000000000000000000000000000000000000001\"}", encoding="utf-8")
+
     config = AlphaNodeConfig.load(config_path)
-    node = AlphaNode(config=config, ens_cache=ens_cache)
-    node.bootstrap()
-    result = node.run_once()
-    assert result is not None
-    assert node.state.ops.completed_jobs >= 1
+    knowledge = KnowledgeLake(config.resolve_path(config.knowledge_lake.database_path))
+    safety = SafetyManager(config.safety)
+    stake_client = StakeManagerClient(config.staking)
+    orchestrator = Orchestrator(config, knowledge, stake_client, safety)
+    orchestrator.load_specialists()
+
+    # Ensure at least one job is available with high capability
+    monkeypatch.setattr(orchestrator, "capability_scores", lambda: {"finance": 1.0})
+    result = orchestrator.run_cycle()
+    assert result.job.domain == "finance"
+    assert "finance" in result.specialist_outputs
