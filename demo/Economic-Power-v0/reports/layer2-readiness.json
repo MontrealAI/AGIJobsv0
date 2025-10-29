@@ -1,0 +1,123 @@
+{
+  "network": "Arbitrum One",
+  "chainId": 42161,
+  "rollupType": "optimistic",
+  "status": "pilot",
+  "readinessScore": 0.91,
+  "classification": "mission-ready",
+  "settlementTimeMinutes": 12,
+  "settlementSummary": "Settlements confirm on L1 in 12 minutes with 3 watcher(s).",
+  "bridge": {
+    "contract": "0xA100000000000000000000000000000000000100",
+    "ownerSafe": "0xAGIJobsGovernor0000000000000000000000003",
+    "upgradeScript": "npm run owner:bridge-upgrade",
+    "watchers": [
+      "Watchtower Core Ops",
+      "Validator Nexus Cooperative",
+      "Guardian Mesh"
+    ],
+    "monitoringCadenceMinutes": 5
+  },
+  "sequencer": {
+    "operator": "AGI Jobs Sequencer Syndicate",
+    "backupOperators": [
+      "Sovereign Mesh Collective",
+      "Atlas Sentinel Grid"
+    ],
+    "decentralizationPlan": "Progressively activate additional sequencer keys via governance, rotating keys each epoch with automated proof verification."
+  },
+  "monitoring": {
+    "dashboards": [
+      "https://status.agijobs.ai/l2",
+      "https://grafana.agijobs.ai/d/l2-bridge",
+      "https://grafana.agijobs.ai/d/l2-latency"
+    ],
+    "alerts": [
+      "#agi-ops",
+      "PagerDuty:AGIJobs",
+      "Opsgenie:AGI-L2"
+    ]
+  },
+  "guardrails": [
+    "Run bridge settlement verification every epoch and attest results to governance ledger.",
+    "Hold >= 110% liquidity buffer in the mainnet treasury for L2 settlement backstops.",
+    "Trigger sequencer key rotation if latency exceeds 90th percentile for 15 minutes.",
+    "Escalate to governance safe if bridge watchers report anomaly severity > 2."
+  ],
+  "playbooks": [
+    {
+      "id": "bridge-pause",
+      "name": "Bridge emergency pause",
+      "script": "npm run owner:program -- --program bridge-emergency-pause",
+      "objective": "Pause rollup bridge on anomaly and route settlements back to mainnet."
+    },
+    {
+      "id": "sequencer-failover",
+      "name": "Sequencer failover",
+      "script": "npm run owner:program -- --program sequencer-failover",
+      "objective": "Rotate sequencer key set via multi-sig and resynchronise watchers."
+    },
+    {
+      "id": "l2-liquidity-topup",
+      "name": "L2 liquidity top-up",
+      "script": "npm run owner:program -- --program treasury-l2-topup",
+      "objective": "Refill bridge liquidity from mainnet treasury buffers when utilisation > 80%."
+    }
+  ],
+  "readinessFactors": [
+    {
+      "id": "bridge-audit",
+      "label": "Bridge audit coverage",
+      "status": "complete",
+      "weight": 0.25,
+      "contribution": 0.25,
+      "description": "Latest bridge audit completed Jan 2025 by Sigma Prime with zero critical findings."
+    },
+    {
+      "id": "sequencer-drills",
+      "label": "Sequencer failover drills",
+      "status": "in-progress",
+      "weight": 0.2,
+      "contribution": 0.12,
+      "description": "Quarterly rotation drills underway; 3 of 4 rehearsals executed with validated proofs."
+    },
+    {
+      "id": "data-availability",
+      "label": "Data availability pipeline",
+      "status": "complete",
+      "weight": 0.2,
+      "contribution": 0.2,
+      "description": "EigenDA service level integrated with redundancy mirrors across three geographies."
+    },
+    {
+      "id": "liquidity-backstop",
+      "label": "Liquidity backstop",
+      "status": "complete",
+      "weight": 0.15,
+      "contribution": 0.15,
+      "description": "Mainnet treasury commits 15M AGI liquidity buffer with automated refill triggers."
+    },
+    {
+      "id": "compliance-protocol",
+      "label": "Compliance protocol",
+      "status": "complete",
+      "weight": 0.1,
+      "contribution": 0.1,
+      "description": "Jurisdictional review complete; attestations logged on-chain for regulator portal."
+    },
+    {
+      "id": "agent-migration",
+      "label": "Agent migration mesh",
+      "status": "in-progress",
+      "weight": 0.1,
+      "contribution": 0.06,
+      "description": "Agent gateway beta routed 72% of workloads through Arbitrum mirrored APIs."
+    }
+  ],
+  "commentary": "Layer-2 mesh ready for production pilot with bridge guardrails, sequencer rotations, and compliance telemetry wired into the owner autopilot.",
+  "recommendedActions": [
+    "Complete readiness factor: Sequencer failover drills.",
+    "Complete readiness factor: Agent migration mesh."
+  ],
+  "mermaid": "graph TD\n    Owner[Owner Multi-Sig] -->|Bridge controls| Bridge\n    Bridge[\"Bridge 0xA100000000000000000000000000000000000100\"] -->|Finalize 12m| Mainnet[(Ethereum Mainnet)]\n    Bridge --> L2[Arbitrum One Rollup]\n    L2 --> Sequencer[\"Sequencer AGI Jobs Sequencer Syndicate\"]\n    Sequencer --> Backups[Backups Sovereign Mesh Collective | Atlas Sentinel Grid]\n    Bridge --> Watchers[Watchers Watchtower Core Ops, Validator Nexus Cooperative, Guardian Mesh]\n    Watchers --> Alerts[Alerts #agi-ops / PagerDuty:AGIJobs / Opsgenie:AGI-L2]\n    Alerts --> Owner\n    Owner --> Playbooks[Playbooks 3]\n    Owner --> Guardrails[Guardrails 4]\n"
+}
