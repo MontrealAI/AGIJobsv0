@@ -9,6 +9,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🌍 **Regional Sovereignty** – Earth, Luna, Mars, and Helios shards operate autonomously while reporting to a unified global ledger.
 - 🛰️ **Deterministic Routing** – Regional routers enforce locality, latency budgets, and spillover rules with auditable policies.
 - 🤖 **Containerized Agent Marketplace** – Nodes self-register with capabilities, heartbeats, and owner-managed quotas.
+- 🧱 **Container DNA & Pricing Telemetry** – Marketplace snapshots expose container images, runtime orchestration, compliance envelopes, and per-job pricing for every node.
 - 💾 **Crash-Proof Checkpointing** – A built-in recovery engine snapshots the entire fabric so runs resume exactly where they stopped.
 - 🛡️ **Owner Supreme Controls** – The owner can pause, update, reprioritize, or surgically reroute jobs at any moment via declarative commands.
 - 🧭 **Checkpoint Command Deck** – Owners retarget storage paths, tighten snapshot cadence, and trigger instant saves from the same schedule that drives pauses and reroutes.
@@ -64,7 +65,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
   ```
   Add `--jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json` to the command above to replay the curated Kardashev workload during the acceptance suite.
   This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
-6. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, and ledger invariants instantly—even offline.
+6. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, ledger invariants, and full container/pricing/compliance metadata instantly—even offline.
 7. **Open the run-specific dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore the same data pre-linked to that execution with zero configuration.
 8. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 

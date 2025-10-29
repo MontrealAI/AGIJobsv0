@@ -74,7 +74,20 @@
       "capacity": 24,
       "specialties": ["general", "finance", "compliance"],
       "heartbeatIntervalSec": 12,
-      "maxConcurrency": 24
+      "maxConcurrency": 24,
+      "endpoint": "https://earth-core-alpha.fabric.ops/api",
+      "deployment": {
+        "orchestration": "kubernetes",
+        "runtime": "node-lts",
+        "image": "registry.agi/earth-core-alpha:2.1.0",
+        "version": "2.1.0",
+        "entrypoint": "/opt/agi/start-core-alpha.sh",
+        "resources": { "cpuCores": 32, "memoryGb": 128, "gpuClass": "A10", "storageGb": 512 }
+      },
+      "availabilityZones": ["earth-central-1a", "earth-central-1b"],
+      "pricing": { "amount": 0.00072, "currency": "USDC", "unit": "job", "notes": "Includes compliance attestation" },
+      "tags": ["finance-hub", "tier-zero"],
+      "compliance": ["SOC2-Type-II", "GDPR"]
     },
     {
       "id": "earth.edge-europa",
@@ -82,7 +95,20 @@
       "capacity": 16,
       "specialties": ["logistics", "iot", "edge"],
       "heartbeatIntervalSec": 18,
-      "maxConcurrency": 12
+      "maxConcurrency": 12,
+      "endpoint": "https://edge-europa.fabric.ops/api",
+      "deployment": {
+        "orchestration": "nomad",
+        "runtime": "wasm",
+        "image": "registry.agi/edge-europa:3.5.2",
+        "version": "3.5.2",
+        "entrypoint": "/srv/bin/bootstrap",
+        "resources": { "cpuCores": 12, "memoryGb": 48, "storageGb": 256 }
+      },
+      "availabilityZones": ["earth-edge-1"],
+      "pricing": { "amount": 0.00038, "currency": "USDC", "unit": "job" },
+      "tags": ["edge", "iot"],
+      "compliance": ["ISO-27001"]
     },
     {
       "id": "luna.nav-station",
@@ -90,7 +116,20 @@
       "capacity": 12,
       "specialties": ["navigation", "observation"],
       "heartbeatIntervalSec": 18,
-      "maxConcurrency": 10
+      "maxConcurrency": 10,
+      "endpoint": "https://luna-nav.fabric.ops/api",
+      "deployment": {
+        "orchestration": "kubernetes",
+        "runtime": "python-3.11",
+        "image": "registry.agi/luna-nav-station:1.2.8",
+        "version": "1.2.8",
+        "entrypoint": "/opt/agi/luna-nav.sh",
+        "resources": { "cpuCores": 10, "memoryGb": 32, "storageGb": 128 }
+      },
+      "availabilityZones": ["luna-orbit-a"],
+      "pricing": { "amount": 0.00028, "currency": "USDC", "unit": "job" },
+      "tags": ["luna", "relay"],
+      "compliance": ["Lunar-Safety-Standard"]
     },
     {
       "id": "mars.regolith-cradle",
@@ -98,7 +137,20 @@
       "capacity": 18,
       "specialties": ["manufacturing", "terraforming"],
       "heartbeatIntervalSec": 20,
-      "maxConcurrency": 14
+      "maxConcurrency": 14,
+      "endpoint": "https://mars-regolith.fabric.ops/api",
+      "deployment": {
+        "orchestration": "nomad",
+        "runtime": "rust-optimized",
+        "image": "registry.agi/mars-regolith:4.0.0",
+        "version": "4.0.0",
+        "entrypoint": "/opt/agi/regolith.sh",
+        "resources": { "cpuCores": 20, "memoryGb": 72, "storageGb": 384 }
+      },
+      "availabilityZones": ["mars-foundry-a", "mars-foundry-b"],
+      "pricing": { "amount": 0.00055, "currency": "USDC", "unit": "job" },
+      "tags": ["manufacturing", "mars"],
+      "compliance": ["Mars-Colony-Safety"]
     },
     {
       "id": "mars.gpu-helion",
@@ -106,7 +158,20 @@
       "capacity": 32,
       "specialties": ["gpu", "vision", "simulation"],
       "heartbeatIntervalSec": 10,
-      "maxConcurrency": 20
+      "maxConcurrency": 20,
+      "endpoint": "https://mars-gpu-helion.fabric.ops/api",
+      "deployment": {
+        "orchestration": "kubernetes",
+        "runtime": "cuda",
+        "image": "registry.agi/mars-gpu-helion:5.3.1",
+        "version": "5.3.1",
+        "entrypoint": "/opt/agi/run-gpu.sh",
+        "resources": { "cpuCores": 40, "memoryGb": 160, "gpuClass": "A100", "storageGb": 512 }
+      },
+      "availabilityZones": ["mars-gpu-east"],
+      "pricing": { "amount": 0.00088, "currency": "USDC", "unit": "job", "notes": "High-priority GPU lane" },
+      "tags": ["gpu", "critical"],
+      "compliance": ["Mars-Colony-Safety", "SOC2-Type-II"]
     },
     {
       "id": "helios.solaris-array",
@@ -114,7 +179,20 @@
       "capacity": 28,
       "specialties": ["gpu", "astronomy"],
       "heartbeatIntervalSec": 9,
-      "maxConcurrency": 18
+      "maxConcurrency": 18,
+      "endpoint": "https://helios-solaris.fabric.ops/api",
+      "deployment": {
+        "orchestration": "kubernetes",
+        "runtime": "cuda",
+        "image": "registry.agi/helios-solaris:6.2.0",
+        "version": "6.2.0",
+        "entrypoint": "/opt/agi/launch-helion.sh",
+        "resources": { "cpuCores": 36, "memoryGb": 144, "gpuClass": "H100", "storageGb": 512 }
+      },
+      "availabilityZones": ["helios-array-a", "helios-array-b"],
+      "pricing": { "amount": 0.0012, "currency": "USDC", "unit": "job", "notes": "Premium solar analytics lane" },
+      "tags": ["helios", "premium"],
+      "compliance": ["SOC2-Type-II", "Solaris-Safety"]
     }
   ],
   "checkpoint": {

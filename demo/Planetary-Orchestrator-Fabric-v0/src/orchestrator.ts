@@ -13,14 +13,18 @@ import {
   JobState,
   LedgerSnapshot,
   NodeDefinition,
+  NodeDeploymentProfile,
   NodeHealthReport,
   NodeState,
+  NodePricingModel,
+  NodeResourcesProfile,
   OwnerCommand,
   RegistryEvent,
   RouterHealthReport,
   ShardConfig,
   ShardId,
   ShardState,
+  SummaryNodeSnapshot,
 } from './types';
 import {
   InMemoryFabricLogger,
@@ -78,6 +82,48 @@ function cloneRegistryEvent(event: RegistryEvent): RegistryEvent {
     default:
       return event;
   }
+}
+
+function cloneOptionalArray(values: string[] | undefined): string[] | undefined {
+  return values ? values.map((value) => value) : undefined;
+}
+
+function cloneNodeResources(resources: NodeResourcesProfile | undefined): NodeResourcesProfile | undefined {
+  if (!resources) {
+    return undefined;
+  }
+  return { ...resources };
+}
+
+function cloneNodeDeployment(
+  deployment: NodeDeploymentProfile | undefined
+): NodeDeploymentProfile | undefined {
+  if (!deployment) {
+    return undefined;
+  }
+  return {
+    ...deployment,
+    resources: cloneNodeResources(deployment.resources),
+  };
+}
+
+function cloneNodePricing(pricing: NodePricingModel | undefined): NodePricingModel | undefined {
+  if (!pricing) {
+    return undefined;
+  }
+  return { ...pricing };
+}
+
+function cloneNodeDefinition(definition: NodeDefinition): NodeDefinition {
+  return {
+    ...definition,
+    specialties: [...definition.specialties],
+    availabilityZones: cloneOptionalArray(definition.availabilityZones),
+    tags: cloneOptionalArray(definition.tags),
+    compliance: cloneOptionalArray(definition.compliance),
+    deployment: cloneNodeDeployment(definition.deployment),
+    pricing: cloneNodePricing(definition.pricing),
+  };
 }
 
 export class PlanetaryOrchestrator {
@@ -410,6 +456,79 @@ export class PlanetaryOrchestrator {
           configDefinition.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
           applied.heartbeatIntervalSec = command.update.heartbeatIntervalSec;
         }
+        if (command.update.endpoint !== undefined) {
+          definition.endpoint = command.update.endpoint;
+          configDefinition.endpoint = command.update.endpoint;
+          applied.endpoint = command.update.endpoint;
+        }
+        if (command.update.availabilityZones) {
+          const zones = command.update.availabilityZones.map((zone) => zone);
+          definition.availabilityZones = zones;
+          configDefinition.availabilityZones = zones.map((zone) => zone);
+          applied.availabilityZones = zones.map((zone) => zone);
+        }
+        if (command.update.tags) {
+          const tags = command.update.tags.map((tag) => tag);
+          definition.tags = tags;
+          configDefinition.tags = tags.map((tag) => tag);
+          applied.tags = tags.map((tag) => tag);
+        }
+        if (command.update.compliance) {
+          const compliance = command.update.compliance.map((item) => item);
+          definition.compliance = compliance;
+          configDefinition.compliance = compliance.map((item) => item);
+          applied.compliance = compliance.map((item) => item);
+        }
+        if (command.update.deployment) {
+          const update = command.update.deployment;
+          const existing = definition.deployment ? cloneNodeDeployment(definition.deployment) : undefined;
+          let merged: NodeDeploymentProfile;
+          if (existing) {
+            merged = {
+              ...existing,
+              ...update,
+              resources: {
+                ...existing.resources,
+                ...(update.resources ?? {}),
+              },
+            };
+          } else {
+            if (!update.orchestration || !update.image) {
+              throw new Error('Deployment updates must include orchestration and image when provisioning a new profile');
+            }
+            merged = {
+              orchestration: update.orchestration,
+              image: update.image,
+              runtime: update.runtime,
+              entrypoint: update.entrypoint,
+              version: update.version,
+              resources: update.resources ? { ...update.resources } : undefined,
+            };
+          }
+          definition.deployment = {
+            ...merged,
+            resources: cloneNodeResources(merged.resources),
+          };
+          configDefinition.deployment = cloneNodeDeployment(definition.deployment);
+          applied.deployment = cloneNodeDeployment(definition.deployment);
+        }
+        if (command.update.pricing) {
+          const update = command.update.pricing;
+          const current = definition.pricing ? { ...definition.pricing } : undefined;
+          const merged: Partial<NodePricingModel> = { ...current, ...update };
+          if (typeof merged.amount !== 'number' || !Number.isFinite(merged.amount)) {
+            throw new Error('Pricing updates must specify a numeric amount');
+          }
+          if (!merged.currency) {
+            throw new Error('Pricing updates must include a currency code');
+          }
+          if (!merged.unit) {
+            throw new Error('Pricing updates must include a billing unit');
+          }
+          definition.pricing = { ...merged } as NodePricingModel;
+          configDefinition.pricing = { ...definition.pricing };
+          applied.pricing = { ...definition.pricing };
+        }
         if (command.update.region && command.update.region !== definition.region) {
           this.requeueJobsForNode(nodeState, 'owner-node-region-update');
           definition.region = command.update.region;
@@ -436,15 +555,16 @@ export class PlanetaryOrchestrator {
         if (this.nodes.has(command.node.id)) {
           throw new Error(`Node ${command.node.id} already registered`);
         }
-        this.config.nodes.push({ ...command.node, specialties: [...command.node.specialties] });
-        const nodeState = this.createNodeState({ ...command.node, specialties: [...command.node.specialties] });
+        const definition = cloneNodeDefinition(command.node);
+        this.config.nodes.push(definition);
+        const nodeState = this.createNodeState(definition);
         nodeState.lastHeartbeatTick = this.tick;
         this.nodes.set(command.node.id, nodeState);
         push({
           tick: this.tick,
           type: 'owner.node.register',
           message: `Owner registered node ${command.node.id}`,
-          data: { node: command.node, reason: command.reason },
+          data: { node: cloneNodeDefinition(nodeState.definition), reason: command.reason },
         });
         break;
       }
@@ -643,9 +763,12 @@ export class PlanetaryOrchestrator {
     for (const [nodeId, nodePayload] of Object.entries(payload.nodes)) {
       const index = this.config.nodes.findIndex((entry) => entry.id === nodeId);
       if (index >= 0) {
-        this.config.nodes[index] = { ...this.config.nodes[index], ...nodePayload.definition };
+        this.config.nodes[index] = cloneNodeDefinition({
+          ...this.config.nodes[index],
+          ...nodePayload.definition,
+        });
       } else {
-        this.config.nodes.push({ ...nodePayload.definition });
+        this.config.nodes.push(cloneNodeDefinition(nodePayload.definition));
       }
     }
     if (payload.reporting) {
@@ -790,12 +913,23 @@ export class PlanetaryOrchestrator {
     return snapshot;
   }
 
-  getNodeSnapshots(): Record<string, { active: boolean; runningJobs: number }> {
-    const snapshot: Record<string, { active: boolean; runningJobs: number }> = {};
+  getNodeSnapshots(): Record<string, SummaryNodeSnapshot> {
+    const snapshot: Record<string, SummaryNodeSnapshot> = {};
     for (const [nodeId, node] of this.nodes.entries()) {
       snapshot[nodeId] = {
         active: node.active,
         runningJobs: node.runningJobs.size,
+        region: node.definition.region,
+        capacity: node.definition.capacity,
+        maxConcurrency: node.definition.maxConcurrency,
+        specialties: [...node.definition.specialties],
+        heartbeatIntervalSec: node.definition.heartbeatIntervalSec,
+        endpoint: node.definition.endpoint,
+        deployment: cloneNodeDeployment(node.definition.deployment),
+        availabilityZones: cloneOptionalArray(node.definition.availabilityZones),
+        pricing: cloneNodePricing(node.definition.pricing),
+        tags: cloneOptionalArray(node.definition.tags),
+        compliance: cloneOptionalArray(node.definition.compliance),
       };
     }
     return snapshot;
@@ -1235,7 +1369,7 @@ export class PlanetaryOrchestrator {
 
   private createNodeState(definition: NodeDefinition): NodeState {
     return {
-      definition,
+      definition: cloneNodeDefinition(definition),
       active: true,
       runningJobs: new Map(),
       lastHeartbeatTick: 0,

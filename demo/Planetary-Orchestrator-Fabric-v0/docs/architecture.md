@@ -50,16 +50,16 @@ graph LR
 
 ## Node Marketplace
 
-Nodes register declaratively. The orchestrator enforces owner-set maximum concurrency, latency windows, and heartbeat intervals.
+Nodes register declaratively. The orchestrator enforces owner-set maximum concurrency, latency windows, and heartbeat intervals while surfacing the exact container image, runtime, pricing, and compliance posture for every agent pod.
 
-| Node ID | Region | Capacity | Max Concurrency | Heartbeat | Capabilities |
-| --- | --- | --- | --- | --- | --- |
-| `earth.core-alpha` | Earth | 24 | 24 | 12 s | general, finance, compliance |
-| `earth.edge-europa` | Earth | 16 | 12 | 18 s | logistics, iot, edge |
-| `luna.nav-station` | Luna | 12 | 10 | 18 s | navigation, observation |
-| `mars.regolith-cradle` | Mars | 18 | 14 | 20 s | manufacturing, terraforming |
-| `mars.gpu-helion` | Mars | 32 | 20 | 10 s | gpu, vision, simulation |
-| `helios.solaris-array` | Helios | 28 | 18 | 9 s | gpu, astronomy |
+| Node ID | Region | Container Image | Runtime | Pricing (USDC/job) | Capabilities | Compliance |
+| --- | --- | --- | --- | --- | --- | --- |
+| `earth.core-alpha` | Earth | `registry.agi/earth-core-alpha:2.1.0` | kubernetes · node-lts | 0.00072 | general, finance, compliance | SOC2-Type-II, GDPR |
+| `earth.edge-europa` | Earth | `registry.agi/edge-europa:3.5.2` | nomad · wasm | 0.00038 | logistics, iot, edge | ISO-27001 |
+| `luna.nav-station` | Luna | `registry.agi/luna-nav-station:1.2.8` | kubernetes · python-3.11 | 0.00028 | navigation, observation | Lunar-Safety-Standard |
+| `mars.regolith-cradle` | Mars | `registry.agi/mars-regolith:4.0.0` | nomad · rust-optimized | 0.00055 | manufacturing, terraforming | Mars-Colony-Safety |
+| `mars.gpu-helion` | Mars | `registry.agi/mars-gpu-helion:5.3.1` | kubernetes · cuda | 0.00088 (priority) | gpu, vision, simulation | Mars-Colony-Safety, SOC2-Type-II |
+| `helios.solaris-array` | Helios | `registry.agi/helios-solaris:6.2.0` | kubernetes · cuda | 0.00120 (premium) | gpu, astronomy | SOC2-Type-II, Solaris-Safety |
 
 ## Event Loop
 
