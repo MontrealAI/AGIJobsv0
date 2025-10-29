@@ -135,7 +135,6 @@ jobs:
           if (!topologyHtml.includes('Planetary Orchestrator Fabric') || !topologyHtml.includes('mermaid')) {
             throw new Error('mission topology HTML artifact malformed');
           }
-          const ownerCommandsPath = path.join(reportDir, 'owner-commands-executed.json');
           if (!fs.existsSync(ownerCommandsPath)) {
             throw new Error('missing owner command execution log');
           }
