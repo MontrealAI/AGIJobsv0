@@ -292,14 +292,14 @@ function renderMetrics(data) {
 
 function renderOwnerLevers(target, surface) {
   const levers = [
-    ...surface.hyperstructure_vectors ?? [],
-    ...surface.market_sentinels ?? [],
-    ...surface.onchain_controls ?? [],
-    ...surface.portfolio_modes ?? [],
-    ...surface.simulation_envelopes ?? [],
-    ...surface.owner_decisions ?? [],
-    ...surface.ci_controls ?? [],
-    ...surface.treasury_routes ?? []
+    ...(surface.hyperstructure_vectors ?? []),
+    ...(surface.market_sentinels ?? []),
+    ...(surface.onchain_controls ?? []),
+    ...(surface.portfolio_modes ?? []),
+    ...(surface.simulation_envelopes ?? []),
+    ...(surface.owner_decisions ?? []),
+    ...(surface.ci_controls ?? []),
+    ...(surface.treasury_routes ?? [])
   ];
   target.appendChild(createList(levers, (lever) => lever));
 }
