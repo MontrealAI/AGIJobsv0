@@ -1,22 +1,8 @@
-from pathlib import Path
-
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.jobs import JobOpportunity
-from alpha_node.planner import MuZeroPlanner
+from agi_alpha_node_demo.planner import MuZeroPlanner
 
 
-def test_planner_ranks_high_value_jobs(tmp_path):
-    config = AlphaNodeConfig.load(Path('demo/AGI-Alpha-Node-v0/config.toml'))
-    planner = MuZeroPlanner(config.planner)
-    jobs = [
-        JobOpportunity(
-            job_id='A', domain='finance', reward=1000, stake_required=100,
-            duration_hours=10, success_probability=0.9, impact_score=5, client='X'
-        ),
-        JobOpportunity(
-            job_id='B', domain='finance', reward=10000, stake_required=200,
-            duration_hours=8, success_probability=0.7, impact_score=9, client='Y'
-        )
-    ]
-    decisions = planner.plan(jobs)
-    assert decisions[0].job_id == 'B'
+def test_planner_returns_action():
+    planner = MuZeroPlanner(action_space=["finance", "biotech"], rollout_depth=3, simulations=10, discount=0.95, exploration_constant=1.2)
+    outcome = planner.plan({"alpha": 1.0, "risk": 0.3})
+    assert outcome.selected_action in {"finance", "biotech"}
+    assert outcome.expected_value >= 0

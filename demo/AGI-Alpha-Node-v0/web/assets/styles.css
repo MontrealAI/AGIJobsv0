@@ -1,0 +1,35 @@
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  padding: 2rem;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #e0f2fe;
+}
+
+header, section, footer {
+  margin-bottom: 2rem;
+  background: rgba(15, 23, 42, 0.65);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 16px 40px rgba(15, 118, 110, 0.25);
+}
+
+h1, h2 {
+  color: #38bdf8;
+}
+
+a {
+  color: #fbbf24;
+}
+
+code {
+  background: rgba(56, 189, 248, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+}
+
+.mermaid {
+  background: rgba(2, 6, 23, 0.85);
+  border-radius: 12px;
+  padding: 1rem;
+}
