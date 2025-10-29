@@ -1,0 +1,50 @@
+[
+  {
+    "domain": "finance",
+    "title": "Cross-exchange basis arbitrage widens",
+    "value": 1.35,
+    "baseline": 0.4,
+    "confidence": 0.92,
+    "minutes_ago": 8
+  },
+  {
+    "domain": "finance",
+    "title": "Treasury yield inversion deepens",
+    "value": -0.75,
+    "baseline": -0.2,
+    "confidence": 0.88,
+    "minutes_ago": 21
+  },
+  {
+    "domain": "supply_chain",
+    "title": "Lithium production outage",
+    "value": -2.8,
+    "baseline": -0.6,
+    "confidence": 0.9,
+    "minutes_ago": 12
+  },
+  {
+    "domain": "supply_chain",
+    "title": "Rail bottleneck cleared",
+    "value": 1.9,
+    "baseline": 0.2,
+    "confidence": 0.78,
+    "minutes_ago": 35
+  },
+  {
+    "domain": "biotech",
+    "title": "Novel CRISPR therapy fast-tracked",
+    "value": 2.4,
+    "baseline": 0.7,
+    "confidence": 0.87,
+    "minutes_ago": 18
+  },
+  {
+    "domain": "energy",
+    "title": "Grid storage demand surge",
+    "value": 3.1,
+    "baseline": 1.1,
+    "confidence": 0.94,
+    "minutes_ago": 6
+  }
+]
