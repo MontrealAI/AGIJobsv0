@@ -327,6 +327,191 @@ function renderOwnerSupremacy(summary) {
   responseEl.textContent = `Response cadence: ${supremacy.quickActions.responseMinutes} minutes`;
 }
 
+function renderEmergencyAuthority(summary) {
+  const report = summary.ownerEmergencyAuthority;
+  const pauseEl = document.getElementById('emergency-pause');
+  const resumeEl = document.getElementById('emergency-resume');
+  const responseEl = document.getElementById('emergency-response');
+  const autopilotEl = document.getElementById('emergency-autopilot');
+  const metricsList = document.getElementById('emergency-metrics');
+  const alertsList = document.getElementById('emergency-alerts');
+  const contactsList = document.getElementById('emergency-contacts');
+  const circuitBody = document.querySelector('#emergency-circuits tbody');
+  const moduleBody = document.querySelector('#emergency-modules tbody');
+  const programBody = document.querySelector('#emergency-programs tbody');
+  const actionsList = document.getElementById('emergency-actions');
+
+  if (
+    !pauseEl ||
+    !resumeEl ||
+    !responseEl ||
+    !autopilotEl ||
+    !metricsList ||
+    !alertsList ||
+    !contactsList ||
+    !circuitBody ||
+    !moduleBody ||
+    !programBody ||
+    !actionsList
+  ) {
+    return;
+  }
+
+  const resetTable = (tbody) => {
+    tbody.innerHTML = '';
+  };
+  const resetList = (list, emptyMessage) => {
+    list.innerHTML = '';
+    if (emptyMessage) {
+      const li = document.createElement('li');
+      li.textContent = emptyMessage;
+      list.append(li);
+    }
+  };
+
+  if (!report) {
+    pauseEl.textContent = 'Unavailable';
+    resumeEl.textContent = 'Unavailable';
+    responseEl.textContent = 'Emergency telemetry unavailable.';
+    autopilotEl.textContent = 'Telemetry unavailable';
+    autopilotEl.className = 'emergency-chip gated';
+    metricsList.innerHTML = '';
+    resetList(alertsList, 'Alert mesh offline.');
+    resetList(contactsList, 'No emergency contacts configured.');
+    resetTable(circuitBody);
+    resetTable(moduleBody);
+    resetTable(programBody);
+    resetList(actionsList, 'Publish emergency briefing to populate actions.');
+    return;
+  }
+
+  pauseEl.textContent = report.pauseCommand;
+  resumeEl.textContent = report.resumeCommand;
+  responseEl.textContent = `Response cadence: ${report.responseMinutes} minutes (target ≤ ${report.targetResponseMinutes} minutes)`;
+  autopilotEl.textContent = report.autopilotReady
+    ? `Autopilot ready — ${report.autopilotNarrative}`
+    : `Autopilot gated — ${report.autopilotNarrative}`;
+  autopilotEl.className = `emergency-chip ${report.autopilotReady ? 'ready' : 'gated'}`;
+
+  const percent = (value) => `${(value * 100).toFixed(1)}%`;
+  const metrics = [
+    ['Safety mesh', percent(report.safetyScore)],
+    ['Custody supremacy', percent(report.controlScore)],
+    ['Shock resilience', `${percent(report.shockResilienceScore)} (${report.shockClassification.replace(/-/g, ' ')})`],
+    ['Command coverage', percent(report.commandCoverage)],
+  ];
+  metricsList.innerHTML = '';
+  for (const [label, value] of metrics) {
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${label}:</strong> ${value}`;
+    metricsList.append(li);
+  }
+
+  alertsList.innerHTML = '';
+  if (report.alertChannels.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Alert mesh pending – configure channels now.';
+    alertsList.append(li);
+  } else {
+    for (const channel of report.alertChannels) {
+      const li = document.createElement('li');
+      li.textContent = channel;
+      alertsList.append(li);
+    }
+  }
+
+  contactsList.innerHTML = '';
+  if (report.emergencyContacts.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Emergency roster empty – assign responders.';
+    contactsList.append(li);
+  } else {
+    for (const contact of report.emergencyContacts) {
+      const li = document.createElement('li');
+      li.textContent = contact;
+      contactsList.append(li);
+    }
+  }
+
+  resetTable(circuitBody);
+  if (report.circuitBreakers.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.textContent = 'No circuit breakers registered.';
+    row.append(cell);
+    circuitBody.append(row);
+  } else {
+    for (const breaker of report.circuitBreakers) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${breaker.metric}</td>
+        <td>${breaker.comparator} ${breaker.threshold}</td>
+        <td><code>${breaker.action}</code></td>
+      `;
+      circuitBody.append(row);
+    }
+  }
+
+  resetTable(moduleBody);
+  const criticalModules = report.modules.filter((module) => module.requiresAction);
+  if (criticalModules.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 3;
+    cell.textContent = 'All modules green – custody and audits current.';
+    row.append(cell);
+    moduleBody.append(row);
+  } else {
+    for (const module of criticalModules) {
+      const row = document.createElement('tr');
+      row.className = 'action-required';
+      const notes = module.notes.length > 0 ? module.notes.join('; ') : 'Action required';
+      const statusLabel = module.status.replace(/-/g, ' ');
+      row.innerHTML = `
+        <td>${module.name}</td>
+        <td>${statusLabel}</td>
+        <td>${notes}</td>
+      `;
+      moduleBody.append(row);
+    }
+  }
+
+  resetTable(programBody);
+  if (report.commandPrograms.length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 2;
+    cell.textContent = 'Publish deterministic programs for every surface.';
+    row.append(cell);
+    programBody.append(row);
+  } else {
+    for (const program of report.commandPrograms.slice(0, 12)) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${program.surface.toUpperCase()}</td>
+        <td><code>${program.script}</code></td>
+      `;
+      programBody.append(row);
+    }
+    if (report.commandPrograms.length > 12) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 2;
+      cell.textContent = `…and ${report.commandPrograms.length - 12} additional programs online.`;
+      row.append(cell);
+      programBody.append(row);
+    }
+  }
+
+  actionsList.innerHTML = '';
+  for (const action of report.recommendedActions) {
+    const li = document.createElement('li');
+    li.textContent = action;
+    actionsList.append(li);
+  }
+}
+
 function renderProgramTable(tableId, programs) {
   const table = document.querySelector(`#${tableId} tbody`);
   if (!table) {
@@ -830,6 +1015,7 @@ async function renderMermaid(summary) {
   const timeline = document.getElementById('mermaid-timeline');
   const command = document.getElementById('mermaid-command');
   const supremacy = document.getElementById('mermaid-supremacy');
+  const emergency = document.getElementById('mermaid-emergency');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -846,6 +1032,10 @@ async function renderMermaid(summary) {
   if (supremacy && summary.ownerControlSupremacy?.mermaid) {
     supremacy.textContent = summary.ownerControlSupremacy.mermaid;
     nodes.push(supremacy);
+  }
+  if (emergency && summary.ownerEmergencyAuthority?.mermaid) {
+    emergency.textContent = summary.ownerEmergencyAuthority.mermaid;
+    nodes.push(emergency);
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -975,6 +1165,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
   renderOwnerDominion(summary);
+  renderEmergencyAuthority(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);
@@ -1031,6 +1222,7 @@ async function renderSummary(summary) {
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
   renderOwnerDominion(summary);
+  renderEmergencyAuthority(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
   renderSovereignty(summary);

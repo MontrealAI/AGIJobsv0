@@ -6,6 +6,8 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import type { EmergencyConsoleReport } from './ownerEmergencyReport';
+import { buildEmergencyConsoleReport, renderEmergencyConsoleReport } from './ownerEmergencyReport';
 
 const commandProgramSchema = z.object({
   id: z.string(),
@@ -337,7 +339,7 @@ type OwnerControlSupremacy = {
   mermaid: string;
 };
 
-type Summary = {
+export type Summary = {
   scenarioId: string;
   title: string;
   generatedAt: string;
@@ -411,11 +413,12 @@ type Summary = {
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
   ownerControlSupremacy: OwnerControlSupremacy;
+  ownerEmergencyAuthority: EmergencyConsoleReport;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
 };
 
-type CoverageSurface =
+export type CoverageSurface =
   | 'jobs'
   | 'validators'
   | 'stablecoinAdapters'
@@ -2490,6 +2493,7 @@ function synthesiseSummary(
       recommendedActions: [],
       mermaid: '',
     },
+    ownerEmergencyAuthority: {} as EmergencyConsoleReport,
     globalExpansionPlan: [],
     shockResilience,
   };
@@ -2785,6 +2789,7 @@ export async function runScenario(
     summary.ownerControlSupremacy.index.toFixed(3),
   );
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
+  summary.ownerEmergencyAuthority = buildEmergencyConsoleReport(summary);
   return summary;
 }
 
@@ -2903,6 +2908,18 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-control-supremacy.mmd'),
     `${summary.ownerControlSupremacy.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.json'),
+    JSON.stringify(summary.ownerEmergencyAuthority, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.md'),
+    renderEmergencyConsoleReport(summary.ownerEmergencyAuthority),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.mmd'),
+    `${summary.ownerEmergencyAuthority.mermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
     path.join(outputDir, 'shock-resilience.json'),

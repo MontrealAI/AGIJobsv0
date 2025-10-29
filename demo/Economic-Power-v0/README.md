@@ -43,6 +43,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `shock-resilience.json` – fortified shock defence dossier detailing score, drivers, recommendations, and telemetry powering the resilience gauge.
 - `owner-control-supremacy.json` – supremacy ledger fusing coverage, custody, safety mesh, guardrail density, and program coverage into a single index for the owner multi-sig.
 - `owner-control-supremacy.mmd` – mermaid supremacy map wiring coverage surfaces, program categories, and quick commands directly to the multi-sig authority.
+- `owner-emergency-authority.json` – emergency authority console snapshot with pause/resume commands, alert mesh, module triage, circuit breakers, and autopilot readiness classification.
+- `owner-emergency-authority.md` – printable emergency briefing covering immediate commands, metrics, recommended actions, and a live mermaid command lattice.
+- `owner-emergency-authority.mmd` – mermaid emergency graph routing the owner multi-sig through pause/resume, circuit breakers, guardrails, and critical modules.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -105,6 +108,10 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 ## Owner autopilot CLI – instant mission briefings
 
 `npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive a Markdown briefing covering guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save demo/Economic-Power-v0/reports/owner-autopilot-brief.md` to persist the briefing alongside the generated reports.
+
+## Emergency authority console – unstoppable pause dominion
+
+`npm run owner:emergency:economic-power` delivers a live emergency authority console so the owner multi-sig can pause, resume, and triage modules in seconds. By default the command renders a Markdown briefing that includes the latest pause/resume instructions, circuit breakers, alert mesh contacts, autopilot readiness, and a mermaid command lattice. Use `--json` to emit machine-readable output, `--save demo/Economic-Power-v0/reports/owner-emergency-authority.md` to persist the Markdown alongside the scenario reports, and `--save-json demo/Economic-Power-v0/reports/owner-emergency-authority.json` to archive the structured payload for automation.
 
 ## Command catalog – execute anything instantly
 

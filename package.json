@@ -363,6 +363,7 @@
     "owner:diagram": "npx hardhat run --no-compile scripts/v2/renderOwnerMermaid.ts",
     "owner:doctor": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlDoctor.ts",
     "owner:emergency": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerEmergencyRunbook.ts",
+    "owner:emergency:economic-power": "node --import tsx demo/Economic-Power-v0/scripts/ownerEmergencyConsole.ts",
     "owner:guide": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlGuide.ts",
     "owner:health": "npx hardhat run --no-compile scripts/owner-healthcheck.js",
     "owner:mission-control": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerMissionControl.ts",
