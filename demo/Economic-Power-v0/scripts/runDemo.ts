@@ -313,6 +313,30 @@ type EconomicDominanceReport = {
   recommendations: string[];
 };
 
+type OwnerControlSupremacyClassification =
+  | 'total-supremacy'
+  | 'fortified-supremacy'
+  | 'elevated'
+  | 'attention';
+
+type ProgramCoverage = Record<
+  'job' | 'validator' | 'adapter' | 'module' | 'treasury' | 'orchestrator',
+  number
+>;
+
+type OwnerControlSupremacy = {
+  index: number;
+  classification: OwnerControlSupremacyClassification;
+  summary: string;
+  guardrailCoverage: number;
+  programCoverage: ProgramCoverage;
+  coverageDetail: Record<CoverageSurface, number>;
+  quickActions: OwnerCommandPlan['quickActions'];
+  signals: string[];
+  recommendedActions: string[];
+  mermaid: string;
+};
+
 type Summary = {
   scenarioId: string;
   title: string;
@@ -338,6 +362,7 @@ type Summary = {
     stabilityIndex: number;
     ownerCommandCoverage: number;
     ownerDominionScore: number;
+    ownerControlSupremacyIndex: number;
     sovereignControlScore: number;
     sovereignSafetyScore: number;
     assertionPassRate: number;
@@ -385,6 +410,7 @@ type Summary = {
   governanceLedger: GovernanceLedger;
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
+  ownerControlSupremacy: OwnerControlSupremacy;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
 };
@@ -971,6 +997,238 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
   };
 }
 
+function formatPercent(value: number, decimals = 1): string {
+  return `${(Math.max(0, Math.min(1, value)) * 100).toFixed(decimals)}%`;
+}
+
+function escapeMermaidLabel(value: string): string {
+  return value.replace(/"/g, '\\"');
+}
+
+function computeProgramCoverage(catalog: CommandCatalog): ProgramCoverage {
+  return {
+    job: catalog.jobPrograms.length > 0 ? 1 : 0,
+    validator: catalog.validatorPrograms.length > 0 ? 1 : 0,
+    adapter: catalog.adapterPrograms.length > 0 ? 1 : 0,
+    module: catalog.modulePrograms.length > 0 ? 1 : 0,
+    treasury: catalog.treasuryPrograms.length > 0 ? 1 : 0,
+    orchestrator: catalog.orchestratorPrograms.length > 0 ? 1 : 0,
+  };
+}
+
+function classifyOwnerControlSupremacy(
+  index: number,
+): { classification: OwnerControlSupremacyClassification; summary: string } {
+  if (index >= 0.97) {
+    return {
+      classification: 'total-supremacy',
+      summary:
+        'Owner multi-sig commands every surface with rehearsed guardrails – supremacy is absolute and unstoppable.',
+    };
+  }
+  if (index >= 0.9) {
+    return {
+      classification: 'fortified-supremacy',
+      summary:
+        'Owner supremacy is fortified across command, custody, and safety – expand scripts to reach total supremacy.',
+    };
+  }
+  if (index >= 0.8) {
+    return {
+      classification: 'elevated',
+      summary:
+        'Owner retains elevated command authority – script missing guardrails to close remaining gaps.',
+    };
+  }
+  return {
+    classification: 'attention',
+    summary:
+      'Owner supremacy requires immediate action – authorise programs and incident drills to reclaim absolute control.',
+  };
+}
+
+function generateOwnerControlSupremacyMermaid(
+  summary: Summary,
+  index: number,
+  coverageDetail: Record<CoverageSurface, number>,
+  programCoverage: ProgramCoverage,
+  guardrailCoverage: number,
+): string {
+  const lines: string[] = [];
+  lines.push('graph LR');
+  lines.push(
+    `  OWNER["Owner Multi-Sig • Supremacy ${formatPercent(index)}"]`,
+  );
+  lines.push(
+    `  OWNER --> Coverage["Command Coverage ${formatPercent(summary.metrics.ownerCommandCoverage)}"]`,
+  );
+  lines.push(
+    `  OWNER --> Custody["Custody ${formatPercent(summary.metrics.sovereignControlScore)}"]`,
+  );
+  lines.push(
+    `  OWNER --> Safety["Safety Mesh ${formatPercent(summary.metrics.sovereignSafetyScore)}"]`,
+  );
+  lines.push(
+    `  OWNER --> Guardrails["Guardrail Coverage ${formatPercent(guardrailCoverage)}"]`,
+  );
+  lines.push(
+    `  OWNER --> Response["Response ${summary.ownerCommandPlan.quickActions.responseMinutes}m"]`,
+  );
+
+  const surfaceLabels: Record<CoverageSurface, string> = {
+    jobs: 'Job orchestration',
+    validators: 'Validator sovereignty',
+    stablecoinAdapters: 'Stablecoin adapters',
+    modules: 'Protocol modules',
+    parameters: 'Parameter overrides',
+    pause: 'Emergency pause',
+    resume: 'Emergency resume',
+    treasury: 'Treasury programs',
+    orchestrator: 'Orchestrator mesh',
+  };
+  let surfaceIndex = 0;
+  const coverageEntries = Object.entries(coverageDetail) as Array<[
+    CoverageSurface,
+    number,
+  ]>;
+  for (const [surface, value] of coverageEntries) {
+    const nodeId = sanitiseId('Surface', surface, surfaceIndex++);
+    const label = `${surfaceLabels[surface as CoverageSurface]} ${formatPercent(value)}`;
+    lines.push(`  Coverage --> ${nodeId}["${escapeMermaidLabel(label)}"]`);
+  }
+
+  const programLabels: Record<keyof ProgramCoverage, string> = {
+    job: 'Job programs',
+    validator: 'Validator programs',
+    adapter: 'Adapter programs',
+    module: 'Module programs',
+    treasury: 'Treasury programs',
+    orchestrator: 'Orchestrator programs',
+  };
+  const programEntries = Object.entries(programCoverage) as Array<[
+    keyof ProgramCoverage,
+    number,
+  ]>;
+  let programIndex = 0;
+  for (const [category, value] of programEntries) {
+    const nodeId = sanitiseId('Program', category, programIndex++);
+    const label = `${programLabels[category as keyof ProgramCoverage]} ${formatPercent(value)}`;
+    lines.push(`  Guardrails --> ${nodeId}["${escapeMermaidLabel(label)}"]`);
+  }
+
+  const pauseLabel = escapeMermaidLabel(`Pause ${summary.ownerCommandPlan.quickActions.pause}`);
+  const resumeLabel = escapeMermaidLabel(`Resume ${summary.ownerCommandPlan.quickActions.resume}`);
+  lines.push(`  Response --> Pause["${pauseLabel}"]`);
+  lines.push(`  Response --> Resume["${resumeLabel}"]`);
+  return `${lines.join('\n')}\n`;
+}
+
+function buildOwnerControlSupremacy(summary: Summary): OwnerControlSupremacy {
+  const coverageDetail = summary.ownerCommandPlan.coverageDetail;
+  const coverageValues = Object.values(coverageDetail);
+  const coverageAverage =
+    coverageValues.reduce((acc, value) => acc + value, 0) /
+    Math.max(coverageValues.length, 1);
+  const guardrailTarget = summary.ownerSovereignty.circuitBreakers.length + 2; // pause + resume
+  const guardrailCoverage = guardrailTarget === 0
+    ? 1
+    : Math.min(summary.ownerAutopilot.guardrails.length / guardrailTarget, 1);
+  const programCoverage = computeProgramCoverage(summary.commandCatalog);
+  const programEntries = Object.entries(programCoverage) as Array<[
+    keyof ProgramCoverage,
+    number,
+  ]>;
+  const programCoverageScore =
+    programEntries.reduce((acc, [, value]) => acc + value, 0) /
+    Math.max(programEntries.length, 1);
+  const responseTarget = summary.sovereignSafetyMesh.targetResponseMinutes;
+  const quickActions = summary.ownerCommandPlan.quickActions;
+  const quickActionScore =
+    responseTarget <= 0
+      ? 1
+      : Math.max(
+          0,
+          Math.min(
+            1,
+            1 -
+              Math.max(0, quickActions.responseMinutes - responseTarget) /
+                Math.max(responseTarget, 1),
+          ),
+        );
+
+  const coverageScore = summary.metrics.ownerCommandCoverage;
+  const controlScore = summary.metrics.sovereignControlScore;
+  const safetyScore = summary.metrics.sovereignSafetyScore;
+
+  const indexRaw =
+    0.3 * coverageScore +
+    0.15 * coverageAverage +
+    0.2 * controlScore +
+    0.15 * safetyScore +
+    0.1 * guardrailCoverage +
+    0.05 * programCoverageScore +
+    0.05 * quickActionScore;
+  const index = Number(Math.min(1, Math.max(0, indexRaw)).toFixed(4));
+  const { classification, summary: classificationSummary } = classifyOwnerControlSupremacy(index);
+
+  const scriptedSurfaces = programEntries.filter(([, value]) => value === 1).length;
+  const signals = [
+    `Coverage ${formatPercent(coverageScore)}`,
+    `Surface average ${formatPercent(coverageAverage)}`,
+    `Custody ${formatPercent(controlScore)}`,
+    `Safety ${formatPercent(safetyScore)}`,
+    `Guardrails ${formatPercent(guardrailCoverage)}`,
+    `Response ${quickActions.responseMinutes}m (target ≤ ${responseTarget}m)`,
+    `${scriptedSurfaces}/${programEntries.length} program surfaces scripted`,
+  ];
+
+  const recommendedActions: string[] = [];
+  const coverageEntries = Object.entries(coverageDetail) as Array<[
+    CoverageSurface,
+    number,
+  ]>;
+  for (const [surface, value] of coverageEntries) {
+    if (value < 1) {
+      recommendedActions.push(`Authorise additional programs for ${surface} surface to close supremacy gap.`);
+    }
+  }
+  if (guardrailCoverage < 1) {
+    recommendedActions.push('Publish guardrails covering every circuit breaker and treasury command.');
+  }
+  for (const [category, value] of programEntries) {
+    if (value < 1) {
+      recommendedActions.push(`Add deterministic programs for ${category} category to secure supremacy.`);
+    }
+  }
+  if (quickActionScore < 1) {
+    recommendedActions.push('Accelerate incident response drills to beat the target response window.');
+  }
+  if (recommendedActions.length === 0) {
+    recommendedActions.push('Supremacy absolute – maintain guardrail rehearsals to preserve total control.');
+  }
+
+  const mermaid = generateOwnerControlSupremacyMermaid(
+    summary,
+    index,
+    coverageDetail,
+    programCoverage,
+    guardrailCoverage,
+  );
+
+  return {
+    index,
+    classification,
+    summary: classificationSummary,
+    guardrailCoverage,
+    programCoverage,
+    coverageDetail,
+    quickActions,
+    signals,
+    recommendedActions,
+    mermaid,
+  };
+}
+
 function buildGlobalExpansionPlan(
   summary: Summary,
   scenario: Scenario,
@@ -1244,7 +1502,8 @@ function collectCommandScripts(scenario: Scenario): string[] {
   for (const upgrade of scenario.safeguards.upgradePaths) {
     scripts.add(upgrade.script);
   }
-  for (const catalog of Object.values(scenario.commandCatalog)) {
+  const catalogs = Object.values(scenario.commandCatalog) as CommandProgram[][];
+  for (const catalog of catalogs) {
     for (const program of catalog) {
       scripts.add(program.script);
     }
@@ -2125,6 +2384,7 @@ function synthesiseSummary(
       stabilityIndex,
       ownerCommandCoverage: ownerCoverage.value,
       ownerDominionScore,
+      ownerControlSupremacyIndex: 0,
       sovereignControlScore,
       sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
       assertionPassRate: 0,
@@ -2213,6 +2473,22 @@ function synthesiseSummary(
       coverageDetail: ownerCoverage.detail,
       signals: [],
       recommendedActions: [],
+    },
+    ownerControlSupremacy: {
+      index: 0,
+      classification: 'attention',
+      summary: 'Owner supremacy placeholder – guardrails and coverage synthesis pending.',
+      guardrailCoverage: 0,
+      programCoverage: computeProgramCoverage(scenario.commandCatalog),
+      coverageDetail: ownerCoverage.detail,
+      quickActions: {
+        pause: scenario.safeguards.pauseScript,
+        resume: scenario.safeguards.resumeScript,
+        responseMinutes: scenario.safeguards.responseMinutes,
+      },
+      signals: [],
+      recommendedActions: [],
+      mermaid: '',
     },
     globalExpansionPlan: [],
     shockResilience,
@@ -2504,6 +2780,10 @@ export async function runScenario(
   );
   summary.ownerAutopilot = buildOwnerAutopilot(summary, workingScenario);
   summary.ownerDominion = buildOwnerDominion(summary);
+  summary.ownerControlSupremacy = buildOwnerControlSupremacy(summary);
+  summary.metrics.ownerControlSupremacyIndex = Number(
+    summary.ownerControlSupremacy.index.toFixed(3),
+  );
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
   return summary;
 }
@@ -2617,6 +2897,14 @@ async function writeOutputs(
     JSON.stringify(summary.ownerDominion, null, 2),
   );
   await fs.writeFile(
+    path.join(outputDir, 'owner-control-supremacy.json'),
+    JSON.stringify(summary.ownerControlSupremacy, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-control-supremacy.mmd'),
+    `${summary.ownerControlSupremacy.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
     path.join(outputDir, 'shock-resilience.json'),
     JSON.stringify(summary.shockResilience, null, 2),
   );
@@ -2657,6 +2945,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'stabilityIndex',
     'ownerCommandCoverage',
     'ownerDominionScore',
+    'ownerControlSupremacyIndex',
     'sovereignControlScore',
     'sovereignSafetyScore',
     'assertionPassRate',

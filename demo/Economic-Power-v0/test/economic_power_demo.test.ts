@@ -271,6 +271,32 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.ownerDominion.signals.length >= 3,
     'Dominion signals should expose composite telemetry',
   );
+  assert(
+    summary.ownerControlSupremacy.index >= 0.97,
+    'Owner control supremacy index should confirm absolute supremacy',
+  );
+  assert.equal(
+    summary.ownerControlSupremacy.classification,
+    'total-supremacy',
+    'Baseline supremacy classification should be total-supremacy',
+  );
+  assert.equal(
+    summary.metrics.ownerControlSupremacyIndex,
+    Number(summary.ownerControlSupremacy.index.toFixed(3)),
+    'Supremacy metric should mirror surfaced index',
+  );
+  assert(
+    summary.ownerControlSupremacy.signals.length >= 5,
+    'Owner control supremacy signals should surface multi-signal telemetry',
+  );
+  assert(
+    summary.ownerControlSupremacy.recommendedActions.length >= 1,
+    'Owner control supremacy should recommend sustaining guardrails',
+  );
+  assert(
+    summary.ownerControlSupremacy.mermaid.includes('graph LR'),
+    'Owner control supremacy mermaid graph should be rendered',
+  );
   assert.equal(
     summary.ownerAutopilot.telemetry.economicDominanceIndex,
     summary.metrics.economicDominanceIndex,

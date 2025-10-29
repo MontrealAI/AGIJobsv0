@@ -77,6 +77,53 @@
         </div>
       </section>
 
+      <section id="owner-supremacy" class="panel" aria-labelledby="supremacy-heading">
+        <div class="panel-header">
+          <h2 id="supremacy-heading">Owner supremacy mesh</h2>
+          <p>Supremacy index fusing coverage, custody, safety mesh, guardrails, and deterministic programs.</p>
+        </div>
+        <div class="supremacy-grid">
+          <article class="supremacy-card" aria-label="Supremacy score">
+            <h3>Supremacy status</h3>
+            <p id="supremacy-score" class="supremacy-score">—</p>
+            <span id="supremacy-classification" class="supremacy-chip supremacy-attention">Awaiting data</span>
+            <p id="supremacy-summary" class="narrative"></p>
+            <p id="supremacy-guardrail" class="supremacy-guardrail"></p>
+          </article>
+          <article class="supremacy-card" aria-label="Signals and guardrails">
+            <h3>Signals &amp; guardrails</h3>
+            <ul id="supremacy-signals" class="supremacy-list"></ul>
+            <ul id="supremacy-actions" class="supremacy-list"></ul>
+          </article>
+          <article class="supremacy-card" aria-label="Program coverage">
+            <h3>Program coverage</h3>
+            <div class="table-wrapper">
+              <table id="supremacy-programs">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Coverage</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="quick-actions">
+              <p><strong>Pause:</strong> <code id="supremacy-pause"></code></p>
+              <p><strong>Resume:</strong> <code id="supremacy-resume"></code></p>
+              <p id="supremacy-response"></p>
+            </div>
+          </article>
+        </div>
+        <div class="mermaid-wrapper">
+          <div
+            id="mermaid-supremacy"
+            class="mermaid"
+            aria-label="Owner supremacy mermaid diagram"
+          ></div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="command-catalog-heading">
         <div class="panel-header">
           <h2 id="command-catalog-heading">Command catalog supremacy</h2>

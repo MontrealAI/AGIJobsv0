@@ -311,6 +311,104 @@ main {
   text-transform: uppercase;
 }
 
+.supremacy-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.supremacy-card {
+  background: rgba(9, 18, 32, 0.82);
+  border: 1px solid rgba(110, 231, 255, 0.18);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 28px 46px rgba(4, 12, 24, 0.65);
+}
+
+.supremacy-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.supremacy-score {
+  font-size: 2.3rem;
+  font-weight: 700;
+}
+
+.supremacy-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.18);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.supremacy-chip.supremacy-total-supremacy {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+.supremacy-chip.supremacy-fortified-supremacy {
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(59, 130, 246, 0.55);
+}
+
+.supremacy-chip.supremacy-elevated {
+  background: rgba(250, 204, 21, 0.24);
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.supremacy-chip.supremacy-attention {
+  background: rgba(248, 113, 113, 0.25);
+  border-color: rgba(248, 113, 113, 0.6);
+}
+
+.supremacy-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.supremacy-list li {
+  background: rgba(14, 165, 233, 0.12);
+  border-left: 3px solid rgba(14, 165, 233, 0.55);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.85rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.supremacy-guardrail {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.quick-actions p {
+  margin: 0.35rem 0;
+  color: var(--text-secondary);
+}
+
+.mermaid-wrapper {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(7, 13, 26, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 1.2rem;
+}
+
 .assertion-card {
   background: rgba(7, 13, 26, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.25);

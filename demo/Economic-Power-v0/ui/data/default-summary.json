@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-29T02:17:06.884Z",
+  "executionTimestamp": "2025-10-29T03:07:46.662Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -23,6 +23,7 @@
     "stabilityIndex": 0.761,
     "ownerCommandCoverage": 1,
     "ownerDominionScore": 0.994,
+    "ownerControlSupremacyIndex": 0.997,
     "sovereignControlScore": 1,
     "sovereignSafetyScore": 0.979,
     "assertionPassRate": 1,
@@ -1217,6 +1218,49 @@
     "recommendedActions": [
       "Maintain autopilot cadence and periodic drills to preserve total dominion."
     ]
+  },
+  "ownerControlSupremacy": {
+    "index": 0.9968,
+    "classification": "total-supremacy",
+    "summary": "Owner multi-sig commands every surface with rehearsed guardrails – supremacy is absolute and unstoppable.",
+    "guardrailCoverage": 1,
+    "programCoverage": {
+      "job": 1,
+      "validator": 1,
+      "adapter": 1,
+      "module": 1,
+      "treasury": 1,
+      "orchestrator": 1
+    },
+    "coverageDetail": {
+      "jobs": 1,
+      "validators": 1,
+      "stablecoinAdapters": 1,
+      "modules": 1,
+      "parameters": 1,
+      "pause": 1,
+      "resume": 1,
+      "treasury": 1,
+      "orchestrator": 1
+    },
+    "quickActions": {
+      "pause": "npm run owner:system-pause",
+      "resume": "npm run owner:update-all",
+      "responseMinutes": 9
+    },
+    "signals": [
+      "Coverage 100.0%",
+      "Surface average 100.0%",
+      "Custody 100.0%",
+      "Safety 97.9%",
+      "Guardrails 100.0%",
+      "Response 9m (target ≤ 15m)",
+      "6/6 program surfaces scripted"
+    ],
+    "recommendedActions": [
+      "Supremacy absolute – maintain guardrail rehearsals to preserve total control."
+    ],
+    "mermaid": "graph LR\n  OWNER[\"Owner Multi-Sig • Supremacy 99.7%\"]\n  OWNER --> Coverage[\"Command Coverage 100.0%\"]\n  OWNER --> Custody[\"Custody 100.0%\"]\n  OWNER --> Safety[\"Safety Mesh 97.9%\"]\n  OWNER --> Guardrails[\"Guardrail Coverage 100.0%\"]\n  OWNER --> Response[\"Response 9m\"]\n  Coverage --> Surface_0_jobs[\"Job orchestration 100.0%\"]\n  Coverage --> Surface_1_validators[\"Validator sovereignty 100.0%\"]\n  Coverage --> Surface_2_stablecoinAdapters[\"Stablecoin adapters 100.0%\"]\n  Coverage --> Surface_3_modules[\"Protocol modules 100.0%\"]\n  Coverage --> Surface_4_parameters[\"Parameter overrides 100.0%\"]\n  Coverage --> Surface_5_pause[\"Emergency pause 100.0%\"]\n  Coverage --> Surface_6_resume[\"Emergency resume 100.0%\"]\n  Coverage --> Surface_7_treasury[\"Treasury programs 100.0%\"]\n  Coverage --> Surface_8_orchestrator[\"Orchestrator mesh 100.0%\"]\n  Guardrails --> Program_0_job[\"Job programs 100.0%\"]\n  Guardrails --> Program_1_validator[\"Validator programs 100.0%\"]\n  Guardrails --> Program_2_adapter[\"Adapter programs 100.0%\"]\n  Guardrails --> Program_3_module[\"Module programs 100.0%\"]\n  Guardrails --> Program_4_treasury[\"Treasury programs 100.0%\"]\n  Guardrails --> Program_5_orchestrator[\"Orchestrator programs 100.0%\"]\n  Response --> Pause[\"Pause npm run owner:system-pause\"]\n  Response --> Resume[\"Resume npm run owner:update-all\"]\n"
   },
   "globalExpansionPlan": [
     {
