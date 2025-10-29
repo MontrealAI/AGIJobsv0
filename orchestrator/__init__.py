@@ -18,6 +18,7 @@ _MODULES = [
     "state",
     "aa",
     "analytics",
+    "workflows",
 ]
 __all__ = list(_MODULES)
 
