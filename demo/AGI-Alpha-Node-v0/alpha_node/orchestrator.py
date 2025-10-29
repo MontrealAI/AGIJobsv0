@@ -3,11 +3,17 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 from .knowledge import KnowledgeLake
 from .planner import MuZeroPlanner, PlanCandidate
-from .specialists import BiotechSynthesist, FinanceStrategist, ManufacturingOptimizer, SpecialistResult
+from .specialists import (
+    BaseSpecialist,
+    BiotechSynthesist,
+    FinanceStrategist,
+    ManufacturingOptimizer,
+    SpecialistResult,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,19 +27,26 @@ class ExecutionOutcome:
 class Orchestrator:
     """Coordinates planner and specialist execution."""
 
-    def __init__(self, planner: MuZeroPlanner, knowledge: KnowledgeLake) -> None:
+    def __init__(
+        self,
+        planner: MuZeroPlanner,
+        knowledge: KnowledgeLake,
+        specialists: Optional[Dict[str, BaseSpecialist]] = None,
+    ) -> None:
         self._planner = planner
         self._knowledge = knowledge
-        self._specialists = {
-            "deploy": FinanceStrategist(knowledge),
-            "synthesize": BiotechSynthesist(knowledge),
-            "optimize": ManufacturingOptimizer(knowledge),
+        self._specialists = specialists or {
+            "finance": FinanceStrategist(knowledge),
+            "biotech": BiotechSynthesist(knowledge),
+            "manufacturing": ManufacturingOptimizer(knowledge),
         }
 
     def execute(self, jobs: Iterable[Dict[str, float]]) -> ExecutionOutcome:
-        plan = self._planner.propose(jobs)
-        specialist = self._select_specialist(plan)
-        job_payload = next(job for job in jobs if job["job_id"] == plan.job_id)
+        jobs_list: List[Dict[str, float]] = list(jobs)
+        plan = self._planner.propose(jobs_list)
+        job_payload = next(job for job in jobs_list if job["job_id"] == plan.job_id)
+        metadata = job_payload.get("metadata", {})
+        specialist = self._select_specialist(plan, metadata)
         result = specialist.evaluate(job_payload)
         self._knowledge.record(
             topic="orchestrator",
@@ -51,8 +64,17 @@ class Orchestrator:
         )
         return ExecutionOutcome(plan=plan, result=result)
 
-    def _select_specialist(self, plan: PlanCandidate):
-        for keyword, specialist in self._specialists.items():
-            if keyword in plan.description.lower():
-                return specialist
-        return self._specialists["optimize"]
+    def _select_specialist(self, plan: PlanCandidate, metadata: Dict[str, object]) -> BaseSpecialist:
+        domain = str(metadata.get("domain", "")).lower()
+        if domain in self._specialists:
+            return self._specialists[domain]
+        description = plan.description.lower()
+        for keyword, fallback in {
+            "deploy": "finance",
+            "synth": "biotech",
+            "manufact": "manufacturing",
+        }.items():
+            if keyword in description and fallback in self._specialists:
+                return self._specialists[fallback]
+        # Default to any available specialist to keep the node productive.
+        return next(iter(self._specialists.values()))

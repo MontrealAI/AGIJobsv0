@@ -1,20 +1,36 @@
 [
   {
-    "id": "FIN-001",
-    "domain": "finance",
-    "strategies": ["treasury-optimizer", "yield-strategy"],
-    "payload": {"capital_multiplier": 2.4}
+    "job_id": "FIN-001",
+    "description": "Deploy a sovereign treasury optimizer that compounds AGIALPHA liquidity across cross-chain markets.",
+    "base_reward": 18.5,
+    "risk": 0.18,
+    "metadata": {
+      "domain": "finance",
+      "strategies": ["treasury-optimizer", "yield-strategy"],
+      "capital_multiplier": 2.4
+    }
   },
   {
-    "id": "BIO-042",
-    "domain": "biotech",
-    "strategies": ["synthesis-flow", "bio-risk-buffer"],
-    "payload": {"synthesis_efficiency": 1.8}
+    "job_id": "BIO-042",
+    "description": "Synthesize next-generation antimicrobial compound using autonomous wet lab orchestration.",
+    "base_reward": 22.1,
+    "risk": 0.22,
+    "metadata": {
+      "domain": "biotech",
+      "strategies": ["synthesis-flow", "bio-risk-buffer"],
+      "synthesis_efficiency": 1.8
+    }
   },
   {
-    "id": "MAN-777",
-    "domain": "manufacturing",
-    "strategies": ["digital-twin", "lean-hyperloop"],
-    "payload": {"throughput": 220, "waste_reduction": 0.22}
+    "job_id": "MAN-777",
+    "description": "Optimise hyper-scale robotics manufacturing line with digital twin feedback loops.",
+    "base_reward": 16.9,
+    "risk": 0.15,
+    "metadata": {
+      "domain": "manufacturing",
+      "strategies": ["digital-twin", "lean-hyperloop"],
+      "throughput": 220,
+      "waste_reduction": 0.22
+    }
   }
 ]
