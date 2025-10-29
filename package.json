@@ -352,6 +352,7 @@
     "onebox:verify-sri": "node apps/onebox/scripts/verify-sri.mjs",
     "owner:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/exportOwnerMatrix.ts",
     "owner:atlas": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlAtlas.ts",
+    "owner:autopilot:economic-power": "node --import tsx demo/Economic-Power-v0/scripts/ownerAutopilot.ts",
     "owner:audit": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerConfigAudit.ts",
     "owner:audit-hamiltonian": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerHamiltonianAudit.ts",
     "owner:blueprint": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/v2/ownerControlBlueprint.ts",

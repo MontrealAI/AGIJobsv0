@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import path from 'node:path';
 import test from 'node:test';
 import { loadScenarioFromFile, runScenario } from '../scripts/runDemo';
+import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/ownerAutopilot';
 import './owner_programs.test';
 
 const scenarioPath = path.join(__dirname, '..', 'scenario', 'baseline.json');
@@ -244,5 +245,30 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.globalExpansionPlan.some((phase) => phase.phase.includes('Planetary')),
     'Expansion plan should culminate in planetary scale phase',
   );
+});
+
+test('owner autopilot briefing surfaces guardrails and command cadence', async () => {
+  const scenario = await loadScenarioFromFile(scenarioPath);
+  const summary = await runScenario(scenario);
+  const brief = buildAutopilotBrief(summary);
+
+  assert.equal(brief.scenarioId, summary.scenarioId);
+  assert.equal(brief.guardrails.length, summary.ownerAutopilot.guardrails.length);
+  assert.equal(brief.commandSequence.length, summary.ownerAutopilot.commandSequence.length);
+  assert.equal(brief.coverage, summary.ownerCommandPlan.commandCoverage);
+  assert.equal(brief.pauseCommand, summary.ownerCommandPlan.quickActions.pause);
+  assert.equal(brief.resumeCommand, summary.ownerCommandPlan.quickActions.resume);
+  assert(brief.recommendedActions.length >= 1, 'Brief should include recommended actions');
+
+  const rendered = renderAutopilotBrief(brief);
+  assert(rendered.includes('Economic Power Autopilot Brief'));
+  assert(rendered.includes('## Guardrails'));
+  assert(rendered.includes('## Command sequence'));
+  assert(rendered.includes('## Safety mesh readiness'));
+  assert(rendered.includes('## Telemetry checkpoints'));
+  assert(rendered.includes('## Dominance signals'));
+  assert(rendered.includes('## Recommended actions'));
+  assert(rendered.includes(brief.pauseCommand));
+  assert(rendered.includes(brief.resumeCommand));
 });
 
