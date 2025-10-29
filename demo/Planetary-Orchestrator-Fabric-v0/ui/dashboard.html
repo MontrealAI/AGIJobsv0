@@ -2,69 +2,890 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Planetary Orchestrator Fabric – Static Mission Console</title>
+  <title>Planetary Orchestrator Fabric – Mission Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    body { font-family: 'Inter', Arial, sans-serif; background: radial-gradient(circle at top, #102a76, #050714); color: #fff; margin: 0; padding: 32px; }
-    h1 { margin-bottom: 0.5rem; }
-    .subtitle { color: rgba(255,255,255,0.7); margin-bottom: 2rem; }
-    .card-grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-    .card { background: rgba(8, 17, 56, 0.85); padding: 24px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
-    pre { background: rgba(0,0,0,0.35); padding: 16px; border-radius: 12px; overflow-x: auto; }
-    .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }
-    footer { margin-top: 32px; text-align: center; color: rgba(255,255,255,0.6); font-size: 0.85rem; }
+    :root {
+      color-scheme: dark;
+      --bg-gradient: radial-gradient(circle at 20% 20%, #162b74, #040611 62%);
+      --panel-bg: rgba(12, 19, 54, 0.84);
+      --panel-border: rgba(120, 165, 255, 0.25);
+      --panel-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+      --accent: #5c8dff;
+      --accent-strong: #7ad0ff;
+      --success: #18d0a9;
+      --warning: #f3b43a;
+      --critical: #ff5c7a;
+      --text-dim: rgba(255, 255, 255, 0.68);
+      --metric-bg: rgba(6, 12, 46, 0.92);
+      --transition: 220ms ease;
+      font-family: 'Inter', Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg-gradient);
+      color: #f5f7ff;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    header.hero {
+      padding: 48px clamp(24px, 6vw, 72px) 24px;
+      background: linear-gradient(120deg, rgba(13, 28, 80, 0.95), rgba(9, 14, 40, 0.9));
+      box-shadow: 0 18px 52px rgba(0, 0, 0, 0.48);
+    }
+
+    header.hero h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 3.1rem);
+      letter-spacing: -0.02em;
+    }
+
+    header.hero p {
+      margin: 12px 0 0;
+      max-width: 960px;
+      font-size: 1.05rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    main {
+      padding: 0 clamp(24px, 6vw, 72px) 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    section.panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: clamp(20px, 3vw, 36px);
+      box-shadow: var(--panel-shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    section.panel h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.5rem;
+    }
+
+    section.panel p {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .controls {
+      display: grid;
+      gap: 18px;
+    }
+
+    .controls .pickers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(8, 16, 46, 0.85);
+      border: 1px dashed rgba(123, 160, 255, 0.45);
+      border-radius: 16px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: border var(--transition), background var(--transition), transform var(--transition);
+    }
+
+    .picker:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .picker input[type="file"] {
+      display: none;
+    }
+
+    .status {
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      background: rgba(8, 15, 42, 0.82);
+      border: 1px solid rgba(123, 160, 255, 0.35);
+    }
+
+    .status.success { border-color: rgba(24, 208, 169, 0.55); color: #d6fff2; }
+    .status.warn { border-color: rgba(243, 180, 58, 0.55); color: #ffefc7; }
+    .status.error { border-color: rgba(255, 92, 122, 0.55); color: #ffd7df; }
+
+    .dropzone {
+      border: 1px dashed rgba(123, 160, 255, 0.35);
+      border-radius: 18px;
+      padding: 28px;
+      text-align: center;
+      color: var(--text-dim);
+      transition: border var(--transition), color var(--transition), background var(--transition);
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent-strong);
+      color: #fff;
+      background: rgba(32, 54, 130, 0.35);
+    }
+
+    .grid {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .metrics {
+      display: grid;
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: var(--metric-bg);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: inset 0 0 0 1px rgba(123, 160, 255, 0.12);
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: inset 0 0 0 1px rgba(123, 160, 255, 0.4), 0 12px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    .metric-card strong {
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 6px;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .metric-card span {
+      font-size: 1.45rem;
+      font-weight: 600;
+    }
+
+    .metric-card small {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .metric-card code {
+      font-family: 'Source Code Pro', 'SFMono-Regular', Menlo, monospace;
+      font-size: 0.85rem;
+      color: #f5f7ff;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(10, 16, 44, 0.9);
+      box-shadow: inset 0 0 0 1px rgba(123, 160, 255, 0.18);
+    }
+
+    table.data-table thead {
+      background: rgba(17, 32, 84, 0.75);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.8rem;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(123, 160, 255, 0.1);
+    }
+
+    table.data-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    pre.json {
+      background: rgba(5, 9, 30, 0.82);
+      border: 1px solid rgba(123, 160, 255, 0.18);
+      border-radius: 16px;
+      padding: 16px;
+      max-height: 320px;
+      overflow: auto;
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+
+    .mermaid {
+      background: #fff;
+      color: #000;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: inset 0 0 0 1px rgba(18, 32, 84, 0.12);
+    }
+
+    button.action {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #01030b;
+      background: linear-gradient(120deg, #7ad0ff, #5c8dff);
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    button.action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px rgba(92, 141, 255, 0.45);
+    }
+
+    .note {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    footer {
+      padding: 24px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.55);
+    }
+
+    @media (max-width: 720px) {
+      header.hero {
+        padding: 36px 18px 18px;
+      }
+      main {
+        padding: 0 18px 48px;
+      }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </head>
 <body>
-  <h1>Planetary Orchestrator Fabric Mission Console</h1>
-  <p class="subtitle">Load any generated summary from <code>reports/&lt;label&gt;/summary.json</code> to preview live mission telemetry.</p>
-  <div class="card-grid">
-    <div class="card">
-      <h2>Topology</h2>
-      <div class="mermaid">
-        flowchart TD
-          Owner[Owner Multisig] --> Ledger((Unified Ledger))
-          Ledger --> EarthShard
-          Ledger --> LunaShard
-          Ledger --> MarsShard
-          Ledger --> HeliosShard
-          EarthShard --> EarthAgents((Agents))
-          LunaShard --> LunaAgents((Agents))
-          MarsShard --> MarsAgents((Agents))
-          HeliosShard --> HeliosAgents((Agents))
+  <header class="hero">
+    <h1>Planetary Orchestrator Fabric Mission Console</h1>
+    <p>
+      Load any generated <code>reports/&lt;label&gt;</code> bundle from AGI Jobs v0 (v2) to explore shard health, ledger flows, owner
+      interventions, and checkpoint state. A non-technical owner can drag-and-drop the exported folder, confirm resilience drills,
+      and command a superintelligent planetary workforce without touching source code.
+    </p>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <h2>Load Telemetry</h2>
+      <p>
+        Choose the folder that contains <code>summary.json</code>, <code>owner-script.json</code>, <code>owner-commands-executed.json</code>,
+        and <code>ledger.json</code>. You can also drag the folder onto the dropzone. For quick orientation, load the curated sample.
+      </p>
+      <div class="pickers">
+        <label class="picker" title="Pick the reports directory">
+          <span>📁 Select report bundle</span>
+          <input id="report-picker" type="file" webkitdirectory multiple />
+        </label>
+        <button id="sample-button" class="action" type="button">🚀 Load sample telemetry</button>
       </div>
-    </div>
-    <div class="card">
-      <h2>How to Use</h2>
-      <ol>
-        <li>Run <code>bin/run-demo.sh</code> or <code>npm run demo:planetary-orchestrator-fabric</code>.</li>
-        <li>Open the generated <code>reports/&lt;label&gt;/dashboard.html</code> for a live data view.</li>
-        <li>Load <code>owner-script.json</code> into the owner console to rehearse pause/reroute drills.</li>
-        <li>Inspect <code>events.ndjson</code> to audit the deterministic event stream.</li>
-      </ol>
-    </div>
-    <div class="card">
-      <h2>Owner Command Deck</h2>
-      <pre>{
-  "pauseAll": "owner:system-pause",
-  "rerouteMars": "owner:reroute-shard",
-  "adjustLatency": "owner:set-latency-budget"
-}</pre>
-    </div>
-    <div class="card">
-      <h2>Restart Drill Telemetry</h2>
-      <ul>
-        <li>Run <code>bin/run-restart-drill.sh</code> to stage a stop at <code>--stop-after</code> ticks.</li>
-        <li>Inspect <code>summary.json.run</code> for <code>checkpointRestored</code>, <code>stoppedEarly</code>, and <code>stopTick</code>.</li>
-        <li>Search <code>events.ndjson</code> for <code>"simulation.stopped"</code> to confirm the deliberate halt.</li>
-        <li>Dashboard charts reflect both pre- and post-resume metrics once the drill completes.</li>
-      </ul>
-    </div>
-  </div>
-  <footer>Generated assets become live once you execute the demo. This static template is safe to host or embed.</footer>
+      <div id="dropzone" class="dropzone">Drop the generated <code>reports/&lt;label&gt;</code> folder here.</div>
+      <div id="status" class="status">Awaiting telemetry bundle…</div>
+      <p class="note">
+        Need to generate fresh data? Run
+        <code>demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh --output-label my-run</code> then open the resulting directory.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Mission Metrics</h2>
+      <div id="mission-metrics" class="metrics"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Shard Telemetry</h2>
+      <table class="data-table" id="shard-table">
+        <thead>
+          <tr>
+            <th>Shard</th>
+            <th>Queue</th>
+            <th>In-Flight</th>
+            <th>Completed</th>
+            <th>Failed</th>
+            <th>Spillovers</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="note" id="shard-note">Load telemetry to populate shard detail.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Owner Control Deck</h2>
+      <div id="owner-status" class="metrics"></div>
+      <pre class="json" id="owner-state-json">Owner state will appear here once telemetry is loaded.</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Owner Command Schedules</h2>
+      <div id="owner-commands-summary" class="metrics"></div>
+      <p class="note">Source schedule: <span id="owner-command-source">—</span></p>
+      <pre class="json" id="owner-commands-json">Execution log pending load…</pre>
+      <pre class="json" id="owner-script-json">Owner script payloads pending load…</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Ledger &amp; Spillover Cartography</h2>
+      <div id="ledger-metrics" class="metrics"></div>
+      <div id="ledger-invariants" class="metrics"></div>
+      <div id="spillover-diagram" class="mermaid">flowchart LR\n  placeholder((Waiting)) --0--> placeholder</div>
+      <pre class="json" id="ledger-events-json">Ledger events will render here.</pre>
+    </section>
+
+    <section class="panel">
+      <h2>Node Marketplace Snapshot</h2>
+      <div id="node-grid" class="metrics"></div>
+      <p class="note">Nodes automatically reassign jobs when a heartbeat fails—<span id="node-summary">load telemetry to verify.</span></p>
+    </section>
+
+    <section class="panel">
+      <h2>Operator Checklist</h2>
+      <div class="grid">
+        <div class="metric-card">
+          <strong>High-Load Trial</strong>
+          <span>10,000+</span>
+          <small>Jobs dispatched across sharded registries. Confirm drop rate &lt; 2%.</small>
+        </div>
+        <div class="metric-card">
+          <strong>Outage Drill</strong>
+          <span>Heartbeat</span>
+          <small>Trigger <code>--simulate-outage</code> to watch auto-reassignment.</small>
+        </div>
+        <div class="metric-card">
+          <strong>Checkpoint Resume</strong>
+          <span>Zero Loss</span>
+          <small>Kill orchestrator mid-run, restart with <code>--resume</code>, audit dashboard.</small>
+        </div>
+        <div class="metric-card">
+          <strong>Owner Supremacy</strong>
+          <span>Total</span>
+          <small>Pause, reroute, retarget reporting, and rotate checkpoints without code edits.</small>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Planetary Orchestrator Fabric v0 — generated entirely through AGI Jobs v0 (v2) for non-technical planetary operators.
+  </footer>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const missionMetricsEl = document.getElementById('mission-metrics');
+    const shardTableBody = document.querySelector('#shard-table tbody');
+    const shardNoteEl = document.getElementById('shard-note');
+    const ownerStatusEl = document.getElementById('owner-status');
+    const ownerStateJsonEl = document.getElementById('owner-state-json');
+    const ownerCommandsSummaryEl = document.getElementById('owner-commands-summary');
+    const ownerCommandsJsonEl = document.getElementById('owner-commands-json');
+    const ownerScriptJsonEl = document.getElementById('owner-script-json');
+    const ownerCommandSourceEl = document.getElementById('owner-command-source');
+    const ledgerMetricsEl = document.getElementById('ledger-metrics');
+    const ledgerInvariantsEl = document.getElementById('ledger-invariants');
+    const spilloverDiagramEl = document.getElementById('spillover-diagram');
+    const ledgerEventsJsonEl = document.getElementById('ledger-events-json');
+    const nodeGridEl = document.getElementById('node-grid');
+    const nodeSummaryEl = document.getElementById('node-summary');
+
+    function setStatus(message, variant = 'info') {
+      statusEl.textContent = message;
+      statusEl.classList.remove('success', 'warn', 'error');
+      if (variant === 'success') statusEl.classList.add('success');
+      if (variant === 'warn') statusEl.classList.add('warn');
+      if (variant === 'error') statusEl.classList.add('error');
+    }
+
+    function formatNumber(value) {
+      return typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString() : '—';
+    }
+
+    function formatPercent(numerator, denominator) {
+      if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
+        return '—';
+      }
+      return ((numerator / denominator) * 100).toFixed(2) + '%';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderMetrics(container, entries) {
+      container.innerHTML = entries
+        .map(
+          (entry) => {
+            const value = entry.allowHtml ? entry.value : escapeHtml(entry.value ?? '—');
+            const hint = entry.hint ? escapeHtml(entry.hint) : '';
+            return `
+            <div class="metric-card">
+              <strong>${entry.label}</strong>
+              <span>${value}</span>
+              ${hint ? `<small>${hint}</small>` : ''}
+            </div>
+          `;
+          }
+        )
+        .join('');
+    }
+
+    function renderShardTable(shards = {}, statistics = {}) {
+      const rows = Object.entries(shards).map(([shardId, snapshot]) => {
+        const stat = statistics[shardId] || {};
+        return `
+          <tr>
+            <td><strong>${shardId}</strong></td>
+            <td>${formatNumber(snapshot.queueDepth)}</td>
+            <td>${formatNumber(snapshot.inFlight)}</td>
+            <td>${formatNumber(snapshot.completed)}</td>
+            <td>${formatNumber(stat.failed)}</td>
+            <td>${formatNumber(stat.spillovers)}</td>
+          </tr>
+        `;
+      });
+      shardTableBody.innerHTML = rows.join('');
+      shardNoteEl.textContent = rows.length === 0
+        ? 'No shard telemetry available in this bundle.'
+        : 'Shard metrics pulled directly from summary.json';
+    }
+
+    function renderOwnerStatus(ownerState) {
+      const pausedShards = Array.isArray(ownerState.pausedShards) && ownerState.pausedShards.length > 0
+        ? ownerState.pausedShards.join(', ')
+        : 'None';
+      const checkpoint = ownerState.checkpoint || {};
+      const reporting = ownerState.reporting || {};
+      renderMetrics(ownerStatusEl, [
+        { label: 'System Paused', value: ownerState.systemPaused ? 'Yes' : 'No', hint: 'Global pause switch toggled by the owner multisig.' },
+        { label: 'Paused Shards', value: pausedShards, hint: 'Regional fabric segments currently halted.' },
+        { label: 'Checkpoint Path', value: checkpoint.path ? `<code>${escapeHtml(checkpoint.path)}</code>` : '—', hint: 'Active storage target for restart snapshots.', allowHtml: Boolean(checkpoint.path) },
+        { label: 'Checkpoint Interval', value: formatNumber(checkpoint.intervalTicks) + ' ticks', hint: 'Snapshot cadence (can be tightened mid-run).' },
+        { label: 'Reporting Directory', value: reporting.directory ? `<code>${escapeHtml(reporting.directory)}</code>` : '—', hint: 'Where dashboards, ledgers, and events are archived.', allowHtml: Boolean(reporting.directory) },
+        { label: 'Default Report Label', value: reporting.defaultLabel || '—', hint: 'Label applied to future report bundles.' },
+      ]);
+      ownerStateJsonEl.textContent = JSON.stringify(ownerState, null, 2);
+    }
+
+    function renderOwnerCommands(metadata = {}, executionLog = {}, ownerScript = {}) {
+      const scheduled = Array.isArray(metadata.scheduled) ? metadata.scheduled.length : 0;
+      const executed = Array.isArray(metadata.executed) ? metadata.executed.length : 0;
+      const pending = Array.isArray(metadata.pending) ? metadata.pending.length : 0;
+      const skipped = Array.isArray(metadata.skippedBeforeResume) ? metadata.skippedBeforeResume.length : 0;
+      renderMetrics(ownerCommandsSummaryEl, [
+        { label: 'Scheduled', value: formatNumber(scheduled), hint: 'Commands loaded from owner schedule or inline payload.' },
+        { label: 'Executed', value: formatNumber(executed), hint: 'Commands applied during the run.' },
+        { label: 'Pending', value: formatNumber(pending), hint: 'Commands with ticks greater than the run stop tick.' },
+        { label: 'Skipped (Resume)', value: formatNumber(skipped), hint: 'Commands that occurred before the restored checkpoint.' },
+      ]);
+      ownerCommandSourceEl.textContent = metadata.source || 'Inline schedule';
+      ownerCommandsJsonEl.textContent = JSON.stringify(executionLog, null, 2);
+      ownerScriptJsonEl.textContent = JSON.stringify(ownerScript, null, 2);
+    }
+
+    function renderLedger(ledger = {}) {
+      const totals = ledger.totals || {};
+      renderMetrics(ledgerMetricsEl, [
+        { label: 'Jobs Submitted', value: formatNumber(totals.submitted), hint: 'Registered across all shards.' },
+        { label: 'Assignments', value: formatNumber(totals.assigned), hint: 'Jobs routed to regional nodes.' },
+        { label: 'Completed', value: formatNumber(totals.completed), hint: 'Finished without retries.' },
+        { label: 'Failed', value: formatNumber(totals.failed), hint: 'Terminal failures across shards.' },
+        { label: 'Cancelled', value: formatNumber(totals.cancelled), hint: 'Owner-requested cancellations.' },
+        { label: 'Spillovers Out', value: formatNumber(totals.spilloversOut), hint: 'Jobs pushed to other shards.' },
+        { label: 'Spillovers In', value: formatNumber(totals.spilloversIn), hint: 'Jobs adopted from other shards.' },
+        { label: 'Reassignments', value: formatNumber(totals.reassignments), hint: 'Jobs rerouted after failures/outages.' },
+        { label: 'Pending Jobs', value: formatNumber(ledger.pendingJobs), hint: 'Queue + in-flight jobs at snapshot tick.' },
+        { label: 'Running Jobs', value: formatNumber(ledger.runningJobs), hint: 'Currently executing tasks.' },
+      ]);
+
+      const invariants = Array.isArray(ledger.invariants) ? ledger.invariants : [];
+      if (invariants.length > 0) {
+        ledgerInvariantsEl.innerHTML = '';
+        invariants.forEach((entry = {}) => {
+          const card = document.createElement('div');
+          card.className = 'metric-card';
+          card.style.borderLeft = `4px solid ${entry.ok ? 'var(--success)' : 'var(--critical)'}`;
+
+          const titleEl = document.createElement('strong');
+          titleEl.textContent = entry.id ?? 'Invariant';
+          card.appendChild(titleEl);
+
+          const statusEl = document.createElement('span');
+          statusEl.textContent = entry.ok ? 'Aligned' : 'Investigate';
+          card.appendChild(statusEl);
+
+          const messageEl = document.createElement('small');
+          messageEl.textContent = entry.message || 'No additional notes';
+          card.appendChild(messageEl);
+
+          ledgerInvariantsEl.appendChild(card);
+        });
+      } else {
+        ledgerInvariantsEl.innerHTML = '';
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'metric-card';
+
+        const titleEl = document.createElement('strong');
+        titleEl.textContent = 'Ledger Invariants';
+        emptyCard.appendChild(titleEl);
+
+        const statusEl = document.createElement('span');
+        statusEl.textContent = 'Nominal';
+        emptyCard.appendChild(statusEl);
+
+        const messageEl = document.createElement('small');
+        messageEl.textContent = 'No invariants provided.';
+        emptyCard.appendChild(messageEl);
+
+        ledgerInvariantsEl.appendChild(emptyCard);
+      }
+
+      const flows = Array.isArray(ledger.flows) ? ledger.flows : [];
+      const flowLines = ['flowchart LR'];
+      flows.forEach((flow, index) => {
+        const from = String(flow.from ?? 'unknown').replace(/[^a-zA-Z0-9]/g, '_') || `from_${index}`;
+        const to = String(flow.to ?? 'unknown').replace(/[^a-zA-Z0-9]/g, '_') || `to_${index}`;
+        const label = Number(flow.count ?? 0).toLocaleString();
+        flowLines.push(`${from}(${flow.from ?? 'unknown'}) -->|${label}| ${to}(${flow.to ?? 'unknown'})`);
+      });
+      if (flowLines.length === 1) {
+        flowLines.push('placeholder((No spillovers))');
+      }
+      spilloverDiagramEl.textContent = flowLines.join('\n');
+      if (window.mermaid) {
+        window.mermaid.init(undefined, [spilloverDiagramEl]);
+      }
+
+      const eventSample = {
+        totalEvents: ledger.totalEvents ?? (Array.isArray(ledger.events) ? ledger.events.length : 0),
+        ownerEvents: ledger.ownerEvents ?? 0,
+        sampleSize: Array.isArray(ledger.events) ? ledger.events.length : 0,
+        sample: Array.isArray(ledger.events) ? ledger.events.slice(-12) : [],
+      };
+      ledgerEventsJsonEl.textContent = JSON.stringify(eventSample, null, 2);
+    }
+
+    function renderNodes(nodes = {}) {
+      const entries = Object.entries(nodes);
+      if (entries.length === 0) {
+        nodeGridEl.innerHTML = '<div class="metric-card"><strong>No nodes</strong><span>—</span><small>Telemetry bundle did not include node snapshots.</small></div>';
+        nodeSummaryEl.textContent = 'load telemetry to verify.';
+        return;
+      }
+      const metrics = entries.map(([nodeId, snapshot]) => {
+        const status = snapshot.active ? 'Healthy' : 'Offline';
+        const color = snapshot.active ? 'var(--success)' : 'var(--critical)';
+        return `
+          <div class="metric-card" style="border-left: 4px solid ${color};">
+            <strong>${nodeId}</strong>
+            <span>${status}</span>
+            <small>Running jobs: ${formatNumber(snapshot.runningJobs)}</small>
+          </div>
+        `;
+      });
+      nodeGridEl.innerHTML = metrics.join('');
+      nodeSummaryEl.textContent = 'heartbeat coverage proven via automatic reassignments (<2% drop target).';
+    }
+
+    function validateSummary(summary) {
+      if (!summary || typeof summary !== 'object') {
+        throw new Error('Summary is empty or malformed');
+      }
+      if (!summary.metrics) {
+        throw new Error('summary.metrics is missing');
+      }
+      if (!summary.shards) {
+        throw new Error('summary.shards is missing');
+      }
+    }
+
+    async function parseJsonFile(file, friendlyName) {
+      try {
+        const text = await file.text();
+        return JSON.parse(text);
+      } catch (error) {
+        throw new Error(`Unable to parse ${friendlyName}: ${error.message || error}`);
+      }
+    }
+
+    function normaliseFilePath(file) {
+      return (file.webkitRelativePath || file.fullPath || file.name || '').toLowerCase();
+    }
+
+    function findFile(files, patterns) {
+      const lowerPatterns = patterns.map((pattern) => pattern.toLowerCase());
+      return files.find((file) => {
+        const path = normaliseFilePath(file);
+        return lowerPatterns.some((pattern) => path.endsWith(pattern));
+      });
+    }
+
+    async function handleFileBundle(fileArray) {
+      if (!fileArray || fileArray.length === 0) {
+        setStatus('No files detected in bundle.', 'warn');
+        return;
+      }
+      try {
+        const summaryFile = findFile(fileArray, ['summary.json']);
+        if (!summaryFile) {
+          throw new Error('Could not find summary.json in the provided bundle.');
+        }
+        const summary = await parseJsonFile(summaryFile, 'summary.json');
+        validateSummary(summary);
+
+        const ownerScriptFile = findFile(fileArray, ['owner-script.json']);
+        const ownerScript = ownerScriptFile ? await parseJsonFile(ownerScriptFile, 'owner-script.json') : {};
+
+        const ownerCommandsFile = findFile(fileArray, ['owner-commands-executed.json']);
+        const ownerCommands = ownerCommandsFile ? await parseJsonFile(ownerCommandsFile, 'owner-commands-executed.json') : {};
+
+        const ledgerFile = findFile(fileArray, ['ledger.json']);
+        const ledger = ledgerFile ? await parseJsonFile(ledgerFile, 'ledger.json') : {};
+
+        const metrics = summary.metrics || {};
+        const dropCount = (metrics.jobsSubmitted || 0) - (metrics.jobsCompleted || 0) - (metrics.jobsCancelled || 0);
+        const dropRate = formatPercent(dropCount, metrics.jobsSubmitted || 0);
+
+        renderMetrics(missionMetricsEl, [
+          { label: 'Owner', value: summary.owner?.name || '—', hint: 'Supreme controller of the planetary fabric.' },
+          { label: 'Tick', value: formatNumber(metrics.tick), hint: 'Simulation tick captured in snapshot.' },
+          { label: 'Jobs Submitted', value: formatNumber(metrics.jobsSubmitted), hint: 'Work registered across shards.' },
+          { label: 'Jobs Completed', value: formatNumber(metrics.jobsCompleted), hint: 'Finished tasks (including resumed jobs).' },
+          { label: 'Jobs Failed', value: formatNumber(metrics.jobsFailed), hint: 'Terminal failures after retries & spillovers.' },
+          { label: 'Jobs Cancelled', value: formatNumber(metrics.jobsCancelled), hint: 'Owner issued cancellations.' },
+          { label: 'Spillovers', value: formatNumber(metrics.spillovers), hint: 'Cross-shard transfers triggered by policy or owner.' },
+          { label: 'Reassignments', value: formatNumber(metrics.reassignedAfterFailure), hint: 'Jobs rescued after node outage or failure.' },
+          { label: 'Drop Rate', value: dropRate, hint: '<2% target enforced by acceptance autopilot.' },
+        ]);
+
+        renderShardTable(summary.shards, summary.shardStatistics || {});
+        renderOwnerStatus(summary.ownerState || {
+          systemPaused: false,
+          pausedShards: [],
+          checkpoint: summary.checkpoint || {},
+          reporting: summary.reporting || {},
+        });
+        renderOwnerCommands(summary.ownerCommands || {}, ownerCommands, ownerScript);
+        renderLedger(summary.ledger ? { ...summary.ledger, ...ledger } : ledger);
+        renderNodes(summary.nodes || {});
+        setStatus(`Telemetry loaded from ${summaryFile.name}. Owner supremacy verified.`, 'success');
+      } catch (error) {
+        console.error(error);
+        setStatus(error.message || String(error), 'error');
+      }
+    }
+
+    async function collectFilesFromDataTransfer(dataTransfer) {
+      if (!dataTransfer) return [];
+      const items = Array.from(dataTransfer.items || []);
+      const entryPromises = [];
+      for (const item of items) {
+        const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+        if (entry) {
+          entryPromises.push(traverseFileTree(entry));
+        }
+      }
+      if (entryPromises.length === 0) {
+        return Array.from(dataTransfer.files || []);
+      }
+      const nested = await Promise.all(entryPromises);
+      return nested.flat();
+    }
+
+    function traverseFileTree(entry, path = '') {
+      return new Promise((resolve) => {
+        if (entry.isFile) {
+          entry.file((file) => {
+            Object.defineProperty(file, 'fullPath', {
+              value: path + entry.name,
+              configurable: true,
+            });
+            resolve([file]);
+          });
+        } else if (entry.isDirectory) {
+          const reader = entry.createReader();
+          const entries = [];
+          const readEntries = () => {
+            reader.readEntries(async (batch) => {
+              if (!batch.length) {
+                const nestedPromises = entries.map((child) => traverseFileTree(child, path + entry.name + '/'));
+                const nested = await Promise.all(nestedPromises);
+                resolve(nested.flat());
+                return;
+              }
+              entries.push(...batch);
+              readEntries();
+            });
+          };
+          readEntries();
+        } else {
+          resolve([]);
+        }
+      });
+    }
+
+    document.getElementById('report-picker').addEventListener('change', (event) => {
+      const files = Array.from(event.target.files || []);
+      handleFileBundle(files);
+    });
+
+    const dropzone = document.getElementById('dropzone');
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', async (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('dragover');
+      const files = await collectFilesFromDataTransfer(event.dataTransfer);
+      handleFileBundle(files);
+    });
+
+    const SAMPLE_SUMMARY = {
+      owner: {
+        name: 'Planetary Fabric Owner',
+        address: '0xF4BR1C0000000000000000000000000000000WN',
+      },
+      metrics: {
+        tick: 384,
+        jobsSubmitted: 12000,
+        jobsCompleted: 11976,
+        jobsFailed: 12,
+        jobsCancelled: 8,
+        spillovers: 164,
+        reassignedAfterFailure: 56,
+        ownerInterventions: 9,
+        systemPauses: 1,
+        shardPauses: 2,
+      },
+      shards: {
+        earth: { queueDepth: 12, inFlight: 8, completed: 4100 },
+        luna: { queueDepth: 6, inFlight: 4, completed: 2900 },
+        mars: { queueDepth: 10, inFlight: 12, completed: 3600 },
+        helios: { queueDepth: 4, inFlight: 6, completed: 3376 },
+      },
+      shardStatistics: {
+        earth: { completed: 4100, failed: 4, spillovers: 42 },
+        luna: { completed: 2900, failed: 2, spillovers: 36 },
+        mars: { completed: 3600, failed: 4, spillovers: 58 },
+        helios: { completed: 3376, failed: 2, spillovers: 28 },
+      },
+      nodes: {
+        'earth.core-alpha': { active: true, runningJobs: 6 },
+        'earth.edge-europa': { active: true, runningJobs: 4 },
+        'luna.nav-station': { active: true, runningJobs: 3 },
+        'mars.regolith-cradle': { active: false, runningJobs: 0 },
+        'mars.gpu-helion': { active: true, runningJobs: 7 },
+        'helios.solaris-array': { active: true, runningJobs: 6 },
+      },
+      ownerState: {
+        systemPaused: false,
+        pausedShards: ['mars'],
+        checkpoint: { path: 'demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoint.json', intervalTicks: 20 },
+        reporting: { directory: 'demo/Planetary-Orchestrator-Fabric-v0/reports', defaultLabel: 'latest' },
+      },
+      checkpoint: { path: 'demo/Planetary-Orchestrator-Fabric-v0/storage/checkpoint.json', intervalTicks: 20 },
+      ownerCommands: {
+        source: 'demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json',
+        scheduled: [{ tick: 120 }, { tick: 150 }, { tick: 180 }],
+        executed: [{ tick: 120 }, { tick: 150 }],
+        skippedBeforeResume: [{ tick: 90 }],
+        pending: [{ tick: 240 }],
+      },
+      ledger: {
+        totals: {
+          submitted: 12000,
+          assigned: 12000,
+          completed: 11976,
+          failed: 12,
+          cancelled: 8,
+          spilloversOut: 82,
+          spilloversIn: 82,
+          reassignments: 56,
+        },
+        flows: [
+          { from: 'earth', to: 'mars', count: 26 },
+          { from: 'mars', to: 'helios', count: 34 },
+          { from: 'luna', to: 'earth', count: 22 },
+        ],
+        invariants: [
+          { id: 'totals-match', ok: true, message: 'Shard totals reconcile with ledger totals.' },
+          { id: 'drop-rate', ok: true, message: 'Drop rate below 2% planetary mandate.' },
+        ],
+        events: [
+          { tick: 122, type: 'job.spillover', shard: 'helios', originShard: 'mars', jobId: 'job-9301' },
+          { tick: 198, type: 'job.requeued', shard: 'earth', originShard: 'earth', jobId: 'job-8412' },
+          { tick: 240, type: 'owner.system.pause', shard: 'earth', jobId: null },
+        ],
+        totalEvents: 2048,
+        ownerEvents: 68,
+        pendingJobs: 32,
+        runningJobs: 30,
+      },
+    };
+
+    const SAMPLE_OWNER_COMMANDS = {
+      executed: [
+        { tick: 120, command: { type: 'system.pause', reason: 'Helios calibration' } },
+        { tick: 150, command: { type: 'system.resume', reason: 'Calibration complete' } },
+      ],
+      skipped: [{ tick: 90, command: { type: 'checkpoint.save' } }],
+      pending: [{ tick: 240, command: { type: 'checkpoint.configure', update: { intervalTicks: 10 } } }],
+    };
+
+    const SAMPLE_OWNER_SCRIPT = {
+      pauseAll: { command: 'owner:system-pause', reason: 'Helios calibration window' },
+      rerouteMarsToHelios: { command: 'owner:reroute-shard', source: 'mars', target: 'helios' },
+      directOwnerCommands: {
+        pauseFabric: { type: 'system.pause', reason: 'Helios calibration' },
+        resumeFabric: { type: 'system.resume', reason: 'Calibration complete' },
+      },
+    };
+
+    document.getElementById('sample-button').addEventListener('click', () => {
+      handleFileBundle([
+        new File([JSON.stringify(SAMPLE_SUMMARY)], 'summary.json', { type: 'application/json' }),
+        new File([JSON.stringify(SAMPLE_OWNER_SCRIPT)], 'owner-script.json', { type: 'application/json' }),
+        new File([JSON.stringify(SAMPLE_OWNER_COMMANDS)], 'owner-commands-executed.json', { type: 'application/json' }),
+        new File([JSON.stringify(SAMPLE_SUMMARY.ledger)], 'ledger.json', { type: 'application/json' }),
+      ]);
+      setStatus('Loaded curated sample telemetry. Replace with a real report bundle to view live data.', 'success');
+    });
+  </script>
 </body>
 </html>

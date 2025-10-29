@@ -43,7 +43,7 @@ Behind the scenes the drill forwards the following flags to the TypeScript entry
 2. Inspect `reports/<label>/events.ndjson`:
    - A `simulation.stopped` event appears exactly once.
    - Subsequent events show resumed processing and checkpoint saves.
-3. Launch `reports/<label>/dashboard.html` and load the summary to visualise pre/post drill topology.
+3. Open `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html`, drop the `reports/<label>` folder, and inspect the auto-rendered shard tables, owner command ledger, and spillover map to visualise pre/post drill topology.
 4. Review `reports/<label>/owner-commands-executed.json` to audit which commands ran before and after the restart.
 
 ## Production Hardening Tips

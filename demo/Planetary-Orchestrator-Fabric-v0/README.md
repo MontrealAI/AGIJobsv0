@@ -15,6 +15,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🗂️ **Adaptive Reporting** – Owners redirect artifact directories and default labels on demand, with changes persisting across checkpoints and resumes.
 - 📈 **CI-Certified** – Dedicated workflows and tests guarantee green checks on every PR and on `main`.
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
+- 🖥️ **Zero-Config Mission Console** – Drop any `reports/<label>` folder onto `ui/dashboard.html` to inspect metrics, owner controls, and ledger flows without a build step.
 - 🎛️ **Owner Command Schedules** – Load declarative schedules that trigger pause/resume, shard tuning, and node lifecycle actions mid-run.
 - ♻️ **Zero-Downtime Restart Drill** – A two-stage launcher halts the orchestrator on command, resumes from checkpoint, and merges telemetry for auditors automatically.
 - 🎯 **Surgical Job Control** – Owners reroute hot jobs across shards or cancel redundant work instantly without touching code.
@@ -57,8 +58,9 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
     --outage-node mars.gpu-helion
   ```
   This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
-6. **Open the dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore live topology overlays, planetary ledger invariants, spillover mermaid flows, and owner command panels for either run.
-7. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
+6. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, and ledger invariants instantly—even offline.
+7. **Open the run-specific dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore the same data pre-linked to that execution with zero configuration.
+8. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
 
@@ -126,7 +128,7 @@ flowchart TD
 | `docs/restart-drill.md` | Step-by-step walkthrough of the orchestrator restart exercise and artifact interpretation. |
 | `src/` | TypeScript source powering the orchestrator, routers, checkpoint manager, and simulation engine. |
 | `tests/planetary_fabric.test.ts` | Deterministic assertions validating shard balance, failover (<2% drop), and checkpoint resume. |
-| `ui/dashboard.html` | Pre-rendered dashboard template that visualizes run artifacts without a build step. |
+| `ui/dashboard.html` | Drag-and-drop mission console that ingests `reports/<label>` bundles and renders metrics, owner controls, and ledger flows. |
 | `reports/` | Generated output bundles; each run writes to a timestamped directory plus the chosen label. |
 | `storage/` | Durable checkpoint snapshots; safe to commit sanitized templates, but not production secrets. |
 
