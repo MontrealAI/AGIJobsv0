@@ -1,0 +1,28 @@
+version: 1
+curriculum:
+  fast_beta: 0.1
+  slow_beta: 0.01
+  min_probability: 0.001
+  moi:
+    interesting_weight: 1.0
+    boring_weight: 0.001
+thermostat:
+  roi_target: 5.0
+  roi_floor: 2.5
+  min_moi_interval: 25
+  max_moi_interval: 200
+sentinel:
+  roi_floor: 1.5
+  budget_limit: 1000.0
+  moi_daily_max: 250
+  min_entropy: 0.65
+cost_model:
+  fm_call_cost: 0.03
+  default_intervention_cost: 0.0
+cohorts:
+  enterprise:
+    roi_floor: 3.5
+    exploration_epsilon: 0.05
+  smb:
+    roi_floor: 2.0
+    exploration_epsilon: 0.1
