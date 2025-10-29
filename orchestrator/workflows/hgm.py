@@ -103,6 +103,28 @@ class HGMOrchestrationWorkflow:
     async def snapshot(self) -> Dict[str, AgentNode]:
         return await self._invoke_with_engine(self._engine.snapshot())
 
+    async def engine_config(self) -> EngineConfig:
+        """Return a snapshot of the underlying engine configuration."""
+
+        return await self._invoke_with_engine(self._engine.get_config())
+
+    async def update_engine_parameters(
+        self,
+        *,
+        widening_alpha: float | None = None,
+        min_visitations: int | None = None,
+        thompson_prior: float | None = None,
+    ) -> EngineConfig:
+        """Adjust engine parameters under the workflow lock."""
+
+        return await self._invoke_with_engine(
+            self._engine.update_parameters(
+                widening_alpha=widening_alpha,
+                min_visitations=min_visitations,
+                thompson_prior=thompson_prior,
+            )
+        )
+
     # ------------------------------------------------------------------
     # Scheduling helpers
     async def schedule_expansion(
