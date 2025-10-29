@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers } from '../src/runtime';
 import { deployEnvironment } from '../src/environment';
 import { executeJobRound } from '../src/jobRunner';
 
@@ -16,13 +16,13 @@ async function auditReport() {
 
   const totalStake = await env.validators.reduce(async (accPromise, entry) => {
     const acc = await accPromise;
-    const stake = await env.stakeManager.stakeOf(entry.signer.address);
+    const stake = await env.stakeManager.stakeOf(entry.address);
     return acc + stake;
   }, Promise.resolve(0n));
 
   const report = {
-    owner: env.owner.address,
-    sentinel: env.sentinel.address,
+    owner: await env.owner.getAddress(),
+    sentinel: await env.sentinel.getAddress(),
     validatorCount: env.validators.length,
     totalStakeEth: ethers.formatEther(totalStake),
     verifyingKey: env.verifyingKey,

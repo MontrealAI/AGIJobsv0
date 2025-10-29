@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers } from './runtime';
 import type { DemoEnvironment } from './environment';
 
 const encodeEntropy = (secret: bigint) => ethers.solidityPackedKeccak256(['uint256'], [secret]);
@@ -53,7 +53,7 @@ export async function executeJobRound(env: DemoEnvironment, config: JobConfig, s
     const validator = committee[i];
     const salt = BigInt(3000 + seedOffset * 10 + i);
     voteSalts.set(validator.toLowerCase(), salt);
-    const signer = env.validators.find((entry) => entry.signer.address.toLowerCase() === validator.toLowerCase());
+    const signer = env.validators.find((entry) => entry.address.toLowerCase() === validator.toLowerCase());
     if (!signer) throw new Error('missing validator signer');
     await env.demo.connect(signer.signer).commitVote(jobId, encodeVote(jobId, validator, config.expectedResult, salt));
   }
@@ -63,7 +63,7 @@ export async function executeJobRound(env: DemoEnvironment, config: JobConfig, s
   await ethers.provider.send('evm_mine', []);
 
   for (const validator of committee) {
-    const signer = env.validators.find((entry) => entry.signer.address.toLowerCase() === validator.toLowerCase());
+    const signer = env.validators.find((entry) => entry.address.toLowerCase() === validator.toLowerCase());
     if (!signer) throw new Error('missing validator signer');
     const salt = voteSalts.get(validator.toLowerCase());
     await env.demo.connect(signer.signer).revealVote(jobId, config.expectedResult, salt!);

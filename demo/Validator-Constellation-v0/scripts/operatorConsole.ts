@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers } from '../src/runtime';
 import { deployEnvironment } from '../src/environment';
 import { executeJobRound } from '../src/jobRunner';
 
@@ -17,8 +17,8 @@ async function operatorConsole() {
   const validatorRows = await Promise.all(
     env.validators.map(async (entry) => ({
       validator: entry.name,
-      address: entry.signer.address,
-      stake: ethers.formatEther(await env.stakeManager.stakeOf(entry.signer.address)),
+      address: entry.address,
+      stake: ethers.formatEther(await env.stakeManager.stakeOf(entry.address)),
     })),
   );
 

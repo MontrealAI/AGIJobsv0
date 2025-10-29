@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { ethers } from 'hardhat';
+import { ethers } from '../src/runtime';
 import { deployEnvironment } from '../src/environment';
 import { executeJobRound } from '../src/jobRunner';
 import { buildTree, getRoot } from '../src/merkle';
@@ -59,15 +59,17 @@ async function runScenario() {
     domain: scenario.domain,
     jobsExecuted: telemetry.length,
     validators: env.validators.map((v) => v.name),
-    sentinel: env.sentinel.address,
+    sentinel: await env.sentinel.getAddress(),
   };
+
+  const sentinelAddress = summary.sentinel;
 
   const mermaid = `graph LR
     Owner[Owner]
     Owner -->|Deploys| Demo[Validator Constellation]
     Demo -->|Validates| Jobs((Jobs))
     Jobs -->|Batched zk Proof| zkVerifier
-    Demo -->|Sentinel Alert| Sentinel(${env.sentinel.address.slice(0, 10)}...)
+    Demo -->|Sentinel Alert| Sentinel(${sentinelAddress.slice(0, 10)}...)
     Sentinel -->|Resume| Owner`;
 
   console.log(`\n📡 Scenario: ${scenario.title}`);

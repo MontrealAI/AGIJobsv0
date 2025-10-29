@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat';
+import { ethers } from '../src/runtime';
 import { buildTree, getRoot } from '../src/merkle';
 import { deployEnvironment } from '../src/environment';
 import { executeJobRound, type JobExecutionTelemetry } from '../src/jobRunner';
@@ -41,8 +41,8 @@ async function runDemo() {
   const validatorTable = await Promise.all(
     env.validators.map(async (entry) => ({
       validator: entry.name,
-      address: entry.signer.address,
-      stake: ethers.formatEther(await env.stakeManager.stakeOf(entry.signer.address)),
+      address: entry.address,
+      stake: ethers.formatEther(await env.stakeManager.stakeOf(entry.address)),
     })),
   );
 
@@ -76,8 +76,8 @@ async function runDemo() {
     totalJobsFinalised: telemetry.length,
     committees: telemetry.map((item) => ({ jobId: item.jobId.toString(), size: item.committee.length })),
     domain: 'validator.constellation.demo',
-    owner: env.owner.address,
-    sentinel: env.sentinel.address,
+    owner: await env.owner.getAddress(),
+    sentinel: await env.sentinel.getAddress(),
     sentinelEvent: 'demo-guardrail',
   };
 

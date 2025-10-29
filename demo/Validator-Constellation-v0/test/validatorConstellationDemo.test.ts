@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
 import type { Signer } from 'ethers';
 import { loadFixture, mine, time } from '@nomicfoundation/hardhat-network-helpers';
 import { buildTree, computeLeaf, getProof, getRoot } from '../src/merkle';
+import { ethers } from '../src/runtime';
 
 const domainPrimary = ethers.keccak256(ethers.toUtf8Bytes('demo.domain.primary'));
 const domainBatch = ethers.keccak256(ethers.toUtf8Bytes('demo.domain.batch'));
@@ -17,7 +17,7 @@ async function deployFixture() {
     await ethers.getSigners();
 
   const StakeManager = await ethers.getContractFactory('ConstellationStakeManager');
-  const stakeManager = await StakeManager.deploy(ethers.parseEther('1'), deployer.address);
+  const stakeManager = await StakeManager.deploy(ethers.parseEther('1'), await deployer.getAddress());
 
   const Oracle = await ethers.getContractFactory('ENSIdentityOracle');
   const identityOracle = await Oracle.deploy();
@@ -30,34 +30,47 @@ async function deployFixture() {
   const demo = await Demo.deploy(await stakeManager.getAddress(), await identityOracle.getAddress(), await zkVerifier.getAddress());
 
   await stakeManager.setController(await demo.getAddress(), true);
-  await demo.configureSentinel(sentinel.address, true);
+  await demo.configureSentinel(await sentinel.getAddress(), true);
 
-  const validators = [
+  const validatorSigners = [
     { signer: validatorA, name: 'atlas.club.agi.eth' },
     { signer: validatorB, name: 'beluga.club.agi.eth' },
     { signer: validatorC, name: 'celeste.club.agi.eth' },
     { signer: validatorD, name: 'draco.club.agi.eth' },
     { signer: validatorE, name: 'elysian.club.agi.eth' },
   ];
-  const validatorLeaves = validators.map((entry) => computeLeaf(entry.signer.address, entry.name));
+  const validators = await Promise.all(
+    validatorSigners.map(async ({ signer, name }) => ({
+      signer,
+      name,
+      address: await signer.getAddress(),
+    })),
+  );
+  const validatorLeaves = validators.map((entry) => computeLeaf(entry.address, entry.name));
   const validatorTree = buildTree(validatorLeaves);
 
-  const agents = [{ signer: agent, name: 'astra.agent.agi.eth' }];
-  const agentLeaves = agents.map((entry) => computeLeaf(entry.signer.address, entry.name));
+  const agents = [
+    {
+      signer: agent,
+      name: 'astra.agent.agi.eth',
+      address: await agent.getAddress(),
+    },
+  ];
+  const agentLeaves = agents.map((entry) => computeLeaf(entry.address, entry.name));
   const agentTree = buildTree(agentLeaves);
 
   await identityOracle.updateMerkleRoots(getRoot(validatorTree), getRoot(agentTree), ethers.ZeroHash);
 
   for (let i = 0; i < validators.length; i += 1) {
     const entry = validators[i];
-    await stakeManager.connect(entry.signer).depositStake(entry.signer.address, { value: ethers.parseEther('5') });
+    await stakeManager.connect(entry.signer).depositStake(entry.address, { value: ethers.parseEther('5') });
     await demo.connect(entry.signer).registerValidator(entry.name, getProof(validatorTree, i));
   }
 
   await demo.connect(agent).registerAgent(agents[0].name, getProof(agentTree, 0));
 
   const validatorMap = new Map<string, Signer>();
-  validators.forEach((entry) => validatorMap.set(entry.signer.address.toLowerCase(), entry.signer));
+  validators.forEach((entry) => validatorMap.set(entry.address.toLowerCase(), entry.signer));
 
   return {
     demo,
