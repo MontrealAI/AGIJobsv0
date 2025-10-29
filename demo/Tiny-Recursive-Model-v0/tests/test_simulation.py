@@ -7,6 +7,7 @@ from tiny_recursive_model_v0.config import (
     DemoConfig,
     EthereumConfig,
     LedgerConfig,
+    ReportConfig,
     OwnerConfig,
     SentinelConfig,
     TelemetryConfig,
@@ -67,6 +68,7 @@ def _make_demo_config(telemetry_path: Path) -> DemoConfig:
         ),
         telemetry=TelemetryConfig(enable_structured_logs=True, write_path=str(telemetry_path)),
         ethereum=EthereumConfig(rpc_url="https://mainnet.infura.io/v3/KEY", chain_id=1, logging_contract="0x0", confirmations_required=1),
+        report=ReportConfig(path=str(telemetry_path.with_name("executive_report.md"))),
     )
 
 

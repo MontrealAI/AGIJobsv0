@@ -12,6 +12,7 @@ install:
 telemetry:
 @mkdir -p assets
 @touch assets/telemetry.jsonl
+@touch assets/trm_executive_report.md
 
 _demo_invoke: telemetry
 @$(ACTIVATE) && $(PYTHON) demo_runner.py
@@ -31,4 +32,4 @@ format: install
 
 clean:
 rm -rf __pycache__ */__pycache__ .pytest_cache $(VENV)
-rm -f assets/telemetry.jsonl
+rm -f assets/telemetry.jsonl assets/trm_executive_report.md

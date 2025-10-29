@@ -213,6 +213,11 @@ class TelemetryConfig:
 
 
 @dataclass
+class ReportConfig:
+    path: str
+
+
+@dataclass
 class EthereumConfig:
     rpc_url: str
     chain_id: int
@@ -231,6 +236,7 @@ class DemoConfig:
     trm: TrmConfig
     telemetry: TelemetryConfig
     ethereum: EthereumConfig
+    report: ReportConfig
 
     @classmethod
     def load(cls, path: Path | str) -> "DemoConfig":
@@ -246,6 +252,7 @@ class DemoConfig:
             trm=TrmConfig.from_dict(payload["trm"]),
             telemetry=TelemetryConfig(**payload["telemetry"]),
             ethereum=EthereumConfig(**payload["ethereum"]),
+            report=ReportConfig(**payload.get("report", {"path": "demo/Tiny-Recursive-Model-v0/assets/trm_executive_report.md"})),
         )
 
     def dump(self, path: Path | str) -> None:
@@ -261,6 +268,7 @@ class DemoConfig:
             "trm": self.trm.to_dict(),
             "telemetry": self.telemetry.__dict__,
             "ethereum": self.ethereum.__dict__,
+            "report": self.report.__dict__,
         }
         with path_obj.open("w", encoding="utf-8") as handle:
             yaml.safe_dump(payload, handle, sort_keys=False)
@@ -279,6 +287,7 @@ __all__ = [
     "SentinelConfig",
     "ThermostatConfig",
     "TelemetryConfig",
+    "ReportConfig",
     "TrainingConfig",
     "TrmConfig",
 ]

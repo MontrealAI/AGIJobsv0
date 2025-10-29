@@ -22,7 +22,8 @@ That command will:
 1. Fine-tune the TRM on synthetic job-market data.
 2. Run a 200-opportunity conversion simulation.
 3. Persist telemetry (`demo_metrics.json`, `trm_calls.json`, `training.json`).
-4. Print an executive summary comparing TRM, LLM, and greedy baselines.
+4. Generate an executive-grade Markdown dossier at `assets/trm_executive_report.md` complete with Mermaid intelligence maps.
+5. Print an executive summary comparing TRM, LLM, and greedy baselines.
 
 ## System design (Mermaid overview)
 
@@ -67,6 +68,7 @@ flowchart TD
 - `trm_demo/sentinel.py` – Guardrails enforcing ROI floor, latency, and budget caps.
 - `trm_demo/subgraph.py` – File-backed telemetry logger for dashboards.
 - `trm_demo/ui.py` – Executive summary renderer for terminal and automation pipelines.
+- `trm_demo/reporting.py` – Auto-generates executive dossiers with Mermaid intelligence maps.
 - `trm_demo/utils.py` – Feature generation helpers.
 - `trm_demo/weights.py` – Deterministic TRM initialisation ready for production.
 

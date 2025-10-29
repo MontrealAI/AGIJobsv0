@@ -19,6 +19,7 @@ from trm_demo.simulation import (
     ground_truth_probability,
 )
 from trm_demo.sentinel import Sentinel, SentinelConfig
+from trm_demo.reporting import write_report
 from trm_demo.subgraph import SubgraphConfig, SubgraphLogger
 from trm_demo.thermostat import Thermostat, ThermostatConfig
 from trm_demo.ui import render_summary
@@ -36,6 +37,7 @@ def _build_from_config(config_path: Path) -> Tuple[
     Thermostat,
     Sentinel,
     SubgraphLogger,
+    Path,
 ]:
     raw = _load_yaml(config_path)
     model_config = TinyRecursiveModelConfig(**raw.get("model", {}))
@@ -45,7 +47,8 @@ def _build_from_config(config_path: Path) -> Tuple[
     thermostat = Thermostat(ThermostatConfig(**raw.get("thermostat", {})))
     sentinel = Sentinel(SentinelConfig(**raw.get("sentinel", {})))
     subgraph = SubgraphLogger(SubgraphConfig(Path(raw.get("subgraph", {}).get("path", "trm_calls.json"))))
-    return model, simulation_config, thermostat, sentinel, subgraph
+    report_path = Path(raw.get("report", {}).get("path", "assets/trm_executive_report.md"))
+    return model, simulation_config, thermostat, sentinel, subgraph, report_path
 
 
 def _generate_training_dataset(size: int, rng: np.random.Generator) -> List[Tuple[np.ndarray, float]]:
@@ -59,7 +62,7 @@ def _generate_training_dataset(size: int, rng: np.random.Generator) -> List[Tupl
 
 
 def _run_demo(args: argparse.Namespace) -> SimulationOutcome:
-    model, simulation_config, thermostat, sentinel, subgraph = _build_from_config(args.config)
+    model, simulation_config, thermostat, sentinel, subgraph, report_path = _build_from_config(args.config)
     ledger = EconomicLedger()
     rng = np.random.default_rng(args.seed)
 
@@ -83,6 +86,10 @@ def _run_demo(args: argparse.Namespace) -> SimulationOutcome:
     if args.export_json:
         Path(args.export_json).write_text(json.dumps(outcome.as_dict(), indent=2))
 
+    destination = args.export_report or report_path
+    if destination:
+        write_report(outcome, ledger, destination)
+
     print(render_summary(outcome))
     return outcome
 
@@ -101,6 +108,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--learning-rate", type=float, default=0.05, help="Learning rate for training")
     parser.add_argument("--export-json", type=Path, help="Optional path to export simulation metrics")
     parser.add_argument("--export-training-log", type=Path, help="Optional path to export training telemetry")
+    parser.add_argument(
+        "--export-report",
+        type=Path,
+        help="Optional path to export the executive Markdown report (defaults to config report.path)",
+    )
     return parser
 
 
