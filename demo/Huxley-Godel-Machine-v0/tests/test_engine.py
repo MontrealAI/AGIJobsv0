@@ -2,42 +2,41 @@ from __future__ import annotations
 
 import random
 
-from hgm_demo.engine import EngineParameters, HGMEngine
-from hgm_demo.structures import AgentNode
+from hgm_demo.engine import ActionType, DecisionContext, HGMEngine
 
 
-def make_engine(tau: float = 1.0, alpha: float = 1.2) -> HGMEngine:
-    params = EngineParameters(tau=tau, alpha=alpha, epsilon=0.05, max_agents=8, max_actions=50)
-    rng = random.Random(1234)
-    engine = HGMEngine(params=params, rng=rng)
-    root = AgentNode(agent_id="root", parent_id=None, depth=0, generation=0, quality=0.6)
-    engine.register_root(root)
+def make_engine(seed: int = 5) -> HGMEngine:
+    rng = random.Random(seed)
+    engine = HGMEngine(tau=1.1, alpha=1.3, epsilon=0.05, rng=rng)
+    engine.register_root(quality=0.55, description="unit-test root")
     return engine
 
 
-def test_propagate_result_updates_clade() -> None:
+def test_clade_metrics_propagate_to_ancestors() -> None:
     engine = make_engine()
-    child = AgentNode(agent_id="child", parent_id="root", depth=1, generation=1, quality=0.7)
-    engine.register_child("root", child)
-    engine.record_evaluation("child", True)
-    assert engine.get_agent("child").self_success == 1
-    assert engine.get_agent("root").clade_success == engine.get_agent("root").self_success + 1
+    child = engine.create_child(engine.root_id, quality=0.6)
+    grandchild = engine.create_child(child.agent_id, quality=0.7)
+
+    engine.record_evaluation(grandchild.agent_id, True)
+
+    assert engine.get_agent(grandchild.agent_id).successes == 1
+    assert engine.get_agent(child.agent_id).clade_successes == 1
+    assert engine.get_agent(engine.root_id).clade_successes == 1
 
 
-def test_next_action_prefers_expansion_until_budget() -> None:
-    engine = make_engine(alpha=1.5)
-    action = engine.next_action()
-    assert action is not None
-    assert action[0] == "expand"
-
-
-def test_select_final_agent_returns_best_node() -> None:
+def test_next_action_prefers_expansion_initially() -> None:
     engine = make_engine()
-    child = AgentNode(agent_id="child", parent_id="root", depth=1, generation=1, quality=0.9)
-    engine.register_child("root", child)
-    for _ in range(5):
-        engine.record_evaluation("child", True)
-    engine.record_evaluation("root", False)
-    winner = engine.select_final_agent()
-    assert winner is not None
-    assert winner.agent_id == "child"
+    decision = engine.next_action(DecisionContext())
+    assert decision is not None
+    assert decision.action is ActionType.EXPAND
+
+
+def test_best_agent_returns_high_performer() -> None:
+    engine = make_engine()
+    child = engine.create_child(engine.root_id, quality=0.8)
+    for _ in range(6):
+        engine.record_evaluation(child.agent_id, True)
+    for _ in range(3):
+        engine.record_evaluation(engine.root_id, False)
+    winner = engine.best_agent()
+    assert winner.agent_id == child.agent_id
