@@ -32,6 +32,9 @@ class SubgraphIndexer:
             "RoundFinalized",
             "PhaseTransition",
             "ConfigUpdated",
+            "DomainSafetyUpdated",
+            "DomainRegistered",
+            "SentinelConfigUpdated",
         }
         if event.type in indexed_types:
             self.events.append(

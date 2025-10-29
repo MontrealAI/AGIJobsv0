@@ -14,3 +14,5 @@ def test_demo_runner_summary():
     assert summary.timeline
     assert summary.timeline.get("commitDeadlineBlock") is not None
     assert summary.owner_actions
+    assert len(summary.sentinel_alerts) >= 3
+    assert any(event["domain"] == "synthetic-biology" for event in summary.domain_events)

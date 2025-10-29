@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from validator_constellation.events import EventBus
-from validator_constellation.sentinel import AgentAction, DomainPauseController, SentinelMonitor, SentinelRule
+from validator_constellation.sentinel import AgentAction, DomainPauseController, SentinelMonitor
 
 
 def test_sentinel_triggers_pause():
     bus = EventBus()
-    controller = DomainPauseController(bus)
-    sentinel = SentinelMonitor(
-        rules=[
-            SentinelRule(
-                name="budget-overrun",
-                description="Agent spend exceeded allocated budget",
-                predicate=lambda action: action.spend > action.metadata.get("budget", 0),
-            )
+    controller = DomainPauseController(
+        bus,
+        domains=[
+            {
+                "domain": "bio",
+                "human_name": "Biosecurity Domain",
+                "budget_limit": 1_000,
+                "unsafe_opcodes": ["SELFDESTRUCT"],
+            }
         ],
-        pause_controller=controller,
-        event_bus=bus,
     )
+    sentinel = SentinelMonitor(pause_controller=controller, event_bus=bus)
     action = AgentAction(
         agent="eve.agent.agi.eth",
         domain="bio",
@@ -34,9 +34,18 @@ def test_sentinel_triggers_pause():
 
 def test_resume_domain():
     bus = EventBus()
-    controller = DomainPauseController(bus)
-    sentinel = SentinelMonitor([], controller, bus)
-    controller.pause("bio", "test")
+    controller = DomainPauseController(
+        bus,
+        domains=[
+            {
+                "domain": "bio",
+                "human_name": "Biosecurity Domain",
+                "budget_limit": 1_000,
+            }
+        ],
+    )
+    sentinel = SentinelMonitor(pause_controller=controller, event_bus=bus)
+    controller.pause("bio", reason="test", triggered_by="pytest")
     assert controller.is_paused("bio")
     sentinel.resume_domain("bio", "owner")
     assert not controller.is_paused("bio")

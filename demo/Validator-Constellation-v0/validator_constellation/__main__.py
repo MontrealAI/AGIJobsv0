@@ -12,6 +12,10 @@ def main() -> None:
     print(f"Timeline: {summary.timeline}")
     if summary.owner_actions:
         print(f"Owner actions: {summary.owner_actions}")
+    if summary.sentinel_alerts:
+        print(f"Sentinel alerts: {summary.sentinel_alerts}")
+    if summary.domain_events:
+        print(f"Domain events: {summary.domain_events}")
 
 
 if __name__ == "__main__":

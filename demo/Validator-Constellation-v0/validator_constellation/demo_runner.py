@@ -28,6 +28,8 @@ class DemoSummary:
     indexed_events: int
     timeline: Dict[str, Optional[int]]
     owner_actions: List[Dict[str, object]]
+    sentinel_alerts: List[Dict[str, object]]
+    domain_events: List[Dict[str, object]]
 
 
 def run_validator_constellation_demo(
@@ -48,13 +50,50 @@ def run_validator_constellation_demo(
     event_bus = EventBus()
     SubgraphIndexer(event_bus)
     stake_manager = StakeManager(event_bus, config.owner_address)
-    domain_pause = DomainPauseController(event_bus)
+    domain_pause = DomainPauseController(
+        event_bus,
+        domains=[
+            {
+                "domain": "synthetic-biology",
+                "human_name": "Synthetic Biology AGI Lab",
+                "budget_limit": Decimal(budget_limit),
+                "unsafe_opcodes": ["SELFDESTRUCT", "DELEGATECALL"],
+                "allowed_targets": ["vault.sentinel.agi"],
+                "max_calldata_bytes": 4096,
+                "forbidden_selectors": ["0xd0e30db0"],
+            },
+            {
+                "domain": "quantum-trade",
+                "human_name": "Quantum Trade Network",
+                "budget_limit": Decimal("500"),
+                "unsafe_opcodes": ["CREATE2"],
+                "allowed_targets": ["0xquantum-safe"],
+                "max_calldata_bytes": 2048,
+                "forbidden_selectors": ["0xa9059cbb"],
+            },
+        ],
+    )
+    sentinel = SentinelMonitor(
+        pause_controller=domain_pause,
+        event_bus=event_bus,
+        budget_grace_ratio=0.05,
+        custom_rules=[
+            SentinelRule(
+                name="RISK_SPIKE",
+                description="Agent risk score exceeded threshold",
+                predicate=lambda action, _state: isinstance(action.metadata.get("riskScore"), (int, float))
+                and action.metadata["riskScore"] > 90,
+                severity="HIGH",
+            )
+        ],
+    )
     owner_console = OwnerConsole(
         owner_address=config.owner_address,
         config=config,
         pause_controller=domain_pause,
         stake_manager=stake_manager,
         event_bus=event_bus,
+        sentinel=sentinel,
     )
 
     owner_updates: Dict[str, object] = {
@@ -107,31 +146,48 @@ def run_validator_constellation_demo(
     round_engine.advance_blocks(config.reveal_phase_blocks)
     round_result = round_engine.finalize()
 
-    sentinel = SentinelMonitor(
-        rules=[
-            SentinelRule(
-                name="budget-overrun",
-                description="Agent spend exceeded allocated budget",
-                predicate=lambda action: action.spend > action.metadata.get("budget", 0),
-            ),
-            SentinelRule(
-                name="restricted-call",
-                description="Agent invoked a restricted function",
-                predicate=lambda action: action.metadata.get("restricted", False),
-            ),
-        ],
-        pause_controller=domain_pause,
-        event_bus=event_bus,
-    )
-
     action = AgentAction(
         agent="eve.agent.agi.eth",
         domain="synthetic-biology",
         spend=1_200.0,
         call="allocate_funds",
         metadata={"budget": budget_limit},
+        opcode="DELEGATECALL",
+        block_number=11,
     )
     sentinel.evaluate(action)
+
+    quantum_action = AgentAction(
+        agent="quinn.agent.agi.eth",
+        domain="quantum-trade",
+        spend=320.0,
+        call="swap_derivative",
+        target="0xshadow-vault",
+        metadata={"budget": 400.0, "calldataBytes": 1024},
+        block_number=12,
+    )
+    sentinel.evaluate(quantum_action)
+
+    owner_console.update_domain_policy(
+        config.owner_address,
+        "quantum-trade",
+        allowed_targets=["0xquantum-safe", "0xshadow-vault"],
+    )
+    owner_console.resume_domain(config.owner_address, "quantum-trade")
+
+    quantum_follow_up = AgentAction(
+        agent="quinn.agent.agi.eth",
+        domain="quantum-trade",
+        spend=450.0,
+        call="swap_derivative",
+        target="0xshadow-vault",
+        metadata={"budget": 450.0, "riskScore": 95},
+        block_number=13,
+    )
+    if sentinel.evaluate(quantum_follow_up):
+        owner_console.resume_domain(config.owner_address, "quantum-trade")
+
+    owner_console.update_sentinel(config.owner_address, budget_grace_ratio=0.08)
 
     batcher = ZKBatchAttestor(config)
     job_target = max(1, job_count or config.batch_proof_capacity)
@@ -145,16 +201,38 @@ def run_validator_constellation_demo(
     finalized_event = next(event_bus.find("RoundFinalized"), None)
     timeline = finalized_event.payload.get("timeline") if finalized_event else {}
 
+    domain_pauses = [
+        {
+            "domain": event.payload["domain"],
+            "reason": event.payload["reason"],
+            "triggeredBy": event.payload.get("triggeredBy"),
+            "timestamp": event.payload.get("timestamp"),
+        }
+        for event in event_bus.find("DomainPaused")
+    ]
+
+    sentinel_alerts = [
+        {
+            "domain": event.payload["domain"],
+            "rule": event.payload.get("rule", ""),
+            "reason": event.payload["reason"],
+            "severity": event.payload.get("severity", ""),
+        }
+        for event in event_bus.find("SentinelAlert")
+    ]
+
     return DemoSummary(
         committee=committee,
         truthful_outcome=truthful_outcome,
         round_result=round_result,
         slashed_validators=slashed,
-        paused_domains=list(domain_pause.paused_domains.keys()),
+        paused_domains=sorted(domain_pause.paused_domains.keys()),
         batch_proof_root=proof.batch_root,
         gas_saved=batcher.estimate_gas_saved(len(jobs)),
         indexed_events=len(event_bus.events),
         timeline=dict(timeline or {}),
         owner_actions=[{"action": action.action, "details": action.details} for action in owner_console.actions],
+        sentinel_alerts=sentinel_alerts,
+        domain_events=domain_pauses,
     )
 

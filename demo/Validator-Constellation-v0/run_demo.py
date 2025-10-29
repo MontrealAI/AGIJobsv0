@@ -85,6 +85,8 @@ def main() -> None:
         "gasSaved": summary.gas_saved,
         "timeline": summary.timeline,
         "ownerActions": summary.owner_actions,
+        "sentinelAlerts": summary.sentinel_alerts,
+        "domainEvents": summary.domain_events,
     }
     print(json.dumps(data, indent=2))
     if args.output:
