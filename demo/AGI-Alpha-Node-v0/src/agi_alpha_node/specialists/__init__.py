@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from importlib import import_module
-from typing import Dict, Type
+from typing import Type
 
 from .base import SpecialistAgent, SpecialistContext
 

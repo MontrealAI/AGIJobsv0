@@ -70,7 +70,6 @@ def compliance(
     log_file = config.resolved_log_file(config_path.parent)
     configure_logging(str(log_file) if log_file else None)
 
-    knowledge = KnowledgeLake(Path(config.knowledge_lake.database_path))
     ens = ENSVerifier(config.ens, base_path=config.resolve_path(".")).verify()
     stake = StakeManagerClient(config.staking).current_status()
     engine = ComplianceEngine()

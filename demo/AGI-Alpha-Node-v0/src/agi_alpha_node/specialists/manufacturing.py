@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import statistics
 from typing import Dict
 
 from .base import SpecialistAgent, SpecialistContext
