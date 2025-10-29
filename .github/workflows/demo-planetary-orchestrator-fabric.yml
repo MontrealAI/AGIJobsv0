@@ -76,14 +76,37 @@ jobs:
           const dashboardPath = path.join(reportDir, 'dashboard.html');
           const ownerScriptPath = path.join(reportDir, 'owner-script.json');
           const ledgerPath = path.join(reportDir, 'ledger.json');
+          const chroniclePath = path.join(reportDir, 'mission-chronicle.md');
           for (const file of [summaryPath, eventsPath, dashboardPath, ownerScriptPath, ledgerPath]) {
             if (!fs.existsSync(file)) {
               throw new Error(`expected artifact missing: ${file}`);
             }
           }
+          if (!fs.existsSync(chroniclePath)) {
+            throw new Error(`expected chronicle missing: ${chroniclePath}`);
+          }
           const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
           if (!summary.metrics || summary.metrics.jobsCompleted === undefined) {
             throw new Error('summary missing metrics');
+          }
+          const requiredMetricKeys = [
+            'jobsSubmitted',
+            'jobsCompleted',
+            'jobsFailed',
+            'jobsCancelled',
+            'spillovers',
+            'reassignedAfterFailure',
+            'valueSubmitted',
+            'valueCompleted',
+            'valueFailed',
+            'valueCancelled',
+            'valueSpillovers',
+            'valueReassigned',
+          ];
+          for (const key of requiredMetricKeys) {
+            if (typeof summary.metrics[key] !== 'number') {
+              throw new Error(`summary metrics missing key: ${key}`);
+            }
           }
           if (!summary.shards || Object.keys(summary.shards).length === 0) {
             throw new Error('summary missing shard snapshots');
@@ -93,6 +116,9 @@ jobs:
           }
           if (!summary.ownerCommands || !Array.isArray(summary.ownerCommands.executed)) {
             throw new Error('summary missing owner command metadata');
+          }
+          if (!summary.chronicle || summary.chronicle.path !== './mission-chronicle.md') {
+            throw new Error('summary missing chronicle metadata');
           }
           const drop = summary.metrics.jobsSubmitted - summary.metrics.jobsCompleted;
           const dropRate = drop / summary.metrics.jobsSubmitted;
@@ -145,6 +171,10 @@ jobs:
           if (ownerCommandsLog.executed.length !== summary.ownerCommands.executed.length) {
             throw new Error('summary owner command counts do not match execution log');
           }
+          const chronicleContent = fs.readFileSync(chroniclePath, 'utf8');
+          if (!chronicleContent.includes('Mission Chronicle') || !chronicleContent.includes('Reliability digest')) {
+            throw new Error('mission chronicle content is incomplete');
+          }
           if (!summary.ledger || !summary.ledger.totals) {
             throw new Error('summary missing ledger metadata');
           }
@@ -152,11 +182,32 @@ jobs:
             throw new Error(`ledger path unexpected: ${summary.ledger.path}`);
           }
           const ledger = JSON.parse(fs.readFileSync(ledgerPath, 'utf8'));
-          ['submitted', 'completed', 'failed', 'cancelled', 'spilloversOut', 'reassignments'].forEach((key) => {
+          const ledgerKeys = [
+            'submitted',
+            'completed',
+            'failed',
+            'cancelled',
+            'spilloversOut',
+            'reassignments',
+            'valueSubmitted',
+            'valueCompleted',
+            'valueFailed',
+            'valueCancelled',
+            'valueSpilloversOut',
+            'valueSpilloversIn',
+            'valueReassignments',
+          ];
+          for (const key of ledgerKeys) {
             if (ledger.totals[key] !== summary.ledger.totals[key]) {
               throw new Error(`ledger total mismatch for ${key}`);
             }
-          });
+          }
+          if (ledger.totals.valueSpilloversOut !== summary.metrics.valueSpillovers) {
+            throw new Error('summary value spillovers mismatch with ledger totals');
+          }
+          if (ledger.totals.valueReassignments !== summary.metrics.valueReassigned) {
+            throw new Error('summary value reassignments mismatch with ledger totals');
+          }
           if (!Array.isArray(ledger.invariants) || ledger.invariants.length === 0) {
             throw new Error('ledger invariants missing');
           }
@@ -166,5 +217,27 @@ jobs:
           if (!Array.isArray(ledger.events) || ledger.events.length === 0) {
             throw new Error('ledger event sample missing');
           }
+          if (!summary.chronicle || summary.chronicle.valueDropRate === undefined) {
+            throw new Error('summary missing chronicle value drop rate');
+          }
+          if (!summary.chronicle || summary.chronicle.valueFailureRate === undefined) {
+            throw new Error('summary missing chronicle value failure rate');
+          }
+          if (summary.chronicle.submittedValue !== summary.metrics.valueSubmitted) {
+            throw new Error('chronicle submitted value mismatch');
+          }
+          if (summary.chronicle.completedValue !== summary.metrics.valueCompleted) {
+            throw new Error('chronicle completed value mismatch');
+          }
+          ['Value Submitted', 'Value Completed', 'Value Spillovers'].forEach((snippet) => {
+            if (!dashboardHtml.includes(snippet)) {
+              throw new Error(`dashboard missing value snippet: ${snippet}`);
+            }
+          });
+          ['Value drop rate', 'Value failure rate', 'Value submitted'].forEach((snippet) => {
+            if (!chronicleContent.includes(snippet)) {
+              throw new Error(`chronicle missing snippet: ${snippet}`);
+            }
+          });
           console.log('Planetary orchestrator fabric artifacts validated.');
           NODE
