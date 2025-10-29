@@ -1,0 +1,158 @@
+"""Core scheduling logic for hierarchical generative modelling."""
+
+from __future__ import annotations
+
+import asyncio
+import math
+from typing import Awaitable, Callable, Dict, Optional, Sequence
+from .config import EngineConfig
+from .sampling import ThompsonSampler, posterior_parameters
+from .types import AgentNode
+
+Callback = Callable[[AgentNode, Dict[str, object]], Awaitable[None] | None]
+
+
+class HGMEngine:
+    """Stateful engine implementing widening and Thompson sampling.
+
+    The engine operates on a sparse dictionary of :class:`AgentNode` objects
+    and provides concurrency safe helpers to drive the expansion/evaluation
+    loop used by the orchestrator. Callbacks supplied through the constructor
+    are always invoked outside of the internal lock which makes it safe to
+    perform I/O in reaction to state updates.
+    """
+
+    def __init__(
+        self,
+        config: EngineConfig | None = None,
+        *,
+        on_expansion_result: Callback | None = None,
+        on_evaluation_result: Callback | None = None,
+    ) -> None:
+        self._config = config or EngineConfig()
+        self._nodes: Dict[str, AgentNode] = {}
+        self._lock = asyncio.Lock()
+        self._sampler = ThompsonSampler(seed=self._config.seed)
+        self._on_expansion_result = on_expansion_result
+        self._on_evaluation_result = on_evaluation_result
+
+    async def ensure_node(self, key: str, **metadata: object) -> AgentNode:
+        """Return a node, creating it when necessary."""
+
+        async with self._lock:
+            node = self._nodes.get(key)
+            if node is None:
+                node = AgentNode(key=key, metadata=dict(metadata))
+                self._nodes[key] = node
+            else:
+                node.metadata.update(metadata)
+            return node
+
+    async def next_action(self, key: str, actions: Sequence[str]) -> Optional[str]:
+        """Return the next action using the widening rule and Thompson sampling."""
+
+        if not actions:
+            return None
+
+        return_action: Optional[str] = None
+
+        async with self._lock:
+            node = self._nodes.get(key)
+            if node is None:
+                node = AgentNode(key=key)
+                self._nodes[key] = node
+
+            widened_limit = max(
+                1,
+                int(
+                    math.floor(
+                        max(node.visits, self._config.min_visitations)
+                        ** self._config.widening_alpha
+                    )
+                ),
+            )
+            children = node.metadata.setdefault("children", [])
+            explored_set = set(children)
+
+            if len(children) < min(widened_limit, len(actions)):
+                for action in actions:
+                    if action not in explored_set:
+                        children.append(action)
+                        child = AgentNode(key=f"{key}/{action}", parent=key)
+                        self._nodes[child.key] = child
+                        return_action = action
+                        break
+                else:
+                    return_action = None
+            else:
+                return_action = None
+
+            if return_action is not None:
+                action = return_action
+            else:
+                if not children:
+                    return actions[0]
+
+                alphas = []
+                betas = []
+                arms = []
+                for action in children:
+                    child_key = f"{key}/{action}"
+                    child = self._nodes.setdefault(
+                        child_key, AgentNode(key=child_key, parent=key)
+                    )
+                    alpha, beta = posterior_parameters(
+                        child.success_weight,
+                        child.failure_weight,
+                        self._config.thompson_prior,
+                    )
+                    alphas.append(alpha)
+                    betas.append(beta)
+                    arms.append(action)
+                choice = self._sampler.choose(arms, alphas, betas)
+                action = choice.arm
+
+        return action
+
+    async def record_expansion(self, key: str, action: str, *, payload: Optional[dict[str, object]] = None) -> None:
+        """Record the result of expanding an action."""
+
+        payload = dict(payload or {})
+        child_key = f"{key}/{action}"
+        async with self._lock:
+            child = self._nodes.setdefault(child_key, AgentNode(key=child_key, parent=key))
+            child.metadata.update(payload)
+        if self._on_expansion_result is not None:
+            callback_payload = {"action": action, **payload}
+            await _invoke_callback(self._on_expansion_result, child, callback_payload)
+
+    async def record_evaluation(self, key: str, reward: float, *, weight: float = 1.0) -> None:
+        """Record the evaluation outcome for a node."""
+
+        async with self._lock:
+            node = self._nodes.setdefault(key, AgentNode(key=key))
+            node.record_reward(reward, weight)
+
+            parent_key = node.parent
+            while parent_key is not None:
+                parent = self._nodes.setdefault(parent_key, AgentNode(key=parent_key))
+                parent.record_reward(reward, weight)
+                parent_key = parent.parent
+
+            payload = {"reward": reward, "weight": weight, "cmp": node.cmp.to_dict()}
+        if self._on_evaluation_result is not None:
+            await _invoke_callback(self._on_evaluation_result, node, payload)
+
+    async def snapshot(self) -> Dict[str, AgentNode]:
+        """Return a shallow copy of the nodes tracked by the engine."""
+
+        async with self._lock:
+            return dict(self._nodes)
+
+
+async def _invoke_callback(callback: Callback, node: AgentNode, payload: Dict[str, object]) -> None:
+    """Invoke a callback that may be synchronous or asynchronous."""
+
+    result = callback(node, payload)
+    if asyncio.iscoroutine(result):
+        await result
