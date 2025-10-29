@@ -24,6 +24,8 @@ from .sentinel import (
     AgentAction,
     DomainPauseController,
     SentinelRule,
+    PauseRecord,
+    DomainState,
 )
 from .demo_runner import run_validator_constellation_demo
 from .subgraph import SubgraphIndexer, IndexedEvent
@@ -49,6 +51,8 @@ __all__ = [
     "AgentAction",
     "DomainPauseController",
     "SentinelRule",
+    "PauseRecord",
+    "DomainState",
     "SubgraphIndexer",
     "IndexedEvent",
     "OwnerConsole",

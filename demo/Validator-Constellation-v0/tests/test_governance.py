@@ -12,7 +12,16 @@ def test_owner_console_controls_configuration():
     config = SystemConfig()
     bus = EventBus()
     stake_manager = StakeManager(bus, config.owner_address)
-    pause_controller = DomainPauseController(bus)
+    pause_controller = DomainPauseController(
+        bus,
+        domains=[
+            {
+                "domain": "bio",
+                "human_name": "Biosecurity Domain",
+                "budget_limit": 1_000,
+            }
+        ],
+    )
     indexer = SubgraphIndexer(bus)
     console = OwnerConsole(config.owner_address, config, pause_controller, stake_manager, bus)
 
@@ -21,7 +30,7 @@ def test_owner_console_controls_configuration():
     assert action.details["slash_fraction_non_reveal"] == 0.4
     assert indexer.latest("ConfigUpdated")
 
-    pause_controller.pause("bio", "test")
+    pause_controller.pause("bio", reason="test", triggered_by="pytest")
     console.resume_domain(config.owner_address, "bio")
     assert not pause_controller.is_paused("bio")
 
@@ -30,7 +39,16 @@ def test_owner_console_rejects_unauthorised_updates():
     config = SystemConfig()
     bus = EventBus()
     stake_manager = StakeManager(bus, config.owner_address)
-    pause_controller = DomainPauseController(bus)
+    pause_controller = DomainPauseController(
+        bus,
+        domains=[
+            {
+                "domain": "bio",
+                "human_name": "Biosecurity Domain",
+                "budget_limit": 1_000,
+            }
+        ],
+    )
     console = OwnerConsole(config.owner_address, config, pause_controller, stake_manager, bus)
 
     with pytest.raises(PermissionError):
