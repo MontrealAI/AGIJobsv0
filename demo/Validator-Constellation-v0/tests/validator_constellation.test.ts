@@ -32,6 +32,8 @@ import {
   refreshStateFromDemo,
 } from '../src/core/operatorState';
 import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
+import { DomainPauseController } from '../src/core/domainPause';
+import { SentinelMonitor } from '../src/core/sentinel';
 import { AgentAction, Hex, VoteValue, ValidatorIdentity, ValidatorStatusEvent } from '../src/core/types';
 import { writeReportArtifacts, ReportContext } from '../src/core/reporting';
 
@@ -144,6 +146,79 @@ test('stake manager emits validator status transitions for subgraph telemetry', 
     eventBus.off('ValidatorStatusChanged', handler);
     subgraphIndexer.clear();
   }
+});
+
+test('sentinel authorises hashed targets and metadata hashes', () => {
+  const pause = new DomainPauseController([
+    {
+      id: 'quantum',
+      humanName: 'Quantum Lattice',
+      budgetLimit: 1_000n,
+      unsafeOpcodes: new Set<string>(),
+      allowedTargets: new Set(['0xquantum-safe']),
+      maxCalldataBytes: 0,
+      forbiddenSelectors: new Set<string>(),
+    },
+  ]);
+  const sentinel = new SentinelMonitor(pause, {
+    budgetGraceRatio: 0.1,
+    unsafeOpcodes: new Map(),
+    allowedTargets: new Map(),
+    allowedTargetHashes: new Map(),
+    maxCalldataBytes: new Map(),
+    forbiddenSelectors: new Map(),
+  });
+  sentinel.updateAllowedTargets('quantum', ['0xquantum-safe']);
+
+  const agent = {
+    address: '0xface00000000000000000000000000000000face' as Hex,
+    ensName: 'zephyr.agent.agi.eth',
+    domainId: 'quantum',
+    budget: 1_000n,
+  };
+
+  const hashed = keccak256(toUtf8Bytes('0xquantum-safe'));
+  const hashedNoPrefix = hashed.slice(2);
+
+  const hashedTargetAction: AgentAction = {
+    agent,
+    domainId: 'quantum',
+    type: 'CALL',
+    amountSpent: 100n,
+    description: 'hashed target test',
+    target: hashed,
+    metadata: { budget: 1_000, targetHash: hashedNoPrefix },
+  };
+
+  assert.equal(sentinel.observe(hashedTargetAction), undefined);
+  assert.equal(pause.getState('quantum').paused, false);
+
+  const metadataHashOnly: AgentAction = {
+    agent,
+    domainId: 'quantum',
+    type: 'CALL',
+    amountSpent: 110n,
+    description: 'metadata hash target',
+    metadata: { targetHash: hashedNoPrefix },
+  };
+
+  assert.equal(sentinel.observe(metadataHashOnly), undefined);
+  assert.equal(pause.getState('quantum').paused, false);
+
+  const rogueHash = keccak256(toUtf8Bytes('0xrogue-target'));
+  const rogueAction: AgentAction = {
+    agent,
+    domainId: 'quantum',
+    type: 'CALL',
+    amountSpent: 120n,
+    description: 'rogue hash',
+    metadata: { targetHash: rogueHash },
+  };
+
+  const alert = sentinel.observe(rogueAction);
+  assert.ok(alert, 'expected sentinel to emit alert for rogue hash');
+  assert.equal(alert?.rule, 'UNAUTHORIZED_TARGET');
+  assert.equal(pause.getState('quantum').paused, true);
 });
 
 function orchestrateRound(): {

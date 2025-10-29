@@ -36,6 +36,14 @@ This single command spins up the validator constellation, performs VRF committee
 
 Passing `--web-artifacts web/data` additionally produces `summary.json`, `events.json`, `timeline.json`, and `owner-actions.json` files that the `web/index.html` command deck automatically ingests.  Open the HTML file locally after running the command to see the live metrics and sentinel alert stream updated with your run's telemetry.
 
+To replay the Kardashev-ready YAML scenario that ships with the repository, simply point the CLI to the configuration file:
+
+```bash
+python run_demo.py --scenario config/stellar-scenario.yaml --seed mission-42
+```
+
+The scenario runner ingests the ENS registry, validator committee, sentinel anomalies, owner actions, and governance deltas defined in the YAML and emits the same comprehensive summary artefacts—no code edits required.
+
 You can also run the package directly:
 
 ```bash

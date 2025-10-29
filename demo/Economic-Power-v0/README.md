@@ -39,6 +39,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `economic-dominance.json` – composite dominance index summarising ROI, capital velocity, sovereignty, safety, and automation posture with actionable recommendations.
 - `owner-autopilot.json` – cadence, guardrails, and deterministic command sequence for the owner autopilot along with telemetry mirrors.
 - `owner-autopilot.mmd` – mermaid control graph visualising cadence, guardrails, and command objectives.
+- `owner-autopilot-brief.md` – operator-friendly briefing that distils cadence, guardrails, telemetry checkpoints, dominance signals, and recommended multi-sig actions.
 - `global-expansion-plan.md` – markdown roadmap breaking down testnet supremacy, mainnet pilot, planetary expansion, and governance acceleration phases.
 - `global-expansion.mmd` – mermaid gantt of the expansion cadence, immediately embeddable into ops dashboards.
 - `shock-resilience.json` – fortified shock defence dossier detailing score, drivers, recommendations, and telemetry powering the resilience gauge.
@@ -101,7 +102,7 @@ Additional safeguards:
 - **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
 - **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
 - **Command Catalog Supremacy** – `npm run owner:program -- --list` enumerates deterministic programs for every job, validator, adapter, module, treasury motion, and orchestrator flow.
-- **Owner Autopilot** – `owner-autopilot.json` and `owner-autopilot.mmd` provide a mission-ready cadence, guardrails, and command sequence the multi-sig can execute without additional authoring.
+- **Owner Autopilot** – `owner-autopilot.json`, `owner-autopilot.mmd`, and `owner-autopilot-brief.md` provide a mission-ready cadence, guardrails, recommended actions, and telemetry checkpoints the multi-sig can execute without additional authoring.
 
 ## Interactive CLI – empowering the operator
 
@@ -122,7 +123,7 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 
 ## Owner autopilot CLI – instant mission briefings
 
-`npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive a Markdown briefing covering guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save demo/Economic-Power-v0/reports/owner-autopilot-brief.md` to persist the briefing alongside the generated reports.
+`npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive the same Markdown briefing shipped automatically in `reports/owner-autopilot-brief.md`, refreshed on demand with updated guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save <path>` to persist additional briefings.
 
 ## Command catalog – execute anything instantly
 

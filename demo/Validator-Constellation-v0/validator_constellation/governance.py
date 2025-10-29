@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Dict, Iterable, Optional
 
 from .config import SystemConfig
@@ -125,6 +126,37 @@ class OwnerConsole:
 
     def attach_sentinel(self, sentinel: SentinelMonitor) -> None:
         self._sentinel = sentinel
+
+    def distribute_treasury(
+        self,
+        caller: str,
+        recipient: str,
+        amount: float | str | int,
+        note: str | None = None,
+    ) -> OwnerAction:
+        self._require_owner(caller)
+        decimal_amount = Decimal(str(amount))
+        self._stake_manager.distribute_treasury(recipient, decimal_amount, note)
+        action = OwnerAction(
+            operator=self._owner,
+            action="treasury-distribution",
+            details={
+                "recipient": recipient.lower(),
+                "amount": float(decimal_amount),
+                "note": note,
+            },
+        )
+        self._actions.append(action)
+        return action
+
+    def record_custom_action(self, *, action: str, details: Dict[str, object]) -> OwnerAction:
+        entry = OwnerAction(operator=self._owner, action=action, details=details)
+        self._actions.append(entry)
+        self._event_bus.publish(
+            "OwnerActionRecorded",
+            {"owner": self._owner, "action": action, "details": details},
+        )
+        return entry
 
     def deactivate_validator(self, caller: str, address: str) -> OwnerAction:
         self._require_owner(caller)

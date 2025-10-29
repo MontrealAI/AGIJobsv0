@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict
+from typing import Dict, Optional
 
 from .events import EventBus
 
@@ -25,6 +25,8 @@ class StakeManager:
         self._event_bus = event_bus
         self._owner = owner_address.lower()
         self._stakes: Dict[str, ValidatorStake] = {}
+        self._treasury_balance: Decimal = Decimal(0)
+        self._treasury_recipient: Optional[str] = None
 
     def register_validator(self, address: str, ens_name: str, stake: Decimal) -> None:
         address = address.lower()
@@ -56,6 +58,7 @@ class StakeManager:
         penalty = stake.stake * Decimal(fraction)
         stake.stake -= penalty
         stake.slashed_amount += penalty
+        self._treasury_balance += penalty
         self._event_bus.publish(
             "ValidatorSlashed",
             {
@@ -64,6 +67,7 @@ class StakeManager:
                 "penalty": float(penalty),
                 "remaining": float(stake.stake),
                 "reason": reason,
+                "treasuryBalance": float(self._treasury_balance),
             },
         )
         return penalty
@@ -88,6 +92,34 @@ class StakeManager:
 
     def is_active(self, address: str) -> bool:
         return self._get(address).active
+
+    def set_treasury_recipient(self, recipient: str) -> None:
+        self._treasury_recipient = recipient.lower()
+
+    def distribute_treasury(self, recipient: str, amount: Decimal, note: str | None = None) -> Decimal:
+        if amount <= 0:
+            raise ValueError("Distribution amount must be positive")
+        if amount > self._treasury_balance:
+            raise ValueError("Insufficient treasury balance")
+        recipient_address = recipient.lower()
+        self._treasury_balance -= amount
+        self._event_bus.publish(
+            "TreasuryDistributed",
+            {
+                "recipient": recipient_address,
+                "amount": float(amount),
+                "note": note,
+                "balanceAfter": float(self._treasury_balance),
+                "treasuryOwner": self._treasury_recipient or self._owner,
+            },
+        )
+        return amount
+
+    def get_treasury_balance(self) -> Decimal:
+        return self._treasury_balance
+
+    def get_treasury_recipient(self) -> str:
+        return self._treasury_recipient or self._owner
 
     def _get(self, address: str) -> ValidatorStake:
         normalized = address.lower()

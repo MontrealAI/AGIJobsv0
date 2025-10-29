@@ -83,9 +83,12 @@ export class ValidatorConstellationDemo {
       opcodeMap.set(domain.id, domain.unsafeOpcodes);
       const normalizedTargets = new Set(Array.from(domain.allowedTargets, (target) => normalizeTarget(target)));
       allowedTargetsMap.set(domain.id, normalizedTargets);
-      const hashedTargets = new Set(
-        Array.from(normalizedTargets, (target) => keccak256(toUtf8Bytes(target))),
-      );
+      const hashedTargets = new Set<string>();
+      for (const target of normalizedTargets) {
+        const hashed = keccak256(toUtf8Bytes(target));
+        hashedTargets.add(hashed);
+        hashedTargets.add(hashed.slice(2));
+      }
       allowedTargetHashes.set(domain.id, hashedTargets);
       calldataLimits.set(domain.id, domain.maxCalldataBytes);
       selectorMap.set(domain.id, new Set(Array.from(domain.forbiddenSelectors, (selector) => selector.toLowerCase())));

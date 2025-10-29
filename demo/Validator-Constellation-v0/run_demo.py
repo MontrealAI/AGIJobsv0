@@ -8,6 +8,7 @@ from pathlib import Path
 
 from validator_constellation.demo_runner import (
     run_validator_constellation_demo,
+    run_validator_constellation_scenario,
     summary_to_dict,
     write_web_artifacts,
 )
@@ -52,6 +53,12 @@ def main() -> None:
         help="Override the simulated contract owner address",
     )
     parser.add_argument(
+        "--scenario",
+        type=Path,
+        default=None,
+        help="Optional path to a YAML scenario to execute instead of the built-in flow",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -77,14 +84,27 @@ def main() -> None:
         overrides["slash_fraction_incorrect_vote"] = args.slash_incorrect
     if args.owner is not None:
         overrides["owner_address"] = args.owner
-    summary = run_validator_constellation_demo(
-        seed=args.seed,
-        truthful_outcome=args.truth == "true",
-        committee_size=args.committee_size,
-        job_count=args.jobs,
-        config_overrides=overrides or None,
-        budget_limit=args.budget,
-    )
+    if args.scenario:
+        seed_default = parser.get_default("seed")
+        truth_default = parser.get_default("truth")
+        seed_override = args.seed if args.seed != seed_default else None
+        truthful_override = None
+        if args.truth != truth_default:
+            truthful_override = args.truth == "true"
+        summary = run_validator_constellation_scenario(
+            args.scenario,
+            seed_override=seed_override,
+            truthful_override=truthful_override,
+        )
+    else:
+        summary = run_validator_constellation_demo(
+            seed=args.seed,
+            truthful_outcome=args.truth == "true",
+            committee_size=args.committee_size,
+            job_count=args.jobs,
+            config_overrides=overrides or None,
+            budget_limit=args.budget,
+        )
     data = summary_to_dict(summary)
     print(json.dumps(data, indent=2))
     if args.output:
