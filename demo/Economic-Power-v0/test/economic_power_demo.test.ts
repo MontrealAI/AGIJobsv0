@@ -1,7 +1,11 @@
 import { strict as assert } from 'node:assert';
 import path from 'node:path';
 import test from 'node:test';
-import { loadScenarioFromFile, runScenario } from '../scripts/runDemo';
+import {
+  loadScenarioFromFile,
+  runScenario,
+  verifyDeterminism,
+} from '../scripts/runDemo';
 import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/autopilotBrief';
 import './owner_programs.test';
 
@@ -19,6 +23,23 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.mermaidFlow.includes('graph TD'), 'Flow mermaid diagram should be rendered');
   assert(summary.mermaidTimeline.includes('gantt'), 'Timeline mermaid diagram should be rendered');
   assert(summary.metrics.stabilityIndex >= 0.65, 'Stability index should be within resilience band');
+  const deterministic = await verifyDeterminism(scenario, summary);
+  assert(deterministic.matches, 'Deterministic verification should pass');
+  assert.equal(
+    deterministic.mismatches.length,
+    0,
+    `Deterministic mismatches encountered: ${deterministic.mismatches.join(', ')}`,
+  );
+  assert.equal(
+    deterministic.proof.metricsHash,
+    deterministic.verificationProof.metricsHash,
+    'Metric hash should remain stable across runs',
+  );
+  assert.equal(
+    deterministic.proof.commandCoverageHash,
+    deterministic.verificationProof.commandCoverageHash,
+    'Command coverage hash should remain stable across runs',
+  );
   assert.equal(
     summary.metrics.ownerCommandCoverage,
     1,

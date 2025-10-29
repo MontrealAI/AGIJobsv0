@@ -33,6 +33,35 @@
         <div id="assertion-grid" class="assertion-grid" role="list" aria-describedby="assertion-heading"></div>
       </section>
 
+      <section id="deterministic-panel" class="panel" aria-labelledby="deterministic-heading">
+        <div class="panel-header">
+          <h2 id="deterministic-heading">Deterministic verification</h2>
+          <p>Dual-run hash proofs confirm unstoppable reproducibility across every economic surface.</p>
+        </div>
+        <div class="deterministic-grid">
+          <article class="deterministic-card" aria-label="Verification status">
+            <h3>Status</h3>
+            <p id="deterministic-status" class="deterministic-status">Awaiting data</p>
+            <ul id="deterministic-mismatches" class="deterministic-list"></ul>
+          </article>
+          <article class="deterministic-card" aria-label="Hash comparison">
+            <h3>Hash comparison</h3>
+            <div class="table-wrapper">
+              <table id="deterministic-table" aria-label="Deterministic hash comparison">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Primary</th>
+                    <th>Replay</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="owner-controls-heading">
         <div class="panel-header">
           <h2 id="owner-controls-heading">Owner command authority</h2>

@@ -147,6 +147,67 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+.deterministic-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.deterministic-card {
+  background: rgba(8, 16, 32, 0.78);
+  border: 1px solid rgba(110, 231, 255, 0.2);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 26px 44px rgba(6, 16, 32, 0.6);
+}
+
+.deterministic-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.deterministic-status {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.deterministic-status.deterministic-pass {
+  color: #22c55e;
+}
+
+.deterministic-status.deterministic-fail {
+  color: #f97316;
+}
+
+.deterministic-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+#deterministic-table tbody tr td {
+  font-family: 'Fira Mono', 'Source Code Pro', monospace;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+#deterministic-table tbody tr.mismatch td {
+  background: rgba(248, 113, 113, 0.1);
+  color: #fecaca;
+}
+
 .catalog-grid {
   margin-top: 1.5rem;
   display: grid;
