@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterable, Tuple
+import copy
 import json
 
 
@@ -70,7 +71,28 @@ class DemoConfig:
         return self.require_section("baseline")
 
 
-def load_config(path: Path) -> DemoConfig:
+def _apply_override(payload: Dict[str, Any], key: str, value: Any) -> None:
+    parts = key.split(".") if key else []
+    if not parts:
+        raise ConfigError("Override keys must not be empty.")
+    cursor: Dict[str, Any] = payload
+    for part in parts[:-1]:
+        existing = cursor.get(part)
+        if existing is None or not isinstance(existing, dict):
+            existing = {}
+            cursor[part] = existing
+        cursor = existing
+    cursor[parts[-1]] = value
+
+
+def _apply_overrides(payload: Dict[str, Any], overrides: Iterable[Tuple[str, Any]]) -> Dict[str, Any]:
+    updated = copy.deepcopy(payload)
+    for key, value in overrides:
+        _apply_override(updated, key, value)
+    return updated
+
+
+def load_config(path: Path, overrides: Iterable[Tuple[str, Any]] | None = None) -> DemoConfig:
     """Load a :class:`DemoConfig` from ``path``.
 
     Args:
@@ -87,6 +109,9 @@ def load_config(path: Path) -> DemoConfig:
         raw_config = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ConfigError(f"Failed to parse configuration: {exc}") from exc
+
+    if overrides:
+        raw_config = _apply_overrides(raw_config, overrides)
 
     return DemoConfig(raw=raw_config)
 

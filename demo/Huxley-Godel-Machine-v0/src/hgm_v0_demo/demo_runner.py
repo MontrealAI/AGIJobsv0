@@ -4,14 +4,14 @@ from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence, Tuple
 import argparse
 import json
 import math
 import random
 
 from .baseline import GreedyBaselineSimulator
-from .config_loader import DemoConfig, load_config
+from .config_loader import ConfigError, DemoConfig, load_config
 from .engine import HGMEngine
 from .metrics import EconomicSnapshot, RunSummary
 from .orchestrator import HGMDemoOrchestrator
@@ -72,13 +72,47 @@ def build_sentinel(config: DemoConfig, engine: HGMEngine) -> Sentinel:
     )
 
 
-def run_hgm_demo(config: DemoConfig, rng: random.Random) -> RunSummary:
+def _normalise_latency_range(value: Any, label: str) -> Tuple[float, float] | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        val = float(value)
+        return (val, val)
+    if isinstance(value, (list, tuple)):
+        if not value:
+            raise ConfigError(f"{label} must not be empty.")
+        if len(value) == 1:
+            val = float(value[0])
+            return (val, val)
+        try:
+            first = float(value[0])
+            second = float(value[1])
+        except (TypeError, ValueError) as exc:
+            raise ConfigError(f"{label} entries must be numeric.") from exc
+        return (first, second)
+    raise ConfigError(f"{label} must be a number or a two-element sequence.")
+
+
+def run_hgm_demo(
+    config: DemoConfig,
+    rng: random.Random,
+    output_dir: Path,
+) -> tuple[RunSummary, Path]:
     engine = build_engine(config, rng)
     thermostat = build_thermostat(config, engine)
     sentinel = build_sentinel(config, engine)
     hgm_cfg = config.hgm
     econ = config.economics
     quality_cfg = hgm_cfg.get("quality", {})
+    simulation_cfg = config.simulation
+    evaluation_latency = _normalise_latency_range(
+        simulation_cfg.get("evaluation_latency"),
+        "simulation.evaluation_latency",
+    )
+    expansion_latency = _normalise_latency_range(
+        simulation_cfg.get("expansion_latency"),
+        "simulation.expansion_latency",
+    )
     orchestrator = HGMDemoOrchestrator(
         engine=engine,
         thermostat=thermostat,
@@ -92,13 +126,14 @@ def run_hgm_demo(config: DemoConfig, rng: random.Random) -> RunSummary:
             float(quality_cfg.get("min_quality", 0.01)),
             float(quality_cfg.get("max_quality", 0.99)),
         ),
+        evaluation_latency_range=evaluation_latency,
+        expansion_latency_range=expansion_latency,
     )
-    simulation_cfg = config.simulation
     total_steps = int(simulation_cfg.get("total_steps", 200))
     report_interval = int(simulation_cfg.get("report_interval", 10))
     summary = orchestrator.run(total_steps=total_steps, report_interval=report_interval)
-    write_timeline(orchestrator.timeline.snapshots)
-    return summary
+    timeline_path = write_timeline(orchestrator.timeline.snapshots, output_dir)
+    return summary, timeline_path
 
 
 def run_baseline(config: DemoConfig, rng: random.Random) -> RunSummary:
@@ -122,15 +157,15 @@ def run_baseline(config: DemoConfig, rng: random.Random) -> RunSummary:
     return simulator.run()
 
 
-def write_timeline(snapshots: List[EconomicSnapshot]) -> None:
-    report_dir = Path("demo/Huxley-Godel-Machine-v0/reports")
-    report_dir.mkdir(parents=True, exist_ok=True)
+def write_timeline(snapshots: List[EconomicSnapshot], output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
     payload: List[Dict[str, Any]] = [asdict(snapshot) for snapshot in snapshots]
-    path = report_dir / "hgm_timeline.json"
+    path = output_dir / "timeline.json"
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return path
 
 
-def print_summary_table(hgm: RunSummary, baseline: RunSummary) -> None:
+def format_summary_table(hgm: RunSummary, baseline: RunSummary) -> str:
     headers = [
         "Strategy",
         "GMV",
@@ -161,16 +196,21 @@ def print_summary_table(hgm: RunSummary, baseline: RunSummary) -> None:
         ],
     ]
     widths = [max(len(str(row[idx])) for row in ([headers] + rows)) for idx in range(len(headers))]
-    line = " | ".join(header.ljust(widths[idx]) for idx, header in enumerate(headers))
-    print("\n" + line)
-    print("-+-".join("-" * width for width in widths))
+    lines = [" | ".join(header.ljust(widths[idx]) for idx, header in enumerate(headers))]
+    lines.append("-+-".join("-" * width for width in widths))
     for row in rows:
-        print(" | ".join(row[idx].ljust(widths[idx]) for idx in range(len(headers))))
+        lines.append(" | ".join(row[idx].ljust(widths[idx]) for idx in range(len(headers))))
+    return "\n".join(lines)
 
 
-def save_overall_report(hgm: RunSummary, baseline: RunSummary) -> Path:
-    report_dir = Path("demo/Huxley-Godel-Machine-v0/reports")
-    report_dir.mkdir(parents=True, exist_ok=True)
+def print_summary_table(hgm: RunSummary, baseline: RunSummary) -> str:
+    table = format_summary_table(hgm, baseline)
+    print("\n" + table)
+    return table
+
+
+def save_overall_report(hgm: RunSummary, baseline: RunSummary, output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
     delta_profit = hgm.profit - baseline.profit
     delta_roi = (0.0 if math.isinf(baseline.roi) else hgm.roi - baseline.roi)
     payload = {
@@ -180,12 +220,39 @@ def save_overall_report(hgm: RunSummary, baseline: RunSummary) -> Path:
         "profit_lift": delta_profit,
         "roi_delta": delta_roi,
     }
-    path = report_dir / "summary.json"
+    path = output_dir / "summary.json"
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return path
 
 
-def parse_args() -> argparse.Namespace:
+def write_summary_text(table: str, output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / "summary.txt"
+    path.write_text(table.rstrip() + "\n", encoding="utf-8")
+    return path
+
+
+def _parse_override_value(raw: str) -> Any:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return raw
+
+
+def _parse_overrides(raw_overrides: Sequence[str]) -> List[Tuple[str, Any]]:
+    overrides: List[Tuple[str, Any]] = []
+    for raw in raw_overrides:
+        if "=" not in raw:
+            raise ConfigError("Overrides must be in KEY=VALUE format.")
+        key, value = raw.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise ConfigError("Override keys must not be empty.")
+        overrides.append((key, _parse_override_value(value.strip())))
+    return overrides
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Huxley–Gödel Machine demo simulation")
     parser.add_argument(
         "--config",
@@ -199,20 +266,43 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional random seed override for reproducibility.",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("demo/Huxley-Godel-Machine-v0/reports"),
+        help="Directory where artifacts (timeline, summaries) will be written.",
+    )
+    parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="PATH=VALUE",
+        help=(
+            "Override configuration entries using dotted paths, e.g. "
+            "--set simulation.total_steps=60 --set hgm.tau=0.8. Values are "
+            "parsed as JSON when possible."
+        ),
+    )
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
-    config = load_config(args.config)
+def main(argv: Sequence[str] | None = None) -> None:
+    args = parse_args(argv)
+    overrides = _parse_overrides(args.overrides)
+    config = load_config(args.config, overrides=overrides)
     seed = args.seed if args.seed is not None else config.seed
     rng = random.Random(seed)
-    hgm_summary = run_hgm_demo(config, rng)
+    hgm_summary, timeline_path = run_hgm_demo(config, rng, args.output_dir)
     baseline_rng = random.Random(seed + 1)
     baseline_summary = run_baseline(config, baseline_rng)
-    print_summary_table(hgm_summary, baseline_summary)
-    report_path = save_overall_report(hgm_summary, baseline_summary)
+    table = print_summary_table(hgm_summary, baseline_summary)
+    report_path = save_overall_report(hgm_summary, baseline_summary, args.output_dir)
+    text_path = write_summary_text(table, args.output_dir)
     print(f"\nDetailed metrics saved to {report_path}")
+    print(f"Tabular summary saved to {text_path}")
+    if timeline_path.exists():
+        print(f"Timeline saved to {timeline_path}")
 
 
 if __name__ == "__main__":

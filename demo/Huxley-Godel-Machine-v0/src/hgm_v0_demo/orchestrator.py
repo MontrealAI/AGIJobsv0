@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import math
 import random
 
@@ -33,6 +33,8 @@ class HGMDemoOrchestrator:
         expansion_cost: float,
         mutation_std: float,
         quality_bounds: tuple[float, float],
+        evaluation_latency_range: Tuple[float, float] | None = None,
+        expansion_latency_range: Tuple[float, float] | None = None,
     ) -> None:
         self.engine = engine
         self.thermostat = thermostat
@@ -49,6 +51,8 @@ class HGMDemoOrchestrator:
         self.cost = 0.0
         self.successes = 0
         self.failures = 0
+        self._evaluation_latency_range = evaluation_latency_range
+        self._expansion_latency_range = expansion_latency_range
 
     def run(self, total_steps: int, report_interval: int) -> RunSummary:
         for step in range(1, total_steps + 1):
@@ -154,10 +158,23 @@ class HGMDemoOrchestrator:
             f"gmv={snapshot.gmv:.2f} cost={snapshot.cost:.2f} roi={roi}"
         )
 
+    def _latency_from_range(self, latency_range: Tuple[float, float], minimum: int) -> int:
+        low, high = latency_range
+        if low > high:
+            low, high = high, low
+        if math.isclose(low, high):
+            return max(minimum, int(round(low)))
+        sample = self.rng.uniform(low, high)
+        return max(minimum, int(round(sample)))
+
     def _evaluation_duration(self) -> int:
+        if self._evaluation_latency_range is not None:
+            return self._latency_from_range(self._evaluation_latency_range, 0)
         return max(1, int(self.rng.gammavariate(2.0, 0.7)))
 
     def _expansion_duration(self) -> int:
+        if self._expansion_latency_range is not None:
+            return self._latency_from_range(self._expansion_latency_range, 0)
         return max(2, int(self.rng.gammavariate(3.0, 0.8)))
 
     def _bounded_quality(self, quality: float) -> float:

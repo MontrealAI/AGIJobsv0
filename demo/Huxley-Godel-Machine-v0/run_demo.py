@@ -12,7 +12,7 @@ def main() -> None:
     sys.path.insert(0, str(src_path))
     from hgm_v0_demo.demo_runner import main as demo_main
 
-    demo_main()
+    demo_main(sys.argv[1:])
 
 
 if __name__ == "__main__":

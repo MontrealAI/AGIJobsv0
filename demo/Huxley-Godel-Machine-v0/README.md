@@ -26,7 +26,9 @@ policy. Run the demo once and you will witness:
 2. From the repository root run:
 
    ```bash
-   python demo/Huxley-Godel-Machine-v0/run_demo.py
+   python demo/Huxley-Godel-Machine-v0/run_demo.py \
+     --output-dir demo/Huxley-Godel-Machine-v0/reports \
+     --set simulation.total_steps=120
    ```
 
    The script automatically:
@@ -35,14 +37,15 @@ policy. Run the demo once and you will witness:
    - launches the HGM engine, Thermostat, and Sentinel
    - runs a parallelised simulation with live progress logs
    - benchmarks against a greedy baseline
-   - stores detailed reports in `demo/Huxley-Godel-Machine-v0/reports/`
+   - stores detailed reports in the directory provided via `--output-dir`
 
 3. **Inspect the output**:
 
    - The console prints an ASCII dashboard comparing the strategies.
-   - `reports/summary.json` captures profit, ROI, and lift for audit.
-   - `reports/hgm_timeline.json` contains step-by-step telemetry ready for BI
-     tooling or dashboards.
+   - `summary.json` captures profit, ROI, and lift for audit.
+   - `summary.txt` mirrors the console table for quick sharing.
+   - `timeline.json` contains step-by-step telemetry ready for BI tooling or
+     dashboards.
 
 No hidden dependencies, no external services, and no specialist knowledge are
 required.
@@ -90,7 +93,13 @@ Every important parameter is editable inside
 | Sentinel | `min_roi`, `max_failures_per_agent`, `hard_budget_ratio` | Enforce hard guard-rails with instant operator control. |
 
 Adjust a value, re-run `run_demo.py`, and the system restarts with your new
-policy instantly.
+policy instantly. Prefer CLI overrides? Use `--set`, for example:
+
+```bash
+python demo/Huxley-Godel-Machine-v0/run_demo.py \
+  --set simulation.evaluation_latency=[0,0] \
+  --set hgm.tau=0.8
+```
 
 ## 🔬 Output interpretation
 
@@ -131,8 +140,14 @@ sys.path.append("demo/Huxley-Godel-Machine-v0/src")
 from hgm_v0_demo import demo_runner
 
 config = demo_runner.load_config(Path("demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json"))
-summary = demo_runner.run_hgm_demo(config, random.Random(2025))
+rng = random.Random(2025)
+summary, timeline_path = demo_runner.run_hgm_demo(
+    config,
+    rng,
+    Path("demo/Huxley-Godel-Machine-v0/reports"),
+)
 print(summary)
+print("timeline written to", timeline_path)
 ```
 
 ## 🛡️ Production-ready safeguards
