@@ -1,0 +1,39 @@
+model:
+  input_dim: 9
+  hidden_dim: 12
+  n_cycles: 6
+  outer_steps: 3
+  halt_threshold: 0.6
+  halting_weight: 0.5
+  ema_decay: 0.999
+  initial_output: 0.5
+  max_steps: 18
+
+simulation:
+  opportunities: 200
+  candidates_per_opportunity: 3
+  conversion_value: 100.0
+  greedy_cost: 0.0001
+  llm_cost: 0.05
+  trm_base_cost: 0.001
+  trm_cost_per_step: 0.0001
+  random_seed: 2025
+
+thermostat:
+  target_roi: 2.0
+  window: 25
+  min_cycles: 3
+  max_cycles: 8
+  min_outer_steps: 2
+  max_outer_steps: 5
+  min_halt_threshold: 0.5
+  max_halt_threshold: 0.85
+
+sentinel:
+  roi_floor: 1.2
+  max_cost: 50.0
+  max_latency_ms: 2000.0
+  max_steps: 18
+
+subgraph:
+  path: trm_calls.json
