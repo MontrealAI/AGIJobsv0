@@ -1,46 +1,53 @@
-"""Event bus utilities powering pseudo on-chain/subgraph telemetry."""
-
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 
-@dataclass(slots=True)
+@dataclass
 class Event:
-    """Represents a structured event emitted by the simulation."""
-
     type: str
-    payload: Dict[str, object]
-    timestamp: datetime
+    payload: Dict[str, Any]
+    block: int
+    timestamp: float
 
 
 class EventBus:
-    """Simple publish/subscribe event bus with replay support."""
+    """Simple event bus capturing timeline ordered emissions."""
 
     def __init__(self) -> None:
         self._events: List[Event] = []
         self._subscribers: List[Callable[[Event], None]] = []
+        self._block: int = 0
 
-    def publish(self, event_type: str, payload: Dict[str, object]) -> Event:
-        event = Event(type=event_type, payload=payload, timestamp=datetime.now(timezone.utc))
+    @property
+    def current_block(self) -> int:
+        return self._block
+
+    def advance_block(self, blocks: int = 1) -> None:
+        self._block += max(1, blocks)
+
+    def emit(self, event_type: str, **payload: Any) -> Event:
+        event = Event(event_type, payload, self._block, time.time())
         self._events.append(event)
         for subscriber in list(self._subscribers):
             subscriber(event)
         return event
 
-    def subscribe(self, handler: Callable[[Event], None]) -> None:
-        if handler not in self._subscribers:
-            self._subscribers.append(handler)
+    def subscribe(self, callback: Callable[[Event], None]) -> None:
+        self._subscribers.append(callback)
 
-    def unsubscribe(self, handler: Callable[[Event], None]) -> None:
-        if handler in self._subscribers:
-            self._subscribers.remove(handler)
-
-    @property
-    def events(self) -> Tuple[Event, ...]:
-        return tuple(self._events)
+    def events(self) -> Iterable[Event]:
+        return iter(self._events)
 
     def find(self, event_type: str) -> Iterable[Event]:
-        return (event for event in self._events if event.type == event_type)
+        for event in self._events:
+            if event.type == event_type:
+                yield event
+
+    def latest(self, event_type: str) -> Optional[Event]:
+        for event in reversed(self._events):
+            if event.type == event_type:
+                return event
+        return None

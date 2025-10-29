@@ -1,58 +1,34 @@
-"""Mock subgraph indexer used for the demo."""
-
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from .events import Event, EventBus
 
 
-@dataclass(slots=True)
-class IndexedEvent:
-    type: str
-    payload: Dict[str, object]
-    timestamp: str
-
-
-@dataclass(slots=True)
 class SubgraphIndexer:
-    event_bus: EventBus
-    events: List[IndexedEvent] = field(default_factory=list)
+    def __init__(self, bus: EventBus) -> None:
+        self._events: List[Event] = []
+        bus.subscribe(self._events.append)
 
-    def __post_init__(self) -> None:
-        self.event_bus.subscribe(self._handle_event)
-
-    def _handle_event(self, event: Event) -> None:
-        indexed_types = {
-            "ValidatorSlashed",
-            "DomainPaused",
-            "DomainResumed",
-            "SentinelAlert",
-            "RoundFinalized",
-            "PhaseTransition",
-            "ConfigUpdated",
-            "DomainSafetyUpdated",
-            "DomainRegistered",
-            "SentinelConfigUpdated",
-            "TreasuryDistributed",
-            "EntropyUpdated",
-            "OwnerActionRecorded",
-        }
-        if event.type in indexed_types:
-            self.events.append(
-                IndexedEvent(
-                    type=event.type,
-                    payload=dict(event.payload),
-                    timestamp=event.timestamp.isoformat(),
-                )
-            )
-
-    def latest(self, event_type: str) -> IndexedEvent | None:
-        for event in reversed(self.events):
+    def latest(self, event_type: str) -> Optional[Event]:
+        for event in reversed(self._events):
             if event.type == event_type:
                 return event
         return None
 
-    def all(self, event_type: str) -> List[IndexedEvent]:
-        return [event for event in self.events if event.type == event_type]
+    def all_events(self) -> List[Event]:
+        return list(self._events)
+
+    def feed(self) -> List[Dict[str, object]]:
+        return [
+            {
+                "type": event.type,
+                "payload": event.payload,
+                "block": event.block,
+                "timestamp": event.timestamp,
+            }
+            for event in self._events
+        ]
+
+    def count(self) -> int:
+        return len(self._events)
