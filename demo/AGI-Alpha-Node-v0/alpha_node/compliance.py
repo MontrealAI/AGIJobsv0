@@ -37,7 +37,9 @@ class ComplianceEngine:
         staking = min(snapshot["economy"]["staked_amount"] / stake_requirement, 1.0)
         governance = 1.0 if not snapshot["governance"]["paused"] else 0.5
         economic = min(1.0, snapshot["economy"]["rewards_accrued"] / stake_requirement)
-        antifragile = 1.0 if snapshot["economy"]["slashed_amount"] == 0 else 0.3
+        drills = snapshot["operations"].get("drills_completed", 0)
+        antifragile_base = 1.0 if snapshot["economy"]["slashed_amount"] == 0 else 0.3
+        antifragile = min(1.0, antifragile_base + 0.1 * min(drills, 5))
         strategic = min(1.0, snapshot["operations"]["completed_jobs"] / 5)
         dimensions = {
             "identity": identity,

@@ -67,15 +67,29 @@ AGI-Alpha-Node-v0/
 ```bash
 git clone https://github.com/MontrealAI/AGIJobsv0.git
 cd AGIJobsv0/demo/AGI-Alpha-Node-v0
-python run_alpha_node.py --config config.example.yaml --ens-cache demo_ens_cache.json --mode cli
+python run_alpha_node.py --config config.example.yaml --ens-cache demo_ens_cache.json
 ```
 
-The CLI guides operators through:
+The interactive bridge handles every lifecycle decision:
 
-1. `bootstrap` – ENS verification, governance readiness, metrics boot.
-2. `run-once` – claim a job, plan, execute, reinvest rewards.
-3. `status` – full JSON state snapshot ready for auditors.
-4. `pause` / `resume` – instant sovereignty, even mid-flight.
+1. **Bootstrap** – ENS verification, governance readiness, metrics boot.
+2. **Run once** – claim a job, plan, execute, reinvest rewards.
+3. **Govern** – rotate governance keys, stake/withdraw, trigger pause drills.
+4. **Observe** – status snapshots, compliance scorecards, Prometheus endpoints.
+
+Command palette available at any time:
+
+```text
+bootstrap        -> ENS + stake verification
+run-once         -> Autonomous execution loop
+stake/withdraw   -> Adjust $AGIALPHA collateral on demand
+claim-rewards    -> Harvest profits into the treasury
+set-governance   -> Rotate multisig governance keys instantly
+pause/resume     -> Sovereign emergency controls
+compliance       -> Governance-grade scorecard (JSON/table)
+drill            -> Automated antifragility stress test
+status           -> Full JSON telemetry snapshot
+```
 
 ## Ultra-intuitive Dashboard
 
@@ -108,7 +122,7 @@ Point any Prometheus instance to `http://localhost:9753/metrics` and alert on th
 Run the suite:
 
 ```bash
-pytest demo/AGI-Alpha-Node-v0/tests -q
+PYTHONPATH=. python -m pytest demo/AGI-Alpha-Node-v0/tests -q
 ```
 
 ## Deployment Blueprint

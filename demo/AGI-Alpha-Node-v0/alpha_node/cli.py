@@ -34,6 +34,27 @@ def run_once_command(args: argparse.Namespace) -> None:
         print("No jobs executed")
 
 
+def stake_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.bootstrap()
+    status = node.stake(int(args.amount))
+    print(json.dumps(status.__dict__, indent=2))
+
+
+def withdraw_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.bootstrap()
+    status = node.withdraw(int(args.amount))
+    print(json.dumps(status.__dict__, indent=2))
+
+
+def claim_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.bootstrap()
+    snapshot = node.claim_rewards()
+    print(json.dumps(snapshot.__dict__, indent=2))
+
+
 def pause_command(args: argparse.Namespace) -> None:
     node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
     node.pause()
@@ -52,6 +73,31 @@ def status_command(args: argparse.Namespace) -> None:
     print(json.dumps(snapshot, indent=2))
 
 
+def governance_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.update_governance(args.address)
+    print(f"Governance address updated to {args.address}")
+
+
+def compliance_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.bootstrap()
+    score = node.compliance_report()
+    if args.format == "json":
+        print(json.dumps({"composite": score.composite, "dimensions": score.dimensions}, indent=2))
+    else:
+        print("Composite Compliance Score: %.2f" % score.composite)
+        for dimension, value in score.dimensions.items():
+            print(f"- {dimension}: {value:.2f}")
+
+
+def drill_command(args: argparse.Namespace) -> None:
+    node = _load_node(Path(args.config), Path(args.ens_cache) if args.ens_cache else None)
+    node.bootstrap()
+    node.run_safety_drill()
+    print("Emergency drill executed and recorded")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Operate the AGI Alpha Node demo")
     parser.add_argument("--config", required=True, help="Path to configuration YAML")
@@ -63,6 +109,21 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("pause", help="Pause the node")
     subparsers.add_parser("resume", help="Resume the node")
     subparsers.add_parser("status", help="Show current state snapshot")
+    stake_parser = subparsers.add_parser("stake", help="Increase operator stake")
+    stake_parser.add_argument("--amount", required=True, help="Stake amount in wei")
+    withdraw_parser = subparsers.add_parser("withdraw", help="Withdraw operator stake")
+    withdraw_parser.add_argument("--amount", required=True, help="Withdrawal amount in wei")
+    subparsers.add_parser("claim-rewards", help="Claim accumulated rewards")
+    governance_parser = subparsers.add_parser("set-governance", help="Rotate governance address")
+    governance_parser.add_argument("--address", required=True, help="New governance address")
+    compliance_parser = subparsers.add_parser("compliance", help="Show compliance scorecard")
+    compliance_parser.add_argument(
+        "--format",
+        choices=["table", "json"],
+        default="table",
+        help="Output format",
+    )
+    subparsers.add_parser("drill", help="Run antifragility safety drill")
 
     return parser
 
@@ -81,6 +142,18 @@ def main(argv: list[str] | None = None) -> None:
         resume_command(args)
     elif command == "status":
         status_command(args)
+    elif command == "stake":
+        stake_command(args)
+    elif command == "withdraw":
+        withdraw_command(args)
+    elif command == "claim-rewards":
+        claim_command(args)
+    elif command == "set-governance":
+        governance_command(args)
+    elif command == "compliance":
+        compliance_command(args)
+    elif command == "drill":
+        drill_command(args)
     else:
         parser.error(f"Unknown command: {command}")
 

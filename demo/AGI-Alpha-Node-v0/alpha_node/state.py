@@ -1,7 +1,9 @@
-"""State management for the Alpha Node."""
+"""Thread-safe runtime state structures for the Alpha Node demo."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import time
+from dataclasses import dataclass
 from threading import RLock
 from typing import Dict, Optional
 
@@ -27,6 +29,8 @@ class OperationalState:
     completed_jobs: int = 0
     failed_jobs: int = 0
     compliance_score: float = 0.0
+    drills_completed: int = 0
+    last_drill_timestamp: Optional[float] = None
 
 
 class AlphaNodeState:
@@ -43,6 +47,10 @@ class AlphaNodeState:
         with self._lock:
             self.governance.paused = value
 
+    def set_governance_address(self, address: str) -> None:
+        with self._lock:
+            self.governance.governance_address = address
+
     def update_stake(self, amount: int) -> None:
         with self._lock:
             self.economy.staked_amount = amount
@@ -50,6 +58,10 @@ class AlphaNodeState:
     def accrue_rewards(self, amount: int) -> None:
         with self._lock:
             self.economy.rewards_accrued += amount
+
+    def set_rewards(self, amount: int) -> None:
+        with self._lock:
+            self.economy.rewards_accrued = amount
 
     def register_completion(self, job_id: str, success: bool) -> None:
         with self._lock:
@@ -59,6 +71,10 @@ class AlphaNodeState:
             else:
                 self.ops.failed_jobs += 1
 
+    def set_slashed_amount(self, amount: int) -> None:
+        with self._lock:
+            self.economy.slashed_amount = amount
+
     def set_compliance(self, score: float) -> None:
         with self._lock:
             self.ops.compliance_score = score
@@ -66,6 +82,11 @@ class AlphaNodeState:
     def set_ens_verified(self, verified: bool) -> None:
         with self._lock:
             self.ops.ens_verified = verified
+
+    def record_drill(self) -> None:
+        with self._lock:
+            self.ops.drills_completed += 1
+            self.ops.last_drill_timestamp = time.time()
 
     def snapshot(self) -> Dict[str, object]:
         with self._lock:
@@ -86,6 +107,8 @@ class AlphaNodeState:
                     "completed_jobs": self.ops.completed_jobs,
                     "failed_jobs": self.ops.failed_jobs,
                     "compliance_score": self.ops.compliance_score,
+                    "drills_completed": self.ops.drills_completed,
+                    "last_drill_timestamp": self.ops.last_drill_timestamp,
                 },
                 "custom_metrics": dict(self.custom_metrics),
             }
