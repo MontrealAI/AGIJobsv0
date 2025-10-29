@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Era of Experience Control Tower</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+
+      async function bootstrap() {
+        const response = await fetch('../reports/era_of_experience_report.json');
+        const report = await response.json();
+        const headline = document.querySelector('#headline');
+        headline.textContent = `GMV Lift ${(report.improvement.gmvLiftPct * 100).toFixed(2)}% · ROI Δ ${report.improvement.roiDelta.toFixed(2)}`;
+
+        const flowDiagram = document.querySelector('#flow-diagram');
+        flowDiagram.textContent = report.mermaidFlow;
+        const valueDiagram = document.querySelector('#value-diagram');
+        valueDiagram.textContent = report.mermaidValueStream;
+        const ownerDiagram = document.querySelector('#owner-diagram');
+        ownerDiagram.textContent = report.ownerConsole.actionableMermaid;
+
+        mermaid.run({ nodes: [flowDiagram, valueDiagram, ownerDiagram] });
+
+        const table = document.querySelector('#metrics');
+        const metrics = [
+          ['Baseline GMV', report.baseline.grossMerchandiseValue.toFixed(2)],
+          ['Experience-Native GMV', report.rlEnhanced.grossMerchandiseValue.toFixed(2)],
+          ['GMV Lift %', (report.improvement.gmvLiftPct * 100).toFixed(2)],
+          ['ROI Δ', report.improvement.roiDelta.toFixed(3)],
+          ['Latency Δ (h)', report.improvement.avgLatencyDelta.toFixed(2)],
+          ['Success Rate Δ (%)', (report.improvement.successRateDelta * 100).toFixed(2)],
+        ];
+        for (const [label, value] of metrics) {
+          const row = document.createElement('tr');
+          const labelCell = document.createElement('td');
+          labelCell.textContent = label;
+          const valueCell = document.createElement('td');
+          valueCell.textContent = value;
+          row.append(labelCell, valueCell);
+          table.append(row);
+        }
+
+        const actions = document.querySelector('#actions');
+        report.ownerConsole.recommendedActions.forEach((item) => {
+          const li = document.createElement('li');
+          li.textContent = item;
+          actions.append(li);
+        });
+      }
+
+      bootstrap().catch((error) => {
+        console.error('Failed to bootstrap dashboard', error);
+        const errorBox = document.querySelector('#error');
+        errorBox.textContent = 'Unable to load report. Run the demo first.';
+        errorBox.hidden = false;
+      });
+    </script>
+    <style>
+      body {
+        padding: 2rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+      }
+      pre.mermaid {
+        background: #0f172a;
+        color: #fff;
+        padding: 1rem;
+        border-radius: 0.75rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Era of Experience · Control Tower</h1>
+      <p id="headline">Preparing autonomous intelligence briefing...</p>
+      <mark id="error" hidden></mark>
+    </header>
+    <main class="grid">
+      <section>
+        <h2>Experience Flow</h2>
+        <pre id="flow-diagram" class="mermaid"></pre>
+      </section>
+      <section>
+        <h2>Value Stream</h2>
+        <pre id="value-diagram" class="mermaid"></pre>
+      </section>
+      <section>
+        <h2>Owner Console</h2>
+        <pre id="owner-diagram" class="mermaid"></pre>
+      </section>
+      <section>
+        <h2>Executive Metrics</h2>
+        <table>
+          <tbody id="metrics"></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>Recommended Actions</h2>
+        <ul id="actions"></ul>
+      </section>
+    </main>
+  </body>
+</html>

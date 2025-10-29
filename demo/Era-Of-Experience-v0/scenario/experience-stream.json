@@ -1,0 +1,102 @@
+{
+  "version": "0.1",
+  "title": "Era of Experience Hyperstream",
+  "description": "Simulated day-one deployment where AGI Jobs v0 (v2) orchestrates streaming labour interactions and composes experience-native rewards aligned with Silver & Sutton's thesis.",
+  "agents": [
+    {
+      "id": "agent-aegis",
+      "name": "Aegis Hyper-Operator",
+      "specialization": ["deep-research", "quant-analysis", "mission-control"],
+      "reliability": 0.94,
+      "velocity": 1.25,
+      "operatingCost": 11.5,
+      "adaptability": 0.72,
+      "energyFootprint": 0.32
+    },
+    {
+      "id": "agent-celestia",
+      "name": "Celestia Orchestrator",
+      "specialization": ["creative-labs", "narrative-design", "strategy"],
+      "reliability": 0.88,
+      "velocity": 1.1,
+      "operatingCost": 8.4,
+      "adaptability": 0.81,
+      "energyFootprint": 0.27
+    },
+    {
+      "id": "agent-nova",
+      "name": "Nova Expansion Architect",
+      "specialization": ["market-expansion", "operations", "legal-compliance"],
+      "reliability": 0.79,
+      "velocity": 0.95,
+      "operatingCost": 6.8,
+      "adaptability": 0.9,
+      "energyFootprint": 0.21
+    },
+    {
+      "id": "agent-orion",
+      "name": "Orion Sentinel Engineer",
+      "specialization": ["infrastructure", "security", "automation"],
+      "reliability": 0.91,
+      "velocity": 1.35,
+      "operatingCost": 13.7,
+      "adaptability": 0.64,
+      "energyFootprint": 0.34
+    }
+  ],
+  "jobStreams": [
+    {
+      "id": "stream-quant-alpha",
+      "category": "Quantitative Intelligence",
+      "complexity": 8,
+      "value": 220,
+      "reward": 90,
+      "latencyTargetHours": 12,
+      "criticality": 0.95,
+      "experienceRequired": 0.7,
+      "sustainabilityTarget": 0.35,
+      "volume": 60
+    },
+    {
+      "id": "stream-narrative",
+      "category": "Narrative Experience",
+      "complexity": 5,
+      "value": 130,
+      "reward": 55,
+      "latencyTargetHours": 18,
+      "criticality": 0.75,
+      "experienceRequired": 0.5,
+      "sustainabilityTarget": 0.3,
+      "volume": 80
+    },
+    {
+      "id": "stream-expansion",
+      "category": "Global Expansion",
+      "complexity": 7,
+      "value": 170,
+      "reward": 68,
+      "latencyTargetHours": 24,
+      "criticality": 0.85,
+      "experienceRequired": 0.65,
+      "sustainabilityTarget": 0.28,
+      "volume": 55
+    },
+    {
+      "id": "stream-sentinel",
+      "category": "Sentinel Automation",
+      "complexity": 9,
+      "value": 260,
+      "reward": 102,
+      "latencyTargetHours": 10,
+      "criticality": 0.98,
+      "experienceRequired": 0.75,
+      "sustainabilityTarget": 0.33,
+      "volume": 45
+    }
+  ],
+  "deterministicSeed": "era-of-experience-alpha",
+  "owner": {
+    "name": "Era Experience Owner",
+    "safe": "0x1111111111111111111111111111111111111111"
+  }
+}

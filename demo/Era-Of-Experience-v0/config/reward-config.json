@@ -1,0 +1,10 @@
+{
+  "successBonus": 4.0,
+  "failurePenalty": -6.0,
+  "gmvWeight": 0.35,
+  "latencyWeight": -0.25,
+  "costWeight": -0.2,
+  "ratingWeight": 0.3,
+  "sustainabilityWeight": -0.15,
+  "latencyReferenceHours": 8
+}
