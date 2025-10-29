@@ -184,6 +184,9 @@ export function renderAutopilotBrief(brief: AutopilotBrief): string {
       brief.telemetry.economicDominanceIndex,
     )}`,
   );
+  lines.push(
+    `- Superintelligence index: ${formatPercent(brief.telemetry.superIntelligenceIndex)}`,
+  );
   lines.push(`- Capital velocity: ${brief.telemetry.capitalVelocity.toFixed(2)} AGI/h`);
   lines.push(
     `- Global expansion readiness: ${formatPercent(brief.telemetry.globalExpansionReadiness)}`,
