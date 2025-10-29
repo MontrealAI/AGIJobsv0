@@ -599,6 +599,12 @@ class DemoOrchestrator:
 
     def update_validator_stake(self, address: str, ens: str, new_stake: int) -> None:
         self.ledger.adjust_stake(self.owner, address, new_stake, ens)
+        for validator in self.validators:
+            if validator.address == address:
+                validator.stake = new_stake
+                break
+        else:
+            raise ValueError(f"Validator {address} is not registered")
         self.record_owner_action("update-stake", address=address, ens=ens, stake=new_stake)
 
 
