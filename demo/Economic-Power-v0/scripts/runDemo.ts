@@ -338,6 +338,35 @@ type OwnerControlSupremacy = {
   mermaid: string;
 };
 
+type OwnerControlDrillStatus = 'ready' | 'fortify' | 'attention';
+
+type OwnerControlDrill = {
+  id: string;
+  surface: CoverageSurface;
+  label: string;
+  coverage: number;
+  status: OwnerControlDrillStatus;
+  commands: string[];
+  description: string;
+  recommendedAction: string;
+};
+
+type OwnerControlDrillClassification =
+  | 'total-control'
+  | 'fortified'
+  | 'reinforced'
+  | 'attention';
+
+type OwnerControlDrillReport = {
+  readinessScore: number;
+  classification: OwnerControlDrillClassification;
+  summary: string;
+  drills: OwnerControlDrill[];
+  focusAreas: string[];
+  directives: string[];
+  mermaid: string;
+};
+
 type SuperIntelligenceClassification =
   | 'transcendent-dominion'
   | 'planetary-dominant'
@@ -387,6 +416,7 @@ type Summary = {
     ownerCommandCoverage: number;
     ownerDominionScore: number;
     ownerControlSupremacyIndex: number;
+    ownerControlDrillReadiness: number;
     sovereignControlScore: number;
     sovereignSafetyScore: number;
     assertionPassRate: number;
@@ -419,8 +449,9 @@ type Summary = {
   mermaidFlow: string;
   mermaidTimeline: string;
   ownerCommandMermaid: string;
-  ownerCommandPlan: OwnerCommandPlan;
-  sovereignSafetyMesh: SovereignSafetyMesh;
+    ownerCommandPlan: OwnerCommandPlan;
+    ownerControlDrills: OwnerControlDrillReport;
+    sovereignSafetyMesh: SovereignSafetyMesh;
   assertions: Assertion[];
   treasuryTrajectory: TrajectoryEntry[];
   deployment: {
@@ -548,9 +579,282 @@ function buildOwnerCommandPlan(
   };
 }
 
+const OWNER_CONTROL_SURFACE_LABELS: Record<CoverageSurface, string> = {
+  jobs: 'Job orchestration',
+  validators: 'Validator sovereignty',
+  stablecoinAdapters: 'Stablecoin adapter',
+  modules: 'Protocol module',
+  parameters: 'Parameter override',
+  pause: 'Emergency pause',
+  resume: 'System resume',
+  treasury: 'Treasury program',
+  orchestrator: 'Orchestrator command',
+};
+
+const OWNER_CONTROL_SURFACE_DESCRIPTIONS: Record<CoverageSurface, string> = {
+  jobs: 'Launch, assign, and close jobs from the owner multi-sig without developer intervention.',
+  validators: 'Command validator committees, rotate quorums, and escalate disputes deterministically.',
+  stablecoinAdapters: 'Upgrade and route fiat bridges to maintain low-slippage liquidity on demand.',
+  modules: 'Promote immutable module upgrades and rehearse contract migrations under owner custody.',
+  parameters: 'Override durations, quorums, and other runtime parameters through scripted programs.',
+  pause: 'Trigger global pause drills to freeze execution instantly in the event of anomalies.',
+  resume: 'Resume orchestrated operations after investigations, restoring state in a single command.',
+  treasury: 'Move reserves, top up buffers, and stream rewards straight from the owner treasury safe.',
+  orchestrator: 'Reconfigure the off-chain orchestrator mesh, scaling agents and automation in real time.',
+};
+
+function gatherCommandsForSurface(
+  surface: CoverageSurface,
+  plan: OwnerCommandPlan,
+  scenario: Scenario,
+): string[] {
+  switch (surface) {
+    case 'jobs':
+      return plan.jobPrograms.map((program) => program.script);
+    case 'validators':
+      return plan.validatorPrograms.map((program) => program.script);
+    case 'stablecoinAdapters':
+      return plan.adapterPrograms.map((program) => program.script);
+    case 'modules':
+      return [
+        ...plan.modulePrograms.map((program) => program.script),
+        ...scenario.safeguards.upgradePaths.map((upgrade) => upgrade.script),
+        ...scenario.modules.map((module) => module.upgradeScript),
+      ];
+    case 'parameters':
+      return plan.parameterControls.map((control) => control.script);
+    case 'pause':
+      return [plan.quickActions.pause];
+    case 'resume':
+      return [plan.quickActions.resume];
+    case 'treasury':
+      return plan.treasuryPrograms.map((program) => program.script);
+    case 'orchestrator':
+      return plan.orchestratorPrograms.map((program) => program.script);
+    default:
+      return [];
+  }
+}
+
+function uniqueCommands(commands: string[]): string[] {
+  const unique = new Set<string>();
+  for (const command of commands) {
+    const trimmed = command.trim();
+    if (trimmed.length > 0) {
+      unique.add(trimmed);
+    }
+  }
+  return Array.from(unique);
+}
+
+function classifyOwnerControlDrillStatus(
+  coverage: number,
+): OwnerControlDrillStatus {
+  if (coverage >= 0.95) {
+    return 'ready';
+  }
+  if (coverage >= 0.8) {
+    return 'fortify';
+  }
+  return 'attention';
+}
+
+function drillRecommendation(
+  status: OwnerControlDrillStatus,
+  label: string,
+): string {
+  const lowerLabel = label.toLowerCase();
+  switch (status) {
+    case 'ready':
+      return `${label} drill verified by Economic Power CI – continue rehearsals via the owner multi-sig.`;
+    case 'fortify':
+      return `Expand ${lowerLabel} drill coverage with additional deterministic commands until parity is achieved.`;
+    case 'attention':
+    default:
+      return `Author and verify missing ${lowerLabel} command scripts before escalating production load.`;
+  }
+}
+
+function classifyOwnerControlDrillScore(
+  score: number,
+): { classification: OwnerControlDrillClassification; summary: string } {
+  if (score >= 0.98) {
+    return {
+      classification: 'total-control',
+      summary:
+        'Every control drill is rehearsed, scripted, and validated – the owner multi-sig commands the entire economic lattice.',
+    };
+  }
+  if (score >= 0.9) {
+    return {
+      classification: 'fortified',
+      summary:
+        'Control drills are fortified across the stack – top up remaining rehearsals to reach unstoppable total control.',
+    };
+  }
+  if (score >= 0.75) {
+    return {
+      classification: 'reinforced',
+      summary:
+        'Control drills are reinforced but still rely on selective scripts – expand rehearsals to cover every surface.',
+    };
+  }
+  return {
+    classification: 'attention',
+    summary:
+      'Control drills require immediate attention – script and validate missing programs before scaling new workloads.',
+  };
+}
+
+function buildOwnerControlDrills(
+  scenario: Scenario,
+  plan: OwnerCommandPlan,
+  coverage: CommandCoverage,
+): OwnerControlDrillReport {
+  const surfaces = (Object.keys(coverage.detail) as CoverageSurface[]).map((surface) => {
+    const coverageValue = coverage.detail[surface];
+    const label = OWNER_CONTROL_SURFACE_LABELS[surface];
+    const commands = uniqueCommands(
+      gatherCommandsForSurface(surface, plan, scenario),
+    );
+    const status = classifyOwnerControlDrillStatus(coverageValue);
+    return {
+      id: surface,
+      surface,
+      label: `${label} drill`,
+      coverage: coverageValue,
+      status,
+      commands,
+      description: OWNER_CONTROL_SURFACE_DESCRIPTIONS[surface],
+      recommendedAction: drillRecommendation(status, label),
+    } satisfies OwnerControlDrill;
+  });
+
+  surfaces.sort((a, b) => {
+    if (a.coverage === b.coverage) {
+      return a.label.localeCompare(b.label);
+    }
+    return a.coverage - b.coverage;
+  });
+
+  const readinessScore = Number(
+    (
+      surfaces.reduce((total, drill) => total + drill.coverage, 0) /
+      Math.max(surfaces.length, 1)
+    ).toFixed(3),
+  );
+  const { classification, summary } = classifyOwnerControlDrillScore(readinessScore);
+  const readyCount = surfaces.filter((drill) => drill.status === 'ready').length;
+  const flagged = surfaces.filter((drill) => drill.status !== 'ready');
+  const focusAreas =
+    surfaces.length === 0
+      ? ['No control surfaces detected – configure owner command catalog to retain unstoppable custody.']
+      : surfaces
+          .slice(0, Math.min(3, surfaces.length))
+          .map(
+            (drill) =>
+              `${drill.label} – ${(drill.coverage * 100).toFixed(1)}% coverage (${drill.status.toUpperCase()})`,
+          );
+  const directives =
+    surfaces.length === 0
+      ? ['Authorise deterministic owner programs to unlock control drills.']
+      : [
+          `Keep ${readyCount}/${surfaces.length} drills locked at unstoppable readiness through weekly owner autopilot verification.`,
+        ];
+  if (flagged.length > 0) {
+    for (const drill of flagged) {
+      directives.push(`${drill.label}: ${drill.recommendedAction}`);
+    }
+  } else {
+    directives.push(
+      'Rotate pause, resume, treasury, and orchestrator drills through the owner autopilot program every 24 hours to preserve unstoppable command coverage.',
+    );
+  }
+  directives.push('Archive rehearsal proofs inside the governance safe to maintain immutable auditability.');
+  const mermaid = generateOwnerControlDrillMermaid({ readinessScore, classification, drills: surfaces });
+  return {
+    readinessScore,
+    classification,
+    summary,
+    drills: surfaces,
+    focusAreas,
+    directives,
+    mermaid,
+  };
+}
+
 function sanitiseId(prefix: string, value: string, index: number): string {
   const safe = value.replace(/[^a-zA-Z0-9]/g, '_');
   return `${prefix}_${index}_${safe}`;
+}
+
+function generateOwnerControlDrillMermaid(report: {
+  readinessScore: number;
+  classification: OwnerControlDrillClassification;
+  drills: OwnerControlDrill[];
+}): string {
+  const rootId = 'OwnerDrillAuthority';
+  const readinessId = 'DrillReadinessGauge';
+  const lines = [
+    'graph TD',
+    `    ${rootId}["Owner Multi-Sig Drill Authority"]`,
+    `    ${readinessId}["Readiness ${(report.readinessScore * 100).toFixed(1)}%\\n${report.classification.replace(/-/g, ' ')}"]`,
+    `    ${rootId} --> ${readinessId}`,
+  ];
+  report.drills.forEach((drill, index) => {
+    const id = sanitiseId('Drill', drill.id, index);
+    const label = `${drill.label}\\n${(drill.coverage * 100).toFixed(1)}% • ${drill.status.toUpperCase()}`;
+    lines.push(`    ${id}["${label}"]`);
+    lines.push(`    ${readinessId} --> ${id}`);
+    lines.push(`    class ${id} drill-${drill.status};`);
+  });
+  lines.push('    classDef readinessRoot fill:#0f172a,stroke:#0f172a,color:#38bdf8;');
+  lines.push('    classDef readinessGauge fill:#1e3a8a,stroke:#1e40af,color:#f8fafc;');
+  lines.push('    classDef drill-ready fill:#15803d,stroke:#14532d,color:#f0fdf4;');
+  lines.push('    classDef drill-fortify fill:#b45309,stroke:#92400e,color:#fffbeb;');
+  lines.push('    classDef drill-attention fill:#b91c1c,stroke:#7f1d1d,color:#fef2f2;');
+  lines.push(`    class ${rootId} readinessRoot;`);
+  lines.push(`    class ${readinessId} readinessGauge;`);
+  return `${lines.join('\n')}\n`;
+}
+
+function generateOwnerControlDrillMarkdown(report: OwnerControlDrillReport): string {
+  const lines: string[] = [
+    '# Owner Control Drill Readiness',
+    '',
+    `- **Readiness Score:** ${(report.readinessScore * 100).toFixed(1)}% (${report.classification.replace(/-/g, ' ')})`,
+    `- **Summary:** ${report.summary}`,
+    '',
+    '## Focus surfaces',
+    '',
+  ];
+  const focusEntries = report.focusAreas.length > 0 ? report.focusAreas : ['No focus areas detected.'];
+  for (const focus of focusEntries) {
+    lines.push(`- ${focus}`);
+  }
+  lines.push('', '## Directives', '');
+  const directiveEntries = report.directives.length > 0 ? report.directives : ['No directives surfaced.'];
+  for (const directive of directiveEntries) {
+    lines.push(`- ${directive}`);
+  }
+  lines.push('', '## Drill catalogue', '');
+  lines.push('| Drill | Coverage | Status | Commands | Recommended action |');
+  lines.push('| --- | --- | --- | --- | --- |');
+  for (const drill of report.drills) {
+    const preview = drill.commands.slice(0, 3).map((command) => `\`${command.replace(/\|/g, '\\|')}\``);
+    const remainder = drill.commands.length - preview.length;
+    const commandCell =
+      preview.length === 0
+        ? '_No commands surfaced_'
+        : remainder > 0
+        ? `${preview.join('<br />')}<br /><em>+${remainder} more</em>`
+        : preview.join('<br />');
+    lines.push(
+      `| ${drill.label.replace(/\|/g, '\\|')} | ${(drill.coverage * 100).toFixed(1)}% | ${drill.status.toUpperCase()} | ${commandCell} | ${drill.recommendedAction.replace(/\|/g, '\\|')} |`,
+    );
+  }
+  lines.push('', '_Generated by AGI Jobs Economic Power orchestration._', '');
+  return `${lines.join('\n')}\n`;
 }
 
 function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): string {
@@ -865,6 +1169,7 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       (breaker) =>
         `${breaker.metric} ${breaker.comparator} ${breaker.threshold} → ${breaker.action}`,
     ),
+    `Control drills ${(summary.ownerControlDrills.readinessScore * 100).toFixed(1)}% (${summary.ownerControlDrills.classification})`,
   ];
   const sequence: OwnerAutopilotCommand[] = [];
   const surfaces: Array<{
@@ -990,6 +1295,14 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
   ) {
     recommendedActions.push('Shorten incident response drills to beat target response window.');
   }
+  const pendingDrills = summary.ownerControlDrills.drills.filter(
+    (drill) => drill.status !== 'ready',
+  );
+  if (pendingDrills.length > 0) {
+    recommendedActions.push(
+      `Promote ${pendingDrills.map((drill) => drill.label).join(', ')} to ready status with deterministic drill rehearsals.`,
+    );
+  }
   if (guardrails.length < 3) {
     recommendedActions.push('Publish additional guardrails to cover treasury, validators, and orchestrator cadence.');
   }
@@ -1009,6 +1322,7 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
     `Custody ${(sovereignControlScore * 100).toFixed(1)}%`,
     `Guardrails ${guardrails.length}`,
     `Response ${summary.sovereignSafetyMesh.responseMinutes}m`,
+    `Control drills ${(summary.ownerControlDrills.readinessScore * 100).toFixed(1)}% (${summary.ownerControlDrills.classification})`,
     `Shock resilience ${(summary.metrics.shockResilienceScore * 100).toFixed(1)}% (${summary.shockResilience.classification})`,
   ];
 
@@ -1182,19 +1496,21 @@ function buildOwnerControlSupremacy(summary: Summary): OwnerControlSupremacy {
                 Math.max(responseTarget, 1),
           ),
         );
+  const drillReadiness = summary.ownerControlDrills.readinessScore;
 
   const coverageScore = summary.metrics.ownerCommandCoverage;
   const controlScore = summary.metrics.sovereignControlScore;
   const safetyScore = summary.metrics.sovereignSafetyScore;
 
   const indexRaw =
-    0.3 * coverageScore +
-    0.15 * coverageAverage +
+    0.28 * coverageScore +
+    0.12 * coverageAverage +
     0.2 * controlScore +
-    0.15 * safetyScore +
+    0.13 * safetyScore +
     0.1 * guardrailCoverage +
     0.05 * programCoverageScore +
-    0.05 * quickActionScore;
+    0.05 * quickActionScore +
+    0.07 * drillReadiness;
   const index = Number(Math.min(1, Math.max(0, indexRaw)).toFixed(4));
   const { classification, summary: classificationSummary } = classifyOwnerControlSupremacy(index);
 
@@ -1206,6 +1522,7 @@ function buildOwnerControlSupremacy(summary: Summary): OwnerControlSupremacy {
     `Safety ${formatPercent(safetyScore)}`,
     `Guardrails ${formatPercent(guardrailCoverage)}`,
     `Response ${quickActions.responseMinutes}m (target ≤ ${responseTarget}m)`,
+    `Control drills ${formatPercent(drillReadiness)}`,
     `${scriptedSurfaces}/${programEntries.length} program surfaces scripted`,
   ];
 
@@ -1226,6 +1543,14 @@ function buildOwnerControlSupremacy(summary: Summary): OwnerControlSupremacy {
     if (value < 1) {
       recommendedActions.push(`Add deterministic programs for ${category} category to secure supremacy.`);
     }
+  }
+  const pendingDrills = summary.ownerControlDrills.drills.filter(
+    (drill) => drill.status !== 'ready',
+  );
+  if (pendingDrills.length > 0) {
+    recommendedActions.push(
+      `Elevate ${pendingDrills.map((drill) => drill.label).join(', ')} drills to ready status to preserve supremacy.`,
+    );
   }
   if (quickActionScore < 1) {
     recommendedActions.push('Accelerate incident response drills to beat the target response window.');
@@ -2408,6 +2733,12 @@ function synthesiseSummary(
     ownerCoverage,
     commandScripts,
   );
+  const ownerCommandPlan = buildOwnerCommandPlan(scenario, ownerCoverage);
+  const ownerControlDrills = buildOwnerControlDrills(
+    scenario,
+    ownerCommandPlan,
+    ownerCoverage,
+  );
   const shockResilience = computeShockResilience(
     scenario,
     context,
@@ -2510,6 +2841,7 @@ function synthesiseSummary(
       ownerCommandCoverage: ownerCoverage.value,
       ownerDominionScore,
       ownerControlSupremacyIndex: 0,
+      ownerControlDrillReadiness: ownerControlDrills.readinessScore,
       sovereignControlScore,
       sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
       assertionPassRate: 0,
@@ -2542,7 +2874,8 @@ function synthesiseSummary(
     mermaidFlow: '',
     mermaidTimeline: '',
     ownerCommandMermaid: '',
-    ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
+    ownerCommandPlan,
+    ownerControlDrills,
     sovereignSafetyMesh: sovereignSafetyMeshWithShock,
     assertions: [],
     treasuryTrajectory: [],
@@ -3012,6 +3345,19 @@ async function writeOutputs(
     generateOwnerCommandMarkdown(summary),
   );
 
+  await fs.writeFile(
+    path.join(outputDir, 'owner-control-drills.json'),
+    JSON.stringify(summary.ownerControlDrills, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-control-drills.mmd'),
+    `${summary.ownerControlDrills.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-control-drills.md'),
+    generateOwnerControlDrillMarkdown(summary.ownerControlDrills),
+  );
+
   const commandChecklist = {
     generatedAt: summary.generatedAt,
     coverage: summary.ownerCommandPlan.commandCoverage,
@@ -3102,6 +3448,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'ownerCommandCoverage',
     'ownerDominionScore',
     'ownerControlSupremacyIndex',
+    'ownerControlDrillReadiness',
     'sovereignControlScore',
     'sovereignSafetyScore',
     'assertionPassRate',

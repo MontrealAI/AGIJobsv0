@@ -299,6 +299,40 @@ test('economic power simulation produces deterministic metrics', async () => {
     Number(summary.ownerControlSupremacy.index.toFixed(3)),
     'Supremacy metric should mirror surfaced index',
   );
+  assert.equal(
+    summary.metrics.ownerControlDrillReadiness,
+    Number(summary.ownerControlDrills.readinessScore.toFixed(3)),
+    'Control drill readiness metric should match drill report score',
+  );
+  assert.equal(
+    summary.ownerControlDrills.classification,
+    'total-control',
+    'Control drill classification should confirm total control',
+  );
+  assert(
+    summary.ownerControlDrills.focusAreas.length >= 1,
+    'Control drill report should surface focus areas for the owner multi-sig',
+  );
+  assert(
+    summary.ownerControlDrills.directives.length >= 2,
+    'Control drill directives should provide ongoing mission guidance',
+  );
+  assert(
+    summary.ownerControlDrills.mermaid.includes('graph TD'),
+    'Control drill mermaid map should be generated for dashboards',
+  );
+  assert(
+    summary.ownerControlDrills.drills.length >= 9,
+    'Control drill catalog should enumerate every command surface',
+  );
+  for (const drill of summary.ownerControlDrills.drills) {
+    assert.equal(drill.status, 'ready', `Drill ${drill.id} should be production ready`);
+    assert(
+      drill.commands.length >= 1,
+      `Drill ${drill.id} should catalogue at least one deterministic command`,
+    );
+    assert(drill.coverage >= 0.95, `Drill ${drill.id} coverage should exceed fortified threshold`);
+  }
   assert(
     summary.ownerControlSupremacy.signals.length >= 5,
     'Owner control supremacy signals should surface multi-signal telemetry',

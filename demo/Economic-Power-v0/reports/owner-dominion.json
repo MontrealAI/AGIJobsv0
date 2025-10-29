@@ -7,7 +7,8 @@
     "Resume • npm run owner:update-all",
     "validatorConfidence < 0.95 → npm run owner:system-pause",
     "automationScore < 0.8 → npm run owner:parameters",
-    "treasuryAfterRun < 1800000 → npm run owner:audit"
+    "treasuryAfterRun < 1800000 → npm run owner:audit",
+    "Control drills 100.0% (total-control)"
   ],
   "readiness": {
     "pauseReady": true,
@@ -32,8 +33,9 @@
     "Command coverage 100.0%",
     "Safety mesh 97.9%",
     "Custody 100.0%",
-    "Guardrails 5",
+    "Guardrails 6",
     "Response 9m",
+    "Control drills 100.0% (total-control)",
     "Shock resilience 98.0% (impregnable)"
   ],
   "recommendedActions": [

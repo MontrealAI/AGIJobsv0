@@ -43,6 +43,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `shock-resilience.json` – fortified shock defence dossier detailing score, drivers, recommendations, and telemetry powering the resilience gauge.
 - `owner-control-supremacy.json` – supremacy ledger fusing coverage, custody, safety mesh, guardrail density, and program coverage into a single index for the owner multi-sig.
 - `owner-control-supremacy.mmd` – mermaid supremacy map wiring coverage surfaces, program categories, and quick commands directly to the multi-sig authority.
+- `owner-control-drills.json` – rehearsal ledger detailing readiness score, classification, per-surface drills, command catalogues, and recommended actions.
+- `owner-control-drills.mmd` – mermaid rehearsal lattice mapping readiness gauge to every drill node for instant embedding in dashboards.
+- `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
 - `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
 - `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
 
@@ -129,6 +132,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Control drill readiness cockpit surfacing per-surface rehearsal status, command catalogues, and recommended owner actions.
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.
 - Owner supremacy mesh quantifying the new supremacy index, guardrail density, and program coverage with a live mermaid map.

@@ -1,0 +1,38 @@
+graph TD
+    OwnerDrillAuthority["Owner Multi-Sig Drill Authority"]
+    DrillReadinessGauge["Readiness 100.0%\ntotal control"]
+    OwnerDrillAuthority --> DrillReadinessGauge
+    Drill_0_pause["Emergency pause drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_0_pause
+    class Drill_0_pause drill-ready;
+    Drill_1_jobs["Job orchestration drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_1_jobs
+    class Drill_1_jobs drill-ready;
+    Drill_2_orchestrator["Orchestrator command drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_2_orchestrator
+    class Drill_2_orchestrator drill-ready;
+    Drill_3_parameters["Parameter override drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_3_parameters
+    class Drill_3_parameters drill-ready;
+    Drill_4_modules["Protocol module drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_4_modules
+    class Drill_4_modules drill-ready;
+    Drill_5_stablecoinAdapters["Stablecoin adapter drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_5_stablecoinAdapters
+    class Drill_5_stablecoinAdapters drill-ready;
+    Drill_6_resume["System resume drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_6_resume
+    class Drill_6_resume drill-ready;
+    Drill_7_treasury["Treasury program drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_7_treasury
+    class Drill_7_treasury drill-ready;
+    Drill_8_validators["Validator sovereignty drill\n100.0% • READY"]
+    DrillReadinessGauge --> Drill_8_validators
+    class Drill_8_validators drill-ready;
+    classDef readinessRoot fill:#0f172a,stroke:#0f172a,color:#38bdf8;
+    classDef readinessGauge fill:#1e3a8a,stroke:#1e40af,color:#f8fafc;
+    classDef drill-ready fill:#15803d,stroke:#14532d,color:#f0fdf4;
+    classDef drill-fortify fill:#b45309,stroke:#92400e,color:#fffbeb;
+    classDef drill-attention fill:#b91c1c,stroke:#7f1d1d,color:#fef2f2;
+    class OwnerDrillAuthority readinessRoot;
+    class DrillReadinessGauge readinessGauge;

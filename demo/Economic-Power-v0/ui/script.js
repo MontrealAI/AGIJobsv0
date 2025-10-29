@@ -64,6 +64,13 @@ const metricMap = [
       'Supremacy index fusing coverage, custody, safety mesh, guardrails, and program coverage for the owner multi-sig.',
   },
   {
+    id: 'ownerControlDrillReadiness',
+    label: 'Control Drill Readiness',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description:
+      'Average readiness across pause, resume, module, treasury, and orchestrator drills rehearsed by the owner multi-sig.',
+  },
+  {
     id: 'treasuryAfterRun',
     label: 'Treasury After Run (AGI)',
     formatter: (value) => formatNumber(value),
@@ -332,6 +339,92 @@ function renderOwnerSupremacy(summary) {
   pauseEl.textContent = supremacy.quickActions.pause;
   resumeEl.textContent = supremacy.quickActions.resume;
   responseEl.textContent = `Response cadence: ${supremacy.quickActions.responseMinutes} minutes`;
+}
+
+function renderControlDrills(summary) {
+  const report = summary.ownerControlDrills;
+  const scoreEl = document.getElementById('drill-score');
+  const classificationEl = document.getElementById('drill-classification');
+  const summaryEl = document.getElementById('drill-summary');
+  const tableBody = document.querySelector('#drill-table tbody');
+  const focusList = document.getElementById('drill-focus');
+  const directiveList = document.getElementById('drill-directives');
+  const mermaidContainer = document.getElementById('mermaid-drills');
+  if (!scoreEl || !classificationEl || !summaryEl || !tableBody || !focusList || !directiveList) {
+    return;
+  }
+
+  tableBody.innerHTML = '';
+  focusList.innerHTML = '';
+  directiveList.innerHTML = '';
+  if (mermaidContainer) {
+    mermaidContainer.textContent = '';
+  }
+  if (!report) {
+    scoreEl.textContent = '—';
+    classificationEl.textContent = 'Awaiting data';
+    classificationEl.className = 'drill-chip';
+    summaryEl.textContent = 'Control drill readiness report not generated yet.';
+    if (focusList) {
+      const li = document.createElement('li');
+      li.textContent = 'No focus areas available.';
+      focusList.append(li);
+    }
+    if (directiveList) {
+      const li = document.createElement('li');
+      li.textContent = 'No directives available.';
+      directiveList.append(li);
+    }
+    return;
+  }
+
+  const score = (report.readinessScore * 100).toFixed(1);
+  scoreEl.textContent = `${score}%`;
+  const classificationLabel = report.classification.replace(/-/g, ' ');
+  classificationEl.textContent = classificationLabel;
+  classificationEl.className = `drill-chip drill-${report.classification}`;
+  summaryEl.textContent = report.summary;
+
+  const focusEntries = report.focusAreas?.length ? report.focusAreas : ['No focus areas available.'];
+  for (const focus of focusEntries) {
+    const li = document.createElement('li');
+    li.textContent = focus;
+    focusList.append(li);
+  }
+
+  const directives = report.directives?.length ? report.directives : ['No directives available.'];
+  for (const directive of directives) {
+    const li = document.createElement('li');
+    li.textContent = directive;
+    directiveList.append(li);
+  }
+
+  if (mermaidContainer && report.mermaid) {
+    mermaidContainer.textContent = report.mermaid;
+  }
+
+  for (const drill of report.drills) {
+    const row = document.createElement('tr');
+    const coverage = `${(drill.coverage * 100).toFixed(1)}%`;
+    const statusText = drill.status.toUpperCase();
+    const commands = drill.commands.slice(0, 3);
+    const commandCells = commands
+      .map((command) => `<code>${command}</code>`)
+      .join('<br />');
+    const remaining = drill.commands.length - commands.length;
+    const commandMarkup =
+      remaining > 0
+        ? `${commandCells}<span class="drill-more">+${remaining} more</span>`
+        : commandCells || '<em>No commands surfaced</em>';
+    row.innerHTML = `
+      <td>${drill.label}</td>
+      <td>${coverage}</td>
+      <td><span class="drill-status drill-status-${drill.status}">${statusText}</span></td>
+      <td>${commandMarkup}</td>
+      <td>${drill.recommendedAction}</td>
+    `;
+    tableBody.append(row);
+  }
 }
 
 function renderProgramTable(tableId, programs) {
@@ -900,6 +993,7 @@ async function renderMermaid(summary) {
   const timeline = document.getElementById('mermaid-timeline');
   const command = document.getElementById('mermaid-command');
   const supremacy = document.getElementById('mermaid-supremacy');
+  const drills = document.getElementById('mermaid-drills');
   const superintelligence = document.getElementById('mermaid-superintelligence');
   const nodes = [];
   if (flow) {
@@ -917,6 +1011,10 @@ async function renderMermaid(summary) {
   if (supremacy && summary.ownerControlSupremacy?.mermaid) {
     supremacy.textContent = summary.ownerControlSupremacy.mermaid;
     nodes.push(supremacy);
+  }
+  if (drills && summary.ownerControlDrills?.mermaid) {
+    drills.textContent = summary.ownerControlDrills.mermaid;
+    nodes.push(drills);
   }
   if (superintelligence && summary.superIntelligence?.mermaid) {
     superintelligence.textContent = summary.superIntelligence.mermaid;
@@ -1050,6 +1148,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
+  renderControlDrills(summary);
   renderSuperIntelligence(summary);
   renderOwnerDominion(summary);
   renderCommandCatalog(summary);
@@ -1107,6 +1206,7 @@ async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
+  renderControlDrills(summary);
   renderSuperIntelligence(summary);
   renderOwnerDominion(summary);
   renderCommandCatalog(summary);
