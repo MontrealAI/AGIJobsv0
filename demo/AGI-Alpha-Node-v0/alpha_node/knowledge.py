@@ -1,63 +1,100 @@
-"""Persistent knowledge lake for specialists and planner."""
+"""Knowledge Lake implementation."""
 from __future__ import annotations
 
-import json
+import logging
+import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Iterable, Iterator, List, Tuple
 
-from .logging_utils import get_logger
+_LOGGER = logging.getLogger(__name__)
 
-LOGGER = get_logger(__name__)
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS knowledge (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic TEXT NOT NULL,
+    content TEXT NOT NULL,
+    tags TEXT,
+    confidence REAL NOT NULL,
+    created_at TEXT NOT NULL
+);
+"""
 
 
-@dataclass(slots=True)
-class KnowledgeRecord:
-    job_id: str
-    domain: str
-    insight: str
-    reward_delta: float
+@dataclass
+class KnowledgeEntry:
+    topic: str
+    content: str
+    tags: Tuple[str, ...]
+    confidence: float
+    created_at: datetime
 
 
 class KnowledgeLake:
-    def __init__(self, storage_path: Path) -> None:
-        self.storage_path = storage_path
-        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        if not self.storage_path.exists():
-            self._write([])
+    """Simple SQLite-backed long-term memory."""
 
-    def _read(self) -> List[Dict[str, object]]:
-        with self.storage_path.open("r", encoding="utf-8") as handle:
-            return json.load(handle)
+    def __init__(self, db_path: Path) -> None:
+        self._db_path = db_path
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        with self._connection() as conn:
+            conn.executescript(SCHEMA)
+        _LOGGER.debug("KnowledgeLake initialized", extra={"path": str(self._db_path)})
 
-    def _write(self, payload: List[Dict[str, object]]) -> None:
-        with self.storage_path.open("w", encoding="utf-8") as handle:
-            json.dump(payload, handle, indent=2)
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        conn = sqlite3.connect(self._db_path)
+        try:
+            yield conn
+        finally:
+            conn.commit()
+            conn.close()
 
-    def add(self, record: KnowledgeRecord) -> None:
-        payload = self._read()
-        payload.append(
-            {
-                "job_id": record.job_id,
-                "domain": record.domain,
-                "insight": record.insight,
-                "reward_delta": record.reward_delta,
-            }
-        )
-        self._write(payload)
-        LOGGER.debug("Knowledge stored | job=%s domain=%s", record.job_id, record.domain)
+    def record(self, topic: str, content: str, tags: Iterable[str], confidence: float) -> KnowledgeEntry:
+        now = datetime.now(timezone.utc)
+        tags_str = ",".join(sorted(tags))
+        with self._connection() as conn:
+            conn.execute(
+                "INSERT INTO knowledge (topic, content, tags, confidence, created_at) VALUES (?, ?, ?, ?, ?)",
+                (topic, content, tags_str, float(confidence), now.isoformat()),
+            )
+        entry = KnowledgeEntry(topic, content, tuple(sorted(tags)), float(confidence), now)
+        _LOGGER.info("Knowledge recorded", extra={"topic": topic, "tags": tags_str})
+        return entry
 
-    def search(self, domain: str) -> List[KnowledgeRecord]:
-        results = [
-            KnowledgeRecord(**item)
-            for item in self._read()
-            if item["domain"].lower() == domain.lower()
+    def query(self, topic: str, limit: int = 5) -> List[KnowledgeEntry]:
+        with self._connection() as conn:
+            rows = conn.execute(
+                "SELECT topic, content, tags, confidence, created_at FROM knowledge WHERE topic = ? ORDER BY created_at DESC LIMIT ?",
+                (topic, limit),
+            ).fetchall()
+        entries = [
+            KnowledgeEntry(
+                topic=row[0],
+                content=row[1],
+                tags=tuple(filter(None, row[2].split(","))),
+                confidence=float(row[3]),
+                created_at=datetime.fromisoformat(row[4]),
+            )
+            for row in rows
         ]
-        LOGGER.debug("Knowledge search | domain=%s results=%s", domain, len(results))
-        return results
+        return entries
 
-    def latest(self, limit: int = 5) -> List[KnowledgeRecord]:
-        return [KnowledgeRecord(**item) for item in self._read()[-limit:]]
-
-
-__all__ = ["KnowledgeLake", "KnowledgeRecord"]
+    def latest(self, limit: int = 10) -> List[KnowledgeEntry]:
+        with self._connection() as conn:
+            rows = conn.execute(
+                "SELECT topic, content, tags, confidence, created_at FROM knowledge ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        entries = [
+            KnowledgeEntry(
+                topic=row[0],
+                content=row[1],
+                tags=tuple(filter(None, row[2].split(","))),
+                confidence=float(row[3]),
+                created_at=datetime.fromisoformat(row[4]),
+            )
+            for row in rows
+        ]
+        return entries

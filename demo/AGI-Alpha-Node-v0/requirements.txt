@@ -1,3 +1,8 @@
-jsonschema==4.22.0
-pyyaml==6.0.2
-rich==13.7.1
+fastapi>=0.110
+prometheus-client>=0.20
+pydantic>=1.10
+PyYAML>=6.0
+rich>=13.7
+typer[all]>=0.9
+uvicorn[standard]>=0.23
+web3>=6.11

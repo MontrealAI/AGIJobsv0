@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AGI Alpha Node Command Hub</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script type="module">
+    async function refresh() {
+      const res = await fetch('/api/knowledge');
+      const knowledge = await res.json();
+      const table = document.querySelector('#knowledge tbody');
+      table.innerHTML = '';
+      for (const entry of knowledge) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.topic}</td>
+          <td>${entry.content}</td>
+          <td>${entry.tags.join(', ')}</td>
+          <td>${(entry.confidence * 100).toFixed(1)}%</td>
+          <td>${new Date(entry.created_at).toLocaleString()}</td>`;
+        table.appendChild(row);
+      }
+    }
+    setInterval(refresh, 5000);
+    window.addEventListener('DOMContentLoaded', refresh);
+  </script>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: #e2e8f0;
+    }
+    header, main {
+      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.72);
+      border-radius: 18px;
+      padding: 2rem;
+      margin: 2rem auto;
+      max-width: 1100px;
+      box-shadow: 0 40px 80px rgba(15, 23, 42, 0.5);
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    table {
+      font-size: 0.9rem;
+    }
+    .mermaid {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+  </style>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+</head>
+<body>
+  <header>
+    <h1>AGI Alpha Node Command Hub</h1>
+    <p>An institutional-grade command surface orchestrating ENS-verified identity, staked economies, and autonomous specialist swarms.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Live Architecture</h2>
+      <div class="mermaid">
+        graph LR
+          Operator((Operator)) --> CLI[Command Hub CLI]
+          CLI --> ENSVerifier
+          CLI --> Governance
+          CLI --> StakeManager
+          CLI --> Planner
+          Planner --> Orchestrator
+          Orchestrator --> Finance
+          Orchestrator --> Biotech
+          Orchestrator --> Manufacturing
+          Orchestrator --> KnowledgeLake
+          Orchestrator --> Metrics
+          Metrics --> Dashboard
+      </div>
+    </section>
+    <section>
+      <h2>Knowledge Lake Stream</h2>
+      <table id="knowledge">
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>Content</th>
+            <th>Tags</th>
+            <th>Confidence</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

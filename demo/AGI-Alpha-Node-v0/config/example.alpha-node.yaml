@@ -1,0 +1,36 @@
+# Example configuration for the AGI Alpha Node demo.
+# Copy to config/alpha-node.yaml and customize the fields.
+
+identity:
+  ens_domain: "demo.alpha.node.agi.eth"
+  operator_address: "0x000000000000000000000000000000000000dEaD"
+  governance_address: "0x000000000000000000000000000000000000bEEF"
+  rpc_url: "https://eth-mainnet.g.alchemy.com/v2/your-key"
+
+security:
+  emergency_contact: "ops@alpha-node"
+  pause_contract: "0x000000000000000000000000000000000000c0DE"
+
+staking:
+  stake_manager_address: "0x0000000000000000000000000000000000005TaK"
+  min_stake_wei: "1000000000000000000000"
+  reward_tokens:
+    - symbol: "AGIALPHA"
+      address: "0x000000000000000000000000000000000000A610"
+
+jobs:
+  job_router_address: "0x0000000000000000000000000000000000000B55"
+  poll_interval_seconds: 15
+
+planner:
+  search_depth: 4
+  exploration_constant: 1.25
+  learning_rate: 0.15
+
+metrics:
+  prometheus_port: 8788
+  dashboard_port: 8787
+
+storage:
+  knowledge_path: "./storage/knowledge.db"
+  logs_path: "./storage/logs.jsonl"

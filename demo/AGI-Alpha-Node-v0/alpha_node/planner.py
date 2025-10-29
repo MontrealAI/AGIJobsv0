@@ -1,72 +1,111 @@
-"""MuZero-inspired planner implementation."""
+"""MuZero-inspired planner for AGI Alpha Node demo."""
 from __future__ import annotations
 
+import logging
 import math
 import random
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Optional
 
 from .knowledge import KnowledgeLake
-from .logging_utils import get_logger
 
-LOGGER = get_logger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(slots=True)
-class Plan:
+@dataclass
+class PlanCandidate:
     job_id: str
-    strategy: str
-    expected_value: float
-    horizon: int
+    expected_reward: float
+    risk_score: float
+    description: str
+
+
+@dataclass
+class PlannerStats:
+    simulations: int
+    best_reward: float
+    best_job_id: Optional[str]
 
 
 class MuZeroPlanner:
-    """Simplified MuZero-style planner for the demo."""
+    """Simplified MuZero++ planner with tree-search heuristics."""
 
-    def __init__(
-        self,
-        horizon: int,
-        exploration_bias: float,
-        knowledge: KnowledgeLake,
-    ) -> None:
-        self.horizon = horizon
-        self.exploration_bias = exploration_bias
-        self.knowledge = knowledge
-        self.value_cache: Dict[str, float] = {}
+    def __init__(self, depth: int, exploration_constant: float, learning_rate: float, knowledge: KnowledgeLake) -> None:
+        self._depth = depth
+        self._exploration_constant = exploration_constant
+        self._learning_rate = learning_rate
+        self._knowledge = knowledge
+        self._value_memory: Dict[str, float] = {}
 
-    def plan(self, job_id: str, domain: str, options: Iterable[str]) -> Plan:
-        prior = self._prior_from_knowledge(domain)
-        best_option, best_score = None, float("-inf")
-        for option in options:
-            simulation_score = self._simulate(job_id, option, prior)
-            LOGGER.debug(
-                "Planner simulation | job=%s option=%s score=%s", job_id, option, simulation_score
+    def propose(self, jobs: Iterable[Dict[str, float]], simulations: int = 32) -> PlanCandidate:
+        best_candidate: Optional[PlanCandidate] = None
+        best_value = -math.inf
+        stats = PlannerStats(simulations=simulations, best_reward=-math.inf, best_job_id=None)
+
+        jobs_list = list(jobs)
+        if not jobs_list:
+            raise ValueError("Planner requires at least one job to evaluate")
+
+        for simulation in range(simulations):
+            job = random.choice(jobs_list)
+            job_id = job["job_id"]
+            prior = self._value_memory.get(job_id, job.get("base_reward", 0.0))
+            noise = random.uniform(-0.05, 0.1)
+            exploration_bonus = self._exploration_constant * math.sqrt(math.log(simulation + 2))
+            projected_reward = prior * (1 + noise) + exploration_bonus
+            risk_penalty = job.get("risk", 0.0) * random.uniform(0.8, 1.2)
+            value = projected_reward - risk_penalty
+            _LOGGER.debug(
+                "Planner simulation",
+                extra={
+                    "simulation": simulation,
+                    "job_id": job_id,
+                    "projected_reward": projected_reward,
+                    "risk_penalty": risk_penalty,
+                    "value": value,
+                },
             )
-            if simulation_score > best_score:
-                best_option, best_score = option, simulation_score
-        if best_option is None:
-            raise ValueError("Planner received an empty option set")
-        plan = Plan(job_id=job_id, strategy=best_option, expected_value=best_score, horizon=self.horizon)
-        self.value_cache[job_id] = best_score
-        LOGGER.info("Planner decision | job=%s strategy=%s value=%.2f", job_id, best_option, best_score)
-        return plan
+            if value > best_value:
+                best_value = value
+                best_candidate = PlanCandidate(
+                    job_id=job_id,
+                    expected_reward=max(projected_reward - risk_penalty, 0.0),
+                    risk_score=risk_penalty,
+                    description=job.get("description", ""),
+                )
+                stats.best_reward = best_candidate.expected_reward
+                stats.best_job_id = job_id
 
-    def _prior_from_knowledge(self, domain: str) -> float:
-        records = self.knowledge.search(domain)
-        if not records:
-            return 0.0
-        average = sum(record.reward_delta for record in records) / len(records)
-        LOGGER.debug("Planner prior | domain=%s prior=%.2f", domain, average)
-        return average
+        if best_candidate is None:
+            raise RuntimeError("Planner failed to select a candidate job")
 
-    def _simulate(self, job_id: str, option: str, prior: float) -> float:
-        random.seed(hash((job_id, option)) & 0xFFFFFFFF)
-        expectation = prior
-        for depth in range(self.horizon):
-            exploitation = expectation + random.random()
-            exploration = self.exploration_bias * math.sqrt(depth + 1)
-            expectation = expectation + 0.5 * (exploitation + exploration)
-        return expectation
+        self._update_value_memory(best_candidate)
+        self._knowledge.record(
+            topic="planner",
+            content=f"Selected job {best_candidate.job_id} with reward {best_candidate.expected_reward:.4f}",
+            tags=["planner", "decision"],
+            confidence=0.9,
+        )
+        _LOGGER.info(
+            "Planner selection complete",
+            extra={
+                "best_job_id": best_candidate.job_id,
+                "expected_reward": best_candidate.expected_reward,
+                "risk_score": best_candidate.risk_score,
+                "stats": stats.__dict__,
+            },
+        )
+        return best_candidate
 
-
-__all__ = ["MuZeroPlanner", "Plan"]
+    def _update_value_memory(self, candidate: PlanCandidate) -> None:
+        previous = self._value_memory.get(candidate.job_id, candidate.expected_reward)
+        updated = (1 - self._learning_rate) * previous + self._learning_rate * candidate.expected_reward
+        self._value_memory[candidate.job_id] = updated
+        _LOGGER.debug(
+            "Planner value memory updated",
+            extra={
+                "job_id": candidate.job_id,
+                "previous": previous,
+                "updated": updated,
+            },
+        )

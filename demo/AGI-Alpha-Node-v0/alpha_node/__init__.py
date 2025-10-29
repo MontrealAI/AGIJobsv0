@@ -1,12 +1,9 @@
-"""Core package for the AGI Alpha Node demo.
+"""AGI Alpha Node demo package."""
+from importlib import metadata
 
-This package bundles a production-oriented yet self-contained implementation of
-an Alpha Node that exercises the AGI Jobs v0 (v2) architecture.  The module is
-structured to provide a non-technical operator with a turnkey experience while
-keeping each subsystem testable and auditable.
-"""
+__all__ = ["__version__"]
 
-from .config import AlphaNodeConfig
-from .node import AlphaNode
-
-__all__ = ["AlphaNodeConfig", "AlphaNode"]
+try:
+    __version__ = metadata.version("alpha-node")
+except metadata.PackageNotFoundError:  # pragma: no cover - fallback when not installed
+    __version__ = "0.0.0"

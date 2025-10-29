@@ -1,39 +1,15 @@
 version: "3.9"
 services:
-  agi-alpha-node:
-    build: .
-    image: agi-alpha-node:latest
-    container_name: agi-alpha-node
-    ports:
-      - "8055:8055"
-      - "9095:9095"
+  commandhub:
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+    command: ["poetry", "run", "python", "-m", "alpha_node.cli", "run"]
+    working_dir: /app/demo/AGI-Alpha-Node-v0
     environment:
-      AGI_ALPHA_NODE_KEYSTORE_PASSWORD: "demo-password"
+      - PYTHONUNBUFFERED=1
     volumes:
-      - ./state:/opt/agi-alpha-node/state
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9095/metrics"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  prometheus:
-    image: prom/prometheus:v2.51.0
-    container_name: agi-alpha-prometheus
-    volumes:
-      - ./monitoring/prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./:/app/demo/AGI-Alpha-Node-v0
     ports:
-      - "9090:9090"
-    depends_on:
-      - agi-alpha-node
-
-  grafana:
-    image: grafana/grafana:10.4.2
-    container_name: agi-alpha-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - prometheus
-
+      - "8787:8787"
+      - "8788:8788"
