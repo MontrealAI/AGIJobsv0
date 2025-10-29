@@ -1,206 +1,109 @@
-# 🎖️ Tiny Recursive Model Demo (TRM) — AGI Jobs v0/v2 Superintelligence Showcase
+# 🎖️ Tiny Recursive Model Demo – AGI Jobs v0 (v2)
 
-Welcome to the **Tiny Recursive Model Demo (TRM)** — a flagship demonstration proving that [AGI Jobs v0/v2](../..) lets any visionary, even non-technical operators, build and deploy production-grade recursive reasoning systems that rival far larger AI stacks while respecting economic guardrails, blockchain-grade accountability, and operational safety.
+> A flagship showcase proving that non-technical builders can orchestrate world-class recursive reasoning, adaptive economics, and blockchain-grade telemetry with just **one command** inside **AGI Jobs v0 (v2)**.
 
-This demo is engineered for clarity, empowerment, and awe: a single directory contains everything needed to launch a **self-optimising, thermostat-governed, sentinel-protected** Tiny Recursive Model that **outperforms expensive LLM pipelines** on a simulated conversion funnel while consuming microscopic compute budgets. Every artifact — from Mermaid diagrams and ROI dashboards to Ethereum logging hooks — is turnkey, auditable, and ready for Mainnet-grade deployment.
+## Why this demo matters
 
-> **Promise:** Run one command and experience a sovereign intelligence engine that reasons recursively, halts adaptively, tunes itself in real time, enforces profit guardrails, and emits cryptographically auditable telemetry. No ML background required.
+- **Production ready:** Implements a controllable Tiny Recursive Model (TRM) with EMA-stabilised recursion, adaptive halting, ROI thermostat, and sentinel guardrails.
+- **Business aligned:** Simulates a conversion funnel comparing TRM vs. greedy and LLM baselines while logging GMV, cost, and ROI per decision.
+- **Operator friendly:** Ships with turnkey YAML configuration, auto-training, event logging, and mermaid architecture maps, so domain experts can tune strategy without touching code.
 
-## 🌌 Demo Flyover
-
-```mermaid
-flowchart LR
-    A[Non-technical Operator] -->|1. Configure| B(Tiny Recursive Model Config)
-    B -->|Auto-provision| C{TRM Engine}
-    C -->|Recursive Reasoning| D((Adaptive Halting))
-    C -->|Deep Supervision| E[Training Loop]
-    C -->|Telemetry| F[Structured Ledger]
-    F -->|Economic ROI| G[TRM Thermostat]
-    F -->|Guardrail Violations| H[Sentinel]
-    G -->|Dynamic Tuning| C
-    H -->|Circuit Breakers| C
-    F -->|On/Off Chain| I[(Ethereum Event Log)]
-    C -->|Best Answer + Proof| J[UI / CLI / Streamlit]
-    J -->|Instant Insights| A
-```
-
-## 🚀 Why This Demo Matters
-
-* **Recursive Reasoning Dominance:** Implements the Tiny Recursive Model architecture highlighted in “Less is More: Recursive Reasoning with Tiny Networks” — a ~7M parameter engine with cyclical refinement and adaptive computation time halting.
-* **Economic Intelligence:** Couples every inference with compute cost, GMV uplift, and ROI through a live ledger. Thermostat controllers adjust recursion depth, halting thresholds, and concurrency in real time to maximise profit.
-* **Fail-safe Governance:** Sentinel guardrails enforce ROI floors, daily budgets, latency ceilings, and failure backoffs. Operators remain in full control via a single YAML config.
-* **Trustless Telemetry:** Emits structured JSONL traces and (optionally) Ethereum logs for verifiable audit trails.
-* **Iconic UX:** Launch a Streamlit control centre, animated Plotly dashboards, CLI or notebook workflows, and a knowledge-rich documentation set inside this folder.
-
-## 📂 Directory Map
-
-```
-Tiny-Recursive-Model-v0/
-├── README.md                              # You are here
-├── Makefile                               # High-level command surface
-├── requirements.txt                       # Self-contained dependency set (CPU-only PyTorch)
-├── assets/
-│   └── telemetry.jsonl                    # Streaming telemetry (generated at runtime)
-├── config/
-│   └── trm_demo_config.yaml               # Single source of truth — operators edit this file
-├── notebooks/
-│   └── TRM_playground.ipynb               # Hands-on lab for exploratory users
-├── src/
-│   ├── config.py                          # Dataclasses + loader for YAML config
-│   ├── ledger.py                          # ROI-aware economic ledger
-│   ├── engine.py                          # TRM network, training loop, EMA, halting
-│   ├── thermostat.py                      # Adaptive recursion controller
-│   ├── sentinel.py                        # Hard guardrails / circuit breakers
-│   ├── orchestrator.py                    # Glue logic for inference + telemetry
-│   ├── simulation.py                      # Conversion funnel simulator (TRM vs LLM vs Greedy)
-│   ├── governance.py                      # Owner console + Ethereum logging hooks
-│   ├── telemetry.py                       # Structured log writer
-│   └── utils.py                           # Shared helpers (metrics, seeds, data synthesis)
-├── tests/
-│   ├── test_engine.py                     # Unit tests for halting + training sanity
-│   ├── test_thermostat.py                 # ROI-driven tuning regression
-│   └── test_sentinel.py                   # Guardrail behaviour checks
-├── ui/
-│   └── streamlit_app.py                   # Non-technical control centre
-└── demo_runner.py                         # One-click orchestrated experience
-```
-
-> **Everything ships with docstrings, comments, and type hints.** Non-technical users edit `config/trm_demo_config.yaml`, run `make demo`, and the platform handles the rest.
-
-## 🏁 60-Second Quickstart
+## Quickstart (non-technical friendly)
 
 ```bash
 cd demo/Tiny-Recursive-Model-v0
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-make demo  # trains TRM, runs ROI simulation, launches report summary
+pip install -r ../../requirements-python.txt
+python main.py --train-epochs 5 --export-json demo_metrics.json --export-training-log training.json
 ```
 
-Open the Streamlit control centre in another terminal:
+That command will:
 
-```bash
-make ui
-```
+1. Fine-tune the TRM on synthetic job-market data.
+2. Run a 200-opportunity conversion simulation.
+3. Persist telemetry (`demo_metrics.json`, `trm_calls.json`, `training.json`).
+4. Print an executive summary comparing TRM, LLM, and greedy baselines.
 
-Every command prints human-readable explanations and writes telemetry to `assets/telemetry.jsonl` for auditing.
-
-## 📊 Conversion Funnel Showdown (Default Config)
-
-| Engine | Conversion Rate | Cost / 100 Ops | GMV / 100 Ops | Profit / 100 Ops | ROI |
-|--------|-----------------|----------------|---------------|------------------|-----|
-| Greedy Baseline | ~30% | $0.01 | $3000 | $2999.99 | 3000x |
-| Heavy LLM | ~45% | $5.00 | $4500 | $4495.00 | 899x |
-| **Tiny Recursive Model** | **50%+** | **$0.10** | **$5000+** | **$4899.90** | **>4900x** |
-
-TRM rivals the LLM’s lift while maintaining compute spend close to zero, producing the highest profit with margin for dynamic scaling.
-
-## 🧠 Deep Dive Architecture
+## System design (Mermaid overview)
 
 ```mermaid
-sequenceDiagram
-    participant User as Operator
-    participant Orchestrator
-    participant Engine as TRM Engine
-    participant Thermostat
-    participant Sentinel
-    participant Ledger
-    participant Chain as Ethereum Log
+flowchart TD
+    subgraph User Space
+        CLI["👩‍💼 Non-Technical User<br/>python main.py"]
+    end
+    subgraph Intelligence
+        TRM["Tiny Recursive Model\n• Recursive latent state\n• EMA weights\n• Adaptive halting"]
+        Thermostat["ROI Thermostat\n• Target ROI 2.0\n• Adjusts recursion depth"]
+        Sentinel["Sentinel Guardrails\n• ROI floor\n• Cost + latency caps"]
+    end
+    subgraph Economics
+        Ledger["Economic Ledger\n• GMV vs Cost\n• Success rate"]
+        Subgraph["Telemetry Subgraph\ntrm_calls.json"]
+    end
+    subgraph Outcomes
+        Report["Executive Summary\n+ JSON dashboards"]
+    end
 
-    User->>Orchestrator: run_demo(config)
-    Orchestrator->>Engine: infer(batch, params)
-    Engine-->>Orchestrator: answer, telemetry
-    Orchestrator->>Ledger: record(success, cost)
-    Ledger-->>Thermostat: ROI snapshot
-    Thermostat->>Engine: update_params()
-    Ledger-->>Sentinel: ROI, cost, latency
-    Sentinel->>Orchestrator: allow | pause
-    Orchestrator->>Chain: emitTRMCall()
-    Orchestrator-->>User: final report + metrics
+    CLI -->|loads YAML config| TRM
+    TRM -->|per opportunity inference| Ledger
+    TRM --> Thermostat
+    Thermostat -->|parameter updates| TRM
+    TRM --> Sentinel
+    Sentinel -->|halt / allow| TRM
+    Ledger -->|ROI window| Thermostat
+    Ledger --> Subgraph
+    Subgraph --> Report
+    Ledger --> Report
 ```
 
-### Key Innovations
+## Files & structure
 
-1. **Recursive Micro-Network:** 2-layer PyTorch module loops through inner cycles (`n`) and outer improvements (`T`), carrying latent state and answer deltas. Halting head implements Adaptive Computation Time.
-2. **Deep Supervision:** Loss applied at each outer step plus binary halting labels ensures the network improves answers progressively and learns to stop efficiently.
-3. **Economic Feedback Loop:** Ledger tracks GMV, cost, ROI per invocation. Thermostat adjusts recursion/halt thresholds automatically toward target ROI.
-4. **Sentinel Guardrails:** Circuit breaker enforces ROI floor, budgets, latency, and failure rates. Operators can override or pause instantly.
-5. **Ethereum Hooks:** Telemetry optionally posts to a logging contract for on-chain accountability — drop-in for production mainnet workflows.
+- `main.py` – Command-line entry point orchestrating training, simulation, and reporting.
+- `config/default_config.yaml` – Single source of truth for model, economics, thermostat, sentinel, and telemetry.
+- `trm_demo/engine.py` – TRM core with recursion, halting head, EMA weights, and fine-tuning utilities.
+- `trm_demo/simulation.py` – Conversion funnel simulator with adaptive thermostat and sentinel.
+- `trm_demo/economic.py` – ROI ledger with per-call economics.
+- `trm_demo/thermostat.py` – Dynamic recursion tuner.
+- `trm_demo/sentinel.py` – Guardrails enforcing ROI floor, latency, and budget caps.
+- `trm_demo/subgraph.py` – File-backed telemetry logger for dashboards.
+- `trm_demo/ui.py` – Executive summary renderer for terminal and automation pipelines.
+- `trm_demo/utils.py` – Feature generation helpers.
+- `trm_demo/weights.py` – Deterministic TRM initialisation ready for production.
 
-## 🛠️ Command Palette (Makefile)
+## Operator controls
+
+- **Budget knobs:** Edit `max_cost`, `roi_floor`, or `conversion_value` in YAML to adjust profitability requirements.
+- **Reasoning depth:** Thermostat automatically tunes recursion, but you can set hard min/max bounds.
+- **Halting behaviour:** Change `halt_threshold` or `halting_weight` to control when recursion stops.
+- **Telemetry:** `trm_calls.json` can be ingested by The Graph or analytics pipelines as-is.
+
+## Sample output
 
 ```
-make install      # create venv + install dependencies
-make demo         # full experience (train → simulate → report)
-make ui           # launch Streamlit dashboard
-make test         # run Pytest suite
-make format       # format with Ruff & Black
-make clean        # remove artefacts
+🏆 Tiny Recursive Model vs Baselines
+
+Strategy            | Success Rate | ROI    | Total Value | Total Cost
+------------------- | ------------ | ------ | ----------- | ----------
+Tiny Recursive Model|       52.50% | 48.90 | $10500.00 | $ 214.50
+LLM                 |       44.00% |  8.98 | $ 8800.00 | $ 978.00
+Greedy Baseline     |       31.00% |  0.66 | $ 6200.00 | $   4.12
+
+Average TRM recursion steps: 8.20
 ```
 
-All commands are idempotent and output step-by-step explanations for new operators.
+> **Takeaway:** TRM delivers premium conversions at micro-compute cost, dwarfing both heuristic and large-model approaches.
 
-## 📘 Operator Playbook & Audit Trail
+## Next steps
 
-* Consult the [Operator Playbook](OPERATOR_PLAYBOOK.md) for a checklist-style walkthrough that non-technical stewards can follow to install, run, govern, and audit the demo safely.
-* Telemetry now records explicit `SentinelStatus` events alongside `TRMInference`, `ThermostatUpdate`, and `EthereumLog`, providing a tamper-evident record of every guardrail decision in `assets/telemetry.jsonl`.
-* For rapid verification, run `jq 'select(.event_type == "SentinelStatus")' assets/telemetry.jsonl | head` after each demo to confirm the sentinel loop stayed healthy or paused with a documented reason.
+- Point the ledger at live AGI Jobs telemetry to control real GMV flows.
+- Pipe `trm_calls.json` into the existing subgraph indexer for historic analytics.
+- Deploy `main.py` behind a FastAPI or Streamlit surface to empower go-to-market teams.
 
-## 🔐 Owner Controls & Governance
+## Testing
 
-* `src/governance.py` exposes a friendly console allowing owners to:
-  * Update recursion budgets, ROI targets, or ledger economics live.
-  * Pause/resume TRM inference instantly (no redeploy).
-  * Rotate Ethereum logging credentials.
-* Configuration changes are persisted to YAML and broadcast through telemetry so audits capture every adjustment.
+```
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest test/demo/test_tiny_recursive_model_demo.py -k trm
+```
 
-## 🌐 Web UI Highlights
+The tests verify recursion halting, thermostat responsiveness, and that TRM achieves a superior ROI to baselines in simulation.
 
-The Streamlit control centre includes:
-
-* **Live ROI Thermometer:** Visualises ROI vs target with dynamic gauge.
-* **Recursion Depth Heatmap:** Shows actual cycles used per inference.
-* **Sentinel Status Panel:** Green/Amber/Red indicator with actionable copy.
-* **Owner Overrides:** Buttons for pausing, resuming, or forcing full-depth reasoning.
-* **Telemetry Explorer:** Filterable table of TRM calls with export to CSV.
-
-Screenshots and animated GIFs are generated by running `make ui` and using the built-in capture utility.
-
-## 📓 Notebook Playground
-
-`notebooks/TRM_playground.ipynb` guides curious minds through:
-
-1. Loading the model and dataset.
-2. Visualising latent state progression over recursive steps.
-3. Comparing TRM predictions vs baseline heuristics.
-4. Experimenting with halting thresholds interactively.
-
-## 🧪 Testing & CI
-
-* `pytest` suite covers engine dynamics, thermostat adjustments, sentinel guardrails, telemetry logging, and ledger accounting (`make test` wraps `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q`).
-* Integration test `tests/test_simulation.py` exercises the full simulation loop and asserts that sentinel telemetry is emitted for every inference cycle.
-* GitHub Action **`demo-tiny-recursive-model.yml`** runs on every PR, guaranteeing green V2 CI for this demo.
-* Tests are deterministic thanks to fixed seeds and synthetic datasets.
-
-## 🔄 Continuous Deployment Story
-
-1. **Shadow Mode:** Run TRM side-by-side with current heuristics to collect telemetry without impacting users.
-2. **A/B Rollout:** Gradually shift traffic using ROI thermostat to maintain profitability.
-3. **Full Production:** Sentinel guardrails enforce profitability and latency SLAs while Ethereum logs provide trustless auditability.
-4. **Iterative Learning:** EMA checkpoints, config updates, and fine-tuning loops run automatically through `make demo` or scheduler integration.
-
-## ♾️ Extending the Demo
-
-* Swap datasets via CSV in `assets/` — the loader auto-detects schema.
-* Integrate with live job marketplaces by pointing `orchestrator.py` at existing AGI Jobs event streams.
-* Replace Ethereum logging stub with production contract addresses; ABI is fully documented in `src/governance.py`.
-* Deploy Streamlit app behind authentication and scale horizontally; all state is persisted in the ledger/telemetry pipeline.
-
-## 📡 Support & Contribution
-
-* Issues and PRs welcome — the demo follows AGI Jobs code standards (type hints, docstrings, 100% lint compliance).
-* Security reviews encouraged: sentinel + thermostat ensure safe failure modes, but we embrace red-team feedback.
-* For research collaborations, connect with the AGI Jobs core team (contact info in root README).
-
----
-
-**Run it. Trust it. Scale it.** Tiny Recursive Models, orchestrated by AGI Jobs v0/v2, deliver a new operating system for profit-maximising intelligence. This demo is your launchpad.
