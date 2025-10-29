@@ -49,8 +49,8 @@ class HGMOrchestrationWorkflow:
             on_expansion_result=self._on_expansion_result,
             on_evaluation_result=self._on_evaluation_result,
         )
-        self._engine_lock: asyncio.Lock | None = None
-        self._busy_lock: asyncio.Lock | None = None
+        self._engine_lock = asyncio.Lock()
+        self._busy_lock = asyncio.Lock()
         self._busy_agents: set[str] = set()
         self.expansion_events: list[tuple[str, Dict[str, object]]] = []
         self.evaluation_events: list[tuple[str, Dict[str, object]]] = []
@@ -58,18 +58,10 @@ class HGMOrchestrationWorkflow:
     # ------------------------------------------------------------------
     # Internal synchronisation helpers
     def _engine_guard(self) -> asyncio.Lock:
-        lock = self._engine_lock
-        if lock is None:
-            lock = asyncio.Lock()
-            self._engine_lock = lock
-        return lock
+        return self._engine_lock
 
     def _busy_guard(self) -> asyncio.Lock:
-        lock = self._busy_lock
-        if lock is None:
-            lock = asyncio.Lock()
-            self._busy_lock = lock
-        return lock
+        return self._busy_lock
 
     async def _invoke_with_engine(self, coro: Awaitable[object | None]) -> object | None:
         lock = self._engine_guard()

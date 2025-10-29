@@ -33,22 +33,14 @@ class TaskScheduler:
         self._errors: Dict[str, Exception] = {}
         self._tasks: set[asyncio.Task[object | None]] = set()
         self._attempts: Dict[str, int] = defaultdict(int)
-        self._lock: asyncio.Lock | None = None
-        self._semaphore: asyncio.Semaphore | None = None
+        self._lock = asyncio.Lock()
+        self._semaphore = asyncio.Semaphore(self._concurrency)
 
     def _ensure_lock(self) -> asyncio.Lock:
-        lock = self._lock
-        if lock is None:
-            lock = asyncio.Lock()
-            self._lock = lock
-        return lock
+        return self._lock
 
     def _ensure_semaphore(self) -> asyncio.Semaphore:
-        semaphore = self._semaphore
-        if semaphore is None:
-            semaphore = asyncio.Semaphore(self._concurrency)
-            self._semaphore = semaphore
-        return semaphore
+        return self._semaphore
 
     async def schedule(
         self,
