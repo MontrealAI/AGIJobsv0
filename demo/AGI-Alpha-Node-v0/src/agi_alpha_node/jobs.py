@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 
 from .blockchain import BlockchainClient
 from .config import Config

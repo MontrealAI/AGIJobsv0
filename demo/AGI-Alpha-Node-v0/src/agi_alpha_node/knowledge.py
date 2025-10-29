@@ -1,84 +1,92 @@
+"""Knowledge lake implementation."""
+
 from __future__ import annotations
 
+import datetime as dt
 import json
-import time
-from dataclasses import dataclass
+import logging
+import sqlite3
 from pathlib import Path
-from threading import Lock
-from typing import Dict, Iterable, List, Optional
+from typing import Iterable, List, Optional, Sequence
 
+import numpy as np
 
-@dataclass
-class KnowledgeEntry:
-    timestamp: float
-    domain: str
-    metric: str
-    value: float
-    note: str
-
-    def as_dict(self) -> Dict[str, object]:
-        return {
-            "timestamp": self.timestamp,
-            "domain": self.domain,
-            "metric": self.metric,
-            "value": self.value,
-            "note": self.note,
-        }
+LOGGER = logging.getLogger("agi_alpha_node")
 
 
 class KnowledgeLake:
-    def __init__(self, storage_path: Path, retention_days: int, max_entries: int) -> None:
-        self.storage_path = storage_path
-        self.retention_seconds = retention_days * 86400
-        self.max_entries = max_entries
-        self._lock = Lock()
-        self._entries: List[KnowledgeEntry] = []
-        self._load()
+    """Persistent store for cross-job intelligence."""
 
-    def _load(self) -> None:
-        if not self.storage_path.exists():
-            self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-            return
-        with self.storage_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                data = json.loads(line)
-                self._entries.append(KnowledgeEntry(**data))
-        self._enforce_limits()
+    def __init__(self, database_path: Path, embedding_dimension: int = 16):
+        self.database_path = database_path
+        self.embedding_dimension = embedding_dimension
+        self._ensure_schema()
 
-    def _persist(self) -> None:
-        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        with self.storage_path.open("w", encoding="utf-8") as handle:
-            for entry in self._entries:
-                handle.write(json.dumps(entry.as_dict()) + "\n")
+    def _ensure_schema(self) -> None:
+        self.database_path.parent.mkdir(parents=True, exist_ok=True)
+        with sqlite3.connect(self.database_path) as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS knowledge (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    created_at TEXT NOT NULL,
+                    topic TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    embedding BLOB NOT NULL
+                )
+                """
+            )
+        LOGGER.debug("Knowledge lake schema ensured", extra={"event": "knowledge_schema"})
 
-    def _enforce_limits(self) -> None:
-        cutoff = time.time() - self.retention_seconds
-        self._entries = [entry for entry in self._entries if entry.timestamp >= cutoff]
-        if len(self._entries) > self.max_entries:
-            self._entries = self._entries[-self.max_entries :]
+    def add_entry(self, topic: str, content: str, embedding: Optional[Sequence[float]] = None) -> None:
+        embedding_vec = np.array(embedding or self._embed(content), dtype=np.float32)
+        with sqlite3.connect(self.database_path) as conn:
+            conn.execute(
+                "INSERT INTO knowledge(created_at, topic, content, embedding) VALUES (?, ?, ?, ?)",
+                (dt.datetime.now(dt.timezone.utc).isoformat(), topic, content, embedding_vec.tobytes()),
+            )
+        LOGGER.info(
+            "Knowledge entry stored",
+            extra={"event": "knowledge_add", "data": {"topic": topic}},
+        )
 
-    def store(self, *, domain: str, metric: str, value: float, note: str) -> None:
-        with self._lock:
-            entry = KnowledgeEntry(time.time(), domain, metric, float(value), note)
-            self._entries.append(entry)
-            self._enforce_limits()
-            self._persist()
+    def _embed(self, text: str) -> np.ndarray:
+        # Simple deterministic embedding based on character frequencies.
+        vec = np.zeros(self.embedding_dimension, dtype=np.float32)
+        for idx, char in enumerate(text.encode("utf-8")):
+            vec[idx % self.embedding_dimension] += char / 255.0
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec
 
-    def filter(self, *, domain: Optional[str] = None, metric: Optional[str] = None) -> Iterable[Dict[str, float]]:
-        for entry in list(self._entries):
-            if domain and entry.domain != domain:
-                continue
-            if metric and entry.metric != metric:
-                continue
-            yield {"value": entry.value, "metric": entry.metric, "note": entry.note}
+    def search(self, topic: str, limit: int = 5) -> List[str]:
+        with sqlite3.connect(self.database_path) as conn:
+            cursor = conn.execute(
+                "SELECT content FROM knowledge WHERE topic = ? ORDER BY id DESC LIMIT ?",
+                (topic, limit),
+            )
+            rows = [row[0] for row in cursor.fetchall()]
+        LOGGER.debug(
+            "Knowledge search executed",
+            extra={"event": "knowledge_search", "data": {"topic": topic, "rows": len(rows)}},
+        )
+        return rows
 
-    def count(self, domain: Optional[str] = None) -> int:
-        if domain is None:
-            return len(self._entries)
-        return sum(1 for entry in self._entries if entry.domain == domain)
+    def export(self) -> Iterable[dict]:
+        with sqlite3.connect(self.database_path) as conn:
+            cursor = conn.execute(
+                "SELECT created_at, topic, content FROM knowledge ORDER BY id DESC"
+            )
+            for row in cursor.fetchall():
+                yield {
+                    "created_at": row[0],
+                    "topic": row[1],
+                    "content": row[2],
+                }
 
-    def recent_summary(self, domain: str, limit: int = 5) -> List[Dict[str, object]]:
-        return [entry.as_dict() for entry in self._entries if entry.domain == domain][-limit:]
+    def export_json(self) -> str:
+        return json.dumps(list(self.export()), indent=2)
 
-    def export(self) -> List[Dict[str, object]]:
-        return [entry.as_dict() for entry in self._entries]
+
+__all__ = ["KnowledgeLake"]

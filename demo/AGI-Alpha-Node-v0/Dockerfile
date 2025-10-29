@@ -2,25 +2,23 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    APP_HOME=/opt/agi-alpha-node \
-    PATH="/opt/agi-alpha-node/.venv/bin:$PATH"
+    PIP_NO_CACHE_DIR=1
 
-WORKDIR ${APP_HOME}
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential curl && \
-    rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
 COPY requirements.txt ./
-RUN python -m venv .venv && \
-    .venv/bin/pip install --upgrade pip && \
-    .venv/bin/pip install -r requirements.txt
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && rm -rf /root/.cache/pip
 
+COPY pyproject.toml README.md ./
 COPY src ./src
-COPY config ./config
+COPY config.example.yaml ./config.example.yaml
 COPY web ./web
-COPY scripts ./scripts
 
-EXPOSE 8055 9095
+RUN pip install -e .
 
-ENTRYPOINT ["python", "-m", "agi_alpha_node", "run", "--config", "config/operator.example.yaml"]
+EXPOSE 8080 9109
+
+ENTRYPOINT ["agi-alpha-node"]
+CMD ["run", "config.example.yaml", "--serve-dashboard", "--cycles", "1"]

@@ -1,15 +1,23 @@
 from pathlib import Path
 
-from alpha_node.knowledge import KnowledgeLake, KnowledgeRecord
-from alpha_node.planner import MuZeroPlanner
+import pytest
+
+from agi_alpha_node.config import AlphaNodeConfig
+from agi_alpha_node.knowledge import KnowledgeLake
+from agi_alpha_node.planner import MuZeroPlanner
+from agi_alpha_node.task_router import Job
 
 
-def test_planner_prefers_high_value_option(tmp_path: Path) -> None:
-    lake_path = tmp_path / "knowledge.json"
-    lake = KnowledgeLake(lake_path)
-    lake.add(KnowledgeRecord(job_id="1", domain="finance", insight="x", reward_delta=5.0))
-    lake.add(KnowledgeRecord(job_id="2", domain="finance", insight="y", reward_delta=6.0))
-    planner = MuZeroPlanner(horizon=3, exploration_bias=1.0, knowledge=lake)
-    plan = planner.plan("job", "finance", ["opt-a", "opt-b"])
-    assert plan.strategy in {"opt-a", "opt-b"}
-    assert plan.expected_value > 0
+@pytest.fixture()
+def planner(tmp_path: Path) -> MuZeroPlanner:
+    config = AlphaNodeConfig.load(Path(__file__).resolve().parents[1] / "config.example.yaml")
+    knowledge = KnowledgeLake(tmp_path / "knowledge.db")
+    return MuZeroPlanner(config.planner, knowledge)
+
+
+def test_planner_prefers_high_reward(planner: MuZeroPlanner) -> None:
+    job_low = Job("job-low", "finance", complexity=0.2, reward=1000, payload={})
+    job_high = Job("job-high", "finance", complexity=0.3, reward=9000, payload={})
+    plan = planner.plan([job_low, job_high])
+    assert plan.job.job_id == "job-high"
+    assert plan.expected_reward > 0
