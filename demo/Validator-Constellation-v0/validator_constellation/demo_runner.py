@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from decimal import Decimal
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from .commit_reveal import CommitRevealRound
@@ -30,6 +32,59 @@ class DemoSummary:
     owner_actions: List[Dict[str, object]]
     sentinel_alerts: List[Dict[str, object]]
     domain_events: List[Dict[str, object]]
+    event_feed: List[Dict[str, object]]
+
+
+def _json_default(value: object) -> object:
+    if isinstance(value, Decimal):
+        return float(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serialisable")
+
+
+def summary_to_dict(summary: DemoSummary) -> Dict[str, object]:
+    return {
+        "committee": summary.committee,
+        "truthfulOutcome": summary.truthful_outcome,
+        "roundResult": summary.round_result,
+        "slashedValidators": summary.slashed_validators,
+        "pausedDomains": summary.paused_domains,
+        "batchProofRoot": summary.batch_proof_root,
+        "gasSaved": summary.gas_saved,
+        "indexedEvents": summary.indexed_events,
+        "timeline": summary.timeline,
+        "ownerActions": summary.owner_actions,
+        "sentinelAlerts": summary.sentinel_alerts,
+        "domainEvents": summary.domain_events,
+        "eventFeed": summary.event_feed,
+    }
+
+
+def _write_json(path: Path, payload: object) -> None:
+    path.write_text(json.dumps(payload, indent=2, default=_json_default))
+
+
+def write_web_artifacts(summary: DemoSummary, output_dir: Path) -> Dict[str, Path]:
+    """Export web-ready JSON artefacts for the command deck."""
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = output_dir / "summary.json"
+    events_path = output_dir / "events.json"
+    timeline_path = output_dir / "timeline.json"
+    owner_actions_path = output_dir / "owner-actions.json"
+
+    summary_data = summary_to_dict(summary)
+    _write_json(summary_path, summary_data)
+    _write_json(events_path, summary.event_feed)
+    _write_json(timeline_path, summary.timeline)
+    _write_json(owner_actions_path, summary.owner_actions)
+
+    return {
+        "summary": summary_path,
+        "events": events_path,
+        "timeline": timeline_path,
+        "owner_actions": owner_actions_path,
+    }
 
 
 def run_validator_constellation_demo(
@@ -221,6 +276,16 @@ def run_validator_constellation_demo(
         for event in event_bus.find("SentinelAlert")
     ]
 
+    event_feed = [
+        {
+            "id": index + 1,
+            "type": event.type,
+            "payload": event.payload,
+            "timestamp": event.timestamp.isoformat(),
+        }
+        for index, event in enumerate(event_bus.events)
+    ]
+
     return DemoSummary(
         committee=committee,
         truthful_outcome=truthful_outcome,
@@ -231,8 +296,12 @@ def run_validator_constellation_demo(
         gas_saved=batcher.estimate_gas_saved(len(jobs)),
         indexed_events=len(event_bus.events),
         timeline=dict(timeline or {}),
-        owner_actions=[{"action": action.action, "details": action.details} for action in owner_console.actions],
+        owner_actions=[
+            {"operator": action.operator, "action": action.action, "details": action.details}
+            for action in owner_console.actions
+        ],
         sentinel_alerts=sentinel_alerts,
         domain_events=domain_pauses,
+        event_feed=event_feed,
     )
 
