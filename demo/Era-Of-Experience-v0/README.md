@@ -9,6 +9,7 @@
 - **Owner Supremacy:** The contract owner retains absolute control—exploration rates, pause toggles, and reward curves are editable through a single JSON file or via scripted helpers.
 - **Immediate Impact:** Out of the box the RL policy produces >5% GMV lift versus the deterministic baseline while respecting latency and sustainability guardrails.
 - **Non-technical friendly:** One command (`npm run demo:era-of-experience`) compiles the full report, renders mermaid diagrams, and writes artefacts ready for executive review.
+- **Triple-audit verified:** Every metric is recomputed by an independent auditing module, giving operators an explicit PASS/FAIL badge and detailed notes.
 
 ## Quickstart (non-technical operator)
 
@@ -60,6 +61,7 @@ graph TD
 | `scripts/trainer.ts` | Temporal-difference trainer coordinating experience ingestion, replay sampling, and checkpoint emission. |
 | `scripts/simulation.ts` | Deterministic market simulator modelling agent capabilities, job complexities, and sustainability-aware rewards. |
 | `scripts/runDemo.ts` | CLI + library entrypoint that runs the scenario, persists reports, and prints executive and sustainability metrics. |
+| `scripts/audit.ts` | Independent auditing engine that recomputes marketplace metrics and validates owner control envelopes. |
 | `test/era_of_experience_demo.test.ts` | Deterministic regression asserting GMV/ROI lift, policy checkpoints, and owner console coverage. |
 
 ## Owner control surface
@@ -95,6 +97,7 @@ npm run owner:era-of-experience:controls -- --exploration 0.1 --pause false
 - **Performance envelope:** The owner console computes failure, sustainability, GMV, and latency deltas on every run. If failure rate breaches 25% *or* sustainability dips below 85%, Sentinels auto-trigger a red status and recommend cutting exploration to 5%.
 - **Policy checkpoints:** Deterministic replay triggers checkpoints on the configured cadence, making rollbacks instant and auditable.
 - **Sustainability scoring:** Rewards penalise agents that exceed sustainability targets, guaranteeing green performance across the fleet.
+- **Triple verification:** The audit engine recomputes GMV, ROI, latency, and success metrics from raw experiences, flagging any divergence before reports are accepted.
 
 ## Demo storyline
 

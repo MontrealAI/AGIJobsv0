@@ -101,6 +101,7 @@ export interface SimulationReport {
   mermaidFlow: string;
   mermaidValueStream: string;
   ownerConsole: OwnerConsoleSnapshot;
+  audit: AuditReport;
 }
 
 export interface SimulationRunSummary {
@@ -136,4 +137,17 @@ export interface OwnerConsoleSnapshot {
     sustainabilityScore: number;
   };
   actionableMermaid: string;
+}
+
+export interface AuditSection {
+  name: string;
+  status: 'pass' | 'fail';
+  notes: string[];
+  metrics?: Record<string, number>;
+}
+
+export interface AuditReport {
+  status: 'pass' | 'fail';
+  generatedAt: string;
+  sections: AuditSection[];
 }

@@ -37,4 +37,10 @@ void test('experience-native RL delivers measurable GMV and ROI lift', async () 
     report.experienceLogSample.some((entry) => entry.terminal),
     'Experience stream should contain terminal markers for sentinel safety checks',
   );
+  assert.equal(report.audit.status, 'pass', 'Audit engine should sign off the report');
+  assert(report.audit.sections.length >= 4, 'Audit should cover multiple verification domains');
+  assert(
+    report.audit.sections.every((section) => section.status === 'pass'),
+    'Every audit section should pass for the reference configuration',
+  );
 });

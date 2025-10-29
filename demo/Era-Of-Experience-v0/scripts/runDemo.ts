@@ -39,7 +39,19 @@ function renderMarkdown(report: SimulationReport): string {
     `- Sentinel Activated: ${report.ownerConsole.safeguardStatus.sentinelActivated ? 'Yes' : 'No'}\n` +
     `- Recommended Actions:\n` +
     report.ownerConsole.recommendedActions.map((action) => `  - ${action}`).join('\n') + '\n\n' +
-    '```mermaid\n' + report.ownerConsole.actionableMermaid + '\n```\n';
+    '```mermaid\n' + report.ownerConsole.actionableMermaid + '\n```\n\n' +
+    `## Triple-Audit Verification\n\n` +
+    `- **Status:** ${report.audit.status.toUpperCase()} (generated ${report.audit.generatedAt})\n` +
+    report.audit.sections
+      .map((section) => {
+        const header = `  - ${section.name}: ${section.status.toUpperCase()}`;
+        if (section.notes.length === 0) {
+          return `${header} (no deviations detected)`;
+        }
+        const bulletNotes = section.notes.map((note) => `    - ${note}`).join('\n');
+        return `${header}\n${bulletNotes}`;
+      })
+      .join('\n') + '\n';
 }
 
 export interface DemoOptions {
