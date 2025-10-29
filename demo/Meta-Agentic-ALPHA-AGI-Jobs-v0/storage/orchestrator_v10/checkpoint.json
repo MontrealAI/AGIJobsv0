@@ -1,0 +1,517 @@
+{
+  "created_at": 1761698371.2571428,
+  "governance": {
+    "approvals_required": 0,
+    "guardian_addresses": [],
+    "metadata": {},
+    "policy_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "source": null,
+    "updated_at": 1761698192.8683004
+  },
+  "integrity": "f552b0b9358118acec7deef137a8311ec598aa1abe1cbaa748a295e293f85640",
+  "jobs": {
+    "5f3b7a9eed364dd491436fba17f07aa1": {
+      "assigned_nodes": [],
+      "assigned_shard": null,
+      "plan": {
+        "budget": {
+          "cap": "100.00",
+          "max": "0",
+          "token": "AGIALPHA"
+        },
+        "metadata": {
+          "demo": {
+            "agents": [
+              {
+                "agent_id": "guardian-meta-mesh-v10",
+                "capabilities": [
+                  "execution",
+                  "validation",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "guardian-meta-mesh-v10-secret",
+                "owner": "Guardian Meta-Mesh",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "92000"
+              },
+              {
+                "agent_id": "supremacy-simulation-architect",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "supremacy-simulation-architect-secret",
+                "owner": "Simulation Guild",
+                "region": "omni",
+                "slashable": false,
+                "stake_amount": "58000"
+              },
+              {
+                "agent_id": "alpha-treasury-hyperpilot",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-treasury-hyperpilot-secret",
+                "owner": "Treasury Collective",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "62000"
+              },
+              {
+                "agent_id": "mission-audit-overwatch",
+                "capabilities": [
+                  "validation",
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "mission-audit-overwatch-secret",
+                "owner": "Audit Observatory",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "42000"
+              },
+              {
+                "agent_id": "alpha-compounding-director",
+                "capabilities": [
+                  "execution",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-compounding-director-secret",
+                "owner": "Compounding Network",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "66000"
+              },
+              {
+                "agent_id": "autopilot-dominion-weaver",
+                "capabilities": [
+                  "execution",
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "autopilot-dominion-weaver-secret",
+                "owner": "Autopilot Guild",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "52000"
+              },
+              {
+                "agent_id": "gasless-execution-sentinel",
+                "capabilities": [
+                  "execution",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "gasless-execution-sentinel-secret",
+                "owner": "Account Abstraction Syndicate",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "47000"
+              }
+            ],
+            "attachments": [
+              "meta_agentic_alpha_v10/reports/alpha_meta_supremacy_overview.md",
+              "meta_agentic_alpha_v10/playbooks/owner_supremacy_command_matrix.md"
+            ],
+            "dashboards": [
+              {
+                "file": "meta_agentic_alpha_v10/ui/index.html",
+                "title": "Supremacy Console"
+              },
+              {
+                "file": "meta_agentic_alpha_v10/reports/generated/alpha_meta_supremacy_masterplan.md",
+                "title": "Supremacy Masterplan"
+              }
+            ],
+            "name": "Meta-Agentic α-AGI Jobs Demo V10 — Supremacy Atlas",
+            "narrative": "A non-technical sovereign owner launches the Supremacy Console. AGI Jobs v0 (v2)\nmaterialises a full-stack, unstoppable α-AGI operator: meta-agentic planning,\nhypergraph opportunity capture, treasury autopilot, guardian supremacy mesh,\nCI V2 verification, and gasless execution fabric. Every artefact — dashboards,\nreports, telemetry, override levers — is generated automatically with zero manual\nwiring.\n"
+          },
+          "generatedAt": 1761698371.220514,
+          "scenario": "scenario.yaml"
+        },
+        "plan_id": "33b0a61e61dd292195baf1b9125c8cc3be0f137ea760cb2cf91f5bc4cbb0cc27",
+        "policies": {
+          "allowTools": [
+            "ipfs.pin",
+            "job.post",
+            "job.finalize",
+            "validator.quorum",
+            "llm.generate",
+            "code.run"
+          ],
+          "denyTools": [],
+          "orgId": null,
+          "organizationId": null,
+          "requireValidator": true,
+          "teamId": null,
+          "tenantId": null,
+          "userId": null
+        },
+        "steps": []
+      },
+      "status": {
+        "current": null,
+        "logs": [],
+        "receipts": {
+          "cids": [],
+          "job_id": null,
+          "payouts": [],
+          "plan_id": "33b0a61e61dd292195baf1b9125c8cc3be0f137ea760cb2cf91f5bc4cbb0cc27",
+          "timings": {
+            "completed_at": 1761698371.2564304,
+            "events": [
+              "AwaitingValidation",
+              "JobCompleted",
+              "JobCreated",
+              "ResultSubmitted",
+              "ValidationStarted"
+            ],
+            "scoreboard": {
+              "alpha-compounding-director": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:05Z: Compounding flywheel primed"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 4
+              },
+              "alpha-treasury-hyperpilot": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:03Z: Treasury overdrive simulated",
+                  "2025-12-12T12:04Z: Cross-chain bridge primed"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 5
+              },
+              "autopilot-dominion-weaver": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:01Z: Autopilot lattice aligned"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 5
+              },
+              "gasless-execution-sentinel": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:03Z: Paymaster top-up executed",
+                  "2025-12-12T12:05Z: Bundler rotation completed"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 3
+              },
+              "guardian-meta-mesh-v10": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:00Z: Guardian quorum recalibrated",
+                  "2025-12-12T12:05Z: Emergency pause simulation passed"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 4
+              },
+              "mission-audit-overwatch": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:04Z: CI V2 verdicts green"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 4
+              },
+              "supremacy-simulation-architect": {
+                "losses": 0,
+                "notes": [
+                  "2025-12-12T12:02Z: Scenario sweep complete"
+                ],
+                "slashes": 0,
+                "updatedAt": 1763503200.0,
+                "wins": 3
+              }
+            },
+            "state": "succeeded"
+          },
+          "txes": []
+        },
+        "run": {
+          "completed_at": 1761698371.2564123,
+          "created_at": 1761698371.2508085,
+          "est_budget": "0",
+          "id": "5f3b7a9eed364dd491436fba17f07aa1",
+          "plan_id": "33b0a61e61dd292195baf1b9125c8cc3be0f137ea760cb2cf91f5bc4cbb0cc27",
+          "started_at": 1761698371.25348,
+          "state": "succeeded"
+        },
+        "steps": []
+      },
+      "updated_at": 1761698371.2571428
+    },
+    "918ce95e551f42e5938d6271b68b78fd": {
+      "assigned_nodes": [],
+      "assigned_shard": null,
+      "plan": {
+        "budget": {
+          "cap": "100.00",
+          "max": "0",
+          "token": "AGIALPHA"
+        },
+        "metadata": {
+          "demo": {
+            "agents": [
+              {
+                "agent_id": "guardian-meta-mesh-v10",
+                "capabilities": [
+                  "execution",
+                  "validation",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "guardian-meta-mesh-v10-secret",
+                "owner": "Guardian Meta-Mesh",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "92000"
+              },
+              {
+                "agent_id": "supremacy-simulation-architect",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "supremacy-simulation-architect-secret",
+                "owner": "Simulation Guild",
+                "region": "omni",
+                "slashable": false,
+                "stake_amount": "58000"
+              },
+              {
+                "agent_id": "alpha-treasury-hyperpilot",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-treasury-hyperpilot-secret",
+                "owner": "Treasury Collective",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "62000"
+              },
+              {
+                "agent_id": "mission-audit-overwatch",
+                "capabilities": [
+                  "validation",
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "mission-audit-overwatch-secret",
+                "owner": "Audit Observatory",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "42000"
+              },
+              {
+                "agent_id": "alpha-compounding-director",
+                "capabilities": [
+                  "execution",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "alpha-compounding-director-secret",
+                "owner": "Compounding Network",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "66000"
+              },
+              {
+                "agent_id": "autopilot-dominion-weaver",
+                "capabilities": [
+                  "execution",
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "autopilot-dominion-weaver-secret",
+                "owner": "Autopilot Guild",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "52000"
+              },
+              {
+                "agent_id": "gasless-execution-sentinel",
+                "capabilities": [
+                  "execution",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "gasless-execution-sentinel-secret",
+                "owner": "Account Abstraction Syndicate",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "47000"
+              }
+            ],
+            "attachments": [
+              "meta_agentic_alpha_v10/reports/alpha_meta_supremacy_overview.md",
+              "meta_agentic_alpha_v10/playbooks/owner_supremacy_command_matrix.md"
+            ],
+            "dashboards": [
+              {
+                "file": "meta_agentic_alpha_v10/ui/index.html",
+                "title": "Supremacy Console"
+              },
+              {
+                "file": "meta_agentic_alpha_v10/reports/generated/alpha_meta_supremacy_masterplan.md",
+                "title": "Supremacy Masterplan"
+              }
+            ],
+            "name": "Meta-Agentic α-AGI Jobs Demo V10 — Supremacy Atlas",
+            "narrative": "A non-technical sovereign owner launches the Supremacy Console. AGI Jobs v0 (v2)\nmaterialises a full-stack, unstoppable α-AGI operator: meta-agentic planning,\nhypergraph opportunity capture, treasury autopilot, guardian supremacy mesh,\nCI V2 verification, and gasless execution fabric. Every artefact — dashboards,\nreports, telemetry, override levers — is generated automatically with zero manual\nwiring.\n"
+          },
+          "generatedAt": 1761698192.802575,
+          "scenario": "scenario.yaml"
+        },
+        "plan_id": "d2491a16eb1d882972d60ea8192b7b8b9846c631060bfc2c5cb5ba0e3525488a",
+        "policies": {
+          "allowTools": [
+            "ipfs.pin",
+            "job.post",
+            "job.finalize",
+            "validator.quorum",
+            "llm.generate",
+            "code.run"
+          ],
+          "denyTools": [],
+          "orgId": null,
+          "organizationId": null,
+          "requireValidator": true,
+          "teamId": null,
+          "tenantId": null,
+          "userId": null
+        },
+        "steps": []
+      },
+      "status": {
+        "current": null,
+        "logs": [],
+        "receipts": {
+          "cids": [],
+          "job_id": null,
+          "payouts": [],
+          "plan_id": "d2491a16eb1d882972d60ea8192b7b8b9846c631060bfc2c5cb5ba0e3525488a",
+          "timings": {
+            "completed_at": 1761698192.873493,
+            "events": [
+              "AwaitingValidation",
+              "JobCompleted",
+              "JobCreated",
+              "ResultSubmitted",
+              "ValidationStarted"
+            ],
+            "scoreboard": {},
+            "state": "succeeded"
+          },
+          "txes": []
+        },
+        "run": {
+          "completed_at": 1761698192.8734717,
+          "created_at": 1761698192.8683517,
+          "est_budget": "0",
+          "id": "918ce95e551f42e5938d6271b68b78fd",
+          "plan_id": "d2491a16eb1d882972d60ea8192b7b8b9846c631060bfc2c5cb5ba0e3525488a",
+          "started_at": 1761698192.8714936,
+          "state": "succeeded"
+        },
+        "steps": []
+      },
+      "updated_at": 1761698371.2571428
+    }
+  },
+  "nodes": {},
+  "scoreboard": {
+    "alpha-compounding-director": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:05Z: Compounding flywheel primed"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 4
+    },
+    "alpha-treasury-hyperpilot": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:03Z: Treasury overdrive simulated",
+        "2025-12-12T12:04Z: Cross-chain bridge primed"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 5
+    },
+    "autopilot-dominion-weaver": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:01Z: Autopilot lattice aligned"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 5
+    },
+    "gasless-execution-sentinel": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:03Z: Paymaster top-up executed",
+        "2025-12-12T12:05Z: Bundler rotation completed"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 3
+    },
+    "guardian-meta-mesh-v10": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:00Z: Guardian quorum recalibrated",
+        "2025-12-12T12:05Z: Emergency pause simulation passed"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 4
+    },
+    "mission-audit-overwatch": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:04Z: CI V2 verdicts green"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 4
+    },
+    "supremacy-simulation-architect": {
+      "losses": 0,
+      "notes": [
+        "2025-12-12T12:02Z: Scenario sweep complete"
+      ],
+      "slashes": 0,
+      "updatedAt": 1763503200.0,
+      "wins": 3
+    }
+  },
+  "sequence": 6,
+  "shards": {},
+  "version": "orchestrator.checkpoint.v1"
+}

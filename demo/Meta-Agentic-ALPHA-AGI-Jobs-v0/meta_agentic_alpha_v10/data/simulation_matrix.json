@@ -1,0 +1,24 @@
+{
+  "scenarios": [
+    {
+      "name": "Market Stress",
+      "description": "Volatility spike with correlated drawdowns",
+      "result": "passed"
+    },
+    {
+      "name": "Supply Shock",
+      "description": "Critical material shortage across continents",
+      "result": "passed"
+    },
+    {
+      "name": "Policy Crackdown",
+      "description": "Regulatory tightening on cross-border flows",
+      "result": "passed"
+    },
+    {
+      "name": "Infrastructure Failure",
+      "description": "4337 relayer downtime with gas spike",
+      "result": "passed"
+    }
+  ]
+}

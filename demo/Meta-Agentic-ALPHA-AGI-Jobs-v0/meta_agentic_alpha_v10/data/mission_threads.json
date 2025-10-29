@@ -1,0 +1,48 @@
+{
+  "threads": [
+    {
+      "id": "mission-thread-alpha-forge",
+      "title": "Alpha Forge Expansion",
+      "owner": "Supreme Owner",
+      "status": "active",
+      "objectives": [
+        "Spin up three new alpha factories",
+        "Deploy guardian oversight for each factory",
+        "Route profits into supremacy reserve"
+      ]
+    },
+    {
+      "id": "mission-thread-supply-sense",
+      "title": "Supply Sense Autonomy",
+      "owner": "Autopilot Dominion Weaver",
+      "status": "executing",
+      "objectives": [
+        "Stabilise critical supply inputs",
+        "Forecast disruptions with anomaly mesh",
+        "Trigger antifragility simulations"
+      ]
+    },
+    {
+      "id": "mission-thread-governance-mesh",
+      "title": "Governance Mesh Alignment",
+      "owner": "Guardian Meta-Mesh",
+      "status": "review",
+      "objectives": [
+        "Refresh guardian quorum",
+        "Validate unstoppable overrides",
+        "Publish transparency ledger"
+      ]
+    },
+    {
+      "id": "mission-thread-quantum-expansion",
+      "title": "Quantum Expansion Frontier",
+      "owner": "Simulation Architect",
+      "status": "incubating",
+      "objectives": [
+        "Model next-horizon opportunities",
+        "Test cross-chain execution routes",
+        "Bootstrap new supremacy vector"
+      ]
+    }
+  ]
+}

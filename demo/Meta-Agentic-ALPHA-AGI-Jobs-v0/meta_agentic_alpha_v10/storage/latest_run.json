@@ -1,0 +1,87 @@
+{
+  "runId": "5f3b7a9eed364dd491436fba17f07aa1",
+  "state": "succeeded",
+  "completedSteps": 0,
+  "totalSteps": 1,
+  "estimatedAlphaProbability": 0.02,
+  "governance": {},
+  "agents": [
+    "guardian-meta-mesh-v10",
+    "supremacy-simulation-architect",
+    "alpha-treasury-hyperpilot",
+    "mission-audit-overwatch",
+    "alpha-compounding-director",
+    "autopilot-dominion-weaver",
+    "gasless-execution-sentinel"
+  ],
+  "scoreboard": {
+    "guardian-meta-mesh-v10": {
+      "wins": 4,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:00Z: Guardian quorum recalibrated",
+        "2025-12-12T12:05Z: Emergency pause simulation passed"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "supremacy-simulation-architect": {
+      "wins": 3,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:02Z: Scenario sweep complete"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "alpha-treasury-hyperpilot": {
+      "wins": 5,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:03Z: Treasury overdrive simulated",
+        "2025-12-12T12:04Z: Cross-chain bridge primed"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "mission-audit-overwatch": {
+      "wins": 4,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:04Z: CI V2 verdicts green"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "alpha-compounding-director": {
+      "wins": 4,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:05Z: Compounding flywheel primed"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "autopilot-dominion-weaver": {
+      "wins": 5,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:01Z: Autopilot lattice aligned"
+      ],
+      "updatedAt": 1763503200.0
+    },
+    "gasless-execution-sentinel": {
+      "wins": 3,
+      "losses": 0,
+      "slashes": 0,
+      "notes": [
+        "2025-12-12T12:03Z: Paymaster top-up executed",
+        "2025-12-12T12:05Z: Bundler rotation completed"
+      ],
+      "updatedAt": 1763503200.0
+    }
+  },
+  "logs": [],
+  "steps": []
+}

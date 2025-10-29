@@ -1,0 +1,45 @@
+{
+  "domains": [
+    {
+      "name": "Global Markets",
+      "probability": 0.88,
+      "confidence": 0.93,
+      "delta": 0.12
+    },
+    {
+      "name": "Supply Chains",
+      "probability": 0.86,
+      "confidence": 0.9,
+      "delta": 0.11
+    },
+    {
+      "name": "Frontier Research",
+      "probability": 0.82,
+      "confidence": 0.91,
+      "delta": 0.1
+    },
+    {
+      "name": "Energy Transition",
+      "probability": 0.79,
+      "confidence": 0.88,
+      "delta": 0.09
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "ANOM-4337",
+      "description": "4337 mempool spike enabling cross-chain arbitrage",
+      "impact_score": 0.94
+    },
+    {
+      "id": "ANOM-SUPPLY",
+      "description": "Critical materials shortage across Asia-Pacific",
+      "impact_score": 0.89
+    },
+    {
+      "id": "ANOM-RESEARCH",
+      "description": "Breakthrough in quantum catalysis increases alpha probability",
+      "impact_score": 0.87
+    }
+  ]
+}

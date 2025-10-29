@@ -1,0 +1,16 @@
+{
+  "status": "green",
+  "response_minutes": 5,
+  "checks": [
+    {"name": "pytest", "status": "pass"},
+    {"name": "orchestrator-ci", "status": "pass"},
+    {"name": "static-analysis", "status": "pass"},
+    {"name": "fuzz", "status": "pass"},
+    {"name": "contracts", "status": "pass"},
+    {"name": "simulation", "status": "pass"},
+    {"name": "supply-chain-verifier", "status": "pass"},
+    {"name": "treasury-audit", "status": "pass"},
+    {"name": "guardian-mesh-review", "status": "pass"},
+    {"name": "gasless-safety", "status": "pass"}
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "command_latency_seconds": 6,
+  "owner_approval_speed_minutes": 1,
+  "guardian_quorum": 6,
+  "guardian_count": 7,
+  "failover_guardian_count": 4,
+  "supremacy_vectors": [
+    "Global Alpha Factories",
+    "Cross-Chain Supremacy Bridges",
+    "Guardian Meta-Orchestration",
+    "Curriculum Supremacy Forge"
+  ],
+  "supremacy_controls": [
+    {
+      "id": "override-treasury",
+      "label": "Treasury Overdrive",
+      "description": "Instantly rebalances capital into unstoppable reserve and alpha factories."
+    },
+    {
+      "id": "guardian-pivot",
+      "label": "Guardian Pivot",
+      "description": "Shifts guardian quorum to the antifragility formation on command."
+    },
+    {
+      "id": "curriculum-escalate",
+      "label": "Curriculum Escalator",
+      "description": "Escalates the open-ended curriculum to the next horizon of difficulty."
+    },
+    {
+      "id": "gasless-boost",
+      "label": "Gasless Boost",
+      "description": "Activates 4337 paymaster top-up and session key rotation."
+    }
+  ],
+  "supremacy_matrix": {
+    "automation": 0.94,
+    "resilience": 0.91,
+    "empowerment": 0.96,
+    "velocity": 0.89,
+    "stewardship": 0.93,
+    "expansion": 0.9
+  }
+}
