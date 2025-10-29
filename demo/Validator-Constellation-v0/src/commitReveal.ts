@@ -74,8 +74,12 @@ export class CommitRevealRound {
       this.outcome = "QUORUM_NOT_MET";
       return this.outcome;
     }
-    const truthfulVotes = records.filter((record) => record.truthful && record.vote === truthfulResult).length;
-    const incorrectVotes = records.filter((record) => record.truthful && record.vote !== truthfulResult).length;
+    const truthfulVotes = records.filter(
+      (record) => record.truthful && record.vote === truthfulResult
+    ).length;
+    const incorrectVotes = records.filter(
+      (record) => !record.truthful || record.vote !== truthfulResult
+    ).length;
     this.finalised = true;
     this.outcome = truthfulVotes >= incorrectVotes ? "TRUTH" : "FALSEHOOD";
     return this.outcome;
