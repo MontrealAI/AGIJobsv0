@@ -1,13 +1,13 @@
 """FastAPI dashboard for AGI Alpha Node."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Dict
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+import yaml
 
 from ..knowledge import KnowledgeLake
 
@@ -48,5 +48,17 @@ def latest_knowledge(limit: int = 10) -> JSONResponse:
 def system_status() -> Dict[str, str]:
     config_path = Path("config/alpha-node.yaml")
     if config_path.exists():
-        return json.loads(config_path.read_text(encoding="utf-8"))
+        try:
+            loaded = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:  # pragma: no cover - defensive path
+            return {"error": "failed to load configuration", "detail": str(exc)}
+
+        if loaded is None:
+            return {}
+
+        if isinstance(loaded, dict):
+            return loaded
+
+        # Ensure the payload is JSON serialisable even if the YAML root is not a mapping.
+        return {"config": loaded}
     return {"message": "demo configuration not yet initialized"}
