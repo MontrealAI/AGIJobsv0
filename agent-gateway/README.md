@@ -94,6 +94,34 @@ should return JSON like:
 header. This allows integration with secure keystores such as Hashicorp Vault
 or a cloud KMS.
 
+### Keystore write API
+
+When the agent factory mints a new blueprint wallet it immediately writes the
+private key back to the keystore before registering the wallet locally. The
+gateway issues a `POST` request to `KEYSTORE_URL` (falling back to `PUT` when a
+`405 Method Not Allowed` or `501 Not Implemented` response is returned). The
+request includes the bearer token defined by `KEYSTORE_TOKEN` and a JSON body:
+
+```
+{
+  "privateKey": "0xabc...",
+  "address": "0x123...",
+  "label": "example-agent",
+  "metadata": {
+    "blueprintId": "<uuid>",
+    "category": "research",
+    "ensName": "example-agent.agent.agi.eth"
+  }
+}
+```
+
+Responses **must** use a JSON content type (or an empty body with status `204`)
+and return a success status in the 200 range. The gateway treats any other
+response as a failure and aborts the clone so operators should ensure the
+endpoint durably persists the key before acknowledging the request. The helper
+observes the `FETCH_TIMEOUT_MS` window, retries once on transient network or
+timeout errors, and logs failures for troubleshooting.
+
 ## Authentication
 
 Wallet-related endpoints require credentials. Clients may either:

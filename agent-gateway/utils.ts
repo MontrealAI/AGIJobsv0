@@ -76,6 +76,170 @@ export const GRPC_PORT = parseIntegerEnv('GRPC_PORT', 50051, {
 const STALE_JOB_FLOOR_MS = 60 * 1000;
 const SWEEP_INTERVAL_FLOOR_MS = 1000;
 
+export interface SaveWalletKeyOptions {
+  address?: string;
+  label?: string;
+  metadata?: Record<string, unknown>;
+  retry?: boolean;
+}
+
+type KeystoreMethod = 'POST' | 'PUT';
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function sanitisePayload(
+  privateKey: string,
+  options: SaveWalletKeyOptions
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
+    privateKey,
+    address: options.address,
+    label: options.label,
+  };
+
+  if (isObject(options.metadata)) {
+    const metadataEntries = Object.entries(options.metadata).filter(
+      ([, value]) => value !== undefined && value !== null
+    );
+    if (metadataEntries.length) {
+      payload.metadata = Object.fromEntries(metadataEntries);
+    }
+  }
+
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  );
+}
+
+async function parseJsonBody(res: Response): Promise<Record<string, unknown>> {
+  const text = await res.text();
+  if (!text) {
+    return {};
+  }
+  try {
+    const data = JSON.parse(text);
+    return isObject(data) ? data : {};
+  } catch (err) {
+    throw new Error('Keystore returned a non-JSON response');
+  }
+}
+
+async function issueKeystoreRequest(
+  method: KeystoreMethod,
+  body: Record<string, unknown>,
+  allowRetry: boolean
+): Promise<Record<string, unknown>> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    accept: 'application/json',
+  };
+  if (KEYSTORE_TOKEN) {
+    headers.Authorization = `Bearer ${KEYSTORE_TOKEN}`;
+  }
+
+  try {
+    const res = await fetch(KEYSTORE_URL, {
+      method,
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+
+    if (res.status === 405 || res.status === 501) {
+      const error = new Error(
+        `Keystore does not accept ${method} requests (HTTP ${res.status})`
+      );
+      (error as any).code = 'METHOD_NOT_ALLOWED';
+      (error as any).status = res.status;
+      throw error;
+    }
+
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const payload = await parseJsonBody(res);
+        const message =
+          (typeof payload.error === 'string' && payload.error) ||
+          (typeof payload.message === 'string' && payload.message);
+        if (message) {
+          detail = `: ${message}`;
+        }
+      } catch (parseErr) {
+        const fallback =
+          parseErr instanceof Error ? parseErr.message : String(parseErr);
+        detail = detail || `: ${fallback}`;
+      }
+      const error = new Error(
+        `Keystore responded with HTTP ${res.status} ${res.statusText}${detail}`
+      );
+      (error as any).status = res.status;
+      throw error;
+    }
+
+    if (res.status === 204) {
+      return {};
+    }
+
+    return await parseJsonBody(res);
+  } catch (err: any) {
+    clearTimeout(timer);
+    const isAbort = err?.name === 'AbortError';
+    const isNetwork = err instanceof TypeError;
+    if ((isAbort || isNetwork) && allowRetry) {
+      console.warn(
+        `Keystore ${method} request ${
+          isAbort ? 'timed out' : 'failed'
+        }, retrying once...`
+      );
+      return issueKeystoreRequest(method, body, false);
+    }
+    if (isAbort) {
+      throw new Error('Keystore save request timed out');
+    }
+    throw err;
+  }
+}
+
+export async function saveWalletKey(
+  privateKey: string,
+  options: SaveWalletKeyOptions = {}
+): Promise<Record<string, unknown>> {
+  if (!privateKey) {
+    throw new Error('A private key is required to persist to the keystore');
+  }
+  if (!KEYSTORE_URL) {
+    throw new Error('KEYSTORE_URL is required to save wallet keys.');
+  }
+
+  const payload = sanitisePayload(privateKey, options);
+  const methods: KeystoreMethod[] = ['POST', 'PUT'];
+  const retry = options.retry ?? true;
+  let lastError: unknown;
+
+  for (const method of methods) {
+    try {
+      return await issueKeystoreRequest(method, payload, retry);
+    } catch (err: any) {
+      if (err?.code === 'METHOD_NOT_ALLOWED' && method === 'POST') {
+        console.warn('Keystore POST unsupported, retrying with PUT...');
+        lastError = err;
+        continue;
+      }
+      lastError = err;
+      break;
+    }
+  }
+
+  const message =
+    lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`Failed to persist wallet key to keystore: ${message}`);
+}
+
 function validateEnvConfig(): void {
   const checkAddress = (value: string, name: string): void => {
     if (!value) {
