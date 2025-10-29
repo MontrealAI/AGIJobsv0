@@ -19,10 +19,10 @@ culture-arena-sample:
 @CULTURE_ARENA_MODE=$(MODE) HARDHAT_NETWORK=$(NETWORK) $(HARDHAT) run --no-compile scripts/run.arena.sample.ts
 
 culture-bootstrap:
-@$(MAKE) culture-deploy NETWORK=$(NETWORK) ARGS=$(ARGS)
-@$(MAKE) culture-seed NETWORK=$(NETWORK) ARGS=$(ARGS)
-@$(MAKE) culture-arena-sample NETWORK=$(NETWORK) MODE=$(MODE)
+	@$(MAKE) culture-deploy NETWORK=$(NETWORK) ARGS=$(ARGS)
+	@$(MAKE) culture-seed NETWORK=$(NETWORK) ARGS=$(ARGS)
+	@$(MAKE) culture-arena-sample NETWORK=$(NETWORK) MODE=$(MODE)
 .PHONY: hgm-demo
 hgm-demo:
-	python demo/Huxley-Godel-Machine-v0/run_demo.py
+	python demo/Huxley-Godel-Machine-v0/run.py --report reports/hgm-demo/report.md
 

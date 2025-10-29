@@ -1,49 +1,74 @@
-"""Economic control plane for the HGM demo."""
+"""Adaptive control plane that tunes HGM parameters in real time."""
 from __future__ import annotations
 
-from collections import deque
 from dataclasses import dataclass
-from typing import Deque
+from typing import List
 
-from .structures import EconomicLedger
+from .engine import HGMEngine
+from .metrics import RunMetrics
 
 
 @dataclass
-class ThermostatSettings:
-    target_roi: float
-    min_tau: float
-    max_tau: float
-    tau_step: float
-    alpha_step: float
-    min_alpha: float
-    max_alpha: float
-    min_concurrency: int
-    max_concurrency: int
-    roi_window: int
+class ThermostatConfig:
+    target_roi: float = 1.4
+    boost_roi: float = 2.2
+    tau_step: float = 0.15
+    alpha_step: float = 0.1
+    min_tau: float = 0.4
+    max_tau: float = 5.0
+    min_alpha: float = 1.0
+    max_alpha: float = 3.0
+    min_concurrency: int = 1
+    max_concurrency: int = 1
+
+
+@dataclass
+class ThermostatDecision:
+    tau: float
+    alpha: float
+    concurrency: int
+    notes: List[str]
 
 
 class Thermostat:
-    """Feedback controller that tunes exploration parameters on the fly."""
+    def __init__(self, config: ThermostatConfig | None = None) -> None:
+        self.config = config or ThermostatConfig()
+        self._concurrency = self.config.min_concurrency
 
-    def __init__(self, settings: ThermostatSettings) -> None:
-        self.settings = settings
-        self._roi_history: Deque[float] = deque(maxlen=settings.roi_window)
+    @property
+    def concurrency(self) -> int:
+        return self._concurrency
 
-    def update(self, *, ledger: EconomicLedger, engine, orchestrator) -> None:
-        self._roi_history.append(ledger.roi)
-        if len(self._roi_history) < self.settings.roi_window:
-            return
-        avg_roi = sum(self._roi_history) / len(self._roi_history)
-        tau = engine.params.tau
-        alpha = engine.params.alpha
-        concurrency = orchestrator.concurrency
-        if avg_roi < self.settings.target_roi:
-            tau = min(self.settings.max_tau, tau + self.settings.tau_step)
-            alpha = min(self.settings.max_alpha, alpha + self.settings.alpha_step)
-            concurrency = max(self.settings.min_concurrency, concurrency - 1)
+    def evaluate(self, engine: HGMEngine, metrics: RunMetrics) -> ThermostatDecision:
+        notes: List[str] = []
+        tau = engine.tau
+        alpha = engine.alpha
+        roi = metrics.roi
+
+        if metrics.total_cost == 0:
+            return ThermostatDecision(tau=tau, alpha=alpha, concurrency=self._concurrency, notes=["Waiting for first signal"])
+
+        if roi < self.config.target_roi:
+            tau = min(self.config.max_tau, tau + self.config.tau_step)
+            alpha = min(self.config.max_alpha, alpha + self.config.alpha_step)
+            if self._concurrency > self.config.min_concurrency:
+                self._concurrency -= 1
+                notes.append("ROI under target: throttling concurrency")
+            notes.append("ROI under target: increasing exploitation bias")
+        elif roi > self.config.boost_roi:
+            tau = max(self.config.min_tau, tau - self.config.tau_step)
+            alpha = max(self.config.min_alpha, alpha - self.config.alpha_step)
+            if self._concurrency < self.config.max_concurrency:
+                self._concurrency += 1
+                notes.append("ROI excellent: scaling concurrency")
+            notes.append("ROI excellent: encouraging exploration")
         else:
-            tau = max(self.settings.min_tau, tau - self.settings.tau_step)
-            alpha = max(self.settings.min_alpha, alpha - self.settings.alpha_step)
-            concurrency = min(self.settings.max_concurrency, concurrency + 1)
-        engine.update_parameters(tau=tau, alpha=alpha)
-        orchestrator.set_concurrency(concurrency)
+            notes.append("ROI stable: maintaining parameters")
+
+        engine.update_tau(tau)
+        engine.update_alpha(alpha)
+
+        return ThermostatDecision(tau=tau, alpha=alpha, concurrency=self._concurrency, notes=notes)
+
+
+__all__ = ["Thermostat", "ThermostatConfig", "ThermostatDecision"]
