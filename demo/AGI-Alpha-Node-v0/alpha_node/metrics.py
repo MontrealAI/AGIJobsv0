@@ -27,6 +27,10 @@ class MetricsExporter:
         self._thread.start()
         _LOGGER.info("Prometheus exporter started", extra={"port": self._port})
 
+    def stop(self) -> None:
+        # prometheus_client does not currently expose a shutdown primitive; we log intent for auditability.
+        _LOGGER.info("Prometheus exporter stop requested", extra={"port": self._port})
+
     def update_compliance(self, score: float) -> None:
         _COMPLIANCE_GAUGE.set(score)
 

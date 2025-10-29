@@ -98,6 +98,17 @@ The architecture uses deliberate guardrails: nothing activates without ENS verif
 
 ---
 
+## 🔧 Sovereign Operator Controls
+
+- **Config-governed specialists:** Enable or disable domain experts and adjust their risk budgets directly from `config/alpha-node.yaml`.
+- **Full contract address registry:** Provide StakeManager, incentives, treasury, and fee pool addresses for deterministic governance hand-off.
+- **Dual-mode job harvester:** Seamlessly switch between mainnet polling and curated scenario files to rehearse autonomous execution before going live.
+- **Runtime guardrails:** Pausing, governance rotation, and compliance scoring are callable via CLI, interactive console, or automated drills.
+
+These controls ensure the contract owner retains absolute command while delegating routine intelligence to the Alpha Node swarm.
+
+---
+
 ## 📊 Compliance Scorecard Dimensions
 
 | Dimension | Checks |

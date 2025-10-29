@@ -69,6 +69,17 @@ class StakeManagerClient:
         _LOGGER.info("Rewards accrued", extra={"amount_wei": amount_wei})
         return self._staking_state
 
+    def withdraw(self, amount_wei: int) -> StakeStatus:
+        if amount_wei <= 0:
+            raise ValueError("Stake withdrawal must be positive")
+        self._staking_state.staked_wei = max(self._staking_state.staked_wei - amount_wei, 0)
+        self._staking_state.last_checkpoint_block = self._web3.eth.block_number
+        _LOGGER.info(
+            "Stake withdrawn",
+            extra={"amount_wei": amount_wei, "remaining_stake": self._staking_state.staked_wei},
+        )
+        return self._staking_state
+
     def claim_rewards(self, destination: str) -> List[RewardTokenState]:
         destination = Web3.to_checksum_address(destination)
         if self._staking_state.rewards_wei == 0:

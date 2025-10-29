@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import textwrap
+from dataclasses import asdict, is_dataclass
 from pathlib import Path
 
 from alpha_node.config import AlphaNodeConfig
@@ -58,28 +59,42 @@ def _resolve_amount(raw: str) -> int:
     return int(value)
 
 
+def _serialise(obj: object) -> object:
+    if is_dataclass(obj):
+        return asdict(obj)
+    if isinstance(obj, list):
+        return [_serialise(item) for item in obj]
+    return obj
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Launch the AGI Alpha Node demo")
     parser.add_argument("--config", required=True, help="Configuration file")
-    parser.add_argument("--ens-cache", help="Optional ENS cache")
     args = parser.parse_args()
 
     config_path = Path(args.config)
-    ens_cache = Path(args.ens_cache) if args.ens_cache else None
     config = AlphaNodeConfig.load(config_path)
-    node = AlphaNode(config=config, ens_cache=ens_cache)
+    node = AlphaNode(config=config)
     _print_header(config_path)
 
     while True:
         _print_menu()
         choice = _prompt("Enter selection: ").strip()
         if choice == "1":
-            node.bootstrap()
-            print("✅ Bootstrap complete. Compliance: %.2f" % node.state.ops.compliance_score)
+            scores = node.bootstrap()
+            print("✅ Bootstrap complete. Compliance: %.2f" % scores.total)
         elif choice == "2":
             result = node.run_once()
             if result:
-                print(json.dumps(result.__dict__, indent=2))
+                payload = {
+                    "job_id": result.job_id,
+                    "specialist": result.specialist,
+                    "outcome": result.outcome,
+                    "reward_estimate": result.reward_estimate,
+                    "metadata": result.metadata,
+                    "completed_at": result.completed_at.isoformat(),
+                }
+                print(json.dumps(payload, indent=2))
             else:
                 print("No jobs available to execute.")
         elif choice == "3":
@@ -91,7 +106,7 @@ def main() -> None:
                 print(f"Input error: {exc}")
                 continue
             status = node.stake(amount)
-            print(json.dumps(status.__dict__, indent=2))
+            print(json.dumps(_serialise(status), indent=2))
         elif choice == "5":
             try:
                 amount = _resolve_amount(_prompt("Withdraw amount (wei): "))
@@ -99,10 +114,10 @@ def main() -> None:
                 print(f"Input error: {exc}")
                 continue
             status = node.withdraw(amount)
-            print(json.dumps(status.__dict__, indent=2))
+            print(json.dumps(_serialise(status), indent=2))
         elif choice == "6":
             rewards = node.claim_rewards()
-            print(json.dumps(rewards.__dict__, indent=2))
+            print(json.dumps(rewards, indent=2))
         elif choice == "7":
             address = _prompt("New governance address (0x…): ").strip()
             node.update_governance(address)
@@ -112,9 +127,11 @@ def main() -> None:
             print("Emergency pause drill executed and logged.")
         elif choice == "9":
             score = node.compliance_report()
-            print("Composite Compliance Score: %.2f" % score.composite)
-            for dimension, value in score.dimensions.items():
-                print(f"  - {dimension}: {value:.2f}")
+            print("Composite Compliance Score: %.2f" % score.total)
+            for dimension, value in score.__dict__.items():
+                if dimension == "total":
+                    continue
+                print(f"  - {dimension.replace('_', ' ').title()}: {value:.2f}")
         elif choice == "0":
             node.shutdown()
             print("Shutting down. Stay sovereign.")
