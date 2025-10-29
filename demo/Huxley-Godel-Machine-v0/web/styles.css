@@ -1,0 +1,89 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: radial-gradient(circle at 10% 20%, #04162c, #020b14 55%);
+  color: #e9f0ff;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.5rem 3rem;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+header {
+  text-align: center;
+  padding: 2rem 0 1rem;
+}
+
+h1 {
+  font-size: 2.8rem;
+  margin-bottom: 0.5rem;
+}
+
+section {
+  background: rgba(4, 22, 44, 0.65);
+  border: 1px solid rgba(123, 199, 255, 0.25);
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  box-shadow: 0 20px 60px rgba(3, 14, 33, 0.65);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(24, 56, 92, 0.9), rgba(10, 28, 52, 0.9));
+  border: 1px solid rgba(123, 199, 255, 0.35);
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #98f6ff;
+}
+
+.card p {
+  font-size: 1.5rem;
+  margin: 0.5rem 0 0;
+}
+
+#flowchart {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+#lineage {
+  min-height: 240px;
+  display: grid;
+  gap: 1rem;
+}
+
+.lineage-card {
+  border: 1px solid rgba(170, 240, 255, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  background: rgba(7, 38, 66, 0.85);
+}
+
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  color: rgba(228, 241, 255, 0.75);
+}
+
+code {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
