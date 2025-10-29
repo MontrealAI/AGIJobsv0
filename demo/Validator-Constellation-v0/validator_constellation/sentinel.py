@@ -420,28 +420,32 @@ class SentinelMonitor:
             return None
         target = action.target or action.metadata.get("target")
         metadata_hash = action.metadata.get("targetHash") or action.metadata.get("target_hash")
+        normalized_target: Optional[str] = None
         candidate_hashes: List[str] = []
         if isinstance(target, str):
-            normalized = _normalize_target(target)
+            normalized_target = _normalize_target(target)
             candidate_hashes.extend(
                 filter(
                     None,
                     [
-                        normalized,
-                        _hash_target(normalized),
+                        normalized_target,
+                        _hash_target(normalized_target),
                     ],
                 )
             )
-            if normalized in state.allowed_targets:
+            if normalized_target in state.allowed_targets:
                 return None
             if any(candidate in state.allowed_target_hashes for candidate in candidate_hashes):
                 return None
+        normalized_hash: Optional[str] = None
         if isinstance(metadata_hash, str):
             normalized_hash = _normalize_target(metadata_hash)
-            if normalized_hash in state.allowed_target_hashes:
+            if (
+                normalized_hash in state.allowed_target_hashes
+                and (normalized_target is None or normalized_hash in candidate_hashes)
+            ):
                 return None
         if isinstance(target, str) or isinstance(metadata_hash, str):
-            normalized_target = _normalize_target(target) if isinstance(target, str) else None
             return self._raise_alert(
                 state,
                 action,
@@ -452,6 +456,7 @@ class SentinelMonitor:
                     "target": target,
                     "normalized": normalized_target,
                     "targetHash": metadata_hash,
+                    "metadataNormalized": normalized_hash,
                 },
                 block_number=block_number,
             )
