@@ -69,6 +69,8 @@ class GreedyBaselineSimulator:
             roi=roi,
             profit=profit,
             steps=self.total_steps,
+            best_agent_id=None,
+            best_agent_quality=None,
         )
 
     def _expand_best(self) -> None:

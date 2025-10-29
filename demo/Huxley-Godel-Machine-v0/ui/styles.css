@@ -157,6 +157,45 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.observatory-controls {
+  background: rgba(15, 18, 30, 0.85);
+  border: 1px solid rgba(255, 209, 102, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+}
+
+.observatory-card {
+  background: rgba(10, 12, 22, 0.9);
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 1.25rem;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.observatory-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 209, 102, 0.4);
+}
+
+.observatory-card h3 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 209, 102, 0.85);
+  margin-bottom: 0.5rem;
+}
+
+.observatory-card p {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.observatory-card small {
+  display: block;
+  color: rgba(255, 255, 255, 0.6);
+}
+
 footer {
   background: rgba(0, 0, 0, 0.4);
   border-top: 1px solid rgba(255, 255, 255, 0.04);

@@ -35,7 +35,16 @@ def test_sentinel_pauses_on_low_roi() -> None:
         max_failures_per_agent=5,
         roi_recovery_steps=2,
     )
-    snapshot = EconomicSnapshot(step=5, gmv=50.0, cost=60.0, successes=2, failures=3, roi=50.0 / 60.0)
+    snapshot = EconomicSnapshot(
+        step=5,
+        gmv=50.0,
+        cost=60.0,
+        successes=2,
+        failures=3,
+        roi=50.0 / 60.0,
+        agents=[],
+        best_agent_id=None,
+    )
     sentinel.evaluate(snapshot)
     decision = sentinel.evaluate(snapshot)
     assert decision.pause_expansions is True
@@ -52,7 +61,16 @@ def test_sentinel_halts_on_budget_exhaustion() -> None:
         max_failures_per_agent=5,
         roi_recovery_steps=2,
     )
-    snapshot = EconomicSnapshot(step=5, gmv=10.0, cost=120.0, successes=1, failures=4, roi=10.0 / 120.0)
+    snapshot = EconomicSnapshot(
+        step=5,
+        gmv=10.0,
+        cost=120.0,
+        successes=1,
+        failures=4,
+        roi=10.0 / 120.0,
+        agents=[],
+        best_agent_id=None,
+    )
     decision = sentinel.evaluate(snapshot)
     assert decision.halt_all is True
     assert engine.evaluations_allowed is False
