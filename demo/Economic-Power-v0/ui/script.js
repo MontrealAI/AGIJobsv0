@@ -221,6 +221,20 @@ function formatNumber(value) {
   }).format(value);
 }
 
+function formatMetricValue(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return value ?? '—';
+  }
+  const abs = Math.abs(value);
+  if (abs >= 1000) {
+    return formatNumber(value);
+  }
+  if (abs >= 1) {
+    return value.toFixed(2);
+  }
+  return value.toFixed(3);
+}
+
 function renderMetricCards(summary) {
   const container = document.getElementById('metric-cards');
   container.innerHTML = '';
@@ -320,6 +334,89 @@ function renderSafeTransactions(summary) {
       `;
       tableBody.append(row);
     }
+  }
+}
+
+function renderCrossValidation(summary) {
+  const report = summary.crossValidation;
+  const statusEl = document.getElementById('cross-validation-status');
+  const notesList = document.getElementById('cross-validation-notes');
+  const assignmentsEl = document.getElementById('cross-validation-assignments');
+  const metricsBody = document.querySelector('#cross-validation-metrics tbody');
+  const coverageBody = document.querySelector('#cross-validation-coverage tbody');
+  if (!statusEl || !notesList || !assignmentsEl || !metricsBody || !coverageBody) {
+    return;
+  }
+
+  notesList.innerHTML = '';
+  metricsBody.innerHTML = '';
+  coverageBody.innerHTML = '';
+  assignmentsEl.textContent = '';
+
+  if (!report) {
+    statusEl.textContent = 'Cross-validation report unavailable';
+    statusEl.className = 'deterministic-status';
+    const hint = document.createElement('li');
+    hint.textContent = 'Run the Economic Power generator to produce cross-validation metrics.';
+    notesList.append(hint);
+    return;
+  }
+
+  const pass = report.status === 'pass';
+  statusEl.textContent = pass
+    ? 'Independent cross-validation: PASS'
+    : 'Independent cross-validation: ATTENTION';
+  statusEl.className = `deterministic-status ${pass ? 'deterministic-pass' : 'deterministic-fail'}`;
+
+  for (const note of report.notes || []) {
+    const item = document.createElement('li');
+    item.textContent = note;
+    if (!note.toLowerCase().includes('pass')) {
+      item.classList.add('metric-attention');
+    }
+    notesList.append(item);
+  }
+
+  const assignments = report.assignments || {
+    assignments: 0,
+    expectedJobs: 0,
+    jobCoverage: 0,
+    uniqueAgents: 0,
+    uniqueValidators: 0,
+  };
+  if (assignments.expectedJobs > 0) {
+    assignmentsEl.textContent = `Jobs ${assignments.assignments}/${assignments.expectedJobs} • ` +
+      `Coverage ${(assignments.jobCoverage * 100).toFixed(1)}% • ` +
+      `Agents ${assignments.uniqueAgents} • Validators ${assignments.uniqueValidators}`;
+  }
+
+  for (const check of report.metrics || []) {
+    const row = document.createElement('tr');
+    if (!check.passed) {
+      row.classList.add('metric-attention');
+    }
+    const deltaValue = typeof check.delta === 'number' ? check.delta : Number(check.delta || 0);
+    row.innerHTML = `
+      <td>${check.metric}</td>
+      <td>${formatMetricValue(check.expected)}</td>
+      <td>${formatMetricValue(check.actual)}</td>
+      <td>${formatMetricValue(deltaValue)}</td>
+    `;
+    metricsBody.append(row);
+  }
+
+  for (const check of report.coverage || []) {
+    const row = document.createElement('tr');
+    if (!check.passed) {
+      row.classList.add('metric-attention');
+    }
+    row.innerHTML = `
+      <td>${check.surface}</td>
+      <td>${(check.expected * 100).toFixed(1)}%</td>
+      <td>${(check.actual * 100).toFixed(1)}%</td>
+      <td>${(check.delta * 100).toFixed(1)}%</td>
+    `;
+    coverageBody.append(row);
   }
 }
 
@@ -1463,6 +1560,7 @@ async function renderDashboard(summary, verification) {
   renderTrajectory(summary);
   renderAutopilot(summary);
   renderGlobalExpansion(summary);
+  renderCrossValidation(summary);
   renderDeterministicVerification(verification);
   await renderMermaid(summary);
   updateFooter(summary);

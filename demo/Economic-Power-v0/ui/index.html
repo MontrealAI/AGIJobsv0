@@ -62,6 +62,53 @@
         </div>
       </section>
 
+      <section id="cross-validation-panel" class="panel" aria-labelledby="cross-validation-heading">
+        <div class="panel-header">
+          <h2 id="cross-validation-heading">Independent cross-validation</h2>
+          <p>Secondary computation validates economic metrics, coverage, and assignments for non-negotiable assurance.</p>
+        </div>
+        <div class="deterministic-grid cross-validation-grid">
+          <article class="deterministic-card" aria-label="Cross-validation status">
+            <h3>Status</h3>
+            <p id="cross-validation-status" class="deterministic-status">Awaiting data</p>
+            <ul id="cross-validation-notes" class="deterministic-list"></ul>
+            <p id="cross-validation-assignments" class="deterministic-note"></p>
+          </article>
+          <article class="deterministic-card" aria-label="Metric alignment">
+            <h3>Metric alignment</h3>
+            <div class="table-wrapper">
+              <table id="cross-validation-metrics" aria-label="Cross-validation metrics">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Δ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="deterministic-card" aria-label="Coverage alignment">
+            <h3>Coverage</h3>
+            <div class="table-wrapper">
+              <table id="cross-validation-coverage" aria-label="Cross-validation coverage">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Δ</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="owner-controls-heading">
         <div class="panel-header">
           <h2 id="owner-controls-heading">Owner command authority</h2>

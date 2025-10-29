@@ -90,6 +90,20 @@ test('economic power simulation produces deterministic metrics', async () => {
     1,
     'Owner Safe transaction coverage should confirm every module has a ready multi-sig payload',
   );
+  assert(summary.crossValidation, 'Cross validation report should be generated');
+  assert.equal(summary.crossValidation.status, 'pass', 'Cross validation status should pass');
+  assert(
+    summary.crossValidation.metrics.every((check) => check.passed),
+    'All cross validation metric checks should pass',
+  );
+  assert(
+    summary.crossValidation.coverage.every((check) => check.passed),
+    'All cross validation coverage checks should pass',
+  );
+  assert(
+    summary.crossValidation.assignments.passed,
+    'Assignment cross validation should confirm 1:1 job coverage',
+  );
   assert.equal(
     summary.ownerSafeTransactions.transactions.length,
     scenario.modules.length,

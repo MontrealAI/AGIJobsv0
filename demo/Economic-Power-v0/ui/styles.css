@@ -154,6 +154,10 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.cross-validation-grid {
+  align-items: stretch;
+}
+
 .deterministic-card {
   background: rgba(8, 16, 32, 0.78);
   border: 1px solid rgba(110, 231, 255, 0.2);
@@ -195,6 +199,17 @@ main {
   gap: 0.5rem;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+.deterministic-note {
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.metric-attention {
+  color: #f97316;
+  font-weight: 600;
 }
 
 #deterministic-table tbody tr td {

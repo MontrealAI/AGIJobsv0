@@ -52,6 +52,7 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
 - `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
 - `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
+- `cross-validation.json` – independent recomputation proof confirming metrics, coverage, and job assignments align across validation methods.
 - `deterministic-proof.json` – dual-run hash proof capturing metrics, command coverage, autonomy mesh, and safety mesh fingerprints for audit-grade determinism.
 - `deterministic-verification.json` – verification ledger confirming both runs align and surfacing any mismatches for immediate triage.
 
@@ -136,6 +137,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Interactive job-to-agent tables to inspect assignments and validator stakes.
 - Capital trajectory tracker visualising treasury strength, validator confidence, and automation lift after every job.
 - Live Mermaid rendering of the architecture and timeline.
+- Independent cross-validation cockpit exposing metric deltas, coverage alignment, and assignment verification from the new `cross-validation.json` proof.
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
