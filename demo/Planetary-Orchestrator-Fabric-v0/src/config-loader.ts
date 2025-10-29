@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { resolve } from 'path';
-import { FabricConfig, OwnerCommandSchedule, SpilloverPolicy } from './types';
+import { FabricConfig, JobBlueprint, OwnerCommandSchedule, SpilloverPolicy } from './types';
+import { loadJobBlueprint as loadBlueprint } from './job-blueprint';
 
 function cloneSpilloverPolicies(policies: SpilloverPolicy[] | undefined): SpilloverPolicy[] | undefined {
   if (!policies) {
@@ -78,4 +79,8 @@ export function cloneOwnerCommandSchedule(
     note: schedule.note,
     command: JSON.parse(JSON.stringify(schedule.command)) as OwnerCommandSchedule['command'],
   }));
+}
+
+export async function loadJobBlueprint(path: string): Promise<JobBlueprint> {
+  return loadBlueprint(path);
 }

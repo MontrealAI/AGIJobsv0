@@ -10,6 +10,7 @@ JOBS=10000
 STOP_AFTER=180
 OUTAGE="mars.gpu-helion"
 LABEL=""
+BLUEPRINT=""
 
 usage() {
   cat <<USAGE
@@ -20,6 +21,7 @@ Usage: $(basename "$0") [options]
   --jobs <count>              Total jobs to seed before the drill (default: 10000)
   --stop-after <ticks>        Number of ticks to run before simulating orchestrator shutdown (default: 180)
   --outage <nodeId>           Node ID to mark offline during stage one (default: mars.gpu-helion)
+  --jobs-blueprint <path>     Optional job blueprint JSON applied to both stages
   --label <name>              Label for generated reports (default: resume-drill-<timestamp>)
   -h, --help                  Show this message
 USAGE
@@ -49,6 +51,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --label)
       LABEL="$2"
+      shift 2
+      ;;
+    --jobs-blueprint)
+      BLUEPRINT="$2"
       shift 2
       ;;
     -h|--help)
@@ -87,6 +93,9 @@ fi
 if [[ -n "$OUTAGE" ]]; then
   CMD_STAGE_ONE+=(--simulate-outage "$OUTAGE")
 fi
+if [[ -n "$BLUEPRINT" ]]; then
+  CMD_STAGE_ONE+=(--jobs-blueprint "$BLUEPRINT")
+fi
 "${CMD_STAGE_ONE[@]}"
 
 echo "🔎 Capturing checkpoint path from stage one"
@@ -123,6 +132,9 @@ CMD_STAGE_TWO=(
 )
 if [[ -n "$OWNER_COMMANDS" ]]; then
   CMD_STAGE_TWO+=(--owner-commands "$OWNER_COMMANDS")
+fi
+if [[ -n "$BLUEPRINT" ]]; then
+  CMD_STAGE_TWO+=(--jobs-blueprint "$BLUEPRINT")
 fi
 "${CMD_STAGE_TWO[@]}"
 

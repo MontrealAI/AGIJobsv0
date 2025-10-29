@@ -9,6 +9,7 @@ This dossier documents the first-principles planning behind the restart-ready up
 3. **Simulation Enhancements** – Persist run metadata (`stopAfterTicks`, early termination reason, resume flag) into `summary.json`, events, and logs.
 4. **Testing & CI Reinforcement** – Expand deterministic tests to cover the stop/resume drill and ensure event streams capture the halt.
 5. **Operator Guidance** – Update docs, dashboards, and quickstarts so owners understand the new controls and audit surfaces.
+6. **Blueprinted Workloads** – Allow non-technical owners to load declarative job blueprints so restart drills replay the same Kardashev mix deterministically.
 
 ## Multi-Angle Verification Matrix
 
