@@ -478,5 +478,109 @@
         "description": "Roll forward orchestrator microservices with deterministic change sets."
       }
     ]
-  }
+  },
+  "ownerTransactions": [
+    {
+      "id": "job-registry-duration",
+      "label": "Compress job duration limit",
+      "description": "Set the JobRegistry duration limit to 48 hours to accelerate capital velocity.",
+      "moduleId": "job-registry",
+      "contractName": "JobRegistry",
+      "function": "setJobDurationLimit(uint256 limit)",
+      "args": [48],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["parameters", "velocity"],
+      "prerequisites": [
+        "Confirm validator committees can handle increased cadence",
+        "Notify agent mesh of updated SLA prior to execution"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "stake-manager-reward",
+      "label": "Elevate validator reward share",
+      "description": "Adjust StakeManager validator reward percentage to 12% to reinforce validator incentives.",
+      "moduleId": "stake-manager",
+      "contractName": "StakeManager",
+      "function": "setValidatorRewardPct(uint256 pct)",
+      "args": [1200],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["validators", "incentives"],
+      "prerequisites": [
+        "Verify treasury liquidity covers increased validator yield",
+        "Alert validator constellation of new reward rate"
+      ],
+      "risk": "elevated"
+    },
+    {
+      "id": "validation-module-bounds",
+      "label": "Expand validator quorum window",
+      "description": "Update ValidationModule bounds to require between 3 and 7 validators per job.",
+      "moduleId": "validation-module",
+      "contractName": "ValidationModule",
+      "function": "setValidatorBounds(uint256 minValidators, uint256 maxValidators)",
+      "args": [3, 7],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["validators", "security"],
+      "prerequisites": [
+        "Confirm committee selection cache warmed for new bounds",
+        "Align dispute module juries with expanded quorum"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "reputation-engine-weights",
+      "label": "Tune reputation scoring weights",
+      "description": "Adjust ReputationEngine stake/reputation weights to 60/40 for sharper validator incentives.",
+      "moduleId": "reputation-engine",
+      "contractName": "ReputationEngine",
+      "function": "setScoringWeights(uint256 stakeW, uint256 repW)",
+      "args": [60, 40],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["reputation", "validators"],
+      "prerequisites": [
+        "Validate new weighting with analytics dashboard",
+        "Notify agent operators of updated reputation policy"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "dispute-module-window",
+      "label": "Recalibrate dispute window",
+      "description": "Set DisputeModule dispute window to 24h to accelerate escalations.",
+      "moduleId": "dispute-module",
+      "contractName": "DisputeModule",
+      "function": "setDisputeWindow(uint256 window)",
+      "args": [86400],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["disputes", "security"],
+      "prerequisites": [
+        "Verify validator committee availability for shortened windows",
+        "Publish updated dispute SLA to stakeholders"
+      ],
+      "risk": "elevated"
+    },
+    {
+      "id": "certificate-nft-base-uri",
+      "label": "Refresh certificate metadata base URI",
+      "description": "Update CertificateNFT base URI to latest IPFS catalogue for compliance provenance.",
+      "moduleId": "certificate-nft",
+      "contractName": "CertificateNFT",
+      "function": "setBaseURI(string baseURI_)",
+      "args": ["ipfs://bafybeigdyrmetadata/"],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": ["compliance", "metadata"],
+      "prerequisites": [
+        "Upload audited metadata package to IPFS",
+        "Run certificate indexer resync after execution"
+      ],
+      "risk": "routine"
+    }
+  ]
 }

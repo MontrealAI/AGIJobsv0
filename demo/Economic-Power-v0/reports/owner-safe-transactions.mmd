@@ -1,0 +1,63 @@
+graph LR
+safe_0[
+Governance Safe\n0xAGIJ…0003
+]
+module_0[
+JobRegistry\n0xA100…0001
+]
+class module_0 custodied;
+safe_0 --> tx_job_registry_duration[
+Compress job duration limit\nfunction setJobDurationLimit(uint256)
+]
+tx_job_registry_duration --> module_0
+class tx_job_registry_duration risk_routine;
+module_1[
+StakeManager\n0xA100…0002
+]
+class module_1 custodied;
+safe_0 --> tx_stake_manager_reward[
+Elevate validator reward share\nfunction setValidatorRewardPct(uint256)
+]
+tx_stake_manager_reward --> module_1
+class tx_stake_manager_reward risk_elevated;
+module_2[
+ValidationModule\n0xA100…0003
+]
+class module_2 custodied;
+safe_0 --> tx_validation_module_bounds[
+Expand validator quorum window\nfunction setValidatorBounds(uint256,uint256)
+]
+tx_validation_module_bounds --> module_2
+class tx_validation_module_bounds risk_routine;
+module_3[
+ReputationEngine\n0xA100…0004
+]
+class module_3 custodied;
+safe_0 --> tx_reputation_engine_weights[
+Tune reputation scoring weights\nfunction setScoringWeights(uint256,uint256)
+]
+tx_reputation_engine_weights --> module_3
+class tx_reputation_engine_weights risk_routine;
+module_4[
+DisputeModule\n0xA100…0005
+]
+class module_4 custodied;
+safe_0 --> tx_dispute_module_window[
+Recalibrate dispute window\nfunction setDisputeWindow(uint256)
+]
+tx_dispute_module_window --> module_4
+class tx_dispute_module_window risk_elevated;
+module_5[
+CertificateNFT\n0xA100…0006
+]
+class module_5 custodied;
+safe_0 --> tx_certificate_nft_base_uri[
+Refresh certificate metadata base URI\nfunction setBaseURI(string)
+]
+tx_certificate_nft_base_uri --> module_5
+class tx_certificate_nft_base_uri risk_routine;
+classDef custodied fill:#2f9e44,stroke:#2f9e44,color:#fff;
+classDef attention fill:#862e9c,stroke:#862e9c,color:#fff;
+classDef risk_routine fill:#0b7285,stroke:#0b7285,color:#fff;
+classDef risk_elevated fill:#f08c00,stroke:#f08c00,color:#fff;
+classDef risk_critical fill:#c92a2a,stroke:#c92a2a,color:#fff;

@@ -51,6 +51,12 @@ const metricMap = [
     description: 'Share of critical surfaces with deterministic owner command paths.',
   },
   {
+    id: 'ownerSafeTransactionCoverage',
+    label: 'Safe Transaction Coverage',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Share of protocol modules with ready-to-execute multi-sig transactions.',
+  },
+  {
     id: 'ownerDominionScore',
     label: 'Owner Dominion',
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
@@ -165,6 +171,16 @@ function deriveCompanionPath(basePath, fileName) {
   return segments.join('/');
 }
 
+function shortenAddress(address) {
+  if (!address || typeof address !== 'string') {
+    return '0x0';
+  }
+  if (address.length <= 10) {
+    return address;
+  }
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
 async function loadDeterministicVerification(dataPath) {
   const verificationPath = deriveCompanionPath(dataPath, 'deterministic-verification.json');
   if (!verificationPath) {
@@ -224,8 +240,9 @@ function renderMetricCards(summary) {
 
 function renderOwnerTable(summary) {
   const tbody = document.querySelector('#owner-table tbody');
+  if (!tbody) return;
   tbody.innerHTML = '';
-  for (const control of summary.ownerControl.controls) {
+  for (const control of summary.ownerControl.controls || []) {
     const row = document.createElement('tr');
     row.innerHTML = `
       <td>${control.parameter}</td>
@@ -235,6 +252,74 @@ function renderOwnerTable(summary) {
       <td>${control.description}</td>
     `;
     tbody.append(row);
+  }
+}
+
+function renderSafeTransactions(summary) {
+  const report = summary.ownerSafeTransactions || {
+    coverage: 0,
+    coverageSummary: 'No safe transactions have been prepared.',
+    safeBreakdown: { owner: 0, governance: 0, treasury: 0 },
+    recommendedActions: [],
+    transactions: [],
+    mermaid: 'graph LR\n',
+  };
+  const coverageEl = document.getElementById('safe-coverage');
+  const summaryEl = document.getElementById('safe-summary');
+  const breakdownList = document.getElementById('safe-breakdown');
+  const actionsList = document.getElementById('safe-actions');
+  const tableBody = document.querySelector('#safe-transactions-table tbody');
+  if (!coverageEl || !summaryEl || !breakdownList || !actionsList || !tableBody) {
+    return;
+  }
+  coverageEl.textContent = `${(report.coverage * 100).toFixed(1)}%`;
+  summaryEl.textContent = report.coverageSummary || 'No safe transactions available.';
+  breakdownList.innerHTML = '';
+  const breakdownEntries = Object.entries(report.safeBreakdown || {});
+  if (breakdownEntries.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No safes registered.';
+    breakdownList.append(li);
+  } else {
+    for (const [safe, count] of breakdownEntries) {
+      const li = document.createElement('li');
+      li.textContent = `${safe}: ${count}`;
+      breakdownList.append(li);
+    }
+  }
+  actionsList.innerHTML = '';
+  if ((report.recommendedActions || []).length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No outstanding actions – execute the prepared transactions at will.';
+    actionsList.append(li);
+  } else {
+    for (const action of report.recommendedActions) {
+      const li = document.createElement('li');
+      li.textContent = action;
+      actionsList.append(li);
+    }
+  }
+  tableBody.innerHTML = '';
+  if ((report.transactions || []).length === 0) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = 6;
+    cell.textContent = 'No Safe transactions encoded. Generate reports to populate this deck.';
+    row.append(cell);
+    tableBody.append(row);
+  } else {
+    for (const tx of report.transactions) {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${tx.label}</td>
+        <td>${tx.safeLabel}<br /><small>${shortenAddress(tx.safeAddress)}</small></td>
+        <td>${tx.contractName}<br /><small>${shortenAddress(tx.contractAddress)}</small></td>
+        <td><code>${tx.functionSignature}</code></td>
+        <td>${Number(tx.valueEther || 0).toFixed(2)} ETH</td>
+        <td><code>${tx.safeCliCommand}</code></td>
+      `;
+      tableBody.append(row);
+    }
   }
 }
 
@@ -1202,6 +1287,7 @@ async function renderMermaid(summary) {
   const drills = document.getElementById('mermaid-drills');
   const superintelligence = document.getElementById('mermaid-superintelligence');
   const deploymentIntegrity = document.getElementById('mermaid-deployment-integrity');
+  const safeTransactions = document.getElementById('mermaid-safe-transactions');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -1230,6 +1316,10 @@ async function renderMermaid(summary) {
   if (deploymentIntegrity && summary.deploymentIntegrity?.mermaid) {
     deploymentIntegrity.textContent = summary.deploymentIntegrity.mermaid;
     nodes.push(deploymentIntegrity);
+  }
+  if (safeTransactions && summary.ownerSafeTransactions?.mermaid) {
+    safeTransactions.textContent = summary.ownerSafeTransactions.mermaid;
+    nodes.push(safeTransactions);
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -1281,12 +1371,13 @@ function renderAutopilot(summary) {
       globalExpansionReadiness: 0,
       superIntelligenceIndex: 0,
       shockResilienceScore: 0,
+      ownerSafeTransactionCoverage: 0,
     },
     commandSequence: [],
   };
   missionEl.textContent = autopilot.mission;
   cadenceEl.textContent = `${autopilot.cadenceHours.toFixed(1)}h cadence`;
-  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${(autopilot.telemetry.superIntelligenceIndex * 100).toFixed(1)}% superintelligence • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness • ${(autopilot.telemetry.shockResilienceScore * 100).toFixed(1)}% shock resilience`;
+  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${(autopilot.telemetry.superIntelligenceIndex * 100).toFixed(1)}% superintelligence • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness • ${(autopilot.telemetry.shockResilienceScore * 100).toFixed(1)}% shock resilience • ${(autopilot.telemetry.ownerSafeTransactionCoverage * 100).toFixed(1)}% safe coverage`;
   guardrailList.innerHTML = '';
   for (const guardrail of autopilot.guardrails) {
     const li = document.createElement('li');
@@ -1357,6 +1448,7 @@ function renderGlobalExpansion(summary) {
 async function renderDashboard(summary, verification) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderSafeTransactions(summary);
   renderOwnerSupremacy(summary);
   renderControlDrills(summary);
   renderSuperIntelligence(summary);

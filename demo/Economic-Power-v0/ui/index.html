@@ -81,6 +81,50 @@
         </table>
       </section>
 
+      <section id="safe-transactions-panel" class="panel" aria-labelledby="safe-transactions-heading">
+        <div class="panel-header">
+          <h2 id="safe-transactions-heading">Multi-sig execution kit</h2>
+          <p>Pre-encoded Safe transactions granting instant parameter, validator, and upgrade control.</p>
+        </div>
+        <div class="safe-summary-grid" role="group" aria-label="Safe transaction summary">
+          <article class="safe-summary-card" aria-label="Coverage status">
+            <h3>Coverage</h3>
+            <p id="safe-coverage" class="safe-coverage">—</p>
+            <p id="safe-summary" class="narrative"></p>
+          </article>
+          <article class="safe-summary-card" aria-label="Safe distribution">
+            <h3>Safes</h3>
+            <ul id="safe-breakdown" class="safe-list"></ul>
+          </article>
+          <article class="safe-summary-card" aria-label="Recommended actions">
+            <h3>Recommended actions</h3>
+            <ul id="safe-actions" class="safe-list"></ul>
+          </article>
+        </div>
+        <div class="table-wrapper">
+          <table id="safe-transactions-table" aria-label="Owner Safe transactions">
+            <thead>
+              <tr>
+                <th>Label</th>
+                <th>Safe</th>
+                <th>Contract</th>
+                <th>Function</th>
+                <th>Value</th>
+                <th>Command</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="mermaid-wrapper">
+          <div
+            id="mermaid-safe-transactions"
+            class="mermaid"
+            aria-label="Owner Safe transaction graph"
+          ></div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="dominion-heading">
         <div class="panel-header">
           <h2 id="dominion-heading">Owner dominion index</h2>

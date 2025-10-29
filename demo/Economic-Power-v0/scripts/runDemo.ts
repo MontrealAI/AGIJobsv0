@@ -3,6 +3,15 @@ import path from 'node:path';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import crypto from 'node:crypto';
+import {
+  Interface,
+  ParamType,
+  formatEther,
+  getAddress,
+  isHexString,
+  parseEther,
+  zeroPadValue,
+} from 'ethers';
 import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -22,6 +31,22 @@ const commandCatalogSchema = z.object({
   modulePrograms: z.array(commandProgramSchema),
   treasuryPrograms: z.array(commandProgramSchema),
   orchestratorPrograms: z.array(commandProgramSchema),
+});
+
+const ownerTransactionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  description: z.string(),
+  moduleId: z.string().optional(),
+  contractAddress: z.string().optional(),
+  contractName: z.string(),
+  function: z.string(),
+  args: z.array(z.unknown()).default([]),
+  valueEther: z.union([z.string(), z.number()]).default('0'),
+  safe: z.enum(['owner', 'governance', 'treasury']).default('governance'),
+  tags: z.array(z.string()).default([]),
+  prerequisites: z.array(z.string()).default([]),
+  risk: z.enum(['routine', 'elevated', 'critical']).default('routine'),
 });
 
 const scenarioSchema = z.object({
@@ -148,12 +173,59 @@ const scenarioSchema = z.object({
     ),
   }),
   commandCatalog: commandCatalogSchema,
+  ownerTransactions: z.array(ownerTransactionSchema).default([]),
 });
 
 type Scenario = z.infer<typeof scenarioSchema>;
 
 type CommandProgram = z.infer<typeof commandProgramSchema>;
 type CommandCatalog = z.infer<typeof commandCatalogSchema>;
+
+type OwnerTransactionDefinition = z.infer<typeof ownerTransactionSchema>;
+
+type OwnerSafeTransactionSafe = OwnerTransactionDefinition['safe'];
+
+type OwnerSafeTransaction = {
+  id: string;
+  label: string;
+  description: string;
+  safe: OwnerSafeTransactionSafe;
+  safeLabel: string;
+  safeAddress: string;
+  contractAddress: string;
+  contractName: string;
+  moduleId?: string;
+  moduleName?: string;
+  moduleStatus?: Scenario['modules'][number]['status'];
+  moduleOwner?: string;
+  moduleAuditLagDays?: number | null;
+  ownerCustody: boolean;
+  functionFragment: string;
+  functionSignature: string;
+  selector: string;
+  data: string;
+  valueWei: string;
+  valueEther: string;
+  args: unknown[];
+  tags: string[];
+  prerequisites: string[];
+  risk: OwnerTransactionDefinition['risk'];
+  checksum: string;
+  safeCliCommand: string;
+};
+
+type OwnerSafeTransactionsReport = {
+  chainId: number;
+  network: string;
+  safeCount: number;
+  transactions: OwnerSafeTransaction[];
+  coverage: number;
+  coverageSummary: string;
+  safeBreakdown: Record<OwnerSafeTransactionSafe, number>;
+  integrityHash: string;
+  mermaid: string;
+  recommendedActions: string[];
+};
 
 const scenarioMetadata = new WeakMap<Scenario, { filePath: string }>();
 
@@ -244,6 +316,7 @@ type OwnerAutopilot = {
     superIntelligenceIndex: number;
     shockResilienceScore: number;
     deploymentIntegrityScore: number;
+    ownerSafeTransactionCoverage: number;
   };
   commandSequence: OwnerAutopilotCommand[];
 };
@@ -411,6 +484,7 @@ type DeterministicProof = {
   sovereignSafetyMeshHash: string;
   superIntelligenceHash: string;
   deploymentIntegrityHash: string;
+  ownerSafeTransactionsHash: string;
 };
 
 type DeterministicVerification = {
@@ -457,6 +531,7 @@ export type Summary = {
     superIntelligenceIndex: number;
     shockResilienceScore: number;
     deploymentIntegrityScore: number;
+    ownerSafeTransactionCoverage: number;
   };
   ownerControl: {
     threshold: string;
@@ -503,6 +578,7 @@ export type Summary = {
   superIntelligence: SuperIntelligenceReport;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
+  ownerSafeTransactions: OwnerSafeTransactionsReport;
 };
 
 type SummaryWithSnapshot = Summary & {
@@ -1637,7 +1713,20 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
     ),
     `Control drills ${(summary.ownerControlDrills.readinessScore * 100).toFixed(1)}% (${summary.ownerControlDrills.classification})`,
   ];
+  const safeTransactions = summary.ownerSafeTransactions?.transactions ?? [];
+  const safeCoverage = summary.metrics.ownerSafeTransactionCoverage ?? 0;
+  guardrails.push(
+    `Safe transaction coverage ${(safeCoverage * 100).toFixed(1)}% across ${safeTransactions.length} encoded actions`,
+  );
   const sequence: OwnerAutopilotCommand[] = [];
+  for (const tx of safeTransactions.slice(0, 3)) {
+    sequence.push({
+      programId: tx.id,
+      surface: 'modules',
+      script: tx.safeCliCommand,
+      objective: tx.description,
+    });
+  }
   const surfaces: Array<{
     surface: CoverageSurface | 'automation';
     programs: CommandProgram[];
@@ -1686,6 +1775,7 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       superIntelligenceIndex: summary.metrics.superIntelligenceIndex,
       shockResilienceScore: summary.metrics.shockResilienceScore,
       deploymentIntegrityScore: summary.metrics.deploymentIntegrityScore,
+      ownerSafeTransactionCoverage: summary.metrics.ownerSafeTransactionCoverage,
     },
     commandSequence: sequence,
   };
@@ -1874,10 +1964,6 @@ function computeValidatorResponseScore(
     return 0.5;
   }
   return 0.3;
-}
-
-function escapeMermaidLabel(value: string): string {
-  return value.replace(/"/g, '\\"');
 }
 
 function computeProgramCoverage(catalog: CommandCatalog): ProgramCoverage {
@@ -3123,6 +3209,351 @@ function buildGovernanceLedger(
   };
 }
 
+function shortenAddress(address: string): string {
+  if (!address) return '0x0';
+  const normalised = address.startsWith('0x') ? address : `0x${address}`;
+  return `${normalised.slice(0, 6)}…${normalised.slice(-4)}`;
+}
+
+function escapeMermaidLabel(label: string): string {
+  return label.replace(/"/g, '\\"').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function computeAuditLagDays(
+  analysisTimestamp: string,
+  lastAudit: string | undefined,
+): number | null {
+  if (!lastAudit) {
+    return null;
+  }
+  const analysis = new Date(analysisTimestamp);
+  const audit = new Date(lastAudit);
+  if (Number.isNaN(analysis.getTime()) || Number.isNaN(audit.getTime())) {
+    return null;
+  }
+  const diffMs = Math.max(analysis.getTime() - audit.getTime(), 0);
+  return Number((diffMs / (1000 * 60 * 60 * 24)).toFixed(1));
+}
+
+function resolveSafeAddress(
+  scenario: Scenario,
+  safe: OwnerSafeTransactionSafe,
+): { label: string; address: string } {
+  switch (safe) {
+    case 'owner':
+      return { label: 'Owner Safe', address: scenario.treasury.ownerSafe };
+    case 'governance':
+      return { label: 'Governance Safe', address: scenario.owner.governanceSafe };
+    case 'treasury':
+      return { label: 'Treasury Safe', address: scenario.treasury.ownerSafe };
+    default:
+      return { label: 'Owner Safe', address: scenario.treasury.ownerSafe };
+  }
+}
+
+function normaliseArgument(value: unknown, param: ParamType, context: string): unknown {
+  if (param.baseType === 'array') {
+    if (!Array.isArray(value)) {
+      throw new Error(`Expected array value for ${context}`);
+    }
+    const child = param.arrayChildren ?? ParamType.from(param.type.replace(/\[\]$/, ''));
+    return value.map((item, index) =>
+      normaliseArgument(item, child, `${context}[${index}]`),
+    );
+  }
+  if (param.baseType === 'tuple') {
+    if (!param.components) {
+      throw new Error(`Tuple parameter ${context} missing components`);
+    }
+    if (Array.isArray(value)) {
+      return param.components.map((component, index) =>
+        normaliseArgument(value[index], component, `${context}.${index}`),
+      );
+    }
+    if (value && typeof value === 'object') {
+      return param.components.map((component, index) => {
+        const tupleValue =
+          (component.name && (value as Record<string, unknown>)[component.name]) ??
+          (value as Record<string, unknown>)[index];
+        return normaliseArgument(tupleValue, component, `${context}.${component.name || index}`);
+      });
+    }
+    throw new Error(`Invalid tuple value for ${context}`);
+  }
+  switch (param.baseType) {
+    case 'uint256':
+    case 'uint128':
+    case 'uint96':
+    case 'uint64':
+    case 'uint32':
+    case 'uint16':
+    case 'uint8':
+    case 'int256':
+    case 'int128':
+    case 'int64':
+    case 'int32':
+    case 'int16':
+    case 'int8': {
+      if (typeof value === 'bigint') {
+        return value;
+      }
+      if (typeof value === 'number') {
+        if (!Number.isFinite(value)) {
+          throw new Error(`Non-finite number provided for ${context}`);
+        }
+        return BigInt(Math.trunc(value));
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed.startsWith('0x')) {
+          return BigInt(trimmed);
+        }
+        return BigInt(trimmed);
+      }
+      throw new Error(`Unsupported integer value for ${context}`);
+    }
+    case 'address':
+      if (typeof value !== 'string') {
+        throw new Error(`Expected address string for ${context}`);
+      }
+      return getAddress(value);
+    case 'bool':
+      return Boolean(value);
+    case 'bytes32':
+    case 'bytes':
+      if (typeof value !== 'string' || !isHexString(value)) {
+        throw new Error(`Expected hex string for ${context}`);
+      }
+      return param.baseType === 'bytes32' ? zeroPadValue(value, 32) : value;
+    case 'string':
+      return value == null ? '' : String(value);
+    default:
+      return value;
+  }
+}
+
+function generateOwnerSafeTransactionsMermaid(
+  report: OwnerSafeTransactionsReport,
+): string {
+  const lines: string[] = ['graph LR'];
+  const safeNodes = new Map<string, string>();
+  const moduleNodes = new Map<string, string>();
+  let safeIndex = 0;
+  let moduleIndex = 0;
+  for (const tx of report.transactions) {
+    const safeKey = `${tx.safe}:${tx.safeAddress.toLowerCase()}`;
+    if (!safeNodes.has(safeKey)) {
+      const nodeId = `safe_${safeIndex++}`;
+      safeNodes.set(safeKey, nodeId);
+      const safeLabel = `${tx.safeLabel}\\n${shortenAddress(tx.safeAddress)}`;
+      lines.push(`${nodeId}[
+${escapeMermaidLabel(safeLabel)}
+]`);
+    }
+    const moduleKey = tx.contractAddress.toLowerCase();
+    if (!moduleNodes.has(moduleKey)) {
+      const nodeId = `module_${moduleIndex++}`;
+      moduleNodes.set(moduleKey, nodeId);
+      const moduleLabel = `${tx.contractName}\\n${shortenAddress(tx.contractAddress)}`;
+      lines.push(`${nodeId}[
+${escapeMermaidLabel(moduleLabel)}
+]`);
+      lines.push(`class ${nodeId} ${tx.ownerCustody ? 'custodied' : 'attention'};`);
+    }
+    const safeNode = safeNodes.get(safeKey)!;
+    const moduleNode = moduleNodes.get(moduleKey)!;
+    const txNode = `tx_${tx.id.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    const txLabel = `${tx.label}\\n${tx.functionSignature}`;
+    lines.push(`${safeNode} --> ${txNode}[
+${escapeMermaidLabel(txLabel)}
+]`);
+    lines.push(`${txNode} --> ${moduleNode}`);
+    lines.push(`class ${txNode} risk_${tx.risk};`);
+  }
+  lines.push('classDef custodied fill:#2f9e44,stroke:#2f9e44,color:#fff;');
+  lines.push('classDef attention fill:#862e9c,stroke:#862e9c,color:#fff;');
+  lines.push('classDef risk_routine fill:#0b7285,stroke:#0b7285,color:#fff;');
+  lines.push('classDef risk_elevated fill:#f08c00,stroke:#f08c00,color:#fff;');
+  lines.push('classDef risk_critical fill:#c92a2a,stroke:#c92a2a,color:#fff;');
+  return `${lines.join('\n')}\n`;
+}
+
+function generateOwnerSafeTransactionsMarkdown(
+  report: OwnerSafeTransactionsReport,
+): string {
+  const lines: string[] = [];
+  lines.push('# Owner Safe Transaction Kit');
+  lines.push('');
+  lines.push(
+    `Coverage ${(report.coverage * 100).toFixed(1)}% across ${report.transactions.length} transaction(s).`,
+  );
+  lines.push(`Network: ${report.network} (chainId ${report.chainId})`);
+  lines.push(`Integrity hash: ${report.integrityHash}`);
+  lines.push('');
+  lines.push('## Safe breakdown');
+  for (const [safe, count] of Object.entries(report.safeBreakdown)) {
+    lines.push(`- ${safe}: ${count}`);
+  }
+  if (report.recommendedActions.length > 0) {
+    lines.push('');
+    lines.push('## Recommended actions');
+    for (const action of report.recommendedActions) {
+      lines.push(`- ${action}`);
+    }
+  }
+  for (const tx of report.transactions) {
+    lines.push('');
+    lines.push(`## ${tx.label} (${tx.id})`);
+    lines.push(`- Safe: ${tx.safeLabel} (${tx.safeAddress})`);
+    lines.push(`- Contract: ${tx.contractName} (${tx.contractAddress})`);
+    if (tx.moduleName) {
+      lines.push(`- Module: ${tx.moduleName} (${tx.moduleStatus ?? 'unknown status'})`);
+    }
+    lines.push(`- Function: \`${tx.functionSignature}\``);
+    lines.push(`- Value: ${tx.valueEther} ETH (${tx.valueWei} wei)`);
+    lines.push(`- Selector: ${tx.selector}`);
+    lines.push(`- CLI: \`${tx.safeCliCommand}\``);
+    if (tx.tags.length > 0) {
+      lines.push(`- Tags: ${tx.tags.join(', ')}`);
+    }
+    if (tx.prerequisites.length > 0) {
+      lines.push('- Prerequisites:');
+      for (const prereq of tx.prerequisites) {
+        lines.push(`  - ${prereq}`);
+      }
+    }
+    lines.push(`- Custody: ${tx.ownerCustody ? 'Owner-controlled' : 'External owner'}`);
+    if (tx.moduleAuditLagDays !== null) {
+      lines.push(`- Last audit lag: ${tx.moduleAuditLagDays} day(s)`);
+    }
+    lines.push(`- Checksum: ${tx.checksum}`);
+  }
+  lines.push('');
+  return `${lines.join('\n')}\n`;
+}
+
+function buildOwnerSafeTransactions(
+  summary: Summary,
+  scenario: Scenario,
+): OwnerSafeTransactionsReport {
+  const modulesById = new Map(scenario.modules.map((module) => [module.id, module]));
+  const safeBreakdown: Record<OwnerSafeTransactionSafe, number> = {
+    owner: 0,
+    governance: 0,
+    treasury: 0,
+  };
+  const transactions: OwnerSafeTransaction[] = [];
+  const coveredModules = new Set<string>();
+  for (const definition of scenario.ownerTransactions ?? []) {
+    const safeInfo = resolveSafeAddress(scenario, definition.safe);
+    const module = definition.moduleId ? modulesById.get(definition.moduleId) : undefined;
+    const contractAddress = definition.contractAddress ?? module?.address;
+    if (!contractAddress) {
+      throw new Error(`Owner transaction ${definition.id} missing contract address`);
+    }
+    const fragment = definition.function.trim().startsWith('function ')
+      ? definition.function.trim()
+      : `function ${definition.function.trim()}`;
+    const iface = new Interface([fragment]);
+    const signatureKey = fragment.replace(/^function\s+/, '').split('(')[0];
+    const functionFragment = iface.getFunction(signatureKey);
+    const minimalSignature = functionFragment.format('minimal');
+    const args = definition.args ?? [];
+    if (args.length < functionFragment.inputs.length) {
+      throw new Error(`Owner transaction ${definition.id} missing arguments for ${minimalSignature}`);
+    }
+    const normalisedArgs = functionFragment.inputs.map((param, index) =>
+      normaliseArgument(args[index], param, `${definition.id}:${param.name || index}`),
+    );
+    const data = iface.encodeFunctionData(minimalSignature, normalisedArgs);
+    const selector = data.slice(0, 10);
+    const valueWei = parseEther(String(definition.valueEther ?? '0')).toString();
+    const checksum = hashObject({
+      id: definition.id,
+      to: contractAddress,
+      data,
+      value: valueWei,
+    });
+    if (module) {
+      coveredModules.add(module.id);
+    }
+    safeBreakdown[definition.safe] = (safeBreakdown[definition.safe] ?? 0) + 1;
+    const moduleAuditLagDays = module
+      ? computeAuditLagDays(summary.analysisTimestamp, module.lastAudit)
+      : null;
+    const ownerCustody = module
+      ? module.owner.toLowerCase() === safeInfo.address.toLowerCase()
+      : false;
+    const safeCliCommand =
+      `npx @safe-global/cli transactions propose --safe-address ${safeInfo.address} ` +
+      `--chain-id ${scenario.network.chainId} --to ${contractAddress} --value ${valueWei} --data ${data}`;
+    transactions.push({
+      id: definition.id,
+      label: definition.label,
+      description: definition.description,
+      safe: definition.safe,
+      safeLabel: safeInfo.label,
+      safeAddress: safeInfo.address,
+      contractAddress,
+      contractName: definition.contractName,
+      moduleId: definition.moduleId,
+      moduleName: module?.name,
+      moduleStatus: module?.status,
+      moduleOwner: module?.owner,
+      moduleAuditLagDays,
+      ownerCustody,
+      functionFragment: fragment,
+      functionSignature: minimalSignature,
+      selector,
+      data,
+      valueWei,
+      valueEther: formatEther(BigInt(valueWei)),
+      args,
+      tags: definition.tags,
+      prerequisites: definition.prerequisites,
+      risk: definition.risk,
+      checksum,
+      safeCliCommand,
+    });
+  }
+  const uniqueSafes = new Set(
+    transactions.map((tx) => `${tx.safe}:${tx.safeAddress.toLowerCase()}`),
+  );
+  const coverage = scenario.modules.length
+    ? coveredModules.size / scenario.modules.length
+    : 0;
+  const integrityHash = hashObject(
+    transactions.map((tx) => ({ id: tx.id, to: tx.contractAddress, data: tx.data, value: tx.valueWei })),
+  );
+  const recommendedActions: string[] = [];
+  if (coverage < 1) {
+    recommendedActions.push('Author multi-sig transactions for uncovered modules to reach 100% coverage.');
+  }
+  if (transactions.some((tx) => !tx.ownerCustody)) {
+    recommendedActions.push('Transfer module ownership to the governance safe before executing outstanding transactions.');
+  }
+  if (transactions.some((tx) => tx.moduleAuditLagDays !== null && tx.moduleAuditLagDays > 90)) {
+    recommendedActions.push('Refresh security audits older than 90 days before executing upgrades.');
+  }
+  if (recommendedActions.length === 0) {
+    recommendedActions.push('Execute the encoded transactions to accelerate velocity and reinforce governance control.');
+  }
+  const report: OwnerSafeTransactionsReport = {
+    chainId: scenario.network.chainId,
+    network: scenario.network.name,
+    safeCount: uniqueSafes.size,
+    transactions,
+    coverage,
+    coverageSummary: `${(coverage * 100).toFixed(1)}% module coverage via ${transactions.length} encoded transactions`,
+    safeBreakdown,
+    integrityHash,
+    mermaid: '',
+    recommendedActions,
+  };
+  report.mermaid = generateOwnerSafeTransactionsMermaid(report);
+  return report;
+}
+
 async function ensureDir(dir: string): Promise<void> {
   await fs.mkdir(dir, { recursive: true });
 }
@@ -3497,6 +3928,7 @@ function synthesiseSummary(
       superIntelligenceIndex: 0,
       shockResilienceScore: shockResilience.score,
       deploymentIntegrityScore: 0,
+      ownerSafeTransactionCoverage: 0,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -3590,6 +4022,7 @@ function synthesiseSummary(
         superIntelligenceIndex: 0,
         shockResilienceScore: shockResilience.score,
         deploymentIntegrityScore: 0,
+        ownerSafeTransactionCoverage: 0,
       },
       commandSequence: [],
     },
@@ -3644,6 +4077,18 @@ function synthesiseSummary(
     },
     globalExpansionPlan: [],
     shockResilience,
+    ownerSafeTransactions: {
+      chainId: scenario.network.chainId,
+      network: scenario.network.name,
+      safeCount: 0,
+      transactions: [],
+      coverage: 0,
+      coverageSummary: '0% module coverage via 0 encoded transactions',
+      safeBreakdown: { owner: 0, governance: 0, treasury: 0 },
+      integrityHash: hashObject([]),
+      mermaid: 'graph LR\n',
+      recommendedActions: [],
+    },
   };
 }
 
@@ -3671,6 +4116,25 @@ function computeAssertions(
       `modules=${summary.deployment.modules.length}`,
       `coverage=${coverage.toFixed(3)}`,
     ],
+  });
+
+  const safeTransactions = summary.ownerSafeTransactions.transactions;
+  const safeCoverage = summary.metrics.ownerSafeTransactionCoverage;
+  const safeOutcome = safeTransactions.length > 0 && safeCoverage >= 0.9 ? 'pass' : 'fail';
+  assertions.push({
+    id: 'safe-transaction-dominion',
+    title: 'Governance safe holds executable upgrades for every module',
+    outcome: safeOutcome,
+    severity: 'critical',
+    summary:
+      safeOutcome === 'pass'
+        ? 'Encoded multi-sig transactions cover the full module surface with deterministic payloads.'
+        : 'Author additional Safe transactions to reach full module coverage before promotion.',
+    metric: Number(safeCoverage.toFixed(3)),
+    target: 0.9,
+    evidence: safeTransactions.map(
+      (tx) => `${tx.id}:${tx.contractName}:${tx.selector}`,
+    ),
   });
 
   const governanceOwners = new Set([
@@ -3928,6 +4392,10 @@ export async function runScenario(
   const executionTimestamp = new Date().toISOString();
   const analysisTimestamp = workingScenario.analysisTimestamp ?? executionTimestamp;
   const summary = synthesiseSummary(context, analysisTimestamp, executionTimestamp);
+  summary.ownerSafeTransactions = buildOwnerSafeTransactions(summary, workingScenario);
+  summary.metrics.ownerSafeTransactionCoverage = Number(
+    summary.ownerSafeTransactions.coverage.toFixed(3),
+  );
   summary.mermaidFlow = generateMermaidFlow(summary, workingScenario);
   summary.mermaidTimeline = generateMermaidTimeline(summary);
   summary.ownerCommandMermaid = generateOwnerCommandMermaid(summary, workingScenario);
@@ -3956,6 +4424,8 @@ export async function runScenario(
     summary.superIntelligence.index.toFixed(3),
   );
   summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
+  summary.ownerAutopilot.telemetry.ownerSafeTransactionCoverage =
+    summary.metrics.ownerSafeTransactionCoverage;
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
   summary.deploymentIntegrity = computeDeploymentIntegrity(summary, workingScenario, {
     config: deploymentConfig,
@@ -3997,6 +4467,7 @@ const DETERMINISTIC_FIELDS: Array<keyof DeterministicProof> = [
   'sovereignSafetyMeshHash',
   'superIntelligenceHash',
   'deploymentIntegrityHash',
+  'ownerSafeTransactionsHash',
 ];
 
 export function buildDeterministicProof(summary: Summary): DeterministicProof {
@@ -4044,6 +4515,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
       globalExpansionPlan: summary.globalExpansionPlan,
       assertions: summary.assertions,
       treasuryTrajectory: summary.treasuryTrajectory,
+      ownerSafeTransactions: summary.ownerSafeTransactions,
     }),
     metricsHash: hashObject(summary.metrics),
     assignmentsHash: hashObject(assignmentsProjection),
@@ -4055,6 +4527,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
     sovereignSafetyMeshHash: hashObject(summary.sovereignSafetyMesh),
     superIntelligenceHash: hashObject(summary.superIntelligence),
     deploymentIntegrityHash: hashObject(summary.deploymentIntegrity),
+    ownerSafeTransactionsHash: hashObject(summary.ownerSafeTransactions),
   };
   return proof;
 }
@@ -4128,6 +4601,18 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
     JSON.stringify(sovereigntyPlan, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-safe-transactions.json'),
+    JSON.stringify(summary.ownerSafeTransactions, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-safe-transactions.mmd'),
+    summary.ownerSafeTransactions.mermaid,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-safe-transactions.md'),
+    generateOwnerSafeTransactionsMarkdown(summary.ownerSafeTransactions),
   );
   const deploymentMap = {
     network: summary.deployment.network,
@@ -4310,6 +4795,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'globalExpansionReadiness',
     'superIntelligenceIndex',
     'shockResilienceScore',
+    'ownerSafeTransactionCoverage',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

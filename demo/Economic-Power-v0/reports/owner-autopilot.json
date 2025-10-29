@@ -8,7 +8,8 @@
     "validatorConfidence < 0.95 → npm run owner:system-pause",
     "automationScore < 0.8 → npm run owner:parameters",
     "treasuryAfterRun < 1800000 → npm run owner:audit",
-    "Control drills 100.0% (total-control)"
+    "Control drills 100.0% (total-control)",
+    "Safe transaction coverage 100.0% across 6 encoded actions"
   ],
   "narrative": "Autopilot cycles every 6.7h to refresh capital, validator posture, and orchestrator coverage while preserving 98.0% shock resilience (impregnable).",
   "telemetry": {
@@ -17,9 +18,28 @@
     "globalExpansionReadiness": 0.966,
     "superIntelligenceIndex": 0.9682,
     "shockResilienceScore": 0.98,
-    "deploymentIntegrityScore": 0.998
+    "deploymentIntegrityScore": 0.998,
+    "ownerSafeTransactionCoverage": 1
   },
   "commandSequence": [
+    {
+      "programId": "job-registry-duration",
+      "surface": "modules",
+      "script": "npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000001 --value 0 --data 0x17a651370000000000000000000000000000000000000000000000000000000000000030",
+      "objective": "Set the JobRegistry duration limit to 48 hours to accelerate capital velocity."
+    },
+    {
+      "programId": "stake-manager-reward",
+      "surface": "modules",
+      "script": "npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000002 --value 0 --data 0x04ffdbaf00000000000000000000000000000000000000000000000000000000000004b0",
+      "objective": "Adjust StakeManager validator reward percentage to 12% to reinforce validator incentives."
+    },
+    {
+      "programId": "validation-module-bounds",
+      "surface": "modules",
+      "script": "npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000003 --value 0 --data 0xc14447e200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000007",
+      "objective": "Update ValidationModule bounds to require between 3 and 7 validators per job."
+    },
     {
       "programId": "job-ai-lab-fusion",
       "surface": "jobs",
