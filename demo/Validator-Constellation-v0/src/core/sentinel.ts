@@ -172,6 +172,19 @@ export class SentinelMonitor {
           hashCandidates.size > 0 && Array.from(hashCandidates).some((candidate) => hashedSet.has(candidate));
 
         if (!rawMatch && !hashedMatch) {
+          const preferredTarget =
+            typeof action.target === 'string'
+              ? this.normalizeTarget(action.target)
+              : typeof action.metadata?.target === 'string'
+                ? this.normalizeTarget(action.metadata.target as string)
+                : undefined;
+          const hashedTarget = preferredTarget
+            ? this.hashTarget(preferredTarget)
+            : metadataHashWithPrefix
+              ? metadataHashWithPrefix
+              : metadataHashWithoutPrefix
+                ? `0x${metadataHashWithoutPrefix}`
+                : undefined;
           return this.raiseAlert(
             action,
             'UNAUTHORIZED_TARGET',
@@ -183,6 +196,7 @@ export class SentinelMonitor {
               target: action.target,
               normalizedTargets: Array.from(normalizedTargets),
               candidateHashes: Array.from(hashCandidates),
+              hashedTarget,
               allowedTargets: Array.from(allowed),
             },
             blockNumber,
