@@ -3,7 +3,7 @@ services:
   agi-alpha-node-demo:
     build:
       context: .
-      dockerfile: Dockerfile.demo
+      dockerfile: Dockerfile
     command: ["python", "-m", "agi_alpha_node_demo.cli", "run"]
     environment:
       PYTHONUNBUFFERED: "1"
