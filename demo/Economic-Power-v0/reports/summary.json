@@ -3,7 +3,7 @@
   "title": "AGIJobs Economic Power Launch",
   "generatedAt": "2025-02-01T00:00:00.000Z",
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T23:08:17.428Z",
+  "executionTimestamp": "2025-10-28T23:41:44.154Z",
   "metrics": {
     "totalJobs": 5,
     "totalAgents": 4,
@@ -22,6 +22,7 @@
     "riskMitigationScore": 0.912,
     "stabilityIndex": 0.761,
     "ownerCommandCoverage": 1,
+    "ownerDominionScore": 0.994,
     "sovereignControlScore": 1,
     "sovereignSafetyScore": 0.979,
     "assertionPassRate": 1,
@@ -1147,6 +1148,47 @@
         "script": "npm run owner:program -- --program orchestrator-pause-drill",
         "objective": "Run full-stack pause/resume drill to validate emergency readiness."
       }
+    ]
+  },
+  "ownerDominion": {
+    "score": 0.994,
+    "classification": "total-dominion",
+    "summary": "Owner multi-sig exerts absolute dominion – every command, pause, and upgrade is scripted and rehearsed.",
+    "guardrails": [
+      "Pause • npm run owner:system-pause",
+      "Resume • npm run owner:update-all",
+      "validatorConfidence < 0.95 → npm run owner:system-pause",
+      "automationScore < 0.8 → npm run owner:parameters",
+      "treasuryAfterRun < 1800000 → npm run owner:audit"
+    ],
+    "readiness": {
+      "pauseReady": true,
+      "resumeReady": true,
+      "responseMinutes": 9,
+      "coverage": 1,
+      "safety": 0.979,
+      "control": 1
+    },
+    "coverageDetail": {
+      "jobs": 1,
+      "validators": 1,
+      "stablecoinAdapters": 1,
+      "modules": 1,
+      "parameters": 1,
+      "pause": 1,
+      "resume": 1,
+      "treasury": 1,
+      "orchestrator": 1
+    },
+    "signals": [
+      "Command coverage 100.0%",
+      "Safety mesh 97.9%",
+      "Custody 100.0%",
+      "Guardrails 5",
+      "Response 9m"
+    ],
+    "recommendedActions": [
+      "Maintain autopilot cadence and periodic drills to preserve total dominion."
     ]
   },
   "globalExpansionPlan": [
