@@ -11,6 +11,7 @@ import {
   JobDefinition,
   LedgerSnapshot,
   NodeDefinition,
+  SummaryNodeSnapshot,
   OwnerCommandSchedule,
   SimulationArtifacts,
   SimulationOptions,
@@ -193,7 +194,7 @@ function buildMissionChronicleMarkdown(args: {
   ledger: LedgerSnapshot;
   shardSnapshots: Record<string, { queueDepth: number; inFlight: number; completed: number }>;
   shardStats: Record<string, { completed: number; failed: number; spillovers: number }>;
-  nodeSnapshots: Record<string, { active: boolean; runningJobs: number }>;
+  nodeSnapshots: Record<string, SummaryNodeSnapshot>;
   executedCommands: OwnerCommandSchedule[];
   skippedCommands: OwnerCommandSchedule[];
   pendingCommands: OwnerCommandSchedule[];
@@ -248,12 +249,60 @@ function buildMissionChronicleMarkdown(args: {
   });
 
   const nodeRows = Object.entries(nodeSnapshots).map(([nodeId, snapshot]) => {
-    const definition = config.nodes.find((entry) => entry.id === nodeId);
-    const region = definition?.region ?? 'n/a';
-    const capacity = definition?.capacity ?? 0;
-    const concurrency = definition?.maxConcurrency ?? 0;
+    const container = snapshot.deployment
+      ? `${snapshot.deployment.image}${snapshot.deployment.version ? `:${snapshot.deployment.version}` : ''}`
+      : '—';
+    const runtimeParts: string[] = [];
+    if (snapshot.deployment?.orchestration) {
+      runtimeParts.push(snapshot.deployment.orchestration);
+    }
+    if (snapshot.deployment?.runtime) {
+      runtimeParts.push(snapshot.deployment.runtime);
+    }
+    const runtime = runtimeParts.length > 0 ? runtimeParts.join(' · ') : '—';
     const status = snapshot.active ? '✅ Active' : '⚠️ Offline';
-    return `| ${nodeId} | ${region} | ${formatInteger(capacity)} | ${formatInteger(concurrency)} | ${status} | ${formatInteger(snapshot.runningJobs)} |`;
+    return `| ${nodeId} | ${snapshot.region} | \`${container}\` | ${runtime} | ${status} | ${formatInteger(snapshot.runningJobs)} |`;
+  });
+
+  const nodeMetadata = Object.entries(nodeSnapshots).map(([nodeId, snapshot]) => {
+    const fragments: string[] = [];
+    if (snapshot.endpoint) {
+      fragments.push(`endpoint ${snapshot.endpoint}`);
+    }
+    if (snapshot.specialties.length > 0) {
+      fragments.push(`specialties ${snapshot.specialties.join(', ')}`);
+    }
+    if (snapshot.deployment?.resources) {
+      const resources = snapshot.deployment.resources;
+      const cpu = resources.cpuCores !== undefined ? `${resources.cpuCores} CPU` : undefined;
+      const memory = resources.memoryGb !== undefined ? `${resources.memoryGb} GB RAM` : undefined;
+      const gpu = resources.gpuClass ? `${resources.gpuClass} GPU` : undefined;
+      const storage = resources.storageGb !== undefined ? `${resources.storageGb} GB storage` : undefined;
+      const resourcesLine = [cpu, memory, gpu, storage].filter(Boolean).join(' / ');
+      if (resourcesLine) {
+        fragments.push(`resources ${resourcesLine}`);
+      }
+    }
+    if (snapshot.availabilityZones && snapshot.availabilityZones.length > 0) {
+      fragments.push(`zones ${snapshot.availabilityZones.join(', ')}`);
+    }
+    if (snapshot.pricing) {
+      const amount = Number.isFinite(snapshot.pricing.amount)
+        ? snapshot.pricing.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })
+        : String(snapshot.pricing.amount);
+      fragments.push(`pricing ${amount} ${snapshot.pricing.currency}/${snapshot.pricing.unit}`);
+      if (snapshot.pricing.notes) {
+        fragments.push(snapshot.pricing.notes);
+      }
+    }
+    if (snapshot.compliance && snapshot.compliance.length > 0) {
+      fragments.push(`compliance ${snapshot.compliance.join(', ')}`);
+    }
+    if (snapshot.tags && snapshot.tags.length > 0) {
+      fragments.push(`tags ${snapshot.tags.join(', ')}`);
+    }
+    const details = fragments.length > 0 ? fragments.join(' • ') : 'telemetry available on demand.';
+    return `- **${nodeId}** — ${details}`;
   });
 
   const invariantLines = ledger.invariants.map((entry) =>
@@ -336,9 +385,13 @@ function buildMissionChronicleMarkdown(args: {
   lines.push('## Node Marketplace Pulse');
   lines.push('');
   if (nodeRows.length > 0) {
-    lines.push('| Node | Region | Capacity | Max Concurrency | Status | Running Jobs |');
+    lines.push('| Node | Region | Container Image | Orchestration Runtime | Status | Running Jobs |');
     lines.push('| --- | --- | --- | --- | --- | --- |');
     lines.push(...nodeRows);
+    lines.push('');
+    lines.push('### Node marketplace telemetry');
+    lines.push('');
+    lines.push(...nodeMetadata);
   } else {
     lines.push('No nodes registered in this run.');
   }
@@ -876,7 +929,7 @@ async function writeArtifacts(
   const metrics = orchestrator.fabricMetrics;
   const shardSnapshots = orchestrator.getShardSnapshots();
   const shardStats = orchestrator.getShardStatistics();
-  const nodeSnapshots = orchestrator.getNodeSnapshots();
+  const nodeSnapshots: Record<string, SummaryNodeSnapshot> = orchestrator.getNodeSnapshots();
   const ownerState = orchestrator.getOwnerState();
   const checkpointConfig = orchestrator.getCheckpointConfig();
   const jobBlueprintCount = countJobsInBlueprint(options.jobBlueprint);
@@ -1072,6 +1125,24 @@ async function writeArtifacts(
           specialties: ['gpu', 'astronomy'],
           heartbeatIntervalSec: 9,
           maxConcurrency: 12,
+          endpoint: 'https://helios-backup.fabric.ops/api',
+          deployment: {
+            orchestration: 'kubernetes',
+            runtime: 'nvidia-cuda',
+            image: 'registry.agi/helios-gpu-worker:1.4.0',
+            version: '1.4.0',
+            entrypoint: '/opt/agi/run-helion.sh',
+            resources: { cpuCores: 24, memoryGb: 96, gpuClass: 'A100', storageGb: 320 },
+          },
+          availabilityZones: ['helios-gateway-a', 'helios-gateway-b'],
+          pricing: {
+            amount: 0.00094,
+            currency: 'USDC',
+            unit: 'job',
+            notes: 'Includes planetary spillover insurance',
+          },
+          tags: ['gpu-backup', 'helios'],
+          compliance: ['ISO-27001', 'SOC2-Type-II'],
         },
       },
       deregisterEarthEdge: {
@@ -1111,6 +1182,16 @@ async function writeArtifacts(
         type: 'job.cancel',
         reason: 'De-duplicate resolved Earth logistics request',
         locator: { kind: 'tail', shard: 'earth', offset: 4, includeInFlight: true },
+      },
+      upgradeEarthNodeRuntime: {
+        type: 'node.update',
+        nodeId: 'earth.core-alpha',
+        reason: 'Roll out hardened container image',
+        update: {
+          deployment: { image: 'registry.agi/earth-core-alpha:2.2.0', version: '2.2.0' },
+          pricing: { amount: 0.00075 },
+          tags: ['finance-hub', 'tier-zero', 'hardened'],
+        },
       },
     },
     commandScheduleTemplate: [
@@ -1641,7 +1722,7 @@ function buildMissionTopologyMermaid(
   config: FabricConfig,
   shardSnapshots: Record<string, { queueDepth: number; inFlight: number; completed: number }>,
   shardStats: Record<string, { completed: number; failed: number; spillovers: number }>,
-  nodeSnapshots: Record<string, { active: boolean; runningJobs: number }>,
+  nodeSnapshots: Record<string, SummaryNodeSnapshot>,
   ledgerSnapshot: LedgerSnapshot,
   ownerState: OwnerStateSnapshot
 ): string {
@@ -1654,12 +1735,13 @@ function buildMissionTopologyMermaid(
     shardPauses: 0,
   };
 
-  const nodesByShard: Record<string, NodeDefinition[]> = {};
-  for (const node of config.nodes) {
-    if (!nodesByShard[node.region]) {
-      nodesByShard[node.region] = [];
+  const nodesByShard: Record<string, Array<{ id: string; snapshot: SummaryNodeSnapshot }>> = {};
+  for (const [nodeId, snapshot] of Object.entries(nodeSnapshots)) {
+    const region = snapshot.region ?? config.nodes.find((node) => node.id === nodeId)?.region ?? 'unknown';
+    if (!nodesByShard[region]) {
+      nodesByShard[region] = [];
     }
-    nodesByShard[node.region].push(node);
+    nodesByShard[region].push({ id: nodeId, snapshot });
   }
 
   lines.push('%% Autogenerated Planetary Orchestrator Fabric topology');
@@ -1769,20 +1851,45 @@ function buildMissionTopologyMermaid(
       lines.push(`    ${placeholderId}(["${escapeMermaidLabel(placeholderLabel)}"])`);
       lines.push(`    ${routerId} --> ${placeholderId};`);
     } else {
-      for (const node of shardNodeDefinitions) {
-        const nodeId = `node_${sanitizeMermaidId(node.id)}`;
-        const snapshotState = nodeSnapshots[node.id] ?? { active: false, runningJobs: 0 };
-        const ledgerNode = ledgerSnapshot.nodes?.[node.id];
+      for (const { id, snapshot: nodeSnapshot } of shardNodeDefinitions) {
+        const nodeId = `node_${sanitizeMermaidId(id)}`;
+        const ledgerNode = ledgerSnapshot.nodes?.[id];
+        const containerLabel = nodeSnapshot.deployment
+          ? `${nodeSnapshot.deployment.image}${nodeSnapshot.deployment.version ? `:${nodeSnapshot.deployment.version}` : ''}`
+          : 'No container profile';
+        const runtimeLabel = [
+          nodeSnapshot.deployment?.orchestration,
+          nodeSnapshot.deployment?.runtime,
+        ]
+          .filter((entry): entry is string => Boolean(entry))
+          .join(' · ');
+        const pricingLabel = nodeSnapshot.pricing
+          ? `${nodeSnapshot.pricing.amount.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${nodeSnapshot.pricing.currency}/${nodeSnapshot.pricing.unit}`
+          : undefined;
         const nodeLabel = [
-          node.id,
-          snapshotState.active ? '🟢 Active' : '⚠️ Offline',
-          `Concurrency ${formatNumber(node.maxConcurrency ?? node.capacity)} | Running ${formatNumber(snapshotState.runningJobs)}`,
-          `Completed ${formatNumber(ledgerNode?.completions ?? 0)} | Reassign ${formatNumber(ledgerNode?.reassignments ?? 0)}`,
-          `Skills: ${formatList(node.specialties)}`,
-        ].join(newline);
+          id,
+          nodeSnapshot.active ? '🟢 Active' : '⚠️ Offline',
+          `Concurrency ${formatNumber(nodeSnapshot.maxConcurrency)} | Running ${formatNumber(nodeSnapshot.runningJobs)}`,
+          ledgerNode
+            ? `Completed ${formatNumber(ledgerNode.completions ?? 0)} | Reassign ${formatNumber(ledgerNode.reassignments ?? 0)}`
+            : undefined,
+          `Container: ${containerLabel}`,
+          runtimeLabel ? `Runtime: ${runtimeLabel}` : undefined,
+          nodeSnapshot.endpoint ? `Endpoint: ${nodeSnapshot.endpoint}` : undefined,
+          pricingLabel ? `Pricing: ${pricingLabel}` : undefined,
+          nodeSnapshot.availabilityZones && nodeSnapshot.availabilityZones.length > 0
+            ? `Zones: ${formatList(nodeSnapshot.availabilityZones)}`
+            : undefined,
+          nodeSnapshot.compliance && nodeSnapshot.compliance.length > 0
+            ? `Compliance: ${formatList(nodeSnapshot.compliance)}`
+            : undefined,
+          `Skills: ${formatList(nodeSnapshot.specialties)}`,
+        ]
+          .filter((entry): entry is string => Boolean(entry))
+          .join(newline);
         lines.push(`    ${nodeId}["${escapeMermaidLabel(nodeLabel)}"]`);
         lines.push(`    ${routerId} --> ${nodeId};`);
-        nodeClassAssignments.push({ id: nodeId, active: snapshotState.active });
+        nodeClassAssignments.push({ id: nodeId, active: nodeSnapshot.active });
       }
     }
 

@@ -209,18 +209,31 @@ node scripts/v2/ownerControlSurface.ts \
        "registerHeliosBackup": {
          "type": "node.register",
          "reason": "Spin up backup GPU helion",
-         "node": {
-           "id": "helios.solaris-backup",
-           "region": "helios",
-           "capacity": 20,
-           "specialties": ["gpu", "astronomy"],
-           "heartbeatIntervalSec": 9,
-           "maxConcurrency": 12
-         }
-       }
-     }
-   }
-   ```
+       "node": {
+         "id": "helios.solaris-backup",
+         "region": "helios",
+         "capacity": 20,
+         "specialties": ["gpu", "astronomy"],
+         "heartbeatIntervalSec": 9,
+          "maxConcurrency": 12,
+          "endpoint": "https://helios-backup.fabric.ops/api",
+          "deployment": {
+            "orchestration": "kubernetes",
+            "runtime": "cuda",
+            "image": "registry.agi/helios-gpu-worker:1.4.0",
+            "version": "1.4.0",
+            "entrypoint": "/opt/agi/run-helion.sh",
+            "resources": { "cpuCores": 24, "memoryGb": 96, "gpuClass": "A100", "storageGb": 320 }
+          },
+          "availabilityZones": ["helios-gateway-a", "helios-gateway-b"],
+          "pricing": { "amount": 0.00094, "currency": "USDC", "unit": "job" },
+          "tags": ["gpu", "backup"],
+          "compliance": ["SOC2-Type-II", "Solaris-Safety"]
+        }
+      }
+    }
+  }
+  ```
 
 Use these payloads with `run-demo.sh --owner-commands`, or apply them interactively by piping JSON into your governance tooling.
 

@@ -697,16 +697,61 @@
       const metrics = entries.map(([nodeId, snapshot]) => {
         const status = snapshot.active ? 'Healthy' : 'Offline';
         const color = snapshot.active ? 'var(--success)' : 'var(--critical)';
+        const container = snapshot.deployment
+          ? `${snapshot.deployment.image}${snapshot.deployment.version ? `:${snapshot.deployment.version}` : ''}`
+          : '—';
+        const runtime = [snapshot.deployment?.orchestration, snapshot.deployment?.runtime]
+          .filter((value) => Boolean(value))
+          .join(' · ') || '—';
+        const pricing = snapshot.pricing
+          ? `${Number(snapshot.pricing.amount).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${snapshot.pricing.currency}/${snapshot.pricing.unit}`
+          : '—';
+        const compliance = Array.isArray(snapshot.compliance) && snapshot.compliance.length
+          ? snapshot.compliance.join(', ')
+          : '—';
+        const tags = Array.isArray(snapshot.tags) && snapshot.tags.length ? snapshot.tags.join(', ') : '—';
+        const zones = Array.isArray(snapshot.availabilityZones) && snapshot.availabilityZones.length
+          ? snapshot.availabilityZones.join(', ')
+          : '—';
+        const specialties = Array.isArray(snapshot.specialties) && snapshot.specialties.length
+          ? snapshot.specialties.join(', ')
+          : '—';
+        const endpoint = snapshot.endpoint || '—';
+        const resources = snapshot.deployment && snapshot.deployment.resources
+          ? [
+              snapshot.deployment.resources.cpuCores !== undefined
+                ? `${snapshot.deployment.resources.cpuCores} CPU`
+                : null,
+              snapshot.deployment.resources.memoryGb !== undefined
+                ? `${snapshot.deployment.resources.memoryGb} GB RAM`
+                : null,
+              snapshot.deployment.resources.gpuClass || null,
+              snapshot.deployment.resources.storageGb !== undefined
+                ? `${snapshot.deployment.resources.storageGb} GB storage`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || '—'
+          : '—';
         return `
           <div class="metric-card" style="border-left: 4px solid ${color};">
             <strong>${nodeId}</strong>
             <span>${status}</span>
-            <small>Running jobs: ${formatNumber(snapshot.runningJobs)}</small>
+            <small>Region: ${snapshot.region} · Running jobs: ${formatNumber(snapshot.runningJobs)}</small>
+            <small>Container: <code>${container}</code></small>
+            <small>Runtime: ${runtime}</small>
+            <small>Endpoint: ${endpoint}</small>
+            <small>Resources: ${resources}</small>
+            <small>Availability zones: ${zones}</small>
+            <small>Specialties: ${specialties}</small>
+            <small>Pricing: ${pricing}</small>
+            <small>Compliance: ${compliance}</small>
+            <small>Tags: ${tags}</small>
           </div>
         `;
       });
       nodeGridEl.innerHTML = metrics.join('');
-      nodeSummaryEl.textContent = 'heartbeat coverage proven via automatic reassignments (<2% drop target).';
+      nodeSummaryEl.textContent = 'Container profiles, runtime classes, compliance, and pricing streamed directly from the mission ledger.';
     }
 
     function validateSummary(summary) {

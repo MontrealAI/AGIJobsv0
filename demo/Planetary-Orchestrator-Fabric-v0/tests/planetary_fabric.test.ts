@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runAcceptanceSuite } from '../src/acceptance';
-import { FabricConfig, JobBlueprint, JobDefinition, OwnerCommandSchedule } from '../src/types';
+import { FabricConfig, JobBlueprint, JobDefinition, NodeDefinition, OwnerCommandSchedule } from '../src/types';
 import { runSimulation } from '../src/simulation';
 
 const testConfig: FabricConfig = {
@@ -22,9 +22,69 @@ const testConfig: FabricConfig = {
     { id: 'luna', displayName: 'Luna', latencyBudgetMs: 80, spilloverTargets: ['earth'], maxQueue: 100 },
   ],
   nodes: [
-    { id: 'earth.node', region: 'earth', capacity: 10, specialties: ['general'], heartbeatIntervalSec: 10, maxConcurrency: 5 },
-    { id: 'mars.node', region: 'mars', capacity: 10, specialties: ['general'], heartbeatIntervalSec: 10, maxConcurrency: 5 },
-    { id: 'luna.node', region: 'luna', capacity: 10, specialties: ['general'], heartbeatIntervalSec: 10, maxConcurrency: 5 },
+    {
+      id: 'earth.node',
+      region: 'earth',
+      capacity: 10,
+      specialties: ['general'],
+      heartbeatIntervalSec: 10,
+      maxConcurrency: 5,
+      endpoint: 'https://earth-node.test/api',
+      deployment: {
+        orchestration: 'kubernetes',
+        runtime: 'node-lts',
+        image: 'registry.test/earth-node:1.0.0',
+        version: '1.0.0',
+        entrypoint: '/srv/start.sh',
+        resources: { cpuCores: 8, memoryGb: 32, storageGb: 120 },
+      },
+      availabilityZones: ['earth-a'],
+      pricing: { amount: 0.00045, currency: 'USDC', unit: 'job' },
+      tags: ['general'],
+      compliance: ['ISO-27001'],
+    },
+    {
+      id: 'mars.node',
+      region: 'mars',
+      capacity: 10,
+      specialties: ['general'],
+      heartbeatIntervalSec: 10,
+      maxConcurrency: 5,
+      endpoint: 'https://mars-node.test/api',
+      deployment: {
+        orchestration: 'nomad',
+        runtime: 'rust',
+        image: 'registry.test/mars-node:2.0.0',
+        version: '2.0.0',
+        entrypoint: '/srv/run.sh',
+        resources: { cpuCores: 10, memoryGb: 40, storageGb: 160 },
+      },
+      availabilityZones: ['mars-a'],
+      pricing: { amount: 0.00052, currency: 'USDC', unit: 'job' },
+      tags: ['mars'],
+      compliance: ['Mars-Colony-Safety'],
+    },
+    {
+      id: 'luna.node',
+      region: 'luna',
+      capacity: 10,
+      specialties: ['general'],
+      heartbeatIntervalSec: 10,
+      maxConcurrency: 5,
+      endpoint: 'https://luna-node.test/api',
+      deployment: {
+        orchestration: 'kubernetes',
+        runtime: 'python',
+        image: 'registry.test/luna-node:1.1.0',
+        version: '1.1.0',
+        entrypoint: '/srv/launch.sh',
+        resources: { cpuCores: 6, memoryGb: 24, storageGb: 80 },
+      },
+      availabilityZones: ['luna-a'],
+      pricing: { amount: 0.0003, currency: 'USDC', unit: 'job' },
+      tags: ['luna'],
+      compliance: ['Lunar-Safety-Standard'],
+    },
   ],
   checkpoint: {
     path: 'unused',
@@ -53,6 +113,23 @@ function createJobs(total: number): JobDefinition[] {
   return jobs;
 }
 
+function cloneNodeDefinitionForTest(node: NodeDefinition): NodeDefinition {
+  return {
+    ...node,
+    specialties: [...node.specialties],
+    availabilityZones: node.availabilityZones ? [...node.availabilityZones] : undefined,
+    tags: node.tags ? [...node.tags] : undefined,
+    compliance: node.compliance ? [...node.compliance] : undefined,
+    deployment: node.deployment
+      ? {
+          ...node.deployment,
+          resources: node.deployment.resources ? { ...node.deployment.resources } : undefined,
+        }
+      : undefined,
+    pricing: node.pricing ? { ...node.pricing } : undefined,
+  };
+}
+
 async function buildOrchestrator(
   configInput: FabricConfig = testConfig
 ): Promise<{ orchestrator: PlanetaryOrchestrator; checkpointPath: string }>
@@ -73,10 +150,7 @@ async function buildOrchestrator(
           }
         : undefined,
     })),
-    nodes: configInput.nodes.map((node) => ({
-      ...node,
-      specialties: [...node.specialties],
-    })),
+    nodes: configInput.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...configInput.checkpoint, path: checkpointPath },
     reporting: { ...configInput.reporting },
   };
@@ -99,10 +173,7 @@ function cloneConfig(configInput: FabricConfig): FabricConfig {
           }
         : undefined,
     })),
-    nodes: configInput.nodes.map((node) => ({
-      ...node,
-      specialties: [...node.specialties],
-    })),
+    nodes: configInput.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...configInput.checkpoint },
     reporting: { ...configInput.reporting },
   };
@@ -332,6 +403,19 @@ async function testOwnerCommandControls(): Promise<void> {
       specialties: ['general'],
       heartbeatIntervalSec: 10,
       maxConcurrency: 2,
+      endpoint: 'https://earth-backup.test/api',
+      deployment: {
+        orchestration: 'kubernetes',
+        runtime: 'node-lts',
+        image: 'registry.test/earth-backup:1.0.0',
+        version: '1.0.0',
+        entrypoint: '/srv/start-backup.sh',
+        resources: { cpuCores: 4, memoryGb: 16, storageGb: 64 },
+      },
+      availabilityZones: ['earth-b'],
+      pricing: { amount: 0.00035, currency: 'USDC', unit: 'job' },
+      tags: ['backup'],
+      compliance: ['ISO-27001'],
     },
   });
   await orchestrator.applyOwnerCommand({
@@ -344,6 +428,35 @@ async function testOwnerCommandControls(): Promise<void> {
       specialties: ['general'],
       heartbeatIntervalSec: 10,
       maxConcurrency: 2,
+      endpoint: 'https://mars-reserve.test/api',
+      deployment: {
+        orchestration: 'nomad',
+        runtime: 'rust',
+        image: 'registry.test/mars-reserve:1.0.0',
+        version: '1.0.0',
+        entrypoint: '/srv/launch-reserve.sh',
+        resources: { cpuCores: 6, memoryGb: 24, storageGb: 96 },
+      },
+      availabilityZones: ['mars-b'],
+      pricing: { amount: 0.0004, currency: 'USDC', unit: 'job' },
+      tags: ['reserve'],
+      compliance: ['Mars-Colony-Safety'],
+    },
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.update',
+    nodeId: 'earth.node',
+    reason: 'upgrade earth container runtime',
+    update: {
+      endpoint: 'https://earth-node-upgraded.test/api',
+      deployment: {
+        image: 'registry.test/earth-node:1.1.0',
+        version: '1.1.0',
+        runtime: 'node-lts',
+      },
+      pricing: { amount: 0.0005 },
+      tags: ['general', 'finance'],
+      compliance: ['ISO-27001', 'SOC2-Type-II'],
     },
   });
   await orchestrator.applyOwnerCommand({ type: 'node.deregister', nodeId: 'mars.node', reason: 'rotate mars node' });
@@ -413,7 +526,7 @@ async function testOwnerCommandControls(): Promise<void> {
 
   const ownerState = orchestrator.getOwnerState();
   assert.equal(ownerState.systemPaused, false, 'system should be resumed');
-  assert.equal(ownerState.metrics.ownerInterventions, 14);
+  assert.equal(ownerState.metrics.ownerInterventions, 15);
   assert.equal(ownerState.metrics.systemPauses, 1);
   assert.equal(ownerState.metrics.shardPauses, 1);
   assert.deepEqual(ownerState.pausedShards, [], 'no shards should remain paused');
@@ -423,8 +536,24 @@ async function testOwnerCommandControls(): Promise<void> {
   assert.equal(ownerState.reporting.defaultLabel, 'owner-governance');
 
   const nodeSnapshot = orchestrator.getNodeSnapshots();
-  assert.ok(nodeSnapshot['earth.node.backup'], 'earth backup node should be registered');
-  assert.ok(nodeSnapshot['mars.node.reserve'], 'mars reserve node should be registered');
+  const earthNodeSnapshot = nodeSnapshot['earth.node'];
+  assert.ok(earthNodeSnapshot, 'earth node should be present after updates');
+  assert.equal(earthNodeSnapshot.endpoint, 'https://earth-node-upgraded.test/api');
+  assert.equal(earthNodeSnapshot.deployment?.image, 'registry.test/earth-node:1.1.0');
+  assert.equal(earthNodeSnapshot.deployment?.runtime, 'node-lts');
+  assert.equal(earthNodeSnapshot.pricing?.amount, 0.0005);
+  assert.deepEqual(earthNodeSnapshot.compliance, ['ISO-27001', 'SOC2-Type-II']);
+  assert.deepEqual(earthNodeSnapshot.tags, ['general', 'finance']);
+
+  const earthBackupSnapshot = nodeSnapshot['earth.node.backup'];
+  assert.ok(earthBackupSnapshot, 'earth backup node should be registered');
+  assert.equal(earthBackupSnapshot.deployment?.orchestration, 'kubernetes');
+  assert.equal(earthBackupSnapshot.pricing?.amount, 0.00035);
+
+  const marsReserveSnapshot = nodeSnapshot['mars.node.reserve'];
+  assert.ok(marsReserveSnapshot, 'mars reserve node should be registered');
+  assert.equal(marsReserveSnapshot.deployment?.runtime, 'rust');
+  assert.equal(marsReserveSnapshot.pricing?.amount, 0.0004);
   assert.ok(!nodeSnapshot['mars.node'], 'original mars node should be removed');
 
   const metrics = orchestrator.fabricMetrics;
@@ -452,7 +581,7 @@ async function testJobBlueprintSeeding(): Promise<void> {
           }
         : undefined,
     })),
-    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    nodes: testConfig.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...testConfig.checkpoint, path: checkpointPath },
     reporting: { directory: reportingDir, defaultLabel: 'blueprint' },
   };
@@ -540,7 +669,7 @@ async function testReportingRetarget(): Promise<void> {
           }
         : undefined,
     })),
-    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    nodes: testConfig.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...testConfig.checkpoint, path: checkpointPath },
     reporting: { directory: initialReportingDir, defaultLabel: 'initial-label' },
   };
@@ -575,6 +704,12 @@ async function testReportingRetarget(): Promise<void> {
     result.artifacts.summaryPath.includes(join(retargetedReportingDir, 'owner-elevated')),
     'summary should live under retargeted directory'
   );
+  const summaryEarthNode = summary.nodes['earth.node'];
+  assert.ok(summaryEarthNode, 'summary should include earth.node snapshot');
+  assert.equal(summaryEarthNode.endpoint, 'https://earth-node.test/api');
+  assert.equal(summaryEarthNode.deployment.image, 'registry.test/earth-node:1.0.0');
+  assert.equal(summaryEarthNode.pricing.amount, 0.00045);
+  assert.deepEqual(summaryEarthNode.compliance, ['ISO-27001']);
   assert.equal(summary.chronicle.path, './mission-chronicle.md');
   assert.ok(summary.chronicle.dropRate >= 0);
   assert.ok(summary.chronicle.failureRate >= 0);
@@ -619,7 +754,7 @@ async function testOwnerCommandSchedule(): Promise<void> {
       ...shard,
       spilloverTargets: [...shard.spilloverTargets],
     })),
-    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    nodes: testConfig.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...testConfig.checkpoint, path: checkpointPath, intervalTicks: 3 },
     reporting: { directory: reportingDir, defaultLabel: 'schedule' },
   };
@@ -702,7 +837,7 @@ async function testStopAndResumeDrill(): Promise<void> {
           }
         : undefined,
     })),
-    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    nodes: testConfig.nodes.map((node) => cloneNodeDefinitionForTest(node)),
     checkpoint: { ...testConfig.checkpoint, path: checkpointPath, intervalTicks: 4 },
     reporting: { directory: reportingDir, defaultLabel: 'resume-drill' },
   };

@@ -42,7 +42,20 @@
           "capacity": 20,
           "specialties": ["gpu", "astronomy"],
           "heartbeatIntervalSec": 9,
-          "maxConcurrency": 12
+          "maxConcurrency": 12,
+          "endpoint": "https://helios-backup.fabric.ops/api",
+          "deployment": {
+            "orchestration": "kubernetes",
+            "runtime": "cuda",
+            "image": "registry.agi/helios-gpu-worker:1.4.0",
+            "version": "1.4.0",
+            "entrypoint": "/opt/agi/run-helion.sh",
+            "resources": { "cpuCores": 24, "memoryGb": 96, "gpuClass": "A100", "storageGb": 320 }
+          },
+          "availabilityZones": ["helios-gateway-a", "helios-gateway-b"],
+          "pricing": { "amount": 0.00094, "currency": "USDC", "unit": "job", "notes": "Backup GPU lane" },
+          "tags": ["gpu", "backup"],
+          "compliance": ["SOC2-Type-II", "Solaris-Safety"]
         }
       }
     },

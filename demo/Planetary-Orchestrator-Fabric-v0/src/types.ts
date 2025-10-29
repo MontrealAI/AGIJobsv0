@@ -22,6 +22,29 @@ export interface ShardConfig {
   router?: RouterConfig;
 }
 
+export interface NodeResourcesProfile {
+  cpuCores?: number;
+  memoryGb?: number;
+  gpuClass?: string;
+  storageGb?: number;
+}
+
+export interface NodeDeploymentProfile {
+  orchestration: string;
+  image: string;
+  runtime?: string;
+  entrypoint?: string;
+  version?: string;
+  resources?: NodeResourcesProfile;
+}
+
+export interface NodePricingModel {
+  amount: number;
+  currency: string;
+  unit: string;
+  notes?: string;
+}
+
 export interface NodeDefinition {
   id: string;
   region: ShardId;
@@ -29,6 +52,12 @@ export interface NodeDefinition {
   specialties: string[];
   heartbeatIntervalSec: number;
   maxConcurrency: number;
+  endpoint?: string;
+  deployment?: NodeDeploymentProfile;
+  availabilityZones?: string[];
+  pricing?: NodePricingModel;
+  tags?: string[];
+  compliance?: string[];
 }
 
 export interface JobDefinition {
@@ -415,6 +444,14 @@ export type OwnerCommand =
         specialties?: string[];
         heartbeatIntervalSec?: number;
         region?: ShardId;
+        endpoint?: string;
+        deployment?: Partial<NodeDeploymentProfile> & {
+          resources?: Partial<NodeResourcesProfile>;
+        };
+        availabilityZones?: string[];
+        pricing?: Partial<NodePricingModel>;
+        tags?: string[];
+        compliance?: string[];
       };
       reason?: string;
     }
@@ -464,6 +501,17 @@ export interface SummaryShardStatistics {
 export interface SummaryNodeSnapshot {
   active: boolean;
   runningJobs: number;
+  region: ShardId;
+  capacity: number;
+  maxConcurrency: number;
+  specialties: string[];
+  heartbeatIntervalSec: number;
+  endpoint?: string;
+  deployment?: NodeDeploymentProfile;
+  availabilityZones?: string[];
+  pricing?: NodePricingModel;
+  tags?: string[];
+  compliance?: string[];
 }
 
 export interface OwnerCommandSummary {
