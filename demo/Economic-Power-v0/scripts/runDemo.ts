@@ -2877,6 +2877,11 @@ const DEFAULT_SCENARIO = path.join(
   'baseline.json',
 );
 
+const SCENARIO_PRESETS: Record<string, string> = {
+  baseline: DEFAULT_SCENARIO,
+  'mainnet-dominion': path.join(__dirname, '..', 'scenario', 'mainnet-dominion.json'),
+};
+
 const DEFAULT_OUTPUT_DIR = path.join(__dirname, '..', 'reports');
 const DEFAULT_SUMMARY_FILE = path.join(DEFAULT_OUTPUT_DIR, 'summary.json');
 const DEFAULT_FLOW_FILE = path.join(DEFAULT_OUTPUT_DIR, 'flow.mmd');
@@ -2898,6 +2903,48 @@ const UI_DETERMINISTIC_VERIFICATION = path.join(
 );
 const BASELINE_CI_SUMMARY = path.join(DEFAULT_OUTPUT_DIR, 'baseline-summary.json');
 const DETERMINISTIC_VERSION = '1.0';
+
+export function resolveScenarioPath(input?: string | null): string {
+  if (input === undefined || input === null) {
+    return DEFAULT_SCENARIO;
+  }
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return DEFAULT_SCENARIO;
+  }
+
+  const preset = SCENARIO_PRESETS[trimmed];
+  if (preset) {
+    return preset;
+  }
+
+  const scenarioDir = path.resolve(__dirname, '..', 'scenario');
+  const candidates = new Set<string>();
+  const potentials = [trimmed];
+  if (!trimmed.endsWith('.json')) {
+    potentials.push(`${trimmed}.json`);
+  }
+
+  for (const candidate of potentials) {
+    if (path.isAbsolute(candidate)) {
+      candidates.add(path.resolve(candidate));
+      continue;
+    }
+    candidates.add(path.resolve(process.cwd(), candidate));
+    candidates.add(path.resolve(scenarioDir, candidate));
+  }
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  const knownPresets = Object.keys(SCENARIO_PRESETS).join(', ');
+  throw new Error(
+    `Unable to resolve scenario "${input}". Provide a valid file path or one of the presets: ${knownPresets}.`,
+  );
+}
 
 function canonicalStringify(value: unknown): string {
   if (value === null || typeof value !== 'object') {
@@ -5544,7 +5591,8 @@ export async function main(): Promise<void> {
     .help()
     .parse();
 
-  const scenario = await loadScenarioFromFile(argv.scenario);
+  const scenarioPath = resolveScenarioPath(String(argv.scenario));
+  const scenario = await loadScenarioFromFile(scenarioPath);
   const summary = await runScenario(scenario, {
     interactive: argv.interactive,
     deploymentConfigPath: argv['deployment-config'],

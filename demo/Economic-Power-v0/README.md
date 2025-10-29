@@ -16,6 +16,7 @@
 npm run demo:economic-power           # generates the full report set
 npm run demo:economic-power -- --interactive   # dial in multipliers and quorum uplifts live
 npm run demo:economic-power:ci        # deterministic CI run used by GitHub Actions
+npm run demo:economic-power:dominion  # mainnet dominion preset with maximal owner supremacy
 npm run test:economic-power           # deterministic simulation unit tests
 ```
 
@@ -60,6 +61,13 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `deterministic-verification.json` – verification ledger confirming both runs align and surfacing any mismatches for immediate triage.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
+
+### Scenario presets for instant supremacy drills
+
+- `baseline` *(default)* – balanced launch posture used for CI verification.
+- `mainnet-dominion` – high-intensity mainnet execution profile tuned for maximal ROI, validator strength, and treasury velocity. Trigger it with `npm run demo:economic-power:dominion` or `npm run demo:economic-power -- --scenario mainnet-dominion`.
+
+The CLI accepts either preset names or explicit JSON paths, letting the owner rapidly pivot between blueprints without editing files.
 
 ## Architecture in one glance
 
