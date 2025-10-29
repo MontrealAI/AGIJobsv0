@@ -1,0 +1,19 @@
+{
+  "alpha_routes": [
+    "Meta liquidity vault",
+    "Cross-domain delta neutral",
+    "Sovereign supply bridge",
+    "Climate vault",
+    "Compute hypergrid options"
+  ],
+  "owner_switches": [
+    "Override paymaster throttle",
+    "Redirect treasury stream",
+    "Trigger autonomous validator",
+    "Activate antifragility backstop"
+  ],
+  "compounding_multiplier": 0.52,
+  "gasless": true,
+  "owner_command_latency_seconds": 6,
+  "owner_approval_speed_minutes": 1
+}

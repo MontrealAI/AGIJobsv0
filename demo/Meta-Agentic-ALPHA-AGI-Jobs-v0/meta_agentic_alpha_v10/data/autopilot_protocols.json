@@ -1,0 +1,14 @@
+{
+  "modes": [
+    {"id": "guardian_supermesh", "title": "Guardian Supermesh", "description": "Auto-rotate guardians + failover strata", "status": "active"},
+    {"id": "liquidity_hyperloop", "title": "Liquidity Hyperloop", "description": "Rebalance unstoppable reserves in real time", "status": "active"},
+    {"id": "curriculum_generator", "title": "Curriculum Generator", "description": "Regenerate POET+MuZero curriculum on anomaly feed", "status": "ready"},
+    {"id": "antifragility_rehearsal", "title": "Antifragility Rehearsal", "description": "Run stress rehearsals before execution", "status": "active"},
+    {"id": "sentinel_uplift", "title": "Sentinel Uplift", "description": "Escalate market sentinels when CI flags risk", "status": "active"}
+  ],
+  "safety": {
+    "session_keys": 10,
+    "max_spend": "360000",
+    "circuit_breaker_minutes": 6
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "guardians": [
+    {"address": "0xGUARDIAN000000000000000000000000000000AA", "role": "Prime", "weight": 0.18, "capabilities": ["execution", "analysis"], "latency_ms": 42},
+    {"address": "0xGUARDIAN000000000000000000000000000000BB", "role": "Prime", "weight": 0.17, "capabilities": ["validation", "analysis"], "latency_ms": 44},
+    {"address": "0xGUARDIAN000000000000000000000000000000CC", "role": "Prime", "weight": 0.16, "capabilities": ["execution", "support"], "latency_ms": 43},
+    {"address": "0xGUARDIAN000000000000000000000000000000DD", "role": "Prime", "weight": 0.17, "capabilities": ["analysis", "support"], "latency_ms": 45},
+    {"address": "0xGUARDIAN000000000000000000000000000000EE", "role": "Prime", "weight": 0.16, "capabilities": ["execution", "validation"], "latency_ms": 41},
+    {"address": "0xGUARDIAN000000000000000000000000000000FF", "role": "Prime", "weight": 0.16, "capabilities": ["analysis", "support"], "latency_ms": 43}
+  ],
+  "failover": [
+    {"address": "0xGUARDIAN00000000000000000000000000000011", "capabilities": ["execution", "analysis"], "activation_ms": 52},
+    {"address": "0xGUARDIAN00000000000000000000000000000022", "capabilities": ["validation", "analysis"], "activation_ms": 55},
+    {"address": "0xGUARDIAN00000000000000000000000000000033", "capabilities": ["analysis", "support"], "activation_ms": 54},
+    {"address": "0xGUARDIAN00000000000000000000000000000044", "capabilities": ["execution", "support"], "activation_ms": 53},
+    {"address": "0xGUARDIAN00000000000000000000000000000055", "capabilities": ["analysis", "support"], "activation_ms": 56}
+  ],
+  "quorum": {"required": 6, "total": 11, "response_ms": 180},
+  "heartbeat_seconds": 45,
+  "unstoppable_threshold": 0.96
+}

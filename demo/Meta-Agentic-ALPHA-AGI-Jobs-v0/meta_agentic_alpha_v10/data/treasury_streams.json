@@ -1,0 +1,10 @@
+{
+  "streams": [
+    {"name": "Quantum Alpha Reinforcement", "cadence": "hourly", "route": "treasury/quantum-alpha", "amount": 72000},
+    {"name": "Guardian Mesh Sustainment", "cadence": "2h", "route": "resilience/guardian-mesh", "amount": 54000},
+    {"name": "Autopilot Liquidity", "cadence": "daily", "route": "execution/liquidity-grid", "amount": 68000},
+    {"name": "Curriculum Lab", "cadence": "6h", "route": "expansion/curriculum-lab", "amount": 52000},
+    {"name": "Climate Ventures", "cadence": "12h", "route": "impact/climate", "amount": 48000},
+    {"name": "Compute Hypergrid", "cadence": "4h", "route": "compute/hypergrid", "amount": 64000}
+  ]
+}

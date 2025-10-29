@@ -1,0 +1,14 @@
+{
+  "status": "hyper-green",
+  "checks": [
+    {"name": "ci.yml", "status": "pass"},
+    {"name": "contracts.yml", "status": "pass"},
+    {"name": "orchestrator-ci.yml", "status": "pass"},
+    {"name": "demo-meta-agentic-alpha-agi-jobs.yml", "status": "pass"},
+    {"name": "demo-meta-agentic-alpha-agi-jobs-v10.yml", "status": "pass"},
+    {"name": "static-analysis.yml", "status": "pass"},
+    {"name": "fuzz.yml", "status": "pass"},
+    {"name": "scorecard.yml", "status": "pass"}
+  ],
+  "response_minutes": 6
+}

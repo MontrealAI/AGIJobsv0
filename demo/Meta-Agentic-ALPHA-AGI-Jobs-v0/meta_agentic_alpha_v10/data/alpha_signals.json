@@ -1,0 +1,29 @@
+{
+  "domains": [
+    {"name": "Quantum Finance", "probability": 0.97, "confidence": 0.95, "delta": 0.22},
+    {"name": "Biofabrication", "probability": 0.95, "confidence": 0.93, "delta": 0.2},
+    {"name": "Planetary Supply Mesh", "probability": 0.96, "confidence": 0.94, "delta": 0.21},
+    {"name": "Climate Restoration", "probability": 0.94, "confidence": 0.92, "delta": 0.19},
+    {"name": "Compute Hypergrids", "probability": 0.98, "confidence": 0.96, "delta": 0.24}
+  ],
+  "anomalies": [
+    {
+      "id": "alpha-singularity-108",
+      "description": "Multi-chain liquidity pricing collapse detected across 7 markets",
+      "signals": ["Quantum Finance", "Compute Hypergrids"],
+      "impact_score": 0.99
+    },
+    {
+      "id": "supply-hypermesh-204",
+      "description": "Satellite telemetry shows raw material disequilibrium forming",
+      "signals": ["Planetary Supply Mesh"],
+      "impact_score": 0.97
+    },
+    {
+      "id": "bio-surge-311",
+      "description": "New CRISPR substrate unlock with orphan IP opportunity",
+      "signals": ["Biofabrication"],
+      "impact_score": 0.965
+    }
+  ]
+}

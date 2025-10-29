@@ -1,0 +1,354 @@
+---
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V10 — Omnidominion Singularity"
+  narrative: |
+    A non-technical owner presses run. AGI Jobs v0 (v2) unfurls the
+    Omnidominion Console: a sovereign-grade superstructure that identifies,
+    learns, designs, strategises, and executes trillion-scale opportunities
+    while enforcing unstoppable governance and CI V2 controls. Every lever is
+    editable by the owner in seconds.
+  dashboards:
+    - title: "Omnidominion Console"
+      file: "meta_agentic_alpha_v10/ui/index.html"
+    - title: "Omnidominion Masterplan"
+      file: "meta_agentic_alpha_v10/reports/generated/alpha_meta_omnidominion_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v10/playbooks/owner_omnisovereignty_command_matrix.md"
+  agents:
+    - agent_id: "guardian-omnimesh-v10"
+      owner: "Guardian Omnimesh"
+      region: "omni"
+      capabilities: [execution, validation, analysis]
+      stake_amount: "98000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-omnimesh-v10-secret"
+    - agent_id: "sentinel-synthesis-director"
+      owner: "Sentinel Collective"
+      region: "omni"
+      capabilities: [analysis, support]
+      stake_amount: "62000"
+      multisig: true
+      slashable: false
+      operator_secret: "sentinel-synthesis-director-secret"
+    - agent_id: "treasury-omnidriver"
+      owner: "Treasury Guild"
+      region: "omni"
+      capabilities: [analysis, execution]
+      stake_amount: "68000"
+      multisig: true
+      slashable: true
+      operator_secret: "treasury-omnidriver-secret"
+    - agent_id: "mission-hyperforge"
+      owner: "Creative Hyperforge"
+      region: "omni"
+      capabilities: [analysis, support]
+      stake_amount: "54000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-hyperforge-secret"
+    - agent_id: "portfolio-navigator-v10"
+      owner: "Portfolio Navigator"
+      region: "omni"
+      capabilities: [analysis, execution, support]
+      stake_amount: "72000"
+      multisig: true
+      slashable: true
+      operator_secret: "portfolio-navigator-v10-secret"
+    - agent_id: "autopilot-superconductor"
+      owner: "Autopilot Network"
+      region: "omni"
+      capabilities: [execution, analysis, support]
+      stake_amount: "56000"
+      multisig: true
+      slashable: true
+      operator_secret: "autopilot-superconductor-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v10"
+  title: "Meta-Agentic α-AGI Jobs Demo — Omnidominion Singularity"
+  narrative: |
+    The V10 release proves AGI Jobs v0 (v2) is a superintelligent factory for
+    economic power. Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise
+    → Out-Execute loops converge into an unstoppable wealth engine. Owners can
+    change any parameter instantly: guardian quorum, treasury bands, autopilot
+    velocity, antifragility buffers, and account abstraction levers.
+  unstoppable_initiatives:
+    - "Auto-orchestrate quantum alpha vaults"
+    - "Spawn sovereign curriculum laboratories"
+    - "Spin hypergrid compute markets"
+    - "Deploy unstoppable climate impact funds"
+    - "Route antifragility drills through guardian supermesh"
+  owner:
+    address: "0xSOVEREIGN00000000000000000000000000000010"
+    timelock: "0xTIMEL0CK00000000000000000000000000000010"
+    multisig: "0xMULTI500000000000000000000000000000010"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000AA"
+      - "0xGUARDIAN000000000000000000000000000000BB"
+      - "0xGUARDIAN000000000000000000000000000000CC"
+      - "0xGUARDIAN000000000000000000000000000000DD"
+      - "0xGUARDIAN000000000000000000000000000000EE"
+      - "0xGUARDIAN000000000000000000000000000000FF"
+    guardian_failover:
+      - "0xGUARDIAN00000000000000000000000000000011"
+      - "0xGUARDIAN00000000000000000000000000000022"
+      - "0xGUARDIAN00000000000000000000000000000033"
+      - "0xGUARDIAN00000000000000000000000000000044"
+      - "0xGUARDIAN00000000000000000000000000000055"
+    approvals_required: 6
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 6
+    mission_threads:
+      - "mission-thread-quantum-alpha"
+      - "mission-thread-biofabrication"
+      - "mission-thread-climate"
+      - "mission-thread-hypergrid"
+      - "mission-thread-governance"
+    sovereign_domains:
+      - "treasury-omnidominion"
+      - "guardian-supermesh"
+      - "execution-fabric"
+      - "curriculum-foundry"
+      - "alpha-factory"
+      - "governance-strategy"
+    delegation:
+      treasury:
+        owner_override: true
+        max_adjustment_percent: 18
+      governance:
+        guardian_rotation: true
+        threshold_update: true
+        quorum_extension: true
+      execution:
+        paymaster_routing: true
+        relayer_selection: true
+        autopilot_activation: true
+      emergency_override:
+        multisig_guard: 5
+        sentinel_watch: true
+        unstoppable_break_glass: true
+    control_scripts:
+      pause: "scripts/v3/systemPauseAction.ts"
+      resume: "scripts/v3/systemResumeAction.ts"
+      update_treasury: "scripts/v3/updateRewardEngine.ts"
+      rotate_guardians: "scripts/v3/rotateGovernance.ts"
+      upgrade_modules: "scripts/v3/updateAllModules.ts"
+      emergency_shutdown: "scripts/v3/emergencyShutdown.ts"
+    upgrade_scripts:
+      redeploy_modules: "scripts/v3/redeployModules.ts"
+      instantiate_new_domain: "scripts/v3/instantiateNewDomain.ts"
+      bootstrap_guardian_mesh: "scripts/v3/bootstrapGuardianMesh.ts"
+      deploy_omni_sentiels: "scripts/v3/deployOmniSentinels.ts"
+    mutable_parameters:
+      job_fee_bps: 28
+      validator_bond: 128000
+      alpha_multiplier: 2.78
+      treasury_drawdown_limit: 1.9
+      guardian_stake_floor: 82000
+      autopilot_velocity: 1.35
+    unstoppable_switches:
+      unstoppable_pause: "scripts/v3/unstoppablePause.ts"
+      unstoppable_resume: "scripts/v3/unstoppableResume.ts"
+      unstoppable_rebalance: "scripts/v3/unstoppableRebalance.ts"
+      unstoppable_launch: "scripts/v3/unstoppableLaunch.ts"
+    unstoppable_threshold: 0.96
+    guardian_playbook: "meta_agentic_alpha_v10/playbooks/owner_omnisovereignty_command_matrix.md"
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "44800000"
+    unstoppable_reserve_percent: 52
+    risk_limits:
+      max_drawdown_percent: 1.4
+      var_percent: 0.8
+      antifragility_buffer_percent: 48
+      circuit_breaker_percent: 3.2
+    liquidity_routes:
+      - "treasury/quantum-alpha"
+      - "resilience/guardian-mesh"
+      - "execution/liquidity-grid"
+      - "expansion/curriculum-lab"
+      - "impact/climate"
+      - "compute/hypergrid"
+    streams:
+      - name: "Quantum Alpha Reinforcement"
+        cadence: "hourly"
+        route: "treasury/quantum-alpha"
+      - name: "Guardian Mesh Sustainment"
+        cadence: "2h"
+        route: "resilience/guardian-mesh"
+      - name: "Autopilot Liquidity"
+        cadence: "daily"
+        route: "execution/liquidity-grid"
+      - name: "Curriculum Lab"
+        cadence: "6h"
+        route: "expansion/curriculum-lab"
+      - name: "Climate Ventures"
+        cadence: "12h"
+        route: "impact/climate"
+      - name: "Compute Hypergrid"
+        cadence: "4h"
+        route: "compute/hypergrid"
+  gasless:
+    enabled: true
+    bundler: "omnidominion-bundler"
+    paymaster: "account-abstraction/omnidominion-paymaster.json"
+    session_keys:
+      - "guardian-omnimesh-v10"
+      - "sentinel-synthesis-director"
+      - "treasury-omnidriver"
+      - "mission-hyperforge"
+      - "portfolio-navigator-v10"
+      - "autopilot-superconductor"
+      - "owner-override-sentinel"
+      - "sovereign-ci-v2"
+      - "treasury-flywheel"
+    overrideable_parameters:
+      max_fee_gwei: 12
+      preferred_network: "ethereum-mainnet"
+      failover_network: "base"
+      session_duration_minutes: 240
+  operations:
+    telemetry_channels:
+      - "omni/liquidity"
+      - "omni/policy"
+      - "omni/climate"
+      - "omni/compute"
+      - "omni/bio"
+    autopilot_modes:
+      guardian_quorum: "auto-sign and rotate guardians"
+      liquidity_hyperloop: "maintain unstoppable reserve bands"
+      curriculum_regeneration: "retrain world model on anomaly feed"
+      antifragility_backstop: "simulate stress packets before execution"
+    owner_prompts:
+      - "What alpha flywheels unlocked today?"
+      - "Where are unstoppable buffers positioned?"
+      - "Which guardians approved the latest flight?"
+      - "How does CI V2 gate releases?"
+      - "Which parameters can I adjust right now?"
+    onchain_controls:
+      - "Account abstraction paymaster override"
+      - "Session key mint / revoke"
+      - "Treasury stream rerouting"
+      - "Guardian quorum threshold update"
+      - "CI V2 pipeline enforcement"
+    portfolio_modes:
+      - "Quantum delta neutral"
+      - "Supply arbitrage"
+      - "Biofabrication venture"
+      - "Climate impact"
+      - "Compute hypergrid"
+    simulation_envelopes:
+      - "Monte Carlo liquidity"
+      - "Guardian failure rehearsal"
+      - "Regulatory regime swap"
+    owner_decisions:
+      - "Approve unstoppable charter"
+      - "Adjust alpha multiplier"
+      - "Throttle treasury drawdown"
+      - "Promote guardian stratum"
+      - "Launch new mission thread"
+  omni:
+    hyperstructure_vectors:
+      - "Treasury Hyperloop"
+      - "Guardian Resonance"
+      - "Autopilot Nexus"
+      - "Curriculum Synthesis"
+      - "Opportunity Distiller"
+    market_sentinels:
+      - "Global liquidity radar"
+      - "Patent delta watch"
+      - "Supply telematics"
+      - "Policy arbitrage vision"
+      - "Compute grid sentinel"
+    command_protocols:
+      - "Guardian quorum attestation"
+      - "Treasury unstoppable audit"
+      - "Autopilot override ledger"
+      - "Curriculum refresh notarisation"
+    sovereign_ops:
+      - "Sovereign job deployment"
+      - "Validator automation"
+      - "Treasury rebalancing"
+      - "Guardian quorum updates"
+    supercluster_integrations:
+      - "Ethereum mainnet"
+      - "L2 rollup execution"
+      - "Cross-chain liquidity relayers"
+    unstoppable_target: 0.965
+  omni_switches:
+    omnidominion_pause: "scripts/v3/omnidominionPause.ts"
+    omnidominion_resume: "scripts/v3/omnidominionResume.ts"
+    omnidominion_retarget: "scripts/v3/omnidominionRetarget.ts"
+  ci:
+    checks:
+      - "ci.yml"
+      - "contracts.yml"
+      - "fuzz.yml"
+      - "static-analysis.yml"
+      - "orchestrator-ci.yml"
+      - "demo-meta-agentic-alpha-agi-jobs.yml"
+      - "demo-meta-agentic-alpha-agi-jobs-v10.yml"
+    controls:
+      - "Block merges unless CI green"
+      - "Enforce coverage thresholds"
+      - "Alert guardians on CI regression"
+
+plan:
+  budget_max: "680000"
+  approvals:
+    - "guardian-omnimesh-v10"
+    - "treasury-omnidriver"
+  steps:
+    - id: "ingest-alpha"
+      name: "Identify omnidominion alpha signals"
+      kind: "plan"
+      action: "analysis.collect-alpha-signals"
+      params:
+        feeds: ["financial", "supply", "scientific", "policy"]
+        detections_required: 3
+    - id: "evolve-curriculum"
+      name: "Evolve POET+MuZero curriculum"
+      kind: "plan"
+      action: "simulation.evolve-curriculum"
+      params:
+        method: "poet-muzero"
+        iterations: 64
+    - id: "meta-plan"
+      name: "Run meta-agentic tree search"
+      kind: "plan"
+      action: "planning.meta-agentic-tree-search"
+      params:
+        branching_factor: 7
+        depth: 5
+        agents: ["guardian-omnimesh-v10", "sentinel-synthesis-director"]
+    - id: "design-blueprint"
+      name: "Draft hyperforge blueprint"
+      kind: "plan"
+      action: "design.hyperforge"
+      params:
+        deliverables: ["treasury", "execution", "governance"]
+    - id: "strategise"
+      name: "Optimise omnidominion strategy"
+      kind: "plan"
+      action: "strategy.portfolio-navigator"
+      params:
+        allocations: ["quantum", "climate", "compute"]
+    - id: "execute"
+      name: "Simulate account abstraction bundle"
+      kind: "validate"
+      action: "execution.account-abstraction"
+      params:
+        bundler: "0xBUNDLER00000000000000000000000000000010"
+        paymaster: "0xPAYMASTER000000000000000000000000000010"
+        dry_run: true
+        confirmations_required: 2
+    - id: "finalise"
+      name: "Emit omnidominion artefacts"
+      kind: "finalize"
+      action: "reporting.emit-dashboard"
+      params:
+        outputs:
+          - "meta_agentic_alpha_v10/ui/dashboard-data-v10.json"
+          - "meta_agentic_alpha_v10/reports/generated/alpha_meta_omnidominion_masterplan.md"

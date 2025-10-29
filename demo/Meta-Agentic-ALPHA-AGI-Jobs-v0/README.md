@@ -57,6 +57,7 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v6.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v8.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v10.py
 ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 3. **Open the console**:
@@ -87,6 +88,9 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/reports/generated/alpha_meta_sovereignty_masterplan.md`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v9/ui/dashboard-data-v9.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v9.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/reports/generated/alpha_meta_omnidominion_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/ui/dashboard-data-v10.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v10.json`
 
 > ✅ Everything ships pre-configured. The CLI auto-registers the validator agent, configures checkpoints, and ensures account-abstraction-ready governance parameters.
 
@@ -197,6 +201,13 @@ sequenceDiagram
 - **Owner Convergence Mandate:** Validation enforces ≥42% unstoppable reserve, ≥44% antifragility buffer, emergency pause, guardian failover mesh, and mandatory control scripts before any action executes.
 - **Meta-Convergence Artefacts:** The V8 run emits `meta_agentic_alpha_v8/ui/index.html`, `dashboard-data-v8.json`, and `alpha_meta_convergence_masterplan.md`, showcasing rich Mermaid diagrams (flow, journey, state, quadrant) for stakeholder briefings.
 - **CI Alignment:** The orchestration checks CI health and writes scoreboard snapshots under `storage/orchestrator_v8/`, proving every run is greenlit before sovereign execution proceeds.
+
+## 🌌 V10 Omnidominion Console (Brand New)
+
+- **Omnidominion Sovereignty:** `meta_agentic_demo_v10.py` enforces ≥6 guardian primaries, ≥5 failover guardians, ≥52% unstoppable reserve, ≥48% antifragility buffer, hyperstructure command protocols, and CI V2 gates before any execution step.
+- **Superintelligence Dashboard:** The V10 console renders hyperstructure flow, radar, sequence, gantt, journey, state, and quadrant Mermaid diagrams alongside hyperstructure vectors, market sentinels, on-chain overrides, and treasury flywheel controls.
+- **Owner Omnisovereignty Mandate:** Owners can update guardian quorum, treasury routes, autopilot velocity, antifragility buffers, and account-abstraction bundler/paymaster via CLI helpers; the generated deck captures sovereignty matrices, CI status, and scoreboard snapshots automatically.
+- **CI V2 Greenline:** `.github/workflows/demo-meta-agentic-alpha-agi-jobs.yml` now executes the V10 CLI, proving every PR and the main branch maintain a fully green V2 CI grid. `ci_matrix.json` marks the Omnidominion run as `hyper-green` so nothing ships without passing pipelines.
 
 ## 👑 V9 Sovereignty Console (Brand New)
 
