@@ -168,16 +168,15 @@ class HGMEngine:
         self._propagate_result(node, success)
 
     def _propagate_result(self, node: AgentNode, success: bool) -> None:
-        cursor: Optional[AgentNode] = node
-        while cursor is not None:
+        node.register_result(success)
+        parent_id = node.parent_id
+        while parent_id:
+            cursor = self.state.agents[parent_id]
             if success:
                 cursor.clade_success += 1
             else:
                 cursor.clade_failure += 1
-            if cursor.agent_id == node.agent_id:
-                cursor.register_result(success)
             parent_id = cursor.parent_id
-            cursor = self.state.agents[parent_id] if parent_id else None
 
     def pending_agents(self) -> Set[str]:
         return set(self.state.busy_agents)

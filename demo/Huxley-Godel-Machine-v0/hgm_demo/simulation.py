@@ -101,6 +101,7 @@ class SimulationEnvironment:
             quality_sigma=self.quality_sigma,
             quality_bounds=self.quality_bounds,
             baseline_quality_drift=self.baseline_quality_drift,
+            innovation_bias=self.innovation_bias,
             evaluation_latency=self.evaluation_latency,
             expansion_latency=self.expansion_latency,
         )
