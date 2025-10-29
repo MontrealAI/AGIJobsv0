@@ -69,8 +69,17 @@ export class PlanetaryLedger {
     for (const [nodeId, totals] of Object.entries(checkpoint.nodes)) {
       this.nodeTotals.set(nodeId, cloneNodeTotals(totals));
     }
-    for (const [key, entry] of Object.entries(checkpoint.flows)) {
-      this.spillovers.set(key, { count: entry.count, value: entry.value });
+    for (const [key, rawEntry] of Object.entries(checkpoint.flows as Record<string, unknown>)) {
+      if (typeof rawEntry === 'number') {
+        this.spillovers.set(key, { count: rawEntry, value: 0 });
+        continue;
+      }
+      if (rawEntry && typeof rawEntry === 'object') {
+        const entry = rawEntry as { count?: number; value?: number };
+        const count = typeof entry.count === 'number' ? entry.count : 0;
+        const value = typeof entry.value === 'number' ? entry.value : 0;
+        this.spillovers.set(key, { count, value });
+      }
     }
     this.events.push(...checkpoint.events.map((entry) => ({ ...entry })));
     this.totalEvents = checkpoint.totalEvents ?? this.events.length;
