@@ -22,3 +22,7 @@ culture-bootstrap:
 @$(MAKE) culture-deploy NETWORK=$(NETWORK) ARGS=$(ARGS)
 @$(MAKE) culture-seed NETWORK=$(NETWORK) ARGS=$(ARGS)
 @$(MAKE) culture-arena-sample NETWORK=$(NETWORK) MODE=$(MODE)
+.PHONY: hgm-demo
+hgm-demo:
+	python demo/Huxley-Godel-Machine-v0/run_demo.py
+
