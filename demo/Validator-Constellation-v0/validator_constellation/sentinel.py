@@ -117,13 +117,18 @@ class DomainPauseController:
         forbidden_selectors: Iterable[str] | None = None,
     ) -> DomainState:
         normalized_targets = {_normalize_target(target) for target in allowed_targets or ()}
+        hashed_targets = set()
+        for target in normalized_targets:
+            hashed = _hash_target(target)
+            hashed_targets.add(hashed)
+            hashed_targets.add(f"0x{hashed}")
         state = DomainState(
             id=domain,
             human_name=human_name,
             budget_limit=Decimal(str(budget_limit)),
             unsafe_opcodes={opcode.upper() for opcode in (unsafe_opcodes or ())},
             allowed_targets=normalized_targets,
-            allowed_target_hashes={_hash_target(target) for target in normalized_targets},
+            allowed_target_hashes=hashed_targets,
             max_calldata_bytes=max(0, int(max_calldata_bytes)),
             forbidden_selectors={_normalize_selector(selector) for selector in (forbidden_selectors or ())},
         )
@@ -220,8 +225,13 @@ class DomainPauseController:
             state.unsafe_opcodes = {opcode.upper() for opcode in unsafe_opcodes}
         if allowed_targets is not None:
             normalized_targets = {_normalize_target(target) for target in allowed_targets}
+            hashed_targets = set()
+            for target in normalized_targets:
+                hashed = _hash_target(target)
+                hashed_targets.add(hashed)
+                hashed_targets.add(f"0x{hashed}")
             state.allowed_targets = normalized_targets
-            state.allowed_target_hashes = {_hash_target(target) for target in normalized_targets}
+            state.allowed_target_hashes = hashed_targets
         if max_calldata_bytes is not None:
             state.max_calldata_bytes = max(0, int(max_calldata_bytes))
         if forbidden_selectors is not None:
@@ -406,23 +416,47 @@ class SentinelMonitor:
     def _check_target(
         self, state: DomainState, action: AgentAction, block_number: Optional[int]
     ) -> Optional[SentinelAlert]:
-        if not state.allowed_targets:
+        if not state.allowed_targets and not state.allowed_target_hashes:
             return None
         target = action.target or action.metadata.get("target")
-        if not isinstance(target, str):
-            return None
-        normalized = _normalize_target(target)
-        hashed = _hash_target(normalized)
-        if normalized not in state.allowed_targets and hashed not in state.allowed_target_hashes:
+        metadata_hash = action.metadata.get("targetHash") or action.metadata.get("target_hash")
+        normalized_target: Optional[str] = None
+        candidate_hashes: List[str] = []
+        if isinstance(target, str):
+            normalized_target = _normalize_target(target)
+            candidate_hashes.extend(
+                filter(
+                    None,
+                    [
+                        normalized_target,
+                        _hash_target(normalized_target),
+                    ],
+                )
+            )
+            if normalized_target in state.allowed_targets:
+                return None
+            if any(candidate in state.allowed_target_hashes for candidate in candidate_hashes):
+                return None
+        normalized_hash: Optional[str] = None
+        if isinstance(metadata_hash, str):
+            normalized_hash = _normalize_target(metadata_hash)
+            if (
+                normalized_hash in state.allowed_target_hashes
+                and (normalized_target is None or normalized_hash in candidate_hashes)
+            ):
+                return None
+        if isinstance(target, str) or isinstance(metadata_hash, str):
             return self._raise_alert(
                 state,
                 action,
                 rule="UNAUTHORIZED_TARGET",
-                reason=f"Target {target} is not authorised",
+                reason=f"Target {target or metadata_hash} is not authorised",
                 severity="CRITICAL",
                 metadata={
                     "target": target,
-                    "normalized": normalized,
+                    "normalized": normalized_target,
+                    "targetHash": metadata_hash,
+                    "metadataNormalized": normalized_hash,
                 },
                 block_number=block_number,
             )
