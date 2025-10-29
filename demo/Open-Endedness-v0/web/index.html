@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AGI Jobs OMNI Open-Endedness Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>AGI Jobs OMNI Open-Endedness Dashboard</h1>
+      <p>Demonstrating how non-technical operators can orchestrate
+      compounding GMV through OMNI-guided curricula.</p>
+    </header>
+    <section class="controls">
+      <label for="jsonInput">Metrics JSON</label>
+      <input id="jsonInput" type="text" value="../results/latest.json" />
+      <button id="load">Load</button>
+    </section>
+    <section class="charts">
+      <canvas id="gmvChart"></canvas>
+      <canvas id="roiChart"></canvas>
+      <canvas id="allocationChart"></canvas>
+    </section>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>

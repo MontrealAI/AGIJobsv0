@@ -1,0 +1,66 @@
+:root {
+  color-scheme: dark light;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #f8fafc;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 2rem;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+header p {
+  max-width: 720px;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 2rem 0;
+}
+
+.controls input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.controls button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(120deg, #22d3ee, #6366f1);
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+canvas {
+  background: rgba(15, 23, 42, 0.6);
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
+}

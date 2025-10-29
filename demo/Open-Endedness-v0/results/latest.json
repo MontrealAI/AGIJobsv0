@@ -1,0 +1,72 @@
+{
+  "Uniform": {
+    "strategy_name": "Uniform",
+    "total_revenue": 227800.0,
+    "fm_cost": 0.0,
+    "attempts": 1000,
+    "successes": 110,
+    "task_frequency": {
+      "salary_signal": 168,
+      "discount_target": 156,
+      "cta_opt": 163,
+      "follow_up": 159,
+      "interview_flow": 184,
+      "talent_match": 170
+    },
+    "revenue_per_task": {
+      "salary_signal": 0.0,
+      "discount_target": 0.0,
+      "cta_opt": 4800.0,
+      "follow_up": 44100.0,
+      "interview_flow": 170500.0,
+      "talent_match": 8400.0
+    },
+    "roi": 227800000000.0
+  },
+  "Learning Progress": {
+    "strategy_name": "Learning Progress",
+    "total_revenue": 362700.0,
+    "fm_cost": 0.0,
+    "attempts": 1000,
+    "successes": 124,
+    "task_frequency": {
+      "interview_flow": 273,
+      "discount_target": 123,
+      "cta_opt": 151,
+      "salary_signal": 99,
+      "talent_match": 172,
+      "follow_up": 182
+    },
+    "revenue_per_task": {
+      "interview_flow": 272800.0,
+      "discount_target": 3500.0,
+      "cta_opt": 8400.0,
+      "salary_signal": 0.0,
+      "talent_match": 67200.0,
+      "follow_up": 10800.0
+    },
+    "roi": 362700000000.0
+  },
+  "OMNI": {
+    "strategy_name": "OMNI",
+    "total_revenue": 506600.0,
+    "fm_cost": 20.0,
+    "attempts": 1000,
+    "successes": 167,
+    "task_frequency": {
+      "interview_flow": 384,
+      "discount_target": 195,
+      "cta_opt": 185,
+      "salary_signal": 124,
+      "talent_match": 112
+    },
+    "revenue_per_task": {
+      "interview_flow": 443300.0,
+      "discount_target": 52500.0,
+      "cta_opt": 10800.0,
+      "salary_signal": 0.0,
+      "talent_match": 0.0
+    },
+    "roi": 25330.0
+  }
+}
