@@ -1,0 +1,51 @@
+{
+  "streams": [
+    {
+      "name": "Alpha Compounding",
+      "allocation_percent": 0.32,
+      "destination": "Alpha Factory Vault"
+    },
+    {
+      "name": "Guardian Quorum",
+      "allocation_percent": 0.18,
+      "destination": "Guardian Compensation Mesh"
+    },
+    {
+      "name": "Supremacy Reserve",
+      "allocation_percent": 0.22,
+      "destination": "Supremacy Reserve"
+    },
+    {
+      "name": "Innovation Lab",
+      "allocation_percent": 0.14,
+      "destination": "Curriculum Foundry"
+    },
+    {
+      "name": "Ecosystem Expansion",
+      "allocation_percent": 0.14,
+      "destination": "Cross-Domain Partnerships"
+    }
+  ],
+  "bridges": [
+    {
+      "id": "Layer2-Supremacy-Bridge",
+      "status": "ready",
+      "capacity": 0.27
+    },
+    {
+      "id": "Crosschain-Stable-Bridge",
+      "status": "active",
+      "capacity": 0.31
+    },
+    {
+      "id": "DeFi-Supremacy-Bridge",
+      "status": "active",
+      "capacity": 0.22
+    },
+    {
+      "id": "Alpha-Industrial-Bridge",
+      "status": "calibrating",
+      "capacity": 0.2
+    }
+  ]
+}

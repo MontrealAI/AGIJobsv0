@@ -1,0 +1,24 @@
+{
+  "layers": [
+    {
+      "name": "Foundational",
+      "checks": ["pytest", "static-analysis", "lint", "type-check"],
+      "status": "pass"
+    },
+    {
+      "name": "Simulation",
+      "checks": ["agent-simulations", "scenario-playback"],
+      "status": "pass"
+    },
+    {
+      "name": "On-Chain",
+      "checks": ["contracts", "fuzz", "fork-tests"],
+      "status": "pass"
+    },
+    {
+      "name": "Governance",
+      "checks": ["guardian-mesh-review", "policy-safety"],
+      "status": "pass"
+    }
+  ]
+}

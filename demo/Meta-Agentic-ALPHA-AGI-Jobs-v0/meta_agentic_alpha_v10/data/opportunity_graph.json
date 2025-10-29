@@ -1,0 +1,42 @@
+{
+  "nodes": [
+    {
+      "label": "Supply Chain Inefficiency",
+      "value": 0.32,
+      "connections": ["Energy Transition", "Reshoring Catalyst"]
+    },
+    {
+      "label": "Frontier Research Breakthrough",
+      "value": 0.28,
+      "connections": ["Biotech Acceleration", "Alpha Factory"]
+    },
+    {
+      "label": "Policy Loophole",
+      "value": 0.22,
+      "connections": ["Regulatory Arbitrage", "Guardian Mesh"]
+    },
+    {
+      "label": "Liquidity Dislocation",
+      "value": 0.18,
+      "connections": ["DeFi Supremacy Bridge", "Treasury Reserve"]
+    }
+  ],
+  "insights": [
+    {
+      "score": 4.9,
+      "description": "Deploy treasury overdrive to capture supply chain arbitrage"
+    },
+    {
+      "score": 4.6,
+      "description": "Launch quantum expansion thread to scale frontier research"
+    },
+    {
+      "score": 4.4,
+      "description": "Activate guardian pivot to secure regulatory advantage"
+    },
+    {
+      "score": 4.2,
+      "description": "Route unstoppable liquidity through DeFi supremacy bridge"
+    }
+  ]
+}

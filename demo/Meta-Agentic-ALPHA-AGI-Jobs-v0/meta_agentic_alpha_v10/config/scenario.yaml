@@ -1,0 +1,291 @@
+demo:
+  name: "Meta-Agentic α-AGI Jobs Demo V10 — Supremacy Atlas"
+  narrative: |
+    A non-technical sovereign owner launches the Supremacy Console. AGI Jobs v0 (v2)
+    materialises a full-stack, unstoppable α-AGI operator: meta-agentic planning,
+    hypergraph opportunity capture, treasury autopilot, guardian supremacy mesh,
+    CI V2 verification, and gasless execution fabric. Every artefact — dashboards,
+    reports, telemetry, override levers — is generated automatically with zero manual
+    wiring.
+  dashboards:
+    - title: "Supremacy Console"
+      file: "meta_agentic_alpha_v10/ui/index.html"
+    - title: "Supremacy Masterplan"
+      file: "meta_agentic_alpha_v10/reports/generated/alpha_meta_supremacy_masterplan.md"
+  attachments:
+    - "meta_agentic_alpha_v10/reports/alpha_meta_supremacy_overview.md"
+    - "meta_agentic_alpha_v10/playbooks/owner_supremacy_command_matrix.md"
+  agents:
+    - agent_id: "guardian-meta-mesh-v10"
+      owner: "Guardian Meta-Mesh"
+      region: "omni"
+      capabilities:
+        - execution
+        - validation
+        - analysis
+      stake_amount: "92000"
+      multisig: true
+      slashable: true
+      operator_secret: "guardian-meta-mesh-v10-secret"
+    - agent_id: "supremacy-simulation-architect"
+      owner: "Simulation Guild"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "58000"
+      multisig: true
+      slashable: false
+      operator_secret: "supremacy-simulation-architect-secret"
+    - agent_id: "alpha-treasury-hyperpilot"
+      owner: "Treasury Collective"
+      region: "omni"
+      capabilities:
+        - analysis
+        - support
+      stake_amount: "62000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-treasury-hyperpilot-secret"
+    - agent_id: "mission-audit-overwatch"
+      owner: "Audit Observatory"
+      region: "omni"
+      capabilities:
+        - validation
+        - analysis
+        - support
+      stake_amount: "42000"
+      multisig: true
+      slashable: true
+      operator_secret: "mission-audit-overwatch-secret"
+    - agent_id: "alpha-compounding-director"
+      owner: "Compounding Network"
+      region: "omni"
+      capabilities:
+        - execution
+        - analysis
+      stake_amount: "66000"
+      multisig: true
+      slashable: true
+      operator_secret: "alpha-compounding-director-secret"
+    - agent_id: "autopilot-dominion-weaver"
+      owner: "Autopilot Guild"
+      region: "omni"
+      capabilities:
+        - execution
+        - analysis
+        - support
+      stake_amount: "52000"
+      multisig: true
+      slashable: true
+      operator_secret: "autopilot-dominion-weaver-secret"
+    - agent_id: "gasless-execution-sentinel"
+      owner: "Account Abstraction Syndicate"
+      region: "omni"
+      capabilities:
+        - execution
+        - support
+      stake_amount: "47000"
+      multisig: true
+      slashable: true
+      operator_secret: "gasless-execution-sentinel-secret"
+
+scenario:
+  id: "meta-agentic-alpha-v10"
+  title: "Meta-Agentic α-AGI Jobs Demo — Supremacy Atlas"
+  narrative: |
+    Meta-Agentic α-AGI Jobs V10 demonstrates a supremacy-grade orchestrator. The
+    platform identifies alpha, evolves its curriculum, designs solutions,
+    strategises multi-domain missions, executes on-chain via 4337, enforces CI V2,
+    and routes treasury flows across chains — all with owner-first override levers.
+    Every parameter, script, treasury stream, guardian lever, and gasless control is
+    editable by the owner with zero code.
+  unstoppable_initiatives:
+    - "Auto-orchestrate new alpha factories"
+    - "Regenerate curriculum from market anomalies"
+    - "Spin up sovereign mission threads on demand"
+    - "Deploy unstoppable liquidity mesh"
+    - "Stream antifragility probes into guardian council"
+    - "Coordinate cross-chain supremacy reserves"
+  owner:
+    address: "0xSUPREME0000000000000000000000000000000010"
+    timelock: "0xTIMEL0CK00000000000000000000000000000010"
+    multisig: "0xMULTI5000000000000000000000000000000010"
+    guardians:
+      - "0xGUARDIAN000000000000000000000000000000AA"
+      - "0xGUARDIAN000000000000000000000000000000BB"
+      - "0xGUARDIAN000000000000000000000000000000CC"
+      - "0xGUARDIAN000000000000000000000000000000DD"
+      - "0xGUARDIAN000000000000000000000000000000EE"
+      - "0xGUARDIAN000000000000000000000000000000FF"
+      - "0xGUARDIAN000000000000000000000000000000GG"
+    guardian_failover:
+      - "0xGUARDIAN000000000000000000000000000000HH"
+      - "0xGUARDIAN000000000000000000000000000000II"
+      - "0xGUARDIAN000000000000000000000000000000JJ"
+      - "0xGUARDIAN000000000000000000000000000000KK"
+    approvals_required: 6
+    emergency_pause: true
+    can_delegate_parameters: true
+    circuit_breaker_window_minutes: 6
+    mission_threads:
+      - "mission-thread-alpha-forge"
+      - "mission-thread-supply-sense"
+      - "mission-thread-governance-mesh"
+      - "mission-thread-quantum-expansion"
+    supremacy_vectors:
+      - "supremacy-vector-global-alpha"
+      - "supremacy-vector-supply-autonomy"
+      - "supremacy-vector-portfolio-synthesis"
+      - "supremacy-vector-governance-alignment"
+    sovereign_domains:
+      - "global-markets"
+      - "supply-chains"
+      - "frontier-research"
+      - "public-policy"
+      - "energy-transition"
+      - "healthcare"
+    unstoppable_threshold: 0.95
+    unstoppable_switches:
+      emergency_pause: "activate-emergency-pause"
+      guardian_shift: "rotate-guardian-mesh"
+      treasury_overdrive: "deploy-unstoppable-treasury"
+      curriculum_escalation: "escalate-open-ended-challenges"
+    upgrade_scripts:
+      treasury: "scripts/upgrade_treasury_router.py"
+      guardians: "scripts/upgrade_guardian_mesh.py"
+      curriculum: "scripts/upgrade_curriculum_foundry.py"
+      ci: "scripts/upgrade_ci_grid.py"
+    control_scripts:
+      pause: "scripts/control/pause_operations.py"
+      resume: "scripts/control/resume_operations.py"
+      update_treasury: "scripts/control/update_treasury_routes.py"
+      rotate_guardians: "scripts/control/rotate_guardians.py"
+      upgrade_modules: "scripts/control/upgrade_modules.py"
+    mutable_parameters:
+      job_fee_bps: 68
+      validator_bond: 128000
+      alpha_multiplier: 3.2
+      treasury_drawdown_limit: 2.5
+      guardian_stake_floor: 88000
+      autopilot_velocity: 1.4
+    gasless_controls:
+      paymaster_topup: "scripts/topup_paymaster.py"
+      session_keys_rotate: "scripts/rotate_session_keys.py"
+    delegation_matrix:
+      autopilot-dominion-weaver:
+        can_override: true
+        max_spend: 150000
+      guardian-meta-mesh-v10:
+        can_override: true
+        max_spend: 120000
+    session_keys:
+      - "0xSESSIONKEY00000000000000000000000000000010"
+      - "0xSESSIONKEY00000000000000000000000000000011"
+      - "0xSESSIONKEY00000000000000000000000000000012"
+      - "0xSESSIONKEY00000000000000000000000000000013"
+    unstoppable_reserve_percent: 0.37
+    antifragility_buffer_percent: 0.32
+  operations:
+    telemetry_channels:
+      - "supremacy.telemetry.guardian-grid"
+      - "supremacy.telemetry.alpha-factory"
+      - "supremacy.telemetry.treasury-autopilot"
+      - "supremacy.telemetry.gasless-router"
+      - "supremacy.telemetry.mission-threads"
+    autopilot_modes:
+      guardian_mesh: "scripts/autopilot_guardian_mesh.py"
+      treasury_allocator: "scripts/autopilot_treasury_allocator.py"
+      alpha_factory: "scripts/autopilot_alpha_factory.py"
+      curriculum_escalator: "scripts/autopilot_curriculum_escalator.py"
+      market_bridge: "scripts/autopilot_market_bridge.py"
+    owner_prompts:
+      - "Approve guardian quorum update"
+      - "Authorize treasury supremacy sweep"
+      - "Launch new alpha thread"
+      - "Escalate curriculum complexity"
+      - "Dispatch antifragility probes"
+    antifragility_programs:
+      - "Run stress-mode guardian audits"
+      - "Simulate market regime flips"
+      - "Inject black-swan liquidity scenarios"
+    gasless_controls:
+      paymaster_topup: "scripts/topup_paymaster.py"
+      session_keys_rotate: "scripts/rotate_session_keys.py"
+      bundler_refresh: "scripts/refresh_bundler_keys.py"
+    owner_prompts_acknowledged: true
+  treasury:
+    token: "AGIALPHA"
+    initial_balance: "42000000"
+    treasury_address: "0xTREASURY00000000000000000000000000000010"
+    fee_pool: "0xFEEPOOL00000000000000000000000000000010"
+    unstoppable_reserve_percent: 40
+    risk_limits:
+      max_drawdown_percent: 1.6
+      var_percent: 0.8
+      antifragility_buffer_percent: 35
+      circuit_breaker_percent: 3.2
+    streams:
+      - name: "alpha-compounding"
+        allocation_percent: 0.32
+        destination: "Alpha Factory Vault"
+      - name: "guardian-quorum"
+        allocation_percent: 0.18
+        destination: "Guardian Compensation Mesh"
+      - name: "treasury-reserve"
+        allocation_percent: 0.22
+        destination: "Supremacy Reserve"
+      - name: "innovation-lab"
+        allocation_percent: 0.14
+        destination: "Curriculum Foundry"
+      - name: "ecosystem-expansion"
+        allocation_percent: 0.14
+        destination: "Cross-Domain Partnerships"
+    bridge_channels:
+      - "Layer2-Supremacy-Bridge"
+      - "Crosschain-Stable-Bridge"
+      - "DeFi-Supremacy-Bridge"
+      - "Alpha-Industrial-Bridge"
+    policies:
+      unstoppable_reserve:
+        min_percent: 0.35
+        target_percent: 0.42
+      antifragility_buffer:
+        min_percent: 0.30
+        target_percent: 0.35
+  gasless:
+    enabled: true
+    session_keys:
+      - "0xSESSIONKEY00000000000000000000000000000010"
+      - "0xSESSIONKEY00000000000000000000000000000011"
+      - "0xSESSIONKEY00000000000000000000000000000012"
+      - "0xSESSIONKEY00000000000000000000000000000013"
+      - "0xSESSIONKEY00000000000000000000000000000014"
+      - "0xSESSIONKEY00000000000000000000000000000015"
+    bundler: "0xBUNDLER0000000000000000000000000000000010"
+    paymaster: "0xPAYMASTER00000000000000000000000000000010"
+    relayers:
+      - "https://bundler.supremacy.alpha"
+      - "https://bundler.guardian.mesh"
+  ci:
+    checks:
+      - "pytest"
+      - "orchestrator-ci"
+      - "static-analysis"
+      - "fuzz"
+      - "contracts"
+      - "simulation"
+      - "supply-chain-verifier"
+      - "treasury-audit"
+      - "guardian-mesh-review"
+      - "gasless-safety"
+    policy:
+      fail_fast: true
+      escalation_minutes: 7
+  execution:
+    dry_run: true
+    gasless: true
+    bundler: "0xBUNDLER0000000000000000000000000000000010"
+    paymaster: "0xPAYMASTER00000000000000000000000000000010"
+    account_abstraction: true
+    require_guardian_quorum: true

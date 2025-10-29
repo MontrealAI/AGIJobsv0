@@ -1,0 +1,35 @@
+{
+  "owner_switches": [
+    {
+      "id": "activate-emergency-pause",
+      "latency_seconds": 12,
+      "description": "Immediate guardian-triggered pause across all pipelines"
+    },
+    {
+      "id": "rotate-guardian-mesh",
+      "latency_seconds": 18,
+      "description": "Rotates the guardian roster into antifragility formation"
+    },
+    {
+      "id": "deploy-unstoppable-treasury",
+      "latency_seconds": 22,
+      "description": "Streams reserves into unstoppable alpha execution"
+    },
+    {
+      "id": "escalate-open-ended-challenges",
+      "latency_seconds": 16,
+      "description": "Escalates the open-ended curriculum and autopilot difficulty"
+    }
+  ],
+  "gasless_controls": [
+    "paymaster_topup",
+    "session_keys_rotate",
+    "bundler_refresh"
+  ],
+  "safety_bounds": {
+    "max_single_spend": 180000,
+    "max_daily_spend": 950000,
+    "guardian_threshold": 0.86,
+    "ci_v2_lockdown": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "events": [
+    {"time": "T+0", "event": "Owner launches Supremacy Console"},
+    {"time": "T+1", "event": "Meta-agentic planner composes mission"},
+    {"time": "T+2", "event": "Guardian quorum verified"},
+    {"time": "T+3", "event": "Treasury overdrive simulated"},
+    {"time": "T+4", "event": "4337 execution dry-run"},
+    {"time": "T+5", "event": "Supremacy dashboard rendered"},
+    {"time": "T+6", "event": "Owner override window opens"}
+  ]
+}

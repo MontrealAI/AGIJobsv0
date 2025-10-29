@@ -1,0 +1,29 @@
+{
+  "modes": [
+    {
+      "id": "guardian_mesh",
+      "description": "Maintains guardian quorum, rotates primaries, and enforces unstoppable threshold."
+    },
+    {
+      "id": "treasury_allocator",
+      "description": "Streams capital into alpha factories, reserves, and antifragility buffers."
+    },
+    {
+      "id": "alpha_factory",
+      "description": "Synthesises new alpha strategies across finance, supply chain, and biotech."
+    },
+    {
+      "id": "curriculum_escalator",
+      "description": "Evolves the open-ended curriculum using POET-style difficulty escalation."
+    },
+    {
+      "id": "market_bridge",
+      "description": "Bridges opportunities across chains and markets with 4337 execution envelopes."
+    }
+  ],
+  "gasless_controls": [
+    "paymaster_topup",
+    "session_keys_rotate",
+    "bundler_refresh"
+  ]
+}

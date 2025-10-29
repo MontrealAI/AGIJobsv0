@@ -1,0 +1,24 @@
+{
+  "routes": [
+    {
+      "id": "job-registry",
+      "description": "Deploys jobs to AGI Jobs v0 (v2) marketplace",
+      "status": "ready"
+    },
+    {
+      "id": "treasury-router",
+      "description": "Rebalances reserves via unstoppable treasury module",
+      "status": "ready"
+    },
+    {
+      "id": "guardian-override",
+      "description": "Executes guardian quorum adjustments via multisig",
+      "status": "ready"
+    },
+    {
+      "id": "gasless-bundler",
+      "description": "Sends ERC-4337 bundles through sponsored paymaster",
+      "status": "ready"
+    }
+  ]
+}

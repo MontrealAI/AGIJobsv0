@@ -1,0 +1,29 @@
+{
+  "guardians": 7,
+  "approvals_required": 6,
+  "timelock_seconds": 7200,
+  "emergency_pause": true,
+  "session_keys": 4,
+  "parameters": [
+    {
+      "name": "stake_floor",
+      "value": "80,000",
+      "mutable": true
+    },
+    {
+      "name": "reward_split",
+      "value": "60/40",
+      "mutable": true
+    },
+    {
+      "name": "treasury_reserve_target",
+      "value": "40%",
+      "mutable": true
+    },
+    {
+      "name": "mission_thread_limit",
+      "value": 16,
+      "mutable": true
+    }
+  ]
+}

@@ -1,0 +1,855 @@
+{
+  "generated_at": "2025-10-29T00:39:31.260814+00:00",
+  "alpha": {
+    "domains": [
+      {
+        "name": "Global Markets",
+        "probability": 0.88,
+        "confidence": 0.93,
+        "delta": 0.12
+      },
+      {
+        "name": "Supply Chains",
+        "probability": 0.86,
+        "confidence": 0.9,
+        "delta": 0.11
+      },
+      {
+        "name": "Frontier Research",
+        "probability": 0.82,
+        "confidence": 0.91,
+        "delta": 0.1
+      },
+      {
+        "name": "Energy Transition",
+        "probability": 0.79,
+        "confidence": 0.88,
+        "delta": 0.09
+      }
+    ],
+    "anomalies": [
+      {
+        "id": "ANOM-4337",
+        "description": "4337 mempool spike enabling cross-chain arbitrage",
+        "impact_score": 0.94
+      },
+      {
+        "id": "ANOM-SUPPLY",
+        "description": "Critical materials shortage across Asia-Pacific",
+        "impact_score": 0.89
+      },
+      {
+        "id": "ANOM-RESEARCH",
+        "description": "Breakthrough in quantum catalysis increases alpha probability",
+        "impact_score": 0.87
+      }
+    ]
+  },
+  "opportunity_graph": {
+    "nodes": [
+      {
+        "label": "Supply Chain Inefficiency",
+        "value": 0.32,
+        "connections": [
+          "Energy Transition",
+          "Reshoring Catalyst"
+        ]
+      },
+      {
+        "label": "Frontier Research Breakthrough",
+        "value": 0.28,
+        "connections": [
+          "Biotech Acceleration",
+          "Alpha Factory"
+        ]
+      },
+      {
+        "label": "Policy Loophole",
+        "value": 0.22,
+        "connections": [
+          "Regulatory Arbitrage",
+          "Guardian Mesh"
+        ]
+      },
+      {
+        "label": "Liquidity Dislocation",
+        "value": 0.18,
+        "connections": [
+          "DeFi Supremacy Bridge",
+          "Treasury Reserve"
+        ]
+      }
+    ],
+    "insights": [
+      {
+        "score": 4.9,
+        "description": "Deploy treasury overdrive to capture supply chain arbitrage"
+      },
+      {
+        "score": 4.6,
+        "description": "Launch quantum expansion thread to scale frontier research"
+      },
+      {
+        "score": 4.4,
+        "description": "Activate guardian pivot to secure regulatory advantage"
+      },
+      {
+        "score": 4.2,
+        "description": "Route unstoppable liquidity through DeFi supremacy bridge"
+      }
+    ]
+  },
+  "governance": {
+    "guardians": 7,
+    "approvals_required": 6,
+    "timelock_seconds": 7200,
+    "emergency_pause": true,
+    "session_keys": 4,
+    "parameters": [
+      {
+        "name": "stake_floor",
+        "value": "80,000",
+        "mutable": true
+      },
+      {
+        "name": "reward_split",
+        "value": "60/40",
+        "mutable": true
+      },
+      {
+        "name": "treasury_reserve_target",
+        "value": "40%",
+        "mutable": true
+      },
+      {
+        "name": "mission_thread_limit",
+        "value": 16,
+        "mutable": true
+      }
+    ]
+  },
+  "guardian_mesh": {
+    "guardians": [
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000AA",
+        "role": "Primary",
+        "weight": 0.18,
+        "capabilities": [
+          "execution",
+          "analysis"
+        ],
+        "latency_seconds": 14
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000BB",
+        "role": "Primary",
+        "weight": 0.17,
+        "capabilities": [
+          "validation",
+          "analysis"
+        ],
+        "latency_seconds": 13
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000CC",
+        "role": "Primary",
+        "weight": 0.16,
+        "capabilities": [
+          "execution",
+          "support"
+        ],
+        "latency_seconds": 15
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000DD",
+        "role": "Primary",
+        "weight": 0.15,
+        "capabilities": [
+          "analysis",
+          "support"
+        ],
+        "latency_seconds": 12
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000EE",
+        "role": "Primary",
+        "weight": 0.12,
+        "capabilities": [
+          "execution",
+          "validation"
+        ],
+        "latency_seconds": 16
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000FF",
+        "role": "Primary",
+        "weight": 0.11,
+        "capabilities": [
+          "support",
+          "analysis"
+        ],
+        "latency_seconds": 11
+      },
+      {
+        "address": "0xGUARDIAN000000000000000000000000000000GG",
+        "role": "Primary",
+        "weight": 0.11,
+        "capabilities": [
+          "execution",
+          "analysis"
+        ],
+        "latency_seconds": 17
+      }
+    ],
+    "failover": [
+      "0xGUARDIAN000000000000000000000000000000HH",
+      "0xGUARDIAN000000000000000000000000000000II",
+      "0xGUARDIAN000000000000000000000000000000JJ",
+      "0xGUARDIAN000000000000000000000000000000KK"
+    ],
+    "quorum_percent": 0.86
+  },
+  "execution_routes": {
+    "routes": [
+      {
+        "id": "job-registry",
+        "description": "Deploys jobs to AGI Jobs v0 (v2) marketplace",
+        "status": "ready"
+      },
+      {
+        "id": "treasury-router",
+        "description": "Rebalances reserves via unstoppable treasury module",
+        "status": "ready"
+      },
+      {
+        "id": "guardian-override",
+        "description": "Executes guardian quorum adjustments via multisig",
+        "status": "ready"
+      },
+      {
+        "id": "gasless-bundler",
+        "description": "Sends ERC-4337 bundles through sponsored paymaster",
+        "status": "ready"
+      }
+    ]
+  },
+  "simulations": {
+    "scenarios": [
+      {
+        "name": "Market Stress",
+        "description": "Volatility spike with correlated drawdowns",
+        "result": "passed"
+      },
+      {
+        "name": "Supply Shock",
+        "description": "Critical material shortage across continents",
+        "result": "passed"
+      },
+      {
+        "name": "Policy Crackdown",
+        "description": "Regulatory tightening on cross-border flows",
+        "result": "passed"
+      },
+      {
+        "name": "Infrastructure Failure",
+        "description": "4337 relayer downtime with gas spike",
+        "result": "passed"
+      }
+    ]
+  },
+  "timeline": {
+    "events": [
+      {
+        "time": "T+0",
+        "event": "Owner launches Supremacy Console"
+      },
+      {
+        "time": "T+1",
+        "event": "Meta-agentic planner composes mission"
+      },
+      {
+        "time": "T+2",
+        "event": "Guardian quorum verified"
+      },
+      {
+        "time": "T+3",
+        "event": "Treasury overdrive simulated"
+      },
+      {
+        "time": "T+4",
+        "event": "4337 execution dry-run"
+      },
+      {
+        "time": "T+5",
+        "event": "Supremacy dashboard rendered"
+      },
+      {
+        "time": "T+6",
+        "event": "Owner override window opens"
+      }
+    ]
+  },
+  "ci": {
+    "layers": [
+      {
+        "name": "Foundational",
+        "checks": [
+          "pytest",
+          "static-analysis",
+          "lint",
+          "type-check"
+        ],
+        "status": "pass"
+      },
+      {
+        "name": "Simulation",
+        "checks": [
+          "agent-simulations",
+          "scenario-playback"
+        ],
+        "status": "pass"
+      },
+      {
+        "name": "On-Chain",
+        "checks": [
+          "contracts",
+          "fuzz",
+          "fork-tests"
+        ],
+        "status": "pass"
+      },
+      {
+        "name": "Governance",
+        "checks": [
+          "guardian-mesh-review",
+          "policy-safety"
+        ],
+        "status": "pass"
+      }
+    ]
+  },
+  "metrics": {
+    "alpha_probability": 0.02,
+    "alpha_compounding_index": 0.127,
+    "owner_empowerment": 1.0,
+    "antifragility_index": 0.9763636363636363,
+    "control_surface_score": 1.0,
+    "unstoppable_readiness": 1.0,
+    "automation_aperture": 0.635,
+    "capital_flywheel_index": 1.0,
+    "convergence_velocity": 0.9063409090909091,
+    "guardian_resilience": 1.0,
+    "response_minutes": 8,
+    "step_completion_ratio": 0.0,
+    "scoreboard": {
+      "guardian-meta-mesh-v10": {
+        "wins": 4,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:00Z: Guardian quorum recalibrated",
+          "2025-12-12T12:05Z: Emergency pause simulation passed"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "supremacy-simulation-architect": {
+        "wins": 3,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:02Z: Scenario sweep complete"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "alpha-treasury-hyperpilot": {
+        "wins": 5,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:03Z: Treasury overdrive simulated",
+          "2025-12-12T12:04Z: Cross-chain bridge primed"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "mission-audit-overwatch": {
+        "wins": 4,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:04Z: CI V2 verdicts green"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "alpha-compounding-director": {
+        "wins": 4,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:05Z: Compounding flywheel primed"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "autopilot-dominion-weaver": {
+        "wins": 5,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:01Z: Autopilot lattice aligned"
+        ],
+        "updatedAt": 1763503200.0
+      },
+      "gasless-execution-sentinel": {
+        "wins": 3,
+        "losses": 0,
+        "slashes": 0,
+        "notes": [
+          "2025-12-12T12:03Z: Paymaster top-up executed",
+          "2025-12-12T12:05Z: Bundler rotation completed"
+        ],
+        "updatedAt": 1763503200.0
+      }
+    },
+    "supremacy_index": 1.0,
+    "autopilot_mastery": 1.0,
+    "meta_ci_health": 1.0,
+    "expansion_thrust": 1.0,
+    "owner_command_latency_seconds": 6,
+    "owner_approval_speed_minutes": 1
+  },
+  "control_surface": {
+    "score": 1.0,
+    "guardian_quorum": 6,
+    "guardian_count": 7,
+    "failover_guardian_count": 4,
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 6,
+    "unstoppable_reserve_percent": 40.0,
+    "antifragility_buffer_percent": 35.0,
+    "session_keys": [
+      "0xSESSIONKEY00000000000000000000000000000010",
+      "0xSESSIONKEY00000000000000000000000000000011",
+      "0xSESSIONKEY00000000000000000000000000000012",
+      "0xSESSIONKEY00000000000000000000000000000013",
+      "0xSESSIONKEY00000000000000000000000000000014",
+      "0xSESSIONKEY00000000000000000000000000000015"
+    ],
+    "bundler": "0xBUNDLER0000000000000000000000000000000010",
+    "paymaster": "0xPAYMASTER00000000000000000000000000000010",
+    "delegation": {},
+    "control_scripts": {
+      "pause": "scripts/control/pause_operations.py",
+      "resume": "scripts/control/resume_operations.py",
+      "update_treasury": "scripts/control/update_treasury_routes.py",
+      "rotate_guardians": "scripts/control/rotate_guardians.py",
+      "upgrade_modules": "scripts/control/upgrade_modules.py"
+    },
+    "mutable_parameters": {
+      "job_fee_bps": 68,
+      "validator_bond": 128000,
+      "alpha_multiplier": 3.2,
+      "treasury_drawdown_limit": 2.5,
+      "guardian_stake_floor": 88000,
+      "autopilot_velocity": 1.4
+    },
+    "timelock": "0xTIMEL0CK00000000000000000000000000000010",
+    "multisig": "0xMULTI5000000000000000000000000000000010",
+    "levers": [
+      "Activate pause",
+      "Activate resume",
+      "Activate rotate guardians",
+      "Activate update treasury",
+      "Activate upgrade modules",
+      "Adjust alpha multiplier to 3.2",
+      "Adjust autopilot velocity to 1.4",
+      "Adjust guardian stake floor to 88000",
+      "Adjust job fee bps to 68",
+      "Adjust treasury drawdown limit to 2.5",
+      "Adjust validator bond to 128000",
+      "Antifragility buffer 35.0%",
+      "Bundler 0xBUNDLER0000000000000000000000000000000010",
+      "Circuit breaker 6 minutes",
+      "Guardian quorum 6/7",
+      "Multisig 0xMULTI5000000000000000000000000000000010",
+      "Paymaster 0xPAYMASTER00000000000000000000000000000010",
+      "Timelock 0xTIMEL0CK00000000000000000000000000000010",
+      "Unstoppable reserve 40.0%"
+    ],
+    "sovereign_domains": [
+      "global-markets",
+      "supply-chains",
+      "frontier-research",
+      "public-policy",
+      "energy-transition",
+      "healthcare"
+    ],
+    "mission_threads": [
+      "mission-thread-alpha-forge",
+      "mission-thread-supply-sense",
+      "mission-thread-governance-mesh",
+      "mission-thread-quantum-expansion"
+    ],
+    "supremacy_vectors": [
+      "supremacy-vector-global-alpha",
+      "supremacy-vector-supply-autonomy",
+      "supremacy-vector-portfolio-synthesis",
+      "supremacy-vector-governance-alignment"
+    ],
+    "unstoppable_initiatives": [
+      "Auto-orchestrate new alpha factories",
+      "Regenerate curriculum from market anomalies",
+      "Spin up sovereign mission threads on demand",
+      "Deploy unstoppable liquidity mesh",
+      "Stream antifragility probes into guardian council",
+      "Coordinate cross-chain supremacy reserves"
+    ],
+    "telemetry_channels": [
+      "supremacy.telemetry.guardian-grid",
+      "supremacy.telemetry.alpha-factory",
+      "supremacy.telemetry.treasury-autopilot",
+      "supremacy.telemetry.gasless-router",
+      "supremacy.telemetry.mission-threads"
+    ],
+    "autopilot_modes": {
+      "guardian_mesh": "scripts/autopilot_guardian_mesh.py",
+      "treasury_allocator": "scripts/autopilot_treasury_allocator.py",
+      "alpha_factory": "scripts/autopilot_alpha_factory.py",
+      "curriculum_escalator": "scripts/autopilot_curriculum_escalator.py",
+      "market_bridge": "scripts/autopilot_market_bridge.py"
+    },
+    "upgrade_scripts": {
+      "treasury": "scripts/upgrade_treasury_router.py",
+      "guardians": "scripts/upgrade_guardian_mesh.py",
+      "curriculum": "scripts/upgrade_curriculum_foundry.py",
+      "ci": "scripts/upgrade_ci_grid.py"
+    },
+    "owner_prompts": [
+      "Approve guardian quorum update",
+      "Authorize treasury supremacy sweep",
+      "Launch new alpha thread",
+      "Escalate curriculum complexity",
+      "Dispatch antifragility probes"
+    ],
+    "antifragility_programs": [
+      "Run stress-mode guardian audits",
+      "Simulate market regime flips",
+      "Inject black-swan liquidity scenarios"
+    ],
+    "unstoppable_switches": {
+      "emergency_pause": "activate-emergency-pause",
+      "guardian_shift": "rotate-guardian-mesh",
+      "treasury_overdrive": "deploy-unstoppable-treasury",
+      "curriculum_escalation": "escalate-open-ended-challenges"
+    },
+    "gasless_controls": {
+      "paymaster_topup": "scripts/topup_paymaster.py",
+      "session_keys_rotate": "scripts/rotate_session_keys.py",
+      "bundler_refresh": "scripts/refresh_bundler_keys.py"
+    },
+    "unstoppable_threshold": 0.95
+  },
+  "mermaid": {
+    "flow": "graph TD\n  Owner((Supreme Owner)) --> Identify[Hyper Identify Mesh]\n  Identify --> Learn[Open-Ended Curriculum Forge]\n  Learn --> Think[Meta-Agentic Tree of Supremacy]\n  Think --> Design[Creative Atlas]\n  Design --> Strategise[Portfolio Navigator]\n  Strategise --> Execute[On-Chain Execution Fabric]\n  Execute --> Govern[Guardian Meta-Conductor]\n  Govern --> Sustain[Owner Supremacy Matrix]\n  Sustain --> Owner\n  Owner -->|Override Scripts| Execute\n  Owner -->|Parameter Switches| Strategise\n  subgraph Supremacy[\"Supremacy Flywheel\"]\n    Telemetry((Telemetry))\n    Autopilot((Autopilot))\n    Treasury((Treasury))\n    Guardians((Guardian Mesh))\n    CI((CI V2 Grid))\n    Gasless((Gasless Fabric))\n    Telemetry --> Autopilot\n    Autopilot --> Treasury\n    Treasury --> Guardians\n    Guardians --> CI\n    CI --> Gasless\n    Gasless --> Execute\n  end\n  Execute --> Supremacy\n  Supremacy --> Execute",
+    "sequence": "sequenceDiagram\n  participant Owner as Supreme Owner\n  participant Console as Supremacy Console\n  participant Planner as Meta-Agentic Planner\n  participant Guardians as Guardian Council\n  participant Chain as AGI Jobs v0 (v2)\n  participant Treasury as Treasury Autopilot\n  Owner->>Console: Launch Supremacy Scenario\n  Console->>Planner: Upload V10 scenario YAML\n  Planner->>Guardians: Stream unstoppable levers & antifragility checks\n  Guardians->>Treasury: Approve hyper-bridge & reserves\n  Treasury->>Chain: Simulate 4337 execution + treasury routing\n  Chain-->>Console: CI V2 verdicts + receipts + telemetry\n  Console-->>Owner: Render supremacy dashboard & override levers\n  Owner->>Chain: Optional unstoppable switch execution",
+    "gantt": "gantt\n  title Meta-Agentic Supremacy Timeline\n  dateFormat X\n  axisFormat %s\n  section Identify\n    Hyper-signal fusion       :done,    0, 1\n    Antifragility anomaly scan:active,  1, 1\n  section Learn\n    Curriculum escalation     :        2, 1\n    World model distillation  :        3, 2\n  section Strategise\n    Treasury supremacy mesh   :        5, 1\n    Guardian quorum sync      :        6, 1\n  section Execute\n    4337 dry-run envelope     :        7, 1\n    On-chain execution        :        8, 1\n    Owner override window     :        9, 1",
+    "mindmap": "mindmap\n  root((Meta-Convergence))\n    Identify\n      Multi-domain feeds\n      Alpha anomalies\n    Learn\n      Curriculum loops\n      World model distillation\n    Think\n      Meta search\n      Guardian council\n    Design\n      Creative forges\n      Simulation sweeps\n    Strategise\n      Treasury dominion\n      Governance lattice\n    Execute\n      4337 account abstraction\n      Sovereign overrides",
+    "journey": "journey\n  title Owner Empowerment Journey V10\n  section Console\n    Launch supremacy CLI: 5: owner\n    Review unstoppable dashboard: 5: owner\n    Trigger override switch: 5: owner\n  section Guardians\n    Confirm quorum: 5: guardians\n    Approve antifragility probes: 5: guardians\n    Endorse unstoppable threshold: 5: guardians\n  section Treasury\n    Stream hyperliquidity: 4: treasury\n    Route cross-chain bridges: 4: treasury",
+    "state": "stateDiagram-v2\n  [*] --> SupremacyReady\n  SupremacyReady --> Identify\n  Identify --> Learn\n  Learn --> Think\n  Think --> Design\n  Design --> Strategise\n  Strategise --> Execute\n  Execute --> SupremacyReview\n  SupremacyReview --> Execute: Override Script\n  SupremacyReview --> [*]",
+    "quadrant": "quadrantChart\n  title Supremacy Command Quadrant\n  x-axis Automation <---> Human Oversight\n  y-axis Passive <---> Proactive\n  \"Owner Override Mesh\" : 0.40 : 0.92\n  \"Guardian Meta-Mesh\" : -0.05 : 0.95\n  \"CI Enforcement\" : 0.68 : 0.72\n  \"Alpha Factories\" : 0.84 : 0.45\n  \"Autopilot Orchestrators\" : 0.60 : 0.82\n  \"Gasless Fabric\" : 0.55 : 0.88",
+    "flow_v10": "graph TD\n  Owner((Supreme Owner)) --> Identify[Hyper Identify Mesh]\n  Identify --> Learn[Open-Ended Curriculum Forge]\n  Learn --> Think[Meta-Agentic Tree of Supremacy]\n  Think --> Design[Creative Atlas]\n  Design --> Strategise[Portfolio Navigator]\n  Strategise --> Execute[On-Chain Execution Fabric]\n  Execute --> Govern[Guardian Meta-Conductor]\n  Govern --> Sustain[Owner Supremacy Matrix]\n  Sustain --> Owner\n  Owner -->|Override Scripts| Execute\n  Owner -->|Parameter Switches| Strategise\n  subgraph Supremacy[\"Supremacy Flywheel\"]\n    Telemetry((Telemetry))\n    Autopilot((Autopilot))\n    Treasury((Treasury))\n    Guardians((Guardian Mesh))\n    CI((CI V2 Grid))\n    Gasless((Gasless Fabric))\n    Telemetry --> Autopilot\n    Autopilot --> Treasury\n    Treasury --> Guardians\n    Guardians --> CI\n    CI --> Gasless\n    Gasless --> Execute\n  end\n  Execute --> Supremacy\n  Supremacy --> Execute",
+    "radar": "%%{init: {'theme': 'dark'} }%%\nradarChart\n  title Supremacy Capability Radar\n  axes Automation, Resilience, Empowerment, Velocity, Stewardship, Expansion\n  dataset Owner\n    data 1.00, 1.00, 1.00, 1.00, 1.00, 1.00",
+    "sequence_v10": "sequenceDiagram\n  participant Owner as Supreme Owner\n  participant Console as Supremacy Console\n  participant Planner as Meta-Agentic Planner\n  participant Guardians as Guardian Council\n  participant Chain as AGI Jobs v0 (v2)\n  participant Treasury as Treasury Autopilot\n  Owner->>Console: Launch Supremacy Scenario\n  Console->>Planner: Upload V10 scenario YAML\n  Planner->>Guardians: Stream unstoppable levers & antifragility checks\n  Guardians->>Treasury: Approve hyper-bridge & reserves\n  Treasury->>Chain: Simulate 4337 execution + treasury routing\n  Chain-->>Console: CI V2 verdicts + receipts + telemetry\n  Console-->>Owner: Render supremacy dashboard & override levers\n  Owner->>Chain: Optional unstoppable switch execution",
+    "gantt_v10": "gantt\n  title Meta-Agentic Supremacy Timeline\n  dateFormat X\n  axisFormat %s\n  section Identify\n    Hyper-signal fusion       :done,    0, 1\n    Antifragility anomaly scan:active,  1, 1\n  section Learn\n    Curriculum escalation     :        2, 1\n    World model distillation  :        3, 2\n  section Strategise\n    Treasury supremacy mesh   :        5, 1\n    Guardian quorum sync      :        6, 1\n  section Execute\n    4337 dry-run envelope     :        7, 1\n    On-chain execution        :        8, 1\n    Owner override window     :        9, 1",
+    "journey_v10": "journey\n  title Owner Empowerment Journey V10\n  section Console\n    Launch supremacy CLI: 5: owner\n    Review unstoppable dashboard: 5: owner\n    Trigger override switch: 5: owner\n  section Guardians\n    Confirm quorum: 5: guardians\n    Approve antifragility probes: 5: guardians\n    Endorse unstoppable threshold: 5: guardians\n  section Treasury\n    Stream hyperliquidity: 4: treasury\n    Route cross-chain bridges: 4: treasury",
+    "state_v10": "stateDiagram-v2\n  [*] --> SupremacyReady\n  SupremacyReady --> Identify\n  Identify --> Learn\n  Learn --> Think\n  Think --> Design\n  Design --> Strategise\n  Strategise --> Execute\n  Execute --> SupremacyReview\n  SupremacyReview --> Execute: Override Script\n  SupremacyReview --> [*]",
+    "quadrant_v10": "quadrantChart\n  title Supremacy Command Quadrant\n  x-axis Automation <---> Human Oversight\n  y-axis Passive <---> Proactive\n  \"Owner Override Mesh\" : 0.40 : 0.92\n  \"Guardian Meta-Mesh\" : -0.05 : 0.95\n  \"CI Enforcement\" : 0.68 : 0.72\n  \"Alpha Factories\" : 0.84 : 0.45\n  \"Autopilot Orchestrators\" : 0.60 : 0.82\n  \"Gasless Fabric\" : 0.55 : 0.88"
+  },
+  "approvals": [],
+  "supremacy": {
+    "command_latency_seconds": 6,
+    "owner_approval_speed_minutes": 1,
+    "guardian_quorum": 6,
+    "guardian_count": 7,
+    "failover_guardian_count": 4,
+    "supremacy_vectors": [
+      "Global Alpha Factories",
+      "Cross-Chain Supremacy Bridges",
+      "Guardian Meta-Orchestration",
+      "Curriculum Supremacy Forge"
+    ],
+    "supremacy_controls": [
+      {
+        "id": "override-treasury",
+        "label": "Treasury Overdrive",
+        "description": "Instantly rebalances capital into unstoppable reserve and alpha factories."
+      },
+      {
+        "id": "guardian-pivot",
+        "label": "Guardian Pivot",
+        "description": "Shifts guardian quorum to the antifragility formation on command."
+      },
+      {
+        "id": "curriculum-escalate",
+        "label": "Curriculum Escalator",
+        "description": "Escalates the open-ended curriculum to the next horizon of difficulty."
+      },
+      {
+        "id": "gasless-boost",
+        "label": "Gasless Boost",
+        "description": "Activates 4337 paymaster top-up and session key rotation."
+      }
+    ],
+    "supremacy_matrix": {
+      "automation": 0.94,
+      "resilience": 0.91,
+      "empowerment": 0.96,
+      "velocity": 0.89,
+      "stewardship": 0.93,
+      "expansion": 0.9
+    }
+  },
+  "mission_threads": {
+    "threads": [
+      {
+        "id": "mission-thread-alpha-forge",
+        "title": "Alpha Forge Expansion",
+        "owner": "Supreme Owner",
+        "status": "active",
+        "objectives": [
+          "Spin up three new alpha factories",
+          "Deploy guardian oversight for each factory",
+          "Route profits into supremacy reserve"
+        ]
+      },
+      {
+        "id": "mission-thread-supply-sense",
+        "title": "Supply Sense Autonomy",
+        "owner": "Autopilot Dominion Weaver",
+        "status": "executing",
+        "objectives": [
+          "Stabilise critical supply inputs",
+          "Forecast disruptions with anomaly mesh",
+          "Trigger antifragility simulations"
+        ]
+      },
+      {
+        "id": "mission-thread-governance-mesh",
+        "title": "Governance Mesh Alignment",
+        "owner": "Guardian Meta-Mesh",
+        "status": "review",
+        "objectives": [
+          "Refresh guardian quorum",
+          "Validate unstoppable overrides",
+          "Publish transparency ledger"
+        ]
+      },
+      {
+        "id": "mission-thread-quantum-expansion",
+        "title": "Quantum Expansion Frontier",
+        "owner": "Simulation Architect",
+        "status": "incubating",
+        "objectives": [
+          "Model next-horizon opportunities",
+          "Test cross-chain execution routes",
+          "Bootstrap new supremacy vector"
+        ]
+      }
+    ]
+  },
+  "autopilot": {
+    "modes": [
+      {
+        "id": "guardian_mesh",
+        "description": "Maintains guardian quorum, rotates primaries, and enforces unstoppable threshold."
+      },
+      {
+        "id": "treasury_allocator",
+        "description": "Streams capital into alpha factories, reserves, and antifragility buffers."
+      },
+      {
+        "id": "alpha_factory",
+        "description": "Synthesises new alpha strategies across finance, supply chain, and biotech."
+      },
+      {
+        "id": "curriculum_escalator",
+        "description": "Evolves the open-ended curriculum using POET-style difficulty escalation."
+      },
+      {
+        "id": "market_bridge",
+        "description": "Bridges opportunities across chains and markets with 4337 execution envelopes."
+      }
+    ],
+    "gasless_controls": [
+      "paymaster_topup",
+      "session_keys_rotate",
+      "bundler_refresh"
+    ]
+  },
+  "treasury_streams": {
+    "streams": [
+      {
+        "name": "Alpha Compounding",
+        "allocation_percent": 0.32,
+        "destination": "Alpha Factory Vault"
+      },
+      {
+        "name": "Guardian Quorum",
+        "allocation_percent": 0.18,
+        "destination": "Guardian Compensation Mesh"
+      },
+      {
+        "name": "Supremacy Reserve",
+        "allocation_percent": 0.22,
+        "destination": "Supremacy Reserve"
+      },
+      {
+        "name": "Innovation Lab",
+        "allocation_percent": 0.14,
+        "destination": "Curriculum Foundry"
+      },
+      {
+        "name": "Ecosystem Expansion",
+        "allocation_percent": 0.14,
+        "destination": "Cross-Domain Partnerships"
+      }
+    ],
+    "bridges": [
+      {
+        "id": "Layer2-Supremacy-Bridge",
+        "status": "ready",
+        "capacity": 0.27
+      },
+      {
+        "id": "Crosschain-Stable-Bridge",
+        "status": "active",
+        "capacity": 0.31
+      },
+      {
+        "id": "DeFi-Supremacy-Bridge",
+        "status": "active",
+        "capacity": 0.22
+      },
+      {
+        "id": "Alpha-Industrial-Bridge",
+        "status": "calibrating",
+        "capacity": 0.2
+      }
+    ]
+  },
+  "unstoppable_matrix": {
+    "owner_switches": [
+      {
+        "id": "activate-emergency-pause",
+        "latency_seconds": 12,
+        "description": "Immediate guardian-triggered pause across all pipelines"
+      },
+      {
+        "id": "rotate-guardian-mesh",
+        "latency_seconds": 18,
+        "description": "Rotates the guardian roster into antifragility formation"
+      },
+      {
+        "id": "deploy-unstoppable-treasury",
+        "latency_seconds": 22,
+        "description": "Streams reserves into unstoppable alpha execution"
+      },
+      {
+        "id": "escalate-open-ended-challenges",
+        "latency_seconds": 16,
+        "description": "Escalates the open-ended curriculum and autopilot difficulty"
+      }
+    ],
+    "gasless_controls": [
+      "paymaster_topup",
+      "session_keys_rotate",
+      "bundler_refresh"
+    ],
+    "safety_bounds": {
+      "max_single_spend": 180000,
+      "max_daily_spend": 950000,
+      "guardian_threshold": 0.86,
+      "ci_v2_lockdown": true
+    }
+  },
+  "ci_v2": {
+    "status": "green",
+    "response_minutes": 5,
+    "checks": [
+      {
+        "name": "pytest",
+        "status": "pass"
+      },
+      {
+        "name": "orchestrator-ci",
+        "status": "pass"
+      },
+      {
+        "name": "static-analysis",
+        "status": "pass"
+      },
+      {
+        "name": "fuzz",
+        "status": "pass"
+      },
+      {
+        "name": "contracts",
+        "status": "pass"
+      },
+      {
+        "name": "simulation",
+        "status": "pass"
+      },
+      {
+        "name": "supply-chain-verifier",
+        "status": "pass"
+      },
+      {
+        "name": "treasury-audit",
+        "status": "pass"
+      },
+      {
+        "name": "guardian-mesh-review",
+        "status": "pass"
+      },
+      {
+        "name": "gasless-safety",
+        "status": "pass"
+      }
+    ]
+  },
+  "command_matrix": {
+    "mission_threads": [
+      "mission-thread-alpha-forge",
+      "mission-thread-supply-sense",
+      "mission-thread-governance-mesh",
+      "mission-thread-quantum-expansion"
+    ],
+    "unstoppable_initiatives": [
+      "Auto-orchestrate new alpha factories",
+      "Regenerate curriculum from market anomalies",
+      "Spin up sovereign mission threads on demand",
+      "Deploy unstoppable liquidity mesh",
+      "Stream antifragility probes into guardian council",
+      "Coordinate cross-chain supremacy reserves"
+    ],
+    "telemetry_channels": [
+      "supremacy.telemetry.guardian-grid",
+      "supremacy.telemetry.alpha-factory",
+      "supremacy.telemetry.treasury-autopilot",
+      "supremacy.telemetry.gasless-router",
+      "supremacy.telemetry.mission-threads"
+    ],
+    "autopilot_modes": {
+      "guardian_mesh": "scripts/autopilot_guardian_mesh.py",
+      "treasury_allocator": "scripts/autopilot_treasury_allocator.py",
+      "alpha_factory": "scripts/autopilot_alpha_factory.py",
+      "curriculum_escalator": "scripts/autopilot_curriculum_escalator.py",
+      "market_bridge": "scripts/autopilot_market_bridge.py"
+    },
+    "supremacy_vectors": [
+      "supremacy-vector-global-alpha",
+      "supremacy-vector-supply-autonomy",
+      "supremacy-vector-portfolio-synthesis",
+      "supremacy-vector-governance-alignment"
+    ]
+  }
+}

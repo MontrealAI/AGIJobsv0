@@ -1,0 +1,60 @@
+{
+  "guardians": [
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000AA",
+      "role": "Primary",
+      "weight": 0.18,
+      "capabilities": ["execution", "analysis"],
+      "latency_seconds": 14
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000BB",
+      "role": "Primary",
+      "weight": 0.17,
+      "capabilities": ["validation", "analysis"],
+      "latency_seconds": 13
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000CC",
+      "role": "Primary",
+      "weight": 0.16,
+      "capabilities": ["execution", "support"],
+      "latency_seconds": 15
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000DD",
+      "role": "Primary",
+      "weight": 0.15,
+      "capabilities": ["analysis", "support"],
+      "latency_seconds": 12
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000EE",
+      "role": "Primary",
+      "weight": 0.12,
+      "capabilities": ["execution", "validation"],
+      "latency_seconds": 16
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000FF",
+      "role": "Primary",
+      "weight": 0.11,
+      "capabilities": ["support", "analysis"],
+      "latency_seconds": 11
+    },
+    {
+      "address": "0xGUARDIAN000000000000000000000000000000GG",
+      "role": "Primary",
+      "weight": 0.11,
+      "capabilities": ["execution", "analysis"],
+      "latency_seconds": 17
+    }
+  ],
+  "failover": [
+    "0xGUARDIAN000000000000000000000000000000HH",
+    "0xGUARDIAN000000000000000000000000000000II",
+    "0xGUARDIAN000000000000000000000000000000JJ",
+    "0xGUARDIAN000000000000000000000000000000KK"
+  ],
+  "quorum_percent": 0.86
+}
