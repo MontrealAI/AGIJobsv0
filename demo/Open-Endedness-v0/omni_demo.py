@@ -268,11 +268,15 @@ class OmniStrategy:
     def select_task(self, rng: random.Random) -> TaskSpec:
         return self.engine.sample_task(rng)
 
-    def observe(self, task: TaskSpec, success_value: float) -> None:
+    def observe(self, task: TaskSpec, success_value: float) -> bool:
+        """Update learning progress and refresh MoI partitions when needed."""
+
         self.engine.update_task_outcome(task.task_id, success_value)
         if success_value > 0 and task not in self.mastered:
             self.mastered.append(task)
             self.engine.refresh_partition(self.mastered)
+            return True
+        return False
 
 
 @dataclasses.dataclass
@@ -318,14 +322,13 @@ class Simulation:
             if success:
                 successes += 1
             revenue_per_task[task_spec.task_id] += revenue
-            if hasattr(strategy, "engine"):
-                lp_value = revenue if success else 0.0
-                strategy.engine.update_task_outcome(task_spec.task_id, lp_value)
+            success_value = revenue if success else 0.0
             if isinstance(strategy, OmniStrategy):
-                strategy.observe(task_spec, revenue)
-                fm_queries += 1  # refresh_partition call per new mastery approximation
+                refreshed = strategy.observe(task_spec, success_value)
+                if refreshed:
+                    fm_queries += 1
             else:
-                strategy.observe(task_spec, revenue)
+                strategy.observe(task_spec, success_value)
         fm_cost = fm_queries * fm_cost_per_query
         return SimulationResult(
             strategy_name=strategy_name,
