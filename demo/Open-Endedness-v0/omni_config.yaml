@@ -1,0 +1,33 @@
+# Seed configuration for OMNI Open-Endedness demo.
+meta:
+  version: 1
+  description: "AGI Jobs OMNI open-endedness demonstration profile"
+
+curriculum:
+  steps: 1000
+  seed: 42
+  fm_cost_per_query: 0.02
+  fast_beta: 0.1
+  slow_beta: 0.01
+  interesting_weight: 1.0
+  boring_weight: 0.000001
+  min_probability: 0.001
+
+thermostat:
+  roi_target: 8.0
+  roi_floor: 3.0
+  fm_budget_usd: 200.0
+  qps_max: 0.05
+  diversity_entropy_floor: 1.2
+  exploration_epsilon_bounds: [0.01, 0.15]
+
+sentinels:
+  task_roi_floor: 1.2
+  overall_roi_floor: 2.5
+  max_new_tasks_daily: 6
+  fm_daily_cap: 150
+  allow_manual_overrides: true
+
+reporting:
+  save_json: demo/Open-Endedness-v0/results/latest.json
+  charts: demo/Open-Endedness-v0/web/index.html
