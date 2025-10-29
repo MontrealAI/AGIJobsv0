@@ -238,6 +238,7 @@ type OwnerAutopilot = {
     economicDominanceIndex: number;
     capitalVelocity: number;
     globalExpansionReadiness: number;
+    superIntelligenceIndex: number;
     shockResilienceScore: number;
   };
   commandSequence: OwnerAutopilotCommand[];
@@ -337,6 +338,29 @@ type OwnerControlSupremacy = {
   mermaid: string;
 };
 
+type SuperIntelligenceClassification =
+  | 'transcendent-dominion'
+  | 'planetary-dominant'
+  | 'ascendant'
+  | 'formative';
+
+type SuperIntelligenceReport = {
+  index: number;
+  classification: SuperIntelligenceClassification;
+  narrative: string;
+  drivers: string[];
+  commandAssurance: string[];
+  telemetry: {
+    economicDominanceIndex: number;
+    ownerSupremacyIndex: number;
+    sovereignSafetyScore: number;
+    automationScore: number;
+    shockResilienceScore: number;
+    globalExpansionReadiness: number;
+  };
+  mermaid: string;
+};
+
 type Summary = {
   scenarioId: string;
   title: string;
@@ -369,6 +393,7 @@ type Summary = {
     economicDominanceIndex: number;
     capitalVelocity: number;
     globalExpansionReadiness: number;
+    superIntelligenceIndex: number;
     shockResilienceScore: number;
   };
   ownerControl: {
@@ -411,6 +436,7 @@ type Summary = {
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
   ownerControlSupremacy: OwnerControlSupremacy;
+  superIntelligence: SuperIntelligenceReport;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
 };
@@ -886,6 +912,7 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       economicDominanceIndex: summary.metrics.economicDominanceIndex,
       capitalVelocity: summary.metrics.capitalVelocity,
       globalExpansionReadiness: summary.metrics.globalExpansionReadiness,
+      superIntelligenceIndex: summary.metrics.superIntelligenceIndex,
       shockResilienceScore: summary.metrics.shockResilienceScore,
     },
     commandSequence: sequence,
@@ -1226,6 +1253,104 @@ function buildOwnerControlSupremacy(summary: Summary): OwnerControlSupremacy {
     signals,
     recommendedActions,
     mermaid,
+  };
+}
+
+function classifySuperIntelligence(index: number): {
+  classification: SuperIntelligenceClassification;
+  summary: string;
+} {
+  if (index >= 0.96) {
+    return {
+      classification: 'transcendent-dominion',
+      summary:
+        'The owner multi-sig directs a civilisation-scale AGI lattice with unstoppable command authority, capital velocity, and risk absorption.',
+    };
+  }
+  if (index >= 0.9) {
+    return {
+      classification: 'planetary-dominant',
+      summary:
+        'Automation, safety mesh, and treasury firepower already surpass planetary demand – only incremental guardrails remain before total transcendence.',
+    };
+  }
+  if (index >= 0.75) {
+    return {
+      classification: 'ascendant',
+      summary:
+        'The engine is accelerating toward unstoppable scale; expand scripted coverage and validator depth to eliminate the remaining choke points.',
+    };
+  }
+  return {
+    classification: 'formative',
+    summary:
+      'Foundational loops are online, but the owner must authorise additional guardrails, automation, and custody to unlock superintelligent leverage.',
+  };
+}
+
+function buildSuperIntelligence(summary: Summary): SuperIntelligenceReport {
+  const metrics = summary.metrics;
+  const supremacyIndex = summary.ownerControlSupremacy.index;
+  const weights = {
+    economicDominance: 0.2,
+    ownerSupremacy: 0.2,
+    sovereignSafety: 0.18,
+    automation: 0.14,
+    shockResilience: 0.14,
+    globalExpansion: 0.08,
+    sovereignControl: 0.06,
+  } as const;
+
+  const indexRaw =
+    metrics.economicDominanceIndex * weights.economicDominance +
+    supremacyIndex * weights.ownerSupremacy +
+    metrics.sovereignSafetyScore * weights.sovereignSafety +
+    metrics.automationScore * weights.automation +
+    metrics.shockResilienceScore * weights.shockResilience +
+    metrics.globalExpansionReadiness * weights.globalExpansion +
+    metrics.sovereignControlScore * weights.sovereignControl;
+  const index = Number(Math.min(1, Math.max(0, indexRaw)).toFixed(4));
+  const { classification, summary: narrative } = classifySuperIntelligence(index);
+
+  const drivers = [
+    `Economic dominance ${(metrics.economicDominanceIndex * 100).toFixed(1)}% confirming runaway value capture.`,
+    `Owner supremacy ${(supremacyIndex * 100).toFixed(1)}% with guardrail coverage ${(summary.ownerControlSupremacy.guardrailCoverage * 100).toFixed(1)}% keeping every lever under direct command.`,
+    `Sovereign safety ${(metrics.sovereignSafetyScore * 100).toFixed(1)}% across ${summary.sovereignSafetyMesh.alertChannels.length} alert channels and ${summary.sovereignSafetyMesh.emergencyContacts.length} emergency contacts.`,
+    `Automation mesh ${(metrics.automationScore * 100).toFixed(1)}% orchestrating agents without human delay.`,
+    `Shock resilience ${(metrics.shockResilienceScore * 100).toFixed(1)}% ensuring capital velocity persists under failure scenarios.`,
+  ];
+
+  const commandAssurance = [
+    `Command coverage ${(summary.ownerCommandPlan.commandCoverage * 100).toFixed(1)}% across ${Object.keys(summary.ownerCommandPlan.coverageDetail).length} sovereign surfaces.`,
+    `Program supremacy guarantees ${(summary.ownerControlSupremacy.programCoverage.treasury * 100).toFixed(1)}% treasury control and ${(summary.ownerControlSupremacy.programCoverage.orchestrator * 100).toFixed(1)}% orchestrator automation.`,
+    `Global expansion readiness ${(metrics.globalExpansionReadiness * 100).toFixed(1)}% unlocks immediate replication across jurisdictions.`,
+  ];
+
+  const mermaidLines = [
+    'graph LR',
+    `  EconomicDominance["Economic Dominance ${(metrics.economicDominanceIndex * 100).toFixed(1)}%"] --> Apex["Superintelligence ${(index * 100).toFixed(1)}%"]`,
+    `  OwnerSupremacy["Owner Supremacy ${(supremacyIndex * 100).toFixed(1)}%"] --> Apex`,
+    `  SovereignSafety["Sovereign Safety ${(metrics.sovereignSafetyScore * 100).toFixed(1)}%"] --> Apex`,
+    `  Automation["Automation ${(metrics.automationScore * 100).toFixed(1)}%"] --> Apex`,
+    `  ShockResilience["Shock Resilience ${(metrics.shockResilienceScore * 100).toFixed(1)}%"] --> Apex`,
+    `  GlobalExpansion["Global Expansion ${(metrics.globalExpansionReadiness * 100).toFixed(1)}%"] --> Apex`,
+  ];
+
+  return {
+    index,
+    classification,
+    narrative,
+    drivers,
+    commandAssurance,
+    telemetry: {
+      economicDominanceIndex: metrics.economicDominanceIndex,
+      ownerSupremacyIndex: supremacyIndex,
+      sovereignSafetyScore: metrics.sovereignSafetyScore,
+      automationScore: metrics.automationScore,
+      shockResilienceScore: metrics.shockResilienceScore,
+      globalExpansionReadiness: metrics.globalExpansionReadiness,
+    },
+    mermaid: `${mermaidLines.join('\n')}\n`,
   };
 }
 
@@ -2391,6 +2516,7 @@ function synthesiseSummary(
       economicDominanceIndex: dominanceIndex,
       capitalVelocity,
       globalExpansionReadiness,
+      superIntelligenceIndex: 0,
       shockResilienceScore: shockResilience.score,
     },
     ownerControl: {
@@ -2453,6 +2579,7 @@ function synthesiseSummary(
         economicDominanceIndex: dominanceIndex,
         capitalVelocity,
         globalExpansionReadiness,
+        superIntelligenceIndex: 0,
         shockResilienceScore: shockResilience.score,
       },
       commandSequence: [],
@@ -2488,6 +2615,22 @@ function synthesiseSummary(
       },
       signals: [],
       recommendedActions: [],
+      mermaid: '',
+    },
+    superIntelligence: {
+      index: 0,
+      classification: 'formative',
+      narrative: 'Superintelligence index pending computation.',
+      drivers: [],
+      commandAssurance: [],
+      telemetry: {
+        economicDominanceIndex: dominanceIndex,
+        ownerSupremacyIndex: 0,
+        sovereignSafetyScore: sovereignSafetyMesh.safetyScore,
+        automationScore: automationCoverage,
+        shockResilienceScore: shockResilience.score,
+        globalExpansionReadiness,
+      },
       mermaid: '',
     },
     globalExpansionPlan: [],
@@ -2784,6 +2927,11 @@ export async function runScenario(
   summary.metrics.ownerControlSupremacyIndex = Number(
     summary.ownerControlSupremacy.index.toFixed(3),
   );
+  summary.superIntelligence = buildSuperIntelligence(summary);
+  summary.metrics.superIntelligenceIndex = Number(
+    summary.superIntelligence.index.toFixed(3),
+  );
+  summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
   return summary;
 }
@@ -2905,6 +3053,14 @@ async function writeOutputs(
     `${summary.ownerControlSupremacy.mermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
+    path.join(outputDir, 'super-intelligence.json'),
+    JSON.stringify(summary.superIntelligence, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'super-intelligence.mmd'),
+    `${summary.superIntelligence.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
     path.join(outputDir, 'shock-resilience.json'),
     JSON.stringify(summary.shockResilience, null, 2),
   );
@@ -2952,6 +3108,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'economicDominanceIndex',
     'capitalVelocity',
     'globalExpansionReadiness',
+    'superIntelligenceIndex',
     'shockResilienceScore',
   ];
   const tolerance = 0.05;
