@@ -3,6 +3,7 @@ import path from 'node:path';
 import test from 'node:test';
 import {
   loadScenarioFromFile,
+  resolveScenarioPath,
   runScenario,
   verifyDeterminism,
 } from '../scripts/runDemo';
@@ -490,6 +491,60 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.globalExpansionPlan.some((phase) => phase.phase.includes('Planetary')),
     'Expansion plan should culminate in planetary scale phase',
+  );
+});
+
+test('mainnet dominion scenario preset saturates owner supremacy', async () => {
+  const dominionScenarioPath = resolveScenarioPath('mainnet-dominion');
+  const scenario = await loadScenarioFromFile(dominionScenarioPath);
+  assert.equal(
+    scenario.scenarioId,
+    'economic-power-v0-mainnet-dominion',
+    'Scenario ID should match dominion preset',
+  );
+  const summary = await runScenario(scenario);
+  assert.equal(summary.assignments.length, scenario.jobs.length);
+  assert(summary.metrics.roiMultiplier > 3, 'Dominion ROI should exceed 3× baseline capital.');
+  assert(
+    summary.metrics.validatorConfidence > 0.98,
+    'Validator confidence should reflect fortified dominion quorum.',
+  );
+  assert(
+    summary.metrics.ownerDominionScore >= 0.99,
+    'Owner dominion score should evidence near-total dominion.',
+  );
+  assert(
+    summary.metrics.ownerControlSupremacyIndex >= 0.99,
+    'Owner supremacy index should remain near-perfect.',
+  );
+  assert(
+    summary.metrics.layer2ReadinessScore >= 0.95,
+    'Layer-2 readiness score should confirm dominion expansion posture.',
+  );
+  assert(
+    summary.metrics.globalExpansionReadiness >= 0.95,
+    'Global expansion readiness should remain mission-grade.',
+  );
+  assert(
+    summary.metrics.shockResilienceScore >= 0.99,
+    'Shock resilience should confirm dominion-grade defence.',
+  );
+  assert(
+    summary.metrics.capitalVelocity > 10000,
+    'Capital velocity should confirm treasury overdrive.',
+  );
+  assert(
+    summary.metrics.superIntelligenceIndex >= 0.95,
+    'Superintelligence index should remain civilisation-scale.',
+  );
+  assert(
+    summary.metrics.assertionPassRate >= 0.85,
+    'Dominion assertion pass rate should stay within unstoppable thresholds.',
+  );
+  assert.equal(
+    summary.ownerSafeTransactions.transactions.length,
+    scenario.modules.length,
+    'Dominion scenario should produce Safe transactions for every module.',
   );
 });
 

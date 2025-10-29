@@ -1,0 +1,822 @@
+{
+  "version": "1.0",
+  "scenarioId": "economic-power-v0-mainnet-dominion",
+  "title": "AGIJobs Mainnet Dominion Acceleration",
+  "description": "High-intensity mainnet execution showcasing unstoppable owner supremacy, validator rigor, and treasury overdrive.",
+  "analysisTimestamp": "2025-04-15T00:00:00.000Z",
+  "network": {
+    "name": "Ethereum Mainnet",
+    "chainId": 1,
+    "rpcUrl": "https://mainnet.infura.io/v3/YOUR-KEY",
+    "explorer": "https://etherscan.io",
+    "deploymentRegistry": "deployment-config/mainnet.json"
+  },
+  "layer2": {
+    "network": "Arbitrum One",
+    "chainId": 42161,
+    "rollupType": "optimistic",
+    "status": "ready",
+    "readinessScore": 0.98,
+    "settlementTimeMinutes": 8,
+    "bridge": {
+      "contract": "0xA100000000000000000000000000000000000100",
+      "ownerSafe": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:bridge-upgrade -- --target mainnet-dominion",
+      "watchers": [
+        "Watchtower Core Ops",
+        "Dominion L2 Guard",
+        "Atlas Sentinel Grid",
+        "Validator Nexus Cooperative"
+      ],
+      "monitoringCadenceMinutes": 2
+    },
+    "sequencer": {
+      "operator": "Dominion Sequencer Federation",
+      "backupOperators": [
+        "Sovereign Mesh Collective",
+        "Atlas Sentinel Grid",
+        "Global Validator Compact"
+      ],
+      "decentralizationPlan": "Progressively activate additional sequencer keys via governance, rotating keys each epoch with automated proof verification."
+    },
+    "monitoring": {
+      "dashboards": [
+        "https://status.agijobs.ai/l2",
+        "https://grafana.agijobs.ai/d/l2-bridge",
+        "https://grafana.agijobs.ai/d/l2-latency",
+        "https://grafana.agijobs.ai/d/l2-dominion"
+      ],
+      "alerts": [
+        "#agi-ops",
+        "#agi-dominion",
+        "PagerDuty:AGIJobs",
+        "Opsgenie:AGI-L2"
+      ]
+    },
+    "readinessFactors": [
+      {
+        "id": "bridge-audit",
+        "label": "Bridge audit coverage",
+        "status": "complete",
+        "weight": 0.25,
+        "description": "Latest bridge audit completed Jan 2025 by Sigma Prime with zero critical findings."
+      },
+      {
+        "id": "sequencer-drills",
+        "label": "Sequencer failover drills",
+        "status": "complete",
+        "weight": 0.2,
+        "description": "Weekly rotation drills executed with cross-chain attestation proofs."
+      },
+      {
+        "id": "data-availability",
+        "label": "Data availability pipeline",
+        "status": "complete",
+        "weight": 0.2,
+        "description": "EigenDA service level integrated with redundancy mirrors across three geographies."
+      },
+      {
+        "id": "liquidity-backstop",
+        "label": "Liquidity backstop",
+        "status": "complete",
+        "weight": 0.18,
+        "description": "Mainnet treasury commits 25M AGI liquidity buffer with automated refill triggers and insured coverage."
+      },
+      {
+        "id": "compliance-protocol",
+        "label": "Compliance protocol",
+        "status": "complete",
+        "weight": 0.1,
+        "description": "Jurisdictional review complete; attestations logged on-chain for regulator portal."
+      },
+      {
+        "id": "agent-migration",
+        "label": "Agent migration mesh",
+        "status": "in-progress",
+        "weight": 0.1,
+        "description": "Agent gateway beta routed 72% of workloads through Arbitrum mirrored APIs."
+      }
+    ],
+    "guardrails": [
+      "Bridge withdraw throttle triggers at 10% variance.",
+      "Sequencer failover automation drills weekly.",
+      "Dual watchtower quorum enforces settlement verification."
+    ],
+    "playbooks": [
+      {
+        "id": "l2-breach-containment",
+        "name": "L2 Breach Containment",
+        "script": "npm run owner:bridge-upgrade -- --mode containment",
+        "objective": "Lockdown cross-domain settlement while activating insurance buffers."
+      },
+      {
+        "id": "l2-liquidity-surge",
+        "name": "Liquidity Surge",
+        "script": "npm run owner:treasury-bridge -- --boost",
+        "objective": "Amplify L2 liquidity buffers to sustain agent throughput under peak demand."
+      },
+      {
+        "id": "bridge-pause",
+        "name": "Bridge emergency pause",
+        "script": "npm run owner:program -- --program bridge-emergency-pause",
+        "objective": "Pause rollup bridge on anomaly and route settlements back to mainnet."
+      },
+      {
+        "id": "sequencer-failover",
+        "name": "Sequencer failover",
+        "script": "npm run owner:program -- --program sequencer-failover",
+        "objective": "Rotate sequencer key set via multi-sig and resynchronise watchers."
+      },
+      {
+        "id": "l2-liquidity-topup",
+        "name": "L2 liquidity top-up",
+        "script": "npm run owner:program -- --program treasury-l2-topup",
+        "objective": "Refill bridge liquidity from mainnet treasury buffers when utilisation > 80%."
+      }
+    ],
+    "commentary": "Dominion scenario activates full mainnet posture with accelerated bridge monitoring, sequencer federation, and surge guardrails."
+  },
+  "treasury": {
+    "agiBalance": 45000000,
+    "stablecoinBalance": 18500000,
+    "operationsBuffer": 5500000,
+    "ownerSafe": "0xAGIJobsOwnerSafe0000000000000000000000001"
+  },
+  "owner": {
+    "operator": "AGI Jobs Dominion Council",
+    "governanceSafe": "0xAGIJobsGovernor0000000000000000000000003",
+    "threshold": 5,
+    "members": 7,
+    "controls": [
+      {
+        "parameter": "jobDuration",
+        "current": 72,
+        "target": "36h",
+        "script": "npm run owner:parameters",
+        "description": "Compress job cycle to unleash accelerated compounding velocity."
+      },
+      {
+        "parameter": "validatorQuorum",
+        "current": 3,
+        "target": 7,
+        "script": "npm run owner:upgrade",
+        "description": "Elevate validator quorum for critical-value executions."
+      },
+      {
+        "parameter": "stablecoinAdapter",
+        "current": "USDC v1",
+        "target": "USDC v3",
+        "script": "npm run owner:update-all",
+        "description": "Activate next-gen adapter with post-trade surveillance and circuit breakers."
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "atlas",
+      "ens": "atlas.agent.agijobs.eth",
+      "name": "Atlas Strategic Model Forge",
+      "reputation": 97,
+      "availability": 0.92,
+      "capacity": 4,
+      "skills": [
+        "strategy",
+        "tokenomics",
+        "simulation",
+        "coordination"
+      ],
+      "specializations": [
+        "macro-planning",
+        "multi-agent synthesis"
+      ]
+    },
+    {
+      "id": "helios",
+      "ens": "helios.agent.agijobs.eth",
+      "name": "Helios Sovereign Build Hub",
+      "reputation": 94,
+      "availability": 0.88,
+      "capacity": 6,
+      "skills": [
+        "engineering",
+        "devops",
+        "observability",
+        "security"
+      ],
+      "specializations": [
+        "ci/cd",
+        "sre"
+      ]
+    },
+    {
+      "id": "aurora",
+      "ens": "aurora.agent.agijobs.eth",
+      "name": "Aurora Economic Intelligence Mesh",
+      "reputation": 92,
+      "availability": 0.96,
+      "capacity": 5,
+      "skills": [
+        "market-analysis",
+        "ai-orchestration",
+        "data-science",
+        "coordination"
+      ],
+      "specializations": [
+        "forecasting",
+        "scenario-design"
+      ]
+    },
+    {
+      "id": "sentinel",
+      "ens": "sentinel.agent.agijobs.eth",
+      "name": "Sentinel Assurance Fabric",
+      "reputation": 95,
+      "availability": 0.9,
+      "capacity": 3,
+      "skills": [
+        "assurance",
+        "audit",
+        "compliance"
+      ],
+      "specializations": [
+        "commit-reveal",
+        "disputes"
+      ]
+    }
+  ],
+  "validators": [
+    {
+      "id": "validator-alpha",
+      "ens": "alpha.validator.agijobs.eth",
+      "name": "Validator Alpha Prime",
+      "reliability": 1,
+      "stake": 125999.99999999999,
+      "competencies": [
+        "commit-reveal",
+        "quality-assurance",
+        "dominion-ops"
+      ]
+    },
+    {
+      "id": "validator-beta",
+      "ens": "beta.validator.agijobs.eth",
+      "name": "Validator Beta",
+      "reliability": 0.998,
+      "stake": 121799.99999999999,
+      "competencies": [
+        "risk",
+        "compliance",
+        "dominion-ops"
+      ]
+    },
+    {
+      "id": "validator-gamma",
+      "ens": "gamma.validator.agijobs.eth",
+      "name": "Validator Gamma",
+      "reliability": 0.995,
+      "stake": 127399.99999999999,
+      "competencies": [
+        "economic-modeling",
+        "policy",
+        "dominion-ops"
+      ]
+    },
+    {
+      "id": "validator-delta",
+      "ens": "delta.validator.agijobs.eth",
+      "name": "Validator Delta",
+      "reliability": 0.992,
+      "stake": 121099.99999999999,
+      "competencies": [
+        "ml-evaluation",
+        "security",
+        "dominion-ops"
+      ]
+    },
+    {
+      "id": "validator-epsilon",
+      "ens": "epsilon.validator.agijobs.eth",
+      "name": "Validator Epsilon",
+      "reliability": 0.989,
+      "stake": 116199.99999999999,
+      "competencies": [
+        "inference",
+        "red-teaming",
+        "dominion-ops"
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "job-ai-lab-fusion",
+      "name": "AI Lab Fusion Accelerator",
+      "rewardAgi": 162000,
+      "rewardStable": 31250,
+      "economicValue": 675000,
+      "skills": [
+        "engineering",
+        "ai-orchestration",
+        "devops"
+      ],
+      "executionHours": 36,
+      "validatorQuorum": 6,
+      "risk": "high"
+    },
+    {
+      "id": "job-supply-chain",
+      "name": "Autonomous Supply Mesh",
+      "rewardAgi": 108000,
+      "rewardStable": 18750,
+      "economicValue": 467500,
+      "skills": [
+        "strategy",
+        "coordination",
+        "simulation"
+      ],
+      "executionHours": 30,
+      "validatorQuorum": 5,
+      "risk": "medium"
+    },
+    {
+      "id": "job-governance-upgrade",
+      "name": "Governance Upgrade Launch",
+      "rewardAgi": 87750,
+      "rewardStable": 11250,
+      "economicValue": 365000,
+      "skills": [
+        "assurance",
+        "audit",
+        "security"
+      ],
+      "executionHours": 28,
+      "validatorQuorum": 6,
+      "risk": "medium"
+    },
+    {
+      "id": "job-market-expansion",
+      "name": "Market Expansion Omniloop",
+      "rewardAgi": 74250,
+      "rewardStable": 10000,
+      "economicValue": 330000,
+      "skills": [
+        "market-analysis",
+        "scenario-design",
+        "coordination"
+      ],
+      "executionHours": 24,
+      "validatorQuorum": 5,
+      "risk": "medium"
+    },
+    {
+      "id": "job-oracle-integration",
+      "name": "Oracle Integration Spine",
+      "rewardAgi": 56700,
+      "rewardStable": 7500,
+      "economicValue": 280000,
+      "skills": [
+        "engineering",
+        "security",
+        "devops"
+      ],
+      "executionHours": 22,
+      "validatorQuorum": 4,
+      "risk": "low"
+    }
+  ],
+  "stablecoinAdapters": [
+    {
+      "name": "USDC v1",
+      "swapFeeBps": 12,
+      "slippageBps": 25
+    }
+  ],
+  "modules": [
+    {
+      "id": "job-registry",
+      "name": "JobRegistry",
+      "address": "0xA100000000000000000000000000000000000001",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Primary registry coordinating job lifecycle, escrow, and agent authorization gates.",
+      "lastAudit": "2025-01-12T00:00:00.000Z"
+    },
+    {
+      "id": "stake-manager",
+      "name": "StakeManager",
+      "address": "0xA100000000000000000000000000000000000002",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:parameters",
+      "status": "active",
+      "description": "Manages agent and validator staking positions, slashing, and economic alignment loops.",
+      "lastAudit": "2025-01-04T00:00:00.000Z"
+    },
+    {
+      "id": "validation-module",
+      "name": "ValidationModule",
+      "address": "0xA100000000000000000000000000000000000003",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:upgrade",
+      "status": "pending-upgrade",
+      "description": "Commit–reveal validator consensus spine enforcing deliverable correctness.",
+      "lastAudit": "2024-12-15T00:00:00.000Z"
+    },
+    {
+      "id": "reputation-engine",
+      "name": "ReputationEngine",
+      "address": "0xA100000000000000000000000000000000000004",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Aggregates performance signals to prioritise elite agents and validators in the matching fabric.",
+      "lastAudit": "2024-12-28T00:00:00.000Z"
+    },
+    {
+      "id": "dispute-module",
+      "name": "DisputeModule",
+      "address": "0xA100000000000000000000000000000000000005",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:upgrade",
+      "status": "active",
+      "description": "Escalation and arbitration flow for contested deliverables with automated jury selection.",
+      "lastAudit": "2025-01-09T00:00:00.000Z"
+    },
+    {
+      "id": "certificate-nft",
+      "name": "CertificateNFT",
+      "address": "0xA100000000000000000000000000000000000006",
+      "version": "2.0.0",
+      "owner": "0xAGIJobsGovernor0000000000000000000000003",
+      "upgradeScript": "npm run owner:update-all",
+      "status": "active",
+      "description": "Mints proof-of-completion artefacts for employers and downstream compliance attestations.",
+      "lastAudit": "2025-01-02T00:00:00.000Z"
+    }
+  ],
+  "automation": {
+    "matchingEngine": "Dominion Matching Engine 2.0",
+    "validatorOrchestrator": "Validator Dominion Orchestrator",
+    "notificationHub": "Dominion Signal Mesh"
+  },
+  "observability": {
+    "dashboards": [
+      "https://grafana.agijobs.ai/d/dominion-core",
+      "https://grafana.agijobs.ai/d/dominion-treasury",
+      "https://grafana.agijobs.ai/d/dominion-validators"
+    ],
+    "alertChannels": [
+      "#agi-dominion",
+      "#agi-ops",
+      "PagerDuty:AGIJobs"
+    ]
+  },
+  "safeguards": {
+    "pauseScript": "npm run owner:system-pause -- --scenario dominion",
+    "resumeScript": "npm run owner:system-resume -- --scenario dominion",
+    "responseMinutes": 9,
+    "emergencyContacts": [
+      "governance@agijobs.ai",
+      "security-operations@agijobs.ai",
+      "treasury@agijobs.ai"
+    ],
+    "circuitBreakers": [
+      {
+        "metric": "validatorConfidence",
+        "comparator": "<",
+        "threshold": 0.95,
+        "action": "npm run owner:system-pause",
+        "description": "Pause contracts if validator confidence slips below 95% to protect settlement integrity."
+      },
+      {
+        "metric": "automationScore",
+        "comparator": "<",
+        "threshold": 0.8,
+        "action": "npm run owner:parameters",
+        "description": "Recalibrate automation if orchestration coverage drops under 80%."
+      },
+      {
+        "metric": "treasuryAfterRun",
+        "comparator": "<",
+        "threshold": 1800000,
+        "action": "npm run owner:audit",
+        "description": "Trigger treasury forensic audit when buffers fall below the defensive floor."
+      }
+    ],
+    "upgradePaths": [
+      {
+        "module": "JobRegistry",
+        "script": "npm run owner:update-all -- --scenario dominion",
+        "description": "Ships the hardened JobRegistry bundle with deterministic migration plan."
+      },
+      {
+        "module": "ValidationModule",
+        "script": "npm run owner:upgrade",
+        "description": "Activates the upgraded validator commit–reveal consensus parameters."
+      },
+      {
+        "module": "StakeManager",
+        "script": "npm run owner:parameters",
+        "description": "Rebalances stake requirements to throttle spam and fortify incentives."
+      }
+    ]
+  },
+  "commandCatalog": {
+    "jobPrograms": [
+      {
+        "id": "job-ai-lab-fusion",
+        "target": "job-ai-lab-fusion",
+        "script": "npm run owner:program -- --program job-ai-lab-fusion",
+        "description": "Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator."
+      },
+      {
+        "id": "job-supply-mesh",
+        "target": "job-supply-chain",
+        "script": "npm run owner:program -- --program job-supply-chain",
+        "description": "Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment."
+      },
+      {
+        "id": "job-governance-upgrade",
+        "target": "job-governance-upgrade",
+        "script": "npm run owner:program -- --program job-governance-upgrade",
+        "description": "Authorize Sentinel assurance fabric to promote the upgraded governance module."
+      },
+      {
+        "id": "job-market-expansion",
+        "target": "job-market-expansion",
+        "script": "npm run owner:program -- --program job-market-expansion",
+        "description": "Activate Aurora omni-loop teams for immediate market penetration."
+      },
+      {
+        "id": "job-oracle-integration",
+        "target": "job-oracle-integration",
+        "script": "npm run owner:program -- --program job-oracle-integration",
+        "description": "Command Helios to ship the oracle integration spine with hardened adapters."
+      }
+    ],
+    "validatorPrograms": [
+      {
+        "id": "validator-alpha",
+        "target": "validator-alpha",
+        "script": "npm run owner:program -- --program validator-alpha",
+        "description": "Escalate Validator Alpha quorum weighting and deploy fresh attestations."
+      },
+      {
+        "id": "validator-beta",
+        "target": "validator-beta",
+        "script": "npm run owner:program -- --program validator-beta",
+        "description": "Rotate Validator Beta committees and enforce staking deltas."
+      },
+      {
+        "id": "validator-gamma",
+        "target": "validator-gamma",
+        "script": "npm run owner:program -- --program validator-gamma",
+        "description": "Deploy Gamma macro-policy validators to contested economic tasks."
+      },
+      {
+        "id": "validator-delta",
+        "target": "validator-delta",
+        "script": "npm run owner:program -- --program validator-delta",
+        "description": "Refresh Delta’s ML-evaluation pipelines with latest defence heuristics."
+      },
+      {
+        "id": "validator-epsilon",
+        "target": "validator-epsilon",
+        "script": "npm run owner:program -- --program validator-epsilon",
+        "description": "Escalate Epsilon red-team programs for adversarial fortification."
+      }
+    ],
+    "adapterPrograms": [
+      {
+        "id": "adapter-usdc-v1",
+        "target": "USDC v1",
+        "script": "npm run owner:program -- --program adapter-usdc",
+        "description": "Upgrade the USDC bridge adapter with deterministic slippage guards."
+      }
+    ],
+    "modulePrograms": [
+      {
+        "id": "module-job-registry",
+        "target": "job-registry",
+        "script": "npm run owner:program -- --program module-job-registry",
+        "description": "Promote the JobRegistry v2 deployment with zero-downtime migration."
+      },
+      {
+        "id": "module-stake-manager",
+        "target": "stake-manager",
+        "script": "npm run owner:program -- --program module-stake-manager",
+        "description": "Adjust stake thresholds and payout cadence for StakeManager."
+      },
+      {
+        "id": "module-validation",
+        "target": "validation-module",
+        "script": "npm run owner:program -- --program module-validation",
+        "description": "Roll out commit–reveal validator enhancements across ValidationModule."
+      },
+      {
+        "id": "module-reputation",
+        "target": "reputation-engine",
+        "script": "npm run owner:program -- --program module-reputation",
+        "description": "Regenerate reputation curves and publish new weighting vectors."
+      },
+      {
+        "id": "module-dispute",
+        "target": "dispute-module",
+        "script": "npm run owner:program -- --program module-dispute",
+        "description": "Commission expanded dispute juries and refresh escalation liveness timers."
+      },
+      {
+        "id": "module-certificate",
+        "target": "certificate-nft",
+        "script": "npm run owner:program -- --program module-certificate",
+        "description": "Ship upgraded CertificateNFT metadata schema for compliance provenance."
+      }
+    ],
+    "treasuryPrograms": [
+      {
+        "id": "treasury-liquidity",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-liquidity",
+        "description": "Rebalance AGI/USDC buffers and top up validator incentive pools."
+      },
+      {
+        "id": "treasury-yield",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-yield",
+        "description": "Deploy surplus treasury capital into protocol-aligned yield strategies."
+      },
+      {
+        "id": "treasury-insurance",
+        "target": "treasury",
+        "script": "npm run owner:program -- --program treasury-insurance",
+        "description": "Activate insurance backstops for mission-critical validator cohorts."
+      }
+    ],
+    "orchestratorPrograms": [
+      {
+        "id": "orchestrator-rebalance",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-rebalance",
+        "description": "Re-weight autonomous routing priorities to maximise throughput."
+      },
+      {
+        "id": "orchestrator-pause-drill",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-pause-drill",
+        "description": "Run full-stack pause/resume drill to validate emergency readiness."
+      },
+      {
+        "id": "orchestrator-upgrade",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-upgrade",
+        "description": "Roll forward orchestrator microservices with deterministic change sets."
+      },
+      {
+        "id": "orchestrator-dominion-surge",
+        "target": "orchestrator",
+        "script": "npm run owner:program -- --program orchestrator-dominion-surge",
+        "description": "Activate surge routing priorities for mainnet dominion operations."
+      }
+    ]
+  },
+  "ownerTransactions": [
+    {
+      "id": "job-registry-duration",
+      "label": "Compress job duration limit",
+      "description": "Set the JobRegistry duration limit to 36 hours to amplify compounding velocity.",
+      "moduleId": "job-registry",
+      "contractName": "JobRegistry",
+      "function": "setJobDurationLimit(uint256 limit)",
+      "args": [
+        36
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "parameters",
+        "velocity"
+      ],
+      "prerequisites": [
+        "Confirm validator committees can handle increased cadence",
+        "Notify agent mesh of updated SLA prior to execution"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "stake-manager-reward",
+      "label": "Elevate validator reward share",
+      "description": "Adjust StakeManager validator reward percentage to 14% to reinforce dominion validators.",
+      "moduleId": "stake-manager",
+      "contractName": "StakeManager",
+      "function": "setValidatorRewardPct(uint256 pct)",
+      "args": [
+        1400
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "validators",
+        "incentives"
+      ],
+      "prerequisites": [
+        "Verify treasury liquidity covers increased validator yield",
+        "Alert validator constellation of new reward rate"
+      ],
+      "risk": "elevated"
+    },
+    {
+      "id": "validation-module-bounds",
+      "label": "Expand validator quorum window",
+      "description": "Update ValidationModule bounds to require between 4 and 8 validators per job for dominion posture.",
+      "moduleId": "validation-module",
+      "contractName": "ValidationModule",
+      "function": "setValidatorBounds(uint256 minValidators, uint256 maxValidators)",
+      "args": [
+        4,
+        8
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "validators",
+        "security"
+      ],
+      "prerequisites": [
+        "Confirm committee selection cache warmed for new bounds",
+        "Align dispute module juries with expanded quorum"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "reputation-engine-weights",
+      "label": "Tune reputation scoring weights",
+      "description": "Adjust ReputationEngine stake/reputation weights to 60/40 for sharper validator incentives.",
+      "moduleId": "reputation-engine",
+      "contractName": "ReputationEngine",
+      "function": "setScoringWeights(uint256 stakeW, uint256 repW)",
+      "args": [
+        60,
+        40
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "reputation",
+        "validators"
+      ],
+      "prerequisites": [
+        "Validate new weighting with analytics dashboard",
+        "Notify agent operators of updated reputation policy"
+      ],
+      "risk": "routine"
+    },
+    {
+      "id": "dispute-module-window",
+      "label": "Recalibrate dispute window",
+      "description": "Set DisputeModule dispute window to 18h to accelerate escalations under dominion cadence.",
+      "moduleId": "dispute-module",
+      "contractName": "DisputeModule",
+      "function": "setDisputeWindow(uint256 window)",
+      "args": [
+        64800
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "disputes",
+        "security"
+      ],
+      "prerequisites": [
+        "Verify validator committee availability for shortened windows",
+        "Publish updated dispute SLA to stakeholders"
+      ],
+      "risk": "elevated"
+    },
+    {
+      "id": "certificate-nft-base-uri",
+      "label": "Refresh certificate metadata base URI",
+      "description": "Update CertificateNFT base URI to latest IPFS catalogue for compliance provenance.",
+      "moduleId": "certificate-nft",
+      "contractName": "CertificateNFT",
+      "function": "setBaseURI(string baseURI_)",
+      "args": [
+        "ipfs://bafybeigdyrmetadata/"
+      ],
+      "valueEther": "0",
+      "safe": "governance",
+      "tags": [
+        "compliance",
+        "metadata"
+      ],
+      "prerequisites": [
+        "Upload audited metadata package to IPFS",
+        "Run certificate indexer resync after execution"
+      ],
+      "risk": "routine"
+    }
+  ]
+}

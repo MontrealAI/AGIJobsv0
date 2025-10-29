@@ -4,7 +4,7 @@ import process from 'node:process';
 import { stdout } from 'node:process';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { loadScenarioFromFile, runScenario } from './runDemo';
+import { loadScenarioFromFile, runScenario, resolveScenarioPath } from './runDemo';
 import {
   AutopilotBrief,
   buildAutopilotBrief,
@@ -28,9 +28,10 @@ export const DEFAULT_AUTOPILOT_BRIEF_PATH = path.join(
 type Summary = Awaited<ReturnType<typeof runScenario>>;
 
 export async function generateAutopilotBrief(
-  scenarioPath: string,
+  scenarioInput: string,
 ): Promise<{ summary: Summary; brief: AutopilotBrief }> {
-  const scenario = await loadScenarioFromFile(scenarioPath);
+  const resolvedScenarioPath = resolveScenarioPath(scenarioInput);
+  const scenario = await loadScenarioFromFile(resolvedScenarioPath);
   const summary = await runScenario(scenario);
   return { summary, brief: buildAutopilotBrief(summary) };
 }
@@ -54,8 +55,8 @@ async function main(): Promise<void> {
     .help()
     .parse();
 
-  const scenarioPath = String(argv.scenario);
-  const { brief } = await generateAutopilotBrief(scenarioPath);
+  const scenarioInput = String(argv.scenario);
+  const { brief } = await generateAutopilotBrief(scenarioInput);
 
   if (argv.json) {
     stdout.write(JSON.stringify({ brief }, null, 2));
