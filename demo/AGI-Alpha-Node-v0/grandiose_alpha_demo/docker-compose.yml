@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  agi-alpha-node-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "-m", "agi_alpha_node_demo.cli", "run"]
+    environment:
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "9404:9404"
+    volumes:
+      - ./data:/app/data
