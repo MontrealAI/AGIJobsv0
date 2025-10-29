@@ -1,0 +1,199 @@
+{
+  "created_at": 1761741002.6546826,
+  "governance": {
+    "approvals_required": 0,
+    "guardian_addresses": [],
+    "metadata": {},
+    "policy_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "source": null,
+    "updated_at": 1761741002.649219
+  },
+  "integrity": "465fdeb97297661e2c3267dbe1f971d32c1318245eb318cd2fb7397155c01567",
+  "jobs": {
+    "701826110db74b6abcbcf25ec75a34c8": {
+      "assigned_nodes": [],
+      "assigned_shard": null,
+      "plan": {
+        "budget": {
+          "cap": "100.00",
+          "max": "0",
+          "token": "AGIALPHA"
+        },
+        "metadata": {
+          "demo": {
+            "agents": [
+              {
+                "agent_id": "hypergrid-signal-architect",
+                "capabilities": [
+                  "analysis",
+                  "execution",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "hypergrid-signal-architect-secret",
+                "owner": "Signal Architects",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "96000"
+              },
+              {
+                "agent_id": "mu-forge-curriculum-guild",
+                "capabilities": [
+                  "analysis",
+                  "validation"
+                ],
+                "multisig": true,
+                "operator_secret": "mu-forge-curriculum-guild-secret",
+                "owner": "Curriculum Guild",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "74000"
+              },
+              {
+                "agent_id": "meta-tree-strategist",
+                "capabilities": [
+                  "analysis",
+                  "execution"
+                ],
+                "multisig": true,
+                "operator_secret": "meta-tree-strategist-secret",
+                "owner": "Meta Strategists",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "81000"
+              },
+              {
+                "agent_id": "creative-synthesis-studio",
+                "capabilities": [
+                  "analysis",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "creative-synthesis-studio-secret",
+                "owner": "Design Studio",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "69000"
+              },
+              {
+                "agent_id": "sovereign-governance-weaver",
+                "capabilities": [
+                  "analysis",
+                  "validation"
+                ],
+                "multisig": true,
+                "operator_secret": "sovereign-governance-weaver-secret",
+                "owner": "Governance Weaver",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "63000"
+              },
+              {
+                "agent_id": "execution-mesh-orchestrator",
+                "capabilities": [
+                  "execution",
+                  "support"
+                ],
+                "multisig": true,
+                "operator_secret": "execution-mesh-orchestrator-secret",
+                "owner": "Execution Mesh",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "72000"
+              },
+              {
+                "agent_id": "gasless-guardian-sentinel",
+                "capabilities": [
+                  "execution",
+                  "analysis"
+                ],
+                "multisig": true,
+                "operator_secret": "gasless-guardian-sentinel-secret",
+                "owner": "Account Abstraction Syndicate",
+                "region": "omni",
+                "slashable": true,
+                "stake_amount": "58000"
+              }
+            ],
+            "attachments": [
+              "meta_agentic_alpha_v11/reports/alpha_meta_singularity_overview.md",
+              "meta_agentic_alpha_v11/playbooks/owner_hypergrid_command_matrix.md"
+            ],
+            "dashboards": [
+              {
+                "file": "meta_agentic_alpha_v11/ui/index.html",
+                "title": "Hypergrid Console"
+              },
+              {
+                "file": "meta_agentic_alpha_v11/reports/generated/alpha_meta_singularity_masterplan.md",
+                "title": "Hypergrid Masterplan"
+              }
+            ],
+            "name": "Meta-Agentic α-AGI Jobs Demo V11 — Hypergrid",
+            "narrative": "A non-technical sovereign owner launches the Hypergrid Console. AGI Jobs v0 (v2)\nspins up a full-stack meta-agentic alpha factory: multi-domain signal sweeps,\nself-escalating curriculum, tree-search meta-planning, antifragility design,\nsovereign strategy governance, unstoppable execution meshes, and ERC-4337\nautomation. Every artefact is generated from one YAML—no manual wiring.\n"
+          },
+          "generatedAt": 1761741002.616977,
+          "scenario": "scenario.yaml"
+        },
+        "plan_id": "d0861213e178fc4b98434388851bec1c0d582b4051c2e6e16ea084983ea123af",
+        "policies": {
+          "allowTools": [
+            "ipfs.pin",
+            "job.post",
+            "job.finalize",
+            "validator.quorum",
+            "llm.generate",
+            "code.run"
+          ],
+          "denyTools": [],
+          "orgId": null,
+          "organizationId": null,
+          "requireValidator": true,
+          "teamId": null,
+          "tenantId": null,
+          "userId": null
+        },
+        "steps": []
+      },
+      "status": {
+        "current": null,
+        "logs": [],
+        "receipts": {
+          "cids": [],
+          "job_id": null,
+          "payouts": [],
+          "plan_id": "d0861213e178fc4b98434388851bec1c0d582b4051c2e6e16ea084983ea123af",
+          "timings": {
+            "completed_at": 1761741002.6542218,
+            "events": [
+              "AwaitingValidation",
+              "JobCompleted",
+              "JobCreated",
+              "ResultSubmitted",
+              "ValidationStarted"
+            ],
+            "scoreboard": {},
+            "state": "succeeded"
+          },
+          "txes": []
+        },
+        "run": {
+          "completed_at": 1761741002.6541805,
+          "created_at": 1761741002.6492722,
+          "est_budget": "0",
+          "id": "701826110db74b6abcbcf25ec75a34c8",
+          "plan_id": "d0861213e178fc4b98434388851bec1c0d582b4051c2e6e16ea084983ea123af",
+          "started_at": 1761741002.6525798,
+          "state": "succeeded"
+        },
+        "steps": []
+      },
+      "updated_at": 1761741002.6546826
+    }
+  },
+  "nodes": {},
+  "scoreboard": {},
+  "sequence": 3,
+  "shards": {},
+  "version": "orchestrator.checkpoint.v1"
+}

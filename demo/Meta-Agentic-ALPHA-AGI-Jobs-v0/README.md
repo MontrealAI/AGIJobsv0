@@ -58,6 +58,7 @@ python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v7.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v8.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v9.py
 python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v10.py
+python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v11.py
 ```
    The V2 CLI prints direct links to the freshly generated owner console and masterplan report.
 
@@ -105,6 +106,10 @@ Use `--override` to adjust parameters on the fly, e.g. `--override owner.risk_li
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v10.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/ui/dashboard-data-v10.json`
    - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/reports/generated/alpha_meta_supremacy_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/latest_run_v11.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v11/ui/dashboard-data-v11.json`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v11/reports/generated/alpha_meta_singularity_masterplan.md`
+   - `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/orchestrator_v11/scoreboard.json`
 
 > ✅ Everything ships pre-configured. The CLI auto-registers the validator agent, configures checkpoints, and ensures account-abstraction-ready governance parameters.
 

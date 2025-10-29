@@ -1,0 +1,547 @@
+{
+  "meta": {
+    "runId": "701826110db74b6abcbcf25ec75a34c8",
+    "scenarioId": "meta-agentic-alpha-v11",
+    "state": "succeeded"
+  },
+  "metrics": {
+    "owner_empowerment": 1.0,
+    "unstoppable_readiness": 1.0,
+    "alpha_signal_strength": 0.93,
+    "world_model_maturity": 0.9199999999999999,
+    "planner_intelligence": 0.8999999999999999,
+    "design_velocity": 0.86,
+    "strategy_resilience": 0.9199999999999999,
+    "execution_certainty": 0.96,
+    "meta_ci_health": 1.0,
+    "capital_flywheel_index": 0.9600000000000001,
+    "expansion_thrust": 0.9199999999999999,
+    "supremacy_index": 0.958,
+    "owner_command_latency_seconds": 5,
+    "guardian_resilience": 0.93
+  },
+  "identify": {
+    "streams": [
+      {
+        "id": "finance-global-alpha",
+        "domain": "finance",
+        "source": "Omega Alpha Feed",
+        "refresh_minutes": 5,
+        "alpha_signal": 0.93,
+        "confidence": 0.95,
+        "detectors": [
+          "transformer-alpha-scan",
+          "guardian-anomaly-net"
+        ],
+        "notes": "Detects mispricings across 27 venues"
+      },
+      {
+        "id": "supply-chain-grid",
+        "domain": "supply",
+        "source": "Supply Mesh",
+        "refresh_minutes": 7,
+        "alpha_signal": 0.89,
+        "confidence": 0.92,
+        "detectors": [
+          "rl-supply-scout",
+          "inventory-monitor"
+        ],
+        "notes": "Aggregates logistic telemetry"
+      },
+      {
+        "id": "research-frontier",
+        "domain": "research",
+        "source": "Open Frontier",
+        "refresh_minutes": 10,
+        "alpha_signal": 0.88,
+        "confidence": 0.9,
+        "detectors": [
+          "paper-miner",
+          "citations-graph"
+        ],
+        "notes": "Tracks emerging patents"
+      },
+      {
+        "id": "policy-radar",
+        "domain": "policy",
+        "source": "Policy Radar",
+        "refresh_minutes": 8,
+        "alpha_signal": 0.87,
+        "confidence": 0.9,
+        "detectors": [
+          "policy-monitor",
+          "regulation-forecast"
+        ],
+        "notes": "Identifies regulatory windows"
+      },
+      {
+        "id": "energy-transition",
+        "domain": "energy",
+        "source": "Energy Transition Oracle",
+        "refresh_minutes": 6,
+        "alpha_signal": 0.86,
+        "confidence": 0.9,
+        "detectors": [
+          "grid-sensor",
+          "energy-price-arb"
+        ],
+        "notes": "Monitors renewable transitions"
+      },
+      {
+        "id": "healthcare-demand",
+        "domain": "health",
+        "source": "Health Demand Signal",
+        "refresh_minutes": 9,
+        "alpha_signal": 0.85,
+        "confidence": 0.88,
+        "detectors": [
+          "hospital-capacity",
+          "demand-surges"
+        ],
+        "notes": "Forecasts demand spikes"
+      },
+      {
+        "id": "infrastructure-stimulus",
+        "domain": "infrastructure",
+        "source": "Infrastructure Stimulus Feed",
+        "refresh_minutes": 11,
+        "alpha_signal": 0.84,
+        "confidence": 0.87,
+        "detectors": [
+          "infrastructure-budget-tracker",
+          "construction-monitor"
+        ],
+        "notes": "Tracks infrastructure spend"
+      }
+    ],
+    "detectors": [
+      "transformer-alpha-scan",
+      "rl-supply-scout",
+      "guardian-anomaly-net",
+      "paper-miner",
+      "regulation-forecast"
+    ],
+    "watchers": [
+      "guardian-meta-sentinel",
+      "owner-console-scribe",
+      "treasury-overseer",
+      "risk-harmonics",
+      "compliance-oracle"
+    ],
+    "anomalies": [
+      {
+        "id": "alpha-gap-112",
+        "description": "Liquidity hole between treasury ETFs and commodity options",
+        "impact_score": 0.86
+      },
+      {
+        "id": "supply-surge-507",
+        "description": "Unexpected container reallocation creates arbitrage",
+        "impact_score": 0.82
+      },
+      {
+        "id": "policy-window-44b",
+        "description": "Policy exemption enabling energy project acceleration",
+        "impact_score": 0.79
+      }
+    ]
+  },
+  "knowledge_base": {
+    "nodes": [
+      {
+        "id": "node-global-alpha",
+        "label": "Global Alpha Spread",
+        "category": "finance",
+        "signal": 0.92,
+        "confidence": 0.94
+      },
+      {
+        "id": "node-supply",
+        "label": "Supply Chain Bottleneck",
+        "category": "supply",
+        "signal": 0.88,
+        "confidence": 0.91
+      },
+      {
+        "id": "node-research",
+        "label": "Lab Breakthrough",
+        "category": "research",
+        "signal": 0.86,
+        "confidence": 0.89
+      },
+      {
+        "id": "node-policy",
+        "label": "Policy Loophole",
+        "category": "policy",
+        "signal": 0.83,
+        "confidence": 0.88
+      },
+      {
+        "id": "node-energy",
+        "label": "Energy Transition",
+        "category": "energy",
+        "signal": 0.84,
+        "confidence": 0.87
+      },
+      {
+        "id": "node-health",
+        "label": "Healthcare Demand Shock",
+        "category": "health",
+        "signal": 0.82,
+        "confidence": 0.86
+      },
+      {
+        "id": "node-infra",
+        "label": "Infrastructure Stimulus",
+        "category": "infrastructure",
+        "signal": 0.81,
+        "confidence": 0.85
+      }
+    ],
+    "links": [
+      {
+        "source": "node-global-alpha",
+        "target": "node-supply",
+        "relationship": "drives",
+        "weight": 0.74
+      },
+      {
+        "source": "node-supply",
+        "target": "node-policy",
+        "relationship": "triggers",
+        "weight": 0.66
+      },
+      {
+        "source": "node-research",
+        "target": "node-health",
+        "relationship": "accelerates",
+        "weight": 0.71
+      },
+      {
+        "source": "node-energy",
+        "target": "node-infra",
+        "relationship": "requires",
+        "weight": 0.65
+      },
+      {
+        "source": "node-policy",
+        "target": "node-global-alpha",
+        "relationship": "enables",
+        "weight": 0.59
+      },
+      {
+        "source": "node-health",
+        "target": "node-global-alpha",
+        "relationship": "amplifies",
+        "weight": 0.62
+      },
+      {
+        "source": "node-infra",
+        "target": "node-supply",
+        "relationship": "stabilises",
+        "weight": 0.57
+      }
+    ],
+    "retention": [
+      "archive-immutable-on-guardian-approval",
+      "refresh-interval-30m",
+      "auto-prune-false-positives",
+      "pin-critical-signals-on-ipfs"
+    ]
+  },
+  "learn": {
+    "curricula": [
+      "hypergrid-finance-curriculum",
+      "hypergrid-supply-curriculum",
+      "hypergrid-research-curriculum",
+      "hypergrid-policy-curriculum",
+      "hypergrid-energy-curriculum",
+      "hypergrid-health-curriculum"
+    ],
+    "simulation_channels": [
+      "mu-zero-market-forge",
+      "poet-supply-simulator",
+      "agent-arena-governance",
+      "energy-transition-digital-twin",
+      "biofrontier-lab-world"
+    ],
+    "world_models": [
+      "mu-zero-global-alpha",
+      "mu-zero-supply-stability",
+      "mu-zero-policy-reactor",
+      "mu-zero-energy-grid"
+    ]
+  },
+  "think": {
+    "protocols": [
+      "meta-agentic-tree-search",
+      "a2a-coordination-grid",
+      "hybrid-llm-evaluator",
+      "governance-risk-evaluator",
+      "treasury-optimizer",
+      "ethics-simulator"
+    ],
+    "heuristics": [
+      "expected-alpha-delta",
+      "risk-adjusted-yield",
+      "guardian-trust-index",
+      "regulatory-latency",
+      "curriculum-surprise"
+    ],
+    "meta_agents": [
+      "strategy-architect",
+      "risk-sentinel",
+      "treasury-orchestrator",
+      "governance-advisor",
+      "execution-director"
+    ]
+  },
+  "design": {
+    "studios": [
+      "design-studio-hypergrid",
+      "design-studio-supply",
+      "design-studio-biofrontier",
+      "design-studio-governance",
+      "design-studio-energy"
+    ],
+    "prototypes": [
+      {
+        "name": "alpha-factory-pipeline",
+        "description": "Automated pipeline combining finance + supply anomalies",
+        "status": "validated"
+      },
+      {
+        "name": "policy-aware-liquidity-grid",
+        "description": "Liquidity routing sensitive to policy windows",
+        "status": "simulated"
+      },
+      {
+        "name": "cross-domain-research-market",
+        "description": "Pair biotech discoveries with capital routes",
+        "status": "in-flight"
+      }
+    ]
+  },
+  "strategise": {
+    "programs": [
+      "hypergrid-treasury-compounding",
+      "guardian-supremacy-governance",
+      "regulatory-diplomacy",
+      "portfolio-shock-absorber",
+      "mission-thread-prioritiser",
+      "ethics-safety-ledger"
+    ],
+    "governance_hooks": [
+      "timelock-review-window",
+      "multisig-override",
+      "guardian-quorum-check",
+      "ethics-audit-lambda"
+    ],
+    "antifragility_loops": [
+      "scenario-swap-loop",
+      "guardian-randomised-drill",
+      "treasury-drawdown-reset",
+      "curriculum-shock-therapy"
+    ]
+  },
+  "execute": {
+    "mesh": [
+      {
+        "name": "job-registry-create",
+        "action": "create_job",
+        "endpoint": "contracts/v2/job_registry.createJob",
+        "dry_run": true,
+        "guarded": true
+      },
+      {
+        "name": "stake-manager-stake",
+        "action": "stake_agent",
+        "endpoint": "contracts/v2/stake_manager.stake",
+        "dry_run": true,
+        "guarded": true
+      },
+      {
+        "name": "treasury-router-swap",
+        "action": "route_funds",
+        "endpoint": "contracts/v2/treasury_router.route",
+        "dry_run": true,
+        "guarded": true
+      },
+      {
+        "name": "account-abstraction-bundle",
+        "action": "send_user_operation",
+        "endpoint": "erc4337/bundler.sendUserOperation",
+        "dry_run": true,
+        "guarded": true
+      },
+      {
+        "name": "guardian-signal-broadcast",
+        "action": "emit_guardian_signal",
+        "endpoint": "events/guardian.broadcast",
+        "dry_run": true,
+        "guarded": true
+      },
+      {
+        "name": "offchain-liquidity-call",
+        "action": "call_uniswap_router",
+        "endpoint": "defi/uniswap.swapExactTokens",
+        "dry_run": true,
+        "guarded": true
+      }
+    ],
+    "safeguards": [
+      "simulate-eth-call-before-commit",
+      "require-ci-v2-green",
+      "guardian-approval-threshold",
+      "treasury-position-limits",
+      "owner-final-confirmation"
+    ],
+    "dry_run_tools": [
+      "hardhat-callstatic",
+      "foundry-cast-sim",
+      "forked-mainnet-smoke"
+    ]
+  },
+  "tooling": {
+    "external_tools": [
+      "defi-exchange-adapter",
+      "onchain-governance-adapter",
+      "cloud-orchestration-adapter",
+      "ml-training-adapter",
+      "supply-chain-api-adapter"
+    ],
+    "dataset_channels": [
+      "eth-mainnet-oracle",
+      "cross-chain-yield-scanner",
+      "trade-fi-newsmesh",
+      "open-science-feed",
+      "global-policy-radar",
+      "supply-sensor-grid"
+    ]
+  },
+  "control_surface": {
+    "guardian_quorum": 7,
+    "guardian_count": 7,
+    "failover_guardian_count": 5,
+    "session_keys": [
+      "hypergrid-session-guardian",
+      "hypergrid-session-treasury",
+      "hypergrid-session-risk",
+      "hypergrid-session-design",
+      "hypergrid-session-execution",
+      "hypergrid-session-governance"
+    ],
+    "unstoppable_threshold": 0.965,
+    "telemetry_channels": [
+      "telemetry-global-alpha",
+      "telemetry-supply-chain",
+      "telemetry-research",
+      "telemetry-governance",
+      "telemetry-treasury"
+    ],
+    "autopilot_modes": {
+      "cruise": "Auto-balance opportunity queue",
+      "overdrive": "Escalate curriculum + execution",
+      "sentinel": "Risk-aware guardrails",
+      "nocturne": "Nightly retro + treasury sync",
+      "launchpad": "Spin new opportunity cells"
+    },
+    "autopilot_controls": {
+      "queue_depth": "scripts/autopilot/adjust_queue_depth.py",
+      "curriculum_rate": "scripts/autopilot/adjust_curriculum_rate.py",
+      "treasury_spread": "scripts/autopilot/adjust_treasury_spread.py",
+      "gasless_budget": "scripts/autopilot/adjust_gasless_budget.py",
+      "guardian_quorum": "scripts/autopilot/adjust_guardian_quorum.py",
+      "expansion_vector": "scripts/autopilot/adjust_expansion_vector.py"
+    },
+    "owner_actions": [
+      "activate-hypergrid-emergency-pause",
+      "deploy-hyper-compounding",
+      "invoke-guardian-realignment",
+      "refresh-meta-agentic-tree",
+      "seal-override-window"
+    ],
+    "supremacy_vectors": [
+      "vector-alpha-capture",
+      "vector-antifragility",
+      "vector-governance-alignment",
+      "vector-treasury-compounding",
+      "vector-simulation-expansion"
+    ],
+    "mission_threads": [
+      "mission-thread-global-alpha",
+      "mission-thread-supply-sense",
+      "mission-thread-biofrontier",
+      "mission-thread-energy-transition",
+      "mission-thread-policy-anticipation",
+      "mission-thread-governance-sovereignty"
+    ],
+    "sovereign_domains": [
+      "global-markets",
+      "supply-chains",
+      "frontier-research",
+      "public-policy",
+      "energy-transition",
+      "healthcare",
+      "infrastructure"
+    ],
+    "gasless_controls": {
+      "paymaster_topup": "scripts/gasless/topup_paymaster.py",
+      "sponsor_bundle": "scripts/gasless/sponsor_bundled_tx.py",
+      "rotate_session_keys": "scripts/gasless/rotate_session_keys.py",
+      "renew_session_key": "scripts/gasless/renew_session_key.py"
+    },
+    "upgrade_scripts": {
+      "treasury": "scripts/upgrade_treasury_router.py",
+      "guardians": "scripts/upgrade_guardian_mesh.py",
+      "curriculum": "scripts/upgrade_curriculum_foundry.py",
+      "ci": "scripts/upgrade_ci_grid.py",
+      "execution_mesh": "scripts/upgrade_execution_mesh.py"
+    },
+    "mutable_parameters": {
+      "job_fee_bps": 55,
+      "validator_bond": 50000,
+      "alpha_multiplier": 3.4,
+      "opportunity_buffer": 0.12
+    },
+    "emergency_pause": true,
+    "circuit_breaker_minutes": 5,
+    "unstoppable_reserve_percent": 42.0,
+    "antifragility_buffer_percent": 36.0
+  },
+  "ci_v2": {
+    "status": "green",
+    "checks": [
+      "npm run lint:ci",
+      "npm test",
+      "npm run abi:diff",
+      "pytest orchestrator",
+      "pytest routes",
+      "pytest demo hypergrid",
+      "python simulation.montecarlo",
+      "npm run coverage",
+      "forge test",
+      "npm run check:access-control",
+      "npm run demo:asi-takeoff"
+    ],
+    "gatekeepers": [
+      "pytest-orchestrator",
+      "pytest-routes",
+      "fuzz-suite",
+      "foundry-tests",
+      "coverage-enforcer",
+      "scoreboard-sanity"
+    ],
+    "response_minutes": 3
+  },
+  "mermaid": {
+    "flow": "graph LR\n  Identify((Identify — Hyper Signals)) --> OutLearn[Out-Learn — Simulation Forge]\n  OutLearn --> OutThink[Out-Think — Meta-Agentic Tree Search]\n  OutThink --> OutDesign[Out-Design — Creative Atlas]\n  OutDesign --> OutStrategise[Out-Strategise — Portfolio Navigator]\n  OutStrategise --> OutExecute[Out-Execute — Execution Mesh]\n  OutExecute --> Treasury[Treasury Autopilot]\n  Treasury --> Governance[Guardian Mesh]\n  Governance --> Owner[Owner Override Console]\n  Owner --> Identify\n  Owner --> OutStrategise\n  subgraph CI_V2[CI V2 Enforcement]\n    Lint[Lint]\n    Tests[Tests]\n    Python[Python Suites]\n    Foundry[Foundry]\n    Coverage[Coverage]\n  end\n  OutExecute --> CI_V2\n  CI_V2 --> Owner",
+    "sequence": "sequenceDiagram\n  participant Owner as Owner\n  participant Planner as Meta-Planner\n  participant Guild as Specialist Agents\n  participant Governance as Guardian Mesh\n  participant Chain as AGI Jobs v0 (v2)\n  Owner->>Planner: Publish Hypergrid mandate\n  Planner->>Guild: Spawn identify/learn/think threads\n  Guild->>Governance: Deliver risk + antifragility dossier\n  Governance->>Chain: Approve unstoppable parameters\n  Chain-->>Planner: Simulate execution + treasury flow\n  Planner-->>Owner: Render control surface + receipts\n  Owner->>Chain: Execute override / pause / redeploy",
+    "gantt": "gantt\n  title Hypergrid Sprint Timeline\n  dateFormat X\n  axisFormat %s\n  section Identify\n    Multi-domain sweep    :done,    0, 1\n    Anomaly triage        :active,  1, 1\n  section Out-Learn\n    Curriculum escalation :        2, 1\n    MuZero world model    :        3, 2\n  section Out-Think\n    Tree search synthesis :        5, 1\n    A2A coordination     :        6, 1\n  section Out-Design\n    Prototype drafting    :        7, 1\n    Simulation feedback   :        8, 1\n  section Out-Strategise\n    Treasury rebalancing  :        9, 1\n    Governance updates    :        10, 1\n  section Out-Execute\n    Dry-run envelope      :        11, 1\n    On-chain commit       :        12, 1\n    Owner confirmation    :        13, 1",
+    "journey": "journey\n  title Owner Empowerment Path\n  section Console\n    Launch hypergrid CLI: 5: owner\n    Review strategy slate: 5: owner\n    Approve overrides: 5: owner\n  section Agents\n    Compile signal dossier: 5: agents\n    Refine world models: 5: agents\n    Stress-test plans: 5: agents\n  section Governance\n    Validate safeguards: 5: guardians\n    Confirm unstoppable quorum: 5: guardians\n    Stream telemetry: 4: guardians",
+    "state": "stateDiagram-v2\n  [*] --> Identify\n  Identify --> OutLearn\n  OutLearn --> OutThink\n  OutThink --> OutDesign\n  OutDesign --> OutStrategise\n  OutStrategise --> OutExecute\n  OutExecute --> Review\n  Review --> Identify: Opportunity refresh\n  Review --> [*]\n  Review --> Override: Owner control\n  Override --> OutExecute: Parameter shift",
+    "radar": "%%{init: {'theme': 'dark'} }%%\nradarChart\n  title Hypergrid Capability Radar\n  axes Empowerment, Readiness, Signals, WorldModel, Planner, Execution\n  dataset Hypergrid\n    data 1.00, 1.00, 0.93, 0.92, 0.90, 0.96",
+    "knowledge": "graph TD\n  node-global-alpha[Global Alpha Spread]:::node\n  node-supply[Supply Chain Bottleneck]:::node\n  node-research[Lab Breakthrough]:::node\n  node-policy[Policy Loophole]:::node\n  node-energy[Energy Transition]:::node\n  node-health[Healthcare Demand Shock]:::node\n  node-infra[Infrastructure Stimulus]:::node\n  node-global-alpha --|drives (0.74)|--> node-supply\n  node-supply --|triggers (0.66)|--> node-policy\n  node-research --|accelerates (0.71)|--> node-health\n  node-energy --|requires (0.65)|--> node-infra\n  node-policy --|enables (0.59)|--> node-global-alpha\n  node-health --|amplifies (0.62)|--> node-global-alpha\n  node-infra --|stabilises (0.57)|--> node-supply\n  classDef node fill:#041a2f,stroke:#22d3ee,stroke-width:2px,color:#f8fafc;",
+    "quadrant": "quadrantChart\n  title Hypergrid Command Quadrant\n  x-axis Automation <---> Human Oversight\n  y-axis Passive <---> Proactive\n  \"Owner Override Mesh\" : 0.35 : 0.95\n  \"Guardian Council\" : -0.10 : 0.96\n  \"CI Enforcement\" : 0.60 : 0.78\n  \"Alpha Factories\" : 0.82 : 0.58\n  \"Simulation Forge\" : 0.55 : 0.74\n  \"Execution Mesh\" : 0.70 : 0.88"
+  }
+}
