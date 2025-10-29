@@ -250,10 +250,12 @@ function aggregateSummary(
       details: { job, agent: chosen, outcome },
     };
     experiences.push(experience);
-    trainer.integrate(experience);
-    trainer.train(config.batchSize);
-    if (i % 40 === 0) {
-      trainer.maybeCheckpoint(`Policy update after ${i + 1} experiences`);
+    if (!ownerControls.paused) {
+      trainer.integrate(experience);
+      trainer.train(config.batchSize);
+      if (i % 40 === 0) {
+        trainer.maybeCheckpoint(`Policy update after ${i + 1} experiences`);
+      }
     }
     totalRewardPaid += outcome.rewardPaid;
     totalCost += outcome.cost + outcome.penalties;
