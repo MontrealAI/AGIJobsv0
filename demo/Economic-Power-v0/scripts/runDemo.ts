@@ -508,6 +508,7 @@ export type Summary = {
 type SummaryWithSnapshot = Summary & {
   __scenarioSnapshot?: Scenario;
   __deploymentConfigPath?: string;
+  __skipDeploymentVerification?: boolean;
 };
 
 type CoverageSurface =
@@ -3976,6 +3977,11 @@ export async function runScenario(
     enumerable: false,
     configurable: false,
   });
+  Object.defineProperty(summary, '__skipDeploymentVerification', {
+    value: skipDeploymentVerification,
+    enumerable: false,
+    configurable: false,
+  });
   return summary;
 }
 
@@ -4059,9 +4065,10 @@ export async function verifyDeterminism(
 ): Promise<DeterministicVerification> {
   const carrier = summary as SummaryWithSnapshot;
   const scenarioForVerification = carrier.__scenarioSnapshot ?? scenario;
+  const skipDeploymentVerification = carrier.__skipDeploymentVerification ?? false;
   const verificationSummary = await runScenario(scenarioForVerification, {
     deploymentConfigPath: carrier.__deploymentConfigPath ?? undefined,
-    skipDeploymentVerification: false,
+    skipDeploymentVerification,
   });
   const proof = buildDeterministicProof(summary);
   const verificationProof = buildDeterministicProof(verificationSummary);
