@@ -25,6 +25,40 @@ export class SentinelMonitor {
     return keccak256(toUtf8Bytes(target));
   }
 
+  private hashVariants(target: string): [string, string] {
+    const hashed = this.hashTarget(target);
+    const withoutPrefix = hashed.startsWith('0x') ? hashed.slice(2) : hashed;
+    return [hashed, withoutPrefix];
+  }
+
+  private normalizeHashInput(hash?: string): [string | undefined, string | undefined] {
+    if (typeof hash !== 'string') {
+      return [undefined, undefined];
+    }
+    const trimmed = hash.trim().toLowerCase();
+    if (!trimmed) {
+      return [undefined, undefined];
+    }
+    if (trimmed.startsWith('0x')) {
+      return [trimmed, trimmed.slice(2)];
+    }
+    return [`0x${trimmed}`, trimmed];
+  }
+
+  private getAllowedTargetHashes(domainId: string, allowed: Set<string>): Set<string> {
+    const configured = this.config.allowedTargetHashes.get(domainId);
+    if (configured) {
+      return configured;
+    }
+    const derived = new Set<string>();
+    for (const target of allowed) {
+      const [withPrefix, withoutPrefix] = this.hashVariants(target);
+      derived.add(withPrefix);
+      derived.add(withoutPrefix);
+    }
+    return derived;
+  }
+
   private getDomainConfig(domainId: string): DomainConfig {
     return this.domainController.getState(domainId).config;
   }
@@ -97,21 +131,55 @@ export class SentinelMonitor {
       }
     }
 
-    if (action.target) {
-      const allowed = this.config.allowedTargets.get(domain.id) ?? domain.allowedTargets;
-      if (allowed.size > 0) {
-        const normalizedTarget = this.normalizeTarget(action.target);
-        const hashedTarget = this.hashTarget(normalizedTarget);
-        const hashedSet = this.config.allowedTargetHashes.get(domain.id);
-        const hashedMatch = hashedSet ? hashedSet.has(hashedTarget) : allowed.has(normalizedTarget);
-        if (!allowed.has(normalizedTarget) || !hashedMatch) {
-          return this.raiseAlert(action, 'UNAUTHORIZED_TARGET', `target ${action.target} is not authorized`, 'CRITICAL', {
+    const allowed = this.config.allowedTargets.get(domain.id) ?? domain.allowedTargets;
+    if (allowed.size > 0) {
+      const normalizedTargets = new Set<string>();
+      if (typeof action.target === 'string') {
+        normalizedTargets.add(this.normalizeTarget(action.target));
+      }
+      const metadataTarget =
+        typeof action.metadata?.target === 'string'
+          ? this.normalizeTarget(action.metadata.target as string)
+          : undefined;
+      if (metadataTarget) {
+        normalizedTargets.add(metadataTarget);
+      }
+
+      const hashedSet = this.getAllowedTargetHashes(domain.id, allowed);
+      const hashCandidates = new Set<string>();
+      for (const target of normalizedTargets) {
+        const [withPrefix, withoutPrefix] = this.hashVariants(target);
+        hashCandidates.add(withPrefix);
+        hashCandidates.add(withoutPrefix);
+      }
+      const [metadataHashWithPrefix, metadataHashWithoutPrefix] = this.normalizeHashInput(
+        (action.metadata?.targetHash as string | undefined) ??
+          (action.metadata?.target_hash as string | undefined),
+      );
+      if (metadataHashWithPrefix) {
+        hashCandidates.add(metadataHashWithPrefix);
+      }
+      if (metadataHashWithoutPrefix) {
+        hashCandidates.add(metadataHashWithoutPrefix);
+      }
+
+      const rawMatch = normalizedTargets.size > 0 && Array.from(normalizedTargets).some((target) => allowed.has(target));
+      const hashedMatch = hashCandidates.size > 0 && Array.from(hashCandidates).some((candidate) => hashedSet.has(candidate));
+
+      if (!rawMatch && !hashedMatch) {
+        return this.raiseAlert(
+          action,
+          'UNAUTHORIZED_TARGET',
+          `target ${action.target ?? action.metadata?.target ?? action.metadata?.targetHash ?? action.metadata?.target_hash} is not authorized`,
+          'CRITICAL',
+          {
             target: action.target,
-            normalizedTarget,
-            hashedTarget,
+            normalizedTargets: Array.from(normalizedTargets),
+            candidateHashes: Array.from(hashCandidates),
             allowedTargets: Array.from(allowed),
-          }, blockNumber);
-        }
+          },
+          blockNumber,
+        );
       }
     }
 
@@ -170,8 +238,13 @@ export class SentinelMonitor {
   updateAllowedTargets(domainId: string, targets: Iterable<string>): void {
     const normalized = Array.from(targets, (target) => this.normalizeTarget(target));
     this.config.allowedTargets.set(domainId, new Set(normalized));
-    const hashed = normalized.map((target) => this.hashTarget(target));
-    this.config.allowedTargetHashes.set(domainId, new Set(hashed));
+    const hashed = new Set<string>();
+    for (const target of normalized) {
+      const [withPrefix, withoutPrefix] = this.hashVariants(target);
+      hashed.add(withPrefix);
+      hashed.add(withoutPrefix);
+    }
+    this.config.allowedTargetHashes.set(domainId, hashed);
   }
 
   getAllowedTargets(domainId: string): Set<string> {
