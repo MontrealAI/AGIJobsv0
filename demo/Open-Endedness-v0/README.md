@@ -24,12 +24,38 @@ graph TD
     B -->|Spins up simulation/demo| C[OMNI Demo Engine]
     C --> D[Learning Progress Meter]
     C --> E[Model of Interestingness]
+    C --> I[Thermostat Controller]
+    C --> J[Sentinel Suite]
     D -->|probabilities| F[Task Sampler]
     E -->|Interesting/Boring tags| F
+    I -->|Param updates| C
+    J -->|Task enable/disable| F
     F -->|Curriculum| G[Agent Simulation]
     G -->|Outcomes| H[Economic Ledger]
     H -->|GMV/ROI dashboards| A
+    J -->|Budget & ROI guardrails| A
+    I -->|Spend telemetry| A
     G -->|Mastery signals| E
+```
+
+### Thermostat, Sentinels, and Owner Control loop
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant Orchestrator
+    participant Thermostat
+    participant Sentinel
+    participant Ledger
+
+    Owner->>Orchestrator: Adjust config / pause window
+    Orchestrator->>Ledger: Record attempt & costs
+    Orchestrator->>Thermostat: Forward ROI snapshot
+    Thermostat-->>Orchestrator: Tune weights / exploration
+    Orchestrator->>Sentinel: Request FM refresh permission
+    Sentinel->>Ledger: Inspect per-task ROI
+    Sentinel-->>Orchestrator: Approve / deny + disable tasks
+    Ledger-->>Owner: Surfaced via dashboard + JSON artefacts
 ```
 
 ## Quickstart (non-technical operator friendly)
@@ -73,10 +99,36 @@ runtime.
 | ---- | ----------- |
 | `omni_demo.py` | High-fidelity OMNI simulator + CLI. |
 | `prompts/interestingness_prompt.md` | Production-ready prompt template. |
-| `omni_config.yaml` | Seed configuration with ROI and budget guardrails. |
-| `web/index.html` | Browser dashboard with Chart.js visualisations. |
+| `omni_config.yaml` | Seed configuration with ROI, thermostat, sentinel & owner control guardrails. |
+| `web/index.html` | Browser dashboard with Chart.js visualisations and live event stream. |
+| `web/main.js` | Client logic rendering ROI, spend, allocation and guardrail signals. |
 | `results/latest.json` | Generated metrics snapshot (updated via CLI). |
 | `tests/test_probabilities.py` | Regression tests validating LP maths. |
+| `tests/test_controls.py` | Coverage for thermostat, sentinel, and ledger governance. |
+
+### Intelligent guardrails for non-technical owners
+
+```mermaid
+graph LR
+    OwnerConsole[Owner Controls\\npause_windows & weight schedule] -->|Overrides| Engine[OMNI Engine]
+    Engine --> Thermostat
+    Engine --> Sentinel
+    Thermostat -->|Auto tuning| Engine
+    Sentinel -->|ROI floor & QPS| Engine
+    Sentinel --> Ledger
+    Ledger --> Dashboard[Dashboard & JSON Ledger]
+    Dashboard --> OwnerConsole
+```
+
+**Owner levers surfaced in config:**
+
+| Control | Purpose | Example |
+| ------- | ------- | ------- |
+| `pause_windows` | Temporarily halt task execution without code edits. | Pause steps 320-340 to align with treasury maintenance. |
+| `weight_schedule` | Deterministically retune OMNI weights mid-run. | Increase `interesting_weight` at step 450 after validating ROI. |
+| `manual_overrides` | Force-enable/disable tasks via Sentinel without editing the engine. | Keep a compliance-critical task active regardless of MoI verdict. |
+
+Thermostat rules keep FM spend productive and diversify allocations whenever entropy collapses. Sentinel rules hard-stop ROI-negative tasks, throttle FM cadence, and enforce budget ceilings so the demo remains safe even in aggressive exploration regimes.
 
 ## Dashboard preview
 
@@ -93,6 +145,12 @@ graph LR
 The static HTML dashboard consumes JSON via Fetch API.  Deploy on any
 static host (S3, IPFS, or AGI Jobs web tier) for instant stakeholder
 access.
+
+### Live guardrail telemetry
+
+- **Spend Profile chart** – stacked bars showing operational vs FM spend per strategy.
+- **Return Profiles chart** – dual lines for total ROI and ROI on FM expenditure.
+- **Event stream** – thermostat, sentinel, and owner interventions rendered as a chronological playbook so executives can audit every automated decision.
 
 ## Business interpretation
 
@@ -112,6 +170,10 @@ access.
 2. Swap the heuristic MoI mode for GPT-4 once credentials are provisioned.
 3. Run the included notebook (coming soon) to benchmark against live
    marketplace cohorts.
+
+## CI v2 alignment
+
+The demo inherits AGI Jobs v0 (v2)'s **CI v2** discipline. Run `npm run ci:verify-branch-protection` or the root `make ci` target to confirm branch protection gates stay green. Unit coverage for the demo (`pytest demo/Open-Endedness-v0/tests`) is intended to be wired into the existing GitHub Actions surfaces so every OMNI upgrade publishes artefacts with full telemetry.
 
 This demo is self-contained, deterministic, and upgrade-safe.  It can be
 used during investor demos, stakeholder briefings, or internal training
