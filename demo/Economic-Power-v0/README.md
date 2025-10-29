@@ -99,6 +99,10 @@ Additional safeguards:
 
 The CLI recalculates ROI, payback horizon, validator confidence, and writes the new telemetry set into `reports/` for the UI to ingest.
 
+## Owner autopilot CLI – instant mission briefings
+
+`npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive a Markdown briefing covering guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save demo/Economic-Power-v0/reports/owner-autopilot-brief.md` to persist the briefing alongside the generated reports.
+
 ## Command catalog – execute anything instantly
 
 - `npm run owner:program -- --list` – print every deterministic program with the exact `npm` command to run it.
