@@ -59,3 +59,21 @@ def test_alpha_node_run_once(tmp_path: Path) -> None:
     result = node.run_once()
     assert result is not None
     assert node.state.ops.completed_jobs >= 1
+
+
+def test_alpha_node_owner_controls(tmp_path: Path) -> None:
+    config_path = _write_config(tmp_path)
+    ens_cache = tmp_path / "ens.json"
+    ens_cache.write_text("{\"demo.alpha.node.agi.eth\": \"0x1234567890abcdef1234567890abcdef12345678\"}", encoding="utf-8")
+    config = AlphaNodeConfig.load(config_path)
+    node = AlphaNode(config=config, ens_cache=ens_cache)
+    node.bootstrap()
+    node.update_governance("0x9999999999999999999999999999999999999999")
+    assert node.state.snapshot()["governance"]["address"] == "0x9999999999999999999999999999999999999999"
+    stake_status = node.stake(5)
+    assert stake_status.staked_amount >= 5
+    rewards = node.claim_rewards()
+    assert rewards.unclaimed_rewards == 0
+    node.run_safety_drill()
+    snapshot = node.state.snapshot()
+    assert snapshot["operations"]["drills_completed"] >= 1

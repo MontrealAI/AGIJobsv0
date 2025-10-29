@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 from typing import Dict, Optional
 
-from .blockchain import BlockchainInteractor
-from .compliance import ComplianceEngine
+from .blockchain import BlockchainInteractor, RewardSnapshot, StakeStatus
+from .compliance import ComplianceEngine, ComplianceScore
 from .config import AlphaNodeConfig
 from .ens import ENSVerifier
 from .jobs import TaskHarvester
@@ -77,6 +77,7 @@ class AlphaNode:
             raise RuntimeError("ENS verification failed")
         stake_status = self.blockchain.status(self.config.owner_address)
         self.state.update_stake(stake_status.staked_amount)
+        self.state.set_slashed_amount(stake_status.slashed_amount)
         if not stake_status.active:
             LOGGER.warning(
                 "Stake below threshold | required=%s current=%s",
@@ -95,6 +96,50 @@ class AlphaNode:
     def resume(self) -> None:
         self.state.set_paused(False)
         LOGGER.info("System resumed by operator")
+
+    def update_governance(self, address: str) -> None:
+        self.state.set_governance_address(address)
+        LOGGER.info("Governance address updated | address=%s", address)
+        self.compliance.evaluate()
+
+    def stake(self, amount: int) -> StakeStatus:
+        status = self.blockchain.stake(self.config.owner_address, amount)
+        self.state.update_stake(status.staked_amount)
+        self.state.set_slashed_amount(status.slashed_amount)
+        LOGGER.info(
+            "Stake operation | operator=%s staked=%s required=%s",
+            self.config.owner_address,
+            status.staked_amount,
+            status.required_amount,
+        )
+        self.compliance.evaluate()
+        return status
+
+    def withdraw(self, amount: int) -> StakeStatus:
+        status = self.blockchain.withdraw(self.config.owner_address, amount)
+        self.state.update_stake(status.staked_amount)
+        self.state.set_slashed_amount(status.slashed_amount)
+        LOGGER.info("Stake withdrawal | remaining=%s", status.staked_amount)
+        self.compliance.evaluate()
+        return status
+
+    def claim_rewards(self) -> RewardSnapshot:
+        snapshot = self.blockchain.claim_rewards(self.config.owner_address)
+        self.state.set_rewards(snapshot.unclaimed_rewards)
+        LOGGER.info("Rewards claimed | remaining=%s", snapshot.unclaimed_rewards)
+        self.compliance.evaluate()
+        return snapshot
+
+    def run_safety_drill(self) -> None:
+        LOGGER.info("Executing emergency drill")
+        self.pause()
+        time.sleep(0.1)
+        self.state.record_drill()
+        self.resume()
+        self.compliance.evaluate()
+
+    def compliance_report(self) -> ComplianceScore:
+        return self.compliance.evaluate()
 
     def run_once(self) -> Optional[SpecialistResult]:
         if self.state.governance.paused:
