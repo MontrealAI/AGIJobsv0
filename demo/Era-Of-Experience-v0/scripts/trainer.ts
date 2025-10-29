@@ -1,15 +1,20 @@
 import { ExperienceBuffer } from './experienceBuffer';
 import { AdaptivePolicy } from './policy';
+import { DeterministicRandom } from './random';
 import { ExperienceRecord, PolicySnapshot, SimulationConfig } from './types';
 
 export class ExperienceTrainer {
   private readonly policy: AdaptivePolicy;
   private readonly buffer: ExperienceBuffer;
   private readonly checkpoints: PolicySnapshot[] = [];
+  private readonly sampler: DeterministicRandom;
+  private processed = 0;
 
   constructor(private readonly config: SimulationConfig) {
     this.policy = new AdaptivePolicy(config.learningRate, config.discountFactor);
-    this.buffer = new ExperienceBuffer(config.bufferSize);
+    this.sampler = new DeterministicRandom(config.replaySeed ?? 'experience-buffer');
+    this.buffer = new ExperienceBuffer(config.bufferSize, () => this.sampler.next());
+    this.maybeCheckpoint('Initial deployment snapshot');
   }
 
   integrate(record: ExperienceRecord): void {
@@ -18,9 +23,14 @@ export class ExperienceTrainer {
       record.stateId,
       record.actionId,
       record.reward,
-      null,
+      record.terminal ? null : record.nextStateId,
       this.config.discountFactor,
     );
+    this.processed += 1;
+    const interval = this.config.checkpointInterval ?? 40;
+    if (interval > 0 && this.processed % interval === 0) {
+      this.maybeCheckpoint(`Policy update after ${this.processed} experiences`);
+    }
   }
 
   train(batchSize: number): void {
@@ -29,7 +39,13 @@ export class ExperienceTrainer {
       return;
     }
     for (const record of batch) {
-      this.policy.update(record.stateId, record.actionId, record.reward, null, this.config.discountFactor);
+      this.policy.update(
+        record.stateId,
+        record.actionId,
+        record.reward,
+        record.terminal ? null : record.nextStateId,
+        this.config.discountFactor,
+      );
     }
   }
 

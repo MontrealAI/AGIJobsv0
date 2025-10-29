@@ -13,7 +13,7 @@
         const response = await fetch('../reports/era_of_experience_report.json');
         const report = await response.json();
         const headline = document.querySelector('#headline');
-        headline.textContent = `GMV Lift ${(report.improvement.gmvLiftPct * 100).toFixed(2)}% · ROI Δ ${report.improvement.roiDelta.toFixed(2)}`;
+        headline.textContent = `GMV Lift ${(report.improvement.gmvLiftPct * 100).toFixed(2)}% · ROI Δ ${report.improvement.roiDelta.toFixed(2)} · Sustainability ${(report.rlEnhanced.sustainabilityScore * 100).toFixed(1)}%`;
 
         const flowDiagram = document.querySelector('#flow-diagram');
         flowDiagram.textContent = report.mermaidFlow;
@@ -32,6 +32,9 @@
           ['ROI Δ', report.improvement.roiDelta.toFixed(3)],
           ['Latency Δ (h)', report.improvement.avgLatencyDelta.toFixed(2)],
           ['Success Rate Δ (%)', (report.improvement.successRateDelta * 100).toFixed(2)],
+          ['Sustainability Score (%)', (report.rlEnhanced.sustainabilityScore * 100).toFixed(1)],
+          ['Failure Rate (%)', (report.ownerConsole.safeguardStatus.failureRate * 100).toFixed(2)],
+          ['Sentinel Status', report.ownerConsole.safeguardStatus.sentinelActivated ? 'ALERT' : 'Nominal'],
         ];
         for (const [label, value] of metrics) {
           const row = document.createElement('tr');

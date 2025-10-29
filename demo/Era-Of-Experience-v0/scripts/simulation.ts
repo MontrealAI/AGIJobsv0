@@ -20,6 +20,14 @@ import { ExperienceTrainer } from './trainer';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function linkExperiences(records: ExperienceRecord[]): void {
+  for (let i = 0; i < records.length; i += 1) {
+    const next = records[i + 1] ?? null;
+    records[i].nextStateId = next ? next.stateId : null;
+    records[i].terminal = next === null;
+  }
+}
+
 interface ScenarioStream extends JobDefinition {
   volume: number;
 }
@@ -140,7 +148,8 @@ function createBaselineSummary(
 
   const experiences: ExperienceRecord[] = [];
 
-  for (const job of jobs) {
+  for (let i = 0; i < jobs.length; i += 1) {
+    const job = jobs[i];
     const chosen = selectBaselineAgent(job, agents);
     const { outcome, sustainabilityOvershoot } = simulateOutcome(random, job, chosen);
     const rewardSignal = calculateReward(rewardConfig, job, outcome, chosen);
@@ -166,10 +175,14 @@ function createBaselineSummary(
       stateId: composeStateId(job),
       actionId: composeActionId(chosen),
       reward: rewardSignal,
-      timestamp: Date.now(),
+      timestamp: Date.now() + i,
+      nextStateId: null,
+      terminal: true,
       details: { job, agent: chosen, outcome },
     });
   }
+
+  linkExperiences(experiences);
 
   const totalJobs = jobs.length;
   const averageLatencyHours = totalLatency / totalJobs;
@@ -234,8 +247,11 @@ function aggregateSummary(
   let sustainabilityPenalty = 0;
 
   const epsilon = ownerControls.paused ? 0 : ownerControls.exploration ?? config.epsilon;
+  const jobsToProcess = Math.min(config.horizon, jobs.length);
 
-  for (let i = 0; i < Math.min(config.horizon, jobs.length); i += 1) {
+  let previousExperience: ExperienceRecord | null = null;
+
+  for (let i = 0; i < jobsToProcess; i += 1) {
     const job = jobs[i];
     const stateId = composeStateId(job);
     const policy = trainer.getPolicy();
@@ -247,16 +263,20 @@ function aggregateSummary(
       actionId: composeActionId(chosen),
       reward: rewardSignal,
       timestamp: Date.now() + i,
+      nextStateId: null,
+      terminal: true,
       details: { job, agent: chosen, outcome },
     };
-    experiences.push(experience);
-    if (!ownerControls.paused) {
-      trainer.integrate(experience);
-      trainer.train(config.batchSize);
-      if (i % 40 === 0) {
-        trainer.maybeCheckpoint(`Policy update after ${i + 1} experiences`);
+    if (previousExperience) {
+      previousExperience.nextStateId = stateId;
+      previousExperience.terminal = false;
+      experiences.push(previousExperience);
+      if (!ownerControls.paused) {
+        trainer.integrate(previousExperience);
+        trainer.train(config.batchSize);
       }
     }
+    previousExperience = experience;
     totalRewardPaid += outcome.rewardPaid;
     totalCost += outcome.cost + outcome.penalties;
     totalRating += outcome.rating;
@@ -277,7 +297,24 @@ function aggregateSummary(
     });
   }
 
-  const totalJobs = Math.min(config.horizon, jobs.length);
+  if (previousExperience) {
+    experiences.push(previousExperience);
+    if (!ownerControls.paused) {
+      trainer.integrate(previousExperience);
+      trainer.train(config.batchSize);
+    }
+  }
+
+  if (!ownerControls.paused) {
+    const postEpochs = config.postTrainingEpochs ?? 0;
+    for (let epoch = 0; epoch < postEpochs; epoch += 1) {
+      trainer.train(config.batchSize);
+    }
+  }
+
+  trainer.maybeCheckpoint('Post-run final snapshot');
+
+  const totalJobs = jobsToProcess;
   const averageLatencyHours = totalLatency / totalJobs;
   const averageCost = totalCost / totalJobs;
   const averageRating = totalRating / totalJobs;
@@ -325,9 +362,11 @@ function buildMermaidValueStream(report: SimulationReport): string {
     Jobs[Job Streams] --> Policy[Adaptive Policy]
     Policy --> Success[Success Rate ${(report.rlEnhanced.successRate * 100).toFixed(1)}%]
     Policy --> Latency[Latency Δ ${report.improvement.avgLatencyDelta.toFixed(2)}h]
+    Policy --> Sustainability[Sustainability ${(report.rlEnhanced.sustainabilityScore * 100).toFixed(1)}%]
     Success --> GMV[GMV Lift ${(report.improvement.gmvLiftPct * 100).toFixed(1)}%]
     GMV --> ROI[ROI Δ ${report.improvement.roiDelta.toFixed(2)}]
     ROI --> Owner[Owner Consoles]
+    Sustainability --> Owner
     Owner --> Sentinel[Sentinel Safeguards]
     Sentinel --> Policy
   `;
@@ -337,7 +376,9 @@ function buildOwnerConsole(report: SimulationReport): OwnerConsoleSnapshot {
   const failureRate = 1 - report.rlEnhanced.successRate;
   const gmvTrend = report.improvement.gmvLiftPct;
   const latencyTrend = report.improvement.avgLatencyDelta;
-  const sentinelActivated = failureRate > 0.25;
+  const sustainabilityScore = report.rlEnhanced.sustainabilityScore;
+  const sustainabilityAlert = sustainabilityScore < 0.85;
+  const sentinelActivated = failureRate > 0.25 || sustainabilityAlert;
   const recommendedActions = [
     gmvTrend > 0.05
       ? 'Maintain elevated exploration to continue compounding GMV lift.'
@@ -348,6 +389,9 @@ function buildOwnerConsole(report: SimulationReport): OwnerConsoleSnapshot {
     sentinelActivated
       ? 'Sentinel triggered: dispatch emergency review and temporarily reduce exploration to 5%.'
       : 'Sentinels green: continue autopilot with daily checkpoint review.',
+    sustainabilityAlert
+      ? 'Activate sustainability task force and adjust reward penalties for high-footprint agents.'
+      : 'Sustainability index green: continue rewarding efficient execution pathways.',
   ];
 
   const actionableMermaid = `graph TD
@@ -355,6 +399,8 @@ function buildOwnerConsole(report: SimulationReport): OwnerConsoleSnapshot {
     Owner -->|Pause Toggle| Pause[Paused ${report.ownerConsole.controls.paused ? 'Yes' : 'No'}]
     Owner -->|Reward Override| Reward[Dynamic Reward Composer]
     Control --> Sentinel[Sentinel Envelope]
+    Reward --> Sustainability[Sustainability Score ${(sustainabilityScore * 100).toFixed(1)}%]
+    Sustainability --> Sentinel
     Sentinel --> Policy[Adaptive Policy]
     Reward --> Policy
   `;
@@ -367,6 +413,7 @@ function buildOwnerConsole(report: SimulationReport): OwnerConsoleSnapshot {
       gmvTrend,
       latencyTrend,
       sentinelActivated,
+      sustainabilityScore,
     },
     actionableMermaid,
   };
@@ -418,6 +465,7 @@ export async function runExperienceDemo(
         gmvTrend: 0,
         latencyTrend: 0,
         sentinelActivated: false,
+        sustainabilityScore: 0,
       },
       actionableMermaid: '',
     },

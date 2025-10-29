@@ -38,6 +38,8 @@ export interface ExperienceRecord {
   actionId: string;
   reward: number;
   timestamp: number;
+  nextStateId: string | null;
+  terminal: boolean;
   details: {
     job: JobDefinition;
     agent: AgentProfile;
@@ -65,6 +67,9 @@ export interface SimulationConfig {
   batchSize: number;
   checkpointsToKeep: number;
   ownerControlsPath: string;
+  replaySeed?: string;
+  checkpointInterval?: number;
+  postTrainingEpochs?: number;
 }
 
 export interface OwnerControlState {
@@ -128,6 +133,7 @@ export interface OwnerConsoleSnapshot {
     gmvTrend: number;
     latencyTrend: number;
     sentinelActivated: boolean;
+    sustainabilityScore: number;
   };
   actionableMermaid: string;
 }
