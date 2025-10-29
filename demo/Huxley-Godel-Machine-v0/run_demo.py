@@ -9,12 +9,12 @@ import random
 
 from hgm_demo.baseline import GreedyBaseline
 from hgm_demo.config import Config, load_config_with_overrides
-from hgm_demo.engine import EngineParameters, HGMEngine
-from hgm_demo.orchestrator import AdaptiveOrchestrator, OrchestratorSettings
-from hgm_demo.sentinel import Sentinel, SentinelSettings
+from hgm_demo.engine import HGMEngine
+from hgm_demo.orchestrator import DemoOrchestrator, EconomicParameters
+from hgm_demo.sentinel import Sentinel, SentinelConfig
 from hgm_demo.simulation import EconomicModel, SimulationEnvironment
 from hgm_demo.structures import DemoTelemetry
-from hgm_demo.thermostat import Thermostat, ThermostatSettings
+from hgm_demo.thermostat import Thermostat, ThermostatConfig
 
 
 def _build_environment(rng: random.Random, config: Config) -> SimulationEnvironment:
@@ -32,54 +32,57 @@ def _build_environment(rng: random.Random, config: Config) -> SimulationEnvironm
         quality_bounds=(float(sim_cfg["quality_floor"]), float(sim_cfg["quality_ceiling"])),
         baseline_quality_drift=float(sim_cfg["baseline_quality_drift"]),
         innovation_bias=float(sim_cfg.get("innovation_bias", 0.0)),
-        evaluation_latency=tuple(sim_cfg["evaluation_latency"]),
-        expansion_latency=tuple(sim_cfg["expansion_latency"]),
+        evaluation_latency=tuple(float(x) for x in sim_cfg["evaluation_latency"]),
+        expansion_latency=tuple(float(x) for x in sim_cfg["expansion_latency"]),
     )
 
 
 def _build_engine(rng: random.Random, config: Config) -> HGMEngine:
     eng_cfg = config.engine
-    params = EngineParameters(
+    return HGMEngine(
         tau=float(eng_cfg["tau"]),
         alpha=float(eng_cfg["alpha"]),
         epsilon=float(eng_cfg["epsilon"]),
-        max_agents=int(eng_cfg["max_agents"]),
-        max_actions=int(eng_cfg["max_actions"]),
+        rng=rng,
     )
-    return HGMEngine(params=params, rng=rng)
 
 
-async def _run_hgm(config: Config, telemetry: DemoTelemetry, *, output_dir: Path) -> None:
+async def _run_hgm(config: Config, telemetry: DemoTelemetry) -> None:
     master_seed = int(config.simulation["seed"])
     rng_master = random.Random(master_seed)
     engine_rng = random.Random(rng_master.random())
     env_rng = random.Random(rng_master.random())
     engine = _build_engine(engine_rng, config)
-    environment = _build_environment(env_rng, config)
     agent_cfg = config.initial_agent
-    root = environment.create_root(
-        name=agent_cfg["name"],
+    engine.register_root(
         quality=float(agent_cfg["quality"]),
-        prior_successes=int(agent_cfg["prior_successes"]),
-        prior_failures=int(agent_cfg["prior_failures"]),
+        description=str(agent_cfg["name"]),
     )
-    engine.register_root(root)
-    thermostat_settings = ThermostatSettings(**config.thermostat)
-    thermostat = Thermostat(thermostat_settings)
-    sentinel_settings = SentinelSettings(**config.sentinel)
-    sentinel = Sentinel(sentinel_settings)
-    orchestrator = AdaptiveOrchestrator(
-        engine=engine,
-        environment=environment,
-        thermostat=thermostat,
-        sentinel=sentinel,
-        telemetry=telemetry,
-        settings=OrchestratorSettings(initial_concurrency=config.thermostat["min_concurrency"]),
+    econ_cfg = config.economic_model
+    sim_cfg = config.simulation
+    eval_latency = tuple(float(x) for x in sim_cfg["evaluation_latency"])
+    exp_latency = tuple(float(x) for x in sim_cfg["expansion_latency"])
+    avg_eval_latency = sum(eval_latency) / len(eval_latency)
+    avg_exp_latency = sum(exp_latency) / len(exp_latency)
+    orchestrator = DemoOrchestrator(
+        engine,
+        thermostat=Thermostat(ThermostatConfig(**config.thermostat)),
+        sentinel=Sentinel(SentinelConfig(**config.sentinel)),
+        parameters=EconomicParameters(
+            evaluation_cost=float(econ_cfg["failure_cost"]),
+            expansion_cost=float(econ_cfg["expansion_cost"]),
+            base_success_value=float(econ_cfg["success_value"]),
+            evaluation_latency=avg_eval_latency,
+            expansion_latency=avg_exp_latency,
+        ),
+        rng=env_rng,
     )
-    await orchestrator.run()
+    await orchestrator.run(max_actions=int(config.engine["max_actions"]))
+    metrics = orchestrator.metrics
+    telemetry.ledger.gmv = metrics.total_gmv
+    telemetry.ledger.cost = metrics.total_cost
+    telemetry.final_agent_id = engine.best_agent().agent_id
     telemetry.hgm_profit = telemetry.ledger.profit
-    artifact_path = output_dir / "hgm_run.json"
-    artifact_path.write_text(json.dumps(telemetry.to_dict(), indent=2))
 
 
 async def _run_baseline(config: Config, telemetry: DemoTelemetry, *, steps: int) -> None:
@@ -161,12 +164,14 @@ def main() -> None:
         parser.error(str(exc))
     args.output_dir.mkdir(parents=True, exist_ok=True)
     telemetry = DemoTelemetry()
-    asyncio.run(_run_hgm(config, telemetry, output_dir=args.output_dir))
+    asyncio.run(_run_hgm(config, telemetry))
     asyncio.run(_run_baseline(config, telemetry, steps=config.engine["max_actions"]))
     report = render_report(telemetry)
     print(report)
     summary_path = args.output_dir / "summary.txt"
     summary_path.write_text(report)
+    artifact_path = args.output_dir / "hgm_run.json"
+    artifact_path.write_text(json.dumps(telemetry.to_dict(), indent=2))
 
 
 if __name__ == "__main__":

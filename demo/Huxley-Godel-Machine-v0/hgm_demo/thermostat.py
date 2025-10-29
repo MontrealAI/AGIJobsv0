@@ -20,6 +20,7 @@ class ThermostatConfig:
     max_alpha: float = 3.0
     min_concurrency: int = 1
     max_concurrency: int = 1
+    roi_window: int = 4
 
 
 @dataclass
