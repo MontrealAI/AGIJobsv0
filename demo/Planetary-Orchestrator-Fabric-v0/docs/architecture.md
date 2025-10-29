@@ -80,6 +80,7 @@ Nodes register declaratively. The orchestrator enforces owner-set maximum concur
 - **Run Metadata** (`summary.json.run`) captures `checkpointRestored`, `stoppedEarly`, `stopTick`, and `stopReason` for every session.
 - **Owner Scripts** (`reports/<label>/owner-script.json`) enumerates ready-to-run governance payloads.
 - **Owner Command Ledger** (`reports/<label>/owner-commands-executed.json`) records scheduled, executed, skipped, and pending owner interventions for auditability.
+- **Mission Topology Atlases** (`reports/<label>/mission-topology.mmd` & `mission-topology.html`) visualise shard throughput, node status, and spillover flows in a governance-ready mermaid graph.
 - **Drill Events** (`simulation.stopped`) mark intentional halts so observability stacks distinguish rehearsals from outages.
 
 ## Security Considerations

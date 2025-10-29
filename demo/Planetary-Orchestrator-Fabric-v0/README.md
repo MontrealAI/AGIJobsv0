@@ -13,6 +13,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🛡️ **Owner Supreme Controls** – The owner can pause, update, reprioritize, or surgically reroute jobs at any moment via declarative commands.
 - 🧭 **Checkpoint Command Deck** – Owners retarget storage paths, tighten snapshot cadence, and trigger instant saves from the same schedule that drives pauses and reroutes.
 - 🗂️ **Adaptive Reporting** – Owners redirect artifact directories and default labels on demand, with changes persisting across checkpoints and resumes.
+- 🗺️ **Mission Topology Atlases** – Every run emits \`mission-topology.mmd\` and a ready-to-share HTML atlas that narrates shard health, node posture, and spillover links in living mermaid diagrams.
 - 📈 **CI-Certified** – Dedicated workflows and tests guarantee green checks on every PR and on `main`.
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
 - 🖥️ **Zero-Config Mission Console** – Drop any `reports/<label>` folder onto `ui/dashboard.html` to inspect metrics, owner controls, and ledger flows without a build step.
@@ -42,6 +43,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
      --output-label "kardashev-kill-switch" \
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
+  Every execution emits a living mermaid atlas at \`reports/<label>/mission-topology.mmd\` alongside \`mission-topology.html\`, giving non-technical owners a one-click planetary topology view.
 4. **Execute the restart drill** to rehearse orchestrator kill/resume with merged telemetry:
   ```bash
   demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh \

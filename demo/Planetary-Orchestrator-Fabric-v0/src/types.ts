@@ -339,6 +339,8 @@ export interface SimulationArtifacts {
   ownerScriptPath: string;
   ownerCommandsPath: string;
   ledgerPath: string;
+  missionGraphPath: string;
+  missionGraphHtmlPath: string;
 }
 
 export interface RunMetadata {

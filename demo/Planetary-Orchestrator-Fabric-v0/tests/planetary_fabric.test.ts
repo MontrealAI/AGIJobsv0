@@ -531,6 +531,17 @@ async function testReportingRetarget(): Promise<void> {
   );
   const eventsStats = await stat(result.artifacts.eventsPath);
   assert.ok(eventsStats.size > 0, 'events file should exist in retargeted directory');
+  const topologyPath = join(retargetedReportingDir, 'owner-elevated', 'mission-topology.mmd');
+  const topologyStats = await stat(topologyPath);
+  assert.ok(topologyStats.size > 0, 'topology mermaid should be generated');
+  const topologyHtmlPath = join(retargetedReportingDir, 'owner-elevated', 'mission-topology.html');
+  await stat(topologyHtmlPath);
+  const topologyDefinition = await readFile(topologyPath, 'utf8');
+  assert.ok(topologyDefinition.includes('flowchart'), 'topology definition should contain mermaid syntax');
+  assert.equal(summary.topology.mermaidPath, './mission-topology.mmd');
+  assert.equal(summary.topology.htmlPath, './mission-topology.html');
+  assert.equal(result.artifacts.missionGraphPath, topologyPath);
+  assert.equal(result.artifacts.missionGraphHtmlPath, topologyHtmlPath);
 
   let initialDirExists = true;
   try {
