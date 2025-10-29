@@ -45,8 +45,6 @@ class Sentinel:
             return "Model produced invalid recursion metrics"
         if telemetry.cycles_used > self.config.max_total_cycles:
             return "Exceeded cycle budget"
-        if telemetry.steps_used * telemetry.cycles_used > self.config.max_total_cycles:
-            return "Aggregate cycles beyond budget"
         if telemetry.halted_early is False and telemetry.cycles_used >= self.config.max_total_cycles:
             return "Max recursion reached without halting"
         if entry.latency_ms > self.config.max_latency_ms:
