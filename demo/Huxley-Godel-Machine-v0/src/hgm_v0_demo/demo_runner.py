@@ -1,14 +1,15 @@
 """Command line entry point for the Huxley–Gödel Machine demo."""
 from __future__ import annotations
 
-from dataclasses import asdict
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, List, Sequence, Tuple
 import argparse
 import json
 import math
 import random
+import os
+from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Sequence, Tuple
 
 from .baseline import GreedyBaselineSimulator
 from .config_loader import ConfigError, DemoConfig, load_config
@@ -252,6 +253,17 @@ def _parse_overrides(raw_overrides: Sequence[str]) -> List[Tuple[str, Any]]:
     return overrides
 
 
+def _print_guided_banner(output_dir: Path, pace_ms: int | None) -> None:
+    print("\n╔══════════════════════════════════════════════════════════════╗")
+    print("║                 Guided HGM Demonstration Mode                ║")
+    print("╠══════════════════════════════════════════════════════════════╣")
+    print(f"║ Artefacts directory : {output_dir} ".ljust(62) + "║")
+    if pace_ms and pace_ms > 0:
+        print(f"║ Guided cadence     : {pace_ms} ms between narration beats ".ljust(62) + "║")
+    print("║ Tip                : Visit ui/index.html for the live story ║")
+    print("╚══════════════════════════════════════════════════════════════╝\n")
+
+
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Huxley–Gödel Machine demo simulation")
     parser.add_argument(
@@ -292,6 +304,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     overrides = _parse_overrides(args.overrides)
     config = load_config(args.config, overrides=overrides)
     seed = args.seed if args.seed is not None else config.seed
+    guided_mode = os.getenv("HGM_GUIDED_MODE", "").strip().lower() in {"1", "true", "yes"}
+    pace_raw = os.getenv("HGM_GUIDED_PACE_MS")
+    pace_ms: int | None = None
+    if pace_raw:
+        try:
+            pace_ms = max(int(float(pace_raw)), 0)
+        except ValueError:
+            pace_ms = None
+    if guided_mode:
+        _print_guided_banner(args.output_dir, pace_ms)
     rng = random.Random(seed)
     hgm_summary, timeline_path = run_hgm_demo(config, rng, args.output_dir)
     baseline_rng = random.Random(seed + 1)
