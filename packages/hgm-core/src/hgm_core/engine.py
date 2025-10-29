@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import math
+from dataclasses import replace
 from typing import Awaitable, Callable, Dict, Optional, Sequence
 from .config import EngineConfig
 from .sampling import ThompsonSampler, posterior_parameters
@@ -148,6 +149,41 @@ class HGMEngine:
 
         async with self._lock:
             return dict(self._nodes)
+
+    async def get_config(self) -> EngineConfig:
+        """Return a copy of the engine configuration in a threadsafe manner."""
+
+        async with self._lock:
+            return replace(self._config)
+
+    async def update_parameters(
+        self,
+        *,
+        widening_alpha: Optional[float] = None,
+        min_visitations: Optional[int] = None,
+        thompson_prior: Optional[float] = None,
+    ) -> EngineConfig:
+        """Update runtime parameters of the engine in a threadsafe manner.
+
+        Parameters are clamped to sensible ranges to avoid invalid values and the
+        resulting configuration snapshot is returned to the caller.
+        """
+
+        async with self._lock:
+            if widening_alpha is not None:
+                if widening_alpha <= 0:
+                    raise ValueError("widening_alpha must be positive")
+                self._config.widening_alpha = float(widening_alpha)
+            if min_visitations is not None:
+                if min_visitations <= 0:
+                    raise ValueError("min_visitations must be positive")
+                self._config.min_visitations = int(min_visitations)
+            if thompson_prior is not None:
+                if thompson_prior <= 0:
+                    raise ValueError("thompson_prior must be positive")
+                self._config.thompson_prior = float(thompson_prior)
+
+            return replace(self._config)
 
 
 async def _invoke_callback(callback: Callback, node: AgentNode, payload: Dict[str, object]) -> None:
