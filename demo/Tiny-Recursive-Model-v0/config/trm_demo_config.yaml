@@ -1,0 +1,48 @@
+owner:
+  address: "0xDEADBEEFDEADBEEFDEADBEEFDEADBEEFDEADBEEF"
+  name: "AGI Jobs Superintelligence Steward"
+thermostat:
+  target_roi: 2.0
+  window: 20
+  min_inner_cycles: 3
+  max_inner_cycles: 8
+  min_outer_steps: 2
+  max_outer_steps: 5
+  min_halt_threshold: 0.45
+  max_halt_threshold: 0.85
+  min_concurrency: 1
+  max_concurrency: 6
+sentinel:
+  min_roi: 1.25
+  max_daily_cost: 75.0
+  max_latency_ms: 2000
+  max_total_cycles: 18
+  failure_backoff_limit: 5
+ledger:
+  value_per_success: 100.0
+  base_compute_cost: 0.001
+  cost_per_cycle: 0.0001
+  daily_budget: 50.0
+trm:
+  input_dim: 12
+  latent_dim: 32
+  hidden_dim: 48
+  output_dim: 2
+  inner_cycles: 6
+  outer_steps: 3
+  halt_threshold: 0.55
+  max_cycles: 18
+  ema_decay: 0.999
+  learning_rate: 0.0015
+  weight_decay: 0.0001
+  batch_size: 64
+  epochs: 4
+  device: "cpu"
+telemetry:
+  enable_structured_logs: true
+  write_path: "demo/Tiny-Recursive-Model-v0/assets/telemetry.jsonl"
+ethereum:
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_KEY_HERE"
+  chain_id: 1
+  logging_contract: "0x0000000000000000000000000000000000000000"
+  confirmations_required: 2
