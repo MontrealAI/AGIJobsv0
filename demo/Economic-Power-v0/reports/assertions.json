@@ -14,6 +14,23 @@
     ]
   },
   {
+    "id": "safe-transaction-dominion",
+    "title": "Governance safe holds executable upgrades for every module",
+    "outcome": "pass",
+    "severity": "critical",
+    "summary": "Encoded multi-sig transactions cover the full module surface with deterministic payloads.",
+    "metric": 1,
+    "target": 0.9,
+    "evidence": [
+      "job-registry-duration:JobRegistry:0x17a65137",
+      "stake-manager-reward:StakeManager:0x04ffdbaf",
+      "validation-module-bounds:ValidationModule:0xc14447e2",
+      "reputation-engine-weights:ReputationEngine:0x6d876aeb",
+      "dispute-module-window:DisputeModule:0x332226d0",
+      "certificate-nft-base-uri:CertificateNFT:0x55f804b3"
+    ]
+  },
+  {
     "id": "sovereign-custody",
     "title": "All modules sit under governed safes",
     "outcome": "pass",

@@ -46,6 +46,11 @@ test('economic power simulation produces deterministic metrics', async () => {
     'Deployment integrity hash should remain stable across runs',
   );
   assert.equal(
+    deterministic.proof.ownerSafeTransactionsHash,
+    deterministic.verificationProof.ownerSafeTransactionsHash,
+    'Safe transaction hash should remain stable across runs',
+  );
+  assert.equal(
     summary.metrics.ownerCommandCoverage,
     1,
     'Owner command coverage should confirm total command supremacy',
@@ -80,6 +85,21 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.metrics.sovereignSafetyScore >= 0.95,
     'Sovereign safety mesh score should confirm unstoppable readiness',
   );
+  assert.equal(
+    summary.metrics.ownerSafeTransactionCoverage,
+    1,
+    'Owner Safe transaction coverage should confirm every module has a ready multi-sig payload',
+  );
+  assert.equal(
+    summary.ownerSafeTransactions.transactions.length,
+    scenario.modules.length,
+    'Safe transaction kit should include one entry per module',
+  );
+  assert(
+    summary.ownerSafeTransactions.integrityHash.length === 64,
+    'Safe transaction integrity hash should be a 32-byte hex digest',
+  );
+  assert(summary.ownerSafeTransactions.mermaid.includes('graph LR'));
   assert.equal(
     summary.metrics.assertionPassRate,
     1,
@@ -169,8 +189,15 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.shockResilience.recommendations.length >= 1,
     'Shock resilience recommendations should guide owner action',
   );
+  const safeAssertion = summary.assertions.find((item) => item.id === 'safe-transaction-dominion');
+  assert(safeAssertion, 'Safe transaction assertion should be registered');
+  assert.equal(safeAssertion?.outcome, 'pass', 'Safe transaction assertion should pass');
   assert(summary.ownerCommandPlan.coverageNarrative.length > 0, 'Coverage narrative should be present');
   assert(summary.ownerCommandMermaid.includes('graph LR'), 'Owner command mermaid graph should render');
+  assert(
+    summary.ownerSafeTransactions.recommendedActions.length >= 1,
+    'Safe transactions report should surface recommended actions',
+  );
   assert.equal(
     summary.treasuryTrajectory.length,
     summary.assignments.length,
@@ -318,6 +345,12 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.ownerAutopilot.guardrails.some((guardrail) => guardrail.includes(summary.ownerSovereignty.pauseScript)),
     'Autopilot guardrails should include pause command',
+  );
+  assert(
+    summary.ownerAutopilot.guardrails.some((guardrail) =>
+      guardrail.toLowerCase().includes('safe transaction coverage'),
+    ),
+    'Autopilot guardrails should reference safe transaction coverage cadence',
   );
   assert.equal(
     summary.ownerDominion.score,

@@ -35,6 +35,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `sovereign-safety-mesh.json` – composite readiness diagnostics across pause/resume readiness, alerting, scripted coverage, and circuit breaker posture.
 - `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
 - `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
+- `owner-safe-transactions.json` – pre-encoded Safe transactions (to/data/value) covering job registry, stake manager, and validation module control surfaces.
+- `owner-safe-transactions.mmd` – mermaid execution graph wiring each safe to its target modules, highlighting coverage and custody.
+- `owner-safe-transactions.md` – operator-friendly walkthrough of every encoded transaction with prerequisites, CLI command, and custody posture.
 - `economic-dominance.json` – composite dominance index summarising ROI, capital velocity, sovereignty, safety, and automation posture with actionable recommendations.
 - `owner-autopilot.json` – cadence, guardrails, and deterministic command sequence for the owner autopilot along with telemetry mirrors.
 - `owner-autopilot.mmd` – mermaid control graph visualising cadence, guardrails, and command objectives.
@@ -136,6 +139,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
 - Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
+- Multi-sig execution kit visualising safe transaction coverage, CLI payloads, and the ownership graph generated in `owner-safe-transactions.*`.
 - Control drill readiness cockpit surfacing per-surface rehearsal status, command catalogues, and recommended owner actions.
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.

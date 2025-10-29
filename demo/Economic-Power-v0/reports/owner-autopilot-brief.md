@@ -15,19 +15,23 @@ Owner multi-sig exerts absolute dominion – every command, pause, and upgrade i
 - automationScore < 0.8 → npm run owner:parameters
 - treasuryAfterRun < 1800000 → npm run owner:audit
 - Control drills 100.0% (total-control)
+- Safe transaction coverage 100.0% across 6 encoded actions
 
 ## Command sequence
-1. [JOBS] npm run owner:program -- --program job-ai-lab-fusion — Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator.
-2. [JOBS] npm run owner:program -- --program job-supply-chain — Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment.
-3. [VALIDATORS] npm run owner:program -- --program validator-alpha — Escalate Validator Alpha quorum weighting and deploy fresh attestations.
-4. [VALIDATORS] npm run owner:program -- --program validator-beta — Rotate Validator Beta committees and enforce staking deltas.
-5. [STABLECOINADAPTERS] npm run owner:program -- --program adapter-usdc — Upgrade the USDC bridge adapter with deterministic slippage guards.
-6. [MODULES] npm run owner:program -- --program module-job-registry — Promote the JobRegistry v2 deployment with zero-downtime migration.
-7. [MODULES] npm run owner:program -- --program module-stake-manager — Adjust stake thresholds and payout cadence for StakeManager.
-8. [TREASURY] npm run owner:program -- --program treasury-liquidity — Rebalance AGI/USDC buffers and top up validator incentive pools.
-9. [TREASURY] npm run owner:program -- --program treasury-yield — Deploy surplus treasury capital into protocol-aligned yield strategies.
-10. [ORCHESTRATOR] npm run owner:program -- --program orchestrator-rebalance — Re-weight autonomous routing priorities to maximise throughput.
-11. [ORCHESTRATOR] npm run owner:program -- --program orchestrator-pause-drill — Run full-stack pause/resume drill to validate emergency readiness.
+1. [MODULES] npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000001 --value 0 --data 0x17a651370000000000000000000000000000000000000000000000000000000000000030 — Set the JobRegistry duration limit to 48 hours to accelerate capital velocity.
+2. [MODULES] npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000002 --value 0 --data 0x04ffdbaf00000000000000000000000000000000000000000000000000000000000004b0 — Adjust StakeManager validator reward percentage to 12% to reinforce validator incentives.
+3. [MODULES] npx @safe-global/cli transactions propose --safe-address 0xAGIJobsGovernor0000000000000000000000003 --chain-id 1 --to 0xA100000000000000000000000000000000000003 --value 0 --data 0xc14447e200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000007 — Update ValidationModule bounds to require between 3 and 7 validators per job.
+4. [JOBS] npm run owner:program -- --program job-ai-lab-fusion — Dispatch Helios and Atlas to fuse AI labs into a consolidated planetary accelerator.
+5. [JOBS] npm run owner:program -- --program job-supply-chain — Reconfigure autonomous supply mesh coverage for instant cross-border fulfilment.
+6. [VALIDATORS] npm run owner:program -- --program validator-alpha — Escalate Validator Alpha quorum weighting and deploy fresh attestations.
+7. [VALIDATORS] npm run owner:program -- --program validator-beta — Rotate Validator Beta committees and enforce staking deltas.
+8. [STABLECOINADAPTERS] npm run owner:program -- --program adapter-usdc — Upgrade the USDC bridge adapter with deterministic slippage guards.
+9. [MODULES] npm run owner:program -- --program module-job-registry — Promote the JobRegistry v2 deployment with zero-downtime migration.
+10. [MODULES] npm run owner:program -- --program module-stake-manager — Adjust stake thresholds and payout cadence for StakeManager.
+11. [TREASURY] npm run owner:program -- --program treasury-liquidity — Rebalance AGI/USDC buffers and top up validator incentive pools.
+12. [TREASURY] npm run owner:program -- --program treasury-yield — Deploy surplus treasury capital into protocol-aligned yield strategies.
+13. [ORCHESTRATOR] npm run owner:program -- --program orchestrator-rebalance — Re-weight autonomous routing priorities to maximise throughput.
+14. [ORCHESTRATOR] npm run owner:program -- --program orchestrator-pause-drill — Run full-stack pause/resume drill to validate emergency readiness.
 
 ## Safety mesh readiness
 - Pause command: `npm run owner:system-pause`
@@ -61,7 +65,7 @@ Owner multi-sig exerts absolute dominion – every command, pause, and upgrade i
 - Command coverage 100.0%
 - Safety mesh 97.9%
 - Custody 100.0%
-- Guardrails 6
+- Guardrails 7
 - Response 9m
 - Control drills 100.0% (total-control)
 - Shock resilience 98.0% (impregnable)

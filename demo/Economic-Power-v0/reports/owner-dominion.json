@@ -8,7 +8,8 @@
     "validatorConfidence < 0.95 → npm run owner:system-pause",
     "automationScore < 0.8 → npm run owner:parameters",
     "treasuryAfterRun < 1800000 → npm run owner:audit",
-    "Control drills 100.0% (total-control)"
+    "Control drills 100.0% (total-control)",
+    "Safe transaction coverage 100.0% across 6 encoded actions"
   ],
   "readiness": {
     "pauseReady": true,
@@ -33,7 +34,7 @@
     "Command coverage 100.0%",
     "Safety mesh 97.9%",
     "Custody 100.0%",
-    "Guardrails 6",
+    "Guardrails 7",
     "Response 9m",
     "Control drills 100.0% (total-control)",
     "Shock resilience 98.0% (impregnable)"
