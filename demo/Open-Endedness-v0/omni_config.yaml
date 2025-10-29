@@ -27,6 +27,19 @@ sentinels:
   max_new_tasks_daily: 6
   fm_daily_cap: 150
   allow_manual_overrides: true
+  manual_overrides:
+    disable: []
+    enable: []
+
+owner_controls:
+  pause_windows:
+    - start: 320
+      end: 340
+  weight_schedule:
+    - step: 450
+      interesting_weight: 1.35
+      boring_weight: 0.005
+      min_probability: 0.015
 
 reporting:
   save_json: demo/Open-Endedness-v0/results/latest.json

@@ -13,16 +13,39 @@ async function fetchMetrics() {
 function buildDatasets(metrics) {
   const strategies = Object.keys(metrics);
   const gmvData = strategies.map((name) => metrics[name].total_revenue);
-  const roiData = strategies.map((name) => metrics[name].roi);
+  const operationalCostData = strategies.map((name) => metrics[name].operational_cost || 0);
+  const fmCostData = strategies.map((name) => metrics[name].fm_cost || 0);
+  const roiTotalData = strategies.map((name) => metrics[name].roi_total || metrics[name].roi || 0);
+  const roiFmData = strategies.map((name) => metrics[name].roi_fm || metrics[name].roi || 0);
+  const pausedSteps = strategies.map((name) => metrics[name].paused_steps || 0);
+
   const tasks = new Set();
   strategies.forEach((name) => {
     Object.keys(metrics[name].task_frequency).forEach((task) => tasks.add(task));
   });
   const taskList = Array.from(tasks);
-  const allocationData = strategies.map((name) => {
-    return taskList.map((task) => metrics[name].task_frequency[task] || 0);
-  });
-  return { strategies, gmvData, roiData, taskList, allocationData };
+  const allocationData = strategies.map((name) => taskList.map((task) => metrics[name].task_frequency[task] || 0));
+
+  const events = strategies.map((name) => ({
+    strategy: name,
+    paused: metrics[name].paused_steps || 0,
+    thermostat: metrics[name].thermostat_events || [],
+    sentinel: metrics[name].sentinel_events || [],
+    owner: metrics[name].owner_events || [],
+  }));
+
+  return {
+    strategies,
+    gmvData,
+    operationalCostData,
+    fmCostData,
+    roiTotalData,
+    roiFmData,
+    taskList,
+    allocationData,
+    events,
+    pausedSteps,
+  };
 }
 
 function ensureChart(ctxId, config) {
@@ -60,23 +83,61 @@ function renderCharts(data) {
     },
   });
 
+  ensureChart('costChart', {
+    type: 'bar',
+    data: {
+      labels: data.strategies,
+      datasets: [
+        {
+          label: 'Operational Spend',
+          data: data.operationalCostData,
+          backgroundColor: 'rgba(14, 165, 233, 0.85)',
+          stack: 'cost',
+        },
+        {
+          label: 'FM Spend',
+          data: data.fmCostData,
+          backgroundColor: 'rgba(244, 114, 182, 0.85)',
+          stack: 'cost',
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        title: { display: true, text: 'Spend Profile (USD)' },
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true },
+      },
+    },
+  });
+
   ensureChart('roiChart', {
     type: 'line',
     data: {
       labels: data.strategies,
       datasets: [
         {
-          label: 'ROI (GMV / FM Spend)',
-          data: data.roiData,
+          label: 'ROI (Total)',
+          data: data.roiTotalData,
           fill: false,
           borderColor: '#facc15',
+          tension: 0.3,
+        },
+        {
+          label: 'ROI (Foundation Model)',
+          data: data.roiFmData,
+          fill: false,
+          borderColor: '#4ade80',
+          borderDash: [6, 4],
           tension: 0.3,
         },
       ],
     },
     options: {
       plugins: {
-        title: { display: true, text: 'Return on Foundation Model Spend' },
+        title: { display: true, text: 'Return Profiles' },
       },
       scales: { y: { beginAtZero: true } },
     },
@@ -108,6 +169,63 @@ function renderCharts(data) {
       },
     },
   });
+
+  renderEvents(data.events);
+}
+
+function renderEvents(events) {
+  const container = document.getElementById('eventsLog');
+  container.innerHTML = '';
+  events.forEach((entry) => {
+    const card = document.createElement('article');
+    card.className = 'event-card';
+    const heading = document.createElement('h3');
+    heading.textContent = entry.strategy;
+    card.appendChild(heading);
+
+    const list = document.createElement('ul');
+    if (entry.paused) {
+      const pauseItem = document.createElement('li');
+      pauseItem.innerHTML = `<strong>Owner Pause</strong> • ${entry.paused} steps held`;
+      list.appendChild(pauseItem);
+    }
+    const timeline = [...entry.owner, ...entry.thermostat, ...entry.sentinel]
+      .filter((event) => event)
+      .sort((a, b) => (a.step || 0) - (b.step || 0));
+    timeline.forEach((event) => {
+      const item = document.createElement('li');
+      item.innerHTML = describeEvent(event);
+      list.appendChild(item);
+    });
+    if (!list.childElementCount) {
+      const item = document.createElement('li');
+      item.textContent = 'No interventions triggered.';
+      list.appendChild(item);
+    }
+    card.appendChild(list);
+    container.appendChild(card);
+  });
+}
+
+function describeEvent(event) {
+  const action = (event.action || 'event').replace(/_/g, ' ');
+  const step = event.step !== undefined ? `Step ${event.step}` : 'Step –';
+  const details = Object.entries(event)
+    .filter(([key]) => !['action', 'step'].includes(key))
+    .map(([key, value]) => {
+      if (typeof value === 'number') {
+        return `${key}: ${value.toFixed(3)}`;
+      }
+      if (Array.isArray(value)) {
+        return `${key}: ${value.join(', ')}`;
+      }
+      if (typeof value === 'object' && value !== null) {
+        return `${key}: ${JSON.stringify(value)}`;
+      }
+      return `${key}: ${value}`;
+    })
+    .join(' • ');
+  return `<strong>${step}</strong> • ${action}${details ? ` — ${details}` : ''}`;
 }
 
 async function load() {

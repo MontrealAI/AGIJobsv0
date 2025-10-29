@@ -64,3 +64,47 @@ canvas {
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
 }
+
+.events {
+  margin-top: 3rem;
+  background: rgba(15, 23, 42, 0.55);
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+.events h2 {
+  margin-top: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 1rem;
+  color: #bae6fd;
+}
+
+#eventsLog {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.event-card {
+  background: rgba(30, 41, 59, 0.8);
+  border-radius: 16px;
+  padding: 1rem 1.2rem;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.event-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.event-card ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.6;
+}
+
+.event-card li strong {
+  color: #38bdf8;
+}
