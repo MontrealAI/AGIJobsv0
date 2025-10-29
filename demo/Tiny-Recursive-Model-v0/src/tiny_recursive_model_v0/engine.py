@@ -309,15 +309,19 @@ class TinyRecursiveModelEngine:
                 probabilities=probabilities,
             )
 
-def infer(
-    self,
-    inputs: torch.Tensor,
-    *,
-    halt_threshold: Optional[float] = None,
-    use_ema: bool = True,
-) -> InferenceTelemetry:
+    def infer(
+        self,
+        inputs: torch.Tensor,
+        *,
+        halt_threshold: Optional[float] = None,
+        use_ema: bool = True,
+    ) -> InferenceTelemetry:
         model = self.ema_model if use_ema else self.model
-        return self._predict_with_model(model, inputs.to(self.device), halt_threshold=halt_threshold)
+        return self._predict_with_model(
+            model,
+            inputs.to(self.device),
+            halt_threshold=halt_threshold,
+        )
 
     def infer_dataset(
         self,
