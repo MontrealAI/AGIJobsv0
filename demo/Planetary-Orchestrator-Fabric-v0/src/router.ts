@@ -476,6 +476,10 @@ export class ShardRouterService {
       }
       return target;
     }
+    if (this.config.spilloverTargets.length > 0) {
+      const fallbackIndex = job.spilloverHistory.length % this.config.spilloverTargets.length;
+      return this.config.spilloverTargets[fallbackIndex];
+    }
     return undefined;
   }
 

@@ -17,7 +17,12 @@ import {
 } from './types';
 import { countJobsInBlueprint, expandJobBlueprint } from './job-blueprint';
 
-const DEFAULT_OUTAGE_TICK = 120;
+const MIN_OUTAGE_TICK = 5;
+const MAX_OUTAGE_TICK = 80;
+
+function coercePositiveInteger(value: number): number {
+  return Math.max(1, Math.floor(value));
+}
 
 export interface SimulationResult {
   metrics: FabricMetrics;
@@ -40,6 +45,28 @@ async function pathExists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function computeOutageTick(plannedJobs: number, explicit?: number): number {
+  if (explicit !== undefined) {
+    return coercePositiveInteger(explicit);
+  }
+  const derived = Math.floor(plannedJobs / 400);
+  return Math.min(MAX_OUTAGE_TICK, Math.max(MIN_OUTAGE_TICK, derived));
+}
+
+function computeTickBudgets(
+  plannedJobs: number,
+  startTick: number,
+  stopAfterTicks: number | undefined
+): { initialLimit: number; hardLimit: number; extensionWindow: number } {
+  const baseWindow = Math.max(Math.ceil(plannedJobs * 0.4), 200);
+  if (stopAfterTicks !== undefined) {
+    const stopTick = startTick + coercePositiveInteger(stopAfterTicks);
+    return { initialLimit: stopTick, hardLimit: stopTick, extensionWindow: baseWindow };
+  }
+  const hardLimit = startTick + Math.max(baseWindow * 4, Math.ceil(plannedJobs * 1.5), 2000);
+  return { initialLimit: startTick + baseWindow, hardLimit, extensionWindow: baseWindow };
 }
 
 class ReportOutputManager {
@@ -263,52 +290,77 @@ export async function runSimulation(
   }
   await flushEvents();
 
-  const outageTick = options.outageTick ?? DEFAULT_OUTAGE_TICK;
+  const outageTick = computeOutageTick(plannedJobs, options.outageTick);
   const outageNodeId = options.simulateOutage;
 
-  const maxTicks = Math.max(Math.ceil(plannedJobs * 0.35), 200) + orchestrator.currentTick;
+  const { initialLimit, hardLimit, extensionWindow } = computeTickBudgets(
+    plannedJobs,
+    orchestrator.currentTick,
+    stopAfterTicks
+  );
+  let tickBudgetLimit = initialLimit;
+  let tick = orchestrator.currentTick;
 
-  for (let tick = orchestrator.currentTick + 1; tick <= maxTicks; tick += 1) {
-    await applyCommandsForTick(tick);
-    orchestrator.processTick({ tick });
+  while (tick < tickBudgetLimit && tick < hardLimit) {
+    const nextTick = tick + 1;
+    await applyCommandsForTick(nextTick);
+    orchestrator.processTick({ tick: nextTick });
     await flushEvents();
 
-    if (outageNodeId && tick === outageTick) {
+    if (outageNodeId && nextTick === outageTick) {
       orchestrator.markOutage(outageNodeId);
       await flushEvents();
     }
 
-    if (tick % config.checkpoint.intervalTicks === 0) {
+    if (nextTick % config.checkpoint.intervalTicks === 0) {
       await orchestrator.saveCheckpoint();
       await flushEvents();
     }
 
-    if (options.ciMode && (tick === startTick + 1 || tick % 200 === 0)) {
+    if (options.ciMode && (nextTick === startTick + 1 || nextTick % 200 === 0)) {
       const snapshot = orchestrator.getShardSnapshots();
       const totalQueued = Object.values(snapshot).reduce(
         (sum, entry) => sum + entry.queueDepth + entry.inFlight,
         0
       );
       process.stdout.write(
-        `[ci-progress] tick=${tick} queued=${totalQueued} completed=${Object.values(snapshot).reduce((sum, entry) => sum + entry.completed, 0)}\n`
+        `[ci-progress] tick=${nextTick} queued=${totalQueued} completed=${Object.values(snapshot).reduce((sum, entry) => sum + entry.completed, 0)}\n`
       );
     }
 
-    if (stopAtTick !== undefined && tick >= stopAtTick) {
-      stopTick = tick;
-      if (!allJobsSettled(orchestrator)) {
+    const jobsSettled = allJobsSettled(orchestrator);
+    if (stopAtTick !== undefined && nextTick >= stopAtTick) {
+      stopTick = nextTick;
+      if (!jobsSettled) {
         stoppedEarly = true;
         stopReason = `stop-after-ticks=${Math.ceil(stopAfterTicks ?? 0)}`;
       } else if (!stopReason) {
         stopReason = 'completed';
       }
+      tick = nextTick;
       break;
     }
 
-    if (allJobsSettled(orchestrator)) {
-      stopTick = tick;
+    if (jobsSettled) {
+      stopTick = nextTick;
       stopReason = stopReason ?? 'completed';
+      tick = nextTick;
       break;
+    }
+
+    tick = nextTick;
+    if (stopAtTick === undefined && tick >= tickBudgetLimit && tickBudgetLimit < hardLimit) {
+      tickBudgetLimit = Math.min(tickBudgetLimit + extensionWindow, hardLimit);
+    }
+  }
+
+  if (!stopTick) {
+    stopTick = orchestrator.currentTick;
+    if (!allJobsSettled(orchestrator)) {
+      stoppedEarly = true;
+      stopReason = stopReason ?? 'exhausted-tick-budget';
+    } else if (!stopReason) {
+      stopReason = 'completed';
     }
   }
 

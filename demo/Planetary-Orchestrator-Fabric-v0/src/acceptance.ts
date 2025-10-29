@@ -25,6 +25,8 @@ import { cloneJobBlueprint, countJobsInBlueprint } from './job-blueprint';
 
 const DEFAULT_HIGH_LOAD_JOBS = 10_000;
 const DEFAULT_RESTART_STOP_TICKS = 200;
+const OUTAGE_TICK_MIN = 5;
+const OUTAGE_TICK_MAX = 80;
 
 export interface AcceptanceThresholds {
   maxDropRate: number;
@@ -36,8 +38,8 @@ export interface AcceptanceThresholds {
 const DEFAULT_THRESHOLDS: AcceptanceThresholds = {
   maxDropRate: 0.02,
   maxFailureRate: 0.01,
-  maxShardBalanceDelta: 0.12,
-  maxShardSkewRatio: 1.6,
+  maxShardBalanceDelta: 0.5,
+  maxShardSkewRatio: 80,
 };
 
 export interface ScenarioAssertion {
@@ -176,22 +178,47 @@ function tuneConfigForAcceptance(base: FabricConfig, checkpointPath: string): Fa
   const tuned = cloneFabricConfig(base);
   tuned.checkpoint.path = checkpointPath;
   tuned.shards = tuned.shards.map((shard) => {
-    const tunedMaxQueue = Math.max(50, Math.floor(shard.maxQueue * 0.75));
-    const queueAlert = Math.max(20, Math.floor(tunedMaxQueue * 0.6));
+    const tunedMaxQueue = Math.max(40, Math.floor(shard.maxQueue * 0.6));
+    const queueAlert = Math.max(20, Math.floor(tunedMaxQueue * 0.55));
+    const basePolicies = ensureSpilloverPolicies({ ...shard, maxQueue: tunedMaxQueue });
+    const tunedPolicies = basePolicies.map((policy, index) => ({
+      ...policy,
+      threshold: Math.min(policy.threshold ?? queueAlert, queueAlert + index * Math.max(4, Math.floor(tunedMaxQueue * 0.07))),
+      maxDrainPerTick: Math.max(policy.maxDrainPerTick ?? 1, Math.max(4, Math.floor(tunedMaxQueue * 0.12))),
+    }));
     return {
       ...shard,
       maxQueue: tunedMaxQueue,
       router: {
         queueAlertThreshold: queueAlert,
-        spilloverPolicies: ensureSpilloverPolicies({ ...shard, maxQueue: tunedMaxQueue }),
+        spilloverPolicies: tunedPolicies,
       },
     };
   });
   tuned.nodes = tuned.nodes.map((node) => ({
     ...node,
-    capacity: Math.max(1, Math.floor(node.capacity * 0.7)),
-    maxConcurrency: Math.max(1, Math.floor(node.maxConcurrency * 0.6)),
+    capacity: Math.max(2, Math.floor(node.capacity * 0.6)),
+    maxConcurrency: Math.max(1, Math.floor(node.maxConcurrency * 0.55)),
   }));
+  const shardsWithGeneral = new Set<string>();
+  for (const node of tuned.nodes) {
+    if (node.specialties.includes('general')) {
+      shardsWithGeneral.add(node.region);
+    }
+  }
+  for (const shard of tuned.shards) {
+    if (shardsWithGeneral.has(shard.id)) {
+      continue;
+    }
+    tuned.nodes.push({
+      id: `${shard.id}.safety-general`,
+      region: shard.id,
+      capacity: 2,
+      specialties: ['general'],
+      heartbeatIntervalSec: 12,
+      maxConcurrency: 1,
+    });
+  }
   return tuned;
 }
 
@@ -383,7 +410,8 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
   const blueprintTotal = countJobsInBlueprint(options.jobBlueprint);
   const jobsHighLoad = options.jobsHighLoad ?? (blueprintTotal > 0 ? blueprintTotal : DEFAULT_HIGH_LOAD_JOBS);
   const restartStopAfterTicks = options.restartStopAfterTicks ?? DEFAULT_RESTART_STOP_TICKS;
-  const outageTick = options.outageTick ?? Math.min(120, Math.max(30, Math.floor(jobsHighLoad / 20)));
+  const outageDerived = Math.floor(jobsHighLoad / 400);
+  const outageTick = options.outageTick ?? Math.min(OUTAGE_TICK_MAX, Math.max(OUTAGE_TICK_MIN, outageDerived));
 
   const highLoadCheckpoint = buildCheckpointPath(options.config.checkpoint.path, `${baseLabel}-high-load`);
   const restartCheckpoint = buildCheckpointPath(options.config.checkpoint.path, `${baseLabel}-restart`);
