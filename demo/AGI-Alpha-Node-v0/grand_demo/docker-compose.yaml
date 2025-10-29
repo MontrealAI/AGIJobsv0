@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  alpha-node:
+    build: .
+    container_name: agi-alpha-node
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./config:/app/config
+      - ./storage:/app/storage
+    ports:
+      - "8080:8080"
+      - "9108:9108"
+    command: ["python", "scripts/run_demo.py"]
+    restart: unless-stopped

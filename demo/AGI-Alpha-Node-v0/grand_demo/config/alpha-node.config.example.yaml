@@ -1,0 +1,58 @@
+governance:
+  governance_address: "0x0000000000000000000000000000000000000000"
+  emergency_pause_address: "0x0000000000000000000000000000000000000000"
+  ens_domain: "demo.alpha.node.agi.eth"
+
+blockchain:
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_KEY"
+  chain_id: 1
+  default_gas_limit: 4000000
+  contracts:
+    stake_manager:
+      name: "StakeManager"
+      address: "0x0000000000000000000000000000000000000000"
+      abi: "abis/StakeManager.json"
+    fee_pool:
+      name: "FeePool"
+      address: "0x0000000000000000000000000000000000000000"
+      abi: "abis/FeePool.json"
+    job_registry:
+      name: "JobRegistry"
+      address: "0x0000000000000000000000000000000000000000"
+      abi: "abis/JobRegistry.json"
+    system_pause:
+      name: "SystemPause"
+      address: "0x0000000000000000000000000000000000000000"
+      abi: "abis/SystemPause.json"
+
+planner:
+  horizon: 16
+  exploration_constant: 1.5
+  discount_factor: 0.97
+  max_rollouts: 256
+  temperature: 0.85
+
+specialists:
+  - name: "finance"
+  - name: "biotech"
+  - name: "manufacturing"
+
+knowledge_lake:
+  path: "storage/knowledge/knowledge.json"
+  embedding_dim: 64
+  similarity_threshold: 0.72
+
+metrics:
+  host: "0.0.0.0"
+  port: 9108
+
+web:
+  host: "0.0.0.0"
+  port: 8080
+  enable_https: false
+  allowed_origins:
+    - "*"
+
+compliance:
+  drill_interval_minutes: 60
+  minimum_stake: 1000

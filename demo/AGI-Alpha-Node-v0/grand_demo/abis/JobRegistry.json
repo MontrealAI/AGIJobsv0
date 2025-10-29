@@ -1,0 +1,40 @@
+[
+  {
+    "inputs": [],
+    "name": "listOpenJobs",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "jobId", "type": "uint256" },
+          { "internalType": "string", "name": "domain", "type": "string" },
+          { "internalType": "uint256", "name": "reward", "type": "uint256" },
+          { "internalType": "string", "name": "metadata", "type": "string" }
+        ],
+        "internalType": "struct Job[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "jobId", "type": "uint256" }
+    ],
+    "name": "claimJob",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "jobId", "type": "uint256" },
+      { "internalType": "string", "name": "artifactUri", "type": "string" }
+    ],
+    "name": "submitResult",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

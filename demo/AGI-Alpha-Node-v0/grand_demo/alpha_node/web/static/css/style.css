@@ -1,0 +1,120 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", sans-serif;
+  background: radial-gradient(circle at top, #020617, #000);
+  color: #f1f5f9;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  opacity: 0.85;
+}
+
+.cta {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.cta a {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  color: #0f172a;
+  background: linear-gradient(135deg, #38bdf8, #22d3ee);
+  transition: transform 0.3s ease;
+}
+
+.cta a.secondary {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+.cta a:hover {
+  transform: translateY(-2px);
+}
+
+.diagram, .metrics, .runbook {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 30px 60px -40px rgba(14, 116, 144, 0.8);
+}
+
+.mermaid {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: rgba(2, 132, 199, 0.15);
+  border-radius: 18px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.8;
+}
+
+.card .value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: -40% 20% auto;
+  height: 120%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.35), transparent 60%);
+  transform: rotate(12deg);
+}
+
+.runbook ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.runbook li {
+  margin-bottom: 0.7rem;
+}

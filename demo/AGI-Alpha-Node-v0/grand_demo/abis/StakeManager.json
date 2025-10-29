@@ -1,0 +1,39 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "depositStake",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "claimRewards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "operator", "type": "address" }
+    ],
+    "name": "getOperator",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "stakedAmount", "type": "uint256" },
+          { "internalType": "uint256", "name": "rewards", "type": "uint256" },
+          { "internalType": "bool", "name": "slashRisk", "type": "bool" },
+          { "internalType": "uint256", "name": "lastUpdateBlock", "type": "uint256" }
+        ],
+        "internalType": "struct OperatorState",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
