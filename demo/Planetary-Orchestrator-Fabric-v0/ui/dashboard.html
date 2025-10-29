@@ -322,6 +322,12 @@
     </section>
 
     <section class="panel">
+      <h2>Job Blueprint</h2>
+      <div id="blueprint-metrics" class="metrics"></div>
+      <pre class="json" id="blueprint-entries-json">Blueprint details will appear after loading telemetry.</pre>
+    </section>
+
+    <section class="panel">
       <h2>Shard Telemetry</h2>
       <table class="data-table" id="shard-table">
         <thead>
@@ -401,6 +407,8 @@
   <script>
     const statusEl = document.getElementById('status');
     const missionMetricsEl = document.getElementById('mission-metrics');
+    const blueprintMetricsEl = document.getElementById('blueprint-metrics');
+    const blueprintEntriesJsonEl = document.getElementById('blueprint-entries-json');
     const shardTableBody = document.querySelector('#shard-table tbody');
     const shardNoteEl = document.getElementById('shard-note');
     const ownerStatusEl = document.getElementById('owner-status');
@@ -460,6 +468,49 @@
           }
         )
         .join('');
+    }
+
+    function renderBlueprint(blueprint = {}, metrics = {}) {
+      if (blueprint && Object.keys(blueprint).length > 0) {
+        const cards = [];
+        const totalJobs = typeof blueprint.totalJobs === 'number' ? blueprint.totalJobs : metrics.jobsSubmitted;
+        if (typeof totalJobs === 'number') {
+          cards.push({ label: 'Total Jobs', value: totalJobs.toLocaleString() });
+        }
+        if (blueprint.metadata?.label) {
+          cards.push({ label: 'Label', value: blueprint.metadata.label });
+        }
+        if (blueprint.metadata?.description) {
+          cards.push({ label: 'Description', value: blueprint.metadata.description });
+        }
+        if (blueprint.metadata?.author) {
+          cards.push({ label: 'Author', value: blueprint.metadata.author });
+        }
+        if (blueprint.metadata?.version) {
+          cards.push({ label: 'Version', value: blueprint.metadata.version });
+        }
+        if (blueprint.source) {
+          cards.push({ label: 'Source', value: blueprint.source });
+        }
+        renderMetrics(blueprintMetricsEl, cards);
+        blueprintEntriesJsonEl.textContent = JSON.stringify(blueprint.entries ?? [], null, 2);
+      } else {
+        renderMetrics(blueprintMetricsEl, [
+          {
+            label: 'Mode',
+            value: 'Procedural',
+            hint: 'No job blueprint supplied; workload generated from shard skills.',
+          },
+        ]);
+        blueprintEntriesJsonEl.textContent = JSON.stringify(
+          {
+            note: 'Provide --jobs-blueprint to attach a declarative workload.',
+            submittedJobs: metrics.jobsSubmitted ?? 0,
+          },
+          null,
+          2
+        );
+      }
     }
 
     function renderShardTable(shards = {}, statistics = {}) {
@@ -690,6 +741,8 @@
           { label: 'Drop Rate', value: dropRate, hint: '<2% target enforced by acceptance autopilot.' },
         ]);
 
+        renderBlueprint(summary.jobBlueprint, metrics);
+
         renderShardTable(summary.shards, summary.shardStatistics || {});
         renderOwnerStatus(summary.ownerState || {
           systemPaused: false,
@@ -826,6 +879,50 @@
         executed: [{ tick: 120 }, { tick: 150 }],
         skippedBeforeResume: [{ tick: 90 }],
         pending: [{ tick: 240 }],
+      },
+      jobBlueprint: {
+        metadata: {
+          label: 'K-II Helios Bridge',
+          description: 'Declarative orchestration of Kardashev-II scale mission streams.',
+          author: 'Planetary Fabric Owner',
+          version: '1.0.0',
+        },
+        source: 'demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json',
+        totalJobs: 12000,
+        entries: [
+          {
+            shard: 'earth',
+            count: 4200,
+            requiredSkills: ['orchestration', 'capital-markets'],
+            estimatedDurationTicks: 4,
+            value: 1500,
+            note: 'Earth command lattice, sovereign settlements, and capital augmentation.',
+          },
+          {
+            shard: 'luna',
+            count: 2600,
+            requiredSkills: ['logistics', 'relay'],
+            estimatedDurationTicks: 3,
+            value: 1300,
+            note: 'Luna relay grid provisioning & cryogenic logistics support.',
+          },
+          {
+            shard: 'mars',
+            count: 3000,
+            requiredSkills: ['terraforming', 'mining'],
+            estimatedDurationTicks: 6,
+            value: 2100,
+            note: 'Mars regolith transmutation & terraforming initiative.',
+          },
+          {
+            shard: 'helios',
+            count: 2200,
+            requiredSkills: ['fusion', 'solar'],
+            estimatedDurationTicks: 5,
+            value: 2400,
+            note: 'Helios Dyson lattice expansion & antimatter capture arrays.',
+          },
+        ],
       },
       ledger: {
         totals: {

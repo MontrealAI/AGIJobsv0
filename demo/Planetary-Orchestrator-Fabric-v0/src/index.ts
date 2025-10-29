@@ -1,8 +1,9 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { loadFabricConfig, loadOwnerCommandSchedule } from './config-loader';
+import { loadFabricConfig, loadJobBlueprint, loadOwnerCommandSchedule } from './config-loader';
 import { runSimulation } from './simulation';
 import { OwnerCommandSchedule, SimulationOptions } from './types';
+import { countJobsInBlueprint } from './job-blueprint';
 
 function lastValue<T>(value: T | T[] | undefined): T | undefined {
   if (Array.isArray(value)) {
@@ -47,6 +48,10 @@ async function main(): Promise<void> {
       type: 'string',
       describe: 'Path to owner command schedule JSON',
     })
+    .option('jobs-blueprint', {
+      type: 'string',
+      describe: 'Path to a job blueprint JSON file',
+    })
     .option('stop-after-ticks', {
       type: 'number',
       describe: 'Stop the run after the provided number of ticks (for restart drills)',
@@ -84,8 +89,13 @@ async function main(): Promise<void> {
     ownerCommands = await loadOwnerCommandSchedule(ownerCommandsPath);
   }
 
+  const blueprintPath = lastValue(argv['jobs-blueprint']);
+  const jobBlueprint = blueprintPath ? await loadJobBlueprint(blueprintPath) : undefined;
+  const plannedJobs = countJobsInBlueprint(jobBlueprint);
+  const jobsOverride = plannedJobs > 0 ? plannedJobs : undefined;
+
   const options: SimulationOptions = {
-    jobs: lastValue(argv.jobs) ?? 10000,
+    jobs: jobsOverride ?? (lastValue(argv.jobs) ?? 10000),
     simulateOutage: lastValue(argv['simulate-outage']),
     outageTick: lastValue(argv['outage-tick']),
     resume: lastValue(argv.resume) ?? false,
@@ -96,6 +106,8 @@ async function main(): Promise<void> {
     ownerCommandSource: ownerCommandsPath,
     stopAfterTicks: lastValue(argv['stop-after-ticks']),
     preserveReportDirOnResume: lastValue(argv['preserve-report-on-resume']) ?? true,
+    jobBlueprint,
+    jobBlueprintSource: blueprintPath,
   };
 
   const result = await runSimulation(config, options);

@@ -36,6 +36,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
   ```bash
   demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh \
      --jobs 10000 \
+     --jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json \
      --simulate-outage "mars.gpu-helion" \
      --checkpoint-interval 30 \
      --output-label "kardashev-kill-switch" \
@@ -46,6 +47,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
   demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh \
      --jobs 12000 \
      --stop-after 200 \
+     --jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json \
      --label "resume-drill" \
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
@@ -57,6 +59,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
     --jobs-high-load 10000 \
     --outage-node mars.gpu-helion
   ```
+  Add `--jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json` to the command above to replay the curated Kardashev workload during the acceptance suite.
   This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
 6. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, and ledger invariants instantly—even offline.
 7. **Open the run-specific dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore the same data pre-linked to that execution with zero configuration.
@@ -120,6 +123,7 @@ flowchart TD
 | `bin/run-demo.sh` | One-command launcher for the full demo flow. |
 | `bin/run-restart-drill.sh` | Two-phase orchestrator kill/resume drill that stitches checkpoint + resume artifacts. |
 | `config/fabric.example.json` | Declarative definition of shards, nodes, owner policies, checkpoint schedules. |
+| `config/jobs.blueprint.example.json` | Declarative workload blueprint empowering non-technical owners to set the planetary agenda. |
 | `config/owner-commands.example.json` | Sample schedule of owner commands applied mid-run. |
 | `docs/architecture.md` | Deep dive into the architecture with additional diagrams, latency budgets, and ledger mapping. |
 | `docs/owner-control.md` | Owner empowerment manual with pause/update scripts and governance hooks. |
@@ -159,6 +163,7 @@ flowchart TD
 ## Next Steps
 
 - Integrate live blockchain endpoints (mainnet, L2, or planetary rollups) by filling in the placeholders in `config/fabric.example.json`.
+- Clone `config/jobs.blueprint.example.json` to define your own workload mix—adjust shard counts, skills, and durations, then pass the new file via `--jobs-blueprint`.
 - Wire container registries and GPU fleets by connecting the node marketplace to Kubernetes, Nomad, or bare-metal pools.
 - Attach treasury/payment processors via the existing reward engine scripts in `scripts/v2/`.
 - Publish dashboards to IPFS or internal portals by copying the generated HTML + JSON artifacts.

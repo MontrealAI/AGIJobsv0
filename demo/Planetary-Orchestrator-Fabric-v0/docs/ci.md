@@ -40,6 +40,8 @@ npm run test:planetary-orchestrator-fabric
 npm run demo:planetary-orchestrator-fabric:ci
 # Optional: run the combined acceptance suite locally
 npm run demo:planetary-orchestrator-fabric:acceptance -- --label local-acceptance
+# Optional: replay the curated blueprint during acceptance
+npm run demo:planetary-orchestrator-fabric:acceptance -- --label local-blueprint --jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json
 # Optional: rehearse the restart drill locally
 demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh --label ci-drill
 ```

@@ -40,6 +40,32 @@ export interface JobDefinition {
   submissionTick: number;
 }
 
+export interface JobBlueprintEntry {
+  id?: string;
+  idPrefix?: string;
+  shard: ShardId;
+  requiredSkills: string[];
+  estimatedDurationTicks?: number;
+  value?: number;
+  valueStep?: number;
+  submissionTick?: number;
+  count?: number;
+  note?: string;
+}
+
+export interface JobBlueprintMetadata {
+  label?: string;
+  description?: string;
+  author?: string;
+  version?: string;
+}
+
+export interface JobBlueprint {
+  metadata?: JobBlueprintMetadata;
+  jobs: JobBlueprintEntry[];
+  source?: string;
+}
+
 export type JobStatus =
   | "queued"
   | "assigned"
@@ -127,6 +153,8 @@ export interface SimulationOptions {
   ownerCommandSource?: string;
   stopAfterTicks?: number;
   preserveReportDirOnResume?: boolean;
+  jobBlueprint?: JobBlueprint;
+  jobBlueprintSource?: string;
 }
 
 export interface CheckpointData {

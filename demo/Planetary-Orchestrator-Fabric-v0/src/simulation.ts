@@ -15,6 +15,7 @@ import {
   SimulationOptions,
   RunMetadata,
 } from './types';
+import { countJobsInBlueprint, expandJobBlueprint } from './job-blueprint';
 
 const DEFAULT_OUTAGE_TICK = 120;
 
@@ -194,6 +195,12 @@ export async function runSimulation(
     }
   }
 
+  const jobBlueprintCount = countJobsInBlueprint(options.jobBlueprint);
+  const plannedJobs = jobBlueprintCount > 0 ? jobBlueprintCount : options.jobs;
+  if (plannedJobs <= 0) {
+    throw new Error('Simulation requires at least one job. Provide --jobs or a non-empty blueprint.');
+  }
+
   const flushEvents = async (): Promise<void> => {
     const events = orchestrator.fabricEvents;
     if (events.length > 0) {
@@ -252,14 +259,14 @@ export async function runSimulation(
   }
 
   if (!checkpointRestored) {
-    await seedJobs(orchestrator, config, options.jobs);
+    await seedJobs(orchestrator, config, options, plannedJobs);
   }
   await flushEvents();
 
   const outageTick = options.outageTick ?? DEFAULT_OUTAGE_TICK;
   const outageNodeId = options.simulateOutage;
 
-  const maxTicks = Math.max(Math.ceil(options.jobs * 0.35), 200) + orchestrator.currentTick;
+  const maxTicks = Math.max(Math.ceil(plannedJobs * 0.35), 200) + orchestrator.currentTick;
 
   for (let tick = orchestrator.currentTick + 1; tick <= maxTicks; tick += 1) {
     await applyCommandsForTick(tick);
@@ -373,8 +380,24 @@ export async function runSimulation(
 async function seedJobs(
   orchestrator: PlanetaryOrchestrator,
   config: FabricConfig,
-  jobs: number
+  options: SimulationOptions,
+  plannedJobs: number
 ): Promise<void> {
+  if (options.jobBlueprint) {
+    const expanded = expandJobBlueprint(options.jobBlueprint, config);
+    if (expanded.length === 0) {
+      throw new Error('Job blueprint must contain at least one job entry.');
+    }
+    if (expanded.length !== plannedJobs) {
+      throw new Error(
+        `Blueprint expanded job count (${expanded.length}) does not match planned job count (${plannedJobs}).`
+      );
+    }
+    for (const job of expanded) {
+      orchestrator.submitJob({ ...job, submissionTick: job.submissionTick ?? orchestrator.currentTick });
+    }
+    return;
+  }
   const shards = config.shards;
   const skillMatrix: Record<string, string[]> = {};
   const nodesByShard: Record<string, NodeDefinition[]> = {};
@@ -385,7 +408,7 @@ async function seedJobs(
     nodeList.push(node);
     nodesByShard[node.region] = nodeList;
   }
-  for (let index = 0; index < jobs; index += 1) {
+  for (let index = 0; index < plannedJobs; index += 1) {
     const shard = shards[index % shards.length];
     const skills = pickNodeCompatibleSkills(nodesByShard[shard.id], index) ?? pickSkills(skillMatrix[shard.id], index);
     const duration = 1 + (index % 5);
@@ -455,6 +478,7 @@ async function writeArtifacts(
   const nodeSnapshots = orchestrator.getNodeSnapshots();
   const ownerState = orchestrator.getOwnerState();
   const checkpointConfig = orchestrator.getCheckpointConfig();
+  const jobBlueprintCount = countJobsInBlueprint(options.jobBlueprint);
   const rotatedCheckpointPath = checkpointConfig.path.endsWith('.json')
     ? `${checkpointConfig.path.slice(0, -5)}.owner.json`
     : `${checkpointConfig.path}.owner.json`;
@@ -465,6 +489,39 @@ async function writeArtifacts(
   const ledgerPath = join(reportDir, 'ledger.json');
   await fs.writeFile(ledgerPath, JSON.stringify(ledgerSnapshot, null, 2), 'utf8');
 
+  const summaryOptions = {
+    jobs: options.jobs,
+    simulateOutage: options.simulateOutage,
+    outageTick: options.outageTick,
+    resume: options.resume,
+    checkpointPath: options.checkpointPath,
+    outputLabel: options.outputLabel,
+    ciMode: options.ciMode,
+    ownerCommandSource: options.ownerCommandSource,
+    stopAfterTicks: options.stopAfterTicks,
+    preserveReportDirOnResume: options.preserveReportDirOnResume,
+    jobBlueprintSource: options.jobBlueprintSource ?? options.jobBlueprint?.source,
+    jobBlueprintTotal: jobBlueprintCount > 0 ? jobBlueprintCount : undefined,
+  };
+
+  const jobBlueprintSummary = options.jobBlueprint
+    ? {
+        metadata: options.jobBlueprint.metadata,
+        source: summaryOptions.jobBlueprintSource,
+        totalJobs: jobBlueprintCount,
+        entries: options.jobBlueprint.jobs.map((entry) => ({
+          shard: entry.shard,
+          count: entry.count ?? 1,
+          requiredSkills: entry.requiredSkills,
+          estimatedDurationTicks: entry.estimatedDurationTicks,
+          value: entry.value,
+          valueStep: entry.valueStep,
+          submissionTick: entry.submissionTick,
+          note: entry.note,
+        })),
+      }
+    : undefined;
+
   const summary = {
     owner: config.owner,
     metrics,
@@ -473,7 +530,7 @@ async function writeArtifacts(
     nodes: nodeSnapshots,
     checkpoint: checkpointConfig,
     checkpointPath: checkpointConfig.path,
-    options,
+    options: summaryOptions,
     run: runMetadata,
     ownerState,
     ownerCommands: {
@@ -483,6 +540,7 @@ async function writeArtifacts(
       skippedBeforeResume: skippedCommands,
       pending: pendingCommands,
     },
+    jobBlueprint: jobBlueprintSummary,
     ledger: {
       totals: ledgerSnapshot.totals,
       shards: ledgerSnapshot.shards,
@@ -751,6 +809,37 @@ function buildDashboardHtml(
         '<div class="metric"><strong>Owner Interventions</strong><br />' + ownerMetrics.ownerInterventions.toLocaleString() + '</div>' +
         '<div class="metric"><strong>System Pauses</strong><br />' + ownerMetrics.systemPauses.toLocaleString() + '</div>' +
         '<div class="metric"><strong>Shard Pauses</strong><br />' + ownerMetrics.shardPauses.toLocaleString() + '</div>';
+      const blueprint = summary.jobBlueprint;
+      if (blueprint) {
+        const metadata = blueprint.metadata ?? {};
+        const metaBlocks = [
+          '<div class="metric"><strong>Total Jobs</strong><br />' + blueprint.totalJobs.toLocaleString() + '</div>',
+        ];
+        if (metadata.label) {
+          metaBlocks.push('<div class="metric"><strong>Label</strong><br />' + metadata.label + '</div>');
+        }
+        if (metadata.description) {
+          metaBlocks.push(
+            '<div class="metric"><strong>Description</strong><br />' + metadata.description + '</div>'
+          );
+        }
+        if (metadata.author) {
+          metaBlocks.push('<div class="metric"><strong>Author</strong><br />' + metadata.author + '</div>');
+        }
+        if (metadata.version) {
+          metaBlocks.push('<div class="metric"><strong>Version</strong><br />' + metadata.version + '</div>');
+        }
+        if (blueprint.source) {
+          metaBlocks.push('<div class="metric"><strong>Source</strong><br /><code>' + blueprint.source + '</code></div>');
+        }
+        document.getElementById('blueprint-meta').innerHTML = metaBlocks.join('');
+        document.getElementById('blueprint-entries').textContent = JSON.stringify(blueprint.entries, null, 2);
+      } else {
+        document.getElementById('blueprint-meta').innerHTML =
+          '<div class="metric warn">No job blueprint loaded. Procedural generator seeded workload.</div>';
+        document.getElementById('blueprint-entries').textContent =
+          JSON.stringify({ note: 'Blueprint not provided', generatedJobs: metrics.jobsSubmitted }, null, 2);
+      }
       document.getElementById('options').textContent = JSON.stringify(summary.options, null, 2);
       const ownerState = summary.ownerState ?? {
         systemPaused: false,
@@ -907,6 +996,11 @@ function buildDashboardHtml(
     <section>
       <h2>Mission Metrics</h2>
       <div id="metrics" class="metrics"></div>
+    </section>
+    <section>
+      <h2>Job Blueprint</h2>
+      <div id="blueprint-meta" class="metrics"></div>
+      <pre id="blueprint-entries">Loading...</pre>
     </section>
     <section>
       <h2>Owner Fabric State</h2>

@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runAcceptanceSuite } from '../src/acceptance';
-import { FabricConfig, JobDefinition, OwnerCommandSchedule } from '../src/types';
+import { FabricConfig, JobBlueprint, JobDefinition, OwnerCommandSchedule } from '../src/types';
 import { runSimulation } from '../src/simulation';
 
 const testConfig: FabricConfig = {
@@ -404,6 +404,77 @@ async function testOwnerCommandControls(): Promise<void> {
   await rm(rotatedCheckpointPath, { force: true });
 }
 
+async function testJobBlueprintSeeding(): Promise<void> {
+  const dir = await mkdtemp(join(tmpdir(), 'fabric-blueprint-'));
+  const checkpointPath = join(dir, 'checkpoint.json');
+  const reportingDir = join(dir, 'reports');
+  const config: FabricConfig = {
+    ...testConfig,
+    shards: testConfig.shards.map((shard) => ({
+      ...shard,
+      spilloverTargets: [...shard.spilloverTargets],
+      router: shard.router
+        ? {
+            queueAlertThreshold: shard.router.queueAlertThreshold,
+            spilloverPolicies: shard.router.spilloverPolicies
+              ? shard.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    })),
+    nodes: testConfig.nodes.map((node) => ({ ...node, specialties: [...node.specialties] })),
+    checkpoint: { ...testConfig.checkpoint, path: checkpointPath },
+    reporting: { directory: reportingDir, defaultLabel: 'blueprint' },
+  };
+
+  const blueprint: JobBlueprint = {
+    metadata: { label: 'Unit Test Blueprint', author: 'Test Harness' },
+    source: 'unit-test-blueprint.json',
+    jobs: [
+      {
+        idPrefix: 'earth-blueprint',
+        shard: 'earth',
+        requiredSkills: ['general', 'finance'],
+        estimatedDurationTicks: 3,
+        value: 1500,
+        valueStep: 10,
+        count: 4,
+      },
+      {
+        id: 'mars-bespoke-0001',
+        shard: 'mars',
+        requiredSkills: ['manufacturing'],
+        estimatedDurationTicks: 5,
+        value: 3200,
+        count: 1,
+      },
+    ],
+  };
+  const totalJobs = blueprint.jobs.reduce((sum, entry) => sum + (entry.count ?? 1), 0);
+
+  const result = await runSimulation(config, {
+    jobs: totalJobs,
+    jobBlueprint: blueprint,
+    jobBlueprintSource: blueprint.source,
+    outputLabel: 'blueprint',
+    checkpointPath,
+    ciMode: true,
+  });
+
+  const summaryRaw = await readFile(result.artifacts.summaryPath, 'utf8');
+  const summary = JSON.parse(summaryRaw);
+  assert.equal(summary.metrics.jobsSubmitted, totalJobs);
+  assert.equal(summary.jobBlueprint.totalJobs, totalJobs);
+  assert.equal(summary.jobBlueprint.metadata.label, 'Unit Test Blueprint');
+  assert.equal(summary.jobBlueprint.entries[0].count, 4);
+  assert.equal(summary.jobBlueprint.entries[1].shard, 'mars');
+  assert.equal(summary.jobBlueprint.source, 'unit-test-blueprint.json');
+  const blueprintSummary = await readFile(join(reportingDir, 'blueprint', 'summary.json'), 'utf8');
+  assert.ok(blueprintSummary.includes('jobBlueprint'));
+
+  await rm(dir, { force: true, recursive: true });
+}
+
 async function testReportingRetarget(): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), 'fabric-reporting-'));
   const checkpointPath = join(dir, 'checkpoint.json');
@@ -735,6 +806,7 @@ async function run(): Promise<void> {
   await testLedgerCheckpointPersistence();
   await testDeterministicReplay();
   await testOwnerCommandControls();
+  await testJobBlueprintSeeding();
   await testReportingRetarget();
   await testOwnerCommandSchedule();
   await testStopAndResumeDrill();

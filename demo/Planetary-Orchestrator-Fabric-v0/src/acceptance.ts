@@ -6,6 +6,7 @@ import {
   cloneFabricConfig,
   cloneOwnerCommandSchedule,
   loadFabricConfig,
+  loadJobBlueprint,
   loadOwnerCommandSchedule,
 } from './config-loader';
 import { runSimulation, SimulationResult } from './simulation';
@@ -18,7 +19,9 @@ import {
   SimulationOptions,
   ShardConfig,
   SpilloverPolicy,
+  JobBlueprint,
 } from './types';
+import { cloneJobBlueprint, countJobsInBlueprint } from './job-blueprint';
 
 const DEFAULT_HIGH_LOAD_JOBS = 10_000;
 const DEFAULT_RESTART_STOP_TICKS = 200;
@@ -101,6 +104,8 @@ interface ScenarioConfig {
     | 'checkpointPath'
     | 'ownerCommands'
     | 'preserveReportDirOnResume'
+    | 'jobBlueprint'
+    | 'jobBlueprintSource'
   >;
 }
 
@@ -211,6 +216,8 @@ async function executeScenario(config: ScenarioConfig): Promise<ScenarioExecutio
     ownerCommandSource: 'acceptance-suite',
     preserveReportDirOnResume: config.options.preserveReportDirOnResume,
     ciMode: true,
+    jobBlueprint: cloneJobBlueprint(config.options.jobBlueprint),
+    jobBlueprintSource: config.options.jobBlueprintSource,
   };
   const result = await runSimulation(configClone, options);
   const summary = await readSummary(result.artifacts.summaryPath);
@@ -363,6 +370,8 @@ export interface AcceptanceOptions {
   outageTick?: number;
   restartStopAfterTicks?: number;
   thresholds?: Partial<AcceptanceThresholds>;
+  jobBlueprint?: JobBlueprint;
+  jobBlueprintSource?: string;
 }
 
 export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<AcceptanceReport> {
@@ -371,7 +380,8 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
     ...(options.thresholds ?? {}),
   };
   const baseLabel = sanitiseLabel(options.baseLabel);
-  const jobsHighLoad = options.jobsHighLoad ?? DEFAULT_HIGH_LOAD_JOBS;
+  const blueprintTotal = countJobsInBlueprint(options.jobBlueprint);
+  const jobsHighLoad = options.jobsHighLoad ?? (blueprintTotal > 0 ? blueprintTotal : DEFAULT_HIGH_LOAD_JOBS);
   const restartStopAfterTicks = options.restartStopAfterTicks ?? DEFAULT_RESTART_STOP_TICKS;
   const outageTick = options.outageTick ?? Math.min(120, Math.max(30, Math.floor(jobsHighLoad / 20)));
 
@@ -396,6 +406,8 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       checkpointPath: highLoadCheckpoint,
       ownerCommands: undefined,
       preserveReportDirOnResume: undefined,
+      jobBlueprint: options.jobBlueprint,
+      jobBlueprintSource: options.jobBlueprintSource,
     },
   });
 
@@ -413,6 +425,8 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       checkpointPath: restartCheckpoint,
       ownerCommands: undefined,
       preserveReportDirOnResume: false,
+      jobBlueprint: options.jobBlueprint,
+      jobBlueprintSource: options.jobBlueprintSource,
     },
   });
 
@@ -430,6 +444,8 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       checkpointPath: restartCheckpoint,
       ownerCommands: undefined,
       preserveReportDirOnResume: true,
+      jobBlueprint: options.jobBlueprint,
+      jobBlueprintSource: options.jobBlueprintSource,
     },
   });
 
@@ -460,6 +476,10 @@ async function runFromCli(): Promise<void> {
       type: 'number',
       describe: 'Number of jobs for the high-load scenario',
       default: DEFAULT_HIGH_LOAD_JOBS,
+    })
+    .option('jobs-blueprint', {
+      type: 'string',
+      describe: 'Optional job blueprint JSON file to seed both scenarios',
     })
     .option('outage-node', {
       type: 'string',
@@ -497,6 +517,10 @@ async function runFromCli(): Promise<void> {
   if (argv['owner-commands']) {
     ownerCommands = await loadOwnerCommandSchedule(argv['owner-commands']);
   }
+  let jobBlueprint: JobBlueprint | undefined;
+  if (argv['jobs-blueprint']) {
+    jobBlueprint = await loadJobBlueprint(argv['jobs-blueprint']);
+  }
 
   const thresholdsOverrides: Partial<AcceptanceThresholds> = {};
   if (typeof argv['max-drop-rate'] === 'number') {
@@ -521,6 +545,8 @@ async function runFromCli(): Promise<void> {
     outageTick: argv['outage-tick'],
     restartStopAfterTicks: argv['restart-stop-after'],
     thresholds: thresholdsOverrides,
+    jobBlueprint,
+    jobBlueprintSource: argv['jobs-blueprint'],
   });
 
   const headline = report.overallPass ? '✅ Acceptance suite PASSED' : '❌ Acceptance suite FAILED';
