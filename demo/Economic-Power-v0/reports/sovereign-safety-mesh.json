@@ -18,5 +18,8 @@
     "security-operations@agijobs.ai",
     "treasury@agijobs.ai"
   ],
-  "notes": []
+  "notes": [],
+  "shockResilienceScore": 0.98,
+  "shockClassification": "impregnable",
+  "shockSummary": "Shockwaves are fully absorbed – treasury buffers, guardrails, and automation form an impregnable shield."
 }

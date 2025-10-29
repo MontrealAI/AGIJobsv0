@@ -98,6 +98,12 @@ const metricMap = [
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
     description: 'Readiness index for unlocking mainnet pilots and planetary rollout.',
   },
+  {
+    id: 'shockResilienceScore',
+    label: 'Shock Resilience',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description: 'Composite resilience score fusing guardrails, emergency response, and treasury buffers.',
+  },
 ];
 
 async function loadSummary(path) {
@@ -290,6 +296,13 @@ function renderSovereignty(summary) {
     alertChannels: [],
     notes: [],
   };
+  const shockResilience = summary.shockResilience || {
+    score: 0,
+    classification: 'attention',
+    summary: 'Shock resilience telemetry unavailable.',
+    drivers: [],
+    recommendations: [],
+  };
 
   const safetyScoreEl = document.getElementById('safety-score');
   if (safetyScoreEl) {
@@ -299,6 +312,52 @@ function renderSovereignty(summary) {
   const safetyResponseEl = document.getElementById('safety-response');
   if (safetyResponseEl) {
     safetyResponseEl.textContent = `Response readiness: ${safetyMesh.responseMinutes} minutes (target ≤ ${safetyMesh.targetResponseMinutes} minutes)`;
+  }
+
+  const shockScoreEl = document.getElementById('shock-score');
+  const shockClassificationEl = document.getElementById('shock-classification');
+  const shockSummaryEl = document.getElementById('shock-summary');
+  if (shockScoreEl) {
+    shockScoreEl.textContent = `${(shockResilience.score * 100).toFixed(1)}%`;
+  }
+  if (shockClassificationEl) {
+    shockClassificationEl.textContent = shockResilience.classification.replace(/-/g, ' ');
+    shockClassificationEl.className = `shock-chip shock-${shockResilience.classification}`;
+  }
+  if (shockSummaryEl) {
+    shockSummaryEl.textContent = shockResilience.summary;
+  }
+
+  const shockDrivers = document.getElementById('shock-drivers');
+  if (shockDrivers) {
+    shockDrivers.innerHTML = '';
+    if (shockResilience.drivers && shockResilience.drivers.length > 0) {
+      for (const driver of shockResilience.drivers) {
+        const li = document.createElement('li');
+        li.textContent = driver;
+        shockDrivers.append(li);
+      }
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'No drivers published.';
+      shockDrivers.append(li);
+    }
+  }
+
+  const shockActions = document.getElementById('shock-actions');
+  if (shockActions) {
+    shockActions.innerHTML = '';
+    if (shockResilience.recommendations && shockResilience.recommendations.length > 0) {
+      for (const rec of shockResilience.recommendations) {
+        const li = document.createElement('li');
+        li.textContent = rec;
+        shockActions.append(li);
+      }
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'Shock resilience already impregnable.';
+      shockActions.append(li);
+    }
   }
 
   const safetyTable = document.querySelector('#safety-metrics tbody');
@@ -715,12 +774,13 @@ function renderAutopilot(summary) {
       economicDominanceIndex: 0,
       capitalVelocity: 0,
       globalExpansionReadiness: 0,
+      shockResilienceScore: 0,
     },
     commandSequence: [],
   };
   missionEl.textContent = autopilot.mission;
   cadenceEl.textContent = `${autopilot.cadenceHours.toFixed(1)}h cadence`;
-  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness`;
+  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness • ${(autopilot.telemetry.shockResilienceScore * 100).toFixed(1)}% shock resilience`;
   guardrailList.innerHTML = '';
   for (const guardrail of autopilot.guardrails) {
     const li = document.createElement('li');

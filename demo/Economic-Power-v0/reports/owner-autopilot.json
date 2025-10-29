@@ -9,11 +9,12 @@
     "automationScore < 0.8 → npm run owner:parameters",
     "treasuryAfterRun < 1800000 → npm run owner:audit"
   ],
-  "narrative": "Autopilot cycles every 6.7h to refresh capital, validator posture, and orchestrator coverage.",
+  "narrative": "Autopilot cycles every 6.7h to refresh capital, validator posture, and orchestrator coverage while preserving 98.0% shock resilience (impregnable).",
   "telemetry": {
     "economicDominanceIndex": 0.994,
     "capitalVelocity": 26290.99,
-    "globalExpansionReadiness": 0.966
+    "globalExpansionReadiness": 0.966,
+    "shockResilienceScore": 0.98
   },
   "commandSequence": [
     {

@@ -63,6 +63,24 @@
     ]
   },
   {
+    "id": "shock-resilience",
+    "title": "Shock resilience remains at fortified threshold or higher",
+    "outcome": "pass",
+    "severity": "critical",
+    "summary": "Shock defences surpass the fortified threshold ensuring economic continuity under stress.",
+    "target": 0.9,
+    "metric": 0.98,
+    "evidence": [
+      "Stability index 76.1%",
+      "Guardrail coverage 98.7%",
+      "Risk dampening 73.4%",
+      "Emergency depth 3 contact(s)",
+      "Alert mesh 2 channel(s)",
+      "Operations buffer 14.4% of treasury",
+      "Automation density 85.2%"
+    ]
+  },
+  {
     "id": "treasury-resilience",
     "title": "Treasury remains solvent after every execution step",
     "outcome": "pass",
