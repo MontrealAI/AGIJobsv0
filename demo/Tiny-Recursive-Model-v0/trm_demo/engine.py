@@ -260,6 +260,12 @@ class TinyRecursiveModel:
 
                 step_count = len(caches)
                 grad_y_carry = 0.0
+                sample_grads = {
+                    "W_y": np.zeros_like(self._params["W_y"]),
+                    "b_y": np.zeros_like(self._params["b_y"]),
+                    "W_h": np.zeros_like(self._params["W_h"]),
+                    "b_h": np.zeros_like(self._params["b_h"]),
+                }
 
                 for step_index in reversed(range(step_count)):
                     cache = caches[step_index]
@@ -283,8 +289,8 @@ class TinyRecursiveModel:
                     grad_logits = grad_output * derivative
 
                     readout_input = np.concatenate((latent, np.array([y_prev])))
-                    grads["W_y"] += grad_logits * readout_input
-                    grads["b_y"] += grad_logits
+                    sample_grads["W_y"] += grad_logits * readout_input
+                    sample_grads["b_y"] += grad_logits
 
                     backprop_input = self._params["W_y"].T * grad_logits
                     grad_y_carry = backprop_input[-1]
@@ -295,12 +301,13 @@ class TinyRecursiveModel:
                     halt_grad *= self.config.halting_weight
                     halt_derivative = halt_prob * (1.0 - halt_prob)
                     grad_halt_logit = halt_grad * halt_derivative
-                    grads["W_h"] += grad_halt_logit * latent
-                    grads["b_h"] += grad_halt_logit
+                    sample_grads["W_h"] += grad_halt_logit * latent
+                    sample_grads["b_h"] += grad_halt_logit
 
-                # Normalise by steps traversed for stability
-                for key in grads:
-                    grads[key] /= float(total_cycles + 1)
+                # Normalise per-sample gradients by steps traversed for stability
+                normaliser = float(total_cycles + 1)
+                for key in sample_grads:
+                    grads[key] += sample_grads[key] / normaliser
 
             sample_count = float(len(dataset_list))
             for key in ("W_y", "b_y", "W_h", "b_h"):
