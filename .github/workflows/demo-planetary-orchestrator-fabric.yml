@@ -117,6 +117,25 @@ jobs:
             throw new Error('owner script missing direct owner commands');
           }
           const ownerCommandsPath = path.join(reportDir, 'owner-commands-executed.json');
+          const topologyPath = path.join(reportDir, 'mission-topology.mmd');
+          const topologyHtmlPath = path.join(reportDir, 'mission-topology.html');
+          for (const file of [topologyPath, topologyHtmlPath]) {
+            if (!fs.existsSync(file)) {
+              throw new Error(`missing topology artifact: ${file}`);
+            }
+          }
+          const topologyContent = fs.readFileSync(topologyPath, 'utf8');
+          if (!topologyContent.includes('flowchart')) {
+            throw new Error('mission topology mermaid file missing flowchart definition');
+          }
+          if (!summary.topology || summary.topology.mermaidPath !== './mission-topology.mmd' || summary.topology.htmlPath !== './mission-topology.html') {
+            throw new Error('summary missing topology metadata');
+          }
+          const topologyHtml = fs.readFileSync(topologyHtmlPath, 'utf8');
+          if (!topologyHtml.includes('Planetary Orchestrator Fabric') || !topologyHtml.includes('mermaid')) {
+            throw new Error('mission topology HTML artifact malformed');
+          }
+          const ownerCommandsPath = path.join(reportDir, 'owner-commands-executed.json');
           if (!fs.existsSync(ownerCommandsPath)) {
             throw new Error('missing owner command execution log');
           }

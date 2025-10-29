@@ -54,6 +54,7 @@ demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh --label ci-drill
 | `reports/ci-latest/events.ndjson` | Event-by-event telemetry |
 | `reports/ci-latest/dashboard.html` | Rendered mission control dashboard |
 | `reports/ci-latest/owner-script.json` | Replayable owner command payloads |
+| `reports/ci-latest/mission-topology.mmd` & `mission-topology.html` | Planetary mermaid atlas for shard, node, and spillover visualization |
 | `storage/checkpoint.json` | Most recent checkpoint snapshot |
 
 These guardrails keep the demo production-ready and prove that AGI Jobs v0 (v2) can enforce enterprise-grade CI discipline for planetary orchestration.

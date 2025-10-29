@@ -35,7 +35,7 @@ timeline
 6. **Validate planetary resilience** by executing `npm run demo:planetary-orchestrator-fabric:acceptance -- --label planetary-acceptance`. The harness proves that:
    - <2% of jobs drop during 10k-load with a simulated node outage.
    - The orchestrator can be killed mid-run and resume from checkpoint without duplication or loss.
-7. **File the audit bundle** by shipping `summary.json`, `events.ndjson`, `ledger.json`, and the owner command logs to your archival system.
+7. **File the audit bundle** by shipping `summary.json`, `events.ndjson`, `ledger.json`, `mission-topology.mmd`/`mission-topology.html`, and the owner command logs to your archival system.
 
 ## Multi-Angle Verification Grid
 

@@ -9,6 +9,7 @@ import {
   FabricEvent,
   FabricMetrics,
   JobDefinition,
+  LedgerSnapshot,
   NodeDefinition,
   OwnerCommandSchedule,
   SimulationArtifacts,
@@ -68,6 +69,10 @@ function computeTickBudgets(
   const hardLimit = startTick + Math.max(baseWindow * 4, Math.ceil(plannedJobs * 1.5), 2000);
   return { initialLimit: startTick + baseWindow, hardLimit, extensionWindow: baseWindow };
 }
+
+type OwnerStateSnapshot = ReturnType<PlanetaryOrchestrator['getOwnerState']>;
+
+const NUMBER_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
 class ReportOutputManager {
   private eventsStream?: WriteStream;
@@ -541,6 +546,23 @@ async function writeArtifacts(
   const ledgerPath = join(reportDir, 'ledger.json');
   await fs.writeFile(ledgerPath, JSON.stringify(ledgerSnapshot, null, 2), 'utf8');
 
+  const missionGraph = buildMissionTopologyMermaid(
+    config,
+    shardSnapshots,
+    shardStats,
+    nodeSnapshots,
+    ledgerSnapshot,
+    ownerState
+  );
+  const missionGraphPath = join(reportDir, 'mission-topology.mmd');
+  await fs.writeFile(missionGraphPath, missionGraph, 'utf8');
+  const missionGraphHtmlPath = join(reportDir, 'mission-topology.html');
+  await fs.writeFile(
+    missionGraphHtmlPath,
+    buildMermaidHtmlPage('Planetary Orchestrator Fabric – Topology', missionGraph),
+    'utf8'
+  );
+
   const summaryOptions = {
     jobs: options.jobs,
     simulateOutage: options.simulateOutage,
@@ -593,6 +615,10 @@ async function writeArtifacts(
       pending: pendingCommands,
     },
     jobBlueprint: jobBlueprintSummary,
+    topology: {
+      mermaidPath: './mission-topology.mmd',
+      htmlPath: './mission-topology.html',
+    },
     ledger: {
       totals: ledgerSnapshot.totals,
       shards: ledgerSnapshot.shards,
@@ -791,7 +817,13 @@ async function writeArtifacts(
   const dashboardPath = join(reportDir, 'dashboard.html');
   await fs.writeFile(
     dashboardPath,
-    buildDashboardHtml(summaryPath, ownerScriptPath, executedCommandsPath, ledgerPath),
+    buildDashboardHtml(
+      summaryPath,
+      ownerScriptPath,
+      executedCommandsPath,
+      ledgerPath,
+      './mission-topology.mmd'
+    ),
     'utf8'
   );
 
@@ -802,6 +834,8 @@ async function writeArtifacts(
     ownerScriptPath,
     ownerCommandsPath: executedCommandsPath,
     ledgerPath,
+    missionGraphPath,
+    missionGraphHtmlPath,
   };
 }
 
@@ -809,7 +843,8 @@ function buildDashboardHtml(
   summaryPath: string,
   ownerScriptPath: string,
   executedCommandsPath: string,
-  ledgerPath: string
+  ledgerPath: string,
+  missionGraphPath: string
 ): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -831,13 +866,33 @@ function buildDashboardHtml(
     .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }
     .note { margin-top: 8px; color: rgba(255,255,255,0.65); }
     footer { padding: 24px; text-align: center; font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+    .grid-two { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
   </style>
   <script type="module">
     const executedLogPath = ${JSON.stringify(executedCommandsPath)};
     const ledgerAssetPath = ${JSON.stringify(ledgerPath)};
+    const missionGraphAssetPath = ${JSON.stringify(missionGraphPath)};
     function renderMermaid() {
       if (window.mermaid && typeof window.mermaid.init === 'function') {
         window.mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+      }
+    }
+    async function loadMissionTopology() {
+      const container = document.getElementById('mission-topology');
+      const missionPathEl = document.getElementById('mission-topology-path');
+      missionPathEl.textContent = missionGraphAssetPath;
+      try {
+        const response = await fetch(missionGraphAssetPath);
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ' ' + response.statusText);
+        }
+        const definition = (await response.text()).trim();
+        container.textContent = definition.length > 0
+          ? definition
+          : 'flowchart LR\n  empty((No topology data available))';
+      } catch (error) {
+        container.textContent = 'flowchart LR\n  failure((Topology unavailable))';
+        missionPathEl.textContent = missionGraphAssetPath + ' — ' + error;
       }
     }
     async function loadData() {
@@ -948,6 +1003,7 @@ function buildDashboardHtml(
       const executedResp = await fetch('./owner-commands-executed.json');
       const executedPayload = await executedResp.json();
       document.getElementById('owner-commands').textContent = JSON.stringify(executedPayload, null, 2);
+      await loadMissionTopology();
       try {
         const ledgerResp = await fetch('./ledger.json');
         if (!ledgerResp.ok) {
@@ -1009,7 +1065,6 @@ function buildDashboardHtml(
           sample: events.slice(-12),
         };
         document.getElementById('ledger-events').textContent = JSON.stringify(eventSummary, null, 2);
-        renderMermaid();
       } catch (error) {
         document.getElementById('ledger-metrics').innerHTML =
           '<div class="metric critical">Unable to load ledger telemetry: ' + error + '</div>';
@@ -1017,11 +1072,12 @@ function buildDashboardHtml(
         document.getElementById('ledger-flows').textContent = '';
         document.getElementById('ledger-events').textContent = '';
       }
+      renderMermaid();
     }
     loadData();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </head>
 <body>
   <header>
@@ -1032,18 +1088,28 @@ function buildDashboardHtml(
     <section>
       <h2>Owner</h2>
       <p id="owner">Loading...</p>
-      <div class="mermaid">
-        graph LR
-          Owner[Owner Multisig] --> Ledger((Global Ledger))
-          Ledger --> EarthShard
-          Ledger --> LunaShard
-          Ledger --> MarsShard
-          Ledger --> HeliosShard
-          EarthShard --> EarthAgents((Agents))
-          LunaShard --> LunaAgents((Agents))
-          MarsShard --> MarsAgents((Agents))
-          HeliosShard --> HeliosAgents((Agents))
+      <div class="grid-two">
+        <div class="mermaid">
+          graph LR
+            Owner[Owner Multisig] --> Ledger((Global Ledger))
+            Ledger --> EarthShard
+            Ledger --> LunaShard
+            Ledger --> MarsShard
+            Ledger --> HeliosShard
+            EarthShard --> EarthAgents((Agents))
+            LunaShard --> LunaAgents((Agents))
+            MarsShard --> MarsAgents((Agents))
+            HeliosShard --> HeliosAgents((Agents))
+        </div>
+        <div>
+          <div id="owner-status" class="metrics"></div>
+        </div>
       </div>
+    </section>
+    <section>
+      <h2>Planetary Topology Atlas</h2>
+      <div id="mission-topology" class="mermaid">flowchart LR\n  loading((Loading topology...))</div>
+      <p class="note">Mermaid source: <code id="mission-topology-path"></code></p>
     </section>
     <section>
       <h2>Mission Metrics</h2>
@@ -1056,7 +1122,6 @@ function buildDashboardHtml(
     </section>
     <section>
       <h2>Owner Fabric State</h2>
-      <div id="owner-status" class="metrics"></div>
       <pre id="owner-state">Loading...</pre>
     </section>
     <section>
@@ -1118,3 +1183,297 @@ async function writeShardTelemetry(
     })
   );
 }
+
+function sanitizeMermaidId(raw: string): string {
+  const normalized = raw.replace(/[^a-zA-Z0-9]/g, '_');
+  if (normalized.length === 0) {
+    return 'id_0';
+  }
+  return /^[a-zA-Z_]/.test(normalized) ? normalized : `id_${normalized}`;
+}
+
+function escapeMermaidLabel(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/`/g, '\\`');
+}
+
+function formatNumber(value: number | undefined): string {
+  if (value === undefined || Number.isNaN(value)) {
+    return '0';
+  }
+  return NUMBER_FORMATTER.format(value);
+}
+
+function formatList(values: string[] | undefined): string {
+  if (!values || values.length === 0) {
+    return 'n/a';
+  }
+  const unique = Array.from(new Set(values.filter((entry) => entry && entry.trim().length > 0)));
+  if (unique.length === 0) {
+    return 'n/a';
+  }
+  if (unique.length <= 3) {
+    return unique.join(', ');
+  }
+  return `${unique.slice(0, 3).join(', ')} +${unique.length - 3} more`;
+}
+
+function buildMissionTopologyMermaid(
+  config: FabricConfig,
+  shardSnapshots: Record<string, { queueDepth: number; inFlight: number; completed: number }>,
+  shardStats: Record<string, { completed: number; failed: number; spillovers: number }>,
+  nodeSnapshots: Record<string, { active: boolean; runningJobs: number }>,
+  ledgerSnapshot: LedgerSnapshot,
+  ownerState: OwnerStateSnapshot
+): string {
+  const lines: string[] = [];
+  const newline = String.fromCharCode(10);
+  const pausedShards = new Set(ownerState.pausedShards ?? []);
+  const ownerMetrics = ownerState.metrics ?? {
+    ownerInterventions: 0,
+    systemPauses: 0,
+    shardPauses: 0,
+  };
+
+  const nodesByShard: Record<string, NodeDefinition[]> = {};
+  for (const node of config.nodes) {
+    if (!nodesByShard[node.region]) {
+      nodesByShard[node.region] = [];
+    }
+    nodesByShard[node.region].push(node);
+  }
+
+  lines.push('%% Autogenerated Planetary Orchestrator Fabric topology');
+  lines.push('flowchart LR');
+  lines.push('  classDef owner fill:#1d0f39,stroke:#b784ff,stroke-width:2px,color:#f5f7ff;');
+  lines.push('  classDef orchestrator fill:#082249,stroke:#54c0ff,stroke-width:2px,color:#f5f7ff;');
+  lines.push('  classDef orchestratorPaused fill:#3a2308,stroke:#f6b93b,stroke-width:2px,color:#fff;');
+  lines.push('  classDef shard fill:#0d1b4c,stroke:#64a9ff,stroke-width:2px,color:#f5f7ff;');
+  lines.push('  classDef shardPaused fill:#2f143a,stroke:#ff6bcb,stroke-width:2px,color:#fff;');
+  lines.push('  classDef router fill:#0b1733,stroke:#64a9ff,stroke-dasharray: 4 2,color:#f5f7ff;');
+  lines.push('  classDef nodeActive fill:#053b2a,stroke:#1dd1a1,stroke-width:2px,color:#f5f7ff;');
+  lines.push('  classDef nodeDown fill:#3d0d0d,stroke:#ff6b6b,stroke-width:2px,color:#fff;');
+  lines.push('  classDef ledger fill:#041230,stroke:#4b6aff,stroke-width:2px,color:#f5f7ff;');
+  lines.push('  classDef invariantAlert fill:#31131f,stroke:#ff9ff3,stroke-width:2px,color:#fff;');
+
+  const ownerId = 'owner_command';
+  const ownerLabel = [
+    'Owner Authority',
+    `Paused: ${ownerState.systemPaused ? 'Yes' : 'No'}`,
+    `Interventions: ${formatNumber(ownerMetrics.ownerInterventions)}`,
+    `System Pauses: ${formatNumber(ownerMetrics.systemPauses)}`,
+    `Shard Pauses: ${formatNumber(ownerMetrics.shardPauses)}`,
+    ownerState.reporting?.directory ? `Reporting: ${ownerState.reporting.directory}` : undefined,
+  ]
+    .filter((entry): entry is string => Boolean(entry))
+    .join(newline);
+  lines.push(`  ${ownerId}["${escapeMermaidLabel(ownerLabel)}"]`);
+  lines.push(`  class ${ownerId} owner;`);
+
+  const orchestratorId = 'planetary_orchestrator';
+  const orchestratorLabel = [
+    'Planetary Orchestrator',
+    `Tick ${formatNumber(ledgerSnapshot.tick)}`,
+    `Completed ${formatNumber(ledgerSnapshot.totals?.completed ?? 0)}`,
+    `Reassignments ${formatNumber(ledgerSnapshot.totals?.reassignments ?? 0)}`,
+  ].join(newline);
+  lines.push(`  ${orchestratorId}["${escapeMermaidLabel(orchestratorLabel)}"]`);
+  lines.push(`  class ${orchestratorId} ${ownerState.systemPaused ? 'orchestratorPaused' : 'orchestrator'};`);
+  lines.push(`  ${ownerId} -->|Command Stream| ${orchestratorId};`);
+
+  const ledgerId = 'global_ledger';
+  const ledgerLabel = [
+    'Global Ledger',
+    `Pending ${formatNumber(ledgerSnapshot.pendingJobs)} | Running ${formatNumber(ledgerSnapshot.runningJobs)}`,
+    `Owner Events ${formatNumber(ledgerSnapshot.ownerEvents)}`,
+    `Events Logged ${formatNumber(ledgerSnapshot.totalEvents)}`,
+  ].join(newline);
+  lines.push(`  ${ledgerId}["${escapeMermaidLabel(ledgerLabel)}"]`);
+  lines.push(`  class ${ledgerId} ledger;`);
+  lines.push(`  ${orchestratorId} -->|State Sync| ${ledgerId};`);
+
+  const failingInvariant = (ledgerSnapshot.invariants ?? []).find((entry) => !entry.ok);
+  if (failingInvariant) {
+    const invariantId = 'invariant_alert';
+    const invariantLabel = ['Invariant Alert', failingInvariant.id, failingInvariant.message].join(newline);
+    lines.push(`  ${invariantId}["${escapeMermaidLabel(invariantLabel)}"]`);
+    lines.push(`  class ${invariantId} invariantAlert;`);
+    lines.push(`  ${ledgerId} --> ${invariantId};`);
+  }
+
+  const spilloverEdges = new Set<string>();
+  const ledgerFlowTotals = new Map<string, number>();
+
+  for (const shard of config.shards) {
+    const sanitizedShard = sanitizeMermaidId(shard.id);
+    const clusterId = `cluster_${sanitizedShard}`;
+    const hubId = `shard_${sanitizedShard}`;
+    const routerId = `${hubId}_router`;
+    const snapshot = shardSnapshots[shard.id] ?? { queueDepth: 0, inFlight: 0, completed: 0 };
+    const stats = shardStats[shard.id] ?? { completed: 0, failed: 0, spillovers: 0 };
+    const ledgerTotals = ledgerSnapshot.shards?.[shard.id];
+
+    const shardLabel = [
+      `${shard.displayName} (${shard.id.toUpperCase()})`,
+      `Queue ${formatNumber(snapshot.queueDepth)} | In-flight ${formatNumber(snapshot.inFlight)}`,
+      `Completed ${formatNumber(stats.completed)} | Failed ${formatNumber(stats.failed ?? 0)}`,
+      `Spillovers ${formatNumber(stats.spillovers ?? 0)}`,
+      ledgerTotals ? `Assigned ${formatNumber(ledgerTotals.assigned)}` : undefined,
+    ]
+      .filter((entry): entry is string => Boolean(entry))
+      .join(newline);
+
+    const routerLabel = [
+      `${shard.displayName} Router`,
+      `Latency ${formatNumber(shard.latencyBudgetMs)} ms`,
+      shard.router?.queueAlertThreshold !== undefined
+        ? `Alert ${formatNumber(shard.router.queueAlertThreshold)}`
+        : undefined,
+      shard.router?.spilloverPolicies?.length
+        ? `Spillover Policies ${shard.router.spilloverPolicies.length}`
+        : undefined,
+    ]
+      .filter((entry): entry is string => Boolean(entry))
+      .join(newline);
+
+    lines.push(`  subgraph ${clusterId}["${escapeMermaidLabel(shard.displayName + ' — Regional Fabric')}"]`);
+    lines.push('    direction TB');
+    lines.push(`    ${hubId}["${escapeMermaidLabel(shardLabel)}"]`);
+    lines.push(`    ${routerId}{{${escapeMermaidLabel(routerLabel)}}}`);
+    lines.push(`    ${hubId} --> ${routerId};`);
+
+    const shardNodeDefinitions = nodesByShard[shard.id] ?? [];
+    const nodeClassAssignments: { id: string; active: boolean }[] = [];
+    if (shardNodeDefinitions.length === 0) {
+      const placeholderId = `${hubId}_reserve`;
+      const placeholderLabel = ['Reserve Capacity', 'Awaiting agents'].join(newline);
+      lines.push(`    ${placeholderId}(["${escapeMermaidLabel(placeholderLabel)}"])`);
+      lines.push(`    ${routerId} --> ${placeholderId};`);
+    } else {
+      for (const node of shardNodeDefinitions) {
+        const nodeId = `node_${sanitizeMermaidId(node.id)}`;
+        const snapshotState = nodeSnapshots[node.id] ?? { active: false, runningJobs: 0 };
+        const ledgerNode = ledgerSnapshot.nodes?.[node.id];
+        const nodeLabel = [
+          node.id,
+          snapshotState.active ? '🟢 Active' : '⚠️ Offline',
+          `Concurrency ${formatNumber(node.maxConcurrency ?? node.capacity)} | Running ${formatNumber(snapshotState.runningJobs)}`,
+          `Completed ${formatNumber(ledgerNode?.completions ?? 0)} | Reassign ${formatNumber(ledgerNode?.reassignments ?? 0)}`,
+          `Skills: ${formatList(node.specialties)}`,
+        ].join(newline);
+        lines.push(`    ${nodeId}["${escapeMermaidLabel(nodeLabel)}"]`);
+        lines.push(`    ${routerId} --> ${nodeId};`);
+        nodeClassAssignments.push({ id: nodeId, active: snapshotState.active });
+      }
+    }
+
+    lines.push('  end');
+    lines.push(`  ${orchestratorId} -->|${formatNumber(shard.latencyBudgetMs)} ms SLA| ${hubId};`);
+    lines.push(`  ${hubId} --> ${ledgerId};`);
+    lines.push(`  class ${hubId} ${pausedShards.has(shard.id) ? 'shardPaused' : 'shard'};`);
+    lines.push(`  class ${routerId} router;`);
+    for (const assignment of nodeClassAssignments) {
+      lines.push(`  class ${assignment.id} ${assignment.active ? 'nodeActive' : 'nodeDown'};`);
+    }
+
+    for (const target of shard.spilloverTargets ?? []) {
+      if (!target || target === shard.id) {
+        continue;
+      }
+      const targetId = `shard_${sanitizeMermaidId(target)}`;
+      const edgeKey = `${hubId}->${targetId}`;
+      if (!spilloverEdges.has(edgeKey)) {
+        lines.push(`  ${hubId} -. spillover .-> ${targetId};`);
+        spilloverEdges.add(edgeKey);
+      }
+    }
+  }
+
+  for (const flow of ledgerSnapshot.flows ?? []) {
+    const fromId = flow.from ? `shard_${sanitizeMermaidId(flow.from)}` : undefined;
+    const toId = flow.to ? `shard_${sanitizeMermaidId(flow.to)}` : undefined;
+    if (!fromId || !toId || fromId === toId) {
+      continue;
+    }
+    const key = `${fromId}|${toId}`;
+    const runningTotal = ledgerFlowTotals.get(key) ?? 0;
+    ledgerFlowTotals.set(key, runningTotal + (Number.isFinite(flow.count) ? flow.count : 0));
+  }
+
+  for (const [key, count] of ledgerFlowTotals.entries()) {
+    const [fromId, toId] = key.split('|');
+    lines.push(`  ${fromId} -->|${formatNumber(count)}| ${toId};`);
+  }
+
+  return lines.join(newline);
+}
+
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function buildMermaidHtmlPage(title: string, mermaidDefinition: string): string {
+  const normalized = (mermaidDefinition ?? '').replace(/\r?\n/g, '\n').trim();
+  const safeDefinition = normalized.length > 0 ? normalized : 'flowchart LR\n  empty((No topology data))';
+  const mermaidJson = JSON.stringify(safeDefinition);
+  const safeTitle = escapeHtml(title);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${safeTitle}</title>
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 32px; background: #050714; color: #f5f7ff; }
+    h1 { margin-top: 0; font-size: 2.25rem; }
+    .container { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; }
+    .mermaid { background: #fff; color: #000; border-radius: 16px; padding: 24px; box-shadow: 0 12px 48px rgba(0,0,0,0.4); }
+    pre { background: rgba(5,7,20,0.85); padding: 16px; border-radius: 12px; color: #dfe6ff; overflow: auto; }
+    footer { margin-top: 24px; font-size: 0.85rem; color: rgba(255,255,255,0.6); text-align: center; }
+    .badge { display: inline-block; padding: 6px 12px; border-radius: 999px; background: rgba(86, 204, 242, 0.15); color: #56ccf2; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>${safeTitle}</h1>
+      <p class="badge">Rendered by AGI Jobs v0 (v2) Planetary Orchestrator Fabric</p>
+    </header>
+    <section>
+      <div id="topology" class="mermaid">flowchart LR\n  loading((Loading topology...))</div>
+    </section>
+    <section>
+      <details open>
+        <summary>Raw Mermaid Definition</summary>
+        <pre id="topology-source"></pre>
+      </details>
+    </section>
+  </div>
+  <footer>Planetary-scale governance dashboards orchestrated autonomously.</footer>
+  <script type="module">
+    const definition = ${mermaidJson};
+    const container = document.getElementById('topology');
+    const source = document.getElementById('topology-source');
+    source.textContent = definition;
+    container.textContent = definition;
+    function render() {
+      if (window.mermaid && typeof window.mermaid.init === 'function') {
+        window.mermaid.init(undefined, [container]);
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', render);
+    } else {
+      render();
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
+</body>
+</html>`;
+}
+

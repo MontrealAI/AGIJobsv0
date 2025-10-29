@@ -322,6 +322,12 @@
     </section>
 
     <section class="panel">
+      <h2>Planetary Topology Atlas</h2>
+      <p class="note">Mermaid artifact: <code id="topology-path">—</code></p>
+      <div id="topology-mermaid" class="mermaid">flowchart TD\n  placeholder((Awaiting topology...))</div>
+    </section>
+
+    <section class="panel">
       <h2>Job Blueprint</h2>
       <div id="blueprint-metrics" class="metrics"></div>
       <pre class="json" id="blueprint-entries-json">Blueprint details will appear after loading telemetry.</pre>
@@ -423,6 +429,8 @@
     const ledgerEventsJsonEl = document.getElementById('ledger-events-json');
     const nodeGridEl = document.getElementById('node-grid');
     const nodeSummaryEl = document.getElementById('node-summary');
+    const topologyMermaidEl = document.getElementById('topology-mermaid');
+    const topologyPathEl = document.getElementById('topology-path');
 
     function setStatus(message, variant = 'info') {
       statusEl.textContent = message;
@@ -468,6 +476,22 @@
           }
         )
         .join('');
+    }
+
+    function renderTopology(mermaidSource, artifactPath) {
+      if (mermaidSource && mermaidSource.trim()) {
+        topologyMermaidEl.textContent = mermaidSource;
+        topologyPathEl.textContent = artifactPath || 'mission-topology.mmd';
+        if (window.mermaid) {
+          window.mermaid.init(undefined, [topologyMermaidEl]);
+        }
+      } else {
+        topologyMermaidEl.textContent = 'flowchart TD\n  placeholder((Topology artifact not provided))';
+        topologyPathEl.textContent = artifactPath ? `${artifactPath} (missing)` : 'mission-topology.mmd (missing)';
+        if (window.mermaid) {
+          window.mermaid.init(undefined, [topologyMermaidEl]);
+        }
+      }
     }
 
     function renderBlueprint(blueprint = {}, metrics = {}) {
@@ -725,6 +749,15 @@
         const ledgerFile = findFile(fileArray, ['ledger.json']);
         const ledger = ledgerFile ? await parseJsonFile(ledgerFile, 'ledger.json') : {};
 
+        const topologyFile = findFile(fileArray, ['mission-topology.mmd']);
+        let topologySource = '';
+        let topologyLabel = summary.topology?.mermaidPath || 'mission-topology.mmd';
+        if (topologyFile) {
+          topologySource = await topologyFile.text();
+          topologyLabel = topologyFile.webkitRelativePath || topologyFile.fullPath || topologyFile.name || topologyLabel;
+        }
+        renderTopology(topologySource, topologyLabel);
+
         const metrics = summary.metrics || {};
         const dropCount = (metrics.jobsSubmitted || 0) - (metrics.jobsCompleted || 0) - (metrics.jobsCancelled || 0);
         const dropRate = formatPercent(dropCount, metrics.jobsSubmitted || 0);
@@ -924,6 +957,7 @@
           },
         ],
       },
+      topology: { mermaidPath: './mission-topology.mmd', htmlPath: './mission-topology.html' },
       ledger: {
         totals: {
           submitted: 12000,
@@ -974,12 +1008,31 @@
       },
     };
 
+    const SAMPLE_TOPOLOGY = `flowchart TD\n  owner([Planetary Fabric Owner]) --> ledger((Unified Ledger))\n  ledger --> earth[Earth Hypergrid\nQueue: 12\nIn-Flight: 8]\n  ledger --> luna[Luna Relay\nQueue: 6\nIn-Flight: 4]\n  ledger --> mars[Mars Foundry\nQueue: 10\nIn-Flight: 12]\n  ledger --> helios[Helios GPU Helion\nQueue: 4\nIn-Flight: 6]\n  earth --> earth_core_alpha[[earth.core-alpha\nActive\nRunning: 6]]\n  earth --> earth_edge_europa[[earth.edge-europa\nActive\nRunning: 4]]\n  luna --> luna_nav_station[[luna.nav-station\nActive\nRunning: 3]]\n  mars --> mars_regolith_cradle[[mars.regolith-cradle\nOffline\nRunning: 0]]\n  mars --> mars_gpu_helion[[mars.gpu-helion\nActive\nRunning: 7]]\n  helios --> helios_solaris_array[[helios.solaris-array\nActive\nRunning: 6]]\n  earth -."26".-> mars\n  mars -."34".-> helios\n  luna -."22".-> earth\n  classDef owner fill:#0d1b4c,stroke:#5c8dff,color:#f5f7ff;\n  classDef ledger fill:#051937,stroke:#7ad0ff,color:#f5f7ff;\n  classDef shard fill:#0f3460,stroke:#00b4d8,color:#f5f7ff;\n  classDef node fill:#134e5e,stroke:#11cbd7,color:#f5f7ff;\n  class owner owner;\n  class ledger ledger;\n  class earth,luna,mars,helios shard;\n  class earth_core_alpha,earth_edge_europa,luna_nav_station,mars_regolith_cradle,mars_gpu_helion,helios_solaris_array node;`;
+
+
+    const SAMPLE_TOPOLOGY_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sample Planetary Topology</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
+  <style>body { font-family: 'Inter', Arial, sans-serif; background: #050714; color: #f5f7ff; padding: 24px; } .mermaid { background: #fff; color: #000; border-radius: 12px; padding: 16px; }</style>
+</head>
+<body>
+  <h1>Sample Planetary Topology</h1>
+  <div class="mermaid">${SAMPLE_TOPOLOGY}</div>
+</body>
+</html>`;
     document.getElementById('sample-button').addEventListener('click', () => {
       handleFileBundle([
         new File([JSON.stringify(SAMPLE_SUMMARY)], 'summary.json', { type: 'application/json' }),
         new File([JSON.stringify(SAMPLE_OWNER_SCRIPT)], 'owner-script.json', { type: 'application/json' }),
         new File([JSON.stringify(SAMPLE_OWNER_COMMANDS)], 'owner-commands-executed.json', { type: 'application/json' }),
         new File([JSON.stringify(SAMPLE_SUMMARY.ledger)], 'ledger.json', { type: 'application/json' }),
+        new File([SAMPLE_TOPOLOGY], 'mission-topology.mmd', { type: 'text/plain' }),
+        new File([SAMPLE_TOPOLOGY_HTML], 'mission-topology.html', { type: 'text/html' }),
       ]);
       setStatus('Loaded curated sample telemetry. Replace with a real report bundle to view live data.', 'success');
     });
