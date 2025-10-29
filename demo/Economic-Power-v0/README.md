@@ -41,6 +41,8 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `global-expansion-plan.md` – markdown roadmap breaking down testnet supremacy, mainnet pilot, planetary expansion, and governance acceleration phases.
 - `global-expansion.mmd` – mermaid gantt of the expansion cadence, immediately embeddable into ops dashboards.
 - `shock-resilience.json` – fortified shock defence dossier detailing score, drivers, recommendations, and telemetry powering the resilience gauge.
+- `owner-control-supremacy.json` – supremacy ledger fusing coverage, custody, safety mesh, guardrail density, and program coverage into a single index for the owner multi-sig.
+- `owner-control-supremacy.mmd` – mermaid supremacy map wiring coverage surfaces, program categories, and quick commands directly to the multi-sig authority.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -127,6 +129,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.
+- Owner supremacy mesh quantifying the new supremacy index, guardrail density, and program coverage with a live mermaid map.
 - Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 - Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.

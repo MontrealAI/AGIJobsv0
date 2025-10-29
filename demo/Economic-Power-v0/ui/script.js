@@ -57,6 +57,13 @@ const metricMap = [
     description: 'Composite dominion index across command coverage, custody, and safety mesh readiness.',
   },
   {
+    id: 'ownerControlSupremacyIndex',
+    label: 'Owner Supremacy Index',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description:
+      'Supremacy index fusing coverage, custody, safety mesh, guardrails, and program coverage for the owner multi-sig.',
+  },
+  {
     id: 'treasuryAfterRun',
     label: 'Treasury After Run (AGI)',
     formatter: (value) => formatNumber(value),
@@ -217,6 +224,107 @@ function renderOwnerDominion(summary) {
       actionsList.append(li);
     }
   }
+}
+
+function renderOwnerSupremacy(summary) {
+  const supremacy = summary.ownerControlSupremacy;
+  const scoreEl = document.getElementById('supremacy-score');
+  const classificationEl = document.getElementById('supremacy-classification');
+  const summaryEl = document.getElementById('supremacy-summary');
+  const signalsList = document.getElementById('supremacy-signals');
+  const actionsList = document.getElementById('supremacy-actions');
+  const guardrailEl = document.getElementById('supremacy-guardrail');
+  const programBody = document.querySelector('#supremacy-programs tbody');
+  const pauseEl = document.getElementById('supremacy-pause');
+  const resumeEl = document.getElementById('supremacy-resume');
+  const responseEl = document.getElementById('supremacy-response');
+
+  if (
+    !scoreEl ||
+    !classificationEl ||
+    !summaryEl ||
+    !signalsList ||
+    !actionsList ||
+    !guardrailEl ||
+    !programBody ||
+    !pauseEl ||
+    !resumeEl ||
+    !responseEl
+  ) {
+    return;
+  }
+
+  if (!supremacy) {
+    scoreEl.textContent = '—';
+    classificationEl.textContent = 'Unavailable';
+    classificationEl.className = 'supremacy-chip supremacy-attention';
+    summaryEl.textContent = 'Owner supremacy telemetry unavailable.';
+    guardrailEl.textContent = '';
+    signalsList.innerHTML = '';
+    actionsList.innerHTML = '';
+    programBody.innerHTML = '';
+    pauseEl.textContent = '—';
+    resumeEl.textContent = '—';
+    responseEl.textContent = 'Response cadence unavailable.';
+    return;
+  }
+
+  scoreEl.textContent = `${(supremacy.index * 100).toFixed(1)}%`;
+  const classificationLabel = supremacy.classification.replace(/-/g, ' ');
+  classificationEl.textContent = classificationLabel;
+  classificationEl.className = `supremacy-chip supremacy-${supremacy.classification}`;
+  summaryEl.textContent = supremacy.summary;
+  guardrailEl.textContent = `${(supremacy.guardrailCoverage * 100).toFixed(1)}% guardrail coverage`;
+
+  signalsList.innerHTML = '';
+  if (supremacy.signals.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Supremacy signals pending.';
+    signalsList.append(li);
+  } else {
+    for (const signal of supremacy.signals) {
+      const li = document.createElement('li');
+      li.textContent = signal;
+      signalsList.append(li);
+    }
+  }
+
+  actionsList.innerHTML = '';
+  if (supremacy.recommendedActions.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'Supremacy absolute – maintain cadence.';
+    actionsList.append(li);
+  } else {
+    for (const action of supremacy.recommendedActions) {
+      const li = document.createElement('li');
+      li.textContent = action;
+      actionsList.append(li);
+    }
+  }
+
+  const labelMap = {
+    job: 'Job programs',
+    validator: 'Validator programs',
+    adapter: 'Adapter programs',
+    module: 'Module programs',
+    treasury: 'Treasury programs',
+    orchestrator: 'Orchestrator programs',
+  };
+  programBody.innerHTML = '';
+  for (const [category, coverage] of Object.entries(supremacy.programCoverage)) {
+    const row = document.createElement('tr');
+    const ratio = typeof coverage === 'number' ? coverage : Number(coverage) || 0;
+    const percent = `${(ratio * 100).toFixed(1)}%`;
+    row.innerHTML = `
+      <td>${labelMap[category] || category}</td>
+      <td>${percent}</td>
+    `;
+    programBody.append(row);
+  }
+
+  pauseEl.textContent = supremacy.quickActions.pause;
+  resumeEl.textContent = supremacy.quickActions.resume;
+  responseEl.textContent = `Response cadence: ${supremacy.quickActions.responseMinutes} minutes`;
 }
 
 function renderProgramTable(tableId, programs) {
@@ -721,13 +829,26 @@ async function renderMermaid(summary) {
   const flow = document.getElementById('mermaid-flow');
   const timeline = document.getElementById('mermaid-timeline');
   const command = document.getElementById('mermaid-command');
-  flow.textContent = summary.mermaidFlow;
-  timeline.textContent = summary.mermaidTimeline;
+  const supremacy = document.getElementById('mermaid-supremacy');
+  const nodes = [];
+  if (flow) {
+    flow.textContent = summary.mermaidFlow;
+    nodes.push(flow);
+  }
+  if (timeline) {
+    timeline.textContent = summary.mermaidTimeline;
+    nodes.push(timeline);
+  }
   if (command) {
     command.textContent = summary.ownerCommandMermaid;
-    await mermaid.run({ nodes: [flow, timeline, command] });
-  } else {
-    await mermaid.run({ nodes: [flow, timeline] });
+    nodes.push(command);
+  }
+  if (supremacy && summary.ownerControlSupremacy?.mermaid) {
+    supremacy.textContent = summary.ownerControlSupremacy.mermaid;
+    nodes.push(supremacy);
+  }
+  if (nodes.length > 0) {
+    await mermaid.run({ nodes });
   }
 }
 
@@ -852,6 +973,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   const summary = await loadSummary(dataPath);
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderOwnerSupremacy(summary);
   renderOwnerDominion(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
@@ -907,6 +1029,7 @@ function setupFileHandlers() {
 async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
+  renderOwnerSupremacy(summary);
   renderOwnerDominion(summary);
   renderCommandCatalog(summary);
   renderAssignments(summary);
