@@ -1,6 +1,7 @@
 import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
 
 const defaultDataPath = 'data/default-summary.json';
+const defaultMonteCarloPath = 'data/default-monte-carlo.json';
 const metricMap = [
   {
     id: 'roiMultiplier',
@@ -127,12 +128,294 @@ const metricMap = [
   },
 ];
 
+const monteCarloMetricLabels = {
+  roiMultiplier: 'ROI multiplier',
+  validatorConfidence: 'Validator confidence',
+  economicDominanceIndex: 'Economic dominance',
+  shockResilienceScore: 'Shock resilience',
+  ownerDominionScore: 'Owner dominion',
+  superIntelligenceIndex: 'Superintelligence',
+  sovereignSafetyScore: 'Sovereign safety',
+  sovereignControlScore: 'Sovereign control',
+  ownerControlSupremacyIndex: 'Owner supremacy',
+  capitalVelocity: 'Capital velocity',
+  globalExpansionReadiness: 'Global expansion',
+};
+
 async function loadSummary(path) {
   const response = await fetch(path, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Unable to load summary data from ${path}`);
   }
   return response.json();
+}
+
+async function loadMonteCarloReport(path = defaultMonteCarloPath) {
+  try {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) {
+      return null;
+    }
+    return response.json();
+  } catch (error) {
+    console.warn('Unable to load Monte Carlo report:', error);
+    return null;
+  }
+}
+
+function clearMonteCarlo() {
+  const runsEl = document.getElementById('monte-carlo-runs');
+  const unstoppableEl = document.getElementById('monte-carlo-unstoppable');
+  const dominanceEl = document.getElementById('monte-carlo-dominance');
+  const safetyEl = document.getElementById('monte-carlo-safety');
+  const narrativeEl = document.getElementById('monte-carlo-narrative');
+  const guardrailList = document.getElementById('monte-carlo-guardrails');
+  const actionList = document.getElementById('monte-carlo-actions');
+  const tableBody = document.querySelector('#monte-carlo-metrics tbody');
+  const mermaidContainer = document.getElementById('mermaid-monte-carlo');
+
+  if (runsEl) runsEl.textContent = '—';
+  if (unstoppableEl) unstoppableEl.textContent = '—';
+  if (dominanceEl) dominanceEl.textContent = '—';
+  if (safetyEl) safetyEl.textContent = '—';
+  if (narrativeEl) narrativeEl.textContent = 'Monte Carlo report not available for this summary.';
+  if (guardrailList) {
+    guardrailList.innerHTML = '';
+    const li = document.createElement('li');
+    li.textContent = 'No guardrail telemetry available.';
+    guardrailList.append(li);
+  }
+  if (actionList) {
+    actionList.innerHTML = '';
+    const li = document.createElement('li');
+    li.textContent = 'Run the demo with `--monte-carlo` to generate stress telemetry.';
+    actionList.append(li);
+  }
+  if (tableBody) {
+    tableBody.innerHTML = '';
+  }
+  if (mermaidContainer) {
+    mermaidContainer.textContent = '';
+  }
+}
+
+function clearLiquiditySovereignty() {
+  const pairs = [
+    ['liquidity-start-agi', '—'],
+    ['liquidity-end-agi', '—'],
+    ['liquidity-start-stable', '—'],
+    ['liquidity-end-stable', '—'],
+    ['liquidity-operations-buffer', '—'],
+    ['liquidity-velocity', '—'],
+    ['liquidity-net-yield', '—'],
+    ['liquidity-validator-rewards', '—'],
+    ['liquidity-owner-buffer', '—'],
+  ];
+  for (const [id, value] of pairs) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  }
+  const badge = document.getElementById('liquidity-unstoppable');
+  if (badge) {
+    badge.textContent = 'Awaiting telemetry';
+    badge.className = 'liquidity-badge liquidity-badge--pending';
+  }
+  const narrativeEl = document.getElementById('liquidity-narrative');
+  if (narrativeEl) {
+    narrativeEl.textContent = 'Liquidity sovereignty telemetry not generated yet.';
+  }
+  const guardrailList = document.getElementById('liquidity-guardrails');
+  if (guardrailList) {
+    guardrailList.innerHTML = '';
+    const li = document.createElement('li');
+    li.textContent = 'No guardrails published.';
+    guardrailList.append(li);
+  }
+  const actionsList = document.getElementById('liquidity-actions');
+  if (actionsList) {
+    actionsList.innerHTML = '';
+    const li = document.createElement('li');
+    li.textContent = 'Run the demo to compute liquidity sovereignty directives.';
+    actionsList.append(li);
+  }
+  const mermaidContainer = document.getElementById('mermaid-liquidity');
+  if (mermaidContainer) {
+    mermaidContainer.textContent = '';
+  }
+}
+
+function formatMonteCarloMetric(metric, value) {
+  if (Number.isNaN(value)) {
+    return '—';
+  }
+  if (metric === 'roiMultiplier') {
+    return `${value.toFixed(2)}×`;
+  }
+  if (metric === 'capitalVelocity') {
+    return `${value.toFixed(2)} AGI/h`;
+  }
+  if (metric === 'globalExpansionReadiness') {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+  if (
+    metric === 'validatorConfidence' ||
+    metric === 'economicDominanceIndex' ||
+    metric === 'shockResilienceScore' ||
+    metric === 'ownerDominionScore' ||
+    metric === 'superIntelligenceIndex' ||
+    metric === 'sovereignSafetyScore' ||
+    metric === 'sovereignControlScore' ||
+    metric === 'ownerControlSupremacyIndex'
+  ) {
+    return `${(value * 100).toFixed(1)}%`;
+  }
+  return value.toFixed(3);
+}
+
+function renderMonteCarlo(report) {
+  const runsEl = document.getElementById('monte-carlo-runs');
+  const unstoppableEl = document.getElementById('monte-carlo-unstoppable');
+  const dominanceEl = document.getElementById('monte-carlo-dominance');
+  const safetyEl = document.getElementById('monte-carlo-safety');
+  const narrativeEl = document.getElementById('monte-carlo-narrative');
+  const guardrailList = document.getElementById('monte-carlo-guardrails');
+  const actionList = document.getElementById('monte-carlo-actions');
+  const tableBody = document.querySelector('#monte-carlo-metrics tbody');
+
+  if (!runsEl || !unstoppableEl || !dominanceEl || !safetyEl || !narrativeEl || !guardrailList || !actionList || !tableBody) {
+    return;
+  }
+
+  runsEl.textContent = report.runs.toString();
+  unstoppableEl.textContent = `${(report.unstoppableConfidence * 100).toFixed(1)}%`;
+  dominanceEl.textContent = `${(report.dominanceConfidence * 100).toFixed(1)}%`;
+  safetyEl.textContent = `${(report.safetyConfidence * 100).toFixed(1)}%`;
+  narrativeEl.textContent = report.narrative;
+
+  guardrailList.innerHTML = '';
+  if (!report.guardrailBreaches || report.guardrailBreaches.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'All guardrails satisfied across Monte Carlo envelope.';
+    guardrailList.append(li);
+  } else {
+    for (const breach of report.guardrailBreaches) {
+      const li = document.createElement('li');
+      const metricLabel = monteCarloMetricLabels[breach.metric] || breach.metric;
+      li.textContent = `${metricLabel}: ${breach.summary} (${breach.percentage.toFixed(1)}% of runs)`;
+      guardrailList.append(li);
+    }
+  }
+
+  actionList.innerHTML = '';
+  const actions = report.recommendedActions && report.recommendedActions.length > 0
+    ? report.recommendedActions
+    : ['Maintain unstoppable autopilot cadence.'];
+  for (const action of actions) {
+    const li = document.createElement('li');
+    li.textContent = action;
+    actionList.append(li);
+  }
+
+  tableBody.innerHTML = '';
+  for (const [metric, stats] of Object.entries(report.metrics)) {
+    const label = monteCarloMetricLabels[metric] || metric;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${label}</td>
+      <td>${formatMonteCarloMetric(metric, stats.mean)}</td>
+      <td>${formatMonteCarloMetric(metric, stats.p10)}</td>
+      <td>${formatMonteCarloMetric(metric, stats.p90)}</td>
+      <td>${formatMonteCarloMetric(metric, stats.stdDev)}</td>
+    `;
+    tableBody.append(row);
+  }
+
+  const mermaidContainer = document.getElementById('mermaid-monte-carlo');
+  if (mermaidContainer) {
+    mermaidContainer.textContent = report.mermaid;
+  }
+}
+
+function renderLiquiditySovereignty(report) {
+  if (!report) {
+    clearLiquiditySovereignty();
+    return;
+  }
+
+  const startAgi = document.getElementById('liquidity-start-agi');
+  const endAgi = document.getElementById('liquidity-end-agi');
+  const startStable = document.getElementById('liquidity-start-stable');
+  const endStable = document.getElementById('liquidity-end-stable');
+  const bufferEl = document.getElementById('liquidity-operations-buffer');
+  const velocityEl = document.getElementById('liquidity-velocity');
+  const netYieldEl = document.getElementById('liquidity-net-yield');
+  const validatorEl = document.getElementById('liquidity-validator-rewards');
+  const ownerBufferEl = document.getElementById('liquidity-owner-buffer');
+  const badge = document.getElementById('liquidity-unstoppable');
+  const narrativeEl = document.getElementById('liquidity-narrative');
+  const guardrailList = document.getElementById('liquidity-guardrails');
+  const actionsList = document.getElementById('liquidity-actions');
+  const mermaidContainer = document.getElementById('mermaid-liquidity');
+
+  if (
+    !startAgi ||
+    !endAgi ||
+    !startStable ||
+    !endStable ||
+    !bufferEl ||
+    !velocityEl ||
+    !netYieldEl ||
+    !validatorEl ||
+    !ownerBufferEl ||
+    !badge ||
+    !narrativeEl ||
+    !guardrailList ||
+    !actionsList ||
+    !mermaidContainer
+  ) {
+    return;
+  }
+
+  startAgi.textContent = `${formatNumber(report.startingAgi)} AGI`;
+  endAgi.textContent = `${formatNumber(report.endingAgi)} AGI`;
+  startStable.textContent = `${formatNumber(report.startingStablecoin)} Stable`;
+  endStable.textContent = `${formatNumber(report.endingStablecoin)} Stable`;
+  bufferEl.textContent = `${formatNumber(report.operationsBuffer)} AGI`;
+  velocityEl.textContent = `${formatNumber(report.capitalVelocity)} AGI/h`;
+  netYieldEl.textContent = `${formatNumber(report.netYield)} AGI`;
+  validatorEl.textContent = `${formatNumber(report.validatorRewards)} AGI`;
+  ownerBufferEl.textContent = `${formatNumber(report.ownerBufferContribution)} AGI`;
+
+  badge.textContent = report.unstoppable
+    ? 'Unstoppable liquidity confirmed'
+    : 'Guardrails active';
+  badge.className = `liquidity-badge ${report.unstoppable ? 'liquidity-badge--pass' : 'liquidity-badge--alert'}`;
+  narrativeEl.textContent = report.narrative;
+
+  guardrailList.innerHTML = '';
+  if (report.guardrails.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No guardrail telemetry published.';
+    guardrailList.append(li);
+  } else {
+    for (const guardrail of report.guardrails) {
+      const li = document.createElement('li');
+      li.textContent = guardrail;
+      guardrailList.append(li);
+    }
+  }
+
+  actionsList.innerHTML = '';
+  const directives = report.recommendations.length
+    ? report.recommendations
+    : ['No directives surfaced.'];
+  for (const directive of directives) {
+    const li = document.createElement('li');
+    li.textContent = directive;
+    actionsList.append(li);
+  }
+
+  mermaidContainer.textContent = report.mermaid || '';
 }
 
 function formatNumber(value) {
@@ -995,6 +1278,8 @@ async function renderMermaid(summary) {
   const supremacy = document.getElementById('mermaid-supremacy');
   const drills = document.getElementById('mermaid-drills');
   const superintelligence = document.getElementById('mermaid-superintelligence');
+  const monteCarlo = document.getElementById('mermaid-monte-carlo');
+  const liquidity = document.getElementById('mermaid-liquidity');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -1019,6 +1304,19 @@ async function renderMermaid(summary) {
   if (superintelligence && summary.superIntelligence?.mermaid) {
     superintelligence.textContent = summary.superIntelligence.mermaid;
     nodes.push(superintelligence);
+  }
+  if (liquidity && summary.liquiditySovereignty?.mermaid) {
+    liquidity.textContent = summary.liquiditySovereignty.mermaid;
+    nodes.push(liquidity);
+  }
+  const activeMonteCarlo = window.currentMonteCarlo;
+  if (monteCarlo) {
+    if (activeMonteCarlo?.mermaid) {
+      monteCarlo.textContent = activeMonteCarlo.mermaid;
+      nodes.push(monteCarlo);
+    } else {
+      monteCarlo.textContent = '';
+    }
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -1143,26 +1441,12 @@ function renderGlobalExpansion(summary) {
   }
 }
 
-async function bootstrap(dataPath = defaultDataPath) {
-  const summary = await loadSummary(dataPath);
-  renderMetricCards(summary);
-  renderOwnerTable(summary);
-  renderOwnerSupremacy(summary);
-  renderControlDrills(summary);
-  renderSuperIntelligence(summary);
-  renderOwnerDominion(summary);
-  renderCommandCatalog(summary);
-  renderAssignments(summary);
-  renderSovereignty(summary);
-  renderGovernanceLedger(summary);
-  renderDeployment(summary);
-  renderAssertions(summary);
-  renderTrajectory(summary);
-  renderAutopilot(summary);
-  renderGlobalExpansion(summary);
-  await renderMermaid(summary);
-  updateFooter(summary);
-  window.currentSummary = summary;
+async function bootstrap(dataPath = defaultDataPath, monteCarloPath = defaultMonteCarloPath) {
+  const [summary, monteCarlo] = await Promise.all([
+    loadSummary(dataPath),
+    loadMonteCarloReport(monteCarloPath),
+  ]);
+  await renderSummary(summary, monteCarlo);
 }
 
 function setupFileHandlers() {
@@ -1179,7 +1463,7 @@ function setupFileHandlers() {
     if (!file) return;
     const data = await file.text();
     const summary = JSON.parse(data);
-    await renderSummary(summary);
+    await renderSummary(summary, null);
   });
 
   dropzone.addEventListener('dragover', (event) => {
@@ -1198,12 +1482,13 @@ function setupFileHandlers() {
     if (!file) return;
     const data = await file.text();
     const summary = JSON.parse(data);
-    await renderSummary(summary);
+    await renderSummary(summary, null);
   });
 }
 
-async function renderSummary(summary) {
+async function renderSummary(summary, monteCarloReport) {
   renderMetricCards(summary);
+  renderLiquiditySovereignty(summary.liquiditySovereignty);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
   renderControlDrills(summary);
@@ -1218,6 +1503,12 @@ async function renderSummary(summary) {
   renderTrajectory(summary);
   renderAutopilot(summary);
   renderGlobalExpansion(summary);
+  if (monteCarloReport) {
+    renderMonteCarlo(monteCarloReport);
+  } else {
+    clearMonteCarlo();
+  }
+  window.currentMonteCarlo = monteCarloReport;
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;

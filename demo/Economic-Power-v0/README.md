@@ -15,6 +15,7 @@
 # from the repository root
 npm run demo:economic-power           # generates the full report set
 npm run demo:economic-power -- --interactive   # dial in multipliers and quorum uplifts live
+npm run demo:economic-power:stress    # baseline run plus 64-run Monte Carlo stress harness
 npm run demo:economic-power:ci        # deterministic CI run used by GitHub Actions
 npm run test:economic-power           # deterministic simulation unit tests
 ```
@@ -48,6 +49,10 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
 - `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
 - `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
+- `liquidity-sovereignty.json` – liquidity sovereignty ledger quantifying capital posture, guardrails, and unstoppable directives for the owner multi-sig.
+- `liquidity-sovereignty.mmd` – mermaid treasury flow mapping buffers, capital velocity, and owner guardrails for dashboards.
+- `monte-carlo.json` – Monte Carlo stress harness report with confidence intervals, guardrail breaches, and owner actions.
+- `monte-carlo.mmd` – mermaid visual of stress harness outputs ready for dashboards.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -107,6 +112,14 @@ Additional safeguards:
 
 The CLI recalculates ROI, payback horizon, validator confidence, and writes the new telemetry set into `reports/` for the UI to ingest.
 
+## Monte Carlo stress harness – unstoppable resilience analytics
+
+- `npm run demo:economic-power:stress` executes the baseline scenario and a deterministic 64-run Monte Carlo envelope, outputting stress telemetry into `reports/monte-carlo.json`.
+- Pass `--monte-carlo <runs>` to `npm run demo:economic-power` to customise the number of stress runs (capped at 128 to guarantee rapid feedback).
+- The harness perturbs agent availability, validator reliability, treasury buffers, and stablecoin adapters per run, then recomputes dominance, safety, and supremacy indices.
+- Outputs include confidence intervals, guardrail breach counts, owner action recommendations, and a mermaid map for dashboards. The UI autoloads `ui/data/default-monte-carlo.json` whenever the report is regenerated.
+- A run is considered *unstoppable* when ROI ≥ 1.2×, owner dominion ≥ 95%, sovereign safety ≥ 95%, and the superintelligence index ≥ 95%. The confidence scores surface the share of runs that satisfy these civilisation-grade thresholds.
+
 ## Owner autopilot CLI – instant mission briefings
 
 `npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive a Markdown briefing covering guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save demo/Economic-Power-v0/reports/owner-autopilot-brief.md` to persist the briefing alongside the generated reports.
@@ -136,6 +149,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.
 - Owner supremacy mesh quantifying the new supremacy index, guardrail density, and program coverage with a live mermaid map.
+- Liquidity sovereignty cockpit detailing capital posture, guardrail posture, directives, and a live mermaid treasury flow.
 - Superintelligence control layer exposing the civilisation-scale superintelligence index, dominance drivers, command assurances, and a live mermaid contribution graph.
 - Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.

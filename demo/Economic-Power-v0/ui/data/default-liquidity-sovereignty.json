@@ -1,0 +1,24 @@
+{
+  "startingAgi": 1250000,
+  "startingStablecoin": 350000,
+  "endingAgi": 2254040,
+  "endingStablecoin": 287000,
+  "operationsBuffer": 180000,
+  "validatorRewards": 28960,
+  "ownerBufferContribution": 7240,
+  "netYield": 933800,
+  "capitalVelocity": 26290.99,
+  "unstoppable": true,
+  "guardrails": [
+    "ROI multiplier 3.28× clears unstoppable floor 1.20×.",
+    "Owner dominion 99.40% sustains unstoppable custody authority.",
+    "Sovereign safety 97.90% exceeds unstoppable guardrail 95.00%.",
+    "Superintelligence 96.80% affirms civilisation-grade leverage.",
+    "Capital velocity 26290.99 AGI/h eclipses unstoppable floor 1,000 AGI/h."
+  ],
+  "recommendations": [
+    "Archive liquidity sovereignty telemetry in the governance safe to evidence unstoppable readiness."
+  ],
+  "narrative": "Treasury compounds relentlessly from 1,250,000 AGI to 2,254,040 AGI while maintaining total-dominion dominion and transcendent-dominion superintelligence posture.",
+  "mermaid": "graph LR\n    TreasuryStart[\"Start Treasury\\nAGI 1,250,000\\nStable 350,000\"] --> Escrow[\"Escrow & Rewards\\n-398,200 AGI\"]\n    Escrow --> Value[\"Economic Value Created\\n+1,395,000\"]\n    Value --> TreasuryEnd[\"End Treasury\\nAGI 2,254,040\\nStable 287,000\"]\n    TreasuryStart --> Buffer[\"Operations Buffer\\n180,000 AGI\"]\n    TreasuryEnd --> OwnerBuffer[\"Owner Buffer Contribution\\n+7,240 AGI\"]"
+}

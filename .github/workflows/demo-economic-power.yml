@@ -28,5 +28,7 @@ jobs:
         run: npm ci
       - name: Generate economic power reports
         run: npm run demo:economic-power:ci
+      - name: Run Monte Carlo stress harness
+        run: npm run demo:economic-power -- --monte-carlo 24 --ci
       - name: Validate simulation logic
         run: npm run test:economic-power

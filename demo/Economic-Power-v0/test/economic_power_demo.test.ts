@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import path from 'node:path';
 import test from 'node:test';
-import { loadScenarioFromFile, runScenario } from '../scripts/runDemo';
+import { loadScenarioFromFile, runMonteCarlo, runScenario } from '../scripts/runDemo';
 import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/ownerAutopilot';
 import './owner_programs.test';
 
@@ -88,6 +88,21 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.superIntelligence.commandAssurance.length >= 3,
     'Command assurances should enumerate decisive owner programs',
+  );
+
+  assert(summary.liquiditySovereignty, 'Liquidity sovereignty report should be present');
+  assert(summary.liquiditySovereignty.unstoppable, 'Liquidity sovereignty should confirm unstoppable posture');
+  assert(
+    summary.liquiditySovereignty.guardrails.length >= 4,
+    'Liquidity sovereignty guardrails should enumerate capital guardrail posture',
+  );
+  assert(
+    summary.liquiditySovereignty.recommendations.length >= 1,
+    'Liquidity sovereignty recommendations should surface owner directives',
+  );
+  assert(
+    summary.liquiditySovereignty.mermaid.includes('graph LR'),
+    'Liquidity sovereignty mermaid should render treasury flow',
   );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
@@ -364,6 +379,24 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.globalExpansionPlan.some((phase) => phase.phase.includes('Planetary')),
     'Expansion plan should culminate in planetary scale phase',
   );
+});
+
+test('monte carlo stress harness preserves unstoppable posture', async () => {
+  const scenario = await loadScenarioFromFile(scenarioPath);
+  const summary = await runScenario(scenario);
+  const report = await runMonteCarlo(scenario, 8, summary.tuning);
+
+  assert.equal(report.runs, 8);
+  assert(report.unstoppableConfidence >= 0.85, 'Unstoppable confidence should remain fortified');
+  assert(report.dominanceConfidence >= 0.85, 'Dominance confidence should stay elevated');
+  assert(report.safetyConfidence >= 0.85, 'Safety confidence should reflect sovereign readiness');
+  assert(report.metrics.roiMultiplier.mean > 1.05, 'Mean ROI should stay above 1.05×');
+  assert(
+    report.metrics.economicDominanceIndex.p10 >= 0.85,
+    'p10 dominance should stay within unstoppable range',
+  );
+  assert(report.mermaid.includes('graph TD'), 'Monte Carlo mermaid diagram should render');
+  assert(report.recommendedActions.length >= 1, 'Monte Carlo report should include owner actions');
 });
 
 test('owner autopilot briefing surfaces guardrails and command cadence', async () => {

@@ -116,6 +116,138 @@ main {
   color: var(--text-secondary);
 }
 
+.monte-carlo-grid {
+  margin-top: 1.25rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.monte-carlo-card {
+  background: rgba(8, 13, 28, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 24px 42px rgba(4, 12, 24, 0.6);
+}
+
+.monte-carlo-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.monte-carlo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.monte-carlo-list li {
+  background: rgba(14, 21, 40, 0.75);
+  border-left: 3px solid rgba(110, 231, 255, 0.35);
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.9rem;
+}
+
+.liquidity-grid {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.liquidity-card {
+  background: rgba(8, 11, 24, 0.78);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  box-shadow: 0 24px 42px rgba(4, 10, 22, 0.55);
+}
+
+.liquidity-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+.liquidity-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.liquidity-list li {
+  background: rgba(10, 14, 28, 0.75);
+  border-left: 3px solid rgba(99, 102, 241, 0.4);
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.9rem;
+}
+
+.liquidity-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.liquidity-badge--pending {
+  background: rgba(148, 163, 184, 0.2);
+  color: rgba(226, 232, 240, 0.9);
+}
+
+.liquidity-badge--pass {
+  background: rgba(16, 185, 129, 0.2);
+  color: rgba(16, 185, 129, 0.95);
+}
+
+.liquidity-badge--alert {
+  background: rgba(239, 68, 68, 0.2);
+  color: rgba(248, 113, 113, 0.95);
+}
+
+.monte-carlo-list code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: var(--accent);
+}
+
+#monte-carlo-unstoppable,
+#monte-carlo-dominance,
+#monte-carlo-safety {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+#monte-carlo-narrative {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
 .grid-two {
   display: grid;
   gap: 1.5rem;

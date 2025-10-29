@@ -390,6 +390,28 @@ type SuperIntelligenceReport = {
   mermaid: string;
 };
 
+type LiquiditySovereigntyReport = {
+  startingAgi: number;
+  startingStablecoin: number;
+  endingAgi: number;
+  endingStablecoin: number;
+  operationsBuffer: number;
+  validatorRewards: number;
+  ownerBufferContribution: number;
+  netYield: number;
+  capitalVelocity: number;
+  unstoppable: boolean;
+  guardrails: string[];
+  recommendations: string[];
+  narrative: string;
+  mermaid: string;
+};
+
+type ScenarioTuning = {
+  multiplier: number;
+  quorumDelta: number;
+};
+
 type Summary = {
   scenarioId: string;
   title: string;
@@ -426,6 +448,7 @@ type Summary = {
     superIntelligenceIndex: number;
     shockResilienceScore: number;
   };
+  tuning: ScenarioTuning;
   ownerControl: {
     threshold: string;
     members: number;
@@ -468,8 +491,67 @@ type Summary = {
   ownerDominion: OwnerDominionReport;
   ownerControlSupremacy: OwnerControlSupremacy;
   superIntelligence: SuperIntelligenceReport;
+  liquiditySovereignty: LiquiditySovereigntyReport;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
+};
+
+const MONTE_CARLO_METRICS = [
+  'roiMultiplier',
+  'validatorConfidence',
+  'economicDominanceIndex',
+  'shockResilienceScore',
+  'ownerDominionScore',
+  'superIntelligenceIndex',
+  'sovereignSafetyScore',
+  'sovereignControlScore',
+  'ownerControlSupremacyIndex',
+  'capitalVelocity',
+  'globalExpansionReadiness',
+] as const;
+
+type MonteCarloMetricId = (typeof MONTE_CARLO_METRICS)[number];
+
+type MonteCarloStatistic = {
+  mean: number;
+  min: number;
+  max: number;
+  p10: number;
+  p50: number;
+  p90: number;
+  stdDev: number;
+};
+
+type MonteCarloRunSample = {
+  seed: string;
+  metrics: Record<MonteCarloMetricId, number>;
+  unstoppable: boolean;
+};
+
+type MonteCarloGuardrailBreach = {
+  metric: MonteCarloMetricId;
+  breaches: number;
+  threshold: number;
+  percentage: number;
+  summary: string;
+};
+
+type MonteCarloReport = {
+  scenarioId: string;
+  title: string;
+  runs: number;
+  tuning: ScenarioTuning;
+  unstoppableConfidence: number;
+  dominanceConfidence: number;
+  safetyConfidence: number;
+  unstoppable: boolean;
+  narrative: string;
+  mermaid: string;
+  metrics: Record<MonteCarloMetricId, MonteCarloStatistic>;
+  guardrailBreaches: MonteCarloGuardrailBreach[];
+  recommendedActions: string[];
+  seeds: string[];
+  samples: MonteCarloRunSample[];
 };
 
 type CoverageSurface =
@@ -1862,6 +1944,20 @@ const DEFAULT_SUMMARY_FILE = path.join(DEFAULT_OUTPUT_DIR, 'summary.json');
 const DEFAULT_FLOW_FILE = path.join(DEFAULT_OUTPUT_DIR, 'flow.mmd');
 const DEFAULT_TIMELINE_FILE = path.join(DEFAULT_OUTPUT_DIR, 'timeline.mmd');
 const UI_DEFAULT_SUMMARY = path.join(__dirname, '..', 'ui', 'data', 'default-summary.json');
+const UI_MONTE_CARLO_SUMMARY = path.join(
+  __dirname,
+  '..',
+  'ui',
+  'data',
+  'default-monte-carlo.json',
+);
+const UI_LIQUIDITY_SOVEREIGNTY_SUMMARY = path.join(
+  __dirname,
+  '..',
+  'ui',
+  'data',
+  'default-liquidity-sovereignty.json',
+);
 const BASELINE_CI_SUMMARY = path.join(DEFAULT_OUTPUT_DIR, 'baseline-summary.json');
 
 function pseudoRandom(seed: string): number {
@@ -2966,8 +3062,25 @@ function synthesiseSummary(
       },
       mermaid: '',
     },
+    liquiditySovereignty: {
+      startingAgi: scenario.treasury.agiBalance,
+      startingStablecoin: scenario.treasury.stablecoinBalance,
+      endingAgi: scenario.treasury.agiBalance,
+      endingStablecoin: scenario.treasury.stablecoinBalance,
+      operationsBuffer: scenario.treasury.operationsBuffer,
+      validatorRewards: 0,
+      ownerBufferContribution: 0,
+      netYield: 0,
+      capitalVelocity: 0,
+      unstoppable: false,
+      guardrails: [],
+      recommendations: [],
+      narrative: 'Liquidity sovereignty computation pending.',
+      mermaid: 'graph LR\n    TreasuryStart --> TreasuryEnd',
+    },
     globalExpansionPlan: [],
     shockResilience,
+    tuning: { multiplier: 1, quorumDelta: 0 },
   };
 }
 
@@ -3146,32 +3259,49 @@ function updateNetMetrics(context: SimulationContext, assignment: Assignment): v
   }
 }
 
-export async function runScenario(
-  scenario: Scenario,
-  options: { interactive?: boolean } = {},
-): Promise<Summary> {
-  const workingScenario = JSON.parse(JSON.stringify(scenario)) as Scenario;
-  if (options.interactive) {
-    const rl = readline.createInterface({ input, output });
+function cloneScenario<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function applyScenarioTuning(scenario: Scenario, tuning: ScenarioTuning): void {
+  const safeMultiplier = Number.isFinite(tuning.multiplier) && tuning.multiplier > 0 ? tuning.multiplier : 1;
+  const safeQuorumDelta = Number.isFinite(tuning.quorumDelta)
+    ? Math.trunc(tuning.quorumDelta)
+    : 0;
+
+  if (safeMultiplier !== 1) {
+    for (const job of scenario.jobs) {
+      job.economicValue = Number((job.economicValue * safeMultiplier).toFixed(2));
+    }
+  }
+
+  if (safeQuorumDelta !== 0) {
+    for (const job of scenario.jobs) {
+      job.validatorQuorum = Math.max(job.validatorQuorum + safeQuorumDelta, 1);
+    }
+  }
+}
+
+async function promptScenarioTuning(): Promise<ScenarioTuning> {
+  const rl = readline.createInterface({ input, output });
+  try {
     const multiplierAnswer = await rl.question(
       'Enter desired economic multiplier (default 1.0, press Enter to keep baseline): ',
     );
-    const multiplier = Number(multiplierAnswer.trim()) || 1;
-    workingScenario.jobs = workingScenario.jobs.map((job) => ({
-      ...job,
-      economicValue: job.economicValue * multiplier,
-    }));
-    const quorumAnswer = await rl.question(
-      'Enter validator quorum uplift (e.g. +1, default 0): ',
-    );
-    const quorumDelta = Number(quorumAnswer.trim()) || 0;
-    workingScenario.jobs = workingScenario.jobs.map((job) => ({
-      ...job,
-      validatorQuorum: Math.max(job.validatorQuorum + quorumDelta, 1),
-    }));
-    await rl.close();
-  }
+    const parsedMultiplier = Number(multiplierAnswer.trim());
+    const multiplier = Number.isFinite(parsedMultiplier) && parsedMultiplier > 0 ? parsedMultiplier : 1;
 
+    const quorumAnswer = await rl.question('Enter validator quorum uplift (e.g. +1, default 0): ');
+    const parsedQuorum = Number(quorumAnswer.trim());
+    const quorumDelta = Number.isFinite(parsedQuorum) ? Math.trunc(parsedQuorum) : 0;
+
+    return { multiplier, quorumDelta } satisfies ScenarioTuning;
+  } finally {
+    rl.close();
+  }
+}
+
+async function simulateScenario(workingScenario: Scenario): Promise<Summary> {
   const agentStates = new Map<string, AgentState>();
   for (const agent of workingScenario.agents) {
     agentStates.set(agent.id, { availableAt: 0, load: 0 });
@@ -3265,7 +3395,29 @@ export async function runScenario(
     summary.superIntelligence.index.toFixed(3),
   );
   summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
+  summary.liquiditySovereignty = buildLiquiditySovereigntyReport(
+    workingScenario,
+    context,
+    summary.metrics,
+    summary.ownerDominion,
+    summary.superIntelligence,
+  );
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
+  return summary;
+}
+
+export async function runScenario(
+  scenario: Scenario,
+  options: { interactive?: boolean; tuning?: ScenarioTuning } = {},
+): Promise<Summary> {
+  const baseScenario = cloneScenario(scenario);
+  let tuning = options.tuning ?? { multiplier: 1, quorumDelta: 0 };
+  if (options.interactive) {
+    tuning = await promptScenarioTuning();
+  }
+  applyScenarioTuning(baseScenario, tuning);
+  const summary = await simulateScenario(baseScenario);
+  summary.tuning = tuning;
   return summary;
 }
 
@@ -3407,6 +3559,14 @@ async function writeOutputs(
     `${summary.superIntelligence.mermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
+    path.join(outputDir, 'liquidity-sovereignty.json'),
+    JSON.stringify(summary.liquiditySovereignty, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'liquidity-sovereignty.mmd'),
+    `${summary.liquiditySovereignty.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
     path.join(outputDir, 'shock-resilience.json'),
     JSON.stringify(summary.shockResilience, null, 2),
   );
@@ -3422,6 +3582,467 @@ async function writeOutputs(
   if (options.updateUiSummary) {
     await ensureDir(path.dirname(UI_DEFAULT_SUMMARY));
     await fs.writeFile(UI_DEFAULT_SUMMARY, JSON.stringify(summary, null, 2));
+    await fs.writeFile(
+      UI_LIQUIDITY_SOVEREIGNTY_SUMMARY,
+      JSON.stringify(summary.liquiditySovereignty, null, 2),
+    );
+  }
+}
+
+function createMonteCarloRng(seed: string): () => number {
+  const seedBuffer = crypto.createHash('sha256').update(seed).digest();
+  let state = seedBuffer.readUInt32BE(0);
+  return () => {
+    state = (1664525 * state + 1013904223) >>> 0;
+    return state / 0xffffffff;
+  };
+}
+
+function buildMonteCarloScenario(baseScenario: Scenario, rng: () => number): Scenario {
+  const scenario = cloneScenario(baseScenario);
+  for (const job of scenario.jobs) {
+    const valueScale = 0.9 + rng() * 0.25; // 0.90 – 1.15
+    job.economicValue = Number((job.economicValue * valueScale).toFixed(2));
+    const durationScale = 0.85 + rng() * 0.3; // 0.85 – 1.15
+    job.executionHours = Number(Math.max(1, job.executionHours * durationScale).toFixed(2));
+  }
+
+  for (const agent of scenario.agents) {
+    const availabilityShift = (rng() - 0.5) * 0.1;
+    agent.availability = Number(
+      Math.min(1, Math.max(0.5, agent.availability + availabilityShift)).toFixed(3),
+    );
+    const capacityShift = rng() < 0.25 ? (rng() > 0.5 ? 1 : -1) : 0;
+    agent.capacity = Math.max(1, agent.capacity + capacityShift);
+  }
+
+  for (const validator of scenario.validators) {
+    const reliabilityShift = (rng() - 0.5) * 0.02;
+    validator.reliability = Number(
+      Math.min(0.999, Math.max(0.9, validator.reliability + reliabilityShift)).toFixed(4),
+    );
+    const stakeShift = Math.round((rng() - 0.5) * 5000);
+    validator.stake = Math.max(50000, validator.stake + stakeShift);
+  }
+
+  scenario.treasury.agiBalance = Number(
+    Math.max(0, scenario.treasury.agiBalance * (0.97 + rng() * 0.06)).toFixed(2),
+  );
+  scenario.treasury.stablecoinBalance = Number(
+    Math.max(0, scenario.treasury.stablecoinBalance * (0.92 + rng() * 0.15)).toFixed(2),
+  );
+  scenario.treasury.operationsBuffer = Number(
+    Math.max(0, scenario.treasury.operationsBuffer * (0.95 + rng() * 0.1)).toFixed(2),
+  );
+
+  for (const adapter of scenario.stablecoinAdapters) {
+    const feeDelta = Math.round((rng() - 0.5) * 4);
+    adapter.swapFeeBps = Math.max(0, adapter.swapFeeBps + feeDelta);
+    const slippageDelta = Math.round((rng() - 0.5) * 10);
+    adapter.slippageBps = Math.max(0, adapter.slippageBps + slippageDelta);
+  }
+
+  return scenario;
+}
+
+function percentile(sorted: number[], ratio: number): number {
+  if (sorted.length === 0) {
+    return 0;
+  }
+  const position = (sorted.length - 1) * ratio;
+  const lowerIndex = Math.floor(position);
+  const upperIndex = Math.ceil(position);
+  if (lowerIndex === upperIndex) {
+    return sorted[lowerIndex];
+  }
+  const lower = sorted[lowerIndex];
+  const upper = sorted[upperIndex];
+  const weight = position - lowerIndex;
+  return lower + (upper - lower) * weight;
+}
+
+function computeStatistic(values: number[]): MonteCarloStatistic {
+  if (values.length === 0) {
+    return {
+      mean: 0,
+      min: 0,
+      max: 0,
+      p10: 0,
+      p50: 0,
+      p90: 0,
+      stdDev: 0,
+    } satisfies MonteCarloStatistic;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const sum = values.reduce((total, value) => total + value, 0);
+  const mean = sum / values.length;
+  const variance = values.reduce((total, value) => total + (value - mean) ** 2, 0) / values.length;
+  return {
+    mean: Number(mean.toFixed(4)),
+    min: Number(sorted[0].toFixed(4)),
+    max: Number(sorted[sorted.length - 1].toFixed(4)),
+    p10: Number(percentile(sorted, 0.1).toFixed(4)),
+    p50: Number(percentile(sorted, 0.5).toFixed(4)),
+    p90: Number(percentile(sorted, 0.9).toFixed(4)),
+    stdDev: Number(Math.sqrt(variance).toFixed(4)),
+  } satisfies MonteCarloStatistic;
+}
+
+const MONTE_CARLO_GUARDRAIL_THRESHOLDS: Partial<Record<MonteCarloMetricId, number>> = {
+  roiMultiplier: 1.2,
+  validatorConfidence: 0.93,
+  economicDominanceIndex: 0.9,
+  shockResilienceScore: 0.94,
+  ownerDominionScore: 0.95,
+  superIntelligenceIndex: 0.95,
+  sovereignSafetyScore: 0.95,
+  ownerControlSupremacyIndex: 0.95,
+};
+
+const LIQUIDITY_SOVEREIGNTY_THRESHOLDS = {
+  roiMultiplier: 1.2,
+  ownerDominionScore: 0.95,
+  sovereignSafetyScore: 0.95,
+  superIntelligenceIndex: 0.95,
+  capitalVelocity: 1000,
+} as const;
+
+function formatLiquidityNumber(value: number): string {
+  return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+function buildLiquiditySovereigntyReport(
+  scenario: Scenario,
+  context: SimulationContext,
+  metrics: Summary['metrics'],
+  ownerDominion: OwnerDominionReport,
+  superIntelligence: SuperIntelligenceReport,
+): LiquiditySovereigntyReport {
+  const startingAgi = Number(scenario.treasury.agiBalance.toFixed(2));
+  const startingStable = Number(scenario.treasury.stablecoinBalance.toFixed(2));
+  const endingAgi = Number(metrics.treasuryAfterRun.toFixed(2));
+  const endingStable = Number(
+    Math.max(0, scenario.treasury.stablecoinBalance - context.totalStable).toFixed(2),
+  );
+  const unstoppable =
+    metrics.roiMultiplier >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.roiMultiplier &&
+    metrics.ownerDominionScore >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.ownerDominionScore &&
+    metrics.sovereignSafetyScore >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.sovereignSafetyScore &&
+    metrics.superIntelligenceIndex >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.superIntelligenceIndex &&
+    metrics.capitalVelocity >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.capitalVelocity;
+
+  const guardrails: string[] = [];
+  const recommendations: string[] = [];
+
+  if (metrics.roiMultiplier >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.roiMultiplier) {
+    guardrails.push(
+      `ROI multiplier ${metrics.roiMultiplier.toFixed(2)}× clears unstoppable floor ${LIQUIDITY_SOVEREIGNTY_THRESHOLDS.roiMultiplier.toFixed(2)}×.`,
+    );
+  } else {
+    guardrails.push(
+      `ROI multiplier ${metrics.roiMultiplier.toFixed(2)}× below unstoppable floor ${LIQUIDITY_SOVEREIGNTY_THRESHOLDS.roiMultiplier.toFixed(2)}×.`,
+    );
+    recommendations.push(
+      'Trigger economic uplift programs (`npm run owner:program -- --program job-market-expansion`) to reinforce ROI.',
+    );
+  }
+
+  if (metrics.ownerDominionScore >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.ownerDominionScore) {
+    guardrails.push(
+      `Owner dominion ${(metrics.ownerDominionScore * 100).toFixed(2)}% sustains unstoppable custody authority.`,
+    );
+  } else {
+    guardrails.push(
+      `Owner dominion ${(metrics.ownerDominionScore * 100).toFixed(2)}% below unstoppable custody floor ${(LIQUIDITY_SOVEREIGNTY_THRESHOLDS.ownerDominionScore * 100).toFixed(2)}%.`,
+    );
+    recommendations.push('Run the owner autopilot cadence (`npm run owner:autopilot:economic-power`) to restore dominion.');
+  }
+
+  if (metrics.sovereignSafetyScore >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.sovereignSafetyScore) {
+    guardrails.push(
+      `Sovereign safety ${(metrics.sovereignSafetyScore * 100).toFixed(2)}% exceeds unstoppable guardrail ${(LIQUIDITY_SOVEREIGNTY_THRESHOLDS.sovereignSafetyScore * 100).toFixed(2)}%.`,
+    );
+  } else {
+    guardrails.push(
+      `Sovereign safety ${(metrics.sovereignSafetyScore * 100).toFixed(2)}% below unstoppable guardrail ${(LIQUIDITY_SOVEREIGNTY_THRESHOLDS.sovereignSafetyScore * 100).toFixed(2)}%.`,
+    );
+    recommendations.push('Execute pause/resume drills (`npm run owner:system-pause`) to reinforce sovereign safety.');
+  }
+
+  if (metrics.superIntelligenceIndex >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.superIntelligenceIndex) {
+    guardrails.push(
+      `Superintelligence ${(metrics.superIntelligenceIndex * 100).toFixed(2)}% affirms civilisation-grade leverage.`,
+    );
+  } else {
+    guardrails.push(
+      `Superintelligence ${(metrics.superIntelligenceIndex * 100).toFixed(2)}% below civilisation-grade guardrail ${(LIQUIDITY_SOVEREIGNTY_THRESHOLDS.superIntelligenceIndex * 100).toFixed(2)}%.`,
+    );
+    recommendations.push(
+      'Re-run validator fortification (`npm run owner:program -- --program validator-alpha`) and telemetry verification to amplify superintelligence.',
+    );
+  }
+
+  if (metrics.capitalVelocity >= LIQUIDITY_SOVEREIGNTY_THRESHOLDS.capitalVelocity) {
+    guardrails.push(
+      `Capital velocity ${metrics.capitalVelocity.toFixed(2)} AGI/h eclipses unstoppable floor ${LIQUIDITY_SOVEREIGNTY_THRESHOLDS.capitalVelocity.toLocaleString()} AGI/h.`,
+    );
+  } else {
+    guardrails.push(
+      `Capital velocity ${metrics.capitalVelocity.toFixed(2)} AGI/h below unstoppable floor ${LIQUIDITY_SOVEREIGNTY_THRESHOLDS.capitalVelocity.toLocaleString()} AGI/h.`,
+    );
+    recommendations.push(
+      'Activate treasury acceleration suite (`npm run owner:program -- --program treasury-velocity`) to increase liquidity throughput.',
+    );
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push('Archive liquidity sovereignty telemetry in the governance safe to evidence unstoppable readiness.');
+  }
+
+  const narrative = unstoppable
+    ? `Treasury compounds relentlessly from ${formatLiquidityNumber(startingAgi)} AGI to ${formatLiquidityNumber(
+        endingAgi,
+      )} AGI while maintaining ${ownerDominion.classification} dominion and ${
+        superIntelligence.classification
+      } superintelligence posture.`
+    : 'Liquidity guardrails demand immediate owner action to restore unstoppable economic power.';
+
+  const mermaid = [
+    'graph LR',
+    `    TreasuryStart["Start Treasury\\nAGI ${formatLiquidityNumber(startingAgi)}\\nStable ${formatLiquidityNumber(startingStable)}"] --> Escrow["Escrow & Rewards\\n-${formatLiquidityNumber(
+      metrics.totalEscrowedAgi + metrics.validatorRewardsAgi + metrics.ownerBufferContribution,
+    )} AGI"]`,
+    `    Escrow --> Value["Economic Value Created\\n+${formatLiquidityNumber(context.cumulativeValue)}"]`,
+    `    Value --> TreasuryEnd["End Treasury\\nAGI ${formatLiquidityNumber(endingAgi)}\\nStable ${formatLiquidityNumber(endingStable)}"]`,
+    `    TreasuryStart --> Buffer["Operations Buffer\\n${formatLiquidityNumber(scenario.treasury.operationsBuffer)} AGI"]`,
+    `    TreasuryEnd --> OwnerBuffer["Owner Buffer Contribution\\n+${formatLiquidityNumber(metrics.ownerBufferContribution)} AGI"]`,
+  ].join('\n');
+
+  return {
+    startingAgi,
+    startingStablecoin: startingStable,
+    endingAgi,
+    endingStablecoin: endingStable,
+    operationsBuffer: Number(scenario.treasury.operationsBuffer.toFixed(2)),
+    validatorRewards: Number(metrics.validatorRewardsAgi.toFixed(2)),
+    ownerBufferContribution: Number(metrics.ownerBufferContribution.toFixed(2)),
+    netYield: Number(metrics.netYield.toFixed(2)),
+    capitalVelocity: Number(metrics.capitalVelocity.toFixed(2)),
+    unstoppable,
+    guardrails,
+    recommendations,
+    narrative,
+    mermaid,
+  } satisfies LiquiditySovereigntyReport;
+}
+
+function buildMonteCarloRecommendations(
+  stats: Record<MonteCarloMetricId, MonteCarloStatistic>,
+  guardrails: MonteCarloGuardrailBreach[],
+): string[] {
+  const actions = new Set<string>();
+
+  if (stats.roiMultiplier.p10 < 1.3) {
+    actions.add(
+      'Activate economic uplift programs via `npm run owner:program -- --program job-ai-lab-fusion` and `npm run owner:program -- --program job-market-expansion` to reinforce upside.',
+    );
+  }
+
+  if (stats.validatorConfidence.p10 < 0.95) {
+    actions.add(
+      'Escalate validator fortification (`npm run owner:program -- --program validator-alpha` and committee rotation) to harden consensus.',
+    );
+  }
+
+  if (stats.sovereignSafetyScore.p10 < 0.95) {
+    actions.add(
+      'Drill pause/resume guardrails with `npm run owner:system-pause` and `npm run owner:update-all` to raise the sovereign safety mesh.',
+    );
+  }
+
+  if (stats.ownerControlSupremacyIndex.p10 < 0.95) {
+    actions.add(
+      'Run the owner autopilot cadence (`npm run owner:autopilot:economic-power`) to refresh supremacy coverage across every control surface.',
+    );
+  }
+
+  if (stats.economicDominanceIndex.p10 < 0.9) {
+    actions.add(
+      'Command the supply mesh (`npm run owner:program -- --program job-supply-chain`) to re-accelerate economic dominance.',
+    );
+  }
+
+  if (guardrails.some((guardrail) => guardrail.metric === 'superIntelligenceIndex')) {
+    actions.add(
+      'Reinforce superintelligence cadence by verifying telemetry and running `npm run owner:program -- --program validator-epsilon` for adversarial readiness.',
+    );
+  }
+
+  if (actions.size === 0) {
+    actions.add(
+      'Maintain the unstoppable autopilot cadence and archive Monte Carlo telemetry in the governance safe for immutable assurance.',
+    );
+  }
+
+  return Array.from(actions);
+}
+
+function buildMonteCarloMermaid(report: MonteCarloReport): string {
+  const dominance = report.metrics.economicDominanceIndex;
+  const safety = report.metrics.sovereignSafetyScore;
+  const supremacy = report.metrics.ownerControlSupremacyIndex;
+  const superIntelligence = report.metrics.superIntelligenceIndex;
+  return [
+    'graph TD',
+    '    BaseScenario[Baseline Scenario] --> Stress[Monte Carlo Stress Harness]',
+    `    Stress --> Dominance["Economic Dominance\\np10 ${(dominance.p10 * 100).toFixed(1)}% | p90 ${(dominance.p90 * 100).toFixed(1)}%"]`,
+    `    Stress --> Safety["Sovereign Safety\\np10 ${(safety.p10 * 100).toFixed(1)}% | p90 ${(safety.p90 * 100).toFixed(1)}%"]`,
+    `    Stress --> Supremacy["Owner Supremacy\\np10 ${(supremacy.p10 * 100).toFixed(1)}% | p90 ${(supremacy.p90 * 100).toFixed(1)}%"]`,
+    `    Stress --> SuperIntelligence["Superintelligence\\np10 ${(superIntelligence.p10 * 100).toFixed(1)}% | p90 ${(superIntelligence.p90 * 100).toFixed(1)}%"]`,
+    `    Stress --> ROI["ROI Multiplier\\np10 ${report.metrics.roiMultiplier.p10.toFixed(2)}× | p90 ${report.metrics.roiMultiplier.p90.toFixed(2)}×"]`,
+  ].join('\n');
+}
+
+export async function runMonteCarlo(
+  scenario: Scenario,
+  runs: number,
+  tuning: ScenarioTuning,
+): Promise<MonteCarloReport> {
+  const sanitizedRuns = Math.min(Math.max(Math.floor(runs), 1), 128);
+  const tunedScenario = cloneScenario(scenario);
+  applyScenarioTuning(tunedScenario, tuning);
+
+  const metricsMap = Object.fromEntries(
+    MONTE_CARLO_METRICS.map((metric) => [metric, [] as number[]]),
+  ) as Record<MonteCarloMetricId, number[]>;
+  const guardrailCounts: Partial<Record<MonteCarloMetricId, number>> = {};
+  const samples: MonteCarloRunSample[] = [];
+  const seeds: string[] = [];
+  let unstoppableHits = 0;
+  let dominanceHits = 0;
+  let safetyHits = 0;
+
+  for (let index = 0; index < sanitizedRuns; index += 1) {
+    const seed = `${scenario.scenarioId}-mc-${index + 1}`;
+    seeds.push(seed);
+    const rng = createMonteCarloRng(seed);
+    const variant = buildMonteCarloScenario(tunedScenario, rng);
+    const summary = await simulateScenario(variant);
+    const runMetrics = {} as Record<MonteCarloMetricId, number>;
+
+    for (const metric of MONTE_CARLO_METRICS) {
+      const value = summary.metrics[metric];
+      runMetrics[metric] = value;
+      metricsMap[metric].push(value);
+      const threshold = MONTE_CARLO_GUARDRAIL_THRESHOLDS[metric];
+      if (typeof threshold === 'number' && value < threshold) {
+        guardrailCounts[metric] = (guardrailCounts[metric] ?? 0) + 1;
+      }
+    }
+
+    const unstoppable =
+      runMetrics.roiMultiplier >= 1.2 &&
+      runMetrics.ownerDominionScore >= 0.95 &&
+      runMetrics.sovereignSafetyScore >= 0.95 &&
+      runMetrics.superIntelligenceIndex >= 0.95;
+    if (unstoppable) {
+      unstoppableHits += 1;
+    }
+    if (runMetrics.economicDominanceIndex >= 0.9) {
+      dominanceHits += 1;
+    }
+    if (runMetrics.sovereignSafetyScore >= 0.95) {
+      safetyHits += 1;
+    }
+
+    samples.push({ seed, metrics: runMetrics, unstoppable });
+  }
+
+  const stats = Object.fromEntries(
+    MONTE_CARLO_METRICS.map((metric) => [metric, computeStatistic(metricsMap[metric])]),
+  ) as Record<MonteCarloMetricId, MonteCarloStatistic>;
+
+  const guardrailBreaches = Object.entries(MONTE_CARLO_GUARDRAIL_THRESHOLDS)
+    .map(([metric, threshold]) => {
+      if (typeof threshold !== 'number') {
+        return null;
+      }
+      const breaches = guardrailCounts[metric as MonteCarloMetricId] ?? 0;
+      if (breaches === 0) {
+        return null;
+      }
+      const percentage = Number(((breaches / sanitizedRuns) * 100).toFixed(1));
+      return {
+        metric: metric as MonteCarloMetricId,
+        breaches,
+        threshold,
+        percentage,
+        summary: `${breaches}/${sanitizedRuns} runs dipped below ${threshold}`,
+      } satisfies MonteCarloGuardrailBreach;
+    })
+    .filter((value): value is MonteCarloGuardrailBreach => value !== null)
+    .sort((a, b) => b.breaches - a.breaches);
+
+  const unstoppableConfidence = Number((unstoppableHits / sanitizedRuns).toFixed(4));
+  const dominanceConfidence = Number((dominanceHits / sanitizedRuns).toFixed(4));
+  const safetyConfidence = Number((safetyHits / sanitizedRuns).toFixed(4));
+
+  const recommendedActions = buildMonteCarloRecommendations(stats, guardrailBreaches);
+  const mermaid = buildMonteCarloMermaid({
+    scenarioId: scenario.scenarioId,
+    title: scenario.title,
+    runs: sanitizedRuns,
+    tuning,
+    unstoppableConfidence,
+    dominanceConfidence,
+    safetyConfidence,
+    unstoppable: unstoppableConfidence >= 0.9,
+    narrative: '',
+    mermaid: '',
+    metrics: stats,
+    guardrailBreaches,
+    recommendedActions,
+    seeds,
+    samples,
+  });
+
+  const unstoppableFlag = unstoppableConfidence >= 0.9;
+  const narrative = `Monte Carlo harness executed ${sanitizedRuns} deterministic runs — unstoppable confidence ${(unstoppableConfidence * 100).toFixed(
+    1,
+  )}% with dominance ${(dominanceConfidence * 100).toFixed(1)}% and safety ${(safetyConfidence * 100).toFixed(
+    1,
+  )}%.`;
+
+  return {
+    scenarioId: scenario.scenarioId,
+    title: scenario.title,
+    runs: sanitizedRuns,
+    tuning,
+    unstoppableConfidence,
+    dominanceConfidence,
+    safetyConfidence,
+    unstoppable: unstoppableFlag,
+    narrative,
+    mermaid,
+    metrics: stats,
+    guardrailBreaches,
+    recommendedActions,
+    seeds,
+    samples,
+  } satisfies MonteCarloReport;
+}
+
+async function writeMonteCarloOutputs(
+  report: MonteCarloReport,
+  outputDir: string,
+  options: { updateUiSummary?: boolean } = {},
+): Promise<void> {
+  await ensureDir(outputDir);
+  await fs.writeFile(path.join(outputDir, 'monte-carlo.json'), JSON.stringify(report, null, 2));
+  await fs.writeFile(path.join(outputDir, 'monte-carlo.mmd'), `${report.mermaid.trimEnd()}\n`);
+  if (options.updateUiSummary) {
+    await ensureDir(path.dirname(UI_MONTE_CARLO_SUMMARY));
+    await fs.writeFile(UI_MONTE_CARLO_SUMMARY, JSON.stringify(report, null, 2));
   }
 }
 
@@ -3494,6 +4115,11 @@ export async function main(): Promise<void> {
       default: false,
       describe: 'Enable CI validation mode',
     })
+    .option('monte-carlo', {
+      type: 'number',
+      default: 0,
+      describe: 'Run Monte Carlo stress harness with the specified number of runs',
+    })
     .help()
     .parse();
 
@@ -3502,6 +4128,10 @@ export async function main(): Promise<void> {
     interactive: argv.interactive,
   });
   await writeOutputs(summary, argv.output, { updateUiSummary: !argv.ci });
+  if (argv.monteCarlo && argv.monteCarlo > 0) {
+    const monteCarloReport = await runMonteCarlo(scenario, argv.monteCarlo, summary.tuning);
+    await writeMonteCarloOutputs(monteCarloReport, argv.output, { updateUiSummary: !argv.ci });
+  }
   if (argv.ci) {
     compareWithBaseline(summary, BASELINE_CI_SUMMARY);
   }

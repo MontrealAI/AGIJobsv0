@@ -25,6 +25,98 @@
     <main>
       <section id="metric-cards" aria-label="Economic metrics"></section>
 
+      <section id="monte-carlo-panel" class="panel" aria-labelledby="monte-carlo-heading">
+        <div class="panel-header">
+          <h2 id="monte-carlo-heading">Monte Carlo stress harness</h2>
+          <p>
+            Deterministic resilience harness projecting economic dominance, sovereignty, and supremacy across
+            stochastic market conditions.
+          </p>
+        </div>
+        <div class="monte-carlo-grid">
+          <article class="monte-carlo-card" aria-label="Stress summary">
+            <h3>Stress posture</h3>
+            <p><strong>Runs:</strong> <span id="monte-carlo-runs">—</span></p>
+            <p><strong>Unstoppable confidence:</strong> <span id="monte-carlo-unstoppable">—</span></p>
+            <p><strong>Dominance confidence:</strong> <span id="monte-carlo-dominance">—</span></p>
+            <p><strong>Safety confidence:</strong> <span id="monte-carlo-safety">—</span></p>
+            <p id="monte-carlo-narrative" class="narrative"></p>
+          </article>
+          <article class="monte-carlo-card" aria-label="Guardrail breaches">
+            <h3>Guardrail watch</h3>
+            <ul id="monte-carlo-guardrails" class="monte-carlo-list"></ul>
+          </article>
+          <article class="monte-carlo-card" aria-label="Recommended actions">
+            <h3>Owner actions</h3>
+            <ul id="monte-carlo-actions" class="monte-carlo-list"></ul>
+          </article>
+        </div>
+        <div class="table-wrapper">
+          <table id="monte-carlo-metrics" aria-label="Monte Carlo metric distribution">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Mean</th>
+                <th>p10</th>
+                <th>p90</th>
+                <th>Std dev</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="mermaid-wrapper">
+          <div
+            id="mermaid-monte-carlo"
+            class="mermaid"
+            aria-label="Monte Carlo resilience mermaid diagram"
+          ></div>
+        </div>
+      </section>
+
+      <section id="liquidity-panel" class="panel" aria-labelledby="liquidity-heading">
+        <div class="panel-header">
+          <h2 id="liquidity-heading">Liquidity sovereignty</h2>
+          <p>
+            Treasury velocity, buffers, and unstoppable guardrails proving the owner commands civilisation-scale capital flows.
+          </p>
+        </div>
+        <div class="liquidity-grid">
+          <article class="liquidity-card" aria-label="Treasury posture">
+            <h3>Capital posture</h3>
+            <p><strong>Starting AGI:</strong> <span id="liquidity-start-agi">—</span></p>
+            <p><strong>Ending AGI:</strong> <span id="liquidity-end-agi">—</span></p>
+            <p><strong>Starting stablecoin:</strong> <span id="liquidity-start-stable">—</span></p>
+            <p><strong>Ending stablecoin:</strong> <span id="liquidity-end-stable">—</span></p>
+            <p><strong>Operations buffer:</strong> <span id="liquidity-operations-buffer">—</span></p>
+          </article>
+          <article class="liquidity-card" aria-label="Velocity and yield">
+            <h3>Velocity &amp; yield</h3>
+            <p><strong>Capital velocity:</strong> <span id="liquidity-velocity">—</span></p>
+            <p><strong>Net yield:</strong> <span id="liquidity-net-yield">—</span></p>
+            <p><strong>Validator rewards:</strong> <span id="liquidity-validator-rewards">—</span></p>
+            <p><strong>Owner buffer:</strong> <span id="liquidity-owner-buffer">—</span></p>
+            <span id="liquidity-unstoppable" class="liquidity-badge liquidity-badge--pending">Awaiting telemetry</span>
+            <p id="liquidity-narrative" class="narrative"></p>
+          </article>
+          <article class="liquidity-card" aria-label="Guardrail posture">
+            <h3>Guardrail watch</h3>
+            <ul id="liquidity-guardrails" class="liquidity-list"></ul>
+          </article>
+          <article class="liquidity-card" aria-label="Owner directives">
+            <h3>Owner directives</h3>
+            <ul id="liquidity-actions" class="liquidity-list"></ul>
+          </article>
+        </div>
+        <div class="mermaid-wrapper">
+          <div
+            id="mermaid-liquidity"
+            class="mermaid"
+            aria-label="Liquidity sovereignty flow diagram"
+          ></div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="assertion-heading">
         <div class="panel-header">
           <h2 id="assertion-heading">Economic power verification</h2>

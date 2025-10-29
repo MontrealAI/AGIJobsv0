@@ -1,0 +1,1276 @@
+{
+  "scenarioId": "economic-power-v0-baseline",
+  "title": "AGIJobs Economic Power Launch",
+  "runs": 64,
+  "tuning": {
+    "multiplier": 1,
+    "quorumDelta": 0
+  },
+  "unstoppableConfidence": 1,
+  "dominanceConfidence": 1,
+  "safetyConfidence": 1,
+  "unstoppable": true,
+  "narrative": "Monte Carlo harness executed 64 deterministic runs — unstoppable confidence 100.0% with dominance 100.0% and safety 100.0%.",
+  "mermaid": "graph TD\n    BaseScenario[Baseline Scenario] --> Stress[Monte Carlo Stress Harness]\n    Stress --> Dominance[\"Economic Dominance\\np10 99.2% | p90 100.0%\"]\n    Stress --> Safety[\"Sovereign Safety\\np10 97.9% | p90 97.9%\"]\n    Stress --> Supremacy[\"Owner Supremacy\\np10 99.7% | p90 99.7%\"]\n    Stress --> SuperIntelligence[\"Superintelligence\\np10 96.8% | p90 97.0%\"]\n    Stress --> ROI[\"ROI Multiplier\\np10 3.24× | p90 3.51×\"]",
+  "metrics": {
+    "roiMultiplier": {
+      "mean": 3.3616,
+      "min": 3.15,
+      "max": 3.58,
+      "p10": 3.243,
+      "p50": 3.37,
+      "p90": 3.511,
+      "stdDev": 0.1024
+    },
+    "validatorConfidence": {
+      "mean": 0.9819,
+      "min": 0.974,
+      "max": 0.9871,
+      "p10": 0.9783,
+      "p50": 0.9821,
+      "p90": 0.9847,
+      "stdDev": 0.0026
+    },
+    "economicDominanceIndex": {
+      "mean": 0.9969,
+      "min": 0.985,
+      "max": 1,
+      "p10": 0.992,
+      "p50": 1,
+      "p90": 1,
+      "stdDev": 0.0043
+    },
+    "shockResilienceScore": {
+      "mean": 0.9804,
+      "min": 0.976,
+      "max": 0.985,
+      "p10": 0.977,
+      "p50": 0.9805,
+      "p90": 0.984,
+      "stdDev": 0.0026
+    },
+    "ownerDominionScore": {
+      "mean": 0.994,
+      "min": 0.994,
+      "max": 0.994,
+      "p10": 0.994,
+      "p50": 0.994,
+      "p90": 0.994,
+      "stdDev": 0
+    },
+    "superIntelligenceIndex": {
+      "mean": 0.969,
+      "min": 0.966,
+      "max": 0.97,
+      "p10": 0.968,
+      "p50": 0.969,
+      "p90": 0.97,
+      "stdDev": 0.0009
+    },
+    "sovereignSafetyScore": {
+      "mean": 0.979,
+      "min": 0.979,
+      "max": 0.979,
+      "p10": 0.979,
+      "p50": 0.979,
+      "p90": 0.979,
+      "stdDev": 0
+    },
+    "sovereignControlScore": {
+      "mean": 1,
+      "min": 1,
+      "max": 1,
+      "p10": 1,
+      "p50": 1,
+      "p90": 1,
+      "stdDev": 0
+    },
+    "ownerControlSupremacyIndex": {
+      "mean": 0.997,
+      "min": 0.997,
+      "max": 0.997,
+      "p10": 0.997,
+      "p50": 0.997,
+      "p90": 0.997,
+      "stdDev": 0
+    },
+    "capitalVelocity": {
+      "mean": 26833.8488,
+      "min": 23631.19,
+      "max": 31722.93,
+      "p10": 24402.132,
+      "p50": 26807.785,
+      "p90": 29301.786,
+      "stdDev": 1886.4416
+    },
+    "globalExpansionReadiness": {
+      "mean": 0.966,
+      "min": 0.966,
+      "max": 0.966,
+      "p10": 0.966,
+      "p50": 0.966,
+      "p90": 0.966,
+      "stdDev": 0
+    }
+  },
+  "guardrailBreaches": [],
+  "recommendedActions": [
+    "Maintain the unstoppable autopilot cadence and archive Monte Carlo telemetry in the governance safe for immutable assurance."
+  ],
+  "seeds": [
+    "economic-power-v0-baseline-mc-1",
+    "economic-power-v0-baseline-mc-2",
+    "economic-power-v0-baseline-mc-3",
+    "economic-power-v0-baseline-mc-4",
+    "economic-power-v0-baseline-mc-5",
+    "economic-power-v0-baseline-mc-6",
+    "economic-power-v0-baseline-mc-7",
+    "economic-power-v0-baseline-mc-8",
+    "economic-power-v0-baseline-mc-9",
+    "economic-power-v0-baseline-mc-10",
+    "economic-power-v0-baseline-mc-11",
+    "economic-power-v0-baseline-mc-12",
+    "economic-power-v0-baseline-mc-13",
+    "economic-power-v0-baseline-mc-14",
+    "economic-power-v0-baseline-mc-15",
+    "economic-power-v0-baseline-mc-16",
+    "economic-power-v0-baseline-mc-17",
+    "economic-power-v0-baseline-mc-18",
+    "economic-power-v0-baseline-mc-19",
+    "economic-power-v0-baseline-mc-20",
+    "economic-power-v0-baseline-mc-21",
+    "economic-power-v0-baseline-mc-22",
+    "economic-power-v0-baseline-mc-23",
+    "economic-power-v0-baseline-mc-24",
+    "economic-power-v0-baseline-mc-25",
+    "economic-power-v0-baseline-mc-26",
+    "economic-power-v0-baseline-mc-27",
+    "economic-power-v0-baseline-mc-28",
+    "economic-power-v0-baseline-mc-29",
+    "economic-power-v0-baseline-mc-30",
+    "economic-power-v0-baseline-mc-31",
+    "economic-power-v0-baseline-mc-32",
+    "economic-power-v0-baseline-mc-33",
+    "economic-power-v0-baseline-mc-34",
+    "economic-power-v0-baseline-mc-35",
+    "economic-power-v0-baseline-mc-36",
+    "economic-power-v0-baseline-mc-37",
+    "economic-power-v0-baseline-mc-38",
+    "economic-power-v0-baseline-mc-39",
+    "economic-power-v0-baseline-mc-40",
+    "economic-power-v0-baseline-mc-41",
+    "economic-power-v0-baseline-mc-42",
+    "economic-power-v0-baseline-mc-43",
+    "economic-power-v0-baseline-mc-44",
+    "economic-power-v0-baseline-mc-45",
+    "economic-power-v0-baseline-mc-46",
+    "economic-power-v0-baseline-mc-47",
+    "economic-power-v0-baseline-mc-48",
+    "economic-power-v0-baseline-mc-49",
+    "economic-power-v0-baseline-mc-50",
+    "economic-power-v0-baseline-mc-51",
+    "economic-power-v0-baseline-mc-52",
+    "economic-power-v0-baseline-mc-53",
+    "economic-power-v0-baseline-mc-54",
+    "economic-power-v0-baseline-mc-55",
+    "economic-power-v0-baseline-mc-56",
+    "economic-power-v0-baseline-mc-57",
+    "economic-power-v0-baseline-mc-58",
+    "economic-power-v0-baseline-mc-59",
+    "economic-power-v0-baseline-mc-60",
+    "economic-power-v0-baseline-mc-61",
+    "economic-power-v0-baseline-mc-62",
+    "economic-power-v0-baseline-mc-63",
+    "economic-power-v0-baseline-mc-64"
+  ],
+  "samples": [
+    {
+      "seed": "economic-power-v0-baseline-mc-1",
+      "metrics": {
+        "roiMultiplier": 3.3,
+        "validatorConfidence": 0.982,
+        "economicDominanceIndex": 0.995,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27142.07,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-2",
+      "metrics": {
+        "roiMultiplier": 3.58,
+        "validatorConfidence": 0.9818,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29311.35,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-3",
+      "metrics": {
+        "roiMultiplier": 3.45,
+        "validatorConfidence": 0.98,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28777.9,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-4",
+      "metrics": {
+        "roiMultiplier": 3.37,
+        "validatorConfidence": 0.9825,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26383.96,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-5",
+      "metrics": {
+        "roiMultiplier": 3.53,
+        "validatorConfidence": 0.9758,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.984,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28954.92,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-6",
+      "metrics": {
+        "roiMultiplier": 3.44,
+        "validatorConfidence": 0.9808,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27418.79,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-7",
+      "metrics": {
+        "roiMultiplier": 3.45,
+        "validatorConfidence": 0.9847,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29362.57,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-8",
+      "metrics": {
+        "roiMultiplier": 3.27,
+        "validatorConfidence": 0.983,
+        "economicDominanceIndex": 0.994,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26789.3,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-9",
+      "metrics": {
+        "roiMultiplier": 3.18,
+        "validatorConfidence": 0.9754,
+        "economicDominanceIndex": 0.987,
+        "shockResilienceScore": 0.984,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.967,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28440.9,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-10",
+      "metrics": {
+        "roiMultiplier": 3.39,
+        "validatorConfidence": 0.9824,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.977,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29997.35,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-11",
+      "metrics": {
+        "roiMultiplier": 3.52,
+        "validatorConfidence": 0.9871,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.984,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27501.19,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-12",
+      "metrics": {
+        "roiMultiplier": 3.39,
+        "validatorConfidence": 0.9792,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27795.52,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-13",
+      "metrics": {
+        "roiMultiplier": 3.27,
+        "validatorConfidence": 0.9847,
+        "economicDominanceIndex": 0.993,
+        "shockResilienceScore": 0.977,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29197.88,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-14",
+      "metrics": {
+        "roiMultiplier": 3.33,
+        "validatorConfidence": 0.9816,
+        "economicDominanceIndex": 0.997,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24353.05,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-15",
+      "metrics": {
+        "roiMultiplier": 3.26,
+        "validatorConfidence": 0.9802,
+        "economicDominanceIndex": 0.992,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24491.84,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-16",
+      "metrics": {
+        "roiMultiplier": 3.4,
+        "validatorConfidence": 0.9838,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 31420.47,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-17",
+      "metrics": {
+        "roiMultiplier": 3.42,
+        "validatorConfidence": 0.9822,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25076.96,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-18",
+      "metrics": {
+        "roiMultiplier": 3.26,
+        "validatorConfidence": 0.9845,
+        "economicDominanceIndex": 0.993,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25869.5,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-19",
+      "metrics": {
+        "roiMultiplier": 3.46,
+        "validatorConfidence": 0.9847,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26867.44,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-20",
+      "metrics": {
+        "roiMultiplier": 3.34,
+        "validatorConfidence": 0.9838,
+        "economicDominanceIndex": 0.998,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26631.07,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-21",
+      "metrics": {
+        "roiMultiplier": 3.38,
+        "validatorConfidence": 0.9812,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29279.47,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-22",
+      "metrics": {
+        "roiMultiplier": 3.15,
+        "validatorConfidence": 0.9779,
+        "economicDominanceIndex": 0.985,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.966,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 23690.15,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-23",
+      "metrics": {
+        "roiMultiplier": 3.43,
+        "validatorConfidence": 0.9763,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26050.97,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-24",
+      "metrics": {
+        "roiMultiplier": 3.52,
+        "validatorConfidence": 0.9827,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.977,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26065.52,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-25",
+      "metrics": {
+        "roiMultiplier": 3.31,
+        "validatorConfidence": 0.9833,
+        "economicDominanceIndex": 0.996,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24361.75,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-26",
+      "metrics": {
+        "roiMultiplier": 3.52,
+        "validatorConfidence": 0.9836,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.976,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26212.38,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-27",
+      "metrics": {
+        "roiMultiplier": 3.16,
+        "validatorConfidence": 0.9826,
+        "economicDominanceIndex": 0.986,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.967,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27507.83,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-28",
+      "metrics": {
+        "roiMultiplier": 3.48,
+        "validatorConfidence": 0.9845,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27511.48,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-29",
+      "metrics": {
+        "roiMultiplier": 3.37,
+        "validatorConfidence": 0.9828,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25544.29,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-30",
+      "metrics": {
+        "roiMultiplier": 3.48,
+        "validatorConfidence": 0.9809,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24620.92,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-31",
+      "metrics": {
+        "roiMultiplier": 3.43,
+        "validatorConfidence": 0.9798,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24851.91,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-32",
+      "metrics": {
+        "roiMultiplier": 3.41,
+        "validatorConfidence": 0.9816,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28557.68,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-33",
+      "metrics": {
+        "roiMultiplier": 3.53,
+        "validatorConfidence": 0.9816,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28082.19,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-34",
+      "metrics": {
+        "roiMultiplier": 3.32,
+        "validatorConfidence": 0.9835,
+        "economicDominanceIndex": 0.996,
+        "shockResilienceScore": 0.985,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27528.09,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-35",
+      "metrics": {
+        "roiMultiplier": 3.29,
+        "validatorConfidence": 0.9798,
+        "economicDominanceIndex": 0.995,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26675.49,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-36",
+      "metrics": {
+        "roiMultiplier": 3.37,
+        "validatorConfidence": 0.9839,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24074.23,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-37",
+      "metrics": {
+        "roiMultiplier": 3.33,
+        "validatorConfidence": 0.9839,
+        "economicDominanceIndex": 0.997,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 29328.91,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-38",
+      "metrics": {
+        "roiMultiplier": 3.15,
+        "validatorConfidence": 0.9804,
+        "economicDominanceIndex": 0.986,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.967,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28654.39,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-39",
+      "metrics": {
+        "roiMultiplier": 3.39,
+        "validatorConfidence": 0.9808,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27237.33,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-40",
+      "metrics": {
+        "roiMultiplier": 3.45,
+        "validatorConfidence": 0.9839,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 28685.77,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-41",
+      "metrics": {
+        "roiMultiplier": 3.41,
+        "validatorConfidence": 0.9844,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24771,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-42",
+      "metrics": {
+        "roiMultiplier": 3.31,
+        "validatorConfidence": 0.974,
+        "economicDominanceIndex": 0.995,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25483.12,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-43",
+      "metrics": {
+        "roiMultiplier": 3.31,
+        "validatorConfidence": 0.9858,
+        "economicDominanceIndex": 0.996,
+        "shockResilienceScore": 0.984,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25664.64,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-44",
+      "metrics": {
+        "roiMultiplier": 3.49,
+        "validatorConfidence": 0.9849,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.981,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 31722.93,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-45",
+      "metrics": {
+        "roiMultiplier": 3.3,
+        "validatorConfidence": 0.9858,
+        "economicDominanceIndex": 0.995,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24833.38,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-46",
+      "metrics": {
+        "roiMultiplier": 3.35,
+        "validatorConfidence": 0.9811,
+        "economicDominanceIndex": 0.998,
+        "shockResilienceScore": 0.976,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27226.06,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-47",
+      "metrics": {
+        "roiMultiplier": 3.37,
+        "validatorConfidence": 0.9833,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.977,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25985.05,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-48",
+      "metrics": {
+        "roiMultiplier": 3.24,
+        "validatorConfidence": 0.9839,
+        "economicDominanceIndex": 0.992,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24712.35,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-49",
+      "metrics": {
+        "roiMultiplier": 3.35,
+        "validatorConfidence": 0.9805,
+        "economicDominanceIndex": 0.998,
+        "shockResilienceScore": 0.976,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27822.03,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-50",
+      "metrics": {
+        "roiMultiplier": 3.3,
+        "validatorConfidence": 0.9773,
+        "economicDominanceIndex": 0.995,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25985.18,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-51",
+      "metrics": {
+        "roiMultiplier": 3.36,
+        "validatorConfidence": 0.9794,
+        "economicDominanceIndex": 0.999,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24427.29,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-52",
+      "metrics": {
+        "roiMultiplier": 3.25,
+        "validatorConfidence": 0.9826,
+        "economicDominanceIndex": 0.992,
+        "shockResilienceScore": 0.98,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26309.82,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-53",
+      "metrics": {
+        "roiMultiplier": 3.27,
+        "validatorConfidence": 0.9815,
+        "economicDominanceIndex": 0.993,
+        "shockResilienceScore": 0.985,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 25249.87,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-54",
+      "metrics": {
+        "roiMultiplier": 3.27,
+        "validatorConfidence": 0.9812,
+        "economicDominanceIndex": 0.993,
+        "shockResilienceScore": 0.979,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 23726.22,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-55",
+      "metrics": {
+        "roiMultiplier": 3.35,
+        "validatorConfidence": 0.9807,
+        "economicDominanceIndex": 0.998,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27413.77,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-56",
+      "metrics": {
+        "roiMultiplier": 3.18,
+        "validatorConfidence": 0.9814,
+        "economicDominanceIndex": 0.988,
+        "shockResilienceScore": 0.985,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.968,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 24391.35,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-57",
+      "metrics": {
+        "roiMultiplier": 3.4,
+        "validatorConfidence": 0.9806,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.977,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27765.8,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-58",
+      "metrics": {
+        "roiMultiplier": 3.52,
+        "validatorConfidence": 0.9823,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.978,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26595.97,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-59",
+      "metrics": {
+        "roiMultiplier": 3.31,
+        "validatorConfidence": 0.9837,
+        "economicDominanceIndex": 0.996,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 23631.19,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-60",
+      "metrics": {
+        "roiMultiplier": 3.39,
+        "validatorConfidence": 0.9807,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.976,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 30130.52,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-61",
+      "metrics": {
+        "roiMultiplier": 3.37,
+        "validatorConfidence": 0.9776,
+        "economicDominanceIndex": 0.999,
+        "shockResilienceScore": 0.983,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26425.16,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-62",
+      "metrics": {
+        "roiMultiplier": 3.15,
+        "validatorConfidence": 0.9813,
+        "economicDominanceIndex": 0.985,
+        "shockResilienceScore": 0.982,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.967,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 27136,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-63",
+      "metrics": {
+        "roiMultiplier": 3.4,
+        "validatorConfidence": 0.986,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.976,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.969,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26826.57,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    },
+    {
+      "seed": "economic-power-v0-baseline-mc-64",
+      "metrics": {
+        "roiMultiplier": 3.41,
+        "validatorConfidence": 0.9843,
+        "economicDominanceIndex": 1,
+        "shockResilienceScore": 0.984,
+        "ownerDominionScore": 0.994,
+        "superIntelligenceIndex": 0.97,
+        "sovereignSafetyScore": 0.979,
+        "sovereignControlScore": 1,
+        "ownerControlSupremacyIndex": 0.997,
+        "capitalVelocity": 26826.27,
+        "globalExpansionReadiness": 0.966
+      },
+      "unstoppable": true
+    }
+  ]
+}
