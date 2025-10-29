@@ -1,12 +1,13 @@
 {
   "analysisTimestamp": "2025-02-01T00:00:00.000Z",
-  "executionTimestamp": "2025-10-28T23:41:44.154Z",
+  "executionTimestamp": "2025-10-29T02:17:06.884Z",
   "dominanceIndex": 0.994,
   "capitalVelocity": 26290.99,
   "roiMultiplier": 3.28,
   "automationScore": 0.852,
   "sovereignSafetyScore": 0.979,
   "sovereignControlScore": 1,
+  "shockResilienceScore": 0.98,
   "summary": "Economic dominance index blends ROI, automation, sovereignty, and safety mesh readiness to evidence unstoppable scale.",
   "recommendations": [
     "Maintain current cadence; dominance metrics exceed unstoppable thresholds."

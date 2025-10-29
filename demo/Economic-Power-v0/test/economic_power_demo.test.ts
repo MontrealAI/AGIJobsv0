@@ -71,6 +71,10 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.metrics.globalExpansionReadiness >= 0.9,
     'Global expansion readiness should exceed 90% to unlock planetary rollout',
   );
+  assert(
+    summary.metrics.shockResilienceScore >= 0.95,
+    'Shock resilience score should confirm impregnable defence posture',
+  );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {
@@ -81,6 +85,19 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.ownerCommandPlan.commandCoverage,
     summary.metrics.ownerCommandCoverage,
     'Owner command plan coverage should match computed metric',
+  );
+  assert.equal(
+    summary.shockResilience.score,
+    summary.metrics.shockResilienceScore,
+    'Shock resilience summary should align with surfaced metric',
+  );
+  assert(
+    summary.shockResilience.drivers.length >= 3,
+    'Shock resilience drivers should enumerate the defensive factors',
+  );
+  assert(
+    summary.shockResilience.recommendations.length >= 1,
+    'Shock resilience recommendations should guide owner action',
   );
   assert(summary.ownerCommandPlan.coverageNarrative.length > 0, 'Coverage narrative should be present');
   assert(summary.ownerCommandMermaid.includes('graph LR'), 'Owner command mermaid graph should render');
@@ -104,6 +121,11 @@ test('economic power simulation produces deterministic metrics', async () => {
     scenario.safeguards.resumeScript,
     'Resume script should mirror scenario safeguards',
   );
+  assert.equal(
+    summary.ownerSovereignty.shockResilienceScore,
+    summary.metrics.shockResilienceScore,
+    'Owner sovereignty manifest should surface the shock resilience score',
+  );
   assert.deepEqual(
     summary.ownerSovereignty.alertChannels,
     scenario.observability.alertChannels,
@@ -119,6 +141,16 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.sovereignSafetyMesh.safetyScore,
     summary.metrics.sovereignSafetyScore,
     'Safety mesh score should align with surfaced metric',
+  );
+  assert.equal(
+    summary.sovereignSafetyMesh.shockResilienceScore,
+    summary.metrics.shockResilienceScore,
+    'Safety mesh metadata should track shock resilience score',
+  );
+  assert.equal(
+    summary.sovereignSafetyMesh.shockClassification,
+    summary.shockResilience.classification,
+    'Safety mesh classification should align with shock resilience classification',
   );
   assert(summary.sovereignSafetyMesh.pauseReady, 'Pause command should be production ready');
   assert(summary.sovereignSafetyMesh.resumeReady, 'Resume command should be production ready');
@@ -140,6 +172,9 @@ test('economic power simulation produces deterministic metrics', async () => {
     'Coverage assertion should pass once command catalog covers every surface',
   );
   assert(summary.assertions.every((assertion) => assertion.outcome === 'pass'));
+  const shockAssertion = summary.assertions.find((assertion) => assertion.id === 'shock-resilience');
+  assert(shockAssertion, 'Shock resilience assertion should be generated');
+  assert.equal(shockAssertion?.outcome, 'pass');
 
   for (const assignment of summary.assignments) {
     assert(
@@ -171,6 +206,10 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(summary.governanceLedger.alerts.length >= 1, 'Ledger should expose actionable alerts');
   const coverageAlert = summary.governanceLedger.alerts.find((alert) => alert.id === 'coverage-gap');
   assert(!coverageAlert, 'Coverage gap alert should be eliminated once coverage reaches 100%');
+  assert(
+    summary.governanceLedger.alerts.every((alert) => alert.id !== 'shock-resilience-gap'),
+    'Shock resilience should not degrade governance ledger state in baseline scenario',
+  );
 
   assert.equal(summary.commandCatalog.jobPrograms.length, scenario.commandCatalog.jobPrograms.length);
   assert.equal(summary.commandCatalog.validatorPrograms.length, scenario.commandCatalog.validatorPrograms.length);
@@ -197,6 +236,12 @@ test('economic power simulation produces deterministic metrics', async () => {
   }
   assert(summary.ownerCommandPlan.treasuryPrograms.length > 0, 'Owner plan should list treasury programs');
   assert(summary.ownerCommandPlan.orchestratorPrograms.length > 0, 'Owner plan should list orchestrator programs');
+
+  assert(summary.shockResilience.summary.length > 0, 'Shock resilience summary narrative should be populated');
+  assert(
+    summary.ownerAutopilot.telemetry.shockResilienceScore === summary.metrics.shockResilienceScore,
+    'Autopilot telemetry should mirror shock resilience metric',
+  );
 
   assert(summary.ownerAutopilot.commandSequence.length > 0, 'Owner autopilot should propose deterministic command sequence');
   assert(summary.ownerAutopilot.cadenceHours >= 6, 'Owner autopilot cadence should stay within operational bounds');
@@ -259,6 +304,8 @@ test('owner autopilot briefing surfaces guardrails and command cadence', async (
   assert.equal(brief.pauseCommand, summary.ownerCommandPlan.quickActions.pause);
   assert.equal(brief.resumeCommand, summary.ownerCommandPlan.quickActions.resume);
   assert(brief.recommendedActions.length >= 1, 'Brief should include recommended actions');
+  assert.equal(brief.shockResilienceScore, summary.metrics.shockResilienceScore);
+  assert.equal(brief.shockResilienceClassification, summary.shockResilience.classification);
 
   const rendered = renderAutopilotBrief(brief);
   assert(rendered.includes('Economic Power Autopilot Brief'));
@@ -266,6 +313,7 @@ test('owner autopilot briefing surfaces guardrails and command cadence', async (
   assert(rendered.includes('## Command sequence'));
   assert(rendered.includes('## Safety mesh readiness'));
   assert(rendered.includes('## Telemetry checkpoints'));
+  assert(rendered.includes('## Shock resilience posture'));
   assert(rendered.includes('## Dominance signals'));
   assert(rendered.includes('## Recommended actions'));
   assert(rendered.includes(brief.pauseCommand));

@@ -238,6 +238,7 @@ type OwnerAutopilot = {
     economicDominanceIndex: number;
     capitalVelocity: number;
     globalExpansionReadiness: number;
+    shockResilienceScore: number;
   };
   commandSequence: OwnerAutopilotCommand[];
 };
@@ -266,6 +267,29 @@ type OwnerDominionReport = {
   recommendedActions: string[];
 };
 
+type ShockResilienceClassification =
+  | 'impregnable'
+  | 'fortified'
+  | 'resilient'
+  | 'attention';
+
+type ShockResilienceReport = {
+  score: number;
+  classification: ShockResilienceClassification;
+  summary: string;
+  drivers: string[];
+  recommendations: string[];
+  telemetry: {
+    stabilityIndex: number;
+    guardrailCoverage: number;
+    riskFactor: number;
+    emergencyContacts: number;
+    alertChannels: number;
+    bufferRatio: number;
+    automationDensity: number;
+  };
+};
+
 type GlobalExpansionPhase = {
   phase: string;
   horizonHours: number;
@@ -284,6 +308,7 @@ type EconomicDominanceReport = {
   automationScore: number;
   sovereignSafetyScore: number;
   sovereignControlScore: number;
+  shockResilienceScore: number;
   summary: string;
   recommendations: string[];
 };
@@ -319,6 +344,7 @@ type Summary = {
     economicDominanceIndex: number;
     capitalVelocity: number;
     globalExpansionReadiness: number;
+    shockResilienceScore: number;
   };
   ownerControl: {
     threshold: string;
@@ -334,6 +360,9 @@ type Summary = {
     circuitBreakers: Scenario['safeguards']['circuitBreakers'];
     upgradePaths: Scenario['safeguards']['upgradePaths'];
     alertChannels: Scenario['observability']['alertChannels'];
+    shockResilienceScore?: number;
+    shockResilienceClassification?: ShockResilienceClassification;
+    shockResilienceSummary?: string;
   };
   commandCatalog: CommandCatalog;
   assignments: Assignment[];
@@ -357,6 +386,7 @@ type Summary = {
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
   globalExpansionPlan: GlobalExpansionPhase[];
+  shockResilience: ShockResilienceReport;
 };
 
 type CoverageSurface =
@@ -409,6 +439,9 @@ type SovereignSafetyMesh = {
   alertChannels: string[];
   emergencyContacts: string[];
   notes: string[];
+  shockResilienceScore?: number;
+  shockClassification?: ShockResilienceClassification;
+  shockSummary?: string;
 };
 
 type TrajectoryEntry = {
@@ -815,7 +848,8 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
   }
   const narrative =
     'Autopilot cycles every ' +
-    `${cadenceHours.toFixed(1)}h to refresh capital, validator posture, and orchestrator coverage.`;
+    `${cadenceHours.toFixed(1)}h to refresh capital, validator posture, and orchestrator coverage while preserving ` +
+    `${(summary.metrics.shockResilienceScore * 100).toFixed(1)}% shock resilience (${summary.shockResilience.classification}).`;
   return {
     mission: 'Sustain unstoppable economic acceleration with deterministic owner oversight.',
     cadenceHours,
@@ -826,6 +860,7 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       economicDominanceIndex: summary.metrics.economicDominanceIndex,
       capitalVelocity: summary.metrics.capitalVelocity,
       globalExpansionReadiness: summary.metrics.globalExpansionReadiness,
+      shockResilienceScore: summary.metrics.shockResilienceScore,
     },
     commandSequence: sequence,
   };
@@ -905,6 +940,12 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
   if (guardrails.length < 3) {
     recommendedActions.push('Publish additional guardrails to cover treasury, validators, and orchestrator cadence.');
   }
+  if (summary.metrics.shockResilienceScore < 0.95) {
+    recommendedActions.push(
+      summary.shockResilience.recommendations[0] ??
+        'Escalate guardrail and buffer programs to elevate shock resilience beyond 95%.',
+    );
+  }
   if (recommendedActions.length === 0) {
     recommendedActions.push('Maintain autopilot cadence and periodic drills to preserve total dominion.');
   }
@@ -915,6 +956,7 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
     `Custody ${(sovereignControlScore * 100).toFixed(1)}%`,
     `Guardrails ${guardrails.length}`,
     `Response ${summary.sovereignSafetyMesh.responseMinutes}m`,
+    `Shock resilience ${(summary.metrics.shockResilienceScore * 100).toFixed(1)}% (${summary.shockResilience.classification})`,
   ];
 
   return {
@@ -1015,6 +1057,9 @@ function buildEconomicDominanceReport(summary: Summary): EconomicDominanceReport
   if (summary.metrics.economicDominanceIndex < 0.9) {
     recommendations.push('Increase validator quorums or deploy additional automation modules to push dominance > 90%.');
   }
+  if (summary.metrics.shockResilienceScore < 0.9) {
+    recommendations.push(summary.shockResilience.recommendations[0]);
+  }
   if (recommendations.length === 0) {
     recommendations.push('Maintain current cadence; dominance metrics exceed unstoppable thresholds.');
   }
@@ -1027,6 +1072,7 @@ function buildEconomicDominanceReport(summary: Summary): EconomicDominanceReport
     automationScore: summary.metrics.automationScore,
     sovereignSafetyScore: summary.metrics.sovereignSafetyScore,
     sovereignControlScore: summary.metrics.sovereignControlScore,
+    shockResilienceScore: summary.metrics.shockResilienceScore,
     summary:
       'Economic dominance index blends ROI, automation, sovereignty, and safety mesh readiness to evidence unstoppable scale.',
     recommendations,
@@ -1475,6 +1521,139 @@ function computeSovereignSafetyMesh(
   };
 }
 
+function classifyShockResilience(
+  score: number,
+): { classification: ShockResilienceClassification; summary: string } {
+  if (score >= 0.95) {
+    return {
+      classification: 'impregnable',
+      summary:
+        'Shockwaves are fully absorbed – treasury buffers, guardrails, and automation form an impregnable shield.',
+    };
+  }
+  if (score >= 0.88) {
+    return {
+      classification: 'fortified',
+      summary:
+        'Infrastructure is fortified against exogenous shocks – expand redundancy to achieve impregnable status.',
+    };
+  }
+  if (score >= 0.78) {
+    return {
+      classification: 'resilient',
+      summary:
+        'System is resilient but can further harden buffers, alerts, or automation density to deflect extreme scenarios.',
+    };
+  }
+  return {
+    classification: 'attention',
+    summary:
+      'Shock defences require immediate attention – reinforce emergency contacts, buffers, and guardrail coverage.',
+  };
+}
+
+function computeShockResilience(
+  scenario: Scenario,
+  context: SimulationContext,
+  coverage: CommandCoverage,
+  safetyMesh: SovereignSafetyMesh,
+  stabilityIndex: number,
+): ShockResilienceReport {
+  const riskWeights: Record<Scenario['jobs'][number]['risk'], number> = {
+    low: 0.3,
+    medium: 0.6,
+    high: 0.85,
+  };
+  const averageRisk =
+    scenario.jobs.reduce((acc, job) => acc + riskWeights[job.risk], 0) /
+    Math.max(scenario.jobs.length, 1);
+  const riskFactor = Math.max(0, 1 - averageRisk * 0.45);
+  const guardrailCoverage =
+    safetyMesh.safetyScore * 0.6 +
+    Math.min(1, coverage.value) * 0.4;
+  const emergencyContacts = scenario.safeguards.emergencyContacts.length;
+  const alertChannels = scenario.observability.alertChannels.length;
+  const bufferRatio =
+    scenario.treasury.agiBalance <= 0
+      ? 0
+      : scenario.treasury.operationsBuffer /
+        Math.max(scenario.treasury.agiBalance, 1);
+  const automationDensity =
+    context.assignments.length === 0
+      ? 0
+      : context.automationLift / Math.max(context.assignments.length, 1);
+  const automationContribution = Math.min(
+    0.12,
+    automationDensity * 0.05 + context.validatorConfidence * 0.03,
+  );
+
+  const score = Number(
+    Math.min(
+      0.999,
+      Math.max(
+        0.65,
+        0.11 +
+          0.32 * stabilityIndex +
+          0.22 * guardrailCoverage +
+          0.16 * riskFactor +
+          Math.min(0.12, bufferRatio * 0.5) +
+          Math.min(0.08, emergencyContacts * 0.02) +
+          Math.min(0.06, alertChannels * 0.02) +
+          automationContribution,
+      ),
+    ).toFixed(3),
+  );
+
+  const { classification, summary } = classifyShockResilience(score);
+
+  const drivers = [
+    `Stability index ${(stabilityIndex * 100).toFixed(1)}%`,
+    `Guardrail coverage ${(guardrailCoverage * 100).toFixed(1)}%`,
+    `Risk dampening ${(riskFactor * 100).toFixed(1)}%`,
+    `Emergency depth ${emergencyContacts} contact(s)`,
+    `Alert mesh ${alertChannels} channel(s)`,
+    `Operations buffer ${(bufferRatio * 100).toFixed(1)}% of treasury`,
+    `Automation density ${(automationDensity * 100).toFixed(1)}%`,
+  ];
+
+  const recommendations: string[] = [];
+  if (emergencyContacts < 3) {
+    recommendations.push('Add additional emergency contacts to maintain 3+ escalation routes.');
+  }
+  if (alertChannels < 2) {
+    recommendations.push('Provision redundant alert channels (e.g., PagerDuty + SMS) for shock broadcasts.');
+  }
+  if (bufferRatio < 0.1) {
+    recommendations.push('Increase operations buffer to at least 10% of AGI treasury for liquidity resilience.');
+  }
+  if (automationDensity < 0.75) {
+    recommendations.push('Deploy further automation runbooks to keep automation density above 75%.');
+  }
+  if (classification !== 'impregnable') {
+    recommendations.push('Execute guardrail and emergency drills to elevate shock resilience to impregnable.');
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('Maintain drill cadence and telemetry mirroring to preserve impregnable resilience.');
+  }
+
+  return {
+    score,
+    classification,
+    summary,
+    drivers,
+    recommendations,
+    telemetry: {
+      stabilityIndex,
+      guardrailCoverage,
+      riskFactor,
+      emergencyContacts,
+      alertChannels,
+      bufferRatio,
+      automationDensity,
+    },
+  };
+}
+
 function buildGovernanceLedger(
   scenario: Scenario,
   summary: Summary,
@@ -1845,6 +2024,19 @@ function synthesiseSummary(
     ownerCoverage,
     commandScripts,
   );
+  const shockResilience = computeShockResilience(
+    scenario,
+    context,
+    ownerCoverage,
+    sovereignSafetyMesh,
+    stabilityIndex,
+  );
+  const sovereignSafetyMeshWithShock: SovereignSafetyMesh = {
+    ...sovereignSafetyMesh,
+    shockResilienceScore: shockResilience.score,
+    shockClassification: shockResilience.classification,
+    shockSummary: shockResilience.summary,
+  };
   const totalEscrowedAgi = Math.round(context.totalEscrowedAgi);
   const totalStablecoinVolume = Math.round(context.totalStable);
   const validatorRewards = Math.round(context.validatorRewards);
@@ -1939,6 +2131,7 @@ function synthesiseSummary(
       economicDominanceIndex: dominanceIndex,
       capitalVelocity,
       globalExpansionReadiness,
+      shockResilienceScore: shockResilience.score,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -1954,6 +2147,9 @@ function synthesiseSummary(
       circuitBreakers: scenario.safeguards.circuitBreakers,
       upgradePaths: scenario.safeguards.upgradePaths,
       alertChannels: scenario.observability.alertChannels,
+      shockResilienceScore: shockResilience.score,
+      shockResilienceClassification: shockResilience.classification,
+      shockResilienceSummary: shockResilience.summary,
     },
     commandCatalog: scenario.commandCatalog,
     assignments: context.assignments,
@@ -1961,7 +2157,7 @@ function synthesiseSummary(
     mermaidTimeline: '',
     ownerCommandMermaid: '',
     ownerCommandPlan: buildOwnerCommandPlan(scenario, ownerCoverage),
-    sovereignSafetyMesh,
+    sovereignSafetyMesh: sovereignSafetyMeshWithShock,
     assertions: [],
     treasuryTrajectory: [],
     deployment: {
@@ -1997,6 +2193,7 @@ function synthesiseSummary(
         economicDominanceIndex: dominanceIndex,
         capitalVelocity,
         globalExpansionReadiness,
+        shockResilienceScore: shockResilience.score,
       },
       commandSequence: [],
     },
@@ -2006,11 +2203,11 @@ function synthesiseSummary(
       summary: 'Owner dominion placeholder – autopilot guardrails pending synthesis.',
       guardrails: [],
       readiness: {
-        pauseReady: sovereignSafetyMesh.pauseReady,
-        resumeReady: sovereignSafetyMesh.resumeReady,
-        responseMinutes: sovereignSafetyMesh.responseMinutes,
+        pauseReady: sovereignSafetyMeshWithShock.pauseReady,
+        resumeReady: sovereignSafetyMeshWithShock.resumeReady,
+        responseMinutes: sovereignSafetyMeshWithShock.responseMinutes,
         coverage: ownerCoverage.value,
-        safety: sovereignSafetyMesh.safetyScore,
+        safety: sovereignSafetyMeshWithShock.safetyScore,
         control: sovereignControlScore,
       },
       coverageDetail: ownerCoverage.detail,
@@ -2018,6 +2215,7 @@ function synthesiseSummary(
       recommendedActions: [],
     },
     globalExpansionPlan: [],
+    shockResilience,
   };
 }
 
@@ -2125,6 +2323,21 @@ function computeAssertions(
       const required = job ? job.validatorQuorum : 0;
       return `${assignment.jobId}:quorum=${assignment.validatorIds.length}/${required};confidence=${assignment.validatorConfidence.toFixed(3)}`;
     }),
+  });
+
+  const shockOutcome = summary.metrics.shockResilienceScore >= 0.9 ? 'pass' : 'fail';
+  assertions.push({
+    id: 'shock-resilience',
+    title: 'Shock resilience remains at fortified threshold or higher',
+    outcome: shockOutcome,
+    severity: 'critical',
+    summary:
+      shockOutcome === 'pass'
+        ? 'Shock defences surpass the fortified threshold ensuring economic continuity under stress.'
+        : `Shock resilience below fortified band – ${summary.shockResilience.recommendations[0]}`,
+    target: 0.9,
+    metric: Number(summary.metrics.shockResilienceScore.toFixed(3)),
+    evidence: summary.shockResilience.drivers,
   });
 
   const treasuryStress = summary.treasuryTrajectory.some(
@@ -2328,6 +2541,9 @@ async function writeOutputs(
     ownerCommandCoverage: summary.metrics.ownerCommandCoverage,
     sovereignControlScore: summary.metrics.sovereignControlScore,
     sovereignSafetyScore: summary.metrics.sovereignSafetyScore,
+    shockResilienceScore: summary.metrics.shockResilienceScore,
+    shockResilienceClassification: summary.shockResilience.classification,
+    shockResilienceSummary: summary.shockResilience.summary,
   };
   await fs.writeFile(
     path.join(outputDir, 'owner-sovereignty.json'),
@@ -2401,6 +2617,10 @@ async function writeOutputs(
     JSON.stringify(summary.ownerDominion, null, 2),
   );
   await fs.writeFile(
+    path.join(outputDir, 'shock-resilience.json'),
+    JSON.stringify(summary.shockResilience, null, 2),
+  );
+  await fs.writeFile(
     path.join(outputDir, 'global-expansion-plan.md'),
     generateGlobalExpansionMarkdown(summary),
   );
@@ -2443,6 +2663,7 @@ function compareWithBaseline(summary: Summary, baselinePath: string): void {
     'economicDominanceIndex',
     'capitalVelocity',
     'globalExpansionReadiness',
+    'shockResilienceScore',
   ];
   const tolerance = 0.05;
   for (const metric of metricsToCheck) {

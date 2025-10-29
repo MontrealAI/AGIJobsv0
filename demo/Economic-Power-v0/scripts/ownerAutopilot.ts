@@ -33,6 +33,11 @@ type AutopilotBrief = {
   guardrails: string[];
   commandSequence: Summary['ownerAutopilot']['commandSequence'];
   telemetry: Summary['ownerAutopilot']['telemetry'];
+  shockResilienceScore: number;
+  shockResilienceClassification: Summary['shockResilience']['classification'];
+  shockResilienceSummary: string;
+  shockResilienceDrivers: string[];
+  shockResilienceRecommendations: string[];
   coverage: number;
   coverageNarrative: string;
   coverageDetail: Summary['ownerCommandPlan']['coverageDetail'];
@@ -70,6 +75,11 @@ export function buildAutopilotBrief(summary: Summary): AutopilotBrief {
     guardrails: [...autopilot.guardrails],
     commandSequence: [...autopilot.commandSequence],
     telemetry: { ...autopilot.telemetry },
+    shockResilienceScore: summary.shockResilience.score,
+    shockResilienceClassification: summary.shockResilience.classification,
+    shockResilienceSummary: summary.shockResilience.summary,
+    shockResilienceDrivers: [...summary.shockResilience.drivers],
+    shockResilienceRecommendations: [...summary.shockResilience.recommendations],
     coverage: summary.ownerCommandPlan.commandCoverage,
     coverageNarrative: summary.ownerCommandPlan.coverageNarrative,
     coverageDetail: { ...summary.ownerCommandPlan.coverageDetail },
@@ -178,6 +188,26 @@ export function renderAutopilotBrief(brief: AutopilotBrief): string {
   lines.push(
     `- Global expansion readiness: ${formatPercent(brief.telemetry.globalExpansionReadiness)}`,
   );
+  lines.push(`- Shock resilience: ${formatPercent(brief.telemetry.shockResilienceScore)}`);
+  lines.push('');
+
+  lines.push('## Shock resilience posture');
+  lines.push(
+    `- Score: ${formatPercent(brief.shockResilienceScore)} (${brief.shockResilienceClassification})`,
+  );
+  lines.push(`- Summary: ${brief.shockResilienceSummary}`);
+  if (brief.shockResilienceDrivers.length > 0) {
+    lines.push('- Drivers:');
+    for (const driver of brief.shockResilienceDrivers) {
+      lines.push(`  - ${driver}`);
+    }
+  }
+  if (brief.shockResilienceRecommendations.length > 0) {
+    lines.push('- Recommended actions:');
+    for (const rec of brief.shockResilienceRecommendations) {
+      lines.push(`  - ${rec}`);
+    }
+  }
   lines.push('');
 
   lines.push('## Dominance signals');
