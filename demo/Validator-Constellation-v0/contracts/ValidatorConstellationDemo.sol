@@ -154,6 +154,7 @@ contract ValidatorConstellationDemo is Ownable, Pausable, ReentrancyGuard {
     error EntropyPhaseClosed();
     error EntropyRevealPending();
     error InsufficientEntropyContributors();
+    error NotJobCreator();
 
     modifier onlyValidator() {
         if (!validators[msg.sender].active) revert NotValidator();
@@ -395,6 +396,7 @@ contract ValidatorConstellationDemo is Ownable, Pausable, ReentrancyGuard {
     function recordExecution(uint256 jobId, uint256 spend, string calldata note) external onlyAgent whenNotPaused {
         Job storage job = jobs[jobId];
         if (job.creator == address(0)) revert JobNotFound();
+        if (job.creator != msg.sender) revert NotJobCreator();
         job.spend = spend;
         emit SpendRecorded(jobId, spend, note);
         if (spend > job.budget && !job.sentinelTripped) {

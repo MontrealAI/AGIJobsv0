@@ -13,7 +13,7 @@ const encodeVoteCommitment = (jobId: bigint, validator: string, approval: boolea
   ethers.solidityPackedKeccak256(['uint256', 'address', 'bool', 'uint256'], [jobId, validator, approval, salt]);
 
 async function deployFixture() {
-  const [deployer, validatorA, validatorB, validatorC, validatorD, validatorE, sentinel, agent] =
+  const [deployer, validatorA, validatorB, validatorC, validatorD, validatorE, sentinel, agent, rogueAgent] =
     await ethers.getSigners();
 
   const StakeManager = await ethers.getContractFactory('ConstellationStakeManager');
@@ -55,6 +55,11 @@ async function deployFixture() {
       name: 'astra.agent.agi.eth',
       address: await agent.getAddress(),
     },
+    {
+      signer: rogueAgent,
+      name: 'borealis.agent.agi.eth',
+      address: await rogueAgent.getAddress(),
+    },
   ];
   const agentLeaves = agents.map((entry) => computeLeaf(entry.address, entry.name));
   const agentTree = buildTree(agentLeaves);
@@ -67,7 +72,9 @@ async function deployFixture() {
     await demo.connect(entry.signer).registerValidator(entry.name, getProof(validatorTree, i));
   }
 
-  await demo.connect(agent).registerAgent(agents[0].name, getProof(agentTree, 0));
+  for (let i = 0; i < agents.length; i += 1) {
+    await demo.connect(agents[i].signer).registerAgent(agents[i].name, getProof(agentTree, i));
+  }
 
   const validatorMap = new Map<string, Signer>();
   validators.forEach((entry) => validatorMap.set(entry.address.toLowerCase(), entry.signer));
@@ -82,6 +89,7 @@ async function deployFixture() {
     validatorMap,
     sentinel,
     agentSigner: agent,
+    rogueAgentSigner: rogueAgent,
   };
 }
 
@@ -273,6 +281,20 @@ describe('ValidatorConstellationDemo', () => {
     expect(state.paused).to.be.true;
     const job = await demo.jobs(jobId);
     expect(job.sentinelTripped).to.be.true;
+  });
+
+  it('prevents agents from recording execution for jobs they do not own', async () => {
+    const { demo, agentSigner, rogueAgentSigner } = await loadFixture(deployFixture);
+
+    const jobTx = await demo
+      .connect(agentSigner)
+      .createJob(domainPrimary, specHash, ethers.parseEther('5'), true);
+    await jobTx.wait();
+    const jobId = (await demo.nextJobId()) - 1n;
+
+    await expect(
+      demo.connect(rogueAgentSigner).recordExecution(jobId, ethers.parseEther('1'), 'malicious overspend'),
+    ).to.be.revertedWithCustomError(demo, 'NotJobCreator');
   });
 
   it('finalises one thousand jobs through zk-batched attestation', async () => {
