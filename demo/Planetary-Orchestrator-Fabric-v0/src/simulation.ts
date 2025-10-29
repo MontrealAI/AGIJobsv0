@@ -1287,17 +1287,34 @@ function buildDashboardHtml(
         systemPauses: 0,
         shardPauses: 0,
       };
-      document.getElementById('metrics').innerHTML =
-        '<div class="metric"><strong>Tick</strong><br />' + metrics.tick.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Submitted</strong><br />' + metrics.jobsSubmitted.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Completed</strong><br />' + metrics.jobsCompleted.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Failed</strong><br />' + metrics.jobsFailed.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Cancelled</strong><br />' + metrics.jobsCancelled.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Spillovers</strong><br />' + metrics.spillovers.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Reassignments</strong><br />' + metrics.reassignedAfterFailure.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Owner Interventions</strong><br />' + ownerMetrics.ownerInterventions.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>System Pauses</strong><br />' + ownerMetrics.systemPauses.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Shard Pauses</strong><br />' + ownerMetrics.shardPauses.toLocaleString() + '</div>';
+      const missionMetricEntries = [
+        { label: 'Tick', value: metrics.tick },
+        { label: 'Jobs Submitted', value: metrics.jobsSubmitted },
+        { label: 'Jobs Completed', value: metrics.jobsCompleted },
+        { label: 'Jobs Failed', value: metrics.jobsFailed },
+        { label: 'Jobs Cancelled', value: metrics.jobsCancelled },
+        { label: 'Spillovers', value: metrics.spillovers },
+        { label: 'Reassignments', value: metrics.reassignedAfterFailure },
+        { label: 'Value Submitted', value: metrics.valueSubmitted },
+        { label: 'Value Completed', value: metrics.valueCompleted },
+        { label: 'Value Failed', value: metrics.valueFailed },
+        { label: 'Value Cancelled', value: metrics.valueCancelled },
+        { label: 'Value Spillovers', value: metrics.valueSpillovers },
+        { label: 'Value Reassigned', value: metrics.valueReassigned },
+        { label: 'Owner Interventions', value: ownerMetrics.ownerInterventions },
+        { label: 'System Pauses', value: ownerMetrics.systemPauses },
+        { label: 'Shard Pauses', value: ownerMetrics.shardPauses },
+      ];
+      document.getElementById('metrics').innerHTML = missionMetricEntries
+        .map(
+          (entry) =>
+            '<div class="metric"><strong>' +
+            entry.label +
+            '</strong><br />' +
+            (entry.value ?? 0).toLocaleString() +
+            '</div>'
+        )
+        .join('');
       const blueprint = summary.jobBlueprint;
       if (blueprint) {
         const metadata = blueprint.metadata ?? {};
@@ -1394,17 +1411,35 @@ function buildDashboardHtml(
         const ledger = await ledgerResp.json();
         document.getElementById('ledger-path').textContent = ledgerAssetPath;
         const totals = ledger.totals ?? {};
-        document.getElementById('ledger-metrics').innerHTML =
-          '<div class="metric"><strong>Jobs Submitted</strong><br />' + (totals.submitted ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Assignments</strong><br />' + (totals.assigned ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Completed</strong><br />' + (totals.completed ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Failed</strong><br />' + (totals.failed ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Cancelled</strong><br />' + (totals.cancelled ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Spillovers Out</strong><br />' + (totals.spilloversOut ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Spillovers In</strong><br />' + (totals.spilloversIn ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Reassignments</strong><br />' + (totals.reassignments ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Pending Jobs</strong><br />' + (ledger.pendingJobs ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Running Jobs</strong><br />' + (ledger.runningJobs ?? 0).toLocaleString() + '</div>';
+        const ledgerMetricEntries = [
+          { label: 'Jobs Submitted', value: totals.submitted },
+          { label: 'Assignments', value: totals.assigned },
+          { label: 'Completed', value: totals.completed },
+          { label: 'Failed', value: totals.failed },
+          { label: 'Cancelled', value: totals.cancelled },
+          { label: 'Spillovers Out', value: totals.spilloversOut },
+          { label: 'Spillovers In', value: totals.spilloversIn },
+          { label: 'Reassignments', value: totals.reassignments },
+          { label: 'Value Submitted', value: totals.valueSubmitted },
+          { label: 'Value Completed', value: totals.valueCompleted },
+          { label: 'Value Failed', value: totals.valueFailed },
+          { label: 'Value Cancelled', value: totals.valueCancelled },
+          { label: 'Value Spillovers Out', value: totals.valueSpilloversOut },
+          { label: 'Value Spillovers In', value: totals.valueSpilloversIn },
+          { label: 'Value Reassignments', value: totals.valueReassignments },
+          { label: 'Pending Jobs', value: ledger.pendingJobs },
+          { label: 'Running Jobs', value: ledger.runningJobs },
+        ];
+        document.getElementById('ledger-metrics').innerHTML = ledgerMetricEntries
+          .map(
+            (entry) =>
+              '<div class="metric"><strong>' +
+              entry.label +
+              '</strong><br />' +
+              (entry.value ?? 0).toLocaleString() +
+              '</div>'
+          )
+          .join('');
         const invariantHtml = Array.isArray(ledger.invariants) && ledger.invariants.length > 0
           ? ledger.invariants
               .map((entry) => {
