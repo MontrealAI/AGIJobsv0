@@ -1,0 +1,11 @@
+{
+  "title": "Validator Constellation Kardashev-II Readiness",
+  "domain": "validator.constellation.demo",
+  "jobs": [
+    { "spec": "bootstrap-sentinel", "budget": "5", "expectedResult": true },
+    { "spec": "hyperlane-attestation", "budget": "6", "expectedResult": true },
+    { "spec": "zk-batch-finality", "budget": "4", "expectedResult": true },
+    { "spec": "guardrail-resilience", "budget": "7", "expectedResult": true },
+    { "spec": "ens-governance-check", "budget": "3", "expectedResult": true }
+  ]
+}

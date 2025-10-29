@@ -1,67 +1,91 @@
-import path from 'path';
-import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
-import { loadScenarioConfig, prepareScenario, executeScenario } from '../src/core/scenario';
-import { writeReportArtifacts } from '../src/core/reporting';
-import { subgraphIndexer } from '../src/core/subgraph';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { ethers } from '../src/runtime';
+import { deployEnvironment } from '../src/environment';
+import { executeJobRound } from '../src/jobRunner';
+import { buildTree, getRoot } from '../src/merkle';
 
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
+interface ScenarioJob {
+  spec: string;
+  budget: string;
+  expectedResult: boolean;
 }
 
-async function main() {
-  const argv = yargs(hideBin(process.argv))
-    .option('config', {
-      type: 'string',
-      demandOption: true,
-      describe: 'Path to the scenario JSON or YAML file',
-    })
-    .option('out', {
-      type: 'string',
-      describe: 'Directory where reports will be written',
-      default: path.join(__dirname, '..', 'reports', 'scenarios'),
-    })
-    .option('name', {
-      type: 'string',
-      describe: 'Override the output folder name',
-    })
-    .strict()
-    .help()
-    .parseSync();
-
-  const scenarioPath = path.resolve(argv.config);
-  const scenarioConfig = loadScenarioConfig(scenarioPath);
-  subgraphIndexer.clear();
-  const prepared = prepareScenario(scenarioConfig);
-  const executed = executeScenario(prepared);
-
-  const scenarioName = executed.context.scenarioName ?? 'validator-constellation-scenario';
-  const slug = slugify(argv.name ?? scenarioName);
-  const reportDir = path.join(path.resolve(argv.out), slug || `scenario-${Date.now()}`);
-
-  writeReportArtifacts({
-    reportDir,
-    roundResult: executed.report,
-    subgraphRecords: subgraphIndexer.list(),
-    events: [executed.report.vrfWitness, ...executed.report.commits, ...executed.report.reveals],
-    context: executed.context,
-    jobBatch: prepared.plan.jobBatch,
-    truthfulVote: prepared.plan.truthfulVote,
-  });
-
-  console.log(`Scenario "${scenarioName}" executed successfully.`);
-  console.log('VRF witness transcript:', executed.report.vrfWitness.transcript);
-  console.log(`Validators slashed: ${executed.report.slashingEvents.length}`);
-  console.log(`Sentinel alerts: ${executed.report.sentinelAlerts.length}`);
-  console.log(`Reports written to ${reportDir}`);
-  console.log(`Owner mission briefing available at ${path.join(reportDir, 'owner-digest.md')}`);
+interface ScenarioConfig {
+  title: string;
+  domain: string;
+  jobs: ScenarioJob[];
 }
 
-main().catch((error) => {
-  console.error('Scenario execution failed:', error);
-  process.exit(1);
+async function loadScenario(filePath: string): Promise<ScenarioConfig> {
+  const data = await fs.readFile(filePath, 'utf8');
+  return JSON.parse(data) as ScenarioConfig;
+}
+
+async function runScenario() {
+  const scenarioPath = process.argv[2] ?? path.join(__dirname, '..', 'scenario', 'baseline.json');
+  const scenario = await loadScenario(scenarioPath);
+  const env = await deployEnvironment();
+
+  const telemetry = [];
+  for (let i = 0; i < scenario.jobs.length; i += 1) {
+    const job = scenario.jobs[i];
+    telemetry.push(
+      await executeJobRound(
+        env,
+        {
+          domain: scenario.domain,
+          spec: job.spec,
+          budget: ethers.parseEther(job.budget),
+          expectedResult: job.expectedResult,
+        },
+        i,
+      ),
+    );
+  }
+
+  const leaves = telemetry.map((item) => item.leaf);
+  const root = getRoot(buildTree(leaves));
+  const chainId = BigInt((await ethers.provider.getNetwork()).chainId);
+  const witness = ethers.keccak256(
+    ethers.solidityPacked(['bytes32', 'uint256', 'address', 'uint256'], [root, BigInt(leaves.length), await env.demo.getAddress(), chainId]),
+  );
+  const proof = ethers.hexlify(ethers.concat([env.verifyingKey, root, witness]));
+  const jobIds = telemetry.map((item) => item.jobId);
+  await env.demo.submitBatchProof({ jobIds, jobsRoot: root, proof });
+
+  const summary = {
+    scenario: scenario.title,
+    domain: scenario.domain,
+    jobsExecuted: telemetry.length,
+    validators: env.validators.map((v) => v.name),
+    sentinel: await env.sentinel.getAddress(),
+  };
+
+  const sentinelAddress = summary.sentinel;
+
+  const mermaid = `graph LR
+    Owner[Owner]
+    Owner -->|Deploys| Demo[Validator Constellation]
+    Demo -->|Validates| Jobs((Jobs))
+    Jobs -->|Batched zk Proof| zkVerifier
+    Demo -->|Sentinel Alert| Sentinel(${sentinelAddress.slice(0, 10)}...)
+    Sentinel -->|Resume| Owner`;
+
+  console.log(`\n📡 Scenario: ${scenario.title}`);
+  console.table(
+    telemetry.map((item, idx) => ({
+      job: scenario.jobs[idx].spec,
+      committee: item.committee.length,
+      approvals: item.approvals.toString(),
+    })),
+  );
+  console.log('\nMermaid Blueprint:\n');
+  console.log(mermaid);
+  console.log('\nScenario Summary:\n', summary);
+}
+
+runScenario().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });
