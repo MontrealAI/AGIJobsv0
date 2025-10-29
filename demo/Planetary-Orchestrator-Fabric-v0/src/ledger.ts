@@ -35,7 +35,7 @@ function cloneNodeTotals(totals: LedgerNodeTotals): LedgerNodeTotals {
 export class PlanetaryLedger {
   private readonly shardTotals: Map<ShardId, LedgerShardTotals> = new Map();
   private readonly nodeTotals: Map<string, LedgerNodeTotals> = new Map();
-  private readonly spillovers: Map<string, number> = new Map();
+  private readonly spillovers: Map<string, { count: number; value: number }> = new Map();
   private readonly events: LedgerEventEntry[] = [];
   private readonly maxEvents: number;
   private totalEvents = 0;
@@ -69,8 +69,17 @@ export class PlanetaryLedger {
     for (const [nodeId, totals] of Object.entries(checkpoint.nodes)) {
       this.nodeTotals.set(nodeId, cloneNodeTotals(totals));
     }
-    for (const [key, count] of Object.entries(checkpoint.flows)) {
-      this.spillovers.set(key, count);
+    for (const [key, rawEntry] of Object.entries(checkpoint.flows as Record<string, unknown>)) {
+      if (typeof rawEntry === 'number') {
+        this.spillovers.set(key, { count: rawEntry, value: 0 });
+        continue;
+      }
+      if (rawEntry && typeof rawEntry === 'object') {
+        const entry = rawEntry as { count?: number; value?: number };
+        const count = typeof entry.count === 'number' ? entry.count : 0;
+        const value = typeof entry.value === 'number' ? entry.value : 0;
+        this.spillovers.set(key, { count, value });
+      }
     }
     this.events.push(...checkpoint.events.map((entry) => ({ ...entry })));
     this.totalEvents = checkpoint.totalEvents ?? this.events.length;
@@ -88,9 +97,9 @@ export class PlanetaryLedger {
     for (const [nodeId, totals] of this.nodeTotals.entries()) {
       nodes[nodeId] = cloneNodeTotals(totals);
     }
-    const flows: Record<string, number> = {};
-    for (const [key, count] of this.spillovers.entries()) {
-      flows[key] = count;
+    const flows: Record<string, { count: number; value: number }> = {};
+    for (const [key, entry] of this.spillovers.entries()) {
+      flows[key] = { count: entry.count, value: entry.value };
     }
     return {
       shards,
@@ -106,25 +115,32 @@ export class PlanetaryLedger {
 
   recordRegistryEvent(event: RegistryEvent, tick: number): void {
     switch (event.type) {
-      case 'job.created':
+      case 'job.created': {
+        const value = event.job.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.submitted += 1;
+          totals.valueSubmitted += value;
         });
         this.pushEvent({
           tick,
           type: event.type,
           shard: event.shard,
           jobId: event.job.id,
+          value,
         });
         break;
-      case 'job.requeued':
+      }
+      case 'job.requeued': {
+        const value = event.job.value ?? 0;
         if (event.job.assignedNodeId) {
           this.bumpNodeTotals(event.job.assignedNodeId, event.shard, (totals) => {
             totals.reassignments += 1;
+            totals.valueReassignments += value;
           });
         }
         this.bumpShardTotals(event.shard, (totals) => {
           totals.reassignments += 1;
+          totals.valueReassignments += value;
         });
         this.pushEvent({
           tick,
@@ -132,30 +148,40 @@ export class PlanetaryLedger {
           shard: event.shard,
           originShard: event.origin,
           jobId: event.job.id,
+          value,
         });
         break;
-      case 'job.spillover':
+      }
+      case 'job.spillover': {
+        const value = event.job.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.spilloversIn += 1;
+          totals.valueSpilloversIn += value;
         });
         this.bumpShardTotals(event.from, (totals) => {
           totals.spilloversOut += 1;
+          totals.valueSpilloversOut += value;
         });
-        this.bumpSpillover({ from: event.from, to: event.shard });
+        this.bumpSpillover({ from: event.from, to: event.shard }, value);
         this.pushEvent({
           tick,
           type: event.type,
           shard: event.shard,
           originShard: event.from,
           jobId: event.job.id,
+          value,
         });
         break;
-      case 'job.assigned':
+      }
+      case 'job.assigned': {
+        const value = event.job.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.assigned += 1;
+          totals.valueAssigned += value;
         });
         this.bumpNodeTotals(event.nodeId, event.shard, (totals) => {
           totals.assignments += 1;
+          totals.valueAssignments += value;
         });
         this.pushEvent({
           tick,
@@ -163,15 +189,20 @@ export class PlanetaryLedger {
           shard: event.shard,
           nodeId: event.nodeId,
           jobId: event.job.id,
+          value,
         });
         break;
-      case 'job.completed':
+      }
+      case 'job.completed': {
+        const value = event.job.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.completed += 1;
+          totals.valueCompleted += value;
         });
         if (event.job.assignedNodeId) {
           this.bumpNodeTotals(event.job.assignedNodeId, event.shard, (totals) => {
             totals.completions += 1;
+            totals.valueCompletions += value;
           });
         }
         this.pushEvent({
@@ -180,15 +211,20 @@ export class PlanetaryLedger {
           shard: event.shard,
           nodeId: event.job.assignedNodeId,
           jobId: event.job.id,
+          value,
         });
         break;
-      case 'job.failed':
+      }
+      case 'job.failed': {
+        const value = event.job.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.failed += 1;
+          totals.valueFailed += value;
         });
         if (event.job.assignedNodeId) {
           this.bumpNodeTotals(event.job.assignedNodeId, event.shard, (totals) => {
             totals.failures += 1;
+            totals.valueFailures += value;
           });
         }
         this.pushEvent({
@@ -198,11 +234,15 @@ export class PlanetaryLedger {
           nodeId: event.job.assignedNodeId,
           jobId: event.job.id,
           reason: event.reason,
+          value,
         });
         break;
-      case 'job.cancelled':
+      }
+      case 'job.cancelled': {
+        const value = event.job?.value ?? 0;
         this.bumpShardTotals(event.shard, (totals) => {
           totals.cancelled += 1;
+          totals.valueCancelled += value;
         });
         this.pushEvent({
           tick,
@@ -210,8 +250,10 @@ export class PlanetaryLedger {
           shard: event.shard,
           jobId: event.jobId,
           reason: event.reason,
+          value,
         });
         break;
+      }
       case 'node.heartbeat':
       case 'node.offline':
         this.pushEvent({
@@ -248,9 +290,10 @@ export class PlanetaryLedger {
     for (const [nodeId, totals] of this.nodeTotals.entries()) {
       nodes[nodeId] = cloneNodeTotals(totals);
     }
-    const flows = Array.from(this.spillovers.entries()).map(([key, count]) => ({
+    const flows = Array.from(this.spillovers.entries()).map(([key, entry]) => ({
       ...parseSpilloverKey(key),
-      count,
+      count: entry.count,
+      value: entry.value,
     }));
 
     const totals = Object.values(shards).reduce(
@@ -263,6 +306,14 @@ export class PlanetaryLedger {
         acc.spilloversOut += entry.spilloversOut;
         acc.spilloversIn += entry.spilloversIn;
         acc.reassignments += entry.reassignments;
+        acc.valueSubmitted += entry.valueSubmitted;
+        acc.valueAssigned += entry.valueAssigned;
+        acc.valueCompleted += entry.valueCompleted;
+        acc.valueFailed += entry.valueFailed;
+        acc.valueCancelled += entry.valueCancelled;
+        acc.valueSpilloversOut += entry.valueSpilloversOut;
+        acc.valueSpilloversIn += entry.valueSpilloversIn;
+        acc.valueReassignments += entry.valueReassignments;
         return acc;
       },
       {
@@ -274,6 +325,14 @@ export class PlanetaryLedger {
         spilloversOut: 0,
         spilloversIn: 0,
         reassignments: 0,
+        valueSubmitted: 0,
+        valueAssigned: 0,
+        valueCompleted: 0,
+        valueFailed: 0,
+        valueCancelled: 0,
+        valueSpilloversOut: 0,
+        valueSpilloversIn: 0,
+        valueReassignments: 0,
       }
     );
 
@@ -309,6 +368,14 @@ export class PlanetaryLedger {
       spilloversOut: number;
       spilloversIn: number;
       reassignments: number;
+      valueSubmitted: number;
+      valueAssigned: number;
+      valueCompleted: number;
+      valueFailed: number;
+      valueCancelled: number;
+      valueSpilloversOut: number;
+      valueSpilloversIn: number;
+      valueReassignments: number;
     },
     context: LedgerSnapshotContext
   ): { id: string; ok: boolean; message: string }[] {
@@ -378,6 +445,71 @@ export class PlanetaryLedger {
         : `Accounting mismatch: submitted=${totals.submitted}, completed=${totals.completed}, failed=${totals.failed}, cancelled=${totals.cancelled}, pending=${context.pendingJobs}.`,
     });
 
+    const valueSubmittedMatches = Math.round(totals.valueSubmitted) === Math.round(context.metrics.valueSubmitted);
+    invariants.push({
+      id: 'ledger.valueSubmitted',
+      ok: valueSubmittedMatches,
+      message: valueSubmittedMatches
+        ? 'Ledger value submissions align with orchestrator metrics.'
+        : `Ledger value submissions (${totals.valueSubmitted}) differ from orchestrator metrics (${context.metrics.valueSubmitted}).`,
+    });
+
+    const valueCompletedMatches = Math.round(totals.valueCompleted) === Math.round(context.metrics.valueCompleted);
+    invariants.push({
+      id: 'ledger.valueCompleted',
+      ok: valueCompletedMatches,
+      message: valueCompletedMatches
+        ? 'Ledger completed value aligns with orchestrator metrics.'
+        : `Ledger completed value (${totals.valueCompleted}) differs from orchestrator metrics (${context.metrics.valueCompleted}).`,
+    });
+
+    const valueFailedMatches = Math.round(totals.valueFailed) === Math.round(context.metrics.valueFailed);
+    invariants.push({
+      id: 'ledger.valueFailed',
+      ok: valueFailedMatches,
+      message: valueFailedMatches
+        ? 'Ledger failure value aligns with orchestrator metrics.'
+        : `Ledger failure value (${totals.valueFailed}) differs from orchestrator metrics (${context.metrics.valueFailed}).`,
+    });
+
+    const valueCancelledMatches = Math.round(totals.valueCancelled) === Math.round(context.metrics.valueCancelled);
+    invariants.push({
+      id: 'ledger.valueCancelled',
+      ok: valueCancelledMatches,
+      message: valueCancelledMatches
+        ? 'Ledger cancellation value aligns with orchestrator metrics.'
+        : `Ledger cancellation value (${totals.valueCancelled}) differs from orchestrator metrics (${context.metrics.valueCancelled}).`,
+    });
+
+    const valueSpilloverMatches = Math.round(totals.valueSpilloversOut) === Math.round(context.metrics.valueSpillovers);
+    invariants.push({
+      id: 'ledger.valueSpillovers',
+      ok: valueSpilloverMatches,
+      message: valueSpilloverMatches
+        ? 'Ledger spillover value aligns with orchestrator metrics.'
+        : `Ledger spillover value (${totals.valueSpilloversOut}) differs from orchestrator metrics (${context.metrics.valueSpillovers}).`,
+    });
+
+    const valueReassignMatches = Math.round(totals.valueReassignments) === Math.round(context.metrics.valueReassigned);
+    invariants.push({
+      id: 'ledger.valueReassignments',
+      ok: valueReassignMatches,
+      message: valueReassignMatches
+        ? 'Ledger reassignment value aligns with orchestrator metrics.'
+        : `Ledger reassignment value (${totals.valueReassignments}) differs from orchestrator metrics (${context.metrics.valueReassigned}).`,
+    });
+
+    const pendingValue = totals.valueSubmitted - totals.valueCompleted - totals.valueFailed - totals.valueCancelled;
+    const expectedPendingValue = context.metrics.valueSubmitted - context.metrics.valueCompleted - context.metrics.valueFailed - context.metrics.valueCancelled;
+    const pendingValueMatches = Math.round(pendingValue) === Math.round(expectedPendingValue);
+    invariants.push({
+      id: 'ledger.pendingValueAccounting',
+      ok: pendingValueMatches,
+      message: pendingValueMatches
+        ? 'Value accounting matches submitted totals.'
+        : `Value accounting mismatch: submitted=${totals.valueSubmitted}, completed=${totals.valueCompleted}, failed=${totals.valueFailed}, cancelled=${totals.valueCancelled}, derivedPending=${pendingValue}.`,
+    });
+
     return invariants;
   }
 
@@ -394,6 +526,14 @@ export class PlanetaryLedger {
       spilloversIn: 0,
       spilloversOut: 0,
       reassignments: 0,
+      valueSubmitted: 0,
+      valueAssigned: 0,
+      valueCompleted: 0,
+      valueFailed: 0,
+      valueCancelled: 0,
+      valueSpilloversIn: 0,
+      valueSpilloversOut: 0,
+      valueReassignments: 0,
     };
     mutate(totals);
     this.shardTotals.set(shard, totals);
@@ -410,14 +550,20 @@ export class PlanetaryLedger {
       completions: 0,
       failures: 0,
       reassignments: 0,
+      valueAssignments: 0,
+      valueCompletions: 0,
+      valueFailures: 0,
+      valueReassignments: 0,
     };
     mutate(totals);
     this.nodeTotals.set(nodeId, totals);
   }
 
-  private bumpSpillover(key: SpilloverKey): void {
-    const current = this.spillovers.get(spilloverKeyToString(key)) ?? 0;
-    this.spillovers.set(spilloverKeyToString(key), current + 1);
+  private bumpSpillover(key: SpilloverKey, value: number): void {
+    const current = this.spillovers.get(spilloverKeyToString(key)) ?? { count: 0, value: 0 };
+    current.count += 1;
+    current.value += value;
+    this.spillovers.set(spilloverKeyToString(key), current);
   }
 
   private pushEvent(entry: LedgerEventEntry): void {

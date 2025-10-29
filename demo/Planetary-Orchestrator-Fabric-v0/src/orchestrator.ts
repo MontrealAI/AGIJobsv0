@@ -68,7 +68,13 @@ function cloneRegistryEvent(event: RegistryEvent): RegistryEvent {
     case 'node.offline':
       return { type: event.type, shard: event.shard, nodeId: event.nodeId, reason: event.reason };
     case 'job.cancelled':
-      return { type: event.type, shard: event.shard, jobId: event.jobId, reason: event.reason };
+      return {
+        type: event.type,
+        shard: event.shard,
+        jobId: event.jobId,
+        reason: event.reason,
+        job: event.job ? cloneJob(event.job) : undefined,
+      };
     default:
       return event;
   }
@@ -111,6 +117,12 @@ export class PlanetaryOrchestrator {
       ownerInterventions: 0,
       systemPauses: 0,
       shardPauses: 0,
+      valueSubmitted: 0,
+      valueCompleted: 0,
+      valueFailed: 0,
+      valueCancelled: 0,
+      valueSpillovers: 0,
+      valueReassigned: 0,
     };
   }
 
@@ -223,6 +235,7 @@ export class PlanetaryOrchestrator {
     };
     router.queueJob(job, 'new');
     this.metrics.jobsSubmitted += 1;
+    this.metrics.valueSubmitted += job.value;
     this.recordFabricEvent({
       tick: this.tick,
       type: 'job.submitted',
@@ -476,7 +489,9 @@ export class PlanetaryOrchestrator {
         job.failedTick = this.tick;
         shard.failed.set(job.id, job);
         this.metrics.jobsFailed += 1;
+        this.metrics.valueFailed += job.value;
         this.metrics.jobsCancelled += 1;
+        this.metrics.valueCancelled += job.value;
         push({
           tick: this.tick,
           type: 'owner.job.cancelled',
@@ -488,6 +503,7 @@ export class PlanetaryOrchestrator {
           shard: shardId,
           jobId: job.id,
           reason,
+          job: cloneJob(job),
         });
         this.recordRegistryEvent({
           type: 'job.failed',
@@ -665,6 +681,7 @@ export class PlanetaryOrchestrator {
         shardPayload.failed.map((job) => [job.id, { ...job, spilloverHistory: [...job.spilloverHistory] }])
       );
       shardState.spilloverCount = shardPayload.spilloverCount;
+      shardState.spilloverValue = shardPayload.spilloverValue ?? 0;
       shardState.paused = shardPayload.paused;
       const router = this.routers.get(shardConfig.id);
       router?.setPaused(this.systemPaused || shardState.paused);
@@ -882,13 +899,19 @@ export class PlanetaryOrchestrator {
     }
   }
 
-  getShardStatistics(): Record<ShardId, { completed: number; failed: number; spillovers: number }> {
-    const stats: Record<ShardId, { completed: number; failed: number; spillovers: number }> = {};
+  getShardStatistics(): Record<ShardId, { completed: number; failed: number; spillovers: number; valueCompleted: number; valueFailed: number; valueSpillovers: number }> {
+    const stats: Record<
+      ShardId,
+      { completed: number; failed: number; spillovers: number; valueCompleted: number; valueFailed: number; valueSpillovers: number }
+    > = {};
     for (const [shardId, shard] of this.shards.entries()) {
       stats[shardId] = {
         completed: shard.completed.size,
         failed: shard.failed.size,
         spillovers: shard.spilloverCount,
+        valueCompleted: Array.from(shard.completed.values()).reduce((sum, job) => sum + job.value, 0),
+        valueFailed: Array.from(shard.failed.values()).reduce((sum, job) => sum + job.value, 0),
+        valueSpillovers: shard.spilloverValue,
       };
     }
     return stats;
@@ -923,6 +946,7 @@ export class PlanetaryOrchestrator {
         }
         router.queueJob(cloneJob(event.job), 'new');
         this.metrics.jobsSubmitted += 1;
+        this.metrics.valueSubmitted += event.job.value;
         break;
       }
       case 'job.requeued': {
@@ -939,6 +963,7 @@ export class PlanetaryOrchestrator {
         }
         this.recordFabricEvent(router.requeueJob(cloneJob(event.job), this.tick, `replay-${event.origin}`));
         this.metrics.reassignedAfterFailure += 1;
+        this.metrics.valueReassigned += event.job.value;
         break;
       }
       case 'job.spillover': {
@@ -950,8 +975,10 @@ export class PlanetaryOrchestrator {
         const origin = this.shards.get(event.from);
         if (origin) {
           origin.spilloverCount += 1;
+          origin.spilloverValue += event.job.value;
         }
         this.metrics.spillovers += 1;
+        this.metrics.valueSpillovers += event.job.value;
         break;
       }
       case 'job.assigned': {
@@ -987,6 +1014,7 @@ export class PlanetaryOrchestrator {
           this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
         }
         this.metrics.jobsCompleted += 1;
+        this.metrics.valueCompleted += event.job.value;
         break;
       }
       case 'job.failed': {
@@ -1000,11 +1028,14 @@ export class PlanetaryOrchestrator {
           this.nodes.get(event.job.assignedNodeId)?.runningJobs.delete(event.job.id);
         }
         this.metrics.jobsFailed += 1;
+        this.metrics.valueFailed += event.job.value;
         break;
       }
       case 'job.cancelled': {
         const router = this.routers.get(event.shard);
         router?.cancelJob(event.jobId, this.tick);
+        const value = event.job?.value ?? 0;
+        this.metrics.valueCancelled += value;
         this.metrics.jobsCancelled += 1;
         break;
       }
@@ -1069,8 +1100,10 @@ export class PlanetaryOrchestrator {
       const originShard = this.shards.get(request.origin);
       if (originShard) {
         originShard.spilloverCount += 1;
+        originShard.spilloverValue += request.job.value;
       }
       this.metrics.spillovers += 1;
+      this.metrics.valueSpillovers += request.job.value;
       this.recordRegistryEvent({
         type: 'job.spillover',
         shard: request.target,
@@ -1086,6 +1119,7 @@ export class PlanetaryOrchestrator {
     }
     for (const entry of failures) {
       this.metrics.jobsFailed += 1;
+      this.metrics.valueFailed += entry.job.value;
       this.recordRegistryEvent({
         type: 'job.failed',
         shard: shardId,
@@ -1150,6 +1184,7 @@ export class PlanetaryOrchestrator {
       shard?.inFlight.delete(jobId);
       node.runningJobs.delete(jobId);
       this.metrics.reassignedAfterFailure += 1;
+      this.metrics.valueReassigned += job.value;
     }
   }
 
@@ -1168,6 +1203,7 @@ export class PlanetaryOrchestrator {
           const node = job.assignedNodeId ? this.nodes.get(job.assignedNodeId) : undefined;
           node?.runningJobs.delete(jobId);
           this.metrics.jobsCompleted += 1;
+          this.metrics.valueCompleted += job.value;
           this.recordFabricEvent({
             tick: this.tick,
             type: 'job.completed',
@@ -1192,6 +1228,7 @@ export class PlanetaryOrchestrator {
       completed: new Map(),
       failed: new Map(),
       spilloverCount: 0,
+      spilloverValue: 0,
       paused: false,
     };
   }
@@ -1300,6 +1337,7 @@ export class PlanetaryOrchestrator {
         completed: Array.from(shard.completed.values()).map((job) => cloneJob(job)),
         failed: Array.from(shard.failed.values()).map((job) => cloneJob(job)),
         spilloverCount: shard.spilloverCount,
+        spilloverValue: shard.spilloverValue,
         paused: shard.paused,
         config: {
           ...shard.config,

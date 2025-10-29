@@ -118,6 +118,7 @@ export interface ShardState {
   completed: Map<string, JobState>;
   failed: Map<string, JobState>;
   spilloverCount: number;
+  spilloverValue: number;
   paused: boolean;
 }
 
@@ -168,6 +169,7 @@ export interface CheckpointData {
     completed: JobState[];
     failed: JobState[];
     spilloverCount: number;
+    spilloverValue: number;
     paused: boolean;
     config: ShardConfig;
   }>;
@@ -201,11 +203,17 @@ export interface FabricMetrics {
   ownerInterventions: number;
   systemPauses: number;
   shardPauses: number;
+  valueSubmitted: number;
+  valueCompleted: number;
+  valueFailed: number;
+  valueCancelled: number;
+  valueSpillovers: number;
+  valueReassigned: number;
 }
 
 export type RegistryEvent =
   | { type: 'job.created'; shard: ShardId; job: JobState }
-  | { type: 'job.cancelled'; shard: ShardId; jobId: string; reason?: string }
+  | { type: 'job.cancelled'; shard: ShardId; jobId: string; reason?: string; job?: JobState }
   | { type: 'job.requeued'; shard: ShardId; job: JobState; origin: string }
   | { type: 'job.spillover'; shard: ShardId; job: JobState; from: ShardId }
   | { type: 'job.assigned'; shard: ShardId; job: JobState; nodeId: string }
@@ -263,6 +271,14 @@ export interface LedgerShardTotals {
   spilloversIn: number;
   spilloversOut: number;
   reassignments: number;
+  valueSubmitted: number;
+  valueAssigned: number;
+  valueCompleted: number;
+  valueFailed: number;
+  valueCancelled: number;
+  valueSpilloversIn: number;
+  valueSpilloversOut: number;
+  valueReassignments: number;
 }
 
 export interface LedgerNodeTotals {
@@ -271,6 +287,10 @@ export interface LedgerNodeTotals {
   completions: number;
   failures: number;
   reassignments: number;
+  valueAssignments: number;
+  valueCompletions: number;
+  valueFailures: number;
+  valueReassignments: number;
 }
 
 export interface LedgerEventEntry {
@@ -281,12 +301,13 @@ export interface LedgerEventEntry {
   nodeId?: string;
   jobId?: string;
   reason?: string;
+  value?: number;
 }
 
 export interface LedgerCheckpoint {
   shards: Record<ShardId, LedgerShardTotals>;
   nodes: Record<string, LedgerNodeTotals>;
-  flows: Record<string, number>;
+  flows: Record<string, { count: number; value: number }>;
   events: LedgerEventEntry[];
   totalEvents?: number;
   ownerEvents?: number;
@@ -315,10 +336,18 @@ export interface LedgerSnapshot {
     spilloversOut: number;
     spilloversIn: number;
     reassignments: number;
+    valueSubmitted: number;
+    valueAssigned: number;
+    valueCompleted: number;
+    valueFailed: number;
+    valueCancelled: number;
+    valueSpilloversOut: number;
+    valueSpilloversIn: number;
+    valueReassignments: number;
   };
   shards: Record<ShardId, LedgerShardTotals>;
   nodes: Record<string, LedgerNodeTotals>;
-  flows: { from: ShardId; to: ShardId; count: number }[];
+  flows: { from: ShardId; to: ShardId; count: number; value: number }[];
   events: LedgerEventEntry[];
   totalEvents: number;
   ownerEvents: number;
@@ -341,6 +370,7 @@ export interface SimulationArtifacts {
   ledgerPath: string;
   missionGraphPath: string;
   missionGraphHtmlPath: string;
+  missionChroniclePath: string;
 }
 
 export interface RunMetadata {
@@ -426,6 +456,9 @@ export interface SummaryShardStatistics {
   completed: number;
   failed: number;
   spillovers: number;
+  valueCompleted: number;
+  valueFailed: number;
+  valueSpillovers: number;
 }
 
 export interface SummaryNodeSnapshot {
@@ -459,11 +492,20 @@ export interface FabricSummary {
     reporting: FabricConfig['reporting'];
   };
   ownerCommands: OwnerCommandSummary;
+  chronicle: {
+    path: string;
+    dropRate: number;
+    failureRate: number;
+    valueDropRate?: number;
+    valueFailureRate?: number;
+    submittedValue?: number;
+    completedValue?: number;
+  };
   ledger: {
     totals: LedgerSnapshot['totals'];
     shards: Record<ShardId, LedgerShardTotals>;
     nodes: Record<string, LedgerNodeTotals>;
-    flows: { from: ShardId; to: ShardId; count: number }[];
+    flows: { from: ShardId; to: ShardId; count: number; value: number }[];
     invariants: LedgerSnapshot['invariants'];
     totalEvents: number;
     ownerEvents: number;

@@ -216,6 +216,36 @@ async function testLedgerAccounting(): Promise<void> {
   assert.equal(ledger.totals.cancelled, metrics.jobsCancelled, 'ledger should track cancellations');
   assert.equal(ledger.totals.spilloversOut, metrics.spillovers, 'ledger should track spillovers');
   assert.equal(ledger.totals.reassignments, metrics.reassignedAfterFailure, 'ledger should track reassignments');
+  assert.equal(
+    ledger.totals.valueSubmitted,
+    metrics.valueSubmitted,
+    'ledger should track submitted economic value'
+  );
+  assert.equal(
+    ledger.totals.valueCompleted,
+    metrics.valueCompleted,
+    'ledger should track completed economic value'
+  );
+  assert.equal(
+    ledger.totals.valueFailed,
+    metrics.valueFailed,
+    'ledger should track failed economic value'
+  );
+  assert.equal(
+    ledger.totals.valueCancelled,
+    metrics.valueCancelled,
+    'ledger should track cancelled economic value'
+  );
+  assert.equal(
+    ledger.totals.valueSpilloversOut,
+    metrics.valueSpillovers,
+    'ledger should track spillover economic value'
+  );
+  assert.equal(
+    ledger.totals.valueReassignments,
+    metrics.valueReassigned,
+    'ledger should track reassigned economic value'
+  );
   assert.ok(ledger.invariants.every((entry) => entry.ok), 'ledger invariants should all pass');
   assert.ok(ledger.events.length > 0, 'ledger should retain event history');
   await rm(checkpointPath, { force: true, recursive: true });
@@ -469,8 +499,24 @@ async function testJobBlueprintSeeding(): Promise<void> {
   assert.equal(summary.jobBlueprint.entries[0].count, 4);
   assert.equal(summary.jobBlueprint.entries[1].shard, 'mars');
   assert.equal(summary.jobBlueprint.source, 'unit-test-blueprint.json');
+  assert.equal(summary.chronicle.path, './mission-chronicle.md');
+  assert.ok(summary.chronicle.dropRate >= 0);
+  assert.ok(summary.chronicle.failureRate >= 0);
+  assert.equal(summary.chronicle.submittedValue, summary.metrics.valueSubmitted);
+  assert.equal(summary.chronicle.completedValue, summary.metrics.valueCompleted);
+  assert.ok(summary.chronicle.valueDropRate >= 0);
+  assert.ok(summary.chronicle.valueFailureRate >= 0);
+  assert.ok(summary.metrics.valueSubmitted >= summary.metrics.valueCompleted);
+  assert.ok(summary.metrics.valueSubmitted >= summary.metrics.valueFailed);
   const blueprintSummary = await readFile(join(reportingDir, 'blueprint', 'summary.json'), 'utf8');
   assert.ok(blueprintSummary.includes('jobBlueprint'));
+  const chroniclePath = join(reportingDir, 'blueprint', 'mission-chronicle.md');
+  const chronicleContent = await readFile(chroniclePath, 'utf8');
+  assert.ok(chronicleContent.includes('Mission Chronicle'));
+  assert.ok(chronicleContent.includes('Reliability digest'));
+  assert.ok(chronicleContent.includes('Value drop rate'));
+  assert.ok(chronicleContent.includes('Value failure rate'));
+  assert.ok(chronicleContent.includes('Value submitted'));
 
   await rm(dir, { force: true, recursive: true });
 }
@@ -529,6 +575,9 @@ async function testReportingRetarget(): Promise<void> {
     result.artifacts.summaryPath.includes(join(retargetedReportingDir, 'owner-elevated')),
     'summary should live under retargeted directory'
   );
+  assert.equal(summary.chronicle.path, './mission-chronicle.md');
+  assert.ok(summary.chronicle.dropRate >= 0);
+  assert.ok(summary.chronicle.failureRate >= 0);
   const eventsStats = await stat(result.artifacts.eventsPath);
   assert.ok(eventsStats.size > 0, 'events file should exist in retargeted directory');
   const topologyPath = join(retargetedReportingDir, 'owner-elevated', 'mission-topology.mmd');
@@ -542,6 +591,12 @@ async function testReportingRetarget(): Promise<void> {
   assert.equal(summary.topology.htmlPath, './mission-topology.html');
   assert.equal(result.artifacts.missionGraphPath, topologyPath);
   assert.equal(result.artifacts.missionGraphHtmlPath, topologyHtmlPath);
+  assert.ok(result.artifacts.missionChroniclePath.endsWith('mission-chronicle.md'));
+  const chronicleStats = await stat(result.artifacts.missionChroniclePath);
+  assert.ok(chronicleStats.size > 0, 'chronicle markdown should be generated');
+  const chronicleContent = await readFile(result.artifacts.missionChroniclePath, 'utf8');
+  assert.ok(chronicleContent.includes('Mission Chronicle'));
+  assert.ok(chronicleContent.includes('Owner Command Timeline'));
 
   let initialDirExists = true;
   try {
@@ -620,6 +675,8 @@ async function testOwnerCommandSchedule(): Promise<void> {
   assert.equal(summary.ownerState.checkpoint.intervalTicks, 4);
   assert.equal(summary.ownerState.reporting.directory, join(reportingDir, 'schedule', 'governance-archive'));
   assert.equal(summary.ownerState.reporting.defaultLabel, 'schedule-governance');
+  assert.equal(summary.chronicle.path, './mission-chronicle.md');
+  assert.ok(summary.chronicle.dropRate >= 0);
   const ownerLogRaw = await readFile(join(reportRoot, 'owner-commands-executed.json'), 'utf8');
   const ownerLog = JSON.parse(ownerLogRaw);
   assert.equal(ownerLog.executed.length, schedule.length);

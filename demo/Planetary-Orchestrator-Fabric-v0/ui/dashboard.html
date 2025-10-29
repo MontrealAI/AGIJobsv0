@@ -299,7 +299,7 @@
       <h2>Load Telemetry</h2>
       <p>
         Choose the folder that contains <code>summary.json</code>, <code>owner-script.json</code>, <code>owner-commands-executed.json</code>,
-        and <code>ledger.json</code>. You can also drag the folder onto the dropzone. For quick orientation, load the curated sample.
+        <code>mission-chronicle.md</code>, and <code>ledger.json</code>. You can also drag the folder onto the dropzone. For quick orientation, load the curated sample.
       </p>
       <div class="pickers">
         <label class="picker" title="Pick the reports directory">
@@ -313,6 +313,7 @@
       <p class="note">
         Need to generate fresh data? Run
         <code>demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh --output-label my-run</code> then open the resulting directory.
+        The generated <code>mission-chronicle.md</code> gives a human-readable briefing even when the dashboard is offline.
       </p>
     </section>
 
@@ -344,6 +345,9 @@
             <th>Completed</th>
             <th>Failed</th>
             <th>Spillovers</th>
+            <th>Value Completed</th>
+            <th>Value Failed</th>
+            <th>Value Spillovers</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -548,6 +552,9 @@
             <td>${formatNumber(snapshot.completed)}</td>
             <td>${formatNumber(stat.failed)}</td>
             <td>${formatNumber(stat.spillovers)}</td>
+            <td>${formatNumber(stat.valueCompleted)}</td>
+            <td>${formatNumber(stat.valueFailed)}</td>
+            <td>${formatNumber(stat.valueSpillovers)}</td>
           </tr>
         `;
       });
@@ -601,6 +608,12 @@
         { label: 'Spillovers Out', value: formatNumber(totals.spilloversOut), hint: 'Jobs pushed to other shards.' },
         { label: 'Spillovers In', value: formatNumber(totals.spilloversIn), hint: 'Jobs adopted from other shards.' },
         { label: 'Reassignments', value: formatNumber(totals.reassignments), hint: 'Jobs rerouted after failures/outages.' },
+        { label: 'Value Submitted', value: formatNumber(totals.valueSubmitted), hint: 'Economic weight registered across shards.' },
+        { label: 'Value Completed', value: formatNumber(totals.valueCompleted), hint: 'Total value delivered across all regions.' },
+        { label: 'Value Failed', value: formatNumber(totals.valueFailed), hint: 'Value impacted by terminal failures.' },
+        { label: 'Value Cancelled', value: formatNumber(totals.valueCancelled), hint: 'Value intentionally cancelled by the owner.' },
+        { label: 'Value Spillovers', value: formatNumber(totals.valueSpilloversOut), hint: 'Value redirected across shards.' },
+        { label: 'Value Reassigned', value: formatNumber(totals.valueReassignments), hint: 'Value rescued after outages.' },
         { label: 'Pending Jobs', value: formatNumber(ledger.pendingJobs), hint: 'Queue + in-flight jobs at snapshot tick.' },
         { label: 'Running Jobs', value: formatNumber(ledger.runningJobs), hint: 'Currently executing tasks.' },
       ]);
@@ -652,7 +665,9 @@
       flows.forEach((flow, index) => {
         const from = String(flow.from ?? 'unknown').replace(/[^a-zA-Z0-9]/g, '_') || `from_${index}`;
         const to = String(flow.to ?? 'unknown').replace(/[^a-zA-Z0-9]/g, '_') || `to_${index}`;
-        const label = Number(flow.count ?? 0).toLocaleString();
+        const countLabel = Number(flow.count ?? 0).toLocaleString();
+        const valueLabel = Number(flow.value ?? 0).toLocaleString();
+        const label = `${countLabel} jobs | ${valueLabel} value`;
         flowLines.push(`${from}(${flow.from ?? 'unknown'}) -->|${label}| ${to}(${flow.to ?? 'unknown'})`);
       });
       if (flowLines.length === 1) {
@@ -761,6 +776,8 @@
         const metrics = summary.metrics || {};
         const dropCount = (metrics.jobsSubmitted || 0) - (metrics.jobsCompleted || 0) - (metrics.jobsCancelled || 0);
         const dropRate = formatPercent(dropCount, metrics.jobsSubmitted || 0);
+        const valueDrop = (metrics.valueSubmitted || 0) - (metrics.valueCompleted || 0) - (metrics.valueCancelled || 0);
+        const valueDropRate = formatPercent(valueDrop, metrics.valueSubmitted || 0);
 
         renderMetrics(missionMetricsEl, [
           { label: 'Owner', value: summary.owner?.name || '—', hint: 'Supreme controller of the planetary fabric.' },
@@ -772,6 +789,13 @@
           { label: 'Spillovers', value: formatNumber(metrics.spillovers), hint: 'Cross-shard transfers triggered by policy or owner.' },
           { label: 'Reassignments', value: formatNumber(metrics.reassignedAfterFailure), hint: 'Jobs rescued after node outage or failure.' },
           { label: 'Drop Rate', value: dropRate, hint: '<2% target enforced by acceptance autopilot.' },
+          { label: 'Value Submitted', value: formatNumber(metrics.valueSubmitted), hint: 'Total economic weight dispatched.' },
+          { label: 'Value Completed', value: formatNumber(metrics.valueCompleted), hint: 'Value delivered across all shards.' },
+          { label: 'Value Failed', value: formatNumber(metrics.valueFailed), hint: 'Value impacted by terminal failures.' },
+          { label: 'Value Cancelled', value: formatNumber(metrics.valueCancelled), hint: 'Value intentionally halted by owner.' },
+          { label: 'Value Spillovers', value: formatNumber(metrics.valueSpillovers), hint: 'Value redirected across regions.' },
+          { label: 'Value Reassigned', value: formatNumber(metrics.valueReassigned), hint: 'Economic load rescued after outages.' },
+          { label: 'Value Drop Rate', value: valueDropRate, hint: 'Target <2% pending economic value.' },
         ]);
 
         renderBlueprint(summary.jobBlueprint, metrics);

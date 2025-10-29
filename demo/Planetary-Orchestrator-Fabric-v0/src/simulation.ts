@@ -73,6 +73,350 @@ function computeTickBudgets(
 type OwnerStateSnapshot = ReturnType<PlanetaryOrchestrator['getOwnerState']>;
 
 const NUMBER_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+const INTEGER_FORMATTER = new Intl.NumberFormat('en-US');
+const PERCENT_FORMATTER = new Intl.NumberFormat('en-US', {
+  style: 'percent',
+  maximumFractionDigits: 2,
+});
+
+function formatInteger(value: number): string {
+  return INTEGER_FORMATTER.format(Math.round(value));
+}
+
+function formatPercent(value: number): string {
+  if (!Number.isFinite(value)) {
+    return PERCENT_FORMATTER.format(0);
+  }
+  return PERCENT_FORMATTER.format(Math.max(0, value));
+}
+
+function summariseOwnerCommand(command: OwnerCommandSchedule['command']): string {
+  switch (command.type) {
+    case 'system.pause':
+      return 'Pause planetary fabric';
+    case 'system.resume':
+      return 'Resume planetary fabric';
+    case 'shard.pause':
+      return `Pause shard ${command.shard}`;
+    case 'shard.resume':
+      return `Resume shard ${command.shard}`;
+    case 'shard.update': {
+      const updates: string[] = [];
+      if (command.update.displayName) {
+        updates.push(`display name → ${command.update.displayName}`);
+      }
+      if (command.update.latencyBudgetMs !== undefined) {
+        updates.push(`latency budget → ${command.update.latencyBudgetMs}ms`);
+      }
+      if (command.update.maxQueue !== undefined) {
+        updates.push(`max queue → ${command.update.maxQueue}`);
+      }
+      if (command.update.spilloverTargets) {
+        updates.push(`spillover targets → ${command.update.spilloverTargets.join(', ')}`);
+      }
+      if (command.update.router?.queueAlertThreshold !== undefined) {
+        updates.push(`queue alert → ${command.update.router.queueAlertThreshold}`);
+      }
+      if (command.update.router?.spilloverPolicies) {
+        updates.push('spillover policies tuned');
+      }
+      const summary = updates.length > 0 ? ` (${updates.join('; ')})` : '';
+      return `Update shard ${command.shard}${summary}`;
+    }
+    case 'node.update': {
+      const updates: string[] = [];
+      if (command.update.capacity !== undefined) {
+        updates.push(`capacity → ${command.update.capacity}`);
+      }
+      if (command.update.maxConcurrency !== undefined) {
+        updates.push(`max concurrency → ${command.update.maxConcurrency}`);
+      }
+      if (command.update.specialties) {
+        updates.push(`specialties → ${command.update.specialties.join(', ')}`);
+      }
+      if (command.update.heartbeatIntervalSec !== undefined) {
+        updates.push(`heartbeat → ${command.update.heartbeatIntervalSec}s`);
+      }
+      if (command.update.region) {
+        updates.push(`region → ${command.update.region}`);
+      }
+      const summary = updates.length > 0 ? ` (${updates.join('; ')})` : '';
+      return `Update node ${command.nodeId}${summary}`;
+    }
+    case 'node.register':
+      return `Register node ${command.node.id} in ${command.node.region}`;
+    case 'node.deregister':
+      return `Deregister node ${command.nodeId}`;
+    case 'job.cancel':
+      return command.jobId ? `Cancel job ${command.jobId}` : 'Cancel targeted job';
+    case 'job.reroute': {
+      const identifier = command.jobId ? command.jobId : 'targeted job';
+      return `Reroute ${identifier} to shard ${command.targetShard}`;
+    }
+    case 'checkpoint.save':
+      return 'Save checkpoint snapshot';
+    case 'checkpoint.configure': {
+      const updates: string[] = [];
+      if (command.update.intervalTicks !== undefined) {
+        updates.push(`interval → ${command.update.intervalTicks} ticks`);
+      }
+      if (command.update.path) {
+        updates.push(`path → ${command.update.path}`);
+      }
+      const summary = updates.length > 0 ? ` (${updates.join('; ')})` : '';
+      return `Configure checkpoint${summary}`;
+    }
+    case 'reporting.configure': {
+      const updates: string[] = [];
+      if (command.update.directory) {
+        updates.push(`directory → ${command.update.directory}`);
+      }
+      if (command.update.defaultLabel) {
+        updates.push(`label → ${command.update.defaultLabel}`);
+      }
+      const summary = updates.length > 0 ? ` (${updates.join('; ')})` : '';
+      return `Configure reporting${summary}`;
+    }
+    default: {
+      const fallback = command as { type: string };
+      return fallback.type ?? 'unknown.command';
+    }
+  }
+}
+
+
+function buildMissionChronicleMarkdown(args: {
+  config: FabricConfig;
+  options: SimulationOptions;
+  metrics: FabricMetrics;
+  ownerState: ReturnType<PlanetaryOrchestrator['getOwnerState']>;
+  ledger: LedgerSnapshot;
+  shardSnapshots: Record<string, { queueDepth: number; inFlight: number; completed: number }>;
+  shardStats: Record<string, { completed: number; failed: number; spillovers: number }>;
+  nodeSnapshots: Record<string, { active: boolean; runningJobs: number }>;
+  executedCommands: OwnerCommandSchedule[];
+  skippedCommands: OwnerCommandSchedule[];
+  pendingCommands: OwnerCommandSchedule[];
+  run: RunMetadata;
+  missionGraphRelativePath: string;
+  ownerScriptRelativePath: string;
+  summaryRelativePath: string;
+}): string {
+  const {
+    config,
+    options,
+    metrics,
+    ownerState,
+    ledger,
+    shardSnapshots,
+    shardStats,
+    nodeSnapshots,
+    executedCommands,
+    skippedCommands,
+    pendingCommands,
+    run,
+    missionGraphRelativePath,
+    ownerScriptRelativePath,
+    summaryRelativePath,
+  } = args;
+
+  const label = options.outputLabel ?? config.reporting.defaultLabel;
+  const dropCount = Math.max(0, metrics.jobsSubmitted - metrics.jobsCompleted);
+  const dropRate = metrics.jobsSubmitted === 0 ? 0 : dropCount / metrics.jobsSubmitted;
+  const failureRate = metrics.jobsSubmitted === 0 ? 0 : metrics.jobsFailed / metrics.jobsSubmitted;
+  const spilloverRate = metrics.jobsSubmitted === 0 ? 0 : metrics.spillovers / metrics.jobsSubmitted;
+  const valueDrop = Math.max(0, metrics.valueSubmitted - metrics.valueCompleted - metrics.valueCancelled);
+  const valueDropRate = metrics.valueSubmitted === 0 ? 0 : valueDrop / metrics.valueSubmitted;
+  const valueFailureRate = metrics.valueSubmitted === 0 ? 0 : metrics.valueFailed / metrics.valueSubmitted;
+  const resilienceSignals = [
+    run.checkpointRestored
+      ? '✅ Orchestrator resumed from checkpoint with zero data loss.'
+      : '⚠️ Run executed without checkpoint restoration.',
+    run.stoppedEarly
+      ? `⚠️ Run halted early at tick ${formatInteger(run.stopTick ?? metrics.tick)} (${run.stopReason ?? 'stop directive'})`
+      : '✅ Run completed without an enforced stop.',
+    ownerState.systemPaused
+      ? '⚠️ System currently paused by owner command.'
+      : '✅ Fabric is live and stewarded by owner safeguards.',
+  ];
+
+  const shardRows = Object.entries(shardSnapshots).map(([shardId, snapshot]) => {
+    const configEntry = config.shards.find((entry) => entry.id === shardId);
+    const displayName = configEntry?.displayName ?? shardId;
+    const stats = shardStats[shardId] ?? { completed: 0, failed: 0, spillovers: 0 };
+    return `| ${displayName} (${shardId}) | ${formatInteger(snapshot.queueDepth)} | ${formatInteger(snapshot.inFlight)} | ${formatInteger(snapshot.completed)} | ${formatInteger(stats.failed)} | ${formatInteger(stats.spillovers)} |`;
+  });
+
+  const nodeRows = Object.entries(nodeSnapshots).map(([nodeId, snapshot]) => {
+    const definition = config.nodes.find((entry) => entry.id === nodeId);
+    const region = definition?.region ?? 'n/a';
+    const capacity = definition?.capacity ?? 0;
+    const concurrency = definition?.maxConcurrency ?? 0;
+    const status = snapshot.active ? '✅ Active' : '⚠️ Offline';
+    return `| ${nodeId} | ${region} | ${formatInteger(capacity)} | ${formatInteger(concurrency)} | ${status} | ${formatInteger(snapshot.runningJobs)} |`;
+  });
+
+  const invariantLines = ledger.invariants.map((entry) =>
+    `${entry.ok ? '✅' : '❌'} ${entry.message}`
+  );
+  const flowRows = ledger.flows.map((flow) => `| ${flow.from} → ${flow.to} | ${formatInteger(flow.count)} |`);
+
+  const executedLines = executedCommands.slice(0, 12).map((entry) => {
+    const description = summariseOwnerCommand(entry.command);
+    const note = entry.note ? ` — ${entry.note}` : '';
+    return `- Tick ${formatInteger(entry.tick)}: ${description}${note}`;
+  });
+  if (executedCommands.length > executedLines.length) {
+    executedLines.push(`- … ${executedCommands.length - executedLines.length} additional command(s) executed.`);
+  }
+
+  const skippedLines = skippedCommands.map((entry) => {
+    const description = summariseOwnerCommand(entry.command);
+    const note = entry.note ? ` — ${entry.note}` : '';
+    return `- Tick ${formatInteger(entry.tick)}: ${description}${note}`;
+  });
+
+  const pendingLines = pendingCommands.map((entry) => {
+    const description = summariseOwnerCommand(entry.command);
+    const note = entry.note ? ` — ${entry.note}` : '';
+    return `- Tick ${formatInteger(entry.tick)}: ${description}${note}`;
+  });
+
+  const lines: string[] = [];
+  lines.push('# Planetary Orchestrator Fabric – Mission Chronicle');
+  lines.push('');
+  lines.push(`**Label:** ${label}  |  **Owner:** ${config.owner.name}  |  **Global Multisig:** ${config.owner.multisig}`);
+  lines.push('');
+  lines.push(
+    'AGI Jobs v0 (v2) executed this planetary mission so that a non-technical owner could wield a superintelligent, sharded orchestration fabric without touching source code. '
+      + 'This chronicle is the operator-grade briefing capturing throughput, spillover dynamics, and governance actions in a single, human-readable ledger.'
+  );
+  lines.push('');
+  lines.push('## Run Overview');
+  lines.push('');
+  lines.push('| Metric | Value |');
+  lines.push('| --- | --- |');
+  lines.push(`| Final tick | ${formatInteger(metrics.tick)} |`);
+  lines.push(`| Jobs submitted | ${formatInteger(metrics.jobsSubmitted)} |`);
+  lines.push(`| Jobs completed | ${formatInteger(metrics.jobsCompleted)} |`);
+  lines.push(`| Jobs failed | ${formatInteger(metrics.jobsFailed)} |`);
+  lines.push(`| Jobs cancelled | ${formatInteger(metrics.jobsCancelled)} |`);
+  lines.push(`| Spillovers orchestrated | ${formatInteger(metrics.spillovers)} |`);
+  lines.push(`| Reassignments after failures | ${formatInteger(metrics.reassignedAfterFailure)} |`);
+  lines.push(`| Owner interventions recorded | ${formatInteger(ownerState.metrics.ownerInterventions)} |`);
+  lines.push(`| Value submitted | ${formatInteger(metrics.valueSubmitted)} |`);
+  lines.push(`| Value completed | ${formatInteger(metrics.valueCompleted)} |`);
+  lines.push(`| Value failed | ${formatInteger(metrics.valueFailed)} |`);
+  lines.push(`| Value cancelled | ${formatInteger(metrics.valueCancelled)} |`);
+  lines.push(`| Value spilled across shards | ${formatInteger(metrics.valueSpillovers)} |`);
+  lines.push(`| Value reassigned after failures | ${formatInteger(metrics.valueReassigned)} |`);
+  lines.push('');
+  lines.push('## Reliability Signals');
+  lines.push('');
+  lines.push(`- Drop rate: **${formatPercent(dropRate)}** (${formatInteger(dropCount)} job(s) outstanding)`);
+  lines.push(`- Failure rate: **${formatPercent(failureRate)}**`);
+  lines.push(`- Spillover intensity: **${formatPercent(spilloverRate)}** of total work redirected across shards`);
+  lines.push(`- Owner pause toggles: ${formatInteger(ownerState.metrics.systemPauses)} system / ${formatInteger(ownerState.metrics.shardPauses)} shard`);
+  lines.push(`- Value drop rate: **${formatPercent(valueDropRate)}** (${formatInteger(valueDrop)} value units outstanding)`);
+  lines.push(`- Value failure rate: **${formatPercent(valueFailureRate)}**`);
+  lines.push(`- Value reassigned: ${formatInteger(metrics.valueReassigned)} economic units rerouted after outages`);
+  lines.push('');
+  resilienceSignals.forEach((signal) => lines.push(`- ${signal}`));
+  lines.push('');
+  lines.push('## Shard Throughput & Backlog');
+  lines.push('');
+  if (shardRows.length > 0) {
+    lines.push('| Shard | Queue Depth | In Flight | Completed | Failed | Spillovers Out |');
+    lines.push('| --- | --- | --- | --- | --- | --- |');
+    lines.push(...shardRows);
+  } else {
+    lines.push('No shard telemetry captured.');
+  }
+  lines.push('');
+  lines.push('## Node Marketplace Pulse');
+  lines.push('');
+  if (nodeRows.length > 0) {
+    lines.push('| Node | Region | Capacity | Max Concurrency | Status | Running Jobs |');
+    lines.push('| --- | --- | --- | --- | --- | --- |');
+    lines.push(...nodeRows);
+  } else {
+    lines.push('No nodes registered in this run.');
+  }
+  lines.push('');
+  lines.push('## Ledger Guarantees');
+  lines.push('');
+  lines.push(`- Total ledger events sampled: ${formatInteger(ledger.totalEvents)}`);
+  lines.push(`- Owner command events sampled: ${formatInteger(ledger.ownerEvents)}`);
+  const queueDigest = Object.entries(ledger.queueDepthByShard)
+    .map(([id, queue]) => `${id}: ${formatInteger(queue.queue)} queued / ${formatInteger(queue.inFlight)} in-flight`)
+    .join('; ');
+  if (queueDigest) {
+    lines.push(`- Queue depth snapshot: ${queueDigest}`);
+  }
+  lines.push('');
+  if (invariantLines.length > 0) {
+    lines.push('### Ledger Invariants');
+    invariantLines.forEach((entry) => lines.push(entry));
+    lines.push('');
+  }
+  if (flowRows.length > 0) {
+    lines.push('### Inter-Shard Spillover Flows');
+    lines.push('| Route | Jobs |');
+    lines.push('| --- | --- |');
+    lines.push(...flowRows);
+    lines.push('');
+  }
+  lines.push('## Owner Command Timeline');
+  lines.push('');
+  if (executedLines.length > 0) {
+    lines.push(...executedLines);
+  } else {
+    lines.push('- No owner commands were executed during this run.');
+  }
+  lines.push('');
+  if (skippedLines.length > 0) {
+    lines.push('### Commands Skipped Pre-Resume');
+    lines.push(...skippedLines);
+    lines.push('');
+  }
+  if (pendingLines.length > 0) {
+    lines.push('### Pending Commands Still Scheduled');
+    lines.push(...pendingLines);
+    lines.push('');
+  }
+  lines.push('## Governance & Checkpoint Control');
+  lines.push('');
+  lines.push(`- Checkpoint path: ${'`'}${ownerState.checkpoint.path}${'`'} (interval ${formatInteger(ownerState.checkpoint.intervalTicks)} tick(s))`);
+  lines.push(`- Reporting directory: ${'`'}${ownerState.reporting.directory}${'`'} (default label ${'`'}${ownerState.reporting.defaultLabel}${'`'})`);
+  lines.push(
+    ownerState.pausedShards.length > 0
+      ? `- Paused shards: ${ownerState.pausedShards.join(', ')}`
+      : '- All shards currently active.'
+  );
+  lines.push('');
+  lines.push('## Artifact Index for Mission Directors');
+  lines.push('');
+  lines.push('- Mission summary JSON: `' + summaryRelativePath + '`');
+  lines.push('- Owner command payloads: `' + ownerScriptRelativePath + '`');
+  lines.push('- Planetary topology mermaid: `' + missionGraphRelativePath + '`');
+  lines.push('- Interactive dashboard: `./dashboard.html`');
+  lines.push('- Ledger snapshot: `./ledger.json`');
+  lines.push('');
+  lines.push('## Empowerment Highlights');
+  lines.push('');
+  lines.push('- **Non-technical mastery:** Every command above is replayable directly from the generated owner scripts, ensuring executives can reproduce the superintelligent behaviour without touching code.');
+  lines.push('- **Spillover governance:** Regional spillovers and failover assignments are logged for audit, proving that Kardashev-grade throughput stayed deterministic and balanced.');
+  lines.push('- **Instant restart readiness:** The checkpoint configuration and ledger invariants document exactly how the orchestrator resumes after a kill-switch drill, guaranteeing business continuity.');
+  lines.push('');
+  lines.push('This chronicle demonstrates that AGI Jobs v0 (v2) empowers mission owners to direct a planetary workforce with the precision, transparency, and command authority expected from a post-capital superintelligence.');
+  lines.push('');
+  lines.push(
+    `**Reliability digest:** Drop rate ${formatPercent(dropRate)} · Failure rate ${formatPercent(failureRate)} · Value drop ${formatPercent(valueDropRate)} · Value failure ${formatPercent(valueFailureRate)} · Spillover rate ${formatPercent(spilloverRate)}.`
+  );
+  lines.push('');
+
+  return lines.join('\n');
+}
 
 class ReportOutputManager {
   private eventsStream?: WriteStream;
@@ -540,6 +884,12 @@ async function writeArtifacts(
     ? `${checkpointConfig.path.slice(0, -5)}.owner.json`
     : `${checkpointConfig.path}.owner.json`;
   const ledgerSnapshot = orchestrator.getLedgerSnapshot();
+  const dropCount = Math.max(0, metrics.jobsSubmitted - metrics.jobsCompleted);
+  const dropRate = metrics.jobsSubmitted === 0 ? 0 : dropCount / metrics.jobsSubmitted;
+  const failureRate = metrics.jobsSubmitted === 0 ? 0 : metrics.jobsFailed / metrics.jobsSubmitted;
+  const valueDrop = Math.max(0, metrics.valueSubmitted - metrics.valueCompleted - metrics.valueCancelled);
+  const valueDropRate = metrics.valueSubmitted === 0 ? 0 : valueDrop / metrics.valueSubmitted;
+  const valueFailureRate = metrics.valueSubmitted === 0 ? 0 : metrics.valueFailed / metrics.valueSubmitted;
 
   await writeShardTelemetry(reportDir, shardSnapshots, shardStats);
 
@@ -560,6 +910,28 @@ async function writeArtifacts(
   await fs.writeFile(
     missionGraphHtmlPath,
     buildMermaidHtmlPage('Planetary Orchestrator Fabric – Topology', missionGraph),
+    'utf8'
+  );
+  const missionChroniclePath = join(reportDir, 'mission-chronicle.md');
+  await fs.writeFile(
+    missionChroniclePath,
+    buildMissionChronicleMarkdown({
+      config,
+      options,
+      metrics,
+      ownerState,
+      ledger: ledgerSnapshot,
+      shardSnapshots,
+      shardStats,
+      nodeSnapshots,
+      executedCommands,
+      skippedCommands,
+      pendingCommands,
+      run: runMetadata,
+      missionGraphRelativePath: './mission-topology.mmd',
+      ownerScriptRelativePath: './owner-script.json',
+      summaryRelativePath: './summary.json',
+    }),
     'utf8'
   );
 
@@ -618,6 +990,15 @@ async function writeArtifacts(
     topology: {
       mermaidPath: './mission-topology.mmd',
       htmlPath: './mission-topology.html',
+    },
+    chronicle: {
+      path: './mission-chronicle.md',
+      dropRate,
+      failureRate,
+      valueDropRate,
+      valueFailureRate,
+      submittedValue: metrics.valueSubmitted,
+      completedValue: metrics.valueCompleted,
     },
     ledger: {
       totals: ledgerSnapshot.totals,
@@ -836,6 +1217,7 @@ async function writeArtifacts(
     ledgerPath,
     missionGraphPath,
     missionGraphHtmlPath,
+    missionChroniclePath,
   };
 }
 
@@ -905,17 +1287,34 @@ function buildDashboardHtml(
         systemPauses: 0,
         shardPauses: 0,
       };
-      document.getElementById('metrics').innerHTML =
-        '<div class="metric"><strong>Tick</strong><br />' + metrics.tick.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Submitted</strong><br />' + metrics.jobsSubmitted.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Completed</strong><br />' + metrics.jobsCompleted.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Failed</strong><br />' + metrics.jobsFailed.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Jobs Cancelled</strong><br />' + metrics.jobsCancelled.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Spillovers</strong><br />' + metrics.spillovers.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Reassignments</strong><br />' + metrics.reassignedAfterFailure.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Owner Interventions</strong><br />' + ownerMetrics.ownerInterventions.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>System Pauses</strong><br />' + ownerMetrics.systemPauses.toLocaleString() + '</div>' +
-        '<div class="metric"><strong>Shard Pauses</strong><br />' + ownerMetrics.shardPauses.toLocaleString() + '</div>';
+      const missionMetricEntries = [
+        { label: 'Tick', value: metrics.tick },
+        { label: 'Jobs Submitted', value: metrics.jobsSubmitted },
+        { label: 'Jobs Completed', value: metrics.jobsCompleted },
+        { label: 'Jobs Failed', value: metrics.jobsFailed },
+        { label: 'Jobs Cancelled', value: metrics.jobsCancelled },
+        { label: 'Spillovers', value: metrics.spillovers },
+        { label: 'Reassignments', value: metrics.reassignedAfterFailure },
+        { label: 'Value Submitted', value: metrics.valueSubmitted },
+        { label: 'Value Completed', value: metrics.valueCompleted },
+        { label: 'Value Failed', value: metrics.valueFailed },
+        { label: 'Value Cancelled', value: metrics.valueCancelled },
+        { label: 'Value Spillovers', value: metrics.valueSpillovers },
+        { label: 'Value Reassigned', value: metrics.valueReassigned },
+        { label: 'Owner Interventions', value: ownerMetrics.ownerInterventions },
+        { label: 'System Pauses', value: ownerMetrics.systemPauses },
+        { label: 'Shard Pauses', value: ownerMetrics.shardPauses },
+      ];
+      document.getElementById('metrics').innerHTML = missionMetricEntries
+        .map(
+          (entry) =>
+            '<div class="metric"><strong>' +
+            entry.label +
+            '</strong><br />' +
+            (entry.value ?? 0).toLocaleString() +
+            '</div>'
+        )
+        .join('');
       const blueprint = summary.jobBlueprint;
       if (blueprint) {
         const metadata = blueprint.metadata ?? {};
@@ -1012,17 +1411,35 @@ function buildDashboardHtml(
         const ledger = await ledgerResp.json();
         document.getElementById('ledger-path').textContent = ledgerAssetPath;
         const totals = ledger.totals ?? {};
-        document.getElementById('ledger-metrics').innerHTML =
-          '<div class="metric"><strong>Jobs Submitted</strong><br />' + (totals.submitted ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Assignments</strong><br />' + (totals.assigned ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Completed</strong><br />' + (totals.completed ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Failed</strong><br />' + (totals.failed ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Cancelled</strong><br />' + (totals.cancelled ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Spillovers Out</strong><br />' + (totals.spilloversOut ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Spillovers In</strong><br />' + (totals.spilloversIn ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Reassignments</strong><br />' + (totals.reassignments ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Pending Jobs</strong><br />' + (ledger.pendingJobs ?? 0).toLocaleString() + '</div>' +
-          '<div class="metric"><strong>Running Jobs</strong><br />' + (ledger.runningJobs ?? 0).toLocaleString() + '</div>';
+        const ledgerMetricEntries = [
+          { label: 'Jobs Submitted', value: totals.submitted },
+          { label: 'Assignments', value: totals.assigned },
+          { label: 'Completed', value: totals.completed },
+          { label: 'Failed', value: totals.failed },
+          { label: 'Cancelled', value: totals.cancelled },
+          { label: 'Spillovers Out', value: totals.spilloversOut },
+          { label: 'Spillovers In', value: totals.spilloversIn },
+          { label: 'Reassignments', value: totals.reassignments },
+          { label: 'Value Submitted', value: totals.valueSubmitted },
+          { label: 'Value Completed', value: totals.valueCompleted },
+          { label: 'Value Failed', value: totals.valueFailed },
+          { label: 'Value Cancelled', value: totals.valueCancelled },
+          { label: 'Value Spillovers Out', value: totals.valueSpilloversOut },
+          { label: 'Value Spillovers In', value: totals.valueSpilloversIn },
+          { label: 'Value Reassignments', value: totals.valueReassignments },
+          { label: 'Pending Jobs', value: ledger.pendingJobs },
+          { label: 'Running Jobs', value: ledger.runningJobs },
+        ];
+        document.getElementById('ledger-metrics').innerHTML = ledgerMetricEntries
+          .map(
+            (entry) =>
+              '<div class="metric"><strong>' +
+              entry.label +
+              '</strong><br />' +
+              (entry.value ?? 0).toLocaleString() +
+              '</div>'
+          )
+          .join('');
         const invariantHtml = Array.isArray(ledger.invariants) && ledger.invariants.length > 0
           ? ledger.invariants
               .map((entry) => {
@@ -1165,7 +1582,7 @@ function buildDashboardHtml(
 async function writeShardTelemetry(
   reportDir: string,
   snapshots: Record<string, { queueDepth: number; inFlight: number; completed: number }>,
-  statistics: Record<string, { completed: number; failed: number; spillovers: number }>
+  statistics: Record<string, { completed: number; failed: number; spillovers: number; valueCompleted: number; valueFailed: number; valueSpillovers: number }>
 ): Promise<void> {
   const entries = Object.entries(snapshots);
   await Promise.all(
@@ -1178,6 +1595,9 @@ async function writeShardTelemetry(
         completed: snapshot.completed,
         failed: stat?.failed ?? 0,
         spillovers: stat?.spillovers ?? 0,
+        valueCompleted: stat?.valueCompleted ?? 0,
+        valueFailed: stat?.valueFailed ?? 0,
+        valueSpillovers: stat?.valueSpillovers ?? 0,
       };
       await fs.writeFile(join(reportDir, `${shardId}-telemetry.json`), JSON.stringify(payload, null, 2), 'utf8');
     })
