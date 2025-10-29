@@ -532,21 +532,44 @@
 
       const invariants = Array.isArray(ledger.invariants) ? ledger.invariants : [];
       if (invariants.length > 0) {
-        ledgerInvariantsEl.innerHTML = invariants
-          .map((entry) => {
-            const variant = entry.ok ? 'success' : 'critical';
-            const label = entry.ok ? 'Aligned' : 'Investigate';
-            return `
-              <div class="metric-card" style="border-left: 4px solid ${entry.ok ? 'var(--success)' : 'var(--critical)'};">
-                <strong>${entry.id}</strong>
-                <span>${label}</span>
-                <small>${entry.message || 'No additional notes'}</small>
-              </div>
-            `;
-          })
-          .join('');
+        ledgerInvariantsEl.innerHTML = '';
+        invariants.forEach((entry = {}) => {
+          const card = document.createElement('div');
+          card.className = 'metric-card';
+          card.style.borderLeft = `4px solid ${entry.ok ? 'var(--success)' : 'var(--critical)'}`;
+
+          const titleEl = document.createElement('strong');
+          titleEl.textContent = entry.id ?? 'Invariant';
+          card.appendChild(titleEl);
+
+          const statusEl = document.createElement('span');
+          statusEl.textContent = entry.ok ? 'Aligned' : 'Investigate';
+          card.appendChild(statusEl);
+
+          const messageEl = document.createElement('small');
+          messageEl.textContent = entry.message || 'No additional notes';
+          card.appendChild(messageEl);
+
+          ledgerInvariantsEl.appendChild(card);
+        });
       } else {
-        ledgerInvariantsEl.innerHTML = '<div class="metric-card"><strong>Ledger Invariants</strong><span>Nominal</span><small>No invariants provided.</small></div>';
+        ledgerInvariantsEl.innerHTML = '';
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'metric-card';
+
+        const titleEl = document.createElement('strong');
+        titleEl.textContent = 'Ledger Invariants';
+        emptyCard.appendChild(titleEl);
+
+        const statusEl = document.createElement('span');
+        statusEl.textContent = 'Nominal';
+        emptyCard.appendChild(statusEl);
+
+        const messageEl = document.createElement('small');
+        messageEl.textContent = 'No invariants provided.';
+        emptyCard.appendChild(messageEl);
+
+        ledgerInvariantsEl.appendChild(emptyCard);
       }
 
       const flows = Array.isArray(ledger.flows) ? ledger.flows : [];
