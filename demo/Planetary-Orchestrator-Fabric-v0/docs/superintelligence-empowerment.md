@@ -29,7 +29,7 @@ timeline
 
 1. **Prime the environment** using the quickstart in the README. Copy the `.env` templates and run `npm install` once.
 2. **Launch** the fabric with `bin/run-demo.sh`. Supply `--output-label` to route artifacts into a named directory.
-3. **Load the dashboard** (`ui/dashboard.html`) to review the topology, job flows, and restart drill guidance without a build step.
+3. **Load the mission console** (`ui/dashboard.html`) and drop the generated `reports/<label>` folder onto the page to review topology, job flows, owner interventions, and restart drill guidance without a build step.
 4. **Replay governance payloads** from `reports/<label>/owner-script.json` or generate new ones with `npm run owner:system-pause` etc.
 5. **Rehearse the restart drill** via `bin/run-restart-drill.sh --stop-after 200`. The script halts the orchestrator, extracts the checkpoint path from `summary.json`, and resumes automatically.
 6. **Validate planetary resilience** by executing `npm run demo:planetary-orchestrator-fabric:acceptance -- --label planetary-acceptance`. The harness proves that:

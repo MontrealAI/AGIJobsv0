@@ -36,7 +36,7 @@ This dossier documents the first-principles planning behind the restart-ready up
 - **Mathematical sanity:** Verified that stop tick calculations use `Math.ceil(stopAfterTicks)` to avoid off-by-one drift between integer and fractional input.
 - **Log symmetry:** Compared pre/post resume shard statistics during testing to confirm totals match and no shard is starved.
 - **Event stream integrity:** Confirmed via tests that the appended `simulation.stopped` event exists exactly once, ensuring replay systems can detect intentional halts.
-- **Documentation completeness:** Cross-referenced README, `docs/owner-control.md`, `docs/restart-drill.md`, and `ui/dashboard.html` so every operator surface mentions the restart drill.
+- **Documentation completeness:** Cross-referenced README, `docs/owner-control.md`, `docs/restart-drill.md`, and the drag-and-drop console `ui/dashboard.html` so every operator surface mentions the restart drill.
 
 ## Potential Pitfalls & Future Watchpoints
 
