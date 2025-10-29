@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tiny Recursive Model Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs" type="module"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+      body { padding: 2rem; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; }
+      pre { background: #0f172a; color: #f8fafc; padding: 1rem; border-radius: 0.75rem; overflow-x: auto; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>🎖️ Tiny Recursive Model Demo</h1>
+      <p>
+        This interactive dossier showcases how a non-technical operator can summon AGI Jobs v0 (v2) to train, govern, and deploy a
+        Tiny Recursive Model with industrial-grade ROI and safety guardrails.
+      </p>
+      <section>
+        <h2>System Flow</h2>
+        <pre class="mermaid">
+flowchart LR
+    user(User Prompt) --> planner[AGI Jobs Planner]
+    planner --> orchestrator[TRM Orchestrator]
+    orchestrator --> engine[Tiny Recursive Model Engine]
+    engine --> ledger[Economic Ledger]
+    ledger --> thermostat[Thermostat]
+    thermostat --> orchestrator
+    ledger --> sentinel[Sentinel Guardrails]
+    sentinel --> orchestrator
+    ledger --> telemetry[Telemetry/Subgraph]
+    telemetry --> dashboards[Executive Dashboards]
+        </pre>
+      </section>
+      <section class="grid">
+        <article>
+          <h3>Three-Step Bootstrap</h3>
+          <ol>
+            <li>Train TRM with deep supervision (`python run_demo.py train`).</li>
+            <li>Simulate production ROI (`python run_demo.py simulate`).</li>
+            <li>Open this page to review results and governance payloads.</li>
+          </ol>
+          <p>
+            The generated <code>artifacts/report.json</code> file powers the charts below and can be mirrored on-chain for
+            compliance.
+          </p>
+        </article>
+        <article>
+          <h3>Deployment Manifest</h3>
+          <p>
+            Run <code>python run_demo.py deploy --registry https://alpha.agijobs.ai/trm</code> to emit a manifest containing the
+            EMA checkpoint, thermostat bounds, sentinel guardrails, and economics. Contract owners can apply the JSON payload to
+            update live parameters in real time.
+          </p>
+        </article>
+      </section>
+      <section>
+        <h2>Latest Metrics</h2>
+        <p>Load <code>../artifacts/report.json</code> to refresh the panel.</p>
+        <button id="load-report">Load Report</button>
+        <table id="metrics-table">
+          <thead>
+            <tr><th>Approach</th><th>Success Rate</th><th>Cost</th><th>Value</th><th>ROI</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <script>
+      async function loadReport() {
+        try {
+          const response = await fetch('../artifacts/report.json');
+          if (!response.ok) {
+            alert('Report not found. Run python run_demo.py bootstrap first.');
+            return;
+          }
+          const data = await response.json();
+          const tbody = document.querySelector('#metrics-table tbody');
+          tbody.innerHTML = '';
+          Object.values(data.results).forEach((entry) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${entry.approach}</td>
+              <td>${(entry.success_rate * 100).toFixed(2)}%</td>
+              <td>$${Number(entry.cost).toFixed(4)}</td>
+              <td>$${Number(entry.value).toFixed(2)}</td>
+              <td>${Number(entry.roi).toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        } catch (error) {
+          console.error(error);
+          alert('Unable to load report.');
+        }
+      }
+      document.getElementById('load-report').addEventListener('click', loadReport);
+    </script>
+  </body>
+</html>

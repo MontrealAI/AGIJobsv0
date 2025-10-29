@@ -1,0 +1,54 @@
+model:
+  input_dim: 8
+  latent_dim: 24
+  answer_dim: 2
+  hidden_dim: 48
+  inner_cycles: 6
+  outer_steps: 3
+  halt_threshold: 0.5
+  learning_rate: 0.05
+  ema_decay: 0.999
+  weight_scale: 0.2
+  max_grad_norm: 5.0
+training:
+  epochs: 40
+  batch_size: 128
+  seed: 42
+  checkpoint_interval: 10
+  log_interval: 5
+  validation_split: 0.2
+  deep_supervision_weight: 0.4
+  halt_loss_weight: 0.2
+economics:
+  value_per_success: 100.0
+  cost_per_call: 0.001
+  target_roi: 2.0
+  roi_floor: 1.2
+  daily_cost_cap: 50.0
+  max_latency_ms: 2000
+  max_recursion: 18
+thermostat:
+  window: 50
+  min_inner_cycles: 3
+  max_inner_cycles: 9
+  min_outer_steps: 2
+  max_outer_steps: 5
+  min_halt_threshold: 0.4
+  max_halt_threshold: 0.9
+  adjustment_rate: 0.1
+  concurrency:
+    min: 1
+    max: 6
+sentinel:
+  roi_floor: 1.0
+  max_cost: 500.0
+  max_latency_ms: 2500
+  max_recursions: 24
+  failure_limit: 8
+baseline:
+  greedy_accuracy: 0.3
+  llm_accuracy: 0.45
+  llm_cost: 0.05
+simulation:
+  trials: 1000
+  seed: 7
