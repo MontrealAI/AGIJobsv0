@@ -1,0 +1,50 @@
+identity:
+  ens_domain: demo.alpha.node.agi.eth
+  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
+
+governance:
+  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+
+economy:
+  stake_threshold: 1000
+
+network:
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_API_KEY"
+
+contracts:
+  job_registry: "0x0000000000000000000000000000000000000001"
+  stake_manager: "0x0000000000000000000000000000000000000002"
+  incentives: "0x0000000000000000000000000000000000000003"
+  treasury: "0x0000000000000000000000000000000000000004"
+
+storage:
+  knowledge_lake: "./storage/knowledge.json"
+  log_file: "./logs/alpha_node.log"
+
+observability:
+  enable_prometheus: true
+  enable_dashboard: true
+  metrics_port: 9753
+  dashboard_port: 8088
+
+runtime:
+  job_poll_interval: 2.5
+  planning_horizon: 4
+  exploration_bias: 1.2
+
+specialists:
+  - name: finance
+    model: "finance-strategist-v1"
+    risk_limit: 3.5
+    description: "Treasury liquidity orchestration"
+    enabled: true
+  - name: biotech
+    model: "biotech-synthesist-v1"
+    risk_limit: 2.0
+    description: "Molecular discovery and synthesis"
+    enabled: true
+  - name: manufacturing
+    model: "manufacturing-optimizer-v1"
+    risk_limit: 1.5
+    description: "Digital twin optimization"
+    enabled: true

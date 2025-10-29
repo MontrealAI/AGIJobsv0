@@ -1,32 +1,47 @@
-from __future__ import annotations
-
 from pathlib import Path
 
 import pytest
 
-from agi_alpha_node.config import ConfigError, load_config
+from alpha_node.config import AlphaNodeConfig
 
 
-def test_load_config_success(tmp_path: Path) -> None:
-    config_path = tmp_path / "config.yaml"
-    config_path.write_text(Path("demo/AGI-Alpha-Node-v0/config/operator.example.yaml").read_text())
-    config = load_config(config_path)
-    assert config.operator.ens_domain == "demo.alpha.node.agi.eth"
-    assert config.network.chain_id == 1
-    assert config.staking.minimum_stake == 10000.0
+def test_config_load(tmp_path: Path) -> None:
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text(
+        """
+identity:
+  ens_domain: demo.alpha.node.agi.eth
+  owner_address: "0xabc"
 
+governance:
+  governance_address: "0xdef"
 
-def test_load_config_missing(tmp_path: Path) -> None:
-    with pytest.raises(ConfigError):
-        load_config(tmp_path / "missing.yaml")
+economy:
+  stake_threshold: 10
 
+network:
+  rpc_url: "https://example.invalid"
 
-def test_load_config_invalid(tmp_path: Path) -> None:
-    config_path = tmp_path / "config.yaml"
-    config_path.write_text(
-        Path("demo/AGI-Alpha-Node-v0/config/operator.example.yaml").read_text().replace(
-            "0x1111111111111111111111111111111111111111", "invalid"
-        )
+contracts:
+  job_registry: "0x1"
+  stake_manager: "0x2"
+  incentives: "0x3"
+  treasury: "0x4"
+
+storage:
+  knowledge_lake: "knowledge.json"
+  log_file: "logs/alpha.log"
+""",
+        encoding="utf-8",
     )
-    with pytest.raises(ConfigError):
-        load_config(config_path)
+    config = AlphaNodeConfig.load(cfg)
+    assert config.ens_domain == "demo.alpha.node.agi.eth"
+    assert config.knowledge_path.name == "knowledge.json"
+    assert config.log_path.name == "alpha.log"
+
+
+def test_config_missing_section(tmp_path: Path) -> None:
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text("identity: {}\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        AlphaNodeConfig.load(cfg)
