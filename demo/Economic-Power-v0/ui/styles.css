@@ -500,6 +500,116 @@ main {
   border-radius: 1.2rem;
 }
 
+.emergency-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.emergency-card {
+  background: rgba(8, 13, 26, 0.8);
+  border: 1px solid rgba(110, 231, 255, 0.18);
+  border-radius: 1.25rem;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 26px 45px rgba(3, 10, 20, 0.6);
+}
+
+.emergency-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.emergency-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: rgba(56, 189, 248, 0.18);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  text-transform: uppercase;
+}
+
+.emergency-chip.ready {
+  background: rgba(74, 222, 128, 0.18);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+.emergency-chip.gated {
+  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.emergency-response {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.emergency-metrics,
+.emergency-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.emergency-metrics li,
+.emergency-list li {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.emergency-metrics li strong {
+  color: var(--accent-strong);
+}
+
+#emergency-circuits,
+#emergency-modules,
+#emergency-programs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#emergency-circuits th,
+#emergency-circuits td,
+#emergency-modules th,
+#emergency-modules td,
+#emergency-programs th,
+#emergency-programs td {
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+  padding: 0.6rem;
+  text-align: left;
+}
+
+#emergency-programs td code,
+#emergency-modules td code,
+#emergency-circuits td code {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.85rem;
+}
+
+#emergency-modules tbody tr.action-required td {
+  color: #f87171;
+}
+
 .assertion-card {
   background: rgba(7, 13, 26, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.25);

@@ -6,6 +6,8 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import type { EmergencyConsoleReport } from './ownerEmergencyReport';
+import { buildEmergencyConsoleReport, renderEmergencyConsoleReport } from './ownerEmergencyReport';
 
 const commandProgramSchema = z.object({
   id: z.string(),
@@ -338,6 +340,7 @@ type OwnerControlSupremacy = {
   mermaid: string;
 };
 
+export type Summary = {
 type SuperIntelligenceClassification =
   | 'transcendent-dominion'
   | 'planetary-dominant'
@@ -436,12 +439,13 @@ type Summary = {
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
   ownerControlSupremacy: OwnerControlSupremacy;
+  ownerEmergencyAuthority: EmergencyConsoleReport;
   superIntelligence: SuperIntelligenceReport;
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
 };
 
-type CoverageSurface =
+export type CoverageSurface =
   | 'jobs'
   | 'validators'
   | 'stablecoinAdapters'
@@ -2617,6 +2621,7 @@ function synthesiseSummary(
       recommendedActions: [],
       mermaid: '',
     },
+    ownerEmergencyAuthority: {} as EmergencyConsoleReport,
     superIntelligence: {
       index: 0,
       classification: 'formative',
@@ -2933,6 +2938,7 @@ export async function runScenario(
   );
   summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
+  summary.ownerEmergencyAuthority = buildEmergencyConsoleReport(summary);
   return summary;
 }
 
@@ -3053,6 +3059,16 @@ async function writeOutputs(
     `${summary.ownerControlSupremacy.mermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.json'),
+    JSON.stringify(summary.ownerEmergencyAuthority, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.md'),
+    renderEmergencyConsoleReport(summary.ownerEmergencyAuthority),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-emergency-authority.mmd'),
+    `${summary.ownerEmergencyAuthority.mermaid.trimEnd()}\n`,
     path.join(outputDir, 'super-intelligence.json'),
     JSON.stringify(summary.superIntelligence, null, 2),
   );

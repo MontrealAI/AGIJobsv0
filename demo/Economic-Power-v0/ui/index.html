@@ -124,6 +124,78 @@
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="emergency-heading">
+        <div class="panel-header">
+          <h2 id="emergency-heading">Emergency authority console</h2>
+          <p>Instant pause/resume control, alert mesh coverage, and module triage for the owner multi-sig.</p>
+        </div>
+        <div class="emergency-grid">
+          <article class="emergency-card" aria-label="Immediate commands">
+            <h3>Immediate commands</h3>
+            <p><strong>Pause:</strong> <code id="emergency-pause"></code></p>
+            <p><strong>Resume:</strong> <code id="emergency-resume"></code></p>
+            <p id="emergency-response" class="emergency-response"></p>
+            <span id="emergency-autopilot" class="emergency-chip">Awaiting telemetry</span>
+          </article>
+          <article class="emergency-card" aria-label="Safety &amp; custody metrics">
+            <h3>Safety &amp; custody</h3>
+            <ul id="emergency-metrics" class="emergency-metrics"></ul>
+          </article>
+          <article class="emergency-card" aria-label="Alert mesh">
+            <h3>Alert mesh</h3>
+            <ul id="emergency-alerts" class="emergency-list"></ul>
+          </article>
+          <article class="emergency-card" aria-label="Emergency contacts">
+            <h3>Emergency contacts</h3>
+            <ul id="emergency-contacts" class="emergency-list"></ul>
+          </article>
+          <article class="emergency-card" aria-label="Circuit breakers">
+            <h3>Circuit breakers</h3>
+            <div class="table-wrapper">
+              <table id="emergency-circuits">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Threshold</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="emergency-card" aria-label="Modules requiring action">
+            <h3>Module triage</h3>
+            <div class="table-wrapper">
+              <table id="emergency-modules">
+                <thead>
+                  <tr>
+                    <th>Module</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="emergency-card" aria-label="Deterministic programs">
+            <h3>Deterministic programs</h3>
+            <div class="table-wrapper">
+              <table id="emergency-programs">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Command</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </article>
+          <article class="emergency-card" aria-label="Recommended actions">
+            <h3>Recommended actions</h3>
+            <ul id="emergency-actions" class="emergency-list"></ul>
       <section id="superintelligence-panel" class="panel" aria-labelledby="superintelligence-heading">
         <div class="panel-header">
           <h2 id="superintelligence-heading">Superintelligence control layer</h2>
@@ -151,6 +223,9 @@
         </div>
         <div class="mermaid-wrapper">
           <div
+            id="mermaid-emergency"
+            class="mermaid"
+            aria-label="Emergency authority mermaid diagram"
             id="mermaid-superintelligence"
             class="mermaid"
             aria-label="Superintelligence contribution diagram"

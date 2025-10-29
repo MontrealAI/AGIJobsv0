@@ -3,6 +3,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { loadScenarioFromFile, runScenario } from '../scripts/runDemo';
 import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/ownerAutopilot';
+import { buildEmergencyConsoleReport, renderEmergencyConsoleReport } from '../scripts/ownerEmergencyReport';
 import './owner_programs.test';
 
 const scenarioPath = path.join(__dirname, '..', 'scenario', 'baseline.json');
@@ -358,5 +359,27 @@ test('owner autopilot briefing surfaces guardrails and command cadence', async (
   assert(rendered.includes('## Recommended actions'));
   assert(rendered.includes(brief.pauseCommand));
   assert(rendered.includes(brief.resumeCommand));
+});
+
+test('owner emergency console surfaces unstoppable pause authority', async () => {
+  const scenario = await loadScenarioFromFile(scenarioPath);
+  const summary = await runScenario(scenario);
+  const report = buildEmergencyConsoleReport(summary);
+
+  assert(summary.ownerEmergencyAuthority, 'Summary should expose emergency authority snapshot');
+  assert.equal(report.pauseCommand, summary.ownerEmergencyAuthority.pauseCommand);
+  assert.equal(report.resumeCommand, summary.ownerEmergencyAuthority.resumeCommand);
+  assert.equal(report.autopilotReady, summary.ownerEmergencyAuthority.autopilotReady);
+  assert(report.guardrails.length >= 1, 'Emergency console should surface guardrails');
+  assert(report.recommendedActions.length >= 1, 'Emergency console should recommend owner actions');
+  assert(report.mermaid.includes('graph TD'), 'Emergency console mermaid graph should render');
+  assert(report.alertChannels.length >= summary.ownerSovereignty.alertChannels.length);
+
+  const rendered = renderEmergencyConsoleReport(report);
+  assert(rendered.includes('Emergency Authority Console'));
+  assert(rendered.includes(report.pauseCommand));
+  assert(rendered.includes(report.resumeCommand));
+  assert(rendered.includes('Circuit breaker catalogue'));
+  assert(rendered.includes('Recommended owner actions'));
 });
 
