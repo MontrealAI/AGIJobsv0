@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AGI Alpha Node Command Hub</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background: radial-gradient(circle at top, #040712, #010104);
+        color: #e8f1ff;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        padding: 2rem;
+        text-align: center;
+        background: rgba(20, 42, 78, 0.6);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      main {
+        padding: 2rem;
+        display: grid;
+        gap: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      }
+      section {
+        background: rgba(8, 18, 40, 0.85);
+        border-radius: 18px;
+        padding: 1.5rem;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+      }
+      h1,
+      h2 {
+        margin: 0 0 1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      pre {
+        background: rgba(0, 0, 0, 0.45);
+        padding: 1rem;
+        border-radius: 12px;
+        overflow-x: auto;
+      }
+      button {
+        background: linear-gradient(135deg, #14ffe9, #00b3ff);
+        border: none;
+        color: #011627;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+      button:hover {
+        opacity: 0.85;
+      }
+      #metrics {
+        font-size: 0.95rem;
+        line-height: 1.6;
+      }
+      .flowchart-container {
+        background: rgba(2, 9, 24, 0.7);
+        border-radius: 16px;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>AGI Alpha Node Command Hub</h1>
+      <p>
+        Execute, monitor, and govern an institutional-scale AGI economy with a single
+        click. This dashboard visualizes the AGI Jobs v0 (v2) Alpha Node operating at
+        full capacity for non-technical operators.
+      </p>
+      <button id="simulate">Run Intelligence Pulse</button>
+    </header>
+    <main>
+      <section>
+        <h2>Live Metrics</h2>
+        <div id="metrics">
+          <strong>Compliance Score:</strong> <span id="compliance">0.00</span><br />
+          <strong>Rewards Claimed:</strong> <span id="rewards">0</span><br />
+          <strong>Active Jobs:</strong> <span id="jobs">0</span><br />
+          <strong>Last Sync:</strong> <span id="timestamp">—</span>
+        </div>
+      </section>
+      <section>
+        <h2>Strategic Intelligence</h2>
+        <pre id="intelligence"></pre>
+      </section>
+      <section class="flowchart-container">
+        <h2>Alpha Node Macro Architecture</h2>
+        <div class="mermaid">
+          graph TD
+            A[ENS Verified Operator] -->|configures| B[Governance Console]
+            B -->|deploys| C[AGI Alpha Node Core]
+            C --> D[MuZero++ Planner]
+            D --> E{Orchestrator}
+            E -->|Finance| F[Finance Strategist]
+            E -->|Biotech| G[Biotech Synthesist]
+            E -->|Manufacturing| H[Manufacturing Optimizer]
+            F --> I[On-Chain Job Settlement]
+            G --> I
+            H --> I
+            I --> J[Treasury & Reinvestment]
+            J --> C
+            C --> K[Prometheus & Compliance Streams]
+            C --> L[Operator Dashboard]
+        </div>
+      </section>
+    </main>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+
+      const intelligenceNarratives = [
+        "Finance Strategist executes cross-chain basis arb delivering 27% annualized alpha.",
+        "Biotech Synthesist simulates protein folding acceleration, generating licensing royalties.",
+        "Manufacturing Optimizer rebalances supplier mesh, unlocking 12% throughput expansion.",
+      ];
+
+      async function fetchMetrics() {
+        try {
+          const response = await fetch("http://localhost:9097/metrics");
+          const text = await response.text();
+          const metrics = Object.fromEntries(
+            text
+              .split("\n")
+              .filter((line) => line && !line.startsWith("#"))
+              .map((line) => line.split(" "))
+          );
+          document.getElementById("compliance").textContent = Number(
+            metrics.agi_alpha_node_compliance_score || 0
+          ).toFixed(2);
+          document.getElementById("rewards").textContent = metrics.agi_alpha_node_rewards_claimed || 0;
+          document.getElementById("jobs").textContent = metrics.agi_alpha_node_active_jobs || 0;
+          document.getElementById("timestamp").textContent = new Date(
+            (metrics.agi_alpha_node_timestamp || 0) * 1000
+          ).toLocaleTimeString();
+        } catch (err) {
+          document.getElementById("timestamp").textContent = "Awaiting metrics stream";
+        }
+      }
+
+      function simulateIntelligence() {
+        const narrative = intelligenceNarratives[Math.floor(Math.random() * intelligenceNarratives.length)];
+        document.getElementById("intelligence").textContent = `${new Date().toLocaleTimeString()} → ${narrative}`;
+      }
+
+      document.getElementById("simulate").addEventListener("click", () => {
+        simulateIntelligence();
+        fetchMetrics();
+      });
+
+      simulateIntelligence();
+      fetchMetrics();
+      setInterval(fetchMetrics, 5000);
+    </script>
+  </body>
+</html>

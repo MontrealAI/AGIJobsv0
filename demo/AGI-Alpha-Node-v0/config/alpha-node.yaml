@@ -1,0 +1,4 @@
+# Operator-provided configuration overrides
+ens_name: demo.alpha.node.agi.eth
+operator_address: "0x000000000000000000000000000000000000dEaD"
+minimum_stake: 100000000000000000000

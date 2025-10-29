@@ -1,0 +1,21 @@
+ens_name: demo.alpha.node.agi.eth
+operator_address: "0x000000000000000000000000000000000000dEaD"
+minimum_stake: 100000000000000000000 # 100 $AGIALPHA in wei
+knowledge_path: storage/knowledge_lake.sqlite
+governance:
+  governance_address: "0x000000000000000000000000000000000000c0de"
+  emergency_contact: "ops@aginode.demo"
+  allowed_operators:
+    - "0x000000000000000000000000000000000000dEaD"
+blockchain:
+  rpc_url: "https://mainnet.infura.io/v3/YOUR_KEY"
+  ens_registry: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
+  stake_manager: "0x1111111111111111111111111111111111111111"
+  fee_pool: "0x2222222222222222222222222222222222222222"
+  system_pause: "0x3333333333333333333333333333333333333333"
+  job_router: "0x4444444444444444444444444444444444444444"
+  job_registry: "0x5555555555555555555555555555555555555555"
+metrics:
+  host: "0.0.0.0"
+  port: 9097
+  log_path: logs/alpha-node.log
