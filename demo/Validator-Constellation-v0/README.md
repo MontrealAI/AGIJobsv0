@@ -1,148 +1,106 @@
-# Validator Constellation v0 Demo
+# Validator Constellation Demo
 
-> A non-technical, production-grade walkthrough that shows how AGI Jobs v0 (v2) empowers operators to command a validator constellation, deliver ZK-supercharged throughput, and enforce Kardashev-II safety guardrails with a single command.
+The Validator Constellation demo showcases how a non-technical operator can command an AGI-scale validator fabric with autonomous guardrails, zk-batched finalisation and ENS-enforced identities. It is engineered for Kardashev-II readiness: every control surface is accessible through a single-owner console and every subsystem can be paused within seconds.
 
-## ✨ Why this demo matters
+## Highlights
 
-This directory packages a complete, batteries-included simulation that mirrors the on-chain Validator Constellation and Sentinel Guardrail stack.  It is intentionally ergonomic: a business operator with zero blockchain experience can run the scenario, inspect results, and export compliance artefacts without editing code.  The workflow mirrors the live system:
+- **VRF-grade Commit–Reveal**: Validators commit and reveal under deterministic randomness with entropy contributions from agents and validators.
+- **ZK-Batched Attestations**: Up to 1000 jobs are finalised in a single proof submission through a pluggable verifier contract.
+- **Sentinel Guardrails**: Budget overruns and anomaly reports automatically freeze the affected domain while keeping other domains live.
+- **ENS Identity Enforcement**: Validators, agents and nodes must control authorised ENS subdomains; proofs are verified on-chain.
+- **Owner Supremacy**: Treasury, staking parameters, pausers and circuit breakers are governed by the contract owner through single function calls.
 
-1. **Identity-controlled onboarding** verifies ENS subdomain ownership for validators, agents, and nodes.
-2. **VRF committee selection** deterministically elects an unbiased validation committee.
-3. **Commit–reveal voting with block timelines** locks validator intent before the reveal phase, enforces commit and reveal deadlines, and produces auditable timelines.
-4. **Zero-knowledge batch attestations** finalize 1,000 jobs at once while surfacing gas savings.
-5. **Sentinel monitors** guardrail every domain and trigger domain-scoped emergency pauses inside the SLA window.
-6. **Stake slashing events** emit auditable telemetry that downstream subgraphs can index in real time.
-7. **Owner console controls** let governance update parameters live, resume paused domains, and broadcast `ConfigUpdated` events for downstream dashboards.
-
-Running the demo therefore conveys—in minutes—the depth of control, throughput, and resilience that AGI Jobs v0 (v2) already delivers.
-
-## 🚀 Quickstart (non-technical friendly)
+## Quick Start
 
 ```bash
-cd demo/Validator-Constellation-v0
-python run_demo.py \
-  --seed community-round-42 \
-  --truth true \
-  --committee-size 3 \
-  --quorum 2 \
-  --commit-blocks 5 \
-  --reveal-blocks 6 \
-  --slash-non-reveal 0.35 \
-  --output summary.json
+npm install
+npm run demo:validator-constellation
 ```
 
-This single command spins up the validator constellation, performs VRF committee selection, executes the commit–reveal round with enforced block windows, batches 1,000 job attestations into one ZK proof, fires a Sentinel anomaly, and exports a JSON compliance bundle.  The JSON includes the selected committee, truthful outcome, slashed validator list, paused domains, proof root, gas saved by the batch attestation, the full timeline of the validation round, and a log of owner governance actions applied during the run.
+The command deploys the stack, executes three validation rounds, finalises them through a zk batch proof, and surfaces operator telemetry plus mermaid diagrams.
 
-You can also run the package directly:
+To run the full scenario baseline:
 
 ```bash
-python -m validator_constellation
+npm run demo:validator-constellation:scenario
 ```
 
-## 🧠 System architecture (Mermaid)
+For an interactive console snapshot:
+
+```bash
+npm run demo:validator-constellation:operator-console
+```
+
+Generate the audit report:
+
+```bash
+npm run demo:validator-constellation:audit-report
+```
+
+Run the Hardhat test-suite validating commit–reveal, sentinel guardrails and the 1000-job batch finality:
+
+```bash
+npm run test:validator-constellation
+```
+
+## System Diagram
 
 ```mermaid
 graph TD
-    subgraph Identity & Governance
-        Owner[Contract Owner]
-        ENSVerifier[ENS Identity Verifier]
-        StakeMgr[Stake Manager]
-        Owner -->|configures| ENSVerifier
-        Owner -->|governs| StakeMgr
-    end
+  Owner[Owner Multisig]
+  Sentinel[Sentinel Swarm]
+  StakeManager(ConstellationStakeManager)
+  Identity(ENSIdentityOracle)
+  ValidatorModule[ValidatorConstellationDemo]
+  ZKVerifier(DemoZkBatchVerifier)
 
-    subgraph Validation Flow
-        VRF[Deterministic VRF]
-        Committee[Validator Committee]
-        CommitReveal[Commit-Reveal Round]
-        ZKBatch[ZK Batch Attestor]
-    end
-
-    subgraph Autonomy Guardrails
-        Sentinel[Sentinel Monitor]
-        PauseCtrl[Domain Pause Controller]
-        SubgraphIndexer[Subgraph Indexer]
-    end
-
-    ENSVerifier -->|authorises| Committee
-    StakeMgr -->|stakes| Committee
-    VRF -->|selects| Committee
-    Committee -->|commits| CommitReveal
-    Committee -->|reveals| CommitReveal
-    CommitReveal -->|truth votes| StakeMgr
-    CommitReveal -->|finalisation| ZKBatch
-    ZKBatch -->|proof| StakeMgr
-    Sentinel -->|alerts| PauseCtrl
-    PauseCtrl -->|pause events| SubgraphIndexer
-    StakeMgr -->|slashing events| SubgraphIndexer
+  Owner -->|Configures| StakeManager
+  Owner -->|Publishes Roots| Identity
+  Identity -->|Approves ENS| Validators
+  Validators -->|Stake| StakeManager
+  Owner -->|Deploys| ValidatorModule
+  ValidatorModule -->|Commit-Reveal| Validators
+  ValidatorModule -->|Batch Proof| ZKVerifier
+  ValidatorModule -->|Guardrail Alert| Sentinel
+  Sentinel -->|Pause Domain| ValidatorModule
+  Owner -->|Resume Domain| ValidatorModule
 ```
 
-## 🛰️ Sentinel guardrail topology
+## File Structure
 
-```mermaid
-flowchart LR
-    AgentAction[Agent Action]
-    BudgetRule[Budget Overrun Rule]
-    RestrictedRule[Restricted Call Rule]
-    Alert[Sentinel Alert]
-    Pause[Domain Paused]
-    Resume[Governance Resume]
+- `contracts/` – Solidity contracts for staking, identity, zk verification and the validator demo module.
+- `scripts/` – TypeScript orchestrations for demo runs, scenarios, operator console and audit reports.
+- `test/` – Hardhat tests covering ENS enforcement, slashing, sentinel guardrails and 1000-job batch finality.
+- `scenario/` – JSON scenario configurations.
+- `src/` – Shared TypeScript helpers (environment deployer, Merkle utilities, job runner).
 
-    AgentAction --> BudgetRule
-    AgentAction --> RestrictedRule
-    BudgetRule -->|trigger| Alert
-    RestrictedRule -->|trigger| Alert
-    Alert --> Pause
-    Pause -->|operator clearance| Resume
-```
+## ENS Identity Policy
 
-## 🛡️ ENS identity policy
+Validators must own `*.club.agi.eth` (or the `*.alpha.club.agi.eth` equivalent). Agents must own `*.agent.agi.eth`. Identities are verified via Merkle proofs anchored to ENS NameWrapper snapshots. The `ENSIdentityOracle` enforces suffix policies and rejects unauthorised domains.
 
-* Validators: `*.club.agi.eth` and `*.alpha.club.agi.eth`
-* Agents: `<name>.agent.agi.eth` and `<name>.alpha.agent.agi.eth`
-* Nodes: `<name>.node.agi.eth` and `<name>.alpha.node.agi.eth`
+## Sentinel Guardrails
 
-The `ENSIdentityVerifier` enforces the namespace, validates deterministic signatures, and blocks any blacklisted address.  The contract owner can refresh the allowlists at runtime via `SystemConfig.update` and the `OwnerConsole` facade exposed in Python.
+Sentinel operators can pause any domain by calling `reportSentinelAlert`. Budget overruns automatically trigger the sentinel and force a domain pause until the owner resumes operations. Guardrails are logged through events to provide instant observability.
 
-## 🧭 Owner command surface
+## zk-Batched Attestations
 
-Non-technical operators configure the demo via `run_demo.py` arguments or the programmatic `OwnerConsole`.  Both surfaces fan out to the same governance hooks:
+`DemoZkBatchVerifier` mimics a Groth16 verifier with a governance-controlled verifying key. Production deployments can upgrade to a real verifier without altering the interface. The validator module passes a witness hash to guarantee the integrity of batched results.
 
-* `--committee-size`, `--quorum`, `--commit-blocks`, `--reveal-blocks`, `--slash-non-reveal`, `--slash-incorrect`, `--owner`, and `--budget` map one-to-one to production configuration controls.
-* The `OwnerConsole` publishes `ConfigUpdated` and `DomainResumed` events to the mock subgraph so dashboards stay synchronized.
-* Governance history is emitted in `summary.ownerActions`, making export to regulators or auditors automatic.
+## Tests
 
-## 🧪 Test matrix
+The Hardhat suite ensures:
 
-Run the automated suite with:
+- ENS identities are enforced for validators and agents.
+- Commit–reveal rounds slash non-revealing or dishonest validators.
+- Sentinel guardrails pause domains upon anomaly detection.
+- 1000 jobs finalise via a single zk batch proof.
+
+Run with:
 
 ```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/Validator-Constellation-v0/tests
+npm run test:validator-constellation
 ```
 
-The tests cover:
+## Empowerment
 
-* deterministic VRF committee selection and commit–reveal flow with timeline enforcement
-* automatic slashing for non-reveal and incorrect votes, including reveal deadline handling
-* Sentinel anomaly detection halting affected domains
-* zero-knowledge batch proof verification for 1,000 jobs
-* ENS namespace enforcement for validators, agents, and nodes
-* Governance controls updating configuration and resuming paused domains
-* EventBus integration powering the subgraph indexer scenario
-
-## 🌐 Interactive dashboard (static export)
-
-Open [`web/index.html`](./web/index.html) for a single-page dashboard that renders the architecture diagrams, streaming events, and operator runbook.  The page bundles Mermaid.js and auto-renders the diagrams for any exported event traces.
-
-## 🛠️ File map
-
-| Path | Purpose |
-| --- | --- |
-| `validator_constellation/` | Python package with deterministic primitives |
-| `run_demo.py` | CLI orchestrator for non-technical operators |
-| `tests/` | Pytest suite ensuring production-grade behaviour |
-| `web/index.html` | Interactive documentation and architecture viewer |
-
----
-
-AGI Jobs v0 (v2) now demonstrates, in a single directory, how anyone can command an AI-native validator fleet with Kardashev-II guardrails.  The same primitives drop into production to power unstoppable validation constellations.
+The demo is intentionally non-technical. Operators only need to run the provided scripts; all control pathways (stake, pause, resume, audit) are surfaced with deterministic outputs, tables and mermaid diagrams. The validator constellation demonstrates how AGI Jobs v0 (v2) enables planetary-scale trust without requiring solidity expertise.
