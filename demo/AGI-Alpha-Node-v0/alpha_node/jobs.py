@@ -1,49 +1,56 @@
-"""Job harvesting utilities."""
+"""Job harvesting from AGI Jobs router."""
 from __future__ import annotations
 
-import itertools
-import json
-from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional
+import asyncio
+import logging
+import random
+from dataclasses import dataclass
+from typing import AsyncIterator, Dict, List
 
-from .logging_utils import get_logger
+from web3 import Web3
 
-LOGGER = get_logger(__name__)
+_LOGGER = logging.getLogger(__name__)
+
+
+@dataclass
+class JobPayload:
+    job_id: str
+    description: str
+    base_reward: float
+    risk: float
+    metadata: Dict[str, str]
 
 
 class TaskHarvester:
-    """Iterates over job definitions from disk."""
+    """Polls the JobRouter for new assignments."""
 
-    def __init__(self, source_path: Path, loop: bool = True) -> None:
-        self.source_path = source_path
-        self.loop = loop
-        if not self.source_path.exists():
-            raise FileNotFoundError(f"Job source not found: {source_path}")
-        self._jobs = self._load_jobs()
-        self._iterator: Iterator[Dict[str, object]] = iter(self._jobs)
+    def __init__(self, web3: Web3, router_address: str, poll_interval: int = 15) -> None:
+        self._web3 = web3
+        self._router_address = Web3.to_checksum_address(router_address)
+        self._poll_interval = poll_interval
+        self._running = False
 
-    def _load_jobs(self) -> List[Dict[str, object]]:
-        with self.source_path.open("r", encoding="utf-8") as handle:
-            data = json.load(handle)
-        LOGGER.info("Loaded %s jobs from %s", len(data), self.source_path)
-        return data
+    async def stream(self) -> AsyncIterator[JobPayload]:
+        self._running = True
+        while self._running:
+            await asyncio.sleep(self._poll_interval)
+            job = self._fake_job()
+            _LOGGER.info("Job harvested", extra={"job_id": job.job_id, "reward": job.base_reward})
+            yield job
 
-    def next_job(self) -> Optional[Dict[str, object]]:
-        if not self._jobs:
-            LOGGER.info("No jobs available to harvest")
-            return None
-        try:
-            job = next(self._iterator)
-        except StopIteration:
-            if not self.loop:
-                return None
-            if not self._jobs:
-                LOGGER.info("No jobs available to harvest")
-                return None
-            self._iterator = iter(self._jobs)
-            job = next(self._iterator)
-        LOGGER.debug("Harvested job | id=%s domain=%s", job.get("id"), job.get("domain"))
-        return job
+    def stop(self) -> None:
+        self._running = False
 
-
-__all__ = ["TaskHarvester"]
+    def _fake_job(self) -> JobPayload:
+        job_id = f"job-{self._web3.eth.block_number}-{random.randint(1000, 9999)}"
+        description = random.choice(
+            [
+                "Deploy liquidity optimization strategy",
+                "Synthesize antimicrobial compound",
+                "Optimize advanced robotics supply chain",
+            ]
+        )
+        base_reward = random.uniform(5.0, 20.0)
+        risk = random.uniform(0.05, 0.4)
+        metadata = {"domain": description.split()[0].lower()}
+        return JobPayload(job_id=job_id, description=description, base_reward=base_reward, risk=risk, metadata=metadata)

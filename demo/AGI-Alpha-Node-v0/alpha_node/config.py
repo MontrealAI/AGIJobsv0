@@ -1,113 +1,116 @@
-"""Configuration utilities for the AGI Alpha Node demo."""
+"""Configuration loading utilities for the Alpha Node demo."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import List, Optional
 
 import yaml
 
 
-@dataclass(slots=True)
-class SpecialistConfig:
-    """Configuration for a specialist agent."""
-
-    name: str
-    model: str
-    risk_limit: float
-    description: str
-    enabled: bool = True
+@dataclass
+class RewardToken:
+    symbol: str
+    address: str
 
 
-@dataclass(slots=True)
-class AlphaNodeConfig:
-    """Runtime configuration loaded from YAML."""
-
+@dataclass
+class IdentityConfig:
     ens_domain: str
-    owner_address: str
+    operator_address: str
     governance_address: str
-    stake_threshold: int
     rpc_url: str
-    job_registry_address: str
+
+
+@dataclass
+class SecurityConfig:
+    emergency_contact: str
+    pause_contract: str
+
+
+@dataclass
+class StakingConfig:
     stake_manager_address: str
-    incentives_address: str
-    treasury_address: str
+    min_stake_wei: int
+    reward_tokens: List[RewardToken] = field(default_factory=list)
+
+
+@dataclass
+class JobsConfig:
+    job_router_address: str
+    poll_interval_seconds: int = 15
+
+
+@dataclass
+class PlannerConfig:
+    search_depth: int = 4
+    exploration_constant: float = 1.25
+    learning_rate: float = 0.1
+
+
+@dataclass
+class MetricsConfig:
+    prometheus_port: int = 8788
+    dashboard_port: int = 8787
+
+
+@dataclass
+class StorageConfig:
     knowledge_path: Path
-    log_path: Path
-    metrics_port: int = 9753
-    dashboard_port: int = 8088
-    job_poll_interval: float = 5.0
-    planning_horizon: int = 4
-    exploration_bias: float = 1.2
-    enable_prometheus: bool = True
-    enable_dashboard: bool = True
-    specialists: List[SpecialistConfig] = field(default_factory=list)
+    logs_path: Path
+
+
+@dataclass
+class AlphaNodeConfig:
+    identity: IdentityConfig
+    security: SecurityConfig
+    staking: StakingConfig
+    jobs: JobsConfig
+    planner: PlannerConfig = field(default_factory=PlannerConfig)
+    metrics: MetricsConfig = field(default_factory=MetricsConfig)
+    storage: StorageConfig = field(default_factory=lambda: StorageConfig(Path("./storage/knowledge.db"), Path("./storage/logs.jsonl")))
 
     @classmethod
-    def load(cls, path: Path | str) -> "AlphaNodeConfig":
-        """Load configuration from YAML."""
-
-        path = Path(path)
-        with path.open("r", encoding="utf-8") as handle:
-            payload = yaml.safe_load(handle)
-        cls._validate_keys(payload)
-        knowledge_path = Path(payload["storage"]["knowledge_lake"])
-        log_path = Path(payload["storage"]["log_file"])
-        specialists = [
-            SpecialistConfig(
-                name=item["name"],
-                model=item["model"],
-                risk_limit=float(item.get("risk_limit", 0.0)),
-                description=item.get("description", ""),
-                enabled=bool(item.get("enabled", True)),
-            )
-            for item in payload.get("specialists", [])
-        ]
+    def from_file(cls, path: Path) -> "AlphaNodeConfig":
+        data = _load_yaml(path)
         return cls(
-            ens_domain=payload["identity"]["ens_domain"],
-            owner_address=payload["identity"]["owner_address"],
-            governance_address=payload["governance"]["governance_address"],
-            stake_threshold=int(payload["economy"]["stake_threshold"]),
-            rpc_url=payload["network"]["rpc_url"],
-            job_registry_address=payload["contracts"]["job_registry"],
-            stake_manager_address=payload["contracts"]["stake_manager"],
-            incentives_address=payload["contracts"]["incentives"],
-            treasury_address=payload["contracts"]["treasury"],
-            knowledge_path=knowledge_path,
-            log_path=log_path,
-            metrics_port=int(payload.get("observability", {}).get("metrics_port", 9753)),
-            dashboard_port=int(payload.get("observability", {}).get("dashboard_port", 8088)),
-            job_poll_interval=float(payload.get("runtime", {}).get("job_poll_interval", 5.0)),
-            planning_horizon=int(payload.get("runtime", {}).get("planning_horizon", 4)),
-            exploration_bias=float(payload.get("runtime", {}).get("exploration_bias", 1.2)),
-            enable_prometheus=bool(payload.get("observability", {}).get("enable_prometheus", True)),
-            enable_dashboard=bool(payload.get("observability", {}).get("enable_dashboard", True)),
-            specialists=specialists,
+            identity=IdentityConfig(**data["identity"]),
+            security=SecurityConfig(**data["security"]),
+            staking=StakingConfig(
+                stake_manager_address=data["staking"]["stake_manager_address"],
+                min_stake_wei=int(data["staking"]["min_stake_wei"]),
+                reward_tokens=[RewardToken(**token) for token in data["staking"].get("reward_tokens", [])],
+            ),
+            jobs=JobsConfig(**data["jobs"]),
+            planner=PlannerConfig(**data.get("planner", {})),
+            metrics=MetricsConfig(**data.get("metrics", {})),
+            storage=StorageConfig(
+                knowledge_path=Path(data["storage"]["knowledge_path"]).expanduser(),
+                logs_path=Path(data["storage"]["logs_path"]).expanduser(),
+            ),
         )
 
-    @staticmethod
-    def _validate_keys(payload: Dict[str, Any]) -> None:
-        required_sections = {
-            "identity": {"ens_domain", "owner_address"},
-            "governance": {"governance_address"},
-            "economy": {"stake_threshold"},
-            "network": {"rpc_url"},
-            "contracts": {"job_registry", "stake_manager", "incentives", "treasury"},
-            "storage": {"knowledge_lake", "log_file"},
-        }
-        for section, keys in required_sections.items():
-            if section not in payload:
-                raise ValueError(f"Missing configuration section: {section}")
-            missing = keys.difference(payload[section])
-            if missing:
-                raise ValueError(f"Missing keys {missing} in section {section}")
 
-    def enabled_specialists(self) -> Iterable[SpecialistConfig]:
-        return (spec for spec in self.specialists if spec.enabled)
+def _load_yaml(path: Path) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {path}")
+    with path.open("r", encoding="utf-8") as handle:
+        data = yaml.safe_load(handle)
+    if not isinstance(data, dict):
+        raise ValueError("Configuration file must contain a dictionary at the top level")
+    return data
 
 
-def load_config(path: Path | str) -> AlphaNodeConfig:
-    return AlphaNodeConfig.load(path)
+def find_config(custom_path: Optional[str] = None) -> AlphaNodeConfig:
+    """Resolve configuration path, preferring explicit paths."""
+    search_paths = []
+    if custom_path:
+        search_paths.append(Path(custom_path))
+    search_paths.append(Path("config/alpha-node.yaml"))
+    search_paths.append(Path("config/example.alpha-node.yaml"))
 
+    for candidate in search_paths:
+        if candidate.exists():
+            return AlphaNodeConfig.from_file(candidate)
 
-__all__ = ["AlphaNodeConfig", "SpecialistConfig", "load_config"]
+    raise FileNotFoundError("Unable to locate alpha-node configuration file")

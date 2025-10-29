@@ -43,3 +43,8 @@ pyyaml==6.0.2
 rich==13.7.1
 REQ
 
+
+.PHONY: demo-alpha-node
+demo-alpha-node:
+	poetry run python -m alpha_node.cli bootstrap || true
+	poetry run uvicorn alpha_node.web.dashboard:app --reload --port 8787

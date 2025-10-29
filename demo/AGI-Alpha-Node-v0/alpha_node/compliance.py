@@ -1,58 +1,67 @@
-"""Compliance scorecard implementation."""
+"""Compliance scorecard logic."""
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Dict
 
-from .state import AlphaNodeState
-from .logging_utils import get_logger
+from .economy import StakeStatus
+from .ens import ENSVerificationResult
+from .governance import GovernanceState
 
-LOGGER = get_logger(__name__)
-
-
-@dataclass(slots=True)
-class ComplianceScore:
-    dimensions: Dict[str, float]
-    composite: float
+_LOGGER = logging.getLogger(__name__)
 
 
-class ComplianceEngine:
-    DIMENSIONS = (
-        "identity",
-        "staking",
-        "governance",
-        "economic_engine",
-        "antifragility",
-        "strategic_intelligence",
-    )
+@dataclass
+class ComplianceScores:
+    identity: float
+    staking: float
+    governance: float
+    economic_engine: float
+    antifragility: float
+    strategic_intelligence: float
 
-    def __init__(self, state: AlphaNodeState, required_stake: int) -> None:
-        self.state = state
-        self.required_stake = required_stake
-
-    def evaluate(self) -> ComplianceScore:
-        snapshot = self.state.snapshot()
-        identity = 1.0 if snapshot["operations"]["ens_verified"] else 0.0
-        stake_requirement = self.required_stake or 1
-        staking = min(snapshot["economy"]["staked_amount"] / stake_requirement, 1.0)
-        governance = 1.0 if not snapshot["governance"]["paused"] else 0.5
-        economic = min(1.0, snapshot["economy"]["rewards_accrued"] / stake_requirement)
-        drills = snapshot["operations"].get("drills_completed", 0)
-        antifragile_base = 1.0 if snapshot["economy"]["slashed_amount"] == 0 else 0.3
-        antifragile = min(1.0, antifragile_base + 0.1 * min(drills, 5))
-        strategic = min(1.0, snapshot["operations"]["completed_jobs"] / 5)
-        dimensions = {
-            "identity": identity,
-            "staking": staking,
-            "governance": governance,
-            "economic_engine": economic,
-            "antifragility": antifragile,
-            "strategic_intelligence": strategic,
-        }
-        composite = sum(dimensions.values()) / len(dimensions)
-        LOGGER.info("Compliance evaluation | score=%.2f dimensions=%s", composite, dimensions)
-        self.state.set_compliance(composite)
-        return ComplianceScore(dimensions=dimensions, composite=composite)
+    @property
+    def total(self) -> float:
+        return round(
+            (
+                self.identity
+                + self.staking
+                + self.governance
+                + self.economic_engine
+                + self.antifragility
+                + self.strategic_intelligence
+            )
+            / 6,
+            4,
+        )
 
 
-__all__ = ["ComplianceEngine", "ComplianceScore"]
+class ComplianceScorecard:
+    def evaluate(
+        self,
+        ens_result: ENSVerificationResult,
+        stake_status: StakeStatus,
+        governance: GovernanceState,
+        planner_trend: float,
+        antifragility_checks: Dict[str, bool],
+    ) -> ComplianceScores:
+        identity_score = 1.0 if ens_result.verified else 0.0
+        staking_score = min(1.0, stake_status.staked_wei / stake_status.min_stake_wei) if stake_status.min_stake_wei else 0.0
+        if stake_status.slashing_risk:
+            staking_score *= 0.2
+        governance_score = 1.0 if not governance.paused else 0.2
+        economic_score = min(1.0, stake_status.rewards_wei / max(stake_status.min_stake_wei, 1) + 0.5)
+        antifragility_score = 1.0 if all(antifragility_checks.values()) else 0.4
+        strategic_score = max(0.0, min(1.0, planner_trend))
+
+        scores = ComplianceScores(
+            identity=round(identity_score, 3),
+            staking=round(staking_score, 3),
+            governance=round(governance_score, 3),
+            economic_engine=round(economic_score, 3),
+            antifragility=round(antifragility_score, 3),
+            strategic_intelligence=round(strategic_score, 3),
+        )
+        _LOGGER.info("Compliance evaluated", extra={"scores": scores.__dict__, "total": scores.total})
+        return scores

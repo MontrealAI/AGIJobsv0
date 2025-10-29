@@ -1,79 +1,64 @@
 from pathlib import Path
 
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.node import AlphaNode
+from web3 import Web3
+
+from alpha_node.compliance import ComplianceScorecard
+from alpha_node.economy import StakeManagerClient
+from alpha_node.ens import ENSVerificationResult
+from alpha_node.governance import GovernanceState, SystemPauseManager
 
 
-def _write_config(tmp_path: Path) -> Path:
-    config_path = tmp_path / "config.yaml"
-    config_path.write_text(
-        """
-identity:
-  ens_domain: demo.alpha.node.agi.eth
-  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
+class FakeEth:
+    block_number = 123
 
-governance:
-  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
 
-economy:
-  stake_threshold: 1
+class FakeWeb3:
+    eth = FakeEth()
 
-network:
-  rpc_url: ""
 
-contracts:
-  job_registry: "0x1"
-  stake_manager: "0x2"
-  incentives: "0x3"
-  treasury: "0x4"
-
-storage:
-  knowledge_lake: "storage/knowledge.json"
-  log_file: "logs/alpha.log"
-
-observability:
-  enable_prometheus: false
-  enable_dashboard: false
-
-specialists:
-  - name: finance
-    model: "demo"
-    risk_limit: 1.0
-    description: "Demo finance"
-    enabled: true
-""",
-        encoding="utf-8",
+def test_governance_pause_cycle(tmp_path: Path) -> None:
+    manager = SystemPauseManager(FakeWeb3(), tmp_path / "gov.json")
+    state = manager.bootstrap(
+        owner="0x000000000000000000000000000000000000dead",
+        governance_address="0x000000000000000000000000000000000000beef",
+        pause_contract="0x000000000000000000000000000000000000c0de",
     )
-    (tmp_path / "storage").mkdir()
-    (tmp_path / "logs").mkdir()
-    return config_path
+    manager.pause("maintenance")
+    assert manager.state.paused is True
+    manager.resume("complete")
+    assert manager.state.paused is False
+    manager.rotate_governance("0x000000000000000000000000000000000000c0fe", "upgrade")
+    assert manager.state.governance_address.lower().endswith("c0fe")
+    manager.load()
+    assert manager.state.governance_address.lower().endswith("c0fe")
 
 
-def test_alpha_node_run_once(tmp_path: Path) -> None:
-    config_path = _write_config(tmp_path)
-    ens_cache = tmp_path / "ens.json"
-    ens_cache.write_text("{\"demo.alpha.node.agi.eth\": \"0x1234567890abcdef1234567890abcdef12345678\"}", encoding="utf-8")
-    config = AlphaNodeConfig.load(config_path)
-    node = AlphaNode(config=config, ens_cache=ens_cache)
-    node.bootstrap()
-    result = node.run_once()
-    assert result is not None
-    assert node.state.ops.completed_jobs >= 1
-
-
-def test_alpha_node_owner_controls(tmp_path: Path) -> None:
-    config_path = _write_config(tmp_path)
-    ens_cache = tmp_path / "ens.json"
-    ens_cache.write_text("{\"demo.alpha.node.agi.eth\": \"0x1234567890abcdef1234567890abcdef12345678\"}", encoding="utf-8")
-    config = AlphaNodeConfig.load(config_path)
-    node = AlphaNode(config=config, ens_cache=ens_cache)
-    node.bootstrap()
-    node.update_governance("0x9999999999999999999999999999999999999999")
-    assert node.state.snapshot()["governance"]["address"] == "0x9999999999999999999999999999999999999999"
-    stake_status = node.stake(5)
-    assert stake_status.staked_amount >= 5
-    rewards = node.claim_rewards()
-    assert rewards.unclaimed_rewards == 0
-    node.run_safety_drill()
-    snapshot = node.state.snapshot()
-    assert snapshot["operations"]["drills_completed"] >= 1
+def test_compliance_integration(tmp_path: Path) -> None:
+    web3 = FakeWeb3()
+    stake = StakeManagerClient(
+        web3,
+        "0x0000000000000000000000000000000000005a0c",
+        1000,
+        [{"symbol": "AGIALPHA", "address": "0x000000000000000000000000000000000000a610"}],
+    )
+    stake.deposit(1500, "0x000000000000000000000000000000000000dead")
+    stake.accrue_rewards(250)
+    governance = GovernanceState(
+        owner="0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        governance_address="0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+        pause_contract="0xc0dec0dec0dec0dec0dec0dec0dec0dec0dec0de",
+        paused=False,
+    )
+    scores = ComplianceScorecard().evaluate(
+        ens_result=ENSVerificationResult(
+            domain="demo.alpha.node.agi.eth",
+            expected_owner="0x000000000000000000000000000000000000dead",
+            resolved_owner="0x000000000000000000000000000000000000dead",
+            verified=True,
+        ),
+        stake_status=stake.status(),
+        governance=governance,
+        planner_trend=0.85,
+        antifragility_checks={"drill": True, "pause_resume": True},
+    )
+    assert scores.total > 0.8
