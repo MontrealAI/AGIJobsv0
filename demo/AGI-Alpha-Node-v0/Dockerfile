@@ -9,4 +9,4 @@ COPY tests ./tests
 COPY README.md ./README.md
 RUN pip install --no-cache-dir pytest pyyaml
 
-CMD ["python", "-m", "agi_alpha_node", "console", "run-demo"]
+CMD ["python", "-m", "agi_alpha_node", "run-demo"]
