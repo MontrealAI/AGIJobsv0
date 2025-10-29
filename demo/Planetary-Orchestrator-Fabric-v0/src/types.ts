@@ -422,6 +422,19 @@ export type OwnerCommand =
   | { type: 'shard.pause'; shard: ShardId; reason?: string }
   | { type: 'shard.resume'; shard: ShardId; reason?: string }
   | {
+      type: 'shard.register';
+      shard: ShardConfig;
+      reason?: string;
+    }
+  | {
+      type: 'shard.deregister';
+      shard: ShardId;
+      reason?: string;
+      redistribution?:
+        | { mode: 'spillover'; targetShard?: ShardId }
+        | { mode: 'cancel'; cancelReason?: string };
+    }
+  | {
       type: 'shard.update';
       shard: ShardId;
       update: {

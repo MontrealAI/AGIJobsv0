@@ -56,6 +56,47 @@ node scripts/v2/ownerControlSurface.ts \
   --reason "Earth backlog > 90%"
 ```
 
+### Register Surge Shards
+
+```json
+{
+  "type": "shard.register",
+  "reason": "Provision edge spillway during surge",
+  "shard": {
+    "id": "edge-surge",
+    "displayName": "Edge Surge Lattice",
+    "latencyBudgetMs": 140,
+    "spilloverTargets": ["earth", "luna"],
+    "maxQueue": 1800,
+    "router": {
+      "queueAlertThreshold": 1200,
+      "spilloverPolicies": [
+        { "target": "earth", "threshold": 1350, "maxDrainPerTick": 60 },
+        { "target": "luna", "threshold": 1500, "maxDrainPerTick": 40 }
+      ]
+    }
+  }
+}
+```
+
+- The shard comes online immediately. Jobs can target it in subsequent ticks, and checkpoints persist the new topology.
+- Routers in neighbouring regions honour the new spillover routes instantly—no restart required.
+
+### Retire Shards Without Downtime
+
+```json
+{
+  "type": "shard.deregister",
+  "shard": "edge-surge",
+  "reason": "Consolidate capacity after surge",
+  "redistribution": { "mode": "spillover", "targetShard": "earth" }
+}
+```
+
+- **Spillover mode** re-queues pending work into the chosen target shard. The ledger records new `job.spillover` events, and dashboards illuminate the transfer.
+- Switch `mode` to `"cancel"` with an optional `"cancelReason"` to evaporate outstanding jobs instead of reassigning them—handy for decommission drills.
+- Summary metrics (`jobsCancelled`, `spillovers`, ledger totals) and mission atlases update the moment the command executes so auditors can verify the retirement instantly.
+
 ### Command the Checkpoint Engine
 
 - **Trigger an immediate checkpoint** when you want a golden snapshot before governance actions:

@@ -5,7 +5,14 @@ import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runAcceptanceSuite } from '../src/acceptance';
-import { FabricConfig, JobBlueprint, JobDefinition, NodeDefinition, OwnerCommandSchedule } from '../src/types';
+import {
+  FabricConfig,
+  JobBlueprint,
+  JobDefinition,
+  NodeDefinition,
+  OwnerCommandSchedule,
+  ShardConfig,
+} from '../src/types';
 import { runSimulation } from '../src/simulation';
 
 const testConfig: FabricConfig = {
@@ -563,6 +570,81 @@ async function testOwnerCommandControls(): Promise<void> {
   await rm(rotatedCheckpointPath, { force: true });
 }
 
+async function testShardRegistrationLifecycle(): Promise<void> {
+  const { orchestrator, checkpointPath } = await buildOrchestrator();
+  const expansionShard: ShardConfig = {
+    id: 'edge',
+    displayName: 'Edge Outpost',
+    latencyBudgetMs: 200,
+    spilloverTargets: ['earth'],
+    maxQueue: 120,
+  };
+  await orchestrator.applyOwnerCommand({ type: 'shard.register', shard: expansionShard, reason: 'expand-edge' });
+  const healthAfterRegister = orchestrator.getHealthReport();
+  assert.ok(healthAfterRegister.shards.some((entry) => entry.shardId === 'edge'));
+  await orchestrator.applyOwnerCommand({
+    type: 'node.register',
+    reason: 'edge bootstrap node',
+    node: {
+      id: 'edge.node-alpha',
+      region: 'edge',
+      capacity: 3,
+      specialties: ['general'],
+      heartbeatIntervalSec: 6,
+      maxConcurrency: 2,
+    },
+  });
+  orchestrator.submitJob({
+    id: 'edge-job-001',
+    shard: 'edge',
+    requiredSkills: ['general'],
+    estimatedDurationTicks: 4,
+    value: 240,
+    submissionTick: 0,
+  });
+  orchestrator.processTick({ tick: 1 });
+  const edgeSnapshot = orchestrator.getShardSnapshots()['edge'];
+  assert.ok(edgeSnapshot && edgeSnapshot.inFlight + edgeSnapshot.queueDepth >= 1);
+  await orchestrator.applyOwnerCommand({
+    type: 'shard.deregister',
+    shard: 'edge',
+    reason: 'consolidate-to-earth',
+    redistribution: { mode: 'spillover', targetShard: 'earth' },
+  });
+  const postDeregisterSnapshots = orchestrator.getShardSnapshots();
+  assert.equal(postDeregisterSnapshots.edge, undefined);
+  const earthSnapshot = postDeregisterSnapshots.earth;
+  assert.ok(earthSnapshot.queueDepth + earthSnapshot.inFlight >= 1);
+  orchestrator.processTick({ tick: 2 });
+  assert.ok(orchestrator.fabricMetrics.spillovers > 0);
+
+  const transientShard: ShardConfig = {
+    id: 'transient',
+    displayName: 'Transient Staging',
+    latencyBudgetMs: 180,
+    spilloverTargets: ['earth'],
+    maxQueue: 40,
+  };
+  await orchestrator.applyOwnerCommand({ type: 'shard.register', shard: transientShard, reason: 'staging-window' });
+  orchestrator.submitJob({
+    id: 'transient-job-001',
+    shard: 'transient',
+    requiredSkills: ['general'],
+    estimatedDurationTicks: 2,
+    value: 90,
+    submissionTick: 0,
+  });
+  await orchestrator.applyOwnerCommand({
+    type: 'shard.deregister',
+    shard: 'transient',
+    reason: 'retire-staging',
+    redistribution: { mode: 'cancel', cancelReason: 'owner-retired-shard' },
+  });
+  assert.equal(orchestrator.getShardSnapshots().transient, undefined);
+  assert.ok(orchestrator.fabricMetrics.jobsCancelled >= 1);
+  await rm(checkpointPath, { force: true, recursive: true });
+}
+
 async function testJobBlueprintSeeding(): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), 'fabric-blueprint-'));
   const checkpointPath = join(dir, 'checkpoint.json');
@@ -1020,6 +1102,7 @@ async function run(): Promise<void> {
   await testLedgerCheckpointPersistence();
   await testDeterministicReplay();
   await testOwnerCommandControls();
+  await testShardRegistrationLifecycle();
   await testJobBlueprintSeeding();
   await testReportingRetarget();
   await testOwnerCommandSchedule();

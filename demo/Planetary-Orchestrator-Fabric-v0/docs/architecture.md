@@ -48,6 +48,8 @@ graph LR
 | Mars | 4000 | 420 ms | Spill to Earth or Helios | Manufacturing, terraforming |
 | Helios | 2200 | 850 ms | Spill to Mars | GPU-intensive analytics, solar observation |
 
+The owner can provision **surge shards** at runtime (e.g., `edge-surge`) that inherit the same guarantees. When the surge ends, a `shard.deregister` payload drains queued jobs into a specified target or cancels them deterministically—no redeploy or restart needed.
+
 ## Node Marketplace
 
 Nodes register declaratively. The orchestrator enforces owner-set maximum concurrency, latency windows, and heartbeat intervals while surfacing the exact container image, runtime, pricing, and compliance posture for every agent pod.

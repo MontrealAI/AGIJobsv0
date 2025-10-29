@@ -1,6 +1,28 @@
 {
   "commands": [
     {
+      "tick": 90,
+      "note": "Spin up emergency edge shard to absorb surge",
+      "command": {
+        "type": "shard.register",
+        "reason": "Provision edge spillway during surge",
+        "shard": {
+          "id": "edge-surge",
+          "displayName": "Edge Surge Lattice",
+          "latencyBudgetMs": 140,
+          "spilloverTargets": ["earth", "luna"],
+          "maxQueue": 1800,
+          "router": {
+            "queueAlertThreshold": 1200,
+            "spilloverPolicies": [
+              { "target": "earth", "threshold": 1350, "maxDrainPerTick": 60 },
+              { "target": "luna", "threshold": 1500, "maxDrainPerTick": 40 }
+            ]
+          }
+        }
+      }
+    },
+    {
       "tick": 120,
       "note": "Pause the full fabric while Helios GPUs recalibrate",
       "command": {
@@ -118,6 +140,16 @@
           "includeInFlight": true
         },
         "reason": "Owner resolved ticket manually"
+      }
+    },
+    {
+      "tick": 300,
+      "note": "Retire the emergency edge shard once demand normalises",
+      "command": {
+        "type": "shard.deregister",
+        "shard": "edge-surge",
+        "reason": "Consolidate capacity after surge",
+        "redistribution": { "mode": "spillover", "targetShard": "earth" }
       }
     }
   ]

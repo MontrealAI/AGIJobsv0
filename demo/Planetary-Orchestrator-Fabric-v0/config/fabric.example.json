@@ -8,7 +8,9 @@
       "owner:pause-all",
       "owner:update-thermostat",
       "owner:reroute-shard",
-      "owner:set-latency-budget"
+      "owner:set-latency-budget",
+      "owner:register-shard",
+      "owner:deregister-shard"
     ]
   },
   "shards": [
