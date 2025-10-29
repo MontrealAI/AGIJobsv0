@@ -88,7 +88,8 @@ def load_metrics_from_path(path: Path) -> Iterable[MetricSample]:
     """Load metrics from a JSON or NDJSON file."""
 
     text = path.read_text()
-    if path.suffix.lower() in {".json", ".ndjson"} and "\n" in text:
+    suffix = path.suffix.lower()
+    if suffix in {".ndjson", ".jsonl"}:
         for line in text.splitlines():
             line = line.strip()
             if not line:
