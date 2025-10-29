@@ -1,0 +1,12 @@
+{
+  "events": [
+    {"time": "00:00", "event": "Owner launches omnidominion charter"},
+    {"time": "00:04", "event": "Guardian quorum attested"},
+    {"time": "00:09", "event": "Curriculum regeneration complete"},
+    {"time": "00:15", "event": "Meta-plan finalised"},
+    {"time": "00:22", "event": "Owner override calibration"},
+    {"time": "00:30", "event": "Account abstraction bundle simulated"},
+    {"time": "00:34", "event": "Treasury flywheel executed"},
+    {"time": "00:36", "event": "Scoreboard + UI updated"}
+  ]
+}

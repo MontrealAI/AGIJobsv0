@@ -1,0 +1,14 @@
+{
+  "owner_command_latency_seconds": 6,
+  "owner_approval_speed_minutes": 1,
+  "alpha_routes": [
+    "Quantum alpha vault",
+    "Guardian arbitrage mesh",
+    "Biofabrication arbitrage",
+    "Climate impact derivatives",
+    "Compute hypergrid options"
+  ],
+  "gasless": true,
+  "account_abstraction": "ERC-4337 bundler + paymaster",
+  "dry_run": true
+}

@@ -1,0 +1,16 @@
+{
+  "signals": [
+    {"name": "Global liquidity radar", "uptime": 0.997},
+    {"name": "Patent delta watch", "uptime": 0.995},
+    {"name": "Supply telematics", "uptime": 0.996},
+    {"name": "Policy arbitrage vision", "uptime": 0.994},
+    {"name": "Compute grid sentinel", "uptime": 0.998}
+  ],
+  "sentinel_clusters": [
+    "Liquidity",
+    "Biofabrication",
+    "Supply",
+    "Climate",
+    "Compute"
+  ]
+}

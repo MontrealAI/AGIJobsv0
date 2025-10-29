@@ -1,0 +1,51 @@
+{
+  "nodes": [
+    {
+      "id": "quantum-liquidity",
+      "label": "Quantum Liquidity Mesh",
+      "value": 0.97,
+      "connections": ["compute-hypergrid", "biofabrication", "climate-restoration"]
+    },
+    {
+      "id": "biofabrication",
+      "label": "Biofabrication IP",
+      "value": 0.95,
+      "connections": ["quantum-liquidity", "supply-constellation", "climate-restoration"]
+    },
+    {
+      "id": "supply-constellation",
+      "label": "Supply Constellation",
+      "value": 0.96,
+      "connections": ["biofabrication", "climate-restoration"]
+    },
+    {
+      "id": "climate-restoration",
+      "label": "Climate Restoration",
+      "value": 0.94,
+      "connections": ["quantum-liquidity", "biofabrication", "compute-hypergrid"]
+    },
+    {
+      "id": "compute-hypergrid",
+      "label": "Compute Hypergrid",
+      "value": 0.98,
+      "connections": ["quantum-liquidity", "climate-restoration"]
+    }
+  ],
+  "insights": [
+    {
+      "id": "alpha-singularity",
+      "description": "Couple quantum liquidity and compute hypergrid to mint unstoppable alpha",
+      "score": 0.99
+    },
+    {
+      "id": "supply-bridge",
+      "description": "Supply constellation plus biofabrication unlocks patent arbitrage",
+      "score": 0.96
+    },
+    {
+      "id": "climate-hyperloop",
+      "description": "Climate restoration and quantum liquidity feed sovereign impact fund",
+      "score": 0.955
+    }
+  ]
+}

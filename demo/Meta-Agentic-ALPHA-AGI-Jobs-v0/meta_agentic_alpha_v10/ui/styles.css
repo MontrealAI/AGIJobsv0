@@ -1,0 +1,159 @@
+:root {
+  color-scheme: dark;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at top, #141b2b, #050608 65%);
+  color: #e9f2ff;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+main.layout {
+  display: grid;
+  gap: 2rem;
+  padding: 2.5rem;
+}
+
+header {
+  background: rgba(12, 24, 45, 0.85);
+  border: 1px solid rgba(80, 150, 255, 0.2);
+  border-radius: 18px;
+  padding: 2rem;
+  box-shadow: 0 12px 40px rgba(0, 20, 60, 0.5);
+}
+
+header h1 {
+  margin-top: 0;
+  font-size: 2.5rem;
+  letter-spacing: 0.04em;
+}
+
+header p {
+  line-height: 1.6;
+  max-width: 960px;
+}
+
+.metrics,
+.owner-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.metric-card {
+  background: rgba(20, 34, 68, 0.85);
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  border: 1px solid rgba(80, 150, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 15, 45, 0.4);
+}
+
+.metric-card strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+section.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+section.panels article {
+  background: rgba(10, 20, 40, 0.85);
+  border: 1px solid rgba(70, 140, 240, 0.18);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+section.panels article h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.03em;
+}
+
+section.panels article ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+section.panels article li + li {
+  margin-top: 0.35rem;
+}
+
+.full-span {
+  grid-column: 1 / -1;
+}
+
+.mermaid-section {
+  background: rgba(8, 16, 34, 0.85);
+  border: 1px solid rgba(80, 150, 255, 0.18);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 12px 36px rgba(0, 10, 40, 0.45);
+}
+
+.mermaid-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  letter-spacing: 0.04em;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(200, 220, 255, 0.85);
+}
+
+code {
+  background: rgba(30, 60, 120, 0.4);
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+}
+
+#owner-levers ul,
+#alpha-domains ul,
+#opportunity-graph ul,
+#guardian-mesh ul,
+#treasury-streams ul,
+#autopilot ul,
+#mission-threads ul,
+#simulations ul,
+#ci-matrix ul,
+#hyperstructure ul,
+#market-sentinels ul,
+#sovereignty-surface ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#owner-levers li,
+#alpha-domains li,
+#opportunity-graph li,
+#guardian-mesh li,
+#treasury-streams li,
+#autopilot li,
+#mission-threads li,
+#simulations li,
+#ci-matrix li,
+#hyperstructure li,
+#market-sentinels li,
+#sovereignty-surface li {
+  margin-bottom: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(40, 80, 160, 0.25);
+  border: 1px solid rgba(80, 140, 240, 0.2);
+}
+
+@media (max-width: 900px) {
+  main.layout {
+    padding: 1.5rem;
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "owner_controls": [
+    "Pause / resume omnidominion fabric",
+    "Rotate guardian supermesh",
+    "Rebalance unstoppable reserves",
+    "Deploy new alpha flywheel",
+    "Escalate antifragility drills",
+    "Rewire CI V2 governance"
+  ],
+  "governance_safeguards": {
+    "timelock": "0xTIMEL0CK00000000000000000000000000000010",
+    "multisig": "0xMULTI500000000000000000000000000000010",
+    "guardian_quorum": 6,
+    "emergency_pause": true,
+    "failover_guardians": 5
+  },
+  "treasury_resilience": {
+    "unstoppable_reserve_percent": 52,
+    "antifragility_buffer_percent": 48,
+    "owner_override_limit_percent": 18,
+    "streams": 6
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "world_model": {
+    "name": "POET+MuZero Omnidominion",
+    "autonomy_layers": ["Curriculum", "Treasury", "Guardian", "Execution"],
+    "autonomous": true,
+    "stress_tests": ["Black swan liquidity", "Guardian rotation surge", "Regime inversion"]
+  },
+  "risk_controls": {
+    "max_drawdown_percent": 1.4,
+    "var_percent": 0.8,
+    "antifragility_buffer_percent": 48,
+    "circuit_breaker_minutes": 6
+  },
+  "resilience_bonus": 0.28,
+  "alpha_feedback": 0.18,
+  "antifragility_modes": [
+    "Real-time VaR adjustment",
+    "Cross-domain hedging",
+    "Dynamic liquidity throttle"
+  ]
+}

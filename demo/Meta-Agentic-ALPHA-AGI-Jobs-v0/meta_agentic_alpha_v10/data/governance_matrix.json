@@ -1,0 +1,22 @@
+{
+  "owner_actions": [
+    "Activate unstoppable governor",
+    "Rotate guardian mesh",
+    "Rebalance unstoppable reserves",
+    "Deploy new alpha charter",
+    "Trigger antifragility rehearsal"
+  ],
+  "guardian_council": {
+    "quorum": 6,
+    "failover": 5,
+    "emergency_pause": true,
+    "session_keys": 10
+  },
+  "policy_overrides": [
+    "Set treasury fee bands",
+    "Adjust validator bonds",
+    "Update alpha multipliers",
+    "Throttle liquidity routes",
+    "Rewrite autopilot velocity"
+  ]
+}

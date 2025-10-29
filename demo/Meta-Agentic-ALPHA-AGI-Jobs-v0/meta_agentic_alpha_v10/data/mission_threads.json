@@ -1,0 +1,9 @@
+{
+  "threads": [
+    {"id": "mission-thread-quantum-alpha", "title": "Quantum Alpha Liquidity"},
+    {"id": "mission-thread-biofabrication", "title": "Biofabrication Sovereignty"},
+    {"id": "mission-thread-climate", "title": "Climate Restoration Ventures"},
+    {"id": "mission-thread-hypergrid", "title": "Hypergrid Compute Expansion"},
+    {"id": "mission-thread-governance", "title": "Guardian Supermesh Governance"}
+  ]
+}

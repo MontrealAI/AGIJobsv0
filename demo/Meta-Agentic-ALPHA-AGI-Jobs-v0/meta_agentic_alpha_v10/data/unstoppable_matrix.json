@@ -1,0 +1,11 @@
+{
+  "command_latency_seconds": 6,
+  "owner_approval_speed_minutes": 1,
+  "unstoppable_controls": [
+    "Omnidominion pause switch",
+    "Autopilot override",
+    "Treasury harden",
+    "Guardian escalation",
+    "CI V2 enforcement"
+  ]
+}

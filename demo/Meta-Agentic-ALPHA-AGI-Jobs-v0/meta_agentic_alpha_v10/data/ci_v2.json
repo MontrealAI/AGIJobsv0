@@ -1,0 +1,14 @@
+{
+  "status": "hyper-green",
+  "checks": [
+    "ci.yml",
+    "contracts.yml",
+    "orchestrator-ci.yml",
+    "static-analysis.yml",
+    "webapp.yml",
+    "fuzz.yml",
+    "scorecard.yml",
+    "demo-meta-agentic-alpha-agi-jobs.yml"
+  ],
+  "enforcement": "All critical flows blocked unless checks succeed"
+}
