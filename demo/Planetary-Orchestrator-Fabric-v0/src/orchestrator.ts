@@ -172,6 +172,21 @@ export class PlanetaryOrchestrator {
     };
   }
 
+  private static cloneShardConfig(config: ShardConfig): ShardConfig {
+    return {
+      ...config,
+      spilloverTargets: [...config.spilloverTargets],
+      router: config.router
+        ? {
+            queueAlertThreshold: config.router.queueAlertThreshold,
+            spilloverPolicies: config.router.spilloverPolicies
+              ? config.router.spilloverPolicies.map((policy) => ({ ...policy }))
+              : undefined,
+          }
+        : undefined,
+    };
+  }
+
   private initializeState(): void {
     this.shards.clear();
     this.nodes.clear();
@@ -374,6 +389,151 @@ export class PlanetaryOrchestrator {
             ? `Owner resumed shard ${command.shard}`
             : `Owner issued resume while shard ${command.shard} already active`,
           data: { reason: command.reason, shard: command.shard, previouslyPaused: wasPaused },
+        });
+        break;
+      }
+      case 'shard.register': {
+        const shardId = command.shard.id;
+        if (this.shards.has(shardId)) {
+          throw new Error(`Shard ${shardId} already exists`);
+        }
+        const config = PlanetaryOrchestrator.cloneShardConfig(command.shard);
+        const state = this.createShardState(config);
+        this.shards.set(shardId, state);
+        this.syncShardConfigReference(shardId, config);
+        const router = new ShardRouterService(state, config, () => this.getNodesForShard(shardId), this.logger);
+        this.routers.set(shardId, router);
+        this.pausedShards.delete(shardId);
+        push({
+          tick: this.tick,
+          type: 'owner.shard.register',
+          message: `Owner registered shard ${shardId}`,
+          data: {
+            shard: shardId,
+            displayName: config.displayName,
+            latencyBudgetMs: config.latencyBudgetMs,
+            maxQueue: config.maxQueue,
+            spilloverTargets: [...config.spilloverTargets],
+            reason: command.reason,
+          },
+        });
+        break;
+      }
+      case 'shard.deregister': {
+        const shardState = this.shards.get(command.shard);
+        if (!shardState) {
+          throw new Error(`Unknown shard ${command.shard}`);
+        }
+        const redistribution = command.redistribution ?? { mode: 'spillover' as const };
+        const queuedJobs = [...shardState.queue];
+        const inFlightJobs = Array.from(shardState.inFlight.values());
+        shardState.queue = [];
+        shardState.inFlight.clear();
+        const allActiveJobs = [...queuedJobs, ...inFlightJobs];
+        for (const job of inFlightJobs) {
+          if (job.assignedNodeId) {
+            this.nodes.get(job.assignedNodeId)?.runningJobs.delete(job.id);
+          }
+        }
+
+        let spilloverTarget: ShardId | undefined;
+        let spillRequests: SpilloverRequest[] = [];
+        let cancelledJobs = 0;
+        let cancelledValue = 0;
+
+        if (redistribution.mode === 'spillover') {
+          spilloverTarget = redistribution.targetShard;
+          if (!spilloverTarget) {
+            spilloverTarget = shardState.config.spilloverTargets.find((target) => target !== command.shard);
+          }
+          if (!spilloverTarget) {
+            throw new Error(`Shard ${command.shard} deregistration requires a spillover target`);
+          }
+          if (spilloverTarget === command.shard) {
+            throw new Error('Shard deregistration spillover target must differ from source shard');
+          }
+          if (!this.shards.has(spilloverTarget)) {
+            throw new Error(`Spillover target shard ${spilloverTarget} not found`);
+          }
+          spillRequests = allActiveJobs.map((job) => {
+            job.assignedNodeId = undefined;
+            job.startedTick = undefined;
+            job.completedTick = undefined;
+            job.failedTick = undefined;
+            job.status = 'spillover';
+            job.spilloverHistory.push(spilloverTarget!);
+            job.shard = spilloverTarget!;
+            job.remainingTicks = Math.max(job.remainingTicks ?? job.estimatedDurationTicks, 1);
+            return {
+              job,
+              target: spilloverTarget!,
+              origin: command.shard,
+              reason: command.reason ?? 'owner-shard-deregister',
+            };
+          });
+          if (spillRequests.length > 0) {
+            this.handleSpillovers(spillRequests);
+          }
+        } else {
+          const cancelReason = redistribution.cancelReason ?? command.reason ?? 'owner-shard-deregister';
+          for (const job of allActiveJobs) {
+            job.assignedNodeId = undefined;
+            job.startedTick = undefined;
+            job.completedTick = undefined;
+            job.status = 'failed';
+            job.failureReason = cancelReason;
+            job.failedTick = this.tick;
+            shardState.failed.set(job.id, job);
+            this.metrics.jobsFailed += 1;
+            this.metrics.valueFailed += job.value;
+            this.metrics.jobsCancelled += 1;
+            this.metrics.valueCancelled += job.value;
+            cancelledJobs += 1;
+            cancelledValue += job.value;
+            push({
+              tick: this.tick,
+              type: 'owner.job.cancelled',
+              message: `Owner cancelled job ${job.id} while deregistering shard ${command.shard}`,
+              data: { jobId: job.id, shard: command.shard, reason: cancelReason, previousState: 'deregistered' },
+            });
+            this.recordRegistryEvent({
+              type: 'job.cancelled',
+              shard: command.shard,
+              jobId: job.id,
+              reason: cancelReason,
+              job: cloneJob(job),
+            });
+            this.recordRegistryEvent({
+              type: 'job.failed',
+              shard: command.shard,
+              reason: cancelReason,
+              job: cloneJob(job),
+            });
+          }
+        }
+
+        const completedCount = shardState.completed.size;
+        const failedCount = shardState.failed.size;
+
+        this.shards.delete(command.shard);
+        this.routers.delete(command.shard);
+        this.pausedShards.delete(command.shard);
+        this.removeShardConfig(command.shard);
+
+        push({
+          tick: this.tick,
+          type: 'owner.shard.deregister',
+          message: `Owner deregistered shard ${command.shard}`,
+          data: {
+            reason: command.reason,
+            activeJobsRedistributed: spillRequests.length,
+            cancelledJobs,
+            cancelledValue,
+            completedJobs: completedCount,
+            failedJobs: failedCount,
+            redistributionMode: redistribution.mode,
+            spilloverTarget,
+          },
         });
         break;
       }
@@ -754,12 +914,18 @@ export class PlanetaryOrchestrator {
     if (!payload) {
       return false;
     }
+    const payloadShardIds = new Set(Object.keys(payload.shards));
     for (const [shardId, shardPayload] of Object.entries(payload.shards)) {
+      const updatedConfig = PlanetaryOrchestrator.cloneShardConfig(shardPayload.config);
       const index = this.config.shards.findIndex((entry) => entry.id === shardId);
       if (index >= 0) {
-        this.config.shards[index] = { ...this.config.shards[index], ...shardPayload.config };
+        this.config.shards[index] = updatedConfig;
+      } else {
+        this.config.shards.push(updatedConfig);
       }
     }
+    this.config.shards = this.config.shards.filter((entry) => payloadShardIds.has(entry.id));
+    const payloadNodeIds = new Set(Object.keys(payload.nodes));
     for (const [nodeId, nodePayload] of Object.entries(payload.nodes)) {
       const index = this.config.nodes.findIndex((entry) => entry.id === nodeId);
       if (index >= 0) {
@@ -771,6 +937,7 @@ export class PlanetaryOrchestrator {
         this.config.nodes.push(cloneNodeDefinition(nodePayload.definition));
       }
     }
+    this.config.nodes = this.config.nodes.filter((entry) => payloadNodeIds.has(entry.id));
     if (payload.reporting) {
       this.config.reporting = { ...payload.reporting };
     }
@@ -1459,6 +1626,13 @@ export class PlanetaryOrchestrator {
       this.config.shards[index] = config;
     } else {
       this.config.shards.push(config);
+    }
+  }
+
+  private removeShardConfig(shardId: ShardId): void {
+    const index = this.config.shards.findIndex((entry) => entry.id === shardId);
+    if (index >= 0) {
+      this.config.shards.splice(index, 1);
     }
   }
 

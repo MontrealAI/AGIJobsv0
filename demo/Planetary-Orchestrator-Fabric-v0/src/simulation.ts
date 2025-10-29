@@ -16,6 +16,7 @@ import {
   SimulationArtifacts,
   SimulationOptions,
   RunMetadata,
+  ShardConfig,
 } from './types';
 import { countJobsInBlueprint, expandJobBlueprint } from './job-blueprint';
 
@@ -1077,6 +1078,21 @@ async function writeArtifacts(
     'utf8'
   );
 
+  const surgeShardConfig: ShardConfig = {
+    id: 'edge-surge',
+    displayName: 'Edge Surge Lattice',
+    latencyBudgetMs: 140,
+    spilloverTargets: ['earth', 'luna'],
+    maxQueue: 1800,
+    router: {
+      queueAlertThreshold: 1200,
+      spilloverPolicies: [
+        { target: 'earth', threshold: 1350, maxDrainPerTick: 60 },
+        { target: 'luna', threshold: 1500, maxDrainPerTick: 40 },
+      ],
+    },
+  };
+
   const ownerScript = {
     pauseAll: {
       command: 'owner:system-pause',
@@ -1183,6 +1199,17 @@ async function writeArtifacts(
         reason: 'De-duplicate resolved Earth logistics request',
         locator: { kind: 'tail', shard: 'earth', offset: 4, includeInFlight: true },
       },
+      registerEdgeShard: {
+        type: 'shard.register',
+        reason: 'Provision edge spillway during surge',
+        shard: surgeShardConfig,
+      },
+      retireEdgeShard: {
+        type: 'shard.deregister',
+        shard: surgeShardConfig.id,
+        reason: 'Consolidate capacity after surge',
+        redistribution: { mode: 'spillover', targetShard: 'earth' },
+      },
       upgradeEarthNodeRuntime: {
         type: 'node.update',
         nodeId: 'earth.core-alpha',
@@ -1195,6 +1222,15 @@ async function writeArtifacts(
       },
     },
     commandScheduleTemplate: [
+      {
+        tick: 90,
+        note: 'Provision emergency edge shard for surge absorption',
+        command: {
+          type: 'shard.register',
+          shard: surgeShardConfig,
+          reason: 'Provision edge spillway during surge',
+        },
+      },
       {
         tick: 120,
         note: 'Run a full-fabric pause drill during Helios calibration',
@@ -1269,6 +1305,16 @@ async function writeArtifacts(
           type: 'job.cancel',
           locator: { kind: 'tail', shard: 'earth', offset: 4, includeInFlight: true },
           reason: 'Owner resolved via manual intervention',
+        },
+      },
+      {
+        tick: 300,
+        note: 'Retire emergency edge shard once demand normalises',
+        command: {
+          type: 'shard.deregister',
+          shard: surgeShardConfig.id,
+          reason: 'Consolidate capacity after surge',
+          redistribution: { mode: 'spillover', targetShard: 'earth' },
         },
       },
     ],

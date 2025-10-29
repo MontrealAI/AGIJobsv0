@@ -12,6 +12,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🧱 **Container DNA & Pricing Telemetry** – Marketplace snapshots expose container images, runtime orchestration, compliance envelopes, and per-job pricing for every node.
 - 💾 **Crash-Proof Checkpointing** – A built-in recovery engine snapshots the entire fabric so runs resume exactly where they stopped.
 - 🛡️ **Owner Supreme Controls** – The owner can pause, update, reprioritize, or surgically reroute jobs at any moment via declarative commands.
+- 🧮 **Dynamic Shard Expansion** – Owners register and retire shards mid-run, spilling queued work into sister regions or cancelling it surgically with a single payload.
 - 🧭 **Checkpoint Command Deck** – Owners retarget storage paths, tighten snapshot cadence, and trigger instant saves from the same schedule that drives pauses and reroutes.
 - 🗂️ **Adaptive Reporting** – Owners redirect artifact directories and default labels on demand, with changes persisting across checkpoints and resumes.
 - 🗺️ **Mission Topology Atlases** – Every run emits \`mission-topology.mmd\` and a ready-to-share HTML atlas that narrates shard health, node posture, and spillover links in living mermaid diagrams.
@@ -71,10 +72,17 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
 
+## Dynamic Shard Control (Edge Surge Drill)
+
+- **Provision surge capacity:** Rehearse the new `shard.register` command by replaying the `edge-surge` payload from `owner-commands.example.json` or `owner-script.json`. The orchestrator spins up a fresh shard mid-run, routes workloads to it immediately, and checkpoints the topology change.
+- **Retire without downtime:** Execute the matching `shard.deregister` payload to spill queued or in-flight jobs into Earth (or the target you specify) with deterministic accounting. Cancel mode is available when you want to evaporate work instead of redistributing it.
+- **Dashboard confirmation:** The generated mission atlas highlights the new shard, the spillover arcs, and the retirement event so non-technical directors can prove the choreography without digging into code.
+
 ## Superintelligence Empowerment Playbook
 
 - 📘 **Mission Chronicle:** Follow the [`docs/superintelligence-empowerment.md`](docs/superintelligence-empowerment.md) playbook for a step-by-step operator timeline, deterministic verification grid, and pitfall countermeasures tailored to non-technical mission directors.
 - 🧠 **Total Owner Supremacy:** Replay the declarative payloads surfaced in `owner-script.json`, reconfigure checkpoints, and redirect report archives on demand—every control is exposed without touching code.
+- 🪐 **Shard Shape-Shifting:** Toggle surge shards on and off using the new `shard.register` and `shard.deregister` payloads. Jobs can spill over into neighbouring regions or be retired instantly while the ledger and dashboards stay perfectly synchronized.
 - 🛡️ **Self-Auditing Assurance:** Pair the playbook with `npm run demo:planetary-orchestrator-fabric:acceptance` to prove <2% drop rate, checkpoint recovery, and ledger invariants in one command, giving executives irrefutable confidence that they are steering a superintelligent planetary network.
 
 ## System Blueprint
