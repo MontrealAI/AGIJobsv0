@@ -1,164 +1,193 @@
-# AGI Alpha Node v0 Demo
+# 🎖️ AGI Alpha Node Demo (v0)
 
-> **Mission:** Empower any operator — including non-technical visionaries — to launch, govern, and scale an AGI Alpha Node that compounds value autonomously using AGI Jobs v0 (v2).
+> **Purpose:** empower a non-technical operator to launch a sovereign AGI Alpha Node capable of orchestrating multi-domain specialists, defending governance, and compounding on-chain wealth at super-structural scale using **AGI Jobs v0 (v2)**.
 
-This demo packages a production-grade Alpha Node stack that can be deployed, governed, and audited with a single command. It showcases how AGI Jobs v0 (v2) unlocks unprecedented leverage: ENS-verified identity, fully-governed staking, autonomous specialist swarms, and real-time compliance analytics.
+## 🚀 Why this demo matters
 
-## ✨ Grand Demo Command Nexus (AGI Alpha Node v0/v2)
+- **Zero-friction activation.** One command turns an ENS-verified, governance-safe, metrics-rich node online.
+- **Institutional-grade safety.** Emergency pauses, governance rotation, antifragile drills, and compliance telemetry are included out of the box.
+- **AI swarm intelligence.** A MuZero++ planner coordinates finance, biotech, and manufacturing specialists, exploiting a persistent knowledge lake to generate strategic alpha.
+- **Operator empowerment.** Every control surface (stake, governance, safety, dashboards, metrics) is exposed via human-friendly CLI and web UI, no engineering background required.
 
-The new [`grand_demo/`](grand_demo/README.md) directory contains an institution-grade showcase that a non-technical operator can launch with a single command. Highlights:
-
-- **Container-native deployment:** `docker compose -f demo/AGI-Alpha-Node-v0/grand_demo/docker-compose.yaml up --build`
-- **Typer-driven console:** `agi-alpha-node demo-job` executes the canonical wealth-generation scenario while emitting structured compliance logs.
-- **Command Nexus dashboard:** FastAPI UI with cinematic mermaid topology, live compliance scorecards, and operator runbook.
-- **Prometheus metrics:** Exports `agi_alpha_node_*` gauges ready for observability pipelines.
-- **Safety drills & governance controls:** ENS ownership, pause transactions, and automated antifragility drills wired in by default.
-
-Run tests for the grand demo with:
-
-```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/AGI-Alpha-Node-v0/grand_demo/tests
-```
-
-## 🎬 Instant Experience
-
-```bash
-make demo-alpha-node
-```
-
-The command above (defined in this directory) guides an operator through:
-
-1. **Identity Verification:** ENS ownership check for `<name>.alpha.node.agi.eth` before activation.
-2. **Governance Bootstrap:** Configuring owner, governance multisig, and emergency pause controls.
-3. **Economic Activation:** Staking $AGIALPHA, wiring incentives, and subscribing to marketplace feeds.
-4. **Autonomous Execution:** Planner + specialist swarm accepts, executes, and reports on-chain jobs.
-5. **Observability:** Web dashboard, Prometheus metrics, structured audit logs, and compliance scorecard.
-
----
-
-## 🌐 Architecture at a Glance
+## 🧠 System atlas
 
 ```mermaid
-graph TD
-    Operator((Operator)) -->|Typer CLI| CommandHub
-    CommandHub -->|verifies| ENS[ENS Verifier]
-    CommandHub -->|configures| Governance[Governance Control]
-    CommandHub -->|stakes| Economy[$AGIALPHA Economy]
-    CommandHub --> Planner
-    Planner --> Orchestrator
-    Orchestrator --> Finance[Finance Strategist]
-    Orchestrator --> Biotech[Biotech Synthesist]
-    Orchestrator --> Manufacturing[Manufacturing Optimizer]
-    Specialists -.-> Knowledge[Knowledge Lake]
-    Planner -.-> Knowledge
-    Orchestrator --> JobRouter[AGI Jobs v2 Router]
-    JobRouter --> Rewards[Rewards & Fee Pools]
-    CommandHub --> Metrics[Prometheus Exporter]
-    Metrics --> Dashboard[Operator Dashboard]
-    Dashboard --> Operator
+mindmap
+  root((AGI Alpha Node))
+    Identity
+      ENS Verification
+      Governance Sovereignty
+    Economy
+      $AGIALPHA Staking
+      Rewards Reinvestment
+      Slashing Guards
+    Intelligence
+      MuZero++ Planner
+      Specialist Swarm
+      Knowledge Lake
+    Operations
+      CLI Control Hub
+      Prometheus Metrics
+      Immersive Dashboard
+    Safety
+      System Pause
+      Compliance Engine
+      Antifragility Drills
 ```
 
-The architecture uses deliberate guardrails: nothing activates without ENS verification, stake thresholds, and governance control. Every component emits metrics and audit logs the moment it runs.
+## 🗂️ Directory map
 
----
+```mermaid
+flowchart LR
+    A[config.toml] --> B(Alpha Node Core)
+    B --> C[alpha_node/]
+    C --> C1[config.py]
+    C --> C2[ens.py]
+    C --> C3[stake.py]
+    C --> C4[planner.py]
+    C --> C5[specialists/]
+    C --> C6[orchestrator.py]
+    C --> C7[compliance.py]
+    C --> C8[metrics.py]
+    A --> D[jobs.json]
+    A --> E[knowledge.json]
+    A --> F[ens_registry.csv]
+    B --> G[web/]
+    B --> H[tests/]
+```
 
-## 🧩 Components
+## 🛠️ Quick start (non-technical operator)
 
-| Component | Purpose | Key File |
-|-----------|---------|----------|
-| **Typer CLI** | Guides non-technical operators via rich prompts and validations. | [`alpha_node/cli.py`](alpha_node/cli.py) |
-| **ENS Verifier** | Ensures only legitimate ENS domain owners can activate the node. | [`alpha_node/ens.py`](alpha_node/ens.py) |
-| **Governance Control** | Owner pause/resume, governance rotation, configuration snapshotting. | [`alpha_node/governance.py`](alpha_node/governance.py) |
-| **Stake Manager Client** | Locks stake, streams rewards, monitors slashing. | [`alpha_node/economy.py`](alpha_node/economy.py) |
-| **Job Harvester** | Streams AGI Jobs v2 opportunities into the planner. | [`alpha_node/jobs.py`](alpha_node/jobs.py) |
-| **MuZero++ Planner** | Self-optimizing decision core with tree search and reward shaping. | [`alpha_node/planner.py`](alpha_node/planner.py) |
-| **Specialist Swarm** | Finance, biotech, and manufacturing experts working in parallel. | [`alpha_node/specialists`](alpha_node/specialists) |
-| **Knowledge Lake** | SQLite-backed long-term memory with semantic indexing hooks. | [`alpha_node/knowledge.py`](alpha_node/knowledge.py) |
-| **Compliance Scorecard** | Six-dimension governance-grade scoring. | [`alpha_node/compliance.py`](alpha_node/compliance.py) |
-| **Prometheus Exporter** | Continuous metrics, structured logs, event streaming. | [`alpha_node/metrics.py`](alpha_node/metrics.py) |
-| **Dashboard** | Beautiful, live web UI for non-technical oversight. | [`alpha_node/web/dashboard.py`](alpha_node/web/dashboard.py) |
-
----
-
-## 🚀 Quickstart
-
-1. Copy the example configuration and customize it:
+1. **Install Python 3.11+** (pre-installed in AGI Jobs v0 (v2) containers).
+2. **Bootstrap the node**:
    ```bash
-   cp config/example.alpha-node.yaml config/alpha-node.yaml
+   cd demo/AGI-Alpha-Node-v0
+   python -m alpha_node.cli bootstrap
    ```
-
-2. Edit the file to point at your RPC, ENS domain, and keys.
-
-3. Launch the demo stack:
+   This deposits the minimum stake, validates ENS ownership, and prints a compliance snapshot.
+3. **Run the intelligence engine**:
    ```bash
-   make demo-alpha-node
+   python -m alpha_node.cli run
    ```
+   The planner harvests jobs, delegates to specialists, captures knowledge, and restakes rewards automatically.
+4. **Monitor metrics**:
+   ```bash
+   python -m alpha_node.cli metrics
+   ```
+   Scrape Prometheus metrics from `http://localhost:9101`.
+5. **View compliance & dashboard data**:
+   ```bash
+   python -m alpha_node.cli dashboard
+   ```
+   Pipe the JSON into the web UI (instructions below) or any analytics stack.
 
-4. Visit the Operator Dashboard at `http://localhost:8787` and the Prometheus metrics endpoint at `http://localhost:8788/metrics`.
+### Emergency controls
 
----
+- `python -m alpha_node.cli pause` — halt every subsystem instantly.
+- `python -m alpha_node.cli resume` — safely resume operations.
+- `python -m alpha_node.cli rotate-governance --address <0x...>` — rotate ownership to a new multisig without downtime.
+- `python -m alpha_node.cli stake-deposit --amount 5000` — top up the treasury stake from operator-controlled wallets.
 
-## 🔧 Sovereign Operator Controls
+## 🌐 Web dashboard (grandiose operator cockpit)
 
-- **Config-governed specialists:** Enable or disable domain experts and adjust their risk budgets directly from `config/alpha-node.yaml`.
-- **Full contract address registry:** Provide StakeManager, incentives, treasury, and fee pool addresses for deterministic governance hand-off.
-- **Dual-mode job harvester:** Seamlessly switch between mainnet polling and curated scenario files to rehearse autonomous execution before going live.
-- **Runtime guardrails:** Pausing, governance rotation, and compliance scoring are callable via CLI, interactive console, or automated drills.
-
-These controls ensure the contract owner retains absolute command while delegating routine intelligence to the Alpha Node swarm.
-
----
-
-## 📊 Compliance Scorecard Dimensions
-
-| Dimension | Checks |
-|-----------|--------|
-| **Identity & ENS** | Ownership verified, ENS records synced, renewal tracked. |
-| **Staking & Activation** | Minimum stake confirmed, slashing monitors active. |
-| **Governance & Safety** | Governance & pause controls healthy, drills recent. |
-| **Economic Engine** | Reward capture, reinvestment velocity, fee settlement. |
-| **Antifragility** | Automated drills run, invariants stable, self-healing ready. |
-| **Strategic Intelligence** | Planner performance trending upward, specialists scoring high. |
-
-The scorecard emits real-time metrics and CLI summaries for audit-readiness.
-
----
-
-## 🧪 Tests & CI
+The `web/` directory contains a zero-dependency dashboard that consumes `dashboard` command output. Serve it statically:
 
 ```bash
-poetry run pytest demo/AGI-Alpha-Node-v0/tests
+python -m http.server 8090 --directory web
 ```
 
-The test suite covers compliance scoring, orchestrator/specialist orchestration, and planner heuristics. The demo integrates with the repository's CI for full traceability.
+Open `http://localhost:8090` and paste the JSON payload from `python -m alpha_node.cli dashboard`. The page renders:
 
----
+- Stake, rewards, antifragility, and strategic alpha gauges.
+- Live compliance radar chart (powered by vanilla canvas).
+- Governance audit timeline fed by `state.json`.
 
-## 🐳 One-Command Container Deployment
-
-A `docker-compose.yaml` ships a full stack: CLI bootstrapper, API, dashboard, metrics exporter. Non-technical operators run:
+## 🧪 Production-grade tests
 
 ```bash
-docker compose -f demo/AGI-Alpha-Node-v0/docker-compose.yaml up --build
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/AGI-Alpha-Node-v0/tests
 ```
 
-The containers expose environment-driven configuration, auto-run ENS verification, and refuse to start without passing safety checks.
+The suite validates planner convergence, compliance scoring, and governance pause behavior.
 
----
+## 🧰 One-command containerization
 
-## 🛡️ Safety & Auditability
+A minimal `Dockerfile` is provided. Build & launch in seconds:
 
-- **Circuit Breakers:** Every on-chain transaction checks the global pause state and compliance guardrails.
-- **Structured Logs:** JSON logs with tx hashes, planner rationales, and compliance deltas.
-- **Self-Tests:** Automated antifragility drills prove the pause/resume pathway regularly.
-- **Runbook Ready:** See [`RUNBOOK.md`](../RUNBOOK.md) for integration guidance.
+```bash
+docker build -t agi-alpha-node demo/AGI-Alpha-Node-v0
 
----
+docker run --rm -it -p 9101:9101 -v $(pwd)/demo/AGI-Alpha-Node-v0:/app agi-alpha-node \
+  python -m alpha_node.cli run
+```
 
-## 📚 Further Reading
+The container auto-initializes state, knowledge lake, and stake ledger, making redeployments deterministic.
 
-- [`config/example.alpha-node.yaml`](config/example.alpha-node.yaml) – configuration template.
-- [`demo/AGI-Alpha-Node-v0/tests`](tests) – integration and unit tests.
-- [`Makefile`](Makefile) – helper commands for operators.
+## 📈 Compliance scorecard dimensions
 
-This demo proves that AGI Jobs v0 (v2) lets any operator harness an economically unstoppable, governance-first AGI Alpha Node in minutes.
+| Dimension | Description | Automated guardrail |
+|-----------|-------------|----------------------|
+| Identity & ENS | Verifies ENS ownership (on-chain or offline fallback) | ENS verification must pass before activation |
+| Staking & Activation | Ensures minimum stake locked & rewards reinvested | Ledger ensures deterministic audits |
+| Governance & Safety | Tracks pause state & governance rotation | CLI exposes pause/resume under multisig control |
+| Economic Engine | Monitors cumulative rewards vs. strategic targets | Planner restakes once thresholds reached |
+| Antifragility | Uses knowledge lake growth & drills to measure resilience | Auto-updates after each orchestration pass |
+| Strategic Intelligence | Evaluates MuZero++ alpha projections | Specialist outputs contribute to strategic index |
+
+## 🧱 Files delivered
+
+- `alpha_node/` — production-ready Python package with ENS verification, staking logic, MuZero++ planner, orchestrator, compliance engine, metrics server, and CLI.
+- `config.toml` — declarative configuration for ENS/governance/staking/intelligence subsystems.
+- `jobs.json`, `knowledge.json`, `ens_registry.csv` — curated datasets powering offline mode.
+- `web/` — immersive operator dashboard with hero section, flowcharts, and compliance radar.
+- `tests/` — deterministic pytest coverage for core safety and intelligence components.
+- `Dockerfile`, `Makefile`, `README.md` — deployment guide, automation, and documentation.
+
+## 🧭 Extending to mainnet
+
+1. Populate `config.toml` with production ENS domain and governance addresses.
+2. Point `ens.provider_url` to an Ethereum HTTPS endpoint.
+3. Replace `ens_registry.csv` with canonical ledger or remove for pure on-chain verification.
+4. Connect job discovery to live AGI Jobs v2 GraphQL endpoint or RPC event stream by customizing `JobRegistry`.
+5. Configure Prometheus to scrape the metrics endpoint and wire alerts to governance multisig.
+
+## 🧨 Antifragility drills
+
+Schedule `python -m alpha_node.cli pause` followed by `resume` weekly, logging drills automatically. The compliance engine rewards recent drills by elevating antifragility scores.
+
+## ♻️ Continuous reinvestment policy
+
+The stake manager restakes rewards once thresholds are reached. Adjust `restake_threshold` in `config.toml` to tune aggressiveness. Audit ledger entries in `stake_ledger.csv` for institutional reporting.
+
+## 🧩 Design rationale
+
+```mermaid
+sequenceDiagram
+    autonumber
+    Operator->>CLI: bootstrap
+    CLI->>ENSVerifier: verify(domain)
+    CLI->>StakeManager: deposit(minimum)
+    CLI->>ComplianceEngine: evaluate()
+    Operator->>CLI: run
+    CLI->>TaskHarvester: harvest jobs
+    TaskHarvester->>Planner: plan(jobs)
+    Planner->>Specialists: delegate decision
+    Specialists->>KnowledgeLake: add insights
+    KnowledgeLake->>ComplianceEngine: update antifragility
+    ComplianceEngine->>Metrics: expose gauges
+    Metrics->>Dashboard: stream telemetry
+```
+
+## ✅ Security & auditability highlights
+
+- Zero private key exposure: config references addresses only, never secrets.
+- Full audit trail in `state.json` and `stake_ledger.csv` with deterministic timestamps.
+- Optional on-chain ENS verification uses `web3` if available; otherwise, offline registry ensures reproducible demo runs.
+
+## 📚 Further reading
+
+- `tests/` for reference implementations of planner/compliance tests.
+- `alpha_node/` package docstrings for architecture deep-dives.
+- `Dockerfile` & `Makefile` for institutional deployment automation.
+
+Welcome to the AGI Alpha Node frontier.

@@ -1,80 +1,76 @@
-"""Orchestrator connecting planner to specialists."""
+"""Orchestrator connecting planner and specialists."""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, List
 
-from .knowledge import KnowledgeLake
-from .planner import MuZeroPlanner, PlanCandidate
+from .knowledge import KnowledgeLake, KnowledgeEntry
+from .jobs import JobOpportunity
+from .planner import MuZeroPlanner, PlanDecision
 from .specialists import (
-    BaseSpecialist,
     BiotechSynthesist,
     FinanceStrategist,
     ManufacturingOptimizer,
+    Specialist,
     SpecialistResult,
 )
-
-_LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class ExecutionOutcome:
-    plan: PlanCandidate
-    result: SpecialistResult
+from .state import StateStore
 
 
-class Orchestrator:
-    """Coordinates planner and specialist execution."""
+@dataclass(slots=True)
+class ExecutionReport:
+    decisions: List[PlanDecision]
+    specialist_outputs: Dict[str, SpecialistResult]
+
+
+class AlphaOrchestrator:
+    """Coordinates planning, execution, and knowledge capture."""
 
     def __init__(
         self,
         planner: MuZeroPlanner,
         knowledge: KnowledgeLake,
-        specialists: Optional[Dict[str, BaseSpecialist]] = None,
+        specialists: Dict[str, Specialist],
+        store: StateStore,
     ) -> None:
-        self._planner = planner
-        self._knowledge = knowledge
-        self._specialists = specialists or {
-            "finance": FinanceStrategist(knowledge),
-            "biotech": BiotechSynthesist(knowledge),
-            "manufacturing": ManufacturingOptimizer(knowledge),
-        }
+        self.planner = planner
+        self.knowledge = knowledge
+        self.specialists = specialists
+        self.store = store
 
-    def execute(self, jobs: Iterable[Dict[str, float]]) -> ExecutionOutcome:
-        jobs_list: List[Dict[str, float]] = list(jobs)
-        plan = self._planner.propose(jobs_list)
-        job_payload = next(job for job in jobs_list if job["job_id"] == plan.job_id)
-        metadata = job_payload.get("metadata", {})
-        specialist = self._select_specialist(plan, metadata)
-        result = specialist.evaluate(job_payload)
-        self._knowledge.record(
-            topic="orchestrator",
-            content=f"Executed job {plan.job_id} via {specialist.name}",
-            tags=[specialist.name, "execution"],
-            confidence=0.92,
+    def run(self, jobs: Iterable[JobOpportunity]) -> ExecutionReport:
+        jobs_list = list(jobs)
+        decisions = self.planner.plan(jobs_list)
+        outputs: Dict[str, SpecialistResult] = {}
+        for decision in decisions:
+            job = next(job for job in jobs_list if job.job_id == decision.job_id)
+            specialist = self.specialists.get(job.domain, self.specialists["default"])
+            result = specialist.solve(job, self.knowledge)
+            outputs[job.job_id] = result
+            self.knowledge.add_entry(
+                KnowledgeEntry(
+                    topic=f"{job.domain}-{job.job_id}",
+                    insight=result.narrative,
+                    impact=result.strategic_alpha,
+                    job_id=job.job_id,
+                )
+            )
+        antifragility = min(1.0, sum(r.strategic_alpha for r in outputs.values()) / 3)
+        strategic_alpha = min(1.0, sum(d.expected_value for d in decisions) / 100)
+        self.store.update(
+            antifragility_index=antifragility,
+            strategic_alpha_index=strategic_alpha,
         )
-        _LOGGER.info(
-            "Orchestrator completed job",
-            extra={
-                "job_id": plan.job_id,
-                "specialist": specialist.name,
-                "reward_estimate": result.reward_estimate,
-            },
-        )
-        return ExecutionOutcome(plan=plan, result=result)
+        return ExecutionReport(decisions=decisions, specialist_outputs=outputs)
 
-    def _select_specialist(self, plan: PlanCandidate, metadata: Dict[str, object]) -> BaseSpecialist:
-        domain = str(metadata.get("domain", "")).lower()
-        if domain in self._specialists:
-            return self._specialists[domain]
-        description = plan.description.lower()
-        for keyword, fallback in {
-            "deploy": "finance",
-            "synth": "biotech",
-            "manufact": "manufacturing",
-        }.items():
-            if keyword in description and fallback in self._specialists:
-                return self._specialists[fallback]
-        # Default to any available specialist to keep the node productive.
-        return next(iter(self._specialists.values()))
+
+def build_specialists(settings) -> Dict[str, Specialist]:
+    return {
+        "finance": FinanceStrategist(settings.finance_model),
+        "biotech": BiotechSynthesist(settings.biotech_model),
+        "manufacturing": ManufacturingOptimizer(settings.manufacturing_model),
+        "default": FinanceStrategist(settings.finance_model),
+    }
+
+
+__all__ = ["AlphaOrchestrator", "ExecutionReport", "build_specialists"]

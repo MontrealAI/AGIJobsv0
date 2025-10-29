@@ -37,12 +37,12 @@ def _print_menu() -> None:
         textwrap.dedent(
             """
             Select an action:
-              [1] Bootstrap node (ENS, stake, metrics)
+              [1] Bootstrap node (ENS verification + stake)
               [2] Execute one autonomous job cycle
               [3] View status snapshot
               [4] Stake additional $AGIALPHA
               [5] Withdraw stake
-              [6] Claim accumulated rewards
+              [6] Restake accumulated rewards
               [7] Rotate governance address
               [8] Run emergency pause drill
               [9] Display compliance scorecard
@@ -55,7 +55,7 @@ def _print_menu() -> None:
 def _resolve_amount(raw: str) -> int:
     value = raw.strip().replace("_", "")
     if not value.isdigit():
-        raise ValueError("Amount must be a positive integer expressed in wei")
+        raise ValueError("Amount must be a positive integer")
     return int(value)
 
 
@@ -81,27 +81,23 @@ def main() -> None:
         _print_menu()
         choice = _prompt("Enter selection: ").strip()
         if choice == "1":
-            scores = node.bootstrap()
-            print("✅ Bootstrap complete. Compliance: %.2f" % scores.total)
+            report = node.bootstrap()
+            print("✅ Bootstrap complete. Compliance: %.2f" % report.overall)
         elif choice == "2":
-            result = node.run_once()
-            if result:
+            report = node.run_once()
+            if report:
                 payload = {
-                    "job_id": result.job_id,
-                    "specialist": result.specialist,
-                    "outcome": result.outcome,
-                    "reward_estimate": result.reward_estimate,
-                    "metadata": result.metadata,
-                    "completed_at": result.completed_at.isoformat(),
+                    "decisions": [asdict(decision) for decision in report.decisions],
+                    "specialists": {k: asdict(v) for k, v in report.specialist_outputs.items()},
                 }
                 print(json.dumps(payload, indent=2))
             else:
                 print("No jobs available to execute.")
         elif choice == "3":
-            print(json.dumps(node.state.snapshot(), indent=2))
+            print(json.dumps(asdict(node.state_snapshot()), indent=2))
         elif choice == "4":
             try:
-                amount = _resolve_amount(_prompt("Stake amount (wei): "))
+                amount = _resolve_amount(_prompt("Stake amount: "))
             except ValueError as exc:
                 print(f"Input error: {exc}")
                 continue
@@ -109,15 +105,18 @@ def main() -> None:
             print(json.dumps(_serialise(status), indent=2))
         elif choice == "5":
             try:
-                amount = _resolve_amount(_prompt("Withdraw amount (wei): "))
+                amount = _resolve_amount(_prompt("Withdraw amount: "))
             except ValueError as exc:
                 print(f"Input error: {exc}")
                 continue
             status = node.withdraw(amount)
             print(json.dumps(_serialise(status), indent=2))
         elif choice == "6":
-            rewards = node.claim_rewards()
-            print(json.dumps(rewards, indent=2))
+            event = node.claim_rewards()
+            if event:
+                print(json.dumps(_serialise(event), indent=2))
+            else:
+                print("No rewards available for restaking.")
         elif choice == "7":
             address = _prompt("New governance address (0x…): ").strip()
             node.update_governance(address)
@@ -126,12 +125,10 @@ def main() -> None:
             node.run_safety_drill()
             print("Emergency pause drill executed and logged.")
         elif choice == "9":
-            score = node.compliance_report()
-            print("Composite Compliance Score: %.2f" % score.total)
-            for dimension, value in score.__dict__.items():
-                if dimension == "total":
-                    continue
-                print(f"  - {dimension.replace('_', ' ').title()}: {value:.2f}")
+            report = node.compliance_report()
+            print("Composite Compliance Score: %.2f" % report.overall)
+            for name, dimension in report.dimensions.items():
+                print(f"  - {name.title()}: {dimension.score:.2f} ({dimension.rationale})")
         elif choice == "0":
             node.shutdown()
             print("Shutting down. Stay sovereign.")

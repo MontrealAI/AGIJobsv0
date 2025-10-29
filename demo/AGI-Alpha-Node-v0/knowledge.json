@@ -1,0 +1,38 @@
+[
+  {
+    "topic": "finance-legacy",
+    "insight": "Compounding multi-chain yield with deterministic hedging unlocked 27% sustained APY for Q4 portfolio.",
+    "impact": 0.92,
+    "job_id": "LEG-000"
+  },
+  {
+    "topic": "bio-therapeutics",
+    "insight": "Adaptive protein lattice search reduced lab iteration cost by 83% while boosting precision.",
+    "impact": 0.87,
+    "job_id": "BIO-LEG-01"
+  },
+  {
+    "topic": "manufacturing-scale",
+    "insight": "Digital twin orchestrations with reinforcement scheduling cut energy draw by 41% across ten plants.",
+    "impact": 0.9,
+    "job_id": "MFG-LEG-07"
+  },
+  {
+    "topic": "finance-FIN-001",
+    "insight": "Leveraged Fermion-Finance-9000 to unlock compounding flows. Heritage signal: Compounding multi-chain yield with deterministic hedging unlocked 27% sustained APY for Q4 portfolio..",
+    "impact": 1.0,
+    "job_id": "FIN-001"
+  },
+  {
+    "topic": "manufacturing-MFG-404",
+    "insight": "Optimized production with MidasForge-Prime. Operational insight: Digital twin orchestrations with reinforcement scheduling cut energy draw by 41% across ten plants..",
+    "impact": 1.0,
+    "job_id": "MFG-404"
+  },
+  {
+    "topic": "biotech-BIO-101",
+    "insight": "Synthesized pipeline via GenesisBio-Omnissynth. Linked biometrics insight: Adaptive protein lattice search reduced lab iteration cost by 83% while boosting precision..",
+    "impact": 0.77,
+    "job_id": "BIO-101"
+  }
+]

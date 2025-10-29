@@ -1,121 +1,59 @@
-"""Thread-safe runtime state structures for the Alpha Node demo."""
-
+"""Persistent state helpers for the AGI Alpha Node demo."""
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
 from threading import RLock
-from typing import Dict, Optional
+from typing import Any, Dict
 
 
-@dataclass(slots=True)
-class GovernanceState:
-    governance_address: str
+@dataclass
+class NodeState:
     paused: bool = False
+    total_rewards: float = 0.0
+    active_jobs: int = 0
+    knowledge_entries: int = 0
+    antifragility_index: float = 1.0
+    strategic_alpha_index: float = 1.0
+    governance_address: str = ""
+    owner_address: str = ""
+    stake_locked: float = 0.0
+    audit_log: list[str] = field(default_factory=list)
 
 
-@dataclass(slots=True)
-class EconomicState:
-    staked_amount: int = 0
-    rewards_accrued: int = 0
-    slashed_amount: int = 0
-    last_distribution_block: Optional[int] = None
+class StateStore:
+    """A tiny thread-safe JSON state store."""
 
-
-@dataclass(slots=True)
-class OperationalState:
-    ens_verified: bool = False
-    last_job_id: Optional[str] = None
-    completed_jobs: int = 0
-    failed_jobs: int = 0
-    compliance_score: float = 0.0
-    drills_completed: int = 0
-    last_drill_timestamp: Optional[float] = None
-
-
-class AlphaNodeState:
-    """Thread-safe mutable state."""
-
-    def __init__(self, governance_address: str) -> None:
+    def __init__(self, path: Path) -> None:
+        self.path = path
         self._lock = RLock()
-        self.governance = GovernanceState(governance_address=governance_address)
-        self.economy = EconomicState()
-        self.ops = OperationalState()
-        self.custom_metrics: Dict[str, float] = {}
+        if not self.path.exists():
+            self.write(NodeState())
 
-    def set_paused(self, value: bool) -> None:
+    def read(self) -> NodeState:
         with self._lock:
-            self.governance.paused = value
+            data = json.loads(self.path.read_text())
+            return NodeState(**data)
 
-    def set_governance_address(self, address: str) -> None:
+    def write(self, state: NodeState) -> None:
         with self._lock:
-            self.governance.governance_address = address
+            payload: Dict[str, Any] = state.__dict__.copy()
+            self.path.write_text(json.dumps(payload, indent=2, sort_keys=True))
 
-    def update_stake(self, amount: int) -> None:
+    def update(self, **changes: Any) -> NodeState:
         with self._lock:
-            self.economy.staked_amount = amount
+            state = self.read()
+            for key, value in changes.items():
+                setattr(state, key, value)
+            self.write(state)
+            return state
 
-    def accrue_rewards(self, amount: int) -> None:
+    def append_audit(self, message: str) -> None:
         with self._lock:
-            self.economy.rewards_accrued += amount
-
-    def set_rewards(self, amount: int) -> None:
-        with self._lock:
-            self.economy.rewards_accrued = amount
-
-    def register_completion(self, job_id: str, success: bool) -> None:
-        with self._lock:
-            self.ops.last_job_id = job_id
-            if success:
-                self.ops.completed_jobs += 1
-            else:
-                self.ops.failed_jobs += 1
-
-    def set_slashed_amount(self, amount: int) -> None:
-        with self._lock:
-            self.economy.slashed_amount = amount
-
-    def set_compliance(self, score: float) -> None:
-        with self._lock:
-            self.ops.compliance_score = score
-
-    def set_ens_verified(self, verified: bool) -> None:
-        with self._lock:
-            self.ops.ens_verified = verified
-
-    def record_drill(self) -> None:
-        with self._lock:
-            self.ops.drills_completed += 1
-            self.ops.last_drill_timestamp = time.time()
-
-    def snapshot(self) -> Dict[str, object]:
-        with self._lock:
-            return {
-                "governance": {
-                    "address": self.governance.governance_address,
-                    "paused": self.governance.paused,
-                },
-                "economy": {
-                    "staked_amount": self.economy.staked_amount,
-                    "rewards_accrued": self.economy.rewards_accrued,
-                    "slashed_amount": self.economy.slashed_amount,
-                    "last_distribution_block": self.economy.last_distribution_block,
-                },
-                "operations": {
-                    "ens_verified": self.ops.ens_verified,
-                    "last_job_id": self.ops.last_job_id,
-                    "completed_jobs": self.ops.completed_jobs,
-                    "failed_jobs": self.ops.failed_jobs,
-                    "compliance_score": self.ops.compliance_score,
-                    "drills_completed": self.ops.drills_completed,
-                    "last_drill_timestamp": self.ops.last_drill_timestamp,
-                },
-                "custom_metrics": dict(self.custom_metrics),
-            }
-
-    def set_metric(self, key: str, value: float) -> None:
-        with self._lock:
-            self.custom_metrics[key] = value
+            state = self.read()
+            state.audit_log.append(message)
+            self.write(state)
 
 
-__all__ = ["AlphaNodeState"]
+__all__ = ["NodeState", "StateStore"]

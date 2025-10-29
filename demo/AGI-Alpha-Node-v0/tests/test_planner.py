@@ -1,16 +1,22 @@
 from pathlib import Path
 
-from alpha_node.knowledge import KnowledgeLake
+from alpha_node.config import AlphaNodeConfig
+from alpha_node.jobs import JobOpportunity
 from alpha_node.planner import MuZeroPlanner
 
 
-def test_planner_proposes_job(tmp_path: Path) -> None:
-    knowledge = KnowledgeLake(tmp_path / "knowledge.db")
-    planner = MuZeroPlanner(depth=3, exploration_constant=1.0, learning_rate=0.1, knowledge=knowledge)
+def test_planner_ranks_high_value_jobs(tmp_path):
+    config = AlphaNodeConfig.load(Path('demo/AGI-Alpha-Node-v0/config.toml'))
+    planner = MuZeroPlanner(config.planner)
     jobs = [
-        {"job_id": "job-a", "description": "Optimize robotics network", "base_reward": 12.0, "risk": 0.1},
-        {"job_id": "job-b", "description": "Synthesize novel compound", "base_reward": 8.0, "risk": 0.3},
+        JobOpportunity(
+            job_id='A', domain='finance', reward=1000, stake_required=100,
+            duration_hours=10, success_probability=0.9, impact_score=5, client='X'
+        ),
+        JobOpportunity(
+            job_id='B', domain='finance', reward=10000, stake_required=200,
+            duration_hours=8, success_probability=0.7, impact_score=9, client='Y'
+        )
     ]
-    candidate = planner.propose(jobs, simulations=10)
-    assert candidate.job_id in {"job-a", "job-b"}
-    assert candidate.expected_reward >= 0
+    decisions = planner.plan(jobs)
+    assert decisions[0].job_id == 'B'

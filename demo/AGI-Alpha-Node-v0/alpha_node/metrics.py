@@ -1,44 +1,63 @@
-"""Prometheus metrics exporter."""
+"""Prometheus-style metrics endpoint."""
 from __future__ import annotations
 
-import logging
-import threading
-from typing import Optional
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
+from typing import Callable
 
-from prometheus_client import Gauge, start_http_server
-
-_LOGGER = logging.getLogger(__name__)
-
-_COMPLIANCE_GAUGE = Gauge("agi_alpha_node_compliance_score", "Composite compliance score")
-_STAKE_GAUGE = Gauge("agi_alpha_node_stake", "Current stake in wei")
-_REWARD_GAUGE = Gauge("agi_alpha_node_rewards", "Unclaimed rewards in wei")
-_JOB_COMPLETIONS = Gauge("agi_alpha_node_completed_jobs", "Total completed jobs")
+from .state import StateStore
 
 
-class MetricsExporter:
-    def __init__(self, port: int) -> None:
-        self._port = port
-        self._thread: Optional[threading.Thread] = None
+class MetricsServer(Thread):
+    """Tiny HTTP server exporting node metrics."""
 
-    def start(self) -> None:
-        if self._thread and self._thread.is_alive():
-            return
-        self._thread = threading.Thread(target=start_http_server, args=(self._port,), daemon=True)
-        self._thread.start()
-        _LOGGER.info("Prometheus exporter started", extra={"port": self._port})
+    def __init__(self, host: str, port: int, store: StateStore) -> None:
+        super().__init__(daemon=True)
+        self.host = host
+        self.port = port
+        self.store = store
+        self.httpd: ThreadingHTTPServer | None = None
+
+    def run(self) -> None:  # pragma: no cover - network IO
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self_inner):
+                state = self.store.read()
+                payload = "\n".join(
+                    [
+                        "# HELP agi_alpha_node_paused Whether the node is paused",
+                        "# TYPE agi_alpha_node_paused gauge",
+                        f"agi_alpha_node_paused {1 if state.paused else 0}",
+                        "# HELP agi_alpha_node_total_rewards Total rewards accrued",
+                        "# TYPE agi_alpha_node_total_rewards counter",
+                        f"agi_alpha_node_total_rewards {state.total_rewards}",
+                        "# HELP agi_alpha_node_stake_locked Stake locked",
+                        "# TYPE agi_alpha_node_stake_locked gauge",
+                        f"agi_alpha_node_stake_locked {state.stake_locked}",
+                        "# HELP agi_alpha_node_antifragility_index Antifragility index",
+                        "# TYPE agi_alpha_node_antifragility_index gauge",
+                        f"agi_alpha_node_antifragility_index {state.antifragility_index}",
+                        "# HELP agi_alpha_node_strategic_alpha Strategic alpha index",
+                        "# TYPE agi_alpha_node_strategic_alpha gauge",
+                        f"agi_alpha_node_strategic_alpha {state.strategic_alpha_index}",
+                        "# HELP agi_alpha_node_active_jobs Active job count",
+                        "# TYPE agi_alpha_node_active_jobs gauge",
+                        f"agi_alpha_node_active_jobs {state.active_jobs}",
+                    ]
+                )
+                self_inner.send_response(200)
+                self_inner.send_header("Content-Type", "text/plain; version=0.0.4")
+                self_inner.end_headers()
+                self_inner.wfile.write(payload.encode("utf-8"))
+
+            def log_message(self_inner, format: str, *args) -> None:
+                return
+
+        self.httpd = ThreadingHTTPServer((self.host, self.port), Handler)
+        self.httpd.serve_forever()
 
     def stop(self) -> None:
-        # prometheus_client does not currently expose a shutdown primitive; we log intent for auditability.
-        _LOGGER.info("Prometheus exporter stop requested", extra={"port": self._port})
+        if self.httpd:
+            self.httpd.shutdown()
 
-    def update_compliance(self, score: float) -> None:
-        _COMPLIANCE_GAUGE.set(score)
 
-    def update_stake(self, stake_wei: int) -> None:
-        _STAKE_GAUGE.set(stake_wei)
-
-    def update_rewards(self, rewards_wei: int) -> None:
-        _REWARD_GAUGE.set(rewards_wei)
-
-    def increment_completions(self, total: int) -> None:
-        _JOB_COMPLETIONS.set(total)
+__all__ = ["MetricsServer"]

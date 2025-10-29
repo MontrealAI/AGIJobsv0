@@ -1,67 +1,75 @@
-"""Compliance scorecard logic."""
+"""Compliance scorecard for the demo."""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import Dict
 
-from .economy import StakeStatus
+from .config import ComplianceSettings
 from .ens import ENSVerificationResult
-from .governance import GovernanceState
-
-_LOGGER = logging.getLogger(__name__)
-
-
-@dataclass
-class ComplianceScores:
-    identity: float
-    staking: float
-    governance: float
-    economic_engine: float
-    antifragility: float
-    strategic_intelligence: float
-
-    @property
-    def total(self) -> float:
-        return round(
-            (
-                self.identity
-                + self.staking
-                + self.governance
-                + self.economic_engine
-                + self.antifragility
-                + self.strategic_intelligence
-            )
-            / 6,
-            4,
-        )
+from .stake import StakeManager
+from .state import StateStore
 
 
-class ComplianceScorecard:
-    def evaluate(
+@dataclass(slots=True)
+class ComplianceDimension:
+    name: str
+    score: float
+    rationale: str
+
+
+@dataclass(slots=True)
+class ComplianceReport:
+    overall: float
+    dimensions: Dict[str, ComplianceDimension]
+
+
+class ComplianceEngine:
+    def __init__(
         self,
-        ens_result: ENSVerificationResult,
-        stake_status: StakeStatus,
-        governance: GovernanceState,
-        planner_trend: float,
-        antifragility_checks: Dict[str, bool],
-    ) -> ComplianceScores:
-        identity_score = 1.0 if ens_result.verified else 0.0
-        staking_score = min(1.0, stake_status.staked_wei / stake_status.min_stake_wei) if stake_status.min_stake_wei else 0.0
-        if stake_status.slashing_risk:
-            staking_score *= 0.2
-        governance_score = 1.0 if not governance.paused else 0.2
-        economic_score = min(1.0, stake_status.rewards_wei / max(stake_status.min_stake_wei, 1) + 0.5)
-        antifragility_score = 1.0 if all(antifragility_checks.values()) else 0.4
-        strategic_score = max(0.0, min(1.0, planner_trend))
+        settings: ComplianceSettings,
+        store: StateStore,
+        stake_manager: StakeManager,
+    ) -> None:
+        self.settings = settings
+        self.store = store
+        self.stake_manager = stake_manager
 
-        scores = ComplianceScores(
-            identity=round(identity_score, 3),
-            staking=round(staking_score, 3),
-            governance=round(governance_score, 3),
-            economic_engine=round(economic_score, 3),
-            antifragility=round(antifragility_score, 3),
-            strategic_intelligence=round(strategic_score, 3),
+    def evaluate(self, ens_result: ENSVerificationResult) -> ComplianceReport:
+        state = self.store.read()
+        dimensions: Dict[str, ComplianceDimension] = {}
+
+        dimensions["identity"] = ComplianceDimension(
+            name="Identity & ENS",
+            score=1.0 if ens_result.verified else 0.0,
+            rationale=f"ENS verified via {ens_result.source}",
         )
-        _LOGGER.info("Compliance evaluated", extra={"scores": scores.__dict__, "total": scores.total})
-        return scores
+        dimensions["staking"] = ComplianceDimension(
+            name="Staking & Activation",
+            score=1.0 if self.stake_manager.meets_minimum() else 0.0,
+            rationale=f"Locked {state.stake_locked} {self.stake_manager.settings.asset_symbol}",
+        )
+        dimensions["governance"] = ComplianceDimension(
+            name="Governance & Safety",
+            score=0.0 if state.paused else 1.0,
+            rationale="System pause engaged" if state.paused else "System active",
+        )
+        dimensions["economic"] = ComplianceDimension(
+            name="Economic Engine",
+            score=min(1.0, state.total_rewards / max(1.0, self.settings.strategic_alpha_target)),
+            rationale=f"Total rewards {state.total_rewards:.2f}",
+        )
+        dimensions["antifragile"] = ComplianceDimension(
+            name="Antifragility",
+            score=min(1.0, state.antifragility_index / self.settings.antifragility_target),
+            rationale=f"Antifragility index {state.antifragility_index:.2f}",
+        )
+        dimensions["strategic"] = ComplianceDimension(
+            name="Strategic Intelligence",
+            score=min(1.0, state.strategic_alpha_index / self.settings.strategic_alpha_target),
+            rationale=f"Strategic alpha {state.strategic_alpha_index:.2f}",
+        )
+        overall = sum(d.score for d in dimensions.values()) / len(dimensions)
+        return ComplianceReport(overall=round(overall, 3), dimensions=dimensions)
+
+
+__all__ = ["ComplianceEngine", "ComplianceReport", "ComplianceDimension"]
