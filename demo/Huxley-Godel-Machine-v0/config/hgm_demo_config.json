@@ -1,0 +1,54 @@
+{
+  "seed": 1337,
+  "simulation": {
+    "total_steps": 120,
+    "report_interval": 10,
+    "baseline_total_steps": 120
+  },
+  "economics": {
+    "success_value": 125.0,
+    "evaluation_cost": 18.5,
+    "expansion_cost": 32.0,
+    "max_budget": 7500.0,
+    "target_roi": 2.5,
+    "min_roi": 1.15
+  },
+  "hgm": {
+    "tau": 1.0,
+    "alpha": 1.4,
+    "epsilon": 0.1,
+    "max_agents": 24,
+    "max_expansions": 40,
+    "max_evaluations": 200,
+    "concurrency": {
+      "evaluation": 4,
+      "expansion": 2
+    },
+    "quality": {
+      "root": 0.58,
+      "mutation_std": 0.12,
+      "min_quality": 0.05,
+      "max_quality": 0.98
+    }
+  },
+  "thermostat": {
+    "roi_window": 12,
+    "tau_adjustment": 0.12,
+    "alpha_adjustment": 0.08,
+    "concurrency_step": 1,
+    "max_concurrency": 8,
+    "min_concurrency": 1,
+    "roi_upper_margin": 1.25,
+    "roi_lower_margin": 0.15
+  },
+  "sentinel": {
+    "max_failures_per_agent": 12,
+    "roi_recovery_steps": 8,
+    "hard_budget_ratio": 0.95
+  },
+  "baseline": {
+    "mutation_std": 0.09,
+    "quality_floor": 0.08,
+    "quality_ceiling": 0.96
+  }
+}
