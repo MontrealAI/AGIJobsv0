@@ -3,9 +3,15 @@ import { ExperienceRecord } from './types';
 export class ExperienceBuffer {
   private buffer: ExperienceRecord[] = [];
 
-  constructor(private readonly capacity: number) {
+  constructor(
+    private readonly capacity: number,
+    private readonly randomFn: () => number = Math.random,
+  ) {
     if (!Number.isFinite(capacity) || capacity <= 0) {
       throw new Error(`ExperienceBuffer requires positive capacity, received ${capacity}`);
+    }
+    if (typeof randomFn !== 'function') {
+      throw new Error('ExperienceBuffer requires a random function');
     }
   }
 
@@ -27,7 +33,12 @@ export class ExperienceBuffer {
     const sampled = new Array<ExperienceRecord>(size);
     const indices = new Set<number>();
     while (indices.size < size) {
-      indices.add(Math.floor(Math.random() * this.buffer.length));
+      const randomValue = this.randomFn();
+      if (!Number.isFinite(randomValue)) {
+        continue;
+      }
+      const index = Math.floor(Math.abs(randomValue % 1) * this.buffer.length);
+      indices.add(index);
     }
     let i = 0;
     for (const index of indices) {

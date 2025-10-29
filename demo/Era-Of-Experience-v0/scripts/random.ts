@@ -20,7 +20,7 @@ export class DeterministicRandom {
     x ^= x >>> 17;
     x ^= x << 5;
     this.state = x >>> 0;
-    return (this.state & 0xffffffff) / 0x100000000;
+    return this.state / 0x100000000;
   }
 
   pick<T>(items: readonly T[]): T {

@@ -5,6 +5,7 @@
 ## Why this demo matters
 
 - **Experience-Native Core:** Every interaction is captured as rich state → action → observation → reward tuples, enabling policies to learn directly from lived marketplace experience.
+- **Temporal-Difference Mastery:** Streaming experiences are linked across time, powering deterministic replay and temporal-difference updates that compound value from every new job.
 - **Owner Supremacy:** The contract owner retains absolute control—exploration rates, pause toggles, and reward curves are editable through a single JSON file or via scripted helpers.
 - **Immediate Impact:** Out of the box the RL policy produces >5% GMV lift versus the deterministic baseline while respecting latency and sustainability guardrails.
 - **Non-technical friendly:** One command (`npm run demo:era-of-experience`) compiles the full report, renders mermaid diagrams, and writes artefacts ready for executive review.
@@ -52,12 +53,13 @@ graph TD
 | Path | Purpose |
 | ---- | ------- |
 | `config/reward-config.json` | Default, production-safe reward weighting across success, GMV, latency, cost, rating, and sustainability. |
+| `config/simulation-config.json` | Horizon, checkpoint cadence, deterministic replay seed, and post-training epochs for the temporal-difference learner. |
 | `config/owner-controls.json` | Owner-operated levers: exploration %, pause flag, reward overrides, annotated notes. |
-| `scripts/experienceBuffer.ts` | Streaming buffer retaining latest 2,048 experiences with constant-time sampling. |
+| `scripts/experienceBuffer.ts` | Streaming buffer retaining latest 2,048 experiences with deterministic sampling for reproducible audits. |
 | `scripts/policy.ts` | Adaptive policy implementing on-policy Q-learning with epsilon-greedy exploration. |
-| `scripts/trainer.ts` | Online trainer coordinating experience ingestion, training mini-batches, and checkpoint emission. |
-| `scripts/simulation.ts` | Deterministic market simulator modelling agent capabilities, job complexities, and reward generation. |
-| `scripts/runDemo.ts` | CLI + library entrypoint that runs the scenario, persists reports, and prints executive metrics. |
+| `scripts/trainer.ts` | Temporal-difference trainer coordinating experience ingestion, replay sampling, and checkpoint emission. |
+| `scripts/simulation.ts` | Deterministic market simulator modelling agent capabilities, job complexities, and sustainability-aware rewards. |
+| `scripts/runDemo.ts` | CLI + library entrypoint that runs the scenario, persists reports, and prints executive and sustainability metrics. |
 | `test/era_of_experience_demo.test.ts` | Deterministic regression asserting GMV/ROI lift, policy checkpoints, and owner console coverage. |
 
 ## Owner control surface
@@ -90,8 +92,8 @@ npm run owner:era-of-experience:controls -- --exploration 0.1 --pause false
 
 ## Sentinel-grade safeguards
 
-- **Performance envelope:** The owner console computes failure rates, GMV trends, and latency deltas on every run. If failure rate breaches 25%, Sentinels auto-trigger a red status and recommend cutting exploration to 5%.
-- **Policy checkpoints:** Every 40 experiences the trainer snapshots Q-values to disk, making rollbacks instant.
+- **Performance envelope:** The owner console computes failure, sustainability, GMV, and latency deltas on every run. If failure rate breaches 25% *or* sustainability dips below 85%, Sentinels auto-trigger a red status and recommend cutting exploration to 5%.
+- **Policy checkpoints:** Deterministic replay triggers checkpoints on the configured cadence, making rollbacks instant and auditable.
 - **Sustainability scoring:** Rewards penalise agents that exceed sustainability targets, guaranteeing green performance across the fleet.
 
 ## Demo storyline
@@ -114,6 +116,7 @@ gantt
 1. **Swap the scenario:** Duplicate `scenario/experience-stream.json`, adjust agent or job parameters, and rerun the CLI to create bespoke experience streams.
 2. **Integrate with live orchestrators:** Import `runEraOfExperienceDemo` inside the operator dashboards to visualise in-flight performance against real on-chain signals.
 3. **Governance automation:** Wire `reports/era_of_experience_report.json` into the mission control autopilot to refresh exploration weights based on daily GMV deltas.
+4. **Reinforcement cadence:** Edit `config/simulation-config.json` to adjust `postTrainingEpochs` and `checkpointInterval` for accelerated temporal-difference convergence in bespoke markets.
 
 ## Testing
 

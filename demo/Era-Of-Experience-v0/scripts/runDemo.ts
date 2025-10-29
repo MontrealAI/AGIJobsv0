@@ -28,6 +28,7 @@ function renderMarkdown(report: SimulationReport): string {
     `- **ROI Delta:** ${roiDelta}\n` +
     `- **Latency Delta:** ${latencyDelta} hours (negative is faster)\n` +
     `- **Success Rate Delta:** ${(report.improvement.successRateDelta * 100).toFixed(2)} percentage points\n\n` +
+    `- **Sustainability Score:** ${(report.rlEnhanced.sustainabilityScore * 100).toFixed(1)}%\n\n` +
     `## Experience Flow\n\n` +
     '```mermaid\n' + report.mermaidFlow + '\n```\n\n' +
     `## Value Stream\n\n` +
@@ -109,6 +110,7 @@ async function cli(): Promise<void> {
     gmvLiftPct: (report.improvement.gmvLiftPct * 100).toFixed(2),
     roiDelta: report.improvement.roiDelta.toFixed(3),
     latencyDelta: report.improvement.avgLatencyDelta.toFixed(2),
+    sustainabilityScore: (report.rlEnhanced.sustainabilityScore * 100).toFixed(1),
   });
 }
 

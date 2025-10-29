@@ -6,5 +6,8 @@
   "bufferSize": 2048,
   "batchSize": 64,
   "checkpointsToKeep": 4,
+  "checkpointInterval": 40,
+  "replaySeed": "era-of-experience-replay",
+  "postTrainingEpochs": 3,
   "ownerControlsPath": "demo/Era-Of-Experience-v0/config/owner-controls.json"
 }
