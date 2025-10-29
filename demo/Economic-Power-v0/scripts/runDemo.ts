@@ -391,6 +391,32 @@ type SuperIntelligenceReport = {
   mermaid: string;
 };
 
+type DeterministicProof = {
+  version: '1.0';
+  scenarioId: string;
+  analysisTimestamp: string;
+  generatedAt: string;
+  executionTimestamp: string;
+  summaryHash: string;
+  metricsHash: string;
+  assignmentsHash: string;
+  commandCoverageHash: string;
+  autopilotHash: string;
+  governanceLedgerHash: string;
+  assertionsHash: string;
+  treasuryTrajectoryHash: string;
+  sovereignSafetyMeshHash: string;
+  superIntelligenceHash: string;
+};
+
+type DeterministicVerification = {
+  version: '1.0';
+  matches: boolean;
+  mismatches: string[];
+  proof: DeterministicProof;
+  verificationProof: DeterministicProof;
+};
+
 export type Summary = {
   scenarioId: string;
   title: string;
@@ -472,6 +498,8 @@ export type Summary = {
   globalExpansionPlan: GlobalExpansionPhase[];
   shockResilience: ShockResilienceReport;
 };
+
+type SummaryWithSnapshot = Summary & { __scenarioSnapshot?: Scenario };
 
 type CoverageSurface =
   | 'jobs'
@@ -1863,7 +1891,43 @@ const DEFAULT_SUMMARY_FILE = path.join(DEFAULT_OUTPUT_DIR, 'summary.json');
 const DEFAULT_FLOW_FILE = path.join(DEFAULT_OUTPUT_DIR, 'flow.mmd');
 const DEFAULT_TIMELINE_FILE = path.join(DEFAULT_OUTPUT_DIR, 'timeline.mmd');
 const UI_DEFAULT_SUMMARY = path.join(__dirname, '..', 'ui', 'data', 'default-summary.json');
+const UI_DETERMINISTIC_PROOF = path.join(
+  __dirname,
+  '..',
+  'ui',
+  'data',
+  'deterministic-proof.json',
+);
+const UI_DETERMINISTIC_VERIFICATION = path.join(
+  __dirname,
+  '..',
+  'ui',
+  'data',
+  'deterministic-verification.json',
+);
 const BASELINE_CI_SUMMARY = path.join(DEFAULT_OUTPUT_DIR, 'baseline-summary.json');
+const DETERMINISTIC_VERSION = '1.0';
+
+function canonicalStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    const items = value.map((item) => canonicalStringify(item));
+    return `[${items.join(',')}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  const serialised = entries
+    .map(([key, val]) => `${JSON.stringify(key)}:${canonicalStringify(val)}`)
+    .join(',');
+  return `{${serialised}}`;
+}
+
+function hashObject(value: unknown): string {
+  return crypto.createHash('sha256').update(canonicalStringify(value)).digest('hex');
+}
 
 function pseudoRandom(seed: string): number {
   const hash = crypto.createHash('sha256').update(seed).digest('hex');
@@ -3267,14 +3331,117 @@ export async function runScenario(
   );
   summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
+  const snapshot = JSON.parse(JSON.stringify(workingScenario)) as Scenario;
+  Object.defineProperty(summary, '__scenarioSnapshot', {
+    value: snapshot,
+    enumerable: false,
+    configurable: false,
+  });
   return summary;
+}
+
+const DETERMINISTIC_FIELDS: Array<keyof DeterministicProof> = [
+  'summaryHash',
+  'metricsHash',
+  'assignmentsHash',
+  'commandCoverageHash',
+  'autopilotHash',
+  'governanceLedgerHash',
+  'assertionsHash',
+  'treasuryTrajectoryHash',
+  'sovereignSafetyMeshHash',
+  'superIntelligenceHash',
+];
+
+export function buildDeterministicProof(summary: Summary): DeterministicProof {
+  const assignmentsProjection = summary.assignments.map((assignment) => ({
+    jobId: assignment.jobId,
+    agentId: assignment.agentId,
+    validatorIds: [...assignment.validatorIds],
+    rewardAgi: assignment.rewardAgi,
+    rewardStable: assignment.rewardStable,
+    netValue: assignment.netValue,
+    automationLift: assignment.automationLift,
+    efficiency: assignment.efficiency,
+    skillMatch: assignment.skillMatch,
+    startHour: assignment.startHour,
+    endHour: assignment.endHour,
+  }));
+  const commandProjection = {
+    quickActions: summary.ownerCommandPlan.quickActions,
+    commandCoverage: summary.ownerCommandPlan.commandCoverage,
+    coverageDetail: summary.ownerCommandPlan.coverageDetail,
+  };
+  const autopilotProjection = {
+    mission: summary.ownerAutopilot.mission,
+    cadenceHours: summary.ownerAutopilot.cadenceHours,
+    dominanceScore: summary.ownerAutopilot.dominanceScore,
+    telemetry: summary.ownerAutopilot.telemetry,
+    guardrails: summary.ownerAutopilot.guardrails,
+    commandSequence: summary.ownerAutopilot.commandSequence,
+  };
+  const proof: DeterministicProof = {
+    version: DETERMINISTIC_VERSION,
+    scenarioId: summary.scenarioId,
+    analysisTimestamp: summary.analysisTimestamp,
+    generatedAt: summary.generatedAt,
+    executionTimestamp: summary.executionTimestamp,
+    summaryHash: hashObject({
+      metrics: summary.metrics,
+      assignments: assignmentsProjection,
+      ownerDominion: summary.ownerDominion,
+      ownerControlSupremacy: summary.ownerControlSupremacy,
+      superIntelligence: summary.superIntelligence,
+      shockResilience: summary.shockResilience,
+      governanceLedger: summary.governanceLedger,
+      commandPlan: commandProjection,
+      globalExpansionPlan: summary.globalExpansionPlan,
+      assertions: summary.assertions,
+      treasuryTrajectory: summary.treasuryTrajectory,
+    }),
+    metricsHash: hashObject(summary.metrics),
+    assignmentsHash: hashObject(assignmentsProjection),
+    commandCoverageHash: hashObject(commandProjection),
+    autopilotHash: hashObject(autopilotProjection),
+    governanceLedgerHash: hashObject(summary.governanceLedger),
+    assertionsHash: hashObject(summary.assertions),
+    treasuryTrajectoryHash: hashObject(summary.treasuryTrajectory),
+    sovereignSafetyMeshHash: hashObject(summary.sovereignSafetyMesh),
+    superIntelligenceHash: hashObject(summary.superIntelligence),
+  };
+  return proof;
+}
+
+export async function verifyDeterminism(
+  scenario: Scenario,
+  summary: Summary,
+): Promise<DeterministicVerification> {
+  const carrier = summary as SummaryWithSnapshot;
+  const scenarioForVerification = carrier.__scenarioSnapshot ?? scenario;
+  const verificationSummary = await runScenario(scenarioForVerification);
+  const proof = buildDeterministicProof(summary);
+  const verificationProof = buildDeterministicProof(verificationSummary);
+  const mismatches: string[] = [];
+  for (const field of DETERMINISTIC_FIELDS) {
+    if (proof[field] !== verificationProof[field]) {
+      mismatches.push(`${field} mismatch`);
+    }
+  }
+  return {
+    version: DETERMINISTIC_VERSION,
+    matches: mismatches.length === 0,
+    mismatches,
+    proof,
+    verificationProof,
+  };
 }
 
 async function writeOutputs(
   summary: Summary,
   outputDir: string,
-  options: { updateUiSummary?: boolean } = {},
+  options: { updateUiSummary?: boolean; deterministicVerification?: DeterministicVerification } = {},
 ): Promise<void> {
+  const { updateUiSummary = false, deterministicVerification } = options;
   await ensureDir(outputDir);
   await fs.writeFile(
     path.join(outputDir, 'summary.json'),
@@ -3425,9 +3592,30 @@ async function writeOutputs(
     `${generateGlobalExpansionMermaid(summary.globalExpansionPlan).trimEnd()}\n`,
   );
 
-  if (options.updateUiSummary) {
+  if (deterministicVerification) {
+    await fs.writeFile(
+      path.join(outputDir, 'deterministic-proof.json'),
+      JSON.stringify(deterministicVerification.proof, null, 2),
+    );
+    await fs.writeFile(
+      path.join(outputDir, 'deterministic-verification.json'),
+      JSON.stringify(deterministicVerification, null, 2),
+    );
+  }
+
+  if (updateUiSummary) {
     await ensureDir(path.dirname(UI_DEFAULT_SUMMARY));
     await fs.writeFile(UI_DEFAULT_SUMMARY, JSON.stringify(summary, null, 2));
+    if (deterministicVerification) {
+      await fs.writeFile(
+        UI_DETERMINISTIC_PROOF,
+        JSON.stringify(deterministicVerification.proof, null, 2),
+      );
+      await fs.writeFile(
+        UI_DETERMINISTIC_VERIFICATION,
+        JSON.stringify(deterministicVerification, null, 2),
+      );
+    }
   }
 }
 
@@ -3507,7 +3695,16 @@ export async function main(): Promise<void> {
   const summary = await runScenario(scenario, {
     interactive: argv.interactive,
   });
-  await writeOutputs(summary, argv.output, { updateUiSummary: !argv.ci });
+  const deterministicVerification = await verifyDeterminism(scenario, summary);
+  if (!deterministicVerification.matches) {
+    throw new Error(
+      `Deterministic verification failed: ${deterministicVerification.mismatches.join(', ')}`,
+    );
+  }
+  await writeOutputs(summary, argv.output, {
+    updateUiSummary: !argv.ci,
+    deterministicVerification,
+  });
   if (argv.ci) {
     compareWithBaseline(summary, BASELINE_CI_SUMMARY);
   }

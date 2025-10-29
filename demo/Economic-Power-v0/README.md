@@ -49,6 +49,8 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
 - `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
 - `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
+- `deterministic-proof.json` – dual-run hash proof capturing metrics, command coverage, autonomy mesh, and safety mesh fingerprints for audit-grade determinism.
+- `deterministic-verification.json` – verification ledger confirming both runs align and surfacing any mismatches for immediate triage.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -124,6 +126,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
 - Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
+- Deterministic verification cockpit exposing dual-run hash proofs and mismatch telemetry for instant audit confidence.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
 - Command coverage detail table translating `owner-command-checklist.json` into per-surface readiness so non-technical operators can see exactly which levers are scripted.
 - Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
@@ -159,6 +162,7 @@ The GitHub workflow `.github/workflows/demo-economic-power.yml` enforces:
 1. `npm run demo:economic-power:ci` – builds fresh reports and compares metrics against the canonical baseline (±5% tolerance).
 2. `npm run test:economic-power` – validates scheduling, ROI, and owner matrix logic.
 3. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
+4. Deterministic proof comparison – `verifyDeterminism` replays the scenario and fails immediately on any hash divergence.
 
 This guarantees a **fully green v2 CI gate**. Pull requests and `main` share identical guard-rails, preventing regressions before production promotion.
 

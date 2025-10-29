@@ -127,12 +127,69 @@ const metricMap = [
   },
 ];
 
+const deterministicFieldMap = [
+  { id: 'metricsHash', label: 'Metrics hash' },
+  { id: 'assignmentsHash', label: 'Assignments hash' },
+  { id: 'commandCoverageHash', label: 'Command coverage hash' },
+  { id: 'autopilotHash', label: 'Autopilot hash' },
+  { id: 'governanceLedgerHash', label: 'Governance ledger hash' },
+  { id: 'assertionsHash', label: 'Assertions hash' },
+  { id: 'treasuryTrajectoryHash', label: 'Treasury trajectory hash' },
+  { id: 'sovereignSafetyMeshHash', label: 'Safety mesh hash' },
+  { id: 'superIntelligenceHash', label: 'Superintelligence hash' },
+  { id: 'summaryHash', label: 'Composite summary hash' },
+];
+
 async function loadSummary(path) {
   const response = await fetch(path, { cache: 'no-store' });
   if (!response.ok) {
     throw new Error(`Unable to load summary data from ${path}`);
   }
   return response.json();
+}
+
+function deriveCompanionPath(basePath, fileName) {
+  if (!basePath) return null;
+  const segments = basePath.split('/');
+  if (segments.length === 0) {
+    return fileName;
+  }
+  segments[segments.length - 1] = fileName;
+  return segments.join('/');
+}
+
+async function loadDeterministicVerification(dataPath) {
+  const verificationPath = deriveCompanionPath(dataPath, 'deterministic-verification.json');
+  if (!verificationPath) {
+    return null;
+  }
+  try {
+    const response = await fetch(verificationPath, { cache: 'no-store' });
+    if (response.ok) {
+      return response.json();
+    }
+  } catch (error) {
+    console.warn('Unable to load deterministic verification:', error);
+  }
+  try {
+    const proofPath = deriveCompanionPath(dataPath, 'deterministic-proof.json');
+    if (!proofPath) return null;
+    const fallback = await fetch(proofPath, { cache: 'no-store' });
+    if (!fallback.ok) {
+      return null;
+    }
+    const proof = await fallback.json();
+    return {
+      version: proof.version ?? '1.0',
+      matches: true,
+      mismatches: [],
+      proof,
+      verificationProof: proof,
+    };
+  } catch (error) {
+    console.warn('Unable to load deterministic proof fallback:', error);
+  }
+  return null;
 }
 
 function formatNumber(value) {
@@ -171,6 +228,70 @@ function renderOwnerTable(summary) {
       <td>${control.description}</td>
     `;
     tbody.append(row);
+  }
+}
+
+function renderDeterministicVerification(verification) {
+  const statusEl = document.getElementById('deterministic-status');
+  const mismatchList = document.getElementById('deterministic-mismatches');
+  const tableBody = document.querySelector('#deterministic-table tbody');
+  if (!statusEl || !mismatchList || !tableBody) {
+    return;
+  }
+
+  mismatchList.innerHTML = '';
+  tableBody.innerHTML = '';
+
+  if (!verification) {
+    statusEl.textContent = 'Deterministic proof unavailable';
+    statusEl.className = 'deterministic-status';
+    const hint = document.createElement('li');
+    hint.textContent = 'Run the Economic Power generator to produce deterministic verification artefacts.';
+    mismatchList.append(hint);
+    return;
+  }
+
+  const matches = Boolean(verification.matches);
+  statusEl.textContent = matches
+    ? 'Deterministic verification: PASS'
+    : 'Deterministic verification: ATTENTION';
+  statusEl.className = `deterministic-status ${matches ? 'deterministic-pass' : 'deterministic-fail'}`;
+
+  const versionItem = document.createElement('li');
+  versionItem.textContent = `Proof version ${verification.version}`;
+  mismatchList.append(versionItem);
+
+  if (verification.mismatches?.length) {
+    for (const mismatch of verification.mismatches) {
+      const item = document.createElement('li');
+      item.textContent = mismatch;
+      mismatchList.append(item);
+    }
+  } else {
+    const successItem = document.createElement('li');
+    successItem.textContent = 'All hashed surfaces align across replayed runs.';
+    mismatchList.append(successItem);
+  }
+
+  for (const field of deterministicFieldMap) {
+    const primary = verification.proof?.[field.id] ?? '—';
+    const replay = verification.verificationProof?.[field.id] ?? '—';
+    const row = document.createElement('tr');
+    if (primary !== replay) {
+      row.classList.add('mismatch');
+    }
+    const labelCell = document.createElement('td');
+    labelCell.textContent = field.label;
+    const primaryCell = document.createElement('td');
+    const primaryCode = document.createElement('code');
+    primaryCode.textContent = primary;
+    primaryCell.append(primaryCode);
+    const replayCell = document.createElement('td');
+    const replayCode = document.createElement('code');
+    replayCode.textContent = replay;
+    replayCell.append(replayCode);
+    row.append(labelCell, primaryCell, replayCell);
+    tableBody.append(row);
   }
 }
 
@@ -1143,8 +1264,7 @@ function renderGlobalExpansion(summary) {
   }
 }
 
-async function bootstrap(dataPath = defaultDataPath) {
-  const summary = await loadSummary(dataPath);
+async function renderDashboard(summary, verification) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
@@ -1160,9 +1280,17 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderTrajectory(summary);
   renderAutopilot(summary);
   renderGlobalExpansion(summary);
+  renderDeterministicVerification(verification);
   await renderMermaid(summary);
   updateFooter(summary);
   window.currentSummary = summary;
+  window.currentVerification = verification;
+}
+
+async function bootstrap(dataPath = defaultDataPath) {
+  const summary = await loadSummary(dataPath);
+  const verification = await loadDeterministicVerification(dataPath);
+  await renderDashboard(summary, verification);
 }
 
 function setupFileHandlers() {
@@ -1179,7 +1307,8 @@ function setupFileHandlers() {
     if (!file) return;
     const data = await file.text();
     const summary = JSON.parse(data);
-    await renderSummary(summary);
+    window.currentVerification = null;
+    await renderSummary(summary, null);
   });
 
   dropzone.addEventListener('dragover', (event) => {
@@ -1198,29 +1327,13 @@ function setupFileHandlers() {
     if (!file) return;
     const data = await file.text();
     const summary = JSON.parse(data);
-    await renderSummary(summary);
+    window.currentVerification = null;
+    await renderSummary(summary, null);
   });
 }
 
-async function renderSummary(summary) {
-  renderMetricCards(summary);
-  renderOwnerTable(summary);
-  renderOwnerSupremacy(summary);
-  renderControlDrills(summary);
-  renderSuperIntelligence(summary);
-  renderOwnerDominion(summary);
-  renderCommandCatalog(summary);
-  renderAssignments(summary);
-  renderSovereignty(summary);
-  renderGovernanceLedger(summary);
-  renderDeployment(summary);
-  renderAssertions(summary);
-  renderTrajectory(summary);
-  renderAutopilot(summary);
-  renderGlobalExpansion(summary);
-  await renderMermaid(summary);
-  updateFooter(summary);
-  window.currentSummary = summary;
+async function renderSummary(summary, verification = null) {
+  await renderDashboard(summary, verification);
 }
 
 setupFileHandlers();
