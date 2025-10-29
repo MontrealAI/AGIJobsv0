@@ -41,6 +41,11 @@ test('economic power simulation produces deterministic metrics', async () => {
     'Command coverage hash should remain stable across runs',
   );
   assert.equal(
+    deterministic.proof.deploymentIntegrityHash,
+    deterministic.verificationProof.deploymentIntegrityHash,
+    'Deployment integrity hash should remain stable across runs',
+  );
+  assert.equal(
     summary.metrics.ownerCommandCoverage,
     1,
     'Owner command coverage should confirm total command supremacy',
@@ -109,6 +114,36 @@ test('economic power simulation produces deterministic metrics', async () => {
   assert(
     summary.superIntelligence.commandAssurance.length >= 3,
     'Command assurances should enumerate decisive owner programs',
+  );
+
+  assert(
+    summary.metrics.deploymentIntegrityScore >= 0.95,
+    'Deployment integrity score should confirm immutable dominion',
+  );
+  assert.equal(
+    summary.deploymentIntegrity.classification,
+    'immutable-dominion',
+    'Deployment integrity classification should confirm immutable dominion',
+  );
+  assert(
+    summary.deploymentIntegrity.coverage.chainId >= 0.9,
+    'Chain ID coverage should remain aligned with mainnet config',
+  );
+  assert(
+    summary.deploymentIntegrity.checks.length >= 9,
+    'Deployment integrity should surface comprehensive checks',
+  );
+  assert(
+    summary.deploymentIntegrity.notes.length >= 3,
+    'Deployment integrity notes should outline custody context',
+  );
+  assert(
+    summary.deploymentIntegrity.mermaid.includes('graph LR'),
+    'Deployment integrity mermaid diagram should render',
+  );
+  assert(
+    summary.deploymentIntegrity.configPath?.includes('deployment-config/mainnet.json'),
+    'Deployment integrity should record the mainnet deployment config path',
   );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);

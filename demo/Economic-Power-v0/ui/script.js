@@ -89,6 +89,13 @@ const metricMap = [
     description: 'Composite readiness across pause, alerting, coverage, and scripted responses.',
   },
   {
+    id: 'deploymentIntegrityScore',
+    label: 'Deployment Integrity',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description:
+      'Verification score aligning scenario configuration with the mainnet deployment registry and owner custody.',
+  },
+  {
     id: 'assertionPassRate',
     label: 'Assertion Pass Rate',
     formatter: (value) => `${(value * 100).toFixed(1)}%`,
@@ -1041,6 +1048,84 @@ function renderDeployment(summary) {
   }
 }
 
+function renderDeploymentIntegrity(summary) {
+  const integrity = summary.deploymentIntegrity || {
+    score: 0,
+    classification: 'attention',
+    summary: 'Deployment integrity telemetry unavailable.',
+    coverage: {},
+    checks: [],
+    notes: [],
+    mermaid: '',
+  };
+  const scoreEl = document.getElementById('integrity-score');
+  const classificationEl = document.getElementById('integrity-classification');
+  const summaryEl = document.getElementById('integrity-summary');
+  const notesList = document.getElementById('integrity-notes');
+  const coverageBody = document.querySelector('#integrity-coverage tbody');
+  const checksBody = document.querySelector('#integrity-checks tbody');
+  if (!scoreEl || !classificationEl || !summaryEl || !notesList || !coverageBody || !checksBody) {
+    return;
+  }
+
+  scoreEl.textContent = `${(integrity.score * 100).toFixed(1)}%`;
+  const classificationLabel = integrity.classification.replace(/-/g, ' ');
+  classificationEl.textContent = classificationLabel;
+  classificationEl.className = `integrity-chip integrity-${integrity.classification}`;
+  summaryEl.textContent = integrity.summary;
+
+  notesList.innerHTML = '';
+  const notes = integrity.notes && integrity.notes.length > 0 ? integrity.notes : ['No deployment notes recorded.'];
+  for (const note of notes) {
+    const li = document.createElement('li');
+    li.textContent = note;
+    notesList.append(li);
+  }
+
+  coverageBody.innerHTML = '';
+  const coverageLabels = {
+    chainId: 'Chain alignment',
+    jobDuration: 'Job duration',
+    moduleCustody: 'Module custody',
+    moduleStatus: 'Module status',
+    auditFreshness: 'Audit freshness',
+    ownerCommand: 'Owner command',
+    sovereignControl: 'Sovereign control',
+    pauseReadiness: 'Pause readiness',
+    observability: 'Observability',
+    validatorResponse: 'Validator response',
+  };
+  for (const [surface, value] of Object.entries(integrity.coverage || {})) {
+    const row = document.createElement('tr');
+    const label = coverageLabels[surface] || surface;
+    row.innerHTML = `
+      <td>${label}</td>
+      <td>${(Number(value) * 100).toFixed(1)}%</td>
+    `;
+    coverageBody.append(row);
+  }
+
+  checksBody.innerHTML = '';
+  const checks = integrity.checks || [];
+  if (checks.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td colspan="4">No deployment checks available.</td>';
+    checksBody.append(row);
+  } else {
+    for (const check of checks) {
+      const row = document.createElement('tr');
+      const statusClass = check.status === 'pass' ? 'integrity-pass' : 'integrity-attention';
+      row.innerHTML = `
+        <td>${check.label}</td>
+        <td><span class="integrity-status ${statusClass}">${check.status.toUpperCase()}</span></td>
+        <td>${check.actual}</td>
+        <td>${check.expected}</td>
+      `;
+      checksBody.append(row);
+    }
+  }
+}
+
 function renderAssertions(summary) {
   const container = document.getElementById('assertion-grid');
   if (!container) return;
@@ -1116,6 +1201,7 @@ async function renderMermaid(summary) {
   const supremacy = document.getElementById('mermaid-supremacy');
   const drills = document.getElementById('mermaid-drills');
   const superintelligence = document.getElementById('mermaid-superintelligence');
+  const deploymentIntegrity = document.getElementById('mermaid-deployment-integrity');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -1140,6 +1226,10 @@ async function renderMermaid(summary) {
   if (superintelligence && summary.superIntelligence?.mermaid) {
     superintelligence.textContent = summary.superIntelligence.mermaid;
     nodes.push(superintelligence);
+  }
+  if (deploymentIntegrity && summary.deploymentIntegrity?.mermaid) {
+    deploymentIntegrity.textContent = summary.deploymentIntegrity.mermaid;
+    nodes.push(deploymentIntegrity);
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -1276,6 +1366,7 @@ async function renderDashboard(summary, verification) {
   renderSovereignty(summary);
   renderGovernanceLedger(summary);
   renderDeployment(summary);
+  renderDeploymentIntegrity(summary);
   renderAssertions(summary);
   renderTrajectory(summary);
   renderAutopilot(summary);

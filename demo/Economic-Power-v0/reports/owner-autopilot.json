@@ -16,7 +16,8 @@
     "capitalVelocity": 26290.99,
     "globalExpansionReadiness": 0.966,
     "superIntelligenceIndex": 0.9682,
-    "shockResilienceScore": 0.98
+    "shockResilienceScore": 0.98,
+    "deploymentIntegrityScore": 0.998
   },
   "commandSequence": [
     {

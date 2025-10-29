@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import { promises as fs, existsSync } from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
@@ -155,6 +155,8 @@ type Scenario = z.infer<typeof scenarioSchema>;
 type CommandProgram = z.infer<typeof commandProgramSchema>;
 type CommandCatalog = z.infer<typeof commandCatalogSchema>;
 
+const scenarioMetadata = new WeakMap<Scenario, { filePath: string }>();
+
 type Assignment = {
   jobId: string;
   jobName: string;
@@ -241,6 +243,7 @@ type OwnerAutopilot = {
     globalExpansionReadiness: number;
     superIntelligenceIndex: number;
     shockResilienceScore: number;
+    deploymentIntegrityScore: number;
   };
   commandSequence: OwnerAutopilotCommand[];
 };
@@ -407,6 +410,7 @@ type DeterministicProof = {
   treasuryTrajectoryHash: string;
   sovereignSafetyMeshHash: string;
   superIntelligenceHash: string;
+  deploymentIntegrityHash: string;
 };
 
 type DeterministicVerification = {
@@ -452,6 +456,7 @@ export type Summary = {
     globalExpansionReadiness: number;
     superIntelligenceIndex: number;
     shockResilienceScore: number;
+    deploymentIntegrityScore: number;
   };
   ownerControl: {
     threshold: string;
@@ -490,6 +495,7 @@ export type Summary = {
     automation: Scenario['automation'];
     observability: Scenario['observability'];
   };
+  deploymentIntegrity: DeploymentIntegrityReport;
   governanceLedger: GovernanceLedger;
   ownerAutopilot: OwnerAutopilot;
   ownerDominion: OwnerDominionReport;
@@ -499,7 +505,10 @@ export type Summary = {
   shockResilience: ShockResilienceReport;
 };
 
-type SummaryWithSnapshot = Summary & { __scenarioSnapshot?: Scenario };
+type SummaryWithSnapshot = Summary & {
+  __scenarioSnapshot?: Scenario;
+  __deploymentConfigPath?: string;
+};
 
 type CoverageSurface =
   | 'jobs'
@@ -554,6 +563,71 @@ type SovereignSafetyMesh = {
   shockResilienceScore?: number;
   shockClassification?: ShockResilienceClassification;
   shockSummary?: string;
+};
+
+const deploymentConfigSchema = z.object({
+  network: z.string(),
+  chainId: z.number(),
+  explorerUrl: z.string().optional(),
+  governance: z.string().optional(),
+  agialpha: z.string().optional(),
+  secureDefaults: z
+    .object({
+      pauseOnLaunch: z.boolean().optional(),
+      maxJobDurationSeconds: z.number().optional(),
+      validatorCommitWindowSeconds: z.number().optional(),
+      validatorRevealWindowSeconds: z.number().optional(),
+    })
+    .optional(),
+});
+
+type DeploymentConfig = z.infer<typeof deploymentConfigSchema>;
+
+type DeploymentIntegrityCheck = {
+  id: string;
+  label: string;
+  status: 'pass' | 'attention';
+  actual: string;
+  expected: string;
+  impact: string;
+  recommendation?: string;
+};
+
+type DeploymentIntegrityCoverage = {
+  chainId: number;
+  jobDuration: number;
+  moduleCustody: number;
+  moduleStatus: number;
+  auditFreshness: number;
+  ownerCommand: number;
+  sovereignControl: number;
+  pauseReadiness: number;
+  observability: number;
+  validatorResponse: number;
+};
+
+type DeploymentIntegrityClassification =
+  | 'immutable-dominion'
+  | 'fortified'
+  | 'reinforced'
+  | 'attention';
+
+type DeploymentIntegrityReport = {
+  analysisTimestamp: string;
+  configPath?: string;
+  network: {
+    name: string;
+    chainId: number;
+    explorer: string;
+  };
+  score: number;
+  classification: DeploymentIntegrityClassification;
+  summary: string;
+  coverage: DeploymentIntegrityCoverage;
+  checks: DeploymentIntegrityCheck[];
+  recommendations: string[];
+  notes: string[];
+  mermaid: string;
 };
 
 type TrajectoryEntry = {
@@ -990,6 +1064,368 @@ function generateOwnerCommandMermaid(summary: Summary, scenario: Scenario): stri
   return `graph LR\n    ${nodes.join('\n    ')}\n${edges.join('\n')}`;
 }
 
+function generateDeploymentIntegrityMermaid({
+  scenario,
+  summary,
+  coverage,
+  config,
+  score,
+  classification,
+}: {
+  scenario: Scenario;
+  summary: Summary;
+  coverage: DeploymentIntegrityCoverage;
+  config: DeploymentConfig | null;
+  score: number;
+  classification: DeploymentIntegrityClassification;
+}): string {
+  const ownerNodeId = 'DeploymentOwner';
+  const configNodeId = 'DeploymentConfig';
+  const safetyNodeId = 'DeploymentSafety';
+  const observabilityNodeId = 'DeploymentObservability';
+  const metricsNodeId = 'DeploymentScore';
+  const dashboards = scenario.observability?.dashboards?.length ?? 0;
+  const alerts = scenario.observability?.alertChannels?.length ?? 0;
+  const lines: string[] = [
+    'graph LR',
+    `    ${configNodeId}["${escapeMermaidLabel(
+      `Config ${config?.network ?? scenario.network.name}\\nChain ${config?.chainId ?? scenario.network.chainId}`,
+    )}"]`,
+    `    ${ownerNodeId}["${escapeMermaidLabel(
+      `Owner Multi-Sig\\n${scenario.owner.governanceSafe.slice(0, 10)}…`,
+    )}"]`,
+    `    ${safetyNodeId}["${escapeMermaidLabel(
+      `Safety Mesh\\nResponse ${summary.ownerSovereignty.responseMinutes}m`,
+    )}"]`,
+    `    ${observabilityNodeId}["${escapeMermaidLabel(
+      `Observability\\nDashboards ${dashboards} • Alerts ${alerts}`,
+    )}"]`,
+    `    ${metricsNodeId}["${escapeMermaidLabel(
+      `Integrity ${(score * 100).toFixed(1)}%\\n${classification.replace(/-/g, ' ')}`,
+    )}"]`,
+    `    ${configNodeId} -->|Defaults| ${ownerNodeId}`,
+    `    ${ownerNodeId} -->|Custody| ${safetyNodeId}`,
+    `    ${ownerNodeId} -->|Telemetry| ${observabilityNodeId}`,
+    `    ${ownerNodeId} --> ${metricsNodeId}`,
+  ];
+  scenario.modules.forEach((module, index) => {
+    const moduleId = sanitiseId('IntegrityModule', module.id ?? module.name, index);
+    const moduleLabel = `${module.name}\\n${module.status.replace(/-/g, ' ')}`;
+    lines.push(`    ${moduleId}["${escapeMermaidLabel(moduleLabel)}"]`);
+    lines.push(`    ${ownerNodeId} -->|${module.owner.slice(0, 10)}…| ${moduleId}`);
+    if (config) {
+      lines.push(`    ${configNodeId} --> ${moduleId}`);
+    }
+    const moduleClass =
+      module.status === 'active'
+        ? 'module-active'
+        : module.status === 'pending-upgrade'
+        ? 'module-pending'
+        : module.status === 'paused'
+        ? 'module-paused'
+        : 'module-deprecated';
+    lines.push(`    class ${moduleId} ${moduleClass};`);
+  });
+  lines.push('    classDef module-active fill:#0f172a,stroke:#0f172a,color:#38bdf8;');
+  lines.push('    classDef module-pending fill:#1f2937,stroke:#f59e0b,color:#fef3c7;');
+  lines.push('    classDef module-paused fill:#7f1d1d,stroke:#b91c1c,color:#fee2e2;');
+  lines.push('    classDef module-deprecated fill:#374151,stroke:#4b5563,color:#d1d5db;');
+  lines.push('    classDef config-root fill:#312e81,stroke:#4338ca,color:#e0e7ff;');
+  lines.push('    classDef owner-root fill:#0f766e,stroke:#0d9488,color:#ecfdf5;');
+  lines.push('    classDef score-root fill:#581c87,stroke:#7e22ce,color:#ede9fe;');
+  lines.push(`    class ${configNodeId} config-root;`);
+  lines.push(`    class ${ownerNodeId} owner-root;`);
+  lines.push(`    class ${metricsNodeId} score-root;`);
+  return `${lines.join('\n')}\n`;
+}
+
+function computeDeploymentIntegrity(
+  summary: Summary,
+  scenario: Scenario,
+  options: { config?: DeploymentConfig | null; configPath?: string | null },
+): DeploymentIntegrityReport {
+  const { config = null, configPath = null } = options;
+  const analysisTimestamp = summary.analysisTimestamp;
+  const modules = scenario.modules ?? [];
+  const ownerAddresses = new Set(
+    [scenario.owner.governanceSafe, scenario.owner.operator, scenario.treasury.ownerSafe]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+      .map((value) => value.toLowerCase()),
+  );
+  const ownedModules = modules.filter((module) => ownerAddresses.has(module.owner.toLowerCase())).length;
+  const moduleCustodyCoverage = modules.length === 0 ? 1 : ownedModules / modules.length;
+  const moduleStatusCoverage =
+    modules.length === 0
+      ? 1
+      : modules.reduce((total, module) => total + moduleStatusWeight(module.status), 0) /
+        Math.max(modules.length, 1);
+  const auditScores = modules.map((module) =>
+    computeAuditFreshnessScore(module.lastAudit, analysisTimestamp),
+  );
+  const auditCoverage = auditScores.length
+    ? auditScores.reduce((total, value) => total + value, 0) / auditScores.length
+    : 1;
+  const longestJobHours = scenario.jobs.reduce(
+    (max, job) => Math.max(max, job.executionHours),
+    0,
+  );
+  const durationControl = scenario.owner.controls.find((control) => control.parameter === 'jobDuration');
+  const durationTargetValue = (() => {
+    if (!durationControl) return undefined;
+    if (typeof durationControl.target === 'number') return Number(durationControl.target);
+    const parsed = Number.parseFloat(String(durationControl.target));
+    return Number.isFinite(parsed) ? parsed : undefined;
+  })();
+  const configDurationHours =
+    config?.secureDefaults?.maxJobDurationSeconds != null
+      ? config.secureDefaults.maxJobDurationSeconds / 3600
+      : undefined;
+  const effectiveDurationCap = Math.max(
+    durationTargetValue ?? configDurationHours ?? longestJobHours,
+    longestJobHours,
+  );
+  const jobCompliance =
+    scenario.jobs.length === 0
+      ? 1
+      : scenario.jobs.filter((job) => job.executionHours <= effectiveDurationCap).length /
+        Math.max(scenario.jobs.length, 1);
+  const dashboards = scenario.observability?.dashboards?.length ?? 0;
+  const alerts = scenario.observability?.alertChannels?.length ?? 0;
+  const dashboardScore = dashboards >= 2 ? 1 : dashboards / Math.max(2, 1);
+  const alertScore = alerts >= 2 ? 1 : alerts / Math.max(2, 1);
+  const observabilityScore = (dashboardScore + alertScore) / 2;
+  const pauseAvailability = summary.sovereignSafetyMesh.pauseReady ? 1 : 0.4;
+  const resumeAvailability = summary.sovereignSafetyMesh.resumeReady ? 1 : 0.4;
+  const pauseReadiness = (pauseAvailability + resumeAvailability) / 2;
+  const commitMinutes = config?.secureDefaults?.validatorCommitWindowSeconds
+    ? config.secureDefaults.validatorCommitWindowSeconds / 60
+    : undefined;
+  const revealMinutes = config?.secureDefaults?.validatorRevealWindowSeconds
+    ? config.secureDefaults.validatorRevealWindowSeconds / 60
+    : undefined;
+  let validatorTarget = Math.max(commitMinutes ?? 0, revealMinutes ?? 0);
+  if (!Number.isFinite(validatorTarget) || validatorTarget < 5) {
+    validatorTarget = 15;
+  }
+  const validatorResponse = computeValidatorResponseScore(
+    summary.ownerSovereignty.responseMinutes,
+    validatorTarget,
+  );
+  const chainIdCoverage = config
+    ? config.chainId === scenario.network.chainId
+      ? 1
+      : 0
+    : 0.7;
+  const coverage: DeploymentIntegrityCoverage = {
+    chainId: Number(clamp01(chainIdCoverage).toFixed(3)),
+    jobDuration: Number(clamp01(jobCompliance).toFixed(3)),
+    moduleCustody: Number(clamp01(moduleCustodyCoverage).toFixed(3)),
+    moduleStatus: Number(clamp01(moduleStatusCoverage).toFixed(3)),
+    auditFreshness: Number(clamp01(auditCoverage).toFixed(3)),
+    ownerCommand: Number(clamp01(summary.metrics.ownerCommandCoverage).toFixed(3)),
+    sovereignControl: Number(clamp01(summary.metrics.sovereignControlScore).toFixed(3)),
+    pauseReadiness: Number(clamp01(pauseReadiness).toFixed(3)),
+    observability: Number(clamp01(observabilityScore).toFixed(3)),
+    validatorResponse: Number(clamp01(validatorResponse).toFixed(3)),
+  };
+  const coverageValues = Object.values(coverage);
+  const score = Number(
+    (
+      coverageValues.reduce((total, value) => total + value, 0) /
+      Math.max(coverageValues.length, 1)
+    ).toFixed(3),
+  );
+  const { classification, summary: classificationSummary } = classifyDeploymentIntegrity(score);
+  const jobComplianceCount =
+    scenario.jobs.length === 0
+      ? 0
+      : scenario.jobs.filter((job) => job.executionHours <= effectiveDurationCap).length;
+  const pendingModules = modules.filter((module) => module.status !== 'active').length;
+  const freshAudits = auditScores.filter((value) => value >= 0.95).length;
+  const chainStatus = coverage.chainId >= 0.99;
+  const checks: DeploymentIntegrityCheck[] = [
+    {
+      id: 'chain-alignment',
+      label: 'Mainnet chain alignment',
+      status: chainStatus ? 'pass' : 'attention',
+      actual: config
+        ? `Scenario ${scenario.network.chainId} vs Config ${config.chainId}`
+        : `Scenario ${scenario.network.chainId}`,
+      expected: config ? `${config.chainId}` : 'Deployment config required',
+      impact: 'Ensures orchestration targets the same mainnet deployment registry as production contracts.',
+      recommendation: chainStatus
+        ? undefined
+        : 'Synchronise scenario network metadata with the deployment config before promoting additional work.',
+    },
+    {
+      id: 'job-duration',
+      label: 'Job duration compliance',
+      status: coverage.jobDuration >= 0.95 ? 'pass' : 'attention',
+      actual: `${jobComplianceCount}/${scenario.jobs.length || 0} jobs ≤ ${effectiveDurationCap.toFixed(1)}h`,
+      expected: `≤ ${effectiveDurationCap.toFixed(1)}h window`,
+      impact: 'Protects validator commitment windows and treasury velocity.',
+      recommendation:
+        coverage.jobDuration >= 0.95
+          ? undefined
+          : 'Execute the owner parameter program to enforce the job duration ceiling prior to scaling throughput.',
+    },
+    {
+      id: 'module-custody',
+      label: 'Module custody control',
+      status: coverage.moduleCustody >= 0.95 ? 'pass' : 'attention',
+      actual: `${ownedModules}/${modules.length || 0} modules under owner custody`,
+      expected: `All modules owned by ${scenario.owner.governanceSafe}`,
+      impact: 'Guarantees every production contract remains under owner multi-sig authority.',
+      recommendation:
+        coverage.moduleCustody >= 0.95
+          ? undefined
+          : 'Migrate outstanding modules into the owner multi-sig before onboarding new employers.',
+    },
+    {
+      id: 'module-status',
+      label: 'Module upgrade posture',
+      status: coverage.moduleStatus >= 0.95 ? 'pass' : 'attention',
+      actual: pendingModules === 0 ? 'All modules active' : `${pendingModules} module upgrades pending`,
+      expected: 'Active or staged upgrades',
+      impact: 'Verifies upgrade sequencing and prevents stale modules from powering production flows.',
+      recommendation:
+        coverage.moduleStatus >= 0.95
+          ? undefined
+          : 'Execute queued upgrade scripts via owner:update-all to complete the hardened deployment bundle.',
+    },
+    {
+      id: 'audit-freshness',
+      label: 'Audit freshness',
+      status: coverage.auditFreshness >= 0.9 ? 'pass' : 'attention',
+      actual: `${freshAudits}/${modules.length || 0} module audits within the freshness target`,
+      expected: 'All audits within 120 days',
+      impact: 'Confirms auditors have recently reviewed every immutable module.',
+      recommendation:
+        coverage.auditFreshness >= 0.9
+          ? undefined
+          : 'Schedule follow-up audits for any module exceeding the freshness window before accepting new capital.',
+    },
+    {
+      id: 'owner-command',
+      label: 'Owner command coverage',
+      status: coverage.ownerCommand >= 0.95 ? 'pass' : 'attention',
+      actual: `Coverage ${formatPercent(coverage.ownerCommand)}`,
+      expected: '≥ 95% owner command coverage',
+      impact: 'Demonstrates the owner multi-sig can orchestrate every surface without developer intervention.',
+      recommendation:
+        coverage.ownerCommand >= 0.95
+          ? undefined
+          : 'Authorise missing deterministic programs to restore total owner command supremacy.',
+    },
+    {
+      id: 'sovereign-control',
+      label: 'Sovereign control score',
+      status: coverage.sovereignControl >= 0.95 ? 'pass' : 'attention',
+      actual: `Custody ${formatPercent(coverage.sovereignControl)}`,
+      expected: '≥ 95% custody control',
+      impact: 'Ensures treasury and core modules remain under explicit owner safe authority.',
+      recommendation:
+        coverage.sovereignControl >= 0.95
+          ? undefined
+          : 'Rotate any externally owned modules into the multi-sig custody set before scaling.',
+    },
+    {
+      id: 'pause-readiness',
+      label: 'Pause and resume readiness',
+      status: coverage.pauseReadiness >= 0.95 ? 'pass' : 'attention',
+      actual: `Pause ${summary.sovereignSafetyMesh.pauseReady ? 'ready' : 'pending'} • Resume ${summary.sovereignSafetyMesh.resumeReady ? 'ready' : 'pending'}`,
+      expected: 'Immediate pause and resume',
+      impact: 'Confirms the owner multi-sig can freeze and restore contracts on demand.',
+      recommendation:
+        coverage.pauseReadiness >= 0.95
+          ? undefined
+          : 'Rehearse pause/resume drills via owner:system-pause and owner:update-all to tighten response cadence.',
+    },
+    {
+      id: 'observability',
+      label: 'Observability coverage',
+      status: coverage.observability >= 0.9 ? 'pass' : 'attention',
+      actual: `Dashboards ${dashboards} • Alerts ${alerts}`,
+      expected: '≥2 dashboards and ≥2 alert channels',
+      impact: 'Guarantees monitoring can surface anomalies across the economic mesh instantly.',
+      recommendation:
+        coverage.observability >= 0.9
+          ? undefined
+          : 'Add redundant dashboards or alert routes to preserve continuous telemetry.',
+    },
+    {
+      id: 'validator-response',
+      label: 'Validator response alignment',
+      status: coverage.validatorResponse >= 0.9 ? 'pass' : 'attention',
+      actual: `Response ${summary.ownerSovereignty.responseMinutes}m vs target ≤ ${validatorTarget.toFixed(1)}m`,
+      expected: `≤ ${validatorTarget.toFixed(1)} minutes`,
+      impact: 'Keeps commit–reveal cycles within deterministic response windows.',
+      recommendation:
+        coverage.validatorResponse >= 0.9
+          ? undefined
+          : 'Accelerate incident response drills or tighten automation to meet validator window targets.',
+    },
+  ];
+  const recommendations = checks
+    .filter((check) => check.status !== 'pass' && check.recommendation)
+    .map((check) => check.recommendation as string);
+  if (recommendations.length === 0) {
+    recommendations.push('Maintain immutable custody cadence and refresh module audits on the existing schedule.');
+  }
+  const notes: string[] = [
+    `Owner multi-sig: ${scenario.owner.governanceSafe}`,
+    `Treasury safe: ${scenario.treasury.ownerSafe}`,
+    `Longest job window: ${longestJobHours.toFixed(1)}h`,
+    `Validator quorum max: ${scenario.jobs.reduce(
+      (max, job) => Math.max(max, job.validatorQuorum),
+      0,
+    )}`,
+  ];
+  if (configPath) {
+    notes.push(`Deployment config: ${configPath}`);
+  }
+  if (config?.secureDefaults?.maxJobDurationSeconds) {
+    notes.push(
+      `Secure max job: ${(config.secureDefaults.maxJobDurationSeconds / 3600).toFixed(1)}h`,
+    );
+  }
+  if (config?.secureDefaults?.validatorCommitWindowSeconds) {
+    notes.push(
+      `Commit window: ${(config.secureDefaults.validatorCommitWindowSeconds / 60).toFixed(1)}m`,
+    );
+  }
+  if (config?.secureDefaults?.validatorRevealWindowSeconds) {
+    notes.push(
+      `Reveal window: ${(config.secureDefaults.validatorRevealWindowSeconds / 60).toFixed(1)}m`,
+    );
+  }
+  const mermaid = generateDeploymentIntegrityMermaid({
+    scenario,
+    summary,
+    coverage,
+    config,
+    score,
+    classification,
+  });
+  return {
+    analysisTimestamp,
+    configPath: configPath ?? undefined,
+    network: {
+      name: scenario.network.name,
+      chainId: scenario.network.chainId,
+      explorer: scenario.network.explorer,
+    },
+    score,
+    classification,
+    summary: classificationSummary,
+    coverage,
+    checks,
+    recommendations,
+    notes,
+    mermaid,
+  };
+}
+
 function generateOwnerCommandMarkdown(summary: Summary): string {
   const lines: string[] = [];
   const formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -1248,6 +1684,7 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
       globalExpansionReadiness: summary.metrics.globalExpansionReadiness,
       superIntelligenceIndex: summary.metrics.superIntelligenceIndex,
       shockResilienceScore: summary.metrics.shockResilienceScore,
+      deploymentIntegrityScore: summary.metrics.deploymentIntegrityScore,
     },
     commandSequence: sequence,
   };
@@ -1371,6 +1808,73 @@ function formatPercent(value: number, decimals = 1): string {
   return `${(Math.max(0, Math.min(1, value)) * 100).toFixed(decimals)}%`;
 }
 
+function clamp01(value: number): number {
+  if (Number.isNaN(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
+}
+
+function moduleStatusWeight(
+  status: Scenario['modules'][number]['status'],
+): number {
+  switch (status) {
+    case 'active':
+      return 1;
+    case 'pending-upgrade':
+      return 0.9;
+    case 'paused':
+      return 0.4;
+    case 'deprecated':
+      return 0.1;
+    default:
+      return 0.5;
+  }
+}
+
+function computeAuditFreshnessScore(
+  lastAudit: string,
+  analysisTimestamp: string,
+  targetDays = 120,
+): number {
+  const auditDate = new Date(lastAudit);
+  const analysisDate = new Date(analysisTimestamp);
+  if (Number.isNaN(auditDate.getTime()) || Number.isNaN(analysisDate.getTime())) {
+    return 0.5;
+  }
+  const diffMs = Math.max(analysisDate.getTime() - auditDate.getTime(), 0);
+  const diffDays = diffMs / (1000 * 60 * 60 * 24);
+  if (diffDays <= targetDays) {
+    return 1;
+  }
+  if (diffDays <= targetDays * 1.5) {
+    return 0.85;
+  }
+  if (diffDays <= targetDays * 2) {
+    return 0.6;
+  }
+  return 0.3;
+}
+
+function computeValidatorResponseScore(
+  responseMinutes: number,
+  targetMinutes: number,
+): number {
+  if (responseMinutes <= targetMinutes) {
+    return 1;
+  }
+  if (responseMinutes <= targetMinutes * 1.5) {
+    return 0.85;
+  }
+  if (responseMinutes <= targetMinutes * 2) {
+    return 0.7;
+  }
+  if (responseMinutes <= targetMinutes * 3) {
+    return 0.5;
+  }
+  return 0.3;
+}
+
 function escapeMermaidLabel(value: string): string {
   return value.replace(/"/g, '\\"');
 }
@@ -1414,6 +1918,37 @@ function classifyOwnerControlSupremacy(
     classification: 'attention',
     summary:
       'Owner supremacy requires immediate action – authorise programs and incident drills to reclaim absolute control.',
+  };
+}
+
+function classifyDeploymentIntegrity(
+  score: number,
+): { classification: DeploymentIntegrityClassification; summary: string } {
+  if (score >= 0.97) {
+    return {
+      classification: 'immutable-dominion',
+      summary:
+        'Deployment lattice anchored to Ethereum mainnet with immutable owner custody, fresh audits, and rehearsed safety mesh.',
+    };
+  }
+  if (score >= 0.9) {
+    return {
+      classification: 'fortified',
+      summary:
+        'Deployment posture fortified – execute remaining upgrades and guardrail drills to crystallise immutable dominion.',
+    };
+  }
+  if (score >= 0.8) {
+    return {
+      classification: 'reinforced',
+      summary:
+        'Deployment fabric reinforced – align outstanding custody, audit, or response targets to achieve fortified posture.',
+    };
+  }
+  return {
+    classification: 'attention',
+    summary:
+      'Deployment verification requires immediate attention – reconcile chain metadata, safety drills, and module custody before scaling.',
   };
 }
 
@@ -2594,7 +3129,52 @@ async function ensureDir(dir: string): Promise<void> {
 export async function loadScenarioFromFile(filePath: string): Promise<Scenario> {
   const data = await fs.readFile(filePath, 'utf8');
   const parsed = JSON.parse(data);
-  return scenarioSchema.parse(parsed);
+  const scenario = scenarioSchema.parse(parsed);
+  scenarioMetadata.set(scenario, { filePath: path.resolve(filePath) });
+  return scenario;
+}
+
+function getScenarioFilePath(scenario: Scenario): string | undefined {
+  const meta = scenarioMetadata.get(scenario);
+  return meta?.filePath;
+}
+
+function resolveDeploymentConfigPath(
+  scenario: Scenario,
+  override?: string,
+): string | null {
+  const candidate = override ?? scenario.network?.deploymentRegistry;
+  if (!candidate) {
+    return null;
+  }
+  if (path.isAbsolute(candidate)) {
+    return candidate;
+  }
+  const scenarioPath = getScenarioFilePath(scenario);
+  if (scenarioPath) {
+    const scenarioRelative = path.resolve(path.dirname(scenarioPath), candidate);
+    if (existsSync(scenarioRelative)) {
+      return scenarioRelative;
+    }
+  }
+  const cwdRelative = path.resolve(process.cwd(), candidate);
+  if (existsSync(cwdRelative)) {
+    return cwdRelative;
+  }
+  return cwdRelative;
+}
+
+async function loadDeploymentConfig(
+  configPath: string,
+): Promise<DeploymentConfig | null> {
+  try {
+    const raw = await fs.readFile(configPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return deploymentConfigSchema.parse(parsed);
+  } catch (error) {
+    console.warn('Unable to load deployment config:', error);
+    return null;
+  }
 }
 
 function computeAgentScore(
@@ -2915,6 +3495,7 @@ function synthesiseSummary(
       globalExpansionReadiness,
       superIntelligenceIndex: 0,
       shockResilienceScore: shockResilience.score,
+      deploymentIntegrityScore: 0,
     },
     ownerControl: {
       threshold: `${scenario.owner.threshold}-of-${scenario.owner.members}`,
@@ -2953,6 +3534,34 @@ function synthesiseSummary(
       automation: scenario.automation,
       observability: scenario.observability,
     },
+    deploymentIntegrity: {
+      analysisTimestamp,
+      configPath: undefined,
+      network: {
+        name: scenario.network.name,
+        chainId: scenario.network.chainId,
+        explorer: scenario.network.explorer,
+      },
+      score: 0,
+      classification: 'attention',
+      summary: 'Deployment integrity placeholder – verification pending.',
+      coverage: {
+        chainId: 0,
+        jobDuration: 0,
+        moduleCustody: 0,
+        moduleStatus: 0,
+        auditFreshness: 0,
+        ownerCommand: 0,
+        sovereignControl: 0,
+        pauseReadiness: 0,
+        observability: 0,
+        validatorResponse: 0,
+      },
+      checks: [],
+      recommendations: [],
+      notes: [],
+      mermaid: '',
+    },
     governanceLedger: {
       analysisTimestamp,
       ownerSafe: scenario.owner.operator,
@@ -2979,6 +3588,7 @@ function synthesiseSummary(
         globalExpansionReadiness,
         superIntelligenceIndex: 0,
         shockResilienceScore: shockResilience.score,
+        deploymentIntegrityScore: 0,
       },
       commandSequence: [],
     },
@@ -3213,10 +3823,16 @@ function updateNetMetrics(context: SimulationContext, assignment: Assignment): v
 
 export async function runScenario(
   scenario: Scenario,
-  options: { interactive?: boolean } = {},
+  options: {
+    interactive?: boolean;
+    deploymentConfigPath?: string | null;
+    skipDeploymentVerification?: boolean;
+  } = {},
 ): Promise<Summary> {
+  const { interactive = false, deploymentConfigPath = undefined, skipDeploymentVerification = false } =
+    options;
   const workingScenario = JSON.parse(JSON.stringify(scenario)) as Scenario;
-  if (options.interactive) {
+  if (interactive) {
     const rl = readline.createInterface({ input, output });
     const multiplierAnswer = await rl.question(
       'Enter desired economic multiplier (default 1.0, press Enter to keep baseline): ',
@@ -3236,6 +3852,15 @@ export async function runScenario(
     }));
     await rl.close();
   }
+
+  const resolvedDeploymentConfigPath = resolveDeploymentConfigPath(
+    scenario,
+    deploymentConfigPath ?? undefined,
+  );
+  const deploymentConfig =
+    skipDeploymentVerification || !resolvedDeploymentConfigPath
+      ? null
+      : await loadDeploymentConfig(resolvedDeploymentConfigPath);
 
   const agentStates = new Map<string, AgentState>();
   for (const agent of workingScenario.agents) {
@@ -3331,9 +3956,23 @@ export async function runScenario(
   );
   summary.ownerAutopilot.telemetry.superIntelligenceIndex = summary.superIntelligence.index;
   summary.globalExpansionPlan = buildGlobalExpansionPlan(summary, workingScenario);
+  summary.deploymentIntegrity = computeDeploymentIntegrity(summary, workingScenario, {
+    config: deploymentConfig,
+    configPath: resolvedDeploymentConfigPath,
+  });
+  summary.metrics.deploymentIntegrityScore = Number(
+    summary.deploymentIntegrity.score.toFixed(3),
+  );
+  summary.ownerAutopilot.telemetry.deploymentIntegrityScore =
+    summary.metrics.deploymentIntegrityScore;
   const snapshot = JSON.parse(JSON.stringify(workingScenario)) as Scenario;
   Object.defineProperty(summary, '__scenarioSnapshot', {
     value: snapshot,
+    enumerable: false,
+    configurable: false,
+  });
+  Object.defineProperty(summary, '__deploymentConfigPath', {
+    value: resolvedDeploymentConfigPath ?? undefined,
     enumerable: false,
     configurable: false,
   });
@@ -3351,6 +3990,7 @@ const DETERMINISTIC_FIELDS: Array<keyof DeterministicProof> = [
   'treasuryTrajectoryHash',
   'sovereignSafetyMeshHash',
   'superIntelligenceHash',
+  'deploymentIntegrityHash',
 ];
 
 export function buildDeterministicProof(summary: Summary): DeterministicProof {
@@ -3408,6 +4048,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
     treasuryTrajectoryHash: hashObject(summary.treasuryTrajectory),
     sovereignSafetyMeshHash: hashObject(summary.sovereignSafetyMesh),
     superIntelligenceHash: hashObject(summary.superIntelligence),
+    deploymentIntegrityHash: hashObject(summary.deploymentIntegrity),
   };
   return proof;
 }
@@ -3418,7 +4059,10 @@ export async function verifyDeterminism(
 ): Promise<DeterministicVerification> {
   const carrier = summary as SummaryWithSnapshot;
   const scenarioForVerification = carrier.__scenarioSnapshot ?? scenario;
-  const verificationSummary = await runScenario(scenarioForVerification);
+  const verificationSummary = await runScenario(scenarioForVerification, {
+    deploymentConfigPath: carrier.__deploymentConfigPath ?? undefined,
+    skipDeploymentVerification: false,
+  });
   const proof = buildDeterministicProof(summary);
   const verificationProof = buildDeterministicProof(verificationSummary);
   const mismatches: string[] = [];
@@ -3491,6 +4135,14 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'deployment-map.json'),
     JSON.stringify(deploymentMap, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'deployment-integrity.json'),
+    JSON.stringify(summary.deploymentIntegrity, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'deployment-integrity.mmd'),
+    `${summary.deploymentIntegrity.mermaid.trimEnd()}\n`,
   );
   await fs.writeFile(
     path.join(outputDir, 'owner-command.mmd'),
@@ -3683,6 +4335,15 @@ export async function main(): Promise<void> {
       default: false,
       describe: 'Enable interactive parameter tuning',
     })
+    .option('deployment-config', {
+      type: 'string',
+      describe: 'Override path to deployment config JSON used for verification',
+    })
+    .option('skip-deployment-verification', {
+      type: 'boolean',
+      default: false,
+      describe: 'Skip deployment config verification checks',
+    })
     .option('ci', {
       type: 'boolean',
       default: false,
@@ -3694,6 +4355,8 @@ export async function main(): Promise<void> {
   const scenario = await loadScenarioFromFile(argv.scenario);
   const summary = await runScenario(scenario, {
     interactive: argv.interactive,
+    deploymentConfigPath: argv['deployment-config'],
+    skipDeploymentVerification: argv['skip-deployment-verification'],
   });
   const deterministicVerification = await verifyDeterminism(scenario, summary);
   if (!deterministicVerification.matches) {
