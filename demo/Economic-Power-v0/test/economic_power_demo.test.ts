@@ -76,6 +76,20 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.metrics.shockResilienceScore >= 0.95,
     'Shock resilience score should confirm impregnable defence posture',
   );
+  assert(
+    summary.metrics.superIntelligenceIndex >= 0.95,
+    'Superintelligence index should prove civilisation-scale leverage',
+  );
+  assert.equal(
+    summary.superIntelligence.classification,
+    'transcendent-dominion',
+    'Superintelligence classification should confirm transcendent dominion',
+  );
+  assert(summary.superIntelligence.mermaid.includes('graph LR'));
+  assert(
+    summary.superIntelligence.commandAssurance.length >= 3,
+    'Command assurances should enumerate decisive owner programs',
+  );
 
   const ownerParameters = summary.ownerControl.controls.map((control) => control.parameter);
   for (const control of scenario.owner.controls) {

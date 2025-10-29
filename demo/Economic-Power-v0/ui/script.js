@@ -94,6 +94,13 @@ const metricMap = [
     description: 'Composite dominance index fusing ROI, automation, and sovereign control.',
   },
   {
+    id: 'superIntelligenceIndex',
+    label: 'Superintelligence Index',
+    formatter: (value) => `${(value * 100).toFixed(1)}%`,
+    description:
+      'Composite gauge fusing dominance, supremacy, automation, safety, resilience, and global expansion readiness.',
+  },
+  {
     id: 'capitalVelocity',
     label: 'Capital Velocity',
     formatter: (value) => `${value.toFixed(2)} AGI/h`,
@@ -536,6 +543,69 @@ function renderProgramTable(tableId, programs) {
     `;
     table.append(row);
   }
+}
+
+function renderSuperIntelligence(summary) {
+  const report = summary.superIntelligence || {
+    index: 0,
+    classification: 'formative',
+    narrative: 'Superintelligence telemetry unavailable.',
+    drivers: [],
+    commandAssurance: [],
+    telemetry: {
+      economicDominanceIndex: 0,
+      ownerSupremacyIndex: 0,
+      sovereignSafetyScore: 0,
+      automationScore: 0,
+      shockResilienceScore: 0,
+      globalExpansionReadiness: 0,
+    },
+  };
+
+  const scoreEl = document.getElementById('superintelligence-score');
+  const classificationEl = document.getElementById('superintelligence-classification');
+  const narrativeEl = document.getElementById('superintelligence-narrative');
+  const driversList = document.getElementById('superintelligence-drivers');
+  const assuranceList = document.getElementById('superintelligence-assurance');
+  const telemetryEl = document.getElementById('superintelligence-telemetry');
+
+  if (!scoreEl || !classificationEl || !narrativeEl || !driversList || !assuranceList || !telemetryEl) {
+    return;
+  }
+
+  scoreEl.textContent = `${(report.index * 100).toFixed(1)}%`;
+  const chipLabel = report.classification.replace(/-/g, ' ');
+  classificationEl.textContent = chipLabel;
+  classificationEl.className = `superintelligence-chip superintelligence-${report.classification}`;
+  narrativeEl.textContent = report.narrative;
+
+  driversList.innerHTML = '';
+  if (report.drivers.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No drivers published – run the demo to compute the superintelligence profile.';
+    driversList.append(li);
+  } else {
+    for (const driver of report.drivers) {
+      const li = document.createElement('li');
+      li.textContent = driver;
+      driversList.append(li);
+    }
+  }
+
+  assuranceList.innerHTML = '';
+  if (report.commandAssurance.length === 0) {
+    const li = document.createElement('li');
+    li.textContent = 'No command assurances published.';
+    assuranceList.append(li);
+  } else {
+    for (const assurance of report.commandAssurance) {
+      const li = document.createElement('li');
+      li.textContent = assurance;
+      assuranceList.append(li);
+    }
+  }
+
+  telemetryEl.textContent = `Telemetry: Dominance ${(report.telemetry.economicDominanceIndex * 100).toFixed(1)}% • Supremacy ${(report.telemetry.ownerSupremacyIndex * 100).toFixed(1)}% • Safety ${(report.telemetry.sovereignSafetyScore * 100).toFixed(1)}% • Automation ${(report.telemetry.automationScore * 100).toFixed(1)}% • Resilience ${(report.telemetry.shockResilienceScore * 100).toFixed(1)}% • Expansion ${(report.telemetry.globalExpansionReadiness * 100).toFixed(1)}%`;
 }
 
 function renderCommandCatalog(summary) {
@@ -1016,6 +1086,7 @@ async function renderMermaid(summary) {
   const command = document.getElementById('mermaid-command');
   const supremacy = document.getElementById('mermaid-supremacy');
   const emergency = document.getElementById('mermaid-emergency');
+  const superintelligence = document.getElementById('mermaid-superintelligence');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -1036,6 +1107,9 @@ async function renderMermaid(summary) {
   if (emergency && summary.ownerEmergencyAuthority?.mermaid) {
     emergency.textContent = summary.ownerEmergencyAuthority.mermaid;
     nodes.push(emergency);
+  if (superintelligence && summary.superIntelligence?.mermaid) {
+    superintelligence.textContent = summary.superIntelligence.mermaid;
+    nodes.push(superintelligence);
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -1085,13 +1159,14 @@ function renderAutopilot(summary) {
       economicDominanceIndex: 0,
       capitalVelocity: 0,
       globalExpansionReadiness: 0,
+      superIntelligenceIndex: 0,
       shockResilienceScore: 0,
     },
     commandSequence: [],
   };
   missionEl.textContent = autopilot.mission;
   cadenceEl.textContent = `${autopilot.cadenceHours.toFixed(1)}h cadence`;
-  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness • ${(autopilot.telemetry.shockResilienceScore * 100).toFixed(1)}% shock resilience`;
+  dominanceEl.textContent = `${(autopilot.telemetry.economicDominanceIndex * 100).toFixed(1)}% dominance • ${(autopilot.telemetry.superIntelligenceIndex * 100).toFixed(1)}% superintelligence • ${autopilot.telemetry.capitalVelocity.toFixed(2)} AGI/h • ${(autopilot.telemetry.globalExpansionReadiness * 100).toFixed(1)}% readiness • ${(autopilot.telemetry.shockResilienceScore * 100).toFixed(1)}% shock resilience`;
   guardrailList.innerHTML = '';
   for (const guardrail of autopilot.guardrails) {
     const li = document.createElement('li');
@@ -1164,6 +1239,7 @@ async function bootstrap(dataPath = defaultDataPath) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
+  renderSuperIntelligence(summary);
   renderOwnerDominion(summary);
   renderEmergencyAuthority(summary);
   renderCommandCatalog(summary);
@@ -1221,6 +1297,7 @@ async function renderSummary(summary) {
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderOwnerSupremacy(summary);
+  renderSuperIntelligence(summary);
   renderOwnerDominion(summary);
   renderEmergencyAuthority(summary);
   renderCommandCatalog(summary);

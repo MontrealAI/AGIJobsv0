@@ -4,6 +4,22 @@
 
 This demo packages a production-grade Alpha Node stack that can be deployed, governed, and audited with a single command. It showcases how AGI Jobs v0 (v2) unlocks unprecedented leverage: ENS-verified identity, fully-governed staking, autonomous specialist swarms, and real-time compliance analytics.
 
+## ✨ Grand Demo Command Nexus (AGI Alpha Node v0/v2)
+
+The new [`grand_demo/`](grand_demo/README.md) directory contains an institution-grade showcase that a non-technical operator can launch with a single command. Highlights:
+
+- **Container-native deployment:** `docker compose -f demo/AGI-Alpha-Node-v0/grand_demo/docker-compose.yaml up --build`
+- **Typer-driven console:** `agi-alpha-node demo-job` executes the canonical wealth-generation scenario while emitting structured compliance logs.
+- **Command Nexus dashboard:** FastAPI UI with cinematic mermaid topology, live compliance scorecards, and operator runbook.
+- **Prometheus metrics:** Exports `agi_alpha_node_*` gauges ready for observability pipelines.
+- **Safety drills & governance controls:** ENS ownership, pause transactions, and automated antifragility drills wired in by default.
+
+Run tests for the grand demo with:
+
+```bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/AGI-Alpha-Node-v0/grand_demo/tests
+```
+
 ## 🎬 Instant Experience
 
 ```bash

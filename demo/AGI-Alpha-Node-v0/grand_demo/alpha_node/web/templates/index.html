@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Alpha Node Command Nexus</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.esm.min.mjs"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+    </script>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <h1>AGI Alpha Node Command Nexus</h1>
+        <p>
+          Experience the institution-grade autonomous wealth engine powered by AGI Jobs v2. Deploy, govern,
+          and scale value creation with a single command.
+        </p>
+        <div class="cta">
+          <a href="https://github.com/MontrealAI/AGIJobsv0" target="_blank">Explore the Codebase</a>
+          <a href="https://agi.global" target="_blank" class="secondary">Join the Operator Network</a>
+        </div>
+      </section>
+
+      <section class="diagram">
+        <h2>End-to-End Alpha Pipeline</h2>
+        <div class="mermaid">
+          {{ mermaid_diagram }}
+        </div>
+      </section>
+
+      <section class="metrics">
+        <h2>Live Governance Scorecard</h2>
+        <div id="scorecard" class="cards"></div>
+      </section>
+
+      <section class="runbook">
+        <h2>Operator Runbook</h2>
+        <ol>
+          <li>Verify ENS ownership via the console: <code>agi-alpha-node bootstrap</code>.</li>
+          <li>Stake $AGIALPHA and activate the node: <code>agi-alpha-node demo-job</code>.</li>
+          <li>Monitor metrics on <code>http://localhost:9108</code> (Prometheus) and this dashboard.</li>
+          <li>Initiate emergency pause using the governance multisig if anomalies arise.</li>
+          <li>Review compliance scorecards and automated drill reports daily.</li>
+        </ol>
+      </section>
+    </main>
+    <script type="module" src="/static/js/app.js"></script>
+  </body>
+</html>

@@ -28,10 +28,13 @@ python run_demo.py \
   --commit-blocks 5 \
   --reveal-blocks 6 \
   --slash-non-reveal 0.35 \
-  --output summary.json
+  --output summary.json \
+  --web-artifacts web/data
 ```
 
 This single command spins up the validator constellation, performs VRF committee selection, executes the commit–reveal round with enforced block windows, batches 1,000 job attestations into one ZK proof, fires a Sentinel anomaly, and exports a JSON compliance bundle.  The JSON includes the selected committee, truthful outcome, slashed validator list, paused domains, proof root, gas saved by the batch attestation, the full timeline of the validation round, and a log of owner governance actions applied during the run.
+
+Passing `--web-artifacts web/data` additionally produces `summary.json`, `events.json`, `timeline.json`, and `owner-actions.json` files that the `web/index.html` command deck automatically ingests.  Open the HTML file locally after running the command to see the live metrics and sentinel alert stream updated with your run's telemetry.
 
 You can also run the package directly:
 

@@ -96,6 +96,35 @@
       .event strong {
         color: var(--accent-2);
       }
+      .event pre {
+        margin: 0.35rem 0 0;
+        white-space: pre-wrap;
+      }
+      .metrics-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+      }
+      .metric {
+        background: rgba(15, 23, 42, 0.6);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        text-align: center;
+        box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.25);
+      }
+      .metric span {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(148, 163, 184, 0.85);
+      }
+      .metric strong {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 1.35rem;
+        color: var(--fg);
+      }
     </style>
     <script>
       mermaid.initialize({ startOnLoad: true, theme: "dark" });
@@ -168,6 +197,12 @@ $ python run_demo.py \
 
     <section class="card-grid">
       <article class="card">
+        <h3>Mission Metrics</h3>
+        <div id="metrics" class="metrics-grid">
+          <p>Awaiting telemetry&hellip;</p>
+        </div>
+      </article>
+      <article class="card">
         <h3>Live Event Feed</h3>
         <div id="events" class="event-log"></div>
       </article>
@@ -188,7 +223,7 @@ $ python run_demo.py \
     </footer>
 
     <script>
-      const EVENT_DATA = [
+      const DEFAULT_EVENTS = [
         {
           type: "ValidatorRegistered",
           payload: {
@@ -265,13 +300,101 @@ $ python run_demo.py \
         },
       ];
 
-      const container = document.getElementById("events");
-      EVENT_DATA.forEach((event) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "event";
-        wrapper.innerHTML = `<strong>${event.type}</strong><br />${JSON.stringify(event.payload, null, 2)}`;
-        container.appendChild(wrapper);
-      });
+      const DEFAULT_SUMMARY = {
+        committee: {
+          "0xaa00000000000000000000000000000000000001": "atlas.club.agi.eth",
+          "0xaa00000000000000000000000000000000000002": "zephyr.club.agi.eth",
+          "0xaa00000000000000000000000000000000000003": "nova.club.agi.eth",
+        },
+        truthfulOutcome: true,
+        slashedValidators: ["0xaa00000000000000000000000000000000000003"],
+        pausedDomains: ["synthetic-biology"],
+        gasSaved: 218000000,
+      };
+
+      async function fetchJson(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${path}: ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function renderEvents(events) {
+        const container = document.getElementById("events");
+        if (!container) {
+          return;
+        }
+        container.innerHTML = "";
+        if (!Array.isArray(events) || events.length === 0) {
+          container.innerHTML = "<p>No events captured yet.</p>";
+          return;
+        }
+        events.slice(0, 24).forEach((event) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "event";
+          const payload = JSON.stringify(event.payload, null, 2);
+          wrapper.innerHTML = `<strong>${event.type}</strong><br /><pre>${payload}</pre>`;
+          container.appendChild(wrapper);
+        });
+      }
+
+      function renderMetrics(summary) {
+        const container = document.getElementById("metrics");
+        if (!container) {
+          return;
+        }
+        const committeeSize = summary.committee ? Object.keys(summary.committee).length : 0;
+        const paused = Array.isArray(summary.pausedDomains) ? summary.pausedDomains.length : 0;
+        const slashed = Array.isArray(summary.slashedValidators) ? summary.slashedValidators.length : 0;
+        const gasSaved = summary.gasSaved || 0;
+        const truthfulOutcome = summary.truthfulOutcome ? "APPROVE" : "REJECT";
+
+        const metrics = [
+          { label: "Validators", value: committeeSize },
+          { label: "Paused Domains", value: paused },
+          { label: "Slashed Validators", value: slashed },
+          {
+            label: "Gas Saved",
+            value: gasSaved ? `${Number(gasSaved).toLocaleString()} gas` : "0",
+          },
+          { label: "Outcome", value: truthfulOutcome },
+        ];
+        container.innerHTML = metrics
+          .map(
+            (metric) => `
+              <div class="metric">
+                <span>${metric.label}</span>
+                <strong>${metric.value}</strong>
+              </div>
+            `,
+          )
+          .join("");
+      }
+
+      async function bootstrap() {
+        let events = DEFAULT_EVENTS;
+        let summary = { ...DEFAULT_SUMMARY };
+        try {
+          const fetchedEvents = await fetchJson("data/events.json");
+          if (Array.isArray(fetchedEvents) && fetchedEvents.length) {
+            events = fetchedEvents;
+          }
+        } catch (error) {
+          console.warn("Using default events:", error);
+        }
+        renderEvents(events);
+
+        try {
+          const fetchedSummary = await fetchJson("data/summary.json");
+          summary = { ...summary, ...fetchedSummary };
+        } catch (error) {
+          console.warn("Using default summary:", error);
+        }
+        renderMetrics(summary);
+      }
+
+      bootstrap();
     </script>
   </body>
 </html>

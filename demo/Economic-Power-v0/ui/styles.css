@@ -396,6 +396,97 @@ main {
   color: var(--text-secondary);
 }
 
+.superintelligence-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.superintelligence-card {
+  background: rgba(7, 13, 26, 0.78);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 1.2rem;
+  padding: 1.25rem;
+  box-shadow: 0 20px 35px rgba(76, 29, 149, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.superintelligence-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #c4b5fd;
+}
+
+.superintelligence-score {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #ede9fe;
+}
+
+.superintelligence-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.22);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.superintelligence-chip.superintelligence-transcendent-dominion {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: rgba(34, 197, 94, 0.6);
+  color: #ecfdf5;
+}
+
+.superintelligence-chip.superintelligence-planetary-dominant {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #dbeafe;
+}
+
+.superintelligence-chip.superintelligence-ascendant {
+  background: rgba(250, 204, 21, 0.24);
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #fef3c7;
+}
+
+.superintelligence-chip.superintelligence-formative {
+  background: rgba(248, 113, 113, 0.24);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fee2e2;
+}
+
+.superintelligence-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.superintelligence-list li {
+  background: rgba(124, 58, 237, 0.15);
+  border-left: 3px solid rgba(124, 58, 237, 0.6);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.85rem;
+  font-size: 0.9rem;
+  color: rgba(237, 233, 254, 0.9);
+}
+
+.superintelligence-telemetry {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(224, 231, 255, 0.8);
+}
+
 .quick-actions p {
   margin: 0.35rem 0;
   color: var(--text-secondary);

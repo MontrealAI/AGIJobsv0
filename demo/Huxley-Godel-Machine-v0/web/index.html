@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Huxley–Gödel Machine Demo Control Tower</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true, theme: "forest" });</script>
+  </head>
+  <body>
+    <header>
+      <h1>Huxley–Gödel Machine Demo 👁️✨</h1>
+      <p>
+        Live insights from the autonomous clade-metaproductivity engine. Run
+        <code>python demo/Huxley-Godel-Machine-v0/run_demo.py</code> and drop the
+        generated <code>hgm_run.json</code> into <code>artifacts/</code> to explore.
+      </p>
+    </header>
+    <main>
+      <section class="summary">
+        <h2>Economic Summary</h2>
+        <div id="summary-cards" class="grid"></div>
+      </section>
+      <section>
+        <h2>Autonomous Evolution Flow</h2>
+        <div class="mermaid" id="flowchart">
+          graph LR
+            A[Start: Load Config] --> B{Thermostat}
+            B -->|ROI >= Target| C[Increase Concurrency]
+            B -->|ROI < Target| D[Constrain Exploration]
+            C --> E[HGM Engine]
+            D --> E
+            E -->|Expand| F[Self-Modification]
+            E -->|Evaluate| G[Mission Execution]
+            F --> H[Ledger Update]
+            G --> H
+            H --> B
+            H --> I[Sentinel Rules]
+            I -->|Safe| B
+            I -->|Halt| J[Graceful Shutdown]
+        </div>
+      </section>
+      <section>
+        <h2>Lineage Performance Explorer</h2>
+        <div id="lineage"></div>
+      </section>
+    </main>
+    <footer>
+      <p>
+        Built with ❤️ for non-technical founders. Every control surface is editable in
+        <code>config/hgm_config.json</code> — tune ROI targets, budgets, and exploration in seconds.
+      </p>
+    </footer>
+    <script type="module" src="viewer.js"></script>
+  </body>
+</html>

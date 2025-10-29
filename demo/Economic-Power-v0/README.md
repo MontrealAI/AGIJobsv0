@@ -46,6 +46,8 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-emergency-authority.json` – emergency authority console snapshot with pause/resume commands, alert mesh, module triage, circuit breakers, and autopilot readiness classification.
 - `owner-emergency-authority.md` – printable emergency briefing covering immediate commands, metrics, recommended actions, and a live mermaid command lattice.
 - `owner-emergency-authority.mmd` – mermaid emergency graph routing the owner multi-sig through pause/resume, circuit breakers, guardrails, and critical modules.
+- `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
+- `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
 
 > **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
 
@@ -137,6 +139,7 @@ The UI inside `demo/Economic-Power-v0/ui/` offers:
 - Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
 - Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.
 - Owner supremacy mesh quantifying the new supremacy index, guardrail density, and program coverage with a live mermaid map.
+- Superintelligence control layer exposing the civilisation-scale superintelligence index, dominance drivers, command assurances, and a live mermaid contribution graph.
 - Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
 - Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
 - Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.

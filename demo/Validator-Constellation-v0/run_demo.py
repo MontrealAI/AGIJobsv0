@@ -6,7 +6,11 @@ import argparse
 import json
 from pathlib import Path
 
-from validator_constellation.demo_runner import run_validator_constellation_demo
+from validator_constellation.demo_runner import (
+    run_validator_constellation_demo,
+    summary_to_dict,
+    write_web_artifacts,
+)
 
 
 def main() -> None:
@@ -53,6 +57,12 @@ def main() -> None:
         default=None,
         help="Optional path to export the summary JSON",
     )
+    parser.add_argument(
+        "--web-artifacts",
+        type=Path,
+        default=None,
+        help="Directory for exporting web dashboard artefacts (events, summary, owner actions)",
+    )
     args = parser.parse_args()
     overrides = {}
     if args.quorum is not None:
@@ -75,23 +85,16 @@ def main() -> None:
         config_overrides=overrides or None,
         budget_limit=args.budget,
     )
-    data = {
-        "committee": summary.committee,
-        "truthfulOutcome": summary.truthful_outcome,
-        "roundResult": summary.round_result,
-        "slashedValidators": summary.slashed_validators,
-        "pausedDomains": summary.paused_domains,
-        "batchProofRoot": summary.batch_proof_root,
-        "gasSaved": summary.gas_saved,
-        "timeline": summary.timeline,
-        "ownerActions": summary.owner_actions,
-        "sentinelAlerts": summary.sentinel_alerts,
-        "domainEvents": summary.domain_events,
-    }
+    data = summary_to_dict(summary)
     print(json.dumps(data, indent=2))
     if args.output:
         args.output.write_text(json.dumps(data, indent=2))
         print(f"Summary exported to {args.output}")
+    if args.web_artifacts:
+        manifest = write_web_artifacts(summary, args.web_artifacts)
+        print("Web artefacts exported:")
+        for label, path in manifest.items():
+            print(f"  {label}: {path}")
 
 
 if __name__ == "__main__":
