@@ -1,27 +1,13 @@
-"""System configuration primitives for the Validator Constellation demo."""
-
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Iterable, Tuple
+from dataclasses import dataclass, replace
+from decimal import Decimal
+from typing import Dict, Iterable, Sequence, Tuple
 
 
-@dataclass(slots=True)
+@dataclass
 class SystemConfig:
-    """Holds configurable parameters for the demo.
-
-    The values are intentionally generous so that non-technical
-    operators can explore edge-cases without modifying source
-    code.  Every parameter is mutable at runtime to emulate the
-    privileged control that the contract owner wields in
-    production deployments.
-    """
-
-    commit_phase_blocks: int = 4
-    reveal_phase_blocks: int = 4
-    quorum: int = 2
-    slash_fraction_non_reveal: float = 0.25
-    slash_fraction_incorrect_vote: float = 0.5
+    owner_address: str = "0x0000000000000000000000000000000000000abc"
     allowed_validator_roots: Tuple[str, ...] = (
         "club.agi.eth",
         "alpha.club.agi.eth",
@@ -34,27 +20,47 @@ class SystemConfig:
         "node.agi.eth",
         "alpha.node.agi.eth",
     )
-    committee_size: int = 3
+    blacklist: Tuple[str, ...] = tuple()
+    commit_phase_blocks: int = 3
+    reveal_phase_blocks: int = 3
+    quorum: int = 3
+    slash_fraction_non_reveal: float = 0.25
+    slash_fraction_dishonest: float = 0.4
+    stake_unit: Decimal = Decimal("32")
+    committee_size: int = 4
     batch_proof_capacity: int = 1_000
-    owner_address: str = "0x0000000000000000000000000000000000000001"
-    blacklist: Tuple[str, ...] = field(default_factory=tuple)
-
-    def update(self, **kwargs) -> None:
-        """Update configuration parameters at runtime.
-
-        The method mirrors owner-governed configuration changes on
-        chain.  Unknown keys raise ``AttributeError`` so that
-        accidental typos cannot silently degrade system security.
-        """
-
-        for key, value in kwargs.items():
-            if not hasattr(self, key):
-                raise AttributeError(f"Unknown configuration field: {key}")
-            setattr(self, key, value)
+    gas_saved_per_job: int = 21000
+    verifying_key: str = "0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed"
+    proving_key: str = "0x0ddc0ffee0ddc0ffee0ddc0ffee0ddc0ffee0ddc0ffee0ddc0ffee0ddc0ffee"
+    sentinel_grace_ratio: float = 0.05
+    default_domains: Tuple[Dict[str, object], ...] = (
+        {
+            "domain": "synthetic-biology",
+            "human_name": "Synthetic Biology Lab",
+            "budget_limit": 1_500_000.0,
+            "unsafe_opcodes": ["SELFDESTRUCT", "DELEGATECALL"],
+            "allowed_targets": [
+                "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            ],
+            "max_calldata_bytes": 4096,
+            "forbidden_selectors": ["0xa9059cbb", "0x23b872dd"],
+        },
+    )
 
     @classmethod
-    def with_overrides(cls, overrides: Iterable[tuple[str, object]]) -> "SystemConfig":
-        config = cls()
+    def with_overrides(cls, overrides: Iterable[Tuple[str, object]]) -> "SystemConfig":
+        base = cls()
+        data = {field.name: getattr(base, field.name) for field in base.__dataclass_fields__.values()}
         for key, value in overrides:
-            setattr(config, key, value)
-        return config
+            data[key] = value
+        return cls(**data)
+
+    def clone(self, **updates: object) -> "SystemConfig":
+        return replace(self, **updates)
+
+    def domain_by_id(self, domain_id: str) -> Dict[str, object]:
+        for domain in self.default_domains:
+            if domain["domain"] == domain_id:
+                return dict(domain)
+        raise KeyError(f"Domain {domain_id} not configured")

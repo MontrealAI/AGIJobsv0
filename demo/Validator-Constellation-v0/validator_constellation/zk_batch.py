@@ -1,58 +1,61 @@
-"""Zero-knowledge batch attestation simulator."""
-
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
-from hashlib import blake2b
-from typing import Iterable, List
+from typing import Iterable
 
 from .config import SystemConfig
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass
 class JobResult:
     job_id: str
     outcome_hash: str
     execution_digest: str
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass
 class BatchProof:
-    batch_root: str
     job_count: int
-    circuit_hash: str
+    digest: str
+    proof: str
+    gas_saved: int
 
 
 class ZKBatchAttestor:
-    """Aggregates job results into a single verifiable proof."""
-
     def __init__(self, config: SystemConfig) -> None:
         self.config = config
 
-    def _hash_job(self, job: JobResult) -> bytes:
-        hasher = blake2b(digest_size=32)
-        hasher.update(job.job_id.encode())
-        hasher.update(job.outcome_hash.encode())
-        hasher.update(job.execution_digest.encode())
-        return hasher.digest()
+    def _digest_jobs(self, jobs: Iterable[JobResult]) -> str:
+        aggregate = hashlib.sha3_256()
+        for job in jobs:
+            aggregate.update(job.job_id.encode())
+            aggregate.update(job.outcome_hash.encode())
+            aggregate.update(job.execution_digest.encode())
+        return aggregate.hexdigest()
 
-    def create_batch_proof(self, jobs: Iterable[JobResult], circuit_hash: str = "constellation-v1") -> BatchProof:
-        jobs_list = list(jobs)
-        if not jobs_list:
-            raise ValueError("Cannot create proof for empty job list")
-        if len(jobs_list) > self.config.batch_proof_capacity:
-            raise ValueError("Job count exceeds batch capacity")
-        hasher = blake2b(digest_size=32)
-        for job in jobs_list:
-            hasher.update(self._hash_job(job))
-        batch_root = hasher.hexdigest()
-        return BatchProof(batch_root=batch_root, job_count=len(jobs_list), circuit_hash=circuit_hash)
+    def create_batch_proof(self, jobs: Iterable[JobResult]) -> BatchProof:
+        job_list = list(jobs)
+        if not job_list:
+            raise ValueError("no jobs provided")
+        if len(job_list) > self.config.batch_proof_capacity:
+            raise ValueError("job batch exceeds attestation capacity")
+        digest = self._digest_jobs(job_list)
+        proof = hashlib.sha3_256(f"{self.config.proving_key}:{digest}".encode()).hexdigest()
+        gas_saved = self.estimate_gas_saved(len(job_list))
+        return BatchProof(len(job_list), digest, proof, gas_saved)
 
     def verify_batch_proof(self, jobs: Iterable[JobResult], proof: BatchProof) -> bool:
-        reconstructed = self.create_batch_proof(jobs, circuit_hash=proof.circuit_hash)
-        return reconstructed == proof
+        job_list = list(jobs)
+        if len(job_list) != proof.job_count:
+            return False
+        digest = self._digest_jobs(job_list)
+        if digest != proof.digest:
+            return False
+        expected_proof = hashlib.sha3_256(f"{self.config.proving_key}:{digest}".encode()).hexdigest()
+        if expected_proof != proof.proof:
+            return False
+        return True
 
-    def estimate_gas_saved(self, jobs: int) -> int:
-        single_tx_cost = 210_000
-        zk_tx_cost = 350_000
-        return max((single_tx_cost * jobs) - zk_tx_cost, 0)
+    def estimate_gas_saved(self, job_count: int) -> int:
+        return job_count * self.config.gas_saved_per_job
