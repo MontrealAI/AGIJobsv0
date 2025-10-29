@@ -112,11 +112,17 @@ class DemoOrchestrator:
                 "Infused with CMP-guided insights and governance hooks."
             )
             child = self.engine.create_child(parent.agent_id, quality=new_quality, description=description)
-            self.metrics.record_expansion()
+            cost = self.parameters.expansion_cost
+            self.metrics.record_expansion(cost=cost)
             if log:
                 log(
-                    "🧬 Expansion → created {child} (quality={quality:.2%}) from parent {parent}"
-                    .format(child=child.agent_id, quality=new_quality, parent=parent.agent_id)
+                    "🧬 Expansion → created {child} (quality={quality:.2%}) cost=${cost:.2f} from parent {parent}"
+                    .format(
+                        child=child.agent_id,
+                        quality=new_quality,
+                        cost=cost,
+                        parent=parent.agent_id,
+                    )
                 )
             self.engine.mark_idle(parent.agent_id)
         finally:

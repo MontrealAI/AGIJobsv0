@@ -25,7 +25,8 @@ class RunMetrics:
             self.total_failures += 1
             self.agent_failures[agent_id] = self.agent_failures.get(agent_id, 0) + 1
 
-    def record_expansion(self) -> None:
+    def record_expansion(self, *, cost: float) -> None:
+        self.total_cost += cost
         self.expansions_completed += 1
 
     @property
