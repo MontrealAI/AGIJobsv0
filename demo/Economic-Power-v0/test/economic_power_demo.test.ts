@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import path from 'node:path';
 import test from 'node:test';
 import { loadScenarioFromFile, runScenario } from '../scripts/runDemo';
-import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/ownerAutopilot';
+import { buildAutopilotBrief, renderAutopilotBrief } from '../scripts/autopilotBrief';
 import './owner_programs.test';
 
 const scenarioPath = path.join(__dirname, '..', 'scenario', 'baseline.json');

@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { buildAutopilotBrief, renderAutopilotBrief } from './autopilotBrief';
 
 const commandProgramSchema = z.object({
   id: z.string(),
@@ -390,7 +391,7 @@ type SuperIntelligenceReport = {
   mermaid: string;
 };
 
-type Summary = {
+export type Summary = {
   scenarioId: string;
   title: string;
   generatedAt: string;
@@ -3381,6 +3382,11 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-autopilot.json'),
     JSON.stringify(summary.ownerAutopilot, null, 2),
+  );
+  const autopilotBrief = buildAutopilotBrief(summary);
+  await fs.writeFile(
+    path.join(outputDir, 'owner-autopilot-brief.md'),
+    renderAutopilotBrief(autopilotBrief),
   );
   await fs.writeFile(
     path.join(outputDir, 'owner-autopilot.mmd'),
