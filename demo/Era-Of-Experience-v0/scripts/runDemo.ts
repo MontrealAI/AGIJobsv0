@@ -1,134 +1,91 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+#!/usr/bin/env node
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import { loadScenario, runExperienceDemo } from './simulation';
-import { loadOwnerControls } from './rewardComposer';
-import { SimulationConfig, SimulationReport } from './types';
+import process from 'node:process';
+import { runEraOfExperienceDemo } from '../src/demoRunner';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-async function loadSimulationConfig(relativePath: string): Promise<SimulationConfig> {
-  const absolute = path.isAbsolute(relativePath) ? relativePath : path.join(__dirname, '..', relativePath);
-  const raw = await import('node:fs/promises').then(({ readFile }) => readFile(absolute, 'utf8'));
-  return JSON.parse(raw) as SimulationConfig;
+interface CliArgs {
+  scenario: string;
+  reward?: string;
+  output?: string;
+  uiData?: string;
+  jobs?: number;
+  seed?: number;
 }
 
-function renderMarkdown(report: SimulationReport): string {
-  const gmvLiftPct = (report.improvement.gmvLiftPct * 100).toFixed(2);
-  const roiDelta = report.improvement.roiDelta.toFixed(3);
-  const latencyDelta = report.improvement.avgLatencyDelta.toFixed(2);
-  return `# Era of Experience Demo Report\n\n` +
-    `## Headline Results\n\n` +
-    `- **Baseline GMV:** ${report.baseline.grossMerchandiseValue.toFixed(2)} tokens\n` +
-    `- **Experience-Native GMV:** ${report.rlEnhanced.grossMerchandiseValue.toFixed(2)} tokens\n` +
-    `- **GMV Lift:** ${gmvLiftPct}%\n` +
-    `- **ROI Delta:** ${roiDelta}\n` +
-    `- **Latency Delta:** ${latencyDelta} hours (negative is faster)\n` +
-    `- **Success Rate Delta:** ${(report.improvement.successRateDelta * 100).toFixed(2)} percentage points\n\n` +
-    `- **Sustainability Score:** ${(report.rlEnhanced.sustainabilityScore * 100).toFixed(1)}%\n\n` +
-    `## Experience Flow\n\n` +
-    '```mermaid\n' + report.mermaidFlow + '\n```\n\n' +
-    `## Value Stream\n\n` +
-    '```mermaid\n' + report.mermaidValueStream + '\n```\n\n' +
-    `## Owner Console Snapshot\n\n` +
-    `- Exploration: ${(report.ownerConsole.controls.exploration * 100).toFixed(1)}%\n` +
-    `- Paused: ${report.ownerConsole.controls.paused ? 'Yes' : 'No'}\n` +
-    `- Sentinel Activated: ${report.ownerConsole.safeguardStatus.sentinelActivated ? 'Yes' : 'No'}\n` +
-    `- Recommended Actions:\n` +
-    report.ownerConsole.recommendedActions.map((action) => `  - ${action}`).join('\n') + '\n\n' +
-    '```mermaid\n' + report.ownerConsole.actionableMermaid + '\n```\n\n' +
-    `## Triple-Audit Verification\n\n` +
-    `- **Status:** ${report.audit.status.toUpperCase()} (generated ${report.audit.generatedAt})\n` +
-    report.audit.sections
-      .map((section) => {
-        const header = `  - ${section.name}: ${section.status.toUpperCase()}`;
-        if (section.notes.length === 0) {
-          return `${header} (no deviations detected)`;
-        }
-        const bulletNotes = section.notes.map((note) => `    - ${note}`).join('\n');
-        return `${header}\n${bulletNotes}`;
-      })
-      .join('\n') + '\n';
+function parseArgs(argv: string[]): CliArgs {
+  const args: CliArgs = { scenario: 'demo/Era-Of-Experience-v0/config/scenarios/baseline.json' };
+  for (let i = 2; i < argv.length; i += 1) {
+    const value = argv[i];
+    if (value === '--scenario' && argv[i + 1]) {
+      args.scenario = argv[i + 1];
+      i += 1;
+    } else if (value === '--reward' && argv[i + 1]) {
+      args.reward = argv[i + 1];
+      i += 1;
+    } else if (value === '--output' && argv[i + 1]) {
+      args.output = argv[i + 1];
+      i += 1;
+    } else if (value === '--ui-data' && argv[i + 1]) {
+      args.uiData = argv[i + 1];
+      i += 1;
+    } else if (value === '--jobs' && argv[i + 1]) {
+      args.jobs = Number(argv[i + 1]);
+      i += 1;
+    } else if (value === '--seed' && argv[i + 1]) {
+      args.seed = Number(argv[i + 1]);
+      i += 1;
+    } else if (value === '--help') {
+      printHelp();
+      process.exit(0);
+    }
+  }
+  return args;
 }
 
-export interface DemoOptions {
-  scenarioPath?: string;
-  configPath?: string;
-  ownerControlsPath?: string;
-  outputDir?: string;
+function printHelp(): void {
+  console.log(`Era of Experience Demo
+Usage: npm run demo:era-of-experience -- [options]
+
+Options:
+  --scenario <path>    Path to scenario JSON (default baseline)
+  --reward <path>      Optional reward override JSON
+  --output <dir>       Directory for generated reports
+  --ui-data <path>     Path for UI summary JSON
+  --jobs <number>      Override number of jobs in run
+  --seed <number>      Override deterministic seed
+  --help               Show this message
+`);
 }
 
-export async function runEraOfExperienceDemo(options: DemoOptions = {}): Promise<SimulationReport> {
-  const scenarioPath = options.scenarioPath ?? 'scenario/experience-stream.json';
-  const configPath = options.configPath ?? 'config/simulation-config.json';
-  const ownerControlsPath = options.ownerControlsPath ?? 'config/owner-controls.json';
-  const outputDir = options.outputDir ?? 'reports';
+async function main(): Promise<void> {
+  const args = parseArgs(process.argv);
+  const scenarioPath = path.resolve(args.scenario);
+  const rewardPath = args.reward ? path.resolve(args.reward) : undefined;
+  const outputDir = args.output ? path.resolve(args.output) : undefined;
+  const uiData = args.uiData ? path.resolve(args.uiData) : undefined;
 
-  const [scenario, config, ownerControls] = await Promise.all([
-    loadScenario(scenarioPath),
-    loadSimulationConfig(configPath),
-    loadOwnerControls(ownerControlsPath),
-  ]);
-
-  const report = await runExperienceDemo(scenario, config, ownerControls);
-  const absoluteOutput = path.isAbsolute(outputDir) ? outputDir : path.join(__dirname, '..', outputDir);
-  await mkdir(absoluteOutput, { recursive: true });
-  const jsonPath = path.join(absoluteOutput, 'era_of_experience_report.json');
-  const markdownPath = path.join(absoluteOutput, 'era_of_experience_report.md');
-  await writeFile(jsonPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
-  await writeFile(markdownPath, renderMarkdown(report), 'utf8');
-  return report;
-}
-
-async function cli(): Promise<void> {
-  const argv = await yargs(hideBin(process.argv))
-    .option('scenario', {
-      type: 'string',
-      default: 'scenario/experience-stream.json',
-      describe: 'Path to the scenario JSON file',
-    })
-    .option('config', {
-      type: 'string',
-      default: 'config/simulation-config.json',
-      describe: 'Path to the simulation configuration JSON file',
-    })
-    .option('controls', {
-      type: 'string',
-      default: 'config/owner-controls.json',
-      describe: 'Path to the owner controls JSON file',
-    })
-    .option('output', {
-      type: 'string',
-      default: 'reports',
-      describe: 'Directory where reports will be written',
-    })
-    .help()
-    .parse();
-
-  const report = await runEraOfExperienceDemo({
-    scenarioPath: argv.scenario,
-    configPath: argv.config,
-    ownerControlsPath: argv.controls,
-    outputDir: argv.output,
+  const result = await runEraOfExperienceDemo({
+    scenarioPath,
+    rewardPath,
+    outputDir,
+    uiDataPath: uiData,
+    writeReports: true,
+    jobCountOverride: args.jobs,
+    seedOverride: args.seed
   });
 
-  console.log('Era of Experience Demo complete. Highlights:');
-  console.table({
-    baselineGMV: report.baseline.grossMerchandiseValue.toFixed(2),
-    rlGMV: report.rlEnhanced.grossMerchandiseValue.toFixed(2),
-    gmvLiftPct: (report.improvement.gmvLiftPct * 100).toFixed(2),
-    roiDelta: report.improvement.roiDelta.toFixed(3),
-    latencyDelta: report.improvement.avgLatencyDelta.toFixed(2),
-    sustainabilityScore: (report.rlEnhanced.sustainabilityScore * 100).toFixed(1),
-  });
+  const lift = (result.delta.gmvDelta ?? 1).toFixed(3);
+  console.log('\n✅ Era of Experience Demo complete');
+  console.log(`Scenario: ${result.scenario.name}`);
+  console.log(`Baseline GMV: ${result.baseline.metrics.gmv.toFixed(2)}`);
+  console.log(`Learning GMV: ${result.learning.metrics.gmv.toFixed(2)}`);
+  console.log(`GMV Lift: ${lift}x`);
+  console.log(`ROI Lift: ${(result.delta.roiDelta ?? 1).toFixed(3)}x`);
+  console.log('Reports written to', outputDir ?? 'demo/Era-Of-Experience-v0/reports');
 }
 
-if (import.meta.url === `file://${__filename}`) {
-  cli().catch((error) => {
-    console.error('Era of Experience demo failed:', error);
-    process.exitCode = 1;
-  });
-}
+main().catch((error) => {
+  console.error('❌ Era of Experience Demo failed');
+  console.error(error);
+  process.exitCode = 1;
+});

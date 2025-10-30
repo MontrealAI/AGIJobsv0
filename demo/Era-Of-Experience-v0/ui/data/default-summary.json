@@ -1,0 +1,1853 @@
+{
+  "scenario": {
+    "name": "era-of-experience-baseline",
+    "description": "Balanced Era of Experience activation with resilient agent swarm and production reward steering.",
+    "seed": 1337,
+    "jobs": {
+      "count": 96,
+      "valueRange": [
+        450,
+        4800
+      ],
+      "complexityRange": [
+        0.15,
+        0.95
+      ],
+      "deadlineRange": [
+        6,
+        72
+      ],
+      "criticalMass": 0.42,
+      "enterpriseMix": 0.38
+    },
+    "agents": [
+      {
+        "id": "AURORA-PRIME",
+        "skill": 0.92,
+        "speed": 0.88,
+        "reliability": 0.97,
+        "cost": 0.62,
+        "adaptivity": 0.86,
+        "stake": 750000
+      },
+      {
+        "id": "LYRA-VANGUARD",
+        "skill": 0.84,
+        "speed": 0.79,
+        "reliability": 0.82,
+        "cost": 0.46,
+        "adaptivity": 0.81,
+        "stake": 520000
+      },
+      {
+        "id": "ORION-SYNTH",
+        "skill": 0.9,
+        "speed": 0.7,
+        "reliability": 0.68,
+        "cost": 0.36,
+        "adaptivity": 0.65,
+        "stake": 410000
+      },
+      {
+        "id": "VEGA-QUANTA",
+        "skill": 0.72,
+        "speed": 0.65,
+        "reliability": 0.7,
+        "cost": 0.31,
+        "adaptivity": 0.7,
+        "stake": 360000
+      }
+    ],
+    "market": {
+      "volatility": 0.18,
+      "demandPulse": 0.61,
+      "regulatoryFriction": 0.12
+    },
+    "reward": {
+      "successWeight": 0.6,
+      "valueWeight": 0.28,
+      "latencyWeight": 0.07,
+      "costWeight": 0.25,
+      "satisfactionWeight": 0.14,
+      "longTermCompoundingWeight": 0.1
+    },
+    "policy": {
+      "learningRate": 0.12,
+      "batchSize": 12,
+      "experienceWindow": 384,
+      "explorationEpsilon": 0.12,
+      "temperature": 0.9,
+      "entropyWeight": 0.015
+    }
+  },
+  "baseline": {
+    "label": "baseline",
+    "metrics": {
+      "gmv": 56413.296137878206,
+      "cost": 5236.068023461889,
+      "successes": 92,
+      "failures": 4,
+      "averageLatency": 4.340392006395735,
+      "averageSatisfaction": 0.8702235814160685,
+      "roi": 10.773980759054362,
+      "autonomyLift": 1.5683103534156237,
+      "rewardAverage": 0.6961754447845883,
+      "rewardVolatility": 0.2774428092400141,
+      "learningSignalDensity": 0.9583333333333334
+    },
+    "trajectory": [
+      {
+        "jobId": "JOB-1",
+        "cumulativeGMV": 794.3262287182733,
+        "cumulativeCost": 45.71199359999999,
+        "runningROI": 17.376757523834478,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1058341631113942
+      },
+      {
+        "jobId": "JOB-2",
+        "cumulativeGMV": 2683.8923442643136,
+        "cumulativeCost": 92.39652435787292,
+        "runningROI": 29.047546570788565,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1201485587134479
+      },
+      {
+        "jobId": "JOB-3",
+        "cumulativeGMV": 3316.941664146725,
+        "cumulativeCost": 138.10851795787292,
+        "runningROI": 24.01692316442414,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0896310538885552
+      },
+      {
+        "jobId": "JOB-4",
+        "cumulativeGMV": 5774.540605489165,
+        "cumulativeCost": 183.82051155787292,
+        "runningROI": 31.414016621704068,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1557130847174162
+      },
+      {
+        "jobId": "JOB-5",
+        "cumulativeGMV": 5495.4577805357985,
+        "cumulativeCost": 229.53250515787292,
+        "runningROI": 23.94195879470758,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-6",
+        "cumulativeGMV": 7326.084133575205,
+        "cumulativeCost": 275.2444987578729,
+        "runningROI": 26.616641446555537,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.13882583617045
+      },
+      {
+        "jobId": "JOB-7",
+        "cumulativeGMV": 9284.51560526155,
+        "cumulativeCost": 351.26451795172926,
+        "runningROI": 26.43169216008725,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0965296238518902
+      },
+      {
+        "jobId": "JOB-8",
+        "cumulativeGMV": 11334.802145452704,
+        "cumulativeCost": 396.97651155172923,
+        "runningROI": 28.552828229424573,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1267111779242858
+      },
+      {
+        "jobId": "JOB-9",
+        "cumulativeGMV": 12278.140562621411,
+        "cumulativeCost": 442.6885051517292,
+        "runningROI": 27.735395023218732,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1137370350720301
+      },
+      {
+        "jobId": "JOB-10",
+        "cumulativeGMV": 12739.15860807756,
+        "cumulativeCost": 490.39612212682306,
+        "runningROI": 25.97728251363097,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.054457050159171
+      },
+      {
+        "jobId": "JOB-11",
+        "cumulativeGMV": 12102.056176797487,
+        "cumulativeCost": 536.108115726823,
+        "runningROI": 22.57390966818372,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-12",
+        "cumulativeGMV": 13919.753793859854,
+        "cumulativeCost": 616.0736073744622,
+        "runningROI": 22.594303062554573,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0872031494958634
+      },
+      {
+        "jobId": "JOB-13",
+        "cumulativeGMV": 12558.364797045942,
+        "cumulativeCost": 661.7856009744622,
+        "runningROI": 18.976485403360353,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-14",
+        "cumulativeGMV": 11473.85002237279,
+        "cumulativeCost": 707.4975945744623,
+        "runningROI": 16.217510999841565,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-15",
+        "cumulativeGMV": 10091.708321019541,
+        "cumulativeCost": 753.2095881744623,
+        "runningROI": 13.398273839660746,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-16",
+        "cumulativeGMV": 12473.377325828187,
+        "cumulativeCost": 823.4323113744623,
+        "runningROI": 15.148029963759608,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1407644900302472
+      },
+      {
+        "jobId": "JOB-17",
+        "cumulativeGMV": 13973.691628267989,
+        "cumulativeCost": 874.293029442343,
+        "runningROI": 15.98284689194072,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.096699209269325
+      },
+      {
+        "jobId": "JOB-18",
+        "cumulativeGMV": 13376.553210569546,
+        "cumulativeCost": 920.005023042343,
+        "runningROI": 14.539652366608756,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-19",
+        "cumulativeGMV": 12683.739112049807,
+        "cumulativeCost": 970.3498130506695,
+        "runningROI": 13.071305771857237,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-20",
+        "cumulativeGMV": 14062.326873117127,
+        "cumulativeCost": 1016.0618066506695,
+        "runningROI": 13.84003097161182,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1111407783881082
+      },
+      {
+        "jobId": "JOB-21",
+        "cumulativeGMV": 15693.728461547289,
+        "cumulativeCost": 1061.7738002506694,
+        "runningROI": 14.780670287628332,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1338319976895161
+      },
+      {
+        "jobId": "JOB-22",
+        "cumulativeGMV": 17913.928370119538,
+        "cumulativeCost": 1108.330237797592,
+        "runningROI": 16.16298803298648,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1279829935712147
+      },
+      {
+        "jobId": "JOB-23",
+        "cumulativeGMV": 20081.836344162002,
+        "cumulativeCost": 1154.0422313975919,
+        "runningROI": 17.401301094364705,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1520012275183489
+      },
+      {
+        "jobId": "JOB-24",
+        "cumulativeGMV": 19163.05359994294,
+        "cumulativeCost": 1224.264954597592,
+        "runningROI": 15.652701262074201,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-25",
+        "cumulativeGMV": 21554.792119155172,
+        "cumulativeCost": 1277.4630894764352,
+        "runningROI": 16.873123221109537,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1170389140821766
+      },
+      {
+        "jobId": "JOB-26",
+        "cumulativeGMV": 23535.8943693107,
+        "cumulativeCost": 1323.1750830764352,
+        "runningROI": 17.78743770974647,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1478565285953706
+      },
+      {
+        "jobId": "JOB-27",
+        "cumulativeGMV": 22904.61528027663,
+        "cumulativeCost": 1368.887076676435,
+        "runningROI": 16.732289807196867,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-28",
+        "cumulativeGMV": 24828.775478352327,
+        "cumulativeCost": 1414.599070276435,
+        "runningROI": 17.5518109689556,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.143704813962836
+      },
+      {
+        "jobId": "JOB-29",
+        "cumulativeGMV": 25677.76605040999,
+        "cumulativeCost": 1460.311063876435,
+        "runningROI": 17.583764641382412,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1088931502522192
+      },
+      {
+        "jobId": "JOB-30",
+        "cumulativeGMV": 27691.215067869052,
+        "cumulativeCost": 1506.0230574764348,
+        "runningROI": 18.386979489058948,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1486014632062371
+      },
+      {
+        "jobId": "JOB-31",
+        "cumulativeGMV": 28996.667237207294,
+        "cumulativeCost": 1556.1507883821628,
+        "runningROI": 18.63358451744474,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0926677037821442
+      },
+      {
+        "jobId": "JOB-32",
+        "cumulativeGMV": 30893.77869029995,
+        "cumulativeCost": 1601.8627819821627,
+        "runningROI": 19.286157989182847,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1458639884795658
+      },
+      {
+        "jobId": "JOB-33",
+        "cumulativeGMV": 30990.977185196243,
+        "cumulativeCost": 1647.5747755821626,
+        "runningROI": 18.810058058970785,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0.9859269738275862
+      },
+      {
+        "jobId": "JOB-34",
+        "cumulativeGMV": 30990.977185196243,
+        "cumulativeCost": 1780.401500120241,
+        "runningROI": 17.40673504437243,
+        "success": false,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-35",
+        "cumulativeGMV": 30229.228161403444,
+        "cumulativeCost": 1826.113493720241,
+        "runningROI": 16.553860570746394,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-36",
+        "cumulativeGMV": 28506.88406577101,
+        "cumulativeCost": 1896.336216920241,
+        "runningROI": 15.03261067916945,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-37",
+        "cumulativeGMV": 30401.880957128014,
+        "cumulativeCost": 1942.048210520241,
+        "runningROI": 15.654544924496946,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1272916604666328
+      },
+      {
+        "jobId": "JOB-38",
+        "cumulativeGMV": 29490.420922951307,
+        "cumulativeCost": 2012.270933720241,
+        "runningROI": 14.655293394528183,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-39",
+        "cumulativeGMV": 29490.420922951307,
+        "cumulativeCost": 2146.7657594628163,
+        "runningROI": 13.737139598467731,
+        "success": false,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-40",
+        "cumulativeGMV": 29490.420922951307,
+        "cumulativeCost": 2267.862444262816,
+        "runningROI": 13.00361977312842,
+        "success": false,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": -0.304505246728639
+      },
+      {
+        "jobId": "JOB-41",
+        "cumulativeGMV": 28165.799462457653,
+        "cumulativeCost": 2318.153955927946,
+        "runningROI": 12.150098741471647,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-42",
+        "cumulativeGMV": 28477.494734188076,
+        "cumulativeCost": 2363.8659495279458,
+        "runningROI": 12.047000693873912,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.062223503020057
+      },
+      {
+        "jobId": "JOB-43",
+        "cumulativeGMV": 29282.418307999615,
+        "cumulativeCost": 2434.088672727946,
+        "runningROI": 12.030136221447535,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0658478291140303
+      },
+      {
+        "jobId": "JOB-44",
+        "cumulativeGMV": 30734.31580492761,
+        "cumulativeCost": 2479.8006663279457,
+        "runningROI": 12.393865451467338,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1230310178441485
+      },
+      {
+        "jobId": "JOB-45",
+        "cumulativeGMV": 30246.06874011224,
+        "cumulativeCost": 2525.5126599279456,
+        "runningROI": 11.976209511844292,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-46",
+        "cumulativeGMV": 32489.38982927939,
+        "cumulativeCost": 2571.2246535279455,
+        "runningROI": 12.635764745294075,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1535741084997118
+      },
+      {
+        "jobId": "JOB-47",
+        "cumulativeGMV": 32489.38982927939,
+        "cumulativeCost": 2705.068776718993,
+        "runningROI": 12.010559623805987,
+        "success": false,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-48",
+        "cumulativeGMV": 32938.681391696446,
+        "cumulativeCost": 2750.780770318993,
+        "runningROI": 11.97430262240663,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.07706216970902
+      },
+      {
+        "jobId": "JOB-49",
+        "cumulativeGMV": 32979.72618812928,
+        "cumulativeCost": 2796.4927639189928,
+        "runningROI": 11.793245673166568,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0.9649814695500286
+      },
+      {
+        "jobId": "JOB-50",
+        "cumulativeGMV": 33898.368384561036,
+        "cumulativeCost": 2866.7154871189928,
+        "runningROI": 11.824810846027976,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0815913664451584
+      },
+      {
+        "jobId": "JOB-51",
+        "cumulativeGMV": 33551.71529188519,
+        "cumulativeCost": 2912.4274807189927,
+        "runningROI": 11.520189091060994,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-52",
+        "cumulativeGMV": 33296.69701829553,
+        "cumulativeCost": 2982.6502039189927,
+        "runningROI": 11.163460259116542,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-53",
+        "cumulativeGMV": 35133.57867440209,
+        "cumulativeCost": 3028.3621975189926,
+        "runningROI": 11.601511438488277,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1323361797658578
+      },
+      {
+        "jobId": "JOB-54",
+        "cumulativeGMV": 35888.40202748543,
+        "cumulativeCost": 3098.5849207189926,
+        "runningROI": 11.582190885753718,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0879273929132258
+      },
+      {
+        "jobId": "JOB-55",
+        "cumulativeGMV": 37941.505860805046,
+        "cumulativeCost": 3144.2969143189925,
+        "runningROI": 12.066769422448964,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1494985467747747
+      },
+      {
+        "jobId": "JOB-56",
+        "cumulativeGMV": 39321.96739636129,
+        "cumulativeCost": 3190.0089079189925,
+        "runningROI": 12.32660112601787,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.131243086214355
+      },
+      {
+        "jobId": "JOB-57",
+        "cumulativeGMV": 38208.23770808056,
+        "cumulativeCost": 3235.7209015189924,
+        "runningROI": 11.8082612409939,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-58",
+        "cumulativeGMV": 40380.88940590387,
+        "cumulativeCost": 3281.4328951189923,
+        "runningROI": 12.305870848667642,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1501780488502478
+      },
+      {
+        "jobId": "JOB-59",
+        "cumulativeGMV": 42423.44901213655,
+        "cumulativeCost": 3327.144888718992,
+        "runningROI": 12.750706816519285,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.149261713566764
+      },
+      {
+        "jobId": "JOB-60",
+        "cumulativeGMV": 44202.15989537537,
+        "cumulativeCost": 3372.856882318992,
+        "runningROI": 13.105258075754575,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.141632726761395
+      },
+      {
+        "jobId": "JOB-61",
+        "cumulativeGMV": 44245.66185182193,
+        "cumulativeCost": 3418.568875918992,
+        "runningROI": 12.942744012998029,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0.9731525193195787
+      },
+      {
+        "jobId": "JOB-62",
+        "cumulativeGMV": 44610.20693995524,
+        "cumulativeCost": 3488.791599118992,
+        "runningROI": 12.78672161192444,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0544986681802129
+      },
+      {
+        "jobId": "JOB-63",
+        "cumulativeGMV": 44459.93843829492,
+        "cumulativeCost": 3559.014322318992,
+        "runningROI": 12.49220554114702,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-64",
+        "cumulativeGMV": 45741.14488422638,
+        "cumulativeCost": 3604.726315918992,
+        "runningROI": 12.689214346794339,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1278119576152126
+      },
+      {
+        "jobId": "JOB-65",
+        "cumulativeGMV": 46370.430575706996,
+        "cumulativeCost": 3650.438309518992,
+        "runningROI": 12.702702153544159,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0951312001162266
+      },
+      {
+        "jobId": "JOB-66",
+        "cumulativeGMV": 47350.47208186006,
+        "cumulativeCost": 3696.150303118992,
+        "runningROI": 12.810753946316368,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.096774482532342
+      },
+      {
+        "jobId": "JOB-67",
+        "cumulativeGMV": 46722.72656878922,
+        "cumulativeCost": 3745.0083736842726,
+        "runningROI": 12.476000560400413,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-68",
+        "cumulativeGMV": 49253.158873307984,
+        "cumulativeCost": 3790.7203672842725,
+        "runningROI": 12.993086828135958,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1591139262003596
+      },
+      {
+        "jobId": "JOB-69",
+        "cumulativeGMV": 48766.27131487476,
+        "cumulativeCost": 3836.4323608842724,
+        "runningROI": 12.711359598591867,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-70",
+        "cumulativeGMV": 48228.670329926535,
+        "cumulativeCost": 3914.714480150581,
+        "runningROI": 12.319843650020525,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-71",
+        "cumulativeGMV": 46569.81578405248,
+        "cumulativeCost": 3966.6760258549434,
+        "runningROI": 11.740261992789094,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-72",
+        "cumulativeGMV": 47526.82978369994,
+        "cumulativeCost": 4015.786291746939,
+        "runningROI": 11.834999756180979,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.07860466132184
+      },
+      {
+        "jobId": "JOB-73",
+        "cumulativeGMV": 46866.27544068033,
+        "cumulativeCost": 4063.655618685498,
+        "runningROI": 11.533033268168655,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-74",
+        "cumulativeGMV": 47968.62306656549,
+        "cumulativeCost": 4109.367612285499,
+        "runningROI": 11.67299389890477,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1128831656038354
+      },
+      {
+        "jobId": "JOB-75",
+        "cumulativeGMV": 47981.24677523738,
+        "cumulativeCost": 4155.0796058854985,
+        "runningROI": 11.547611917536772,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0.9051284133108819
+      },
+      {
+        "jobId": "JOB-76",
+        "cumulativeGMV": 48185.88296044618,
+        "cumulativeCost": 4200.791599485498,
+        "runningROI": 11.47066733002129,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.043587418317147
+      },
+      {
+        "jobId": "JOB-77",
+        "cumulativeGMV": 50525.31556020258,
+        "cumulativeCost": 4251.1816932676475,
+        "runningROI": 11.885004971727419,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1193948073297577
+      },
+      {
+        "jobId": "JOB-78",
+        "cumulativeGMV": 52028.33300360944,
+        "cumulativeCost": 4304.001161951884,
+        "runningROI": 12.088364070053913,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0921260374605284
+      },
+      {
+        "jobId": "JOB-79",
+        "cumulativeGMV": 53175.572897389065,
+        "cumulativeCost": 4349.713155551884,
+        "runningROI": 12.225075768391042,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1227337093863752
+      },
+      {
+        "jobId": "JOB-80",
+        "cumulativeGMV": 54243.627777008805,
+        "cumulativeCost": 4395.4251491518835,
+        "runningROI": 12.3409285646635,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1194454393810278
+      },
+      {
+        "jobId": "JOB-81",
+        "cumulativeGMV": 54465.117898676544,
+        "cumulativeCost": 4441.692671551003,
+        "runningROI": 12.262243681901966,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0166821750473314
+      },
+      {
+        "jobId": "JOB-82",
+        "cumulativeGMV": 54937.47109636897,
+        "cumulativeCost": 4487.4046651510025,
+        "runningROI": 12.242593480149246,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.064660559456364
+      },
+      {
+        "jobId": "JOB-83",
+        "cumulativeGMV": 53568.98093938362,
+        "cumulativeCost": 4557.627388351002,
+        "runningROI": 11.753699101489174,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-84",
+        "cumulativeGMV": 54475.95996373566,
+        "cumulativeCost": 4603.339381951002,
+        "runningROI": 11.834009062492257,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0903454083319586
+      },
+      {
+        "jobId": "JOB-85",
+        "cumulativeGMV": 52998.16858959384,
+        "cumulativeCost": 4651.540973774396,
+        "runningROI": 11.3936798339303,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-86",
+        "cumulativeGMV": 53264.66524981661,
+        "cumulativeCost": 4721.763696974395,
+        "runningROI": 11.2806715177101,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.0401278698224872
+      },
+      {
+        "jobId": "JOB-87",
+        "cumulativeGMV": 53091.75793508766,
+        "cumulativeCost": 4767.475690574395,
+        "runningROI": 11.13624093355179,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-88",
+        "cumulativeGMV": 51445.445242663845,
+        "cumulativeCost": 4813.187684174395,
+        "runningROI": 10.68843531944844,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-89",
+        "cumulativeGMV": 52728.840627288446,
+        "cumulativeCost": 4883.410407374395,
+        "runningROI": 10.797544385715174,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1123280839615615
+      },
+      {
+        "jobId": "JOB-90",
+        "cumulativeGMV": 51806.05497752549,
+        "cumulativeCost": 4929.122400974395,
+        "runningROI": 10.510198522821103,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-91",
+        "cumulativeGMV": 53695.24830485461,
+        "cumulativeCost": 4999.345124174394,
+        "runningROI": 10.740456394020606,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1301092487324567
+      },
+      {
+        "jobId": "JOB-92",
+        "cumulativeGMV": 53504.33247790206,
+        "cumulativeCost": 5045.057117774394,
+        "runningROI": 10.605297666383066,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-93",
+        "cumulativeGMV": 52015.00227578217,
+        "cumulativeCost": 5090.769111374394,
+        "runningROI": 10.21751353043377,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-94",
+        "cumulativeGMV": 54004.2027258547,
+        "cumulativeCost": 5144.64403626189,
+        "runningROI": 10.497169939301434,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1033982585203574
+      },
+      {
+        "jobId": "JOB-95",
+        "cumulativeGMV": 53788.76500966726,
+        "cumulativeCost": 5190.3560298618895,
+        "runningROI": 10.363212985814872,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-96",
+        "cumulativeGMV": 56413.296137878206,
+        "cumulativeCost": 5236.068023461889,
+        "runningROI": 10.773980759054362,
+        "success": true,
+        "selectedAgent": "ORION-SYNTH",
+        "reward": 1.1398641508464746
+      }
+    ]
+  },
+  "learning": {
+    "label": "era-policy",
+    "metrics": {
+      "gmv": 57271.92736642901,
+      "cost": 4788.755626711712,
+      "successes": 94,
+      "failures": 2,
+      "averageLatency": 3.2925347723203653,
+      "averageSatisfaction": 0.9334875359590328,
+      "roi": 11.959667987016461,
+      "autonomyLift": 1.586104514018381,
+      "rewardAverage": 0.7206849529791968,
+      "rewardVolatility": 0.27611851655153563,
+      "learningSignalDensity": 0.9791666666666666
+    },
+    "trajectory": [
+      {
+        "jobId": "JOB-1",
+        "cumulativeGMV": 794.3262287182733,
+        "cumulativeCost": 43.1613,
+        "runningROI": 18.403667839436565,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1205176145260283
+      },
+      {
+        "jobId": "JOB-2",
+        "cumulativeGMV": 2683.8923442643136,
+        "cumulativeCost": 87.2248104,
+        "runningROI": 30.769827208065948,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1305230710379401
+      },
+      {
+        "jobId": "JOB-3",
+        "cumulativeGMV": 3316.941664146725,
+        "cumulativeCost": 130.3861104,
+        "runningROI": 25.43937888760523,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.105192791483026
+      },
+      {
+        "jobId": "JOB-4",
+        "cumulativeGMV": 5774.540605489165,
+        "cumulativeCost": 173.5474104,
+        "runningROI": 33.27356249326763,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1679350232812822
+      },
+      {
+        "jobId": "JOB-5",
+        "cumulativeGMV": 5495.4577805357985,
+        "cumulativeCost": 216.70871039999997,
+        "runningROI": 25.358730483847683,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-6",
+        "cumulativeGMV": 7326.084133575205,
+        "cumulativeCost": 259.87001039999996,
+        "runningROI": 28.191341210548572,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.158906641571492
+      },
+      {
+        "jobId": "JOB-7",
+        "cumulativeGMV": 9284.51560526155,
+        "cumulativeCost": 328.2357845773761,
+        "runningROI": 28.286116387998153,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1083366800604333
+      },
+      {
+        "jobId": "JOB-8",
+        "cumulativeGMV": 11334.802145452704,
+        "cumulativeCost": 371.39708457737606,
+        "runningROI": 30.519362203262627,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1526301881959382
+      },
+      {
+        "jobId": "JOB-9",
+        "cumulativeGMV": 12278.140562621411,
+        "cumulativeCost": 414.55838457737605,
+        "runningROI": 29.617397740341044,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1284204864866643
+      },
+      {
+        "jobId": "JOB-10",
+        "cumulativeGMV": 12739.15860807756,
+        "cumulativeCost": 457.71968457737603,
+        "runningROI": 27.83179102257737,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0752002321091785
+      },
+      {
+        "jobId": "JOB-11",
+        "cumulativeGMV": 12102.056176797487,
+        "cumulativeCost": 500.880984577376,
+        "runningROI": 24.161540464565118,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-12",
+        "cumulativeGMV": 13919.753793859854,
+        "cumulativeCost": 570.0684621423375,
+        "runningROI": 24.41768790637694,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1152497466896145
+      },
+      {
+        "jobId": "JOB-13",
+        "cumulativeGMV": 12558.364797045942,
+        "cumulativeCost": 613.2297621423374,
+        "runningROI": 20.4790529950355,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-14",
+        "cumulativeGMV": 11473.85002237279,
+        "cumulativeCost": 656.3910621423374,
+        "runningROI": 17.480204536795934,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-15",
+        "cumulativeGMV": 10091.708321019541,
+        "cumulativeCost": 699.5523621423374,
+        "runningROI": 14.425951318517868,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-16",
+        "cumulativeGMV": 12473.377325828187,
+        "cumulativeCost": 767.2426869423374,
+        "runningROI": 16.25740790770891,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.143812483981467
+      },
+      {
+        "jobId": "JOB-17",
+        "cumulativeGMV": 13973.691628267989,
+        "cumulativeCost": 810.5735293995103,
+        "runningROI": 17.239264695233743,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1304007612111207
+      },
+      {
+        "jobId": "JOB-18",
+        "cumulativeGMV": 13376.553210569546,
+        "cumulativeCost": 853.7348293995103,
+        "runningROI": 15.66827631944943,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-19",
+        "cumulativeGMV": 12683.739112049807,
+        "cumulativeCost": 898.6145711021859,
+        "runningROI": 14.114771248915655,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-20",
+        "cumulativeGMV": 14062.326873117127,
+        "cumulativeCost": 942.6780815021859,
+        "runningROI": 14.917422128568413,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1224318641446605
+      },
+      {
+        "jobId": "JOB-21",
+        "cumulativeGMV": 15693.728461547289,
+        "cumulativeCost": 985.8393815021859,
+        "runningROI": 15.919153521371566,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1496675402501229
+      },
+      {
+        "jobId": "JOB-22",
+        "cumulativeGMV": 17913.928370119538,
+        "cumulativeCost": 1029.000681502186,
+        "runningROI": 17.409053941507505,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1512184617009842
+      },
+      {
+        "jobId": "JOB-23",
+        "cumulativeGMV": 20081.836344162002,
+        "cumulativeCost": 1072.1619815021859,
+        "runningROI": 18.73022611380579,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.166684678932983
+      },
+      {
+        "jobId": "JOB-24",
+        "cumulativeGMV": 19163.05359994294,
+        "cumulativeCost": 1138.4663315021858,
+        "runningROI": 16.832341080001584,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-25",
+        "cumulativeGMV": 21554.792119155172,
+        "cumulativeCost": 1184.0041647348169,
+        "runningROI": 18.204996875144296,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1417754514610399
+      },
+      {
+        "jobId": "JOB-26",
+        "cumulativeGMV": 23535.8943693107,
+        "cumulativeCost": 1227.1654647348169,
+        "runningROI": 19.179071645726818,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1625399800100047
+      },
+      {
+        "jobId": "JOB-27",
+        "cumulativeGMV": 22904.61528027663,
+        "cumulativeCost": 1270.3267647348168,
+        "runningROI": 18.030490985567805,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-28",
+        "cumulativeGMV": 24828.775478352327,
+        "cumulativeCost": 1314.3902751348169,
+        "runningROI": 18.88995677163363,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1466233170249502
+      },
+      {
+        "jobId": "JOB-29",
+        "cumulativeGMV": 25677.76605040999,
+        "cumulativeCost": 1357.5515751348169,
+        "runningROI": 18.914762813236,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1235766016668534
+      },
+      {
+        "jobId": "JOB-30",
+        "cumulativeGMV": 27691.215067869052,
+        "cumulativeCost": 1400.7128751348168,
+        "runningROI": 19.769372838244102,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1632849146208712
+      },
+      {
+        "jobId": "JOB-31",
+        "cumulativeGMV": 28996.667237207294,
+        "cumulativeCost": 1445.3833854023367,
+        "runningROI": 20.061575032658748,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1089010812340716
+      },
+      {
+        "jobId": "JOB-32",
+        "cumulativeGMV": 30893.77869029995,
+        "cumulativeCost": 1489.4468958023367,
+        "runningROI": 20.741779231852412,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1483507664307853
+      },
+      {
+        "jobId": "JOB-33",
+        "cumulativeGMV": 30990.977185196243,
+        "cumulativeCost": 1532.6081958023367,
+        "runningROI": 20.221069722892963,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0106946963357226
+      },
+      {
+        "jobId": "JOB-34",
+        "cumulativeGMV": 30938.76133589074,
+        "cumulativeCost": 1577.290426095253,
+        "runningROI": 19.615132903889407,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-35",
+        "cumulativeGMV": 30177.01231209794,
+        "cumulativeCost": 1620.451726095253,
+        "runningROI": 18.622592593248335,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-36",
+        "cumulativeGMV": 28454.668216465507,
+        "cumulativeCost": 1686.7560760952529,
+        "runningROI": 16.869462407591556,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-37",
+        "cumulativeGMV": 30349.66510782251,
+        "cumulativeCost": 1729.9173760952528,
+        "runningROI": 17.543996914076544,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1496926049092249
+      },
+      {
+        "jobId": "JOB-38",
+        "cumulativeGMV": 29438.205073645804,
+        "cumulativeCost": 1796.221726095253,
+        "runningROI": 16.38895947308273,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-39",
+        "cumulativeGMV": 28624.050159647595,
+        "cumulativeCost": 1839.466506458947,
+        "runningROI": 15.561060807108761,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-40",
+        "cumulativeGMV": 29703.83477343712,
+        "cumulativeCost": 1882.627806458947,
+        "runningROI": 15.777858306102125,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.118086323398442
+      },
+      {
+        "jobId": "JOB-41",
+        "cumulativeGMV": 28379.213312943466,
+        "cumulativeCost": 1927.4561911621863,
+        "runningROI": 14.72366191411688,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-42",
+        "cumulativeGMV": 28690.90858467389,
+        "cumulativeCost": 1970.6174911621863,
+        "runningROI": 14.559349398524425,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0775582042677805
+      },
+      {
+        "jobId": "JOB-43",
+        "cumulativeGMV": 29495.832158485427,
+        "cumulativeCost": 2038.3078159621864,
+        "runningROI": 14.470744765584817,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.0789388646815625
+      },
+      {
+        "jobId": "JOB-44",
+        "cumulativeGMV": 30947.729655413423,
+        "cumulativeCost": 2082.371326362186,
+        "runningROI": 14.86177285656242,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1275344217864085
+      },
+      {
+        "jobId": "JOB-45",
+        "cumulativeGMV": 30459.482590598054,
+        "cumulativeCost": 2125.5326263621864,
+        "runningROI": 14.330282307982705,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-46",
+        "cumulativeGMV": 32702.803679765202,
+        "cumulativeCost": 2168.6939263621866,
+        "runningROI": 15.07949244576969,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1682575599143459
+      },
+      {
+        "jobId": "JOB-47",
+        "cumulativeGMV": 31061.420998885296,
+        "cumulativeCost": 2213.746358004546,
+        "runningROI": 14.031156228251833,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-48",
+        "cumulativeGMV": 31510.712561302353,
+        "cumulativeCost": 2256.907658004546,
+        "runningROI": 13.961897133692512,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0943396210965288
+      },
+      {
+        "jobId": "JOB-49",
+        "cumulativeGMV": 31551.757357735187,
+        "cumulativeCost": 2300.0689580045464,
+        "runningROI": 13.71774409107643,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0.9852222296539752
+      },
+      {
+        "jobId": "JOB-50",
+        "cumulativeGMV": 32470.399554166943,
+        "cumulativeCost": 2367.7592828045463,
+        "runningROI": 13.713556014742613,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.0844236360464996
+      },
+      {
+        "jobId": "JOB-51",
+        "cumulativeGMV": 32123.7464614911,
+        "cumulativeCost": 2410.9205828045465,
+        "runningROI": 13.324265714353219,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-52",
+        "cumulativeGMV": 31868.728187901434,
+        "cumulativeCost": 2477.2249328045464,
+        "runningROI": 12.864688937157522,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-53",
+        "cumulativeGMV": 33705.609844007995,
+        "cumulativeCost": 2520.3862328045466,
+        "runningROI": 13.373192332709362,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1532383621916844
+      },
+      {
+        "jobId": "JOB-54",
+        "cumulativeGMV": 34460.43319709133,
+        "cumulativeCost": 2586.6905828045465,
+        "runningROI": 13.322209245347226,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1034792123278598
+      },
+      {
+        "jobId": "JOB-55",
+        "cumulativeGMV": 36513.53703041095,
+        "cumulativeCost": 2630.7540932045463,
+        "runningROI": 13.879494523919364,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1519853247259944
+      },
+      {
+        "jobId": "JOB-56",
+        "cumulativeGMV": 37893.998565967195,
+        "cumulativeCost": 2673.9153932045465,
+        "runningROI": 14.171726847554902,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.145926537628989
+      },
+      {
+        "jobId": "JOB-57",
+        "cumulativeGMV": 36780.26887768647,
+        "cumulativeCost": 2717.0766932045467,
+        "runningROI": 13.536706184876754,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-58",
+        "cumulativeGMV": 38952.92057550978,
+        "cumulativeCost": 2760.237993204547,
+        "runningROI": 14.112160136701364,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1667852184846308
+      },
+      {
+        "jobId": "JOB-59",
+        "cumulativeGMV": 40995.48018174246,
+        "cumulativeCost": 2803.399293204547,
+        "runningROI": 14.623489518997774,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.163945164981398
+      },
+      {
+        "jobId": "JOB-60",
+        "cumulativeGMV": 42774.19106498128,
+        "cumulativeCost": 2847.462803604547,
+        "runningROI": 15.021861220042725,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.145386779248118
+      },
+      {
+        "jobId": "JOB-61",
+        "cumulativeGMV": 42817.69302142784,
+        "cumulativeCost": 2890.624103604547,
+        "runningROI": 14.81261190897671,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0.9878359707342128
+      },
+      {
+        "jobId": "JOB-62",
+        "cumulativeGMV": 43182.23810956115,
+        "cumulativeCost": 2958.314428404547,
+        "runningROI": 14.59690616215188,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.0575466621314324
+      },
+      {
+        "jobId": "JOB-63",
+        "cumulativeGMV": 43031.96960790083,
+        "cumulativeCost": 3024.618778404547,
+        "runningROI": 14.227237467129566,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-64",
+        "cumulativeGMV": 44313.176053832285,
+        "cumulativeCost": 3068.6822888045467,
+        "runningROI": 14.440457461334383,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.130298735566432
+      },
+      {
+        "jobId": "JOB-65",
+        "cumulativeGMV": 44942.4617453129,
+        "cumulativeCost": 3111.843588804547,
+        "runningROI": 14.442390969456824,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1098146515308607
+      },
+      {
+        "jobId": "JOB-66",
+        "cumulativeGMV": 45922.50325146597,
+        "cumulativeCost": 3155.004888804547,
+        "runningROI": 14.555445988188728,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1168179330711512
+      },
+      {
+        "jobId": "JOB-67",
+        "cumulativeGMV": 45922.50325146597,
+        "cumulativeCost": 3298.0832060045473,
+        "runningROI": 13.923997783882063,
+        "success": false,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-68",
+        "cumulativeGMV": 48452.93555598473,
+        "cumulativeCost": 3342.146716404547,
+        "runningROI": 14.49754893109839,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.161600704151579
+      },
+      {
+        "jobId": "JOB-69",
+        "cumulativeGMV": 47966.047997551505,
+        "cumulativeCost": 3385.3080164045473,
+        "runningROI": 14.168887370105562,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-70",
+        "cumulativeGMV": 47428.44701260328,
+        "cumulativeCost": 3452.9060524544857,
+        "runningROI": 13.73580580881688,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-71",
+        "cumulativeGMV": 47428.44701260328,
+        "cumulativeCost": 3603.6951860724334,
+        "runningROI": 13.16105956905146,
+        "success": false,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-72",
+        "cumulativeGMV": 48385.461012250744,
+        "cumulativeCost": 3646.8564860724337,
+        "runningROI": 13.267717333280801,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1124958800421012
+      },
+      {
+        "jobId": "JOB-73",
+        "cumulativeGMV": 47724.90666923113,
+        "cumulativeCost": 3690.017786072434,
+        "runningROI": 12.933516702646676,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-74",
+        "cumulativeGMV": 48827.25429511629,
+        "cumulativeCost": 3734.0812964724337,
+        "runningROI": 13.076109066303172,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.120069570347893
+      },
+      {
+        "jobId": "JOB-75",
+        "cumulativeGMV": 48839.87800378818,
+        "cumulativeCost": 3777.242596472434,
+        "runningROI": 12.930034742645265,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0.926331753501453
+      },
+      {
+        "jobId": "JOB-76",
+        "cumulativeGMV": 49044.51418899698,
+        "cumulativeCost": 3821.3061068724337,
+        "runningROI": 12.83448978368752,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.0460741962683664
+      },
+      {
+        "jobId": "JOB-77",
+        "cumulativeGMV": 51383.94678875338,
+        "cumulativeCost": 3864.467406872434,
+        "runningROI": 13.296514468558842,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1496938739813758
+      },
+      {
+        "jobId": "JOB-78",
+        "cumulativeGMV": 52886.964232160244,
+        "cumulativeCost": 3909.6477031888608,
+        "runningROI": 13.527296638268348,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1216296875955953
+      },
+      {
+        "jobId": "JOB-79",
+        "cumulativeGMV": 54034.20412593987,
+        "cumulativeCost": 3952.809003188861,
+        "runningROI": 13.66982418891191,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1374171608010093
+      },
+      {
+        "jobId": "JOB-80",
+        "cumulativeGMV": 55102.25900555961,
+        "cumulativeCost": 3995.970303188861,
+        "runningROI": 13.789456583695566,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.134128890795662
+      },
+      {
+        "jobId": "JOB-81",
+        "cumulativeGMV": 55323.74912722735,
+        "cumulativeCost": 4040.033813588861,
+        "runningROI": 13.69388269502673,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.0300436554035972
+      },
+      {
+        "jobId": "JOB-82",
+        "cumulativeGMV": 55796.102324919775,
+        "cumulativeCost": 4083.195113588861,
+        "runningROI": 13.664814140091055,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0832586617912132
+      },
+      {
+        "jobId": "JOB-83",
+        "cumulativeGMV": 54427.61216793442,
+        "cumulativeCost": 4149.4994635888615,
+        "runningROI": 13.116669286386776,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-84",
+        "cumulativeGMV": 55334.59119228646,
+        "cumulativeCost": 4192.660763588861,
+        "runningROI": 13.197965280863981,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.113551950975256
+      },
+      {
+        "jobId": "JOB-85",
+        "cumulativeGMV": 53856.799818144646,
+        "cumulativeCost": 4235.822063588861,
+        "runningROI": 12.714603920947921,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-86",
+        "cumulativeGMV": 54123.29647836741,
+        "cumulativeCost": 4302.126413588861,
+        "runningROI": 12.580591845793162,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.0556796892371212
+      },
+      {
+        "jobId": "JOB-87",
+        "cumulativeGMV": 53950.389163638465,
+        "cumulativeCost": 4346.189923988862,
+        "runningROI": 12.413260834704547,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-88",
+        "cumulativeGMV": 52304.07647121465,
+        "cumulativeCost": 4389.351223988861,
+        "runningROI": 11.916129241460624,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-89",
+        "cumulativeGMV": 53587.47185583925,
+        "cumulativeCost": 4455.655573988862,
+        "runningROI": 12.026843405192972,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1278799033761957
+      },
+      {
+        "jobId": "JOB-90",
+        "cumulativeGMV": 52664.686206076294,
+        "cumulativeCost": 4498.8168739888615,
+        "runningROI": 11.706341396239434,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-91",
+        "cumulativeGMV": 54553.879533405416,
+        "cumulativeCost": 4565.121223988862,
+        "runningROI": 11.950149154141831,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 1.1456610681470907
+      },
+      {
+        "jobId": "JOB-92",
+        "cumulativeGMV": 54362.963706452865,
+        "cumulativeCost": 4609.184734388862,
+        "runningROI": 11.794485758154565,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-93",
+        "cumulativeGMV": 52873.633504332975,
+        "cumulativeCost": 4653.248244788862,
+        "runningROI": 11.36273646340398,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-94",
+        "cumulativeGMV": 54862.833954405505,
+        "cumulativeCost": 4701.5308163117115,
+        "runningROI": 11.669142689453787,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1219049129508873
+      },
+      {
+        "jobId": "JOB-95",
+        "cumulativeGMV": 54647.39623821806,
+        "cumulativeCost": 4744.692116311711,
+        "runningROI": 11.51758531398624,
+        "success": true,
+        "selectedAgent": "AURORA-PRIME",
+        "reward": 0
+      },
+      {
+        "jobId": "JOB-96",
+        "cumulativeGMV": 57271.92736642901,
+        "cumulativeCost": 4788.755626711712,
+        "runningROI": 11.959667987016461,
+        "success": true,
+        "selectedAgent": "LYRA-VANGUARD",
+        "reward": 1.1483448338117204
+      }
+    ]
+  },
+  "delta": {
+    "gmvDelta": 1.01522,
+    "roiDelta": 1.110051,
+    "successDelta": 1.021739,
+    "autonomyDelta": 1.011346
+  }
+}

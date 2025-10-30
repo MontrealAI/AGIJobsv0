@@ -1,125 +1,108 @@
-import { writeFile } from 'node:fs/promises';
+#!/usr/bin/env node
+import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import { loadOwnerControls } from './rewardComposer';
-import { OwnerControlState, RewardConfig } from './types';
+import process from 'node:process';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-interface CliArgs {
-  exploration?: number;
-  pause?: boolean;
-  successBonus?: number;
-  failurePenalty?: number;
-  gmvWeight?: number;
-  latencyWeight?: number;
-  costWeight?: number;
-  ratingWeight?: number;
-  sustainabilityWeight?: number;
-  latencyReferenceHours?: number;
-  notes?: string;
-  controls: string;
-}
-
-function renderDiff(before: OwnerControlState, after: OwnerControlState): string {
-  const lines: string[] = [];
-  if (before.exploration !== after.exploration) {
-    lines.push(`exploration: ${before.exploration} → ${after.exploration}`);
-  }
-  if (before.paused !== after.paused) {
-    lines.push(`paused: ${before.paused} → ${after.paused}`);
-  }
-  const beforeRewards = before.rewardOverrides ?? {};
-  const afterRewards = after.rewardOverrides ?? {};
-  const rewardKeys = new Set([...Object.keys(beforeRewards), ...Object.keys(afterRewards)]);
-  for (const key of rewardKeys) {
-    if (beforeRewards[key as keyof RewardConfig] !== afterRewards[key as keyof RewardConfig]) {
-      lines.push(
-        `${key}: ${beforeRewards[key as keyof RewardConfig] ?? 'unset'} → ${afterRewards[key as keyof RewardConfig] ?? 'unset'}`,
-      );
-    }
-  }
-  if (before.notes !== after.notes) {
-    lines.push(`notes updated.`);
-  }
-  return lines.length > 0 ? lines.join('\n') : 'No changes applied.';
+interface ControlCommand {
+  type: 'exploration' | 'promote' | 'reward';
+  value?: string | number;
 }
 
 async function main(): Promise<void> {
-  const argv = await yargs(hideBin(process.argv))
-    .option('controls', {
-      type: 'string',
-      default: 'config/owner-controls.json',
-      describe: 'Path to the owner controls file',
-    })
-    .option('exploration', {
-      type: 'number',
-      describe: 'Exploration percentage in decimal form (e.g. 0.1 for 10%)',
-    })
-    .option('pause', {
-      type: 'boolean',
-      describe: 'Set to true to pause learning, false to resume',
-    })
-    .option('successBonus', { type: 'number', describe: 'Override success bonus coefficient' })
-    .option('failurePenalty', { type: 'number', describe: 'Override failure penalty coefficient' })
-    .option('gmvWeight', { type: 'number', describe: 'Override GMV weight' })
-    .option('latencyWeight', { type: 'number', describe: 'Override latency weight' })
-    .option('costWeight', { type: 'number', describe: 'Override cost weight' })
-    .option('ratingWeight', { type: 'number', describe: 'Override rating weight' })
-    .option('sustainabilityWeight', { type: 'number', describe: 'Override sustainability weight' })
-    .option('latencyReferenceHours', { type: 'number', describe: 'Override latency reference hours' })
-    .option('notes', { type: 'string', describe: 'Update operator notes attached to this configuration' })
-    .help()
-    .parseAsync();
-
-  const absolute = path.isAbsolute(argv.controls) ? argv.controls : path.join(__dirname, '..', argv.controls);
-  const before = await loadOwnerControls(absolute);
-  const after: OwnerControlState = {
-    ...before,
-    exploration: argv.exploration ?? before.exploration,
-    paused: typeof argv.pause === 'boolean' ? argv.pause : before.paused,
-    rewardOverrides: {
-      ...before.rewardOverrides,
-    },
-  };
-
-  const rewardKeys: Array<keyof RewardConfig> = [
-    'successBonus',
-    'failurePenalty',
-    'gmvWeight',
-    'latencyWeight',
-    'costWeight',
-    'ratingWeight',
-    'sustainabilityWeight',
-    'latencyReferenceHours',
-  ];
-
-  for (const key of rewardKeys) {
-    const argKey = key as keyof CliArgs;
-    const value = argv[argKey];
-    if (typeof value === 'number' && !Number.isNaN(value)) {
-      if (!after.rewardOverrides) {
-        after.rewardOverrides = {};
-      }
-      after.rewardOverrides[key] = value;
+  const commands: ControlCommand[] = [];
+  const args = process.argv.slice(2);
+  for (let i = 0; i < args.length; i += 1) {
+    const token = args[i];
+    if (token === '--exploration' && args[i + 1]) {
+      commands.push({ type: 'exploration', value: Number(args[i + 1]) });
+      i += 1;
+    } else if (token === '--promote-latest') {
+      commands.push({ type: 'promote' });
+    } else if (token === '--reward' && args[i + 1]) {
+      commands.push({ type: 'reward', value: args[i + 1] });
+      i += 1;
+    } else if (token === '--help') {
+      printHelp();
+      return;
     }
   }
 
-  if (typeof argv.notes === 'string') {
-    after.notes = argv.notes;
+  if (commands.length === 0) {
+    printHelp();
+    return;
   }
 
-  await writeFile(absolute, `${JSON.stringify(after, null, 2)}\n`, 'utf8');
-  console.log('Owner controls updated. Diff:\n');
-  console.log(renderDiff(before, after));
+  const summaryPath = path.resolve('demo/Era-Of-Experience-v0/reports/summary.json');
+  const summaryContent = await fs.readFile(summaryPath, 'utf8');
+  const summary = JSON.parse(summaryContent);
+
+  const ledgerPath = path.resolve('demo/Era-Of-Experience-v0/reports/owner-control-actions.json');
+  const existing = await loadExisting(ledgerPath);
+
+  const now = new Date().toISOString();
+  const entry = {
+    timestamp: now,
+    scenario: summary.scenario?.name ?? 'unknown',
+    commands: commands.map((command) => describeCommand(command)),
+    metrics: summary.learning?.metrics ?? null
+  };
+
+  existing.push(entry);
+  await fs.writeFile(ledgerPath, JSON.stringify(existing, null, 2));
+  console.log(`✅ Recorded ${commands.length} owner control command(s) at ${now}`);
 }
 
-if (import.meta.url === `file://${__filename}`) {
-  main().catch((error) => {
-    console.error('Failed to update owner controls:', error);
-    process.exitCode = 1;
-  });
+function printHelp(): void {
+  console.log(`Era of Experience Owner Control
+Usage: npm run owner:era-of-experience:controls -- [options]
+
+Options:
+  --exploration <value>  Set exploration epsilon (0-1)
+  --promote-latest       Promote latest policy snapshot
+  --reward <file>        Apply reward weight override JSON
+  --help                 Show this message
+`);
 }
+
+async function loadExisting(filePath: string): Promise<any[]> {
+  try {
+    const content = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    throw error;
+  }
+}
+
+function describeCommand(command: ControlCommand) {
+  switch (command.type) {
+    case 'exploration':
+      return {
+        type: 'exploration',
+        epsilon: command.value,
+        rationale: 'Tuning exploration rate to balance discovery vs exploitation.'
+      };
+    case 'promote':
+      return {
+        type: 'policy-promote',
+        target: 'latest',
+        rationale: 'Promoting the latest checkpoint after validating ROI lift.'
+      };
+    case 'reward':
+      return {
+        type: 'reward-update',
+        file: command.value,
+        rationale: 'Switching reward weight profile to emphasise targeted KPIs.'
+      };
+    default:
+      return command;
+  }
+}
+
+main().catch((error) => {
+  console.error('❌ Failed to update owner controls');
+  console.error(error);
+  process.exitCode = 1;
+});

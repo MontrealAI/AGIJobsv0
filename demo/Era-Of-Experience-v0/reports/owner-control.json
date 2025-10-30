@@ -1,0 +1,39 @@
+{
+  "timestamp": "2025-10-30T02:23:42.583Z",
+  "controlSurfaces": [
+    {
+      "surface": "explorationRate",
+      "description": "Adjust exploration epsilon live without redeploying.",
+      "command": "npm run owner:era-of-experience:controls -- --exploration 0.08",
+      "current": 0.12,
+      "recommended": 0.07104166666666667
+    },
+    {
+      "surface": "policyCheckpoint",
+      "description": "Promote the latest high-performing policy snapshot.",
+      "command": "npm run owner:era-of-experience:controls -- --promote-latest",
+      "current": "latest",
+      "recommended": "Promote if GMV delta > 8%"
+    },
+    {
+      "surface": "rewardWeights",
+      "description": "Retune reward weights to emphasise GMV or latency.",
+      "command": "npm run owner:era-of-experience:controls -- --reward gmvsurge.json",
+      "current": "reward-default.json",
+      "recommended": "Increase valueWeight if enterprise GMV > 55% of total"
+    }
+  ],
+  "metrics": {
+    "gmv": 57271.92736642901,
+    "cost": 4788.755626711712,
+    "successes": 94,
+    "failures": 2,
+    "averageLatency": 3.2925347723203653,
+    "averageSatisfaction": 0.9334875359590328,
+    "roi": 11.959667987016461,
+    "autonomyLift": 1.586104514018381,
+    "rewardAverage": 0.7206849529791968,
+    "rewardVolatility": 0.27611851655153563,
+    "learningSignalDensity": 0.9791666666666666
+  }
+}

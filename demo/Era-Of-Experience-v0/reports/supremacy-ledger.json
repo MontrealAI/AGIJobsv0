@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-10-30T02:23:42.585Z",
+  "supremacyIndex": 0.0427,
+  "deltas": {
+    "gmv": 0.01522,
+    "roi": 0.110051,
+    "autonomy": 0.011346
+  },
+  "assurances": {
+    "pauseReady": true,
+    "checkpointDepth": 4,
+    "monitoring": [
+      "performance-drop",
+      "latency-spike",
+      "gmv-regression"
+    ]
+  },
+  "interpretation": "The learning policy materially expands GMV, ROI, and autonomy simultaneously while preserving owner-first guardrails."
+}

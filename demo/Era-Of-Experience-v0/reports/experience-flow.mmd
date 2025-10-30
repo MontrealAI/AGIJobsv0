@@ -1,0 +1,14 @@
+%% Experience-native AGI Jobs execution lattice
+flowchart TD
+  User[Human Operator] -->|Prompt & Objectives| MissionConsole
+  MissionConsole[Mission Console] -->|Scenario Selection| ExperiencePlanner
+  ExperiencePlanner -->|Streamed Jobs (96)| Orchestrator
+  Orchestrator -->|Baseline Heuristic| BaselineLoop[Baseline Loop GMV 56413]
+  Orchestrator -->|Learning Policy| LearningLoop[Era Policy GMV 57272]
+  LearningLoop -->|Continuous Rewards| RewardEngine
+  RewardEngine[Reward Composer] --> ExperienceBuffer
+  ExperienceBuffer[(Streaming Buffer)] --> Trainer
+  Trainer[Real-time Policy Trainer] -->|Updated Weights| Orchestrator
+  Trainer -->|Policy Snapshots| OwnerMultisig[Owner Multi-sig]
+  OwnerMultisig -->|Pause/Upgrade Commands| Orchestrator
+  MissionConsole -->|Mermaid Dashboards| OperatorIntelligence[Operator Intelligence Center]

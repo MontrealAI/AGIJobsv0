@@ -1,0 +1,9 @@
+graph TD
+  Owner[Owner Multi-Sig] -->|Toggles Exploration| PolicySwitch
+  Owner -->|Approves Reward Shifts| RewardDeck
+  Owner -->|Applies Circuit Breakers| SentinelGrid
+  PolicySwitch[Exploration Switch] --> Orchestrator
+  RewardDeck[Reward Composer Deck] --> RewardEngine
+  SentinelGrid[Sentinel Alerts] --> MissionConsole
+  MissionConsole[Mission Console] -->|Publishes KPIs| OperatorIntel
+  OperatorIntel -->|Confirms Lift 1.02x| Owner

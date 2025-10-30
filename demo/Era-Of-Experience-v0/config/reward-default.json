@@ -1,0 +1,11 @@
+{
+  "successWeight": 0.58,
+  "valueWeight": 0.26,
+  "latencyWeight": 0.08,
+  "costWeight": 0.06,
+  "satisfactionWeight": 0.12,
+  "longTermCompoundingWeight": 0.12,
+  "latencyReference": 18,
+  "costReference": 420,
+  "satisfactionReference": 0.82
+}
