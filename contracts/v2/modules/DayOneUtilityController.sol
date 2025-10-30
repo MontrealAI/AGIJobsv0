@@ -32,13 +32,13 @@ contract DayOneUtilityController is Governable {
     error AlreadyUnpaused();
 
     constructor(
-        address governance,
+        address _governance,
         uint256 initialFeeBps,
         int256 initialLatencyGuardBps,
         int256 initialUtilityGuardBps,
         string memory initialNarrative
     )
-        Governable(governance)
+        Governable(_governance)
     {
         _setPlatformFee(initialFeeBps);
         _setLatencyGuard(initialLatencyGuardBps);
