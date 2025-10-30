@@ -70,3 +70,28 @@ def test_failure_streak_prunes_agents_and_budget_halt():
         await monitor.close()
 
     asyncio.run(scenario())
+
+
+def test_idle_monitor_does_not_increase_roi_breaches():
+    async def scenario() -> None:
+        engine = HGMEngine()
+        config = SentinelConfig(
+            roi_floor=2.0,
+            roi_grace_period=3,
+            monitor_interval_seconds=0.1,
+        )
+        monitor = SentinelMonitor(engine, config)
+        await engine.ensure_node("root/c")
+
+        await monitor.observe_evaluation("root/c", {"cost": 10.0, "value": 5.0, "success": False})
+        await monitor.drain()
+
+        snapshot = monitor.snapshot()
+        assert snapshot.roi_breach_count == 1
+
+        await asyncio.sleep(config.monitor_interval_seconds * 3)
+
+        assert monitor.snapshot().roi_breach_count == snapshot.roi_breach_count
+        await monitor.close()
+
+    asyncio.run(scenario())

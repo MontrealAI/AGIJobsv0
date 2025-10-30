@@ -30,6 +30,8 @@ class SentinelState:
     total_cost: float = 0.0
     roi_breach_count: int = 0
     last_roi: Optional[float] = None
+    roi_update_version: int = 0
+    roi_checked_version: int = 0
     pause_reasons: set[str] = field(default_factory=set)
     stop_requested: bool = False
     stop_reason: Optional[str] = None
@@ -157,10 +159,14 @@ class SentinelMonitor:
     async def _handle_expansion(self, event: SentinelEvent) -> None:
         payload = event.payload
         cost = _float(payload.get("cost") or payload.get("spend") or 0.0)
+        roi_mutated = False
         async with self._state_lock:
             if cost:
                 self._state.total_cost += cost
+                roi_mutated = True
                 LOGGER.debug("Recorded expansion cost %.4f (total=%.4f)", cost, self._state.total_cost)
+            if roi_mutated:
+                self._state.roi_update_version += 1
         await self._evaluate_rules()
 
     async def _handle_evaluation(self, event: SentinelEvent) -> None:
@@ -182,12 +188,17 @@ class SentinelMonitor:
         if value is not None:
             payload["value"] = value
         agent = event.agent_key or ""
+        roi_mutated = False
         async with self._state_lock:
             if cost:
                 self._state.total_cost += cost
+                roi_mutated = True
             if value:
                 self._state.total_value += value
+                roi_mutated = True
             self._state.last_roi = self._compute_roi()
+            if roi_mutated:
+                self._state.roi_update_version += 1
             LOGGER.debug(
                 "Evaluation update agent=%s cost=%.4f value=%.4f roi=%s",
                 agent,
@@ -231,31 +242,37 @@ class SentinelMonitor:
             await self._evaluate_budget_locked()
 
     async def _evaluate_roi_locked(self) -> None:
+        state = self._state
         roi = self._compute_roi()
-        self._state.last_roi = roi
+        state.last_roi = roi
+        version = state.roi_update_version
         if roi is None:
-            self._state.roi_breach_count = 0
+            state.roi_checked_version = version
+            state.roi_breach_count = 0
             await self._clear_pause("roi_floor")
             return
+        if version == state.roi_checked_version:
+            return
+        state.roi_checked_version = version
         if roi < self._config.roi_floor:
-            self._state.roi_breach_count += 1
+            state.roi_breach_count += 1
             LOGGER.debug(
                 "ROI %.3fx below floor %.3fx (%d/%d)",
                 roi,
                 self._config.roi_floor,
-                self._state.roi_breach_count,
+                state.roi_breach_count,
                 self._config.roi_grace_period,
             )
-            if self._state.roi_breach_count >= self._config.roi_grace_period:
+            if state.roi_breach_count >= self._config.roi_grace_period:
                 await self._set_pause(
                     "roi_floor",
                     detail=f"ROI {roi:.3f}x below floor {self._config.roi_floor:.3f}x",
                     severity="warning",
                 )
         else:
-            if self._state.roi_breach_count > 0:
-                self._state.roi_breach_count = max(0, self._state.roi_breach_count - 1)
-            if self._state.roi_breach_count == 0:
+            if state.roi_breach_count > 0:
+                state.roi_breach_count = max(0, state.roi_breach_count - 1)
+            if state.roi_breach_count == 0:
                 await self._clear_pause(
                     "roi_floor",
                     detail=f"ROI recovered to {roi:.3f}x (floor {self._config.roi_floor:.3f}x)",
