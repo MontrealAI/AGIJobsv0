@@ -8,6 +8,7 @@ RUN apk add --no-cache python3 make g++ \
 ENV PYTHON=/usr/bin/python3 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
+    NPM_CONFIG_PACKAGE_LOCK=true \
     NPM_CONFIG_FETCH_RETRIES=5 \
     NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=180000 \
