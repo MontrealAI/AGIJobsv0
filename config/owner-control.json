@@ -2,6 +2,9 @@
   "governance": "0x0000000000000000000000000000000000000000",
   "owner": "0x0000000000000000000000000000000000000000",
   "modules": {
+    "hgmControlModule": {
+      "type": "ownable2step"
+    },
     "stakeManager": {
       "type": "governable"
     },

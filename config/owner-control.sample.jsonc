@@ -4,6 +4,15 @@
   // 👑 Default owner fallback used when a module does not override the owner address. Replace with your operational owner.
   "owner": "0x0000000000000000000000000000000000000000",
   "modules": {
+    // === Governance facade for HGM deployments ===
+    "hgmControlModule": {
+      "type": "ownable2step",
+      "address": "0x0000000000000000000000000000000000000000",
+      "notes": [
+        "Owns PlatformRegistry and ReputationEngine",
+        "Targets configured via config/hgm-control-module.json"
+      ]
+    },
     // === Core staking control ===
     "stakeManager": {
       "type": "governable",

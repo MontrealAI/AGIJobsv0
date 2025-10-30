@@ -32,6 +32,7 @@ interface BlueprintDocument {
     decimals: number;
     burnAddress?: string;
   };
+  hgmControl: Record<string, string>;
   jobRegistry: Record<string, string>;
   stakeManager: Record<string, string>;
   feePool: Record<string, string>;
@@ -258,11 +259,20 @@ async function buildBlueprint(
   const thermo = await loadConfig('thermodynamics', options.network);
   const rewardEngine = await loadConfig('reward-engine', options.network);
   const energyOracle = await loadConfig('energy-oracle', options.network);
+  const hgmControl = await loadConfig('hgm-control-module', options.network);
 
   const network = options.network;
   const ownerControlConfig = ownerControl.config ?? {};
+  const hgmControlConfig = hgmControl.config ?? {};
 
   const moduleRows: ModuleRow[] = [
+    toModuleRow(
+      'hgmControlModule',
+      'HGM Control Module',
+      hgmControl.path,
+      network,
+      ownerControlConfig
+    ),
     toModuleRow('jobRegistry', 'Job Registry', jobRegistry.path, network, ownerControlConfig),
     toModuleRow('stakeManager', 'Stake Manager', stakeManager.path, network, ownerControlConfig),
     toModuleRow('feePool', 'Fee Pool', feePool.path, network, ownerControlConfig),
@@ -288,6 +298,16 @@ async function buildBlueprint(
       name: token.config.name ?? 'AGIALPHA',
       decimals,
       burnAddress: formatAddress(token.config.burnAddress),
+    },
+    hgmControl: {
+      'Module address': formatAddress(hgmControlConfig.address) ?? 'not deployed',
+      'Job registry target': formatAddress(hgmControlConfig.targets?.jobRegistry) ?? 'not set',
+      'Stake manager target': formatAddress(hgmControlConfig.targets?.stakeManager) ?? 'not set',
+      'System pause target': formatAddress(hgmControlConfig.targets?.systemPause) ?? 'not set',
+      'Platform registry target':
+        formatAddress(hgmControlConfig.targets?.platformRegistry) ?? 'not set',
+      'Reputation engine target':
+        formatAddress(hgmControlConfig.targets?.reputationEngine) ?? 'not set',
     },
     jobRegistry: {
       'Stake requirement': tokenAmount(jobRegistry.config.jobStakeTokens, decimals, symbol),
@@ -379,6 +399,7 @@ function renderMarkdown(doc: BlueprintDocument, includeDiagrams: boolean): strin
   lines.push('');
 
   const sectionEntries: Array<[string, Record<string, string>]> = [
+    ['HGM Control Module', doc.hgmControl],
     ['Job Registry', doc.jobRegistry],
     ['Stake Manager', doc.stakeManager],
     ['Fee Pool', doc.feePool],
@@ -449,6 +470,7 @@ function renderHuman(doc: BlueprintDocument): string {
   );
   lines.push('');
   const sectionEntries: Array<[string, Record<string, string>]> = [
+    ['HGM Control Module', doc.hgmControl],
     ['Job Registry', doc.jobRegistry],
     ['Stake Manager', doc.stakeManager],
     ['Fee Pool', doc.feePool],

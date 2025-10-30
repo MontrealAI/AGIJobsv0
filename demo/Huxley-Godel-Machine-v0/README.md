@@ -140,6 +140,32 @@ python -m demo.huxley_godel_machine_v0.simulator \
   --set hgm.tau=0.8
 ```
 
+### 🔐 Governance operations
+
+Contract owners can now steer the on-chain deployment without touching raw
+calldata thanks to the `HGMControlModule` facade introduced in `contracts/v2/admin`.
+
+1. **Review targets** – ensure `config/hgm-control-module.json` points to the
+   live JobRegistry, StakeManager, SystemPause, PlatformRegistry, and
+   ReputationEngine addresses.
+2. **Stage parameter changes** – edit the same JSON file to tweak pauser
+   delegates, treasury destinations, or reputation tuning.
+3. **Dry-run the rollout** – execute
+   ```bash
+   npm run owner:update-all -- --network mainnet
+   ```
+   to preview the transaction bundle that `HGMControlModule` will submit.
+4. **Execute with governance** – rerun the command with `--execute` (optionally
+   supplying `--safe` parameters) to push the updates through your multisig or
+   timelock. The script will fan-out to the registry, StakeManager, and pause
+   orchestration contracts.
+5. **Emergency pause** – schedule a `pauseSystem()` call on
+   `HGMControlModule` (for example by adding it to your `owner:update-all`
+   change set) to halt jobs, staking, and dispute flows in one step.
+
+These procedures keep AGI Jobs v0 fully governable while maintaining parity
+between the off-chain simulator and the production contracts.
+
 ## 🔬 Output interpretation
 
 - Console output includes side-by-side CMP vs. baseline summaries.

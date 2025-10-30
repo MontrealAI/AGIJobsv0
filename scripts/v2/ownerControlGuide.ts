@@ -306,6 +306,13 @@ function renderGuide(context: GuideContext, options: CliOptions): string {
   lines.push(renderModulesTable(context));
   lines.push('');
 
+  lines.push(
+    'The **HGM Control Module** owns PlatformRegistry and ReputationEngine on behalf of governance. '
+      + 'Keep `config/hgm-control-module.json` in sync with any owner rotations so emergency pauses, '
+      + 'treasury changes, and metadata updates flow through a single multisig or timelock.'
+  );
+  lines.push('');
+
   lines.push('## Command Reference');
   lines.push('');
   lines.push('| Purpose | Command |');
@@ -360,6 +367,10 @@ function renderGuide(context: GuideContext, options: CliOptions): string {
   );
   lines.push('- **Zero address warning** – Replace any `0x000…` placeholder before executing a production change.');
   lines.push('- **Change control** – Commit JSON modifications and attach the generated Safe bundle for audit trails.');
+  lines.push(
+    '- **HGM control plane** – Use `npm run owner:update-all` after editing `config/hgm-control-module.json` to roll out pauser '
+      + 'delegations, reputation tuning, or coordinated pause actions.'
+  );
   lines.push('- **Disaster recovery** – Re-run the last known-good plan to roll back misconfigurations.');
   lines.push('');
 
