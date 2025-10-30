@@ -1,11 +1,19 @@
-"""Baseline simulator for comparison with the HGM-driven process."""
+"""Baseline simulator for comparison with the HGM-driven process.
+
+The greedy strategy implemented here is intentionally lightweight: it always
+evaluates the empirically best performing agent and periodically clones that
+agent with Gaussian noise applied to the quality estimate.  The class now
+captures a full economic timeline so that downstream tooling (CLI runners,
+visualisers, regression tests) can reason about per-step ROI and cash-flow
+statistics in the exact same shape that the HGM orchestrator produces.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import List
 import random
 
-from .metrics import RunSummary
+from .metrics import EconomicSnapshot, RunSummary
 
 
 @dataclass
@@ -51,6 +59,8 @@ class GreedyBaselineSimulator:
         self.cost = 0.0
         self.successes = 0
         self.failures = 0
+        self.timeline: List[EconomicSnapshot] = []
+        self.logs: List[str] = []
 
     def run(self) -> RunSummary:
         for step in range(1, self.total_steps + 1):
@@ -58,6 +68,25 @@ class GreedyBaselineSimulator:
                 self._expand_best()
             agent = self._select_agent()
             self._evaluate(agent)
+            snapshot = EconomicSnapshot(
+                step=step,
+                gmv=self.gmv,
+                cost=self.cost,
+                successes=self.successes,
+                failures=self.failures,
+                roi=self._compute_roi(),
+                agents=[],
+                best_agent_id=None,
+            )
+            self.timeline.append(snapshot)
+            self.logs.append(
+                "[Baseline] step={:03d} gmv={:.2f} cost={:.2f} roi={}".format(
+                    step,
+                    snapshot.gmv,
+                    snapshot.cost,
+                    "∞" if snapshot.roi == float("inf") else f"{snapshot.roi:.2f}",
+                )
+            )
         roi = self._compute_roi()
         profit = self.gmv - self.cost
         return RunSummary(

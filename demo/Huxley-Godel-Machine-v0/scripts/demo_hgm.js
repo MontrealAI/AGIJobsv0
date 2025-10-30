@@ -92,7 +92,16 @@ async function main() {
     PYTHONPATH: [path.join(demoRoot, 'src'), process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
   };
 
-  const pythonArgs = [path.join(demoRoot, 'run_demo.py'), '--output-dir', reportsRoot, ...args];
+  const uiArtifact = path.join(demoRoot, 'web', 'artifacts', 'comparison.json');
+  const pythonArgs = [
+    '-m',
+    'demo.huxley_godel_machine_v0.simulator',
+    '--output-dir',
+    reportsRoot,
+    '--ui-artifact',
+    uiArtifact,
+    ...args,
+  ];
 
   console.log('♪ Launching simulation in guided mode…');
   await wait(Math.min(paceMs, 1500));
