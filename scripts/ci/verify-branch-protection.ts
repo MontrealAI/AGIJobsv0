@@ -18,6 +18,7 @@ type Args = {
 const EXPECTED_CONTEXTS = [
   "ci (v2) / Lint & static checks",
   "ci (v2) / Tests",
+  "ci (v2) / HGM guardrails",
   "ci (v2) / Foundry",
   "ci (v2) / Coverage thresholds",
   "ci (v2) / Phase 6 readiness",

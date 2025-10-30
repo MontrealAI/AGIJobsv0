@@ -4,6 +4,14 @@ This document outlines the procedures operators should follow when responding to
 production incidents involving the SelfPlay arena, StakeManager, and related
 services.
 
+## Required status checks
+
+- `ci (v2) / HGM guardrails` – validates AGIALPHA configuration, runs the HGM
+  orchestrator regression tests, lint-checks the guided demo assets, and executes
+  a smoke test of `make demo-hgm`. If this gate is red, rerun `ci/hgm-suite.sh`
+  locally (after `npm ci` and `pip install -r requirements-python.txt`) to
+  reproduce the failure before attempting mitigations or hotfixes.
+
 ## 1. Immediate Pause Procedures
 
 1. **Identify the affected components.** Check orchestrator logs and the

@@ -6,13 +6,17 @@
 }
 
 body {
-  font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg-gradient);
   min-height: 100vh;
 }
 
 .hero {
-  background: linear-gradient(135deg, rgba(255, 209, 102, 0.08), rgba(0, 0, 0, 0));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 209, 102, 0.08),
+    rgba(0, 0, 0, 0)
+  );
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -48,11 +52,15 @@ body {
 }
 
 .section::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   opacity: 0.05;
-  background-image: radial-gradient(circle at 20% 20%, rgba(255, 209, 102, 0.3), transparent 40%),
+  background-image: radial-gradient(
+      circle at 20% 20%,
+      rgba(255, 209, 102, 0.3),
+      transparent 40%
+    ),
     radial-gradient(circle at 80% 20%, rgba(247, 127, 0, 0.2), transparent 40%);
   pointer-events: none;
 }
@@ -113,7 +121,7 @@ body {
 }
 
 .timeline-item::before {
-  content: "";
+  content: '';
   position: absolute;
   width: 12px;
   height: 12px;
