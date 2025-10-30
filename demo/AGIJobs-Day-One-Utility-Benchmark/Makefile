@@ -1,6 +1,7 @@
 PYTHON ?= python3
 STRATEGY ?= e2e
 
+.PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni owner-show owner-set owner-toggle owner-explain list clean report ci verify
 .PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni owner-show owner-set owner-toggle owner-reset list clean report ci verify
 
 deps:
@@ -39,6 +40,8 @@ owner-set:
 owner-toggle:
 	$(PYTHON) run_demo.py owner --toggle-pause
 
+owner-explain:
+	$(PYTHON) run_demo.py owner --show --explain
 owner-reset:
 	$(PYTHON) run_demo.py owner --reset
 

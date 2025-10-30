@@ -17,6 +17,8 @@ _spec.loader.exec_module(_module)  # type: ignore[arg-type]
 DayOneUtilityOrchestrator = _module.DayOneUtilityOrchestrator
 StrategyNotFoundError = _module.StrategyNotFoundError
 DemoPausedError = getattr(_module, "DemoPausedError", RuntimeError)
+run_cli = _module.run_cli
+main = _module.main
 
 sys.modules.setdefault("demo_runner", _module)
 
@@ -24,4 +26,6 @@ __all__ = [
     "DayOneUtilityOrchestrator",
     "StrategyNotFoundError",
     "DemoPausedError",
+    "run_cli",
+    "main",
 ]

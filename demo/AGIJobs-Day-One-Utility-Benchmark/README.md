@@ -36,6 +36,13 @@ full strength of **AGI Jobs v0 (v2)**.
    make omni
    ```
 
+   Prefer human-readable briefings? Append `--format narrative` to any `simulate`
+   command for a cinematic mission summary in the terminal:
+
+   ```bash
+   python3 run_demo.py simulate --strategy omni --format narrative
+   ```
+
 4. Inspect the owner command deck:
 
    ```bash
@@ -48,6 +55,7 @@ full strength of **AGI Jobs v0 (v2)**.
    make owner-set KEY=platform_fee_bps VALUE=220
    make owner-set KEY=utility_threshold_override_bps VALUE=900
    make owner-toggle  # Pause/resume entire orchestration instantly
+   make owner-explain # Natural-language breakdown of every owner control
    make owner-reset   # Restore the sovereign defaults in one command
    ```
 
