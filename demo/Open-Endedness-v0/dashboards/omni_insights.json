@@ -1,0 +1,54 @@
+{
+  "gmv": 70932.0,
+  "cost": 259.0,
+  "roi": 273.86872586872585,
+  "disabled_tasks": [
+    "offer_discount_email_c",
+    "offer_discount_email_a",
+    "offer_discount_email_b",
+    "shortlist_top_candidates_variant_c",
+    "shortlist_top_candidates_variant_b"
+  ],
+  "metrics": {
+    "onboarding_call_script_a": {
+      "success_rate": 0.12658227848101267,
+      "lp": 9.000000090080107e-13,
+      "roi": 418.73417721518985
+    },
+    "shortlist_top_candidates_variant_c": {
+      "success_rate": 0.0,
+      "lp": 0.0,
+      "roi": 0.0
+    },
+    "offer_discount_email_b": {
+      "success_rate": 0.0,
+      "lp": 0.0,
+      "roi": 0.0
+    },
+    "shortlist_top_candidates_variant_b": {
+      "success_rate": 0.0,
+      "lp": 0.0,
+      "roi": 0.0
+    },
+    "offer_discount_email_a": {
+      "success_rate": 0.0,
+      "lp": 0.0,
+      "roi": 0.0
+    },
+    "onboarding_call_script_b": {
+      "success_rate": 0.10975609756097561,
+      "lp": 8.999999901000005e-09,
+      "roi": 59.65853658536585
+    },
+    "offer_discount_email_c": {
+      "success_rate": 0.0,
+      "lp": 0.0,
+      "roi": 0.0
+    },
+    "shortlist_top_candidates": {
+      "success_rate": 0.1780821917808219,
+      "lp": 9.000000000899106e-13,
+      "roi": 451.5068493150685
+    }
+  }
+}
