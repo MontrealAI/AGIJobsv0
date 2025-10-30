@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tiny Recursive Model Demo — AGI Jobs v0 (v2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</head>
+<body>
+  <header>
+    <h1>🎖️ Tiny Recursive Model Demo</h1>
+    <p>AGI Jobs v0 (v2) lets non-technical leaders command superintelligent recursion with economic guardrails.</p>
+    <a class="cta" href="../README.md">Open the operator playbook</a>
+  </header>
+  <main>
+    <section>
+      <h2>Mission Control Flow</h2>
+      <div class="diagram mermaid">
+        flowchart LR
+          Operator((Operator Config)) --> Thermostat
+          Thermostat --> Engine
+          Engine --> Model
+          Model --> Ledger
+          Ledger --> Sentinel
+          Sentinel -->|Safe| Thermostat
+          Sentinel -->|Pause| Fallback[Fallback / Human Review]
+      </div>
+    </section>
+    <section class="grid">
+      <div>
+        <h3>Economic Thrusters</h3>
+        <ul>
+          <li>Adaptive thermostat keeps ROI locked above target.</li>
+          <li>Sentinel rules halt runaway costs or latency spikes.</li>
+          <li>Ledger exposes every dollar of value vs. compute spend.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Operator Tools</h3>
+        <ul>
+          <li>Typer CLI for scripted workflows.</li>
+          <li>Streamlit cockpit for visual control.</li>
+          <li>Config packs for instant parameter governance.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Business Outcomes</h3>
+        <ul>
+          <li>TRM delivers LLM-grade accuracy at sub-cent cost.</li>
+          <li>Budget protection ensures compute never outruns GMV.</li>
+          <li>Full telemetry readouts keep stakeholders aligned.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Built with ❤️ by AGI Jobs v0 (v2) – the operator’s superintelligence copilots.
+  </footer>
+</body>
+</html>
