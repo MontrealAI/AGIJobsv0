@@ -23,7 +23,9 @@ full strength of **AGI Jobs v0 (v2)**.
 
    This installs dependencies, simulates the Day-One launch, writes JSON
    telemetry, exports a cinematic HTML dashboard (`out/dashboard_e2e.html`), and
-   renders a high-fidelity chart snapshot.
+   renders a high-fidelity chart snapshot. Operators who prefer direct Python
+   invocations can run `python3 run_demo.py --strategy e2e` or even the shorthand
+   `python3 run_demo.py e2e`; both map to the same sovereign simulation flow.
 
 3. Launch additional strategies to explore the expansion path:
 
