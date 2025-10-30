@@ -7,7 +7,24 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
+try:  # Pydantic v2
+    from pydantic import field_validator
+except ImportError:  # pragma: no cover - exercised in CI with pydantic v1
+    from pydantic import validator as _validator
+
+    def field_validator(*fields, **kwargs):
+        """Compatibility shim for Pydantic v1's validator decorator."""
+
+        def decorator(func):
+            # When defined for Pydantic v2 we annotate validators as classmethods.
+            # The v1 decorator expects a plain function, so unwrap if needed.
+            if isinstance(func, classmethod):
+                func = func.__func__
+            return _validator(*fields, **kwargs)(func)
+
+        return decorator
 
 
 class ContractConfig(BaseModel):
