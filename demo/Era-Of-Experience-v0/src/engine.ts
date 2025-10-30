@@ -39,16 +39,28 @@ export class ExperienceEngine {
     this.rng = new DeterministicRandom(seed);
   }
 
-  public selectAgent(context: AssignmentContext): { index: number; probabilities: number[]; features: number[][] } {
+  public selectAgent(context: AssignmentContext): {
+    index: number;
+    probabilities: number[];
+    features: number[][];
+  } {
     this.ensureWeights(context.agents.length, this.deriveFeatureLength(context));
     const featureVectors = context.agents.map((agent) => this.computeFeatures(context, agent));
     const logits = featureVectors.map((features, idx) => this.dotProduct(this.policyState.weights[idx], features));
-    const probabilities = this.softmax(logits, this.config.policy.temperature);
+    const policyProbabilities = this.softmax(logits, this.config.policy.temperature);
 
-    const explore = this.rng.next() < this.config.policy.explorationEpsilon;
-    const chosenRaw = explore ? Math.floor(this.rng.next() * context.agents.length) : this.weightedSample(probabilities);
+    const epsilon = clamp(this.config.policy.explorationEpsilon, 0, 1);
+    const explore = this.rng.next() < epsilon;
+    const behaviourProbabilities = explore
+      ? Array.from({ length: context.agents.length }, () =>
+          context.agents.length > 0 ? 1 / context.agents.length : 0
+        )
+      : policyProbabilities;
+    const chosenRaw = explore
+      ? Math.floor(this.rng.next() * context.agents.length)
+      : this.weightedSample(policyProbabilities);
     const chosen = clamp(chosenRaw, 0, context.agents.length - 1);
-    return { index: chosen, probabilities, features: featureVectors };
+    return { index: chosen, probabilities: behaviourProbabilities, features: featureVectors };
   }
 
   public recordExperience(experience: Experience): void {
@@ -102,11 +114,23 @@ export class ExperienceEngine {
         (1 - alpha) * this.policyState.averageReward + alpha * reward;
       const advantage = reward - this.policyState.averageReward;
 
+      const logits = state.map((features, idx) =>
+        this.dotProduct(this.policyState.weights[idx], features)
+      );
+      const policyProbabilities = this.softmax(logits, this.config.policy.temperature);
+      const behaviourActionProbability = probabilities[action] ?? 0;
+      const policyActionProbability = policyProbabilities[action] ?? 0;
+      if (behaviourActionProbability <= 0) {
+        continue;
+      }
+      const importanceWeight = policyActionProbability / behaviourActionProbability;
+      const gradientBase = advantage * importanceWeight;
+
       for (let agentIdx = 0; agentIdx < state.length; agentIdx += 1) {
         const features = state[agentIdx];
-        const prob = probabilities[agentIdx];
+        const prob = policyProbabilities[agentIdx];
         const indicator = agentIdx === action ? 1 : 0;
-        const gradientScale = advantage * (indicator - prob);
+        const gradientScale = gradientBase * (indicator - prob);
         const entropyGrad = -entropyWeight * (Math.log(prob + 1e-9) + 1);
         for (let f = 0; f < features.length; f += 1) {
           const update = learningRate * (gradientScale * features[f] + entropyGrad);
