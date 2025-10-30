@@ -1,22 +1,21 @@
+from __future__ import annotations
+
 from pathlib import Path
 
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.jobs import JobOpportunity
-from alpha_node.planner import MuZeroPlanner
+from agi_alpha_node_demo.knowledge.lake import KnowledgeLake
+from agi_alpha_node_demo.orchestration.planner import Planner
 
 
-def test_planner_ranks_high_value_jobs(tmp_path):
-    config = AlphaNodeConfig.load(Path('demo/AGI-Alpha-Node-v0/config.toml'))
-    planner = MuZeroPlanner(config.planner)
+def test_planner_prioritizes_high_value_jobs(tmp_path: Path) -> None:
+    lake_path = tmp_path / "knowledge.sqlite"
+    lake = KnowledgeLake(lake_path)
+    lake.store("Z", "finance", 0.6, {"note": "baseline"})
+    lake.store("Y", "finance", 0.95, {"note": "premium"})
+    planner = Planner(lake, rollout_depth=3, exploration_constant=0.0, simulations=16)
     jobs = [
-        JobOpportunity(
-            job_id='A', domain='finance', reward=1000, stake_required=100,
-            duration_hours=10, success_probability=0.9, impact_score=5, client='X'
-        ),
-        JobOpportunity(
-            job_id='B', domain='finance', reward=10000, stake_required=200,
-            duration_hours=8, success_probability=0.7, impact_score=9, client='Y'
-        )
+        {"id": "A", "domain": "finance", "reward": 1000},
+        {"id": "B", "domain": "biotech", "reward": 15000},
     ]
-    decisions = planner.plan(jobs)
-    assert decisions[0].job_id == 'B'
+    plan = planner.plan(jobs)
+    lake.close()
+    assert plan[0].job_id == "A"

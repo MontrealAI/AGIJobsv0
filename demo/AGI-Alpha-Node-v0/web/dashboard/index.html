@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AGI Alpha Node Command Deck</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.0-alpha.2/css/pico.min.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+  <style>
+    body { background: radial-gradient(circle at top, #0c1226 0%, #020205 100%); color: #f5f9ff; min-height: 100vh; }
+    main { padding: 2rem; }
+    h1 { font-size: 2.8rem; margin-bottom: 0.5rem; }
+    .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card { background: rgba(16, 24, 48, 0.72); border-radius: 16px; box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45); padding: 1.5rem; }
+    pre { background: rgba(4, 10, 20, 0.8); border-radius: 12px; padding: 1rem; color: #9ad4ff; }
+    #diagram { background: rgba(15, 21, 37, 0.9); border-radius: 16px; padding: 1rem; }
+    .metrics-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .metric { background: rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 1rem; text-align: center; }
+    footer { margin-top: 3rem; text-align: center; color: #8aa2f2; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <hgroup>
+        <h1>AGI Alpha Node 👁️✨</h1>
+        <h2>The sovereign command center for autonomous economic super-intelligence.</h2>
+      </hgroup>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h3>Live Node Intelligence</h3>
+        <div class="metrics-grid" id="metrics"></div>
+      </article>
+      <article class="card">
+        <h3>Operations Feed</h3>
+        <pre id="events">Initializing command uplink…</pre>
+      </article>
+    </section>
+
+    <section class="card">
+      <h3>Autonomous Intelligence Architecture</h3>
+      <div class="mermaid" id="diagram">
+        graph TD
+          ENS["ENS Guardian\nIdentity Verification"] -->|Authorizes| Governance["Governance Multisig\nControl Deck"]
+          Governance -->|Activates| Safety["System Pause & Safety Rails"]
+          Safety --> Planner["MuZero++ Planner"]
+          Planner --> Orchestrator["Orchestrator"]
+          Orchestrator --> Finance["Finance Strategist"]
+          Orchestrator --> Biotech["Biotech Synthesist"]
+          Orchestrator --> Manufacturing["Manufacturing Optimizer"]
+          Finance --> Knowledge["Knowledge Lake"]
+          Biotech --> Knowledge
+          Manufacturing --> Knowledge
+          Knowledge --> Planner
+          Planner --> Staking["$AGIALPHA Staking & Rewards"]
+          Staking --> Rewards["FeePool & Treasury"]
+          Rewards --> Reinvest["Autonomous Reinvestment"]
+      </div>
+    </section>
+
+    <section class="card">
+      <h3>Quickstart</h3>
+      <ol>
+        <li>Copy <code>config/alpha_node.example.yml</code> to <code>alpha_node.yml</code> and set your ENS, governance, and contract details.</li>
+        <li>Run <code>docker compose up</code> or <code>python -m agi_alpha_node_demo run</code> to boot the node.</li>
+        <li>Watch this dashboard light up with live staking, compliance, and specialist execution intelligence.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    Composable AGI swarms aligned with sovereign operators. Fully audited, fail-safe, unstoppable.
+  </footer>
+
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+    async function fetchMetrics() {
+      try {
+        const response = await fetch('/metrics/summary');
+        if (!response.ok) throw new Error('Metrics endpoint unavailable');
+        const data = await response.json();
+        const metricsContainer = document.getElementById('metrics');
+        metricsContainer.innerHTML = data.metrics.map(metric => `
+          <div class="metric">
+            <h4>${metric.label}</h4>
+            <p>${metric.value}</p>
+            <small>${metric.description}</small>
+          </div>
+        `).join('');
+      } catch (error) {
+        document.getElementById('metrics').innerHTML = `<p>⚠️ ${error.message}</p>`;
+      }
+    }
+
+    async function fetchEvents() {
+      try {
+        const response = await fetch('/events');
+        if (!response.ok) throw new Error('Event stream unavailable');
+        const text = await response.text();
+        document.getElementById('events').textContent = text;
+      } catch (error) {
+        document.getElementById('events').textContent = `⚠️ ${error.message}`;
+      }
+    }
+
+    setInterval(fetchMetrics, 3000);
+    setInterval(fetchEvents, 5000);
+    fetchMetrics();
+    fetchEvents();
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[
+  {
+    "inputs": [],
+    "name": "jobCount",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
+    "name": "jobs",
+    "outputs": [
+      {"internalType": "bytes32", "name": "jobId", "type": "bytes32"},
+      {"internalType": "string", "name": "domain", "type": "string"},
+      {"internalType": "address", "name": "creator", "type": "address"},
+      {"internalType": "uint256", "name": "reward", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

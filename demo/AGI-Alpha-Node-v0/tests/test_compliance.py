@@ -1,28 +1,19 @@
-from pathlib import Path
+from __future__ import annotations
 
-from alpha_node.compliance import ComplianceEngine
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.ens import ENSVerificationResult
-from alpha_node.stake import StakeManager
-from alpha_node.state import StateStore
+from agi_alpha_node_demo.compliance.scorecard import ComplianceScorecard
 
 
-def test_compliance_scores_all_dimensions(tmp_path):
-    config_path = Path('demo/AGI-Alpha-Node-v0/config.toml')
-    config = AlphaNodeConfig.load(config_path)
-    store = StateStore(tmp_path / 'state.json')
-    stake_manager = StakeManager(config.stake, store, tmp_path / 'ledger.csv')
-    stake_manager.deposit(config.stake.minimum_stake)
-    store.update(total_rewards=500, antifragility_index=0.9, strategic_alpha_index=0.95)
-    engine = ComplianceEngine(config.compliance, store, stake_manager)
-    ens_result = ENSVerificationResult(
-        domain=config.ens.domain,
-        owner=config.ens.owner_address,
-        resolver=None,
-        verified=True,
-        source='test',
+def test_compliance_scores_all_dimensions() -> None:
+    scorecard = ComplianceScorecard()
+    score = scorecard.compute(
+        ens_verified=True,
+        stake_ok=True,
+        governance_address="0x0000000000000000000000000000000000000001",
+        pause_status=False,
+        rewards_growth=0.8,
+        antifragility_score=0.9,
+        intelligence_score=0.95,
     )
-    report = engine.evaluate(ens_result)
-    assert report.overall > 0.5
-    assert len(report.dimensions) == 6
-    assert store.read().compliance_score == report.overall
+    assert score.total > 0.5
+    assert len(score.dimensions) == 6
+    assert all(0 <= dimension.score <= 1 for dimension in score.dimensions)
