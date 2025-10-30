@@ -7,6 +7,7 @@ import {
   cloneOwnerCommandSchedule,
   loadFabricConfig,
   loadJobBlueprint,
+  loadMissionPlan,
   loadOwnerCommandSchedule,
 } from './config-loader';
 import { runSimulation, SimulationResult } from './simulation';
@@ -83,6 +84,7 @@ export interface AcceptanceReport {
   highLoad: HighLoadReport;
   restart: RestartScenarioReport;
   overallPass: boolean;
+  missionPlan?: SimulationOptions['missionPlan'];
 }
 
 interface ScenarioExecution {
@@ -108,6 +110,7 @@ interface ScenarioConfig {
     | 'preserveReportDirOnResume'
     | 'jobBlueprint'
     | 'jobBlueprintSource'
+    | 'missionPlan'
   >;
 }
 
@@ -240,11 +243,13 @@ async function executeScenario(config: ScenarioConfig): Promise<ScenarioExecutio
     checkpointPath: config.checkpointPath,
     outputLabel: config.label,
     ownerCommands: ownerCommandsClone,
-    ownerCommandSource: 'acceptance-suite',
+    ownerCommandSource:
+      config.options.missionPlan?.ownerCommandsSource ?? 'acceptance-suite',
     preserveReportDirOnResume: config.options.preserveReportDirOnResume,
     ciMode: true,
     jobBlueprint: cloneJobBlueprint(config.options.jobBlueprint),
     jobBlueprintSource: config.options.jobBlueprintSource,
+    missionPlan: config.options.missionPlan,
   };
   const result = await runSimulation(configClone, options);
   const summary = await readSummary(result.artifacts.summaryPath);
@@ -399,6 +404,7 @@ export interface AcceptanceOptions {
   thresholds?: Partial<AcceptanceThresholds>;
   jobBlueprint?: JobBlueprint;
   jobBlueprintSource?: string;
+  missionPlan?: SimulationOptions['missionPlan'];
 }
 
 export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<AcceptanceReport> {
@@ -436,6 +442,7 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       preserveReportDirOnResume: undefined,
       jobBlueprint: options.jobBlueprint,
       jobBlueprintSource: options.jobBlueprintSource,
+      missionPlan: options.missionPlan,
     },
   });
 
@@ -455,6 +462,7 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       preserveReportDirOnResume: false,
       jobBlueprint: options.jobBlueprint,
       jobBlueprintSource: options.jobBlueprintSource,
+      missionPlan: options.missionPlan,
     },
   });
 
@@ -474,6 +482,7 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
       preserveReportDirOnResume: true,
       jobBlueprint: options.jobBlueprint,
       jobBlueprintSource: options.jobBlueprintSource,
+      missionPlan: options.missionPlan,
     },
   });
 
@@ -485,12 +494,17 @@ export async function runAcceptanceSuite(options: AcceptanceOptions): Promise<Ac
     highLoad: highLoadReport,
     restart: restartReport,
     overallPass: highLoadReport.pass && restartReport.pass,
+    missionPlan: options.missionPlan,
   };
 }
 
 async function runFromCli(): Promise<void> {
   const argv = await yargs(hideBin(process.argv))
-    .option('config', { type: 'string', demandOption: true, describe: 'Path to fabric configuration JSON' })
+    .option('config', { type: 'string', describe: 'Path to fabric configuration JSON' })
+    .option('plan', {
+      type: 'string',
+      describe: 'Mission plan JSON bundling config, blueprints, and owner schedules',
+    })
     .option('owner-commands', {
       type: 'string',
       describe: 'Optional path to owner command schedule JSON',
@@ -538,17 +552,55 @@ async function runFromCli(): Promise<void> {
       type: 'number',
       describe: 'Maximum acceptable shard skew ratio (>=1)',
     })
+    .check((parsed) => {
+      const hasConfig = parsed.config !== undefined;
+      const hasPlan = parsed.plan !== undefined;
+      if (!hasConfig && !hasPlan) {
+        throw new Error('Provide either --config or --plan to run the acceptance suite.');
+      }
+      if (hasConfig && hasPlan) {
+        throw new Error('Use --config or --plan, but not both simultaneously.');
+      }
+      return true;
+    })
     .parseAsync();
 
-  const config = await loadFabricConfig(argv.config);
-  let ownerCommands: OwnerCommandSchedule[] | undefined;
-  if (argv['owner-commands']) {
-    ownerCommands = await loadOwnerCommandSchedule(argv['owner-commands']);
+  const planPath = argv.plan as string | undefined;
+  const plan = planPath ? await loadMissionPlan(planPath) : undefined;
+
+  const configPath = argv.config as string | undefined;
+  const config = configPath ? await loadFabricConfig(configPath) : plan!.config;
+
+  const ownerCommandsPath = argv['owner-commands'] as string | undefined;
+  let ownerCommands: OwnerCommandSchedule[] | undefined = plan?.ownerCommands;
+  let ownerCommandSource: string | undefined = plan?.ownerCommandsSource;
+  if (ownerCommandsPath) {
+    ownerCommands = await loadOwnerCommandSchedule(ownerCommandsPath);
+    ownerCommandSource = ownerCommandsPath;
   }
-  let jobBlueprint: JobBlueprint | undefined;
-  if (argv['jobs-blueprint']) {
-    jobBlueprint = await loadJobBlueprint(argv['jobs-blueprint']);
+
+  const jobBlueprintPath = argv['jobs-blueprint'] as string | undefined;
+  let jobBlueprint: JobBlueprint | undefined = plan?.jobBlueprint;
+  let jobBlueprintSource = plan?.jobBlueprintSource;
+  if (jobBlueprintPath) {
+    jobBlueprint = await loadJobBlueprint(jobBlueprintPath);
+    jobBlueprintSource = jobBlueprintPath;
   }
+
+  const missionPlanInfo = plan
+    ? {
+        source: plan.source,
+        label: plan.metadata?.label,
+        description: plan.metadata?.description,
+        author: plan.metadata?.author,
+        version: plan.metadata?.version,
+        tags: plan.metadata?.tags,
+        run: plan.run,
+        configSource: plan.configSource,
+        ownerCommandsSource: ownerCommandSource ?? plan.ownerCommandsSource,
+        jobBlueprintSource: jobBlueprintSource ?? plan.jobBlueprintSource,
+      }
+    : undefined;
 
   const thresholdsOverrides: Partial<AcceptanceThresholds> = {};
   if (typeof argv['max-drop-rate'] === 'number') {
@@ -564,17 +616,28 @@ async function runFromCli(): Promise<void> {
     thresholdsOverrides.maxShardSkewRatio = argv['max-shard-skew-ratio'];
   }
 
+  const jobsHighLoadOverride =
+    typeof argv['jobs-high-load'] === 'number' ? argv['jobs-high-load'] : plan?.run?.jobs;
+  const outageNodeOverride = (argv['outage-node'] as string | undefined) ?? plan?.run?.simulateOutage;
+  const outageTickOverride =
+    typeof argv['outage-tick'] === 'number' ? argv['outage-tick'] : plan?.run?.outageTick;
+  const restartStopAfterOverride =
+    typeof argv['restart-stop-after'] === 'number'
+      ? argv['restart-stop-after']
+      : plan?.run?.stopAfterTicks;
+
   const report = await runAcceptanceSuite({
     config,
     ownerCommands,
     baseLabel: argv.label,
-    jobsHighLoad: argv['jobs-high-load'],
-    outageNodeId: argv['outage-node'],
-    outageTick: argv['outage-tick'],
-    restartStopAfterTicks: argv['restart-stop-after'],
+    jobsHighLoad: jobsHighLoadOverride,
+    outageNodeId: outageNodeOverride,
+    outageTick: outageTickOverride,
+    restartStopAfterTicks: restartStopAfterOverride,
     thresholds: thresholdsOverrides,
     jobBlueprint,
-    jobBlueprintSource: argv['jobs-blueprint'],
+    jobBlueprintSource: jobBlueprintSource,
+    missionPlan: missionPlanInfo,
   });
 
   const headline = report.overallPass ? '✅ Acceptance suite PASSED' : '❌ Acceptance suite FAILED';
@@ -584,6 +647,14 @@ async function runFromCli(): Promise<void> {
       `Restart drop rate: ${(report.restart.stageTwoDropRate * 100).toFixed(2)}%`
   );
   console.log(`   Reports saved under label base "${argv.label}".`);
+  if (report.missionPlan) {
+    const planLabel = report.missionPlan.label ?? 'Unnamed mission plan';
+    const planSource = report.missionPlan.source ? `source: ${report.missionPlan.source}` : 'inline mission plan';
+    const planTags = report.missionPlan.tags && report.missionPlan.tags.length > 0
+      ? ` · tags: ${report.missionPlan.tags.join(', ')}`
+      : '';
+    console.log(`   Mission plan: ${planLabel} (${planSource}${planTags})`);
+  }
   console.log(JSON.stringify(report, null, 2));
 
   if (!report.overallPass) {
