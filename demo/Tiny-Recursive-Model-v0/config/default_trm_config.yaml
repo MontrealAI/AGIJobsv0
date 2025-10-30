@@ -1,0 +1,49 @@
+# Default configuration for the Tiny Recursive Model demo.
+# Non-technical operators can tweak values through the CLI or Streamlit UI.
+trm:
+  model_type: att
+  input_dim: 7
+  latent_dim: 64
+  answer_dim: 200
+  max_outer_steps: 3
+  max_inner_steps: 6
+  halt_threshold: 0.55
+  ema_decay: 0.999
+  dropout: 0.05
+  weight_init_scale: 0.7
+  device: cpu
+
+training:
+  epochs: 8
+  batch_size: 128
+  learning_rate: 0.0008
+  weight_decay: 0.0001
+  gradient_clip_norm: 1.0
+  dataset_size: 4096
+  validation_split: 0.1
+  patience: 4
+  checkpoint_path: assets/checkpoints/trm_att.pt
+  seed: 42
+
+thermostat:
+  target_roi: 2.0
+  min_inner_steps: 4
+  max_inner_steps: 10
+  min_outer_steps: 2
+  max_outer_steps: 5
+  halt_threshold_bounds: [0.5, 0.85]
+  adjustment_rate: 0.1
+  window: 25
+
+sentinel:
+  min_roi: 1.25
+  max_daily_cost: 50.0
+  max_latency_ms: 2000
+  max_recursions: 24
+  max_consecutive_failures: 5
+
+ledger:
+  default_success_value: 100.0
+  base_cost_per_call: 0.001
+  cost_per_inner_step: 0.00005
+  cost_per_outer_step: 0.0002

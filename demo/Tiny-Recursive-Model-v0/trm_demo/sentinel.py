@@ -1,74 +1,52 @@
-"""Sentinel guardrails to enforce ROI and latency constraints."""
-
+"""Sentinel guardrails for TRM operations."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Optional
 
-from .economic import EconomicLedger
+from .config import SentinelSettings
+from .ledger import EconomicLedger
 
 
 @dataclass
-class SentinelConfig:
-    """Parameters controlling the sentinel guardrails."""
-
-    roi_floor: float = 1.2
-    max_cost: float = 50.0
-    max_latency_ms: float = 2000.0
-    max_steps: int = 18
+class SentinelStatus:
+    halted: bool
+    reason: Optional[str] = None
 
 
 class Sentinel:
-    """Guardrail monitor that can halt TRM usage when constraints are violated."""
+    """Simple guardrail implementation enforcing ROI and latency caps."""
 
-    def __init__(self, config: Optional[SentinelConfig] = None) -> None:
-        self.config = config or SentinelConfig()
-        self._halt_requested = False
-        self._reason = ""
-
-    @property
-    def halt_requested(self) -> bool:
-        return self._halt_requested
-
-    @property
-    def reason(self) -> str:
-        return self._reason
+    def __init__(self, settings: SentinelSettings) -> None:
+        self.settings = settings
+        self.consecutive_failures = 0
 
     def evaluate(
         self,
         *,
         ledger: EconomicLedger,
-        cumulative_cost: float,
-        last_run_latency_ms: float,
-        last_run_steps: int,
-    ) -> None:
-        """Evaluate the guardrails and update the halt flag if needed."""
+        last_latency_ms: float,
+        last_steps: int,
+        last_success: bool,
+    ) -> SentinelStatus:
+        totals = ledger.totals
+        if totals["total_cost"] > 0 and totals["roi"] < self.settings.min_roi:
+            return SentinelStatus(True, "ROI floor breached")
+        if ledger.cost_this_run() > self.settings.max_daily_cost:
+            return SentinelStatus(True, "Cost budget exhausted")
+        if last_latency_ms > self.settings.max_latency_ms:
+            return SentinelStatus(True, "Latency threshold exceeded")
+        if last_steps > self.settings.max_recursions:
+            return SentinelStatus(True, "Recursion depth exceeded")
 
-        self._halt_requested = False
-        self._reason = ""
+        if not last_success:
+            self.consecutive_failures += 1
+            if self.consecutive_failures >= self.settings.max_consecutive_failures:
+                return SentinelStatus(True, "Too many consecutive failures")
+        else:
+            self.consecutive_failures = 0
 
-        if ledger.entries and ledger.roi < self.config.roi_floor:
-            self._halt_requested = True
-            self._reason = "ROI floor breached"
-            return
+        return SentinelStatus(False, None)
 
-        if cumulative_cost > self.config.max_cost:
-            self._halt_requested = True
-            self._reason = "Cost budget exhausted"
-            return
 
-        if last_run_latency_ms > self.config.max_latency_ms:
-            self._halt_requested = True
-            self._reason = "Latency guardrail triggered"
-            return
-
-        if last_run_steps > self.config.max_steps:
-            self._halt_requested = True
-            self._reason = "Recursion depth exceeded"
-
-    def status(self) -> Dict[str, str | float | bool]:
-        return {
-            "halt_requested": self._halt_requested,
-            "reason": self._reason,
-        }
-
+__all__ = ["Sentinel", "SentinelStatus"]
