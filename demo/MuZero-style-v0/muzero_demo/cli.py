@@ -1,8 +1,27 @@
 """Narrative-first CLI harnessing the MuZero-style planner."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
+
+import click
+
+os.environ.setdefault("_TYPER_FORCE_DISABLE_TERMINAL", "1")
+
+_ORIGINAL_MAKE_METAVAR = click.core.Parameter.make_metavar
+
+
+def _patched_make_metavar(parameter: click.core.Parameter, ctx: Optional[click.Context] = None) -> str:
+    if ctx is None:
+        ctx = click.Context(click.Command(parameter.name or "param"))
+    return _ORIGINAL_MAKE_METAVAR(parameter, ctx)
+
+
+if _ORIGINAL_MAKE_METAVAR.__code__.co_argcount < 2:  # pragma: no cover - backward compatibility
+    pass
+else:  # pragma: no cover - executed during CLI initialisation
+    click.core.Parameter.make_metavar = _patched_make_metavar
 
 import torch
 import typer
@@ -23,6 +42,8 @@ console = Console()
 
 
 def _prepare_trainer(config_path: Path) -> tuple[MuZeroTrainer, PlanningThermostat, SentinelMonitor]:
+    if not config_path.exists():
+        raise typer.BadParameter(f"Configuration file not found: {config_path}")
     demo_config = load_demo_config(config_path)
     if demo_config.environment.rng_seed is not None:
         torch.manual_seed(demo_config.environment.rng_seed)
@@ -38,7 +59,7 @@ def train(
     iterations: int = typer.Option(5, help="Number of self-play/training cycles"),
     episodes_per_iteration: int = typer.Option(6, help="Self-play episodes per cycle"),
     checkpoint: Optional[Path] = typer.Option(None, help="Where to store the trained network"),
-    config_path: Path = typer.Option(DEFAULT_CONFIG, exists=True, help="YAML configuration describing the demo"),
+    config_path: Path = typer.Option(DEFAULT_CONFIG, help="YAML configuration describing the demo"),
 ) -> None:
     """Run a MuZero training loop with adaptive planning controls."""
 
@@ -71,7 +92,7 @@ def train(
 def evaluate(
     checkpoint: Optional[Path] = typer.Option(None, help="Path to trained network weights"),
     episodes: int = typer.Option(25, help="Episodes per strategy for evaluation"),
-    config_path: Path = typer.Option(DEFAULT_CONFIG, exists=True, help="YAML configuration describing the demo"),
+    config_path: Path = typer.Option(DEFAULT_CONFIG, help="YAML configuration describing the demo"),
 ) -> None:
     """Compare MuZero planning to baseline strategies under the sentinel."""
 
