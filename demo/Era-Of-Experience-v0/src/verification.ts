@@ -246,7 +246,10 @@ function computeBootstrapInterval(
 
 function safeRatio(a: number, b: number): number {
   if (b === 0) {
-    return a === 0 ? 1 : Number.POSITIVE_INFINITY;
+    if (a === 0) {
+      return 1;
+    }
+    return a > 0 ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
   }
   return a / b;
 }
