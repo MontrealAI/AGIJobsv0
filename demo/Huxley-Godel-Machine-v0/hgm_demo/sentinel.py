@@ -31,7 +31,12 @@ class Sentinel:
         """Check ROI and budget rules each iteration."""
 
         roi = self.engine.metrics.roi
-        if roi < self.config.roi_floor or self.engine.metrics.cost >= self.config.max_cost:
+        remaining_budget = self.config.max_cost - self.engine.metrics.cost
+        if (
+            roi < self.config.roi_floor
+            or self.engine.metrics.cost >= self.config.max_cost
+            or remaining_budget < self.config.expansion_cost
+        ):
             self.expansions_allowed = False
         elif roi >= self.config.roi_floor * 1.1:
             self.expansions_allowed = True
