@@ -47,9 +47,19 @@ class MuZeroPlanner:
         self._min_q = float("inf")
         self._max_q = float("-inf")
 
-    def run(self, observation: torch.Tensor, legal_actions: List[int]) -> Tuple[torch.Tensor, float, Dict[int, SearchNode]]:
+    def run(
+        self,
+        observation: torch.Tensor,
+        legal_actions: List[int],
+        *,
+        initial_inference: Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]] = None,
+        num_simulations: Optional[int] = None,
+    ) -> Tuple[torch.Tensor, float, Dict[int, SearchNode], int]:
         self._reset_q_bounds()
-        policy_logits, value, hidden_state = self.network.initial_inference(observation.unsqueeze(0))
+        if initial_inference is None:
+            policy_logits, value, hidden_state = self.network.initial_inference(observation.unsqueeze(0))
+        else:
+            policy_logits, value, hidden_state = initial_inference
         policy_probs = torch.softmax(policy_logits, dim=-1)[0]
         root = SearchNode(prior=1.0)
         root.hidden_state = hidden_state
@@ -59,7 +69,8 @@ class MuZeroPlanner:
         self._add_exploration_noise(root)
 
         action_tensor = torch.zeros(1, dtype=torch.long, device=observation.device)
-        for _ in range(self.settings.num_simulations):
+        simulations = num_simulations or self.settings.num_simulations
+        for _ in range(simulations):
             node = root
             search_path = [node]
             current_hidden = hidden_state
@@ -94,7 +105,8 @@ class MuZeroPlanner:
             policy_target = torch.ones_like(policy_target) / policy_target.numel()
         else:
             policy_target = policy_target / total
-        return policy_target, float(value.item()), root.children
+        root_value = float(value.squeeze().item())
+        return policy_target, root_value, root.children, simulations
 
     # ------------------------------------------------------------------
     # Internals

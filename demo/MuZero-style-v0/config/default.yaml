@@ -8,6 +8,10 @@ environment:
   risk_aversion: 0.15
   rng_seed: 7
 
+network:
+  latent_dim: 64
+  hidden_dim: 128
+
 planner:
   num_simulations: 48
   discount: 0.997
@@ -27,6 +31,21 @@ training:
   value_weight: 0.75
   reward_weight: 0.5
   temperature: 0.9
+
+thermostat:
+  min_simulations: 24
+  max_simulations: 144
+  low_entropy: 0.55
+  high_entropy: 1.3
+  budget_pressure_ratio: 0.35
+  endgame_horizon_ratio: 0.8
+
+sentinel:
+  window: 64
+  alert_mae: 12.5
+  fallback_mae: 22.0
+  min_episodes: 6
+  budget_floor: 15.0
 
 artifacts:
   checkpoint_path: artifacts/muzero-demo/model.pt

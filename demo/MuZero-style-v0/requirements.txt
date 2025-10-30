@@ -1,3 +1,4 @@
 numpy>=1.24
 rich>=13.7
 typer>=0.12
+pyyaml>=6.0
