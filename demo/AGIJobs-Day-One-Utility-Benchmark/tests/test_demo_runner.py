@@ -7,7 +7,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from demo_runner import DayOneUtilityOrchestrator, DemoPausedError, StrategyNotFoundError
+from demo_runner import DayOneUtilityOrchestrator, DemoPausedError, StrategyNotFoundError, run_cli
 
 
 def _orchestrator() -> DayOneUtilityOrchestrator:
@@ -108,3 +108,19 @@ def test_invalid_owner_address_rejected():
     orchestrator = _orchestrator()
     with pytest.raises(ValueError):
         orchestrator.update_owner_control("owner_address", "invalid-address")
+
+
+def test_run_cli_strategy_flag_alias(monkeypatch):
+    base_path = Path(__file__).resolve().parents[1]
+    monkeypatch.chdir(base_path)
+    payload, fmt = run_cli(["--strategy", "alphaevolve"])
+    assert fmt == "json"
+    assert payload["strategy"] == "alphaevolve"
+
+
+def test_run_cli_positional_strategy(monkeypatch):
+    base_path = Path(__file__).resolve().parents[1]
+    monkeypatch.chdir(base_path)
+    payload, fmt = run_cli(["omni"])
+    assert fmt == "json"
+    assert payload["strategy"] == "omni"

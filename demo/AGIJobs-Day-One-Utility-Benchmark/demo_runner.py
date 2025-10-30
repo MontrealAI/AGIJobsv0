@@ -12,6 +12,7 @@ import datetime as dt
 import json
 import math
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
@@ -769,8 +770,38 @@ class DayOneUtilityOrchestrator:
 
 
 def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
+    """Run the demo CLI with backwards-compatible argument handling."""
+
     orchestrator = DayOneUtilityOrchestrator()
-    return orchestrator.execute(args)
+    normalized_args: Optional[List[str]]
+
+    if args is None:
+        # Read from sys.argv so we can normalise old-style invocations such as
+        # `python run_demo.py --strategy e2e` which predate the subcommand
+        # interface. We normalise rather than rely on argparse errors so the
+        # CLI feels forgiving to non-technical operators following earlier docs.
+        normalized_args = list(sys.argv[1:])
+    else:
+        normalized_args = list(args)
+
+    if normalized_args is None:
+        return orchestrator.execute(None)
+
+    if not normalized_args:
+        normalized_args = ["simulate"]
+    else:
+        primary = normalized_args[0]
+        known_commands = {"simulate", "owner", "list"}
+        if primary not in known_commands and not primary.startswith("-"):
+            # Allow operators to call `python run_demo.py e2e` and treat the
+            # first positional argument as the strategy name. This mirrors the
+            # friendly interface described in the scaffold request.
+            normalized_args = ["simulate", "--strategy", primary, *normalized_args[1:]]
+        elif primary.startswith("-"):
+            # Any flag-only invocation should default to the simulate command.
+            normalized_args = ["simulate", *normalized_args]
+
+    return orchestrator.execute(normalized_args)
 
 
 def main() -> None:
