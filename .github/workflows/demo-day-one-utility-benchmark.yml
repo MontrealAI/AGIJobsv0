@@ -71,6 +71,10 @@ jobs:
           python3 run_demo.py owner --toggle-pause
           python3 run_demo.py owner --toggle-pause
 
+      - name: Generate scoreboard
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: python3 run_demo.py scoreboard
+
       - name: Validate artefacts
         run: |
           python3 - <<'PY'
@@ -82,6 +86,8 @@ jobs:
               'dashboard_e2e.html',
               'snapshot_e2e.png',
               'owner_controls_snapshot.json',
+              'scoreboard.json',
+              'scoreboard.html',
           ]
           for name in required:
               path = base / name
@@ -95,6 +101,16 @@ jobs:
           for snippet in ['Day-One Utility Benchmark', 'class="mermaid"', 'Owner Controls Snapshot', 'Utility Guardrail']:
               if snippet not in html:
                   raise SystemExit(f'missing dashboard snippet: {snippet}')
+
+          scoreboard = json.loads((base / 'scoreboard.json').read_text())
+          if scoreboard.get('type') != 'scoreboard':
+              raise SystemExit('scoreboard.json missing type=scoreboard')
+          if 'leaders' not in scoreboard:
+              raise SystemExit('scoreboard leaders missing')
+          board_html = (base / 'scoreboard.html').read_text()
+          for snippet in ['Day-One Utility Scoreboard', 'class="mermaid"', 'Strategy Leaderboard']:
+              if snippet not in board_html:
+                  raise SystemExit(f'missing scoreboard snippet: {snippet}')
           PY
 
       - name: Run pytest

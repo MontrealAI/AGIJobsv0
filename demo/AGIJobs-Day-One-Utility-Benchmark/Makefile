@@ -1,7 +1,7 @@
 PYTHON ?= python3
 STRATEGY ?= e2e
 
-.PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni owner-show owner-set owner-toggle owner-reset list clean report ci verify
+.PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni scoreboard owner-show owner-set owner-toggle owner-reset list clean report ci verify
 
 deps:
 	$(PYTHON) -m pip install --upgrade pip >/dev/null
@@ -28,6 +28,9 @@ trm: simulate
 
 omni: STRATEGY := omni
 omni: simulate
+
+scoreboard: deps
+	$(PYTHON) run_demo.py scoreboard
 
 owner-show:
 	$(PYTHON) run_demo.py owner --show
@@ -58,4 +61,5 @@ ci: deps
 	$(PYTHON) run_demo.py simulate --strategy e2e
 	$(PYTHON) run_demo.py simulate --strategy alphaevolve
 	$(PYTHON) run_demo.py simulate --strategy hgm
+	$(PYTHON) run_demo.py scoreboard
 	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q
