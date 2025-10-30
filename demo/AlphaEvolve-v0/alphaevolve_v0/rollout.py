@@ -42,7 +42,12 @@ class RolloutManager:
                 self._canary_percent = 0.15
                 rationale = "Shadow validations clean; activating 15% canary."
         elif self._mode == "canary":
-            if metrics.get("Utility", 0.0) >= 1.02 * self._history[-1][1].get("Utility", 0.0):
+            previous_utility = None
+            if len(self._history) >= 2:
+                previous_metrics = self._history[-2][1]
+                previous_utility = previous_metrics.get("Utility", 0.0)
+            current_utility = metrics.get("Utility", 0.0)
+            if previous_utility is not None and current_utility >= 1.02 * previous_utility:
                 self._canary_percent = min(1.0, self._canary_percent + 0.3)
                 rationale = f"Utility uplift sustained; expanding canary to {self._canary_percent:.0%}."
                 if self._canary_percent >= 1.0:
