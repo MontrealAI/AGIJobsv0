@@ -1,27 +1,21 @@
-"""Tests for configuration loading utilities."""
-
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-from hgm_v0_demo.config_loader import load_config
+import pytest
 
-
-def _config_path() -> Path:
-    return Path("demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json")
+from hgm_demo.config import ConfigError, load_config
 
 
-def test_load_config_override_existing_field() -> None:
-    config = load_config(_config_path(), overrides=[("simulation.total_steps", 64)])
-    assert config.simulation["total_steps"] == 64
+def test_load_config_success(tmp_path: Path) -> None:
+    config_path = Path("demo/Huxley-Godel-Machine-v0/config/demo_agialpha.yml")
+    config = load_config(config_path)
+    assert config.tau > 0
+    assert config.concurrency_bounds[0] <= config.concurrency_bounds[1]
 
 
-def test_load_config_override_nested_creation() -> None:
-    override_value = [0.0, 0.0]
-    config = load_config(
-        _config_path(),
-        overrides=[("simulation.evaluation_latency", override_value)],
-    )
-    assert config.simulation["evaluation_latency"] == override_value
+def test_load_config_invalid(tmp_path: Path) -> None:
+    bad_file = tmp_path / "invalid.yml"
+    bad_file.write_text("tau: -1\n", encoding="utf-8")
+    with pytest.raises(ConfigError):
+        load_config(bad_file)

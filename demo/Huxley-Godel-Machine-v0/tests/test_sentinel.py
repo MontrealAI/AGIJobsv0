@@ -1,76 +1,34 @@
 from __future__ import annotations
 
 import random
-import sys
-from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-from hgm_v0_demo.engine import HGMEngine
-from hgm_v0_demo.metrics import EconomicSnapshot
-from hgm_v0_demo.sentinel import Sentinel
+from hgm_demo.config import load_config
+from hgm_demo.engine import HGMEngine
+from hgm_demo.sentinel import Sentinel
 
 
 def make_engine() -> HGMEngine:
-    rng = random.Random(0)
-    engine = HGMEngine(
-        tau=1.0,
-        alpha=1.2,
-        epsilon=0.1,
-        max_agents=10,
-        max_expansions=5,
-        max_evaluations=20,
-        rng=rng,
-    )
-    engine.register_root(0.5)
+    rng = random.Random(1)
+    engine = HGMEngine(tau=1.0, alpha=1.3, epsilon=0.05, max_expansions=5, max_evaluations=10, rng=rng)
+    engine.create_root({"quality": 0.6})
     return engine
 
 
-def test_sentinel_pauses_on_low_roi() -> None:
+def test_sentinel_prunes_after_failures() -> None:
+    config = load_config("demo/Huxley-Godel-Machine-v0/config/demo_agialpha.yml")
     engine = make_engine()
-    sentinel = Sentinel(
-        engine=engine,
-        max_budget=100.0,
-        min_roi=1.5,
-        hard_budget_ratio=0.9,
-        max_failures_per_agent=5,
-        roi_recovery_steps=2,
-    )
-    snapshot = EconomicSnapshot(
-        step=5,
-        gmv=50.0,
-        cost=60.0,
-        successes=2,
-        failures=3,
-        roi=50.0 / 60.0,
-        agents=[],
-        best_agent_id=None,
-    )
-    sentinel.evaluate(snapshot)
-    decision = sentinel.evaluate(snapshot)
-    assert decision.pause_expansions is True
-    assert engine.expansions_allowed is False
+    sentinel = Sentinel(config, engine)
+    agent = engine.get_agent("a1")
+    for _ in range(config.max_failures_per_agent):
+        engine.evaluation_result(agent.identifier, False, 0.0, config.evaluation_cost)
+        sentinel.observe(type("Outcome", (), {"agent_id": agent.identifier, "success": False})())
+    assert engine.get_agent("a1").pruned is True
 
 
-def test_sentinel_halts_on_budget_exhaustion() -> None:
+def test_sentinel_blocks_expansion_on_low_roi() -> None:
+    config = load_config("demo/Huxley-Godel-Machine-v0/config/demo_agialpha.yml")
     engine = make_engine()
-    sentinel = Sentinel(
-        engine=engine,
-        max_budget=100.0,
-        min_roi=1.0,
-        hard_budget_ratio=0.9,
-        max_failures_per_agent=5,
-        roi_recovery_steps=2,
-    )
-    snapshot = EconomicSnapshot(
-        step=5,
-        gmv=10.0,
-        cost=120.0,
-        successes=1,
-        failures=4,
-        roi=10.0 / 120.0,
-        agents=[],
-        best_agent_id=None,
-    )
-    decision = sentinel.evaluate(snapshot)
-    assert decision.halt_all is True
-    assert engine.evaluations_allowed is False
+    sentinel = Sentinel(config, engine)
+    engine.metrics.cost = config.max_cost + 1
+    sentinel.enforce(1, None)
+    assert sentinel.expansions_allowed is False

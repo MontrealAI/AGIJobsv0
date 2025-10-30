@@ -1,45 +1,47 @@
-"""Baseline strategy used for comparison in the demo."""
+"""Greedy baseline strategy to compare against HGM."""
+
 from __future__ import annotations
 
-import asyncio
-from typing import List, Tuple
+import random
+from dataclasses import dataclass
+from typing import Dict
 
-from .simulation import SimulationEnvironment
-from .structures import AgentNode, EconomicLedger
+from .config import DemoConfig
+
+
+@dataclass(slots=True)
+class BaselineMetrics:
+    evaluations: int = 0
+    successes: int = 0
+    cost: float = 0.0
+    gmv: float = 0.0
+
+    @property
+    def roi(self) -> float:
+        if self.cost == 0:
+            return float("inf")
+        return self.gmv / self.cost
 
 
 class GreedyBaseline:
-    """A deliberately myopic strategy that always exploits the current best agent."""
+    """A naive policy that repeatedly evaluates the best-known agent."""
 
-    def __init__(self, environment: SimulationEnvironment, *, expansion_interval: int, max_agents: int) -> None:
-        self.environment = environment
-        self.expansion_interval = expansion_interval
-        self.max_agents = max_agents
-        self.ledger = EconomicLedger()
-        self.actions: List[Tuple[str, str, bool]] = []
+    def __init__(self, config: DemoConfig, rng: random.Random) -> None:
+        self.config = config
+        self._rng = rng
+        self.metrics = BaselineMetrics()
+        self._quality = 0.35
 
-    async def run(self, steps: int, root: AgentNode) -> EconomicLedger:
-        agents: List[AgentNode] = [root]
-        trials = 0
-        while trials < steps:
-            if trials % self.expansion_interval == 0 and len(agents) < self.max_agents:
-                parent = agents[-1]
-                child, ledger_delta = await self.environment.expand(parent)
-                agents.append(child)
-                self.ledger.cost += ledger_delta.cost
-                self.actions.append(("EXPAND", child.agent_id, True))
-                trials += 1
-                if trials >= steps:
-                    break
-            target = agents[0]
-            success, ledger_delta = await self.environment.evaluate(target)
+    def run(self) -> BaselineMetrics:
+        for _ in range(self.config.max_evaluations):
+            success = self._rng.random() < self._quality
+            self.metrics.evaluations += 1
+            self.metrics.cost += self.config.evaluation_cost
             if success:
-                target.self_success += 1
-                self.ledger.gmv += ledger_delta.gmv
-                self.ledger.cost += ledger_delta.cost
+                self.metrics.successes += 1
+                self.metrics.gmv += self.config.success_reward
+                self._quality = min(0.7, self._quality + 0.005)
             else:
-                target.self_failure += 1
-                self.ledger.cost += ledger_delta.cost
-            self.actions.append(("EVALUATE", target.agent_id, success))
-            trials += 1
-        return self.ledger
+                self._quality = max(0.05, self._quality - 0.035)
+        return self.metrics
+
