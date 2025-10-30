@@ -77,6 +77,7 @@ if run_demo:
         st.session_state.roi = report.metrics["TRM"].roi
         st.session_state.target_roi = orchestrator.config.thermostat.target_roi
         st.session_state.metrics = report.metrics
+        st.session_state.report_path = str(orchestrator.report_path)
 
 report = st.session_state.report
 if report:
@@ -90,6 +91,8 @@ if report:
         target_roi = st.session_state.target_roi
         st.plotly_chart(_roi_gauge(roi_value, target_roi), use_container_width=True)
         st.metric("Target ROI", f"{target_roi:.2f}")
+        st.markdown("## Executive Dossier")
+        st.code(st.session_state.report_path, language="text")
     st.markdown("## Detailed Metrics")
     metrics_json = {
         name: {

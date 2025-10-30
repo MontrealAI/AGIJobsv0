@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
+
 import pandas as pd
 
 from .config import DemoConfig
 from .governance import EthereumLogger, GovernanceConsole
 from .simulation import ConversionSimulation, SimulationReport
 from .telemetry import TelemetryWriter
+from .reporting import write_report
 
 
 class TinyRecursiveDemoOrchestrator:
@@ -23,9 +26,12 @@ class TinyRecursiveDemoOrchestrator:
         self.console = GovernanceConsole(self.config, self.telemetry_writer)
         self.ethereum_logger = EthereumLogger(self.config, self.telemetry_writer)
         self.simulation = ConversionSimulation.default(self.config)
+        self.report_path = Path(self.config.report.path)
+        self._latest_report: Optional[Path] = None
 
     def run(self) -> SimulationReport:
         report = self.simulation.run(self.simulation.engine)
+        self._latest_report = write_report(report, self.simulation.ledger, self.report_path)
         self.ethereum_logger.emit_call(
             {
                 "owner": self.config.owner.address,
@@ -38,6 +44,13 @@ class TinyRecursiveDemoOrchestrator:
     def update_owner_parameter(self, section: str, key: str, value) -> None:
         self.console.update(section, key, value)
         self.console.persist(self.config_path)
+
+    def export_report(self, report: SimulationReport, destination: Path | None = None) -> Path:
+        """Persist a report to disk and return the resolved path."""
+
+        target = destination or self.report_path
+        self._latest_report = write_report(report, self.simulation.ledger, target)
+        return self._latest_report
 
     def render_summary(self, report: SimulationReport) -> str:
         frame: pd.DataFrame = report.to_frame()

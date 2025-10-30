@@ -85,6 +85,12 @@ class StrategyStats:
             return float("inf") if self.successes else 0.0
         return (self.total_value - self.total_cost) / self.total_cost
 
+    @property
+    def profit(self) -> float:
+        """Net value generated after deducting compute spend."""
+
+        return self.total_value - self.total_cost
+
 
 @dataclass
 class SimulationOutcome:

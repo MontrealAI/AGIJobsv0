@@ -46,3 +46,6 @@ ethereum:
   chain_id: 1
   logging_contract: "0x0000000000000000000000000000000000000000"
   confirmations_required: 2
+
+report:
+  path: "demo/Tiny-Recursive-Model-v0/assets/trm_executive_report.md"

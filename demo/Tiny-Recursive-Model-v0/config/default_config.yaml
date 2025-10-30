@@ -37,3 +37,6 @@ sentinel:
 
 subgraph:
   path: trm_calls.json
+
+report:
+  path: assets/trm_executive_report.md

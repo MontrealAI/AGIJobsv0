@@ -43,7 +43,13 @@ def run(config: Path = typer.Option(Path("config/trm_demo_config.yaml"), help="P
     report = orchestrator.run()
     summary_markdown = orchestrator.render_summary(report)
     _render_table(orchestrator, summary_markdown)
-    console.print(Panel.fit("Telemetry written to assets/telemetry.jsonl", style="green"))
+    console.print(
+        Panel.fit(
+            "Telemetry → assets/telemetry.jsonl\n"
+            f"Executive report → {orchestrator.report_path}",
+            style="green",
+        )
+    )
 
 
 @app.command()
