@@ -1,0 +1,54 @@
+[
+  {
+    "iteration": 0,
+    "proposer_valid_rate": 1.0,
+    "solver_success_rate": 0.3333333333333333,
+    "diversity_score": 0.0,
+    "gmv_total": 23.11,
+    "cost_total": 0.06,
+    "roi": 23.05,
+    "notes": [
+      "diversity-floor-breached"
+    ]
+  },
+  {
+    "iteration": 1,
+    "proposer_valid_rate": 1.0,
+    "solver_success_rate": 0.6666666666666666,
+    "diversity_score": 0.4444444444444444,
+    "gmv_total": 69.36,
+    "cost_total": 0.12000000000000001,
+    "roi": 69.24,
+    "notes": []
+  },
+  {
+    "iteration": 2,
+    "proposer_valid_rate": 1.0,
+    "solver_success_rate": 0.6666666666666666,
+    "diversity_score": 0.48,
+    "gmv_total": 115.94000000000001,
+    "cost_total": 0.18,
+    "roi": 115.76,
+    "notes": []
+  },
+  {
+    "iteration": 3,
+    "proposer_valid_rate": 1.0,
+    "solver_success_rate": 0.6666666666666666,
+    "diversity_score": 0.48979591836734704,
+    "gmv_total": 162.4,
+    "cost_total": 0.23999999999999996,
+    "roi": 162.16,
+    "notes": []
+  },
+  {
+    "iteration": 4,
+    "proposer_valid_rate": 1.0,
+    "solver_success_rate": 0.3333333333333333,
+    "diversity_score": 0.5,
+    "gmv_total": 185.56,
+    "cost_total": 0.3,
+    "roi": 185.26,
+    "notes": []
+  }
+]

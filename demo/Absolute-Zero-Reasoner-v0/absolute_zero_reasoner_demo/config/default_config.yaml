@@ -1,0 +1,36 @@
+azr:
+  iterations: 50
+  tasks_per_iteration: 5
+  random_seed: 42
+  proposer:
+    base_temperature: 0.7
+    max_program_loc: 40
+    difficulty_step: 0.05
+    min_difficulty: 0.2
+    max_difficulty: 1.0
+  solver:
+    base_temperature: 0.6
+    accuracy_floor: 0.35
+    accuracy_ceiling: 0.95
+    improvement_rate: 0.08
+  buffers:
+    max_size_per_type: 40
+  rewards:
+    learnability_weight: 1.0
+    correctness_weight: 1.0
+    econ_weight: 0.2
+    format_penalty: 0.5
+  market:
+    human_hour_value_usd: 85.0
+    baseline_completion_minutes: 15
+    ai_completion_minutes: 0.5
+    complexity_bonus_weight: 12.0
+  guardrails:
+    target_success_rate: 0.55
+    target_valid_rate: 0.85
+    diversity_floor: 0.35
+    max_iterations_per_run: 500
+  telemetry:
+    report_path: reports/absolute_zero_reasoner_report.md
+    json_path: reports/absolute_zero_reasoner_metrics.json
+    mermaid_theme: forest
