@@ -54,7 +54,7 @@ class MuZeroPlanner:
     ) -> str:
         total_visits = sum(visit_counts.values())
         best_score = float("-inf")
-        best_strategy = next(iter(priors))
+        best_strategy: str | None = None
         for strategy, prior in priors.items():
             count = visit_counts[strategy]
             value = value_sums[strategy] / (count + 1e-9)
@@ -63,7 +63,9 @@ class MuZeroPlanner:
             if score > best_score:
                 best_score = score
                 best_strategy = strategy
-        return best_strategy
+            elif math.isclose(score, best_score) and random.random() > 0.5:
+                best_strategy = strategy
+        return best_strategy or next(iter(priors))
 
     def _simulate(self, strategy: str, base_reward: float) -> float:
         value = base_reward
