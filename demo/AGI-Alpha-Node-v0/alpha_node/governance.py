@@ -28,7 +28,7 @@ class GovernanceController:
         )
 
     def pause_all(self, reason: str = "manual pause") -> GovernanceStatus:
-        state = self.store.update(paused=True)
+        state = self.store.update(paused=True, pause_reason=reason)
         self.store.append_audit(f"[{datetime.now(UTC).isoformat()}Z] pause: {reason}")
         return GovernanceStatus(
             governance_address=state.governance_address,
@@ -38,7 +38,7 @@ class GovernanceController:
         )
 
     def resume_all(self, reason: str = "manual resume") -> GovernanceStatus:
-        state = self.store.update(paused=False)
+        state = self.store.update(paused=False, pause_reason="")
         self.store.append_audit(f"[{datetime.now(UTC).isoformat()}Z] resume: {reason}")
         return GovernanceStatus(
             governance_address=state.governance_address,

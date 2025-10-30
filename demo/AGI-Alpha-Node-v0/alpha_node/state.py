@@ -11,7 +11,10 @@ from typing import Any, Dict
 @dataclass
 class NodeState:
     paused: bool = False
+    pause_reason: str = ""
     total_rewards: float = 0.0
+    compliance_score: float = 0.0
+    last_safety_violation: str = ""
     active_jobs: int = 0
     knowledge_entries: int = 0
     antifragility_index: float = 1.0

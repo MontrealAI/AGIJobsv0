@@ -22,6 +22,10 @@ class MetricsServer(Thread):
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self_inner):
                 state = self.store.read()
+                reason = state.last_safety_violation or "none"
+                reason_label = (
+                    reason.replace("\\", "\\\\").replace("\"", "\\\"")
+                )
                 payload = "\n".join(
                     [
                         "# HELP agi_alpha_node_paused Whether the node is paused",
@@ -33,6 +37,13 @@ class MetricsServer(Thread):
                         "# HELP agi_alpha_node_stake_locked Stake locked",
                         "# TYPE agi_alpha_node_stake_locked gauge",
                         f"agi_alpha_node_stake_locked {state.stake_locked}",
+                        "# HELP agi_alpha_node_compliance_score Composite compliance score",
+                        "# TYPE agi_alpha_node_compliance_score gauge",
+                        f"agi_alpha_node_compliance_score {state.compliance_score}",
+                        "# HELP agi_alpha_node_last_safety_violation Last safety halt recorded",
+                        "# TYPE agi_alpha_node_last_safety_violation gauge",
+                        f'agi_alpha_node_last_safety_violation{{reason="{reason_label}"}} '
+                        f"{1 if state.last_safety_violation else 0}",
                         "# HELP agi_alpha_node_antifragility_index Antifragility index",
                         "# TYPE agi_alpha_node_antifragility_index gauge",
                         f"agi_alpha_node_antifragility_index {state.antifragility_index}",

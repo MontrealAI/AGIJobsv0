@@ -64,18 +64,23 @@ flowchart LR
    cd demo/AGI-Alpha-Node-v0
    python -m alpha_node.cli bootstrap
    ```
-   This deposits the minimum stake, validates ENS ownership, and prints a compliance snapshot.
-3. **Run the intelligence engine**:
+   This deposits the minimum stake, validates ENS ownership, and prints a compliance snapshot plus a full safety evaluation.
+3. **Verify the safety rails**:
+   ```bash
+   python -m alpha_node.cli safety
+   ```
+   Confirm ENS ownership, staking status, and pause state before activating the node.
+4. **Run the intelligence engine**:
    ```bash
    python -m alpha_node.cli run
    ```
    The planner harvests jobs, delegates to specialists, captures knowledge, and restakes rewards automatically.
-4. **Monitor metrics**:
+5. **Monitor metrics**:
    ```bash
    python -m alpha_node.cli metrics
    ```
-   Scrape Prometheus metrics from `http://localhost:9101`.
-5. **View compliance & dashboard data**:
+   Scrape Prometheus metrics (compliance score, last safety halt, antifragility, etc.) from `http://localhost:9101`.
+6. **View compliance & dashboard data**:
    ```bash
    python -m alpha_node.cli dashboard
    ```
@@ -87,6 +92,8 @@ flowchart LR
 - `python -m alpha_node.cli resume` — safely resume operations.
 - `python -m alpha_node.cli rotate-governance --address <0x...>` — rotate ownership to a new multisig without downtime.
 - `python -m alpha_node.cli stake-deposit --amount 5000` — top up the treasury stake from operator-controlled wallets.
+- `python -m alpha_node.cli drill` — execute an antifragility pause/resume drill and log the result.
+- `python -m alpha_node.cli safety` — print the latest invariant check (ENS, stake sufficiency, pause reason).
 
 ## 🌐 Web dashboard (grandiose operator cockpit)
 
@@ -108,7 +115,7 @@ Open `http://localhost:8090` and paste the JSON payload from `python -m alpha_no
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/AGI-Alpha-Node-v0/tests
 ```
 
-The suite validates planner convergence, compliance scoring, and governance pause behavior.
+The suite validates planner convergence, compliance scoring, governance pause behavior, and the automated safety rails.
 
 ## 🧰 One-command containerization
 

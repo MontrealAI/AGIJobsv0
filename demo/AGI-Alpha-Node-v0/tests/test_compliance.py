@@ -25,3 +25,4 @@ def test_compliance_scores_all_dimensions(tmp_path):
     report = engine.evaluate(ens_result)
     assert report.overall > 0.5
     assert len(report.dimensions) == 6
+    assert store.read().compliance_score == report.overall
