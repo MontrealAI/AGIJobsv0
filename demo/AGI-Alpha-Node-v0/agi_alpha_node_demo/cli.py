@@ -230,10 +230,10 @@ def run_loop(ctx: click.Context, once: bool) -> None:
             result = orchestrator.execute(job)
             metrics.add_rewards(config.staking.token_symbol, job.reward)
             metrics.increment_specialist(job.job_type)
-            blockchain.submit_job_result(
-                job.job_id,
-                {"status": result.status, "summary": result.planner_rationale},
-            )
+
+            payload = dataclass_to_clean_dict(result)
+            payload["summary"] = payload.pop("planner_rationale")
+            tx_hash = blockchain.submit_job_result(job.job_id, payload)
             LOGGER.info(
                 "Submitted job result",
                 extra={
@@ -241,6 +241,7 @@ def run_loop(ctx: click.Context, once: bool) -> None:
                     "status": result.status,
                     "reinvested": result.reinvested,
                     "distributed": result.distributed,
+                    "tx_hash": tx_hash,
                 },
             )
         metrics.set_active_jobs(0)
