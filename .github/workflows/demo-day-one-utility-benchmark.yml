@@ -92,7 +92,7 @@ jobs:
           if not report['guardrail_pass']['utility_uplift']:
               raise SystemExit('utility guardrail must pass for e2e demo')
           html = (base / 'dashboard_e2e.html').read_text()
-          for snippet in ['Day-One Utility Benchmark', 'class="mermaid"', 'Owner Controls Snapshot']:
+          for snippet in ['Day-One Utility Benchmark', 'class="mermaid"', 'Owner Controls Snapshot', 'Utility Guardrail']:
               if snippet not in html:
                   raise SystemExit(f'missing dashboard snippet: {snippet}')
           PY

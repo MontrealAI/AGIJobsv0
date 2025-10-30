@@ -33,7 +33,7 @@ owner-show:
 	$(PYTHON) run_demo.py owner --show
 
 owner-set:
-	@if [ -z "$(KEY)" ]; then echo "Usage: make owner-set KEY=platform_fee_bps VALUE=200"; exit 1; fi
+	@if [ -z "$(KEY)" ]; then echo "Usage: make owner-set KEY=utility_threshold_override_bps VALUE=900"; exit 1; fi
 	$(PYTHON) run_demo.py owner --set $(KEY) "$(VALUE)"
 
 owner-toggle:

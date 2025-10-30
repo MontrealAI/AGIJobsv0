@@ -46,6 +46,7 @@ full strength of **AGI Jobs v0 (v2)**.
 
    ```bash
    make owner-set KEY=platform_fee_bps VALUE=220
+   make owner-set KEY=utility_threshold_override_bps VALUE=900
    make owner-toggle  # Pause/resume entire orchestration instantly
    make owner-reset   # Restore the sovereign defaults in one command
    ```
@@ -133,12 +134,14 @@ sequenceDiagram
 | Control | Description |
 | ------- | ----------- |
 | `platform_fee_bps` | Instant revenue tuning (0–2500 bps). Applied on every run. |
+| `utility_threshold_override_bps` | Optional override of the minimum utility uplift guardrail (basis points). |
 | `latency_threshold_override_bps` | Optional override of latency guardrail from the owner console. |
 | `paused` | Hard stop for the entire orchestrator. When `true`, simulations refuse to run. |
 | `narrative` | Text displayed in the dashboard hero, enabling storytelling updates without deployments. |
 
 Every update triggers schema validation so a mis-typed value cannot compromise the
-pipeline.
+pipeline. Utility guardrails can now be tightened or relaxed live without touching
+YAML by adjusting `utility_threshold_override_bps`.
 
 The command deck now ships with an instant rollback lever via `make owner-reset`
 and enforces mainnet-grade address validation, guaranteeing that only legitimate
@@ -198,6 +201,7 @@ stateDiagram-v2
     Paused --> Active: owner.togglePause(false)
     Active --> Active: owner.setPlatformFee(bps)
     Active --> Active: owner.setLatencyGuard(bps)
+    Active --> Active: owner.setUtilityGuard(bps)
     Active --> Active: owner.updateNarrative()
 ```
 

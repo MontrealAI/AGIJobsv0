@@ -77,6 +77,7 @@ class DayOneUtilityOrchestrator:
         "treasury_address": str,
         "platform_fee_bps": int,
         "latency_threshold_override_bps": (int, type(None)),
+        "utility_threshold_override_bps": (int, type(None)),
         "paused": bool,
         "narrative": str,
     }
@@ -241,6 +242,13 @@ class DayOneUtilityOrchestrator:
             latency_val = int(latency_override)
             if latency_val < -1000:
                 raise ValueError("latency threshold override cannot reduce guardrails below -1000 bps")
+        utility_override = snapshot.get("utility_threshold_override_bps")
+        if utility_override is not None:
+            utility_val = int(utility_override)
+            if utility_val < -1000 or utility_val > 100_000:
+                raise ValueError(
+                    "utility threshold override must be between -1000 and 100000 basis points"
+                )
         narrative = str(snapshot.get("narrative", ""))
         if len(narrative) > 1200:
             raise ValueError("narrative section is capped at 1200 characters")
@@ -269,6 +277,9 @@ class DayOneUtilityOrchestrator:
         override_latency_bps = snapshot.get("latency_threshold_override_bps")
         if override_latency_bps is not None:
             latency_threshold = override_latency_bps / 10_000.0
+        override_utility_bps = snapshot.get("utility_threshold_override_bps")
+        if override_utility_bps is not None:
+            utility_threshold = override_utility_bps / 10_000.0
 
         total_baseline_gmv = 0.0
         total_candidate_gmv = 0.0
@@ -329,6 +340,7 @@ class DayOneUtilityOrchestrator:
             **snapshot,
             "platform_fee_bps": int(snapshot["platform_fee_bps"]),
             "latency_threshold_active": latency_threshold,
+            "utility_threshold_active": utility_threshold,
             "treasury_bonus_bps": profile.treasury_bonus_bps,
             "treasury_bonus_value": treasury_bonus,
         }
@@ -486,6 +498,16 @@ class DayOneUtilityOrchestrator:
             badge_class = "pass" if value else "fail"
             guardrail_badges.append(f'<span class="badge {badge_class}">{label}</span>')
         guardrail_markup = "".join(guardrail_badges)
+        utility_override_value = owner_controls.get("utility_threshold_override_bps")
+        if utility_override_value is None:
+            utility_override_display = "—"
+        else:
+            utility_override_display = f"{int(utility_override_value)} bps"
+        latency_override_value = owner_controls.get("latency_threshold_override_bps")
+        if latency_override_value is None:
+            latency_override_display = "—"
+        else:
+            latency_override_display = f"{int(latency_override_value)} bps"
         chart_markup = (
             f'<img src="{Path(chart_path).name}" alt="Strategy snapshot chart" class="snapshot" />'
             if chart_path
@@ -646,7 +668,10 @@ class DayOneUtilityOrchestrator:
                             <p><strong>Owner:</strong> {owner_controls['owner_address']}</p>
                             <p><strong>Treasury:</strong> {owner_controls['treasury_address']}</p>
                             <p><strong>Platform Fee:</strong> {owner_controls['platform_fee_bps']} bps</p>
+                            <p><strong>Utility Guardrail:</strong> {owner_controls['utility_threshold_active']:.4f}</p>
+                            <p><strong>Utility Override:</strong> {utility_override_display}</p>
                             <p><strong>Latency Guardrail:</strong> {owner_controls['latency_threshold_active']:.4f}</p>
+                            <p><strong>Latency Override:</strong> {latency_override_display}</p>
                             <p><strong>Narrative:</strong> {owner_controls['narrative']}</p>
                         </div>
                     </div>
@@ -759,6 +784,7 @@ class DayOneUtilityOrchestrator:
                 f"  • Owner: {owner_snapshot['owner_address']}",
                 f"  • Treasury: {owner_snapshot['treasury_address']}",
                 f"  • Platform fee: {owner_snapshot['platform_fee_bps']} bps",
+                f"  • Utility guardrail: {owner_snapshot['utility_threshold_active']:.4f}",
                 f"  • Latency guardrail: {owner_snapshot['latency_threshold_active']}",
                 f"  • Narrative: {owner_snapshot['narrative']}",
                 "Outputs:",

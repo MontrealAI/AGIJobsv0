@@ -166,8 +166,14 @@
         if (typeof metrics.utility_uplift === 'number') {
           blocks.push({ label: 'Utility Uplift', value: (metrics.utility_uplift * 100).toFixed(2) + '%' });
         }
+        if (data.rules && typeof data.rules.utility_uplift_threshold === 'number') {
+          blocks.push({ label: 'Utility Guardrail', value: (data.rules.utility_uplift_threshold * 100).toFixed(2) + '%' });
+        }
         if (typeof metrics.latency_delta === 'number') {
           blocks.push({ label: 'Latency Delta', value: (metrics.latency_delta * 100).toFixed(2) + '%' });
+        }
+        if (data.rules && typeof data.rules.max_latency_delta === 'number') {
+          blocks.push({ label: 'Latency Guardrail', value: (data.rules.max_latency_delta * 100).toFixed(2) + '%' });
         }
         if (metrics.candidate && typeof metrics.candidate.utility === 'number') {
           blocks.push({ label: 'Candidate Utility', value: metrics.candidate.utility.toFixed(2) });
@@ -177,6 +183,16 @@
         }
         if (data.strategy_profile && data.strategy_profile.reliability_score) {
           blocks.push({ label: 'Reliability Score', value: (data.strategy_profile.reliability_score * 100).toFixed(2) });
+        }
+        if (data.owner_controls && data.owner_controls.utility_threshold_override_bps !== undefined) {
+          const override = data.owner_controls.utility_threshold_override_bps;
+          const display = override === null ? '—' : `${override} bps`;
+          blocks.push({ label: 'Utility Override', value: display });
+        }
+        if (data.owner_controls && data.owner_controls.latency_threshold_override_bps !== undefined) {
+          const override = data.owner_controls.latency_threshold_override_bps;
+          const display = override === null ? '—' : `${override} bps`;
+          blocks.push({ label: 'Latency Override', value: display });
         }
         metricsEl.innerHTML = blocks.map(block => `
           <div class="metric">
