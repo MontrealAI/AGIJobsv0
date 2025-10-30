@@ -1,4 +1,4 @@
-version: 1
+version: 2
 curriculum:
   fast_beta: 0.1
   slow_beta: 0.01
@@ -6,23 +6,37 @@ curriculum:
   moi:
     interesting_weight: 1.0
     boring_weight: 0.001
+    overlap_threshold: 0.6
 thermostat:
   roi_target: 5.0
   roi_floor: 2.5
   min_moi_interval: 25
   max_moi_interval: 200
+  exploration_epsilon: 0.1
 sentinel:
-  roi_floor: 1.5
+  task_roi_floor: 1.0
+  overall_roi_floor: 1.8
   budget_limit: 1000.0
   moi_daily_max: 250
   min_entropy: 0.65
+  qps_limit: 0.05
+  fm_cost_per_query: 0.03
+owner:
+  paused: false
+  disabled_tasks: []
+  notes: "Controlled via owner_console.py"
 cost_model:
   fm_call_cost: 0.03
   default_intervention_cost: 0.0
 cohorts:
   enterprise:
-    roi_floor: 3.5
-    exploration_epsilon: 0.05
+    overrides:
+      thermostat.roi_floor: 3.5
+      thermostat.exploration_epsilon: 0.04
+      sentinel.overall_roi_floor: 3.5
+      sentinel.task_roi_floor: 1.4
   smb:
-    roi_floor: 2.0
-    exploration_epsilon: 0.1
+    overrides:
+      thermostat.roi_floor: 2.0
+      sentinel.overall_roi_floor: 2.0
+      sentinel.task_roi_floor: 1.1

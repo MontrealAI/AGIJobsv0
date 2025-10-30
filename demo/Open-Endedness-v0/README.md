@@ -31,16 +31,35 @@ flowchart TD
    ```bash
    pip install -r requirements-python.txt
    ```
-2. **Run the guided simulation**:
+2. **Tune or pause parameters via the Owner Console** *(optional)*:
    ```bash
-   python demo/Open-Endedness-v0/omni_demo.py --render
+   python demo/Open-Endedness-v0/owner_console.py show
+   python demo/Open-Endedness-v0/owner_console.py set thermostat.roi_floor 3.2
+   python demo/Open-Endedness-v0/owner_console.py disable-task discount_optimizer
+   ```
+   Changes persist in [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml)
+   and synchronise instantly across the demo.
+3. **Run the guided simulation**:
+   ```bash
+   python demo/Open-Endedness-v0/omni_demo.py --render --cohort enterprise
    ```
    This prints an executive summary and generates comparison plots under
    `reports/omni_demo/`.
-3. **Review insights**: open `reports/omni_demo/index.html` for live dashboards.
+4. **Review insights**: open `reports/omni_demo/index.html` for live dashboards.
 
 > ✅ The demo ships with deterministic seeds so every stakeholder sees the same
 > uplift, making executive approvals immediate.
+
+```mermaid
+flowchart LR
+    Owner[Owner Console (zero-code)] -->|dot-path edits| Config[(Seed Config)]
+    Config -->|resolve cohort overrides| Engine[OMNI Curriculum Engine]
+    Engine -->|state snapshots| Dashboard[Live Dashboards]
+    Engine -->|budget & ROI checks| Sentinel
+    Engine -->|adaptive knobs| Thermostat
+    Sentinel -->|safety verdicts| Owner
+    Thermostat -->|parameter updates| Owner
+```
 
 ## 🧠 Architecture Modules
 
@@ -50,7 +69,9 @@ flowchart TD
 | [`ledger.py`](./ledger.py) | Economic Ledger | Deterministic tracking of GMV, FM spend, ROI per task for reporting and controls |
 | [`thermostat.py`](./thermostat.py) | Thermostat | Auto-tunes MoI cadence & exploration pressure from real-time ROI |
 | [`sentinel.py`](./sentinel.py) | Sentinel | Hard guardrails for ROI floors, FM budgets, entropy |
-| [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml) | Seed Config | Enterprise-ready defaults for $AGIALPHA | 
+| [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml) | Seed Config | Enterprise-ready defaults for $AGIALPHA |
+| [`config_utils.py`](./config_utils.py) | Owner I/O | Dot-path editing, cohort overrides, pause/resume helpers |
+| [`owner_console.py`](./owner_console.py) | Owner Console | Zero-code command deck for pausing, retuning, or reactivating tasks |
 | [`prompts/interestingness_prompt.txt`](./prompts/interestingness_prompt.txt) | MoI Prompt | Drop-in foundation model instructions |
 
 ## 🧪 Simulation Outcomes
@@ -90,9 +111,12 @@ Results are exported as CSV + HTML dashboards to `reports/omni_demo/`.
   reducing foundation-model spend while protecting growth.
 - **Sentinels** hard-stop degenerate behaviour: if entropy collapses or cost
   budgets are hit, the system falls back to LP-only mode until human review.
+- **Owner Console**: [`owner_console.py`](./owner_console.py) gives the contract
+  owner a zero-code shell to pause the curriculum, retune ROI targets, or
+  blacklist interventions in real time.
 - **Configurable**: All knobs live in
-  [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml), enabling
-  contract owners to adjust parameters, pause curricula, or re-route budgets.
+  [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml) and are
+  synchronised with the console, guaranteeing instant superuser control.
 
 ## 🔌 Integrations
 

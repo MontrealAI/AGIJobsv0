@@ -12,11 +12,12 @@ async function fetchMetrics() {
 
 function buildDatasets(metrics) {
   const strategies = Object.keys(metrics);
-  const gmvData = strategies.map((name) => metrics[name].total_revenue);
-  const operationalCostData = strategies.map((name) => metrics[name].operational_cost || 0);
-  const fmCostData = strategies.map((name) => metrics[name].fm_cost || 0);
-  const roiTotalData = strategies.map((name) => metrics[name].roi_total || metrics[name].roi || 0);
-  const roiFmData = strategies.map((name) => metrics[name].roi_fm || metrics[name].roi || 0);
+  const safe = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+  const gmvData = strategies.map((name) => safe(metrics[name].total_revenue));
+  const operationalCostData = strategies.map((name) => safe(metrics[name].operational_cost));
+  const fmCostData = strategies.map((name) => safe(metrics[name].fm_cost));
+  const roiTotalData = strategies.map((name) => safe(metrics[name].roi_total || metrics[name].roi));
+  const roiFmData = strategies.map((name) => safe(metrics[name].roi_fm || metrics[name].roi));
   const pausedSteps = strategies.map((name) => metrics[name].paused_steps || 0);
 
   const tasks = new Set();

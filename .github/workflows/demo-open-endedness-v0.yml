@@ -1,0 +1,61 @@
+name: demo-open-endedness-v0
+
+on:
+  pull_request:
+    paths:
+      - 'demo/Open-Endedness-v0/**'
+      - '.github/workflows/demo-open-endedness-v0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  omni-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            files.pythonhosted.org
+            github.com
+            objects.githubusercontent.com
+            pypi.org
+            raw.githubusercontent.com
+
+      - name: Setup Python
+        uses: actions/setup-python@1e9d7a0c83f019c5576a19aa30b8d3bcea4a986e
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+          cache-dependency-path: requirements-python.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-python.txt
+
+      - name: Run OMNI unit tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: pytest demo/Open-Endedness-v0/tests -q
+
+      - name: Execute OMNI simulation
+        run: python demo/Open-Endedness-v0/omni_demo.py --render --output-dir demo/Open-Endedness-v0/results/ci
+
+      - name: Upload OMNI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: omni-open-endedness-demo
+          path: |
+            demo/Open-Endedness-v0/results/ci
+            demo/Open-Endedness-v0/results/ci/summary.json

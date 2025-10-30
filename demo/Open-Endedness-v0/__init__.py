@@ -23,6 +23,7 @@ _ledger = _load("ledger")
 _engine = _load("omni_engine")
 _thermostat = _load("thermostat")
 _sentinel = _load("sentinel")
+_config_utils = _load("config_utils")
 
 EconomicLedger = _ledger.EconomicLedger
 OmniCurriculumEngine = _engine.OmniCurriculumEngine
@@ -31,6 +32,9 @@ EconomicSnapshot = _thermostat.EconomicSnapshot
 ThermostatController = _thermostat.ThermostatController
 Sentinel = _sentinel.Sentinel
 SentinelConfig = _sentinel.SentinelConfig
+load_config = _config_utils.load_config
+summarise_config = _config_utils.summarise
+set_config_value = _config_utils.set_config_value
 
 __all__ = [
     "EconomicLedger",
@@ -40,4 +44,7 @@ __all__ = [
     "ThermostatController",
     "Sentinel",
     "SentinelConfig",
+    "load_config",
+    "summarise_config",
+    "set_config_value",
 ]

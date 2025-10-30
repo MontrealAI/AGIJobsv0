@@ -7,13 +7,18 @@ import random
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Mapping, Tuple
 
 CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:
     sys.path.append(str(CURRENT_DIR))
 
-from omni_engine import OmniCurriculumEngine
+from config_utils import (
+    DEFAULT_CONFIG_PATH,
+    load_config,
+    owner_disabled_tasks,
+)
+from omni_engine import ModelOfInterestingness, OmniCurriculumEngine
 from thermostat import EconomicSnapshot, ThermostatController
 from sentinel import Sentinel, SentinelConfig
 from ledger import EconomicLedger
@@ -40,6 +45,10 @@ class StrategyResult:
     ledger_totals: Dict[str, float] | None = None
     sentinel_events: List[Dict[str, object]] | None = None
     thermostat_events: List[Dict[str, object]] | None = None
+    owner_disabled: List[str] | None = None
+    owner_paused: bool | None = None
+    task_frequency: Dict[str, int] | None = None
+    owner_events: List[Dict[str, object]] | None = None
 
 
 TASKS = [
@@ -52,59 +61,102 @@ TASKS = [
 
 ITERATIONS = 1000
 SEED = 777
-FM_CALL_COST = 0.03
-
-
 class Simulator:
-    def __init__(self, strategy: str, rng: random.Random) -> None:
+    def __init__(
+        self,
+        strategy: str,
+        rng: random.Random,
+        config: Mapping[str, object],
+    ) -> None:
         self.strategy = strategy
         self.rng = rng
         self.tasks = {task.task_id: task for task in TASKS}
         self.success_rates = {task.task_id: task.base_success for task in TASKS}
         self.practice_gain = {task.task_id: 0.0 for task in TASKS}
+        self.task_counts = {task.task_id: 0 for task in TASKS}
+        curriculum_cfg = config.get("curriculum", {}) if isinstance(config, Mapping) else {}
+        moi_cfg = curriculum_cfg.get("moi", {}) if isinstance(curriculum_cfg, Mapping) else {}
+        moi_client = ModelOfInterestingness(
+            boring_weight=float(moi_cfg.get("boring_weight", 1e-3)),
+            interesting_weight=float(moi_cfg.get("interesting_weight", 1.0)),
+            overlap_threshold=float(moi_cfg.get("overlap_threshold", 0.6)),
+        )
         self.engine = OmniCurriculumEngine(
             task_descriptions={task.task_id: task.description for task in TASKS},
+            fast_beta=float(curriculum_cfg.get("fast_beta", 0.1)),
+            slow_beta=float(curriculum_cfg.get("slow_beta", 0.01)),
+            min_probability=float(curriculum_cfg.get("min_probability", 1e-3)),
+            moi_client=moi_client,
             rng=self.rng,
         )
+        thermostat_cfg = config.get("thermostat", {}) if isinstance(config, Mapping) else {}
         self.thermostat = ThermostatController(
             engine=self.engine,
-            roi_target=5.0,
-            roi_floor=2.0,
-            min_moi_interval=25,
-            max_moi_interval=200,
+            roi_target=float(thermostat_cfg.get("roi_target", 5.0)),
+            roi_floor=float(thermostat_cfg.get("roi_floor", 2.0)),
+            min_moi_interval=int(thermostat_cfg.get("min_moi_interval", 25)),
+            max_moi_interval=int(thermostat_cfg.get("max_moi_interval", 200)),
+        )
+        self.exploration_epsilon = float(thermostat_cfg.get("exploration_epsilon", 0.0))
+        sentinel_cfg = config.get("sentinel", {}) if isinstance(config, Mapping) else {}
+        fm_cost = float(
+            (config.get("cost_model", {}) if isinstance(config, Mapping) else {}).get(
+                "fm_call_cost", sentinel_cfg.get("fm_cost_per_query", 0.03)
+            )
         )
         self.sentinel = Sentinel(
             engine=self.engine,
             config=SentinelConfig(
-                task_roi_floor=1.0,
-                overall_roi_floor=1.8,
-                budget_limit=500.0,
-                moi_daily_max=500,
-                min_entropy=0.6,
-                qps_limit=0.05,
-                fm_cost_per_query=FM_CALL_COST,
+                task_roi_floor=float(sentinel_cfg.get("task_roi_floor", 1.0)),
+                overall_roi_floor=float(sentinel_cfg.get("overall_roi_floor", 1.8)),
+                budget_limit=float(sentinel_cfg.get("budget_limit", 500.0)),
+                moi_daily_max=int(sentinel_cfg.get("moi_daily_max", 500)),
+                min_entropy=float(sentinel_cfg.get("min_entropy", 0.6)),
+                qps_limit=float(sentinel_cfg.get("qps_limit", 0.05)),
+                fm_cost_per_query=float(sentinel_cfg.get("fm_cost_per_query", fm_cost)),
             ),
         )
         self.fm_queries = 0
         self.ledger = EconomicLedger()
+        self.fm_call_cost = fm_cost
+        owner_cfg = config.get("owner", {}) if isinstance(config, Mapping) else {}
+        self.owner_paused = bool(owner_cfg.get("paused", False))
+        self.owner_disabled = set(owner_disabled_tasks(config))
+        self.owner_events: List[Dict[str, object]] = []
+        if self.owner_paused:
+            self.owner_events.append({"step": 0, "action": "owner_pause_active"})
+        if self.owner_disabled:
+            self.owner_events.append(
+                {"step": 0, "action": "owner_disabled_tasks", "tasks": sorted(self.owner_disabled)}
+            )
+        for task_id in self.owner_disabled:
+            if task_id in self.tasks:
+                self.engine.set_task_disabled(task_id, True)
 
     def pick_task(self, step: int) -> Tuple[str, bool]:
+        available_tasks = [task_id for task_id in self.tasks if task_id not in self.engine.disabled_tasks]
+        if not available_tasks:
+            available_tasks = list(self.tasks)
         if self.strategy == "uniform":
-            return self.rng.choice(list(self.tasks)), False
+            return self.rng.choice(available_tasks), False
         if self.strategy == "lp":
             for task_id, state in sorted(
                 self.engine.tasks.items(), key=lambda kv: kv[1].learning_progress, reverse=True
             ):
                 return task_id, False
-            return self.rng.choice(list(self.tasks)), False
+            return self.rng.choice(available_tasks), False
         if self.strategy == "omni":
+            if self.owner_paused:
+                return self.rng.choice(available_tasks), False
+            if self.exploration_epsilon and self.rng.random() < self.exploration_epsilon:
+                return self.rng.choice(available_tasks), False
             fm_queried = False
             self.thermostat.tick()
             if self.thermostat.should_refresh_partition() and self.sentinel.can_issue_fm_query(step):
                 self.engine.refresh_partition()
                 self.thermostat.mark_refreshed()
                 self.fm_queries += 1
-                self.sentinel.register_moi_query(step=step, fm_cost=FM_CALL_COST)
+                self.sentinel.register_moi_query(step=step, fm_cost=self.fm_call_cost)
                 fm_queried = True
             return self.engine.sample_task(), fm_queried
         raise ValueError(f"Unknown strategy {self.strategy}")
@@ -121,10 +173,11 @@ class Simulator:
             step = index + 1
             task_id, fm_queried = self.pick_task(step)
             task = self.tasks[task_id]
+            self.task_counts[task_id] += 1
             success_prob = self.success_rates[task_id]
             success = 1 if self.rng.random() < success_prob else 0
             reward = success * task.value
-            call_cost = FM_CALL_COST if fm_queried else 0.0
+            call_cost = self.fm_call_cost if fm_queried else 0.0
             total_revenue += reward
             total_cost += call_cost
             total_profit += reward - call_cost
@@ -197,17 +250,33 @@ class Simulator:
             ledger_totals=dict(self.ledger.totals()),
             sentinel_events=list(self.sentinel.events) if self.strategy == "omni" else None,
             thermostat_events=list(self.thermostat.events) if self.strategy == "omni" else None,
+            owner_disabled=sorted(self.owner_disabled) if self.owner_disabled else None,
+            owner_paused=self.owner_paused,
+            task_frequency=dict(self.task_counts),
+            owner_events=list(self.owner_events),
         )
 
 
-def compare_strategies(render: bool, output_dir: Path) -> Dict[str, StrategyResult]:
+def compare_strategies(
+    render: bool,
+    output_dir: Path,
+    config_path: Path,
+    cohort: str | None,
+) -> Dict[str, StrategyResult]:
     output_dir.mkdir(parents=True, exist_ok=True)
     strategy_seeds = {"uniform": SEED + 1, "lp": SEED + 2, "omni": SEED + 3}
     results = {}
+    config = load_config(config_path, cohort=cohort)
+    resolved_config = config.resolved
     for strategy in ("uniform", "lp", "omni"):
-        sim = Simulator(strategy=strategy, rng=random.Random(strategy_seeds[strategy]))
+        sim = Simulator(
+            strategy=strategy,
+            rng=random.Random(strategy_seeds[strategy]),
+            config=resolved_config,
+        )
         results[strategy] = sim.run()
 
+    max_events = 50
     summary = {
         name: {
             "final_revenue": res.cumulative_revenue[-1],
@@ -220,6 +289,23 @@ def compare_strategies(render: bool, output_dir: Path) -> Dict[str, StrategyResu
                 if task_id != "cta_refinement" and gain >= 0.4
             ),
             "roi_overall": (res.ledger_totals or {}).get("roi_overall"),
+            "owner_paused": res.owner_paused,
+            "owner_disabled": res.owner_disabled,
+            "task_frequency": res.task_frequency or {},
+            "thermostat_events": (res.thermostat_events or [])[:max_events],
+            "sentinel_events": (res.sentinel_events or [])[:max_events],
+            "owner_events": (res.owner_events or [])[:max_events],
+            "total_revenue": res.cumulative_revenue[-1],
+            "operational_cost": (res.ledger_totals or {}).get("intervention_cost", 0.0),
+            "fm_cost": (res.ledger_totals or {}).get("fm_cost", 0.0),
+            "roi_total": (res.ledger_totals or {}).get("roi_overall"),
+            "roi_fm": (
+                (res.ledger_totals or {}).get("revenue", 0.0)
+                / max((res.ledger_totals or {}).get("fm_cost", 0.0), 1e-9)
+                if (res.ledger_totals or {}).get("fm_cost", 0.0) > 0
+                else float("inf")
+            ),
+            "paused_steps": ITERATIONS if res.owner_paused else 0,
         }
         for name, res in results.items()
     }
@@ -284,9 +370,26 @@ def main() -> None:
         default=Path("reports/omni_demo"),
         help="Where to store outputs",
     )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=DEFAULT_CONFIG_PATH,
+        help="Configuration YAML controlling the curriculum",
+    )
+    parser.add_argument(
+        "--cohort",
+        type=str,
+        default=None,
+        help="Optional cohort override defined in the config",
+    )
     args = parser.parse_args()
 
-    results = compare_strategies(render=args.render, output_dir=args.output_dir)
+    results = compare_strategies(
+        render=args.render,
+        output_dir=args.output_dir,
+        config_path=args.config,
+        cohort=args.cohort,
+    )
     narrative = build_argument(results)
     print("\n=== OMNI Executive Summary ===")
     print(narrative)
