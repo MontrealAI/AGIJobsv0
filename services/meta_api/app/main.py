@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from orchestrator.analytics import AnalyticsScheduler, AnalyticsEngine, get_cache, run_once
 from routes.analytics import router as analytics_router
+from routes.hgm import router as hgm_router
 from routes.agents import router as agents_router
 from routes.meta_orchestrator import router as meta_router
 from routes.onebox import health_router, router as onebox_router
@@ -34,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(meta_router)
     app.include_router(analytics_router)
     app.include_router(agents_router)
+    app.include_router(hgm_router)
 
     scheduler = AnalyticsScheduler(AnalyticsEngine(), get_cache())
 
