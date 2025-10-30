@@ -1137,14 +1137,27 @@ async function testLoadHarness(): Promise<void> {
   for (const job of jobs) {
     orchestrator.submitJob(job);
   }
-  for (let tick = 1; tick <= 900; tick += 1) {
+
+  const maxTicks = 2_400;
+  let pendingJobs = totalJobs;
+  let completedWithinBudget = false;
+  for (let tick = 1; tick <= maxTicks; tick += 1) {
     orchestrator.processTick({ tick });
     if (tick === 5) {
       orchestrator.markOutage('earth.node');
     }
+    const snapshot = orchestrator.getLedgerSnapshot();
+    pendingJobs = snapshot.pendingJobs;
+    if (pendingJobs === 0) {
+      completedWithinBudget = true;
+      break;
+    }
   }
+
   const metrics = orchestrator.fabricMetrics;
   assert.equal(metrics.jobsSubmitted, totalJobs);
+  assert.ok(completedWithinBudget, `fabric should empty backlog within ${maxTicks} ticks (pending ${pendingJobs})`);
+  assert.equal(metrics.jobsCompleted, totalJobs, 'all jobs should complete under load');
   console.log('Load harness metrics snapshot:', metrics);
   assert.ok(metrics.jobsFailed / totalJobs < 0.01, 'failure rate should stay below 1%');
   assert.ok(metrics.reassignedAfterFailure > 0, 'load harness should trigger failover');
@@ -1155,8 +1168,18 @@ async function testLoadHarness(): Promise<void> {
   const min = Math.min(...totals);
   const skewRatio = max / Math.max(min, 1);
   assert.ok(skewRatio <= 120, `shard load skew should remain within 120x (observed ${skewRatio.toFixed(2)})`);
+  const earthDefinition = loadConfig.nodes.find((node) => node.id === 'earth.node');
+  if (!earthDefinition) {
+    throw new Error('earth.node definition missing in load harness config');
+  }
+  await orchestrator.applyOwnerCommand({ type: 'node.deregister', nodeId: 'earth.node', reason: 'load-harness-reset' });
+  await orchestrator.applyOwnerCommand({
+    type: 'node.register',
+    node: cloneNodeDefinitionForTest(earthDefinition),
+    reason: 'load-harness-restore',
+  });
   const health = orchestrator.getHealthReport();
-  assert.notEqual(health.fabric.level, 'critical', 'fabric should remain healthy after load test');
+  assert.equal(health.fabric.level, 'ok', 'fabric should report healthy status after node restoration');
   console.log('Load test summary:', { metrics, fabric: health.fabric });
   await rm(checkpointPath, { force: true, recursive: true });
 }
