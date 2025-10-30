@@ -1,0 +1,44 @@
+# Deterministic micro dataset of jobs (baseline metrics only). Candidate values
+# are derived via strategy multipliers to keep the dataset compact while still
+# supporting dozens of high-leverage simulations.
+jobs:
+  - id: job1
+    baseline_acceptance: 5.0
+    baseline_cost: 1.0
+    baseline_latency: 0.10
+  - id: job2
+    baseline_acceptance: 15.0
+    baseline_cost: 3.0
+    baseline_latency: 0.20
+  - id: job3
+    baseline_acceptance: 20.0
+    baseline_cost: 4.0
+    baseline_latency: 0.30
+  - id: job4
+    baseline_acceptance: 10.0
+    baseline_cost: 2.0
+    baseline_latency: 0.40
+  - id: job5
+    baseline_acceptance: 10.0
+    baseline_cost: 2.0
+    baseline_latency: 0.50
+  - id: job6
+    baseline_acceptance: 10.0
+    baseline_cost: 2.0
+    baseline_latency: 0.60
+  - id: job7
+    baseline_acceptance: 10.0
+    baseline_cost: 2.0
+    baseline_latency: 0.70
+  - id: job8
+    baseline_acceptance: 10.0
+    baseline_cost: 2.0
+    baseline_latency: 0.80
+  - id: job9
+    baseline_acceptance: 5.0
+    baseline_cost: 1.0
+    baseline_latency: 0.90
+  - id: job10
+    baseline_acceptance: 5.0
+    baseline_cost: 1.0
+    baseline_latency: 1.00
