@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 import numpy as np
+import torch
 
 from .environment import EnvironmentConfig, PlannerObservation
 from .mcts import PlannerSettings
@@ -53,6 +54,14 @@ class PlanningThermostat:
         return simulations
 
     def _entropy(self, policy: Iterable[float]) -> float:
+        if isinstance(policy, torch.Tensor):
+            probs = policy.detach().to(dtype=torch.float64, device="cpu")
+            probs = probs[probs > 0]
+            if probs.numel() == 0:
+                return 0.0
+            entropy = -(probs * torch.log(probs)).sum()
+            return float(entropy.item())
+
         probs = np.asarray(list(policy), dtype=np.float64)
         probs = probs[probs > 0]
         if probs.size == 0:
