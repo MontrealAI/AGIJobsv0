@@ -116,10 +116,14 @@ def _monkeypatch_module(module: ModuleType, source: str):
     new_module = types.ModuleType(module.__name__)
     exec(compile(source, filename="<alphaevolve>", mode="exec"), new_module.__dict__)
     sys.modules[module.__name__] = new_module
+    globals_ns = globals()
+    previous = globals_ns.get("heuristics", module)
+    globals_ns["heuristics"] = new_module
     try:
         yield new_module
     finally:
         sys.modules[module.__name__] = module
+        globals_ns["heuristics"] = previous
 
 
 __all__ = ["EvaluationHarness", "SimulationResults", "SandboxViolation"]
