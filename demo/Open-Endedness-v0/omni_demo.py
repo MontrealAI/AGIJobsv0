@@ -134,7 +134,8 @@ class Simulator:
                 self.engine.set_task_disabled(task_id, True)
 
     def pick_task(self, step: int) -> Tuple[str, bool]:
-        available_tasks = [task_id for task_id in self.tasks if task_id not in self.engine.disabled_tasks]
+        disabled = self.engine.disabled_tasks
+        available_tasks = [task_id for task_id in self.tasks if task_id not in disabled]
         if not available_tasks:
             available_tasks = list(self.tasks)
         if self.strategy == "uniform":
@@ -143,7 +144,7 @@ class Simulator:
             ranked_tasks = [
                 (task_id, state)
                 for task_id, state in self.engine.tasks.items()
-                if task_id not in self.engine.disabled_tasks
+                if task_id not in disabled
             ]
             for task_id, state in sorted(
                 ranked_tasks, key=lambda kv: kv[1].learning_progress, reverse=True
