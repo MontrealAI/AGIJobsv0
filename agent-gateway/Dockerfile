@@ -6,6 +6,8 @@ RUN apk add --no-cache python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
     && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \
+    CYPRESS_INSTALL_BINARY=0 \
+    npm_config_cypress_skip_binary_download=1 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
     NPM_CONFIG_FETCH_RETRIES=5 \
