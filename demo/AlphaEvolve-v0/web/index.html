@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AlphaEvolve Demo Portal</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"></script>
+    <script type="module">
+      mermaid.initialize({ startOnLoad: true, theme: "forest" });
+    </script>
+  </head>
+  <body>
+    <header class="hero">
+      <h1>AlphaEvolve Demo 👁️✨</h1>
+      <p>
+        Launch AGI Jobs v0 (v2) into autonomous economic self-improvement. This portal synthesises prompts, telemetry and
+        guardrails into a single command surface for non-technical founders.
+      </p>
+    </header>
+    <main>
+      <section>
+        <h2>Evolution Control Room</h2>
+        <ol class="steps">
+          <li>Load the <code>alphaevolve_manifest.json</code> blueprint.</li>
+          <li>Execute <code>python -m alphaevolve_demo.cli --generations 3</code>.</li>
+          <li>Observe live telemetry below and promote successful heuristics.</li>
+        </ol>
+      </section>
+      <section>
+        <h2>System Architecture</h2>
+        <div class="mermaid">
+          graph TB
+            subgraph User Empowerment
+              A[Command Palette] --> B[Manifest Loader]
+              B --> C[AlphaEvolve Controller]
+              C --> D[Async Diff Orchestrator]
+            end
+            subgraph Safety & Governance
+              D --> E[Sandbox & Guardrails]
+              E --> F[Evaluation Cascade]
+              F --> G[Program Database]
+            end
+            G --> H[Telemetry + MAP-Elites Dashboard]
+            H --> I[Shadow Deployment]
+            I --> J[Canary Promotion]
+            J --> K[Mainnet Upgrade Transaction]
+            K --> L[Owner Overrides]
+        </div>
+      </section>
+      <section>
+        <h2>Telemetry Snapshot</h2>
+        <pre id="telemetry">Run the CLI demo to generate telemetry…</pre>
+      </section>
+    </main>
+    <footer>
+      <p>Crafted for AGI Jobs v0 (v2) — unlock superintelligent economic acceleration.</p>
+    </footer>
+    <script src="assets/viewer.js"></script>
+  </body>
+</html>
