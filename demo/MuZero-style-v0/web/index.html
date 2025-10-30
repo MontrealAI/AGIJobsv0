@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AGI Jobs MuZero Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: radial-gradient(circle at top,#0f172a,#020617); color:#f8fafc; }
+    header { padding: 3rem 2rem; text-align: center; }
+    h1 { font-size: 2.8rem; margin-bottom: 1rem; }
+    p.lead { max-width: 720px; margin: 0 auto; font-size: 1.2rem; color:#cbd5f5; }
+    section { padding: 2rem 3rem; display:flex; flex-wrap:wrap; gap:2rem; justify-content:center; }
+    .card { background: rgba(15,23,42,0.75); border-radius: 18px; padding: 2rem; width: min(360px, 90vw); box-shadow: 0 20px 45px rgba(8,47,73,0.35); }
+    .card h2 { margin-top: 0; color:#38bdf8; }
+    .diagram { width: min(920px, 90vw); background: rgba(15,23,42,0.65); padding: 2rem; border-radius: 20px; margin: 0 auto 3rem; }
+    pre { background: rgba(2,6,23,0.6); padding: 1rem; border-radius: 12px; overflow-x:auto; }
+    footer { text-align:center; padding: 2rem; color:#94a3b8; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MuZero-style Strategic Planner</h1>
+    <p class="lead">Witness AGI Jobs v0 (v2) empowering non-technical operators to command a MuZero-class planner that compounds Gross Merchandise Value while respecting every budgetary and risk constraint.</p>
+  </header>
+  <div class="diagram">
+    <h2>Planning Feedback Loop</h2>
+    <pre>
+Marketplace State → Representation hθ → Latent State
+Latent State + Action → Dynamics gθ → Next Latent + Reward
+Next Latent → Prediction fθ → Policy π, Value v
+π, v → pUCT Search → Optimal Action → Marketplace State
+    </pre>
+  </div>
+  <section>
+    <article class="card">
+      <h2>Plug-and-Play Training</h2>
+      <p>Launch self-play, replay-buffered learning, and gradient updates with a single Typer command. Checkpoints slot straight into the orchestrator.</p>
+    </article>
+    <article class="card">
+      <h2>Economic Thermostat</h2>
+      <p>Planning budgets, horizons, and exploration noise are fully configurable so the contract owner keeps ironclad control over ROI.</p>
+    </article>
+    <article class="card">
+      <h2>Safety & Governance</h2>
+      <p>Reward shaping enforces GMV – Cost discipline, while baselines remain one flag away as conservative fallbacks.</p>
+    </article>
+  </section>
+  <footer>
+    Powered by AGI Jobs v0 (v2) • MuZero-style Demo
+  </footer>
+</body>
+</html>
