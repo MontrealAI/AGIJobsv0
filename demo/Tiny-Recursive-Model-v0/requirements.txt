@@ -1,14 +1,4 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.0+cpu
-pydantic==2.9.2
-pyyaml==6.0.2
-pandas==2.2.3
-numpy==1.26.4
-scikit-learn==1.5.2
-plotly==5.24.1
-streamlit==1.40.2
-typer==0.12.5
-rich==13.9.4
-black==24.10.0
-ruff==0.7.3
-pytest==8.3.4
+numpy>=1.26
+plotly>=5.22
+rich>=13.7
+torch==2.2.0

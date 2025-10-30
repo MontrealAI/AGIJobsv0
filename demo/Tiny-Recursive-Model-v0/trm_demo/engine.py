@@ -1,376 +1,285 @@
-"""Core Tiny Recursive Model engine used by the demo."""
+"""Implementation of the Tiny Recursive Model (TRM) used throughout the demo."""
 
 from __future__ import annotations
 
-import json
-import math
-import time
+import copy
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Tuple
 
-import numpy as np
+import torch
+from torch import Tensor, nn
+from torch.nn import functional as F
+from torch.utils.data import DataLoader
 
-from .weights import DEFAULT_WEIGHTS
-
-
-EPSILON = 1e-9
-
-
-def _sigmoid(value: float) -> float:
-    value = max(min(value, 60.0), -60.0)
-    return 1.0 / (1.0 + math.exp(-value))
+from .config import TinyRecursiveModelConfig
 
 
-def _binary_cross_entropy(pred: float, target: float) -> float:
-    pred = min(max(pred, EPSILON), 1.0 - EPSILON)
-    return -(target * math.log(pred) + (1.0 - target) * math.log(1.0 - pred))
+@dataclass(slots=True)
+class TRMInferenceResult:
+    """Container with rich inference metadata for auditability."""
 
-
-@dataclass
-class TinyRecursiveModelConfig:
-    """Configuration for the Tiny Recursive Model."""
-
-    input_dim: int = 9
-    hidden_dim: int = 12
-    n_cycles: int = 6
-    outer_steps: int = 3
-    halt_threshold: float = 0.6
-    halting_weight: float = 0.5
-    ema_decay: float = 0.999
-    initial_output: float = 0.5
-    max_steps: int = 18
-
-    def copy(self) -> "TinyRecursiveModelConfig":
-        return TinyRecursiveModelConfig(
-            input_dim=self.input_dim,
-            hidden_dim=self.hidden_dim,
-            n_cycles=self.n_cycles,
-            outer_steps=self.outer_steps,
-            halt_threshold=self.halt_threshold,
-            halting_weight=self.halting_weight,
-            ema_decay=self.ema_decay,
-            initial_output=self.initial_output,
-            max_steps=self.max_steps,
-        )
-
-
-@dataclass
-class TinyRecursiveModelResult:
-    """Result container for Tiny Recursive Model inference."""
-
-    prediction: float
+    logits: Tensor
+    probabilities: Tensor
+    predicted_class: Tensor
     steps_used: int
-    halted: bool
-    trajectory: List[Dict[str, float]]
-    latency_ms: float
-
-    @property
-    def confidence(self) -> float:
-        """Return a convenience confidence score in [0, 1]."""
-
-        return abs(self.prediction - 0.5) * 2.0
+    halted_early: bool
+    halt_probabilities: List[float]
 
 
-class TinyRecursiveModel:
-    """Tiny Recursive Model with recursive latent state updates and halting."""
+class _ResidualBlock(nn.Module):
+    """Simple residual MLP block used by the recursive updates."""
 
-    def __init__(
-        self,
-        config: Optional[TinyRecursiveModelConfig] = None,
-        weights: Optional[Dict[str, np.ndarray]] = None,
-    ) -> None:
-        self.config = config.copy() if config else TinyRecursiveModelConfig()
-        self._params = self._initialise_parameters(weights)
-        self._ema_params = {name: value.copy() for name, value in self._params.items()}
-
-    @staticmethod
-    def _initialise_parameters(
-        weights: Optional[Dict[str, np.ndarray]]
-    ) -> Dict[str, np.ndarray]:
-        if weights is None:
-            weights = DEFAULT_WEIGHTS
-        return {
-            name: np.array(value, dtype=np.float64)
-            for name, value in weights.items()
-        }
-
-    # ------------------------------------------------------------------
-    # Inference API
-    # ------------------------------------------------------------------
-    def infer(
-        self,
-        features: np.ndarray,
-        *,
-        halt_threshold: Optional[float] = None,
-        n_cycles: Optional[int] = None,
-        outer_steps: Optional[int] = None,
-        use_ema: bool = True,
-        include_trajectory: bool = True,
-    ) -> TinyRecursiveModelResult:
-        """Run recursive inference on the provided feature vector."""
-
-        active_config = self.config.copy()
-        if halt_threshold is not None:
-            active_config.halt_threshold = float(halt_threshold)
-        if n_cycles is not None:
-            active_config.n_cycles = max(1, int(n_cycles))
-        if outer_steps is not None:
-            active_config.outer_steps = max(1, int(outer_steps))
-
-        params = self._ema_params if use_ema else self._params
-        start = time.perf_counter()
-        prediction, halted, caches, total_steps = self._forward_pass(
-            features, params, active_config
+    def __init__(self, in_dim: int, hidden_dim: int, out_dim: int) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LayerNorm(in_dim),
+            nn.Linear(in_dim, hidden_dim),
+            nn.GELU(),
+            nn.Linear(hidden_dim, out_dim),
         )
-        elapsed_ms = (time.perf_counter() - start) * 1_000.0
+        self.proj = nn.Linear(in_dim, out_dim) if in_dim != out_dim else nn.Identity()
 
-        trajectory: List[Dict[str, float]] = []
-        if include_trajectory:
-            for index, cache in enumerate(caches):
-                trajectory.append(
-                    {
-                        "step": float(index + 1),
-                        "probability": float(cache["y"][0]),
-                        "halt_probability": float(cache["halt_prob"][0]),
-                        "latent_l2": float(np.linalg.norm(cache["z"], ord=2)),
-                    }
-                )
+    def forward(self, x: Tensor) -> Tensor:  # noqa: D401 - simple wrapper
+        residual = self.proj(x)
+        return self.net(x) + residual
 
-        return TinyRecursiveModelResult(
-            prediction=float(prediction),
-            steps_used=total_steps,
-            halted=halted,
-            trajectory=trajectory,
-            latency_ms=elapsed_ms,
+
+class TinyRecursiveModel(nn.Module):
+    """Tiny two-layer recursive reasoning network with adaptive halting."""
+
+    def __init__(self, config: TinyRecursiveModelConfig) -> None:
+        super().__init__()
+        concat_dim = config.input_dim + config.latent_dim + config.answer_dim
+        self.state_update = _ResidualBlock(concat_dim, config.hidden_dim, config.latent_dim)
+        self.answer_update = _ResidualBlock(concat_dim, config.hidden_dim, config.answer_dim)
+        self.output_head = nn.Sequential(
+            nn.LayerNorm(config.answer_dim),
+            nn.Linear(config.answer_dim, config.hidden_dim),
+            nn.GELU(),
+            nn.Linear(config.hidden_dim, config.num_classes),
+        )
+        self.halt_head = nn.Sequential(
+            nn.LayerNorm(config.latent_dim),
+            nn.Linear(config.latent_dim, config.hidden_dim // 2),
+            nn.Tanh(),
+            nn.Linear(config.hidden_dim // 2, 1),
+        )
+        self.config = config
+
+    def _initial_state(self, batch_size: int, device: torch.device) -> Tuple[Tensor, Tensor]:
+        return (
+            torch.zeros(batch_size, self.config.latent_dim, device=device),
+            torch.zeros(batch_size, self.config.answer_dim, device=device),
         )
 
-    def _forward_pass(
+    def forward(  # noqa: D401
         self,
-        features: np.ndarray,
-        params: Dict[str, np.ndarray],
-        runtime_config: TinyRecursiveModelConfig,
-        *,
-        attach_training_metadata: bool = False,
-        target: Optional[float] = None,
-    ) -> Tuple[float, bool, List[Dict[str, np.ndarray]], int]:
-        """Run the TRM recurrence and optionally collect training metadata."""
+        inputs: Tensor,
+        halt_threshold: float,
+        supervise: bool = False,
+    ) -> Dict[str, Tensor | List[Tensor]]:
+        """Run the recursive refinement process.
 
-        if features.shape[0] != runtime_config.input_dim:
-            raise ValueError(
-                f"Expected feature dimension {runtime_config.input_dim}, got {features.shape[0]}"
-            )
+        Args:
+            inputs: Input tensor of shape ``[batch, input_dim]``.
+            halt_threshold: Probability threshold used to decide when to halt.
+            supervise: When ``True`` the model always performs the maximum number
+                of cycles so that training loss can be computed at each step.
 
-        max_cycles = runtime_config.outer_steps * runtime_config.n_cycles
-        if runtime_config.max_steps:
-            max_cycles = min(max_cycles, runtime_config.max_steps)
+        Returns:
+            Dictionary containing the final logits, intermediate logits and
+            halting probabilities for downstream processing.
+        """
 
-        y_prev = runtime_config.initial_output
-        latent = np.zeros(runtime_config.hidden_dim, dtype=np.float64)
-        caches: List[Dict[str, np.ndarray]] = []
-        halted = False
-        total_cycles = 0
+        batch_size = inputs.size(0)
+        device = inputs.device
+        latent, answer = self._initial_state(batch_size, device)
+        max_steps = self.config.total_possible_steps
+        halt_threshold = float(halt_threshold)
 
-        for outer_index in range(runtime_config.outer_steps):
-            cycle_traces: List[Dict[str, np.ndarray]] = []
-            for cycle_index in range(runtime_config.n_cycles):
-                if total_cycles >= max_cycles:
+        logits_per_step: List[Tensor] = []
+        halt_logits: List[Tensor] = []
+        halting_mask = torch.zeros(batch_size, dtype=torch.bool, device=device)
+        steps_executed = torch.zeros(batch_size, dtype=torch.int32, device=device)
+
+        step_counter = 0
+        for outer in range(self.config.outer_steps):
+            for inner in range(self.config.inner_cycles):
+                if step_counter >= max_steps:
                     break
-                input_vec = np.concatenate((features, latent, np.array([y_prev])))
-                pre_activation = params["W_z"] @ input_vec + params["b_z"]
-                latent = np.tanh(pre_activation)
-                cycle_traces.append(
-                    {
-                        "input": input_vec,
-                        "pre_activation": pre_activation,
-                        "latent": latent.copy(),
-                    }
-                )
-                total_cycles += 1
-
-            readout_input = np.concatenate((latent, np.array([y_prev])))
-            logits = float(np.dot(params["W_y"], readout_input) + params["b_y"][0])
-            y_curr = _sigmoid(logits)
-            halt_logit = float(np.dot(params["W_h"][0], latent) + params["b_h"][0])
-            halt_prob = _sigmoid(halt_logit)
-
-            cache: Dict[str, np.ndarray] = {
-                "outer_step": np.array([outer_index], dtype=np.float64),
-                "z": latent.copy(),
-                "y_prev": np.array([y_prev], dtype=np.float64),
-                "y": np.array([y_curr], dtype=np.float64),
-                "logits": np.array([logits], dtype=np.float64),
-                "halt_prob": np.array([halt_prob], dtype=np.float64),
-                "halt_logit": np.array([halt_logit], dtype=np.float64),
-                "cycles": cycle_traces,
-            }
-
-            if attach_training_metadata and target is not None:
-                cache["target"] = np.array([target], dtype=np.float64)
-            caches.append(cache)
-
-            y_prev = y_curr
-            if halt_prob >= runtime_config.halt_threshold or total_cycles >= max_cycles:
-                halted = True
+                concat = torch.cat([inputs, latent, answer], dim=-1)
+                latent = latent + self.state_update(concat)
+                halt_logit = self.halt_head(latent).squeeze(-1)
+                halt_logits.append(halt_logit)
+                halt_prob = torch.sigmoid(halt_logit)
+                newly_halted = (halt_prob >= halt_threshold) & (~halting_mask)
+                halting_mask = halting_mask | newly_halted
+                steps_executed[~halting_mask] += 1
+                step_counter += 1
+                if not supervise and bool(halting_mask.all()):
+                    break
+            concat = torch.cat([inputs, latent, answer], dim=-1)
+            answer = answer + self.answer_update(concat)
+            logits_per_step.append(self.output_head(answer))
+            if not supervise and bool(halting_mask.all()):
                 break
 
-        return y_prev, halted, caches, total_cycles
+        final_logits = logits_per_step[-1]
+        halt_probs = [torch.sigmoid(logit) for logit in halt_logits]
+        return {
+            "final_logits": final_logits,
+            "logits_per_step": logits_per_step,
+            "halt_logits": halt_logits,
+            "halt_probabilities": halt_probs,
+            "steps_executed": steps_executed,
+            "max_steps": torch.tensor(step_counter, device=device),
+        }
 
-    # ------------------------------------------------------------------
-    # Training utilities
-    # ------------------------------------------------------------------
-    def train(
+
+class TRMEngine:
+    """High-level orchestration wrapper around :class:`TinyRecursiveModel`."""
+
+    def __init__(self, config: TinyRecursiveModelConfig) -> None:
+        self.config = config
+        self.device = torch.device(config.device)
+        self.model = TinyRecursiveModel(config).to(self.device)
+        self.ema_model = copy.deepcopy(self.model)
+        for param in self.ema_model.parameters():
+            param.requires_grad_(False)
+
+    def _update_ema(self) -> None:
+        with torch.no_grad():
+            for ema_param, param in zip(self.ema_model.parameters(), self.model.parameters(), strict=True):
+                ema_param.mul_(self.config.ema_decay).add_(param, alpha=1.0 - self.config.ema_decay)
+
+    def parameters(self) -> Iterable[nn.Parameter]:  # pragma: no cover - thin wrapper
+        return self.model.parameters()
+
+    def train_model(
         self,
-        dataset: Iterable[Tuple[np.ndarray, float]],
+        dataset: torch.utils.data.Dataset,
         *,
-        epochs: int = 10,
-        learning_rate: float = 0.05,
-        halting_weight: Optional[float] = None,
-        use_ema: bool = True,
-    ) -> List[Dict[str, float]]:
-        """Fine-tune the readout and halting heads using supervised data."""
+        halt_targets: Optional[Tensor] = None,
+        epochs: Optional[int] = None,
+        batch_size: Optional[int] = None,
+        progress_callback: Optional[callable] = None,
+    ) -> None:
+        """Train the model with deep supervision over recursive steps."""
 
-        if halting_weight is not None:
-            self.config.halting_weight = float(halting_weight)
+        cfg = self.config
+        epochs = epochs or cfg.epochs
+        batch_size = batch_size or cfg.batch_size
+        dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=False)
+        optimiser = torch.optim.AdamW(self.model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
 
-        logs: List[Dict[str, float]] = []
-        dataset_list = list(dataset)
-        if not dataset_list:
-            return logs
+        supervision_weights = cfg.resolved_supervision_weights()
+        halt_loss_weight = 0.1
+        total_steps = cfg.total_possible_steps
 
         for epoch in range(epochs):
-            total_loss = 0.0
-            total_halt_loss = 0.0
-            grads = {
-                "W_y": np.zeros_like(self._params["W_y"]),
-                "b_y": np.zeros_like(self._params["b_y"]),
-                "W_h": np.zeros_like(self._params["W_h"]),
-                "b_h": np.zeros_like(self._params["b_h"]),
-            }
+            epoch_loss = 0.0
+            for batch_idx, batch in enumerate(dataloader):
+                inputs = batch["features"].to(self.device)
+                labels = batch["label"].to(self.device)
+                batch_halt_targets = batch.get("halt_target")
+                if batch_halt_targets is not None:
+                    halt_targets_batch = batch_halt_targets.to(self.device)
+                elif halt_targets is not None:
+                    halt_targets_batch = halt_targets.to(self.device)
+                else:
+                    halt_targets_batch = torch.full((inputs.size(0),), total_steps - 1, device=self.device, dtype=torch.long)
 
-            for features, target in dataset_list:
-                _, _, caches, total_cycles = self._forward_pass(
-                    features,
-                    self._params,
-                    self.config,
-                    attach_training_metadata=True,
-                    target=target,
-                )
-                if not caches:
-                    continue
+                outputs = self.model(inputs, cfg.halt_threshold, supervise=True)
+                logits_per_step: List[Tensor] = outputs["logits_per_step"]  # type: ignore[assignment]
+                halt_logits: List[Tensor] = outputs["halt_logits"]  # type: ignore[assignment]
 
-                step_count = len(caches)
-                grad_y_carry = 0.0
-                sample_grads = {
-                    "W_y": np.zeros_like(self._params["W_y"]),
-                    "b_y": np.zeros_like(self._params["b_y"]),
-                    "W_h": np.zeros_like(self._params["W_h"]),
-                    "b_h": np.zeros_like(self._params["b_h"]),
-                }
+                classification_loss = 0.0
+                for step_idx, logits in enumerate(logits_per_step):
+                    weight = supervision_weights[min(step_idx, len(supervision_weights) - 1)]
+                    classification_loss = classification_loss + weight * F.cross_entropy(logits, labels)
 
-                for step_index in reversed(range(step_count)):
-                    cache = caches[step_index]
-                    prediction = float(cache["y"][0])
-                    halt_prob = float(cache["halt_prob"][0])
-                    y_prev = float(cache["y_prev"][0])
-                    latent = cache["z"]
-                    halt_target = 1.0 if step_index == step_count - 1 else 0.0
+                halt_target_matrix = F.one_hot(halt_targets_batch, num_classes=total_steps).float()
+                stacked_halt_logits = torch.stack(halt_logits, dim=1)
+                halt_probs = torch.sigmoid(stacked_halt_logits)
+                halt_loss = F.binary_cross_entropy(halt_probs, halt_target_matrix[:, : halt_probs.size(1)])
 
-                    loss_step = _binary_cross_entropy(prediction, target)
-                    halt_loss = _binary_cross_entropy(halt_prob, halt_target)
-                    total_loss += loss_step
-                    total_halt_loss += halt_loss
+                loss = classification_loss + halt_loss_weight * halt_loss
+                optimiser.zero_grad()
+                loss.backward()
+                nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                optimiser.step()
+                self._update_ema()
+                epoch_loss += float(loss.item())
 
-                    grad_output = (prediction - target) / max(
-                        prediction * (1.0 - prediction), EPSILON
-                    )
-                    grad_output += grad_y_carry
+            if progress_callback is not None:
+                progress_callback(epoch + 1, epochs, epoch_loss / max(1, batch_idx + 1))
 
-                    derivative = prediction * (1.0 - prediction)
-                    grad_logits = grad_output * derivative
+    @torch.inference_mode()
+    def infer(
+        self,
+        inputs: Tensor,
+        *,
+        use_ema: bool = True,
+        halt_threshold: Optional[float] = None,
+        max_steps: Optional[int] = None,
+    ) -> TRMInferenceResult:
+        """Run inference with adaptive halting and rich telemetry."""
 
-                    readout_input = np.concatenate((latent, np.array([y_prev])))
-                    sample_grads["W_y"] += grad_logits * readout_input
-                    sample_grads["b_y"] += grad_logits
+        model = self.ema_model if use_ema else self.model
+        model.eval()
+        threshold = halt_threshold or self.config.halt_threshold
+        outputs = model(inputs.to(self.device), threshold, supervise=False)
+        logits = outputs["final_logits"]
+        probabilities = F.softmax(logits, dim=-1)
+        predicted_class = torch.argmax(probabilities, dim=-1)
+        steps_executed_tensor: Tensor = outputs["steps_executed"]  # type: ignore[assignment]
+        steps_used = int(torch.max(steps_executed_tensor).item())
+        halt_probs: List[Tensor] = outputs["halt_probabilities"]  # type: ignore[assignment]
+        halting_values = [float(prob.mean().item()) for prob in halt_probs]
+        halted_early = steps_used < (max_steps or self.config.total_possible_steps)
+        if max_steps is not None:
+            steps_used = min(steps_used, max_steps)
+        return TRMInferenceResult(
+            logits=logits.detach().cpu(),
+            probabilities=probabilities.detach().cpu(),
+            predicted_class=predicted_class.detach().cpu(),
+            steps_used=steps_used,
+            halted_early=halted_early,
+            halt_probabilities=halting_values,
+        )
 
-                    backprop_input = self._params["W_y"].T * grad_logits
-                    grad_y_carry = backprop_input[-1]
-
-                    halt_grad = (halt_prob - halt_target) / max(
-                        halt_prob * (1.0 - halt_prob), EPSILON
-                    )
-                    halt_grad *= self.config.halting_weight
-                    halt_derivative = halt_prob * (1.0 - halt_prob)
-                    grad_halt_logit = halt_grad * halt_derivative
-                    sample_grads["W_h"] += grad_halt_logit * latent
-                    sample_grads["b_h"] += grad_halt_logit
-
-                # Normalise per-sample gradients by steps traversed for stability
-                normaliser = float(total_cycles + 1)
-                for key in sample_grads:
-                    grads[key] += sample_grads[key] / normaliser
-
-            sample_count = float(len(dataset_list))
-            for key in ("W_y", "b_y", "W_h", "b_h"):
-                grads[key] /= sample_count
-                self._params[key] -= learning_rate * grads[key]
-
-            if use_ema:
-                for name in self._params:
-                    self._ema_params[name] = (
-                        self.config.ema_decay * self._ema_params[name]
-                        + (1.0 - self.config.ema_decay) * self._params[name]
-                    )
-
-            logs.append(
-                {
-                    "epoch": float(epoch + 1),
-                    "loss": total_loss / sample_count,
-                    "halt_loss": total_halt_loss / sample_count,
-                }
-            )
-
-        return logs
-
-    # ------------------------------------------------------------------
-    # Introspection helpers
-    # ------------------------------------------------------------------
-    def to_dict(self) -> Dict[str, List[float]]:
-        """Serialise the current parameters into plain Python types."""
-
-        return {name: value.tolist() for name, value in self._params.items()}
-
-    def to_json(self) -> str:
-        """Return a JSON representation of the current parameters."""
-
-        return json.dumps(self.to_dict(), indent=2)
-
-    def update_params(
+    def update_hyperparameters(
         self,
         *,
-        n_cycles: Optional[int] = None,
-        outer_steps: Optional[int] = None,
         halt_threshold: Optional[float] = None,
+        inner_cycles: Optional[int] = None,
+        outer_steps: Optional[int] = None,
     ) -> None:
-        """Update runtime control parameters of the model."""
+        """Update runtime hyperparameters in-place (used by thermostat)."""
 
-        if n_cycles is not None:
-            self.config.n_cycles = max(1, int(n_cycles))
-        if outer_steps is not None:
-            self.config.outer_steps = max(1, int(outer_steps))
         if halt_threshold is not None:
             self.config.halt_threshold = float(halt_threshold)
+        if inner_cycles is not None:
+            self.config.inner_cycles = int(inner_cycles)
+        if outer_steps is not None:
+            self.config.outer_steps = int(outer_steps)
 
-    # Convenience wrappers ------------------------------------------------
-    @classmethod
-    def from_json(cls, payload: str, config: Optional[TinyRecursiveModelConfig] = None) -> "TinyRecursiveModel":
-        """Create a model instance from a JSON payload."""
+    def export_model_state(self) -> Dict[str, torch.Tensor]:
+        """Return a serialisable snapshot of the EMA model for deployment."""
 
-        weights = json.loads(payload)
-        arrays = {name: np.array(value, dtype=np.float64) for name, value in weights.items()}
-        return cls(config=config, weights=arrays)
-
-    def clone(self) -> "TinyRecursiveModel":
-        """Create a deep copy of the model."""
-
-        return TinyRecursiveModel(self.config, {name: arr.copy() for name, arr in self._params.items()})
+        return {
+            "config": torch.tensor(
+                [
+                    self.config.input_dim,
+                    self.config.latent_dim,
+                    self.config.answer_dim,
+                    self.config.hidden_dim,
+                    self.config.num_classes,
+                    self.config.inner_cycles,
+                    self.config.outer_steps,
+                ],
+                dtype=torch.float32,
+            ),
+            "state_dict": self.ema_model.state_dict(),
+        }
 
