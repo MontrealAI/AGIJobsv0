@@ -410,6 +410,110 @@ class DayOneUtilityOrchestrator:
             json.dump(payload, handle, indent=2, sort_keys=True)
 
     # ------------------------------------------------------------------
+    # Scoreboard orchestration
+    # ------------------------------------------------------------------
+    def scoreboard(self, strategies: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+        available = self.load_strategies()
+        if strategies is None:
+            requested = list(available.keys())
+        else:
+            requested = []
+            for item in strategies:
+                key = item.lower()
+                if key not in available:
+                    raise StrategyNotFoundError(item)
+                if key not in requested:
+                    requested.append(key)
+
+        if not requested:
+            raise ValueError("At least one strategy must be supplied to generate a scoreboard")
+
+        summaries: Dict[str, Mapping[str, Any]] = {}
+        guardrail_failures: List[Mapping[str, Any]] = []
+        owner_snapshot: Optional[Mapping[str, Any]] = None
+
+        for key in requested:
+            report = self.simulate(key)
+            metrics = report["metrics"]
+            profile = report["strategy_profile"]
+            guardrails = report["guardrail_pass"]
+            failed = [name for name, passed in guardrails.items() if not passed]
+            if failed:
+                guardrail_failures.append({
+                    "strategy": key,
+                    "title": profile["title"],
+                    "failed": failed,
+                })
+            summaries[key] = {
+                "title": profile["title"],
+                "utility_uplift": float(metrics["utility_uplift"]),
+                "latency_delta": float(metrics["latency_delta"]),
+                "owner_treasury": float(metrics["owner_treasury"]),
+                "reliability_score": float(profile["reliability_score"]),
+                "report_path": str(self.output_dir / f"report_{key}.json"),
+                "dashboard_path": report["outputs"]["dashboard"],
+                "snapshot_path": report["outputs"].get("chart"),
+                "guardrail_pass": guardrails,
+            }
+            owner_snapshot = report["owner_controls"]
+
+        utility_leader = max(summaries.items(), key=lambda item: item[1]["utility_uplift"])
+        treasury_leader = max(summaries.items(), key=lambda item: item[1]["owner_treasury"])
+        reliability_leader = max(summaries.items(), key=lambda item: item[1]["reliability_score"])
+        latency_leader = min(summaries.items(), key=lambda item: item[1]["latency_delta"])
+
+        aggregates = {
+            "total_owner_treasury": sum(item["owner_treasury"] for item in summaries.values()),
+            "average_utility_uplift": sum(item["utility_uplift"] for item in summaries.values()) / len(summaries),
+            "average_latency_delta": sum(item["latency_delta"] for item in summaries.values()) / len(summaries),
+        }
+
+        def _leader_payload(entry: Tuple[str, Mapping[str, Any]]) -> Mapping[str, Any]:
+            key, payload = entry
+            return {
+                "strategy": key,
+                "title": payload["title"],
+                "value": payload,
+            }
+
+        leaders = {
+            "utility_uplift": _leader_payload(utility_leader),
+            "owner_treasury": _leader_payload(treasury_leader),
+            "reliability": _leader_payload(reliability_leader),
+            "latency_delta": _leader_payload(latency_leader),
+        }
+
+        if owner_snapshot is None:
+            owner_snapshot = self.load_owner_controls()
+
+        mermaid_blocks = self._build_scoreboard_mermaid(summaries, leaders)
+
+        scoreboard_payload: Dict[str, Any] = {
+            "type": "scoreboard",
+            "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "strategies": summaries,
+            "leaders": leaders,
+            "aggregates": aggregates,
+            "guardrail_failures": guardrail_failures,
+            "owner_controls": owner_snapshot,
+            "mermaid": mermaid_blocks,
+        }
+
+        scoreboard_payload["metrics"] = {
+            "utility_uplift": leaders["utility_uplift"]["value"]["utility_uplift"],
+            "latency_delta": leaders["latency_delta"]["value"]["latency_delta"],
+            "owner_treasury": aggregates["total_owner_treasury"],
+            "average_utility_uplift": aggregates["average_utility_uplift"],
+            "average_latency_delta": aggregates["average_latency_delta"],
+        }
+
+        html_path = self._render_scoreboard_html(scoreboard_payload)
+        scoreboard_payload["outputs"] = {"dashboard": str(html_path)}
+
+        self._write_json(self.output_dir / "scoreboard.json", scoreboard_payload)
+        return scoreboard_payload
+
+    # ------------------------------------------------------------------
     # Visualization helpers
     # ------------------------------------------------------------------
     def _render_chart(self, profile: StrategyProfile, metrics: Mapping[str, Any]) -> Path:
@@ -483,6 +587,40 @@ class DayOneUtilityOrchestrator:
             "systems": systems_diagram.strip(),
             "guardrails": guardrail_diagram.strip(),
             "owner": owner_flow.strip(),
+        }
+
+    def _build_scoreboard_mermaid(
+        self, summaries: Mapping[str, Mapping[str, Any]], leaders: Mapping[str, Mapping[str, Any]]
+    ) -> Mapping[str, str]:
+        pie_lines = []
+        for key, payload in summaries.items():
+            pie_lines.append(f'    "{payload["title"]}" : {payload["owner_treasury"]:.6f}')
+        pie_chart = "\n".join(["pie showData", *pie_lines])
+
+        leader_flow = [
+            "flowchart TD",
+            "    A[Day-One Scoreboard] --> B[Utility Leader]",
+            f"    B -->|{leaders['utility_uplift']['title']}| C{{Utility}}",
+            "    A --> D[Treasury Leader]",
+            f"    D -->|{leaders['owner_treasury']['title']}| E{{Owner Treasury}}",
+            "    A --> F[Reliability Leader]",
+            f"    F -->|{leaders['reliability']['title']}| G{{Reliability}}",
+            "    A --> H[Latency Champion]",
+            f"    H -->|{leaders['latency_delta']['title']}| I{{Latency}}",
+        ]
+
+        guardrail_overview = ["graph LR"]
+        for key, payload in summaries.items():
+            guardrail = payload["guardrail_pass"]
+            status = "Stable" if all(guardrail.values()) else "Investigate"
+            guardrail_overview.append(
+                f"    {key.replace('-', '_')}[{payload['title']}] --> {status}"
+            )
+
+        return {
+            "treasury": pie_chart.strip(),
+            "leaders": "\n".join(leader_flow).strip(),
+            "guardrails": "\n".join(guardrail_overview).strip(),
         }
 
     def _render_dashboard(self, report: Mapping[str, Any], chart_path: Optional[Path]) -> Path:
@@ -702,6 +840,211 @@ class DayOneUtilityOrchestrator:
             handle.write(html)
         return html_path
 
+    def _render_scoreboard_html(self, scoreboard: Mapping[str, Any]) -> Path:
+        strategies = scoreboard["strategies"]
+        aggregates = scoreboard["aggregates"]
+        guardrail_failures: Sequence[Mapping[str, Any]] = scoreboard.get("guardrail_failures", [])
+        mermaid_blocks = scoreboard.get("mermaid", {})
+        leaders = scoreboard.get("leaders", {})
+
+        def _format_pct(value: float) -> str:
+            return f"{value * 100:.2f}%"
+
+        rows = []
+        for key, payload in sorted(
+            strategies.items(), key=lambda item: item[1]["utility_uplift"], reverse=True
+        ):
+            guardrail = payload["guardrail_pass"]
+            guardrail_badge = "pass" if all(guardrail.values()) else "fail"
+            rows.append(
+                """
+                <tr>
+                    <td>{title}</td>
+                    <td>{utility}</td>
+                    <td>{latency}</td>
+                    <td>{treasury:.2f}</td>
+                    <td>{reliability:.2f}</td>
+                    <td><span class="badge {badge}">{status}</span></td>
+                    <td><a href="{dashboard}" target="_blank" rel="noopener">Dashboard</a></td>
+                </tr>
+                """.format(
+                    title=payload["title"],
+                    utility=_format_pct(payload["utility_uplift"]),
+                    latency=_format_pct(payload["latency_delta"]),
+                    treasury=payload["owner_treasury"],
+                    reliability=payload["reliability_score"] * 100,
+                    badge=guardrail_badge,
+                    status="All Guardrails" if guardrail_badge == "pass" else "Investigate",
+                    dashboard=payload["dashboard_path"],
+                )
+            )
+
+        guardrail_notes = "".join(
+            f"<li><strong>{item['title']}</strong>: {', '.join(item['failed'])}</li>" for item in guardrail_failures
+        ) or "<li>All monitored strategies satisfied guardrails.</li>"
+
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8" />
+            <title>Day-One Utility Scoreboard — Command Deck</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <style>
+                :root {{
+                    color-scheme: dark;
+                    --bg: #020617;
+                    --panel: rgba(15, 23, 42, 0.82);
+                    --accent: #38bdf8;
+                    --text: #f8fafc;
+                }}
+                body {{
+                    margin: 0;
+                    font-family: 'Space Grotesk', sans-serif;
+                    background: radial-gradient(circle at top, rgba(56,189,248,0.18), transparent 45%), var(--bg);
+                    color: var(--text);
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                }}
+                header {{
+                    text-align: center;
+                    padding: 2.8rem 5vw 1.4rem;
+                }}
+                header h1 {{
+                    font-size: clamp(2.6rem, 5vw, 3.8rem);
+                    margin-bottom: 0.6rem;
+                }}
+                header p {{
+                    margin: 0 auto;
+                    max-width: 70ch;
+                    color: rgba(248,250,252,0.76);
+                    line-height: 1.5;
+                }}
+                main {{
+                    flex: 1;
+                    padding: 0 5vw 4rem;
+                    display: grid;
+                    gap: 1.4rem;
+                }}
+                .card {{
+                    background: var(--panel);
+                    border-radius: 22px;
+                    padding: 2rem;
+                    box-shadow: 0 40px 120px rgba(56,189,248,0.2);
+                    backdrop-filter: blur(14px);
+                }}
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                }}
+                th, td {{
+                    padding: 0.9rem;
+                    border-bottom: 1px solid rgba(148,163,184,0.24);
+                    text-align: left;
+                }}
+                th {{
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    font-size: 0.85rem;
+                }}
+                .badge {{
+                    display: inline-block;
+                    padding: 0.2rem 0.7rem;
+                    border-radius: 999px;
+                    font-size: 0.75rem;
+                    letter-spacing: 0.05em;
+                }}
+                .badge.pass {{
+                    background: rgba(34,197,94,0.18);
+                    color: #bbf7d0;
+                }}
+                .badge.fail {{
+                    background: rgba(248,113,113,0.2);
+                    color: #fecaca;
+                }}
+                ul {{
+                    margin: 0;
+                    padding-left: 1.4rem;
+                    line-height: 1.5;
+                }}
+                footer {{
+                    text-align: center;
+                    padding: 2.4rem 0;
+                    color: rgba(226,232,240,0.7);
+                }}
+                a {{
+                    color: var(--accent);
+                }}
+            </style>
+        </head>
+        <body>
+            <header>
+                <h1>Day-One Utility Scoreboard</h1>
+                <p>
+                    Aggregated telemetry across strategies proves the operator can command
+                    a sovereign labour market in one sweep. Leaders are crowned live,
+                    guardrails stay visible, and every dashboard remains one click away.
+                </p>
+            </header>
+            <main>
+                <section class="card">
+                    <h2>Strategy Leaderboard</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Strategy</th>
+                                <th>Utility Uplift</th>
+                                <th>Latency Delta</th>
+                                <th>Owner Treasury</th>
+                                <th>Reliability</th>
+                                <th>Guardrails</th>
+                                <th>Explore</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {''.join(rows)}
+                        </tbody>
+                    </table>
+                </section>
+                <section class="card">
+                    <h2>Aggregates</h2>
+                    <ul>
+                        <li>Total owner treasury impact: {aggregates['total_owner_treasury']:.2f}</li>
+                        <li>Average utility uplift: {_format_pct(aggregates['average_utility_uplift'])}</li>
+                        <li>Average latency delta: {_format_pct(aggregates['average_latency_delta'])}</li>
+                        <li>Utility leader: {leaders.get('utility_uplift', {}).get('title', '—')} ({_format_pct(leaders.get('utility_uplift', {}).get('value', {}).get('utility_uplift', 0.0))})</li>
+                        <li>Treasury leader: {leaders.get('owner_treasury', {}).get('title', '—')} ({leaders.get('owner_treasury', {}).get('value', {}).get('owner_treasury', 0.0):.2f})</li>
+                        <li>Reliability leader: {leaders.get('reliability', {}).get('title', '—')} ({leaders.get('reliability', {}).get('value', {}).get('reliability_score', 0.0)*100:.2f})</li>
+                    </ul>
+                </section>
+                <section class="card">
+                    <h2>Guardrail Watchlist</h2>
+                    <ul>{guardrail_notes}</ul>
+                </section>
+                <section class="card">
+                    <h2>Mermaid Intels</h2>
+                    <div class="mermaid">{mermaid_blocks.get('treasury', '')}</div>
+                    <div class="mermaid">{mermaid_blocks.get('leaders', '')}</div>
+                    <div class="mermaid">{mermaid_blocks.get('guardrails', '')}</div>
+                </section>
+            </main>
+            <footer>
+                Generated at {scoreboard['generated_at']} · Powered by AGI Jobs v0 (v2)
+            </footer>
+            <script type="module">
+                import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                mermaid.initialize({{ startOnLoad: true, theme: 'dark' }});
+            </script>
+        </body>
+        </html>
+        """
+
+        html_path = self.output_dir / "scoreboard.html"
+        with html_path.open("w", encoding="utf-8") as handle:
+            handle.write(html)
+        return html_path
+
     # ------------------------------------------------------------------
     # CLI entrypoint
     # ------------------------------------------------------------------
@@ -730,6 +1073,14 @@ class DayOneUtilityOrchestrator:
         )
 
         subparsers.add_parser("list", help="List available strategies")
+        scoreboard = subparsers.add_parser(
+            "scoreboard", help="Generate a multi-strategy scoreboard and dashboard"
+        )
+        scoreboard.add_argument(
+            "--strategies",
+            nargs="*",
+            help="Optional list of strategy keys to include (defaults to all)",
+        )
         return parser
 
     def execute(self, args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
@@ -759,6 +1110,10 @@ class DayOneUtilityOrchestrator:
         if command == "list":
             strategies = {key: profile.title for key, profile in self.load_strategies().items()}
             return {"strategies": strategies}, "json"
+        if command == "scoreboard":
+            strategy_args = getattr(parsed, "strategies", None)
+            scoreboard_payload = self.scoreboard(strategy_args)
+            return scoreboard_payload, "json"
         raise ValueError(f"Unknown command {command}")
 
     def _build_human_summary(self, report: Mapping[str, Any]) -> str:
@@ -817,7 +1172,7 @@ def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], st
         normalized_args = ["simulate"]
     else:
         primary = normalized_args[0]
-        known_commands = {"simulate", "owner", "list"}
+        known_commands = {"simulate", "owner", "list", "scoreboard"}
         if primary not in known_commands and not primary.startswith("-"):
             # Allow operators to call `python run_demo.py e2e` and treat the
             # first positional argument as the strategy name. This mirrors the

@@ -51,7 +51,17 @@ full strength of **AGI Jobs v0 (v2)**.
    make owner-reset   # Restore the sovereign defaults in one command
    ```
 
-5. Serve the dashboard (optional):
+5. Generate the omni scoreboard:
+
+   ```bash
+   make scoreboard
+   ```
+
+   This crowns utility/treasury/reliability leaders, emits `out/scoreboard.json`,
+   and renders a mermaid-rich command-room overview at
+   `out/scoreboard.html`.
+
+6. Serve the dashboard (optional):
 
    ```bash
    python3 -m http.server --directory out 9000
@@ -157,6 +167,7 @@ Running `make e2e` produces:
 - `out/dashboard_e2e.html` — mermaid-enhanced cinematic dashboard
 - `out/snapshot_e2e.png` — baseline vs candidate comparison chart
 - `out/owner_controls_snapshot.json` — owner snapshot for audit trails
+- `out/scoreboard.json` & `out/scoreboard.html` — cross-strategy leaderboard with live mermaid intelligence
 
 ![Dashboard preview](out/snapshot_e2e.png)
 
@@ -217,6 +228,7 @@ protects this demo. It:
 
 1. Installs Python dependencies via the Makefile.
 2. Runs the orchestrator across multiple strategies.
+3. Generates the multi-strategy scoreboard to guarantee leaderboard fidelity.
 3. Validates output artefacts (JSON + dashboard).
 4. Executes Pytest for regression coverage.
 5. Exercises owner commands (set + toggle) to guarantee sovereignty features.

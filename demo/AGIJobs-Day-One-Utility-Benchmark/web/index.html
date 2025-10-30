@@ -125,6 +125,7 @@
           <option value="../out/report_hgm.json">Huxley-Gödel Machine</option>
           <option value="../out/report_trm.json">Total Revenue Maximizer</option>
           <option value="../out/report_omni.json">Omni-Concord Infinity Launch</option>
+          <option value="../out/scoreboard.json">Multi-Strategy Scoreboard</option>
         </select>
       </section>
       <section class="panel">
@@ -161,6 +162,58 @@
       }
 
       function renderMetrics(data) {
+        if (data.type === 'scoreboard') {
+          const blocks = [];
+          const leaders = data.leaders || {};
+          if (leaders.utility_uplift && leaders.utility_uplift.value) {
+            const leader = leaders.utility_uplift;
+            blocks.push({
+              label: 'Utility Leader',
+              value: `${leader.title} (${(leader.value.utility_uplift * 100).toFixed(2)}%)`
+            });
+          }
+          if (leaders.owner_treasury && leaders.owner_treasury.value) {
+            const leader = leaders.owner_treasury;
+            blocks.push({
+              label: 'Treasury Leader',
+              value: `${leader.title} (${leader.value.owner_treasury.toFixed(2)})`
+            });
+          }
+          if (leaders.reliability && leaders.reliability.value) {
+            const leader = leaders.reliability;
+            blocks.push({
+              label: 'Reliability Leader',
+              value: `${leader.title} (${(leader.value.reliability_score * 100).toFixed(2)}%)`
+            });
+          }
+          if (Array.isArray(data.guardrail_failures)) {
+            const failures = data.guardrail_failures.length;
+            const noun = failures === 1 ? 'strategy' : 'strategies';
+            blocks.push({ label: 'Guardrail Alerts', value: failures === 0 ? 'All Clear' : `${failures} ${noun}` });
+          }
+          if (data.aggregates) {
+            blocks.push({
+              label: 'Total Owner Treasury',
+              value: data.aggregates.total_owner_treasury.toFixed(2)
+            });
+            blocks.push({
+              label: 'Avg Utility Uplift',
+              value: (data.aggregates.average_utility_uplift * 100).toFixed(2) + '%'
+            });
+            blocks.push({
+              label: 'Avg Latency Delta',
+              value: (data.aggregates.average_latency_delta * 100).toFixed(2) + '%'
+            });
+          }
+          metricsEl.innerHTML = blocks.map(block => `
+            <div class="metric">
+              <h3>${block.label}</h3>
+              <p>${block.value}</p>
+            </div>
+          `).join('');
+          return;
+        }
+
         const metrics = data.metrics || {};
         const blocks = [];
         if (typeof metrics.utility_uplift === 'number') {

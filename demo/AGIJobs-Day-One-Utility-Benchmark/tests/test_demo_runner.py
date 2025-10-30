@@ -107,6 +107,24 @@ def test_owner_utility_guardrail_override():
     assert report["guardrail_pass"]["utility_uplift"] is False
 
 
+def test_scoreboard_generates_dashboard():
+    orchestrator = _orchestrator()
+    scoreboard = orchestrator.scoreboard()
+
+    scoreboard_path = orchestrator.output_dir / "scoreboard.json"
+    assert scoreboard_path.exists()
+    payload = json.loads(scoreboard_path.read_text(encoding="utf-8"))
+    assert payload["type"] == "scoreboard"
+    assert "e2e" in payload["strategies"]
+    assert payload["leaders"]["utility_uplift"]["title"]
+
+    html_path = Path(scoreboard["outputs"]["dashboard"])
+    assert html_path.exists()
+    html = html_path.read_text(encoding="utf-8")
+    assert "Day-One Utility Scoreboard" in html
+    assert html.count('class="mermaid"') >= 3
+
+
 def test_execute_human_format_summary():
     orchestrator = _orchestrator()
     payload, fmt = orchestrator.execute(["simulate", "--strategy", "e2e", "--format", "human"])
