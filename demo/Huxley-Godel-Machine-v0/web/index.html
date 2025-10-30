@@ -37,12 +37,20 @@
       <section>
         <h2>Autonomous Evolution Flow</h2>
         <div class="mermaid" id="flowchart">
-          graph LR A[Start: Load Config] --> B{Thermostat} B -->|ROI >= Target|
-          C[Increase Concurrency] B -->|ROI < Target| D[Constrain Exploration] C
-          --> E[HGM Engine] D --> E E -->|Expand| F[Self-Modification] E
-          -->|Evaluate| G[Mission Execution] F --> H[Ledger Update] G --> H H
-          --> B H --> I[Sentinel Rules] I -->|Safe| B I -->|Halt| J[Graceful
-          Shutdown]
+          graph LR
+          A[Start: Load Config] --> B{Thermostat}
+          B -->|ROI >= Target| C[Increase Concurrency]
+          B -->|ROI < Target| D[Constrain Exploration]
+          C --> E[HGM Engine]
+          D --> E
+          E -->|Expand| F[Self-Modification]
+          E -->|Evaluate| G[Mission Execution]
+          F --> H[Ledger Update]
+          G --> H
+          H --> B
+          H --> I[Sentinel Rules]
+          I -->|Safe| B
+          I -->|Halt| J[Graceful Shutdown]
         </div>
       </section>
       <section>
