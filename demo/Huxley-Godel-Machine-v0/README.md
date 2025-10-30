@@ -151,6 +151,32 @@ python -m demo.huxley_godel_machine_v0.simulator \
   --set hgm.tau=0.8
 ```
 
+### 🎛️ Owner console shortcuts
+
+- Launch the interactive operator console:
+
+  ```bash
+  make hgm-owner-console
+  ```
+
+  The console prints the current directives, lets you toggle pauses or caps
+  without touching JSON, and emits ready-to-copy `--set owner_controls.*` flags
+  for `make demo-hgm` and `run_demo.py`.
+
+- Automate from CI or scripts without prompts:
+
+  ```bash
+  python demo/Huxley-Godel-Machine-v0/scripts/hgm_owner_console.py \
+    --pause-expansions on \
+    --max-actions 18 \
+    --note "Throttle for executive review" \
+    --output demo/Huxley-Godel-Machine-v0/config/owner_overrides.json
+  ```
+
+  The generated JSON can be supplied to the simulator via
+  `--set owner_controls=$(cat owner_overrides.json)` or by checking the file
+  into version control for reproducible rollouts.
+
 ### 🔐 Governance operations
 
 Contract owners can now steer the on-chain deployment without touching raw

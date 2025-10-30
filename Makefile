@@ -25,13 +25,17 @@ culture-bootstrap:
 	@$(MAKE) culture-arena-sample NETWORK=$(NETWORK) MODE=$(MODE)
 .PHONY: demo-hgm hgm-demo
 demo-hgm:
-	node demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js $(ARGS)
+        node demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js $(ARGS)
 
 hgm-demo: demo-hgm
 
+.PHONY: hgm-owner-console
+hgm-owner-console:
+	$(PYTHON) demo/Huxley-Godel-Machine-v0/scripts/hgm_owner_console.py $(ARGS)
+
 .PHONY: demo-agialpha
 demo-agialpha:
-	$(PYTHON) -m demo.huxley_godel_machine_v0.simulator $(ARGS)
+        $(PYTHON) -m demo.huxley_godel_machine_v0.simulator $(ARGS)
 
 .PHONY: absolute-zero-demo
 absolute-zero-demo:

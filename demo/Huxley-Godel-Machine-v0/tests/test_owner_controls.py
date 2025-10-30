@@ -34,3 +34,20 @@ def test_describe_mentions_cap_when_triggered() -> None:
     description = controls.describe(consumed_actions=2, cap_triggered=True)
     assert "2" in description
     assert "Owner note" in description
+
+
+def test_to_mapping_omits_defaults() -> None:
+    controls = OwnerControls()
+    mapping = controls.to_mapping()
+    assert mapping["pause_all"] is False
+    assert "max_actions" not in mapping
+    assert "note" not in mapping
+
+
+def test_to_cli_args_only_includes_changes() -> None:
+    controls = OwnerControls(pause_all=True, max_actions=7, note="Emergency throttle")
+    args = controls.to_cli_args()
+    assert "--set owner_controls.pause_all=true" in args
+    assert "--set owner_controls.max_actions=7" in args
+    assert any(arg.endswith('"Emergency throttle"') for arg in args)
+    assert all("pause_expansions" not in arg for arg in args)
