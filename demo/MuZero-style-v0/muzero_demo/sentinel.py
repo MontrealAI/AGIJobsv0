@@ -1,35 +1,78 @@
-"""Safety sentinels ensuring alignment and constraint adherence."""
+"""Monitoring utilities ensuring planner alignment and safety."""
 from __future__ import annotations
 
 from collections import deque
-from typing import Deque, Dict
+from dataclasses import dataclass
+from typing import Deque, Dict, Iterable, List
+
+import numpy as np
+
+from .environment import EnvironmentConfig
+from .training import Episode
 
 
-class Sentinel:
-    def __init__(self, config: Dict) -> None:
-        sent_conf = config.get("sentinel", {})
-        self.enabled = bool(sent_conf.get("enable", True))
-        self.alpha = float(sent_conf.get("value_error_alpha", 0.1))
-        self.threshold = float(sent_conf.get("value_error_threshold", 1.0))
-        self.drift_window = int(sent_conf.get("drift_window", 12))
-        self.fallback_on_violation = bool(sent_conf.get("fallback_on_violation", True))
-        self._ema_error = 0.0
-        self._history: Deque[float] = deque(maxlen=self.drift_window)
-        self.triggered = False
+@dataclass
+class SentinelConfig:
+    """Thresholds used by the sentinel monitor."""
 
-    def update(self, predicted_value: float, realised_return: float) -> None:
-        if not self.enabled:
-            return
-        error = abs(predicted_value - realised_return)
-        self._ema_error = self.alpha * error + (1 - self.alpha) * self._ema_error
-        self._history.append(error)
-        if self._ema_error > self.threshold and len(self._history) == self._history.maxlen:
-            self.triggered = True
+    window: int = 64
+    alert_mae: float = 25.0
+    fallback_mae: float = 45.0
+    min_episodes: int = 6
+    budget_floor: float = 5.0
 
-    def should_fallback(self) -> bool:
-        return self.triggered and self.fallback_on_violation
 
-    def reset(self) -> None:
-        self.triggered = False
-        self._ema_error = 0.0
-        self._history.clear()
+@dataclass
+class SentinelStatus:
+    alert_active: bool
+    fallback_required: bool
+    budget_floor_breached: bool
+    mean_absolute_error: float
+    episodes_considered: int
+
+
+class SentinelMonitor:
+    """Aggregate planner statistics to flag misalignment."""
+
+    def __init__(self, config: SentinelConfig, env_config: EnvironmentConfig) -> None:
+        self.config = config
+        self.env_config = env_config
+        self._episodes: Deque[Episode] = deque(maxlen=config.window)
+
+    def record_episode(self, episode: Episode) -> None:
+        self._episodes.append(episode)
+
+    def status(self) -> SentinelStatus:
+        mae = self._mean_absolute_error()
+        episode_count = len(self._episodes)
+        alert = episode_count >= self.config.min_episodes and mae >= self.config.alert_mae
+        fallback = alert and mae >= self.config.fallback_mae
+        budget_floor_breached = any(
+            episode.summary.get("remaining_budget", self.env_config.starting_budget) < self.config.budget_floor
+            for episode in self._episodes
+        )
+        return SentinelStatus(
+            alert_active=alert,
+            fallback_required=fallback,
+            budget_floor_breached=budget_floor_breached,
+            mean_absolute_error=mae,
+            episodes_considered=episode_count,
+        )
+
+    def _mean_absolute_error(self) -> float:
+        if not self._episodes:
+            return 0.0
+        errors: List[float] = []
+        for episode in self._episodes:
+            values = np.asarray(episode.values, dtype=np.float64)
+            actuals = np.asarray(episode.returns, dtype=np.float64)
+            length = min(values.size, actuals.size)
+            if length == 0:
+                continue
+            errors.extend(np.abs(values[:length] - actuals[:length]).tolist())
+        if not errors:
+            return 0.0
+        return float(np.mean(errors))
+
+
+__all__ = ["SentinelConfig", "SentinelMonitor", "SentinelStatus"]

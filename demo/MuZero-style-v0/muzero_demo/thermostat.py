@@ -1,44 +1,83 @@
-"""Economic thermostat regulating MCTS simulation budgets."""
+"""Adaptive controller for planning simulation budgets."""
 from __future__ import annotations
 
-from typing import Dict
+from dataclasses import dataclass
+from typing import Iterable
 
-import math
+import numpy as np
+
+from .environment import EnvironmentConfig, PlannerObservation
+from .mcts import PlannerSettings
+
+
+@dataclass
+class ThermostatConfig:
+    """Configuration for the adaptive simulation thermostat."""
+
+    min_simulations: int = 16
+    max_simulations: int = 160
+    low_entropy: float = 0.5
+    high_entropy: float = 1.35
+    budget_pressure_ratio: float = 0.35
+    endgame_horizon_ratio: float = 0.8
 
 
 class PlanningThermostat:
-    def __init__(self, config: Dict) -> None:
-        settings = config.get("thermostat", {})
-        self.enabled = bool(settings.get("enable", True))
-        self.low_entropy_threshold = float(settings.get("low_entropy_threshold", 0.3))
-        self.high_entropy_threshold = float(settings.get("high_entropy_threshold", 0.7))
-        self.min_simulations = int(settings.get("min_simulations", 32))
-        self.max_simulations = int(settings.get("max_simulations", 192))
-        self.latency_budget = float(settings.get("latency_budget_ms", 120))
-        self.simulation_cost = float(settings.get("simulation_cost_ms", 1.0))
+    """Recommend simulation budgets based on entropy and budget pressure."""
 
-    def decide(self, base_simulations: int, visit_distribution_entropy: float, decision_value_gap: float) -> int:
-        if not self.enabled:
-            return base_simulations
-        entropy_factor = 1.0
-        if visit_distribution_entropy < self.low_entropy_threshold:
-            entropy_factor = 0.6
-        elif visit_distribution_entropy > self.high_entropy_threshold:
-            entropy_factor = 1.4
-        gap_factor = 1.0
-        if decision_value_gap < 0.05:
-            gap_factor = 1.5
-        elif decision_value_gap > 0.25:
-            gap_factor = 0.7
-        simulations = int(base_simulations * entropy_factor * gap_factor)
-        simulations = max(self.min_simulations, min(simulations, self.max_simulations))
-        max_allowed = int(self.latency_budget / max(self.simulation_cost, 1e-6))
-        return min(simulations, max_allowed)
+    def __init__(
+        self,
+        config: ThermostatConfig,
+        env_config: EnvironmentConfig,
+        planner_settings: PlannerSettings,
+    ) -> None:
+        self.config = config
+        self.env_config = env_config
+        self.planner_settings = planner_settings
 
-    @staticmethod
-    def entropy(probabilities) -> float:
-        total = 0.0
-        for p in probabilities:
-            if p > 0:
-                total -= p * math.log(p + 1e-9)
-        return total
+    def recommend(
+        self,
+        observation: PlannerObservation,
+        policy: Iterable[float],
+        legal_actions: Iterable[int],
+    ) -> int:
+        del legal_actions  # only entropy and budget pressure are used
+        base = self.planner_settings.num_simulations
+        entropy = self._entropy(policy)
+        entropy_factor = self._entropy_factor(entropy)
+        budget_ratio = observation.budget_remaining / self.env_config.starting_budget
+        pressure = self._pressure_factor(budget_ratio, observation.timestep)
+        simulations = int(round(base * entropy_factor * pressure))
+        simulations = max(self.config.min_simulations, simulations)
+        simulations = min(self.config.max_simulations, simulations)
+        return simulations
+
+    def _entropy(self, policy: Iterable[float]) -> float:
+        probs = np.asarray(list(policy), dtype=np.float64)
+        probs = probs[probs > 0]
+        if probs.size == 0:
+            return 0.0
+        return float(-np.sum(probs * np.log(probs)))
+
+    def _entropy_factor(self, entropy: float) -> float:
+        if entropy <= self.config.low_entropy:
+            return 0.7
+        if entropy >= self.config.high_entropy:
+            return 1.3
+        span = self.config.high_entropy - self.config.low_entropy
+        if span <= 1e-6:
+            return 1.0
+        alpha = (entropy - self.config.low_entropy) / span
+        return 0.7 + 0.6 * alpha
+
+    def _pressure_factor(self, budget_ratio: float, timestep: int) -> float:
+        pressure = 1.0
+        if budget_ratio <= self.config.budget_pressure_ratio:
+            pressure = max(pressure, 1.3)
+        horizon_ratio = timestep / max(self.env_config.horizon, 1)
+        if horizon_ratio >= self.config.endgame_horizon_ratio:
+            pressure = max(pressure, 1.15)
+        return pressure
+
+
+__all__ = ["PlanningThermostat", "ThermostatConfig"]

@@ -1,98 +1,108 @@
-"""Training pipeline for MuZero demo."""
+"""Training utilities for the MuZero-style demo."""
 from __future__ import annotations
 
-from typing import Dict, Iterable, List, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, Iterable, List, Sequence
 
+import numpy as np
 import torch
+import torch.nn.functional as F
 import torch.optim as optim
 
-from .environment import JobsEnvironment
-from .planner import MuZeroPlanner
+from .environment import EnvironmentConfig
+from .mcts import PlannerSettings
+from .network import MuZeroNetwork, NetworkOutput
 from .replay import ReplayBuffer, Transition
-from .telemetry import TelemetrySink
 
 
-def discount_returns(rewards: List[float], discount: float) -> List[float]:
-    returns = []
+@dataclass
+class TrainingConfig:
+    """Training hyper-parameters used by the demo."""
+
+    batch_size: int = 32
+    unroll_steps: int = 5
+    td_steps: int = 5
+    learning_rate: float = 8e-4
+    weight_decay: float = 1e-6
+    replay_capacity: int = 2048
+    discount: float = 0.997
+    reanalyse_ratio: float = 0.25
+    value_loss_weight: float = 1.0
+    reward_loss_weight: float = 1.0
+    policy_loss_weight: float = 1.0
+    checkpoint_interval: int = 16
+    environment: EnvironmentConfig = field(default_factory=EnvironmentConfig)
+    planner: PlannerSettings = field(default_factory=PlannerSettings)
+
+
+@dataclass
+class Episode:
+    """Container representing a self-play episode."""
+
+    observations: List[np.ndarray]
+    actions: List[int]
+    rewards: List[float]
+    policies: List[np.ndarray]
+    values: List[float]
+    returns: List[float]
+    simulations: List[int]
+    summary: Dict[str, float]
+
+
+def discount_returns(rewards: Sequence[float], discount: float) -> List[float]:
     running = 0.0
+    discounted: List[float] = []
     for reward in reversed(rewards):
         running = reward + discount * running
-        returns.insert(0, running)
-    return returns
+        discounted.insert(0, running)
+    return discounted
 
 
 class MuZeroTrainer:
-    def __init__(self, config: Dict, network: torch.nn.Module, device: torch.device) -> None:
-        self.config = config
-        train_conf = config.get("training", {})
-        self.batch_size = int(train_conf.get("batch_size", 32))
-        self.unroll_steps = int(train_conf.get("unroll_steps", 5))
-        self.td_steps = int(train_conf.get("td_steps", 5))
-        self.learning_rate = float(train_conf.get("learning_rate", 8e-4))
-        self.weight_decay = float(train_conf.get("weight_decay", 1e-6))
-        self.reanalyse_ratio = float(train_conf.get("reanalyse_ratio", 0.25))
-        self.value_weight = float(train_conf.get("value_loss_weight", 1.0))
-        self.reward_weight = float(train_conf.get("reward_loss_weight", 1.0))
-        self.policy_weight = float(train_conf.get("policy_loss_weight", 1.0))
-        self.checkpoint_interval = int(train_conf.get("checkpoint_interval", 16))
-        replay_capacity = int(train_conf.get("replay_capacity", 2048))
-        self.replay = ReplayBuffer(replay_capacity)
-        self.network = network
-        self.device = device
-        self.telemetry = TelemetrySink(config)
-        self.optimizer = optim.Adam(self.network.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
-        self.discount = float(config.get("environment", {}).get("discount", 0.997))
+    """Simple trainer orchestrating replay sampling and optimisation."""
 
-    def self_play(self, env: JobsEnvironment, planner: MuZeroPlanner, episodes: int) -> None:
-        for episode in range(episodes):
-            planner.reset_episode()
-            env.reset()
-            observation = env.observe()
-            episode_transitions: List[Transition] = []
-            accumulated_return = 0.0
-            discount_power = 1.0
-            while not env.done:
-                action, policy, meta = planner.plan(env, observation)
-                next_obs, reward, done, info = env.step(action)
-                accumulated_return += reward * discount_power
-                discount_power *= self.discount
-                transition = Transition(observation=list(observation), action=action, reward=reward, policy=policy, value=meta["expected_value"])
-                episode_transitions.append(transition)
-                planner.observe_outcome(meta["expected_value"], reward)
-                observation = next_obs
-            self.replay.extend_episode(episode_transitions)
-            if len(self.replay) >= self.batch_size:
-                for _ in range(3):
-                    self.train_step()
-            self.telemetry.record("self_play_episode", {"episode": episode, "return": accumulated_return})
+    def __init__(self, config: TrainingConfig, network: MuZeroNetwork, device: torch.device) -> None:
+        self.config = config
+        self.network = network.to(device)
+        self.device = device
+        self.replay = ReplayBuffer(config.replay_capacity)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+
+    def store_episode(self, episode: Iterable[Transition]) -> None:
+        self.replay.extend_episode(episode)
 
     def train_step(self) -> Dict[str, float]:
         if len(self.replay) == 0:
-            return {"loss": 0.0}
-        batch = self.replay.sample(self.batch_size)
+            return {"loss": 0.0, "policy_loss": 0.0, "value_loss": 0.0, "reward_loss": 0.0}
+
+        batch = self.replay.sample(self.config.batch_size)
         observations = torch.tensor([t.observation for t in batch], dtype=torch.float32, device=self.device)
-        actions = torch.tensor([t.action for t in batch], dtype=torch.long, device=self.device)
         rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32, device=self.device).unsqueeze(-1)
         target_policies = torch.tensor([t.policy for t in batch], dtype=torch.float32, device=self.device)
         target_values = torch.tensor([t.value for t in batch], dtype=torch.float32, device=self.device).unsqueeze(-1)
 
-        outputs = self.network.initial_inference(observations)
-        policy_loss = torch.nn.functional.cross_entropy(outputs.policy_logits, torch.argmax(target_policies, dim=-1))
-        value_loss = torch.nn.functional.mse_loss(outputs.value, target_values)
-        reward_loss = torch.nn.functional.mse_loss(outputs.reward, rewards)
-        loss = self.policy_weight * policy_loss + self.value_weight * value_loss + self.reward_weight * reward_loss
+        output: NetworkOutput = self.network.initial_inference(observations)
+        policy_loss = F.cross_entropy(output.policy_logits, torch.argmax(target_policies, dim=-1))
+        value_loss = F.mse_loss(output.value, target_values)
+        reward_loss = F.mse_loss(output.reward, rewards)
+
+        loss = (
+            self.config.policy_loss_weight * policy_loss
+            + self.config.value_loss_weight * value_loss
+            + self.config.reward_loss_weight * reward_loss
+        )
+
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=5.0)
         self.optimizer.step()
-        metrics = {
+
+        return {
             "loss": float(loss.item()),
             "policy_loss": float(policy_loss.item()),
             "value_loss": float(value_loss.item()),
             "reward_loss": float(reward_loss.item()),
         }
-        self.telemetry.record("training_step", metrics)
-        return metrics
 
-    def save_checkpoint(self, path: str) -> None:
-        torch.save(self.network.state_dict(), path)
+
+__all__ = ["Episode", "MuZeroTrainer", "TrainingConfig", "discount_returns"]
