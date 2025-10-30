@@ -1,0 +1,1152 @@
+[
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": -5.252251287996273,
+    "timestamp": 1761826137350,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-21",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 242.11400739476085,
+        "reward": 103.11562836281955,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-21",
+        "agentId": "agent-orion",
+        "success": false,
+        "durationHours": 8.516929288348182,
+        "cost": 22.844749999999998,
+        "rating": 1.295551061304286,
+        "valueCaptured": 36.73535576260701,
+        "penalties": 36.09046992698684,
+        "rewardPaid": 41.246251345127824
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.009359735245385,
+    "timestamp": 1761826137352,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-22",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 240.811871699756,
+        "reward": 102.99185720770619,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-22",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.79290333634708,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 323.88396404341603,
+        "penalties": 0,
+        "rewardPaid": 102.99185720770619
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 5.9992805127657745,
+    "timestamp": 1761826137353,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-23",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 241.76489433413371,
+        "reward": 102.47612495594659,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-23",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.036056668101809,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 321.7684244243304,
+        "penalties": 0,
+        "rewardPaid": 102.47612495594659
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.010736330157527,
+    "timestamp": 1761826137354,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-24",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 244.61651612259448,
+        "reward": 103.06773948739283,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-24",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.802666589722502,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 325.4222493234226,
+        "penalties": 0,
+        "rewardPaid": 103.06773948739283
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.037125453424765,
+    "timestamp": 1761826137355,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-25",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 273.59561142441817,
+        "reward": 101.0513231527526,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-25",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.340279679081869,
+        "cost": 19.865,
+        "rating": 4.939292823258788,
+        "valueCaptured": 376.8895764575734,
+        "penalties": 0,
+        "rewardPaid": 101.0513231527526
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.0098250672932085,
+    "timestamp": 1761826137357,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-26",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 240.52088340139017,
+        "reward": 106.21272681285627,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-26",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.435356777685229,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 313.0435009785293,
+        "penalties": 0,
+        "rewardPaid": 106.21272681285627
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.076662685512381,
+    "timestamp": 1761826137358,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-27",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 273.34424195229076,
+        "reward": 99.1450610809028,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-27",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 7.86353717414895,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 362.96564496411884,
+        "penalties": 0,
+        "rewardPaid": 99.1450610809028
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.048320813696516,
+    "timestamp": 1761826137359,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-28",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 250.72077322937548,
+        "reward": 106.16534221549519,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-28",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.311858359596226,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 345.7279331022818,
+        "penalties": 0,
+        "rewardPaid": 106.16534221549519
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.006829006044787,
+    "timestamp": 1761826137360,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-29",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 242.4924682197161,
+        "reward": 103.17238128622994,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-29",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.0386321664555,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 328.63456242691956,
+        "penalties": 0,
+        "rewardPaid": 103.17238128622994
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.030346908952463,
+    "timestamp": 1761826137362,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-30",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 265.8876681448892,
+        "reward": 102.53260893453843,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-30",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.588127615884877,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 369.52735403291814,
+        "penalties": 0,
+        "rewardPaid": 102.53260893453843
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.030814821446541,
+    "timestamp": 1761826137363,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-31",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 269.34040046622977,
+        "reward": 97.49631405752153,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-31",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.089468013041186,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 355.9015139463574,
+        "penalties": 0,
+        "rewardPaid": 97.49631405752153
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.029358360830806,
+    "timestamp": 1761826137364,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-32",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 274.5056514365133,
+        "reward": 98.95582521934993,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-32",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.428411704977043,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 364.71127514529144,
+        "penalties": 0,
+        "rewardPaid": 98.95582521934993
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.053765218581319,
+    "timestamp": 1761826137366,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-33",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 258.7845198321156,
+        "reward": 98.16490102065727,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-33",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 7.964700708072632,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 343.4034535455071,
+        "penalties": 0,
+        "rewardPaid": 98.16490102065727
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.024296250547305,
+    "timestamp": 1761826137367,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-34",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 244.9418929668609,
+        "reward": 98.73218753328547,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-34",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.514556604868266,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 331.30280363997764,
+        "penalties": 0,
+        "rewardPaid": 98.73218753328547
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.036655091627661,
+    "timestamp": 1761826137368,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-35",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 248.55635667755269,
+        "reward": 101.40375529350713,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-35",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.204395793308503,
+        "cost": 19.865,
+        "rating": 4.935783144380898,
+        "valueCaptured": 340.2627923606998,
+        "penalties": 0,
+        "rewardPaid": 101.40375529350713
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.003843127156932,
+    "timestamp": 1761826137370,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-36",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 257.51640447298996,
+        "reward": 101.01805946691893,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-36",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.386012733378447,
+        "cost": 19.865,
+        "rating": 4.918609610633926,
+        "valueCaptured": 346.48494892760124,
+        "penalties": 0,
+        "rewardPaid": 101.01805946691893
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.044872215891858,
+    "timestamp": 1761826137371,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-37",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 262.060424489202,
+        "reward": 105.87365097915755,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-37",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.994573086872697,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 364.01503095825734,
+        "penalties": 0,
+        "rewardPaid": 105.87365097915755
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.0213468235778285,
+    "timestamp": 1761826137373,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-38",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 245.91354371397756,
+        "reward": 103.0055970305577,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-38",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.060732981166803,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 343.33518848668007,
+        "penalties": 0,
+        "rewardPaid": 103.0055970305577
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.082446752620005,
+    "timestamp": 1761826137374,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-39",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 276.8107572600711,
+        "reward": 103.61338210729882,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-39",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.371275463153141,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 384.28435783275626,
+        "penalties": 0,
+        "rewardPaid": 103.61338210729882
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.091384710825569,
+    "timestamp": 1761826137375,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-40",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 278.4775563830044,
+        "reward": 105.60180561714806,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-40",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.043496638035867,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 382.05931194331686,
+        "penalties": 0,
+        "rewardPaid": 105.60180561714806
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.020527552161299,
+    "timestamp": 1761826137377,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-41",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 270.6060790922493,
+        "reward": 101.21307876538485,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-41",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 9.585358641087078,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 359.7077542769347,
+        "penalties": 0,
+        "rewardPaid": 101.21307876538485
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.07756662691296,
+    "timestamp": 1761826137378,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-42",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 278.58996055996977,
+        "reward": 106.0592276418116,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-42",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.632176592864562,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 386.9229372293773,
+        "penalties": 0,
+        "rewardPaid": 106.0592276418116
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": 6.079824660425504,
+    "timestamp": 1761826137379,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-43",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 272.77789346920326,
+        "reward": 101.05083373188972,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-43",
+        "agentId": "agent-orion",
+        "success": true,
+        "durationHours": 8.167011017305777,
+        "cost": 19.865,
+        "rating": 5,
+        "valueCaptured": 375.5422602037343,
+        "penalties": 0,
+        "rewardPaid": 101.05083373188972
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-orion",
+    "reward": -5.209679792904273,
+    "timestamp": 1761826137381,
+    "nextStateId": "sentinel-automation|c5|e3",
+    "terminal": false,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-44",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 271.6029425733723,
+        "reward": 104.75357010550796,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-orion",
+        "name": "Orion Sentinel Engineer",
+        "specialization": [
+          "infrastructure",
+          "security",
+          "automation"
+        ],
+        "reliability": 0.91,
+        "velocity": 1.35,
+        "operatingCost": 13.7,
+        "adaptability": 0.64,
+        "energyFootprint": 0.34
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-44",
+        "agentId": "agent-orion",
+        "success": false,
+        "durationHours": 7.988043220562394,
+        "cost": 22.844749999999998,
+        "rating": 1.0193454795051367,
+        "valueCaptured": 43.46750403585451,
+        "penalties": 36.66374953692778,
+        "rewardPaid": 41.901428042203186
+      }
+    }
+  },
+  {
+    "stateId": "sentinel-automation|c5|e3",
+    "actionId": "agent-aegis",
+    "reward": 5.6349814809601675,
+    "timestamp": 1761826137382,
+    "nextStateId": null,
+    "terminal": true,
+    "details": {
+      "job": {
+        "id": "stream-sentinel-45",
+        "category": "Sentinel Automation",
+        "complexity": 9,
+        "value": 253.8517307357397,
+        "reward": 103.87454790249467,
+        "latencyTargetHours": 10,
+        "criticality": 0.98,
+        "experienceRequired": 0.75,
+        "sustainabilityTarget": 0.33
+      },
+      "agent": {
+        "id": "agent-aegis",
+        "name": "Aegis Hyper-Operator",
+        "specialization": [
+          "deep-research",
+          "quant-analysis",
+          "mission-control"
+        ],
+        "reliability": 0.94,
+        "velocity": 1.25,
+        "operatingCost": 11.5,
+        "adaptability": 0.72,
+        "energyFootprint": 0.32
+      },
+      "outcome": {
+        "jobId": "stream-sentinel-45",
+        "agentId": "agent-aegis",
+        "success": true,
+        "durationHours": 9.248363161284942,
+        "cost": 16.675,
+        "rating": 3.4466068275440485,
+        "valueCaptured": 192.3115218606879,
+        "penalties": 0,
+        "rewardPaid": 103.87454790249467
+      }
+    }
+  }
+]
