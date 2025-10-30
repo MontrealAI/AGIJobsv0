@@ -1,395 +1,256 @@
-"""Core Huxley–Gödel Machine simulation engine used by the demo.
+"""Core HGM engine implementing Algorithm 1 from the paper."""
 
-The goal of this module is to provide a faithful-yet-accessible
-implementation of the high-level behaviours described in Algorithm 1 of the
-Huxley–Gödel Machine (HGM).  The real production implementation would wire the
-engine into asynchronous workers, blockchains, and safety layers.  For the
-purpose of the demo we expose a pure-Python, deterministic-friendly
-implementation that can be exercised via CLI or notebook environments.
-
-The module purposely contains extensive inline documentation to keep the code
-friendly for non-technical operators exploring the AGI Jobs v0 (v2) platform.
-"""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, Iterable, List, Optional, Set
+import itertools
 import math
 import random
+from dataclasses import dataclass
+from typing import Dict, Iterable, List, Optional
+
+from .models import AgentNode, AgentStats
 
 
-class ActionType(str, Enum):
-    """Enumerates the two high-level scheduling actions supported by HGM."""
+@dataclass(slots=True)
+class EngineMetrics:
+    """Aggregate metrics tracked across the full run."""
 
-    EXPAND = "expand"
-    EVALUATE = "evaluate"
-
-
-@dataclass
-class DecisionContext:
-    """Additional scheduling context supplied by the orchestrator layer."""
-
-    allow_expansions: bool = True
-    allow_evaluations: bool = True
-    pending_expansions: int = 0
-    pending_evaluations: int = 0
-    max_concurrent_evaluations: int = 1
-
-
-@dataclass
-class EngineAction:
-    """Represents a scheduling decision returned by :class:`HGMEngine`."""
-
-    action: ActionType
-    target_agent_id: str
-
-
-@dataclass
-class AgentNode:
-    """Captures the statistics tracked for each agent in the lineage tree."""
-
-    agent_id: str
-    parent_id: Optional[str]
-    quality: float
-    generation: int = 0
-    status: str = "active"
-    description: str = ""
+    expansions: int = 0
+    evaluations: int = 0
     successes: int = 0
     failures: int = 0
-    clade_successes: int = 0
-    clade_failures: int = 0
-    children: List[str] = field(default_factory=list)
-
-    def record_task_outcome(self, success: bool) -> None:
-        if success:
-            self.successes += 1
-            self.clade_successes += 1
-        else:
-            self.failures += 1
-            self.clade_failures += 1
-
-    def record_clade_outcome(self, success: bool) -> None:
-        if success:
-            self.clade_successes += 1
-        else:
-            self.clade_failures += 1
+    cost: float = 0.0
+    gmv: float = 0.0
 
     @property
-    def total_trials(self) -> int:
-        return self.successes + self.failures
+    def roi(self) -> float:
+        if self.cost == 0:
+            return float("inf")
+        return self.gmv / self.cost
 
-    @property
-    def success_rate(self) -> float:
-        if self.total_trials == 0:
-            return 0.0
-        return self.successes / self.total_trials
 
-    @property
-    def clade_trials(self) -> int:
-        return self.clade_successes + self.clade_failures
+@dataclass(slots=True)
+class PendingAction:
+    """Represents the next action the engine would like the orchestrator to perform."""
 
-    @property
-    def cmp_score(self) -> float:
-        """Returns the clade-metaproductivity score used for expansion."""
-
-        trials = self.clade_trials
-        if trials == 0:
-            return 0.0
-        return self.clade_successes / trials
+    action: str  # "expand" or "evaluate"
+    agent_id: str
+    parent_id: Optional[str] = None
 
 
 class HGMEngine:
-    """Implements the scheduling and lineage tracking logic for the demo."""
+    """Implements the control logic of the Huxley–Gödel Machine."""
 
     def __init__(
         self,
         *,
-        tau: float = 1.0,
-        alpha: float = 1.3,
-        epsilon: float = 0.05,
-        rng: Optional[random.Random] = None,
+        tau: float,
+        alpha: float,
+        epsilon: float,
+        max_expansions: int,
+        max_evaluations: int,
+        rng: random.Random,
     ) -> None:
         if tau <= 0:
             raise ValueError("tau must be positive")
         if alpha <= 0:
             raise ValueError("alpha must be positive")
-        if not 0.0 < epsilon < 1.0:
-            raise ValueError("epsilon must be in (0, 1)")
 
         self.tau = tau
         self.alpha = alpha
         self.epsilon = epsilon
-        self.rng = rng or random.Random()
+        self.max_expansions = max_expansions
+        self.max_evaluations = max_evaluations
+        self._rng = rng
 
-        self.agents: Dict[str, AgentNode] = {}
-        self.root_id: Optional[str] = None
-        self._id_counter = 0
-
-        self.total_evaluations = 0
-        self.total_expansions = 0
-
-        self._busy_agents: Set[str] = set()
+        self.metrics = EngineMetrics()
+        self._agents: Dict[str, AgentNode] = {}
+        self._root_id: Optional[str] = None
+        self._id_counter = itertools.count(1)
 
     # ------------------------------------------------------------------
     # Agent management helpers
     # ------------------------------------------------------------------
-    def _next_agent_id(self) -> str:
-        self._id_counter += 1
-        return f"agent-{self._id_counter}"
-
-    def register_root(self, quality: float, *, description: str = "Root agent") -> AgentNode:
-        if self.root_id is not None:
-            raise RuntimeError("Root agent already registered")
-        root = AgentNode(
-            agent_id=self._next_agent_id(),
-            parent_id=None,
-            quality=max(0.0, min(1.0, quality)),
-            generation=0,
-            description=description,
-        )
-        self.agents[root.agent_id] = root
-        self.root_id = root.agent_id
+    def create_root(self, metadata: Optional[Dict[str, float]] = None) -> AgentNode:
+        identifier = self._allocate_id()
+        root = AgentNode(identifier=identifier, parent_id=None, generation=0, metadata=metadata or {})
+        self._agents[identifier] = root
+        self._root_id = identifier
         return root
 
+    def _allocate_id(self) -> str:
+        return f"a{next(self._id_counter)}"
+
     def get_agent(self, agent_id: str) -> AgentNode:
-        try:
-            return self.agents[agent_id]
-        except KeyError as exc:
-            raise KeyError(f"Unknown agent id {agent_id}") from exc
+        return self._agents[agent_id]
 
-    def list_agents(self) -> Iterable[AgentNode]:
-        return self.agents.values()
+    def agents(self) -> Iterable[AgentNode]:
+        return self._agents.values()
+
+    def choose_evaluation_agent(self) -> Optional[AgentNode]:
+        return self._sample_agent_for_evaluation()
+
+    def choose_expansion_agent(self) -> Optional[AgentNode]:
+        return self._sample_agent_for_expansion()
 
     # ------------------------------------------------------------------
-    # Scheduling decisions
+    # Decision making
     # ------------------------------------------------------------------
-    def next_action(self, context: DecisionContext) -> Optional[EngineAction]:
-        if self.root_id is None:
-            raise RuntimeError("Engine must be initialised with register_root() first")
+    def next_action(self) -> Optional[PendingAction]:
+        """Determine the next action to request from the orchestrator."""
 
-        expand_allowed = (
-            context.allow_expansions
-            and context.pending_expansions == 0
-            and self._expansion_condition()
-        )
-        if expand_allowed:
-            expansion_candidate = self._sample_agent_for_expansion()
-            if expansion_candidate is not None:
-                self._busy_agents.add(expansion_candidate.agent_id)
-                return EngineAction(ActionType.EXPAND, expansion_candidate.agent_id)
+        if self.metrics.expansions >= self.max_expansions and self.metrics.evaluations >= self.max_evaluations:
+            return None
 
-        evaluation_capacity_available = (
-            context.allow_evaluations
-            and context.pending_evaluations < context.max_concurrent_evaluations
-        )
-        if evaluation_capacity_available:
-            evaluation_candidate = self._sample_agent_for_evaluation()
-            if evaluation_candidate is not None:
-                self._busy_agents.add(evaluation_candidate.agent_id)
-                return EngineAction(ActionType.EVALUATE, evaluation_candidate.agent_id)
+        should_expand = self._should_expand()
+        if should_expand and self.metrics.expansions < self.max_expansions:
+            candidate = self._sample_agent_for_expansion()
+            if candidate is not None:
+                candidate.mark_busy(True)
+                return PendingAction("expand", candidate.identifier)
+
+        if self.metrics.evaluations < self.max_evaluations:
+            candidate = self._sample_agent_for_evaluation()
+            if candidate is not None:
+                candidate.mark_busy(True)
+                return PendingAction("evaluate", candidate.identifier)
 
         return None
 
-    def mark_idle(self, agent_id: str) -> None:
-        self._busy_agents.discard(agent_id)
-
-    # ------------------------------------------------------------------
-    # Action execution primitives
-    # ------------------------------------------------------------------
-    def create_child(self, parent_id: str, *, quality: float, description: str = "") -> AgentNode:
-        parent = self.get_agent(parent_id)
-        child = AgentNode(
-            agent_id=self._next_agent_id(),
-            parent_id=parent.agent_id,
-            quality=max(0.0, min(1.0, quality)),
-            generation=parent.generation + 1,
-            description=description or f"Descendant of {parent.agent_id}",
-        )
-        self.agents[child.agent_id] = child
-        parent.children.append(child.agent_id)
-        self.total_expansions += 1
-        return child
-
-    def record_evaluation(self, agent_id: str, success: bool) -> None:
-        agent = self.get_agent(agent_id)
-        agent.record_task_outcome(success)
-        self.total_evaluations += 1
-
-        # propagate clade results up the lineage
-        parent_id = agent.parent_id
-        while parent_id is not None:
-            parent = self.get_agent(parent_id)
-            parent.record_clade_outcome(success)
-            parent_id = parent.parent_id
-
-    # ------------------------------------------------------------------
-    # Introspection helpers
-    # ------------------------------------------------------------------
-    def _expansion_condition(self) -> bool:
-        agent_count = len(self.agents)
-        evaluation_term = max(1, self.total_evaluations)
-        limit = math.pow(evaluation_term, self.alpha)
-        return agent_count <= limit
-
-    def _candidate_agents(self) -> List[AgentNode]:
-        return [agent for agent in self.agents.values() if agent.status == "active" and agent.agent_id not in self._busy_agents]
-
+    # Thompson sampling -------------------------------------------------
     def _sample_agent_for_expansion(self) -> Optional[AgentNode]:
-        candidates = self._candidate_agents()
-        if not candidates:
+        expandable = [agent for agent in self._agents.values() if not agent.busy and not agent.pruned]
+        if not expandable:
             return None
 
-        scored: List[tuple[float, AgentNode]] = []
-        for agent in candidates:
-            successes = agent.clade_successes + 1
-            failures = agent.clade_failures + 1
-            sample = self._beta_sample(successes, failures)
-            scored.append((sample, agent))
-        scored.sort(key=lambda item: item[0], reverse=True)
-        return scored[0][1] if scored else None
+        best_agent = None
+        best_sample = -1.0
+        for agent in expandable:
+            stats = agent.stats
+            successes = stats.clade_successes + 1
+            failures = stats.clade_failures + 1
+            sample = self._rng.betavariate(self.tau * successes, self.tau * failures)
+            if sample > best_sample:
+                best_agent = agent
+                best_sample = sample
+        return best_agent
 
     def _sample_agent_for_evaluation(self) -> Optional[AgentNode]:
-        candidates = self._candidate_agents()
-        if not candidates:
+        selectable = [agent for agent in self._agents.values() if not agent.busy and not agent.pruned]
+        if not selectable:
             return None
 
-        scored: List[tuple[float, AgentNode]] = []
-        for agent in candidates:
-            successes = agent.successes + 1
-            failures = agent.failures + 1
-            sample = self._beta_sample(successes, failures)
-            scored.append((sample, agent))
-        scored.sort(key=lambda item: item[0], reverse=True)
-        return scored[0][1] if scored else None
+        best_agent = None
+        best_sample = -1.0
+        for agent in selectable:
+            stats = agent.stats
+            successes = stats.successes + 1
+            failures = stats.failures + 1
+            sample = self._rng.betavariate(self.tau * successes, self.tau * failures)
+            if sample > best_sample:
+                best_agent = agent
+                best_sample = sample
+        return best_agent
 
-    def _beta_sample(self, successes: int, failures: int) -> float:
-        alpha_param = self.tau * successes
-        beta_param = self.tau * failures
-        return self.rng.betavariate(alpha_param, beta_param)
+    def _should_expand(self) -> bool:
+        agent_count = len(self._agents)
+        evals = max(1, self.metrics.evaluations)
+        limit = math.pow(evals, 1 / self.alpha)
+        return agent_count <= limit
 
     # ------------------------------------------------------------------
-    # Final selection
+    # Callbacks from orchestrator
     # ------------------------------------------------------------------
-    def best_agent(self) -> AgentNode:
-        if not self.agents:
-            raise RuntimeError("No agents registered")
+    def expansion_result(self, parent_id: str, quality_delta: float, metadata: Optional[Dict[str, float]] = None) -> AgentNode:
+        parent = self._agents[parent_id]
+        parent.mark_busy(False)
+        child_id = self._allocate_id()
+        child_metadata = dict(parent.metadata)
+        child_metadata.update(metadata or {})
+        child_metadata["quality_delta"] = quality_delta
+        child = AgentNode(identifier=child_id, parent_id=parent_id, generation=parent.generation + 1, metadata=child_metadata)
+        self._agents[child_id] = child
+        parent.children.append(child_id)
+        self.metrics.expansions += 1
+        return child
+
+    def evaluation_result(self, agent_id: str, success: bool, reward: float, cost: float) -> None:
+        agent = self._agents[agent_id]
+        agent.mark_busy(False)
+        self.metrics.evaluations += 1
+        self.metrics.cost += cost
+        if success:
+            self.metrics.successes += 1
+            self.metrics.gmv += reward
+        else:
+            self.metrics.failures += 1
+
+        self._propagate_result(agent, success)
+
+    def _propagate_result(self, agent: AgentNode, success: bool) -> None:
+        current = agent
+        first = True
+        while current is not None:
+            if first:
+                current.stats.record(success)
+                first = False
+            current.stats.record_clade(success)
+            current = self._agents.get(current.parent_id) if current.parent_id else None
+
+    # ------------------------------------------------------------------
+    def final_agent(self) -> Optional[AgentNode]:
+        if not self._agents:
+            return None
+
         percentile = self.epsilon
-        best = None
-        best_score = -1.0
-        for agent in self.agents.values():
-            a = agent.successes + 1
-            b = agent.failures + 1
-            score = self._beta_percentile(a, b, percentile)
-            if score > best_score:
-                best_score = score
-                best = agent
-        assert best is not None
-        return best
+        best_agent = None
+        best_value = -1.0
+        for agent in self._agents.values():
+            if agent.pruned:
+                continue
+            a = agent.stats.successes + 1
+            b = agent.stats.failures + 1
+            value = self._beta_percentile(a, b, percentile)
+            if value > best_value:
+                best_value = value
+                best_agent = agent
+        return best_agent
 
-    def _beta_percentile(self, alpha_param: float, beta_param: float, percentile: float) -> float:
-        """Compute a percentile of a Beta distribution via inverse CDF approximation."""
-
-        # Use binary search on the cumulative distribution function computed
-        # through the regularised incomplete beta function.  To keep the module
-        # dependency-free we approximate using a simple search with moderate
-        # precision which is adequate for the demo scale.
-        from math import isclose
-
-        target = percentile
+    def _beta_percentile(self, a: float, b: float, percentile: float) -> float:
+        # Use inverse CDF approximation via bisection
         low, high = 0.0, 1.0
-        while high - low > 1e-4:
+        for _ in range(30):
             mid = (low + high) / 2
-            cdf = self._beta_cdf(mid, alpha_param, beta_param)
-            if cdf < target:
+            if self._beta_cdf(mid, a, b) < percentile:
                 low = mid
             else:
                 high = mid
-        result = (low + high) / 2
-        # Guard numerical artefacts
-        if isclose(result, 0.0, abs_tol=1e-6):
-            return 0.0
-        if isclose(result, 1.0, abs_tol=1e-6):
-            return 1.0
-        return result
+        return (low + high) / 2
 
-    def _beta_cdf(self, x: float, alpha_param: float, beta_param: float) -> float:
-        if x <= 0:
-            return 0.0
-        if x >= 1:
-            return 1.0
+    def _beta_cdf(self, x: float, a: float, b: float) -> float:
+        # Numerical integration using incomplete beta function approximation
+        # For simplicity and determinism we use a series expansion.
+        total = 0.0
+        for k in range(50):
+            coeff = math.comb(a + b - 1 + k, k)
+            total += coeff * (x ** (a + k)) * ((1 - x) ** b) / (a + k)
+        norm = math.gamma(a + b) / (math.gamma(a) * math.gamma(b))
+        return norm * total
 
-        MAX_ITER = 200
-        EPS = 3e-7
-
-        def cont_frac(a: float, b: float, x_val: float) -> float:
-            am, bm = 1.0, 1.0
-            az = 1.0
-            qab = a + b
-            qap = a + 1.0
-            qam = a - 1.0
-            bz = 1.0 - qab * x_val / qap
-            if abs(bz) < 1e-30:
-                bz = 1e-30
-            em = 0.0
-            tem = 0.0
-            d = 0.0
-            ap = 0.0
-            bp = 0.0
-            app = 0.0
-            bpp = 0.0
-            aold = 0.0
-            for m in range(1, MAX_ITER + 1):
-                em = float(m)
-                tem = em + em
-                d = em * (b - em) * x_val / ((qam + tem) * (a + tem))
-                ap = az + d * am
-                bp = bz + d * bm
-                if abs(bp) < 1e-30:
-                    bp = 1e-30
-                d = -(a + em) * (qab + em) * x_val / ((a + tem) * (qap + tem))
-                app = ap + d * az
-                bpp = bp + d * bz
-                if abs(bpp) < 1e-30:
-                    bpp = 1e-30
-                am, bm = ap / bp, az / bz
-                az, bz = app / bpp, 1.0
-                if abs(az - aold) < (EPS * abs(az)):
-                    return az
-                aold = az
-            return az
-
-        ln_beta = math.lgamma(alpha_param) + math.lgamma(beta_param) - math.lgamma(alpha_param + beta_param)
-        front = math.exp(alpha_param * math.log(x) + beta_param * math.log(1 - x) - ln_beta) / alpha_param
-        frac = cont_frac(alpha_param, beta_param, x)
-        return front * frac
-
-    # ------------------------------------------------------------------
-    # Configuration adjustment hooks (used by the thermostat)
     # ------------------------------------------------------------------
     def update_tau(self, value: float) -> None:
         if value <= 0:
-            raise ValueError("tau must stay positive")
+            raise ValueError("tau must be positive")
         self.tau = value
 
     def update_alpha(self, value: float) -> None:
         if value <= 0:
-            raise ValueError("alpha must stay positive")
+            raise ValueError("alpha must be positive")
         self.alpha = value
 
-    # ------------------------------------------------------------------
-    # Convenience for pruning agents via the sentinel
-    # ------------------------------------------------------------------
-    def prune_agent(self, agent_id: str, reason: str) -> None:
-        agent = self.get_agent(agent_id)
-        agent.status = "pruned"
-        agent.description = (agent.description + f"\n[Pruned] {reason}").strip()
+    def prune_agent(self, agent_id: str) -> None:
+        agent = self._agents.get(agent_id)
+        if agent:
+            agent.pruned = True
+            agent.mark_busy(False)
 
-
-__all__ = [
-    "ActionType",
-    "AgentNode",
-    "DecisionContext",
-    "EngineAction",
-    "HGMEngine",
-]

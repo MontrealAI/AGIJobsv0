@@ -1,0 +1,18 @@
+seed: 2025
+total_iterations: 200
+max_expansions: 40
+max_evaluations: 120
+tau: 1.2
+alpha: 1.4
+epsilon: 0.05
+concurrency: 3
+concurrency_bounds: [1, 6]
+thermostat_interval: 10
+roi_target: 2.0
+roi_floor: 1.0
+max_cost: 2500.0
+max_failures_per_agent: 6
+expansion_cost: 75.0
+evaluation_cost: 10.0
+success_reward: 180.0
+baseline_eagerness: 0.2

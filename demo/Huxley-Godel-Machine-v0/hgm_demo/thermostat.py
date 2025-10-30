@@ -1,75 +1,51 @@
-"""Adaptive control plane that tunes HGM parameters in real time."""
+"""Adaptive control plane for the HGM demo."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
 
+from .config import DemoConfig
 from .engine import HGMEngine
-from .metrics import RunMetrics
+from .simulation import EvaluationOutcome
 
 
-@dataclass
-class ThermostatConfig:
-    target_roi: float = 1.4
-    boost_roi: float = 2.2
-    tau_step: float = 0.15
-    alpha_step: float = 0.1
-    min_tau: float = 0.4
-    max_tau: float = 5.0
-    min_alpha: float = 1.0
-    max_alpha: float = 3.0
-    min_concurrency: int = 1
-    max_concurrency: int = 1
-    roi_window: int = 4
-
-
-@dataclass
-class ThermostatDecision:
-    tau: float
-    alpha: float
-    concurrency: int
-    notes: List[str]
-
-
+@dataclass(slots=True)
 class Thermostat:
-    def __init__(self, config: ThermostatConfig | None = None) -> None:
-        self.config = config or ThermostatConfig()
-        self._concurrency = self.config.min_concurrency
+    """Adjusts sampling concentration and concurrency based on ROI."""
 
-    @property
-    def concurrency(self) -> int:
-        return self._concurrency
+    config: DemoConfig
+    engine: HGMEngine
 
-    def evaluate(self, engine: HGMEngine, metrics: RunMetrics) -> ThermostatDecision:
-        notes: List[str] = []
-        tau = engine.tau
-        alpha = engine.alpha
-        roi = metrics.roi
+    current_concurrency: int = field(init=False)
+    _last_adjust_iteration: int = field(default=0, init=False)
 
-        if metrics.total_cost == 0:
-            return ThermostatDecision(tau=tau, alpha=alpha, concurrency=self._concurrency, notes=["Waiting for first signal"])
+    def __post_init__(self) -> None:
+        self.current_concurrency = self.config.concurrency
 
-        if roi < self.config.target_roi:
-            tau = min(self.config.max_tau, tau + self.config.tau_step)
-            alpha = min(self.config.max_alpha, alpha + self.config.alpha_step)
-            if self._concurrency > self.config.min_concurrency:
-                self._concurrency -= 1
-                notes.append("ROI under target: throttling concurrency")
-            notes.append("ROI under target: increasing exploitation bias")
-        elif roi > self.config.boost_roi:
-            tau = max(self.config.min_tau, tau - self.config.tau_step)
-            alpha = max(self.config.min_alpha, alpha - self.config.alpha_step)
-            if self._concurrency < self.config.max_concurrency:
-                self._concurrency += 1
-                notes.append("ROI excellent: scaling concurrency")
-            notes.append("ROI excellent: encouraging exploration")
+    def observe(self, outcome: EvaluationOutcome) -> None:
+        # Currently unused but reserved for richer heuristics.
+        pass
+
+    def maybe_adjust(self, iteration: int, persistence) -> None:
+        if iteration - self._last_adjust_iteration < self.config.thermostat_interval:
+            return
+
+        roi = self.engine.metrics.roi
+        if roi < self.config.roi_target:
+            # Encourage exploration when ROI stagnates.
+            new_tau = max(0.5, self.engine.tau * 0.9)
+            self.engine.update_tau(new_tau)
+            self.current_concurrency = max(self.config.concurrency_bounds[0], self.current_concurrency - 1)
         else:
-            notes.append("ROI stable: maintaining parameters")
+            new_tau = min(5.0, self.engine.tau * 1.1)
+            self.engine.update_tau(new_tau)
+            self.current_concurrency = min(self.config.concurrency_bounds[1], self.current_concurrency + 1)
 
-        engine.update_tau(tau)
-        engine.update_alpha(alpha)
+        # Adjust alpha inversely with ROI to widen/narrow the tree adaptively.
+        if roi < self.config.roi_target:
+            self.engine.update_alpha(min(3.0, self.engine.alpha + 0.1))
+        else:
+            self.engine.update_alpha(max(0.8, self.engine.alpha - 0.1))
 
-        return ThermostatDecision(tau=tau, alpha=alpha, concurrency=self._concurrency, notes=notes)
+        self._last_adjust_iteration = iteration
 
-
-__all__ = ["Thermostat", "ThermostatConfig", "ThermostatDecision"]

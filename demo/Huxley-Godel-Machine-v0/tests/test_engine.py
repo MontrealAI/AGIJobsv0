@@ -4,43 +4,47 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-from hgm_v0_demo.engine import HGMEngine
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+from hgm_demo.engine import HGMEngine
 
 
-def test_clade_updates_propagate_to_root() -> None:
-    rng = random.Random(42)
-    engine = HGMEngine(
-        tau=1.0,
-        alpha=1.2,
-        epsilon=0.1,
-        max_agents=10,
-        max_expansions=5,
-        max_evaluations=20,
-        rng=rng,
-    )
-    root = engine.register_root(0.5)
-    child = engine.complete_expansion(root.agent_id, 0.6)
-    engine.record_evaluation(child.agent_id, success=True)
-    assert root.clade_success == 1
-    assert child.clade_success == 1
-    assert child.direct_success == 1
+def build_engine(seed: int = 7) -> HGMEngine:
+    rng = random.Random(seed)
+    engine = HGMEngine(tau=1.2, alpha=1.4, epsilon=0.05, max_expansions=5, max_evaluations=10, rng=rng)
+    engine.create_root({"quality": 0.6})
+    return engine
 
 
-def test_best_agent_prefers_higher_success_rate() -> None:
-    rng = random.Random(99)
-    engine = HGMEngine(
-        tau=1.0,
-        alpha=1.2,
-        epsilon=0.1,
-        max_agents=10,
-        max_expansions=5,
-        max_evaluations=20,
-        rng=rng,
-    )
-    root = engine.register_root(0.5)
-    child = engine.complete_expansion(root.agent_id, 0.7)
+def test_expansion_creates_child_and_updates_tree() -> None:
+    engine = build_engine()
+    root = engine.get_agent("a1")
+    child = engine.expansion_result(root.identifier, 0.1, {"note": "test"})
+
+    assert child.parent_id == root.identifier
+    assert child.generation == root.generation + 1
+    assert child.identifier in root.children
+
+
+def test_success_propagates_to_ancestors() -> None:
+    engine = build_engine()
+    root = engine.get_agent("a1")
+    child = engine.expansion_result(root.identifier, 0.1, {})
+    engine.evaluation_result(child.identifier, True, reward=1.0, cost=0.1)
+
+    assert child.stats.successes == 1
+    assert root.stats.clade_successes == 1
+
+
+def test_final_agent_prefers_higher_success_rate() -> None:
+    engine = build_engine()
+    root = engine.get_agent("a1")
+    child = engine.expansion_result(root.identifier, 0.1, {})
     for _ in range(5):
-        engine.record_evaluation(child.agent_id, success=True)
-    engine.record_evaluation(root.agent_id, success=False)
-    assert engine.best_agent() == child
+        engine.evaluation_result(child.identifier, True, reward=1.0, cost=0.1)
+    for _ in range(5):
+        engine.evaluation_result(root.identifier, False, reward=0.0, cost=0.1)
+
+    assert engine.final_agent() == child

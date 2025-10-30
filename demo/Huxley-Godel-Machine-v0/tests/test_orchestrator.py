@@ -1,102 +1,72 @@
-"""Tests for orchestrator scheduling helpers."""
-
 from __future__ import annotations
 
+import asyncio
 import random
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-from hgm_v0_demo.engine import HGMEngine
-from hgm_v0_demo.orchestrator import HGMDemoOrchestrator
-from hgm_v0_demo.sentinel import Sentinel
-from hgm_v0_demo.thermostat import Thermostat, ThermostatConfig
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+from hgm_demo.config import DemoConfig
+from hgm_demo.engine import HGMEngine
+from hgm_demo.orchestrator import Orchestrator
+from hgm_demo.simulation import Simulator
 
 
-def _build_engine() -> HGMEngine:
+class DummyPersistence:
+    def start_run(self) -> None:  # pragma: no cover - not used in this test
+        pass
+
+    def finish_run(self, metrics) -> None:  # pragma: no cover - not used in this test
+        pass
+
+    def record_expansion(self, *args, **kwargs) -> None:
+        raise AssertionError("expansion should not be recorded when over budget")
+
+    def record_evaluation(self, *args, **kwargs) -> None:  # pragma: no cover - not used in this test
+        pass
+
+
+def test_expansion_skipped_when_projected_cost_exceeds_budget() -> None:
+    config = DemoConfig(
+        seed=123,
+        total_iterations=5,
+        max_expansions=3,
+        max_evaluations=3,
+        tau=1.1,
+        alpha=1.3,
+        epsilon=0.05,
+        concurrency=1,
+        thermostat_interval=5,
+        roi_target=2.0,
+        roi_floor=1.0,
+        max_cost=2500.0,
+        max_failures_per_agent=5,
+        expansion_cost=75.0,
+        evaluation_cost=10.0,
+        success_reward=100.0,
+        baseline_eagerness=0.25,
+        concurrency_bounds=(1, 4),
+    )
     engine = HGMEngine(
-        tau=1.0,
-        alpha=1.0,
-        epsilon=0.1,
-        max_agents=8,
-        max_expansions=8,
-        max_evaluations=8,
-        rng=random.Random(0),
+        tau=config.tau,
+        alpha=config.alpha,
+        epsilon=config.epsilon,
+        max_expansions=config.max_expansions,
+        max_evaluations=config.max_evaluations,
+        rng=random.Random(config.seed),
     )
-    engine.register_root(0.5)
-    return engine
+    engine.create_root({"quality": 0.6})
+    engine.metrics.cost = config.max_cost - 20.0
 
+    simulator = Simulator(config, random.Random(config.seed + 1))
+    orchestrator = Orchestrator(engine, simulator, config, DummyPersistence())
+    orchestrator.sentinel.expansions_allowed = True
 
-def _build_thermostat(engine: HGMEngine) -> Thermostat:
-    return Thermostat(
-        engine=engine,
-        config=ThermostatConfig(
-            target_roi=2.0,
-            roi_window=3,
-            tau_adjustment=0.1,
-            alpha_adjustment=0.1,
-            concurrency_step=1,
-            max_concurrency=4,
-            min_concurrency=1,
-            roi_upper_margin=0.2,
-            roi_lower_margin=0.1,
-        ),
-    )
+    asyncio.run(orchestrator._maybe_expand())
 
-
-def _build_sentinel(engine: HGMEngine) -> Sentinel:
-    return Sentinel(
-        engine=engine,
-        max_budget=1_000.0,
-        min_roi=1.0,
-        hard_budget_ratio=0.9,
-        max_failures_per_agent=10,
-        roi_recovery_steps=2,
-    )
-
-
-def test_latency_overrides_allow_zero_duration() -> None:
-    engine = _build_engine()
-    thermostat = _build_thermostat(engine)
-    sentinel = _build_sentinel(engine)
-    orchestrator = HGMDemoOrchestrator(
-        engine=engine,
-        thermostat=thermostat,
-        sentinel=sentinel,
-        rng=random.Random(1),
-        success_value=100.0,
-        evaluation_cost=10.0,
-        expansion_cost=20.0,
-        mutation_std=0.1,
-        quality_bounds=(0.0, 1.0),
-        evaluation_latency_range=(0.0, 0.0),
-        expansion_latency_range=(1.0, 1.0),
-    )
-
-    assert orchestrator._evaluation_duration() == 0
-    assert orchestrator._expansion_duration() == 1
-
-
-def test_orchestrator_records_agent_snapshots() -> None:
-    engine = _build_engine()
-    thermostat = _build_thermostat(engine)
-    sentinel = _build_sentinel(engine)
-    orchestrator = HGMDemoOrchestrator(
-        engine=engine,
-        thermostat=thermostat,
-        sentinel=sentinel,
-        rng=random.Random(2),
-        success_value=120.0,
-        evaluation_cost=10.0,
-        expansion_cost=20.0,
-        mutation_std=0.15,
-        quality_bounds=(0.0, 1.0),
-    )
-
-    summary = orchestrator.run(total_steps=30, report_interval=10)
-    assert orchestrator.timeline.snapshots, "timeline should capture snapshots"
-    final_snapshot = orchestrator.timeline.last
-    assert final_snapshot.agents, "agent snapshots should be recorded"
-    agent_ids = {agent.agent_id for agent in final_snapshot.agents}
-    if summary.best_agent_id is not None:
-        assert summary.best_agent_id in agent_ids
+    assert engine.metrics.expansions == 0
+    assert engine.metrics.cost == config.max_cost - 20.0
+    assert len(list(engine.agents())) == 1

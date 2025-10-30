@@ -1,74 +1,38 @@
-"""Economic safety guardrails for the HGM demo."""
+"""Economic safety rules for the HGM demo."""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
 
+from .config import DemoConfig
 from .engine import HGMEngine
-from .metrics import RunMetrics
+from .simulation import EvaluationOutcome
 
 
-@dataclass
-class SentinelConfig:
-    min_roi: float = 1.0
-    recovery_roi: float = 1.05
-    max_cost: float = 10_000.0
-    max_failures_per_agent: int = 6
-
-
-@dataclass
-class SentinelOutcome:
-    allow_expansions: bool
-    allow_evaluations: bool
-    triggered_rules: List[str]
-
-
+@dataclass(slots=True)
 class Sentinel:
-    """Evaluates hard economic and safety constraints for every scheduling step."""
+    """Monitors ROI and failure streaks to prevent unsound behaviour."""
 
-    def __init__(self, config: SentinelConfig | None = None) -> None:
-        self.config = config or SentinelConfig()
-        self._expansions_paused = False
+    config: DemoConfig
+    engine: HGMEngine
+    expansions_allowed: bool = True
+    _failure_counts: dict[str, int] = field(default_factory=dict, init=False)
 
-    def inspect(self, engine: HGMEngine, metrics: RunMetrics) -> SentinelOutcome:
-        triggered: List[str] = []
-        allow_expansions = True
-        allow_evaluations = True
+    def observe(self, outcome: EvaluationOutcome) -> None:
+        agent_id = outcome.agent_id
+        if outcome.success:
+            self._failure_counts[agent_id] = 0
+        else:
+            self._failure_counts[agent_id] = self._failure_counts.get(agent_id, 0) + 1
+            if self._failure_counts[agent_id] >= self.config.max_failures_per_agent:
+                self.engine.prune_agent(agent_id)
 
-        if metrics.total_cost >= self.config.max_cost:
-            triggered.append("budget_cap")
-            allow_expansions = False
-            allow_evaluations = False
+    def enforce(self, iteration: int, persistence) -> None:  # noqa: D401 - simple enforcement
+        """Check ROI and budget rules each iteration."""
 
-        roi = metrics.roi
-        if metrics.total_cost > 0 and roi < self.config.min_roi:
-            if not self._expansions_paused:
-                triggered.append("roi_floor")
-            self._expansions_paused = True
-        elif self._expansions_paused and roi >= self.config.recovery_roi:
-            triggered.append("roi_recovered")
-            self._expansions_paused = False
+        roi = self.engine.metrics.roi
+        if roi < self.config.roi_floor or self.engine.metrics.cost >= self.config.max_cost:
+            self.expansions_allowed = False
+        elif roi >= self.config.roi_floor * 1.1:
+            self.expansions_allowed = True
 
-        if self._expansions_paused:
-            allow_expansions = False
-
-        self._prune_unproductive_agents(engine, metrics, triggered)
-
-        return SentinelOutcome(
-            allow_expansions=allow_expansions,
-            allow_evaluations=allow_evaluations,
-            triggered_rules=triggered,
-        )
-
-    def _prune_unproductive_agents(self, engine: HGMEngine, metrics: RunMetrics, triggered: List[str]) -> None:
-        max_failures = self.config.max_failures_per_agent
-        if max_failures <= 0:
-            return
-        for agent_id, failure_count in list(metrics.agent_failures.items()):
-            if failure_count >= max_failures:
-                engine.prune_agent(agent_id, f"Sentinel capped after {failure_count} failures")
-                triggered.append(f"pruned:{agent_id}")
-                metrics.reset_agent_failure(agent_id)
-
-
-__all__ = ["Sentinel", "SentinelConfig", "SentinelOutcome"]

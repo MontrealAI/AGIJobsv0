@@ -1,16 +1,21 @@
-"""High-level exports for the Huxley–Gödel Machine demo package."""
-from .simulation import (
-    DemoComparison,
-    StrategyOutcome,
-    run_baseline_simulation,
-    run_comparison,
-    run_hgm_simulation,
-)
+"""Public entry points for the Huxley–Gödel Machine demo."""
+
+from .config import DemoConfig, load_config
+from .engine import HGMEngine
+from .orchestrator import Orchestrator
+from .persistence import Persistence
+from .sentinel import Sentinel
+from .simulation import Simulator
+from .thermostat import Thermostat
 
 __all__ = [
-    "DemoComparison",
-    "StrategyOutcome",
-    "run_baseline_simulation",
-    "run_comparison",
-    "run_hgm_simulation",
+    "DemoConfig",
+    "HGMEngine",
+    "Orchestrator",
+    "Persistence",
+    "Sentinel",
+    "Simulator",
+    "Thermostat",
+    "load_config",
 ]
+

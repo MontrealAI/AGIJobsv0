@@ -1,127 +1,87 @@
 """Configuration helpers for the Huxley–Gödel Machine demo."""
+
 from __future__ import annotations
 
-import ast
-import copy
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, MutableMapping, Sequence, Tuple
+from typing import Any, Dict, Tuple
+
+import yaml
 
 
-@dataclass(frozen=True)
-class Config:
-    """Strongly typed view over the JSON configuration."""
+@dataclass(slots=True)
+class DemoConfig:
+    """Typed configuration loaded from a YAML file."""
 
-    raw: Dict[str, Any]
-
-    @property
-    def initial_agent(self) -> Dict[str, Any]:
-        return self.raw["initial_agent"]
-
-    @property
-    def economic_model(self) -> Dict[str, float]:
-        return self.raw["economic_model"]
-
-    @property
-    def engine(self) -> Dict[str, Any]:
-        return self.raw["engine"]
-
-    @property
-    def thermostat(self) -> Dict[str, Any]:
-        return self.raw["thermostat"]
-
-    @property
-    def sentinel(self) -> Dict[str, Any]:
-        return self.raw["sentinel"]
-
-    @property
-    def simulation(self) -> Dict[str, Any]:
-        return self.raw["simulation"]
-
-    @property
-    def baseline(self) -> Dict[str, Any]:
-        return self.raw["baseline"]
-
-    def latency_range(self, key: str) -> Tuple[float, float]:
-        low, high = self.simulation[key]
-        return float(low), float(high)
+    seed: int
+    total_iterations: int
+    max_expansions: int
+    max_evaluations: int
+    tau: float
+    alpha: float
+    epsilon: float
+    concurrency: int
+    thermostat_interval: int
+    roi_target: float
+    roi_floor: float
+    max_cost: float
+    max_failures_per_agent: int
+    expansion_cost: float
+    evaluation_cost: float
+    success_reward: float
+    baseline_eagerness: float
+    concurrency_bounds: Tuple[int, int]
 
 
-def _load_raw_config(path: Path) -> Dict[str, Any]:
-    return json.loads(path.read_text())
+class ConfigError(RuntimeError):
+    """Raised when a configuration file is invalid."""
 
 
-def load_config(path: Path) -> Config:
-    """Load the demo configuration from ``path``."""
-    return Config(_load_raw_config(path))
+def _require(raw: Dict[str, Any], key: str) -> Any:
+    if key not in raw:
+        raise ConfigError(f"Missing required configuration key: {key}")
+    return raw[key]
 
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "hgm_config.json"
+def load_config(path: str | Path) -> DemoConfig:
+    """Load and validate the demo configuration file."""
 
+    with open(path, "r", encoding="utf-8") as handle:
+        raw: Dict[str, Any] = yaml.safe_load(handle)
 
-def load_default_config() -> Config:
-    return load_config(DEFAULT_CONFIG_PATH)
-
-
-def _parse_override_value(value: str) -> Any:
     try:
-        return ast.literal_eval(value)
-    except (ValueError, SyntaxError):
-        lowered = value.strip().lower()
-        if lowered in {"true", "false"}:
-            return lowered == "true"
-        return value
+        bounds = tuple(_require(raw, "concurrency_bounds"))
+        config = DemoConfig(
+            seed=int(raw.get("seed", 42)),
+            total_iterations=int(_require(raw, "total_iterations")),
+            max_expansions=int(_require(raw, "max_expansions")),
+            max_evaluations=int(_require(raw, "max_evaluations")),
+            tau=float(_require(raw, "tau")),
+            alpha=float(_require(raw, "alpha")),
+            epsilon=float(raw.get("epsilon", 0.05)),
+            concurrency=int(raw.get("concurrency", 2)),
+            thermostat_interval=int(raw.get("thermostat_interval", 5)),
+            roi_target=float(raw.get("roi_target", 2.0)),
+            roi_floor=float(raw.get("roi_floor", 1.0)),
+            max_cost=float(raw.get("max_cost", 5000.0)),
+            max_failures_per_agent=int(raw.get("max_failures_per_agent", 10)),
+            expansion_cost=float(raw.get("expansion_cost", 50.0)),
+            evaluation_cost=float(raw.get("evaluation_cost", 10.0)),
+            success_reward=float(raw.get("success_reward", 100.0)),
+            baseline_eagerness=float(raw.get("baseline_eagerness", 0.25)),
+            concurrency_bounds=(int(bounds[0]), int(bounds[1])),
+        )
+    except (TypeError, ValueError, KeyError, IndexError) as exc:
+        raise ConfigError(f"Invalid configuration in {path}: {exc}") from exc
 
+    if config.alpha <= 0:
+        raise ConfigError("alpha must be strictly positive")
+    if config.tau <= 0:
+        raise ConfigError("tau must be strictly positive")
+    if config.total_iterations <= 0:
+        raise ConfigError("total_iterations must be greater than zero")
+    if config.concurrency_bounds[0] <= 0 or config.concurrency_bounds[0] > config.concurrency_bounds[1]:
+        raise ConfigError("concurrency_bounds must be positive and ordered")
 
-def _coerce_type(template: Any, new_value: Any) -> Any:
-    if isinstance(template, bool):
-        if isinstance(new_value, str):
-            return new_value.strip().lower() in {"1", "true", "yes", "on"}
-        return bool(new_value)
-    if isinstance(template, int) and not isinstance(template, bool):
-        if isinstance(new_value, bool):
-            return int(new_value)
-        if isinstance(new_value, (int, float)):
-            return int(new_value)
-        try:
-            return int(str(new_value))
-        except ValueError as exc:
-            raise ValueError(f"Cannot coerce value {new_value!r} to int") from exc
-    if isinstance(template, float):
-        if isinstance(new_value, (int, float)):
-            return float(new_value)
-        try:
-            return float(str(new_value))
-        except ValueError as exc:
-            raise ValueError(f"Cannot coerce value {new_value!r} to float") from exc
-    return new_value
+    return config
 
-
-def _apply_override(data: MutableMapping[str, Any], override: str) -> None:
-    if "=" not in override:
-        raise ValueError(f"Invalid override '{override}'. Expected format section.key=value")
-    path_str, raw_value = override.split("=", 1)
-    keys = [part.strip() for part in path_str.split(".") if part.strip()]
-    if not keys:
-        raise ValueError(f"Invalid override path in '{override}'")
-    cursor: MutableMapping[str, Any] = data
-    for key in keys[:-1]:
-        value = cursor.get(key)
-        if not isinstance(value, MutableMapping):
-            raise ValueError(f"Unknown configuration path '{path_str}'")
-        cursor = value
-    leaf = keys[-1]
-    if leaf not in cursor:
-        raise ValueError(f"Unknown configuration key '{path_str}'")
-    parsed_value = _parse_override_value(raw_value)
-    cursor[leaf] = _coerce_type(cursor[leaf], parsed_value)
-
-
-def load_config_with_overrides(path: Path | None, overrides: Sequence[str]) -> Config:
-    """Load configuration and apply user-provided overrides."""
-
-    raw = copy.deepcopy(_load_raw_config(path or DEFAULT_CONFIG_PATH))
-    for override in overrides:
-        _apply_override(raw, override)
-    return Config(raw)
