@@ -155,6 +155,14 @@ class CommitRevealRound:
         self.reveals[key] = vote
 
     def finalize(self, truthful_outcome: bool) -> bool:
+        for record in self.commits.values():
+            if not record.revealed:
+                self.stake_manager.slash(
+                    record.validator,
+                    self.config.penalty_missed_reveal,
+                    reason="missed_reveal",
+                )
+
         if len(self.reveals) < self.config.quorum:
             raise RuntimeError("Quorum not met")
 
@@ -164,20 +172,15 @@ class CommitRevealRound:
 
         for record in self.commits.values():
             validator = record.validator
-            if not record.revealed:
-                self.stake_manager.slash(
-                    validator,
-                    self.config.penalty_missed_reveal,
-                    reason="missed_reveal",
-                )
-            elif record.vote != truthful_outcome:
-                self.stake_manager.slash(
-                    validator,
-                    self.config.penalty_incorrect_vote,
-                    reason="incorrect_vote",
-                )
-            else:
-                self.stake_manager.reward(validator, self.config.reward_truthful_vote)
+            if record.revealed:
+                if record.vote != truthful_outcome:
+                    self.stake_manager.slash(
+                        validator,
+                        self.config.penalty_incorrect_vote,
+                        reason="incorrect_vote",
+                    )
+                else:
+                    self.stake_manager.reward(validator, self.config.reward_truthful_vote)
         return outcome
 
 
