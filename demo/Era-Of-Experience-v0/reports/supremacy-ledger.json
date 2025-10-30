@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-10-30T02:23:42.585Z",
-  "supremacyIndex": 0.0427,
+  "timestamp": "2025-10-30T13:48:08.309Z",
+  "supremacyIndex": 0.2318,
   "deltas": {
-    "gmv": 0.01522,
-    "roi": 0.110051,
-    "autonomy": 0.011346
+    "gmv": 0.215923,
+    "roi": 0.356184,
+    "autonomy": 0.111226
   },
   "assurances": {
     "pauseReady": true,

@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-10-30T02:23:42.583Z",
+  "timestamp": "2025-10-30T13:48:08.307Z",
   "controlSurfaces": [
     {
       "surface": "explorationRate",
       "description": "Adjust exploration epsilon live without redeploying.",
       "command": "npm run owner:era-of-experience:controls -- --exploration 0.08",
       "current": 0.12,
-      "recommended": 0.07104166666666667
+      "recommended": 0.09031249999999999
     },
     {
       "surface": "policyCheckpoint",
@@ -24,16 +24,16 @@
     }
   ],
   "metrics": {
-    "gmv": 57271.92736642901,
-    "cost": 4788.755626711712,
-    "successes": 94,
-    "failures": 2,
-    "averageLatency": 3.2925347723203653,
-    "averageSatisfaction": 0.9334875359590328,
-    "roi": 11.959667987016461,
-    "autonomyLift": 1.586104514018381,
-    "rewardAverage": 0.7206849529791968,
-    "rewardVolatility": 0.27611851655153563,
-    "learningSignalDensity": 0.9791666666666666
+    "gmv": 146227.15272606583,
+    "cost": 11559.269617434142,
+    "successes": 57,
+    "failures": 39,
+    "averageLatency": 9.408653912240775,
+    "averageSatisfaction": 0.6547816387440556,
+    "roi": 12.650206939158192,
+    "autonomyLift": 1.3386026605823023,
+    "rewardAverage": 0.5226457178343509,
+    "rewardVolatility": 0.4846307933394932,
+    "learningSignalDensity": 0.59375
   }
 }

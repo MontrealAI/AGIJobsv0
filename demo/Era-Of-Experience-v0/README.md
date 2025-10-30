@@ -23,6 +23,7 @@ npm run demo:era-of-experience -- --scenario demo/Era-Of-Experience-v0/config/sc
 npm run demo:era-of-experience -- --jobs 60  # quick deterministic smoke run
 npm run test:era-of-experience               # deterministic unit tests verifying GMV lift
 npm run demo:era-of-experience:audit         # generate audit artifacts + mermaid diagrams
+npm run demo:era-of-experience:verify        # multi-run statistical verification harness
 npm run owner:era-of-experience:controls -- --promote-latest  # record owner actions
 ```
 
@@ -36,6 +37,7 @@ Outputs land in `demo/Era-Of-Experience-v0/reports/`:
 - `owner-control-actions.json` – append-only audit trail of owner commands recorded via
   `npm run owner:era-of-experience:controls`.
 - `supremacy-ledger.json` – dominance index combining GMV, ROI, and autonomy deltas with guardrail confirmations.
+- `verification.json` – statistical confirmation across deterministic runs with bootstrap confidence intervals.
 - `audit-report.json` – deterministic comparison of baseline vs experience-native runs with audit verdict.
 - `audit-flow.mmd` / `audit-value-stream.mmd` – mermaid diagrams extracted from the audit stream.
 - `audit-experiences.json` – recent experience samples validated during the audit pass.
@@ -109,6 +111,8 @@ Safety mesh:
 ## Tests & CI
 
 - `npm run test:era-of-experience` – verifies the learning agent beats baseline GMV on deterministic scenarios.
+- `npm run demo:era-of-experience:verify` – executes eight deterministic scenario runs, bootstrap resamples the reward deltas, and
+  publishes 95% confidence intervals confirming compounding lift.
 - Included in root `pretest` so CI blocks merges unless the Era of Experience loop remains green.
 
 This demo is production-locked: deterministic, owner-controlled, and engineered for immediate mainnet deployment.

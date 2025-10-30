@@ -81,6 +81,11 @@
         color: var(--muted);
         font-size: 0.9rem;
       }
+      .note {
+        margin-top: 0.5rem;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
       .mermaid-panel {
         max-height: 460px;
         overflow: auto;
@@ -153,6 +158,11 @@
         <h2>Experience-Native Flow</h2>
         <div class="mermaid-panel"><div class="mermaid" id="flow-diagram"></div></div>
       </section>
+      <section id="verification-panel">
+        <h2>Statistical Verification</h2>
+        <p class="note" id="verification-summary">Awaiting verification run. Execute <code>npm run demo:era-of-experience:verify</code> to populate.</p>
+        <div class="metrics-grid" id="verification"></div>
+      </section>
       <section>
         <h2>Supremacy Ledger</h2>
         <div class="metrics-grid" id="ledger"></div>
@@ -185,8 +195,38 @@
         }
       }
 
+      async function loadVerification() {
+        try {
+          const response = await fetch('data/verification.json', { cache: 'no-cache' });
+          if (!response.ok) {
+            throw new Error(`status ${response.status}`);
+          }
+          return await response.json();
+        } catch (error) {
+          console.warn('Verification data unavailable', error);
+          return null;
+        }
+      }
+
       function formatNumber(value) {
         return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+
+      function formatPValue(value) {
+        if (value === undefined || Number.isNaN(value)) {
+          return 'n/a';
+        }
+        if (value < 0.001) {
+          return value.toExponential(2);
+        }
+        return value.toFixed(3);
+      }
+
+      function formatInterval(interval) {
+        if (!interval) {
+          return 'n/a';
+        }
+        return `[${formatNumber(interval.lower)}, ${formatNumber(interval.upper)}]`;
       }
 
       function renderMetrics(root, summary) {
@@ -258,6 +298,47 @@
           '<div class="metric-card"><strong>Awaiting Data</strong><span>Run the demo to populate supremacy ledger.</span></div>';
       }
 
+      function renderVerification(root, verification) {
+        const summaryEl = document.getElementById('verification-summary');
+        if (!verification || !verification.metrics) {
+          root.innerHTML =
+            '<div class="metric-card"><strong>Awaiting Analysis</strong><span>Run the verification harness to unlock statistical guarantees.</span></div>';
+          summaryEl.textContent =
+            'Awaiting verification run. Execute npm run demo:era-of-experience:verify to populate.';
+          return;
+        }
+        summaryEl.textContent = verification.summary ?? 'Verification complete.';
+        const gmv = verification.metrics.gmv;
+        const roi = verification.metrics.roi;
+        const autonomy = verification.metrics.autonomy;
+        root.innerHTML = `
+          <div class="metric-card">
+            <strong>${formatNumber(gmv.difference.mean)}</strong>
+            <span>GMV mean lift (absolute)</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatNumber(gmv.ratio.mean)}x</strong>
+            <span>GMV ratio (mean)</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatInterval(gmv.bootstrapInterval)}</strong>
+            <span>${Math.round((gmv.bootstrapInterval?.confidence ?? 0) * 100)}% bootstrap interval</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatPValue(gmv.pValue)}</strong>
+            <span>Two-tailed p-value</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatNumber(roi.difference.mean)}</strong>
+            <span>ROI mean lift</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatNumber(autonomy.difference.mean)}</strong>
+            <span>Autonomy lift</span>
+          </div>
+        `;
+      }
+
       async function renderFlow(summary) {
         const flow = summary.reports?.flow ?? summary.flow;
         if (flow) {
@@ -269,10 +350,11 @@
       }
 
       async function bootstrap() {
-        const summary = await loadSummary();
+        const [summary, verification] = await Promise.all([loadSummary(), loadVerification()]);
         renderMetrics(document.getElementById('metrics'), summary);
         renderCommands(document.getElementById('commands'), summary);
         renderLedger(document.getElementById('ledger'), summary);
+        renderVerification(document.getElementById('verification'), verification);
         const flowDiagram = await renderFlow(summary);
         const mermaidInstance = await mermaidReady;
         if (mermaidInstance) {
