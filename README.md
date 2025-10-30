@@ -91,8 +91,10 @@ To boot a complete stack with Anvil, meta API, orchestrator, agent gateway, vali
 
 ```bash
 cp deployment-config/oneclick.env.example deployment-config/oneclick.env  # customise secrets first
-RPC_URL=http://localhost:8545 docker compose up --build
+docker compose up --build  # RPC_URL resolves to http://anvil:8545 inside the stack
 ```
+
+The Compose file wires dependent services to `RPC_URL=http://anvil:8545`, so leave the variable unset (or explicitly target the `anvil` hostname) instead of overriding it to `localhost`.
 
 The services exposed locally:
 
@@ -163,7 +165,10 @@ The repository centralises operational scripts under [`scripts/`](scripts/) and 
 The GitHub `ci (v2)` workflow mirrors the required local checks. Run the following before opening a pull request:
 
 ```bash
-# TypeScript linting, formatting, contract compilation
+# Generate Hardhat artifacts and TypeScript constants
+npm run compile
+
+# TypeScript linting, formatting, and contract tests
 npm run lint && npm run test
 
 # OneBox + enterprise portal tests (bundle via esbuild)
