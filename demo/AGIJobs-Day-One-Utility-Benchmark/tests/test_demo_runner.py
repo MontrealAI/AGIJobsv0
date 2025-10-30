@@ -49,6 +49,7 @@ def test_simulate_e2e_outputs():
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     assert payload["metrics"]["candidate"]["platform_fee"] > 0
     assert payload["metrics"]["candidate"]["treasury_bonus"] >= 0
+    assert payload["metrics"]["latency_p95"] > 0
 
 
 def test_pause_blocks_simulation():
@@ -123,6 +124,12 @@ def test_scoreboard_generates_dashboard():
     html = html_path.read_text(encoding="utf-8")
     assert "Day-One Utility Scoreboard" in html
     assert html.count('class="mermaid"') >= 3
+    assert "P95 Latency" in html
+
+    assert "average_latency_p95" in payload["aggregates"]
+    assert payload["metrics"]["best_latency_p95"] == pytest.approx(
+        payload["leaders"]["latency_p95"]["value"]["latency_p95"]
+    )
 
 
 def test_execute_human_format_summary():
@@ -133,6 +140,7 @@ def test_execute_human_format_summary():
     assert "Strategy:" in summary
     assert "Utility uplift" in summary
     assert "Dashboard:" in summary
+    assert "P95 latency" in summary
 
 
 def test_invalid_owner_address_rejected():

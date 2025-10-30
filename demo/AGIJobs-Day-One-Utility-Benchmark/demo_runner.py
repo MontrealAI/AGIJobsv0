@@ -448,6 +448,7 @@ class DayOneUtilityOrchestrator:
                 "title": profile["title"],
                 "utility_uplift": float(metrics["utility_uplift"]),
                 "latency_delta": float(metrics["latency_delta"]),
+                "latency_p95": float(metrics.get("latency_p95", 0.0)),
                 "owner_treasury": float(metrics["owner_treasury"]),
                 "reliability_score": float(profile["reliability_score"]),
                 "report_path": str(self.output_dir / f"report_{key}.json"),
@@ -461,11 +462,13 @@ class DayOneUtilityOrchestrator:
         treasury_leader = max(summaries.items(), key=lambda item: item[1]["owner_treasury"])
         reliability_leader = max(summaries.items(), key=lambda item: item[1]["reliability_score"])
         latency_leader = min(summaries.items(), key=lambda item: item[1]["latency_delta"])
+        latency_p95_leader = min(summaries.items(), key=lambda item: item[1]["latency_p95"])
 
         aggregates = {
             "total_owner_treasury": sum(item["owner_treasury"] for item in summaries.values()),
             "average_utility_uplift": sum(item["utility_uplift"] for item in summaries.values()) / len(summaries),
             "average_latency_delta": sum(item["latency_delta"] for item in summaries.values()) / len(summaries),
+            "average_latency_p95": sum(item["latency_p95"] for item in summaries.values()) / len(summaries),
         }
 
         def _leader_payload(entry: Tuple[str, Mapping[str, Any]]) -> Mapping[str, Any]:
@@ -481,6 +484,7 @@ class DayOneUtilityOrchestrator:
             "owner_treasury": _leader_payload(treasury_leader),
             "reliability": _leader_payload(reliability_leader),
             "latency_delta": _leader_payload(latency_leader),
+            "latency_p95": _leader_payload(latency_p95_leader),
         }
 
         if owner_snapshot is None:
@@ -505,6 +509,8 @@ class DayOneUtilityOrchestrator:
             "owner_treasury": aggregates["total_owner_treasury"],
             "average_utility_uplift": aggregates["average_utility_uplift"],
             "average_latency_delta": aggregates["average_latency_delta"],
+            "average_latency_p95": aggregates["average_latency_p95"],
+            "best_latency_p95": leaders["latency_p95"]["value"]["latency_p95"],
         }
 
         html_path = self._render_scoreboard_html(scoreboard_payload)
@@ -607,6 +613,8 @@ class DayOneUtilityOrchestrator:
             f"    F -->|{leaders['reliability']['title']}| G{{Reliability}}",
             "    A --> H[Latency Champion]",
             f"    H -->|{leaders['latency_delta']['title']}| I{{Latency}}",
+            "    A --> J[P95 Sentinel]",
+            f"    J -->|{leaders['latency_p95']['title']}| K{{Latency P95}}",
         ]
 
         guardrail_overview = ["graph LR"]
@@ -790,6 +798,7 @@ class DayOneUtilityOrchestrator:
                     <div class="metrics-grid">
                         <div class="metric"><h3>Utility Uplift</h3><p>{metrics['utility_uplift']*100:.2f}%</p></div>
                         <div class="metric"><h3>Latency Delta</h3><p>{metrics['latency_delta']*100:.2f}%</p></div>
+                        <div class="metric"><h3>Latency P95</h3><p>{metrics['latency_p95']:.3f}s</p></div>
                         <div class="metric"><h3>Reliability Score</h3><p>{profile['reliability_score']*100:.1f}</p></div>
                         <div class="metric"><h3>Owner Treasury</h3><p>{metrics['owner_treasury']:.2f}</p></div>
                     </div>
@@ -862,6 +871,7 @@ class DayOneUtilityOrchestrator:
                     <td>{title}</td>
                     <td>{utility}</td>
                     <td>{latency}</td>
+                    <td>{latency_p95:.3f}s</td>
                     <td>{treasury:.2f}</td>
                     <td>{reliability:.2f}</td>
                     <td><span class="badge {badge}">{status}</span></td>
@@ -871,6 +881,7 @@ class DayOneUtilityOrchestrator:
                     title=payload["title"],
                     utility=_format_pct(payload["utility_uplift"]),
                     latency=_format_pct(payload["latency_delta"]),
+                    latency_p95=payload["latency_p95"],
                     treasury=payload["owner_treasury"],
                     reliability=payload["reliability_score"] * 100,
                     badge=guardrail_badge,
@@ -996,6 +1007,7 @@ class DayOneUtilityOrchestrator:
                                 <th>Strategy</th>
                                 <th>Utility Uplift</th>
                                 <th>Latency Delta</th>
+                                <th>P95 Latency</th>
                                 <th>Owner Treasury</th>
                                 <th>Reliability</th>
                                 <th>Guardrails</th>
@@ -1013,9 +1025,11 @@ class DayOneUtilityOrchestrator:
                         <li>Total owner treasury impact: {aggregates['total_owner_treasury']:.2f}</li>
                         <li>Average utility uplift: {_format_pct(aggregates['average_utility_uplift'])}</li>
                         <li>Average latency delta: {_format_pct(aggregates['average_latency_delta'])}</li>
+                        <li>Average latency P95: {aggregates['average_latency_p95']:.3f}s</li>
                         <li>Utility leader: {leaders.get('utility_uplift', {}).get('title', '—')} ({_format_pct(leaders.get('utility_uplift', {}).get('value', {}).get('utility_uplift', 0.0))})</li>
                         <li>Treasury leader: {leaders.get('owner_treasury', {}).get('title', '—')} ({leaders.get('owner_treasury', {}).get('value', {}).get('owner_treasury', 0.0):.2f})</li>
                         <li>Reliability leader: {leaders.get('reliability', {}).get('title', '—')} ({leaders.get('reliability', {}).get('value', {}).get('reliability_score', 0.0)*100:.2f})</li>
+                        <li>P95 latency champion: {leaders.get('latency_p95', {}).get('title', '—')} ({leaders.get('latency_p95', {}).get('value', {}).get('latency_p95', 0.0):.3f}s)</li>
                     </ul>
                 </section>
                 <section class="card">
@@ -1127,6 +1141,7 @@ class DayOneUtilityOrchestrator:
             f"Strategy: {profile['title']} ({report['strategy']})",
             f"Utility uplift: {utility_pct:.2f}% — Guardrail {'PASSED' if guardrails['utility_uplift'] else 'BLOCKED'}",
             f"Latency delta: {latency_pct:.2f}% — Guardrail {'PASSED' if guardrails['latency_delta'] else 'BLOCKED'}",
+            f"P95 latency: {metrics['latency_p95']:.3f}s",
             f"Reliability score: {profile['reliability_score']*100:.1f} — {'Operational' if guardrails['reliability_score'] else 'Investigate'}",
             f"Owner treasury (fees + bonuses): {metrics['owner_treasury']:.2f}",
             "Highlights:",
