@@ -1,76 +1,35 @@
-"""Safety sentinels supervising MuZero value alignment and budgets."""
+"""Safety sentinels ensuring alignment and constraint adherence."""
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Deque
-
-import numpy as np
-
-from .configuration import SentinelConfig
-from .environment import EnvironmentConfig
-
-if TYPE_CHECKING:  # pragma: no cover - avoids circular imports at runtime
-    from .training import Episode
+from typing import Deque, Dict
 
 
-@dataclass
-class SentinelStatus:
-    episodes_observed: int
-    mean_absolute_error: float
-    alert_active: bool
-    fallback_required: bool
-    average_simulations: float
-    budget_floor_breached: bool
+class Sentinel:
+    def __init__(self, config: Dict) -> None:
+        sent_conf = config.get("sentinel", {})
+        self.enabled = bool(sent_conf.get("enable", True))
+        self.alpha = float(sent_conf.get("value_error_alpha", 0.1))
+        self.threshold = float(sent_conf.get("value_error_threshold", 1.0))
+        self.drift_window = int(sent_conf.get("drift_window", 12))
+        self.fallback_on_violation = bool(sent_conf.get("fallback_on_violation", True))
+        self._ema_error = 0.0
+        self._history: Deque[float] = deque(maxlen=self.drift_window)
+        self.triggered = False
 
+    def update(self, predicted_value: float, realised_return: float) -> None:
+        if not self.enabled:
+            return
+        error = abs(predicted_value - realised_return)
+        self._ema_error = self.alpha * error + (1 - self.alpha) * self._ema_error
+        self._history.append(error)
+        if self._ema_error > self.threshold and len(self._history) == self._history.maxlen:
+            self.triggered = True
 
-class SentinelMonitor:
-    """Tracks calibration drift and budget adherence."""
+    def should_fallback(self) -> bool:
+        return self.triggered and self.fallback_on_violation
 
-    def __init__(self, config: SentinelConfig, environment: EnvironmentConfig) -> None:
-        self.config = config
-        self.environment = environment
-        self._value_errors: Deque[float] = deque(maxlen=config.window)
-        self._simulations: Deque[int] = deque(maxlen=config.window)
-        self._episodes = 0
-        self._last_status = SentinelStatus(
-            episodes_observed=0,
-            mean_absolute_error=0.0,
-            alert_active=False,
-            fallback_required=False,
-            average_simulations=float(environment.max_jobs),
-            budget_floor_breached=False,
-        )
-
-    def record_episode(self, episode: "Episode") -> SentinelStatus:
-        self._episodes += 1
-        for predicted, actual in zip(episode.values, episode.returns):
-            self._value_errors.append(abs(float(predicted) - float(actual)))
-        self._simulations.extend(int(sim) for sim in episode.simulations)
-        budget_floor_breached = episode.summary.get("remaining_budget", self.environment.starting_budget) < self.config.budget_floor
-
-        if self._value_errors:
-            mae = float(np.mean(self._value_errors))
-        else:
-            mae = 0.0
-
-        episodes_ready = self._episodes >= self.config.min_episodes
-        alert = episodes_ready and (mae > self.config.alert_mae or budget_floor_breached)
-        fallback = episodes_ready and (mae > self.config.fallback_mae or budget_floor_breached)
-        avg_sim = float(np.mean(self._simulations)) if self._simulations else 0.0
-
-        self._last_status = SentinelStatus(
-            episodes_observed=self._episodes,
-            mean_absolute_error=mae,
-            alert_active=alert,
-            fallback_required=fallback,
-            average_simulations=avg_sim,
-            budget_floor_breached=budget_floor_breached,
-        )
-        return self._last_status
-
-    def status(self) -> SentinelStatus:
-        return self._last_status
-
-
-__all__ = ["SentinelMonitor", "SentinelStatus"]
+    def reset(self) -> None:
+        self.triggered = False
+        self._ema_error = 0.0
+        self._history.clear()

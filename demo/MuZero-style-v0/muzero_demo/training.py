@@ -1,266 +1,98 @@
-"""Simplified MuZero training loop tailored for the demo."""
+"""Training pipeline for MuZero demo."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
-import random
+from typing import Dict, Iterable, List, Tuple
 
-import numpy as np
 import torch
-from torch import optim
+import torch.optim as optim
 
-from .environment import AGIJobsPlanningEnv, EnvironmentConfig
-from .mcts import MuZeroPlanner, PlannerSettings
-from .network import MuZeroNetwork, NetworkConfig
-from .thermostat import PlanningThermostat
-from .sentinel import SentinelMonitor
-from .utils import discounted_returns
+from .environment import JobsEnvironment
+from .planner import MuZeroPlanner
+from .replay import ReplayBuffer, Transition
+from .telemetry import TelemetrySink
 
 
-@dataclass
-class TrainingConfig:
-    environment: EnvironmentConfig
-    network: NetworkConfig
-    planner: PlannerSettings
-    batch_size: int = 32
-    unroll_steps: int = 3
-    td_steps: int = 5
-    learning_rate: float = 1e-3
-    discount: float = 0.997
-    replay_buffer_size: int = 2048
-    policy_weight: float = 1.0
-    value_weight: float = 0.5
-    reward_weight: float = 0.5
-    temperature: float = 1.0
-    device: str = "cpu"
-
-
-@dataclass
-class Episode:
-    observations: List[np.ndarray]
-    actions: List[int]
-    rewards: List[float]
-    policies: List[np.ndarray]
-    values: List[float]
-    returns: List[float] = field(default_factory=list)
-    simulations: List[int] = field(default_factory=list)
-    summary: Dict[str, float] = field(default_factory=dict)
-
-    def length(self) -> int:
-        return len(self.actions)
-
-
-class ReplayBuffer:
-    def __init__(self, capacity: int) -> None:
-        self.capacity = capacity
-        self._buffer: List[Episode] = []
-
-    def add(self, episode: Episode) -> None:
-        if len(self._buffer) >= self.capacity:
-            self._buffer.pop(0)
-        self._buffer.append(episode)
-
-    def sample(self, batch_size: int) -> List[Tuple[Episode, int]]:
-        samples: List[Tuple[Episode, int]] = []
-        for _ in range(batch_size):
-            episode = random.choice(self._buffer)
-            index = random.randrange(episode.length())
-            samples.append((episode, index))
-        return samples
-
-    def __len__(self) -> int:  # pragma: no cover - trivial
-        return len(self._buffer)
+def discount_returns(rewards: List[float], discount: float) -> List[float]:
+    returns = []
+    running = 0.0
+    for reward in reversed(rewards):
+        running = reward + discount * running
+        returns.insert(0, running)
+    return returns
 
 
 class MuZeroTrainer:
-    def __init__(
-        self,
-        network: MuZeroNetwork,
-        config: TrainingConfig,
-        thermostat: Optional[PlanningThermostat] = None,
-        sentinel: Optional[SentinelMonitor] = None,
-    ) -> None:
-        self.network = network.to(config.device)
+    def __init__(self, config: Dict, network: torch.nn.Module, device: torch.device) -> None:
         self.config = config
-        self.buffer = ReplayBuffer(config.replay_buffer_size)
-        self.optimizer = optim.Adam(self.network.parameters(), lr=config.learning_rate)
-        self.env = AGIJobsPlanningEnv(config.environment)
-        self.planner = MuZeroPlanner(network, config.planner)
-        self.thermostat = thermostat
-        self.sentinel = sentinel
+        train_conf = config.get("training", {})
+        self.batch_size = int(train_conf.get("batch_size", 32))
+        self.unroll_steps = int(train_conf.get("unroll_steps", 5))
+        self.td_steps = int(train_conf.get("td_steps", 5))
+        self.learning_rate = float(train_conf.get("learning_rate", 8e-4))
+        self.weight_decay = float(train_conf.get("weight_decay", 1e-6))
+        self.reanalyse_ratio = float(train_conf.get("reanalyse_ratio", 0.25))
+        self.value_weight = float(train_conf.get("value_loss_weight", 1.0))
+        self.reward_weight = float(train_conf.get("reward_loss_weight", 1.0))
+        self.policy_weight = float(train_conf.get("policy_loss_weight", 1.0))
+        self.checkpoint_interval = int(train_conf.get("checkpoint_interval", 16))
+        replay_capacity = int(train_conf.get("replay_capacity", 2048))
+        self.replay = ReplayBuffer(replay_capacity)
+        self.network = network
+        self.device = device
+        self.telemetry = TelemetrySink(config)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        self.discount = float(config.get("environment", {}).get("discount", 0.997))
 
-    def self_play(self, episodes: int) -> None:
-        for _ in range(episodes):
-            episode = self._play_episode()
-            self.buffer.add(episode)
-
-    def _play_episode(self) -> Episode:
-        observation = self.env.reset()
-        observations: List[np.ndarray] = []
-        actions: List[int] = []
-        rewards: List[float] = []
-        policies: List[np.ndarray] = []
-        values: List[float] = []
-        simulations: List[int] = []
-
-        done = False
-        while not done:
-            obs_tensor = torch.from_numpy(observation.vector).float().to(self.config.device)
-            initial = self.network.initial_inference(obs_tensor.unsqueeze(0))
-            policy_logits, root_val_tensor, hidden_state = initial
-            policy_probs = torch.softmax(policy_logits, dim=-1)[0]
-            dynamic_simulations: Optional[int] = None
-            if self.thermostat:
-                dynamic_simulations = self.thermostat.recommend(observation, policy_probs, observation.legal_actions)
-            policy, root_value, _, simulations_used = self.planner.run(
-                obs_tensor,
-                observation.legal_actions,
-                initial_inference=(policy_logits, root_val_tensor, hidden_state),
-                num_simulations=dynamic_simulations,
-            )
-            if self.thermostat:
-                self.thermostat.observe(simulations_used, root_value)
-
-            action = self._select_action(policy, observation.legal_actions)
-
-            observations.append(observation.vector.copy())
-            actions.append(action)
-            policies.append(policy.cpu().numpy())
-            values.append(root_value)
-            simulations.append(simulations_used)
-
-            step_result = self.env.step(action)
-            rewards.append(step_result.reward)
-            observation = step_result.observation
-            done = step_result.done
-        summary = self.env.summarize_history()
-        returns = discounted_returns(rewards, self.config.discount)
-        episode = Episode(
-            observations=observations,
-            actions=actions,
-            rewards=rewards,
-            policies=policies,
-            values=values,
-            returns=returns,
-            simulations=simulations,
-            summary=summary,
-        )
-        if self.sentinel:
-            self.sentinel.record_episode(episode)
-        return episode
-
-    def _select_action(self, policy: torch.Tensor, legal_actions: List[int]) -> int:
-        probs = policy.clone()
-        mask = torch.zeros_like(probs)
-        mask[legal_actions] = 1.0
-        probs = probs * mask
-        total = probs.sum()
-        if total <= 0:
-            probs = torch.ones_like(probs) / probs.numel()
-        else:
-            probs = probs / total
-        distribution = torch.distributions.Categorical(probs=probs)
-        return int(distribution.sample().item())
+    def self_play(self, env: JobsEnvironment, planner: MuZeroPlanner, episodes: int) -> None:
+        for episode in range(episodes):
+            planner.reset_episode()
+            env.reset()
+            observation = env.observe()
+            episode_transitions: List[Transition] = []
+            accumulated_return = 0.0
+            discount_power = 1.0
+            while not env.done:
+                action, policy, meta = planner.plan(env, observation)
+                next_obs, reward, done, info = env.step(action)
+                accumulated_return += reward * discount_power
+                discount_power *= self.discount
+                transition = Transition(observation=list(observation), action=action, reward=reward, policy=policy, value=meta["expected_value"])
+                episode_transitions.append(transition)
+                planner.observe_outcome(meta["expected_value"], reward)
+                observation = next_obs
+            self.replay.extend_episode(episode_transitions)
+            if len(self.replay) >= self.batch_size:
+                for _ in range(3):
+                    self.train_step()
+            self.telemetry.record("self_play_episode", {"episode": episode, "return": accumulated_return})
 
     def train_step(self) -> Dict[str, float]:
-        if len(self.buffer) < self.config.batch_size:
+        if len(self.replay) == 0:
             return {"loss": 0.0}
-        batch = self.buffer.sample(self.config.batch_size)
-        total_loss = 0.0
+        batch = self.replay.sample(self.batch_size)
+        observations = torch.tensor([t.observation for t in batch], dtype=torch.float32, device=self.device)
+        actions = torch.tensor([t.action for t in batch], dtype=torch.long, device=self.device)
+        rewards = torch.tensor([t.reward for t in batch], dtype=torch.float32, device=self.device).unsqueeze(-1)
+        target_policies = torch.tensor([t.policy for t in batch], dtype=torch.float32, device=self.device)
+        target_values = torch.tensor([t.value for t in batch], dtype=torch.float32, device=self.device).unsqueeze(-1)
+
+        outputs = self.network.initial_inference(observations)
+        policy_loss = torch.nn.functional.cross_entropy(outputs.policy_logits, torch.argmax(target_policies, dim=-1))
+        value_loss = torch.nn.functional.mse_loss(outputs.value, target_values)
+        reward_loss = torch.nn.functional.mse_loss(outputs.reward, torch.zeros_like(outputs.reward))
+        loss = self.policy_weight * policy_loss + self.value_weight * value_loss + self.reward_weight * reward_loss
         self.optimizer.zero_grad()
-        for episode, index in batch:
-            loss = self._compute_loss(episode, index)
-            loss.backward()
-            total_loss += float(loss.item())
-        torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=10.0)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=5.0)
         self.optimizer.step()
-        return {"loss": total_loss / self.config.batch_size}
-
-    def _compute_loss(self, episode: Episode, index: int) -> torch.Tensor:
-        config = self.config
-        device = config.device
-        observation = torch.from_numpy(episode.observations[index]).float().to(device)
-        policy_targets = [
-            torch.from_numpy(episode.policies[min(index + k, len(episode.policies) - 1)]).float().to(device)
-            for k in range(self.config.unroll_steps + 1)
-        ]
-
-        policy_logits, value, hidden_state = self.network.initial_inference(observation.unsqueeze(0))
-        predictions_policy = [policy_logits.squeeze(0)]
-        predictions_value = [value.squeeze(0)]
-        predictions_reward: List[torch.Tensor] = [torch.zeros(1, device=device)]
-        states = [hidden_state]
-
-        actions = episode.actions[index : index + config.unroll_steps]
-        for action in actions:
-            action_tensor = torch.tensor([action], dtype=torch.long, device=device)
-            policy_logits, value, reward, next_state = self.network.recurrent_inference(states[-1], action_tensor)
-            predictions_policy.append(policy_logits.squeeze(0))
-            predictions_value.append(value.squeeze(0))
-            predictions_reward.append(reward)
-            states.append(next_state)
-
-        target_values = torch.tensor(self._target_values(episode, index), dtype=torch.float32, device=device)
-        target_rewards = torch.tensor(self._target_rewards(episode, index), dtype=torch.float32, device=device)
-
-        loss = torch.tensor(0.0, device=device)
-        weights = {
-            "policy": self.config.policy_weight,
-            "value": self.config.value_weight,
-            "reward": self.config.reward_weight,
+        metrics = {
+            "loss": float(loss.item()),
+            "policy_loss": float(policy_loss.item()),
+            "value_loss": float(value_loss.item()),
+            "reward_loss": float(reward_loss.item()),
         }
-        for k in range(len(predictions_policy)):
-            policy_target = policy_targets[min(k, len(policy_targets) - 1)]
-            targets = {
-                "policy": policy_target,
-                "value": target_values[min(k, target_values.shape[0] - 1)],
-                "reward": target_rewards[min(k, target_rewards.shape[0] - 1)],
-            }
-            predictions = {
-                "policy_logits": predictions_policy[k],
-                "value": predictions_value[k],
-                "reward": predictions_reward[k],
-            }
-            loss = loss + self.network.loss(predictions, targets, weights)
-        return loss / len(predictions_policy)
+        self.telemetry.record("training_step", metrics)
+        return metrics
 
-    def _target_values(self, episode: Episode, index: int) -> List[float]:
-        targets: List[float] = []
-        for k in range(self.config.unroll_steps + 1):
-            total = 0.0
-            discount = 1.0
-            for i in range(self.config.td_steps):
-                pos = index + k + i
-                if pos < len(episode.rewards):
-                    total += discount * episode.rewards[pos]
-                    discount *= self.config.discount
-                else:
-                    break
-            bootstrap_index = index + k + self.config.td_steps
-            if bootstrap_index < len(episode.values):
-                total += discount * episode.values[bootstrap_index]
-            targets.append(total)
-        return targets
-
-    def _target_rewards(self, episode: Episode, index: int) -> List[float]:
-        rewards: List[float] = []
-        for k in range(self.config.unroll_steps + 1):
-            pos = index + k
-            if pos < len(episode.rewards):
-                rewards.append(episode.rewards[pos])
-            else:
-                rewards.append(0.0)
-        return rewards
-
-    def sentinel_status(self) -> Dict[str, float]:
-        if not self.sentinel:
-            return {}
-        status = self.sentinel.status()
-        return {
-            "episodes": float(status.episodes_observed),
-            "mae": status.mean_absolute_error,
-            "alert": 1.0 if status.alert_active else 0.0,
-            "fallback": 1.0 if status.fallback_required else 0.0,
-            "avg_simulations": status.average_simulations,
-            "budget_floor_breached": 1.0 if status.budget_floor_breached else 0.0,
-        }
+    def save_checkpoint(self, path: str) -> None:
+        torch.save(self.network.state_dict(), path)

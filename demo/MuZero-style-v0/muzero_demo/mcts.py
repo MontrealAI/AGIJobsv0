@@ -1,156 +1,149 @@
-"""Monte Carlo Tree Search implementation aligned with MuZero."""
+"""MuZero Monte Carlo Tree Search implementation."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 import math
+
 import torch
 
-from .network import MuZeroNetwork
+from .network import MuZeroNetwork, MuZeroNetworkOutput
+
+
+def softmax_temperature(logits: torch.Tensor, temperature: float) -> torch.Tensor:
+    if temperature <= 0.0:
+        return torch.zeros_like(logits).scatter_(0, torch.argmax(logits), 1.0)
+    scaled = logits / temperature
+    return torch.softmax(scaled, dim=-1)
 
 
 @dataclass
-class PlannerSettings:
-    num_simulations: int = 64
-    discount: float = 0.997
-    dirichlet_alpha: float = 0.3
-    dirichlet_fraction: float = 0.25
-    exploration_constant: float = 1.25
-    temperature: float = 1.0
-    max_depth: int = 12
+class MinMaxStats:
+    min_value: float = float("inf")
+    max_value: float = float("-inf")
+
+    def update(self, value: float) -> None:
+        self.min_value = min(self.min_value, value)
+        self.max_value = max(self.max_value, value)
+
+    def normalize(self, value: float) -> float:
+        if self.max_value > self.min_value:
+            return (value - self.min_value) / (self.max_value - self.min_value)
+        return value
 
 
-class SearchNode:
-    def __init__(self, prior: float) -> None:
+class Node:
+    def __init__(self, prior: float, hidden_state: torch.Tensor) -> None:
         self.prior = prior
-        self.visit_count = 0
+        self.hidden_state = hidden_state
         self.value_sum = 0.0
-        self.children: Dict[int, "SearchNode"] = {}
-        self.reward: float = 0.0
-        self.hidden_state: Optional[torch.Tensor] = None
+        self.visit_count = 0
+        self.children: Dict[int, "Node"] = {}
+        self.reward = 0.0
+        self.is_expanded = False
 
-    @property
     def value(self) -> float:
         if self.visit_count == 0:
             return 0.0
         return self.value_sum / self.visit_count
 
+    def expand(self, actions: List[int], outputs: MuZeroNetworkOutput) -> None:
+        self.is_expanded = True
+        policy = torch.softmax(outputs.policy_logits, dim=-1).squeeze(0)
+        for action in actions:
+            self.children[action] = Node(prior=float(policy[action].item()), hidden_state=outputs.hidden_state)
+        self.reward = float(outputs.reward.squeeze(0).item())
+        self.value_sum += float(outputs.value.squeeze(0).item())
+        self.visit_count += 1
 
-class MuZeroPlanner:
-    def __init__(self, network: MuZeroNetwork, settings: PlannerSettings) -> None:
+
+class MCTS:
+    def __init__(self, network: MuZeroNetwork, config: Dict) -> None:
         self.network = network
-        self.settings = settings
-        self._min_q = float("inf")
-        self._max_q = float("-inf")
+        planner_conf = config.get("planner", {})
+        self.num_actions = int(config.get("environment", {}).get("job_pool_size", network.action_dim))
+        self.exploration_constant = float(planner_conf.get("exploration_constant", 1.5))
+        self.dirichlet_alpha = float(planner_conf.get("dirichlet_alpha", 0.3))
+        self.dirichlet_epsilon = float(planner_conf.get("dirichlet_epsilon", 0.25))
+        self.temperature = float(planner_conf.get("temperature", 1.0))
+        self.min_max_stats = MinMaxStats()
 
-    def _reset_q_bounds(self) -> None:
-        self._min_q = float("inf")
-        self._max_q = float("-inf")
+    def _apply_dirichlet_noise(self, priors: torch.Tensor) -> torch.Tensor:
+        if self.dirichlet_epsilon <= 0.0:
+            return priors
+        noise = torch.distributions.Dirichlet(torch.full_like(priors, self.dirichlet_alpha)).sample()
+        return (1 - self.dirichlet_epsilon) * priors + self.dirichlet_epsilon * noise
 
-    def run(
-        self,
-        observation: torch.Tensor,
-        legal_actions: List[int],
-        *,
-        initial_inference: Optional[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]] = None,
-        num_simulations: Optional[int] = None,
-    ) -> Tuple[torch.Tensor, float, Dict[int, SearchNode], int]:
-        self._reset_q_bounds()
-        if initial_inference is None:
-            policy_logits, value, hidden_state = self.network.initial_inference(observation.unsqueeze(0))
-        else:
-            policy_logits, value, hidden_state = initial_inference
-        policy_probs = torch.softmax(policy_logits, dim=-1)[0]
-        root = SearchNode(prior=1.0)
-        root.hidden_state = hidden_state
-        for action in legal_actions:
-            root.children[action] = SearchNode(prior=float(policy_probs[action]))
+    def run(self, observation: torch.Tensor, num_simulations: int) -> Tuple[Node, List[float]]:
+        network_output = self.network.initial_inference(observation)
+        policy = torch.softmax(network_output.policy_logits, dim=-1).squeeze(0)
+        noisy_prior = self._apply_dirichlet_noise(policy)
+        root = Node(prior=1.0, hidden_state=network_output.hidden_state)
+        for action in range(self.num_actions):
+            child = Node(prior=float(noisy_prior[action].item()), hidden_state=network_output.hidden_state)
+            root.children[action] = child
+        root.is_expanded = True
+        root.reward = float(network_output.reward.squeeze(0).item())
+        root.value_sum = float(network_output.value.squeeze(0).item())
+        root.visit_count = 1
 
-        self._add_exploration_noise(root)
-
-        action_tensor = torch.zeros(1, dtype=torch.long, device=observation.device)
-        simulations = num_simulations or self.settings.num_simulations
-        for _ in range(simulations):
+        for _ in range(num_simulations):
             node = root
             search_path = [node]
-            current_hidden = hidden_state
-            depth = 0
-            value_estimate: Optional[float] = None
-            while node.children and depth < self.settings.max_depth:
-                action, next_node = self._select_child(node)
-                search_path.append(next_node)
-                action_tensor.fill_(action)
-                if next_node.hidden_state is None:
-                    policy_logits, value, reward, next_state = self.network.recurrent_inference(current_hidden, action_tensor)
-                    next_node.hidden_state = next_state
-                    next_node.reward = float(reward.item())
-                    policy = torch.softmax(policy_logits, dim=-1)[0]
-                    for next_action in range(policy.shape[-1]):
-                        next_node.children.setdefault(next_action, SearchNode(prior=float(policy[next_action].item())))
-                    value_estimate = float(value.item())
-                    break
-                current_hidden = next_node.hidden_state
-                node = next_node
-                depth += 1
-            if value_estimate is None:
-                value_estimate = search_path[-1].value
-            self._backpropagate(search_path, value_estimate)
+            actions_path: List[int] = []
+            # Selection
+            while node.is_expanded and node.children:
+                action, node = self._select_child(node)
+                actions_path.append(action)
+                search_path.append(node)
+            # Expansion
+            parent = search_path[-2] if len(search_path) > 1 else root
+            action_tensor = torch.tensor([actions_path[-1]] if actions_path else [0], dtype=torch.long)
+            network_output = self.network.recurrent_inference(parent.hidden_state, action_tensor)
+            node.hidden_state = network_output.hidden_state
+            node.reward = float(network_output.reward.squeeze(0).item())
+            policy = torch.softmax(network_output.policy_logits, dim=-1).squeeze(0)
+            for action in range(self.num_actions):
+                node.children[action] = Node(prior=float(policy[action].item()), hidden_state=network_output.hidden_state)
+            node.is_expanded = True
+            # Backpropagation
+            value = float(network_output.value.squeeze(0).item())
+            self.min_max_stats.update(value)
+            for back_node in reversed(search_path):
+                back_node.value_sum += value
+                back_node.visit_count += 1
+        visit_counts = [root.children[a].visit_count if a in root.children else 0 for a in range(self.num_actions)]
+        return root, visit_counts
 
-        visits = torch.zeros_like(policy_logits[0])
-        for action, child in root.children.items():
-            visits[action] = child.visit_count
-        policy_target = visits ** (1.0 / max(1e-6, self.settings.temperature))
-        total = policy_target.sum()
-        if total <= 0:
-            policy_target = torch.ones_like(policy_target) / policy_target.numel()
-        else:
-            policy_target = policy_target / total
-        root_value = float(value.squeeze().item())
-        return policy_target, root_value, root.children, simulations
-
-    # ------------------------------------------------------------------
-    # Internals
-    # ------------------------------------------------------------------
-    def _add_exploration_noise(self, node: SearchNode) -> None:
-        if not node.children:
-            return
-        actions = list(node.children.keys())
-        noise = torch.distributions.dirichlet.Dirichlet(torch.full((len(actions),), self.settings.dirichlet_alpha)).sample().tolist()
-        for action, eta in zip(actions, noise):
-            child = node.children[action]
-            child.prior = child.prior * (1 - self.settings.dirichlet_fraction) + eta * self.settings.dirichlet_fraction
-
-    def _select_child(self, node: SearchNode) -> Tuple[int, SearchNode]:
+    def _select_child(self, node: Node) -> Tuple[int, Node]:
+        total_visits = sum(child.visit_count for child in node.children.values()) + 1
         best_score = float("-inf")
-        best_action = -1
-        best_child = None
-        total_visits = sum(child.visit_count for child in node.children.values())
+        best_action = 0
+        best_child = next(iter(node.children.values()))
         for action, child in node.children.items():
-            score = self._ucb_score(total_visits, child)
+            q_value = child.value()
+            self.min_max_stats.update(q_value)
+            normalized_q = self.min_max_stats.normalize(q_value)
+            u_score = self._puct_score(node.visit_count, child.prior, child.visit_count)
+            score = normalized_q + u_score
             if score > best_score:
                 best_score = score
                 best_action = action
                 best_child = child
-        assert best_child is not None
         return best_action, best_child
 
-    def _ucb_score(self, parent_visits: int, child: SearchNode) -> float:
-        q = child.reward + self.settings.discount * child.value
-        exploration_term = self.settings.exploration_constant * child.prior * math.sqrt(parent_visits + 1) / (child.visit_count + 1)
-        normalized_q = self._normalize_q(q)
-        return normalized_q + exploration_term
+    def _puct_score(self, parent_visits: int, prior: float, child_visits: int) -> float:
+        return self.exploration_constant * prior * math.sqrt(parent_visits + 1) / (1 + child_visits)
 
-    def _normalize_q(self, q: float) -> float:
-        if q < self._min_q:
-            self._min_q = q
-        if q > self._max_q:
-            self._max_q = q
-        if self._max_q > self._min_q:
-            return (q - self._min_q) / (self._max_q - self._min_q)
-        return 0.5
-
-    def _backpropagate(self, search_path: List[SearchNode], value: float) -> None:
-        for node in reversed(search_path):
-            node.value_sum += value
-            node.visit_count += 1
-            value = node.reward + self.settings.discount * value
+    def final_policy(self, visit_counts: List[float], temperature: float) -> List[float]:
+        visits = torch.tensor(visit_counts, dtype=torch.float32)
+        if temperature == 0.0:
+            best = torch.argmax(visits).item()
+            policy = [0.0 for _ in visit_counts]
+            policy[best] = 1.0
+            return policy
+        scaled = visits ** (1.0 / max(temperature, 1e-6))
+        scaled_sum = scaled.sum().item()
+        if scaled_sum <= 0.0:
+            return [1.0 / len(visit_counts) for _ in visit_counts]
+        return [(val / scaled_sum) for val in scaled.tolist()]
