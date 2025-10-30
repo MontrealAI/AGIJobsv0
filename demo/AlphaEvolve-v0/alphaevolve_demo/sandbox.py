@@ -40,7 +40,6 @@ _SAFE_BUILTIN_NAMES = {
     "object",
 }
 ALLOWED_BUILTINS = {name: getattr(builtins, name) for name in _SAFE_BUILTIN_NAMES}
-ALLOWED_BUILTINS["__import__"] = builtins.__import__
 
 
 class SandboxError(RuntimeError):
@@ -95,4 +94,14 @@ class HeuristicSandbox:
                 raise SandboxError("Use of eval/exec/open is not permitted")
             if isinstance(node, ast.Attribute) and node.attr in {"__dict__", "__class__"}:
                 raise SandboxError("Introspection primitives are not permitted")
+
+
+def _sandbox_import(name: str, globals: Any | None = None, locals: Any | None = None, fromlist: Any = (), level: int = 0) -> Any:
+    root_name = name.split(".")[0]
+    if root_name not in ALLOWED_IMPORTS:
+        raise SandboxError(f"Import of module '{root_name}' is not permitted")
+    return builtins.__import__(name, globals, locals, fromlist, level)
+
+
+ALLOWED_BUILTINS["__import__"] = _sandbox_import
 
