@@ -1,0 +1,6 @@
+owner_address: "0x9F4c1dEFAa7d9f4f24B495C1b8E3aD4f5cB52173"
+treasury_address: "0x4C90d1C8F83F0b2c3d592BFb3E88e3a092f9a912"
+platform_fee_bps: 180
+latency_threshold_override_bps: null
+paused: false
+narrative: "Launch-ready orchestrator with audit-grade guardrails and sovereign owner command deck."

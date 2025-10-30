@@ -16,6 +16,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
 - 🧭 **Checkpoint Command Deck** – Owners retarget storage paths, tighten snapshot cadence, and trigger instant saves from the same schedule that drives pauses and reroutes.
 - 🗂️ **Adaptive Reporting** – Owners redirect artifact directories and default labels on demand, with changes persisting across checkpoints and resumes.
 - 🗺️ **Mission Topology Atlases** – Every run emits \`mission-topology.mmd\` and a ready-to-share HTML atlas that narrates shard health, node posture, and spillover links in living mermaid diagrams.
+- 🧭 **Mission Plan Autopilot** – Load a single mission dossier (`config/mission-plan.example.json`) to orchestrate config, workloads, owner schedules, checkpoint cadence, and reporting targets in one declarative file.
 - 📜 **Mission Chronicle** – Every execution publishes `mission-chronicle.md`, a narrative control-room briefing summarising metrics, owner interventions, and resilience signals.
 - 📈 **CI-Certified** – Dedicated workflows and tests guarantee green checks on every PR and on `main`.
 - 🛰️ **Immersive UI** – Rich mermaid diagrams, dashboards, and walkthroughs translate complex topology into intuitive visuals.
@@ -36,7 +37,13 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
    cp orchestrator/.env.example orchestrator/.env
    cp deployment-config/.env.example deployment-config/.env
    ```
-3. **Run the planetary fabric** (generates full reports + dashboard):
+3. **Launch from the mission plan** (single command for config + owner schedule + blueprint):
+  ```bash
+  demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh \
+     --plan demo/Planetary-Orchestrator-Fabric-v0/config/mission-plan.example.json
+  ```
+  The dossier sets checkpoint cadence, reporting targets, owner command schedules, and the Kardashev workload so non-technical operators can run a full drill without touching flags.
+4. **Run the planetary fabric** (generates full reports + dashboard):
   ```bash
   demo/Planetary-Orchestrator-Fabric-v0/bin/run-demo.sh \
      --jobs 10000 \
@@ -46,8 +53,8 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
      --output-label "kardashev-kill-switch" \
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
-  Every execution emits a living mermaid atlas at \`reports/<label>/mission-topology.mmd\` alongside \`mission-topology.html\` and a mission chronicle at `mission-chronicle.md`, giving non-technical owners a one-click planetary topology view plus an executive briefing.
-4. **Execute the restart drill** to rehearse orchestrator kill/resume with merged telemetry:
+  Every execution emits a living mermaid atlas at `reports/<label>/mission-topology.mmd` alongside `mission-topology.html` and a mission chronicle at `mission-chronicle.md`, giving non-technical owners a one-click planetary topology view plus an executive briefing.
+5. **Execute the restart drill** to rehearse orchestrator kill/resume with merged telemetry:
   ```bash
   demo/Planetary-Orchestrator-Fabric-v0/bin/run-restart-drill.sh \
      --jobs 12000 \
@@ -57,7 +64,7 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
      --owner-commands demo/Planetary-Orchestrator-Fabric-v0/config/owner-commands.example.json
   ```
   This invokes `--stop-after-ticks` under the hood, captures the checkpoint path from `summary.json`, and resumes automatically so non-technical owners see the drill succeed end-to-end.
-5. **Launch the acceptance autopilot** to validate Kardashev-grade readiness in one shot:
+6. **Launch the acceptance autopilot** to validate Kardashev-grade readiness in one shot:
   ```bash
   npm run demo:planetary-orchestrator-fabric:acceptance -- \
     --label planetary-acceptance \
@@ -66,9 +73,9 @@ This demo packages **Planetary Orchestrator Fabric** as a runnable, checkpointab
   ```
   Add `--jobs-blueprint demo/Planetary-Orchestrator-Fabric-v0/config/jobs.blueprint.example.json` to the command above to replay the curated Kardashev workload during the acceptance suite.
   This executes both the 10k-job load trial and the orchestrator kill/resume drill, fails fast if <98% of work completes, and writes a consolidated JSON verdict alongside all mission artifacts.
-6. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, ledger invariants, and full container/pricing/compliance metadata instantly—even offline.
-7. **Open the run-specific dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore the same data pre-linked to that execution with zero configuration.
-8. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
+7. **Review telemetry in the static mission console** by opening `demo/Planetary-Orchestrator-Fabric-v0/ui/dashboard.html` in your browser and dropping the freshly generated `reports/<label>` folder onto the page. The console renders shard tables, owner command summaries, spillover mermaid diagrams, ledger invariants, and full container/pricing/compliance metadata instantly—even offline.
+8. **Open the run-specific dashboard** at `demo/Planetary-Orchestrator-Fabric-v0/reports/<label>/dashboard.html` to explore the same data pre-linked to that execution with zero configuration.
+9. **Practice owner interventions** using the guided commands in [`docs/owner-control.md`](docs/owner-control.md) (pause, reroute, throttle, resume) against the generated state bundle—zero coding required.
 
 The script defaults to the example configuration under `config/fabric.example.json`. Provide your own configuration (with mainnet deployment information, private IP ranges, funding accounts, etc.) by passing `--config path/to/config.json`.
 
@@ -137,6 +144,7 @@ flowchart TD
 | `config/fabric.example.json` | Declarative definition of shards, nodes, owner policies, checkpoint schedules. |
 | `config/jobs.blueprint.example.json` | Declarative workload blueprint empowering non-technical owners to set the planetary agenda. |
 | `config/owner-commands.example.json` | Sample schedule of owner commands applied mid-run. |
+| `config/mission-plan.example.json` | Unified mission dossier that links config, job blueprints, owner commands, checkpoints, and reporting overrides. |
 | `docs/architecture.md` | Deep dive into the architecture with additional diagrams, latency budgets, and ledger mapping. |
 | `docs/owner-control.md` | Owner empowerment manual with pause/update scripts and governance hooks. |
 | `docs/ci.md` | How CI guards this demo with enforced, reproducible checks. |

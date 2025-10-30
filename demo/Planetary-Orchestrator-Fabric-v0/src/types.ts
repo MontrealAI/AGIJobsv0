@@ -95,6 +95,48 @@ export interface JobBlueprint {
   source?: string;
 }
 
+export interface MissionPlanMetadata {
+  label?: string;
+  description?: string;
+  author?: string;
+  version?: string;
+  tags?: string[];
+}
+
+export interface MissionPlanRuntime {
+  jobs?: number;
+  simulateOutage?: string;
+  outageTick?: number;
+  outputLabel?: string;
+  stopAfterTicks?: number;
+  resume?: boolean;
+  checkpoint?: { path?: string; intervalTicks?: number };
+  preserveReportDirOnResume?: boolean;
+  ciMode?: boolean;
+  ownerCommandSource?: string;
+}
+
+export interface MissionPlanFile {
+  metadata?: MissionPlanMetadata;
+  config: string | FabricConfig;
+  ownerCommands?: string | OwnerCommandSchedule[];
+  jobBlueprint?: string | JobBlueprint;
+  run?: MissionPlanRuntime;
+  reporting?: { directory?: string; defaultLabel?: string };
+}
+
+export interface LoadedMissionPlan {
+  source: string;
+  metadata?: MissionPlanMetadata;
+  config: FabricConfig;
+  configSource?: string;
+  ownerCommands?: OwnerCommandSchedule[];
+  ownerCommandsSource?: string;
+  jobBlueprint?: JobBlueprint;
+  jobBlueprintSource?: string;
+  run?: MissionPlanRuntime;
+}
+
 export type JobStatus =
   | "queued"
   | "assigned"
@@ -185,6 +227,18 @@ export interface SimulationOptions {
   preserveReportDirOnResume?: boolean;
   jobBlueprint?: JobBlueprint;
   jobBlueprintSource?: string;
+  missionPlan?: {
+    source?: string;
+    label?: string;
+    description?: string;
+    author?: string;
+    version?: string;
+    tags?: string[];
+    run?: MissionPlanRuntime;
+    configSource?: string;
+    ownerCommandsSource?: string;
+    jobBlueprintSource?: string;
+  };
 }
 
 export interface CheckpointData {

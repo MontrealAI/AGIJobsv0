@@ -11,10 +11,13 @@ import argparse
 import datetime as dt
 import json
 import math
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence
 from textwrap import fill
+from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
 
 try:
     import yaml  # type: ignore
@@ -86,9 +89,14 @@ class DayOneUtilityOrchestrator:
         self.output_dir = self.base_path / "out"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._owner_config_path = self.config_dir / "owner_controls.yaml"
+        self._owner_defaults_path = self.config_dir / "owner_controls.defaults.yaml"
         if not self._owner_config_path.exists():
             raise FileNotFoundError(
                 "Owner controls file is missing. Re-run `make bootstrap` to restore defaults."
+            )
+        if not self._owner_defaults_path.exists():
+            raise FileNotFoundError(
+                "Owner control defaults missing. Ensure owner_controls.defaults.yaml is present."
             )
 
     # ------------------------------------------------------------------
@@ -175,6 +183,12 @@ class DayOneUtilityOrchestrator:
     def save_owner_controls(self, snapshot: Mapping[str, Any]) -> None:
         payload = {key: snapshot[key] for key in self.OWNER_SCHEMA.keys()}
         self._save_yaml(self._owner_config_path, payload)
+
+    def _load_owner_defaults(self) -> Mapping[str, Any]:
+        defaults = self._load_yaml(self._owner_defaults_path)
+        if not isinstance(defaults, Mapping):
+            raise TypeError("owner_controls.defaults.yaml must contain a mapping")
+        return defaults
 
     def _coerce_owner_value(self, key: str, value: str) -> Any:
         if key not in self.OWNER_SCHEMA:
@@ -263,6 +277,12 @@ class DayOneUtilityOrchestrator:
 
         wrapped = [fill(line, width=100) for line in explanations]
         return {"owner_controls": owner_snapshot, "explanation": wrapped}
+    def reset_owner_controls(self) -> Dict[str, Any]:
+        defaults = self._load_owner_defaults()
+        snapshot = {key: defaults[key] for key in self.OWNER_SCHEMA.keys()}
+        self._validate_owner_controls(snapshot)
+        self.save_owner_controls(snapshot)
+        return snapshot
 
     def _validate_owner_controls(self, snapshot: Mapping[str, Any]) -> None:
         fee = int(snapshot["platform_fee_bps"])
@@ -276,6 +296,10 @@ class DayOneUtilityOrchestrator:
         narrative = str(snapshot.get("narrative", ""))
         if len(narrative) > 1200:
             raise ValueError("narrative section is capped at 1200 characters")
+        for label in ("owner_address", "treasury_address"):
+            address = str(snapshot.get(label, ""))
+            if not re.fullmatch(r"0x[a-fA-F0-9]{40}", address):
+                raise ValueError(f"{label} must be an EVM address (0x-prefixed, 40 hex chars)")
 
     # ------------------------------------------------------------------
     # Simulation
@@ -752,6 +776,9 @@ class DayOneUtilityOrchestrator:
             choices=("json", "narrative"),
             default="json",
             help="Choose whether to render JSON only or also print a narrative summary.",
+            choices=("json", "human"),
+            default="json",
+            help="Output format for operator consoles. JSON remains automation-friendly, human emits a narrative summary.",
         )
 
         owner = subparsers.add_parser("owner", help="View or update owner controls")
@@ -762,12 +789,13 @@ class DayOneUtilityOrchestrator:
         )
         owner.add_argument(
             "--explain", action="store_true", help="Print a natural-language explanation of each owner control"
+            "--reset", action="store_true", help="Restore owner controls to the default sovereign configuration"
         )
 
         subparsers.add_parser("list", help="List available strategies")
         return parser
 
-    def execute(self, args: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+    def execute(self, args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
         parser = self.build_parser()
         parsed = parser.parse_args(args=args)
         command = parsed.command or "simulate"
@@ -777,7 +805,15 @@ class DayOneUtilityOrchestrator:
             if getattr(parsed, "format", "json") == "narrative":
                 payload["narrative"] = report.get("cli", {}).get("summary")
             return payload
+            output_format = getattr(parsed, "format", "json")
+            if output_format == "human":
+                summary = self._build_human_summary(report)
+                return {"report": report, "summary": summary}, "human"
+            return report, "json"
         if command == "owner":
+            if parsed.reset:
+                snapshot = self.reset_owner_controls()
+                return {"owner_controls": snapshot, "status": "reset"}, "json"
             if parsed.toggle_pause:
                 snapshot = self.toggle_pause()
                 payload = {"owner_controls": snapshot}
@@ -796,15 +832,84 @@ class DayOneUtilityOrchestrator:
             if parsed.explain:
                 payload["explanation"] = self.explain_owner_controls(snapshot)["explanation"]
             return payload
+                return {"owner_controls": snapshot}, "json"
+            if parsed.set:
+                key, value = parsed.set
+                snapshot = self.update_owner_control(key, value)
+                return {"owner_controls": snapshot}, "json"
+            snapshot = self.load_owner_controls()
+            return {"owner_controls": snapshot}, "json"
         if command == "list":
             strategies = {key: profile.title for key, profile in self.load_strategies().items()}
-            return {"strategies": strategies}
+            return {"strategies": strategies}, "json"
         raise ValueError(f"Unknown command {command}")
 
+    def _build_human_summary(self, report: Mapping[str, Any]) -> str:
+        profile = report["strategy_profile"]
+        metrics = report["metrics"]
+        guardrails = report["guardrail_pass"]
+        owner_snapshot = report["owner_controls"]
+        utility_pct = metrics["utility_uplift"] * 100
+        latency_pct = metrics["latency_delta"] * 100
+        lines = [
+            f"Strategy: {profile['title']} ({report['strategy']})",
+            f"Utility uplift: {utility_pct:.2f}% — Guardrail {'PASSED' if guardrails['utility_uplift'] else 'BLOCKED'}",
+            f"Latency delta: {latency_pct:.2f}% — Guardrail {'PASSED' if guardrails['latency_delta'] else 'BLOCKED'}",
+            f"Reliability score: {profile['reliability_score']*100:.1f} — {'Operational' if guardrails['reliability_score'] else 'Investigate'}",
+            f"Owner treasury (fees + bonuses): {metrics['owner_treasury']:.2f}",
+            "Highlights:",
+        ]
+        for bullet in profile["highlights"]:
+            lines.append(f"  • {bullet}")
+        lines.extend(
+            [
+                "Owner controls:",
+                f"  • Owner: {owner_snapshot['owner_address']}",
+                f"  • Treasury: {owner_snapshot['treasury_address']}",
+                f"  • Platform fee: {owner_snapshot['platform_fee_bps']} bps",
+                f"  • Latency guardrail: {owner_snapshot['latency_threshold_active']}",
+                f"  • Narrative: {owner_snapshot['narrative']}",
+                "Outputs:",
+                f"  • Dashboard: {report['outputs']['dashboard']}",
+                f"  • Snapshot: {report['outputs']['chart']}",
+            ]
+        )
+        return "\n".join(lines)
 
-def run_cli(args: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+
+def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
+    """Run the demo CLI with backwards-compatible argument handling."""
+
     orchestrator = DayOneUtilityOrchestrator()
-    return orchestrator.execute(args)
+    normalized_args: Optional[List[str]]
+
+    if args is None:
+        # Read from sys.argv so we can normalise old-style invocations such as
+        # `python run_demo.py --strategy e2e` which predate the subcommand
+        # interface. We normalise rather than rely on argparse errors so the
+        # CLI feels forgiving to non-technical operators following earlier docs.
+        normalized_args = list(sys.argv[1:])
+    else:
+        normalized_args = list(args)
+
+    if normalized_args is None:
+        return orchestrator.execute(None)
+
+    if not normalized_args:
+        normalized_args = ["simulate"]
+    else:
+        primary = normalized_args[0]
+        known_commands = {"simulate", "owner", "list"}
+        if primary not in known_commands and not primary.startswith("-"):
+            # Allow operators to call `python run_demo.py e2e` and treat the
+            # first positional argument as the strategy name. This mirrors the
+            # friendly interface described in the scaffold request.
+            normalized_args = ["simulate", "--strategy", primary, *normalized_args[1:]]
+        elif primary.startswith("-"):
+            # Any flag-only invocation should default to the simulate command.
+            normalized_args = ["simulate", *normalized_args]
+
+    return orchestrator.execute(normalized_args)
 
 
 def main() -> None:
@@ -817,6 +922,12 @@ def main() -> None:
         for line in explanation:
             print(f"• {line}")
     print(json.dumps(payload, indent=2))
+    payload, format_hint = run_cli()
+    if format_hint == "human":
+        summary = payload.get("summary", "")
+        print(summary)
+    else:
+        print(json.dumps(payload, indent=2))
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entrypoint

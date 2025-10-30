@@ -1,6 +1,11 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { loadFabricConfig, loadJobBlueprint, loadOwnerCommandSchedule } from './config-loader';
+import {
+  loadFabricConfig,
+  loadJobBlueprint,
+  loadMissionPlan,
+  loadOwnerCommandSchedule,
+} from './config-loader';
 import { runSimulation } from './simulation';
 import { OwnerCommandSchedule, SimulationOptions } from './types';
 import { countJobsInBlueprint } from './job-blueprint';
@@ -17,12 +22,14 @@ async function main(): Promise<void> {
     .option('config', {
       type: 'string',
       describe: 'Path to the fabric configuration JSON',
-      demandOption: true,
+    })
+    .option('plan', {
+      type: 'string',
+      describe: 'Path to a mission plan JSON file',
     })
     .option('jobs', {
       type: 'number',
       describe: 'Total jobs to seed across shards',
-      default: 10000,
     })
     .option('simulate-outage', {
       type: 'string',
@@ -58,22 +65,34 @@ async function main(): Promise<void> {
     })
     .option('preserve-report-on-resume', {
       type: 'boolean',
-      default: true,
       describe: 'Preserve existing reports when resuming from a checkpoint',
     })
     .option('resume', {
       type: 'boolean',
-      default: false,
       describe: 'Resume from an existing checkpoint',
     })
     .option('ci', {
       type: 'boolean',
-      default: false,
       describe: 'Run in CI mode (reduced output)',
+    })
+    .check((parsed) => {
+      const hasConfig = parsed.config !== undefined;
+      const hasPlan = parsed.plan !== undefined;
+      if (!hasConfig && !hasPlan) {
+        throw new Error('Provide either --config or --plan to launch the planetary fabric.');
+      }
+      if (hasConfig && hasPlan) {
+        throw new Error('Use --config or --plan, but not both simultaneously.');
+      }
+      return true;
     })
     .parseAsync();
 
-  const config = await loadFabricConfig(argv.config);
+  const planPath = lastValue(argv.plan);
+  const plan = planPath ? await loadMissionPlan(planPath) : undefined;
+  const configPath = lastValue(argv.config);
+  const config = configPath ? await loadFabricConfig(configPath) : plan!.config;
+
   const checkpointInterval = lastValue(argv['checkpoint-interval']);
   if (typeof checkpointInterval === 'number') {
     config.checkpoint.intervalTicks = checkpointInterval;
@@ -85,29 +104,60 @@ async function main(): Promise<void> {
 
   const ownerCommandsPath = lastValue(argv['owner-commands']);
   let ownerCommands: OwnerCommandSchedule[] | undefined;
+  let ownerCommandSource: string | undefined;
   if (ownerCommandsPath) {
     ownerCommands = await loadOwnerCommandSchedule(ownerCommandsPath);
+    ownerCommandSource = ownerCommandsPath;
+  } else if (plan?.ownerCommands) {
+    ownerCommands = plan.ownerCommands;
+    ownerCommandSource = plan.ownerCommandsSource;
   }
 
   const blueprintPath = lastValue(argv['jobs-blueprint']);
-  const jobBlueprint = blueprintPath ? await loadJobBlueprint(blueprintPath) : undefined;
+  let jobBlueprint = blueprintPath ? await loadJobBlueprint(blueprintPath) : undefined;
+  let jobBlueprintSource = blueprintPath;
+  if (!jobBlueprint && plan?.jobBlueprint) {
+    jobBlueprint = plan.jobBlueprint;
+    jobBlueprintSource = plan.jobBlueprintSource;
+  }
+
+  const missionPlanInfo = plan
+    ? {
+        source: plan.source,
+        label: plan.metadata?.label,
+        description: plan.metadata?.description,
+        author: plan.metadata?.author,
+        version: plan.metadata?.version,
+        tags: plan.metadata?.tags,
+        run: plan.run,
+        configSource: plan.configSource,
+        ownerCommandsSource: ownerCommandSource ?? plan.ownerCommandsSource,
+        jobBlueprintSource: jobBlueprintSource ?? plan.jobBlueprintSource,
+      }
+    : undefined;
+
+  const planRun = missionPlanInfo?.run;
+
   const plannedJobs = countJobsInBlueprint(jobBlueprint);
   const jobsOverride = plannedJobs > 0 ? plannedJobs : undefined;
+  const jobsArg = lastValue(argv.jobs);
 
   const options: SimulationOptions = {
-    jobs: jobsOverride ?? (lastValue(argv.jobs) ?? 10000),
-    simulateOutage: lastValue(argv['simulate-outage']),
-    outageTick: lastValue(argv['outage-tick']),
-    resume: lastValue(argv.resume) ?? false,
+    jobs: jobsOverride ?? (jobsArg ?? planRun?.jobs ?? 10000),
+    simulateOutage: lastValue(argv['simulate-outage']) ?? planRun?.simulateOutage,
+    outageTick: lastValue(argv['outage-tick']) ?? planRun?.outageTick,
+    resume: lastValue(argv.resume) ?? planRun?.resume ?? false,
     checkpointPath: lastValue(argv.checkpoint),
-    outputLabel: lastValue(argv['output-label']),
-    ciMode: lastValue(argv.ci) ?? false,
+    outputLabel: lastValue(argv['output-label']) ?? planRun?.outputLabel,
+    ciMode: lastValue(argv.ci) ?? planRun?.ciMode ?? false,
     ownerCommands,
-    ownerCommandSource: ownerCommandsPath,
-    stopAfterTicks: lastValue(argv['stop-after-ticks']),
-    preserveReportDirOnResume: lastValue(argv['preserve-report-on-resume']) ?? true,
+    ownerCommandSource: ownerCommandSource ?? planRun?.ownerCommandSource,
+    stopAfterTicks: lastValue(argv['stop-after-ticks']) ?? planRun?.stopAfterTicks,
+    preserveReportDirOnResume:
+      lastValue(argv['preserve-report-on-resume']) ?? planRun?.preserveReportDirOnResume ?? true,
     jobBlueprint,
-    jobBlueprintSource: blueprintPath,
+    jobBlueprintSource: jobBlueprintSource ?? jobBlueprint?.source,
+    missionPlan: missionPlanInfo,
   };
 
   const result = await runSimulation(config, options);
@@ -124,6 +174,13 @@ async function main(): Promise<void> {
       pending: result.pendingOwnerCommands.length,
       skippedBeforeResume: result.skippedOwnerCommands.length,
     },
+    missionPlan: missionPlanInfo
+      ? {
+          label: missionPlanInfo.label,
+          source: missionPlanInfo.source,
+          run: missionPlanInfo.run,
+        }
+      : undefined,
   };
   process.stdout.write(`${JSON.stringify(log, null, 2)}\n`);
 }
