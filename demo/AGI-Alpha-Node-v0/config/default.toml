@@ -1,0 +1,36 @@
+[network]
+chain_id = 1
+rpc_url = "https://mainnet.infura.io/v3/YOUR_INFURA_KEY"
+ens_domain = "alpha.alpha.node.agi.eth"
+
+[governance]
+owner_address = "0x0000000000000000000000000000000000000001"
+governance_address = "0x0000000000000000000000000000000000000002"
+
+[staking]
+required_stake = "1000000000000000000000"
+slashing_threshold = "500000000000000000000"
+
+[knowledge_lake]
+database = "knowledge.db"
+
+[planner]
+search_depth = 3
+num_simulations = 32
+exploration_constant = 1.2
+
+[metrics]
+port = 9101
+
+[safety]
+automated_drills_interval_seconds = 300
+
+[logging]
+log_dir = "logs"
+log_level = "INFO"
+
+[jobs]
+poll_interval_seconds = 30
+
+[web]
+dashboards_enabled = true
