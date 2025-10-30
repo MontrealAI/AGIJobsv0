@@ -29,11 +29,19 @@ class PauseController:
     def is_paused(self) -> bool:
         return self._local_pause or self.system_pause.is_paused()
 
-    def guard(self, func: Callable[[], None]) -> None:
+    def guard(self, func: Callable[[], None]) -> bool:
+        """Execute ``func`` if the system is not paused.
+
+        Returns ``True`` when the callable executed and ``False`` when the
+        guard prevented execution. This allows higher layers (CLI/tests) to
+        provide helpful feedback to the operator.
+        """
+
         if self.is_paused():
             logger.warning("Operation blocked while paused")
-            return
+            return False
         func()
+        return True
 
 
 class DrillScheduler:

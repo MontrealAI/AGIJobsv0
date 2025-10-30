@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import logging
 from pathlib import Path
@@ -18,6 +19,7 @@ from agi_alpha_node_demo.compliance.scorecard import ComplianceEngine
 from agi_alpha_node_demo.config import AppConfig, load_config
 from agi_alpha_node_demo.knowledge.lake import KnowledgeLake
 from agi_alpha_node_demo.logging_utils import configure_logging
+from agi_alpha_node_demo.governance import GovernanceController
 from agi_alpha_node_demo.metrics.exporter import MetricRegistry, PrometheusServer
 from agi_alpha_node_demo.orchestrator import Orchestrator
 from agi_alpha_node_demo.planner.muzero import MuZeroPlanner
@@ -44,6 +46,7 @@ def build_app(config_path: str) -> tuple[AppConfig, dict]:
     compliance = ComplianceEngine(config, ens, stake_manager, system_pause)
     pause_controller = PauseController(system_pause)
     drill_scheduler = DrillScheduler(pause_controller, config.safety.automated_drills_interval_seconds)
+    governance = GovernanceController(config.governance, pause_controller, metrics)
     components = {
         "ledger": ledger,
         "stake_manager": stake_manager,
@@ -59,6 +62,7 @@ def build_app(config_path: str) -> tuple[AppConfig, dict]:
         "compliance": compliance,
         "pause_controller": pause_controller,
         "drill_scheduler": drill_scheduler,
+        "governance": governance,
     }
     return config, components
 
@@ -84,6 +88,7 @@ def command_run(config: AppConfig, components: dict, serve_dashboard: bool) -> N
     orchestrator: Orchestrator = components["orchestrator"]
     metrics: MetricRegistry = components["metrics"]
     registry: JobRegistryClient = components["registry"]
+    pause_controller: PauseController = components["pause_controller"]
 
     registry.register_job(
         "demo-job-1",
@@ -104,18 +109,27 @@ def command_run(config: AppConfig, components: dict, serve_dashboard: bool) -> N
         },
     )
 
-    reports = orchestrator.run_cycle()
-    total_reward = sum(report.total_reward for report in reports)
-    metrics.set_metric("agi_alpha_node_total_reward", total_reward)
-    metrics.set_metric("agi_alpha_node_jobs_completed", len(reports))
-    metrics.set_metric("agi_alpha_node_compliance_score", components["compliance"].evaluate().overall_score)
+    def _run() -> None:
+        reports = orchestrator.run_cycle()
+        total_reward = sum(report.total_reward for report in reports)
+        metrics.set_metric("agi_alpha_node_total_reward", total_reward)
+        metrics.set_metric("agi_alpha_node_jobs_completed", len(reports))
+        metrics.set_metric(
+            "agi_alpha_node_compliance_score",
+            components["compliance"].evaluate().overall_score,
+        )
 
-    for report in reports:
-        print(f"Executed job {report.job_id} using {report.planner.strategy} -> reward {report.total_reward:.2f}")
+        for report in reports:
+            print(
+                f"Executed job {report.job_id} using {report.planner.strategy} -> reward {report.total_reward:.2f}"
+            )
 
-    if serve_dashboard:
-        dashboard_path = Path(__file__).resolve().parent.parent / "web" / "index.html"
-        print(f"Dashboard available at {dashboard_path}")
+        if serve_dashboard:
+            dashboard_path = Path(__file__).resolve().parent.parent / "web" / "index.html"
+            print(f"Dashboard available at {dashboard_path}")
+
+    if not pause_controller.guard(_run):
+        print("System is paused. Resume governance control before running jobs.")
 
 
 def command_pause(components: dict) -> None:
@@ -126,6 +140,38 @@ def command_pause(components: dict) -> None:
 def command_resume(components: dict) -> None:
     components["pause_controller"].resume()
     logger.info("System resumed by operator")
+
+
+def command_governance(config: AppConfig, components: dict, args: argparse.Namespace) -> None:
+    controller: GovernanceController = components["governance"]
+    caller = args.caller or config.governance.owner_address
+
+    updated = None
+    if args.set_owner:
+        updated = controller.update_owner(args.set_owner, caller)
+        print(f"Owner updated -> {updated.owner_address}")
+    if args.set_governance:
+        updated = controller.update_governance(args.set_governance, caller)
+        print(f"Governance updated -> {updated.governance_address}")
+    if args.pause_system:
+        updated = controller.pause_all(caller)
+        print("System pause engaged")
+    if args.resume_system:
+        updated = controller.resume_all(caller)
+        print("System resumed")
+
+    if updated is None:
+        state = controller.snapshot()
+        history = controller.history()
+        print(
+            json.dumps(
+                {
+                    "state": dataclasses.asdict(state),
+                    "events": [dataclasses.asdict(event) for event in history],
+                },
+                indent=2,
+            )
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -139,6 +185,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--serve-dashboard", action="store_true", help="Print dashboard path after execution")
     sub.add_parser("pause", help="Pause all operations")
     sub.add_parser("resume", help="Resume operations")
+    governance_parser = sub.add_parser("governance", help="Governance controls and status")
+    governance_parser.add_argument("--caller", help="Caller address for authorization checks")
+    governance_parser.add_argument("--set-owner", help="Update owner address")
+    governance_parser.add_argument("--set-governance", help="Update governance controller address")
+    governance_parser.add_argument("--pause-system", action="store_true", help="Pause all operations")
+    governance_parser.add_argument("--resume-system", action="store_true", help="Resume operations")
     return parser
 
 
@@ -158,6 +210,8 @@ def main(argv: List[str] | None = None) -> None:
         command_pause(components)
     elif command == "resume":
         command_resume(components)
+    elif command == "governance":
+        command_governance(config, components, args)
     else:  # pragma: no cover - argparse prevents this
         parser.error(f"Unknown command {command}")
 
