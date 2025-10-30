@@ -413,6 +413,7 @@
     "demo:validator-constellation:audit-report": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/Validator-Constellation-v0/scripts/auditReport.ts",
     "test:trustless-core": "npx hardhat --config demo/Trustless-Economic-Core-v0/hardhat.config.ts test test/demo/trustlessEconomicCoreDemo.test.ts",
     "test:validator-constellation": "node --import tsx demo/Validator-Constellation-v0/tests/validator_constellation.test.ts",
+    "test:validator-constellation:v0": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest tests/demo/test_validator_constellation.py",
     "test:economic-power": "node --import tsx demo/Economic-Power-v0/test/economic_power_demo.test.ts",
     "test:agi-alpha-node": "node --import tsx demo/AGI-Alpha-Node-v0/test/alpha_node_demo.test.ts",
     "test:era-of-experience": "node --test --import tsx demo/Era-Of-Experience-v0/test/*.test.ts",

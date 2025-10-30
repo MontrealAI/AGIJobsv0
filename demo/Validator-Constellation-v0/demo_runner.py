@@ -1,176 +1,137 @@
-"""Executable scenario for the Validator Constellation demo.
+"""High level orchestration for the Validator Constellation demo.
 
-A non-technical operator can run this module with ``python demo_runner.py`` to
-observe how AGI Jobs v0 (v2) assembles a validator constellation, executes
-commit–reveal governance, produces a batched ZK attestation covering one
-thousand jobs, and automatically freezes unsafe domains when the Sentinel
-triggers.
+The runner showcases the full lifecycle from identity onboarding, commit–reveal
+validation, zk-batched attestations, sentinel monitoring, and governance-driven
+recoveries. It is intentionally verbose to help non-technical operators
+understand every step executed by the platform.
 """
 from __future__ import annotations
 
-import argparse
-import importlib.util
-import secrets
-import sys
+from dataclasses import dataclass
+import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Iterable, List, Tuple
 
-MODULE_ROOT = Path(__file__).resolve().parent
-MODULE_NAME = "validator_constellation_runtime"
-
-if MODULE_NAME in sys.modules:
-    validator_module = sys.modules[MODULE_NAME]
-else:
-    spec = importlib.util.spec_from_file_location(
-        MODULE_NAME, MODULE_ROOT / "validator_constellation.py"
-    )
-    validator_module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    sys.modules[MODULE_NAME] = validator_module
-    spec.loader.exec_module(validator_module)  # type: ignore[assignment]
-
-Agent = validator_module.Agent
-AgentAction = validator_module.AgentAction
-DemoOrchestrator = validator_module.DemoOrchestrator
-ENSVerifier = validator_module.ENSVerifier
-JobResult = validator_module.JobResult
-Node = validator_module.Node
-SentinelAlert = validator_module.SentinelAlert
-Validator = validator_module.Validator
+from .identities import EnsIdentity, MockEnsRegistry, deterministic_registry, ensure_agent_identity
+from .validation import (
+    CommitRevealRound,
+    DomainPauseController,
+    Governance,
+    JobResult,
+    SentinelMonitor,
+    StakeManager,
+    SubgraphIndexer,
+    VRFCommitteeSelector,
+    ValidationRoundConfig,
+    ZKBatchAttestor,
+    bootstrap_validators,
+)
 
 
-def _bootstrap_identities() -> Dict[str, str]:
-    """Creates a deterministic ENS registry for the demo."""
-    return {
-        "atlas.club.agi.eth": "0xA7",
-        "callisto.club.agi.eth": "0xC1",
-        "hyperion.club.agi.eth": "0xH1",
-        "selene.club.agi.eth": "0xS1",
-        "vega.club.agi.eth": "0xV1",
-        "atlas.agent.agi.eth": "0xa9",
-        "selene.agent.agi.eth": "0xb0",
-        "io.agent.agi.eth": "0xb1",
-        "atlas.node.agi.eth": "0xc9",
-        "selene.node.agi.eth": "0xd1",
-    }
+@dataclass
+class Agent:
+    address: str
+    ens: str
+    domain: str
+    budget: int
+    spent: int = 0
+
+    def identity(self) -> EnsIdentity:
+        return EnsIdentity(address=self.address, name=self.ens)
 
 
-def _create_validators(registry: ENSVerifier) -> List[Validator]:
-    validators = [
-        Validator("0xA7", "atlas.club.agi.eth", stake=1_000_000),
-        Validator("0xC1", "callisto.club.agi.eth", stake=1_200_000),
-        Validator("0xH1", "hyperion.club.agi.eth", stake=950_000),
-        Validator("0xS1", "selene.club.agi.eth", stake=1_100_000),
-        Validator("0xV1", "vega.club.agi.eth", stake=900_000),
-    ]
-    for validator in validators:
-        registry.verify_validator(validator.ens, validator.address)
-    return validators
+class DemoState:
+    def __init__(self) -> None:
+        self.registry = MockEnsRegistry()
+        self.validators = []
+        self.agents: List[Agent] = []
+        self.validator_registry_seed = "validator_constellation_v0"
+
+    def initialise_registry(self, validators: Iterable[Agent], nodes: Iterable[Agent], agents: Iterable[Agent]) -> None:
+        entries = [participant.identity() for participant in (*validators, *nodes, *agents)]
+        seeded = deterministic_registry(self.validator_registry_seed, entries)
+        self.registry = seeded
 
 
-def _create_agents(registry: ENSVerifier) -> List[Agent]:
-    agents = [
-        Agent("0xa9", "atlas.agent.agi.eth", budget=500),
-        Agent("0xb0", "selene.agent.agi.eth", budget=500),
-        Agent("0xb1", "io.agent.agi.eth", budget=500),
-    ]
-    for agent in agents:
-        registry.verify_agent(agent.ens, agent.address)
-    return agents
+class Demo:
+    """End-to-end scenario for the Validator Constellation."""
 
+    def __init__(self, state: DemoState) -> None:
+        self.state = state
+        self.pause_controller = DomainPauseController()
+        self.sentinel = SentinelMonitor(self.pause_controller)
+        self.governance = Governance(self.pause_controller)
+        self.subgraph = SubgraphIndexer()
 
-def _create_nodes(registry: ENSVerifier) -> List[Node]:
-    nodes = [
-        Node("0xc9", "atlas.node.agi.eth"),
-        Node("0xd1", "selene.node.agi.eth"),
-    ]
-    for node in nodes:
-        registry.verify_node(node.ens, node.address)
-    return nodes
+    def onboard_validators(self, specs: Iterable[Tuple[str, str, int]]) -> StakeManager:
+        validators = bootstrap_validators(self.state.registry, specs)
+        stake_manager = StakeManager(validators)
+        self.subgraph.ingest(stake_manager.event_log)
+        return stake_manager
 
+    def onboard_agents(self, agents: Iterable[Agent]) -> List[Agent]:
+        onboarded = []
+        for agent in agents:
+            ensure_agent_identity(agent.identity(), self.state.registry)
+            onboarded.append(agent)
+        return onboarded
 
-def _prepare_jobs(batch_size: int) -> List[JobResult]:
-    jobs: List[JobResult] = []
-    for idx in range(batch_size):
-        job_id = f"job-{idx:04d}"
-        commitment = secrets.token_hex(16)
-        output_hash = secrets.token_hex(32)
-        jobs.append(JobResult(job_id, commitment, output_hash))
-    return jobs
-
-
-def run_demo(batch_size: int) -> Dict[str, object]:
-    registry = ENSVerifier(_bootstrap_identities())
-    validators = _create_validators(registry)
-    agents = _create_agents(registry)
-    nodes = _create_nodes(registry)
-    orchestrator = DemoOrchestrator(
-        owner_address="0xOWNER",
-        validators=validators,
-        agents=agents,
-        nodes=nodes,
-        ens_registry=registry,
-        epoch_seed="validator-constellation-epoch-0",
-    )
-    commit_round = orchestrator.run_commit_reveal_round(truthful_outcome="approve")
-    jobs = _prepare_jobs(batch_size)
-    zk_proof = orchestrator.produce_zk_attestation(jobs)
-    sentinel_alert: SentinelAlert | None = orchestrator.simulate_action(
-        AgentAction(
-            agent=agents[0],
-            domain="orion-labor",
-            spend=1_000,
-            description="Detected unsafe financial leverage request",
+    def run_validation_round(
+        self,
+        stake_manager: StakeManager,
+        committee_size: int,
+        truthful_outcome: bool,
+        round_id: str,
+    ) -> Dict[str, str]:
+        selector = VRFCommitteeSelector(seed="constellation")
+        committee = selector.select(list(stake_manager.validators.values()), committee_size, round_id)
+        config = ValidationRoundConfig(
+            quorum=max(1, committee_size // 2 + 1),
+            reveal_deadline_blocks=3,
+            penalty_missed_reveal=50,
+            penalty_incorrect_vote=25,
+            reward_truthful_vote=10,
         )
-    )
-    output = {
-        "committee": [validator.ens for validator in commit_round.committee],
-        "zk_proof": zk_proof,
-        "sentinel_alert": sentinel_alert,
-        "domain_paused": orchestrator.pause_manager.is_paused("orion-labor"),
-        "events": [
-            {
-                "type": event.type,
-                "payload": event.payload,
-            }
-            for event in orchestrator.subgraph.events
-        ],
-    }
-    return output
+
+        round_ctx = CommitRevealRound(round_id, committee, config, stake_manager)
+
+        for validator in committee:
+            salt = f"salt-{validator.address}-{round_id}"
+            vote = truthful_outcome if validator.address.endswith("1") else truthful_outcome
+            round_ctx.commit_vote(validator, vote=vote, salt=salt)
+            round_ctx.reveal_vote(validator, vote=vote, salt=salt)
+
+        round_ctx.finalize(truthful_outcome)
+        self.subgraph.ingest(stake_manager.event_log)
+
+        return {
+            "round": round_id,
+            "committee": [validator.ens for validator in committee],
+            "truthful_outcome": truthful_outcome,
+        }
+
+    def demonstrate_batch_attestation(self, job_count: int = 1000) -> str:
+        attestor = ZKBatchAttestor(batch_capacity=job_count)
+        for index in range(job_count):
+            job = JobResult(job_id=f"job-{index}", payload_hash=str(index ** 2), truthful=True)
+            attestor.queue_job(job)
+        proof_digest = attestor.prove_and_submit()
+        return proof_digest
+
+    def trigger_budget_overrun(self, agent: Agent, overrun: int) -> Dict[str, str]:
+        agent.spent = agent.budget + overrun
+        alert = self.sentinel.check_budget(agent.domain, agent.spent, agent.budget)
+        return {
+            "domain": agent.domain,
+            "alert": alert.message if alert else "",
+            "paused": self.pause_controller.is_paused(agent.domain),
+        }
+
+    def governance_resume(self, domain: str) -> None:
+        self.governance.resume_domain(domain)
+
+    def export_report(self, path: Path, payload: Dict[str, object]) -> None:
+        path.write_text(json.dumps(payload, indent=2))
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Run the Validator Constellation demo scenario")
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=1_000,
-        help="Number of jobs to aggregate inside the ZK batch attestation",
-    )
-    args = parser.parse_args()
-    results = run_demo(args.batch_size)
-    print("\n=== Validator Constellation Demo Summary ===")
-    print("Committee:")
-    for ens in results["committee"]:
-        print(f"  • {ens}")
-    print("\nZero-knowledge attestation:")
-    print(f"  Jobs attested: {results['zk_proof']['size']}")
-    print(f"  Digest: {results['zk_proof']['digest']}")
-    print(f"  Proof: {results['zk_proof']['proof'][:32]}…")
-    if results["sentinel_alert"]:
-        print("\nSentinel alert triggered:")
-        print(f"  Domain: {results['sentinel_alert'].domain}")
-        print(f"  Agent: {results['sentinel_alert'].agent_ens}")
-        print(f"  Reason: {results['sentinel_alert'].reason}")
-    else:
-        print("\nNo sentinel alerts detected.")
-    print("\nDomain pause status:")
-    print(f"  orion-labor paused: {results['domain_paused']}")
-    print("\nEvents emitted (first 8):")
-    for event in results["events"][:8]:
-        print(f"  - {event['type']}: {event['payload']}")
-    print("\nUse the --batch-size flag to experiment with different throughput targets.")
-
-
-if __name__ == "__main__":
-    main()
+__all__ = ["Agent", "DemoState", "Demo"]
