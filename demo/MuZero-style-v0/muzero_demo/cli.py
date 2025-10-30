@@ -16,7 +16,7 @@ from .sentinel import SentinelMonitor
 from .thermostat import PlanningThermostat
 from .training import MuZeroTrainer
 
-DEFAULT_CONFIG = Path("demo/MuZero-style-v0/config/default.yaml")
+DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "default.yaml"
 
 app = typer.Typer(help="MuZero-style AGI Jobs planning demo")
 console = Console()
