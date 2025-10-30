@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 import yaml
-from pydantic import BaseModel, Field, field_validator
+import pydantic
+from pydantic import BaseModel, Field
+
+if hasattr(pydantic, "field_validator"):
+    field_validator = pydantic.field_validator  # type: ignore[attr-defined]
+else:  # pragma: no cover - compatibility path for pydantic v1
+    from pydantic import validator as field_validator
 
 
 class ContractConfig(BaseModel):

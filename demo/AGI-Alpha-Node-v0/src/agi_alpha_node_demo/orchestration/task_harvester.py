@@ -26,7 +26,18 @@ class TaskHarvester:
         onchain_jobs = list(self._job_registry.fetch_jobs())
         if onchain_jobs:
             LOGGER.debug("Loaded %d on-chain jobs", len(onchain_jobs))
-        combined = local_jobs + [job.payload for job in onchain_jobs]
+        enriched_onchain_jobs = []
+        for job in onchain_jobs:
+            payload = dict(job.payload)
+            payload.update(
+                {
+                    "job_id": job.job_id,
+                    "domain": job.domain,
+                    "reward": job.reward,
+                }
+            )
+            enriched_onchain_jobs.append(payload)
+        combined = local_jobs + enriched_onchain_jobs
         # Deduplicate by job id
         seen = set()
         deduped = []
