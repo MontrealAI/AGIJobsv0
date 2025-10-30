@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Dict, Iterable, Optional, Sequence
 
 from hgm_core.config import EngineConfig
@@ -14,6 +14,7 @@ from hgm_core.types import AgentNode
 
 from .scheduler import TaskScheduler
 from orchestrator.tools.executors import RetryPolicy
+from backend.models.hgm import HgmRepository
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +29,10 @@ class WorkflowConfig:
     concurrency: int = 4
     retry: RetryPolicy | None = None
     engine: EngineConfig | None = None
+    run_id: str | None = None
+    root_agent: str = "root"
+    run_metadata: dict[str, object] = field(default_factory=dict)
+    repository: HgmRepository | None = None
 
 
 class HGMOrchestrationWorkflow:
@@ -44,6 +49,14 @@ class HGMOrchestrationWorkflow:
         retry_policy = self._config.retry or RetryPolicy()
         self._scheduler = scheduler or TaskScheduler(concurrency=self._config.concurrency, retry=retry_policy)
         engine_config = self._config.engine or EngineConfig()
+        self._run_id = self._config.run_id or uuid.uuid4().hex
+        self._repository = self._config.repository
+        if self._repository is None:
+            try:
+                self._repository = HgmRepository()
+            except Exception:  # pragma: no cover - fallback when DB unavailable
+                LOGGER.warning("HGM persistence unavailable", exc_info=True)
+                self._repository = None
         self._engine = engine or HGMEngine(
             engine_config,
             on_expansion_result=self._on_expansion_result,
@@ -54,6 +67,14 @@ class HGMOrchestrationWorkflow:
         self._busy_agents: set[str] = set()
         self.expansion_events: list[tuple[str, Dict[str, object]]] = []
         self.evaluation_events: list[tuple[str, Dict[str, object]]] = []
+        self._root_agent = self._config.root_agent
+        if self._repository is not None:
+            try:
+                self._repository.ensure_run(self._run_id, self._root_agent, dict(self._config.run_metadata))
+                self._repository.ensure_agent(self._run_id, self._root_agent, None, {"label": self._root_agent})
+            except Exception:  # pragma: no cover - defensive guard
+                LOGGER.warning("Failed to prime HGM persistence", exc_info=True)
+                self._repository = None
 
     # ------------------------------------------------------------------
     # Internal synchronisation helpers
@@ -70,14 +91,52 @@ class HGMOrchestrationWorkflow:
 
     async def _on_expansion_result(self, node: AgentNode, payload: Dict[str, object]) -> None:
         self.expansion_events.append((node.key, dict(payload)))
+        if self._repository is not None:
+            data = dict(payload)
+            parent = node.parent
+            try:
+                await asyncio.to_thread(
+                    self._repository.record_expansion,
+                    self._run_id,
+                    node.key,
+                    parent,
+                    data,
+                )
+            except Exception:  # pragma: no cover - persistence errors should not break workflow
+                LOGGER.warning("Failed to persist expansion event for %s", node.key, exc_info=True)
 
     async def _on_evaluation_result(self, node: AgentNode, payload: Dict[str, object]) -> None:
         self.evaluation_events.append((node.key, dict(payload)))
+        if self._repository is not None:
+            data = dict(payload)
+            try:
+                await asyncio.to_thread(
+                    self._repository.record_evaluation,
+                    self._run_id,
+                    node.key,
+                    data,
+                )
+            except Exception:  # pragma: no cover - persistence errors should not break workflow
+                LOGGER.warning("Failed to persist evaluation event for %s", node.key, exc_info=True)
 
     # ------------------------------------------------------------------
     # Public engine adapters
     async def ensure_node(self, key: str, **metadata: object) -> AgentNode:
-        return await self._invoke_with_engine(self._engine.ensure_node(key, **metadata))
+        node = await self._invoke_with_engine(self._engine.ensure_node(key, **metadata))
+        if self._repository is not None:
+            combined = dict(node.metadata)
+            combined.update(metadata)
+            try:
+                await asyncio.to_thread(
+                    self._repository.ensure_agent,
+                    self._run_id,
+                    node.key,
+                    node.parent,
+                    combined,
+                )
+            except Exception:  # pragma: no cover - persistence failure should not break workflow
+                LOGGER.warning("Failed to persist ensure_node for %s", node.key, exc_info=True)
+        return node
 
     async def next_action(self, key: str, actions: Sequence[str]) -> Optional[str]:
         return await self._invoke_with_engine(self._engine.next_action(key, actions))
