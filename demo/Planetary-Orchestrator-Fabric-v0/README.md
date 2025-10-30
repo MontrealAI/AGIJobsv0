@@ -181,3 +181,58 @@ flowchart TD
 - Publish dashboards to IPFS or internal portals by copying the generated HTML + JSON artifacts.
 
 The Planetary Orchestrator Fabric v0 demo proves that AGI Jobs v0 (v2) hands unprecedented, planetary-grade orchestration power to anyone—no code, no compromises, total owner control.
+
+## Planetary Fabric Python Simulation Harness (AGI Jobs v0/v2 Empowerment)
+
+To let non-technical owners rehearse the planetary workload without touching Node.js or container stacks, this demo now ships a fully self-contained Python orchestration harness inside [`planetary_fabric/`](planetary_fabric/). It mirrors the sharded registry, router, node marketplace, and checkpoint logic described above and can be executed with a single command.
+
+### Quick interactive run
+
+```bash
+python demo/Planetary-Orchestrator-Fabric-v0/run_demo.py
+```
+
+The script provisions Earth/Luna/Mars shards, enqueues 10,000 planetary jobs, simulates an orchestrator crash, reloads from checkpoint, and prints a JSON control-room summary that highlights completion rate, shard balance, reassignment counts, and runtime. Non-technical operators only need Python 3.11+; the script auto-configures its import path and persists checkpoints under the chosen base directory.
+
+### Deterministic acceptance tests
+
+The new harness is covered by high-load and restart regression tests that run in CI alongside the existing TypeScript suite:
+
+```bash
+pytest demo/Planetary-Orchestrator-Fabric-v0/tests/test_simulation.py -q
+```
+
+Both tests simulate the 10k-job flood across shards. The second test forcefully kills the orchestrator mid-run, reloads from the saved checkpoint, and verifies that at least 98% of jobs succeed while the shard queues stay balanced. These runs complete in ~40 seconds on a laptop and emit human-readable telemetry that can be archived with the mission reports.
+
+### Python package layout
+
+```
+planetary_fabric/
+├── config.py          # Shard, node, checkpoint, and simulation dataclasses
+├── jobs.py            # Job serialization helpers for persistence
+├── nodes.py           # Containerized agent marketplace + heartbeat logic
+├── orchestrator.py    # Global coordinator with checkpoint/restart
+├── router.py          # Regional routers that isolate failures
+└── simulation.py      # High-load scenarios and CLI integration
+```
+
+The harness is intentionally configuration-driven, so contract owners can edit [`planetary_fabric/config.py`](planetary_fabric/config.py) to add shards, upgrade nodes, or tighten checkpoint cadences without editing any other file. All governance knobs described earlier (pause, resume, reroute, spillover) remain under owner control.
+
+### Mermaid overview (Python harness focus)
+
+```mermaid
+flowchart TD
+    Operator[Non-Technical Owner] --> CLI{{run_demo.py}}
+    CLI --> Config[planetary_fabric.config]
+    CLI --> Orchestrator[PlanetaryOrchestrator]
+    Orchestrator -->|distributes| EarthShard
+    Orchestrator -->|distributes| LunaShard
+    Orchestrator -->|distributes| MarsShard
+    EarthShard[Earth Router & Nodes] --> Checkpoint[(Checkpoint Vault)]
+    LunaShard[Luna Router & Nodes] --> Checkpoint
+    MarsShard[Mars Router & Nodes] --> Checkpoint
+    Checkpoint -->|resume| Orchestrator
+    Orchestrator --> Telemetry[JSON Summary & Metrics]
+```
+
+This Python layer coexists with the existing TypeScript and UI components: operators can use the lightweight harness for rapid drills, then graduate to the full containerized flow when ready.
