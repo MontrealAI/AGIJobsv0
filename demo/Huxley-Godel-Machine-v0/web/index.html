@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true, theme: "forest" });</script>
   </head>
   <body>
@@ -13,14 +14,23 @@
       <h1>Huxley–Gödel Machine Demo 👁️✨</h1>
       <p>
         Live insights from the autonomous clade-metaproductivity engine. Run
-        <code>python demo/Huxley-Godel-Machine-v0/run_demo.py</code> and drop the
-        generated <code>hgm_run.json</code> into <code>artifacts/</code> to explore.
+        <code>python -m demo.huxley_godel_machine_v0.simulator</code> or
+        <code>make demo-agialpha</code> to generate
+        <code>web/artifacts/comparison.json</code> and explore.
       </p>
     </header>
     <main>
       <section class="summary">
         <h2>Economic Summary</h2>
         <div id="summary-cards" class="grid"></div>
+      </section>
+      <section>
+        <h2>ROI Trajectories</h2>
+        <canvas id="roi-chart" width="720" height="360"></canvas>
+      </section>
+      <section>
+        <h2>Strategy Logs</h2>
+        <div id="log-summary" class="grid"></div>
       </section>
       <section>
         <h2>Autonomous Evolution Flow</h2>

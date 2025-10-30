@@ -1,16 +1,42 @@
 from __future__ import annotations
 
-from hgm_demo.simulation import run_comparison, run_hgm_simulation
+from pathlib import Path
+
+from demo.huxley_godel_machine_v0.simulator import run_simulation
 
 
-def test_hgm_outperforms_baseline() -> None:
-    comparison = run_comparison(seed=9, actions=28)
-    assert comparison.hgm.metrics.total_gmv > comparison.baseline.metrics.total_gmv
-    assert comparison.hgm.metrics.roi >= 1.0
+def _config_path() -> Path:
+    return Path("demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json")
 
 
-def test_mermaid_diagram_contains_agents() -> None:
-    outcome = run_hgm_simulation(seed=3, actions=18)
-    assert outcome.mermaid is not None
-    assert "graph TD" in outcome.mermaid
-    assert "agent-" in outcome.mermaid
+def test_simulation_is_deterministic(tmp_path) -> None:
+    first = run_simulation(
+        config_path=_config_path(),
+        seed=9,
+        output_dir=tmp_path / "first",
+        ui_artifact_path=tmp_path / "first" / "comparison.json",
+    )
+    second = run_simulation(
+        config_path=_config_path(),
+        seed=9,
+        output_dir=tmp_path / "second",
+        ui_artifact_path=tmp_path / "second" / "comparison.json",
+    )
+
+    assert first.hgm.summary.profit == second.hgm.summary.profit
+    assert first.baseline.summary.profit == second.baseline.summary.profit
+    assert first.summary_table == second.summary_table
+
+
+def test_hgm_outperforms_baseline(tmp_path) -> None:
+    report = run_simulation(
+        config_path=_config_path(),
+        seed=11,
+        output_dir=tmp_path / "run",
+        ui_artifact_path=tmp_path / "run" / "comparison.json",
+    )
+    assert report.hgm.summary.profit > report.baseline.summary.profit
+    assert report.hgm.summary.steps >= report.baseline.summary.steps
+    assert report.comparison_artifact_path.exists()
+
+

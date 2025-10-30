@@ -1,6 +1,7 @@
 HARDHAT ?= npx hardhat
 TSNODE ?= npx ts-node --compiler-options '{"module":"commonjs"}'
 NETWORK ?= anvil
+PYTHON ?= python3
 ARGS ?=
 MODE ?=
 
@@ -24,7 +25,11 @@ culture-bootstrap:
 	@$(MAKE) culture-arena-sample NETWORK=$(NETWORK) MODE=$(MODE)
 .PHONY: demo-hgm hgm-demo
 demo-hgm:
-	node demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js $(ARGS)
+        node demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js $(ARGS)
 
 hgm-demo: demo-hgm
+
+.PHONY: demo-agialpha
+demo-agialpha:
+	$(PYTHON) -m demo.huxley_godel_machine_v0.simulator $(ARGS)
 

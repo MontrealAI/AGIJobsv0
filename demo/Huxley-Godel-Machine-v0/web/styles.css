@@ -57,6 +57,27 @@ section {
   margin: 0.5rem 0 0;
 }
 
+.card.highlight {
+  background: linear-gradient(145deg, rgba(76, 201, 240, 0.85), rgba(30, 64, 175, 0.85));
+  color: #03121f;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+#roi-chart {
+  width: 100%;
+  max-width: 720px;
+  height: 320px;
+  margin: 0 auto;
+  display: block;
+}
+
 #flowchart {
   background: rgba(0, 0, 0, 0.25);
   border-radius: 16px;
