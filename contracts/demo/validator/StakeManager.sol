@@ -4,6 +4,10 @@ pragma solidity ^0.8.23;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IValidatorStakeChangeHandler {
+    function handleStakeBelowMinimum(address validator) external;
+}
+
 /**
  * @title StakeManager
  * @notice Handles staking, withdrawals and automated slashing for validators.
@@ -20,6 +24,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
 
     uint256 public minimumStake;
     address public treasury;
+    address public validatorConstellation;
 
     event StakeDeposited(address indexed staker, uint256 amount, uint256 totalStaked);
     event StakeWithdrawn(address indexed staker, uint256 amount, uint256 remaining);
@@ -27,6 +32,7 @@ contract StakeManager is Ownable, ReentrancyGuard {
     event SlashingAuthorityUpdated(address indexed authority, bool enabled);
     event TreasuryUpdated(address indexed treasury);
     event MinimumStakeUpdated(uint256 minimumStake);
+    event ValidatorConstellationUpdated(address indexed constellation);
 
     error InsufficientStake(address account, uint256 required, uint256 current);
     error NotAuthority(address caller);
@@ -53,11 +59,22 @@ contract StakeManager is Ownable, ReentrancyGuard {
         if (info.amount < amount) {
             revert InsufficientStake(msg.sender, amount, info.amount);
         }
+        uint256 previousAmount = info.amount;
+        bool existed = info.exists;
         info.amount -= amount;
         info.lastUpdatedAt = uint64(block.timestamp);
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "STAKE_WITHDRAW_TRANSFER_FAILED");
         emit StakeWithdrawn(msg.sender, amount, info.amount);
+        info.exists = info.amount > 0;
+        if (
+            validatorConstellation != address(0) &&
+            existed &&
+            previousAmount >= minimumStake &&
+            info.amount < minimumStake
+        ) {
+            IValidatorStakeChangeHandler(validatorConstellation).handleStakeBelowMinimum(msg.sender);
+        }
     }
 
     function slash(
@@ -102,5 +119,10 @@ contract StakeManager is Ownable, ReentrancyGuard {
     function updateMinimumStake(uint256 minimumStake_) external onlyOwner {
         minimumStake = minimumStake_;
         emit MinimumStakeUpdated(minimumStake_);
+    }
+
+    function updateValidatorConstellation(address validatorConstellation_) external onlyOwner {
+        validatorConstellation = validatorConstellation_;
+        emit ValidatorConstellationUpdated(validatorConstellation_);
     }
 }

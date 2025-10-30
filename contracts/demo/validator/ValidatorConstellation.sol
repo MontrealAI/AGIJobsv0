@@ -114,6 +114,7 @@ contract ValidatorConstellation is Ownable, ReentrancyGuard {
     event ConfigUpdated(Config newConfig);
 
     error NotCoordinator(address caller);
+    error NotStakeManager(address caller);
     error ValidatorNotActive(address validator);
     error InvalidCommitteeSize(uint256 size, uint256 availableValidators);
     error RoundNotFound(uint256 roundId);
@@ -376,11 +377,16 @@ contract ValidatorConstellation is Ownable, ReentrancyGuard {
         if (penalty > 0) {
             emit ValidatorPenaltyApplied(roundId, validator, reason, penalty);
             if (stakeManager.stakeOf(validator) < stakeManager.minimumStake()) {
-                _validators[validator].status = ValidatorStatus.Suspended;
-                _activeValidators.remove(validator);
-                emit ValidatorStatusChanged(validator, ValidatorStatus.Suspended);
+                _suspendValidator(validator);
             }
         }
+    }
+
+    function handleStakeBelowMinimum(address validator) external {
+        if (msg.sender != address(stakeManager)) {
+            revert NotStakeManager(msg.sender);
+        }
+        _suspendValidator(validator);
     }
 
     function _deriveEntropy(
@@ -427,5 +433,15 @@ contract ValidatorConstellation is Ownable, ReentrancyGuard {
             committee[selected] = candidate;
             selected += 1;
         }
+    }
+
+    function _suspendValidator(address validator) internal {
+        ValidatorInfo storage info = _validators[validator];
+        if (!info.exists || info.status != ValidatorStatus.Active) {
+            return;
+        }
+        info.status = ValidatorStatus.Suspended;
+        _activeValidators.remove(validator);
+        emit ValidatorStatusChanged(validator, ValidatorStatus.Suspended);
     }
 }

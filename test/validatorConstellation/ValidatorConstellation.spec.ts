@@ -97,6 +97,7 @@ async function deployFixture() {
   );
   await constellation.waitForDeployment();
 
+  await stakeManager.connect(operator).updateValidatorConstellation(constellation.getAddress());
   await stakeManager.connect(operator).configureSlashingAuthority(constellation.getAddress(), true);
   await constellation.connect(operator).setCoordinator(await operator.getAddress(), true);
 
@@ -243,6 +244,36 @@ describe("Validator Constellation demo", () => {
     await domainAccess.connect(operator).resumeDomain(domain);
     const resumedState = await domainAccess.domainState(domain);
     expect(resumedState.paused).to.equal(false);
+  });
+
+  it("suspends validators that withdraw below the minimum stake", async () => {
+    const { operator, validatorA, stakeManager, ensAuthorizer, constellation } = await loadFixture(deployFixture);
+
+    const validatorAddress = await validatorA.getAddress();
+    const ensName = "rigel.club.agi.eth";
+    const nh = namehash(ensName);
+    const leaf = solidityPackedKeccak256(["address", "bytes32"], [validatorAddress, nh]);
+    const tree = buildMerkle([leaf]);
+
+    await ensAuthorizer.connect(operator).setRoot(0, false, tree.root, "Validator root");
+    await ensAuthorizer.connect(operator).setRoot(0, true, tree.root, "Validator alpha root");
+
+    await stakeManager
+      .connect(validatorA)
+      .depositStake(validatorAddress, { value: ethers.parseEther("6") });
+
+    await constellation
+      .connect(validatorA)
+      .registerValidator(ensName, nh, true, tree.getProof(leaf));
+
+    await expect(
+      stakeManager.connect(validatorA).withdrawStake(ethers.parseEther("2"))
+    )
+      .to.emit(constellation, "ValidatorStatusChanged")
+      .withArgs(validatorAddress, 2);
+
+    const info = await constellation.validatorInfo(validatorAddress);
+    expect(info.status).to.equal(2);
   });
 
   it("rejects validators without authorised ENS proofs", async () => {
