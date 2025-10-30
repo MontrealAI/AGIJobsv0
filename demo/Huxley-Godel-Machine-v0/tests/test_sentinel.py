@@ -32,3 +32,15 @@ def test_sentinel_blocks_expansion_on_low_roi() -> None:
     engine.metrics.cost = config.max_cost + 1
     sentinel.enforce(1, None)
     assert sentinel.expansions_allowed is False
+
+
+def test_sentinel_blocks_expansion_when_budget_insufficient() -> None:
+    config = load_config("demo/Huxley-Godel-Machine-v0/config/demo_agialpha.yml")
+    engine = make_engine()
+    sentinel = Sentinel(config, engine)
+
+    engine.metrics.cost = config.max_cost - (config.expansion_cost - 1)
+
+    sentinel.enforce(1, None)
+
+    assert sentinel.expansions_allowed is False
