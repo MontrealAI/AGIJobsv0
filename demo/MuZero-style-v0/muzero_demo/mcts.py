@@ -123,8 +123,9 @@ class MuZeroPlanner:
         return best_action, best_child
 
     def _ucb_score(self, parent_visits: int, child: SearchNode) -> float:
+        q = child.reward + self.settings.discount * child.value
         exploration_term = self.settings.exploration_constant * child.prior * math.sqrt(parent_visits + 1) / (child.visit_count + 1)
-        normalized_q = self._normalize_q(child.value)
+        normalized_q = self._normalize_q(q)
         return normalized_q + exploration_term
 
     def _normalize_q(self, q: float) -> float:
