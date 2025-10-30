@@ -1,0 +1,56 @@
+{
+  "prompt": {
+    "explicit_context": "Economic optimization of AGIJobs heuristics via AlphaEvolve.",
+    "stochastic_templates": {
+      "task_intro": [
+        "Elevate the marketplace Utility by refining the heuristics.",
+        "Optimize profitability while respecting fairness and latency objectives.",
+        "Engineer a leap in platform economics via principled heuristic innovation."
+      ],
+      "use_probability": 0.35
+    },
+    "include_metrics": [
+      "Utility",
+      "GMV",
+      "Cost",
+      "Fairness",
+      "Latency"
+    ]
+  },
+  "models": {
+    "fast_model": "openai:gpt-4o-mini",
+    "strong_model": "openai:gpt-4.1",
+    "strong_invoke_ratio": 0.1
+  },
+  "controller": {
+    "max_parallel_evaluations": 4,
+    "max_generations_per_run": 120,
+    "wallclock_time_limit_min": 15
+  },
+  "thermostat": {
+    "success_window": 20,
+    "low_success_threshold": 0.1,
+    "high_success_threshold": 0.55,
+    "min_temperature": 0.2,
+    "max_temperature": 0.85
+  },
+  "guardrails": {
+    "max_cost_pct_baseline": 1.12,
+    "min_utility_pct_baseline": 0.97,
+    "min_fairness": 0.4,
+    "rollback_on_latency_ms": 420
+  },
+  "evolvable_blocks": [
+    "score_match",
+    "price_job",
+    "rank_candidates",
+    "estimate_latency"
+  ],
+  "baseline_metrics": {
+    "GMV": 555.0,
+    "Cost": 216.0,
+    "Utility": 339.0,
+    "Latency": 1.28,
+    "Fairness": 0.65
+  }
+}

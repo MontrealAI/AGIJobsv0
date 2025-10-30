@@ -1,0 +1,20 @@
+{
+  "best": {
+    "utility": 387.0,
+    "diff": "<<<<<< SEARCH\n    score = (compat * 0.4) + (economic_strength * 0.4) + (urgency_alignment * 0.2)\n    adjusted_score = max(score - fairness_penalty, 0.0)\n======\n    cost_pressure = min(agent.cost_per_job / max(job.max_cost, 1), 1.0)\n    score = (compat * 0.36) + (economic_strength * 0.46) + (urgency_alignment * 0.18) - (cost_pressure * 0.2)\n    adjusted_score = max(score - fairness_penalty, 0.0)\n>>>>>> REPLACE"
+  },
+  "history": [
+    {
+      "generation": -1,
+      "utility": 339.0,
+      "gmv": 555.0,
+      "cost": 216.0
+    },
+    {
+      "generation": 0,
+      "utility": 387.0,
+      "gmv": 555.0,
+      "cost": 168.0
+    }
+  ]
+}
