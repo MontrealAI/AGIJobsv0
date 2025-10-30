@@ -2,7 +2,44 @@
 
 This document outlines the procedures operators should follow when responding to
 production incidents involving the SelfPlay arena, StakeManager, and related
-services.
+services. For a full architectural overview and ROI rationale, review the
+[HGM Operator Whitepaper](docs/hgm/whitepaper.md) before executing any of the
+steps below.
+
+## Day-One Operations Checklist
+
+1. **Confirm configuration drift.** Compare the active deployment manifest with
+   [`config/agialpha/hgm.json`](config/agialpha/hgm.json) and
+   [`config/sentinel.json`](config/sentinel.json). Document any overrides in the
+   change log.
+2. **Run guardrail validation.** Execute `ci/hgm-suite.sh` locally and ensure
+   the `ci (v2) / HGM guardrails` job passes. See
+   [`docs/ci-v2-branch-protection-checklist.md`](docs/ci-v2-branch-protection-checklist.md)
+   for required artefacts.
+3. **Prime the operator surface.** Launch the guided simulation with
+   `HGM_REPORT_DIR=$(pwd)/reports/hgm make demo-hgm` and open the lineage viewer
+   in [`demo/Huxley-Godel-Machine-v0/web/index.html`](demo/Huxley-Godel-Machine-v0/web/index.html)
+   to verify reports stream in.
+4. **Snapshot economic baselines.** Record the initial thermostat ROI window by
+   streaming a short burst of metrics:
+   ```bash
+   mkdir -p reports/hgm
+   python scripts/thermostat.py watch --dry-run --iterations 12 > reports/hgm/roi-baseline.log
+   ```
+   Archive the output alongside a sentinel snapshot captured with:
+   ```bash
+   python - <<'PY'
+   from hgm_core.engine import HGMEngine
+   from services.sentinel.config import load_config
+   from services.sentinel.service import SentinelMonitor
+
+   monitor = SentinelMonitor(HGMEngine(), load_config())
+   print(monitor.snapshot())
+   PY
+   ```
+
+Complete this checklist after every fresh environment bring-up or significant
+parameter change.
 
 ## Required status checks
 
@@ -11,6 +48,30 @@ services.
   a smoke test of `make demo-hgm`. If this gate is red, rerun `ci/hgm-suite.sh`
   locally (after `npm ci` and `pip install -r requirements-python.txt`) to
   reproduce the failure before attempting mitigations or hotfixes.
+
+## Economic Levers
+
+The thermostat provides the first line of defence when ROI deviates from the
+treasury policy described in [`config/agialpha/hgm.json`](config/agialpha/hgm.json).
+
+1. **Adjust concurrency safely.** Preview changes with
+   `python scripts/thermostat.py watch --widening-step 0.08 --max-widening-alpha 1.8 --dry-run`.
+   Re-run without `--dry-run` once approved. The controller in
+   [`services/thermostat/controller.py`](services/thermostat/controller.py)
+   applies updates gradually and enforces cooldowns to prevent oscillation.
+2. **Rebalance ROI targets.** Supply new `--target-roi`, `--lower-margin`, and
+   `--upper-margin` values when invoking the thermostat CLI. Document every
+   adjustment in the operations log and capture the resulting ROI baseline.
+3. **Review sentinel gates.** If budget caps or failure streaks drive repeated
+   pauses, inspect [`config/sentinel.json`](config/sentinel.json) and align with
+   risk/compliance before issuing overrides.
+4. **Quantify impact.** Re-run the ROI baseline command
+   (`python scripts/thermostat.py watch --dry-run --iterations 12`) after each
+   change and compare the logs to prior baselines to estimate ROI lift or
+   drawdown. Escalate to finance when variance exceeds 10 %.
+
+Escalate to full pause procedures below when thermostat moves cannot restore ROI
+within two control cycles.
 
 ## 1. Immediate Pause Procedures
 
