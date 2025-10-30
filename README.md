@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![HGM guardrails](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=HGM%20guardrails)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain+workflow%3A%22ci+%28v2%29%22)
 
 AGIJob Manager is an experimental suite of Ethereum smart contracts and tooling for coordinating trustless labour markets among autonomous agents. The **v2** release under `contracts/v2` is the only supported version. Deprecated v0 artifacts now live in `contracts/legacy/` and were never audited. For help migrating older deployments, see [docs/migration-guide.md](docs/migration-guide.md).
 
@@ -17,7 +18,7 @@ All modules now assume the 18‑decimal `$AGIALPHA` token for payments, stakes a
 
 ## Continuous Integration (CI v2)
 
-The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull request and on the `main` branch. The pipeline fan-out mirrors how operators review production releases:
+The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull request and on the `main` branch. The pipeline fan-out mirrors how operators review production releases. Run `ci/hgm-suite.sh` (after `npm ci` and `pip install -r requirements-python.txt`) before opening a pull request so the HGM guardrail job passes locally and on GitHub:
 
 - **Lint & static checks** – runs Prettier, ESLint and Solhint with production-safe rules to guarantee formatting and Solidity hygiene.
 - **Tests** – compiles contracts, regenerates shared constants, and executes the full Hardhat suite together with ABI drift detection.
@@ -25,6 +26,7 @@ The `ci (v2)` GitHub Actions workflow enforces quality gates on every pull reque
 - **Python integration tests** – exercises FastAPI routers (agents, analytics, one-box health) and the meta-agentic demo suites, producing additional coverage data for the orchestrator services.
 - **Load-simulation reports** – generates deterministic Monte Carlo sweeps under `reports/load-sim/` and validates that the expected fee/burn equilibrium stays within safe bounds.
 - **Python coverage enforcement** – combines the unit and integration coverage databases, enforces an 85 % floor (see `.coveragerc`), and uploads consolidated XML artefacts.
+- **HGM guardrails** – validates the AGIALPHA profile configuration, lint-checks the Huxley–Gödel Machine demo assets, runs the HGM regression suites, and executes a guided demo smoke test so the scripts stay deployable.
 - **Foundry** – reuses the generated constants, installs Foundry with a warm cache, and executes high signal fuzz tests.
 - **Coverage thresholds** – regenerates constants, recomputes coverage, enforces the 90 % minimum for the Hardhat suite, and uploads the LCOV artifact.
 - **Summary gate** – publishes a human-readable status table and fails the workflow if any upstream job is unsuccessful, giving non-technical reviewers a single green/red indicator.
@@ -59,12 +61,11 @@ Keep the enforcement proof close at hand by running a quick audit whenever GitHu
 1. Visit **Settings → Branches → Branch protection rules → main** and confirm the required contexts match the workflow job names exactly:
    - `ci (v2) / Lint & static checks`
    - `ci (v2) / Tests`
-   - `ci (v2) / Python unit tests`
-   - `ci (v2) / Python integration tests`
-   - `ci (v2) / Load-simulation reports`
-   - `ci (v2) / Python coverage enforcement`
+   - `ci (v2) / HGM guardrails`
    - `ci (v2) / Foundry`
    - `ci (v2) / Coverage thresholds`
+   - `ci (v2) / Phase 6 readiness`
+   - `ci (v2) / Phase 8 readiness`
    - `ci (v2) / CI summary`
    The names must stay in lockstep with the [`ci.yml` job definitions](.github/workflows/ci.yml).
 2. From the terminal, run `npm run ci:verify-branch-protection` (set `GITHUB_TOKEN` with `repo` scope first). The script prints a ✅/❌ table showing whether the contexts, ordering, and admin enforcement match the CI v2 contract. The command auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote, and accepts `--owner`, `--repo`, and `--branch` overrides when auditing forks.
@@ -89,6 +90,9 @@ COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc -m pytest \
   test/tools \
   test/orchestrator \
   test/simulation
+COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc --append -m pytest tests
+COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc --append -m pytest packages/hgm-core/tests
+COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc --append -m pytest demo/Huxley-Godel-Machine-v0/tests
 
 COVERAGE_FILE=.coverage.integration coverage run --rcfile=.coveragerc -m pytest \
   test/routes/test_agents.py \

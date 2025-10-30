@@ -18,7 +18,9 @@
     if (steps.length === 0) return;
     let index = 0;
     while (true) {
-      const stepNumber = Number(steps[index % steps.length].getAttribute('data-step'));
+      const stepNumber = Number(
+        steps[index % steps.length].getAttribute('data-step')
+      );
       activateStep(stepNumber);
       const paceRaw = document.body.dataset.pace;
       const paceMs = Number(paceRaw || 2000);
@@ -29,7 +31,10 @@
   }
 
   const currency = (value) =>
-    `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    `$${value.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   const percent = (value) => `${(value * 100).toFixed(1)}%`;
 
@@ -73,13 +78,17 @@
       }
     });
     if (highlight) {
-      lines.push(`style ${highlight} fill:#f4d03f,stroke:#f1c40f,stroke-width:4px`);
+      lines.push(
+        `style ${highlight} fill:#f4d03f,stroke:#f1c40f,stroke-width:4px`
+      );
     }
     agents
       .filter((agent) => agent.status !== 'active')
       .forEach((agent) => {
         const fill = agent.status === 'pruned' ? '#7f8c8d' : '#5dade2';
-        lines.push(`style ${agent.agent_id} fill:${fill},stroke:#2c3e50,stroke-width:2px`);
+        lines.push(
+          `style ${agent.agent_id} fill:${fill},stroke:#2c3e50,stroke-width:2px`
+        );
       });
     return lines.join('\n');
   }
@@ -115,7 +124,10 @@
       },
       {
         title: 'Success cadence',
-        value: percent(snapshot.successes / Math.max(1, snapshot.successes + snapshot.failures)),
+        value: percent(
+          snapshot.successes /
+            Math.max(1, snapshot.successes + snapshot.failures)
+        ),
         subtitle: `${snapshot.successes} wins vs ${snapshot.failures} lessons`,
       },
     ];
@@ -145,12 +157,15 @@
       const cell = document.createElement('td');
       cell.colSpan = 5;
       cell.className = 'text-center text-muted';
-      cell.textContent = 'No agent lineage available yet. Run the demo to generate one!';
+      cell.textContent =
+        'No agent lineage available yet. Run the demo to generate one!';
       row.append(cell);
       table.append(row);
       return;
     }
-    const sorted = [...agents].sort((a, b) => b.direct_success - a.direct_success || a.depth - b.depth);
+    const sorted = [...agents].sort(
+      (a, b) => b.direct_success - a.direct_success || a.depth - b.depth
+    );
     sorted.forEach((agent) => {
       const row = document.createElement('tr');
       if (agent.agent_id === highlight) {
@@ -177,14 +192,24 @@
 
   function handleTimeline(timeline) {
     if (!Array.isArray(timeline) || timeline.length === 0) {
-      updateAlert('Timeline is empty. Run the demo to generate artefacts.', 'warning');
+      updateAlert(
+        'Timeline is empty. Run the demo to generate artefacts.',
+        'warning'
+      );
       return;
     }
     const latest = timeline[timeline.length - 1];
     renderSummaryCards(latest);
     renderAgentsTable(latest.agents || [], latest.best_agent_id || null);
-    updateMermaid(buildMermaid(latest.agents || [], latest.best_agent_id || null));
-    updateAlert(`Loaded ${timeline.length} steps. Highlighting ${latest.best_agent_id || 'best available agent'}.`, 'success');
+    updateMermaid(
+      buildMermaid(latest.agents || [], latest.best_agent_id || null)
+    );
+    updateAlert(
+      `Loaded ${timeline.length} steps. Highlighting ${
+        latest.best_agent_id || 'best available agent'
+      }.`,
+      'success'
+    );
   }
 
   async function loadDefaultTimeline() {
@@ -198,11 +223,15 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const paceEnv = Number(new URLSearchParams(window.location.search).get('pace'));
+    const paceEnv = Number(
+      new URLSearchParams(window.location.search).get('pace')
+    );
     if (!Number.isNaN(paceEnv) && paceEnv > 0) {
       document.body.dataset.pace = paceEnv;
     } else {
-      const paceFromEnv = Number(window.localStorage.getItem('hgm-guided-pace'));
+      const paceFromEnv = Number(
+        window.localStorage.getItem('hgm-guided-pace')
+      );
       if (paceFromEnv > 0) {
         document.body.dataset.pace = paceFromEnv;
       }
@@ -230,7 +259,9 @@
     const loadDefaultButton = document.querySelector('#load-default');
     if (loadDefaultButton) {
       loadDefaultButton.addEventListener('click', () => {
-        loadDefaultTimeline().catch((error) => updateAlert(error.message, 'danger'));
+        loadDefaultTimeline().catch((error) =>
+          updateAlert(error.message, 'danger')
+        );
       });
     }
 

@@ -1,6 +1,7 @@
 :root {
   color-scheme: light dark;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
   background: radial-gradient(circle at 10% 20%, #04162c, #020b14 55%);
   color: #e9f0ff;
 }
@@ -40,7 +41,11 @@ section {
 .card {
   padding: 1rem;
   border-radius: 12px;
-  background: linear-gradient(145deg, rgba(24, 56, 92, 0.9), rgba(10, 28, 52, 0.9));
+  background: linear-gradient(
+    145deg,
+    rgba(24, 56, 92, 0.9),
+    rgba(10, 28, 52, 0.9)
+  );
   border: 1px solid rgba(123, 199, 255, 0.35);
 }
 
@@ -58,7 +63,11 @@ section {
 }
 
 .card.highlight {
-  background: linear-gradient(145deg, rgba(76, 201, 240, 0.85), rgba(30, 64, 175, 0.85));
+  background: linear-gradient(
+    145deg,
+    rgba(76, 201, 240, 0.85),
+    rgba(30, 64, 175, 0.85)
+  );
   color: #03121f;
 }
 

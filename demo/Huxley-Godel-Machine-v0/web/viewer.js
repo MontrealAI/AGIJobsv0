@@ -18,7 +18,9 @@ const currency = (value) =>
 async function loadComparison() {
   const response = await fetch('../artifacts/comparison.json');
   if (!response.ok) {
-    throw new Error('Run the simulator to generate web/artifacts/comparison.json');
+    throw new Error(
+      'Run the simulator to generate web/artifacts/comparison.json'
+    );
   }
   return response.json();
 }
@@ -28,7 +30,10 @@ function renderSummary(data) {
   container.innerHTML = '';
   const strategies = [
     { title: data.hgm.summary.strategy || 'HGM', summary: data.hgm.summary },
-    { title: data.baseline.summary.strategy || 'Baseline', summary: data.baseline.summary },
+    {
+      title: data.baseline.summary.strategy || 'Baseline',
+      summary: data.baseline.summary,
+    },
   ];
 
   for (const entry of strategies) {
@@ -39,13 +44,17 @@ function renderSummary(data) {
     card.append(heading);
     for (const field of SUMMARY_FIELDS) {
       const valueRow = document.createElement('p');
-      valueRow.innerHTML = `<strong>${field.label}:</strong> ${field.formatter(entry.summary[field.key])}`;
+      valueRow.innerHTML = `<strong>${field.label}:</strong> ${field.formatter(
+        entry.summary[field.key]
+      )}`;
       card.append(valueRow);
     }
     container.append(card);
   }
 
-  const lift = Number(data.hgm.summary.profit || 0) - Number(data.baseline.summary.profit || 0);
+  const lift =
+    Number(data.hgm.summary.profit || 0) -
+    Number(data.baseline.summary.profit || 0);
   const deltaCard = document.createElement('div');
   deltaCard.className = 'card highlight';
   deltaCard.innerHTML = `
@@ -62,8 +71,12 @@ function renderRoiChart(data) {
   }
 
   const labels = data.hgm.timeline.map((entry) => entry.step);
-  const hgmSeries = data.hgm.timeline.map((entry) => (entry.roi == null ? null : Number(entry.roi)));
-  const baselineSeries = data.baseline.timeline.map((entry) => (entry.roi == null ? null : Number(entry.roi)));
+  const hgmSeries = data.hgm.timeline.map((entry) =>
+    entry.roi == null ? null : Number(entry.roi)
+  );
+  const baselineSeries = data.baseline.timeline.map((entry) =>
+    entry.roi == null ? null : Number(entry.roi)
+  );
 
   new Chart(ctx, {
     type: 'line',
@@ -103,7 +116,9 @@ function renderRoiChart(data) {
           callbacks: {
             label: (context) => {
               const value = context.parsed.y;
-              return `${context.dataset.label}: ${value == null ? '∞' : value.toFixed(2)}x`;
+              return `${context.dataset.label}: ${
+                value == null ? '∞' : value.toFixed(2)
+              }x`;
             },
           },
         },
@@ -181,10 +196,15 @@ function renderLineage(data) {
   for (const record of sorted) {
     const card = document.createElement('div');
     card.className = 'lineage-card';
-    const roi = record.failures + record.successes === 0 ? 0 : record.successes / (record.failures + record.successes);
+    const roi =
+      record.failures + record.successes === 0
+        ? 0
+        : record.successes / (record.failures + record.successes);
     card.innerHTML = `
       <h3>${record.id}</h3>
-      <p><strong>Quality:</strong> ${(Number(record.quality || 0) * 100).toFixed(1)}%</p>
+      <p><strong>Quality:</strong> ${(
+        Number(record.quality || 0) * 100
+      ).toFixed(1)}%</p>
       <p><strong>Successes:</strong> ${record.successes}</p>
       <p><strong>Failures:</strong> ${record.failures}</p>
       <p><strong>Hit Rate:</strong> ${(roi * 100).toFixed(1)}%</p>

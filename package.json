@@ -180,6 +180,7 @@
     "demo:agi-governance:full": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/runFullDemo.ts",
     "demo:agi-governance:owner-diagnostics": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/collectOwnerDiagnostics.ts",
     "demo:agi-governance:validate": "ts-node --project demo/agi-governance/tsconfig.json demo/agi-governance/scripts/validateReport.ts",
+    "demo:hgm:lint": "prettier --check \"demo/Huxley-Godel-Machine-v0/{ui,web}/**/*.{css,html,js,json}\"",
     "demo:agi-labor-market": "npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",
     "demo:agi-labor-market:control-room": "ts-node --transpile-only scripts/v2/launchAgiLaborMarketControlRoom.ts",
     "demo:agi-labor-market:export": "AGI_JOBS_DEMO_EXPORT=demo/agi-labor-market-grand-demo/ui/export/latest.json npx hardhat run --no-compile --network hardhat scripts/v2/agiLaborMarketGrandDemo.ts",

@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script>mermaid.initialize({ startOnLoad: true, theme: "forest" });</script>
+    <script>
+      mermaid.initialize({ startOnLoad: true, theme: 'forest' });
+    </script>
   </head>
   <body>
     <header>
@@ -36,19 +38,19 @@
         <h2>Autonomous Evolution Flow</h2>
         <div class="mermaid" id="flowchart">
           graph LR
-            A[Start: Load Config] --> B{Thermostat}
-            B -->|ROI >= Target| C[Increase Concurrency]
-            B -->|ROI < Target| D[Constrain Exploration]
-            C --> E[HGM Engine]
-            D --> E
-            E -->|Expand| F[Self-Modification]
-            E -->|Evaluate| G[Mission Execution]
-            F --> H[Ledger Update]
-            G --> H
-            H --> B
-            H --> I[Sentinel Rules]
-            I -->|Safe| B
-            I -->|Halt| J[Graceful Shutdown]
+          A[Start: Load Config] --> B{Thermostat}
+          B -->|ROI >= Target| C[Increase Concurrency]
+          B -->|ROI < Target| D[Constrain Exploration]
+          C --> E[HGM Engine]
+          D --> E
+          E -->|Expand| F[Self-Modification]
+          E -->|Evaluate| G[Mission Execution]
+          F --> H[Ledger Update]
+          G --> H
+          H --> B
+          H --> I[Sentinel Rules]
+          I -->|Safe| B
+          I -->|Halt| J[Graceful Shutdown]
         </div>
       </section>
       <section>
@@ -58,8 +60,10 @@
     </main>
     <footer>
       <p>
-        Built with ❤️ for non-technical founders. Every control surface is editable in
-        <code>config/hgm_config.json</code> — tune ROI targets, budgets, and exploration in seconds.
+        Built with ❤️ for non-technical founders. Every control surface is
+        editable in
+        <code>config/hgm_config.json</code> — tune ROI targets, budgets, and
+        exploration in seconds.
       </p>
     </footer>
     <script type="module" src="viewer.js"></script>
