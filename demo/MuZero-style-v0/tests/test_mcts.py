@@ -23,7 +23,8 @@ def test_planner_returns_distribution():
     env = environment.AGIJobsPlanningEnv(env_config)
     observation = env.reset()
     obs_tensor = torch.from_numpy(observation.vector).float()
-    policy, value, _ = planner.run(obs_tensor, observation.legal_actions)
+    policy, value, _, simulations = planner.run(obs_tensor, observation.legal_actions)
     assert pytest.approx(float(policy.sum().item()), rel=1e-4) == 1.0
     assert len(policy) == env_config.max_jobs + 1
     assert isinstance(value, float)
+    assert simulations == planner.settings.num_simulations

@@ -6,7 +6,18 @@ AGI Jobs economics.  The modules are intentionally lightweight so
 non-technical operators can introspect and extend the system easily.
 """
 
-from . import environment, mcts, network, baselines, training, evaluation
+from . import (
+    environment,
+    mcts,
+    network,
+    baselines,
+    training,
+    evaluation,
+    thermostat,
+    sentinel,
+    configuration,
+    utils,
+)
 
 # ---------------------------------------------------------------------------
 # Compatibility helpers
@@ -56,4 +67,8 @@ __all__ = [
     "baselines",
     "training",
     "evaluation",
+    "thermostat",
+    "sentinel",
+    "configuration",
+    "utils",
 ]

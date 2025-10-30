@@ -1,8 +1,8 @@
 """Simplified MuZero training loop tailored for the demo."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List, Tuple
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple
 import random
 
 import numpy as np
@@ -12,6 +12,9 @@ from torch import optim
 from .environment import AGIJobsPlanningEnv, EnvironmentConfig
 from .mcts import MuZeroPlanner, PlannerSettings
 from .network import MuZeroNetwork, NetworkConfig
+from .thermostat import PlanningThermostat
+from .sentinel import SentinelMonitor
+from .utils import discounted_returns
 
 
 @dataclass
@@ -39,6 +42,9 @@ class Episode:
     rewards: List[float]
     policies: List[np.ndarray]
     values: List[float]
+    returns: List[float] = field(default_factory=list)
+    simulations: List[int] = field(default_factory=list)
+    summary: Dict[str, float] = field(default_factory=dict)
 
     def length(self) -> int:
         return len(self.actions)
@@ -67,13 +73,21 @@ class ReplayBuffer:
 
 
 class MuZeroTrainer:
-    def __init__(self, network: MuZeroNetwork, config: TrainingConfig) -> None:
+    def __init__(
+        self,
+        network: MuZeroNetwork,
+        config: TrainingConfig,
+        thermostat: Optional[PlanningThermostat] = None,
+        sentinel: Optional[SentinelMonitor] = None,
+    ) -> None:
         self.network = network.to(config.device)
         self.config = config
         self.buffer = ReplayBuffer(config.replay_buffer_size)
         self.optimizer = optim.Adam(self.network.parameters(), lr=config.learning_rate)
         self.env = AGIJobsPlanningEnv(config.environment)
         self.planner = MuZeroPlanner(network, config.planner)
+        self.thermostat = thermostat
+        self.sentinel = sentinel
 
     def self_play(self, episodes: int) -> None:
         for _ in range(episodes):
@@ -87,23 +101,53 @@ class MuZeroTrainer:
         rewards: List[float] = []
         policies: List[np.ndarray] = []
         values: List[float] = []
+        simulations: List[int] = []
 
         done = False
         while not done:
             obs_tensor = torch.from_numpy(observation.vector).float().to(self.config.device)
-            policy, root_value, _ = self.planner.run(obs_tensor, observation.legal_actions)
+            initial = self.network.initial_inference(obs_tensor.unsqueeze(0))
+            policy_logits, root_val_tensor, hidden_state = initial
+            policy_probs = torch.softmax(policy_logits, dim=-1)[0]
+            dynamic_simulations: Optional[int] = None
+            if self.thermostat:
+                dynamic_simulations = self.thermostat.recommend(observation, policy_probs, observation.legal_actions)
+            policy, root_value, _, simulations_used = self.planner.run(
+                obs_tensor,
+                observation.legal_actions,
+                initial_inference=(policy_logits, root_val_tensor, hidden_state),
+                num_simulations=dynamic_simulations,
+            )
+            if self.thermostat:
+                self.thermostat.observe(simulations_used, root_value)
+
             action = self._select_action(policy, observation.legal_actions)
 
             observations.append(observation.vector.copy())
             actions.append(action)
             policies.append(policy.cpu().numpy())
             values.append(root_value)
+            simulations.append(simulations_used)
 
             step_result = self.env.step(action)
             rewards.append(step_result.reward)
             observation = step_result.observation
             done = step_result.done
-        return Episode(observations=observations, actions=actions, rewards=rewards, policies=policies, values=values)
+        summary = self.env.summarize_history()
+        returns = discounted_returns(rewards, self.config.discount)
+        episode = Episode(
+            observations=observations,
+            actions=actions,
+            rewards=rewards,
+            policies=policies,
+            values=values,
+            returns=returns,
+            simulations=simulations,
+            summary=summary,
+        )
+        if self.sentinel:
+            self.sentinel.record_episode(episode)
+        return episode
 
     def _select_action(self, policy: torch.Tensor, legal_actions: List[int]) -> int:
         probs = policy.clone()
@@ -207,3 +251,16 @@ class MuZeroTrainer:
             else:
                 rewards.append(0.0)
         return rewards
+
+    def sentinel_status(self) -> Dict[str, float]:
+        if not self.sentinel:
+            return {}
+        status = self.sentinel.status()
+        return {
+            "episodes": float(status.episodes_observed),
+            "mae": status.mean_absolute_error,
+            "alert": 1.0 if status.alert_active else 0.0,
+            "fallback": 1.0 if status.fallback_required else 0.0,
+            "avg_simulations": status.average_simulations,
+            "budget_floor_breached": 1.0 if status.budget_floor_breached else 0.0,
+        }

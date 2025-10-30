@@ -1,4 +1,4 @@
-"""Command line interface empowering non-technical operators."""
+"""Narrative-first CLI harnessing the MuZero-style planner."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -9,39 +9,28 @@ import typer
 from rich.console import Console
 from rich.progress import track
 
-from .environment import EnvironmentConfig, vector_size
+from .configuration import load_demo_config
 from .evaluation import evaluate_planner
-from .mcts import PlannerSettings
-from .network import NetworkConfig, make_network, MuZeroNetwork
-from .training import MuZeroTrainer, TrainingConfig
+from .network import make_network
+from .sentinel import SentinelMonitor
+from .thermostat import PlanningThermostat
+from .training import MuZeroTrainer
+
+DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "default.yaml"
 
 app = typer.Typer(help="MuZero-style AGI Jobs planning demo")
 console = Console()
 
 
-def default_training_config(seed: int = 7) -> tuple[MuZeroNetwork, TrainingConfig]:
-    env_config = EnvironmentConfig(rng_seed=seed)
-    observation_dim = vector_size(env_config)
-    action_space = env_config.max_jobs + 1
-    network_config = NetworkConfig(observation_dim=observation_dim, action_space_size=action_space)
-    planner_settings = PlannerSettings(num_simulations=48, temperature=0.8)
-    network = make_network(network_config)
-    training_config = TrainingConfig(
-        environment=env_config,
-        network=network_config,
-        planner=planner_settings,
-        batch_size=16,
-        unroll_steps=3,
-        td_steps=4,
-        learning_rate=2e-3,
-        discount=env_config.discount,
-        replay_buffer_size=512,
-        policy_weight=1.0,
-        value_weight=0.75,
-        reward_weight=0.5,
-        temperature=0.9,
-    )
-    return network, training_config
+def _prepare_trainer(config_path: Path) -> tuple[MuZeroTrainer, PlanningThermostat, SentinelMonitor]:
+    demo_config = load_demo_config(config_path)
+    if demo_config.environment.rng_seed is not None:
+        torch.manual_seed(demo_config.environment.rng_seed)
+    network = make_network(demo_config.network)
+    thermostat = PlanningThermostat(demo_config.thermostat, demo_config.environment, demo_config.planner)
+    sentinel = SentinelMonitor(demo_config.sentinel, demo_config.environment)
+    trainer = MuZeroTrainer(network, demo_config.training, thermostat=thermostat, sentinel=sentinel)
+    return trainer, thermostat, sentinel
 
 
 @app.command()
@@ -49,16 +38,28 @@ def train(
     iterations: int = typer.Option(5, help="Number of self-play/training cycles"),
     episodes_per_iteration: int = typer.Option(6, help="Self-play episodes per cycle"),
     checkpoint: Optional[Path] = typer.Option(None, help="Where to store the trained network"),
+    config_path: Path = typer.Option(DEFAULT_CONFIG, exists=True, help="YAML configuration describing the demo"),
 ) -> None:
-    """Run a compact MuZero training loop suitable for demos."""
+    """Run a MuZero training loop with adaptive planning controls."""
 
-    network, config = default_training_config()
-    trainer = MuZeroTrainer(network, config)
+    trainer, thermostat, sentinel = _prepare_trainer(config_path)
+    network = trainer.network
 
     for iteration in track(range(iterations), description="Self-play & learning"):
         trainer.self_play(episodes_per_iteration)
         metrics = trainer.train_step()
-        console.log(f"Iteration {iteration + 1}: loss={metrics['loss']:.4f}")
+        telemetry = thermostat.telemetry()
+        sentinel_stats = trainer.sentinel_status()
+        console.log(
+            "Iteration %d | loss=%.4f | avg_sim=%.1f | sentinel_mae=%.2f | alert=%s"
+            % (
+                iteration + 1,
+                metrics.get("loss", 0.0),
+                telemetry.average_simulations,
+                sentinel_stats.get("mae", 0.0),
+                "YES" if sentinel_stats.get("alert") else "no",
+            )
+        )
 
     if checkpoint:
         checkpoint.parent.mkdir(parents=True, exist_ok=True)
@@ -70,17 +71,38 @@ def train(
 def evaluate(
     checkpoint: Optional[Path] = typer.Option(None, help="Path to trained network weights"),
     episodes: int = typer.Option(25, help="Episodes per strategy for evaluation"),
+    config_path: Path = typer.Option(DEFAULT_CONFIG, exists=True, help="YAML configuration describing the demo"),
 ) -> None:
-    """Compare MuZero planning to baseline strategies."""
+    """Compare MuZero planning to baseline strategies under the sentinel."""
 
-    network, config = default_training_config()
+    trainer, thermostat, sentinel = _prepare_trainer(config_path)
+    network = trainer.network
     if checkpoint and checkpoint.exists():
         state = torch.load(checkpoint, map_location="cpu")
         network.load_state_dict(state)
         console.log(f"Loaded checkpoint from {checkpoint}")
     network.eval()
 
-    evaluate_planner(network, config.environment, config.planner, episodes=episodes, console=console)
+    evaluate_planner(
+        network,
+        trainer.config.environment,
+        trainer.config.planner,
+        episodes=episodes,
+        console=console,
+        thermostat=thermostat,
+        sentinel=sentinel,
+    )
+
+    status = sentinel.status()
+    console.log(
+        "Sentinel summary: episodes=%d, mae=%.2f, alert=%s, fallback=%s"
+        % (
+            status.episodes_observed,
+            status.mean_absolute_error,
+            "YES" if status.alert_active else "no",
+            "YES" if status.fallback_required else "no",
+        )
+    )
 
 
 if __name__ == "__main__":
