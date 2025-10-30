@@ -11,7 +11,7 @@ Welcome to the flagship showcase demonstrating how a non-technical founder can w
 ```mermaid
 graph TD
     A[Initiate Demo] --> B{Load Config}
-    B -->|Owner Edits YAML| C[Adaptive Control Plane]
+    B -->|Owner Edits Config| C[Adaptive Control Plane]
     C --> D{Run HGM Engine}
     D -->|Expansion| E[Self-Modify Agent]
     D -->|Evaluation| F[Test on Market Task]
@@ -44,7 +44,7 @@ Need the previous simulator loop? Append `ARGS="--legacy"` to keep the heritage 
 
 *No node modules to install, no hidden dependencies.* The Make target executes `run_demo.py`, which:
 
-1. Loads `config/default_config.yaml` (customisable without code changes).
+1. Loads `config/default_config.json` (customisable without code changes).
 2. Seeds the root agent with the owner-specified persona.
 3. Executes the HGM loop with adaptive parameter tuning and sentinel enforcement.
 4. Benchmarks against the greedy baseline to prove the GMV advantage.
@@ -56,7 +56,7 @@ Every step is narrated in the terminal with colour-coded feedback powered by [Ri
 
 ## 🔧 Owner Controls (Zero-Code)
 
-Edit `config/default_config.yaml` to steer the system:
+Edit `config/default_config.json` to steer the system:
 
 | Section | Purpose |
 |---------|---------|
@@ -69,7 +69,7 @@ Edit `config/default_config.yaml` to steer the system:
 | `reporting` | Toggle Markdown / JSON / Mermaid artifact creation. |
 | `baseline` | Behaviour of the greedy comparator. |
 
-All parameters can be altered between runs with zero downtime. The contract owner retains full control: pause expansions instantly by setting `hgm.allow_expansions: false` or by lowering the ROI floor, adjust concurrency, or reprogram rewards.
+Prefer JSON for zero-dependency environments, but YAML files are also supported automatically when `PyYAML` is installed. All parameters can be altered between runs with zero downtime. The contract owner retains full control: pause expansions instantly by setting `hgm.allow_expansions: false` or by lowering the ROI floor, adjust concurrency, or reprogram rewards.
 
 ---
 

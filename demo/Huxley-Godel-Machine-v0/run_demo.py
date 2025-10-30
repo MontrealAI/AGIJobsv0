@@ -33,7 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--config",
         type=Path,
-        default=Path(__file__).parent / "config" / "default_config.yaml",
+        default=Path(__file__).parent / "config" / "default_config.json",
         help="Path to the demo configuration file.",
     )
     parser.add_argument(

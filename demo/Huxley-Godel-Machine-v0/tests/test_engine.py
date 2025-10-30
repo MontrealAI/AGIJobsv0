@@ -15,7 +15,7 @@ from src.sentinel import Sentinel
 from src.baseline import GreedyBaseline
 
 
-CONFIG_PATH = "demo/Huxley-Godel-Machine-v0/config/default_config.yaml"
+CONFIG_PATH = "demo/Huxley-Godel-Machine-v0/config/default_config.json"
 
 
 def create_engine(seed: int = 1234) -> HGMEngine:

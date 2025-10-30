@@ -1,11 +1,15 @@
 """Configuration loading utilities for the Huxley–Gödel Machine demo."""
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict
 
-import yaml
+try:  # pragma: no cover - optional dependency for YAML support
+    import yaml  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - PyYAML not installed in minimal envs
+    yaml = None
 
 
 @dataclass(slots=True)
@@ -91,7 +95,7 @@ class DemoConfiguration:
 
     @classmethod
     def load(cls, path: Path) -> "DemoConfiguration":
-        data = _read_yaml(path)
+        data = _read_config(path)
         return cls(
             run_name=data["run_name"],
             random_seed=int(data["random_seed"]),
@@ -106,11 +110,21 @@ class DemoConfiguration:
         )
 
 
-def _read_yaml(path: Path) -> Dict[str, Any]:
+def _read_config(path: Path) -> Dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Configuration file not found: {path}")
-    with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+    suffix = path.suffix.lower()
+    text = path.read_text(encoding="utf-8")
+    if suffix == ".json":
+        return json.loads(text)
+    if suffix in {".yaml", ".yml"}:
+        if yaml is None:
+            raise ModuleNotFoundError(
+                "PyYAML is required to parse YAML configuration files. "
+                "Install PyYAML or provide a JSON configuration."
+            )
+        return yaml.safe_load(text)
+    raise ValueError(f"Unsupported configuration format for {path}")
 
 
 __all__ = [
