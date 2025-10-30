@@ -1,0 +1,51 @@
+{
+  "evolvable_functions": [
+    "alphaevolve.heuristics.score_match",
+    "alphaevolve.heuristics.price_job",
+    "alphaevolve.heuristics.rank_candidates",
+    "alphaevolve.heuristics.schedule_agents"
+  ],
+  "prompt": {
+    "explicit_context": "Economic optimization of AGIJobs marketplace heuristics.",
+    "include_metrics": ["Utility", "GMV", "Cost", "Fairness"],
+    "stochastic_templates": {
+      "task_intro": [
+        "Improve the allocation logic for higher ROI.",
+        "Discover a breakthrough increase in Utility.",
+        "Engineer a resilient uplift in marketplace economics."
+      ],
+      "use_probability": 0.35
+    }
+  },
+  "models": {
+    "fast_model": "gpt-fast",
+    "strong_model": "gpt-strong",
+    "strong_invoke_ratio": 0.15
+  },
+  "controller": {
+    "max_parallel_evaluations": 4,
+    "max_generations_per_run": 200,
+    "wallclock_time_limit_min": 60
+  },
+  "thermostat": {
+    "success_window": 12,
+    "low_success_threshold": 0.15,
+    "high_success_threshold": 0.6,
+    "min_temperature": 0.2,
+    "max_temperature": 0.9
+  },
+  "guardrails": {
+    "max_cost_pct_baseline": 1.1,
+    "min_utility_pct_baseline": 0.98,
+    "min_fairness": 0.3,
+    "rollback_on_latency_ms": 450
+  },
+  "baseline_metrics": {
+    "GMV": 2100.0,
+    "Cost": 880.0,
+    "Utility": 1220.0,
+    "Latency": 0.4,
+    "Fairness": 0.35,
+    "Acceptance": 0.65
+  }
+}
