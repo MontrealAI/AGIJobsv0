@@ -13,6 +13,7 @@ from .knowledge import KnowledgeLake
 from .metrics import MetricsServer
 from .orchestrator import AlphaOrchestrator, ExecutionReport, build_specialists
 from .planner import MuZeroPlanner
+from .safety import SafetyController, SafetyEvaluation
 from .stake import StakeEvent, StakeManager
 from .state import NodeState, StateStore
 
@@ -34,6 +35,7 @@ class AlphaNode:
         orchestrator: Optional[AlphaOrchestrator] = None,
         harvester: Optional[TaskHarvester] = None,
         compliance: Optional[ComplianceEngine] = None,
+        safety: Optional[SafetyController] = None,
         metrics: Optional[MetricsServer] = None,
     ) -> None:
         self.config = config
@@ -56,6 +58,12 @@ class AlphaNode:
         job_registry = JobRegistry((self.base_path / config.jobs.job_source).resolve())
         self.harvester = harvester or TaskHarvester(job_registry, self.state_store)
         self.compliance = compliance or ComplianceEngine(config.compliance, self.state_store, self.stake_manager)
+        self.safety = safety or SafetyController(
+            self.state_store,
+            self.stake_manager,
+            self.ens_verifier,
+            self.governance,
+        )
         self.metrics = metrics or MetricsServer(
             config.metrics.listen_host,
             config.metrics.listen_port,
@@ -70,6 +78,7 @@ class AlphaNode:
 
         if self.config.stake.minimum_stake:
             self.stake_manager.deposit(float(self.config.stake.minimum_stake))
+        self.safety.guard("bootstrap", auto_resume=False)
         report = self.compliance.evaluate(self.ens_verifier.verify())
         self._last_compliance = report
         return report
@@ -78,6 +87,9 @@ class AlphaNode:
     def run_once(self) -> Optional[ExecutionReport]:
         """Execute a single autonomous planning and execution cycle."""
 
+        evaluation = self.safety.guard("run-cycle")
+        if not evaluation.safe:
+            return None
         jobs = list(self.harvester.harvest())
         if not jobs:
             return None
@@ -119,9 +131,10 @@ class AlphaNode:
         return self.stake_manager.restake_rewards()
 
     # ------------------------------------------------------------------
-    def run_safety_drill(self) -> None:
-        self.pause("drill")
-        self.resume("drill-complete")
+    def run_safety_drill(self) -> SafetyEvaluation:
+        evaluation = self.safety.conduct_drill()
+        self._last_compliance = self.compliance.evaluate(self.ens_verifier.verify())
+        return evaluation
 
     # ------------------------------------------------------------------
     def compliance_report(self) -> ComplianceReport:

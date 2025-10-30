@@ -10,6 +10,10 @@ def test_pause_and_resume_update_state(tmp_path):
     store = StateStore(tmp_path / 'state.json')
     controller = GovernanceController(config.governance, store)
     controller.pause_all('test')
-    assert store.read().paused is True
+    paused_state = store.read()
+    assert paused_state.paused is True
+    assert paused_state.pause_reason == 'test'
     controller.resume_all('test')
-    assert store.read().paused is False
+    resumed_state = store.read()
+    assert resumed_state.paused is False
+    assert resumed_state.pause_reason == ''

@@ -51,7 +51,14 @@ class ComplianceEngine:
         dimensions["governance"] = ComplianceDimension(
             name="Governance & Safety",
             score=0.0 if state.paused else 1.0,
-            rationale="System pause engaged" if state.paused else "System active",
+            rationale=(
+                "System pause engaged"
+                if state.paused
+                else "System active"
+            )
+            + (
+                f" ({state.pause_reason})" if state.pause_reason else ""
+            ),
         )
         dimensions["economic"] = ComplianceDimension(
             name="Economic Engine",
@@ -69,6 +76,7 @@ class ComplianceEngine:
             rationale=f"Strategic alpha {state.strategic_alpha_index:.2f}",
         )
         overall = sum(d.score for d in dimensions.values()) / len(dimensions)
+        self.store.update(compliance_score=round(overall, 3))
         return ComplianceReport(overall=round(overall, 3), dimensions=dimensions)
 
 

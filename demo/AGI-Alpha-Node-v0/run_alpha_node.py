@@ -122,8 +122,9 @@ def main() -> None:
             node.update_governance(address)
             print(f"Governance rotated to {address}")
         elif choice == "8":
-            node.run_safety_drill()
+            evaluation = node.run_safety_drill()
             print("Emergency pause drill executed and logged.")
+            print(json.dumps({"safety": asdict(evaluation)}, indent=2))
         elif choice == "9":
             report = node.compliance_report()
             print("Composite Compliance Score: %.2f" % report.overall)
