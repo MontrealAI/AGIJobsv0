@@ -45,6 +45,7 @@ full strength of **AGI Jobs v0 (v2)**.
    ```bash
    make owner-set KEY=platform_fee_bps VALUE=220
    make owner-toggle  # Pause/resume entire orchestration instantly
+   make owner-reset   # Restore the sovereign defaults in one command
    ```
 
 5. Serve the dashboard (optional):
@@ -104,6 +105,7 @@ mission metrics, and treasury analytics in a single cinematic surface.
 | `config/strategies.yaml` | Five iconic launch profiles (E2E, AlphaEvolve, HGM, TRM, OMNI). |
 | `config/rules.yaml` | Sentinel thresholds controlling launch approval. |
 | `config/owner_controls.yaml` | Owner-governed configuration (addresses, fees, overrides, pause switch). |
+| `config/owner_controls.defaults.yaml` | Canonical sovereign snapshot used for instant resets and CI bootstrapping. |
 | `contracts/v2/modules/DayOneUtilityController.sol` | Upgrade-ready solidity module mirroring the owner controls contract. |
 | `tests/test_demo_runner.py` | Pytest suite verifying guardrails, pausing, output artefacts. |
 
@@ -135,6 +137,10 @@ sequenceDiagram
 
 Every update triggers schema validation so a mis-typed value cannot compromise the
 pipeline.
+
+The command deck now ships with an instant rollback lever via `make owner-reset`
+and enforces mainnet-grade address validation, guaranteeing that only legitimate
+EVM owner/treasury pairs reach the control plane.
 
 ---
 
@@ -222,6 +228,14 @@ make verify  # Installs deps & runs pytest
 
 `pytest` covers pausing behaviour, guardrail correctness, HTML export, and the
 owner console.
+
+```bash
+python3 run_demo.py simulate --strategy e2e --format human
+```
+
+Pair the JSON export with a human-readable battle-briefing sized for founders.
+The command-line summary surfaces guardrail verdicts, treasury outcomes, and
+direct links to the generated dashboard without requiring any parsing tools.
 
 ---
 

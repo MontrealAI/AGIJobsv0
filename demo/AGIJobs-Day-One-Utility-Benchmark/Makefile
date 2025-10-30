@@ -1,15 +1,15 @@
 PYTHON ?= python3
 STRATEGY ?= e2e
 
-.PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni owner-show owner-set owner-toggle list clean report ci verify
+.PHONY: deps bootstrap simulate e2e alphaevolve hgm trm omni owner-show owner-set owner-toggle owner-reset list clean report ci verify
 
 deps:
 	$(PYTHON) -m pip install --upgrade pip >/dev/null
 	$(PYTHON) -m pip install --quiet -r requirements.txt
 
 bootstrap:
-	@cp config/owner_controls.yaml config/owner_controls.yaml >/dev/null 2>&1 || true
-	@echo "Owner controls verified."
+	@cp config/owner_controls.defaults.yaml config/owner_controls.yaml >/dev/null 2>&1 || true
+	@echo "Owner controls restored from defaults."
 
 simulate: deps
 	$(PYTHON) run_demo.py simulate --strategy $(STRATEGY)
@@ -38,6 +38,9 @@ owner-set:
 
 owner-toggle:
 	$(PYTHON) run_demo.py owner --toggle-pause
+
+owner-reset:
+	$(PYTHON) run_demo.py owner --reset
 
 list:
 	$(PYTHON) run_demo.py list
