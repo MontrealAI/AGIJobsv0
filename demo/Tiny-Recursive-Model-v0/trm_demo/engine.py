@@ -114,19 +114,19 @@ class TrmEngine:
             logits = output["logits"][0]
             halt_logits = output["halt_logits"][0]
             halt_probs = torch.sigmoid(halt_logits)
-            final_idx = logits.shape[0] - 1
+            total_outer = logits.shape[0]
+            final_idx = total_outer - 1
             halted_early = False
-            steps_used = 0
-            for outer_idx in range(logits.shape[0]):
-                steps_used += total_inner
+            for outer_idx in range(total_outer):
                 if halt_probs[outer_idx].item() >= halt_threshold:
                     final_idx = outer_idx
-                    halted_early = outer_idx < logits.shape[0] - 1
+                    halted_early = outer_idx < total_outer - 1
                     break
             probs = torch.softmax(logits[final_idx], dim=-1)
             prediction = int(torch.argmax(probs).item())
             confidence = float(probs[prediction].item())
             latency_ms = (time.perf_counter() - start_time) * 1000
+            steps_used = total_outer * total_inner
         return InferenceResult(
             prediction=prediction,
             confidence=confidence,
