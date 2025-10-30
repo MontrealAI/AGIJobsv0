@@ -1,0 +1,32 @@
+# Default configuration for the MuZero-style AGI Jobs planning demo.
+environment:
+  max_jobs: 6
+  planning_horizon: 8
+  starting_budget: 150.0
+  discount: 0.997
+  skip_penalty: -0.5
+  risk_aversion: 0.15
+  rng_seed: 7
+
+planner:
+  num_simulations: 48
+  discount: 0.997
+  dirichlet_alpha: 0.3
+  dirichlet_fraction: 0.25
+  exploration_constant: 1.25
+  temperature: 0.8
+  max_depth: 12
+
+training:
+  batch_size: 16
+  unroll_steps: 3
+  td_steps: 4
+  learning_rate: 0.002
+  replay_buffer_size: 512
+  policy_weight: 1.0
+  value_weight: 0.75
+  reward_weight: 0.5
+  temperature: 0.9
+
+artifacts:
+  checkpoint_path: artifacts/muzero-demo/model.pt

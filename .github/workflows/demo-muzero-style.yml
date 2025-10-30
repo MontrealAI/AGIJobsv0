@@ -1,0 +1,34 @@
+name: demo-muzero-style
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'demo/MuZero-style-v0/**'
+      - '.github/workflows/demo-muzero-style.yml'
+  pull_request:
+    paths:
+      - 'demo/MuZero-style-v0/**'
+      - '.github/workflows/demo-muzero-style.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.1.2
+          pip install -r requirements-python.txt
+          pip install -r demo/MuZero-style-v0/requirements.txt
+      - name: Run MuZero demo tests
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTHONPATH: demo/MuZero-style-v0
+        run: |
+          pytest demo/MuZero-style-v0/tests -q
