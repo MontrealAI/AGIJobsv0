@@ -1,83 +1,119 @@
-import importlib.util
-import pathlib
+import random
+import sys
+from pathlib import Path
 
 import pytest
 
-MODULE_PATH = pathlib.Path(__file__).parents[1] / "omni_demo.py"
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-
-def load_module():
-    spec = importlib.util.spec_from_file_location("omni_demo", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    import sys
-
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)  # type: ignore[misc]
-    return module
-
-
-OMNI_DEMO = load_module()
-EconomicLedger = OMNI_DEMO.EconomicLedger
-ThermostatController = OMNI_DEMO.ThermostatController
-SentinelSuite = OMNI_DEMO.SentinelSuite
-OmniEngine = OMNI_DEMO.OmniEngine
-MoIClient = OMNI_DEMO.MoIClient
-baseline_tasks = OMNI_DEMO.baseline_tasks
+from demo.open_endedness_v0 import (
+    EconomicLedger,
+    EconomicSnapshot,
+    ModelOfInterestingness,
+    OmniCurriculumEngine,
+    Sentinel,
+    SentinelConfig,
+    ThermostatController,
+)
 
 
 @pytest.fixture()
-def prompt_path():
-    return MODULE_PATH.parent / "prompts" / "interestingness_prompt.md"
+def engine() -> OmniCurriculumEngine:
+    descriptions = {
+        "cta_opt": "Optimise premium CTA",
+        "discount": "Optimise hiring discount",
+        "match": "Autonomous talent matching",
+    }
+    return OmniCurriculumEngine(descriptions, rng=random.Random(9), moi_client=ModelOfInterestingness())
 
 
-def test_economic_ledger_tracks_roi(prompt_path):
+def test_economic_ledger_tracks_roi() -> None:
     ledger = EconomicLedger()
-    spec = baseline_tasks()[0]
-    # Successful attempt with FM cost
-    ledger.record(step=1, strategy="OMNI", task=spec, success=True, revenue=spec.value, fm_cost=5.0)
-    # Failed attempt
-    ledger.record(step=2, strategy="OMNI", task=spec, success=False, revenue=0.0, fm_cost=0.0)
-    summary = ledger.task_summary()[spec.task_id]
+    ledger.record(
+        step=1,
+        strategy="OMNI",
+        task_id="cta_opt",
+        success=True,
+        revenue=250.0,
+        fm_cost=5.0,
+        intervention_cost=5.0,
+    )
+    ledger.record(
+        step=2,
+        strategy="OMNI",
+        task_id="cta_opt",
+        success=False,
+        revenue=0.0,
+        fm_cost=0.0,
+        intervention_cost=5.0,
+    )
+    summary = ledger.task_summary()["cta_opt"]
     assert summary["attempts"] == 2
     assert summary["successes"] == 1
-    expected_roi = spec.value / ((spec.operational_cost * 2) + 5.0)
+    expected_roi = 250.0 / (5.0 + 10.0)
     assert summary["roi"] == pytest.approx(expected_roi)
     totals = ledger.totals()
-    assert totals["roi_fm"] == pytest.approx(spec.value / 5.0)
+    assert totals["roi_overall"] == pytest.approx(expected_roi)
 
 
-def test_thermostat_adjusts_underperforming_engine(prompt_path):
-    engine = OmniEngine(baseline_tasks(), MoIClient(prompt_path))
+def test_thermostat_adjusts_underperforming_engine(engine: OmniCurriculumEngine) -> None:
     ledger = EconomicLedger()
-    spec = baseline_tasks()[1]
-    # Record multiple low-value attempts with FM spend to drop ROI below floor
     for step in range(1, 4):
-        ledger.record(step=step, strategy="OMNI", task=spec, success=True, revenue=10.0, fm_cost=5.0)
-        engine.update_task_outcome(spec.task_id, 0.0)
-    thermostat = ThermostatController({"roi_floor": 5.0})
-    distribution = engine.distribution()
-    thermostat.adjust(engine=engine, ledger=ledger, distribution=distribution, step=4)
-    assert engine.interesting_weight < 1.0
-    assert thermostat.events, "Thermostat should log the adjustment"
+        ledger.record(
+            step=step,
+            strategy="OMNI",
+            task_id="discount",
+            success=True,
+            revenue=15.0,
+            fm_cost=6.0,
+            intervention_cost=0.0,
+        )
+        engine.update_task_outcome("discount", 0.0)
+    thermostat = ThermostatController(
+        engine=engine,
+        roi_target=6.0,
+        roi_floor=3.0,
+        min_moi_interval=5,
+        max_moi_interval=40,
+    )
+    snapshot = EconomicSnapshot(conversions=1.0, revenue=15.0, fm_cost=6.0, intervention_cost=0.0)
+    adjustments = thermostat.update(snapshot, ledger=ledger, step=4)
+    assert adjustments, "Thermostat should emit adjustments when ROI dips"
+    assert thermostat.events, "Thermostat must record an event"
+    assert thermostat.current_interval >= 5
+    assert engine.moi_client.boring_weight >= 0.002
 
 
-def test_sentinel_disables_low_roi_tasks(prompt_path):
-    engine = OmniEngine(baseline_tasks(), MoIClient(prompt_path))
+def test_sentinel_disables_low_roi_tasks(engine: OmniCurriculumEngine) -> None:
     ledger = EconomicLedger()
-    spec = baseline_tasks()[0]
-    for step in range(1, 5):
-        ledger.record(step=step, strategy="OMNI", task=spec, success=False, revenue=0.0, fm_cost=0.0)
-        engine.update_task_outcome(spec.task_id, 0.0)
-    sentinel = SentinelSuite({"task_roi_floor": 0.1}, qps_limit=1.0, fm_cost_per_query=0.02)
-    sentinel.evaluate(engine, ledger, step=5)
-    distribution = engine.distribution()
-    assert distribution[spec.task_id] == 0.0
+    sentinel = Sentinel(
+        engine=engine,
+        config=SentinelConfig(task_roi_floor=0.1, overall_roi_floor=0.0, fm_cost_per_query=0.01),
+    )
+    for step in range(1, 6):
+        ledger.record(
+            step=step,
+            strategy="OMNI",
+            task_id="cta_opt",
+            success=False,
+            revenue=0.0,
+            fm_cost=0.0,
+            intervention_cost=0.0,
+        )
+        engine.update_task_outcome("cta_opt", 0.0)
+    sentinel.evaluate(ledger, step=6)
+    assert "cta_opt" in engine.disabled_tasks
     assert any(event["action"] == "sentinel_disable_task" for event in sentinel.events)
 
 
-def test_sentinel_enforces_budget(prompt_path):
-    thermostat = ThermostatController({"fm_budget_usd": 1.0})
-    sentinel = SentinelSuite({}, qps_limit=1.0, fm_cost_per_query=10.0)
-    assert not sentinel.can_issue_fm_query(1, thermostat)
-    assert sentinel.events and sentinel.events[0]["action"] == "sentinel_budget_lock"
+def test_sentinel_enforces_budget(engine: OmniCurriculumEngine) -> None:
+    sentinel = Sentinel(
+        engine=engine,
+        config=SentinelConfig(budget_limit=0.05, fm_cost_per_query=0.05, moi_daily_max=10, qps_limit=1.0),
+    )
+    assert sentinel.can_issue_fm_query(step=1)
+    sentinel.register_moi_query(step=1, fm_cost=0.05)
+    assert not sentinel.can_issue_fm_query(step=2)
+    assert any(event["action"] == "sentinel_budget_lock" for event in sentinel.events)

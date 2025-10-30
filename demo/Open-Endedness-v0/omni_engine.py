@@ -26,7 +26,7 @@ import logging
 import math
 import random
 from collections import defaultdict
-from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Set, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +131,7 @@ class OmniCurriculumEngine:
         self.tasks: Dict[str, TaskState] = defaultdict(TaskState)
         self._distribution: Dict[str, float] = {}
         self._boring_explanations: Dict[str, Optional[str]] = {}
+        self._disabled_tasks: Set[str] = set()
 
         # Warm-up ensures every task has a baseline state.
         for task_id in self.task_descriptions:
@@ -149,6 +150,19 @@ class OmniCurriculumEngine:
     @property
     def boring_explanations(self) -> Mapping[str, Optional[str]]:
         return dict(self._boring_explanations)
+
+    @property
+    def disabled_tasks(self) -> Set[str]:
+        return set(self._disabled_tasks)
+
+    def set_task_disabled(self, task_id: str, disabled: bool) -> None:
+        if task_id not in self.tasks:
+            raise KeyError(f"Unknown task_id {task_id}")
+        if disabled:
+            self._disabled_tasks.add(task_id)
+        else:
+            self._disabled_tasks.discard(task_id)
+        self._distribution = {}
 
     # ------------------------------------------------------------------
     def update_task_outcome(self, task_id: str, success: float) -> None:
@@ -206,8 +220,12 @@ class OmniCurriculumEngine:
 
         combined_weights: Dict[str, float] = {}
         for task_id, base_weight in weights.items():
+            if task_id in self._disabled_tasks:
+                combined_weights[task_id] = 0.0
+                continue
             moi_weight = self.moi_client.weight_for(self.tasks[task_id].interesting)
-            combined_weights[task_id] = max(base_weight * moi_weight, self.min_probability)
+            combined = base_weight * moi_weight
+            combined_weights[task_id] = max(combined, self.min_probability)
 
         total = sum(combined_weights.values())
         if total <= 0:

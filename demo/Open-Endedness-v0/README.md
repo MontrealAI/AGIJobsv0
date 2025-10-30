@@ -47,8 +47,9 @@ flowchart TD
 | Module | Purpose | Key Capabilities |
 | ------ | ------- | ---------------- |
 | [`omni_engine.py`](./omni_engine.py) | OMNI Core | Double EMA LP tracking, Algorithm 1 task partitioning, probabilistic sampler with MoI weighting |
+| [`ledger.py`](./ledger.py) | Economic Ledger | Deterministic tracking of GMV, FM spend, ROI per task for reporting and controls |
 | [`thermostat.py`](./thermostat.py) | Thermostat | Auto-tunes MoI cadence & exploration pressure from real-time ROI |
-| [`sentinel.py`](./sentinel.py) | Sentinel | Hard guardrails for ROI floors, FM budgets, entropy | 
+| [`sentinel.py`](./sentinel.py) | Sentinel | Hard guardrails for ROI floors, FM budgets, entropy |
 | [`config/omni_agialpha_seed.yaml`](./config/omni_agialpha_seed.yaml) | Seed Config | Enterprise-ready defaults for $AGIALPHA | 
 | [`prompts/interestingness_prompt.txt`](./prompts/interestingness_prompt.txt) | MoI Prompt | Drop-in foundation model instructions |
 

@@ -1,64 +1,57 @@
-import importlib.util
-import pathlib
 import random
+import sys
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[3]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from demo.open_endedness_v0 import ModelOfInterestingness, OmniCurriculumEngine
 
 
-MODULE_PATH = pathlib.Path(__file__).parents[1] / "omni_demo.py"
+@pytest.fixture()
+def engine() -> OmniCurriculumEngine:
+    descriptions = {
+        "cta_opt": "Optimise premium CTA",
+        "discount": "Optimise hiring discount",
+        "match": "Autonomous talent matching",
+    }
+    rng = random.Random(5)
+    return OmniCurriculumEngine(descriptions, rng=rng, moi_client=ModelOfInterestingness())
 
 
-def load_module():
-    spec = importlib.util.spec_from_file_location("omni_demo", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec and spec.loader
-    import sys
-
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)  # type: ignore[misc]
-    return module
-
-
-OMNI_DEMO = load_module()
-LearningProgressMeter = OMNI_DEMO.LearningProgressMeter
-OmniEngine = OMNI_DEMO.OmniEngine
-MoIClient = OMNI_DEMO.MoIClient
-baseline_tasks = OMNI_DEMO.baseline_tasks
-
-
-def test_learning_progress_increases_with_success():
-    meter = LearningProgressMeter(fast_beta=0.1, slow_beta=0.01)
+def test_learning_progress_increases_with_success(engine: OmniCurriculumEngine) -> None:
     for _ in range(10):
-        meter.update("task", 0.0)
-    base_lp = meter.lp["task"]
+        engine.update_task_outcome("cta_opt", 0.0)
+    base_lp = engine.tasks["cta_opt"].learning_progress
     for _ in range(5):
-        meter.update("task", 1.0)
-    assert meter.lp["task"] > base_lp
-
-
-def test_distribution_respects_interesting_flag():
-    specs = baseline_tasks()
-    prompt_path = MODULE_PATH.parent / "prompts" / "interestingness_prompt.md"
-    engine = OmniEngine(specs, MoIClient(prompt_path))
-    for spec in specs:
-        engine.update_task_outcome(spec.task_id, 1.0 if spec.task_id == "cta_opt" else 0.0)
-    engine.interesting["cta_opt"] = False
-    distribution = engine.distribution()
-    assert distribution["cta_opt"] < 0.05
-
-
-def test_sample_matches_distribution():
-    specs = baseline_tasks()
-    prompt_path = MODULE_PATH.parent / "prompts" / "interestingness_prompt.md"
-    engine = OmniEngine(specs, MoIClient(prompt_path))
-    rng = random.Random(7)
-    for _ in range(100):
         engine.update_task_outcome("cta_opt", 1.0)
-    counts = {spec.task_id: 0 for spec in specs}
-    for _ in range(500):
-        task = engine.sample_task(rng)
-        counts[task.task_id] += 1
-    distribution = engine.distribution()
-    total = sum(counts.values())
-    for task_id, observed in counts.items():
-        expected = distribution[task_id]
-        if expected > 0.0:
-            assert abs(observed / total - expected) < 0.1
+    assert engine.tasks["cta_opt"].learning_progress > base_lp
+
+
+def test_distribution_respects_disabled_tasks(engine: OmniCurriculumEngine) -> None:
+    engine.update_task_outcome("cta_opt", 1.0)
+    engine.update_task_outcome("discount", 1.0)
+    engine.refresh_partition(force=True)
+    engine.set_task_disabled("cta_opt", True)
+    distribution = engine.distribution
+    assert distribution["cta_opt"] == pytest.approx(0.0)
+    assert distribution["discount"] > distribution["cta_opt"]
+
+
+def test_sample_matches_distribution(engine: OmniCurriculumEngine) -> None:
+    for _ in range(20):
+        engine.update_task_outcome("cta_opt", 1.0)
+    engine.refresh_partition(force=True)
+    counts = {task_id: 0 for task_id in engine.task_descriptions}
+    trials = 500
+    for _ in range(trials):
+        task_id = engine.sample_task()
+        counts[task_id] += 1
+    for task_id, count in counts.items():
+        expected = engine.distribution[task_id]
+        if expected > 0:
+            observed = count / trials
+            assert pytest.approx(observed, rel=0.2) == expected

@@ -1,60 +1,177 @@
-"""Sentinel safeguards for the OMNI demo."""
+"""Sentinel guardrails for the OMNI demo."""
+
 from __future__ import annotations
 
 import dataclasses
 import math
-import sys
-from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional
 
-CURRENT_DIR = Path(__file__).resolve().parent
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.append(str(CURRENT_DIR))
-
-from omni_engine import OmniCurriculumEngine
+try:  # pragma: no cover - fallback for script execution
+    from .ledger import EconomicLedger
+    from .omni_engine import OmniCurriculumEngine
+except ImportError:  # pragma: no cover - executed when running as script
+    from ledger import EconomicLedger  # type: ignore[import-not-found]
+    from omni_engine import OmniCurriculumEngine  # type: ignore[import-not-found]
 
 
 @dataclasses.dataclass
 class SentinelConfig:
-    roi_floor: float = 1.5
+    task_roi_floor: float = 1.5
+    overall_roi_floor: float = 2.0
     budget_limit: float = 100.0
     moi_daily_max: int = 1000
     min_entropy: float = 0.75
+    qps_limit: float = 0.1
+    fm_cost_per_query: float = 0.02
 
 
 class Sentinel:
     def __init__(self, engine: OmniCurriculumEngine, config: SentinelConfig) -> None:
         self.engine = engine
         self.config = config
-        self._task_budget: Dict[str, float] = {}
-        self._moi_queries = 0
+        self.events: List[Dict[str, object]] = []
         self._total_cost = 0.0
+        self._queries = 0
+        self._last_query_step: Optional[int] = None
+        self._moi_locked = False
+        self._disabled_tasks: Dict[str, str] = {}
 
     # ------------------------------------------------------------------
     def register_outcome(self, task_id: str, reward_value: float, cost: float) -> None:
-        self._task_budget[task_id] = self._task_budget.get(task_id, 0.0) + cost
         self._total_cost += cost
+        if self._total_cost > self.config.budget_limit and not self._moi_locked:
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_budget_lock",
+                    "task_id": task_id,
+                    "total_cost": self._total_cost,
+                }
+            )
+
+    def register_moi_query(self, step: int, fm_cost: Optional[float] = None) -> None:
+        if self._moi_locked:
+            return
+        cost = fm_cost if fm_cost is not None else self.config.fm_cost_per_query
+        self._total_cost += cost
+        self._queries += 1
+        self._last_query_step = step
         if self._total_cost > self.config.budget_limit:
-            for state in self.engine.tasks.values():
-                state.interesting = True
-            self.engine.moi_client.boring_weight = 1.0
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_budget_lock",
+                    "step": step,
+                    "total_cost": self._total_cost,
+                }
+            )
+        elif self._queries >= self.config.moi_daily_max:
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_moi_cap_reached",
+                    "step": step,
+                    "queries": self._queries,
+                }
+            )
+
+    def can_issue_fm_query(self, step: int) -> bool:
+        if self._moi_locked:
+            return False
+        cost_projection = self._total_cost + self.config.fm_cost_per_query
+        if cost_projection > self.config.budget_limit:
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_budget_lock",
+                    "step": step,
+                    "total_cost": cost_projection,
+                }
+            )
+            return False
+        if self._queries >= self.config.moi_daily_max:
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_moi_cap_reached",
+                    "step": step,
+                    "queries": self._queries,
+                }
+            )
+            return False
+        if self.config.qps_limit > 0 and self._last_query_step is not None:
+            min_gap = max(int(math.ceil(1 / self.config.qps_limit)), 1)
+            if step - self._last_query_step < min_gap:
+                self.events.append(
+                    {
+                        "action": "sentinel_qps_delay",
+                        "step": step,
+                        "wait_until": self._last_query_step + min_gap,
+                    }
+                )
+                return False
+        return True
 
     # ------------------------------------------------------------------
-    def register_moi_query(self) -> None:
-        self._moi_queries += 1
-        if self._moi_queries >= self.config.moi_daily_max:
+    def evaluate(self, ledger: EconomicLedger, step: int) -> None:
+        summary = ledger.task_summary()
+        for task_id, metrics in summary.items():
+            if metrics["attempts"] < 3:
+                continue
+            if metrics["roi"] < self.config.task_roi_floor:
+                if task_id not in self._disabled_tasks:
+                    self.engine.set_task_disabled(task_id, True)
+                    self._disabled_tasks[task_id] = "roi_floor"
+                    self.events.append(
+                        {
+                            "action": "sentinel_disable_task",
+                            "step": step,
+                            "task_id": task_id,
+                            "roi": metrics["roi"],
+                        }
+                    )
+
+        totals = ledger.totals()
+        if (
+            totals["roi_overall"] != float("inf")
+            and totals["roi_overall"] < self.config.overall_roi_floor
+            and not self._moi_locked
+        ):
+            self._moi_locked = True
+            self.events.append(
+                {
+                    "action": "sentinel_overall_roi_pause",
+                    "step": step,
+                    "roi": totals["roi_overall"],
+                }
+            )
+            for task_id in list(self._disabled_tasks):
+                self.engine.set_task_disabled(task_id, False)
+            self._disabled_tasks.clear()
             self.engine.moi_client.boring_weight = 1.0
 
-    # ------------------------------------------------------------------
-    def enforce_entropy_floor(self) -> bool:
+        self.enforce_entropy_floor(step)
+
+    def enforce_entropy_floor(self, step: int) -> bool:
         distribution = self.engine.distribution
-        entropy = -sum(p * math.log(p) for p in distribution.values() if p > 0)
-        max_entropy = math.log(len(distribution)) if distribution else 1.0
+        positive_probs = [p for p in distribution.values() if p > 0]
+        if not positive_probs:
+            return False
+        entropy = -sum(p * math.log(p) for p in positive_probs)
+        max_entropy = math.log(len(positive_probs)) if positive_probs else 1.0
         normalised_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
         if normalised_entropy < self.config.min_entropy:
-            for task_id, state in self.engine.tasks.items():
-                state.interesting = True
+            for task_id in list(self._disabled_tasks):
+                self.engine.set_task_disabled(task_id, False)
+            self._disabled_tasks.clear()
             self.engine.moi_client.boring_weight = 0.1
             self.engine.refresh_partition(force=True)
+            self.events.append(
+                {
+                    "action": "sentinel_entropy_rebalance",
+                    "step": step,
+                    "entropy": normalised_entropy,
+                }
+            )
             return True
         return False
