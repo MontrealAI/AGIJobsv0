@@ -3,6 +3,7 @@ domain = "demo.alpha.node.agi.eth"
 owner_address = "0x000000000000000000000000000000000000dEaD"
 provider_url = ""
 expected_resolver = ""
+required_suffix = ".alpha.node.agi.eth"
 
 [governance]
 governance_address = "0x1111111111111111111111111111111111111111"

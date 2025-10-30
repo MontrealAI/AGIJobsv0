@@ -19,6 +19,7 @@ class ENSSettings:
     owner_address: str
     provider_url: str | None = None
     expected_resolver: str | None = None
+    required_suffix: str = ".alpha.node.agi.eth"
 
 
 @dataclass(slots=True)
@@ -119,6 +120,7 @@ class AlphaNodeConfig:
                 owner_address=_require("ens", "owner_address"),
                 provider_url=raw["ens"].get("provider_url"),
                 expected_resolver=raw["ens"].get("expected_resolver"),
+                required_suffix=raw["ens"].get("required_suffix", ".alpha.node.agi.eth"),
             ),
             governance=GovernanceSettings(
                 governance_address=_require("governance", "governance_address"),

@@ -66,8 +66,44 @@ flowchart TD
       </article>
     </section>
 
+    <section class="ens-ledger">
+      <article>
+        <h3>ENS Domain</h3>
+        <p id="ensDomain">–</p>
+      </article>
+      <article>
+        <h3>ENS Owner</h3>
+        <p id="ensOwner">–</p>
+      </article>
+      <article>
+        <h3>Verification Source</h3>
+        <p id="ensSource">–</p>
+      </article>
+    </section>
+
     <section class="chart-section">
       <canvas id="complianceChart" width="400" height="400"></canvas>
+    </section>
+
+    <section class="autopilot-section">
+      <h2>Autopilot Wealth Cycles</h2>
+      <p id="autopilotSummary">No autopilot execution detected yet.</p>
+      <div id="autopilotReports" class="autopilot-grid"></div>
+    </section>
+
+    <section class="stake-ledger">
+      <h2>Stake Ledger</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Amount</th>
+            <th>Total Locked</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="stakeLedger"></tbody>
+      </table>
     </section>
 
     <section class="audit-section">

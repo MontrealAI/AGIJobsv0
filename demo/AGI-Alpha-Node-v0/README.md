@@ -65,17 +65,27 @@ flowchart LR
    python -m alpha_node.cli bootstrap
    ```
    This deposits the minimum stake, validates ENS ownership, and prints a compliance snapshot.
-3. **Run the intelligence engine**:
+3. **Activate with ENS guardrails**:
+   ```bash
+   python -m alpha_node.cli activate
+   ```
+   The CLI enforces that the configured ENS ends with `.alpha.node.agi.eth` and auto tops up stake to the minimum.
+4. **Run the intelligence engine**:
    ```bash
    python -m alpha_node.cli run
    ```
    The planner harvests jobs, delegates to specialists, captures knowledge, and restakes rewards automatically.
-4. **Monitor metrics**:
+5. **Spin the autopilot wealth loops**:
+   ```bash
+   python -m alpha_node.cli autopilot --cycles 5 --safety-interval 2
+   ```
+   Cycles execute MuZero++ planning, restake rewards, and trigger antifragility drills on the configured cadence.
+6. **Monitor metrics**:
    ```bash
    python -m alpha_node.cli metrics
    ```
    Scrape Prometheus metrics from `http://localhost:9101`.
-5. **View compliance & dashboard data**:
+7. **View compliance & dashboard data**:
    ```bash
    python -m alpha_node.cli dashboard
    ```
@@ -87,6 +97,10 @@ flowchart LR
 - `python -m alpha_node.cli resume` — safely resume operations.
 - `python -m alpha_node.cli rotate-governance --address <0x...>` — rotate ownership to a new multisig without downtime.
 - `python -m alpha_node.cli stake-deposit --amount 5000` — top up the treasury stake from operator-controlled wallets.
+- `python -m alpha_node.cli stake-withdraw --amount 2500` — simulate a governance-authorized slash or withdrawal.
+- `python -m alpha_node.cli claim-rewards` — restake rewards when the configured threshold is reached.
+- `python -m alpha_node.cli update-stake-policy --restake-threshold 250` — retune staking economics live.
+- `python -m alpha_node.cli safety-drill` — log a pause/resume drill in the compliance ledger.
 
 ## 🌐 Web dashboard (grandiose operator cockpit)
 
@@ -101,6 +115,7 @@ Open `http://localhost:8090` and paste the JSON payload from `python -m alpha_no
 - Stake, rewards, antifragility, and strategic alpha gauges.
 - Live compliance radar chart (powered by vanilla canvas).
 - Governance audit timeline fed by `state.json`.
+- ENS verification status, stake ledger history, and the latest autopilot wealth cycle summary.
 
 ## 🧪 Production-grade tests
 
@@ -142,6 +157,27 @@ The container auto-initializes state, knowledge lake, and stake ledger, making r
 - `web/` — immersive operator dashboard with hero section, flowcharts, and compliance radar.
 - `tests/` — deterministic pytest coverage for core safety and intelligence components.
 - `Dockerfile`, `Makefile`, `README.md` — deployment guide, automation, and documentation.
+
+## ♞ Autopilot wealth loop anatomy
+
+```mermaid
+sequenceDiagram
+    participant Operator
+    participant CLI as alpha_node.cli autopilot
+    participant Node as AlphaNode
+    participant Stake as StakeManager
+    participant Ledger as StateStore
+    participant ENS as ENSVerifier
+
+    Operator->>CLI: `python -m alpha_node.cli autopilot --cycles 3`
+    CLI->>Node: activate() & run_once()
+    Node->>ENS: verify `.alpha.node.agi.eth`
+    Node->>Stake: accrue_rewards()
+    Node->>Stake: restake_rewards()
+    Node->>Ledger: append audit + antifragility drill
+    Node-->>CLI: autopilot payload (decisions + compliance)
+    CLI-->>Operator: JSON summary for dashboard ingestion
+```
 
 ## 🧭 Extending to mainnet
 
