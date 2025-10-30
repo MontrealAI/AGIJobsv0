@@ -39,9 +39,10 @@ class SubgraphIndexer:
 
     events: List[Event] = field(default_factory=list)
 
-    def emit(self, event_type: str, **payload: Any) -> None:
+    def emit(self, event_type: str, **payload: Any) -> Event:
         event = Event(event_type, payload)
         self.events.append(event)
+        return event
 
     def query(self, event_type: Optional[str] = None) -> List[Event]:
         if event_type is None:
@@ -67,6 +68,30 @@ class StakeLedger:
     def ensure_minimum(self, address: str) -> None:
         if self.get_stake(address) < self.min_stake:
             raise ValueError(f"Validator {address} has insufficient stake")
+
+    def set_minimum_stake(self, caller: str, amount: int) -> None:
+        if caller != self.owner:
+            raise PermissionError("Only the owner may set the minimum stake")
+        if amount <= 0:
+            raise ValueError("Minimum stake must be positive")
+        self.min_stake = amount
+        self.subgraph.emit(
+            "MinimumStakeUpdated",
+            minimum=self.min_stake,
+        )
+
+    def adjust_stake(self, caller: str, address: str, amount: int, ens: str) -> None:
+        if caller != self.owner:
+            raise PermissionError("Only the owner may adjust stake levels")
+        if amount < 0:
+            raise ValueError("Stake amount cannot be negative")
+        self.balances[address] = amount
+        self.subgraph.emit(
+            "StakeAdjusted",
+            address=address,
+            ens=ens,
+            newStake=amount,
+        )
 
     def slash(self, address: str, amount: int, reason: str, ens: str) -> None:
         current = self.get_stake(address)
@@ -101,6 +126,13 @@ class DeterministicVRF:
     ) -> List["Validator"]:
         sorted_validators = sorted(validators, key=lambda v: self._score(v.address))
         return list(sorted_validators[: size])
+
+    def rotate_seed(self, caller: str, owner: str, new_seed: str) -> None:
+        if caller != owner:
+            raise PermissionError("Only the owner may rotate the VRF seed")
+        if not new_seed:
+            raise ValueError("VRF seed cannot be empty")
+        self.epoch_seed = new_seed
 
 
 class ENSVerifier:
@@ -288,10 +320,21 @@ class ZKBatchAttestor:
             aggregate.update(result.commitment.encode())
             aggregate.update(result.output_hash.encode())
         digest = aggregate.hexdigest()
+        proof_hex = hashlib.sha3_256(f"{self.proving_key}:{digest}".encode()).hexdigest()
+        signature = hashlib.sha3_256(
+            f"{self.verification_key}:{digest}".encode()
+        ).hexdigest()[:32]
         return {
-            "proof": hashlib.sha3_256(f"{self.proving_key}:{digest}".encode()).hexdigest(),
+            "proof": proof_hex,
             "digest": digest,
             "size": len(results),
+            "calldata": {
+                "validationModule": "ValidationModule",
+                "digest": digest,
+                "jobCount": len(results),
+                "proof": proof_hex,
+                "validationSignature": signature,
+            },
         }
 
     def verify(self, proof_blob: Dict[str, Any]) -> bool:
@@ -300,10 +343,16 @@ class ZKBatchAttestor:
         ).hexdigest()
         if recalculated != proof_blob["proof"]:
             return False
-        expected = hashlib.sha3_256(
+        expected_signature = hashlib.sha3_256(
             f"{self.verification_key}:{proof_blob['digest']}".encode()
-        ).hexdigest()
-        return expected.endswith(proof_blob["proof"][-16:])
+        ).hexdigest()[:32]
+        calldata = proof_blob.get("calldata", {})
+        return (
+            calldata.get("digest") == proof_blob["digest"]
+            and calldata.get("jobCount") == proof_blob["size"]
+            and calldata.get("proof") == proof_blob["proof"]
+            and calldata.get("validationSignature") == expected_signature
+        )
 
 
 @dataclass
@@ -336,6 +385,12 @@ class DomainPauseManager:
             reason=alert.reason,
         )
 
+    def manual_pause(self, domain: str, caller: str, reason: str) -> None:
+        if caller != self.owner:
+            raise PermissionError("Only the contract owner may pause a domain")
+        alert = SentinelAlert(domain=domain, agent_ens=caller, reason=reason)
+        self.pause(domain, alert)
+
     def resume(self, domain: str, caller: str) -> None:
         if caller != self.owner:
             raise PermissionError("Only the contract owner may resume a domain")
@@ -360,6 +415,14 @@ class Sentinel:
         self.pause_manager = pause_manager
         self.budget_limit_per_agent = budget_limit_per_agent
         self.subgraph = subgraph
+
+    def update_budget_limit(self, caller: str, owner: str, new_limit: int) -> None:
+        if caller != owner:
+            raise PermissionError("Only the owner may update sentinel thresholds")
+        if new_limit <= 0:
+            raise ValueError("Sentinel budget limit must be positive")
+        self.budget_limit_per_agent = new_limit
+        self.subgraph.emit("SentinelBudgetUpdated", limit=new_limit)
 
     def inspect(self, action: AgentAction) -> Optional[SentinelAlert]:
         if action.agent.budget <= 0:
@@ -410,7 +473,11 @@ class DemoOrchestrator:
         self.subgraph = SubgraphIndexer()
         self.ledger = StakeLedger(owner_address, subgraph=self.subgraph)
         self.pause_manager = DomainPauseManager(owner_address, self.subgraph)
-        self.sentinal = Sentinel(self.pause_manager, budget_limit_per_agent=100, subgraph=self.subgraph)
+        self.sentinal = Sentinel(
+            self.pause_manager,
+            budget_limit_per_agent=100,
+            subgraph=self.subgraph,
+        )
         self.zk = ZKBatchAttestor("proving-key-demo", "verification-key-demo")
         self.ens_registry = ens_registry
         self.owner = owner_address
@@ -418,6 +485,9 @@ class DemoOrchestrator:
         self.validators = validators
         self.agents = agents
         self.nodes = nodes
+        self.committee_size = min(5, len(self.validators))
+        self.quorum = 3
+        self.owner_actions: List[Dict[str, Any]] = []
         for validator in validators:
             self.ens_registry.verify_validator(validator.ens, validator.address)
             self.ledger.set_stake(validator.address, validator.stake)
@@ -425,6 +495,11 @@ class DemoOrchestrator:
             self.ens_registry.verify_agent(agent.ens, agent.address)
         for node in nodes:
             self.ens_registry.verify_node(node.ens, node.address)
+
+    def record_owner_action(self, action: str, **payload: Any) -> None:
+        entry = {"action": action, "payload": payload, "timestamp": time.time()}
+        self.owner_actions.append(entry)
+        self.subgraph.emit("OwnerAction", action=action, payload=payload)
 
     def run_commit_reveal_round(
         self,
@@ -435,9 +510,9 @@ class DemoOrchestrator:
             round_id=int(time.time()),
             validators=self.validators,
             vrf=self.vrf,
-            committee_size=min(5, len(self.validators)),
+            committee_size=min(self.committee_size, len(self.validators)),
             reveal_deadline=time.time() + 30,
-            quorum=3,
+            quorum=self.quorum,
             stake_ledger=self.ledger,
             subgraph=self.subgraph,
         )
@@ -475,6 +550,7 @@ class DemoOrchestrator:
             "BatchFinalized",
             batch_size=proof["size"],
             digest=proof["digest"],
+            calldata=proof["calldata"],
         )
         return proof
 
@@ -483,6 +559,53 @@ class DemoOrchestrator:
 
     def resume_domain(self, domain: str) -> None:
         self.pause_manager.resume(domain, self.owner)
+
+    def pause_domain(self, domain: str, reason: str) -> None:
+        self.pause_manager.manual_pause(domain, self.owner, reason)
+        self.record_owner_action("domain-pause", domain=domain, reason=reason)
+
+    def rotate_epoch_seed(self, new_seed: str) -> None:
+        self.vrf.rotate_seed(self.owner, self.owner, new_seed)
+        self.record_owner_action("rotate-seed", seed=new_seed)
+
+    def update_committee_parameters(
+        self,
+        *,
+        committee_size: Optional[int] = None,
+        quorum: Optional[int] = None,
+    ) -> None:
+        updates: Dict[str, Any] = {}
+        if committee_size is not None:
+            if committee_size <= 0:
+                raise ValueError("Committee size must be positive")
+            self.committee_size = committee_size
+            updates["committee_size"] = committee_size
+        if quorum is not None:
+            if quorum <= 0:
+                raise ValueError("Quorum must be positive")
+            self.quorum = quorum
+            updates["quorum"] = quorum
+        if updates:
+            self.record_owner_action("update-committee", **updates)
+            self.subgraph.emit("CommitteeParametersUpdated", **updates)
+
+    def update_sentinel_limit(self, new_limit: int) -> None:
+        self.sentinal.update_budget_limit(self.owner, self.owner, new_limit)
+        self.record_owner_action("update-sentinel", limit=new_limit)
+
+    def update_minimum_stake(self, new_minimum: int) -> None:
+        self.ledger.set_minimum_stake(self.owner, new_minimum)
+        self.record_owner_action("update-min-stake", minimum=new_minimum)
+
+    def update_validator_stake(self, address: str, ens: str, new_stake: int) -> None:
+        self.ledger.adjust_stake(self.owner, address, new_stake, ens)
+        for validator in self.validators:
+            if validator.address == address:
+                validator.stake = new_stake
+                break
+        else:
+            raise ValueError(f"Validator {address} is not registered")
+        self.record_owner_action("update-stake", address=address, ens=ens, stake=new_stake)
 
 
 __all__ = [

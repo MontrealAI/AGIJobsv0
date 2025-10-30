@@ -112,6 +112,9 @@ def run_demo(batch_size: int) -> Dict[str, object]:
         ens_registry=registry,
         epoch_seed="validator-constellation-epoch-0",
     )
+    orchestrator.update_minimum_stake(500)
+    orchestrator.update_sentinel_limit(750)
+    orchestrator.update_committee_parameters(committee_size=5, quorum=3)
     commit_round = orchestrator.run_commit_reveal_round(truthful_outcome="approve")
     jobs = _prepare_jobs(batch_size)
     zk_proof = orchestrator.produce_zk_attestation(jobs)
@@ -123,6 +126,16 @@ def run_demo(batch_size: int) -> Dict[str, object]:
             description="Detected unsafe financial leverage request",
         )
     )
+    orchestrator.rotate_epoch_seed("validator-constellation-epoch-1")
+    orchestrator.update_validator_stake(validators[0].address, validators[0].ens, 1_400_000)
+    if sentinel_alert:
+        orchestrator.record_owner_action(
+            "investigate-alert",
+            domain=sentinel_alert.domain,
+            agent=sentinel_alert.agent_ens,
+        )
+        orchestrator.resume_domain("orion-labor")
+        orchestrator.pause_domain("orion-labor", "owner-revalidation-window")
     output = {
         "committee": [validator.ens for validator in commit_round.committee],
         "zk_proof": zk_proof,
@@ -135,6 +148,7 @@ def run_demo(batch_size: int) -> Dict[str, object]:
             }
             for event in orchestrator.subgraph.events
         ],
+        "owner_actions": orchestrator.owner_actions,
     }
     return output
 
@@ -169,6 +183,11 @@ def main() -> None:
     print("\nEvents emitted (first 8):")
     for event in results["events"][:8]:
         print(f"  - {event['type']}: {event['payload']}")
+    if results["owner_actions"]:
+        print("\nOwner console actions:")
+        for action in results["owner_actions"]:
+            payload = ", ".join(f"{k}={v}" for k, v in action["payload"].items())
+            print(f"  - {action['action']} ({payload})")
     print("\nUse the --batch-size flag to experiment with different throughput targets.")
 
 
