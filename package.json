@@ -2,6 +2,7 @@
   "author": "",
   "dependencies": {
     "@apollo/client": "^3.13.1",
+    "@types/node": "^20.12.12",
     "@aws-sdk/client-kms": "^3.899.0",
     "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^2.9.2",
@@ -33,6 +34,7 @@
     "react-markdown": "^9.0.3",
     "recharts": "^2.12.7",
     "three": "^0.171.0",
+    "truffle": "^5.11.5",
     "web3": "^1.10.0",
     "web3.storage": "^4.5.5",
     "ws": "^8.18.3",
@@ -54,7 +56,6 @@
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.13",
     "@types/jest-axe": "^3.5.9",
-    "@types/node": "^20.12.12",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.0",
     "@types/ws": "^8.5.10",
