@@ -406,6 +406,27 @@ type OwnerAutopilot = {
   commandSequence: OwnerAutopilotCommand[];
 };
 
+type OwnerEconomicPowerBrief = {
+  dominance: number;
+  supremacy: number;
+  safety: number;
+  resilience: number;
+  guardrailCoverage: number;
+  commandCoverage: number;
+  safeCoverage: number;
+  autopilotCadenceHours: number;
+  autopilotMission: string;
+  treasuryAfterRun: number;
+  responseMinutes: number;
+  governanceSafe: string;
+  emergencyContacts: string[];
+  narrative: string;
+  guardrails: string[];
+  recommendedActions: string[];
+  signals: string[];
+  mermaid: string;
+};
+
 type OwnerDominionClassification =
   | 'total-dominion'
   | 'fortified'
@@ -572,6 +593,7 @@ type DeterministicProof = {
   deploymentIntegrityHash: string;
   ownerSafeTransactionsHash: string;
   layer2ReadinessHash: string;
+  ownerEconomicPowerBriefHash: string;
   crossValidationHash: string;
 };
 
@@ -670,6 +692,7 @@ export type Summary = {
   ownerSafeTransactions: OwnerSafeTransactionsReport;
   crossValidation: CrossValidationReport;
   layer2Readiness?: Layer2ReadinessReport | null;
+  ownerEconomicPowerBrief: OwnerEconomicPowerBrief;
 };
 
 type SummaryWithSnapshot = Summary & {
@@ -2011,6 +2034,164 @@ function buildOwnerAutopilot(summary: Summary, scenario: Scenario): OwnerAutopil
   };
 }
 
+function generateOwnerEconomicPowerMermaid(brief: OwnerEconomicPowerBrief): string {
+  const lines: string[] = ['graph TD'];
+  lines.push(
+    `  Owner["Owner Multi-Sig"] --> Dominance["Dominance ${formatPercent(brief.dominance)}"]`,
+  );
+  lines.push(
+    `  Owner --> Supremacy["Supremacy ${formatPercent(brief.supremacy)}"]`,
+  );
+  lines.push(`  Owner --> Safety["Safety ${formatPercent(brief.safety)}"]`);
+  lines.push(`  Owner --> Resilience["Resilience ${formatPercent(brief.resilience)}"]`);
+  lines.push(
+    `  Owner --> Autopilot["Autopilot ${brief.autopilotCadenceHours.toFixed(1)}h"]`,
+  );
+  lines.push(
+    `  Owner --> SafeCoverage["Safe Coverage ${formatPercent(brief.safeCoverage)}"]`,
+  );
+  lines.push(
+    `  Owner --> GuardrailCoverage["Guardrail Coverage ${formatPercent(brief.guardrailCoverage)}"]`,
+  );
+  lines.push(
+    `  Owner --> CommandCoverage["Command Coverage ${formatPercent(brief.commandCoverage)}"]`,
+  );
+  const guardrails = brief.guardrails.slice(0, 3);
+  guardrails.forEach((guardrail, index) => {
+    const nodeId = `Guardrail${index}`;
+    lines.push(`  GuardrailCoverage --> ${nodeId}["${escapeMermaidLabel(guardrail)}"]`);
+  });
+  const actions = brief.recommendedActions.slice(0, 3);
+  actions.forEach((action, index) => {
+    const nodeId = `Action${index}`;
+    lines.push(`  Supremacy --> ${nodeId}["${escapeMermaidLabel(action)}"]`);
+  });
+  lines.push(
+    `  Autopilot --> Response["Response ${brief.responseMinutes}m"]`,
+  );
+  lines.push(
+    `  Safety --> Contacts["Emergency Contacts ${brief.emergencyContacts.length}"]`,
+  );
+  return `${lines.join('\n')}\n`;
+}
+
+function generateOwnerEconomicPowerMarkdown(brief: OwnerEconomicPowerBrief): string {
+  const lines: string[] = [];
+  lines.push('# Economic Power Executive Brief');
+  lines.push('');
+  lines.push(brief.narrative);
+  lines.push('');
+  lines.push('## Core metrics');
+  lines.push('');
+  lines.push('| Metric | Value |');
+  lines.push('| --- | --- |');
+  lines.push(`| Dominance | ${formatPercent(brief.dominance)} |`);
+  lines.push(`| Supremacy | ${formatPercent(brief.supremacy)} |`);
+  lines.push(`| Safety mesh | ${formatPercent(brief.safety)} |`);
+  lines.push(`| Shock resilience | ${formatPercent(brief.resilience)} |`);
+  lines.push(`| Guardrail coverage | ${formatPercent(brief.guardrailCoverage)} |`);
+  lines.push(`| Command coverage | ${formatPercent(brief.commandCoverage)} |`);
+  lines.push(`| Safe transaction coverage | ${formatPercent(brief.safeCoverage)} |`);
+  lines.push(`| Autopilot cadence | ${brief.autopilotCadenceHours.toFixed(1)} hours |`);
+  lines.push(`| Treasury after run | ${formatAgi(brief.treasuryAfterRun)} |`);
+  lines.push(`| Response cadence | ${brief.responseMinutes} minutes |`);
+  lines.push('');
+  lines.push('## Autopilot mission');
+  lines.push('');
+  lines.push(`- Mission: ${brief.autopilotMission}`);
+  lines.push(
+    `- Governance safe: \`${brief.governanceSafe}\` — emergency contacts: ${brief.emergencyContacts.join(', ') || 'none'}`,
+  );
+  lines.push('');
+  lines.push('## Guardrails in force');
+  lines.push('');
+  if (brief.guardrails.length === 0) {
+    lines.push('- Guardrail catalogue empty — script pause, resume, and validator directives immediately.');
+  } else {
+    for (const guardrail of brief.guardrails) {
+      lines.push(`- ${guardrail}`);
+    }
+  }
+  lines.push('');
+  lines.push('## Recommended owner actions');
+  lines.push('');
+  if (brief.recommendedActions.length === 0) {
+    lines.push('- Maintain autopilot cadence and treasury telemetry — no new actions surfaced.');
+  } else {
+    for (const action of brief.recommendedActions) {
+      lines.push(`- ${action}`);
+    }
+  }
+  lines.push('');
+  lines.push('## Dominance signals');
+  lines.push('');
+  if (brief.signals.length === 0) {
+    lines.push('- Signals pending — ingest telemetry from the latest simulation run.');
+  } else {
+    for (const signal of brief.signals) {
+      lines.push(`- ${signal}`);
+    }
+  }
+  lines.push('');
+  lines.push('_Generated by AGI Jobs Economic Power orchestration._');
+  lines.push('');
+  return `${lines.join('\n')}\n`;
+}
+
+function buildOwnerEconomicPowerBrief(summary: Summary): OwnerEconomicPowerBrief {
+  const metrics = summary.metrics;
+  const autopilot = summary.ownerAutopilot;
+  const dominion = summary.ownerDominion;
+  const supremacy = summary.ownerControlSupremacy;
+  const safeTransactions = summary.ownerSafeTransactions;
+  const guardrails = dedupe(autopilot.guardrails, 6);
+  const recommendedActions = dedupe(
+    [
+      ...dominion.recommendedActions,
+      ...supremacy.recommendedActions,
+      ...safeTransactions.recommendedActions,
+      ...summary.shockResilience.recommendations,
+    ],
+    6,
+  );
+  const signals = dedupe(
+    [
+      ...dominion.signals,
+      ...supremacy.signals,
+      `Capital velocity ${metrics.capitalVelocity.toFixed(2)} AGI/h`,
+      `Layer-2 readiness ${formatPercent(metrics.layer2ReadinessScore)}`,
+    ],
+    6,
+  );
+  const narrative =
+    `Dominance ${formatPercent(metrics.economicDominanceIndex)} with supremacy ${formatPercent(supremacy.index)} ` +
+    `and safety mesh ${formatPercent(metrics.sovereignSafetyScore)}. Autopilot executes "${autopilot.mission}" ` +
+    `every ${autopilot.cadenceHours.toFixed(1)}h while safes cover ${formatPercent(metrics.ownerSafeTransactionCoverage)} ` +
+    `of modules and treasury projects ${formatAgi(metrics.treasuryAfterRun)} after the run.`;
+  const brief: OwnerEconomicPowerBrief = {
+    dominance: metrics.economicDominanceIndex,
+    supremacy: supremacy.index,
+    safety: metrics.sovereignSafetyScore,
+    resilience: metrics.shockResilienceScore,
+    guardrailCoverage: supremacy.guardrailCoverage,
+    commandCoverage: metrics.ownerCommandCoverage,
+    safeCoverage: metrics.ownerSafeTransactionCoverage,
+    autopilotCadenceHours: autopilot.cadenceHours,
+    autopilotMission: autopilot.mission,
+    treasuryAfterRun: metrics.treasuryAfterRun,
+    responseMinutes: summary.ownerCommandPlan.quickActions.responseMinutes,
+    governanceSafe: summary.ownerControl.governanceSafe,
+    emergencyContacts: [...summary.ownerSovereignty.emergencyContacts],
+    narrative,
+    guardrails,
+    recommendedActions,
+    signals,
+    mermaid: '',
+  };
+  brief.mermaid = generateOwnerEconomicPowerMermaid(brief);
+  return brief;
+}
+
 function classifyLayer2Readiness(
   score: number,
   status: Layer2Config['status'],
@@ -2254,6 +2435,34 @@ function buildOwnerDominion(summary: Summary): OwnerDominionReport {
 
 function formatPercent(value: number, decimals = 1): string {
   return `${(Math.max(0, Math.min(1, value)) * 100).toFixed(decimals)}%`;
+}
+
+const agiFormatter = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 0,
+});
+
+function formatAgi(value: number): string {
+  return `${agiFormatter.format(Math.round(value))} AGI`;
+}
+
+function dedupe(values: string[], limit?: number): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of values) {
+    const value = raw.trim();
+    if (!value) {
+      continue;
+    }
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    result.push(value);
+    if (typeof limit === 'number' && result.length >= limit) {
+      break;
+    }
+  }
+  return result;
 }
 
 function clamp01(value: number): number {
@@ -4541,6 +4750,26 @@ function synthesiseSummary(
       },
       notes: ['Cross-validation pending computation.'],
     },
+    ownerEconomicPowerBrief: {
+      dominance: 0,
+      supremacy: 0,
+      safety: 0,
+      resilience: 0,
+      guardrailCoverage: 0,
+      commandCoverage: ownerCoverage.value,
+      safeCoverage: 0,
+      autopilotCadenceHours: 0,
+      autopilotMission: 'Economic power brief pending orchestration.',
+      treasuryAfterRun,
+      responseMinutes: scenario.safeguards.responseMinutes,
+      governanceSafe: scenario.owner.governanceSafe,
+      emergencyContacts: [...scenario.safeguards.emergencyContacts],
+      narrative: 'Economic power briefing will be populated after simulation completes.',
+      guardrails: [],
+      recommendedActions: [],
+      signals: [],
+      mermaid: 'graph TD\n  EconomicBriefPlaceholder["Economic power brief pending"]\n',
+    },
   };
 }
 
@@ -5135,6 +5364,7 @@ export async function runScenario(
   summary.ownerAutopilot = buildOwnerAutopilot(summary, workingScenario);
   summary.ownerDominion = buildOwnerDominion(summary);
   summary.ownerControlSupremacy = buildOwnerControlSupremacy(summary);
+  summary.ownerEconomicPowerBrief = buildOwnerEconomicPowerBrief(summary);
   summary.metrics.ownerControlSupremacyIndex = Number(
     summary.ownerControlSupremacy.index.toFixed(3),
   );
@@ -5190,6 +5420,7 @@ const DETERMINISTIC_FIELDS: Array<keyof DeterministicProof> = [
   'deploymentIntegrityHash',
   'ownerSafeTransactionsHash',
   'layer2ReadinessHash',
+  'ownerEconomicPowerBriefHash',
   'crossValidationHash',
 ];
 
@@ -5239,6 +5470,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
       assertions: summary.assertions,
       treasuryTrajectory: summary.treasuryTrajectory,
       ownerSafeTransactions: summary.ownerSafeTransactions,
+      ownerEconomicPowerBrief: summary.ownerEconomicPowerBrief,
       crossValidation: summary.crossValidation,
       layer2Readiness: summary.layer2Readiness,
     }),
@@ -5254,6 +5486,7 @@ export function buildDeterministicProof(summary: Summary): DeterministicProof {
     deploymentIntegrityHash: hashObject(summary.deploymentIntegrity),
     ownerSafeTransactionsHash: hashObject(summary.ownerSafeTransactions),
     layer2ReadinessHash: hashObject(summary.layer2Readiness ?? null),
+    ownerEconomicPowerBriefHash: hashObject(summary.ownerEconomicPowerBrief),
     crossValidationHash: hashObject(summary.crossValidation),
   };
   return proof;
@@ -5445,6 +5678,18 @@ async function writeOutputs(
   await fs.writeFile(
     path.join(outputDir, 'owner-control-supremacy.mmd'),
     `${summary.ownerControlSupremacy.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-economic-power-brief.json'),
+    JSON.stringify(summary.ownerEconomicPowerBrief, null, 2),
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-economic-power-brief.mmd'),
+    `${summary.ownerEconomicPowerBrief.mermaid.trimEnd()}\n`,
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'owner-economic-power-brief.md'),
+    generateOwnerEconomicPowerMarkdown(summary.ownerEconomicPowerBrief),
   );
   await fs.writeFile(
     path.join(outputDir, 'super-intelligence.json'),

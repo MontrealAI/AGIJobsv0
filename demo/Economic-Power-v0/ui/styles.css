@@ -859,6 +859,120 @@ main {
   box-shadow: 0 25px 45px rgba(8, 20, 40, 0.55);
 }
 
+.panel.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 2rem;
+  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.25), rgba(2, 6, 23, 0.85));
+  border: 1px solid rgba(129, 140, 248, 0.25);
+}
+
+.panel.hero-graph {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, rgba(45, 212, 191, 0.25), rgba(2, 6, 23, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.panel.hero-graph .panel-header p {
+  color: rgba(191, 219, 254, 0.82);
+}
+
+.panel.hero-graph .mermaid-wrapper {
+  margin-top: 1.75rem;
+  background: rgba(4, 10, 24, 0.82);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 24px 38px rgba(7, 17, 34, 0.55);
+}
+
+.hero-metrics {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 1.75rem;
+}
+
+.hero-card {
+  background: rgba(7, 13, 26, 0.78);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 140px;
+  box-shadow: 0 25px 40px rgba(8, 18, 36, 0.55);
+}
+
+.hero-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.hero-value {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 700;
+  color: #e0f2fe;
+}
+
+.hero-card span {
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.hero-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.hero-panel {
+  background: rgba(4, 10, 24, 0.78);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 20px 36px rgba(5, 12, 28, 0.55);
+}
+
+.hero-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.hero-panel p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.note-list li {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.85rem;
+  background: rgba(8, 16, 32, 0.72);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
 .panel-subheader {
   margin-top: 2rem;
   margin-bottom: 0.75rem;

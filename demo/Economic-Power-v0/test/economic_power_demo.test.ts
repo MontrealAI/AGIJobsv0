@@ -473,11 +473,43 @@ test('economic power simulation produces deterministic metrics', async () => {
     summary.ownerControlSupremacy.mermaid.includes('graph LR'),
     'Owner control supremacy mermaid graph should be rendered',
   );
-  assert.equal(
-    summary.ownerAutopilot.telemetry.economicDominanceIndex,
-    summary.metrics.economicDominanceIndex,
-    'Autopilot telemetry should mirror summary dominance metric',
+  assert(summary.ownerEconomicPowerBrief, 'Economic power brief should be generated');
+  assert(
+    summary.ownerEconomicPowerBrief.mermaid.includes('graph TD'),
+    'Economic power brief mermaid map should render',
   );
+  assert(
+    summary.ownerEconomicPowerBrief.recommendedActions.length >= 1,
+    'Economic power brief should surface recommended actions',
+  );
+  assert(
+    summary.ownerEconomicPowerBrief.guardrails.length >= 1,
+    'Economic power brief should list active guardrails',
+  );
+  assert(
+    summary.ownerEconomicPowerBrief.narrative.includes(summary.ownerAutopilot.mission),
+    'Economic power brief narrative should reference the autopilot mission',
+  );
+  assert.equal(
+    Number(summary.ownerEconomicPowerBrief.safeCoverage.toFixed(3)),
+    Number(summary.metrics.ownerSafeTransactionCoverage.toFixed(3)),
+    'Economic power brief safe coverage should align with metrics',
+  );
+  assert.equal(
+    Number(summary.ownerEconomicPowerBrief.dominance.toFixed(3)),
+    Number(summary.metrics.economicDominanceIndex.toFixed(3)),
+    'Economic power brief dominance should align with metrics',
+  );
+  assert.equal(
+    summary.ownerEconomicPowerBrief.governanceSafe,
+    summary.ownerControl.governanceSafe,
+    'Economic power brief should surface governance safe address',
+  );
+  assert.equal(
+      summary.ownerAutopilot.telemetry.economicDominanceIndex,
+      summary.metrics.economicDominanceIndex,
+      'Autopilot telemetry should mirror summary dominance metric',
+    );
   assert.equal(
     summary.ownerAutopilot.telemetry.globalExpansionReadiness,
     summary.metrics.globalExpansionReadiness,
