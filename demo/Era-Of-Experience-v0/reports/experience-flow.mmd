@@ -3,8 +3,8 @@ flowchart TD
   User[Human Operator] -->|Prompt & Objectives| MissionConsole
   MissionConsole[Mission Console] -->|Scenario Selection| ExperiencePlanner
   ExperiencePlanner -->|Streamed Jobs (96)| Orchestrator
-  Orchestrator -->|Baseline Heuristic| BaselineLoop[Baseline Loop GMV 56413]
-  Orchestrator -->|Learning Policy| LearningLoop[Era Policy GMV 57272]
+  Orchestrator -->|Baseline Heuristic| BaselineLoop[Baseline Loop GMV 120260]
+  Orchestrator -->|Learning Policy| LearningLoop[Era Policy GMV 146227]
   LearningLoop -->|Continuous Rewards| RewardEngine
   RewardEngine[Reward Composer] --> ExperienceBuffer
   ExperienceBuffer[(Streaming Buffer)] --> Trainer

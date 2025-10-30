@@ -1,0 +1,9 @@
+flowchart TD
+  Scenario[Scenario: era-of-experience-baseline] --> Runs[Deterministic Runs (8)]
+  Runs --> Baseline[Baseline Metrics]
+  Runs --> Learning[Learning Metrics]
+  Baseline --> Delta[Mean Delta]
+  Learning --> Delta
+  Delta --> Confidence[Bootstrap + t-test]
+  Confidence --> Verdict{Dominance Confirmed?}
+  Verdict -->|GMV 18292.82-| Outcome[Economic supremacy sustained]
