@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Validator Constellation Control Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/inter@4.5.15/variable.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "InterVariable", system-ui, sans-serif;
+        background: radial-gradient(circle at top, #1e1f3b, #050510 65%);
+        color: #f4f4ff;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        display: grid;
+        gap: 2rem;
+      }
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2.2rem, 3vw, 3.5rem);
+        font-weight: 700;
+      }
+      .grid {
+        display: grid;
+        gap: 1.5rem;
+      }
+      @media (min-width: 900px) {
+        .grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .grid .panel:nth-child(1) {
+          grid-column: span 2;
+        }
+        .grid .panel:nth-child(2) {
+          grid-column: span 1;
+        }
+      }
+      .panel {
+        border-radius: 18px;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(65, 105, 225, 0.2), rgba(138, 43, 226, 0.12));
+        border: 1px solid rgba(135, 206, 250, 0.2);
+        box-shadow: 0 24px 60px rgba(12, 16, 60, 0.35);
+        backdrop-filter: blur(14px);
+      }
+      .panel h2 {
+        margin-top: 0;
+        font-size: 1.35rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #9ad7ff;
+      }
+      .validators {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .validator-card {
+        background: rgba(12, 18, 45, 0.6);
+        border-radius: 14px;
+        padding: 1rem;
+        border: 1px solid rgba(138, 180, 248, 0.35);
+      }
+      .validator-card strong {
+        font-size: 1.05rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(144, 238, 144, 0.2);
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+      }
+      .events {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.8rem;
+      }
+      .events li {
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        background: rgba(30, 42, 76, 0.55);
+        border-left: 4px solid rgba(255, 215, 0, 0.5);
+      }
+      .timeline {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .timeline-step {
+        display: grid;
+        gap: 0.3rem;
+      }
+      .timeline-step span {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: rgba(154, 215, 255, 0.8);
+      }
+      canvas {
+        width: 100%;
+        height: 220px;
+      }
+      footer {
+        font-size: 0.85rem;
+        color: rgba(200, 210, 255, 0.6);
+        text-align: center;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs" type="module"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "dark" });
+
+      const validatorSpectrum = document.querySelector("#validator-spectrum");
+      if (validatorSpectrum) {
+        const ctx = validatorSpectrum.getContext("2d");
+        new Chart(ctx, {
+          type: "radar",
+          data: {
+            labels: [
+              "Stake",
+              "ZK Proofs",
+              "Uptime",
+              "Truthfulness",
+              "Sentinel Responsiveness",
+              "ENS Compliance"
+            ],
+            datasets: [
+              {
+                label: "Andromeda",
+                data: [95, 92, 97, 96, 88, 100],
+                borderColor: "rgba(144, 238, 144, 0.9)",
+                backgroundColor: "rgba(144, 238, 144, 0.2)",
+                borderWidth: 2
+              },
+              {
+                label: "Rigel",
+                data: [90, 90, 94, 91, 84, 100],
+                borderColor: "rgba(135, 206, 250, 0.9)",
+                backgroundColor: "rgba(135, 206, 250, 0.2)",
+                borderWidth: 2
+              },
+              {
+                label: "Vega",
+                data: [88, 93, 96, 94, 92, 100],
+                borderColor: "rgba(255, 215, 0, 0.9)",
+                backgroundColor: "rgba(255, 215, 0, 0.2)",
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100,
+                angleLines: { color: "rgba(148, 163, 255, 0.25)" },
+                grid: { color: "rgba(148, 163, 255, 0.2)" },
+                pointLabels: { color: "rgba(214, 226, 255, 0.85)", font: { size: 12 } },
+                ticks: { display: false }
+              }
+            },
+            plugins: {
+              legend: {
+                labels: { color: "rgba(214, 226, 255, 0.9)" }
+              }
+            }
+          }
+        });
+      }
+
+      const timeline = document.querySelector("#lifecycle");
+      if (timeline) {
+        timeline.innerHTML = `
+          <div class="timeline-step">
+            <span>00:00</span>
+            <strong>Committee VRF Selection</strong>
+            <p>Entropy mix: block.prevrandao + operator seed + domain hash.</p>
+          </div>
+          <div class="timeline-step">
+            <span>00:08</span>
+            <strong>Commit Phase Complete</strong>
+            <p>Validators post hashed votes shielded from influence.</p>
+          </div>
+          <div class="timeline-step">
+            <span>00:14</span>
+            <strong>Reveal Phase Complete</strong>
+            <p>Truth quorum achieved. Disagreeing validator flagged.</p>
+          </div>
+          <div class="timeline-step">
+            <span>00:15</span>
+            <strong>ZK Proof Accepted</strong>
+            <p>1,000 job receipts finalised in a single proof submission.</p>
+          </div>
+          <div class="timeline-step">
+            <span>00:16</span>
+            <strong>Sentinel Alert</strong>
+            <p>Budget overrun halted. Domain paused & investigation launched.</p>
+          </div>
+        `;
+      }
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Validator Constellation Control Room</h1>
+      <p>
+        Monitor the live AGI validation skyline. Every element below is powered by
+        the smart contracts, guardrails, and scripts inside this repository.
+      </p>
+    </header>
+    <section class="grid">
+      <article class="panel">
+        <h2>Mermaid Orbit</h2>
+        <pre class="mermaid">
+flowchart LR
+    operator((Operator)) -->|Deploy| stake[StakeManager]
+    operator -->|Publish Roots| ens[ENSAuthorizer]
+    operator -->|Authorize| sentinel[[Sentinel Guardian]]
+    stake --> constellation{Validator Constellation}
+    ens --> constellation
+    sentinel -->|Pause Domain| domain[DomainAccess]
+    constellation -->|Slash| stake
+    constellation -->|Emit Proof| zk[ZkBatchVerifier]
+        </pre>
+      </article>
+      <article class="panel">
+        <h2>Validator Spectrum</h2>
+        <canvas id="validator-spectrum"></canvas>
+      </article>
+      <article class="panel">
+        <h2>Sentinel Alerts</h2>
+        <ul class="events" id="alerts">
+          <li>
+            <strong>Budget Overrun Halted</strong>
+            <div class="badge">Domain α-paused</div>
+            <p>Sentinel Guardian intercepted overspend in <code>ai-supercluster</code>.</p>
+          </li>
+          <li>
+            <strong>Unsafe Call Escalated</strong>
+            <div class="badge" style="background: rgba(255, 99, 132, 0.3)">Watch</div>
+            <p>Simulation node attempted disallowed syscall. Review required before resume.</p>
+          </li>
+        </ul>
+      </article>
+    </section>
+    <section class="grid">
+      <article class="panel">
+        <h2>Validator Ledger</h2>
+        <div class="validators">
+          <div class="validator-card">
+            <strong>andromeda.club.agi.eth</strong>
+            <p>Stake: 10 ETH • Status: Active • Last Proof: Accepted</p>
+          </div>
+          <div class="validator-card">
+            <strong>rigel.club.agi.eth</strong>
+            <p>Stake: 10 ETH • Status: Active • Last Proof: Accepted</p>
+          </div>
+          <div class="validator-card">
+            <strong>vega.alpha.club.agi.eth</strong>
+            <p>Stake: 10 ETH • Status: Slashed 5% • Awaiting reinstatement</p>
+          </div>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>Lifecycle Timeline</h2>
+        <div class="timeline" id="lifecycle"></div>
+      </article>
+      <article class="panel">
+        <h2>Operator Notes</h2>
+        <p>
+          • Resume paused domains once Sentinel tickets are resolved.<br />
+          • Update ENS Merkle roots weekly via <code>setRoot</code>.<br />
+          • Rotate entropy salt monthly to maximise committee unpredictability.<br />
+          • Export slashing events to the subgraph for real-time dashboards.
+        </p>
+      </article>
+    </section>
+    <footer>
+      Crafted entirely with AGI Jobs v0 (v2). Fork, adapt, and deploy across any
+      L2 or L3 the moment you are ready.
+    </footer>
+  </body>
+</html>
