@@ -67,6 +67,7 @@ class MCTS:
         self.dirichlet_epsilon = float(planner_conf.get("dirichlet_epsilon", 0.25))
         self.temperature = float(planner_conf.get("temperature", 1.0))
         self.min_max_stats = MinMaxStats()
+        self.discount = float(config.get("environment", {}).get("discount", 0.997))
 
     def _apply_dirichlet_noise(self, priors: torch.Tensor) -> torch.Tensor:
         if self.dirichlet_epsilon <= 0.0:
@@ -112,6 +113,7 @@ class MCTS:
             for back_node in reversed(search_path):
                 back_node.value_sum += value
                 back_node.visit_count += 1
+                value = back_node.reward + self.discount * value
         visit_counts = [root.children[a].visit_count if a in root.children else 0 for a in range(self.num_actions)]
         return root, visit_counts
 

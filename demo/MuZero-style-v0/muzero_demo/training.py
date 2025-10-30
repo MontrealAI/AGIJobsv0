@@ -79,7 +79,7 @@ class MuZeroTrainer:
         outputs = self.network.initial_inference(observations)
         policy_loss = torch.nn.functional.cross_entropy(outputs.policy_logits, torch.argmax(target_policies, dim=-1))
         value_loss = torch.nn.functional.mse_loss(outputs.value, target_values)
-        reward_loss = torch.nn.functional.mse_loss(outputs.reward, torch.zeros_like(outputs.reward))
+        reward_loss = torch.nn.functional.mse_loss(outputs.reward, rewards)
         loss = self.policy_weight * policy_loss + self.value_weight * value_loss + self.reward_weight * reward_loss
         self.optimizer.zero_grad()
         loss.backward()
