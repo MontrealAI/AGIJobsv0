@@ -35,5 +35,7 @@ demo-agialpha:
 
 .PHONY: absolute-zero-demo
 absolute-zero-demo:
-	cd demo/Absolute-Zero-Reasoner-v0 && $(PYTHON) -m absolute_zero_reasoner_demo.run_demo --iterations 25 --tasks 6 $(ARGS)
-
+	@echo "[demo] provisioning virtual environment"
+	python -m venv .venv-demo-azr
+	. .venv-demo-azr/bin/activate && pip install --upgrade pip && pip install -r requirements-python.txt && pip install pytest
+	. .venv-demo-azr/bin/activate && python demo/Absolute-Zero-Reasoner-v0/scripts/run_demo.py --iterations 6
