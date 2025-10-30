@@ -8,12 +8,17 @@ import sys
 
 def main() -> None:
     project_root = Path(__file__).resolve().parent
-    repo_root = project_root.parent
+    repo_root = project_root.parent.parent
     src_path = project_root / "src"
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
+
+    try:
+        import sitecustomize  # noqa: F401  # pylint: disable=unused-import
+    except ImportError:
+        pass
 
     from demo.huxley_godel_machine_v0.simulator.__main__ import main as cli_main
 
