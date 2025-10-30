@@ -48,11 +48,11 @@ clean:
 report: e2e
 
 verify: deps
-	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
+	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q
 
 ci: deps
 	$(PYTHON) run_demo.py list
 	$(PYTHON) run_demo.py simulate --strategy e2e
 	$(PYTHON) run_demo.py simulate --strategy alphaevolve
 	$(PYTHON) run_demo.py simulate --strategy hgm
-	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -q
+	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 $(PYTHON) -m pytest -q
