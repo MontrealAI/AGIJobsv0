@@ -120,7 +120,7 @@ Follow this path to stand up an HGM deployment in a fresh environment.
    [`scripts/thermostat.py`](../../scripts/thermostat.py) to adjust concurrency
    or ROI thresholds. Start with a dry run to preview adjustments:
    ```bash
-   python scripts/thermostat.py watch --target-roi 2.2 --widening-step 0.08 --dry-run
+   python -m scripts.thermostat watch --target-roi 2.2 --widening-step 0.08 --dry-run
    ```
    Re-run without `--dry-run` once satisfied. Changes propagate to the workflow
    through [`services/thermostat/controller.py`](../../services/thermostat/controller.py).

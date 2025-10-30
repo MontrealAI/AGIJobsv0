@@ -24,7 +24,7 @@ steps below.
    streaming a short burst of metrics:
    ```bash
    mkdir -p reports/hgm
-   python scripts/thermostat.py watch --dry-run --iterations 12 > reports/hgm/roi-baseline.log
+   python -m scripts.thermostat watch --dry-run --iterations 12 > reports/hgm/roi-baseline.log
    ```
    Archive the output alongside a sentinel snapshot captured with:
    ```bash
@@ -55,7 +55,7 @@ The thermostat provides the first line of defence when ROI deviates from the
 treasury policy described in [`config/agialpha/hgm.json`](config/agialpha/hgm.json).
 
 1. **Adjust concurrency safely.** Preview changes with
-   `python scripts/thermostat.py watch --widening-step 0.08 --max-widening-alpha 1.8 --dry-run`.
+   `python -m scripts.thermostat watch --widening-step 0.08 --max-widening-alpha 1.8 --dry-run`.
    Re-run without `--dry-run` once approved. The controller in
    [`services/thermostat/controller.py`](services/thermostat/controller.py)
    applies updates gradually and enforces cooldowns to prevent oscillation.
@@ -66,7 +66,7 @@ treasury policy described in [`config/agialpha/hgm.json`](config/agialpha/hgm.js
    pauses, inspect [`config/sentinel.json`](config/sentinel.json) and align with
    risk/compliance before issuing overrides.
 4. **Quantify impact.** Re-run the ROI baseline command
-   (`python scripts/thermostat.py watch --dry-run --iterations 12`) after each
+   (`python -m scripts.thermostat watch --dry-run --iterations 12`) after each
    change and compare the logs to prior baselines to estimate ROI lift or
    drawdown. Escalate to finance when variance exceeds 10 %.
 

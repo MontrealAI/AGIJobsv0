@@ -41,7 +41,7 @@ JSON snapshot from the `reports/hgm` directory.
 ### ROI looks great — can I safely add more agents?
 Yes, but change one control at a time:
 1. Preview the desired adjustment with
-   `python scripts/thermostat.py watch --widening-step 0.08 --max-widening-alpha 1.8 --dry-run`.
+   `python -m scripts.thermostat watch --widening-step 0.08 --max-widening-alpha 1.8 --dry-run`.
 2. Re-run the same command without `--dry-run` to apply the new targets. The
    controller in [`services/thermostat/controller.py`](../../services/thermostat/controller.py)
    will gradually scale to the requested level.
@@ -78,7 +78,7 @@ The code that manages this lives in
 2. Export ROI events with:
    ```bash
    mkdir -p reports/hgm
-   python scripts/thermostat.py watch --dry-run --iterations 12 > reports/hgm/roi-export.log
+   python -m scripts.thermostat watch --dry-run --iterations 12 > reports/hgm/roi-export.log
    ```
 3. Optionally run the culture rewards calculator in
    [`orchestrator/tools/culture_rewards.py`](../../orchestrator/tools/culture_rewards.py)
