@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  agi-alpha-node:
+    build: .
+    image: agi-alpha-node:demo
+    command: ["python", "-m", "agi_alpha_node", "console", "run-demo"]
+    ports:
+      - "9097:9097"
+    volumes:
+      - ./config:/app/config
+      - ./storage:/app/storage
+    environment:
+      - AGI_ALPHA_NODE_CONFIG_OVERRIDE={"metrics": {"host": "0.0.0.0", "port": 9097}}
+  dashboard:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    ports:
+      - "8088:80"
+    depends_on:
+      - agi-alpha-node

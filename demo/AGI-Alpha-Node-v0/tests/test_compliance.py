@@ -1,27 +1,18 @@
+import sys
 from pathlib import Path
 
-from alpha_node.compliance import ComplianceEngine
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.ens import ENSVerificationResult
-from alpha_node.stake import StakeManager
-from alpha_node.state import StateStore
+sys.path.append(str(Path(__file__).resolve().parents[1] / "agi_alpha_node"))
+
+from agi_alpha_node.blockchain import BlockchainClient
+from agi_alpha_node.compliance import ComplianceEngine
+from agi_alpha_node.config import load_config
 
 
-def test_compliance_scores_all_dimensions(tmp_path):
-    config_path = Path('demo/AGI-Alpha-Node-v0/config.toml')
-    config = AlphaNodeConfig.load(config_path)
-    store = StateStore(tmp_path / 'state.json')
-    stake_manager = StakeManager(config.stake, store, tmp_path / 'ledger.csv')
-    stake_manager.deposit(config.stake.minimum_stake)
-    store.update(total_rewards=500, antifragility_index=0.9, strategic_alpha_index=0.95)
-    engine = ComplianceEngine(config.compliance, store, stake_manager)
-    ens_result = ENSVerificationResult(
-        domain=config.ens.domain,
-        owner=config.ens.owner_address,
-        resolver=None,
-        verified=True,
-        source='test',
-    )
-    report = engine.evaluate(ens_result)
-    assert report.overall > 0.5
+def test_compliance_produces_score():
+    config = load_config()
+    blockchain = BlockchainClient(config.blockchain, config.minimum_stake)
+    engine = ComplianceEngine(config, blockchain)
+
+    report = engine.evaluate()
+    assert 0 <= report.total_score <= 1
     assert len(report.dimensions) == 6

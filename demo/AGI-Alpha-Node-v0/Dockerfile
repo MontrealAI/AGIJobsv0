@@ -1,11 +1,14 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1 \
+    POETRY_VERSION=1.8.3
+
 WORKDIR /app
-COPY . /app
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN useradd -m agi && chown -R agi /app
-USER agi
+COPY agi_alpha_node ./agi_alpha_node
+COPY tests ./tests
+COPY README.md ./README.md
 
-ENV PYTHONUNBUFFERED=1
-
-CMD ["python", "-m", "alpha_node.cli", "run"]
+CMD ["python", "-m", "agi_alpha_node", "run-demo"]
