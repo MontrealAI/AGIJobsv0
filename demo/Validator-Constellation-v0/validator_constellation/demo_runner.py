@@ -126,8 +126,25 @@ def _collect_domain_events(bus: EventBus) -> List[Dict[str, Any]]:
     ]
 
 
-def run_validator_constellation_demo(seed: str, truthful_outcome: Any) -> DemoSummary:
+def run_validator_constellation_demo(
+    seed: str,
+    truthful_outcome: Any,
+    *,
+    committee_size: Optional[int] = None,
+    job_count: Optional[int] = None,
+    config_overrides: Optional[Mapping[str, object]] = None,
+    budget_limit: Optional[float] = None,
+) -> DemoSummary:
     config = SystemConfig()
+    if config_overrides:
+        config = config.clone(**dict(config_overrides))
+    if committee_size is not None:
+        config = config.clone(committee_size=int(committee_size))
+        if config.quorum > config.committee_size:
+            config = config.clone(quorum=config.committee_size)
+    if job_count is not None:
+        desired_capacity = max(1, int(job_count))
+        config = config.clone(batch_proof_capacity=max(config.batch_proof_capacity, desired_capacity))
     core = _setup_core(seed, config)
     bus: EventBus = core["bus"]
     indexer: SubgraphIndexer = core["indexer"]
@@ -148,7 +165,12 @@ def run_validator_constellation_demo(seed: str, truthful_outcome: Any) -> DemoSu
     ]
     _register_validators(stake_manager, identity, validators)
 
-    committee_addresses = vrf.select_committee(seed, config.committee_size)
+    if budget_limit is not None:
+        for domain in list(pause_controller.domains):
+            pause_controller.update_domain(domain, budget_limit=float(budget_limit))
+
+    committee_size_value = committee_size if committee_size is not None else config.committee_size
+    committee_addresses = vrf.select_committee(seed, committee_size_value)
     committee = {address: stake_manager.get(address).ens for address in committee_addresses}
     round_engine = CommitRevealRound(
         round_id=f"demo::{seed}",
@@ -174,7 +196,8 @@ def run_validator_constellation_demo(seed: str, truthful_outcome: Any) -> DemoSu
             round_engine.reveal(address, choice, salt)
     round_result = round_engine.finalize()
 
-    jobs = _build_jobs(seed, config.batch_proof_capacity)
+    target_job_count = int(job_count if job_count is not None else config.batch_proof_capacity)
+    jobs = _build_jobs(seed, target_job_count)
     proof = attestor.create_batch_proof(jobs)
     attestor.verify_batch_proof(jobs, proof)
 
@@ -239,7 +262,15 @@ def run_validator_constellation_demo(seed: str, truthful_outcome: Any) -> DemoSu
         scenario_name=None,
         committee_signature=hashlib.sha3_256("".join(committee.values()).encode()).hexdigest(),
         gas_metrics={"estimatedProofGas": proof.gas_saved // 10},
-        context={"operator": "Non-technical mission director"},
+        context={
+            "operator": "Non-technical mission director",
+            "committeeSize": committee_size_value,
+            "batchSize": target_job_count,
+            "budgetLimit": budget_limit
+            if budget_limit is not None
+            else pause_controller.domains[next(iter(pause_controller.domains))]["budget_limit"],
+            "configOverrides": dict(config_overrides or {}),
+        },
     )
     return summary
 
@@ -282,7 +313,11 @@ def write_web_artifacts(summary: DemoSummary, output_dir: Path) -> Dict[str, Pat
     return manifest
 
 
-def run_validator_constellation_scenario(path: Path, seed_override: Optional[str] = None) -> DemoSummary:
+def run_validator_constellation_scenario(
+    path: Path,
+    seed_override: Optional[str] = None,
+    truthful_override: Optional[Any] = None,
+) -> DemoSummary:
     document = yaml.safe_load(path.read_text())
     config = SystemConfig()
     base = document.get("baseSetup", {})
@@ -310,7 +345,7 @@ def run_validator_constellation_scenario(path: Path, seed_override: Optional[str
     committee = {address: stake_manager.get(address).ens for address in committee_addresses}
 
     job = document.get("job", {})
-    truthful_outcome = job.get("truthfulVote", True)
+    truthful_outcome = truthful_override if truthful_override is not None else job.get("truthfulVote", True)
     round_engine = CommitRevealRound(
         round_id=f"scenario::{job.get('round', 0)}",
         committee=committee,
