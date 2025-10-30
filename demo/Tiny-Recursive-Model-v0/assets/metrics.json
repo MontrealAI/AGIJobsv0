@@ -1,0 +1,35 @@
+[
+  {
+    "strategy": "Greedy Baseline",
+    "conversions": 9,
+    "attempts": 60,
+    "success_rate": 0.15,
+    "total_value": 900.0,
+    "total_cost": 0.006,
+    "roi": 150000.0,
+    "average_steps": 0.0,
+    "average_latency_ms": 0.19999999999999993
+  },
+  {
+    "strategy": "Large Language Model",
+    "conversions": 16,
+    "attempts": 60,
+    "success_rate": 0.26666666666666666,
+    "total_value": 1600.0,
+    "total_cost": 3.0,
+    "roi": 533.3333333333334,
+    "average_steps": 0.0,
+    "average_latency_ms": 100.0
+  },
+  {
+    "strategy": "Tiny Recursive Model",
+    "conversions": 19,
+    "attempts": 60,
+    "success_rate": 0.5333333333333333,
+    "total_value": 1900.0,
+    "total_cost": 0.16729343900260574,
+    "roi": 11357.289391190086,
+    "average_steps": 18.0,
+    "average_latency_ms": 5.576447966753524
+  }
+]

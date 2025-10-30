@@ -1,56 +1,76 @@
-"""Thermostat controller for dynamic TRM parameter tuning."""
+"""Adaptive ROI-aware thermostat that tunes TRM recursion parameters."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
 
-from .economic import EconomicLedger
+from .config import TinyRecursiveModelConfig
+from .engine import TRMEngine
+from .ledger import EconomicLedger
 
 
-@dataclass
-class ThermostatConfig:
-    """Configuration for the ROI thermostat."""
-
+@dataclass(slots=True)
+class ThermostatSettings:
     target_roi: float = 2.0
-    window: int = 25
-    min_cycles: int = 3
-    max_cycles: int = 8
+    min_inner_cycles: int = 4
+    max_inner_cycles: int = 8
     min_outer_steps: int = 2
     max_outer_steps: int = 5
-    min_halt_threshold: float = 0.5
-    max_halt_threshold: float = 0.85
+    min_halt_threshold: float = 0.45
+    max_halt_threshold: float = 0.75
+    adjustment_rate: float = 0.05
+    roi_window: int = 50
 
 
 class Thermostat:
-    """Adaptive controller that tunes TRM recursion parameters based on ROI."""
+    """Closed-loop controller that keeps TRM ROI near a configurable target."""
 
-    def __init__(self, config: Optional[ThermostatConfig] = None) -> None:
-        self.config = config or ThermostatConfig()
+    def __init__(self, settings: Optional[ThermostatSettings] = None) -> None:
+        self.settings = settings or ThermostatSettings()
 
-    def recommend(
-        self,
-        ledger: EconomicLedger,
-        current_cycles: int,
-        current_steps: int,
-        current_halt: float,
-    ) -> tuple[int, int, float]:
-        """Return suggested (n_cycles, outer_steps, halt_threshold)."""
+    def _clamp(self, value: float, minimum: float, maximum: float) -> float:
+        return max(minimum, min(maximum, value))
 
-        if not ledger.entries:
-            return current_cycles, current_steps, current_halt
+    def update(self, ledger: EconomicLedger, engine: TRMEngine) -> TinyRecursiveModelConfig:
+        """Adjust TRM parameters according to realised ROI."""
 
-        recent = ledger.window(self.config.window)
-        roi = recent.roi
+        roi = ledger.rolling_roi(self.settings.roi_window)
+        cfg = engine.config
+        if roi == float("inf"):
+            return cfg
 
-        if roi >= self.config.target_roi:
-            n_cycles = min(current_cycles + 1, self.config.max_cycles)
-            outer_steps = min(current_steps + 1, self.config.max_outer_steps)
-            halt_threshold = max(current_halt - 0.02, self.config.min_halt_threshold)
-        else:
-            n_cycles = max(current_cycles - 1, self.config.min_cycles)
-            outer_steps = max(current_steps - 1, self.config.min_outer_steps)
-            halt_threshold = min(current_halt + 0.05, self.config.max_halt_threshold)
+        delta = roi - self.settings.target_roi
+        adjustment = self.settings.adjustment_rate * delta
 
-        return n_cycles, outer_steps, halt_threshold
+        new_halt_threshold = self._clamp(
+            cfg.halt_threshold + adjustment * 0.2,
+            self.settings.min_halt_threshold,
+            self.settings.max_halt_threshold,
+        )
+        new_inner_cycles = int(
+            round(
+                self._clamp(
+                    cfg.inner_cycles * (1.0 + adjustment * 0.1),
+                    self.settings.min_inner_cycles,
+                    self.settings.max_inner_cycles,
+                )
+            )
+        )
+        new_outer_steps = int(
+            round(
+                self._clamp(
+                    cfg.outer_steps * (1.0 + adjustment * 0.1),
+                    self.settings.min_outer_steps,
+                    self.settings.max_outer_steps,
+                )
+            )
+        )
+
+        engine.update_hyperparameters(
+            halt_threshold=new_halt_threshold,
+            inner_cycles=new_inner_cycles,
+            outer_steps=new_outer_steps,
+        )
+        return engine.config
 
