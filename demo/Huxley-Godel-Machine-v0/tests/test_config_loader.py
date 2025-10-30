@@ -25,3 +25,10 @@ def test_load_config_override_nested_creation() -> None:
         overrides=[("simulation.evaluation_latency", override_value)],
     )
     assert config.simulation["evaluation_latency"] == override_value
+
+
+def test_owner_controls_section_present() -> None:
+    config = load_config(_config_path())
+    owner_controls = config.owner_controls
+    assert isinstance(owner_controls, dict)
+    assert owner_controls["pause_all"] is False

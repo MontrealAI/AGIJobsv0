@@ -48,7 +48,7 @@ def test_sentinel_pauses_on_low_roi() -> None:
     sentinel.evaluate(snapshot)
     decision = sentinel.evaluate(snapshot)
     assert decision.pause_expansions is True
-    assert engine.expansions_allowed is False
+    assert decision.halt_all is False
 
 
 def test_sentinel_halts_on_budget_exhaustion() -> None:
@@ -73,4 +73,4 @@ def test_sentinel_halts_on_budget_exhaustion() -> None:
     )
     decision = sentinel.evaluate(snapshot)
     assert decision.halt_all is True
-    assert engine.evaluations_allowed is False
+    assert decision.pause_evaluations is True

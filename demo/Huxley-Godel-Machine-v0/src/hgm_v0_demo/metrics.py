@@ -29,6 +29,7 @@ class RunSummary:
     steps: int
     best_agent_id: Optional[str] = None
     best_agent_quality: Optional[float] = None
+    owner_notes: Optional[str] = None
 
 
 @dataclass

@@ -46,6 +46,13 @@
     "roi_recovery_steps": 8,
     "hard_budget_ratio": 0.95
   },
+  "owner_controls": {
+    "pause_all": false,
+    "pause_expansions": false,
+    "pause_evaluations": false,
+    "max_actions": null,
+    "note": "Owner can override at runtime via --set owner_controls.pause_all=true"
+  },
   "baseline": {
     "mutation_std": 0.09,
     "quality_floor": 0.08,
