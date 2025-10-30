@@ -186,6 +186,13 @@
               value: `${leader.title} (${(leader.value.reliability_score * 100).toFixed(2)}%)`
             });
           }
+          if (leaders.latency_p95 && leaders.latency_p95.value) {
+            const leader = leaders.latency_p95;
+            blocks.push({
+              label: 'P95 Latency Leader',
+              value: `${leader.title} (${leader.value.latency_p95.toFixed(3)}s)`
+            });
+          }
           if (Array.isArray(data.guardrail_failures)) {
             const failures = data.guardrail_failures.length;
             const noun = failures === 1 ? 'strategy' : 'strategies';
@@ -203,6 +210,16 @@
             blocks.push({
               label: 'Avg Latency Delta',
               value: (data.aggregates.average_latency_delta * 100).toFixed(2) + '%'
+            });
+            blocks.push({
+              label: 'Avg Latency P95',
+              value: data.aggregates.average_latency_p95.toFixed(3) + 's'
+            });
+          }
+          if (data.metrics && typeof data.metrics.best_latency_p95 === 'number') {
+            blocks.push({
+              label: 'Best P95 Latency',
+              value: data.metrics.best_latency_p95.toFixed(3) + 's'
             });
           }
           metricsEl.innerHTML = blocks.map(block => `
@@ -224,6 +241,9 @@
         }
         if (typeof metrics.latency_delta === 'number') {
           blocks.push({ label: 'Latency Delta', value: (metrics.latency_delta * 100).toFixed(2) + '%' });
+        }
+        if (typeof metrics.latency_p95 === 'number') {
+          blocks.push({ label: 'Latency P95', value: metrics.latency_p95.toFixed(3) + 's' });
         }
         if (data.rules && typeof data.rules.max_latency_delta === 'number') {
           blocks.push({ label: 'Latency Guardrail', value: (data.rules.max_latency_delta * 100).toFixed(2) + '%' });
