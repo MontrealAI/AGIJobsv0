@@ -1,0 +1,38 @@
+{
+  "systemTemperature": "1800000000000000000",
+  "bounds": {
+    "min": "900000000000000000",
+    "max": "3200000000000000000"
+  },
+  "pid": {
+    "kp": "200000000000000000",
+    "ki": "50000000000000000",
+    "kd": "25000000000000000"
+  },
+  "kpiWeights": {
+    "emission": "1",
+    "backlog": "2",
+    "sla": "1"
+  },
+  "integralBounds": {
+    "min": "-500000000000000000",
+    "max": "500000000000000000"
+  },
+  "roleTemperatures": {
+    "agent": "1900000000000000000",
+    "validator": "1700000000000000000"
+  },
+  "controller": {
+    "targetRoi": 2.0,
+    "lowerMargin": 0.12,
+    "upperMargin": 0.18,
+    "roiWindow": 12,
+    "wideningStep": 0.08,
+    "minWideningAlpha": 0.35,
+    "maxWideningAlpha": 1.25,
+    "thompsonStep": 0.12,
+    "minThompsonPrior": 0.5,
+    "maxThompsonPrior": 2.5,
+    "cooldownSteps": 3
+  }
+}

@@ -7,7 +7,9 @@ import os
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Dict, Iterable, Sequence
+
+from config import load_config as load_profile_config
 
 _DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config" / "sentinel.json"
 
@@ -32,6 +34,7 @@ class SentinelConfig:
     success_threshold: float = 0.6
     monitor_interval_seconds: float = 1.0
     alert_channels: Sequence[str] = field(default_factory=lambda: ("log",))
+    control_targets: Dict[str, float] = field(default_factory=dict)
 
     def soft_budget(self) -> float:
         if self.budget_cap <= 0:
@@ -94,8 +97,10 @@ def _load_payload() -> dict[str, object]:
     for path in _path_candidates(("SENTINEL_CONFIG", "SENTINEL_CONFIG_PATH")):
         payload = _load_json(path)
         if payload:
+            if path == _DEFAULT_PATH:
+                return load_profile_config("sentinel")
             return payload
-    return {}
+    return load_profile_config("sentinel")
 
 
 @lru_cache(maxsize=1)
@@ -117,6 +122,16 @@ def load_config() -> SentinelConfig:
     channels = payload.get("alertChannels")
     if isinstance(channels, list):
         config.alert_channels = tuple(str(channel) for channel in channels if channel)
+    targets = payload.get("controlTargets")
+    if isinstance(targets, dict):
+        mapped: Dict[str, float] = {}
+        for key, value in targets.items():
+            try:
+                mapped[str(key)] = float(value)
+            except (TypeError, ValueError):
+                continue
+        if mapped:
+            config.control_targets = mapped
     return config
 
 
