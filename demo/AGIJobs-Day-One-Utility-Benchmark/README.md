@@ -202,8 +202,9 @@ Omni-Concord Launch   :milestone, 0, 1
 ## Smart contract mirror
 
 To anchor the demo in mainnet-grade reality, `contracts/v2/modules/DayOneUtilityController.sol`
-implements the same controls as the CLI. Owners can update fees, guardrails, and
-narratives, plus pause/resume the system through a timelock-governed surface.
+implements the same controls as the CLI. Owners can update fees, guardrails,
+narratives, mapped owner / treasury accounts, plus pause/resume the system
+through a timelock-governed surface.
 
 ```mermaid
 stateDiagram-v2
@@ -214,10 +215,23 @@ stateDiagram-v2
     Active --> Active: owner.setLatencyGuard(bps)
     Active --> Active: owner.setUtilityGuard(bps)
     Active --> Active: owner.updateNarrative()
+    Active --> Active: owner.setOwnerAccount(address)
+    Active --> Active: owner.setTreasuryAccount(address)
 ```
 
 Compile or test with your existing Foundry/Hardhat stack — no extra wiring is
 required.
+
+**Owner surface capabilities**
+
+- `setPlatformFee(uint256)` — calibrate platform revenue share in basis points.
+- `setLatencyGuard(int256)` / `setUtilityGuard(int256)` — tune guardrail gates in
+  basis points, mirrored by the CLI overrides.
+- `setOwnerAccount(address)` / `setTreasuryAccount(address)` — mirror the demo
+  owner + treasury handles on-chain for analytics + payout routing.
+- `updateNarrative(string)` — refreshes the storytelling headline for
+  downstream dashboards.
+- `togglePause(bool)` — instant kill-switch + resume without redeploying.
 
 ---
 

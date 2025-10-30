@@ -17,6 +17,8 @@ contract DayOneUtilityController is Governable {
     int256 public latencyGuardBps;
     int256 public utilityGuardBps;
     string public narrative;
+    address public ownerAccount;
+    address public treasuryAccount;
 
     event PlatformFeeUpdated(uint256 previousFeeBps, uint256 newFeeBps);
     event LatencyGuardUpdated(int256 previousGuardBps, int256 newGuardBps);
@@ -24,6 +26,8 @@ contract DayOneUtilityController is Governable {
     event NarrativeUpdated(string previousNarrative, string newNarrative);
     event Paused();
     event Unpaused();
+    event OwnerAccountUpdated(address previousOwnerAccount, address newOwnerAccount);
+    event TreasuryAccountUpdated(address previousTreasuryAccount, address newTreasuryAccount);
 
     error FeeOutOfRange(uint256 feeBps);
     error LatencyGuardTooLow(int256 guardBps);
@@ -33,6 +37,8 @@ contract DayOneUtilityController is Governable {
 
     constructor(
         address governance,
+        address initialOwnerAccount,
+        address initialTreasuryAccount,
         uint256 initialFeeBps,
         int256 initialLatencyGuardBps,
         int256 initialUtilityGuardBps,
@@ -40,6 +46,8 @@ contract DayOneUtilityController is Governable {
     )
         Governable(governance)
     {
+        _setOwnerAccount(initialOwnerAccount);
+        _setTreasuryAccount(initialTreasuryAccount);
         _setPlatformFee(initialFeeBps);
         _setLatencyGuard(initialLatencyGuardBps);
         _setUtilityGuard(initialUtilityGuardBps);
@@ -70,6 +78,18 @@ contract DayOneUtilityController is Governable {
         emit NarrativeUpdated(previous, newNarrative);
     }
 
+    function setOwnerAccount(address newOwnerAccount) external onlyGovernance {
+        address previous = ownerAccount;
+        _setOwnerAccount(newOwnerAccount);
+        emit OwnerAccountUpdated(previous, newOwnerAccount);
+    }
+
+    function setTreasuryAccount(address newTreasuryAccount) external onlyGovernance {
+        address previous = treasuryAccount;
+        _setTreasuryAccount(newTreasuryAccount);
+        emit TreasuryAccountUpdated(previous, newTreasuryAccount);
+    }
+
     function togglePause(bool shouldPause) external onlyGovernance {
         if (shouldPause) {
             if (paused) revert AlreadyPaused();
@@ -85,9 +105,25 @@ contract DayOneUtilityController is Governable {
     function snapshot()
         external
         view
-        returns (bool isPaused, uint256 feeBps, int256 latencyGuard, int256 utilityGuard, string memory currentNarrative)
+        returns (
+            bool isPaused,
+            uint256 feeBps,
+            int256 latencyGuard,
+            int256 utilityGuard,
+            string memory currentNarrative,
+            address ownerAccount_,
+            address treasuryAccount_
+        )
     {
-        return (paused, platformFeeBps, latencyGuardBps, utilityGuardBps, narrative);
+        return (
+            paused,
+            platformFeeBps,
+            latencyGuardBps,
+            utilityGuardBps,
+            narrative,
+            ownerAccount,
+            treasuryAccount
+        );
     }
 
     function _setPlatformFee(uint256 newFeeBps) internal {
@@ -105,5 +141,15 @@ contract DayOneUtilityController is Governable {
             revert UtilityGuardOutOfRange(newGuardBps);
         }
         utilityGuardBps = newGuardBps;
+    }
+
+    function _setOwnerAccount(address newOwnerAccount) internal {
+        if (newOwnerAccount == address(0)) revert ZeroAddress();
+        ownerAccount = newOwnerAccount;
+    }
+
+    function _setTreasuryAccount(address newTreasuryAccount) internal {
+        if (newTreasuryAccount == address(0)) revert ZeroAddress();
+        treasuryAccount = newTreasuryAccount;
     }
 }
