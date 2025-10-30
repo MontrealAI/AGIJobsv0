@@ -1,0 +1,19 @@
+[
+  {
+    "inputs": [{"internalType": "bytes32", "name": "jobId", "type": "bytes32"}],
+    "name": "claimJob",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "bytes32", "name": "jobId", "type": "bytes32"},
+      {"internalType": "string", "name": "resultUri", "type": "string"}
+    ],
+    "name": "submitJobResult",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

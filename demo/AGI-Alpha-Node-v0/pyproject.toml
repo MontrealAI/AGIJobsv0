@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=67", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agi-alpha-node-demo"
+version = "0.1.0"
+description = "First-class AGI Alpha Node demo built on AGI Jobs v0 (v2)."
+authors = [{name = "Montreal.AI"}]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.1",
+    "fastapi>=0.109",
+    "pydantic>=1.10",
+    "pyyaml>=6.0",
+    "prometheus-client>=0.19",
+    "rich>=13.7",
+    "typer>=0.12",
+    "uvicorn>=0.27",
+    "web3>=6.14",
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "python-dotenv>=1.0",
+    "httpx>=0.26",
+]
+
+[project.scripts]
+agi-alpha-node = "agi_alpha_node_demo.cli.main:main"

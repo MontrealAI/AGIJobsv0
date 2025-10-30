@@ -1,0 +1,48 @@
+# Example configuration for the AGI Alpha Node demo.
+# Copy this file to alpha_node.yml and adjust the values for your environment.
+ens_domain: "demo.alpha.node.agi.eth"
+operator_address: "0x000000000000000000000000000000000000dEaD"
+governance_address: "0x1111111111111111111111111111111111111111"
+rpc_url: "https://mainnet.infura.io/v3/YOUR-PROJECT-ID"
+minimum_stake: "1000"
+system_pause_contract: "0x2222222222222222222222222222222222222222"
+contracts:
+  stake_manager:
+    address: "0x3333333333333333333333333333333333333333"
+    abi: "contracts/StakeManager.json"
+  job_router:
+    address: "0x4444444444444444444444444444444444444444"
+    abi: "contracts/JobRouter.json"
+  job_registry:
+    address: "0x5555555555555555555555555555555555555555"
+    abi: "contracts/JobRegistry.json"
+  platform_registry:
+    address: "0x6666666666666666666666666666666666666666"
+    abi: "contracts/PlatformRegistry.json"
+  identity_registry:
+    address: "0x7777777777777777777777777777777777777777"
+    abi: "contracts/IdentityRegistry.json"
+  system_pause:
+    address: "0x8888888888888888888888888888888888888888"
+    abi: "contracts/SystemPause.json"
+knowledge_lake:
+  path: "storage/knowledge_lake.sqlite3"
+planner:
+  rollout_depth: 5
+  exploration_constant: 1.4
+  simulations: 64
+specialists:
+  - name: "Finance Strategist"
+    module: "finance"
+  - name: "Biotech Synthesist"
+    module: "biotech"
+  - name: "Manufacturing Optimizer"
+    module: "manufacturing"
+metrics:
+  host: "0.0.0.0"
+  port: 9310
+dashboard:
+  host: "0.0.0.0"
+  port: 8080
+jobs:
+  source: "data/jobs/sample_jobs.yml"

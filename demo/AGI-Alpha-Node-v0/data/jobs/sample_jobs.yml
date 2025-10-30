@@ -1,0 +1,25 @@
+- id: "FIN-001"
+  domain: "finance"
+  title: "Dynamic Treasury Yield Optimization"
+  description: "Optimize staking allocations across liquidity pools to maximize protocol treasury yield under risk constraints."
+  reward: "480"
+  parameters:
+    capital: 1000000
+    risk_score: 0.2
+    horizon_days: 30
+- id: "BIO-002"
+  domain: "biotech"
+  title: "Protein Folding Pathway Discovery"
+  description: "Predict a viable folding pathway for a novel therapeutic protein variant using existing structural data."
+  reward: "720"
+  parameters:
+    sequence_length: 512
+    stability_target: 0.95
+- id: "MAN-003"
+  domain: "manufacturing"
+  title: "Adaptive Supply Chain Routing"
+  description: "Re-route supply logistics to maintain throughput during simulated facility outages across two continents."
+  reward: "360"
+  parameters:
+    facilities: 12
+    max_downtime_hours: 24

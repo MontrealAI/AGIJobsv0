@@ -1,0 +1,9 @@
+[
+  {
+    "inputs": [{"internalType": "address", "name": "platform", "type": "address"}],
+    "name": "isRegisteredPlatform",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

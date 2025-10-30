@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  agi-alpha-node:
+    build: .
+    image: agi-alpha-node:latest
+    container_name: agi-alpha-node
+    ports:
+      - "8080:8080"
+      - "9310:9310"
+    volumes:
+      - ./config:/opt/agi-alpha-node/config:ro
+      - ./data:/opt/agi-alpha-node/data:ro
+      - ./storage:/opt/agi-alpha-node/storage
+      - ./logs:/opt/agi-alpha-node/logs
+    environment:
+      - AGI_ALPHA_NODE_CONFIG=/opt/agi-alpha-node/config/alpha_node.yml
+      - PYTHONPATH=/opt/agi-alpha-node/src
+    command: ["python", "-m", "agi_alpha_node_demo", "run", "--dashboard-host", "0.0.0.0", "--dashboard-port", "8080"]
+  dashboard:
+    build: .
+    image: agi-alpha-node-dashboard:latest
+    container_name: agi-alpha-node-dashboard
+    command: ["python", "-m", "agi_alpha_node_demo", "serve-dashboard", "--host", "0.0.0.0", "--port", "8080"]
+    depends_on:
+      - agi-alpha-node
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./web:/opt/agi-alpha-node/web:ro
+      - ./logs:/opt/agi-alpha-node/logs
+    environment:
+      - PYTHONPATH=/opt/agi-alpha-node/src
