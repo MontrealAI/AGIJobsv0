@@ -97,7 +97,7 @@ class OwnerControls:
     # ------------------------------------------------------------------
     # Serialisation helpers
     # ------------------------------------------------------------------
-    def to_mapping(self) -> dict[str, object]:
+    def to_mapping(self, *, include_nulls: bool = False) -> dict[str, object]:
         """Return a JSON-friendly mapping of the owner directives."""
 
         payload: dict[str, object] = {
@@ -105,9 +105,9 @@ class OwnerControls:
             "pause_expansions": self.pause_expansions,
             "pause_evaluations": self.pause_evaluations,
         }
-        if self.max_actions is not None:
+        if include_nulls or self.max_actions is not None:
             payload["max_actions"] = self.max_actions
-        if self.note:
+        if include_nulls or self.note:
             payload["note"] = self.note
         return payload
 
@@ -128,13 +128,15 @@ class OwnerControls:
         import json
 
         baseline = baseline or OwnerControls()
-        current = self.to_mapping()
-        reference = baseline.to_mapping()
+        current = self.to_mapping(include_nulls=True)
+        reference = baseline.to_mapping(include_nulls=True)
         args: list[str] = []
-        for key, value in current.items():
-            if key in reference and reference[key] == value:
+        for key in sorted(set(reference) | set(current)):
+            current_value = current.get(key)
+            reference_value = reference.get(key)
+            if current_value == reference_value:
                 continue
-            encoded = json.dumps(value)
+            encoded = json.dumps(current_value)
             args.append(f"--set {prefix}.{key}={encoded}")
         return args
 

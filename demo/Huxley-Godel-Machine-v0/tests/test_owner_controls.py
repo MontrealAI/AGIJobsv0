@@ -44,6 +44,13 @@ def test_to_mapping_omits_defaults() -> None:
     assert "note" not in mapping
 
 
+def test_to_mapping_includes_nulls_when_requested() -> None:
+    controls = OwnerControls()
+    mapping = controls.to_mapping(include_nulls=True)
+    assert mapping["max_actions"] is None
+    assert mapping["note"] is None
+
+
 def test_to_cli_args_only_includes_changes() -> None:
     controls = OwnerControls(pause_all=True, max_actions=7, note="Emergency throttle")
     args = controls.to_cli_args()
@@ -51,3 +58,11 @@ def test_to_cli_args_only_includes_changes() -> None:
     assert "--set owner_controls.max_actions=7" in args
     assert any(arg.endswith('"Emergency throttle"') for arg in args)
     assert all("pause_expansions" not in arg for arg in args)
+
+
+def test_to_cli_args_emits_null_for_cleared_values() -> None:
+    baseline = OwnerControls(max_actions=5, note="Keep throughput steady")
+    updated = OwnerControls()
+    args = updated.to_cli_args(baseline=baseline)
+    assert "--set owner_controls.max_actions=null" in args
+    assert "--set owner_controls.note=null" in args

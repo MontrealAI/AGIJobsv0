@@ -153,10 +153,11 @@ def _interactive_update(base: OwnerControls) -> OwnerControls:
 def _render_summary(new_controls: OwnerControls, base: OwnerControls) -> str:
     if new_controls == base:
         return "Owner controls unchanged."
-    mapping = new_controls.to_mapping()
-    baseline = base.to_mapping()
+    mapping = new_controls.to_mapping(include_nulls=True)
+    baseline = base.to_mapping(include_nulls=True)
     lines = ["Updated directives:"]
-    for key, value in mapping.items():
+    for key in sorted(set(mapping) | set(baseline)):
+        value = mapping.get(key, "<default>")
         baseline_value = baseline.get(key, "<default>")
         if baseline_value == value:
             continue
