@@ -1,0 +1,18 @@
+{
+  "roiFloor": 1.35,
+  "roiGracePeriod": 4,
+  "budgetCap": 450000.0,
+  "budgetSoftRatio": 0.85,
+  "failureStreak": {
+    "threshold": 4,
+    "successReset": true
+  },
+  "successThreshold": 0.72,
+  "monitorIntervalSeconds": 0.5,
+  "alertChannels": ["log", "pagerduty"],
+  "controlTargets": {
+    "roi": 2.0,
+    "maxBurnRate": 0.3,
+    "minSuccessRate": 0.65
+  }
+}

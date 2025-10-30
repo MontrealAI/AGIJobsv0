@@ -1,0 +1,26 @@
+{
+  "engine": {
+    "wideningAlpha": 0.6,
+    "minVisitations": 3,
+    "thompsonPrior": 1.15,
+    "seed": null
+  },
+  "budget": {
+    "max": 250000.0,
+    "softRatio": 0.82,
+    "initial": 50000.0
+  },
+  "agents": {
+    "root": "agialpha.root",
+    "priors": {
+      "analysis": 1.05,
+      "execution": 0.95,
+      "validation": 1.1
+    }
+  },
+  "controlTargets": {
+    "roi": 2.0,
+    "successRate": 0.7,
+    "maxFailureRatio": 0.25
+  }
+}
