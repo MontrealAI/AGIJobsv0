@@ -65,9 +65,17 @@ class ModelOfInterestingness:
     interesting flags.
     """
 
-    def __init__(self, boring_weight: float = 1e-3, interesting_weight: float = 1.0):
+    def __init__(
+        self,
+        boring_weight: float = 1e-3,
+        interesting_weight: float = 1.0,
+        overlap_threshold: float = 0.6,
+    ):
         self.boring_weight = boring_weight
         self.interesting_weight = interesting_weight
+        if not 0.0 <= overlap_threshold <= 1.0:
+            raise ValueError("overlap_threshold must be between 0 and 1")
+        self.overlap_threshold = overlap_threshold
 
     def label_tasks(
         self,
@@ -97,7 +105,7 @@ class ModelOfInterestingness:
                 result[task_id] = (True, None)
             elif description.lower() in {d.lower() for d in mastered_tasks}:
                 result[task_id] = (False, "Exact duplicate of mastered task")
-            elif len(overlap) / max(len(desc_tokens), 1) > 0.6:
+            elif len(overlap) / max(len(desc_tokens), 1) > self.overlap_threshold:
                 reason = "Shares >60% vocabulary with mastered tasks"
                 result[task_id] = (False, reason)
             else:

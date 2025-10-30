@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import random
 import sys
 from pathlib import Path
@@ -9,6 +10,17 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+_OMNI_DEMO_PATH = ROOT / "demo" / "Open-Endedness-v0" / "omni_demo.py"
+_OMNI_DEMO_SPEC = importlib.util.spec_from_file_location(
+    "demo.open_endedness_v0._test_omni_demo", _OMNI_DEMO_PATH
+)
+if _OMNI_DEMO_SPEC is None or _OMNI_DEMO_SPEC.loader is None:  # pragma: no cover - defensive
+    raise ImportError("Unable to load omni_demo module for testing")
+_OMNI_DEMO = importlib.util.module_from_spec(_OMNI_DEMO_SPEC)
+sys.modules.setdefault(_OMNI_DEMO_SPEC.name, _OMNI_DEMO)
+_OMNI_DEMO_SPEC.loader.exec_module(_OMNI_DEMO)
+Simulator = _OMNI_DEMO.Simulator
 
 from demo.open_endedness_v0 import (
     EconomicLedger,
@@ -119,3 +131,18 @@ def test_sentinel_enforces_budget(engine: OmniCurriculumEngine) -> None:
     sentinel.register_moi_query(step=1, fm_cost=0.05)
     assert not sentinel.can_issue_fm_query(step=2)
     assert any(event["action"] == "sentinel_budget_lock" for event in sentinel.events)
+
+
+def test_lp_strategy_skips_disabled_tasks() -> None:
+    sim = Simulator(
+        strategy="lp",
+        rng=random.Random(11),
+        config={"owner": {"disabled_tasks": ["discount_optimizer"]}},
+    )
+    assert "discount_optimizer" in sim.engine.disabled_tasks
+    sim.engine.tasks["discount_optimizer"].learning_progress = 0.9
+    sim.engine.tasks["cta_refinement"].learning_progress = 0.2
+    sim.engine.tasks["matchmaking_ai"].learning_progress = 0.1
+
+    selections = {sim.pick_task(step=1)[0] for _ in range(5)}
+    assert "discount_optimizer" not in selections
