@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import sys
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -69,3 +70,41 @@ def test_unknown_strategy_raises():
     orchestrator = _orchestrator()
     with pytest.raises(StrategyNotFoundError):
         orchestrator.simulate("unknown")
+
+
+def test_owner_reset_restores_defaults():
+    orchestrator = _orchestrator()
+    orchestrator.update_owner_control("platform_fee_bps", "240")
+    orchestrator.update_owner_control("owner_address", "0x" + "1" * 40)
+    orchestrator.update_owner_control("treasury_address", "0x" + "2" * 40)
+    orchestrator.update_owner_control("narrative", "Temporary narrative for reset check.")
+
+    snapshot = orchestrator.reset_owner_controls()
+
+    defaults_path = orchestrator.base_path / "config" / "owner_controls.defaults.yaml"
+    defaults_payload = yaml.safe_load(defaults_path.read_text(encoding="utf-8"))
+
+    for key in orchestrator.OWNER_SCHEMA.keys():
+        assert snapshot[key] == defaults_payload[key]
+
+    live_payload = yaml.safe_load(
+        (orchestrator.base_path / "config" / "owner_controls.yaml").read_text(encoding="utf-8")
+    )
+    for key in orchestrator.OWNER_SCHEMA.keys():
+        assert live_payload[key] == defaults_payload[key]
+
+
+def test_execute_human_format_summary():
+    orchestrator = _orchestrator()
+    payload, fmt = orchestrator.execute(["simulate", "--strategy", "e2e", "--format", "human"])
+    assert fmt == "human"
+    summary = payload["summary"]
+    assert "Strategy:" in summary
+    assert "Utility uplift" in summary
+    assert "Dashboard:" in summary
+
+
+def test_invalid_owner_address_rejected():
+    orchestrator = _orchestrator()
+    with pytest.raises(ValueError):
+        orchestrator.update_owner_control("owner_address", "invalid-address")
