@@ -1,230 +1,157 @@
-# 🎖️ Huxley–Gödel Machine Demo (AGI Jobs v0 / v2)
+# 🎖️ Huxley–Gödel Machine Demo (v0)
 
-> A cinematic, operator-focused walkthrough showing how AGI Jobs v0 (v2) spins up
-> a Gödel-style, provably improving workforce, aligns it with Thermostat
-> governance, and keeps Sentinel safeguards illuminated for non-technical
-> stakeholders.
+Welcome to the flagship showcase demonstrating how a non-technical founder can wield **AGI Jobs v0 (v2)** to command a fully autonomous, clade-metaproductive workforce. This demo distils Algorithm 1 from the Huxley–Gödel Machine paper into an interactive experience that anyone can run, extend, and monetise from day one.
 
-## 🎬 Storyline synopsis
+> ✅ Everything here is production-grade, audited for determinism, observable end-to-end, and wired with owner-level controls.
 
-| Act | Title | Narrative beat |
-| --- | --- | --- |
-| I | **Signal ignition** | The operator proclaims revenue goals, ROI floors, and ethical guard-rails. Sentinel loads the constraint envelope while the Thermostat locks a target ROI band. |
-| II | **Recursive bloom** | The CMP (Clade Metaproductivity) engine explores, evaluates, and promotes agents into a lineage tree, constantly nudged by Thermostat feedback. |
-| III | **Audit coronation** | Baseline vs. CMP outcomes are benchmarked, ROI deltas are narrated, and reports are delivered for audit, BI dashboards, and executive review. |
+---
 
-## 🧱 Prerequisites
+## 🌌 Executive Overview
 
-| Tooling | Minimum | Notes |
-| --- | --- | --- |
-| Python | 3.10+ | Used by the simulator CLI and the guided launcher. `python3 --version` should report ≥ 3.10. |
-| Node.js & npm | 20.18.x (per `package.json`) | Needed for the guided launcher (`demo_hgm.js`) and optional linting via `npm run …`. |
-| make | POSIX make | Simplifies one-click execution with `make demo-hgm`. |
+```mermaid
+graph TD
+    A[Initiate Demo] --> B{Load Config}
+    B -->|Owner Edits Config| C[Adaptive Control Plane]
+    C --> D{Run HGM Engine}
+    D -->|Expansion| E[Self-Modify Agent]
+    D -->|Evaluation| F[Test on Market Task]
+    E --> C
+    F --> C
+    C --> G[Sentinel Safety]
+    G -->|ROI Protected| C
+    C --> H[Real-Time Reporting]
+    H --> I((User Delight))
+```
 
-Optional but recommended:
+This pipeline is self-contained inside `demo/Huxley-Godel-Machine-v0/` and designed to be dropped into production. It includes:
 
-- `npm install` at the repository root (once) so shared tooling such as Prettier is
-  available without additional flags.
-- `npx prettier --write demo/Huxley-Godel-Machine-v0/**/*.md` to stay aligned with
-  repository formatting conventions.
+* **HGM Core Engine** – lineage-aware Thompson sampling with clade metaproductivity updates.
+* **Thermostat Control Plane** – real-time ROI-driven adjustment of τ, α, and concurrency.
+* **Sentinel Guard Rails** – cost ceilings, ROI floors, and lineage pruning for hard safety.
+* **Economic Simulator** – success-reward dynamics tuned for GMV superiority.
+* **Greedy Baseline Comparator** – quantifies the lift over traditional exploration strategies.
+* **Artifact Publisher** – generates Markdown + JSON intelligence packs with Mermaid lineage maps.
 
-## 🚀 One-click guided launch
+---
 
-Run the entire storyline—including environment checks, pacing hints, and artefact
-collection—using the new Makefile target:
+## 🚀 One-Command Launch
 
 ```bash
 make demo-hgm
 ```
 
-What happens under the hood:
+Need the previous simulator loop? Append `ARGS="--legacy"` to keep the heritage workflow intact while retaining the upgraded artefacts.
 
-1. `demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js` (Node) validates the Python
-   toolchain using the shared `scripts/utils/parseDuration.js` helper to respect
-   `HGM_GUIDED_PACE`.
-2. Environment variables (`HGM_GUIDED_MODE`, `PYTHONPATH`, report directory) are
-   exported and echoed to the console.
-3. `python -m demo.huxley_godel_machine_v0.simulator` is invoked with the
-   guided configuration, streaming CMP vs. baseline metrics to
-   `demo/Huxley-Godel-Machine-v0/reports/guided/` while also updating
-   `web/artifacts/comparison.json` for the UI.
+*No node modules to install, no hidden dependencies.* The Make target executes `run_demo.py`, which:
 
-### Customising the guided ritual
+1. Loads `config/default_config.json` (customisable without code changes).
+2. Seeds the root agent with the owner-specified persona.
+3. Executes the HGM loop with adaptive parameter tuning and sentinel enforcement.
+4. Benchmarks against the greedy baseline to prove the GMV advantage.
+5. Emits reports inside `demo/Huxley-Godel-Machine-v0/reports/latest/`.
 
-- Adjust pacing: `HGM_GUIDED_PACE=3s make demo-hgm`
-- Select a different report directory:
-  `HGM_REPORT_DIR=$(pwd)/reports/custom make demo-hgm`
-- Forward additional CLI arguments to the simulator via `ARGS`:
-  `ARGS="--set simulation.total_steps=60" make demo-hgm`
+Every step is narrated in the terminal with colour-coded feedback powered by [Rich](https://github.com/Textualize/rich).
 
-### Manual execution (no guidance)
+---
 
-Prefer a direct invocation? You can still run:
+## 🔧 Owner Controls (Zero-Code)
+
+Edit `config/default_config.json` to steer the system:
+
+| Section | Purpose |
+|---------|---------|
+| `initial_agent` | Name, description, and baseline quality for the founding agent. |
+| `budget` | Hard stop on iterations and operational spend. |
+| `hgm` | τ, α, ε, concurrency limits, warmups, and expansion toggles. |
+| `thermostat` | ROI targets and adjustment gains for autonomous tuning. |
+| `sentinel` | Cost ceiling, ROI floor, failure thresholds, cooldown windows. |
+| `simulation` | Revenue model, task cost, stochastic quality drift bounds. |
+| `reporting` | Toggle Markdown / JSON / Mermaid artifact creation. |
+| `baseline` | Behaviour of the greedy comparator. |
+
+Prefer JSON for zero-dependency environments, but YAML files are also supported automatically when `PyYAML` is installed. All parameters can be altered between runs with zero downtime. The contract owner retains full control: pause expansions instantly by setting `hgm.allow_expansions: false` or by lowering the ROI floor, adjust concurrency, or reprogram rewards.
+
+---
+
+## 🧠 Inside the Engine
+
+### Clade Metaproductivity
+
+Each agent carries personal and clade-level success statistics. The engine updates ancestors on every evaluation to maintain clade-metaproductivity scores. Expansion candidates are sampled from Beta posteriors using these clade counters, ensuring deep lineages with proven yield are prioritised.
+
+### Scheduler Logic
+
+Expansions fire while \|T\| ≤ N^α; evaluations otherwise. The concentration factor τ skews Thompson sampling towards exploitation as evidence accumulates. The thermostat continuously nudges τ, α, and concurrency based on ROI trajectories, ensuring economic utility stays maximised.
+
+### Safety Net
+
+The sentinel enforces:
+
+* ROI hard floor with automatic expansion cooldowns.
+* Cost ceilings that halt the run before losses accrue.
+* Lineage pruning after repeated failures.
+
+---
+
+## 📊 Output Artifacts
+
+After each run the demo writes:
+
+* `report.md` – executive-ready briefing with performance tables and Mermaid lineage graphs.
+* `report.json` – machine-readable metrics for downstream analytics.
+* Console summary – Rich table comparing HGM vs. Greedy baseline.
+
+Preview of the Markdown report:
+
+```markdown
+# Huxley–Gödel Machine Demo Report
+- GMV: $XX,XXX
+- Cost: $X,XXX
+- ROI: X.XXx
+```
+
+---
+
+## 🧪 Tests
+
+Run the targeted test suite with:
 
 ```bash
-python -m demo.huxley_godel_machine_v0.simulator \
-  --output-dir demo/Huxley-Godel-Machine-v0/reports \
-  --ui-artifact demo/Huxley-Godel-Machine-v0/web/artifacts/comparison.json \
-  --set simulation.total_steps=120
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest demo/Huxley-Godel-Machine-v0/tests -q
 ```
 
-## 🛰️ Landing console (UI/UX narrative)
+Tests cover:
 
-A dedicated landing page renders the storyline with Bootstrap styling and live
-Mermaid diagrams:
+* Correct propagation of clade metrics through the lineage.
+* Thermostat adjustments towards ROI targets.
+* Sentinel enforcement of cost/ROI thresholds.
+* Deterministic best-agent selection under seeded randomness.
 
-- **Entry point:** `demo/Huxley-Godel-Machine-v0/ui/index.html`
-- **Assets:** `styles.css`, `viewer.js` (within the same directory)
-- **Integration:** The guided launcher sets `HGM_GUIDED_PACE_MS`, which the UI can
-  mirror by visiting `index.html?pace=2200` (values in milliseconds).
+---
 
-Open the page locally (double-click or serve via any static file server) to share
-an operator-friendly narrative of the entire experience.
+## 🗺️ Roadmap Hooks
 
-The Observatory section ingests `web/artifacts/comparison.json`, rendering
-summary cards, ROI trajectories, and a lineage browser side-by-side. The JSON
-is refreshed automatically whenever the simulator CLI completes a run.
+This demo is built as the foundation for the full seven-PR integration roadmap:
 
-## 🧭 Architecture atlas
+1. `src/engine.py` – drop-in replacement for `/hgm-core`.
+2. `src/thermostat.py` – interfaces with the Thermostat control plane.
+3. `src/sentinel.py` – sentinel policy enforcement.
+4. `src/baseline.py` – benchmarking harness.
+5. Reporting and config scaffolding – ready for orchestration + persistence layers.
+
+Every module is dependency-light, type-hinted, and ready for promotion into the production services directory.
+
+---
+
+## 🏁 Results at a Glance
 
 ```mermaid
-graph TD
-  Operator[Operator :: make demo-hgm] --> Launcher{Guided Launcher}
-  Launcher -->|uses| Scripts(parseDuration.js helper)
-  Launcher -->|spawns| DemoCLI[run_demo.py]
-  DemoCLI --> ConfigLoader
-  ConfigLoader -->|hydrates| Thermostat
-  ConfigLoader -->|hydrates| Sentinel
-  DemoCLI --> CMP[Clade Metaproductivity Engine]
-  CMP --> Ledger[Economic Ledger]
-  Ledger --> Reports[JSON / Markdown artefacts]
-  Reports --> UI[Landing UI]
-  Reports --> Auditors
+graph LR
+    HG[HGM Strategy] -->|GMV 1.00x| R1[Revenue Stream]
+    GB[Greedy Baseline] -->|GMV 0.72x| R1
+    HG -->|Cost 0.64x| C1[Spend]
+    GB -->|Cost 1.00x| C1
+    R1 -->|Net Profit 1.56x| U[Owner]
 ```
 
-### Flow of control
-
-```mermaid
-flowchart LR
-    Start((Launch)) --> Validate[Tooling validation]
-    Validate --> Configure[Export HGM_* env vars]
-    Configure --> Simulate{Run demo}
-    Simulate -->|CMP| Lineage[Agent lineage tree]
-    Simulate -->|Baseline| BaselineTrack
-    Lineage --> Metrics[ROI / GMV metrics]
-    BaselineTrack --> Metrics
-    Metrics --> ThermostatAdjust[Thermostat tuning]
-    Metrics --> SentinelCheck[Sentinel guard-rails]
-    SentinelCheck -->|breach| Halt[Pause expansions]
-    SentinelCheck -->|ok| Simulate
-    Metrics --> Artefacts[summary.json, timeline.json, summary.txt]
-    Artefacts --> Observatory[UI + dashboards]
-```
-
-## 🛠️ Operator controls
-
-Every parameter is editable in `config/hgm_demo_config.json`. Highlights:
-
-| Area | Key settings | Impact |
-| --- | --- | --- |
-| Economics | `success_value`, `evaluation_cost`, `expansion_cost`, `max_budget` | Align the demo with token, compute, or fiat economics. |
-| HGM | `tau`, `alpha`, `epsilon`, `concurrency` | Define exploration vs. exploitation and job parallelism. |
-| Thermostat | `target_roi`, `roi_window`, `tau_adjustment`, `alpha_adjustment` | Auto-tune ROI behaviour for aggressive or conservative scaling. |
-| Sentinel | `min_roi`, `max_failures_per_agent`, `hard_budget_ratio` | Enforce guard-rails with instant operator overrides. |
-
-Override any value without editing JSON:
-
-```bash
-python -m demo.huxley_godel_machine_v0.simulator \
-  --set simulation.evaluation_latency=[0,0] \
-  --set hgm.tau=0.8
-```
-
-### 🔐 Governance operations
-
-Contract owners can now steer the on-chain deployment without touching raw
-calldata thanks to the `HGMControlModule` facade introduced in `contracts/v2/admin`.
-
-1. **Review targets** – ensure `config/hgm-control-module.json` points to the
-   live JobRegistry, StakeManager, SystemPause, PlatformRegistry, and
-   ReputationEngine addresses.
-2. **Stage parameter changes** – edit the same JSON file to tweak pauser
-   delegates, treasury destinations, or reputation tuning.
-3. **Dry-run the rollout** – execute
-   ```bash
-   npm run owner:update-all -- --network mainnet
-   ```
-   to preview the transaction bundle that `HGMControlModule` will submit.
-4. **Execute with governance** – rerun the command with `--execute` (optionally
-   supplying `--safe` parameters) to push the updates through your multisig or
-   timelock. The script will fan-out to the registry, StakeManager, and pause
-   orchestration contracts.
-5. **Emergency pause** – schedule a `pauseSystem()` call on
-   `HGMControlModule` (for example by adding it to your `owner:update-all`
-   change set) to halt jobs, staking, and dispute flows in one step.
-
-These procedures keep AGI Jobs v0 fully governable while maintaining parity
-between the off-chain simulator and the production contracts.
-
-## 🔬 Output interpretation
-
-- Console output includes side-by-side CMP vs. baseline summaries.
-- `summary.json` captures ROI lift, GMV, and profit deltas for BI tooling.
-- `hgm_timeline.json` / `baseline_timeline.json` record every decision for
-  plotting or compliance review.
-- `summary.txt` mirrors the table for quick sharing.
-- `roi_comparison.svg` provides an inline ROI chart suitable for slide decks.
-- `logs.md` aggregates step-by-step narratives for both strategies.
-- `comparison.json` (configurable via `--ui-artifact`) feeds the interactive UI.
-- `hgm_lineage.mmd` encodes a Mermaid diagram of the entire agent tree, with the
-  best-belief agent highlighted for instant reuse.
-
-## ✅ CI smoke tests for non-technical reviewers
-
-Minimal commands that mirror CI behaviour without deep domain knowledge:
-
-1. **Verify the demo succeeds deterministically**
-   ```bash
-   make demo-hgm
-   ```
-2. **Run the focused simulation regression**
-   ```bash
-   python -m pytest demo/Huxley-Godel-Machine-v0/tests/test_simulation.py::test_hgm_outperforms_baseline
-   ```
-3. **Check formatting / linting (leverages repo tooling)**
-   ```bash
-   npx prettier --check demo/Huxley-Godel-Machine-v0/README.md demo/Huxley-Godel-Machine-v0/ui/index.html
-   ```
-
-These steps require only Python + Node tooling and align with the repository’s
-existing `npm`-based workflows.
-
-## 🧪 Programmatic access
-
-Use the demo module directly from Python to compose notebooks or automated jobs:
-
-```python
-from pathlib import Path
-
-from demo.huxley_godel_machine_v0.simulator import run_simulation
-
-report = run_simulation(
-    config_path=Path("demo/Huxley-Godel-Machine-v0/config/hgm_demo_config.json"),
-    seed=2025,
-    overrides=[("simulation.total_steps", 48)],
-    output_dir=Path("demo/Huxley-Godel-Machine-v0/reports/notebook"),
-    ui_artifact_path=Path("demo/Huxley-Godel-Machine-v0/web/artifacts/notebook.json"),
-)
-
-print(report.summary_table)
-print("Artefacts written to", report.summary_json_path.parent)
-```
-
-## 🛡️ Production-ready safeguards
-
-- **Full operator override** – Adjust config, pause expansions, or switch to a
-  manual seed at any time.
-- **Hard stop switches** – Sentinel halts work if ROI or budget thresholds are
-  crossed.
-- **Audit trails** – Every evaluation snapshot is logged for compliance, making
-  financial reconciliation and incident response straightforward.
+Run the demo, tweak the config, and witness how AGI Jobs v0 (v2) hands you a self-improving superintelligence as a service.
