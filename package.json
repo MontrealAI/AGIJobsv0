@@ -406,6 +406,7 @@
     "demo:economic-power:dominion": "npm run demo:economic-power -- --scenario mainnet-dominion",
     "demo:era-of-experience": "node --import tsx demo/Era-Of-Experience-v0/scripts/runDemo.ts",
     "demo:era-of-experience:audit": "node --import tsx demo/Era-Of-Experience-v0/scripts/runAudit.ts",
+    "demo:era-of-experience:triangulate": "node --import tsx demo/Era-Of-Experience-v0/scripts/runTriangulation.ts",
     "build:agi-alpha-node": "tsc --project demo/AGI-Alpha-Node-v0/tsconfig.build.json",
     "demo:agi-alpha-node": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Alpha-Node-v0/src/cli.ts",
     "demo:agi-alpha-node:prod": "npm run build:agi-alpha-node && node demo/AGI-Alpha-Node-v0/dist/cli.js",
