@@ -1,0 +1,102 @@
+{
+  "generations": 30,
+  "baseline": {
+    "program_id": "baseline",
+    "generation": 0,
+    "metrics": {
+      "Cost": 4287.630859,
+      "Utility": 10808.754956,
+      "Fairness": 0.740868,
+      "GMV": 15096.385815,
+      "Risk": 0.095524,
+      "AcceptanceRate": 0.965852,
+      "Latency": 304.481566,
+      "OwnerRevenue": 1501.602808,
+      "OperatorRevenue": 287.855604
+    },
+    "model_origin": "baseline"
+  },
+  "champion": {
+    "program_id": "fast-73a7561c",
+    "generation": 3,
+    "metrics": {
+      "Cost": 4313.246632,
+      "Utility": 10902.55676,
+      "Fairness": 0.725804,
+      "GMV": 15215.803392,
+      "Risk": 0.09464,
+      "AcceptanceRate": 0.97409,
+      "Latency": 304.045871,
+      "OwnerRevenue": 1510.56355,
+      "OperatorRevenue": 289.515467
+    },
+    "model_origin": "alphaevolve-fast-synthetic"
+  },
+  "logs": [
+    "Gen 1: accepted fast-dba8acfa from alphaevolve-fast-synthetic Utility=10823.58, Fairness=0.741, mode=shadow, canary=0%",
+    "Gen 2: no candidate promoted.",
+    "Gen 3: accepted fast-73a7561c from alphaevolve-fast-synthetic Utility=10902.56, Fairness=0.726, mode=shadow, canary=0%",
+    "Gen 4: no candidate promoted.",
+    "Gen 5: no candidate promoted.",
+    "Gen 6: no candidate promoted.",
+    "Gen 7: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 8: no candidate promoted.",
+    "Gen 9: no candidate promoted.",
+    "Gen 10: no candidate promoted.",
+    "Gen 11: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 12: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 13: no candidate promoted.",
+    "Gen 14: no candidate promoted.",
+    "Gen 15: no candidate promoted.",
+    "Gen 16: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 17: no candidate promoted.",
+    "Gen 18: no candidate promoted.",
+    "Gen 19: no candidate promoted.",
+    "Gen 20: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 21: no candidate promoted. guardrail failures=['fairness-regression']",
+    "Gen 22: no candidate promoted.",
+    "Gen 23: no candidate promoted.",
+    "Gen 24: no candidate promoted.",
+    "Gen 25: no candidate promoted.",
+    "Gen 26: no candidate promoted.",
+    "Gen 27: no candidate promoted.",
+    "Gen 28: no candidate promoted.",
+    "Gen 29: no candidate promoted.",
+    "Gen 30: no candidate promoted."
+  ],
+  "temperature_window": 12,
+  "pareto_front": [
+    {
+      "program_id": "fast-dba8acfa",
+      "generation": 1,
+      "metrics": {
+        "Cost": 4293.144228,
+        "Utility": 10823.577276,
+        "Fairness": 0.741226,
+        "GMV": 15116.721504,
+        "Risk": 0.095543,
+        "AcceptanceRate": 0.967177,
+        "Latency": 304.440665,
+        "OwnerRevenue": 1503.552525,
+        "OperatorRevenue": 288.229092
+      },
+      "model_origin": "alphaevolve-fast-synthetic"
+    },
+    {
+      "program_id": "fast-73a7561c",
+      "generation": 3,
+      "metrics": {
+        "Cost": 4313.246632,
+        "Utility": 10902.55676,
+        "Fairness": 0.725804,
+        "GMV": 15215.803392,
+        "Risk": 0.09464,
+        "AcceptanceRate": 0.97409,
+        "Latency": 304.045871,
+        "OwnerRevenue": 1510.56355,
+        "OperatorRevenue": 289.515467
+      },
+      "model_origin": "alphaevolve-fast-synthetic"
+    }
+  ]
+}

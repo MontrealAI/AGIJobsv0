@@ -1,0 +1,51 @@
+{
+  "prompt": {
+    "explicit_context": "Economic optimization of AGI Jobs marketplace heuristics.",
+    "stochastic_templates": {
+      "task_intro": [
+        "Improve the heuristics to expand Utility (GMV - Cost).",
+        "Evolve the marketplace logic for superior economic leverage.",
+        "Refine the matching intelligence for resilient Utility uplift."
+      ],
+      "use_probability": 0.35
+    },
+    "include_metrics": [
+      "Utility",
+      "GMV",
+      "Cost",
+      "Fairness",
+      "Latency"
+    ],
+    "max_prior_solutions": 3
+  },
+  "models": {
+    "fast_model": "alphaevolve-fast-synthetic",
+    "strong_model": "alphaevolve-strong-synthetic",
+    "fast_mutations_per_cycle": 4,
+    "strong_invoke_ratio": 0.4
+  },
+  "controller": {
+    "max_parallel_evaluations": 4,
+    "max_generations_per_run": 120,
+    "wallclock_time_limit_min": 15,
+    "success_window": 12,
+    "low_success_threshold": 0.18,
+    "high_success_threshold": 0.55,
+    "min_temperature": 0.18,
+    "max_temperature": 0.85,
+    "shadow_to_canary_generations": 3
+  },
+  "guardrails": {
+    "max_cost_pct_baseline": 1.08,
+    "min_utility_pct_baseline": 0.96,
+    "min_fairness": 0.7,
+    "max_latency_ms": 420,
+    "max_risk": 0.12
+  },
+  "evaluation": {
+    "baseline_seed": 314159,
+    "stress_seed": 271828,
+    "shadow_seed": 161803,
+    "simulation_horizon": 48
+  }
+}
