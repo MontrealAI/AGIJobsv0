@@ -36,6 +36,7 @@ class HGMEngine:
         self._sampler = ThompsonSampler(seed=self._config.seed)
         self._on_expansion_result = on_expansion_result
         self._on_evaluation_result = on_evaluation_result
+        self._expansion_gate = True
 
     async def ensure_node(self, key: str, **metadata: object) -> AgentNode:
         """Return a node, creating it when necessary."""
@@ -58,10 +59,15 @@ class HGMEngine:
         return_action: Optional[str] = None
 
         async with self._lock:
+            if not self._expansion_gate:
+                return None
             node = self._nodes.get(key)
             if node is None:
                 node = AgentNode(key=key)
                 self._nodes[key] = node
+
+            if _is_pruned(node):
+                return None
 
             widened_limit = max(
                 1,
@@ -102,6 +108,8 @@ class HGMEngine:
                     child = self._nodes.setdefault(
                         child_key, AgentNode(key=child_key, parent=key)
                     )
+                    if _is_pruned(child):
+                        continue
                     alpha, beta = posterior_parameters(
                         child.success_weight,
                         child.failure_weight,
@@ -110,10 +118,45 @@ class HGMEngine:
                     alphas.append(alpha)
                     betas.append(beta)
                     arms.append(action)
+                if not arms:
+                    return None
                 choice = self._sampler.choose(arms, alphas, betas)
                 action = choice.arm
 
         return action
+
+    async def set_expansion_gate(self, allowed: bool) -> None:
+        """Enable or disable further expansions."""
+
+        async with self._lock:
+            self._expansion_gate = bool(allowed)
+
+    async def expansions_allowed(self) -> bool:
+        """Return whether expansions are currently permitted."""
+
+        async with self._lock:
+            return self._expansion_gate
+
+    async def mark_pruned(self, key: str, *, reason: str | None = None) -> None:
+        """Mark a node as pruned by sentinel guardrails."""
+
+        async with self._lock:
+            node = self._nodes.get(key)
+            if node is None:
+                return
+            sentinel_meta = _ensure_sentinel_meta(node)
+            sentinel_meta["pruned"] = True
+            if reason is not None:
+                sentinel_meta["reason"] = reason
+
+    async def is_pruned(self, key: str) -> bool:
+        """Return whether the specified node is pruned."""
+
+        async with self._lock:
+            node = self._nodes.get(key)
+            if node is None:
+                return False
+            return _is_pruned(node)
 
     async def record_expansion(self, key: str, action: str, *, payload: Optional[dict[str, object]] = None) -> None:
         """Record the result of expanding an action."""
@@ -127,8 +170,17 @@ class HGMEngine:
             callback_payload = {"action": action, **payload}
             await _invoke_callback(self._on_expansion_result, child, callback_payload)
 
-    async def record_evaluation(self, key: str, reward: float, *, weight: float = 1.0) -> None:
+    async def record_evaluation(
+        self,
+        key: str,
+        reward: float,
+        *,
+        weight: float = 1.0,
+        payload: Optional[Dict[str, object]] = None,
+    ) -> None:
         """Record the evaluation outcome for a node."""
+
+        extra = dict(payload or {})
 
         async with self._lock:
             node = self._nodes.setdefault(key, AgentNode(key=key))
@@ -140,7 +192,7 @@ class HGMEngine:
                 parent.record_reward(reward, weight)
                 parent_key = parent.parent
 
-            payload = {"reward": reward, "weight": weight, "cmp": node.cmp.to_dict()}
+            payload = {"reward": reward, "weight": weight, "cmp": node.cmp.to_dict(), **extra}
         if self._on_evaluation_result is not None:
             await _invoke_callback(self._on_evaluation_result, node, payload)
 
@@ -192,3 +244,18 @@ async def _invoke_callback(callback: Callback, node: AgentNode, payload: Dict[st
     result = callback(node, payload)
     if asyncio.iscoroutine(result):
         await result
+
+
+def _ensure_sentinel_meta(node: AgentNode) -> Dict[str, object]:
+    sentinel_meta = node.metadata.get("sentinel")
+    if not isinstance(sentinel_meta, dict):
+        sentinel_meta = {}
+        node.metadata["sentinel"] = sentinel_meta
+    return sentinel_meta
+
+
+def _is_pruned(node: AgentNode) -> bool:
+    sentinel_meta = node.metadata.get("sentinel")
+    if not isinstance(sentinel_meta, dict):
+        return False
+    return bool(sentinel_meta.get("pruned"))

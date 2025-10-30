@@ -13,6 +13,7 @@ coverage.json
 reports/sbom/
 reports/load-sim/
 reports/python-coverage/
+monitoring/sentinel-alerts.log
 
 .next/
 

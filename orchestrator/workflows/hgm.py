@@ -15,11 +15,18 @@ from hgm_core.types import AgentNode
 from .scheduler import TaskScheduler
 from orchestrator.tools.executors import RetryPolicy
 from backend.models.hgm import HgmRepository
+from services.sentinel import SentinelConfig, SentinelMonitor, load_config as load_sentinel_config
 
 LOGGER = logging.getLogger(__name__)
 
 ExpansionWork = Callable[[str], Awaitable[Dict[str, object] | None]]
-EvaluationWork = Callable[[], Awaitable[tuple[float, float | None]]]
+EvaluationWork = Callable[
+    [],
+    Awaitable[
+        tuple[float, float | None]
+        | tuple[float, float | None, Dict[str, object] | None]
+    ],
+]
 
 
 @dataclass(slots=True)
@@ -33,6 +40,9 @@ class WorkflowConfig:
     root_agent: str = "root"
     run_metadata: dict[str, object] = field(default_factory=dict)
     repository: HgmRepository | None = None
+    sentinel: SentinelMonitor | None = None
+    sentinel_config: SentinelConfig | None = None
+    sentinel_enabled: bool = True
 
 
 class HGMOrchestrationWorkflow:
@@ -62,6 +72,11 @@ class HGMOrchestrationWorkflow:
             on_expansion_result=self._on_expansion_result,
             on_evaluation_result=self._on_evaluation_result,
         )
+        sentinel = self._config.sentinel
+        if sentinel is None and self._config.sentinel_enabled:
+            sentinel_config = self._config.sentinel_config or load_sentinel_config()
+            sentinel = SentinelMonitor(self._engine, sentinel_config)
+        self._sentinel = sentinel
         self._engine_lock = asyncio.Lock()
         self._busy_lock = asyncio.Lock()
         self._busy_agents: set[str] = set()
@@ -104,6 +119,8 @@ class HGMOrchestrationWorkflow:
                 )
             except Exception:  # pragma: no cover - persistence errors should not break workflow
                 LOGGER.warning("Failed to persist expansion event for %s", node.key, exc_info=True)
+        if self._sentinel is not None:
+            await self._sentinel.observe_expansion(node.key, dict(payload))
 
     async def _on_evaluation_result(self, node: AgentNode, payload: Dict[str, object]) -> None:
         self.evaluation_events.append((node.key, dict(payload)))
@@ -118,6 +135,8 @@ class HGMOrchestrationWorkflow:
                 )
             except Exception:  # pragma: no cover - persistence errors should not break workflow
                 LOGGER.warning("Failed to persist evaluation event for %s", node.key, exc_info=True)
+        if self._sentinel is not None:
+            await self._sentinel.observe_evaluation(node.key, dict(payload))
 
     # ------------------------------------------------------------------
     # Public engine adapters
@@ -156,8 +175,11 @@ class HGMOrchestrationWorkflow:
         reward: float,
         *,
         weight: float = 1.0,
+        payload: Dict[str, object] | None = None,
     ) -> None:
-        await self._invoke_with_engine(self._engine.record_evaluation(node_key, reward, weight=weight))
+        await self._invoke_with_engine(
+            self._engine.record_evaluation(node_key, reward, weight=weight, payload=payload)
+        )
 
     async def snapshot(self) -> Dict[str, AgentNode]:
         return await self._invoke_with_engine(self._engine.snapshot())
@@ -194,6 +216,9 @@ class HGMOrchestrationWorkflow:
         *,
         request_id: str | None = None,
     ) -> bool:
+        if self._sentinel is not None and self._sentinel.stop_requested:
+            LOGGER.warning("Sentinel stop requested; skipping expansion for %s", parent_key)
+            return False
         choice = await self.next_action(parent_key, actions)
         if choice is None:
             LOGGER.debug("No expansion available for %s", parent_key)
@@ -232,6 +257,12 @@ class HGMOrchestrationWorkflow:
         request_id: str | None = None,
     ) -> bool:
         await self.ensure_node(node_key)
+        if self._sentinel is not None and self._sentinel.stop_requested:
+            LOGGER.warning("Sentinel stop requested; skipping evaluation for %s", node_key)
+            return False
+        if self._sentinel is not None and self._sentinel.is_agent_pruned(node_key):
+            LOGGER.debug("Sentinel marked %s as pruned; evaluation skipped", node_key)
+            return False
         busy_lock = self._busy_guard()
         async with busy_lock:
             if node_key in self._busy_agents:
@@ -242,9 +273,15 @@ class HGMOrchestrationWorkflow:
         task_id = request_id or f"evaluate:{node_key}:{uuid.uuid4().hex}"
 
         async def _run() -> None:
-            reward, weight = await work()
+            result = await work()
+            extra: Dict[str, object] | None = None
+            if isinstance(result, tuple) and len(result) == 3:
+                reward, weight, extra = result  # type: ignore[misc]
+            else:
+                reward, weight = result  # type: ignore[misc]
             weight = weight if weight is not None else 1.0
-            await self.evaluation_activity(node_key, reward, weight=weight)
+            payload = dict(extra or {})
+            await self.evaluation_activity(node_key, reward, weight=weight, payload=payload)
 
         async def _cleanup(success: bool, error: Exception | None) -> None:
             del success, error
@@ -259,6 +296,13 @@ class HGMOrchestrationWorkflow:
 
     async def drain(self) -> None:
         await self._scheduler.wait_for_all()
+        if self._sentinel is not None:
+            await self._sentinel.drain()
+
+    async def shutdown(self) -> None:
+        await self.drain()
+        if self._sentinel is not None:
+            await self._sentinel.close()
 
     # ------------------------------------------------------------------
     # Diagnostic helpers

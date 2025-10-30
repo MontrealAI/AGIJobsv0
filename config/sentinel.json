@@ -1,0 +1,13 @@
+{
+  "roiFloor": 1.2,
+  "roiGracePeriod": 3,
+  "budgetCap": 100000.0,
+  "budgetSoftRatio": 0.8,
+  "failureStreak": {
+    "threshold": 5,
+    "successReset": true
+  },
+  "successThreshold": 0.6,
+  "monitorIntervalSeconds": 1.0,
+  "alertChannels": ["log"]
+}
