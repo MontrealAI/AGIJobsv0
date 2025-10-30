@@ -1,87 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AGI Alpha Node Command Deck</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <header>
-    <h1>AGI Alpha Node Command Deck</h1>
-    <p>Paste the JSON from <code>python -m alpha_node.cli dashboard</code> to project live state.</p>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <h2>Economic Singularity Engine</h2>
-        <p>The Alpha Node fuses ENS sovereignty, $AGIALPHA economics, and AGI intelligence to deliver autonomous wealth compounding.</p>
-        <button id="loadButton">Load Dashboard JSON</button>
-        <input type="file" id="fileInput" accept="application/json" hidden />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AGI Alpha Node Command Deck</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #10152b, #050508 70%);
+        color: #e5f1ff;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        display: grid;
+        gap: 2rem;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .badge {
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #00f5ff, #9b5cff);
+        color: #030303;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+      section {
+        background: rgba(10, 14, 32, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(70, 133, 255, 0.4);
+        border-radius: 1.2rem;
+        padding: 1.5rem;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      h1 {
+        font-size: 2.4rem;
+        margin: 0;
+      }
+      h2 {
+        margin-top: 0;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+      .metric-card {
+        background: rgba(9, 13, 24, 0.9);
+        border-radius: 1rem;
+        padding: 1.2rem;
+        border: 1px solid rgba(80, 160, 255, 0.35);
+      }
+      .metric-card span {
+        font-size: 2.2rem;
+        font-weight: 700;
+        display: block;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: rgba(4, 8, 18, 0.9);
+        padding: 1rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(70, 120, 200, 0.4);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>AGI Alpha Node Command Deck</h1>
+        <p>The sovereign intelligence core compounding capital, compliance, and cognition.</p>
       </div>
-      <div class="hero-visual">
-        <pre id="mermaidDiagram" class="mermaid">
-flowchart TD
-    A[ENS Sovereign Identity]
-    B[$AGIALPHA Treasury]
-    C[MuZero++ Planner]
-    D[Specialist Swarm]
-    E[Knowledge Lake]
-    F[Compliance Radar]
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> C
-        </pre>
+      <span class="badge">AGI JOBS v2 POWERED</span>
+    </header>
+
+    <section>
+      <h2>Live Metrics</h2>
+      <div class="metrics">
+        <div class="metric-card">
+          <h3>Compliance</h3>
+          <span id="compliance">--</span>
+          <small>Compliance score aggregated across governance dimensions.</small>
+        </div>
+        <div class="metric-card">
+          <h3>Total Reward</h3>
+          <span id="reward">--</span>
+          <small>Total autonomous alpha generated this cycle.</small>
+        </div>
+        <div class="metric-card">
+          <h3>Jobs Completed</h3>
+          <span id="jobs">--</span>
+          <small>Autonomously executed AGI Jobs.</small>
+        </div>
       </div>
     </section>
 
-    <section class="metrics-grid">
-      <article>
-        <h3>Stake Locked</h3>
-        <p id="stakeLocked">–</p>
-      </article>
-      <article>
-        <h3>Total Rewards</h3>
-        <p id="totalRewards">–</p>
-      </article>
-      <article>
-        <h3>Antifragility Index</h3>
-        <p id="antifragilityIndex">–</p>
-      </article>
-      <article>
-        <h3>Strategic Alpha</h3>
-        <p id="strategicAlpha">–</p>
-      </article>
-      <article>
-        <h3>Compliance Score</h3>
-        <p id="complianceScore">–</p>
-      </article>
-      <article>
-        <h3>Active Jobs</h3>
-        <p id="activeJobs">–</p>
-      </article>
+    <section>
+      <h2>Compliance Intelligence</h2>
+      <pre id="report">Run `python ... status` to refresh.</pre>
     </section>
 
-    <section class="chart-section">
-      <canvas id="complianceChart" width="400" height="400"></canvas>
+    <section>
+      <h2>Operator Guidance</h2>
+      <ol>
+        <li>Run <code>python ... bootstrap</code> to verify ENS, stake, and start observability.</li>
+        <li>Execute <code>python ... run --serve-dashboard</code> to orchestrate a full job cycle.</li>
+        <li>Point Prometheus to <code>http://localhost:9101</code> for production-grade telemetry.</li>
+        <li>Use <code>python ... pause</code> and <code>python ... resume</code> for instant sovereignty.</li>
+      </ol>
     </section>
 
-    <section class="audit-section">
-      <h2>Governance Audit Trail</h2>
-      <ul id="auditLog"></ul>
-    </section>
-  </main>
-
-  <footer>
-    <p>Powered by AGI Jobs v0 (v2) • Built for decisive institutional operators.</p>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
-  <script src="app.js"></script>
-</body>
+    <script>
+      async function refresh() {
+        try {
+          const response = await fetch('http://localhost:9101');
+          if (!response.ok) return;
+          const text = await response.text();
+          const metrics = Object.fromEntries(
+            text
+              .trim()
+              .split('\n')
+              .map((line) => line.split(' '))
+              .filter((parts) => parts.length === 2)
+          );
+          if (metrics.agi_alpha_node_compliance_score) {
+            document.getElementById('compliance').textContent = Number(metrics.agi_alpha_node_compliance_score).toFixed(2);
+          }
+          if (metrics.agi_alpha_node_total_reward) {
+            document.getElementById('reward').textContent = Number(metrics.agi_alpha_node_total_reward).toFixed(2);
+          }
+          if (metrics.agi_alpha_node_jobs_completed) {
+            document.getElementById('jobs').textContent = Number(metrics.agi_alpha_node_jobs_completed).toFixed(0);
+          }
+        } catch (error) {
+          console.warn('Metrics unavailable', error);
+        }
+      }
+      refresh();
+      setInterval(refresh, 4000);
+    </script>
+  </body>
 </html>

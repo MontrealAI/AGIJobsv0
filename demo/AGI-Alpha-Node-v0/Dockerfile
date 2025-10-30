@@ -1,11 +1,16 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-COPY . /app
+WORKDIR /opt/agi-alpha-node
 
-RUN useradd -m agi && chown -R agi /app
-USER agi
+COPY src ./src
+COPY config ./config
+COPY web ./web
+COPY README.md ./README.md
 
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/opt/agi-alpha-node/src
 
-CMD ["python", "-m", "alpha_node.cli", "run"]
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir web3==6.10.0
+
+ENTRYPOINT ["python", "src/agi_alpha_node_demo/cli.py"]
+CMD ["--config", "config/default.toml", "run", "--serve-dashboard"]

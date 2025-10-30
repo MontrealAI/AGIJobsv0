@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  agi-alpha-node:
+    build: .
+    image: agi-alpha-node:latest
+    container_name: agi-alpha-node
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./config:/opt/agi-alpha-node/config
+      - ./web:/opt/agi-alpha-node/web
+    ports:
+      - "9101:9101"
+    command: ["--config", "config/default.toml", "run", "--serve-dashboard"]
