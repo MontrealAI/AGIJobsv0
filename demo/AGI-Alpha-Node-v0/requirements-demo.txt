@@ -1,0 +1,11 @@
+click>=8.1
+colorama>=0.4
+prometheus_client>=0.19
+pyyaml>=6.0
+rich>=13.7
+sqlalchemy>=2.0
+web3>=6.15
+numpy>=1.26
+scipy>=1.11
+pandas>=2.1
+networkx>=3.2

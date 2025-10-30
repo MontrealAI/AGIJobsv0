@@ -1,87 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AGI Alpha Node Command Deck</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <title>AGI Alpha Node Command Hub</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: true, theme: "dark" });
+  </script>
 </head>
 <body>
   <header>
-    <h1>AGI Alpha Node Command Deck</h1>
-    <p>Paste the JSON from <code>python -m alpha_node.cli dashboard</code> to project live state.</p>
+    <h1>AGI Alpha Node Command Hub</h1>
+    <p>The definitive showcase of autonomous AGI-driven economic acceleration powered by AGI Jobs v0 (v2).</p>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <h2>Economic Singularity Engine</h2>
-        <p>The Alpha Node fuses ENS sovereignty, $AGIALPHA economics, and AGI intelligence to deliver autonomous wealth compounding.</p>
-        <button id="loadButton">Load Dashboard JSON</button>
-        <input type="file" id="fileInput" accept="application/json" hidden />
-      </div>
-      <div class="hero-visual">
-        <pre id="mermaidDiagram" class="mermaid">
-flowchart TD
-    A[ENS Sovereign Identity]
-    B[$AGIALPHA Treasury]
-    C[MuZero++ Planner]
-    D[Specialist Swarm]
-    E[Knowledge Lake]
-    F[Compliance Radar]
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> C
-        </pre>
-      </div>
-    </section>
+  <section>
+    <h2>Live Metrics</h2>
+    <p>Prometheus endpoint: <code>http://localhost:9700/metrics</code>. Import the bundled Grafana dashboard for instant observability.</p>
+  </section>
 
-    <section class="metrics-grid">
-      <article>
-        <h3>Stake Locked</h3>
-        <p id="stakeLocked">–</p>
-      </article>
-      <article>
-        <h3>Total Rewards</h3>
-        <p id="totalRewards">–</p>
-      </article>
-      <article>
-        <h3>Antifragility Index</h3>
-        <p id="antifragilityIndex">–</p>
-      </article>
-      <article>
-        <h3>Strategic Alpha</h3>
-        <p id="strategicAlpha">–</p>
-      </article>
-      <article>
-        <h3>Compliance Score</h3>
-        <p id="complianceScore">–</p>
-      </article>
-      <article>
-        <h3>Active Jobs</h3>
-        <p id="activeJobs">–</p>
-      </article>
-    </section>
+  <section>
+    <h2>Mermaid Blueprint</h2>
+    <div class="mermaid">
+      graph TD
+        Operator[[Operator Console]] --> CLI{{CommandHub CLI}}
+        CLI --> ENS((ENS Registry))
+        CLI --> Stake((Stake Manager))
+        CLI --> Router((Job Router))
+        CLI --> FeePool((Fee Pool))
+        CLI --> Pause((System Pause))
+        Planner((MuZero++ Planner)) --> Orchestrator
+        Orchestrator --> Finance
+        Orchestrator --> Biotech
+        Orchestrator --> Manufacturing
+        Finance --> Knowledge
+        Biotech --> Knowledge
+        Manufacturing --> Knowledge
+        Knowledge((Knowledge Lake)) --> Planner
+        Orchestrator --> Metrics
+        Metrics((Prometheus)) --> Dashboard
+        Dashboard[[Grafana]]
+    </div>
+  </section>
 
-    <section class="chart-section">
-      <canvas id="complianceChart" width="400" height="400"></canvas>
-    </section>
-
-    <section class="audit-section">
-      <h2>Governance Audit Trail</h2>
-      <ul id="auditLog"></ul>
-    </section>
-  </main>
+  <section>
+    <h2>Quick Actions</h2>
+    <ol>
+      <li>Run <code>make demo</code> to bootstrap, warm up the planner, and stream metrics.</li>
+      <li>Execute <code>python -m agi_alpha_node_demo.cli run-job --scenario all</code> to showcase autonomous completion.</li>
+      <li>Share the compliance score with stakeholders using <code>--format json</code>.</li>
+    </ol>
+  </section>
 
   <footer>
-    <p>Powered by AGI Jobs v0 (v2) • Built for decisive institutional operators.</p>
+    <p>Crafted for visionary operators who demand immediate command over institutional-grade AGI infrastructure.</p>
   </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark' });</script>
-  <script src="app.js"></script>
 </body>
 </html>

@@ -1,50 +1,48 @@
-identity:
-  ens_domain: demo.alpha.node.agi.eth
-  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
-
-governance:
-  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
-
-economy:
-  stake_threshold: 1000
-
+# AGI Alpha Node Demo configuration
 network:
-  rpc_url: "https://mainnet.infura.io/v3/YOUR_API_KEY"
+  chain_endpoint: "https://eth.llamarpc.com"
+  chain_id: 1
+  ens_registry: "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e"
 
-contracts:
-  job_registry: "0x0000000000000000000000000000000000000001"
-  stake_manager: "0x0000000000000000000000000000000000000002"
-  incentives: "0x0000000000000000000000000000000000000003"
-  treasury: "0x0000000000000000000000000000000000000004"
+operator:
+  owner_address: "0x1234567890abcdef1234567890abcdef12345678"
+  governance_address: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+  ens_domain: "demo.alpha.node.agi.eth"
+  pause_key_path: "./pause.key"
 
-storage:
-  knowledge_lake: "./storage/knowledge.json"
-  log_file: "./logs/alpha_node.log"
+staking:
+  minimum_stake: 1000.0
+  current_stake: 1500.0
+  token_symbol: "$AGIALPHA"
 
-observability:
-  enable_prometheus: true
-  enable_dashboard: true
-  metrics_port: 9753
-  dashboard_port: 8088
+knowledge_lake:
+  database_path: "./knowledge.sqlite3"
 
-runtime:
-  job_poll_interval: 2.5
-  planning_horizon: 4
-  exploration_bias: 1.2
+metrics:
+  bind_host: "0.0.0.0"
+  bind_port: 9700
+
+safety:
+  auto_pause_on_failure: true
+  invariant_checks:
+    - ens_verified
+    - stake_sufficient
+    - governance_configured
+
+planner:
+  rollout_depth: 5
+  simulations: 64
+  discount: 0.97
+  exploration_constant: 1.3
 
 specialists:
   - name: finance
-    model: "finance-strategist-v1"
-    risk_limit: 3.5
-    description: "Treasury liquidity orchestration"
-    enabled: true
+    risk_tolerance: 0.2
   - name: biotech
-    model: "biotech-synthesist-v1"
-    risk_limit: 2.0
-    description: "Molecular discovery and synthesis"
-    enabled: true
+    synthesis_budget: 500000.0
   - name: manufacturing
-    model: "manufacturing-optimizer-v1"
-    risk_limit: 1.5
-    description: "Digital twin optimization"
-    enabled: true
+    optimisation_level: "ultra"
+
+jobs:
+  default_reinvestment_rate: 0.55
+  heartbeat_seconds: 15

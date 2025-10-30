@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  agi-alpha-node:
+    build: .
+    container_name: agi-alpha-node-demo
+    ports:
+      - "9700:9700"
+      - "9701:9701"
+    environment:
+      - WEB3_PROVIDER_URI=${WEB3_PROVIDER_URI:-https://eth.llamarpc.com}
+      - AGI_ALPHA_NODE_CONFIG=/opt/agi-alpha-node/config.example.yaml
+    volumes:
+      - knowledge-data:/opt/agi-alpha-node/knowledge
+    command: ["python", "-m", "agi_alpha_node_demo.cli", "console", "--config", "/opt/agi-alpha-node/config.example.yaml"]
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - agi-alpha-node
+volumes:
+  knowledge-data:
