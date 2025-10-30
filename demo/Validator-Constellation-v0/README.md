@@ -1,129 +1,111 @@
-# Validator Constellation Demo (AGI Jobs v0/v2)
+# Validator Constellation v0 Demo
 
-> An iconic, production-calibre showcase that lets a non-technical operator
-> command a hyper-advanced validator constellation, orchestrate cryptographic
-> truth, and enforce sentinel guardrails with the ease of running a single
-> command.
+> A fully curated, non-technical friendly launch experience that lets any
+> operator command an autonomous validator super-network with safety guardrails,
+> zero-knowledge batching, and ENS-gated governance – entirely from AGI Jobs v0.
 
-## Mission Control Summary
+## 🌌 Mission Profile
 
-- **Commit–Reveal + Deterministic VRF**: Validators are auto-selected by an
-  on-chain-ready VRF mix, commit hashed votes, and later reveal them for a
-  tamper-proof quorum.
-- **ZK Batched Attestations**: One proof finalises 1,000 jobs in a single
-  submission for planetary-scale throughput.
-- **Sentinel Guardrails**: Autonomous monitors freeze unsafe domains within a
-  block while logging the full incident trail for operators.
-- **ENS-Backed Identity**: Every validator, agent, and node operates under a
-  verifiable ENS subdomain, including production (`*.club.agi.eth`) and alpha
-  (`*.alpha.club.agi.eth`) namespaces.
-- **Owner Superpowers**: The contract owner can retune stakes, budgets, pause
-  domains, and resume operations instantly.
+This demonstration proves that AGI Jobs v0 (v2) can assemble a production-grade
+validation constellation in minutes. It combines:
 
-## Quickstart (5 Minutes, Zero Prerequisites)
+- **Commit–Reveal Voting with VRF committees** for tamper-proof validator
+  consensus.
+- **ZK-batched attestations** capable of finalising 1000 jobs in one proof.
+- **Sentinel anomaly detection** that self-pauses unsafe domains instantly.
+- **Scoped emergency controls** for governance to recover specific domains.
+- **On-chain slashing telemetry** streamed to monitoring dashboards.
+- **ENS-enforced identities** so every validator, node, and agent is verified.
 
-```bash
-cd demo/Validator-Constellation-v0
-python demo_runner.py
-```
+Everything is pre-wired. A non-technical operator can run a single command and
+watch the entire constellation ignite.
 
-Expected highlights printed to terminal:
-
-- Validator committee selected via deterministic VRF
-- Batched proof covering 1,000 jobs
-- Sentinel alert triggered on an unsafe spend and domain pause recorded
-- Live event log excerpt, mirroring what the subgraph exposes to dashboards
-
-### Explore Variations
+## 🧭 Quickstart
 
 ```bash
-python demo_runner.py --batch-size 2048
+# 1. Enter the repo root
+cd AGIJobsv0
+
+# 2. Run the constellation orchestrator (import-safe shim)
+python -m demo.validator_constellation_v0.tour
 ```
 
-Tune the batch size, observe throughput scaling, and verify that the circuit
-breaker still responds instantly under pressure.
+The tour prints every step, produces a JSON mission report in
+`reports/validator-constellation-report.json`, and surfaces the mermaid diagram
+below so you can embed it directly into dashboards.
 
-## Architecture
+## 🛰️ System Blueprint
 
 ```mermaid
 flowchart TD
-    A[Epoch Seed] -->|Blake2s HMAC| B(VRF Scores)
-    B --> C{Top K Committee}
-    C --> D1[Commit Phase]
-    C --> D2[Reveal Phase]
-    D1 --> E[Stake Ledger]
-    D2 --> E
-    E --> F{Truthful Outcome}
-    F -->|Slashes Dishonest or Silent Validators| G[Subgraph Indexer]
-    subgraph Sentinel Autonomy
-        H[Agent Action Stream] --> I{Budget/Call Check}
-        I -->|Trigger| J[Domain Pause Manager]
-        J --> G
-    end
-    subgraph ZK Hyperlane
-        K[Job Results x1000] --> L[ZK Batch Attestor]
-        L --> M[On-Chain ValidationModule]
-        M --> G
-    end
+  subgraph IdentityGate[ENS Identity Gate]
+    agents[Agents<br/>*.agent.agi.eth]
+    nodes[Nodes<br/>*.node.agi.eth]
+    validators[Validators<br/>*.club.agi.eth]
+  end
+
+  subgraph Sentinel[Sentinel Guardrails]
+    detector[Budget & Call Detectors]
+    pause[Domain Pause Controller]
+  end
+
+  subgraph Consensus[Commit–Reveal Consensus]
+    vrf[VRF Committee Selector]
+    commit[Commit Phase]
+    reveal[Reveal Phase]
+    slash[Stake Manager & Slashing]
+  end
+
+  subgraph Throughput[ZK Throughput Engine]
+    batcher[ZK Batch Builder]
+    prover[Proof Submission]
+  end
+
+  IdentityGate --> Consensus
+  Consensus --> Throughput
+  Throughput -->|Aggregated Proof| ledger[Validation Module]
+  Consensus --> slash
+  slash --> dashboard[Subgraph / Monitoring]
+  Sentinel --> pause
+  pause -->|Scoped Halt| domains[Domain Runtime]
+  detector --> Sentinel
+  domains --> detector
+  governance[Governance Console] --> pause
 ```
 
-## Validator Lifecycle
+## 🛡️ Safety & Governance
 
-```mermaid
-sequenceDiagram
-    participant User as Non-Technical Operator
-    participant ENS as ENS Verifier
-    participant VRF as Deterministic VRF
-    participant CR as Commit-Reveal Round
-    participant Sentinel as Sentinel Guardrail
-    participant Owner as Contract Owner
+- **Sentinel Monitors** guard every domain. Overspends or unsafe calls trigger
+  instantaneous pauses.
+- **Domain Scoped Pauses** isolate incidents without disrupting healthy
+  constellations.
+- **Governance Console** can resume domains after review.
+- **Immutable Audit Trail**: all slash, reward, and sentinel events are streamed
+  into the included Subgraph indexer.
 
-    User->>ENS: Register validator ENS subdomains
-    User->>VRF: Provide epoch entropy
-    VRF->>CR: Select committee
-    CR->>CR: Validators commit hashed votes
-    CR->>CR: Validators reveal votes
-    CR->>Owner: Slash dishonest or silent validators
-    CR->>Sentinel: Emit subgraph events
-    Sentinel->>Owner: Auto-pause unsafe domains
-    Owner->>Sentinel: Resume domain post-incident
-```
+## 🧪 Tests
 
-## Files & Capabilities
-
-| File | Purpose |
-|------|---------|
-| `validator_constellation.py` | Production-grade primitives for VRF, commit–reveal, ENS verification, sentinel guardrails, and batched proofs |
-| `demo_runner.py` | Zero-config executable scenario generating committee selection, ZK attestation, and sentinel pause |
-| `tests/test_validator_constellation.py` | Pytest suite validating every acceptance criterion, from 1,000-job proofs to ENS policy enforcement |
-
-## Subgraph-Ready Event Stream
-
-Events emitted during the demo mirror what an indexed subgraph would expose,
-including `CommitteeSelected`, `VoteCommitted`, `VoteRevealed`,
-`RoundFinalized`, `ValidatorSlashed`, `SentinelAlert`, `DomainPaused`, and
-`BatchFinalized`.
-
-## Governance Controls
-
-- **Owner-Driven Resumes**: Domains remain paused until the owner explicitly
-  resumes them (`DemoOrchestrator.resume_domain`).
-- **Stake Tuning**: Adjust stakes through `StakeLedger.set_stake` and re-run the
-  round—slashing penalties automatically scale with stake sizes.
-- **Threshold Management**: Configure sentinel thresholds to tighten or relax
-  autonomy as mission parameters evolve.
-
-## Running the Test Suite
+Run the dedicated validation suite:
 
 ```bash
-pytest demo/Validator-Constellation-v0/tests
+pnpm test:validator-constellation:v0
 ```
 
-All tests are wired into **Validator Constellation Demo CI** so every pull
-request and main-branch push keeps the demo fully green.
+The command is wired through the repository’s main test runner and executes the
+Pytest module found in `tests/demo/test_validator_constellation.py`.
 
----
+## 📦 Outputs
 
-This demo exists to make it unmistakable: AGI Jobs v0 (v2) lets any operator
-stand up a planetary-scale validator network with superintelligent guardrails in
-minutes.
+Running the tour produces:
+
+- `reports/validator-constellation-report.json` – comprehensive mission report.
+- `reports/validator-constellation-events.json` – slashing and reward events.
+- Console logs describing committee formation, sentinel reactions, and ZK batch
+  digests.
+
+## ♾️ Extend
+
+The modules in this directory are pure Python and dependency-free. They can be
+swapped for production smart contract bindings or wired into the AGI Jobs agent
+runtime. The deterministic registry, VRF selection, and ZK batching interfaces
+mirror what on-chain components expect, making the upgrade path seamless.
