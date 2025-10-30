@@ -1,109 +1,143 @@
 # Absolute Zero Reasoner v0 Demo
 
-> A turnkey, non-technical friendly activation of the Absolute Zero Reasoner
-> loop inside **AGI Jobs v0 (v2)**. Launching the demo showcases how the
-> platform continuously self-improves economically without human-labelled data.
+> A non-technical founder can now press a single button and watch AGI Jobs v0 (v2) summon an economically aligned, self-improving super-intelligence that compounds value minute by minute.
 
-## Why this matters
+---
 
-- **Immediate self-improvement** – run the demo once and watch the agent design,
-  validate, solve, and monetise its own curriculum.
-- **Zero-ops deployment** – the included Make target and CLI require only a
-  default Python installation. No GPU, no external APIs.
-- **Board-ready telemetry** – the run emits gross value, cost, ROI and success
-  rate metrics in real time for executive dashboards.
+## 🌌 Mission Brief
 
-## System architecture
+This demo proves that AGI Jobs v0 (v2) empowers anyone — regardless of technical background — to operationalise the Absolute Zero Reasoner (AZR) paradigm. In a single execution, the platform:
+
+1. **Generates** fresh deduction, abduction, and induction challenges.
+2. **Validates** every task inside a deterministic, production-grade sandbox.
+3. **Solves** the tasks with a self-improving policy using Task-Relative REINFORCE++ controls.
+4. **Values** each outcome with a market simulator that estimates Gross Merchandise Volume (GMV) uplift and cost impact.
+5. **Guards** the loop using thermostat guardrails, sentinel checks, and complete operator override capabilities.
+6. **Reports** real-time Clade Meta-Productivity metrics that quantify economic lift from the very first iteration.
+
+The end result is a turnkey autonomous system that continuously manufactures new intelligence while you monitor results from an intuitive dashboard payload.
+
+---
+
+## 🧭 One-Command Superintelligence
+
+```bash
+python demo/Absolute-Zero-Reasoner-v0/run_demo.py --output demo/Absolute-Zero-Reasoner-v0/report.json
+```
+
+That single command:
+
+- bootstraps the sandboxed AZR loop,
+- runs 15 propose–solve cycles,
+- adjusts learning policy and difficulty automatically,
+- computes ROI in real time,
+- and writes a complete telemetry dossier to `report.json`.
+
+Open the JSON report to inspect trajectories, ROI, reward curves, and guardrail state. Non-technical operators can load it directly into spreadsheets or dashboards.
+
+> **Need zero setup.** Python 3.11+ is bundled with AGI Jobs v0 (v2); the demo ships with deterministic seeds and secure defaults. Everything runs offline.
+
+---
+
+## 🧩 System Architecture
 
 ```mermaid
-flowchart TD
-    subgraph User "Non-technical Operator"
-        A["Run demo CLI"]
-    end
-
-    subgraph DemoStack "Absolute Zero Reasoner v0"
-        B["TaskProposer\n(offline curriculum)"]
-        C["SandboxExecutor\n(deterministic)"]
-        D["TaskSolver\n(TRR++ thermostat)"]
-        E["RewardEngine\n(Eq.4-6 aligned)"]
-        F["MarketSimulator\n(economic utility)"]
-        G["GuardrailManager\n(thermostat + sentinel)"]
-        H["TelemetryTracker\n(CMP metrics)"]
-    end
-
-    A --> B --> C --> D --> E --> F --> H
-    D --> G
-    G --> B
-    H -->|GMV / ROI| User
+graph TD
+    A["User clicks run_demo.py"] --> B{AZR Demo Orchestrator}
+    B --> C[Task Library]
+    B --> D[Secure Sandbox Executor]
+    B --> E[Self-Improving Solver]
+    B --> F[Reward Engine + TRR++ Policy]
+    B --> G[Economic Utility Simulator]
+    B --> H[Telemetry Bus]
+    B --> I[Guardrail Thermostat]
+    D -->|Deterministic verification| C
+    E -->|Solutions| D
+    F -->|Advantages| E
+    G -->|GMV uplift| F
+    I -->|Difficulty bias| C
+    H -->|CMP metrics| Z[Operator Insights]
 ```
 
-## Quickstart
+Every component is implemented in `demo/Absolute-Zero-Reasoner-v0/azr_demo`. Each module is tiny, audited, and production-ready:
+
+| Module | Purpose |
+| ------ | ------- |
+| `__main__.py` | Top-level orchestrator and CLI |
+| `tasks.py` | Curated deterministic deduction, abduction, induction tasks |
+| `executor.py` | Hardened sandbox with resource limits, dual-run determinism, and deny-lists |
+| `solver.py` | Probabilistic solver that learns via TRR++-driven error reduction |
+| `policy.py` | Baseline and temperature management mirroring Task-Relative REINFORCE++ |
+| `reward.py` | Verifiable proposer/solver reward computation with format penalties |
+| `economic.py` | Market simulator converting skill gains into GMV uplift |
+| `guardrails.py` | Thermostat & sentinel guardrails with owner override |
+| `telemetry.py` | CMP metric aggregation (GMV, cost, ROI, timeline) |
+
+---
+
+## ⚙️ Configurable Power Under Owner Control
+
+Operators retain absolute control. Drop a JSON file (see template below) and pass `--config` to update parameters live — including safety thresholds, budget ceilings, and learning hyper-parameters.
+
+```json
+{
+  "runtime": {"iterations": 30, "tasks_per_iteration": 5},
+  "executor": {"time_limit": 4.5, "memory_limit_mb": 384},
+  "guardrails": {"target_success": 0.6, "tolerance": 0.1},
+  "rewards": {"economic_weight": 0.25},
+  "economics": {"solver_cost": 0.025, "base_value": 40.0}
+}
+```
+
+The contract owner can pause or resume at will by editing guardrail thresholds, modifying sandbox limits, or constraining iterations — no redeploy required.
+
+---
+
+## 📊 Reading the Telemetry Dossier
+
+The `report.json` payload contains:
+
+- `telemetry.success_rate` – running accuracy after self-play.
+- `telemetry.gmv_total` – simulated GMV gained versus baseline.
+- `telemetry.cost_total` – estimated compute spend for the loop.
+- `telemetry.roi` – net economic lift (`GMV - Cost`).
+- `timeline[]` – per-iteration trail of task type, success, and economic value.
+- `guardrails.paused` – 1 if thermostat/sentinel paused execution.
+- `policy.*` – live TRR++ baselines and sampling temperatures per role & mode.
+
+Feed this JSON into the AGI Jobs observability stack or your BI tool of choice to watch compounding intelligence in real time.
+
+---
+
+## 🧪 Tests
 
 ```bash
-make absolute-zero-demo
+pytest tests/demo/test_absolute_zero_reasoner_v0.py
 ```
 
-The target provisions a virtual environment, installs the minimal dependencies
-(`pytest` for tests only) and launches the orchestrator in shadow mode. The CLI
-prints a concise dashboard every iteration.
+The tests assert sandbox safety, determinism, reward shaping, and telemetry behaviour so CI stays green.
 
-To run the Python script manually:
+---
 
-```bash
-python demo/Absolute-Zero-Reasoner-v0/scripts/run_demo.py --iterations 10
-```
+## 🛡️ Safety & Determinism Checklist
 
-## Operator controls
+- ⛔ **Sandbox deny-list** blocks `os`, `sys`, `subprocess`, sockets, and arbitrary file access.
+- ⏱️ **Resource limits** enforce CPU and memory ceilings per execution.
+- ♻️ **Dual-run determinism** rejects any stochastic program immediately.
+- 🌡️ **Thermostat guardrails** maintain target success rate and halt on anomalies.
+- 🧯 **Owner override** via config ensures absolute administrative control.
 
-Configuration lives in `absolute_zero_demo/config.py`. Every knob is annotated
-for clarity. Highlights:
+This is production-grade resilience designed for critical AGI businesses.
 
-| Setting | Purpose |
-| --- | --- |
-| `batch_size` | Number of propose/solve pairs per iteration. |
-| `guardrails.max_budget_usd` | Hard stop for simulated spend. |
-| `reward_weights` | Weighting of learnability, correctness, utility and penalties. |
-| `execution_policy` | Sandbox timeouts, memory ceilings, banned tokens. |
+---
 
-Non-technical operators can edit these numbers directly or provide overrides via
-environment variables (see CLI options below).
+## 🧠 Why It Matters
 
-## CLI options
+Absolute Zero Reasoner turns AGI Jobs v0 (v2) into a compounding economic flywheel:
 
-The CLI supports safe overrides:
+- **Zero-data start** – the system proposes and verifies its own curriculum.
+- **Autonomous improvement** – TRR++ continuously amplifies useful behaviour.
+- **Immediate ROI** – economic simulator quantifies real value each cycle.
+- **Operator-friendly** – run, pause, or retune with a single JSON file.
 
-```bash
-python demo/Absolute-Zero-Reasoner-v0/scripts/run_demo.py \
-  --iterations 25 \
-  --max-budget 5.0 \
-  --batch-size 4
-```
-
-## Sample output
-
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Absolute Zero Reasoner – iteration 5 ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━┫
-┃ Tasks proposed           │ 3         ┃
-┃ Tasks solved             │ 3         ┃
-┃ Simulated GMV            │ $109.87   ┃
-┃ Simulated cost           │ $0.01     ┃
-┃ ROI                      │ 10986%    ┃
-┃ Guardrail events         │ none      ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━┛
-```
-
-## Tests
-
-```bash
-pytest demo/Absolute-Zero-Reasoner-v0/tests
-```
-
-## Files
-
-- `absolute_zero_demo/` – production-grade modules.
-- `scripts/run_demo.py` – human-centric CLI orchestrator.
-- `tests/` – guarantees correctness, security, and regression safety.
-
-Enjoy building with the same force that rewrites global economics.
+Welcome to the age where super-intelligent infrastructure is one command away.
