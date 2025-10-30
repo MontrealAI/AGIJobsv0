@@ -159,6 +159,72 @@ const deterministicFieldMap = [
   { id: 'summaryHash', label: 'Composite summary hash' },
 ];
 
+function renderEconomicPowerBrief(summary) {
+  const section = document.getElementById('economic-brief');
+  if (!section) return;
+  const brief = summary.ownerEconomicPowerBrief;
+  if (!brief) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.removeProperty('display');
+  const percent = (value) => `${(value * 100).toFixed(1)}%`;
+  const narrative = document.getElementById('economic-brief-narrative');
+  const dominance = document.getElementById('economic-brief-dominance');
+  const supremacy = document.getElementById('economic-brief-supremacy');
+  const safety = document.getElementById('economic-brief-safety');
+  const resilience = document.getElementById('economic-brief-resilience');
+  const autopilot = document.getElementById('economic-brief-autopilot');
+  const treasury = document.getElementById('economic-brief-treasury');
+  const guardrails = document.getElementById('economic-brief-guardrails');
+  const actions = document.getElementById('economic-brief-actions');
+  const signals = document.getElementById('economic-brief-signals');
+  const contacts = document.getElementById('economic-brief-contacts');
+  if (narrative) narrative.textContent = brief.narrative;
+  if (dominance) dominance.textContent = percent(brief.dominance);
+  if (supremacy) supremacy.textContent = percent(brief.supremacy);
+  if (safety) safety.textContent = percent(brief.safety);
+  if (resilience) resilience.textContent = percent(brief.resilience);
+  if (autopilot) {
+    autopilot.textContent = `“${brief.autopilotMission}” • ${brief.autopilotCadenceHours.toFixed(1)}h cadence • Safe coverage ${percent(brief.safeCoverage)} • Guardrail coverage ${percent(brief.guardrailCoverage)} • Command coverage ${percent(brief.commandCoverage)}`;
+  }
+  if (treasury) {
+    treasury.textContent = `Treasury after run ${formatNumber(brief.treasuryAfterRun)} AGI • Response cadence ${brief.responseMinutes}m`;
+  }
+  const populateList = (element, values, emptyMessage) => {
+    if (!element) return;
+    element.innerHTML = '';
+    if (!values || values.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = emptyMessage;
+      element.append(li);
+      return;
+    }
+    for (const value of values) {
+      const li = document.createElement('li');
+      li.textContent = value;
+      element.append(li);
+    }
+  };
+  populateList(
+    guardrails,
+    brief.guardrails,
+    'Guardrail catalogue empty — script pause, resume, and validator directives immediately.',
+  );
+  populateList(
+    actions,
+    brief.recommendedActions,
+    'Maintain autopilot cadence and treasury telemetry — no new actions surfaced.',
+  );
+  populateList(signals, brief.signals, 'Signals pending — ingest telemetry from the latest run.');
+  if (contacts) {
+    const contactList = brief.emergencyContacts?.length
+      ? brief.emergencyContacts.join(', ')
+      : 'No emergency contacts configured';
+    contacts.textContent = `Governance safe ${brief.governanceSafe} • Emergency contacts: ${contactList}`;
+  }
+}
+
 async function loadSummary(path) {
   const response = await fetch(path, { cache: 'no-store' });
   if (!response.ok) {
@@ -1506,6 +1572,7 @@ async function renderMermaid(summary) {
   const superintelligence = document.getElementById('mermaid-superintelligence');
   const deploymentIntegrity = document.getElementById('mermaid-deployment-integrity');
   const safeTransactions = document.getElementById('mermaid-safe-transactions');
+  const economicPower = document.getElementById('mermaid-economic-power');
   const nodes = [];
   if (flow) {
     flow.textContent = summary.mermaidFlow;
@@ -1538,6 +1605,10 @@ async function renderMermaid(summary) {
   if (safeTransactions && summary.ownerSafeTransactions?.mermaid) {
     safeTransactions.textContent = summary.ownerSafeTransactions.mermaid;
     nodes.push(safeTransactions);
+  }
+  if (economicPower && summary.ownerEconomicPowerBrief?.mermaid) {
+    economicPower.textContent = summary.ownerEconomicPowerBrief.mermaid;
+    nodes.push(economicPower);
   }
   if (nodes.length > 0) {
     await mermaid.run({ nodes });
@@ -1664,6 +1735,7 @@ function renderGlobalExpansion(summary) {
 }
 
 async function renderDashboard(summary, verification) {
+  renderEconomicPowerBrief(summary);
   renderMetricCards(summary);
   renderOwnerTable(summary);
   renderSafeTransactions(summary);

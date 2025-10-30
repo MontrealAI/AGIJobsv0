@@ -1,6 +1,6 @@
 # Owner Command Playbook
 
-Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/29/2025, 11:15:12 PM (UTC)
+Generated for analysis window 2/1/2025, 12:00:00 AM • executed 10/30/2025, 4:47:57 PM (UTC)
 
 Command coverage: 100.0% — Owner multi-sig holds deterministic runbooks for every critical surface.
 

@@ -54,6 +54,9 @@ Outputs land in `demo/Economic-Power-v0/reports/`:
 - `owner-control-drills.json` – rehearsal ledger detailing readiness score, classification, per-surface drills, command catalogues, and recommended actions.
 - `owner-control-drills.mmd` – mermaid rehearsal lattice mapping readiness gauge to every drill node for instant embedding in dashboards.
 - `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
+- `owner-economic-power-brief.json` – executive brief exposing dominance, supremacy, safety mesh posture, autopilot cadence, guardrails, and recommended actions in machine-readable form.
+- `owner-economic-power-brief.mmd` – mermaid executive lattice visualising dominance, guardrail coverage, safe coverage, and autopilot cadence for dashboards.
+- `owner-economic-power-brief.md` – operator-ready narrative summarising dominance metrics, guardrails, recommended actions, and emergency readiness.
 - `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
 - `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
 - `cross-validation.json` – independent recomputation proof confirming metrics, coverage, and job assignments align across validation methods.
@@ -140,6 +143,7 @@ The CLI recalculates ROI, payback horizon, validator confidence, and writes the 
 The UI inside `demo/Economic-Power-v0/ui/` offers:
 
 - Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
+- Economic power command lattice – rendered Mermaid view aligning dominance, supremacy, guardrails, autopilot cadence, and Safe transaction coverage for instant operator action.
 - Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
 - Deterministic verification cockpit exposing dual-run hash proofs and mismatch telemetry for instant audit confidence.
 - Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
