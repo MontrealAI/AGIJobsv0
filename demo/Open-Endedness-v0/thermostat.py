@@ -2,21 +2,20 @@
 
 The Thermostat mirrors PR3 of the sprint plan in a compact, testable module. It
 tracks rolling ROI metrics and adjusts OMNI parameters using deterministic
-rules.  The implementation is intentionally transparent so a non-technical
+rules. The implementation is intentionally transparent so a non-technical
 operator can audit and tweak the rules by editing the accompanying YAML config.
 """
 from __future__ import annotations
 
 import dataclasses
-import sys
-from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Mapping, Optional
 
-CURRENT_DIR = Path(__file__).resolve().parent
-if str(CURRENT_DIR) not in sys.path:
-    sys.path.append(str(CURRENT_DIR))
-
-from omni_engine import OmniCurriculumEngine
+try:  # pragma: no cover - fallback when executed as a script
+    from .omni_engine import OmniCurriculumEngine
+    from .ledger import EconomicLedger
+except ImportError:  # pragma: no cover - script execution path
+    from omni_engine import OmniCurriculumEngine  # type: ignore[import-not-found]
+    from ledger import EconomicLedger  # type: ignore[import-not-found]
 
 
 @dataclasses.dataclass
@@ -50,27 +49,60 @@ class ThermostatController:
         self.current_interval = max_moi_interval // 2
         self._cycles_since_refresh = 0
         self.last_snapshot: Optional[EconomicSnapshot] = None
+        self.events: List[Mapping[str, object]] = []
+
+    def tick(self) -> None:
+        self._cycles_since_refresh += 1
 
     def should_refresh_partition(self) -> bool:
-        self._cycles_since_refresh += 1
-        if self._cycles_since_refresh >= self.current_interval:
-            self._cycles_since_refresh = 0
-            return True
-        return False
+        return self._cycles_since_refresh >= self.current_interval
 
-    def update(self, snapshot: EconomicSnapshot) -> Dict[str, float]:
+    def mark_refreshed(self) -> None:
+        self._cycles_since_refresh = 0
+
+    def update(
+        self,
+        snapshot: EconomicSnapshot,
+        *,
+        ledger: Optional[EconomicLedger] = None,
+        step: Optional[int] = None,
+    ) -> Dict[str, float]:
         """Adjust control knobs based on ROI performance."""
         self.last_snapshot = snapshot
         roi = snapshot.roi()
+        if ledger is not None:
+            totals = ledger.totals()
+            ledger_roi = totals["roi_overall"]
+            # Use the more conservative ROI between the snapshot and aggregate
+            if ledger_roi != float("inf"):
+                roi = min(roi, ledger_roi)
         adjustments: Dict[str, float] = {}
         if roi < self.roi_floor:
             self.current_interval = min(self.max_moi_interval, self.current_interval * 2)
             adjustments["moi_interval"] = float(self.current_interval)
             self.engine.min_probability = min(self.engine.min_probability * 2, 0.05)
             adjustments["min_probability"] = self.engine.min_probability
+            self.engine.moi_client.boring_weight = min(
+                self.engine.moi_client.boring_weight * 2,
+                self.engine.moi_client.interesting_weight,
+            )
+            adjustments["boring_weight"] = self.engine.moi_client.boring_weight
         elif roi >= self.roi_target:
             self.current_interval = max(self.min_moi_interval, self.current_interval // 2)
             adjustments["moi_interval"] = float(self.current_interval)
             self.engine.min_probability = max(self.engine.min_probability / 2, 1e-4)
             adjustments["min_probability"] = self.engine.min_probability
+            self.engine.moi_client.boring_weight = max(
+                self.engine.moi_client.boring_weight / 2,
+                1e-5,
+            )
+            adjustments["boring_weight"] = self.engine.moi_client.boring_weight
+
+        if adjustments:
+            event = {
+                "step": step,
+                "roi": roi,
+                "adjustments": adjustments,
+            }
+            self.events.append(event)
         return adjustments

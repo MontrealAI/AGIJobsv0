@@ -16,6 +16,7 @@ if str(CURRENT_DIR) not in sys.path:
 from omni_engine import OmniCurriculumEngine
 from thermostat import EconomicSnapshot, ThermostatController
 from sentinel import Sentinel, SentinelConfig
+from ledger import EconomicLedger
 
 
 @dataclass
@@ -36,6 +37,9 @@ class StrategyResult:
     tasks_mastered: Dict[str, float]
     fm_queries: int = 0
     practice_gain: Dict[str, float] | None = None
+    ledger_totals: Dict[str, float] | None = None
+    sentinel_events: List[Dict[str, object]] | None = None
+    thermostat_events: List[Dict[str, object]] | None = None
 
 
 TASKS = [
@@ -71,11 +75,20 @@ class Simulator:
         )
         self.sentinel = Sentinel(
             engine=self.engine,
-            config=SentinelConfig(budget_limit=500.0, moi_daily_max=500, min_entropy=0.6),
+            config=SentinelConfig(
+                task_roi_floor=1.0,
+                overall_roi_floor=1.8,
+                budget_limit=500.0,
+                moi_daily_max=500,
+                min_entropy=0.6,
+                qps_limit=0.05,
+                fm_cost_per_query=FM_CALL_COST,
+            ),
         )
         self.fm_queries = 0
+        self.ledger = EconomicLedger()
 
-    def pick_task(self) -> Tuple[str, bool]:
+    def pick_task(self, step: int) -> Tuple[str, bool]:
         if self.strategy == "uniform":
             return self.rng.choice(list(self.tasks)), False
         if self.strategy == "lp":
@@ -86,10 +99,12 @@ class Simulator:
             return self.rng.choice(list(self.tasks)), False
         if self.strategy == "omni":
             fm_queried = False
-            if self.thermostat.should_refresh_partition():
+            self.thermostat.tick()
+            if self.thermostat.should_refresh_partition() and self.sentinel.can_issue_fm_query(step):
                 self.engine.refresh_partition()
+                self.thermostat.mark_refreshed()
                 self.fm_queries += 1
-                self.sentinel.register_moi_query()
+                self.sentinel.register_moi_query(step=step, fm_cost=FM_CALL_COST)
                 fm_queried = True
             return self.engine.sample_task(), fm_queried
         raise ValueError(f"Unknown strategy {self.strategy}")
@@ -102,8 +117,9 @@ class Simulator:
         total_cost = 0.0
         total_profit = 0.0
 
-        for step in range(ITERATIONS):
-            task_id, fm_queried = self.pick_task()
+        for index in range(ITERATIONS):
+            step = index + 1
+            task_id, fm_queried = self.pick_task(step)
             task = self.tasks[task_id]
             success_prob = self.success_rates[task_id]
             success = 1 if self.rng.random() < success_prob else 0
@@ -116,6 +132,16 @@ class Simulator:
             cost.append(total_cost)
             profit.append(total_profit)
 
+            self.ledger.record(
+                step=step,
+                strategy=self.strategy.upper(),
+                task_id=task_id,
+                success=bool(success),
+                revenue=reward,
+                fm_cost=call_cost,
+                intervention_cost=0.0,
+            )
+
             if self.strategy == "omni":
                 self.engine.update_task_outcome(task_id, float(success))
                 self.sentinel.register_outcome(task_id, reward, call_cost)
@@ -125,7 +151,8 @@ class Simulator:
                     fm_cost=call_cost,
                     intervention_cost=0.0,
                 )
-                self.thermostat.update(snapshot)
+                self.thermostat.update(snapshot, ledger=self.ledger, step=step)
+                self.sentinel.evaluate(self.ledger, step)
 
             increment = task.learning_rate * (0.5 + 0.5 * success)
             self.practice_gain[task_id] = min(
@@ -167,6 +194,9 @@ class Simulator:
             tasks_mastered=mastered,
             fm_queries=self.fm_queries,
             practice_gain=dict(self.practice_gain),
+            ledger_totals=dict(self.ledger.totals()),
+            sentinel_events=list(self.sentinel.events) if self.strategy == "omni" else None,
+            thermostat_events=list(self.thermostat.events) if self.strategy == "omni" else None,
         )
 
 
@@ -189,6 +219,7 @@ def compare_strategies(render: bool, output_dir: Path) -> Dict[str, StrategyResu
                 for task_id, gain in (res.practice_gain or {}).items()
                 if task_id != "cta_refinement" and gain >= 0.4
             ),
+            "roi_overall": (res.ledger_totals or {}).get("roi_overall"),
         }
         for name, res in results.items()
     }
