@@ -1,3 +1,7 @@
 # Generated demo artefacts
 *.json
 *.md
+!summary.json
+!owner-control.json
+!supremacy-ledger.json
+!owner-control-actions.json

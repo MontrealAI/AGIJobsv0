@@ -1,0 +1,31 @@
+[
+  {
+    "timestamp": "2025-10-30T02:23:54.497Z",
+    "scenario": "era-of-experience-baseline",
+    "commands": [
+      {
+        "type": "exploration",
+        "epsilon": 0.08,
+        "rationale": "Tuning exploration rate to balance discovery vs exploitation."
+      },
+      {
+        "type": "policy-promote",
+        "target": "latest",
+        "rationale": "Promoting the latest checkpoint after validating ROI lift."
+      }
+    ],
+    "metrics": {
+      "gmv": 57271.92736642901,
+      "cost": 4788.755626711712,
+      "successes": 94,
+      "failures": 2,
+      "averageLatency": 3.2925347723203653,
+      "averageSatisfaction": 0.9334875359590328,
+      "roi": 11.959667987016461,
+      "autonomyLift": 1.586104514018381,
+      "rewardAverage": 0.7206849529791968,
+      "rewardVolatility": 0.27611851655153563,
+      "learningSignalDensity": 0.9791666666666666
+    }
+  }
+]

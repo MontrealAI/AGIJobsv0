@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Era of Experience Command Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #02030f;
+        --panel: rgba(20, 24, 48, 0.85);
+        --accent: #7c5cff;
+        --accent-2: #00d4ff;
+        --text: #eef6ff;
+        --muted: rgba(220, 235, 255, 0.7);
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top, rgba(124, 92, 255, 0.22), transparent 55%), var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 2.5rem 2rem 1rem;
+        text-align: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(2.6rem, 3vw, 3.4rem);
+        letter-spacing: 0.04em;
+      }
+      p.subtitle {
+        margin-top: 0.75rem;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+      main {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        padding: 0 2rem 3rem;
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid rgba(124, 92, 255, 0.25);
+        border-radius: 20px;
+        padding: 1.75rem;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 30px 80px rgba(10, 12, 40, 0.32);
+      }
+      h2 {
+        margin-top: 0;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        color: var(--accent-2);
+      }
+      .metrics-grid {
+        display: grid;
+        gap: 1rem;
+      }
+      .metric-card {
+        border-radius: 14px;
+        background: rgba(2, 6, 20, 0.6);
+        padding: 1.2rem;
+        border: 1px solid rgba(0, 212, 255, 0.15);
+      }
+      .metric-card strong {
+        display: block;
+        font-size: 1.9rem;
+        margin-bottom: 0.25rem;
+      }
+      .metric-card span {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .mermaid-panel {
+        max-height: 460px;
+        overflow: auto;
+        background: rgba(2, 6, 20, 0.75);
+        padding: 0.75rem;
+        border-radius: 14px;
+      }
+      ul.command-list {
+        list-style: none;
+        padding-left: 0;
+        display: grid;
+        gap: 1rem;
+      }
+      ul.command-list li {
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
+        border: 1px solid rgba(124, 92, 255, 0.2);
+        background: rgba(10, 12, 36, 0.9);
+        line-height: 1.4;
+      }
+      .pill {
+        display: inline-block;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--bg);
+        background: var(--accent-2);
+        margin-bottom: 0.5rem;
+      }
+      .delta-positive {
+        color: #6efac7;
+      }
+      .delta-negative {
+        color: #ff6b8b;
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        padding-bottom: 2.5rem;
+        font-size: 0.85rem;
+      }
+      code {
+        background: rgba(0, 212, 255, 0.18);
+        padding: 0.15rem 0.4rem;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="pill">Era of Experience</div>
+      <h1>Operator Command Center</h1>
+      <p class="subtitle">
+        Generated from AGI Jobs v0 (v2). Run <code>npm run demo:era-of-experience</code> to refresh this control tower with
+        the latest GMV lift, ROI dominance, and policy readiness metrics.
+      </p>
+    </header>
+    <main>
+      <section id="summary-panel">
+        <h2>Economic Lift Summary</h2>
+        <div class="metrics-grid" id="metrics"></div>
+      </section>
+      <section>
+        <h2>Owner Sovereignty Commands</h2>
+        <ul class="command-list" id="commands"></ul>
+      </section>
+      <section>
+        <h2>Experience-Native Flow</h2>
+        <div class="mermaid-panel"><div class="mermaid" id="flow-diagram"></div></div>
+      </section>
+      <section>
+        <h2>Supremacy Ledger</h2>
+        <div class="metrics-grid" id="ledger"></div>
+      </section>
+    </main>
+    <footer>
+      Mission-ready for immediate mainnet deployment. Every metric is deterministic and reproducible. Owner can pause, retune,
+      or upgrade instantly.
+    </footer>
+    <script type="module">
+      const mermaidReady = new Promise((resolve) => {
+        window.addEventListener('load', () => {
+          if (window.mermaid) {
+            window.mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+            resolve(window.mermaid);
+          } else {
+            resolve(undefined);
+          }
+        });
+      });
+
+      async function loadSummary() {
+        try {
+          const response = await fetch('data/default-summary.json', { cache: 'no-cache' });
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error('Failed to load summary', error);
+          return { message: 'Unable to load summary. Run the demo first.' };
+        }
+      }
+
+      function formatNumber(value) {
+        return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+
+      function renderMetrics(root, summary) {
+        const metrics = summary.learning?.metrics;
+        if (!metrics) {
+          root.innerHTML = `<div class="metric-card"><strong>Awaiting Run</strong><span>${summary.message ?? 'Execute the demo to populate results.'}</span></div>`;
+          return;
+        }
+        const baseline = summary.baseline?.metrics ?? {};
+        const delta = summary.delta ?? {};
+        root.innerHTML = `
+          <div class="metric-card">
+            <strong>${formatNumber(metrics.gmv)}</strong>
+            <span>GMV (learning)</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatNumber(metrics.roi)}</strong>
+            <span>ROI (learning)</span>
+          </div>
+          <div class="metric-card">
+            <strong>${formatNumber(metrics.autonomyLift)}</strong>
+            <span>Autonomy Lift Index</span>
+          </div>
+          <div class="metric-card">
+            <strong class="${(delta.gmvDelta ?? 1) >= 1 ? 'delta-positive' : 'delta-negative'}">${formatNumber(delta.gmvDelta ?? 1)}x</strong>
+            <span>GMV Delta vs baseline (${formatNumber(baseline.gmv ?? 0)})</span>
+          </div>
+        `;
+      }
+
+      function renderCommands(root, summary) {
+        const controls = summary.learning?.metrics
+          ? [
+              {
+                title: 'Exploration Tuning',
+                description:
+                  'Run <code>npm run owner:era-of-experience:controls -- --exploration 0.08</code> to reduce exploration now that GMV lift is proven.',
+              },
+              {
+                title: 'Checkpoint Promotion',
+                description:
+                  'Approve <code>npm run owner:era-of-experience:controls -- --promote-latest</code> to seal the current policy snapshot.',
+              },
+              {
+                title: 'Reward Shift',
+                description:
+                  'Execute <code>npm run owner:era-of-experience:controls -- --reward gmvsurge.json</code> to emphasise high-value enterprises.',
+              }
+            ]
+          : [];
+        root.innerHTML = controls
+          .map((item) => `<li><div class="pill">${item.title}</div><div>${item.description}</div></li>`)
+          .join('') ||
+          '<li><div class="pill">Awaiting Run</div><div>Execute the demo to surface live owner controls.</div></li>';
+      }
+
+      function renderLedger(root, summary) {
+        const ledger = summary.delta
+          ? [
+              { label: 'GMV Delta', value: `${formatNumber(summary.delta.gmvDelta ?? 1)}x` },
+              { label: 'ROI Delta', value: `${formatNumber(summary.delta.roiDelta ?? 1)}x` },
+              { label: 'Autonomy Delta', value: `${formatNumber(summary.delta.autonomyDelta ?? 1)}x` },
+              { label: 'Success Delta', value: `${formatNumber(summary.delta.successDelta ?? 1)}x` }
+            ]
+          : [];
+        root.innerHTML = ledger
+          .map((item) => `<div class="metric-card"><strong>${item.value}</strong><span>${item.label}</span></div>`)
+          .join('') ||
+          '<div class="metric-card"><strong>Awaiting Data</strong><span>Run the demo to populate supremacy ledger.</span></div>';
+      }
+
+      async function renderFlow(summary) {
+        const flow = summary.reports?.flow ?? summary.flow;
+        if (flow) {
+          return flow;
+        }
+        const baselineGMV = summary.baseline?.metrics?.gmv ?? 0;
+        const learningGMV = summary.learning?.metrics?.gmv ?? 0;
+        return `graph TD\n  Owner[Owner Multi-Sig] -->|Commands| Orchestrator\n  Orchestrator -->|Baseline GMV ${formatNumber(baselineGMV)}| Baseline\n  Orchestrator -->|Learning GMV ${formatNumber(learningGMV)}| Learning\n  Learning --> RewardEngine\n  RewardEngine --> Buffer[(Experience Buffer)]\n  Buffer --> Trainer\n  Trainer --> Orchestrator`;
+      }
+
+      async function bootstrap() {
+        const summary = await loadSummary();
+        renderMetrics(document.getElementById('metrics'), summary);
+        renderCommands(document.getElementById('commands'), summary);
+        renderLedger(document.getElementById('ledger'), summary);
+        const flowDiagram = await renderFlow(summary);
+        const mermaidInstance = await mermaidReady;
+        if (mermaidInstance) {
+          const target = document.getElementById('flow-diagram');
+          mermaidInstance.render('eraFlow', flowDiagram).then(({ svg }) => {
+            target.innerHTML = svg;
+          });
+        }
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>

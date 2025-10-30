@@ -1,0 +1,64 @@
+{
+  "name": "era-of-experience-baseline",
+  "description": "Balanced Era of Experience activation with resilient agent swarm and production reward steering.",
+  "seed": 1337,
+  "jobs": {
+    "count": 96,
+    "valueRange": [450, 4800],
+    "complexityRange": [0.15, 0.95],
+    "deadlineRange": [6, 72],
+    "criticalMass": 0.42,
+    "enterpriseMix": 0.38
+  },
+  "agents": [
+    {
+      "id": "AURORA-PRIME",
+      "skill": 0.92,
+      "speed": 0.88,
+      "reliability": 0.97,
+      "cost": 0.62,
+      "adaptivity": 0.86,
+      "stake": 750000
+    },
+    {
+      "id": "LYRA-VANGUARD",
+      "skill": 0.84,
+      "speed": 0.79,
+      "reliability": 0.82,
+      "cost": 0.46,
+      "adaptivity": 0.81,
+      "stake": 520000
+    },
+    {
+      "id": "ORION-SYNTH",
+      "skill": 0.9,
+      "speed": 0.7,
+      "reliability": 0.68,
+      "cost": 0.36,
+      "adaptivity": 0.65,
+      "stake": 410000
+    },
+    {
+      "id": "VEGA-QUANTA",
+      "skill": 0.72,
+      "speed": 0.65,
+      "reliability": 0.7,
+      "cost": 0.31,
+      "adaptivity": 0.7,
+      "stake": 360000
+    }
+  ],
+  "market": {
+    "volatility": 0.18,
+    "demandPulse": 0.61,
+    "regulatoryFriction": 0.12
+  },
+  "reward": {
+    "successWeight": 0.6,
+    "valueWeight": 0.28,
+    "latencyWeight": 0.07,
+    "costWeight": 0.25,
+    "satisfactionWeight": 0.14,
+    "longTermCompoundingWeight": 0.1
+  }
+}

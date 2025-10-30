@@ -1,0 +1,79 @@
+{
+  "name": "era-of-experience-dominion",
+  "description": "High-intensity expansion pass with accelerated GMV lift and aggressive exploration cadence.",
+  "seed": 9001,
+  "jobs": {
+    "count": 144,
+    "valueRange": [800, 7600],
+    "complexityRange": [0.2, 1.0],
+    "deadlineRange": [4, 60],
+    "criticalMass": 0.55,
+    "enterpriseMix": 0.52
+  },
+  "agents": [
+    {
+      "id": "AURORA-PRIME",
+      "skill": 0.95,
+      "speed": 0.92,
+      "reliability": 0.98,
+      "cost": 0.68,
+      "adaptivity": 0.92,
+      "stake": 820000
+    },
+    {
+      "id": "LYRA-VANGUARD",
+      "skill": 0.9,
+      "speed": 0.83,
+      "reliability": 0.94,
+      "cost": 0.57,
+      "adaptivity": 0.85,
+      "stake": 610000
+    },
+    {
+      "id": "ORION-SYNTH",
+      "skill": 0.91,
+      "speed": 0.8,
+      "reliability": 0.9,
+      "cost": 0.5,
+      "adaptivity": 0.82,
+      "stake": 500000
+    },
+    {
+      "id": "VEGA-QUANTA",
+      "skill": 0.82,
+      "speed": 0.74,
+      "reliability": 0.88,
+      "cost": 0.44,
+      "adaptivity": 0.78,
+      "stake": 440000
+    },
+    {
+      "id": "SIRIUS-ASCENT",
+      "skill": 0.88,
+      "speed": 0.87,
+      "reliability": 0.89,
+      "cost": 0.52,
+      "adaptivity": 0.9,
+      "stake": 480000
+    }
+  ],
+  "market": {
+    "volatility": 0.25,
+    "demandPulse": 0.76,
+    "regulatoryFriction": 0.16
+  },
+  "reward": {
+    "successWeight": 0.52,
+    "valueWeight": 0.34,
+    "latencyWeight": 0.07,
+    "costWeight": 0.05,
+    "satisfactionWeight": 0.18,
+    "longTermCompoundingWeight": 0.16
+  },
+  "policy": {
+    "learningRate": 0.18,
+    "batchSize": 16,
+    "experienceWindow": 512,
+    "explorationEpsilon": 0.08
+  }
+}
