@@ -1,0 +1,3482 @@
+{
+  "generatedAt": "2025-10-30T12:08:57.147Z",
+  "status": "pass",
+  "improvement": {
+    "gmvDelta": 21179.342938853802,
+    "gmvLiftPct": 0.823723036445131,
+    "roiDelta": 0.9229374040161646,
+    "successRateDelta": 0.19999999999999996,
+    "avgLatencyDelta": -0.3146237188724115
+  },
+  "baseline": {
+    "label": "Experience-Native Baseline",
+    "totalJobs": 240,
+    "completedJobs": 142,
+    "failedJobs": 98,
+    "grossMerchandiseValue": 25711.728338029283,
+    "totalRewardPaid": 13304.627977100396,
+    "averageLatencyHours": 15.718615408733486,
+    "averageCost": 23.81143461658704,
+    "averageRating": 3.3476246425306257,
+    "roi": 0.35187050091014055,
+    "successRate": 0.5916666666666667,
+    "sustainabilityScore": 1,
+    "timeline": [
+      {
+        "jobId": "stream-quant-alpha-1",
+        "agentId": "agent-celestia",
+        "reward": 85.84674642188475,
+        "rewardSignal": 5.513834065236299,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-2",
+        "agentId": "agent-celestia",
+        "reward": 92.67287613032384,
+        "rewardSignal": 5.606098008742943,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-3",
+        "agentId": "agent-celestia",
+        "reward": 89.8328173798509,
+        "rewardSignal": 5.55721448123218,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-4",
+        "agentId": "agent-celestia",
+        "reward": 91.30391394440085,
+        "rewardSignal": 5.582131467940961,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-5",
+        "agentId": "agent-celestia",
+        "reward": 37.161046527139845,
+        "rewardSignal": -6.027485428947791,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-6",
+        "agentId": "agent-celestia",
+        "reward": 89.05612446600571,
+        "rewardSignal": 5.570549902263578,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-7",
+        "agentId": "agent-celestia",
+        "reward": 34.51555639123544,
+        "rewardSignal": -5.1885817098673055,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-8",
+        "agentId": "agent-celestia",
+        "reward": 86.01140246819705,
+        "rewardSignal": 5.581884866899211,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-9",
+        "agentId": "agent-celestia",
+        "reward": 37.55390315875411,
+        "rewardSignal": -5.3089579829928155,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-10",
+        "agentId": "agent-celestia",
+        "reward": 89.00188374146819,
+        "rewardSignal": 5.543301027528543,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-11",
+        "agentId": "agent-celestia",
+        "reward": 36.572525654733184,
+        "rewardSignal": -5.532483811514234,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-12",
+        "agentId": "agent-celestia",
+        "reward": 36.2220837908797,
+        "rewardSignal": -5.247677175788736,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-13",
+        "agentId": "agent-celestia",
+        "reward": 94.42743603489362,
+        "rewardSignal": 5.57281124801136,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-14",
+        "agentId": "agent-celestia",
+        "reward": 34.9234617266804,
+        "rewardSignal": -5.625903382408646,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-15",
+        "agentId": "agent-celestia",
+        "reward": 37.58508992465214,
+        "rewardSignal": -5.292004559885871,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-16",
+        "agentId": "agent-celestia",
+        "reward": 91.27782743121497,
+        "rewardSignal": 5.532771774690715,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-17",
+        "agentId": "agent-celestia",
+        "reward": 93.38357737334445,
+        "rewardSignal": 5.634259687641559,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-18",
+        "agentId": "agent-celestia",
+        "reward": 34.98557520993054,
+        "rewardSignal": -5.280613105353074,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-19",
+        "agentId": "agent-celestia",
+        "reward": 35.188082521967594,
+        "rewardSignal": -5.5284094596611775,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-20",
+        "agentId": "agent-celestia",
+        "reward": 86.2031161361374,
+        "rewardSignal": 5.439528256948207,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-21",
+        "agentId": "agent-celestia",
+        "reward": 90.54411068279296,
+        "rewardSignal": 5.484428067927207,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-22",
+        "agentId": "agent-celestia",
+        "reward": 35.47156022060663,
+        "rewardSignal": -5.218418478669674,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-23",
+        "agentId": "agent-celestia",
+        "reward": 36.2860813968815,
+        "rewardSignal": -5.299083250844197,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-24",
+        "agentId": "agent-celestia",
+        "reward": 36.05482586352155,
+        "rewardSignal": -5.1821624378768405,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-25",
+        "agentId": "agent-celestia",
+        "reward": 35.3634715827182,
+        "rewardSignal": -5.654324375488388,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-26",
+        "agentId": "agent-celestia",
+        "reward": 91.00031179958023,
+        "rewardSignal": 5.5763278248860715,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-27",
+        "agentId": "agent-celestia",
+        "reward": 88.52972978842445,
+        "rewardSignal": 5.524304625926077,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-28",
+        "agentId": "agent-celestia",
+        "reward": 88.75051845540293,
+        "rewardSignal": 5.535527829080214,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-29",
+        "agentId": "agent-celestia",
+        "reward": 36.461045359354465,
+        "rewardSignal": -5.499531847741403,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-30",
+        "agentId": "agent-celestia",
+        "reward": 35.25729326605797,
+        "rewardSignal": -5.300364932881924,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-31",
+        "agentId": "agent-celestia",
+        "reward": 88.03871119930409,
+        "rewardSignal": 5.570199776605151,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-32",
+        "agentId": "agent-celestia",
+        "reward": 90.44989634561351,
+        "rewardSignal": 5.537355215196749,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-33",
+        "agentId": "agent-celestia",
+        "reward": 36.44552706191316,
+        "rewardSignal": -5.158387523555586,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-34",
+        "agentId": "agent-celestia",
+        "reward": 87.56130399741232,
+        "rewardSignal": 5.545286327470487,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-35",
+        "agentId": "agent-celestia",
+        "reward": 86.49111331463791,
+        "rewardSignal": 5.488655740604033,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-36",
+        "agentId": "agent-celestia",
+        "reward": 93.19572505331597,
+        "rewardSignal": 5.4914539862419876,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-37",
+        "agentId": "agent-celestia",
+        "reward": 91.1246766198892,
+        "rewardSignal": 5.534127937919633,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-38",
+        "agentId": "agent-celestia",
+        "reward": 34.33415342476219,
+        "rewardSignal": -5.885025953768289,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-39",
+        "agentId": "agent-celestia",
+        "reward": 93.29257108387537,
+        "rewardSignal": 5.5646696320385285,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-40",
+        "agentId": "agent-celestia",
+        "reward": 35.88251496786252,
+        "rewardSignal": -5.623001941154792,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-41",
+        "agentId": "agent-celestia",
+        "reward": 35.14830690035597,
+        "rewardSignal": -6.0510062151798,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-42",
+        "agentId": "agent-celestia",
+        "reward": 37.70608943849802,
+        "rewardSignal": -5.6483001825301,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-43",
+        "agentId": "agent-celestia",
+        "reward": 93.6154462604318,
+        "rewardSignal": 5.547767078551911,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-44",
+        "agentId": "agent-celestia",
+        "reward": 35.29025057489053,
+        "rewardSignal": -5.169594994742018,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-45",
+        "agentId": "agent-celestia",
+        "reward": 92.29434224171565,
+        "rewardSignal": 5.538438432775749,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-46",
+        "agentId": "agent-celestia",
+        "reward": 87.38560778391548,
+        "rewardSignal": 5.563121649894712,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-47",
+        "agentId": "agent-celestia",
+        "reward": 37.69942793520168,
+        "rewardSignal": -5.4804339250428615,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-48",
+        "agentId": "agent-celestia",
+        "reward": 88.44281451730058,
+        "rewardSignal": 5.5252702140793675,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-49",
+        "agentId": "agent-celestia",
+        "reward": 87.9925467025023,
+        "rewardSignal": 5.536599794855724,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-50",
+        "agentId": "agent-celestia",
+        "reward": 89.87508209981024,
+        "rewardSignal": 5.5267774278255954,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-51",
+        "agentId": "agent-celestia",
+        "reward": 34.3559135042131,
+        "rewardSignal": -5.284966033905475,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-52",
+        "agentId": "agent-celestia",
+        "reward": 89.675956124207,
+        "rewardSignal": 5.5105895275774985,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-53",
+        "agentId": "agent-celestia",
+        "reward": 35.284271135553716,
+        "rewardSignal": -5.4921183119648385,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-54",
+        "agentId": "agent-celestia",
+        "reward": 94.42496092384683,
+        "rewardSignal": 5.582648130565057,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-55",
+        "agentId": "agent-celestia",
+        "reward": 35.2255030894652,
+        "rewardSignal": -5.486995618909234,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-56",
+        "agentId": "agent-celestia",
+        "reward": 35.37270478885621,
+        "rewardSignal": -5.278352391300305,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-57",
+        "agentId": "agent-celestia",
+        "reward": 87.07473599771038,
+        "rewardSignal": 5.47244872582484,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-58",
+        "agentId": "agent-celestia",
+        "reward": 91.09587085177192,
+        "rewardSignal": 5.558103613537953,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-59",
+        "agentId": "agent-celestia",
+        "reward": 36.83419774426147,
+        "rewardSignal": -6.185590193910247,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-60",
+        "agentId": "agent-celestia",
+        "reward": 94.49213826516643,
+        "rewardSignal": 5.584707597535936,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-1",
+        "agentId": "agent-celestia",
+        "reward": 56.25621778273489,
+        "rewardSignal": 5.557110647305456,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-2",
+        "agentId": "agent-celestia",
+        "reward": 54.18933866347652,
+        "rewardSignal": 5.453192519687032,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-3",
+        "agentId": "agent-celestia",
+        "reward": 53.63442629831843,
+        "rewardSignal": 5.470296133796966,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-4",
+        "agentId": "agent-celestia",
+        "reward": 52.27166255330667,
+        "rewardSignal": 5.467446067701196,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-5",
+        "agentId": "agent-celestia",
+        "reward": 55.71685033640824,
+        "rewardSignal": 5.615951435604142,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-6",
+        "agentId": "agent-celestia",
+        "reward": 53.52740006777458,
+        "rewardSignal": 5.5919423575600975,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-7",
+        "agentId": "agent-celestia",
+        "reward": 57.53070016216952,
+        "rewardSignal": 5.53079785623379,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-8",
+        "agentId": "agent-celestia",
+        "reward": 52.63865250709932,
+        "rewardSignal": 5.500538173452714,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-9",
+        "agentId": "agent-celestia",
+        "reward": 54.417547592078336,
+        "rewardSignal": 5.516951589639889,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-10",
+        "agentId": "agent-celestia",
+        "reward": 55.434828553698026,
+        "rewardSignal": 5.5893874441629805,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-11",
+        "agentId": "agent-celestia",
+        "reward": 54.216448978171684,
+        "rewardSignal": 5.497204839666618,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-12",
+        "agentId": "agent-celestia",
+        "reward": 23.07306504379958,
+        "rewardSignal": -6.733474405320318,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-13",
+        "agentId": "agent-celestia",
+        "reward": 22.89210645481944,
+        "rewardSignal": -6.710250076891168,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-14",
+        "agentId": "agent-celestia",
+        "reward": 53.507348765502684,
+        "rewardSignal": 5.5648937405157435,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-15",
+        "agentId": "agent-celestia",
+        "reward": 21.41193041531369,
+        "rewardSignal": -5.971170982016542,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-16",
+        "agentId": "agent-celestia",
+        "reward": 54.15181418147404,
+        "rewardSignal": 5.4907058135414255,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-17",
+        "agentId": "agent-celestia",
+        "reward": 57.449509830912575,
+        "rewardSignal": 5.461307360918972,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-18",
+        "agentId": "agent-celestia",
+        "reward": 54.32661940273829,
+        "rewardSignal": 5.556334962839835,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-19",
+        "agentId": "agent-celestia",
+        "reward": 21.952073401352393,
+        "rewardSignal": -5.847535850619154,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-20",
+        "agentId": "agent-celestia",
+        "reward": 55.03233749046922,
+        "rewardSignal": 5.581722274404117,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-21",
+        "agentId": "agent-celestia",
+        "reward": 57.6671786508523,
+        "rewardSignal": 5.491691998049605,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-22",
+        "agentId": "agent-celestia",
+        "reward": 54.84153498057276,
+        "rewardSignal": 5.528663519688242,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-23",
+        "agentId": "agent-celestia",
+        "reward": 52.41397664276883,
+        "rewardSignal": 5.529202848484834,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-24",
+        "agentId": "agent-celestia",
+        "reward": 53.2261902281316,
+        "rewardSignal": 5.586176058936621,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-25",
+        "agentId": "agent-celestia",
+        "reward": 55.816366617684245,
+        "rewardSignal": 5.571990298126328,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-26",
+        "agentId": "agent-celestia",
+        "reward": 54.766148602124304,
+        "rewardSignal": 5.580370927581337,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-27",
+        "agentId": "agent-celestia",
+        "reward": 53.663345545413904,
+        "rewardSignal": 5.587239388435539,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-28",
+        "agentId": "agent-celestia",
+        "reward": 53.18669032061007,
+        "rewardSignal": 5.592035530064357,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-29",
+        "agentId": "agent-celestia",
+        "reward": 53.53206104913261,
+        "rewardSignal": 5.518225967011097,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-30",
+        "agentId": "agent-celestia",
+        "reward": 57.64543929672801,
+        "rewardSignal": 5.492141696673296,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-31",
+        "agentId": "agent-celestia",
+        "reward": 57.16075099504087,
+        "rewardSignal": 5.58145095471807,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-32",
+        "agentId": "agent-celestia",
+        "reward": 53.37028440262657,
+        "rewardSignal": 5.571678234121157,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-33",
+        "agentId": "agent-celestia",
+        "reward": 55.84631871373858,
+        "rewardSignal": 5.505303496894402,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-34",
+        "agentId": "agent-celestia",
+        "reward": 56.41026377270464,
+        "rewardSignal": 5.59325412409061,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-35",
+        "agentId": "agent-celestia",
+        "reward": 54.421325606061146,
+        "rewardSignal": 5.466412272727927,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-36",
+        "agentId": "agent-celestia",
+        "reward": 54.393005177145824,
+        "rewardSignal": 5.508846459879537,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-37",
+        "agentId": "agent-celestia",
+        "reward": 56.22477860597428,
+        "rewardSignal": 5.499581216247974,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-38",
+        "agentId": "agent-celestia",
+        "reward": 53.50631463981699,
+        "rewardSignal": 5.518569985744581,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-39",
+        "agentId": "agent-celestia",
+        "reward": 54.18141847895458,
+        "rewardSignal": 5.571036348877289,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-40",
+        "agentId": "agent-celestia",
+        "reward": 53.03849892737344,
+        "rewardSignal": 5.568857301793801,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-41",
+        "agentId": "agent-celestia",
+        "reward": 22.64315007333644,
+        "rewardSignal": -5.814982043986065,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-42",
+        "agentId": "agent-celestia",
+        "reward": 21.86282361452468,
+        "rewardSignal": -5.977333623863192,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-43",
+        "agentId": "agent-celestia",
+        "reward": 56.445392158580944,
+        "rewardSignal": 5.53128308104282,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-44",
+        "agentId": "agent-celestia",
+        "reward": 57.14519610314164,
+        "rewardSignal": 5.477427745367813,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-45",
+        "agentId": "agent-celestia",
+        "reward": 56.42276895989198,
+        "rewardSignal": 5.504866906569445,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-46",
+        "agentId": "agent-celestia",
+        "reward": 54.99914217146579,
+        "rewardSignal": 5.47067691138505,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-47",
+        "agentId": "agent-celestia",
+        "reward": 21.983853123290466,
+        "rewardSignal": -6.096384462699724,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-48",
+        "agentId": "agent-celestia",
+        "reward": 53.69416027213447,
+        "rewardSignal": 5.458328674819299,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-49",
+        "agentId": "agent-celestia",
+        "reward": 52.689865985070355,
+        "rewardSignal": 5.470982169357655,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-50",
+        "agentId": "agent-celestia",
+        "reward": 53.699993192683905,
+        "rewardSignal": 5.497918318951362,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-51",
+        "agentId": "agent-celestia",
+        "reward": 21.031968928920108,
+        "rewardSignal": -5.828412507022803,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-52",
+        "agentId": "agent-celestia",
+        "reward": 54.30148499889765,
+        "rewardSignal": 5.506064874463073,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-53",
+        "agentId": "agent-celestia",
+        "reward": 56.322962732287124,
+        "rewardSignal": 5.555744749175757,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-54",
+        "agentId": "agent-celestia",
+        "reward": 54.52513435820583,
+        "rewardSignal": 5.564835832362183,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-55",
+        "agentId": "agent-celestia",
+        "reward": 53.40226238116156,
+        "rewardSignal": 5.504151219622688,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-56",
+        "agentId": "agent-celestia",
+        "reward": 53.85726972541306,
+        "rewardSignal": 5.552009869750289,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-57",
+        "agentId": "agent-celestia",
+        "reward": 52.61041910049971,
+        "rewardSignal": 5.483621327826523,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-58",
+        "agentId": "agent-celestia",
+        "reward": 53.13101621903479,
+        "rewardSignal": 5.551125385363815,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-59",
+        "agentId": "agent-celestia",
+        "reward": 54.248027679277584,
+        "rewardSignal": 5.562093179833861,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-60",
+        "agentId": "agent-celestia",
+        "reward": 54.761260777013376,
+        "rewardSignal": 5.584656802359758,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-61",
+        "agentId": "agent-celestia",
+        "reward": 54.00212781922892,
+        "rewardSignal": 5.456076894497566,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-62",
+        "agentId": "agent-celestia",
+        "reward": 55.126398552325554,
+        "rewardSignal": 5.461121354067251,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-63",
+        "agentId": "agent-celestia",
+        "reward": 55.02051595656667,
+        "rewardSignal": 5.57704751266465,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-64",
+        "agentId": "agent-celestia",
+        "reward": 21.998401414044203,
+        "rewardSignal": -6.243739331940871,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-65",
+        "agentId": "agent-celestia",
+        "reward": 21.901221515983345,
+        "rewardSignal": -5.686007640754649,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-66",
+        "agentId": "agent-celestia",
+        "reward": 56.39387848973275,
+        "rewardSignal": 5.465123341530867,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-67",
+        "agentId": "agent-celestia",
+        "reward": 57.39545926998835,
+        "rewardSignal": 5.472483469096272,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-68",
+        "agentId": "agent-celestia",
+        "reward": 53.07646978611592,
+        "rewardSignal": 5.588874683214072,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-69",
+        "agentId": "agent-celestia",
+        "reward": 21.955763616226616,
+        "rewardSignal": -5.64598897066835,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-70",
+        "agentId": "agent-celestia",
+        "reward": 54.29166870343033,
+        "rewardSignal": 5.5857690158262,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-71",
+        "agentId": "agent-celestia",
+        "reward": 54.1303053565789,
+        "rewardSignal": 5.499524308500876,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-72",
+        "agentId": "agent-celestia",
+        "reward": 54.03704859421123,
+        "rewardSignal": 5.516403286776783,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-73",
+        "agentId": "agent-celestia",
+        "reward": 54.262235250440426,
+        "rewardSignal": 5.553660174891074,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-74",
+        "agentId": "agent-celestia",
+        "reward": 52.82780659105629,
+        "rewardSignal": 5.498142939045192,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-75",
+        "agentId": "agent-celestia",
+        "reward": 57.36701925646049,
+        "rewardSignal": 5.513315876676143,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-76",
+        "agentId": "agent-celestia",
+        "reward": 53.431963977520354,
+        "rewardSignal": 5.563739685812417,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-77",
+        "agentId": "agent-celestia",
+        "reward": 53.67305706732441,
+        "rewardSignal": 5.501688895982407,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-78",
+        "agentId": "agent-celestia",
+        "reward": 55.440139993443154,
+        "rewardSignal": 5.598281868269941,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-79",
+        "agentId": "agent-celestia",
+        "reward": 54.303470830316655,
+        "rewardSignal": 5.520501640411076,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-80",
+        "agentId": "agent-celestia",
+        "reward": 53.4691099349875,
+        "rewardSignal": 5.429995272356184,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-1",
+        "agentId": "agent-celestia",
+        "reward": 28.175215717107065,
+        "rewardSignal": -5.6433733420719,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-2",
+        "agentId": "agent-celestia",
+        "reward": 70.69075759816914,
+        "rewardSignal": 5.070593054297595,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-3",
+        "agentId": "agent-celestia",
+        "reward": 70.34057789342478,
+        "rewardSignal": 5.087992433791535,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-4",
+        "agentId": "agent-celestia",
+        "reward": 27.079947546534243,
+        "rewardSignal": -5.884155593641554,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-5",
+        "agentId": "agent-celestia",
+        "reward": 27.72478654429317,
+        "rewardSignal": -6.053941277725066,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-6",
+        "agentId": "agent-celestia",
+        "reward": 26.9937629493326,
+        "rewardSignal": -5.83731002316177,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-7",
+        "agentId": "agent-celestia",
+        "reward": 28.426468943357463,
+        "rewardSignal": -6.304026436792648,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-8",
+        "agentId": "agent-celestia",
+        "reward": 67.56006470350549,
+        "rewardSignal": 5.130132776472311,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-9",
+        "agentId": "agent-celestia",
+        "reward": 66.35160129284486,
+        "rewardSignal": 5.106798063275358,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-10",
+        "agentId": "agent-celestia",
+        "reward": 70.75762435495852,
+        "rewardSignal": 5.161283664332452,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-11",
+        "agentId": "agent-celestia",
+        "reward": 28.04125546589494,
+        "rewardSignal": -5.708658118026852,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-12",
+        "agentId": "agent-celestia",
+        "reward": 26.69743533588946,
+        "rewardSignal": -6.158217526474022,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-13",
+        "agentId": "agent-celestia",
+        "reward": 28.443487731069332,
+        "rewardSignal": -6.211102221782192,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-14",
+        "agentId": "agent-celestia",
+        "reward": 64.6162223206833,
+        "rewardSignal": 5.205705636207739,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-15",
+        "agentId": "agent-celestia",
+        "reward": 28.11206706270575,
+        "rewardSignal": -5.680957831067478,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-16",
+        "agentId": "agent-celestia",
+        "reward": 27.432116487920283,
+        "rewardSignal": -6.066354007997397,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-17",
+        "agentId": "agent-celestia",
+        "reward": 69.9882857854478,
+        "rewardSignal": 5.035039825123055,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-18",
+        "agentId": "agent-celestia",
+        "reward": 26.144387201368808,
+        "rewardSignal": -5.823901890759367,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-19",
+        "agentId": "agent-celestia",
+        "reward": 68.37340168366208,
+        "rewardSignal": 5.133395671212158,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-20",
+        "agentId": "agent-celestia",
+        "reward": 26.56132997501642,
+        "rewardSignal": -5.9926210273723335,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-21",
+        "agentId": "agent-celestia",
+        "reward": 71.25525166280568,
+        "rewardSignal": 5.045372936703233,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-22",
+        "agentId": "agent-celestia",
+        "reward": 25.917900713011626,
+        "rewardSignal": -6.585004667249388,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-23",
+        "agentId": "agent-celestia",
+        "reward": 69.01552496207879,
+        "rewardSignal": 5.027833518475514,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-24",
+        "agentId": "agent-celestia",
+        "reward": 66.72078711064532,
+        "rewardSignal": 5.095376833034756,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-25",
+        "agentId": "agent-celestia",
+        "reward": 28.46125300075859,
+        "rewardSignal": -5.6914429221401415,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-26",
+        "agentId": "agent-celestia",
+        "reward": 26.978021147064865,
+        "rewardSignal": -6.084921437928329,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-27",
+        "agentId": "agent-celestia",
+        "reward": 25.865204689092934,
+        "rewardSignal": -5.558158333909499,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-28",
+        "agentId": "agent-celestia",
+        "reward": 26.398729314804076,
+        "rewardSignal": -5.6658551019000445,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-29",
+        "agentId": "agent-celestia",
+        "reward": 71.39394295243545,
+        "rewardSignal": 4.996683826548034,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-30",
+        "agentId": "agent-celestia",
+        "reward": 69.23227647636085,
+        "rewardSignal": 5.1561300434700374,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-31",
+        "agentId": "agent-celestia",
+        "reward": 28.500174563042822,
+        "rewardSignal": -5.708883311288885,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-32",
+        "agentId": "agent-celestia",
+        "reward": 26.19647673286498,
+        "rewardSignal": -5.927613223148792,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-33",
+        "agentId": "agent-celestia",
+        "reward": 27.581504046842454,
+        "rewardSignal": -5.930738174153306,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-34",
+        "agentId": "agent-celestia",
+        "reward": 68.32177655501292,
+        "rewardSignal": 5.0488134245717875,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-35",
+        "agentId": "agent-celestia",
+        "reward": 66.53819509837777,
+        "rewardSignal": 5.043369576419231,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-36",
+        "agentId": "agent-celestia",
+        "reward": 26.07646502334625,
+        "rewardSignal": -5.824508187225532,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-37",
+        "agentId": "agent-celestia",
+        "reward": 69.70494280327111,
+        "rewardSignal": 5.198040160606377,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-38",
+        "agentId": "agent-celestia",
+        "reward": 26.24913423381746,
+        "rewardSignal": -6.021873063530093,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-39",
+        "agentId": "agent-celestia",
+        "reward": 68.28801924083382,
+        "rewardSignal": 5.09126237054046,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-40",
+        "agentId": "agent-celestia",
+        "reward": 26.70038112718612,
+        "rewardSignal": -5.738216543183318,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-41",
+        "agentId": "agent-celestia",
+        "reward": 26.99931057818234,
+        "rewardSignal": -6.430408822219758,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-42",
+        "agentId": "agent-celestia",
+        "reward": 28.138435013145205,
+        "rewardSignal": -5.737655037616828,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-43",
+        "agentId": "agent-celestia",
+        "reward": 26.917046124860647,
+        "rewardSignal": -5.989826779604436,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-44",
+        "agentId": "agent-celestia",
+        "reward": 28.45662022791803,
+        "rewardSignal": -5.840760550704103,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-45",
+        "agentId": "agent-celestia",
+        "reward": 26.018996447920802,
+        "rewardSignal": -5.775820166052282,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-46",
+        "agentId": "agent-celestia",
+        "reward": 27.399535836018618,
+        "rewardSignal": -6.0121144513809455,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-47",
+        "agentId": "agent-celestia",
+        "reward": 67.20004969201982,
+        "rewardSignal": 5.1390032515843584,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-48",
+        "agentId": "agent-celestia",
+        "reward": 68.03801574409007,
+        "rewardSignal": 5.063520526427308,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-49",
+        "agentId": "agent-celestia",
+        "reward": 28.306876634433866,
+        "rewardSignal": -5.824858042468116,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-50",
+        "agentId": "agent-celestia",
+        "reward": 70.59047966646031,
+        "rewardSignal": 4.99701603318038,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-51",
+        "agentId": "agent-celestia",
+        "reward": 66.54196237297728,
+        "rewardSignal": 5.145363703492343,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-52",
+        "agentId": "agent-celestia",
+        "reward": 26.544238309748472,
+        "rewardSignal": -6.142869934456172,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-53",
+        "agentId": "agent-celestia",
+        "reward": 66.35016053048894,
+        "rewardSignal": 5.148047647929824,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-54",
+        "agentId": "agent-celestia",
+        "reward": 65.17931879656389,
+        "rewardSignal": 5.055125900615441,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-55",
+        "agentId": "agent-celestia",
+        "reward": 28.309780673570938,
+        "rewardSignal": -6.024768293557326,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-1",
+        "agentId": "agent-celestia",
+        "reward": 42.21053030954674,
+        "rewardSignal": -5.629742793612533,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-2",
+        "agentId": "agent-celestia",
+        "reward": 41.11154860077426,
+        "rewardSignal": -5.809803719344689,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-3",
+        "agentId": "agent-celestia",
+        "reward": 40.02504981687293,
+        "rewardSignal": -5.451939579344918,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-4",
+        "agentId": "agent-celestia",
+        "reward": 102.89368919511325,
+        "rewardSignal": 5.676913851598097,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-5",
+        "agentId": "agent-celestia",
+        "reward": 40.02045120768249,
+        "rewardSignal": -5.0647499634147355,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-6",
+        "agentId": "agent-celestia",
+        "reward": 40.692939799558374,
+        "rewardSignal": -5.208647476369735,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-7",
+        "agentId": "agent-celestia",
+        "reward": 101.53490626062266,
+        "rewardSignal": 5.648938668672089,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-8",
+        "agentId": "agent-celestia",
+        "reward": 101.16372275305912,
+        "rewardSignal": 5.654941442912187,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-9",
+        "agentId": "agent-celestia",
+        "reward": 105.59335217275657,
+        "rewardSignal": 5.710633958365675,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-10",
+        "agentId": "agent-celestia",
+        "reward": 41.550609038863335,
+        "rewardSignal": -5.355076192538644,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-11",
+        "agentId": "agent-celestia",
+        "reward": 40.41693542724475,
+        "rewardSignal": -5.144310526929019,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-12",
+        "agentId": "agent-celestia",
+        "reward": 42.785399958416825,
+        "rewardSignal": -5.143392505781798,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-13",
+        "agentId": "agent-celestia",
+        "reward": 40.81625276528299,
+        "rewardSignal": -5.10131817610657,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-14",
+        "agentId": "agent-celestia",
+        "reward": 41.903011229149996,
+        "rewardSignal": -5.9962018268283535,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-15",
+        "agentId": "agent-celestia",
+        "reward": 41.963191321659835,
+        "rewardSignal": -5.242259868365837,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-16",
+        "agentId": "agent-celestia",
+        "reward": 102.73113566804678,
+        "rewardSignal": 5.631235771351757,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-17",
+        "agentId": "agent-celestia",
+        "reward": 41.49231899723411,
+        "rewardSignal": -5.009471988519303,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-18",
+        "agentId": "agent-celestia",
+        "reward": 39.88413786845282,
+        "rewardSignal": -5.206697363890218,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-19",
+        "agentId": "agent-celestia",
+        "reward": 42.39838994812221,
+        "rewardSignal": -5.098111591969863,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-20",
+        "agentId": "agent-celestia",
+        "reward": 105.86358032729477,
+        "rewardSignal": 5.629507618799268,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-21",
+        "agentId": "agent-celestia",
+        "reward": 41.246251345127824,
+        "rewardSignal": -5.442248298709725,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-22",
+        "agentId": "agent-celestia",
+        "reward": 41.19674288308248,
+        "rewardSignal": -5.365605575647345,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-23",
+        "agentId": "agent-celestia",
+        "reward": 102.47612495594659,
+        "rewardSignal": 5.647455486146614,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-24",
+        "agentId": "agent-celestia",
+        "reward": 41.22709579495714,
+        "rewardSignal": -5.125585292717918,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-25",
+        "agentId": "agent-celestia",
+        "reward": 40.420529261101045,
+        "rewardSignal": -5.186211952458496,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-26",
+        "agentId": "agent-celestia",
+        "reward": 106.21272681285627,
+        "rewardSignal": 5.646484791507794,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-27",
+        "agentId": "agent-celestia",
+        "reward": 39.658024432361124,
+        "rewardSignal": -5.173418107962752,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-28",
+        "agentId": "agent-celestia",
+        "reward": 106.16534221549519,
+        "rewardSignal": 5.666439362709943,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-29",
+        "agentId": "agent-celestia",
+        "reward": 103.17238128622994,
+        "rewardSignal": 5.622511027525725,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-30",
+        "agentId": "agent-celestia",
+        "reward": 102.53260893453843,
+        "rewardSignal": 5.654039980871435,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-31",
+        "agentId": "agent-celestia",
+        "reward": 38.99852562300862,
+        "rewardSignal": -5.515467501206966,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-32",
+        "agentId": "agent-celestia",
+        "reward": 39.582330087739976,
+        "rewardSignal": -5.187955704690083,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-33",
+        "agentId": "agent-celestia",
+        "reward": 98.16490102065727,
+        "rewardSignal": 5.68146481510285,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-34",
+        "agentId": "agent-celestia",
+        "reward": 39.49287501331419,
+        "rewardSignal": -5.1888716875530845,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-35",
+        "agentId": "agent-celestia",
+        "reward": 101.40375529350713,
+        "rewardSignal": 5.636414096790426,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-36",
+        "agentId": "agent-celestia",
+        "reward": 101.01805946691893,
+        "rewardSignal": 5.609591638824127,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-37",
+        "agentId": "agent-celestia",
+        "reward": 42.34946039166302,
+        "rewardSignal": -5.652345598136142,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-38",
+        "agentId": "agent-celestia",
+        "reward": 41.20223881222308,
+        "rewardSignal": -5.304715241902153,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-39",
+        "agentId": "agent-celestia",
+        "reward": 41.44535284291953,
+        "rewardSignal": -5.649454852069568,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-40",
+        "agentId": "agent-celestia",
+        "reward": 105.60180561714806,
+        "rewardSignal": 5.688951698812496,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-41",
+        "agentId": "agent-celestia",
+        "reward": 40.485231506153944,
+        "rewardSignal": -5.243612809823931,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-42",
+        "agentId": "agent-celestia",
+        "reward": 106.0592276418116,
+        "rewardSignal": 5.723909913049964,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-43",
+        "agentId": "agent-celestia",
+        "reward": 40.420333492755894,
+        "rewardSignal": -5.154485768381276,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-44",
+        "agentId": "agent-celestia",
+        "reward": 41.901428042203186,
+        "rewardSignal": -5.210633473882117,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-45",
+        "agentId": "agent-celestia",
+        "reward": 103.87454790249467,
+        "rewardSignal": 5.6654301735244665,
+        "success": true
+      }
+    ]
+  },
+  "rlEnhanced": {
+    "label": "Experience-Native RL System",
+    "totalJobs": 240,
+    "completedJobs": 190,
+    "failedJobs": 50,
+    "grossMerchandiseValue": 46891.071276883085,
+    "totalRewardPaid": 15851.88691740278,
+    "averageLatencyHours": 15.403991689861074,
+    "averageCost": 19.838806289463086,
+    "averageRating": 4.203692381539244,
+    "roi": 1.2748079049263052,
+    "successRate": 0.7916666666666666,
+    "sustainabilityScore": 0.995125,
+    "timeline": [
+      {
+        "jobId": "stream-quant-alpha-1",
+        "agentId": "agent-aegis",
+        "reward": 85.84674642188475,
+        "rewardSignal": 5.908508196332497,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-2",
+        "agentId": "agent-aegis",
+        "reward": 92.67287613032384,
+        "rewardSignal": 5.9327273148733815,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-3",
+        "agentId": "agent-aegis",
+        "reward": 89.8328173798509,
+        "rewardSignal": 5.975517984664599,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-4",
+        "agentId": "agent-aegis",
+        "reward": 91.30391394440085,
+        "rewardSignal": 5.9886011902894065,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-5",
+        "agentId": "agent-aegis",
+        "reward": 92.9026163178496,
+        "rewardSignal": 5.935085778251858,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-6",
+        "agentId": "agent-aegis",
+        "reward": 35.622449786402285,
+        "rewardSignal": -5.2119613408783065,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-7",
+        "agentId": "agent-aegis",
+        "reward": 86.2888909780886,
+        "rewardSignal": 5.933610478822561,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-8",
+        "agentId": "agent-aegis",
+        "reward": 86.01140246819705,
+        "rewardSignal": 5.872871647944202,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-9",
+        "agentId": "agent-aegis",
+        "reward": 93.88475789688528,
+        "rewardSignal": 5.863711689009478,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-10",
+        "agentId": "agent-aegis",
+        "reward": 89.00188374146819,
+        "rewardSignal": 5.927294938333451,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-11",
+        "agentId": "agent-orion",
+        "reward": 36.572525654733184,
+        "rewardSignal": -6.166624062867538,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-12",
+        "agentId": "agent-aegis",
+        "reward": 90.55520947719924,
+        "rewardSignal": 5.952767588147426,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-13",
+        "agentId": "agent-aegis",
+        "reward": 94.42743603489362,
+        "rewardSignal": 5.919144272486152,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-14",
+        "agentId": "agent-aegis",
+        "reward": 87.308654316701,
+        "rewardSignal": 5.926289374429997,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-15",
+        "agentId": "agent-aegis",
+        "reward": 93.96272481163034,
+        "rewardSignal": 5.964608829842385,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-16",
+        "agentId": "agent-aegis",
+        "reward": 91.27782743121497,
+        "rewardSignal": 5.955846543383393,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-17",
+        "agentId": "agent-aegis",
+        "reward": 37.353430949337785,
+        "rewardSignal": -6.06706415615095,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-18",
+        "agentId": "agent-aegis",
+        "reward": 87.46393802482635,
+        "rewardSignal": 5.943272338075403,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-19",
+        "agentId": "agent-aegis",
+        "reward": 87.97020630491897,
+        "rewardSignal": 5.927230424153248,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-20",
+        "agentId": "agent-aegis",
+        "reward": 86.2031161361374,
+        "rewardSignal": 5.8819379410612225,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-21",
+        "agentId": "agent-aegis",
+        "reward": 90.54411068279296,
+        "rewardSignal": 5.899168242340814,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-22",
+        "agentId": "agent-aegis",
+        "reward": 88.67890055151656,
+        "rewardSignal": 5.92773030044732,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-23",
+        "agentId": "agent-aegis",
+        "reward": 90.71520349220374,
+        "rewardSignal": 5.910480595415326,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-24",
+        "agentId": "agent-aegis",
+        "reward": 90.13706465880387,
+        "rewardSignal": 5.900398775491899,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-25",
+        "agentId": "agent-aegis",
+        "reward": 88.40867895679548,
+        "rewardSignal": 5.9281631847499465,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-26",
+        "agentId": "agent-aegis",
+        "reward": 91.00031179958023,
+        "rewardSignal": 5.925902799979047,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-27",
+        "agentId": "agent-aegis",
+        "reward": 88.52972978842445,
+        "rewardSignal": 5.908382928688604,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-28",
+        "agentId": "agent-aegis",
+        "reward": 88.75051845540293,
+        "rewardSignal": 5.888955323151234,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-29",
+        "agentId": "agent-aegis",
+        "reward": 91.15261339838615,
+        "rewardSignal": 5.931954682804566,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-30",
+        "agentId": "agent-aegis",
+        "reward": 88.14323316514492,
+        "rewardSignal": 5.924081317124109,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-31",
+        "agentId": "agent-aegis",
+        "reward": 35.21548447972164,
+        "rewardSignal": -6.580513623455435,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-32",
+        "agentId": "agent-aegis",
+        "reward": 90.44989634561351,
+        "rewardSignal": 5.917942065787434,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-33",
+        "agentId": "agent-orion",
+        "reward": 91.11381765478289,
+        "rewardSignal": 5.590031744678518,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-34",
+        "agentId": "agent-aegis",
+        "reward": 87.56130399741232,
+        "rewardSignal": 5.947552014186535,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-35",
+        "agentId": "agent-aegis",
+        "reward": 86.49111331463791,
+        "rewardSignal": 5.909591063400757,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-36",
+        "agentId": "agent-aegis",
+        "reward": 93.19572505331597,
+        "rewardSignal": 5.8689371513673345,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-37",
+        "agentId": "agent-aegis",
+        "reward": 91.1246766198892,
+        "rewardSignal": 5.9240392577138925,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-38",
+        "agentId": "agent-celestia",
+        "reward": 34.33415342476219,
+        "rewardSignal": -5.278650206903504,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-39",
+        "agentId": "agent-aegis",
+        "reward": 93.29257108387537,
+        "rewardSignal": 5.909226419394002,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-40",
+        "agentId": "agent-aegis",
+        "reward": 89.70628741965629,
+        "rewardSignal": 5.856355829462205,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-41",
+        "agentId": "agent-aegis",
+        "reward": 87.87076725088991,
+        "rewardSignal": 5.881261694456392,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-42",
+        "agentId": "agent-aegis",
+        "reward": 94.26522359624504,
+        "rewardSignal": 5.932381609532835,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-43",
+        "agentId": "agent-aegis",
+        "reward": 93.6154462604318,
+        "rewardSignal": 5.934806563584333,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-44",
+        "agentId": "agent-aegis",
+        "reward": 88.22562643722631,
+        "rewardSignal": 5.928254109368343,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-45",
+        "agentId": "agent-aegis",
+        "reward": 92.29434224171565,
+        "rewardSignal": 5.924685224529405,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-46",
+        "agentId": "agent-aegis",
+        "reward": 87.38560778391548,
+        "rewardSignal": 5.975282792023651,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-47",
+        "agentId": "agent-aegis",
+        "reward": 94.2485698380042,
+        "rewardSignal": 5.932730187751832,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-48",
+        "agentId": "agent-aegis",
+        "reward": 88.44281451730058,
+        "rewardSignal": 5.898213238461424,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-49",
+        "agentId": "agent-aegis",
+        "reward": 87.9925467025023,
+        "rewardSignal": 5.91098927620302,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-50",
+        "agentId": "agent-aegis",
+        "reward": 35.9500328399241,
+        "rewardSignal": -5.3619340859427185,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-51",
+        "agentId": "agent-aegis",
+        "reward": 34.3559135042131,
+        "rewardSignal": -5.796769256595932,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-52",
+        "agentId": "agent-aegis",
+        "reward": 89.675956124207,
+        "rewardSignal": 5.8792098317348955,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-53",
+        "agentId": "agent-orion",
+        "reward": 35.284271135553716,
+        "rewardSignal": -5.809781369234028,
+        "success": false
+      },
+      {
+        "jobId": "stream-quant-alpha-54",
+        "agentId": "agent-aegis",
+        "reward": 94.42496092384683,
+        "rewardSignal": 5.919609305604898,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-55",
+        "agentId": "agent-aegis",
+        "reward": 88.063757723663,
+        "rewardSignal": 5.878031062078818,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-56",
+        "agentId": "agent-aegis",
+        "reward": 88.43176197214052,
+        "rewardSignal": 5.913879274606052,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-57",
+        "agentId": "agent-aegis",
+        "reward": 87.07473599771038,
+        "rewardSignal": 5.882301319932114,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-58",
+        "agentId": "agent-aegis",
+        "reward": 91.09587085177192,
+        "rewardSignal": 5.911021349999196,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-59",
+        "agentId": "agent-aegis",
+        "reward": 92.08549436065368,
+        "rewardSignal": 5.9691717735571626,
+        "success": true
+      },
+      {
+        "jobId": "stream-quant-alpha-60",
+        "agentId": "agent-orion",
+        "reward": 37.796855306066576,
+        "rewardSignal": -6.357682540545374,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-1",
+        "agentId": "agent-aegis",
+        "reward": 22.50248711309396,
+        "rewardSignal": -6.0071271073805095,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-2",
+        "agentId": "agent-aegis",
+        "reward": 21.67573546539061,
+        "rewardSignal": -5.698964684434769,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-3",
+        "agentId": "agent-celestia",
+        "reward": 53.63442629831843,
+        "rewardSignal": 5.5034994093555305,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-4",
+        "agentId": "agent-celestia",
+        "reward": 52.27166255330667,
+        "rewardSignal": 5.559444684829993,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-5",
+        "agentId": "agent-celestia",
+        "reward": 55.71685033640824,
+        "rewardSignal": 5.478598298587748,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-6",
+        "agentId": "agent-celestia",
+        "reward": 53.52740006777458,
+        "rewardSignal": 5.574172586325453,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-7",
+        "agentId": "agent-celestia",
+        "reward": 57.53070016216952,
+        "rewardSignal": 5.4879682601171265,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-8",
+        "agentId": "agent-celestia",
+        "reward": 52.63865250709932,
+        "rewardSignal": 5.5177155635037805,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-9",
+        "agentId": "agent-celestia",
+        "reward": 54.417547592078336,
+        "rewardSignal": 5.550512306325271,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-10",
+        "agentId": "agent-aegis",
+        "reward": 55.434828553698026,
+        "rewardSignal": 5.2583346258415835,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-11",
+        "agentId": "agent-celestia",
+        "reward": 54.216448978171684,
+        "rewardSignal": 5.442085318076063,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-12",
+        "agentId": "agent-celestia",
+        "reward": 57.68266260949895,
+        "rewardSignal": 5.5343307951666185,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-13",
+        "agentId": "agent-aegis",
+        "reward": 22.89210645481944,
+        "rewardSignal": -5.84349299802556,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-14",
+        "agentId": "agent-celestia",
+        "reward": 21.402939506201076,
+        "rewardSignal": -6.3264908911371585,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-15",
+        "agentId": "agent-celestia",
+        "reward": 53.52982603828423,
+        "rewardSignal": 5.541512260793322,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-16",
+        "agentId": "agent-celestia",
+        "reward": 54.15181418147404,
+        "rewardSignal": 5.577110876374637,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-17",
+        "agentId": "agent-celestia",
+        "reward": 22.97980393236503,
+        "rewardSignal": -5.76258091701486,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-18",
+        "agentId": "agent-celestia",
+        "reward": 54.32661940273829,
+        "rewardSignal": 5.580785959342699,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-19",
+        "agentId": "agent-celestia",
+        "reward": 54.88018350338098,
+        "rewardSignal": 5.548887354723846,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-20",
+        "agentId": "agent-orion",
+        "reward": 55.03233749046922,
+        "rewardSignal": 5.196177140308714,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-21",
+        "agentId": "agent-celestia",
+        "reward": 57.6671786508523,
+        "rewardSignal": 5.45645583000186,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-22",
+        "agentId": "agent-celestia",
+        "reward": 54.84153498057276,
+        "rewardSignal": 5.487121076864957,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-23",
+        "agentId": "agent-celestia",
+        "reward": 52.41397664276883,
+        "rewardSignal": 5.491567047639744,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-24",
+        "agentId": "agent-celestia",
+        "reward": 53.2261902281316,
+        "rewardSignal": 5.573452228643004,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-25",
+        "agentId": "agent-celestia",
+        "reward": 55.816366617684245,
+        "rewardSignal": 5.60251565621056,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-26",
+        "agentId": "agent-celestia",
+        "reward": 54.766148602124304,
+        "rewardSignal": 5.492636705389803,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-27",
+        "agentId": "agent-orion",
+        "reward": 53.663345545413904,
+        "rewardSignal": 5.165439233962914,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-28",
+        "agentId": "agent-celestia",
+        "reward": 53.18669032061007,
+        "rewardSignal": 5.587724352042059,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-29",
+        "agentId": "agent-celestia",
+        "reward": 53.53206104913261,
+        "rewardSignal": 5.519188042579758,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-30",
+        "agentId": "agent-celestia",
+        "reward": 23.058175718691203,
+        "rewardSignal": -5.687178862504113,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-31",
+        "agentId": "agent-orion",
+        "reward": 22.86430039801635,
+        "rewardSignal": -6.159565472736211,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-32",
+        "agentId": "agent-celestia",
+        "reward": 53.37028440262657,
+        "rewardSignal": 5.543601418123441,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-33",
+        "agentId": "agent-aegis",
+        "reward": 55.84631871373858,
+        "rewardSignal": 5.125535342937796,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-34",
+        "agentId": "agent-celestia",
+        "reward": 22.564105509081855,
+        "rewardSignal": -5.764228846082454,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-35",
+        "agentId": "agent-celestia",
+        "reward": 54.421325606061146,
+        "rewardSignal": 5.489440814597398,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-36",
+        "agentId": "agent-aegis",
+        "reward": 21.75720207085833,
+        "rewardSignal": -5.624281716877204,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-37",
+        "agentId": "agent-celestia",
+        "reward": 56.22477860597428,
+        "rewardSignal": 5.565208655766529,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-38",
+        "agentId": "agent-celestia",
+        "reward": 21.402525855926797,
+        "rewardSignal": -5.780492322607343,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-39",
+        "agentId": "agent-celestia",
+        "reward": 54.18141847895458,
+        "rewardSignal": 5.606561618142429,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-40",
+        "agentId": "agent-aegis",
+        "reward": 53.03849892737344,
+        "rewardSignal": 5.15621630693729,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-41",
+        "agentId": "agent-celestia",
+        "reward": 56.60787518334109,
+        "rewardSignal": 5.440556662722492,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-42",
+        "agentId": "agent-celestia",
+        "reward": 54.65705903631169,
+        "rewardSignal": 5.559893569696117,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-43",
+        "agentId": "agent-celestia",
+        "reward": 56.445392158580944,
+        "rewardSignal": 5.573547392266861,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-44",
+        "agentId": "agent-celestia",
+        "reward": 57.14519610314164,
+        "rewardSignal": 5.466629635164465,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-45",
+        "agentId": "agent-celestia",
+        "reward": 56.42276895989198,
+        "rewardSignal": 5.486641683695621,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-46",
+        "agentId": "agent-orion",
+        "reward": 54.99914217146579,
+        "rewardSignal": 5.094891255404764,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-47",
+        "agentId": "agent-celestia",
+        "reward": 54.95963280822616,
+        "rewardSignal": 5.597844984975119,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-48",
+        "agentId": "agent-aegis",
+        "reward": 53.69416027213447,
+        "rewardSignal": 5.2478216559958675,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-49",
+        "agentId": "agent-celestia",
+        "reward": 52.689865985070355,
+        "rewardSignal": 5.5338915631257555,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-50",
+        "agentId": "agent-celestia",
+        "reward": 53.699993192683905,
+        "rewardSignal": 5.485319233191819,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-51",
+        "agentId": "agent-celestia",
+        "reward": 52.57992232230026,
+        "rewardSignal": 5.578097527138759,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-52",
+        "agentId": "agent-celestia",
+        "reward": 54.30148499889765,
+        "rewardSignal": 5.515930944687419,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-53",
+        "agentId": "agent-celestia",
+        "reward": 56.322962732287124,
+        "rewardSignal": 5.504929128734155,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-54",
+        "agentId": "agent-celestia",
+        "reward": 54.52513435820583,
+        "rewardSignal": 5.475375519518185,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-55",
+        "agentId": "agent-celestia",
+        "reward": 53.40226238116156,
+        "rewardSignal": 5.557244826381362,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-56",
+        "agentId": "agent-orion",
+        "reward": 53.85726972541306,
+        "rewardSignal": 5.102245751011278,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-57",
+        "agentId": "agent-celestia",
+        "reward": 52.61041910049971,
+        "rewardSignal": 5.508814903379775,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-58",
+        "agentId": "agent-celestia",
+        "reward": 53.13101621903479,
+        "rewardSignal": 5.579597755188924,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-59",
+        "agentId": "agent-celestia",
+        "reward": 54.248027679277584,
+        "rewardSignal": 5.530996082520883,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-60",
+        "agentId": "agent-celestia",
+        "reward": 54.761260777013376,
+        "rewardSignal": 5.532756761765188,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-61",
+        "agentId": "agent-orion",
+        "reward": 54.00212781922892,
+        "rewardSignal": 5.1235556266549045,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-62",
+        "agentId": "agent-celestia",
+        "reward": 55.126398552325554,
+        "rewardSignal": 5.548730394874099,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-63",
+        "agentId": "agent-celestia",
+        "reward": 55.02051595656667,
+        "rewardSignal": 5.54181318961845,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-64",
+        "agentId": "agent-celestia",
+        "reward": 21.998401414044203,
+        "rewardSignal": -6.114688167373613,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-65",
+        "agentId": "agent-celestia",
+        "reward": 54.75305378995836,
+        "rewardSignal": 5.4792348106852256,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-66",
+        "agentId": "agent-celestia",
+        "reward": 56.39387848973275,
+        "rewardSignal": 5.507961354548075,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-67",
+        "agentId": "agent-celestia",
+        "reward": 22.958183707995342,
+        "rewardSignal": -5.641682324645581,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-68",
+        "agentId": "agent-celestia",
+        "reward": 53.07646978611592,
+        "rewardSignal": 5.5833667607351245,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-69",
+        "agentId": "agent-celestia",
+        "reward": 21.955763616226616,
+        "rewardSignal": -6.020210429025824,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-70",
+        "agentId": "agent-celestia",
+        "reward": 54.29166870343033,
+        "rewardSignal": 5.515020372281583,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-71",
+        "agentId": "agent-celestia",
+        "reward": 54.1303053565789,
+        "rewardSignal": 5.560243570562023,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-72",
+        "agentId": "agent-orion",
+        "reward": 21.614819437684492,
+        "rewardSignal": -5.693676314360038,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-73",
+        "agentId": "agent-celestia",
+        "reward": 54.262235250440426,
+        "rewardSignal": 5.490859854194478,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-74",
+        "agentId": "agent-celestia",
+        "reward": 52.82780659105629,
+        "rewardSignal": 5.522136816651981,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-75",
+        "agentId": "agent-celestia",
+        "reward": 57.36701925646049,
+        "rewardSignal": 5.5948185361955005,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-76",
+        "agentId": "agent-orion",
+        "reward": 21.372785591008142,
+        "rewardSignal": -6.263295517585251,
+        "success": false
+      },
+      {
+        "jobId": "stream-narrative-77",
+        "agentId": "agent-celestia",
+        "reward": 53.67305706732441,
+        "rewardSignal": 5.534176876665446,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-78",
+        "agentId": "agent-celestia",
+        "reward": 55.440139993443154,
+        "rewardSignal": 5.549706946812703,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-79",
+        "agentId": "agent-celestia",
+        "reward": 54.303470830316655,
+        "rewardSignal": 5.462168666060194,
+        "success": true
+      },
+      {
+        "jobId": "stream-narrative-80",
+        "agentId": "agent-orion",
+        "reward": 53.4691099349875,
+        "rewardSignal": 5.104563777104224,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-1",
+        "agentId": "agent-celestia",
+        "reward": 28.175215717107065,
+        "rewardSignal": -5.687435579576607,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-2",
+        "agentId": "agent-aegis",
+        "reward": 28.27630303926766,
+        "rewardSignal": -5.873667555468088,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-3",
+        "agentId": "agent-aegis",
+        "reward": 28.136231157369913,
+        "rewardSignal": -5.835281056657937,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-4",
+        "agentId": "agent-nova",
+        "reward": 67.6998688663356,
+        "rewardSignal": 5.491768643823217,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-5",
+        "agentId": "agent-nova",
+        "reward": 69.31196636073292,
+        "rewardSignal": 5.371975244495763,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-6",
+        "agentId": "agent-nova",
+        "reward": 67.48440737333149,
+        "rewardSignal": 5.405867290668718,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-7",
+        "agentId": "agent-orion",
+        "reward": 28.426468943357463,
+        "rewardSignal": -6.529771494639042,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-8",
+        "agentId": "agent-nova",
+        "reward": 67.56006470350549,
+        "rewardSignal": 5.445639447410766,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-9",
+        "agentId": "agent-nova",
+        "reward": 66.35160129284486,
+        "rewardSignal": 5.455782217829437,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-10",
+        "agentId": "agent-nova",
+        "reward": 70.75762435495852,
+        "rewardSignal": 5.400917171811162,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-11",
+        "agentId": "agent-nova",
+        "reward": 70.10313866473734,
+        "rewardSignal": 5.341281135912471,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-12",
+        "agentId": "agent-nova",
+        "reward": 66.74358833972364,
+        "rewardSignal": 5.508066718715842,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-13",
+        "agentId": "agent-nova",
+        "reward": 71.10871932767333,
+        "rewardSignal": 5.473139493838252,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-14",
+        "agentId": "agent-nova",
+        "reward": 64.6162223206833,
+        "rewardSignal": 5.421123007787545,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-15",
+        "agentId": "agent-nova",
+        "reward": 70.28016765676438,
+        "rewardSignal": 5.371411596186974,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-16",
+        "agentId": "agent-nova",
+        "reward": 68.5802912198007,
+        "rewardSignal": 5.468261204759915,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-17",
+        "agentId": "agent-nova",
+        "reward": 69.9882857854478,
+        "rewardSignal": 5.425624515961317,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-18",
+        "agentId": "agent-nova",
+        "reward": 65.36096800342202,
+        "rewardSignal": 5.438676074262448,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-19",
+        "agentId": "agent-nova",
+        "reward": 27.349360673464833,
+        "rewardSignal": -6.593019180013805,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-20",
+        "agentId": "agent-nova",
+        "reward": 66.40332493754104,
+        "rewardSignal": 5.383558807246138,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-21",
+        "agentId": "agent-nova",
+        "reward": 71.25525166280568,
+        "rewardSignal": 5.410376229160628,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-22",
+        "agentId": "agent-nova",
+        "reward": 64.79475178252906,
+        "rewardSignal": 5.336318747055482,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-23",
+        "agentId": "agent-nova",
+        "reward": 27.606209984831516,
+        "rewardSignal": -5.70425711565372,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-24",
+        "agentId": "agent-nova",
+        "reward": 66.72078711064532,
+        "rewardSignal": 5.435414565189652,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-25",
+        "agentId": "agent-nova",
+        "reward": 71.15313250189647,
+        "rewardSignal": 5.462325086744871,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-26",
+        "agentId": "agent-nova",
+        "reward": 67.44505286766216,
+        "rewardSignal": 5.350464139298121,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-27",
+        "agentId": "agent-nova",
+        "reward": 64.66301172273234,
+        "rewardSignal": 5.450883314058187,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-28",
+        "agentId": "agent-nova",
+        "reward": 65.99682328701019,
+        "rewardSignal": 5.357598094239636,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-29",
+        "agentId": "agent-nova",
+        "reward": 71.39394295243545,
+        "rewardSignal": 5.503507121173529,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-30",
+        "agentId": "agent-nova",
+        "reward": 69.23227647636085,
+        "rewardSignal": 5.475557874790072,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-31",
+        "agentId": "agent-nova",
+        "reward": 71.25043640760705,
+        "rewardSignal": 5.471203210423663,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-32",
+        "agentId": "agent-nova",
+        "reward": 26.19647673286498,
+        "rewardSignal": -6.354732492223171,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-33",
+        "agentId": "agent-celestia",
+        "reward": 27.581504046842454,
+        "rewardSignal": -5.663563161791434,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-34",
+        "agentId": "agent-orion",
+        "reward": 27.32871062200517,
+        "rewardSignal": -6.06098274648581,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-35",
+        "agentId": "agent-nova",
+        "reward": 66.53819509837777,
+        "rewardSignal": 5.355426174118765,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-36",
+        "agentId": "agent-nova",
+        "reward": 65.19116255836562,
+        "rewardSignal": 5.430027910351359,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-37",
+        "agentId": "agent-nova",
+        "reward": 69.70494280327111,
+        "rewardSignal": 5.479804521791804,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-38",
+        "agentId": "agent-nova",
+        "reward": 65.62283558454365,
+        "rewardSignal": 5.368898710800617,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-39",
+        "agentId": "agent-aegis",
+        "reward": 27.31520769633353,
+        "rewardSignal": -5.7488839956423625,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-40",
+        "agentId": "agent-celestia",
+        "reward": 26.70038112718612,
+        "rewardSignal": -5.763930511933356,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-41",
+        "agentId": "agent-nova",
+        "reward": 67.49827644545584,
+        "rewardSignal": 5.3386435540543165,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-42",
+        "agentId": "agent-aegis",
+        "reward": 70.34608753286301,
+        "rewardSignal": 5.085585365758773,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-43",
+        "agentId": "agent-nova",
+        "reward": 67.29261531215161,
+        "rewardSignal": 5.472818900006605,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-44",
+        "agentId": "agent-nova",
+        "reward": 71.14155056979507,
+        "rewardSignal": 5.394238543002653,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-45",
+        "agentId": "agent-nova",
+        "reward": 65.047491119802,
+        "rewardSignal": 5.440689467574557,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-46",
+        "agentId": "agent-nova",
+        "reward": 27.399535836018618,
+        "rewardSignal": -6.499638044806476,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-47",
+        "agentId": "agent-nova",
+        "reward": 67.20004969201982,
+        "rewardSignal": 5.353800676424263,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-48",
+        "agentId": "agent-nova",
+        "reward": 68.03801574409007,
+        "rewardSignal": 5.516033739907085,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-49",
+        "agentId": "agent-nova",
+        "reward": 70.76719158608466,
+        "rewardSignal": 5.365785746915527,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-50",
+        "agentId": "agent-nova",
+        "reward": 70.59047966646031,
+        "rewardSignal": 5.494303119333825,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-51",
+        "agentId": "agent-nova",
+        "reward": 66.54196237297728,
+        "rewardSignal": 5.5117635884478755,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-52",
+        "agentId": "agent-nova",
+        "reward": 26.544238309748472,
+        "rewardSignal": -7.043766759330309,
+        "success": false
+      },
+      {
+        "jobId": "stream-expansion-53",
+        "agentId": "agent-nova",
+        "reward": 66.35016053048894,
+        "rewardSignal": 5.3300676336237744,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-54",
+        "agentId": "agent-nova",
+        "reward": 65.17931879656389,
+        "rewardSignal": 5.4619124459258455,
+        "success": true
+      },
+      {
+        "jobId": "stream-expansion-55",
+        "agentId": "agent-nova",
+        "reward": 28.309780673570938,
+        "rewardSignal": -6.571561395564148,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-1",
+        "agentId": "agent-aegis",
+        "reward": 105.52632577386684,
+        "rewardSignal": 5.627606896561664,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-2",
+        "agentId": "agent-aegis",
+        "reward": 41.11154860077426,
+        "rewardSignal": -5.796177132946694,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-3",
+        "agentId": "agent-aegis",
+        "reward": 40.02504981687293,
+        "rewardSignal": -5.4260784592997755,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-4",
+        "agentId": "agent-celestia",
+        "reward": 41.1574756780453,
+        "rewardSignal": -5.591990726504231,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-5",
+        "agentId": "agent-celestia",
+        "reward": 40.02045120768249,
+        "rewardSignal": -5.014831735598631,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-6",
+        "agentId": "agent-nova",
+        "reward": 40.692939799558374,
+        "rewardSignal": -5.560235949549853,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-7",
+        "agentId": "agent-orion",
+        "reward": 101.53490626062266,
+        "rewardSignal": 6.076744784006728,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-8",
+        "agentId": "agent-orion",
+        "reward": 40.46548910122365,
+        "rewardSignal": -6.0511785744870465,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-9",
+        "agentId": "agent-orion",
+        "reward": 105.59335217275657,
+        "rewardSignal": 6.06212930081846,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-10",
+        "agentId": "agent-orion",
+        "reward": 103.87652259715833,
+        "rewardSignal": 6.038998538531459,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-11",
+        "agentId": "agent-orion",
+        "reward": 101.04233856811187,
+        "rewardSignal": 6.084766754775688,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-12",
+        "agentId": "agent-orion",
+        "reward": 106.96349989604205,
+        "rewardSignal": 6.033657394001184,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-13",
+        "agentId": "agent-aegis",
+        "reward": 40.81625276528299,
+        "rewardSignal": -5.757193758835363,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-14",
+        "agentId": "agent-orion",
+        "reward": 104.75752807287499,
+        "rewardSignal": 6.041175626821148,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-15",
+        "agentId": "agent-orion",
+        "reward": 41.963191321659835,
+        "rewardSignal": -5.1674365079395415,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-16",
+        "agentId": "agent-orion",
+        "reward": 102.73113566804678,
+        "rewardSignal": 6.061284595003256,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-17",
+        "agentId": "agent-orion",
+        "reward": 103.73079749308526,
+        "rewardSignal": 6.080292456975543,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-18",
+        "agentId": "agent-orion",
+        "reward": 39.88413786845282,
+        "rewardSignal": -6.036513548233554,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-19",
+        "agentId": "agent-orion",
+        "reward": 105.99597487030552,
+        "rewardSignal": 6.045927374617343,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-20",
+        "agentId": "agent-orion",
+        "reward": 42.345432130917914,
+        "rewardSignal": -5.469982132899776,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-21",
+        "agentId": "agent-orion",
+        "reward": 41.246251345127824,
+        "rewardSignal": -5.252251287996273,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-22",
+        "agentId": "agent-orion",
+        "reward": 102.99185720770619,
+        "rewardSignal": 6.009359735245385,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-23",
+        "agentId": "agent-orion",
+        "reward": 102.47612495594659,
+        "rewardSignal": 5.9992805127657745,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-24",
+        "agentId": "agent-orion",
+        "reward": 103.06773948739283,
+        "rewardSignal": 6.010736330157527,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-25",
+        "agentId": "agent-orion",
+        "reward": 101.0513231527526,
+        "rewardSignal": 6.037125453424765,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-26",
+        "agentId": "agent-orion",
+        "reward": 106.21272681285627,
+        "rewardSignal": 6.0098250672932085,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-27",
+        "agentId": "agent-orion",
+        "reward": 99.1450610809028,
+        "rewardSignal": 6.076662685512381,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-28",
+        "agentId": "agent-orion",
+        "reward": 106.16534221549519,
+        "rewardSignal": 6.048320813696516,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-29",
+        "agentId": "agent-orion",
+        "reward": 103.17238128622994,
+        "rewardSignal": 6.006829006044787,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-30",
+        "agentId": "agent-orion",
+        "reward": 102.53260893453843,
+        "rewardSignal": 6.030346908952463,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-31",
+        "agentId": "agent-orion",
+        "reward": 97.49631405752153,
+        "rewardSignal": 6.030814821446541,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-32",
+        "agentId": "agent-orion",
+        "reward": 98.95582521934993,
+        "rewardSignal": 6.029358360830806,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-33",
+        "agentId": "agent-orion",
+        "reward": 98.16490102065727,
+        "rewardSignal": 6.053765218581319,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-34",
+        "agentId": "agent-orion",
+        "reward": 98.73218753328547,
+        "rewardSignal": 6.024296250547305,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-35",
+        "agentId": "agent-orion",
+        "reward": 101.40375529350713,
+        "rewardSignal": 6.036655091627661,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-36",
+        "agentId": "agent-orion",
+        "reward": 101.01805946691893,
+        "rewardSignal": 6.003843127156932,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-37",
+        "agentId": "agent-orion",
+        "reward": 105.87365097915755,
+        "rewardSignal": 6.044872215891858,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-38",
+        "agentId": "agent-orion",
+        "reward": 103.0055970305577,
+        "rewardSignal": 6.0213468235778285,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-39",
+        "agentId": "agent-orion",
+        "reward": 103.61338210729882,
+        "rewardSignal": 6.082446752620005,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-40",
+        "agentId": "agent-orion",
+        "reward": 105.60180561714806,
+        "rewardSignal": 6.091384710825569,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-41",
+        "agentId": "agent-orion",
+        "reward": 101.21307876538485,
+        "rewardSignal": 6.020527552161299,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-42",
+        "agentId": "agent-orion",
+        "reward": 106.0592276418116,
+        "rewardSignal": 6.07756662691296,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-43",
+        "agentId": "agent-orion",
+        "reward": 101.05083373188972,
+        "rewardSignal": 6.079824660425504,
+        "success": true
+      },
+      {
+        "jobId": "stream-sentinel-44",
+        "agentId": "agent-orion",
+        "reward": 41.901428042203186,
+        "rewardSignal": -5.209679792904273,
+        "success": false
+      },
+      {
+        "jobId": "stream-sentinel-45",
+        "agentId": "agent-aegis",
+        "reward": 103.87454790249467,
+        "rewardSignal": 5.6349814809601675,
+        "success": true
+      }
+    ]
+  },
+  "audit": {
+    "status": "pass",
+    "generatedAt": "2025-10-30T12:08:57.147Z",
+    "sections": [
+      {
+        "name": "Baseline Summary Consistency",
+        "status": "pass",
+        "notes": [],
+        "metrics": {
+          "reported.totalJobs": 240,
+          "expected.totalJobs": 240,
+          "reported.completedJobs": 142,
+          "expected.completedJobs": 142,
+          "reported.failedJobs": 98,
+          "expected.failedJobs": 98,
+          "reported.grossMerchandiseValue": 25711.728338029283,
+          "expected.grossMerchandiseValue": 25711.728338029283,
+          "reported.totalRewardPaid": 13304.627977100396,
+          "expected.totalRewardPaid": 13304.627977100396,
+          "reported.averageLatencyHours": 15.718615408733486,
+          "expected.averageLatencyHours": 15.718615408733486,
+          "reported.averageCost": 23.81143461658704,
+          "expected.averageCost": 23.81143461658704,
+          "reported.averageRating": 3.3476246425306257,
+          "expected.averageRating": 3.3476246425306257,
+          "reported.roi": 0.35187050091014055,
+          "expected.roi": 0.35187050091014055,
+          "reported.successRate": 0.5916666666666667,
+          "expected.successRate": 0.5916666666666667,
+          "reported.sustainabilityScore": 1,
+          "expected.sustainabilityScore": 1
+        }
+      },
+      {
+        "name": "Experience-Native Summary Consistency",
+        "status": "pass",
+        "notes": [],
+        "metrics": {
+          "reported.totalJobs": 240,
+          "expected.totalJobs": 240,
+          "reported.completedJobs": 190,
+          "expected.completedJobs": 190,
+          "reported.failedJobs": 50,
+          "expected.failedJobs": 50,
+          "reported.grossMerchandiseValue": 46891.071276883085,
+          "expected.grossMerchandiseValue": 46891.071276883085,
+          "reported.totalRewardPaid": 15851.88691740278,
+          "expected.totalRewardPaid": 15851.88691740278,
+          "reported.averageLatencyHours": 15.403991689861074,
+          "expected.averageLatencyHours": 15.403991689861074,
+          "reported.averageCost": 19.838806289463086,
+          "expected.averageCost": 19.838806289463086,
+          "reported.averageRating": 4.203692381539244,
+          "expected.averageRating": 4.203692381539244,
+          "reported.roi": 1.2748079049263052,
+          "expected.roi": 1.2748079049263052,
+          "reported.successRate": 0.7916666666666666,
+          "expected.successRate": 0.7916666666666666,
+          "reported.sustainabilityScore": 0.995125,
+          "expected.sustainabilityScore": 0.995125
+        }
+      },
+      {
+        "name": "Baseline Experience Integrity",
+        "status": "pass",
+        "notes": []
+      },
+      {
+        "name": "Experience-Native Experience Integrity",
+        "status": "pass",
+        "notes": []
+      },
+      {
+        "name": "Owner Control Envelope",
+        "status": "pass",
+        "notes": []
+      }
+    ]
+  }
+}

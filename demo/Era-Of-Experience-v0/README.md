@@ -22,6 +22,7 @@ npm run demo:era-of-experience               # full run with baseline vs learnin
 npm run demo:era-of-experience -- --scenario demo/Era-Of-Experience-v0/config/scenarios/dominion.json
 npm run demo:era-of-experience -- --jobs 60  # quick deterministic smoke run
 npm run test:era-of-experience               # deterministic unit tests verifying GMV lift
+npm run demo:era-of-experience:audit         # generate audit artifacts + mermaid diagrams
 npm run owner:era-of-experience:controls -- --promote-latest  # record owner actions
 ```
 
@@ -35,6 +36,9 @@ Outputs land in `demo/Era-Of-Experience-v0/reports/`:
 - `owner-control-actions.json` – append-only audit trail of owner commands recorded via
   `npm run owner:era-of-experience:controls`.
 - `supremacy-ledger.json` – dominance index combining GMV, ROI, and autonomy deltas with guardrail confirmations.
+- `audit-report.json` – deterministic comparison of baseline vs experience-native runs with audit verdict.
+- `audit-flow.mmd` / `audit-value-stream.mmd` – mermaid diagrams extracted from the audit stream.
+- `audit-experiences.json` – recent experience samples validated during the audit pass.
 
 > **Operator quick start** – run `npm run demo:era-of-experience`, then open `demo/Era-Of-Experience-v0/ui/index.html` with any
 > static server (`npx http-server demo/Era-Of-Experience-v0/ui`). The UI automatically ingests `ui/data/default-summary.json`
