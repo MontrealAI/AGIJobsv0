@@ -34,6 +34,13 @@
     "max_cost": 25000.0,
     "max_failures_per_agent": 12
   },
+  "owner_controls": {
+    "pause_all": false,
+    "pause_expansions": false,
+    "pause_evaluations": false,
+    "max_actions": null,
+    "note": "Operators can pause or cap actions via configuration overrides"
+  },
   "simulation": {
     "quality_sigma": 0.1,
     "quality_floor": 0.1,

@@ -70,6 +70,15 @@ class DemoConfig:
     def baseline(self) -> Dict[str, Any]:
         return self.require_section("baseline")
 
+    @property
+    def owner_controls(self) -> Dict[str, Any]:
+        section = self.raw.get("owner_controls")
+        if section is None:
+            return {}
+        if not isinstance(section, dict):
+            raise ConfigError("Configuration section 'owner_controls' must be a mapping if provided.")
+        return section
+
 
 def _apply_override(payload: Dict[str, Any], key: str, value: Any) -> None:
     parts = key.split(".") if key else []

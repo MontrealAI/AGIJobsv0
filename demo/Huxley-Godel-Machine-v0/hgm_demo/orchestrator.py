@@ -11,6 +11,7 @@ from .engine import ActionType, DecisionContext, EngineAction, HGMEngine
 from .metrics import RunMetrics
 from .sentinel import Sentinel, SentinelConfig, SentinelOutcome
 from .thermostat import Thermostat, ThermostatConfig, ThermostatDecision
+from hgm_v0_demo.owner_controls import OwnerControls
 
 LogCallback = Callable[[str], None]
 
@@ -33,6 +34,7 @@ class DemoOrchestrator:
         sentinel: Optional[Sentinel] = None,
         parameters: Optional[EconomicParameters] = None,
         rng=None,
+        owner_controls: OwnerControls | None = None,
     ) -> None:
         self.engine = engine
         self.thermostat = thermostat or Thermostat(ThermostatConfig())
@@ -44,6 +46,10 @@ class DemoOrchestrator:
         self._pending_evaluations = 0
         self._loop = asyncio.get_event_loop()
         self._rng = rng or random.Random()
+        self.owner_controls = owner_controls or OwnerControls()
+        self._scheduled_actions = 0
+        self._owner_cap_triggered = False
+        self.owner_note: str | None = None
 
     async def run(self, *, max_actions: int, log: Optional[LogCallback] = None) -> None:
         while self.metrics.total_actions < max_actions:
@@ -52,9 +58,28 @@ class DemoOrchestrator:
                 for rule in sentinel_outcome.triggered_rules:
                     log(f"⚠️ Sentinel event: {rule}")
 
+            if self.owner_controls.should_block_new_actions(self._scheduled_actions):
+                if self.owner_controls.max_actions is not None:
+                    self._owner_cap_triggered = True
+                if self._pending_tasks:
+                    await self._await_one()
+                    continue
+                break
+
+            allow_expansions = (
+                sentinel_outcome.allow_expansions
+                and not self.owner_controls.pause_all
+                and not self.owner_controls.pause_expansions
+            )
+            allow_evaluations = (
+                sentinel_outcome.allow_evaluations
+                and not self.owner_controls.pause_all
+                and not self.owner_controls.pause_evaluations
+            )
+
             context = DecisionContext(
-                allow_expansions=sentinel_outcome.allow_expansions,
-                allow_evaluations=sentinel_outcome.allow_evaluations,
+                allow_expansions=allow_expansions,
+                allow_evaluations=allow_evaluations,
                 pending_expansions=self._pending_expansions,
                 pending_evaluations=self._pending_evaluations,
                 max_concurrent_evaluations=self.thermostat.concurrency,
@@ -70,6 +95,7 @@ class DemoOrchestrator:
             task = self._schedule_action(decision, log)
             if task is not None:
                 self._pending_tasks.add(task)
+                self._scheduled_actions += 1
                 continue
 
             if self._pending_tasks:
@@ -79,6 +105,11 @@ class DemoOrchestrator:
 
         if self._pending_tasks:
             await asyncio.wait(self._pending_tasks)
+
+        self.owner_note = self.owner_controls.describe(
+            consumed_actions=self._scheduled_actions,
+            cap_triggered=self._owner_cap_triggered,
+        )
 
     def _schedule_action(self, decision: EngineAction, log: Optional[LogCallback]) -> Optional[asyncio.Task]:
         if decision.action is ActionType.EXPAND:

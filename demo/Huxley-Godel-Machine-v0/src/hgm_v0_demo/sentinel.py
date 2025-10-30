@@ -40,15 +40,15 @@ class Sentinel:
 
     def evaluate(self, snapshot: EconomicSnapshot) -> SentinelDecision:
         decision = SentinelDecision()
-        # Budget hard stop
-        if snapshot.cost >= self.max_budget * self.hard_budget_ratio:
-            decision.pause_expansions = True
-            self.engine.expansions_allowed = False
+        pause_expansions = False
+        pause_evaluations = False
+
         if snapshot.cost >= self.max_budget:
             decision.halt_all = True
-            self.engine.evaluations_allowed = False
-            self.engine.expansions_allowed = False
-            return decision
+            pause_expansions = True
+            pause_evaluations = True
+        elif snapshot.cost >= self.max_budget * self.hard_budget_ratio:
+            pause_expansions = True
 
         # ROI monitoring
         if snapshot.cost > 0 and snapshot.roi < self.min_roi:
@@ -57,16 +57,15 @@ class Sentinel:
             self.state.consecutive_roi_breaches = max(0, self.state.consecutive_roi_breaches - 1)
 
         if self.state.consecutive_roi_breaches >= self.roi_recovery_steps:
-            decision.pause_expansions = True
-            self.engine.expansions_allowed = False
-        elif decision.pause_expansions is False:
-            self.engine.expansions_allowed = True
+            pause_expansions = True
 
         # Agent level pruning
         for agent in self.engine.agents():
             if agent.direct_failure >= self.max_failures_per_agent:
                 self.engine.prune_agent(agent.agent_id)
 
+        decision.pause_expansions = pause_expansions
+        decision.pause_evaluations = pause_evaluations
         return decision
 
 

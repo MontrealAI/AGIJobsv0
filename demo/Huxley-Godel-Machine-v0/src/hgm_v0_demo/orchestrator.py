@@ -9,6 +9,7 @@ import random
 from .engine import ActionType, HGMEngine
 from .lineage import capture_agent_snapshots
 from .metrics import EconomicSnapshot, RunSummary, Timeline
+from .owner_controls import OwnerControls
 from .sentinel import Sentinel
 from .thermostat import Thermostat
 
@@ -36,6 +37,7 @@ class HGMDemoOrchestrator:
         quality_bounds: tuple[float, float],
         evaluation_latency_range: Tuple[float, float] | None = None,
         expansion_latency_range: Tuple[float, float] | None = None,
+        owner_controls: OwnerControls | None = None,
     ) -> None:
         self.engine = engine
         self.thermostat = thermostat
@@ -54,6 +56,12 @@ class HGMDemoOrchestrator:
         self.failures = 0
         self._evaluation_latency_range = evaluation_latency_range
         self._expansion_latency_range = expansion_latency_range
+        self.owner_controls = owner_controls or OwnerControls()
+        self._scheduled_actions = 0
+        self._owner_cap_triggered = False
+        self._sentinel_halt_all = False
+        self._sentinel_pause_expansions = False
+        self._sentinel_pause_evaluations = False
 
     def run(self, total_steps: int, report_interval: int) -> RunSummary:
         for step in range(1, total_steps + 1):
@@ -76,6 +84,10 @@ class HGMDemoOrchestrator:
             self.timeline.append(snapshot)
             self.thermostat.observe(snapshot)
             decision = self.sentinel.evaluate(snapshot)
+            self._sentinel_halt_all = decision.halt_all
+            self._sentinel_pause_expansions = decision.pause_expansions
+            self._sentinel_pause_evaluations = decision.pause_evaluations
+
             if decision.halt_all:
                 break
             if step % report_interval == 0:
@@ -85,6 +97,10 @@ class HGMDemoOrchestrator:
         final_best = self.engine.best_agent()
         best_agent_id = final_best.agent_id if final_best is not None else None
         best_agent_quality = final_best.quality if final_best is not None else None
+        owner_notes = self.owner_controls.describe(
+            consumed_actions=self._scheduled_actions,
+            cap_triggered=self._owner_cap_triggered,
+        )
         return RunSummary(
             strategy="HGM",
             gmv=self.gmv,
@@ -96,6 +112,7 @@ class HGMDemoOrchestrator:
             steps=len(self.timeline.snapshots),
             best_agent_id=best_agent_id,
             best_agent_quality=best_agent_quality,
+            owner_notes=owner_notes,
         )
 
     # ------------------------------------------------------------------
@@ -122,6 +139,11 @@ class HGMDemoOrchestrator:
 
     def _schedule_until_blocked(self, step: int) -> None:
         while True:
+            if self.owner_controls.should_block_new_actions(self._scheduled_actions):
+                if self.owner_controls.max_actions is not None:
+                    self._owner_cap_triggered = True
+                break
+            self._apply_control_flags()
             action = self.engine.next_action()
             if action.kind is ActionType.STOP:
                 break
@@ -140,6 +162,7 @@ class HGMDemoOrchestrator:
                         payload=proposed_quality,
                     )
                 )
+                self._scheduled_actions += 1
             elif action.kind is ActionType.EVALUATE and action.agent_id is not None:
                 agent = self.engine.get_agent(action.agent_id)
                 completion = step + self._evaluation_duration()
@@ -152,6 +175,7 @@ class HGMDemoOrchestrator:
                         payload=agent.quality,
                     )
                 )
+                self._scheduled_actions += 1
             else:
                 break
 
@@ -191,6 +215,21 @@ class HGMDemoOrchestrator:
     def _bounded_quality(self, quality: float) -> float:
         low, high = self.quality_bounds
         return max(low, min(high, quality))
+
+    def _apply_control_flags(self) -> None:
+        allow_expansions = (
+            not self.owner_controls.pause_all
+            and not self.owner_controls.pause_expansions
+            and not self._sentinel_pause_expansions
+        )
+        allow_evaluations = (
+            not self.owner_controls.pause_all
+            and not self.owner_controls.pause_evaluations
+            and not self._sentinel_halt_all
+            and not self._sentinel_pause_evaluations
+        )
+        self.engine.expansions_allowed = allow_expansions
+        self.engine.evaluations_allowed = allow_evaluations
 
 
 __all__ = ["HGMDemoOrchestrator"]

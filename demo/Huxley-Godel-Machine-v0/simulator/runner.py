@@ -20,6 +20,7 @@ from hgm_v0_demo.engine import HGMEngine
 from hgm_v0_demo.lineage import MermaidOptions, mermaid_from_snapshots
 from hgm_v0_demo.metrics import EconomicSnapshot, RunSummary
 from hgm_v0_demo.orchestrator import HGMDemoOrchestrator
+from hgm_v0_demo.owner_controls import OwnerControls
 from hgm_v0_demo.sentinel import Sentinel
 from hgm_v0_demo.thermostat import Thermostat, ThermostatConfig
 
@@ -304,6 +305,10 @@ def _build_hgm_orchestrator(config: DemoConfig, engine: HGMEngine, rng: random.R
     )
     thermostat = _build_thermostat(config, engine)
     sentinel = _build_sentinel(config, engine)
+    try:
+        owner_controls = OwnerControls.from_mapping(config.owner_controls)
+    except ValueError as exc:
+        raise ConfigError(str(exc)) from exc
     orchestrator = HGMDemoOrchestrator(
         engine=engine,
         thermostat=thermostat,
@@ -319,6 +324,7 @@ def _build_hgm_orchestrator(config: DemoConfig, engine: HGMEngine, rng: random.R
         ),
         evaluation_latency_range=evaluation_latency,
         expansion_latency_range=expansion_latency,
+        owner_controls=owner_controls,
     )
     return orchestrator
 
@@ -558,6 +564,8 @@ def run_cli(
         print(
             f"Best-belief agent: {report.hgm.summary.best_agent_id} with estimated quality {quality}"
         )
+    if report.hgm.summary.owner_notes:
+        print(f"Owner directives: {report.hgm.summary.owner_notes}")
     return report
 
 

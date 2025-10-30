@@ -190,14 +190,18 @@ class StrategyOutcome:
     metrics: RunMetrics
     log: List[str] = field(default_factory=list)
     mermaid: str | None = None
+    owner_notes: str | None = None
 
     @property
     def summary(self) -> str:
         roi = "∞" if self.metrics.total_cost == 0 else f"{self.metrics.roi:.2f}"
-        return (
+        base = (
             f"{self.name}: GMV=${self.metrics.total_gmv:.2f} | Cost=${self.metrics.total_cost:.2f} | "
             f"Profit=${self.metrics.profit:.2f} | ROI={roi}"
         )
+        if self.owner_notes:
+            return f"{base} | Owner={self.owner_notes}"
+        return base
 
 
 @dataclass
@@ -233,6 +237,7 @@ async def _run_hgm_async(seed: int, actions: int) -> StrategyOutcome:
         metrics=orchestrator.metrics,
         log=log_messages,
         mermaid=mermaid,
+        owner_notes=orchestrator.owner_note,
     )
 
 

@@ -56,6 +56,17 @@ What happens under the hood:
   `HGM_REPORT_DIR=$(pwd)/reports/custom make demo-hgm`
 - Forward additional CLI arguments to the simulator via `ARGS`:
   `ARGS="--set simulation.total_steps=60" make demo-hgm`
+- Issue contract-owner overrides directly from the CLI. Examples:
+  - Pause every new task: `ARGS="--set owner_controls.pause_all=true" make demo-hgm`
+  - Freeze expansions but keep evaluations running:
+    `ARGS="--set owner_controls.pause_expansions=true" make demo-hgm`
+  - Cap the number of actions scheduled by the CMP engine:
+    `ARGS="--set owner_controls.max_actions=25" make demo-hgm`
+
+Whenever an override is active the simulator surfaces the directive in both the
+console log (look for the `Owner=` segment on summary lines) and inside the
+generated `summary.json` artefact so that auditors can verify who froze or
+throttled the machine.
 
 ### Manual execution (no guidance)
 

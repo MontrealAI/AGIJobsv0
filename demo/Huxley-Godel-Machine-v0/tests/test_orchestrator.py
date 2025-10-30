@@ -9,6 +9,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from hgm_v0_demo.engine import HGMEngine
 from hgm_v0_demo.orchestrator import HGMDemoOrchestrator
+from hgm_v0_demo.owner_controls import OwnerControls
 from hgm_v0_demo.sentinel import Sentinel
 from hgm_v0_demo.thermostat import Thermostat, ThermostatConfig
 
@@ -100,3 +101,26 @@ def test_orchestrator_records_agent_snapshots() -> None:
     agent_ids = {agent.agent_id for agent in final_snapshot.agents}
     if summary.best_agent_id is not None:
         assert summary.best_agent_id in agent_ids
+
+
+def test_owner_controls_cap_actions() -> None:
+    engine = _build_engine()
+    thermostat = _build_thermostat(engine)
+    sentinel = _build_sentinel(engine)
+    owner_controls = OwnerControls(max_actions=1)
+    orchestrator = HGMDemoOrchestrator(
+        engine=engine,
+        thermostat=thermostat,
+        sentinel=sentinel,
+        rng=random.Random(5),
+        success_value=120.0,
+        evaluation_cost=10.0,
+        expansion_cost=20.0,
+        mutation_std=0.15,
+        quality_bounds=(0.0, 1.0),
+        owner_controls=owner_controls,
+    )
+
+    summary = orchestrator.run(total_steps=10, report_interval=5)
+    assert summary.owner_notes is not None
+    assert "Owner cap" in summary.owner_notes
