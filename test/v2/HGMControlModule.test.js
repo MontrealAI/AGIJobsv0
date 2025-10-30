@@ -43,7 +43,9 @@ describe('HGMControlModule', function () {
   });
 
   it('restricts non-owner access', async function () {
-    await expect(module.connect(other).pauseSystem()).to.be.revertedWith('Ownable: caller is not the owner');
+    await expect(module.connect(other).pauseSystem())
+      .to.be.revertedWithCustomError(module, 'OwnableUnauthorizedAccount')
+      .withArgs(other.address);
   });
 
   it('pauses and resumes the system', async function () {
