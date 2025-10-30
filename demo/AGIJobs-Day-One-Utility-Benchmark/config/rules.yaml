@@ -1,0 +1,3 @@
+# Sentinel-style guardrails governing whether a strategy qualifies for launch.
+utility_uplift_threshold: 0.05    # Require at least +5% utility uplift
+max_latency_delta: 0.05          # Allow at most +5% increase in latency

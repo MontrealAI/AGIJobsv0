@@ -1,0 +1,117 @@
+name: demo-day-one-utility-benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'demo/AGIJobs-Day-One-Utility-Benchmark/**'
+      - 'contracts/v2/modules/DayOneUtilityController.sol'
+      - '.github/workflows/demo-day-one-utility-benchmark.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'demo/AGIJobs-Day-One-Utility-Benchmark/**'
+      - 'contracts/v2/modules/DayOneUtilityController.sol'
+      - '.github/workflows/demo-day-one-utility-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  day-one-utility-demo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: |
+            api.github.com
+            files.pythonhosted.org
+            github.com
+            objects.githubusercontent.com
+            pypi.org
+            registry.npmjs.org
+            nodejs.org
+
+      - name: Set up Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install Python dependencies
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: make deps
+
+      - name: Enumerate strategies
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: python3 run_demo.py list
+
+      - name: Run strategy simulations
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: |
+          set -euo pipefail
+          for strat in e2e alphaevolve hgm trm omni; do
+            python3 run_demo.py simulate --strategy "$strat"
+          done
+
+      - name: Exercise owner controls
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: |
+          set -euo pipefail
+          python3 run_demo.py owner --show
+          python3 run_demo.py owner --set platform_fee_bps 210
+          python3 run_demo.py owner --toggle-pause
+          python3 run_demo.py owner --toggle-pause
+
+      - name: Validate artefacts
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+
+          base = pathlib.Path('demo/AGIJobs-Day-One-Utility-Benchmark/out')
+          required = [
+              'report_e2e.json',
+              'dashboard_e2e.html',
+              'snapshot_e2e.png',
+              'owner_controls_snapshot.json',
+          ]
+          for name in required:
+              path = base / name
+              if not path.exists():
+                  raise SystemExit(f'missing artefact: {path}')
+
+          report = json.loads((base / 'report_e2e.json').read_text())
+          if not report['guardrail_pass']['utility_uplift']:
+              raise SystemExit('utility guardrail must pass for e2e demo')
+          html = (base / 'dashboard_e2e.html').read_text()
+          for snippet in ['Day-One Utility Benchmark', 'class="mermaid"', 'Owner Controls Snapshot']:
+              if snippet not in html:
+                  raise SystemExit(f'missing dashboard snippet: {snippet}')
+          PY
+
+      - name: Run pytest
+        working-directory: demo/AGIJobs-Day-One-Utility-Benchmark
+        run: make verify
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+
+      - name: Install node dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+
+      - name: Compile day-one controller
+        run: npx hardhat compile --force

@@ -1,0 +1,87 @@
+strategies:
+  e2e:
+    title: "Day-One Utility Benchmark"
+    acceptance_multiplier: 1.09
+    cost_multiplier: 1.03
+    latency_multiplier: 0.96
+    reliability_score: 0.97
+    qualitative_uplift_bps: 180
+    treasury_bonus_bps: 35
+    description: >-
+      The flagship launch configuration that proves a non-technical operator can
+      wield AGI Jobs v0 (v2) to deploy a sovereign employment lattice from day
+      one. The orchestration pipeline auto-optimizes end-to-end throughput while
+      respecting strict latency guardrails.
+    highlights:
+      - Instant microset onboarding with verifiable audit log
+      - Autonomous treasury balancing with programmable basis point guardrails
+      - Guided launch playbook surfacing owner controls in natural language
+      - Telemetry-grade exports for compliance, board review, and investors
+  alphaevolve:
+    title: "AlphaEvolve Utility Surge"
+    acceptance_multiplier: 1.12
+    cost_multiplier: 1.05
+    latency_multiplier: 0.93
+    reliability_score: 0.96
+    qualitative_uplift_bps: 240
+    treasury_bonus_bps: 45
+    description: >-
+      Accelerates the candidate experience with predictive matching heuristics
+      and autonomous dispute resolution hooks, optimized for fast experimentation
+      in alpha partnerships.
+    highlights:
+      - Predictive matching heuristics unlock immediate hiring speed
+      - Autonomous dispute resolution hooks reduce operational drag
+      - Realtime governance ledger exports for investor-grade reporting
+      - Built-in capital efficiency telemetry for treasury oversight
+  hgm:
+    title: "Huxley-Gödel Machine Day-One Governance"
+    acceptance_multiplier: 1.08
+    cost_multiplier: 1.01
+    latency_multiplier: 0.95
+    reliability_score: 0.98
+    qualitative_uplift_bps: 160
+    treasury_bonus_bps: 28
+    description: >-
+      Hardened governance and monitoring configuration mirroring production
+      expectations for regulated markets. Prioritizes deterministic guardrails
+      and upgrade-safe owner operations.
+    highlights:
+      - Deterministic guardrail validations with double-entry audit trails
+      - Upgrade-safe owner command deck with pause + resume workflows
+      - Sovereign control plane for cross-module orchestration
+      - Zero-trust telemetry channel feeding compliance observatories
+  trm:
+    title: "Total Revenue Maximizer"
+    acceptance_multiplier: 1.15
+    cost_multiplier: 1.07
+    latency_multiplier: 0.99
+    reliability_score: 0.95
+    qualitative_uplift_bps: 320
+    treasury_bonus_bps: 52
+    description: >-
+      Aggressive monetization profile for high-throughput enterprises eager to
+      route entire talent networks through AGI Jobs. Validates that scale-ready
+      revenue streams remain under explicit owner supervision.
+    highlights:
+      - Treasury autopilot with guardrailed surge pricing modules
+      - Multi-market telemetry to prove business continuity readiness
+      - Owner-governed liquidity valves for sustainable reinvestment
+      - Performance envelopes for demand, supply, and arbitration rings
+  omni:
+    title: "Omni-Concord Infinity Launch"
+    acceptance_multiplier: 1.18
+    cost_multiplier: 1.06
+    latency_multiplier: 0.92
+    reliability_score: 0.99
+    qualitative_uplift_bps: 410
+    treasury_bonus_bps: 65
+    description: >-
+      Demonstrates the fully composable omnidomain orchestrator: governance,
+      execution, attestation, and treasury fusion in one click. This is the
+      operational portrait of an unstoppable labor intelligence platform.
+    highlights:
+      - Interleaved staking, validation, and arbitration autopipelines
+      - Multi-chain attestation proofs with zero-knowledge readiness
+      - Sovereign consensus overlays for global workforce mobility
+      - Treasury surge buffer with proactive risk-off sequencing
