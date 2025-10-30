@@ -94,5 +94,51 @@ class OwnerControls:
             return None
         return "; ".join(messages)
 
+    # ------------------------------------------------------------------
+    # Serialisation helpers
+    # ------------------------------------------------------------------
+    def to_mapping(self, *, include_nulls: bool = False) -> dict[str, object]:
+        """Return a JSON-friendly mapping of the owner directives."""
+
+        payload: dict[str, object] = {
+            "pause_all": self.pause_all,
+            "pause_expansions": self.pause_expansions,
+            "pause_evaluations": self.pause_evaluations,
+        }
+        if include_nulls or self.max_actions is not None:
+            payload["max_actions"] = self.max_actions
+        if include_nulls or self.note:
+            payload["note"] = self.note
+        return payload
+
+    def to_cli_args(
+        self,
+        *,
+        prefix: str = "owner_controls",
+        baseline: "OwnerControls" | None = None,
+    ) -> list[str]:
+        """Render overrides as ``--set`` CLI arguments.
+
+        Only values that differ from ``baseline`` (defaults if omitted) are
+        emitted.  Values are encoded using :func:`json.dumps` to guarantee that
+        strings and booleans are shell safe for ``demo_hgm.js`` and
+        ``run_demo.py``.
+        """
+
+        import json
+
+        baseline = baseline or OwnerControls()
+        current = self.to_mapping(include_nulls=True)
+        reference = baseline.to_mapping(include_nulls=True)
+        args: list[str] = []
+        for key in sorted(set(reference) | set(current)):
+            current_value = current.get(key)
+            reference_value = reference.get(key)
+            if current_value == reference_value:
+                continue
+            encoded = json.dumps(current_value)
+            args.append(f"--set {prefix}.{key}={encoded}")
+        return args
+
 
 __all__ = ["OwnerControls"]
