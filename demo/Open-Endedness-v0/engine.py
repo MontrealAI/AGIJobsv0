@@ -169,7 +169,7 @@ class OmniCurriculumEngine:
         probs = self._apply_interestingness(lp_weights)
         epsilon = self._config.exploration_epsilon
         if self._rng.random() < epsilon:
-            task = self._rng.choice(list(self._metrics.keys()))
+            task = self._rng.choices(list(self._metrics.keys()), k=1)[0]
         else:
             threshold = self._rng.random()
             cumulative = 0.0

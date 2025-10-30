@@ -209,7 +209,7 @@ class FunnelSimulator:
                 [s.probabilities for s in self._engine.history]
             )
             if self._strategy == "uniform":
-                task = self._rng.choice(list(self._engine.metrics.keys()))
+                task = self._rng.choices(list(self._engine.metrics.keys()), k=1)[0]
             else:
                 if episode % max(self._engine._config.partition_update_interval, 1) == 0:
                     self._fm_calls += 1
@@ -219,7 +219,7 @@ class FunnelSimulator:
             candidate_cohorts = self._task_to_cohorts.get(task, [])
             if not candidate_cohorts:
                 continue
-            cohort = self._rng.choice(candidate_cohorts)
+            cohort = self._rng.choices(candidate_cohorts, k=1)[0]
             task_config = next(t for t in cohort.tasks if t.task_id == task)
             success_prob = self._success_buffer[task]
             success = self._rng.random() < success_prob
