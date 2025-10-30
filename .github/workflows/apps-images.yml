@@ -27,11 +27,41 @@ jobs:
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            codeload.github.com:443
+            ghcr.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            index.docker.io:443
+            nodejs.org:443
+            registry.npmjs.org:443
+            registry.yarnpkg.com:443
+            storage.googleapis.com:443
+            dl.google.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            binaries.soliditylang.org:443
+            solc-bin.ethereum.org:443
+            api.securityscorecards.dev:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            oauth2.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
 
       - name: Login to GHCR (main)
         if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -39,7 +69,7 @@ jobs:
 
       - name: Build Console image
         id: build_console
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           file: apps/console/Dockerfile
@@ -87,23 +117,53 @@ jobs:
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            api.github.com:443
+            github.com:443
+            objects.githubusercontent.com:443
+            raw.githubusercontent.com:443
+            pkg-containers.githubusercontent.com:443
+            codeload.github.com:443
+            ghcr.io:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            index.docker.io:443
+            nodejs.org:443
+            registry.npmjs.org:443
+            registry.yarnpkg.com:443
+            storage.googleapis.com:443
+            dl.google.com:443
+            pypi.org:443
+            files.pythonhosted.org:443
+            binaries.soliditylang.org:443
+            solc-bin.ethereum.org:443
+            api.securityscorecards.dev:443
+            fulcio.sigstore.dev:443
+            rekor.sigstore.dev:443
+            oauth2.sigstore.dev:443
+            tuf-repo-cdn.sigstore.dev:443
+
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
 
       - name: Setup Node for web build
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Install root deps
-        run: npm ci
+        run: npm ci --no-audit --prefer-offline --progress=false
 
       - name: Webapp build
         run: npm --prefix apps/enterprise-portal run build
 
       - name: Login to GHCR (main)
         if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -111,7 +171,7 @@ jobs:
 
       - name: Build Portal image
         id: build_portal
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
           context: .
           file: apps/enterprise-portal/Dockerfile
