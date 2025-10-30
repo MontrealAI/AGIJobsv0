@@ -140,8 +140,13 @@ class Simulator:
         if self.strategy == "uniform":
             return self.rng.choice(available_tasks), False
         if self.strategy == "lp":
+            ranked_tasks = [
+                (task_id, state)
+                for task_id, state in self.engine.tasks.items()
+                if task_id not in self.engine.disabled_tasks
+            ]
             for task_id, state in sorted(
-                self.engine.tasks.items(), key=lambda kv: kv[1].learning_progress, reverse=True
+                ranked_tasks, key=lambda kv: kv[1].learning_progress, reverse=True
             ):
                 return task_id, False
             return self.rng.choice(available_tasks), False
