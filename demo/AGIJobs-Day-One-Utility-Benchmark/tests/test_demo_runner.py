@@ -40,6 +40,10 @@ def test_simulate_e2e_outputs():
     assert owner_snapshot.exists()
     snapshot_payload = json.loads(owner_snapshot.read_text(encoding="utf-8"))
     assert snapshot_payload["owner_address"].startswith("0x")
+    assert "utility_threshold_active" in snapshot_payload
+    assert snapshot_payload["utility_threshold_active"] == pytest.approx(
+        report["rules"]["utility_uplift_threshold"]
+    )
 
     report_path = orchestrator.output_dir / "report_e2e.json"
     payload = json.loads(report_path.read_text(encoding="utf-8"))
@@ -92,6 +96,15 @@ def test_owner_reset_restores_defaults():
     )
     for key in orchestrator.OWNER_SCHEMA.keys():
         assert live_payload[key] == defaults_payload[key]
+
+
+def test_owner_utility_guardrail_override():
+    orchestrator = _orchestrator()
+    orchestrator.update_owner_control("utility_threshold_override_bps", "1200")
+    report = orchestrator.simulate("e2e")
+    assert report["rules"]["utility_uplift_threshold"] == pytest.approx(0.12)
+    assert report["owner_controls"]["utility_threshold_active"] == pytest.approx(0.12)
+    assert report["guardrail_pass"]["utility_uplift"] is False
 
 
 def test_execute_human_format_summary():
