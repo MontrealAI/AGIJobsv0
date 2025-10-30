@@ -323,6 +323,12 @@
     </section>
 
     <section class="panel">
+      <h2>Mission Plan</h2>
+      <div id="mission-plan-metrics" class="metrics"></div>
+      <pre class="json" id="mission-plan-directives">Mission plan directives will appear here after loading telemetry.</pre>
+    </section>
+
+    <section class="panel">
       <h2>Planetary Topology Atlas</h2>
       <p class="note">Mermaid artifact: <code id="topology-path">—</code></p>
       <div id="topology-mermaid" class="mermaid">flowchart TD\n  placeholder((Awaiting topology...))</div>
@@ -417,6 +423,8 @@
   <script>
     const statusEl = document.getElementById('status');
     const missionMetricsEl = document.getElementById('mission-metrics');
+    const missionPlanMetricsEl = document.getElementById('mission-plan-metrics');
+    const missionPlanDirectivesEl = document.getElementById('mission-plan-directives');
     const blueprintMetricsEl = document.getElementById('blueprint-metrics');
     const blueprintEntriesJsonEl = document.getElementById('blueprint-entries-json');
     const shardTableBody = document.querySelector('#shard-table tbody');
@@ -534,6 +542,79 @@
           {
             note: 'Provide --jobs-blueprint to attach a declarative workload.',
             submittedJobs: metrics.jobsSubmitted ?? 0,
+          },
+          null,
+          2
+        );
+      }
+    }
+
+    function renderMissionPlan(plan = {}, metrics = {}) {
+      if (plan && Object.keys(plan).length > 0) {
+        const cards = [];
+        if (plan.label) {
+          cards.push({ label: 'Label', value: plan.label });
+        }
+        if (plan.description) {
+          cards.push({ label: 'Purpose', value: plan.description });
+        }
+        if (plan.author) {
+          cards.push({ label: 'Author', value: plan.author });
+        }
+        if (plan.version) {
+          cards.push({ label: 'Version', value: plan.version });
+        }
+        if (Array.isArray(plan.tags) && plan.tags.length > 0) {
+          cards.push({ label: 'Tags', value: plan.tags.join(', ') });
+        }
+        if (plan.source) {
+          cards.push({ label: 'Plan Source', value: `<code>${escapeHtml(plan.source)}</code>`, allowHtml: true });
+        }
+        if (plan.configSource) {
+          cards.push({ label: 'Config Source', value: `<code>${escapeHtml(plan.configSource)}</code>`, allowHtml: true });
+        }
+        if (plan.ownerCommandsSource) {
+          cards.push({ label: 'Owner Commands', value: `<code>${escapeHtml(plan.ownerCommandsSource)}</code>`, allowHtml: true });
+        }
+        if (plan.jobBlueprintSource) {
+          cards.push({ label: 'Blueprint Source', value: `<code>${escapeHtml(plan.jobBlueprintSource)}</code>`, allowHtml: true });
+        }
+        if (!plan.run || Object.keys(plan.run).length === 0) {
+          cards.push({
+            label: 'Runtime Directives',
+            value: 'Not provided',
+            hint: 'This dossier relies on CLI flags or defaults for runtime behaviour.',
+          });
+        }
+        renderMetrics(missionPlanMetricsEl, cards.length > 0 ? cards : [
+          {
+            label: 'Mission Plan',
+            value: 'Loaded',
+            hint: 'Plan metadata present but no descriptive fields provided.',
+          },
+        ]);
+
+        const baseRun = plan.run && Object.keys(plan.run).length > 0 ? plan.run : undefined;
+        const directives = {
+          ...(baseRun || {}),
+          jobsSubmitted: metrics.jobsSubmitted,
+          jobsCompleted: metrics.jobsCompleted,
+        };
+        if (!baseRun) {
+          directives.guidance = 'Mission plan omitted runtime directives; CLI defaults or overrides applied during execution.';
+        }
+        missionPlanDirectivesEl.textContent = JSON.stringify(directives, null, 2);
+      } else {
+        renderMetrics(missionPlanMetricsEl, [
+          {
+            label: 'Mission Plan',
+            value: 'None',
+            hint: 'Provide --plan to drive runs from a declarative mission dossier.',
+          },
+        ]);
+        missionPlanDirectivesEl.textContent = JSON.stringify(
+          {
+            guidance: 'Run with demo/Planetary-Orchestrator-Fabric-v0/config/mission-plan.example.json to preload mission directives.',
           },
           null,
           2
@@ -843,6 +924,7 @@
           { label: 'Value Drop Rate', value: valueDropRate, hint: 'Target <2% pending economic value.' },
         ]);
 
+        renderMissionPlan(summary.missionPlan || {}, metrics);
         renderBlueprint(summary.jobBlueprint, metrics);
 
         renderShardTable(summary.shards, summary.shardStatistics || {});

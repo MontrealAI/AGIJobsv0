@@ -342,6 +342,85 @@ function buildMissionChronicleMarkdown(args: {
       + 'This chronicle is the operator-grade briefing capturing throughput, spillover dynamics, and governance actions in a single, human-readable ledger.'
   );
   lines.push('');
+  if (options.missionPlan) {
+    const missionPlan = options.missionPlan;
+    lines.push('## Mission Plan');
+    lines.push('');
+    const planDetails: string[] = [];
+    if (missionPlan.label) {
+      planDetails.push(`- **Label:** ${missionPlan.label}`);
+    }
+    if (missionPlan.description) {
+      planDetails.push(`- **Purpose:** ${missionPlan.description}`);
+    }
+    if (missionPlan.author) {
+      planDetails.push(`- **Author:** ${missionPlan.author}`);
+    }
+    if (missionPlan.version) {
+      planDetails.push(`- **Version:** ${missionPlan.version}`);
+    }
+    if (missionPlan.source) {
+      planDetails.push(`- **Source:** \`${missionPlan.source}\``);
+    }
+    if (missionPlan.configSource) {
+      planDetails.push(`- **Config Source:** \`${missionPlan.configSource}\``);
+    }
+    if (missionPlan.ownerCommandsSource) {
+      planDetails.push(`- **Owner Commands:** \`${missionPlan.ownerCommandsSource}\``);
+    }
+    if (missionPlan.jobBlueprintSource) {
+      planDetails.push(`- **Blueprint:** \`${missionPlan.jobBlueprintSource}\``);
+    }
+    if (missionPlan.tags && missionPlan.tags.length > 0) {
+      planDetails.push(`- **Tags:** ${missionPlan.tags.join(', ')}`);
+    }
+    if (planDetails.length > 0) {
+      lines.push(...planDetails);
+    } else {
+      lines.push('- Mission plan metadata supplied no additional descriptors.');
+    }
+
+    const directives = missionPlan.run ?? {};
+    const directiveLines: string[] = [];
+    if (directives.jobs !== undefined) {
+      directiveLines.push(`- Target jobs: ${formatInteger(directives.jobs)}`);
+    }
+    if (directives.simulateOutage) {
+      directiveLines.push(`- Simulated outage node: ${directives.simulateOutage}`);
+    }
+    if (directives.outageTick !== undefined) {
+      directiveLines.push(`- Outage tick: ${formatInteger(directives.outageTick)}`);
+    }
+    if (directives.stopAfterTicks !== undefined) {
+      directiveLines.push(`- Planned stop-after ticks: ${formatInteger(directives.stopAfterTicks)}`);
+    }
+    if (directives.outputLabel) {
+      directiveLines.push(`- Preferred report label: ${directives.outputLabel}`);
+    }
+    if (directives.checkpoint?.path) {
+      directiveLines.push(`- Checkpoint path override: \`${directives.checkpoint.path}\``);
+    }
+    if (directives.checkpoint?.intervalTicks !== undefined) {
+      directiveLines.push(
+        `- Checkpoint interval override: ${formatInteger(directives.checkpoint.intervalTicks)} tick(s)`
+      );
+    }
+    if (directives.preserveReportDirOnResume !== undefined) {
+      directiveLines.push(
+        `- Preserve report directory on resume: ${directives.preserveReportDirOnResume ? 'yes' : 'no'}`
+      );
+    }
+    if (directives.ownerCommandSource && !missionPlan.ownerCommandsSource) {
+      directiveLines.push(`- Owner command schedule: \`${directives.ownerCommandSource}\``);
+    }
+    if (directiveLines.length > 0) {
+      lines.push('');
+      lines.push('**Run Directives**');
+      lines.push('');
+      lines.push(...directiveLines);
+    }
+    lines.push('');
+  }
   lines.push('## Run Overview');
   lines.push('');
   lines.push('| Metric | Value |');
@@ -1004,6 +1083,21 @@ async function writeArtifacts(
     jobBlueprintTotal: jobBlueprintCount > 0 ? jobBlueprintCount : undefined,
   };
 
+  const missionPlanSummary = options.missionPlan
+    ? {
+        label: options.missionPlan.label,
+        description: options.missionPlan.description,
+        author: options.missionPlan.author,
+        version: options.missionPlan.version,
+        tags: options.missionPlan.tags,
+        source: options.missionPlan.source,
+        configSource: options.missionPlan.configSource,
+        ownerCommandsSource: options.missionPlan.ownerCommandsSource ?? options.ownerCommandSource,
+        jobBlueprintSource: options.missionPlan.jobBlueprintSource ?? summaryOptions.jobBlueprintSource,
+        run: options.missionPlan.run,
+      }
+    : undefined;
+
   const jobBlueprintSummary = options.jobBlueprint
     ? {
         metadata: options.jobBlueprint.metadata,
@@ -1041,6 +1135,7 @@ async function writeArtifacts(
       pending: pendingCommands,
     },
     jobBlueprint: jobBlueprintSummary,
+    missionPlan: missionPlanSummary,
     topology: {
       mermaidPath: './mission-topology.mmd',
       htmlPath: './mission-topology.html',

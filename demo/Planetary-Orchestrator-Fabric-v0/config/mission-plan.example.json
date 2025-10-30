@@ -1,0 +1,32 @@
+{
+  "metadata": {
+    "label": "Kardashev-II Planetary Drill",
+    "description": "Launches the planetary fabric with surge-ready checkpoints, curated owner interventions, and a Kardashev workload.",
+    "author": "AGI Jobs v0 (v2) Mission Council",
+    "version": "1.0.0",
+    "tags": [
+      "demo",
+      "mission-plan",
+      "non-technical"
+    ]
+  },
+  "config": "./fabric.example.json",
+  "ownerCommands": "./owner-commands.example.json",
+  "jobBlueprint": "./jobs.blueprint.example.json",
+  "reporting": {
+    "directory": "../reports/mission-plan",
+    "defaultLabel": "mission-plan"
+  },
+  "run": {
+    "jobs": 10000,
+    "simulateOutage": "mars.gpu-helion",
+    "outageTick": 45,
+    "outputLabel": "mission-plan",
+    "stopAfterTicks": 240,
+    "checkpoint": {
+      "intervalTicks": 30,
+      "path": "../storage/mission-plan-checkpoint.json"
+    },
+    "preserveReportDirOnResume": true
+  }
+}

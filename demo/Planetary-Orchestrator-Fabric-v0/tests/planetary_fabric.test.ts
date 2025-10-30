@@ -1,10 +1,11 @@
 import { strict as assert } from 'node:assert';
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { CheckpointManager } from '../src/checkpoint';
 import { PlanetaryOrchestrator } from '../src/orchestrator';
 import { runAcceptanceSuite } from '../src/acceptance';
+import { loadMissionPlan } from '../src/config-loader';
 import {
   FabricConfig,
   JobBlueprint,
@@ -1110,6 +1111,83 @@ async function testAcceptanceSuiteHarness(): Promise<void> {
   await rm(dir, { force: true, recursive: true });
 }
 
+async function testAcceptanceSuiteMissionPlan(): Promise<void> {
+  const planPath = join(dirname(__filename), '..', 'config', 'mission-plan.example.json');
+  const tempDir = await mkdtemp(join(tmpdir(), 'fabric-plan-acceptance-'));
+  const checkpointPath = join(tempDir, 'checkpoint.json');
+  const reportingDir = join(tempDir, 'reports');
+
+  const plan = await loadMissionPlan(planPath);
+  const config = cloneConfig(plan.config);
+  config.checkpoint.path = checkpointPath;
+  config.reporting = { ...config.reporting, directory: reportingDir };
+
+  const missionPlanDescriptor = plan
+    ? {
+        source: plan.source,
+        label: plan.metadata?.label,
+        description: plan.metadata?.description,
+        author: plan.metadata?.author,
+        version: plan.metadata?.version,
+        tags: plan.metadata?.tags,
+        run: plan.run,
+        configSource: plan.configSource,
+        ownerCommandsSource: plan.ownerCommandsSource,
+        jobBlueprintSource: plan.jobBlueprintSource,
+      }
+    : undefined;
+
+  const trimmedBlueprint = plan.jobBlueprint
+    ? {
+        metadata: plan.jobBlueprint.metadata,
+        source: plan.jobBlueprint.source,
+        jobs: plan.jobBlueprint.jobs.slice(0, 3).map((entry, index) => ({
+          ...entry,
+          estimatedDurationTicks: entry.estimatedDurationTicks ?? (index + 2),
+          value: entry.value ?? 1500 + index * 100,
+          count: Math.min(entry.count ?? 1, 2),
+        })),
+      }
+    : undefined;
+
+  const trimmedJobsTotal = trimmedBlueprint
+    ? trimmedBlueprint.jobs.reduce((sum, entry) => sum + (entry.count ?? 1), 0)
+    : undefined;
+
+  const report = await runAcceptanceSuite({
+    config,
+    ownerCommands: plan.ownerCommands,
+    baseLabel: 'mission-plan-acceptance',
+    jobsHighLoad: trimmedJobsTotal ? Math.max(trimmedJobsTotal * 2, 30) : 60,
+    outageNodeId: plan.run?.simulateOutage,
+    outageTick: plan.run?.outageTick,
+    restartStopAfterTicks: Math.min(plan.run?.stopAfterTicks ?? 180, 40),
+    jobBlueprint: trimmedBlueprint,
+    jobBlueprintSource: trimmedBlueprint?.source,
+    missionPlan: missionPlanDescriptor,
+  });
+
+  assert.ok(report.missionPlan, 'mission plan metadata should be recorded in acceptance report');
+  assert.equal(report.missionPlan?.label, plan.metadata?.label);
+  assert.equal(report.missionPlan?.source, plan.source);
+  assert.equal(report.missionPlan?.jobBlueprintSource, plan.jobBlueprintSource);
+  if (plan.run?.outputLabel) {
+    assert.equal(report.missionPlan?.run?.outputLabel, plan.run.outputLabel);
+  }
+
+  assert.equal(report.highLoad.label, 'mission-plan-acceptance-high-load');
+  assert.equal(report.restart.label, 'mission-plan-acceptance-restart');
+  assert.ok(report.highLoad.assertions.length >= 1, 'high-load scenario should emit assertions');
+  assert.ok(report.restart.assertions.length >= 1, 'restart scenario should emit assertions');
+
+  const stageOneSummaryStat = await stat(report.restart.stageOneSummaryPath);
+  const stageTwoSummaryStat = await stat(report.restart.stageTwoSummaryPath);
+  assert.ok(stageOneSummaryStat.isFile(), 'stage one summary from mission plan run should exist');
+  assert.ok(stageTwoSummaryStat.isFile(), 'stage two summary from mission plan run should exist');
+
+  await rm(tempDir, { force: true, recursive: true });
+}
+
 async function testLoadHarness(): Promise<void> {
   const loadConfig: FabricConfig = {
     ...testConfig,
@@ -1200,6 +1278,7 @@ async function run(): Promise<void> {
   await testOwnerCommandSchedule();
   await testStopAndResumeDrill();
   await testAcceptanceSuiteHarness();
+  await testAcceptanceSuiteMissionPlan();
   await testLoadHarness();
   console.log('Planetary orchestrator fabric tests passed.');
   process.exit(0);
