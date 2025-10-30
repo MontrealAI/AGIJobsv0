@@ -1,0 +1,10 @@
+%% Triangulation consensus graph
+graph TD
+  Scenario[era-of-experience-baseline] --> Consensus[GMV Consensus 100.0%]
+  Scenario --> Seed0[Seed 1337\nGMV 1.015x\nROI 1.109x]
+  Seed0 --> Seed0Dominance[Dominance 68.8%]
+  Scenario --> Seed1[Seed 1776\nGMV 1.156x\nROI 1.331x]
+  Seed1 --> Seed1Dominance[Dominance 100.0%]
+  Scenario --> Seed2[Seed 2025\nGMV 1.059x\nROI 1.197x]
+  Seed2 --> Seed2Dominance[Dominance 100.0%]
+  Consensus --> Verdict[Confidence 95.8%]

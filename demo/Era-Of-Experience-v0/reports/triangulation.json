@@ -1,0 +1,86 @@
+{
+  "scenarioName": "era-of-experience-baseline",
+  "scenarioDescription": "Balanced Era of Experience activation with resilient agent swarm and production reward steering.",
+  "runs": [
+    {
+      "seed": 1337,
+      "baselineGMV": 56413.296138,
+      "learningGMV": 57271.927366,
+      "baselineROI": 10.773981,
+      "learningROI": 11.943118,
+      "baselineAutonomy": 1.56831,
+      "learningAutonomy": 1.586153,
+      "gmvLift": 1.01522,
+      "roiLift": 1.108515,
+      "autonomyLift": 1.011377,
+      "dominanceRatio": 0.6875
+    },
+    {
+      "seed": 1776,
+      "baselineGMV": 37273.481914,
+      "learningGMV": 43072.613494,
+      "baselineROI": 7.090859,
+      "learningROI": 9.439828,
+      "baselineAutonomy": 1.506532,
+      "learningAutonomy": 1.566822,
+      "gmvLift": 1.155583,
+      "roiLift": 1.331267,
+      "autonomyLift": 1.040019,
+      "dominanceRatio": 1
+    },
+    {
+      "seed": 2025,
+      "baselineGMV": 55712.146565,
+      "learningGMV": 58979.383153,
+      "baselineROI": 10.588845,
+      "learningROI": 12.6789,
+      "baselineAutonomy": 1.58206,
+      "learningAutonomy": 1.613498,
+      "gmvLift": 1.058645,
+      "roiLift": 1.197383,
+      "autonomyLift": 1.019871,
+      "dominanceRatio": 1
+    }
+  ],
+  "aggregate": {
+    "gmv": {
+      "mean": 1.076483,
+      "min": 1.01522,
+      "max": 1.155583,
+      "standardDeviation": 0.058675
+    },
+    "roi": {
+      "mean": 1.212388,
+      "min": 1.108515,
+      "max": 1.331267,
+      "standardDeviation": 0.091555
+    },
+    "autonomy": {
+      "mean": 1.023756,
+      "min": 1.011377,
+      "max": 1.040019,
+      "standardDeviation": 0.012011
+    },
+    "dominanceMean": 0.895833,
+    "successRatio": 1,
+    "combinedGMV": {
+      "baseline": 149398.924617,
+      "learning": 159323.924013,
+      "lift": 1.066433
+    },
+    "combinedROI": 1.199185
+  },
+  "verdict": {
+    "gmvPositive": true,
+    "roiPositive": true,
+    "autonomyPositive": true,
+    "consensusRatio": 1,
+    "dominanceMean": 0.895833,
+    "combinedLift": 1.066433,
+    "confidenceScore": 0.958333,
+    "flaggedSeeds": [],
+    "notes": [
+      "All seeds delivered compounding lift across GMV, ROI, and autonomy."
+    ]
+  }
+}

@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import path from 'node:path';
 import { runEraOfExperienceDemo } from '../src/demoRunner';
+import { performTriangulation } from '../src/triangulation';
 
 const scenarioPath = path.resolve('demo/Era-Of-Experience-v0/config/scenarios/baseline.json');
 
@@ -28,4 +29,16 @@ test('identical seeds produce deterministic metrics', async () => {
   const second = await runEraOfExperienceDemo(options);
   assert.equal(first.learning.metrics.gmv, second.learning.metrics.gmv, 'GMV must be deterministic');
   assert.equal(first.learning.metrics.roi, second.learning.metrics.roi, 'ROI must be deterministic');
+});
+
+test('triangulation confirms positive lift across seeds', async () => {
+  const result = await performTriangulation({
+    scenarioPath,
+    seeds: [1337, 1776, 2025],
+    jobCountOverride: 96,
+    writeReports: false
+  });
+  assert.ok(result.verdict.gmvPositive, 'GMV lift should remain positive across seeds');
+  assert.ok(result.verdict.roiPositive, 'ROI lift should remain positive across seeds');
+  assert.ok(result.aggregate.dominanceMean >= 0.5, 'Learning policy should dominate baseline for most of the trajectory');
 });
