@@ -1,0 +1,143 @@
+# Turn-key configuration for the Open-Endedness demo.
+seed: 1337
+episodes: 600
+report:
+  include_plots: true
+  write_distribution_csv: true
+  write_telemetry: true
+  gmvs_target_usd: 250000
+
+omni:
+  fast_ema_beta: 0.1
+  slow_ema_beta: 0.01
+  lp_floor: 1e-6
+  moi_weight_interesting: 1.0
+  moi_weight_boring: 0.001
+  min_probability: 0.001
+  fallback_strategy: "uniform"
+  partition_update_interval: 25
+  exploration_epsilon: 0.08
+  exploration_decay: 0.995
+
+interestingness:
+  model: "stub"
+  stub_profiles:
+    - name: "conversion"
+      description: "Conversion funnel heuristics based on OMNI Appendix prompts."
+      boring_relations:
+        shortlist_top_candidates:
+          - shortlist_top_candidates_variant_b
+          - shortlist_top_candidates_variant_c
+        offer_discount_email_a:
+          - offer_discount_email_b
+          - offer_discount_email_c
+        onboarding_call_script_a:
+          - onboarding_call_script_b
+    - name: "growth"
+      description: "Aggressive growth heuristics prioritising GMV deltas."
+      boring_relations:
+        offer_discount_email_a:
+          - offer_discount_email_c
+thermostat:
+  roi_target: 4.0
+  roi_floor: 1.5
+  fm_cost_per_call: 0.03
+  max_daily_fm_cost: 300.0
+  epsilon_range:
+    min: 0.02
+    max: 0.25
+  moi_interval_bounds:
+    min: 10
+    max: 120
+  adjust_every: 12
+  gmvs_smoothing_beta: 0.2
+  cost_smoothing_beta: 0.1
+
+sentinels:
+  roi_task_floor: 1.0
+  roi_overall_floor: 1.8
+  moi_qps_max: 0.2
+  moi_daily_max: 600
+  min_task_entropy: 0.65
+  budget_limit: 1000.0
+  diversity_injection_window: 30
+  diversity_min_unique: 5
+
+simulation:
+  cohorts:
+    enterprise:
+      value_scale: 1.8
+      tasks:
+        - id: shortlist_top_candidates
+          base_success: 0.18
+          max_success: 0.72
+          learning_rate: 0.015
+          gmv: 1800
+        - id: offer_discount_email_a
+          base_success: 0.09
+          max_success: 0.6
+          learning_rate: 0.022
+          gmv: 2200
+        - id: onboarding_call_script_a
+          base_success: 0.12
+          max_success: 0.55
+          learning_rate: 0.014
+          gmv: 2600
+        - id: shortlist_top_candidates_variant_b
+          base_success: 0.17
+          max_success: 0.4
+          learning_rate: 0.018
+          gmv: 900
+        - id: shortlist_top_candidates_variant_c
+          base_success: 0.17
+          max_success: 0.38
+          learning_rate: 0.016
+          gmv: 850
+        - id: offer_discount_email_b
+          base_success: 0.1
+          max_success: 0.42
+          learning_rate: 0.015
+          gmv: 950
+        - id: offer_discount_email_c
+          base_success: 0.08
+          max_success: 0.41
+          learning_rate: 0.013
+          gmv: 870
+        - id: onboarding_call_script_b
+          base_success: 0.1
+          max_success: 0.43
+          learning_rate: 0.011
+          gmv: 940
+    smb:
+      value_scale: 1.0
+      tasks:
+        - id: shortlist_top_candidates
+          base_success: 0.12
+          max_success: 0.55
+          learning_rate: 0.012
+          gmv: 950
+        - id: offer_discount_email_a
+          base_success: 0.07
+          max_success: 0.45
+          learning_rate: 0.017
+          gmv: 1100
+        - id: onboarding_call_script_a
+          base_success: 0.08
+          max_success: 0.42
+          learning_rate: 0.01
+          gmv: 1250
+        - id: shortlist_top_candidates_variant_b
+          base_success: 0.11
+          max_success: 0.28
+          learning_rate: 0.012
+          gmv: 450
+        - id: offer_discount_email_b
+          base_success: 0.09
+          max_success: 0.33
+          learning_rate: 0.009
+          gmv: 420
+        - id: onboarding_call_script_b
+          base_success: 0.09
+          max_success: 0.36
+          learning_rate: 0.009
+          gmv: 400
