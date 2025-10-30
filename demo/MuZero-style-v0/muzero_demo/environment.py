@@ -1,213 +1,267 @@
-"""Domain-specific environment abstractions for the MuZero-style demo.
-
-The environment models a simplified AGI Jobs marketplace where a planner
-selects which opportunity to pursue at each decision point.  The
-observation surface is deliberately compact so it can be consumed by the
-MuZero network yet expressive enough to capture economic trade-offs.
-"""
+"""Economic job environment for the MuZero-style demo."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, List, Optional
-import copy
+from dataclasses import dataclass, field
+from typing import Dict, List
+
 import numpy as np
 
-
-@dataclass
-class JobOpportunity:
-    """Represents a single opportunity available to the planner."""
-
-    identifier: str
-    reward: float
-    cost: float
-    success_probability: float
-    strategic_value: float
-    execution_time: int
-
-    def expected_utility(self) -> float:
-        """Compute the expected immediate utility for the job."""
-
-        return self.success_probability * self.reward - self.cost
+FEATURES_PER_JOB = 5
+GLOBAL_FEATURES = 2
 
 
 @dataclass
 class EnvironmentConfig:
-    """Configuration knobs for the simulated AGI Jobs marketplace."""
+    """Configuration describing the stochastic planning environment."""
 
-    max_jobs: int = 6
-    planning_horizon: int = 8
-    starting_budget: float = 150.0
+    max_jobs: int = 5
+    horizon: int = 6
+    rng_seed: int | None = None
+    starting_budget: float = 120.0
+    min_reward: float = 60.0
+    max_reward: float = 240.0
+    min_cost: float = 10.0
+    max_cost: float = 90.0
+    min_success_prob: float = 0.25
+    max_success_prob: float = 0.95
+    opportunity_std: float = 0.1
     discount: float = 0.997
-    skip_penalty: float = -0.5
-    risk_aversion: float = 0.15
-    rng_seed: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        if self.max_jobs <= 0:
+            raise ValueError("max_jobs must be positive")
+        if self.horizon <= 0:
+            raise ValueError("horizon must be positive")
+        if self.starting_budget <= 0:
+            raise ValueError("starting_budget must be positive")
+        if not 0.0 < self.min_success_prob < 1.0:
+            raise ValueError("min_success_prob must lie in (0, 1)")
+        if not 0.0 < self.max_success_prob <= 1.0:
+            raise ValueError("max_success_prob must lie in (0, 1]")
+        if self.min_success_prob >= self.max_success_prob:
+            raise ValueError("min_success_prob must be strictly less than max_success_prob")
+        if self.min_reward <= 0 or self.max_reward <= 0:
+            raise ValueError("rewards must be strictly positive")
+        if self.min_cost <= 0 or self.max_cost <= 0:
+            raise ValueError("costs must be strictly positive")
 
 
 @dataclass
 class PlannerObservation:
-    """Observation emitted to the MuZero network."""
+    """Structured observation returned to planning components."""
 
     vector: np.ndarray
     legal_actions: List[int]
     action_metadata: Dict[int, Dict[str, float]]
-    step_index: int
     budget_remaining: float
+    timestep: int
+
+    def __iter__(self):
+        yield self.vector
+        yield self.legal_actions
+        yield self.action_metadata
+        yield self.budget_remaining
+        yield self.timestep
 
 
 @dataclass
-class PlannerStepResult:
+class StepResult:
+    """Container describing the outcome of a single environment step."""
+
     observation: PlannerObservation
     reward: float
     done: bool
-    info: Dict[str, float]
+    info: Dict[str, float] = field(default_factory=dict)
+
+    def __iter__(self):
+        yield self.observation
+        yield self.reward
+        yield self.done
+        yield self.info
 
 
-@dataclass
-class PlannerAction:
-    index: int
-    job: Optional[JobOpportunity]
-    label: str
+def vector_size(config: EnvironmentConfig) -> int:
+    """Return the flattened observation size for ``config``."""
+
+    return FEATURES_PER_JOB * config.max_jobs + GLOBAL_FEATURES
 
 
 class AGIJobsPlanningEnv:
-    """A lightweight economic simulator for MuZero self-play."""
+    """Stochastic economic environment used by the demo planner."""
+
+    skip_action: int
 
     def __init__(self, config: EnvironmentConfig) -> None:
         self.config = config
         self._rng = np.random.default_rng(config.rng_seed)
-        self._jobs: List[JobOpportunity] = []
-        self._step = 0
-        self._budget: float = config.starting_budget
-        self._history: List[Dict[str, float]] = []
+        self.skip_action = config.max_jobs
+        self.reset()
 
     # ------------------------------------------------------------------
-    # Lifecycle helpers
+    # Environment lifecycle
     # ------------------------------------------------------------------
     def reset(self) -> PlannerObservation:
-        """Reset the simulator to an initial randomly sampled state."""
+        """Reset the environment state and return the initial observation."""
 
-        self._rng = np.random.default_rng(self.config.rng_seed)
-        self._jobs = [self._sample_job(i) for i in range(self.config.max_jobs)]
-        self._step = 0
-        self._budget = self.config.starting_budget
-        self._history.clear()
-        return self._build_observation()
+        self._timestep = 0
+        self._budget = float(self.config.starting_budget)
+        self._history: List[Dict[str, float]] = []
+        self._jobs = [self._generate_job() for _ in range(self.config.max_jobs)]
+        return self._make_observation()
 
-    def clone(self) -> "AGIJobsPlanningEnv":
-        """Create a deep copy used for lookahead search."""
+    def seed(self, seed: int) -> None:
+        """Re-seed the underlying pseudo random generator."""
 
-        return copy.deepcopy(self)
+        self._rng = np.random.default_rng(seed)
+
+    def observe(self) -> PlannerObservation:
+        """Return the latest observation without advancing the environment."""
+
+        return self._make_observation()
 
     # ------------------------------------------------------------------
-    # Core simulation logic
+    # Core dynamics
     # ------------------------------------------------------------------
-    def legal_actions(self) -> List[PlannerAction]:
-        actions: List[PlannerAction] = []
-        for idx, job in enumerate(self._jobs):
-            if job.cost <= self._budget:
-                actions.append(PlannerAction(index=idx, job=job, label=f"commit:{job.identifier}"))
-        actions.append(PlannerAction(index=len(self._jobs), job=None, label="skip"))
-        return actions
+    def step(self, action: int) -> StepResult:
+        """Apply ``action`` and return the resulting transition."""
 
-    def step(self, action_index: int) -> PlannerStepResult:
-        actions = self.legal_actions()
-        if not any(a.index == action_index for a in actions):
-            raise ValueError(f"Illegal action index {action_index} for current state")
+        if self.done:
+            raise RuntimeError("Cannot act on a finished episode")
+        if action not in self._legal_actions():
+            raise ValueError(f"Action {action} is not available")
 
-        chosen = next(a for a in actions if a.index == action_index)
-        info: Dict[str, float] = {"step": float(self._step)}
-        utility_reward = 0.0
+        info: Dict[str, float] = {"timestep": float(self._timestep)}
+        reward = 0.0
+        success = False
 
-        if chosen.job is None:
-            utility_reward = self.config.skip_penalty
-            info["action"] = -1
+        if action == self.skip_action:
+            info["skipped"] = 1.0
         else:
-            job = chosen.job
-            success = self._rng.random() < job.success_probability
-            realized_reward = job.reward if success else 0.0
-            utility_reward = realized_reward - job.cost - self.config.risk_aversion * job.strategic_value
-            self._budget -= job.cost
-            info.update(
-                {
-                    "action": float(action_index),
-                    "job_reward": realized_reward,
-                    "job_cost": job.cost,
-                    "job_success_prob": job.success_probability,
-                    "job_strategic_value": job.strategic_value,
-                    "job_succeeded": 1.0 if success else 0.0,
-                }
-            )
-            self._jobs.pop(action_index)
-            # Replace consumed job with a new one to maintain opportunity flow.
-            self._jobs.append(self._sample_job(len(self._jobs)))
+            job = self._jobs[action]
+            cost = job["cost"]
+            payout = job["reward"]
+            success_probability = job["success_probability"]
+            affordable = self._budget >= cost
+            info.update({
+                "cost": cost,
+                "payout": payout,
+                "success_probability": success_probability,
+            })
+            if not affordable:
+                info["affordable"] = 0.0
+            spend = min(cost, self._budget)
+            self._budget -= spend
+            success = bool(self._rng.random() < success_probability and affordable)
+            if success:
+                reward = payout - cost
+                self._budget += payout
+            else:
+                reward = -cost
+            info.update({
+                "success": 1.0 if success else 0.0,
+                "net_reward": reward,
+            })
+            self._jobs[action] = self._generate_job()
 
-        self._step += 1
-        done = self._step >= self.config.planning_horizon or self._budget <= 0
-        discount_factor = self.config.discount ** self._step
-        discounted_reward = utility_reward * discount_factor
-        self._history.append({"reward": utility_reward, "discounted_reward": discounted_reward, "budget": self._budget})
-
-        observation = self._build_observation()
-        return PlannerStepResult(observation=observation, reward=utility_reward, done=done, info=info)
-
-    # ------------------------------------------------------------------
-    # Observation encoding
-    # ------------------------------------------------------------------
-    def _build_observation(self) -> PlannerObservation:
-        legal = self.legal_actions()
-        max_jobs = self.config.max_jobs
-        feature_length = 5
-        obs = np.zeros(2 + max_jobs * feature_length, dtype=np.float32)
-        obs[0] = self._budget / (self.config.starting_budget + 1e-6)
-        obs[1] = self._step / (self.config.planning_horizon + 1e-6)
-        metadata: Dict[int, Dict[str, float]] = {}
-        for idx, job in enumerate(self._jobs[:max_jobs]):
-            base = 2 + idx * feature_length
-            obs[base] = job.reward / 200.0
-            obs[base + 1] = job.cost / 200.0
-            obs[base + 2] = job.success_probability
-            obs[base + 3] = job.strategic_value / 100.0
-            obs[base + 4] = 1.0 if job.cost <= self._budget else 0.0
-            metadata[idx] = {
-                "reward": job.reward,
-                "cost": job.cost,
-                "success_probability": job.success_probability,
-                "strategic_value": job.strategic_value,
-            }
-        metadata[len(self._jobs)] = {"skip": 1.0}
-        legal_indices = [action.index for action in legal]
-        return PlannerObservation(vector=obs, legal_actions=legal_indices, action_metadata=metadata, step_index=self._step, budget_remaining=self._budget)
+        self._timestep += 1
+        self._history.append({"reward": reward, "success": 1.0 if success else 0.0, "budget": self._budget})
+        observation = self._make_observation()
+        done = self.done
+        info["remaining_budget"] = self._budget
+        info["done"] = 1.0 if done else 0.0
+        return StepResult(observation=observation, reward=float(reward), done=done, info=info)
 
     # ------------------------------------------------------------------
-    # Job sampling helpers
-    # ------------------------------------------------------------------
-    def _sample_job(self, index: int) -> JobOpportunity:
-        reward = float(self._rng.uniform(30, 180))
-        cost = float(self._rng.uniform(10, 80))
-        success = float(self._rng.uniform(0.35, 0.95))
-        strategic = float(self._rng.uniform(5, 60))
-        execution_time = int(self._rng.integers(1, 4))
-        return JobOpportunity(
-            identifier=f"J{index}-{self._step}",
-            reward=reward,
-            cost=cost,
-            success_probability=success,
-            strategic_value=strategic,
-            execution_time=execution_time,
-        )
-
-    # ------------------------------------------------------------------
-    # Diagnostics
+    # Introspection helpers
     # ------------------------------------------------------------------
     def summarize_history(self) -> Dict[str, float]:
-        if not self._history:
-            return {"total_reward": 0.0, "discounted_return": 0.0}
-        total_reward = sum(step["reward"] for step in self._history)
-        total_discounted = sum(step["discounted_reward"] for step in self._history)
-        return {"total_reward": total_reward, "discounted_return": total_discounted, "remaining_budget": self._budget}
+        """Aggregate key metrics from the executed episode."""
+
+        total_reward = float(sum(step["reward"] for step in self._history))
+        successes = float(sum(step["success"] for step in self._history))
+        return {
+            "total_reward": total_reward,
+            "successful_trials": successes,
+            "remaining_budget": float(self._budget),
+            "steps": float(self._timestep),
+        }
+
+    @property
+    def done(self) -> bool:
+        return self._timestep >= self.config.horizon or self._budget <= 0.0
+
+    @property
+    def num_actions(self) -> int:
+        return self.config.max_jobs + 1
+
+    # ------------------------------------------------------------------
+    # Internal utilities
+    # ------------------------------------------------------------------
+    def _generate_job(self) -> Dict[str, float]:
+        reward = float(self._rng.uniform(self.config.min_reward, self.config.max_reward))
+        max_cost = min(self.config.max_cost, reward)
+        cost = float(self._rng.uniform(self.config.min_cost, max_cost))
+        success_probability = float(self._rng.uniform(self.config.min_success_prob, self.config.max_success_prob))
+        duration = int(self._rng.integers(1, max(2, self.config.horizon // 2 + 1)))
+        return {
+            "reward": reward,
+            "cost": cost,
+            "success_probability": success_probability,
+            "duration": float(duration),
+        }
+
+    def _legal_actions(self) -> List[int]:
+        return list(range(self.config.max_jobs)) + [self.skip_action]
+
+    def _make_observation(self) -> PlannerObservation:
+        features: List[float] = []
+        metadata: Dict[int, Dict[str, float]] = {}
+        for index, job in enumerate(self._jobs):
+            reward = job["reward"]
+            cost = job["cost"]
+            success_probability = job["success_probability"]
+            expected_value = success_probability * (reward - cost) - (1.0 - success_probability) * cost
+            duration = job["duration"]
+            features.extend(
+                [
+                    reward / self.config.max_reward,
+                    cost / max(self.config.max_cost, 1.0),
+                    success_probability,
+                    expected_value / self.config.max_reward,
+                    duration / max(self.config.horizon, 1),
+                ]
+            )
+            metadata[index] = {
+                "reward": reward,
+                "cost": cost,
+                "success_probability": success_probability,
+                "expected_value": expected_value,
+                "duration": duration,
+                "affordable": 1.0 if self._budget >= cost else 0.0,
+            }
+
+        features.append(self._budget / self.config.starting_budget)
+        features.append((self.config.horizon - self._timestep) / max(self.config.horizon, 1))
+        vector = np.array(features, dtype=np.float32)
+        legal_actions = self._legal_actions()
+        metadata[self.skip_action] = {"reward": 0.0, "cost": 0.0, "success_probability": 0.0, "expected_value": 0.0, "duration": 0.0}
+        return PlannerObservation(
+            vector=vector,
+            legal_actions=legal_actions,
+            action_metadata=metadata,
+            budget_remaining=float(self._budget),
+            timestep=self._timestep,
+        )
 
 
-def vector_size(config: EnvironmentConfig) -> int:
-    """Utility helper to compute observation vector length for configs."""
+JobsEnvironment = AGIJobsPlanningEnv
 
-    return 2 + config.max_jobs * 5
+
+__all__ = [
+    "AGIJobsPlanningEnv",
+    "EnvironmentConfig",
+    "JobsEnvironment",
+    "PlannerObservation",
+    "StepResult",
+    "vector_size",
+]

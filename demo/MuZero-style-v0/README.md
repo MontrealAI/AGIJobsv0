@@ -1,152 +1,140 @@
-# MuZero-style-v0 👁️✨
+# MuZero-Style Planning Demo for AGI Jobs v0/v2
 
-> **AGI Jobs v0 (v2) MuZero-style Planning Demo** – A turnkey, production-calibre showcase revealing how non-technical operators can wield AGI Jobs to deploy superhuman economic planners within minutes.
+> **Mission Control Status**: Fully automated MuZero-style economic planner demonstrating how non-technical builders wield AGI Jobs v0/v2 to orchestrate superhuman job-market strategies.
 
----
+## 1. Ultra-Deep Situation Analysis & Subtask Decomposition
 
-## 🚀 Why this demo matters
+| Phase | Objective | Key Outputs |
+|-------|-----------|-------------|
+| Discovery | Capture MuZero requirements inside AGI Jobs economics. | Narrative brief, capability map. |
+| Architecture | Define network, environment, planner, and safeguards. | MuZero block diagram, module contracts. |
+| Implementation | Ship production-ready demo stack under `demo/MuZero-style-v0`. | Code, configs, CLI, notebooks. |
+| Validation | Quantify lift vs. greedy & policy-only baselines. | Simulation report, telemetry. |
+| Governance | Empower owner controls, safety sentinels, thermostat. | Config schema, guardrails. |
 
-- **Empowers non-technical leaders** – One command launches self-play, learning, and evaluation.
-- **MuZero-inspired** – Implements representation `h`, dynamics `g`, prediction `f`, and a pUCT searcher tuned for AGI Jobs economics.
-- **Economic-first reward shaping** – Every decision maximises `GMV - Cost`, respecting capital, risk, and operational guard-rails.
-- **Safe to iterate** – Configuration-first design keeps the contract owner in full control over horizons, budgets, thermostats, and deployment cadence.
+### Multi-Angle Reasoning Checklist
 
-> When you run this demo you are effectively steering a superintelligent-scale planner that continuously re-invests in the most profitable futures for your marketplace.
+- **Primary hypothesis**: MuZero-style search maximises long-horizon GMV − Cost when embedded in AGI Jobs economics.
+- **Counterfactual**: If MuZero underperforms greedy heuristics, thermostat + sentinels must detect drift and auto-fallback.
+- **Edge Scenarios**: scarce liquidity, volatile success probabilities, adversarial job feeds, contract owner policy changes.
+- **Verification Stack**: analytic calculations, simulation rollouts, statistical tests, config diffing, logging review.
 
----
-
-## 🧠 System architecture at a glance
+### Systems Blueprint
 
 ```mermaid
-flowchart TD
-    A[Marketplace State] -->|Observation hθ| B[Latent State]
-    B -->|Prediction fθ| C[Policy π & Value v]
-    B -->|Recurrent gθ + action a| D[Next Latent]
-    D -->|Reward r| C
-    C -->|pUCT Search| E[MuZero Planner]
-    E -->|Action Recommendation| F[AGI Jobs Orchestrator]
-    subgraph Economic Thermostat
-        B --> T[ROI Thermostat]
-        T --> E
+diagram TB
+    subgraph User Journey
+        U[Non-technical operator] -->|Launches| CLI
+        CLI --> Dashboard
+        Dashboard --> Reports
     end
-    subgraph Sentinel Safety Layer
-        E --> S[Value Alignment Sentinel]
-        S --> F
+
+    subgraph MuZero Stack
+        ENV[Jobs Economy Environment]
+        NET[MuZero Network hθ/gθ/fθ]
+        MCTS[Production pUCT Planner]
+        THERM[ROI Thermostat]
+        SENT[Safety Sentinels]
+        TELE[Telemetry & Lineage]
+        TRAIN[Self-Play Training Loop]
+        REPLAY[Prioritised Replay Buffer]
     end
-    F -->|Economic Outcome| A
-    subgraph Training Loop
-        F -->|Reward Trace| G[Replay Buffer]
-        G --> H[Target Generator]
-        H --> I[MuZero Learner]
-        I -->|Updates θ| B
-    end
+
+    U -->|Chooses Scenario| ENV
+    ENV -->|Observations| NET
+    NET -->|Latent state & priors| MCTS
+    MCTS -->|Action plan| ENV
+    TRAIN -->|Updates| NET
+    REPLAY --> TRAIN
+    TELE --> Dashboard
+    SENT -->|Constraints & Alerts| MCTS
+    THERM -->|Sim budget| MCTS
 ```
 
-- `environment.py` – models the AGI Jobs market, emitting rich observations and legally constrained actions.
-- `network.py` – compact PyTorch implementation of MuZero's three-headed network.
-- `mcts.py` – production-ready pUCT search with Dirichlet root noise, min-max Q normalisation, and temperature-controlled sampling.
-- `thermostat.py` – ROI-aware planning thermostat that adapts simulation budgets to uncertainty, budget pressure, and decision horizon.
-- `sentinel.py` – always-on safeguard monitoring value alignment, simulation ROI, and budget compliance.
-- `training.py` – end-to-end self-play, replay buffer, target generation, learner loop, plus sentinel/thermostat instrumentation.
-- `evaluation.py` – contrasts MuZero against greedy and policy-only baselines with Rich dashboards and sentinel reporting.
+## 2. Demo Highlights
 
----
+- **Zero-Code Onboarding**: one command bootstraps environment, trains compact MuZero, and launches comparison dashboard.
+- **Real-Time Planning**: ROI-aware thermostat keeps compute in-budget while pUCT search hunts profitable futures.
+- **Owner Sovereignty**: declarative config grants full control—budgets, exploration, reward shaping, pause switch.
+- **Safety Net**: sentinels watch calibration, enforce capital discipline, and auto-fallback to trusted heuristics.
 
-## 🛠️ Quickstart (5 minutes)
+## 3. Directory Layout
 
-1. **Install dependencies (isolated virtualenv recommended):**
-   ```bash
-   pip install --index-url https://download.pytorch.org/whl/cpu torch==2.1.2
-   pip install -r demo/MuZero-style-v0/requirements.txt
-   ```
-2. **Train & evaluate in one line:**
-   ```bash
-   PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli train --iterations 6 --episodes-per-iteration 8 --checkpoint demo/MuZero-style-v0/artifacts/muzero.pt
-   PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli evaluate --checkpoint demo/MuZero-style-v0/artifacts/muzero.pt --episodes 50
-   ```
-3. **Observe the Rich table showing MuZero outperforming greedy heuristics on net utility.**
-
-The CLI is intentionally narrative-driven so that an operator can read logs and understand exactly what the planner is learning and why.
-
----
-
-## 📊 Command Nexus (Typer CLI)
-
-| Command | Purpose | Key Flags |
-| --- | --- | --- |
-| `train` | Launches self-play and gradient updates with thermostat & sentinel metrics. | `--iterations`, `--episodes-per-iteration`, `--checkpoint`, `--config-path` |
-| `evaluate` | Compares MuZero vs. greedy vs. policy-only planners with sentinel tracking. | `--checkpoint`, `--episodes`, `--config-path` |
-
-Example interactive session:
-```bash
-$ PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli train --iterations 4 --episodes-per-iteration 10 --checkpoint demo/MuZero-style-v0/artifacts/model.pt
-Self-play & learning ━━━━━━━━━━━━━━━━ 100% 4/4 • 0:45:12
-[10:17:32] Iteration 1 | loss=0.8421 | avg_sim=42.8 | sentinel_mae=3.12 | alert=no
-...
-[10:19:05] Saved model checkpoint to demo/MuZero-style-v0/artifacts/model.pt
-
-$ PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli evaluate --checkpoint demo/MuZero-style-v0/artifacts/model.pt
-────────────────── MuZero Economic Impact Evaluation ──────────────────
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┓
-┃ Strategy         ┃ Avg Utility┃ Std Dev ┃ Avg Discounted Return┃ Episodes ┃
-┣━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━╋━━━━━━━━━╋━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━┫
-┃ MuZero Planner   ┃   86.45    ┃ 12.14   ┃          62.31       ┃    50    ┃
-┃ Greedy Utility   ┃   64.08    ┃ 15.02   ┃          44.10       ┃    50    ┃
-┃ Policy Head Only ┃   57.92    ┃ 18.45   ┃          41.33       ┃    50    ┃
-┗━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━┻━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━┛
-Sentinel summary: episodes=50, mae=4.11, alert=no, fallback=no
+```text
+demo/MuZero-style-v0/
+├── README.md
+├── config
+│   └── muzero_demo.yaml
+├── notebooks
+│   └── exploratory_planning.ipynb
+├── muzero_demo
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── environment.py
+│   ├── evaluation.py
+│   ├── mcts.py
+│   ├── network.py
+│   ├── planner.py
+│   ├── replay.py
+│   ├── sentinel.py
+│   ├── telemetry.py
+│   ├── thermostat.py
+│   └── training.py
+└── scripts
+    └── run_demo.py
 ```
 
----
-
-## 🔧 Configuration mastery
-
-All levers live in [`config/default.yaml`](config/default.yaml):
-
-- **Environment:** adjust horizon, job counts, budgets, risk coefficients.
-- **Planner:** control simulations, exploration noise, depth limits, and discount.
-- **Training:** tune replay sizes, learning rates, loss weights, and temperature.
-- **Thermostat:** guarantee ROI-aware planning effort via min/max simulations and entropy thresholds.
-- **Sentinel:** set alert thresholds, fallback behaviour, and budget floors for instant operator control.
-
-The contract owner can pause, resume, or retune deployments by editing this file—no code surgery required. Every parameter is hot-swappable because the CLI reloads configuration on each invocation.
-
----
-
-## 🛡️ Governance, safety & auditability
-
-- Rewards explicitly encode `GMV - Cost - risk`, keeping long-term capital discipline front-and-centre.
-- Each MuZero decision is reproducible thanks to deterministic seeds and logged metrics.
-- Baselines remain available as instant fallbacks for conservative operators.
-- Sentinel dashboards surface mean absolute error between predicted value and realised return; if thresholds are crossed, the CLI announces the alert and operators can flip back to conservative strategies instantly.
-
----
-
-## 🌐 Web-ready assets
-
-A lightweight [HTML narrative](web/index.html) is included for executive briefings. Embed live evaluation tables or stream CLI logs into the Mission Control dashboard to dramatise MuZero’s lift over greedy heuristics.
-
----
-
-## 🧪 Tests
-
-Run targeted tests to sanity-check the environment, network, and planner:
+## 4. Quickstart (Triple-Verified)
 
 ```bash
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH=demo/MuZero-style-v0 pytest demo/MuZero-style-v0/tests -q
+# 1) Install dependencies in an isolated environment
+pip install -r requirements-python.txt  # ensures torch + rich + typer
+
+# 2) Launch guided experience (auto-trains tiny model, runs evaluation, prints report)
+python demo/MuZero-style-v0/scripts/run_demo.py
+
+# 3) Inspect dashboard artifacts & telemetry
+ls demo/MuZero-style-v0/artifacts
 ```
 
+Each step is automatically validated via:
+
+1. **Static checks** – schema + config validation.
+2. **Runtime assertions** – environment invariants, sentinel constraints.
+3. **Statistical tests** – Student-t comparison of strategies.
+
+## 5. Owner Controls & Safety Layers
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Planning : enable_muzero_planning=true
+    Planning --> ThermostatAdjust : ROI drift detected
+    ThermostatAdjust --> SentinelReview : constraint breach risk
+    SentinelReview --> SafeFallback : owner_pause=true OR drift_threshold exceeded
+    SentinelReview --> Planning : All clear
+    SafeFallback --> Idle : owner_resume
+```
+
+- **Pause / Resume**: `owner.pause_planning` flag in config halts MuZero instantly.
+- **Budget Guardrails**: dynamic capital ceilings enforced per action.
+- **Calibration Watchdogs**: value vs. realised return tracked with exponential smoothing; alerts on divergence.
+
+## 6. Verification Artifacts
+
+| Tool | Purpose | Location |
+|------|---------|----------|
+| Unit tests | Validate network/mcts environment contracts. | `PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli smoke-tests` |
+| Simulation trials | Compare MuZero vs greedy vs policy-only. | `PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli eval` |
+| Metrics export | Prometheus-style JSON lines. | `demo/MuZero-style-v0/artifacts/telemetry/*.jsonl` |
+| Config diff | Snapshot owner overrides. | `demo/MuZero-style-v0/artifacts/config_diffs/` |
+
+## 7. Next Steps
+
+1. Scale replay buffer & actor count for larger economies.
+2. Hook into production AGI Jobs orchestrator via gRPC streaming interface.
+3. Extend thermostat with reinforcement meta-controller.
+
 ---
 
-## 🧭 Extending the demo
-
-1. **Swap in real data** – feed historical AGI Jobs order-books to the environment sampler.
-2. **Scale planning** – increase `num_simulations` and `max_depth` for mission-critical batches.
-3. **Fleet deployment** – package the CLI inside the existing AGI Jobs orchestration container.
-4. **Telemetry** – wire metrics into the Prometheus exporters under `monitoring/` for fleet-wide oversight.
-
-When you are ready for production, drop this module into the orchestrator’s decision hooks: the interfaces already align with the existing `MuZeroPlanner` placeholder classes.
-
----
-
-**You now own a MuZero-class strategist that sees around corners and compound returns far beyond any greedy heuristic.**
+**Result**: This demo operationalises MuZero inside AGI Jobs v0/v2, letting a non-technical leader command superhuman planning power safely, transparently, and profitably.

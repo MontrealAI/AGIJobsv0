@@ -1,76 +1,78 @@
-"""Safety sentinels supervising MuZero value alignment and budgets."""
+"""Monitoring utilities ensuring planner alignment and safety."""
 from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Deque
+from typing import Deque, Dict, Iterable, List
 
 import numpy as np
 
-from .configuration import SentinelConfig
 from .environment import EnvironmentConfig
+from .training import Episode
 
-if TYPE_CHECKING:  # pragma: no cover - avoids circular imports at runtime
-    from .training import Episode
+
+@dataclass
+class SentinelConfig:
+    """Thresholds used by the sentinel monitor."""
+
+    window: int = 64
+    alert_mae: float = 25.0
+    fallback_mae: float = 45.0
+    min_episodes: int = 6
+    budget_floor: float = 5.0
 
 
 @dataclass
 class SentinelStatus:
-    episodes_observed: int
-    mean_absolute_error: float
     alert_active: bool
     fallback_required: bool
-    average_simulations: float
     budget_floor_breached: bool
+    mean_absolute_error: float
+    episodes_considered: int
 
 
 class SentinelMonitor:
-    """Tracks calibration drift and budget adherence."""
+    """Aggregate planner statistics to flag misalignment."""
 
-    def __init__(self, config: SentinelConfig, environment: EnvironmentConfig) -> None:
+    def __init__(self, config: SentinelConfig, env_config: EnvironmentConfig) -> None:
         self.config = config
-        self.environment = environment
-        self._value_errors: Deque[float] = deque(maxlen=config.window)
-        self._simulations: Deque[int] = deque(maxlen=config.window)
-        self._episodes = 0
-        self._last_status = SentinelStatus(
-            episodes_observed=0,
-            mean_absolute_error=0.0,
-            alert_active=False,
-            fallback_required=False,
-            average_simulations=float(environment.max_jobs),
-            budget_floor_breached=False,
-        )
+        self.env_config = env_config
+        self._episodes: Deque[Episode] = deque(maxlen=config.window)
 
-    def record_episode(self, episode: "Episode") -> SentinelStatus:
-        self._episodes += 1
-        for predicted, actual in zip(episode.values, episode.returns):
-            self._value_errors.append(abs(float(predicted) - float(actual)))
-        self._simulations.extend(int(sim) for sim in episode.simulations)
-        budget_floor_breached = episode.summary.get("remaining_budget", self.environment.starting_budget) < self.config.budget_floor
-
-        if self._value_errors:
-            mae = float(np.mean(self._value_errors))
-        else:
-            mae = 0.0
-
-        episodes_ready = self._episodes >= self.config.min_episodes
-        alert = episodes_ready and (mae > self.config.alert_mae or budget_floor_breached)
-        fallback = episodes_ready and (mae > self.config.fallback_mae or budget_floor_breached)
-        avg_sim = float(np.mean(self._simulations)) if self._simulations else 0.0
-
-        self._last_status = SentinelStatus(
-            episodes_observed=self._episodes,
-            mean_absolute_error=mae,
-            alert_active=alert,
-            fallback_required=fallback,
-            average_simulations=avg_sim,
-            budget_floor_breached=budget_floor_breached,
-        )
-        return self._last_status
+    def record_episode(self, episode: Episode) -> None:
+        self._episodes.append(episode)
 
     def status(self) -> SentinelStatus:
-        return self._last_status
+        mae = self._mean_absolute_error()
+        episode_count = len(self._episodes)
+        alert = episode_count >= self.config.min_episodes and mae >= self.config.alert_mae
+        fallback = alert and mae >= self.config.fallback_mae
+        budget_floor_breached = any(
+            episode.summary.get("remaining_budget", self.env_config.starting_budget) < self.config.budget_floor
+            for episode in self._episodes
+        )
+        return SentinelStatus(
+            alert_active=alert,
+            fallback_required=fallback,
+            budget_floor_breached=budget_floor_breached,
+            mean_absolute_error=mae,
+            episodes_considered=episode_count,
+        )
+
+    def _mean_absolute_error(self) -> float:
+        if not self._episodes:
+            return 0.0
+        errors: List[float] = []
+        for episode in self._episodes:
+            values = np.asarray(episode.values, dtype=np.float64)
+            actuals = np.asarray(episode.returns, dtype=np.float64)
+            length = min(values.size, actuals.size)
+            if length == 0:
+                continue
+            errors.extend(np.abs(values[:length] - actuals[:length]).tolist())
+        if not errors:
+            return 0.0
+        return float(np.mean(errors))
 
 
-__all__ = ["SentinelMonitor", "SentinelStatus"]
+__all__ = ["SentinelConfig", "SentinelMonitor", "SentinelStatus"]

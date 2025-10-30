@@ -30,8 +30,8 @@ def greedy_policy(observation: PlannerObservation) -> int:
 def policy_head_action(network: MuZeroNetwork, observation: torch.Tensor, legal_actions: List[int]) -> int:
     network.eval()
     with torch.no_grad():
-        policy_logits, _, _ = network.initial_inference(observation.unsqueeze(0))
-    policy = torch.softmax(policy_logits, dim=-1)[0]
+        output = network.initial_inference(observation.unsqueeze(0))
+    policy = torch.softmax(output.policy_logits, dim=-1)[0]
     mask = torch.zeros_like(policy)
     mask[legal_actions] = 1
     masked_policy = policy * mask

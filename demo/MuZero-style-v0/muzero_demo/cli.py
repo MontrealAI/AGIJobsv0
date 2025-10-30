@@ -1,129 +1,113 @@
-"""Narrative-first CLI harnessing the MuZero-style planner."""
+"""Command-line interface for MuZero demo."""
 from __future__ import annotations
 
-import os
+import argparse
+import json
+import sys
 from pathlib import Path
-from typing import Optional
-
-import click
-
-os.environ.setdefault("_TYPER_FORCE_DISABLE_TERMINAL", "1")
-
-_ORIGINAL_MAKE_METAVAR = click.core.Parameter.make_metavar
-
-
-def _patched_make_metavar(parameter: click.core.Parameter, ctx: Optional[click.Context] = None) -> str:
-    if ctx is None:
-        ctx = click.Context(click.Command(parameter.name or "param"))
-    return _ORIGINAL_MAKE_METAVAR(parameter, ctx)
-
-
-if _ORIGINAL_MAKE_METAVAR.__code__.co_argcount < 2:  # pragma: no cover - backward compatibility
-    pass
-else:  # pragma: no cover - executed during CLI initialisation
-    click.core.Parameter.make_metavar = _patched_make_metavar
+from typing import Dict
 
 import torch
-import typer
-from rich.console import Console
-from rich.progress import track
+import yaml
 
-from .configuration import load_demo_config
-from .evaluation import evaluate_planner
-from .network import make_network
-from .sentinel import SentinelMonitor
-from .thermostat import PlanningThermostat
+from .environment import JobsEnvironment
+from .network import MuZeroNetwork
+from .planner import MuZeroPlanner
 from .training import MuZeroTrainer
-
-DEFAULT_CONFIG = Path(__file__).resolve().parent.parent / "config" / "default.yaml"
-
-app = typer.Typer(help="MuZero-style AGI Jobs planning demo")
-console = Console()
+from .evaluation import compare_strategies
+from .telemetry import TelemetrySink, summarise_runs
 
 
-def _prepare_trainer(config_path: Path) -> tuple[MuZeroTrainer, PlanningThermostat, SentinelMonitor]:
+def load_config(path: str) -> Dict:
+    config_path = Path(path)
     if not config_path.exists():
-        raise typer.BadParameter(f"Configuration file not found: {config_path}")
-    demo_config = load_demo_config(config_path)
-    if demo_config.environment.rng_seed is not None:
-        torch.manual_seed(demo_config.environment.rng_seed)
-    network = make_network(demo_config.network)
-    thermostat = PlanningThermostat(demo_config.thermostat, demo_config.environment, demo_config.planner)
-    sentinel = SentinelMonitor(demo_config.sentinel, demo_config.environment)
-    trainer = MuZeroTrainer(network, demo_config.training, thermostat=thermostat, sentinel=sentinel)
-    return trainer, thermostat, sentinel
+        raise FileNotFoundError(f"Config file {path} not found")
+    with config_path.open("r", encoding="utf-8") as handle:
+        config = yaml.safe_load(handle)
+    experiment = config.setdefault("experiment", {})
+    experiment.setdefault("artifact_dir", str(config_path.parent / ".." / "artifacts"))
+    return config
 
 
-@app.command()
-def train(
-    iterations: int = typer.Option(5, help="Number of self-play/training cycles"),
-    episodes_per_iteration: int = typer.Option(6, help="Self-play episodes per cycle"),
-    checkpoint: Optional[Path] = typer.Option(None, help="Where to store the trained network"),
-    config_path: Path = typer.Option(DEFAULT_CONFIG, help="YAML configuration describing the demo"),
-) -> None:
-    """Run a MuZero training loop with adaptive planning controls."""
-
-    trainer, thermostat, sentinel = _prepare_trainer(config_path)
-    network = trainer.network
-
-    for iteration in track(range(iterations), description="Self-play & learning"):
-        trainer.self_play(episodes_per_iteration)
-        metrics = trainer.train_step()
-        telemetry = thermostat.telemetry()
-        sentinel_stats = trainer.sentinel_status()
-        console.log(
-            "Iteration %d | loss=%.4f | avg_sim=%.1f | sentinel_mae=%.2f | alert=%s"
-            % (
-                iteration + 1,
-                metrics.get("loss", 0.0),
-                telemetry.average_simulations,
-                sentinel_stats.get("mae", 0.0),
-                "YES" if sentinel_stats.get("alert") else "no",
-            )
-        )
-
-    if checkpoint:
-        checkpoint.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(network.state_dict(), checkpoint)
-        console.log(f"Saved model checkpoint to {checkpoint}")
+def prepare_device(config: Dict) -> torch.device:
+    device_name = config.get("experiment", {}).get("device", "cpu")
+    if device_name == "cuda" and not torch.cuda.is_available():
+        print("CUDA requested but unavailable; falling back to CPU", file=sys.stderr)
+        device_name = "cpu"
+    return torch.device(device_name)
 
 
-@app.command()
-def evaluate(
-    checkpoint: Optional[Path] = typer.Option(None, help="Path to trained network weights"),
-    episodes: int = typer.Option(25, help="Episodes per strategy for evaluation"),
-    config_path: Path = typer.Option(DEFAULT_CONFIG, help="YAML configuration describing the demo"),
-) -> None:
-    """Compare MuZero planning to baseline strategies under the sentinel."""
+def run_demo(config_path: str) -> None:
+    config = load_config(config_path)
+    device = prepare_device(config)
+    network = MuZeroNetwork(config).to(device)
+    env = JobsEnvironment(config)
+    env.seed(config.get("experiment", {}).get("seed", 17))
+    planner = MuZeroPlanner(config, network, device)
+    trainer = MuZeroTrainer(config, network, device)
+    episodes = int(config.get("experiment", {}).get("episodes", 32))
+    trainer.self_play(env, planner, episodes)
+    for _ in range(max(episodes // 4, 1)):
+        trainer.train_step()
+    checkpoint_path = Path(config.get("experiment", {}).get("artifact_dir", "demo/MuZero-style-v0/artifacts")) / "muzero_demo.pt"
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    trainer.save_checkpoint(str(checkpoint_path))
+    results = compare_strategies(config, network, device)
+    TelemetrySink(config).record("demo_results", results)
+    TelemetrySink(config).flush()
+    print("=== MuZero Demo Results ===")
+    for strategy, value in results.items():
+        print(f"{strategy:>10}: {value:8.3f}")
+    print(f"Checkpoint saved to {checkpoint_path}")
 
-    trainer, thermostat, sentinel = _prepare_trainer(config_path)
-    network = trainer.network
-    if checkpoint and checkpoint.exists():
-        state = torch.load(checkpoint, map_location="cpu")
-        network.load_state_dict(state)
-        console.log(f"Loaded checkpoint from {checkpoint}")
-    network.eval()
 
-    evaluate_planner(
-        network,
-        trainer.config.environment,
-        trainer.config.planner,
-        episodes=episodes,
-        console=console,
-        thermostat=thermostat,
-        sentinel=sentinel,
-    )
+def run_smoke_tests(config_path: str) -> None:
+    config = load_config(config_path)
+    device = prepare_device(config)
+    network = MuZeroNetwork(config).to(device)
+    env = JobsEnvironment(config)
+    planner = MuZeroPlanner(config, network, device)
+    observation = env.observe()
+    action, policy, meta = planner.plan(env, observation, forced_simulations=8)
+    assert 0 <= action < env.num_actions
+    assert abs(sum(policy) - 1.0) < 1e-6
+    trainer = MuZeroTrainer(config, network, device)
+    trainer.self_play(env, planner, episodes=1)
+    metrics = trainer.train_step()
+    print(json.dumps({"plan_action": action, "policy": policy, "training_metrics": metrics}, indent=2))
 
-    status = sentinel.status()
-    console.log(
-        "Sentinel summary: episodes=%d, mae=%.2f, alert=%s, fallback=%s"
-        % (
-            status.episodes_observed,
-            status.mean_absolute_error,
-            "YES" if status.alert_active else "no",
-            "YES" if status.fallback_required else "no",
-        )
-    )
+
+def run_eval(config_path: str) -> None:
+    config = load_config(config_path)
+    device = prepare_device(config)
+    network = MuZeroNetwork(config).to(device)
+    results = compare_strategies(config, network, device)
+    print(json.dumps(results, indent=2))
+
+
+parser = argparse.ArgumentParser(description="MuZero-style AGI Jobs demo")
+subparsers = parser.add_subparsers(dest="command")
+
+demo_parser = subparsers.add_parser("demo", help="Train and evaluate the MuZero planner")
+demo_parser.add_argument("--config", required=True, help="Path to configuration YAML")
+
+smoke_parser = subparsers.add_parser("smoke-tests", help="Run smoke tests for the demo")
+smoke_parser.add_argument("--config", required=True, help="Path to configuration YAML")
+
+eval_parser = subparsers.add_parser("eval", help="Evaluate strategies only")
+eval_parser.add_argument("--config", required=True, help="Path to configuration YAML")
+
+
+def app(argv: list[str] | None = None) -> None:
+    args = parser.parse_args(argv)
+    if args.command == "demo":
+        run_demo(args.config)
+    elif args.command == "smoke-tests":
+        run_smoke_tests(args.config)
+    elif args.command == "eval":
+        run_eval(args.config)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":

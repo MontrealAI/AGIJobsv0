@@ -1,110 +1,113 @@
-"""Neural network architecture implementing MuZero's h, g and f heads."""
+"""Neural network components for the MuZero-style demo."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Tuple
 
 import torch
-from torch import nn
+import torch.nn as nn
+import torch.nn.functional as F
 
 
 @dataclass
 class NetworkConfig:
+    """Hyper-parameters describing the MuZero-style network."""
+
     observation_dim: int
     action_space_size: int
     latent_dim: int = 64
     hidden_dim: int = 128
-    reward_support: Tuple[float, float] = (-20.0, 200.0)
 
 
-class RepresentationNetwork(nn.Module):
-    def __init__(self, config: NetworkConfig) -> None:
+@dataclass
+class NetworkOutput:
+    """Structured output produced by the network blocks."""
+
+    policy_logits: torch.Tensor
+    value: torch.Tensor
+    reward: torch.Tensor
+    hidden_state: torch.Tensor
+
+    def __iter__(self):
+        yield self.policy_logits
+        yield self.value
+        yield self.hidden_state
+
+
+class RepresentationNet(nn.Module):
+    def __init__(self, observation_dim: int, latent_dim: int, hidden_dim: int) -> None:
         super().__init__()
-        self.trunk = nn.Sequential(
-            nn.Linear(config.observation_dim, config.hidden_dim),
-            nn.LayerNorm(config.hidden_dim),
-            nn.ReLU(),
-            nn.Linear(config.hidden_dim, config.latent_dim),
-        )
+        self.fc1 = nn.Linear(observation_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, latent_dim)
 
     def forward(self, observation: torch.Tensor) -> torch.Tensor:
-        return torch.tanh(self.trunk(observation))
+        x = F.relu(self.fc1(observation))
+        return torch.tanh(self.fc2(x))
 
 
-class DynamicsNetwork(nn.Module):
-    def __init__(self, config: NetworkConfig) -> None:
+class DynamicsNet(nn.Module):
+    def __init__(self, latent_dim: int, hidden_dim: int, action_dim: int) -> None:
         super().__init__()
-        self.action_embedding = nn.Embedding(config.action_space_size, config.latent_dim)
-        self.core = nn.Sequential(
-            nn.Linear(config.latent_dim * 2, config.hidden_dim),
-            nn.ReLU(),
-            nn.Linear(config.hidden_dim, config.latent_dim + 1),
-        )
+        self.action_embed = nn.Embedding(action_dim, hidden_dim)
+        self.fc1 = nn.Linear(latent_dim + hidden_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, latent_dim)
+        self.reward_head = nn.Linear(hidden_dim, 1)
 
     def forward(self, hidden_state: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        action_embed = self.action_embedding(action)
-        stacked = torch.cat([hidden_state, action_embed], dim=-1)
-        transition = self.core(stacked)
-        next_state, reward = transition[..., :-1], transition[..., -1:]
-        return torch.tanh(next_state), reward.squeeze(-1)
+        action_embedding = self.action_embed(action)
+        x = torch.cat([hidden_state, action_embedding], dim=-1)
+        x = F.relu(self.fc1(x))
+        next_hidden = torch.tanh(self.fc2(x))
+        reward = torch.tanh(self.reward_head(x))
+        return next_hidden, reward
 
 
-class PredictionNetwork(nn.Module):
-    def __init__(self, config: NetworkConfig) -> None:
+class PredictionNet(nn.Module):
+    def __init__(self, latent_dim: int, hidden_dim: int, action_dim: int) -> None:
         super().__init__()
-        self.policy_head = nn.Sequential(
-            nn.Linear(config.latent_dim, config.hidden_dim),
-            nn.ReLU(),
-            nn.Linear(config.hidden_dim, config.action_space_size),
-        )
-        self.value_head = nn.Sequential(
-            nn.Linear(config.latent_dim, config.hidden_dim),
-            nn.ReLU(),
-            nn.Linear(config.hidden_dim, 1),
-        )
+        self.fc1 = nn.Linear(latent_dim, hidden_dim)
+        self.policy_head = nn.Linear(hidden_dim, action_dim)
+        self.value_head = nn.Linear(hidden_dim, 1)
 
     def forward(self, hidden_state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        policy_logits = self.policy_head(hidden_state)
-        value = torch.tanh(self.value_head(hidden_state))
-        return policy_logits, value.squeeze(-1)
+        x = F.relu(self.fc1(hidden_state))
+        policy_logits = self.policy_head(x)
+        value = torch.tanh(self.value_head(x))
+        return policy_logits, value
 
 
 class MuZeroNetwork(nn.Module):
-    """End-to-end MuZero architecture exposing inference helpers."""
+    """Container module implementing representation, dynamics and prediction."""
 
     def __init__(self, config: NetworkConfig) -> None:
         super().__init__()
         self.config = config
-        self.representation = RepresentationNetwork(config)
-        self.dynamics = DynamicsNetwork(config)
-        self.prediction = PredictionNetwork(config)
+        self.representation = RepresentationNet(config.observation_dim, config.latent_dim, config.hidden_dim)
+        self.dynamics = DynamicsNet(config.latent_dim, config.hidden_dim, config.action_space_size)
+        self.prediction = PredictionNet(config.latent_dim, config.hidden_dim, config.action_space_size)
 
-    @torch.no_grad()
-    def initial_inference(self, observation: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        hidden_state = self.representation(observation)
-        policy_logits, value = self.prediction(hidden_state)
-        return policy_logits, value, hidden_state
+    def initial_inference(self, observation: torch.Tensor) -> NetworkOutput:
+        if observation.dim() == 1:
+            observation = observation.unsqueeze(0)
+        hidden = self.representation(observation)
+        policy_logits, value = self.prediction(hidden)
+        reward = torch.zeros_like(value)
+        return NetworkOutput(policy_logits=policy_logits, value=value, reward=reward, hidden_state=hidden)
 
-    @torch.no_grad()
-    def recurrent_inference(self, hidden_state: torch.Tensor, action: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        next_state, reward = self.dynamics(hidden_state, action)
-        policy_logits, value = self.prediction(next_state)
-        return policy_logits, value, reward, next_state
-
-    def loss(self, predictions: dict, targets: dict, weights: dict) -> torch.Tensor:
-        log_policy = nn.functional.log_softmax(predictions["policy_logits"], dim=-1)
-        policy_loss = -(targets["policy"] * log_policy).sum(dim=-1)
-        value_loss = nn.functional.mse_loss(predictions["value"], targets["value"], reduction="none")
-        reward_loss = nn.functional.mse_loss(predictions["reward"], targets["reward"], reduction="none")
-        loss = weights["policy"] * policy_loss + weights["value"] * value_loss + weights["reward"] * reward_loss
-        return loss.mean()
+    def recurrent_inference(self, hidden_state: torch.Tensor, action: torch.Tensor) -> NetworkOutput:
+        if hidden_state.dim() == 1:
+            hidden_state = hidden_state.unsqueeze(0)
+        if action.dim() == 0:
+            action = action.unsqueeze(0)
+        next_hidden, reward = self.dynamics(hidden_state, action)
+        policy_logits, value = self.prediction(next_hidden)
+        return NetworkOutput(policy_logits=policy_logits, value=value, reward=reward, hidden_state=next_hidden)
 
 
 def make_network(config: NetworkConfig) -> MuZeroNetwork:
-    network = MuZeroNetwork(config)
-    for module in network.modules():
-        if isinstance(module, nn.Linear):
-            nn.init.xavier_uniform_(module.weight)
-            if module.bias is not None:
-                nn.init.zeros_(module.bias)
-    return network
+    """Factory helper returning an appropriately configured network."""
+
+    return MuZeroNetwork(config)
+
+
+__all__ = ["NetworkConfig", "NetworkOutput", "MuZeroNetwork", "make_network"]

@@ -1,0 +1,80 @@
+# MuZero-style AGI Jobs demo configuration
+owner:
+  pause_planning: false
+  max_capital_per_action: 2500.0
+  governance_contact: "owner@agijobs.example"
+
+experiment:
+  seed: 17
+  device: "cpu"
+  episodes: 48
+  evaluation_episodes: 64
+  artifact_dir: "demo/MuZero-style-v0/artifacts"
+
+environment:
+  episode_length: 6
+  job_pool_size: 5
+  success_noise: 0.08
+  discount: 0.997
+  max_budget: 10000.0
+  stochastic_fail_penalty: 0.2
+
+network:
+  observation_dim: 27
+  hidden_dim: 64
+  latent_dim: 48
+  reward_support: [-4, 4]
+  value_support: [-20, 20]
+  policy_temperature: 1.0
+
+planner:
+  enable_muzero_planning: true
+  default_simulations: 96
+  max_simulations: 256
+  exploration_constant: 1.5
+  dirichlet_alpha: 0.3
+  dirichlet_epsilon: 0.25
+  temperature: 1.0
+  visit_temperature_schedule:
+    warmup_episode: 24
+    min_temperature: 0.05
+
+thermostat:
+  enable: true
+  low_entropy_threshold: 0.25
+  high_entropy_threshold: 0.65
+  min_simulations: 32
+  max_simulations: 192
+  latency_budget_ms: 140
+  simulation_cost_ms: 1.1
+
+sentinel:
+  enable: true
+  value_error_alpha: 0.1
+  value_error_threshold: 0.9
+  drift_window: 12
+  fallback_on_violation: true
+
+training:
+  batch_size: 32
+  unroll_steps: 5
+  td_steps: 5
+  learning_rate: 0.0008
+  weight_decay: 0.000001
+  replay_capacity: 2048
+  warmup_steps: 32
+  reanalyse_ratio: 0.25
+  value_loss_weight: 0.9
+  reward_loss_weight: 1.0
+  policy_loss_weight: 1.0
+  checkpoint_interval: 16
+
+telemetry:
+  enable: true
+  flush_interval: 5
+  prometheus_format: false
+  sample_rate: 1.0
+
+baselines:
+  greedy_immediacy_bias: 0.05
+  policy_temperature: 0.7

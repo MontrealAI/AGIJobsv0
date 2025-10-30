@@ -3,44 +3,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import Any, Dict, Optional
 
 import yaml
 
 from .environment import EnvironmentConfig, vector_size
 from .mcts import PlannerSettings
 from .network import NetworkConfig
-
-if TYPE_CHECKING:  # pragma: no cover
-    from .training import TrainingConfig
-
-
-@dataclass
-class ThermostatConfig:
-    """Controls the ROI-aware planning thermostat."""
-
-    min_simulations: int = 24
-    max_simulations: int = 160
-    low_entropy: float = 0.55
-    high_entropy: float = 1.35
-    budget_pressure_ratio: float = 0.35
-    endgame_horizon_ratio: float = 0.8
-
-
-@dataclass
-class SentinelConfig:
-    """Safety sentinels guarding value alignment and budgets."""
-
-    window: int = 64
-    alert_mae: float = 25.0
-    fallback_mae: float = 45.0
-    min_episodes: int = 6
-    budget_floor: float = 5.0
+from .sentinel import SentinelConfig
+from .thermostat import ThermostatConfig
+from .training import TrainingConfig
 
 
 @dataclass
 class DemoConfig:
-    """Container bundling every subsystem configuration."""
+    """Aggregate configuration returned by :func:`load_demo_config`."""
 
     environment: EnvironmentConfig
     network: NetworkConfig
@@ -51,9 +28,7 @@ class DemoConfig:
 
 
 def load_demo_config(path: Optional[Path]) -> DemoConfig:
-    """Load configuration from ``path`` and materialise dataclasses."""
-
-    from .training import TrainingConfig
+    """Load configuration from ``path`` and produce concrete dataclasses."""
 
     if path is None:
         data: Dict[str, Any] = {}
@@ -76,9 +51,8 @@ def load_demo_config(path: Optional[Path]) -> DemoConfig:
     training_overrides = data.get("training", {})
     training_cfg = TrainingConfig(
         environment=env_cfg,
-        network=network_cfg,
         planner=planner_cfg,
-        **{k: v for k, v in training_overrides.items() if k not in {"environment", "network", "planner"}},
+        **{k: v for k, v in training_overrides.items() if k not in {"environment", "planner"}},
     )
 
     thermostat_cfg = ThermostatConfig(**data.get("thermostat", {}))
@@ -94,4 +68,4 @@ def load_demo_config(path: Optional[Path]) -> DemoConfig:
     )
 
 
-__all__ = ["DemoConfig", "SentinelConfig", "ThermostatConfig", "load_demo_config"]
+__all__ = ["DemoConfig", "load_demo_config"]

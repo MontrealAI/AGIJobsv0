@@ -1,74 +1,36 @@
-"""MuZero-style planning demo package for AGI Jobs v0 (v2).
+"""MuZero-style AGI Jobs planning demo package."""
+from . import torch_compat as _torch_compat
+from .configuration import DemoConfig, load_demo_config
+from .environment import AGIJobsPlanningEnv, EnvironmentConfig, PlannerObservation, StepResult, vector_size
+from .mcts import MuZeroPlanner, PlannerSettings
+from .network import MuZeroNetwork, NetworkConfig, make_network
+from .sentinel import SentinelConfig, SentinelMonitor, SentinelStatus
+from .thermostat import PlanningThermostat, ThermostatConfig
+from .training import Episode, MuZeroTrainer, TrainingConfig, discount_returns
 
-This package exposes ergonomic helpers for running a compact yet
-production-grade MuZero-style planning workflow tailored to
-AGI Jobs economics.  The modules are intentionally lightweight so
-non-technical operators can introspect and extend the system easily.
-"""
-
-from . import (
-    environment,
-    mcts,
-    network,
-    baselines,
-    training,
-    evaluation,
-    thermostat,
-    sentinel,
-    configuration,
-    utils,
-)
-
-# ---------------------------------------------------------------------------
-# Compatibility helpers
-# ---------------------------------------------------------------------------
-try:  # pragma: no cover - defensive patching for CI environments
-    import torch
-except Exception:  # pragma: no cover - torch optional for documentation builds
-    torch = None
-else:
-    import numpy as _np
-
-    _ORIGINAL_FROM_NUMPY = torch.from_numpy
-
-    _NUMPY_TO_TORCH_DTYPE = {
-        _np.dtype("float16"): torch.float16,
-        _np.dtype("float32"): torch.float32,
-        _np.dtype("float64"): torch.float64,
-        _np.dtype("int8"): torch.int8,
-        _np.dtype("int16"): torch.int16,
-        _np.dtype("int32"): torch.int32,
-        _np.dtype("int64"): torch.int64,
-        _np.dtype("uint8"): torch.uint8,
-        _np.dtype("bool"): torch.bool,
-    }
-
-    def _safe_from_numpy(array):
-        """Fallback that mirrors ``torch.from_numpy`` when NumPy bindings are absent."""
-
-        try:
-            return _ORIGINAL_FROM_NUMPY(array)
-        except RuntimeError as exc:  # pragma: no cover - only triggered in CI edge case
-            if "Numpy is not available" not in str(exc):
-                raise
-            if not isinstance(array, _np.ndarray):
-                raise
-
-            dtype = _NUMPY_TO_TORCH_DTYPE.get(array.dtype, torch.float32)
-            tensor = torch.tensor(array.tolist(), dtype=dtype)
-            return tensor.view(array.shape)
-
-    torch.from_numpy = _safe_from_numpy  # type: ignore[assignment]
+_torch_compat.patch_torch_from_numpy()
+del _torch_compat
 
 __all__ = [
-    "environment",
-    "mcts",
-    "network",
-    "baselines",
-    "training",
-    "evaluation",
-    "thermostat",
-    "sentinel",
-    "configuration",
-    "utils",
+    "AGIJobsPlanningEnv",
+    "DemoConfig",
+    "EnvironmentConfig",
+    "Episode",
+    "MuZeroNetwork",
+    "MuZeroPlanner",
+    "MuZeroTrainer",
+    "NetworkConfig",
+    "PlannerObservation",
+    "PlannerSettings",
+    "PlanningThermostat",
+    "SentinelConfig",
+    "SentinelMonitor",
+    "SentinelStatus",
+    "StepResult",
+    "ThermostatConfig",
+    "TrainingConfig",
+    "discount_returns",
+    "load_demo_config",
+    "make_network",
+    "vector_size",
 ]
