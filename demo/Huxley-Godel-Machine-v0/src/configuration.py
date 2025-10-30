@@ -1,0 +1,179 @@
+"""Configuration loading utilities for the Huxley–Gödel Machine demo."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+try:  # pragma: no cover - exercised indirectly through fallback loader tests
+    import yaml  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - exercised in CI without PyYAML
+    yaml = None
+
+
+@dataclass(slots=True)
+class BudgetConfig:
+    max_iterations: int
+    max_cost: float
+
+
+@dataclass(slots=True)
+class InitialAgentConfig:
+    label: str
+    base_quality: float
+    description: str
+
+
+@dataclass(slots=True)
+class HGMConfig:
+    tau: float
+    alpha: float
+    epsilon: float
+    max_concurrency: int
+    min_concurrency: int
+    warmup_iterations: int
+    allow_expansions: bool
+
+
+@dataclass(slots=True)
+class ThermostatConfig:
+    roi_target: float
+    roi_floor: float
+    smoothing_window: int
+    tau_step: float
+    alpha_step: float
+    concurrency_step: int
+    evaluation_enhancement_threshold: float
+
+
+@dataclass(slots=True)
+class SentinelConfig:
+    roi_hard_floor: float
+    cost_ceiling: float
+    max_failures_per_agent: int
+    cooldown_iterations: int
+
+
+@dataclass(slots=True)
+class BaselineConfig:
+    expansion_interval: int
+    evaluation_batch: int
+
+
+@dataclass(slots=True)
+class SimulationConfig:
+    success_value: float
+    base_task_cost: float
+    quality_drift_mean: float
+    quality_drift_stddev: float
+    min_quality: float
+    max_quality: float
+    concurrency_penalty: float
+
+
+@dataclass(slots=True)
+class ReportingConfig:
+    export_markdown: bool
+    export_json: bool
+    export_mermaid: bool
+    artifact_directory: str
+
+
+@dataclass(slots=True)
+class DemoConfiguration:
+    run_name: str
+    random_seed: int
+    budget: BudgetConfig
+    initial_agent: InitialAgentConfig
+    hgm: HGMConfig
+    thermostat: ThermostatConfig
+    sentinel: SentinelConfig
+    baseline: BaselineConfig
+    simulation: SimulationConfig
+    reporting: ReportingConfig
+
+    @classmethod
+    def load(cls, path: Path) -> "DemoConfiguration":
+        data = _read_yaml(path)
+        return cls(
+            run_name=data["run_name"],
+            random_seed=int(data["random_seed"]),
+            budget=BudgetConfig(**data["budget"]),
+            initial_agent=InitialAgentConfig(**data["initial_agent"]),
+            hgm=HGMConfig(**data["hgm"]),
+            thermostat=ThermostatConfig(**data["thermostat"]),
+            sentinel=SentinelConfig(**data["sentinel"]),
+            baseline=BaselineConfig(**data["baseline"]),
+            simulation=SimulationConfig(**data["simulation"]),
+            reporting=ReportingConfig(**data["reporting"]),
+        )
+
+
+def _read_yaml(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {path}")
+    with path.open("r", encoding="utf-8") as handle:
+        if yaml is not None:
+            return yaml.safe_load(handle)
+        return _minimal_yaml_parse(handle.read())
+
+
+def _minimal_yaml_parse(raw: str) -> Dict[str, Any]:
+    """Parse a very small YAML subset used by the demo without external deps."""
+
+    def convert(value: str) -> Any:
+        lowered = value.lower()
+        if lowered in {"true", "false"}:
+            return lowered == "true"
+        if lowered in {"null", "~"}:
+            return None
+        if value.startswith(("'", '"')) and value.endswith(("'", '"')):
+            return value[1:-1]
+        try:
+            if "." in value or "e" in value.lower():
+                return float(value)
+            return int(value)
+        except ValueError:
+            return value
+
+    root: Dict[str, Any] = {}
+    stack: List[Tuple[int, Dict[str, Any]]] = [(-1, root)]
+
+    for raw_line in raw.splitlines():
+        if not raw_line.strip() or raw_line.lstrip().startswith("#"):
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        stripped = raw_line.strip()
+        if ":" not in stripped:
+            raise ValueError(f"Unsupported YAML line: {raw_line}")
+        key, _, remainder = stripped.partition(":")
+        key = key.strip()
+        value = remainder.strip()
+
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        if not stack:
+            raise ValueError(f"Invalid indentation in YAML: {raw_line}")
+        current = stack[-1][1]
+
+        if value == "":
+            new_dict: Dict[str, Any] = {}
+            current[key] = new_dict
+            stack.append((indent, new_dict))
+        else:
+            current[key] = convert(value)
+
+    return root
+
+
+__all__ = [
+    "DemoConfiguration",
+    "BudgetConfig",
+    "InitialAgentConfig",
+    "HGMConfig",
+    "ThermostatConfig",
+    "SentinelConfig",
+    "BaselineConfig",
+    "SimulationConfig",
+    "ReportingConfig",
+]
