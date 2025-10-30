@@ -69,6 +69,10 @@ class Orchestrator:
         if candidate is None:
             return
 
+        projected_cost = self.engine.metrics.cost + self.config.expansion_cost
+        if projected_cost > self.config.max_cost:
+            return
+
         outcome = await self.simulator.expand(candidate.identifier)
         child = self.engine.expansion_result(candidate.identifier, outcome.quality_delta, outcome.metadata)
         self.simulator.register_child(child.identifier, candidate.identifier, outcome.quality_delta)
