@@ -1,0 +1,2 @@
+# Optional packages for rich notebooks / dashboards
+pyyaml>=6.0

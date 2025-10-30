@@ -33,3 +33,7 @@ hgm-demo: demo-hgm
 demo-agialpha:
 	$(PYTHON) -m demo.huxley_godel_machine_v0.simulator $(ARGS)
 
+.PHONY: absolute-zero-demo
+absolute-zero-demo:
+	cd demo/Absolute-Zero-Reasoner-v0 && $(PYTHON) -m absolute_zero_reasoner_demo.run_demo --iterations 25 --tasks 6 $(ARGS)
+
