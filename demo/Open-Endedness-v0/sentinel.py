@@ -35,10 +35,16 @@ class Sentinel:
         self._last_query_step: Optional[int] = None
         self._moi_locked = False
         self._disabled_tasks: Dict[str, str] = {}
+        self._pending_fm_cost = 0.0
 
     # ------------------------------------------------------------------
     def register_outcome(self, task_id: str, reward_value: float, cost: float) -> None:
-        self._total_cost += cost
+        fm_offset = min(cost, self._pending_fm_cost)
+        if fm_offset:
+            self._pending_fm_cost -= fm_offset
+        net_cost = cost - fm_offset
+        if net_cost:
+            self._total_cost += net_cost
         if self._total_cost > self.config.budget_limit and not self._moi_locked:
             self._moi_locked = True
             self.events.append(
@@ -54,6 +60,7 @@ class Sentinel:
             return
         cost = fm_cost if fm_cost is not None else self.config.fm_cost_per_query
         self._total_cost += cost
+        self._pending_fm_cost += cost
         self._queries += 1
         self._last_query_step = step
         if self._total_cost > self.config.budget_limit:
