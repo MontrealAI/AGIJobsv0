@@ -14,6 +14,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence
+from textwrap import fill
 
 try:
     import yaml  # type: ignore
@@ -212,6 +213,57 @@ class DayOneUtilityOrchestrator:
         self.save_owner_controls(snapshot)
         return snapshot
 
+    def explain_owner_controls(self, snapshot: Optional[Mapping[str, Any]] = None) -> Mapping[str, Any]:
+        """Return natural-language guidance for each owner control."""
+
+        if snapshot is None:
+            snapshot = self.load_owner_controls()
+
+        # Copy so callers may safely mutate the returned snapshot.
+        owner_snapshot: Dict[str, Any] = {key: snapshot[key] for key in self.OWNER_SCHEMA.keys() if key in snapshot}
+        owner_snapshot.setdefault("latency_threshold_active", snapshot.get("latency_threshold_active"))
+
+        platform_fee_bps = int(owner_snapshot.get("platform_fee_bps", 0))
+        latency_override = owner_snapshot.get("latency_threshold_override_bps")
+        latency_active = owner_snapshot.get("latency_threshold_active")
+        paused = bool(owner_snapshot.get("paused", False))
+        narrative_text = str(owner_snapshot.get("narrative", "")).strip()
+
+        explanations: List[str] = []
+        explanations.append(
+            f"Owner wallet {owner_snapshot.get('owner_address', 'unknown')} retains the ultimate command switch for the demo."
+        )
+        explanations.append(
+            f"Treasury wallet {owner_snapshot.get('treasury_address', 'unknown')} accumulates every platform-fee basis point."
+        )
+        explanations.append(
+            (
+                "Platform fee is "
+                f"{platform_fee_bps} bps — approximately {platform_fee_bps / 100:.2f}% of every candidate GMV match."
+            )
+        )
+        if latency_override is None:
+            if latency_active is not None:
+                explanations.append(
+                    f"Latency guardrail override unset; sentinel rulebook enforces ±{float(latency_active) * 100:.2f}% delta."
+                )
+            else:
+                explanations.append("Latency guardrail override unset; sentinel defaults remain authoritative.")
+        else:
+            explanations.append(
+                f"Latency guardrail override active at {int(latency_override)} bps (±{int(latency_override) / 100:.2f}%)."
+            )
+        explanations.append(
+            "Demo pipeline is PAUSED — resume with `make owner-toggle`."
+            if paused
+            else "Demo pipeline is LIVE — strategies can be simulated instantly."
+        )
+        if narrative_text:
+            explanations.append(f"Narrative banner broadcasts: {narrative_text}")
+
+        wrapped = [fill(line, width=100) for line in explanations]
+        return {"owner_controls": owner_snapshot, "explanation": wrapped}
+
     def _validate_owner_controls(self, snapshot: Mapping[str, Any]) -> None:
         fee = int(snapshot["platform_fee_bps"])
         if fee < 0 or fee > 2500:
@@ -367,6 +419,11 @@ class DayOneUtilityOrchestrator:
             "chart": str(chart_path) if chart_path else None,
             "dashboard": str(html_path),
         }
+        explainer = self.explain_owner_controls(owner_snapshot)
+        report["cli"] = {
+            "summary": self._compose_cli_summary(report),
+            "owner_console": explainer["explanation"],
+        }
         return report
 
     def _write_json(self, path: Path, payload: Mapping[str, Any]) -> None:
@@ -376,6 +433,33 @@ class DayOneUtilityOrchestrator:
     # ------------------------------------------------------------------
     # Visualization helpers
     # ------------------------------------------------------------------
+    def _compose_cli_summary(self, report: Mapping[str, Any]) -> str:
+        profile = report["strategy_profile"]
+        metrics = report["metrics"]
+        guardrails = report["guardrail_pass"]
+        owner = report["owner_controls"]
+
+        utility_status = "PASS" if guardrails.get("utility_uplift", False) else "CHECK"
+        latency_status = "PASS" if guardrails.get("latency_delta", False) else "CHECK"
+        reliability_status = "PASS" if guardrails.get("reliability_score", False) else "CHECK"
+
+        highlight = ""
+        highlights = profile.get("highlights")
+        if highlights:
+            highlight = fill(f"Highlight: {highlights[0]}", width=100, subsequent_indent="   ")
+
+        lines = [
+            f"🚀 {profile['title']} :: Utility uplift {metrics['utility_uplift']*100:+.2f}% ({utility_status})",
+            f"   Latency delta {metrics['latency_delta']*100:+.2f}% ({latency_status}) · Reliability {profile['reliability_score']*100:.1f}% ({reliability_status})",
+            f"   Owner treasury capture {metrics['owner_treasury']:.2f} (platform fee {owner['platform_fee_bps']} bps).",
+        ]
+        if highlight:
+            lines.append(f"   {highlight}")
+        narrative = str(owner.get("narrative", "")).strip()
+        if narrative:
+            lines.append("   " + fill(f"Narrative: {narrative}", width=100, subsequent_indent="   "))
+        return "\n".join(lines)
+
     def _render_chart(self, profile: StrategyProfile, metrics: Mapping[str, Any]) -> Path:
         baseline = metrics["baseline"]
         candidate = metrics["candidate"]
@@ -663,12 +747,21 @@ class DayOneUtilityOrchestrator:
 
         simulate = subparsers.add_parser("simulate", help="Run a day-one utility simulation")
         simulate.add_argument("--strategy", default="e2e", help="Strategy key from strategies.yaml")
+        simulate.add_argument(
+            "--format",
+            choices=("json", "narrative"),
+            default="json",
+            help="Choose whether to render JSON only or also print a narrative summary.",
+        )
 
         owner = subparsers.add_parser("owner", help="View or update owner controls")
         owner.add_argument("--show", action="store_true", help="Display the current owner configuration")
         owner.add_argument("--set", nargs=2, metavar=("KEY", "VALUE"), help="Update a specific owner control")
         owner.add_argument(
             "--toggle-pause", action="store_true", help="Toggle the paused state for the orchestrator"
+        )
+        owner.add_argument(
+            "--explain", action="store_true", help="Print a natural-language explanation of each owner control"
         )
 
         subparsers.add_parser("list", help="List available strategies")
@@ -679,17 +772,30 @@ class DayOneUtilityOrchestrator:
         parsed = parser.parse_args(args=args)
         command = parsed.command or "simulate"
         if command == "simulate":
-            return self.simulate(parsed.strategy)
+            report = self.simulate(parsed.strategy)
+            payload: Dict[str, Any] = {"report": report}
+            if getattr(parsed, "format", "json") == "narrative":
+                payload["narrative"] = report.get("cli", {}).get("summary")
+            return payload
         if command == "owner":
             if parsed.toggle_pause:
                 snapshot = self.toggle_pause()
-                return {"owner_controls": snapshot}
+                payload = {"owner_controls": snapshot}
+                if parsed.explain:
+                    payload["explanation"] = self.explain_owner_controls(snapshot)["explanation"]
+                return payload
             if parsed.set:
                 key, value = parsed.set
                 snapshot = self.update_owner_control(key, value)
-                return {"owner_controls": snapshot}
+                payload = {"owner_controls": snapshot}
+                if parsed.explain:
+                    payload["explanation"] = self.explain_owner_controls(snapshot)["explanation"]
+                return payload
             snapshot = self.load_owner_controls()
-            return {"owner_controls": snapshot}
+            payload = {"owner_controls": snapshot}
+            if parsed.explain:
+                payload["explanation"] = self.explain_owner_controls(snapshot)["explanation"]
+            return payload
         if command == "list":
             strategies = {key: profile.title for key, profile in self.load_strategies().items()}
             return {"strategies": strategies}
@@ -703,6 +809,13 @@ def run_cli(args: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
 
 def main() -> None:
     payload = run_cli()
+    narrative = payload.get("narrative")
+    if narrative:
+        print(narrative)
+    explanation = payload.get("explanation")
+    if isinstance(explanation, list):
+        for line in explanation:
+            print(f"• {line}")
     print(json.dumps(payload, indent=2))
 
 

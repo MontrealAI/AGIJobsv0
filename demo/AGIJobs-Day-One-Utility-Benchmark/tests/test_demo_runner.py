@@ -6,7 +6,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from demo_runner import DayOneUtilityOrchestrator, DemoPausedError, StrategyNotFoundError
+from demo_runner import DayOneUtilityOrchestrator, DemoPausedError, StrategyNotFoundError, run_cli
 
 
 def _orchestrator() -> DayOneUtilityOrchestrator:
@@ -69,3 +69,20 @@ def test_unknown_strategy_raises():
     orchestrator = _orchestrator()
     with pytest.raises(StrategyNotFoundError):
         orchestrator.simulate("unknown")
+
+
+def test_owner_explain_provides_context():
+    orchestrator = _orchestrator()
+    explanation = orchestrator.explain_owner_controls()
+    assert "owner_controls" in explanation
+    lines = explanation["explanation"]
+    assert any("Platform fee" in line for line in lines)
+    assert any("Latency" in line for line in lines)
+
+
+def test_run_cli_narrative_format():
+    payload = run_cli(["simulate", "--strategy", "e2e", "--format", "narrative"])
+    assert "report" in payload
+    assert "narrative" in payload
+    assert "Utility uplift" in payload["narrative"]
+    assert payload["report"]["cli"]["summary"] == payload["narrative"]
