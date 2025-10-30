@@ -1,0 +1,47 @@
+run_name: "day_one_showcase"
+random_seed: 1337
+budget:
+  max_iterations: 120
+  max_cost: 1200.0
+initial_agent:
+  label: "Atlas-Prime"
+  base_quality: 0.62
+  description: "Zero-shot gig-market architect specialised in orchestrating AGI workforces."
+hgm:
+  tau: 1.25
+  alpha: 1.45
+  epsilon: 0.05
+  max_concurrency: 3
+  min_concurrency: 1
+  warmup_iterations: 5
+  allow_expansions: true
+thermostat:
+  roi_target: 1.6
+  roi_floor: 1.1
+  smoothing_window: 8
+  tau_step: 0.08
+  alpha_step: 0.1
+  concurrency_step: 1
+  evaluation_enhancement_threshold: 2.0
+sentinel:
+  roi_hard_floor: 0.9
+  cost_ceiling: 1800.0
+  
+  max_failures_per_agent: 12
+  cooldown_iterations: 5
+baseline:
+  expansion_interval: 8
+  evaluation_batch: 1
+simulation:
+  success_value: 260.0
+  base_task_cost: 70.0
+  quality_drift_mean: 0.04
+  quality_drift_stddev: 0.12
+  min_quality: 0.05
+  max_quality: 0.97
+  concurrency_penalty: 0.03
+reporting:
+  export_markdown: true
+  export_json: true
+  export_mermaid: true
+  artifact_directory: "reports/latest"
