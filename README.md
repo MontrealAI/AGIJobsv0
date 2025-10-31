@@ -160,8 +160,10 @@ npm run build
 anvil --chain-id 31337 --block-time 2
 
 # Terminal 3 — deploy protocol v2 and bootstrap modules
-npm run contracts:deploy:local
-npm run orchestrator:dev
+npx hardhat run --network localhost scripts/v2/deploy.ts
+
+# Terminal 4 — start the orchestrator control plane
+npm run onebox:server
 ```
 Augment with mission-specific scripts (for example `npm run subgraph:dev`, `npm run services:dev`, or `npm run apps:dev`) depending on which surfaces you are demonstrating.
 
