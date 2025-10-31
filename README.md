@@ -4,265 +4,292 @@
 [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![HGM guardrails](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=HGM%20guardrails)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain+workflow%3A%22ci+%28v2%29%22)
 
-The AGIJobsv0 monorepo delivers the production reference stack for the AGI Jobs protocol: upgradeable Ethereum smart contracts, multi-agent orchestrators, validator/owner consoles, mission control services, and an expansive gallery of cinematic demos that explore the labour markets of post-scarcity civilizations.
+AGIJobsv0 is the production reference stack for the AGI Jobs protocol: upgradeable Ethereum contracts, agent swarms, validator and owner consoles, mission-control services, and an expansive constellation of demos that choreograph sovereign labour markets from human scale to Kardashev-class civilizations.
 
 ```mermaid
-%% grand orchestration map
-flowchart LR
-    classDef core fill:#0f172a,stroke:#e2e8f0,color:#e2e8f0,stroke-width:2px,font-size:16px,font-weight:bold;
-    classDef svc fill:#1d4ed8,stroke:#e2e8f0,color:#f8fafc,stroke-width:2px;
-    classDef apps fill:#22c55e,stroke:#064e3b,color:#022c22,stroke-width:2px;
-    classDef demos fill:#a855f7,stroke:#fdf4ff,color:#2e1065,stroke-width:2px;
-    classDef tooling fill:#f97316,stroke:#fff7ed,color:#431407,stroke-width:2px;
+%% Celestial system architecture of AGIJobsv0
+flowchart TB
+    classDef layer fill:#0f172a,stroke:#cbd5f5,color:#f8fafc,font-size:16px,font-weight:bold,stroke-width:2px;
+    classDef core fill:#1f2937,stroke:#6366f1,color:#e0e7ff,stroke-width:2px;
+    classDef apps fill:#22d3ee,stroke:#0f172a,color:#0b1120;
+    classDef ops fill:#facc15,stroke:#713f12,color:#422006;
+    classDef demos fill:#f0abfc,stroke:#5b21b6,color:#2e1065,font-weight:bold;
 
     subgraph Chain[Protocol Layer]
-        Contracts[[contracts/]]:::core
-        Subgraph[[subgraph/]]:::svc
-        Paymaster[[paymaster/]]:::svc
+        contracts[[contracts/]]:::core
+        migrations[[migrations/]]:::core
+        paymaster[[paymaster/]]:::core
+        subgraphSvc[[subgraph/]]:::core
+        attestation[[attestation/]]:::core
     end
 
-    subgraph Intelligence[Agentic Orchestrator]
-        Orchestrator[[orchestrator/]]:::core
-        AgentGateway[[agent-gateway/]]:::svc
-        Backend[[backend/]]:::svc
-        Services[[services/meta_api\nservices/arena\nservices/thermostat]]:::svc
+    subgraph Intelligence[Agentic Intelligence]
+        orchestrator[[orchestrator/]]:::core
+        agentGateway[[agent-gateway/]]:::core
+        backend[[backend/]]:::core
+        services[[services/meta_api\nservices/arena\nservices/thermostat\nservices/culture-graph-indexer]]:::core
+        packages[[packages/]]:::core
+        shared[[shared/]]:::core
     end
 
     subgraph Experience[Mission Surfaces]
-        Apps[[apps/operator\napps/validator\napps/mission-control\napps/onebox]]:::apps
-        Packages[[packages/]]:::tooling
-        Shared[[shared/]]:::tooling
-    end
-
-    subgraph Simulation[Expeditions & Demos]
-        DemoRoot[[demo/]]:::demos
-        Kardashev[[kardashev_*]]:::demos
-        Examples[[examples/]]:::tooling
+        appsConsole[[apps/console]]:::apps
+        appsOperator[[apps/operator]]:::apps
+        appsMissionControl[[apps/mission-control]]:::apps
+        appsOnebox[[apps/onebox\napps/onebox-static]]:::apps
+        appsValidator[[apps/validator\napps/validator-ui]]:::apps
+        appsEnterprise[[apps/enterprise-portal]]:::apps
+        appsOrchestrator[[apps/orchestrator]]:::apps
     end
 
     subgraph Ops[Operations & Assurance]
-        Docs[[docs/\ninternal_docs/]]:::tooling
-        Scripts[[scripts/\ndeploy/\nservices/notifications]]:::tooling
-        Tests[[tests/\nci/\nreports/]]:::tooling
+        docs[[docs/\ninternal_docs/]]:::ops
+        deploy[[deploy/\ncompose.yaml]]:::ops
+        scripts[[scripts/\nservices/notifications]]:::ops
+        ci[[ci/\nreports/\nmonitoring/]]:::ops
+        tests[[tests/\ntest/\npytest suites]]:::ops
     end
 
-    Contracts --> Orchestrator
-    Orchestrator --> AgentGateway
-    AgentGateway --> Apps
-    Apps --> DemoRoot
-    DemoRoot --> Kardashev
-    Services --> DemoRoot
-    Scripts --> DemoRoot
-    Docs --> Ops
+    subgraph Expeditions[Demonstrations & Simulation]
+        demoHub[[demo/]]:::demos
+        examples[[examples/]]:::demos
+        kardashev[[kardashev_* Python packages]]:::demos
+        simulation[[simulation/]]:::demos
+        data[[data/\nstorage/]]:::demos
+    end
+
+    contracts --> orchestrator --> agentGateway --> appsConsole
+    orchestrator --> backend --> services
+    services --> demoHub
+    demoHub --> kardashev
+    packages --> appsOnebox
+    shared --> appsOperator
+    docs --> deploy
+    deploy --> ops
 ```
 
 ## Table of Contents
 
-- [Platform Overview](#platform-overview)
-- [Repository Atlas](#repository-atlas)
-- [Getting Started](#getting-started)
+- [Constellation Overview](#constellation-overview)
+- [Repository Topography](#repository-topography)
+- [Quickstart](#quickstart)
   - [Prerequisites](#prerequisites)
-  - [Install Dependencies](#install-dependencies)
-  - [Manual Bring-up](#manual-bring-up)
-  - [Docker Compose Launch](#docker-compose-launch)
-- [Demo Command Deck](#demo-command-deck)
-  - [Launchpad Demos](#launchpad-demos)
-  - [Governance & Economic Simulations](#governance--economic-simulations)
-  - [Kardashev-Class Expeditions](#kardashev-class-expeditions)
-  - [Experience, Culture & Research Labs](#experience-culture--research-labs)
-  - [Verification & Health Checks](#verification--health-checks)
+  - [Dependency Install](#dependency-install)
+  - [Manual Bring-Up](#manual-bring-up)
+  - [One-Click Compose](#one-click-compose)
+- [Demo Observatory](#demo-observatory)
+  - [Launchpad & Operations](#launchpad--operations)
+  - [Governance & Economics](#governance--economics)
+  - [Kardashev & Omega Expeditions](#kardashev--omega-expeditions)
+  - [Sovereign Culture & Experience Labs](#sovereign-culture--experience-labs)
+  - [Verification Flight Deck](#verification-flight-deck)
 - [Quality Gates](#quality-gates)
-- [Documentation & Operations](#documentation--operations)
-- [Contributing & Support](#contributing--support)
+- [Documentation & Support](#documentation--support)
 
-## Platform Overview
+## Constellation Overview
 
-AGIJobsv0 packages the contracts, data plane, and agent intelligence that power an autonomous labour market. The repository includes:
+The monorepo packages the complete AGI Jobs mission stack:
 
-- **Upgradeable protocol contracts** under [`contracts/`](contracts/) with Foundry and Hardhat flows, circuit breakers, and staging migrations in [`migrations/`](migrations/).
-- **Orchestration intelligence** in [`orchestrator/`](orchestrator/), [`backend/`](backend/), and [`agent-gateway/`](agent-gateway/) for mission planning, telemetry, and validator APIs.
-- **Operational surfaces** in [`apps/`](apps/) (Operator Console, Validator UI, Mission Control, Enterprise Portal, OneBox, Orchestrator HUD) powered by reusable packages in [`packages/`](packages/) and [`shared/`](shared/).
-- **Service mesh** modules in [`services/`](services/) (meta API, arena, thermostat, culture graph, notifications, sentinel, alerting) with deployment automation in [`deploy/`](deploy/) and [`compose.yaml`](compose.yaml).
-- **Expansive demos** in [`demo/`](demo/) and Kardashev-class Python suites (`kardashev_*`) that showcase orchestrated economies across stellar civilizations.
+- **Upgradeable protocol layer** — Solidity contracts, paymaster relays, subgraph indexers, and attestation flows under [`contracts/`](contracts/), [`paymaster/`](paymaster/), [`subgraph/`](subgraph/), and [`attestation/`](attestation/).
+- **Agent orchestration intelligence** — mission planners, scoring engines, and telemetry routers across [`orchestrator/`](orchestrator/), [`backend/`](backend/), [`agent-gateway/`](agent-gateway/), and FastAPI micro-services in [`services/`](services/).
+- **Mission surfaces** — Next.js/React consoles and HUDs in [`apps/`](apps/) backed by reusable SDKs in [`packages/`](packages/) and shared libraries in [`shared/`](shared/).
+- **Expeditions and demos** — cinematic launchers inside [`demo/`](demo/), Python mission suites in the root `kardashev_*` packages, and analytics examples in [`examples/`](examples/).
+- **Operations and compliance** — deployment blueprints in [`deploy/`](deploy/), [`compose.yaml`](compose.yaml), automation in [`scripts/`](scripts/), monitoring in [`monitoring/`](monitoring/), and comprehensive playbooks under [`docs/`](docs/) and [`internal_docs/`](internal_docs/).
 
-## Repository Atlas
+```mermaid
+%% Demo navigation mindmap
+mindmap
+  root((Demo Observatory))
+    "Launchpad"
+      "AGI Alpha Node"
+      "Validator Constellation"
+      "OneBox Mission Runner"
+      "Day-One Utility Benchmark"
+    "Governance"
+      "AGI Governance v13-v17"
+      "National Supply Chain"
+      "Redenomination Guardian"
+      "Economic Power Dominion"
+    "Kardashev & Omega"
+      "K-II Platform"
+      "Omega Upgrade v3-v5"
+      "Ultra & Supreme Missions"
+    "Culture & Experience"
+      "Era of Experience"
+      "Planetary Orchestrator Fabric"
+      "Sovereign Constellation"
+      "Zenith Sapience Hypernova"
+    "Verification"
+      "Mission CI Pipelines"
+      "Owner Dashboards"
+      "Telemetry Export"
+```
 
-| Domain | Key paths | Highlights |
+## Repository Topography
+
+| Domain | Key Paths | Highlights |
 | --- | --- | --- |
-| Protocol & Chain | [`contracts/`](contracts/), [`migrations/`](migrations/), [`subgraph/`](subgraph/), [`paymaster/`](paymaster/), [`attestation/`](attestation/) | Solidity core, Foundry fuzzing, Hardhat deployments, subgraph indexers, EAS attestation flows. |
-| Agent Intelligence | [`orchestrator/`](orchestrator/), [`backend/`](backend/), [`agent-gateway/`](agent-gateway/), [`services/meta_api`](services/meta_api), [`services/arena`](services/arena) | Mission planners, scoring engines, FastAPI routers, telemetry streaming, arena simulations. |
-| Experience Surfaces | [`apps/operator`](apps/operator), [`apps/validator`](apps/validator), [`apps/mission-control`](apps/mission-control), [`apps/onebox`](apps/onebox), [`apps/orchestrator`](apps/orchestrator) | Next.js/React consoles, real-time dashboards, orchestrator supervision HUDs. |
-| Shared Libraries | [`packages/`](packages/), [`shared/`](shared/), [`lib/`](lib/), [`tools/`](tools/) | TypeScript SDKs, contract bindings, CLI helpers, analytics libraries. |
-| Data & Simulation | [`simulation/`](simulation/), [`storage/`](storage/), [`reports/`](reports/), [`data/`](data/), [`examples/`](examples/) | Monte Carlo load tests, coverage & SBOM artefacts, dataset staging, minimal client scripts. |
-| Demos & Expeditions | [`demo/`](demo/), [`kardashev_*`](./), [`kardashev_ii_omega_grade_alpha_agi_business_3_demo`](kardashev_ii_omega_grade_alpha_agi_business_3_demo) and variants | Narrative missions, Kardashev Omega upgrades, ultra-scale operator runs, CI harnesses. |
-| Operations | [`docs/`](docs/), [`internal_docs/`](internal_docs/), [`scripts/`](scripts/), [`ci/`](ci/), [`RUNBOOK.md`](RUNBOOK.md), [`SECURITY.md`](SECURITY.md) | Deployment handbooks, incident response, automation scripts, CI policies. |
+| Protocol & Chain Control | [`contracts/`](contracts/), [`migrations/`](migrations/), [`paymaster/`](paymaster/), [`subgraph/`](subgraph/), [`attestation/`](attestation/) | Foundry & Hardhat workflows, circuit breakers, subgraph mappings, EAS flows. |
+| Agent Intelligence | [`orchestrator/`](orchestrator/), [`agent-gateway/`](agent-gateway/), [`backend/`](backend/), [`services/arena`](services/arena), [`services/meta_api`](services/meta_api), [`services/thermostat`](services/thermostat) | Multi-agent planning, FastAPI surfaces, validator APIs, thermal governance. |
+| Mission Applications | [`apps/console`](apps/console), [`apps/operator`](apps/operator), [`apps/mission-control`](apps/mission-control), [`apps/onebox`](apps/onebox), [`apps/enterprise-portal`](apps/enterprise-portal), [`apps/validator-ui`](apps/validator-ui) | Operator consoles, validator HUDs, mission orchestration dashboards, OneBox tooling. |
+| Shared Tooling | [`packages/`](packages/), [`shared/`](shared/), [`lib/`](lib/), [`tools/`](tools/) | TypeScript SDKs, orchestrator clients, storage adapters, CLI utilities. |
+| Demos & Expeditions | [`demo/`](demo/), root `kardashev_*` Python packages, [`examples/`](examples/), [`simulation/`](simulation/) | Narrative missions, Kardashev ascendancy suites, Monte Carlo workloads, telemetry exporters. |
+| Operations & Assurance | [`deploy/`](deploy/), [`compose.yaml`](compose.yaml), [`scripts/`](scripts/), [`ci/`](ci/), [`tests/`](tests/), [`reports/`](reports/), [`monitoring/`](monitoring/) | Deployment automation, CI guardrails, SBOMs, coverage, health monitors. |
+| Knowledge Base | [`docs/`](docs/), [`internal_docs/`](internal_docs/), [`RUNBOOK.md`](RUNBOOK.md), [`SECURITY.md`](SECURITY.md), [`MIGRATION.md`](MIGRATION.md), [`CHANGELOG.md`](CHANGELOG.md) | Architecture chronicles, operations handbooks, compliance notes, release history. |
 
-## Getting Started
+## Quickstart
 
 ### Prerequisites
 
-- Node.js 20.18.1 (`nvm use` picks the pinned version in [`.nvmrc`](.nvmrc)).
-- npm 10+
-- Python 3.12 with `pip`
-- Foundry toolchain (`forge`, `anvil`) and Docker (for the full stack).
+- Node.js **20.18.1** (`nvm use` reads [`.nvmrc`](.nvmrc)).
+- npm **10.x**.
+- Python **3.12+** with `pip`.
+- Foundry toolchain (`forge`, `anvil`) and Docker (for compose deployments).
 
-### Install Dependencies
+### Dependency Install
 
 ```bash
-# Install Node/TypeScript dependencies
+# Node/TypeScript dependencies
 npm ci
 
-# Bootstrap Python tooling for orchestrator, demos, and analytics
+# Python requirements for services and demos
 python -m pip install --upgrade pip
 python -m pip install -r requirements-python.txt
+
+# Agent gateway helpers & validator simulators
+python -m pip install -r requirements-agent.txt
 ```
 
-### Manual Bring-up
+### Manual Bring-Up
 
 ```bash
-# Compile contracts and generate shared TypeScript constants
+# Compile contracts, generate ABIs, prepare shared TypeScript constants
 npm run build
 
-# (new terminal) Launch a local Anvil chain
+# Terminal 2 — local Anvil chain
 anvil --chain-id 31337 --block-time 2
 
-# Deploy the v2 contract system locally
+# Terminal 3 — deploy the v2 system to localhost
 npx hardhat run --network localhost scripts/v2/deploy.ts
 
-# Start the meta API with orchestrator routes
+# Terminal 4 — start the core FastAPI mission surface
 uvicorn services.meta_api.app.main:create_app --reload --port 8000
 
-# Optional: bring up gateway & validator tooling
-npm run agent:gateway
-npm run agent:validator
+# Optional surfaces
+npm run agent:gateway        # REST & WebSocket relay for agents
+npm run agent:validator      # Validator simulator
+npm --prefix apps/console run dev   # Mission console UI
 ```
 
-Consult [`docs/quick-start.md`](docs/quick-start.md) for owner role provisioning, identity wallets, and validator alignment.
+Consult [`docs/quick-start.md`](docs/quick-start.md) and [`docs/AGENTIC_QUICKSTART.md`](docs/AGENTIC_QUICKSTART.md) for wallet provisioning, validator keys, and orchestrator alignment drills.
 
-### Docker Compose Launch
+### One-Click Compose
 
 ```bash
-cp deployment-config/oneclick.env.example deployment-config/oneclick.env  # customise secrets
+cp deployment-config/oneclick.env.example deployment-config/oneclick.env
+# Edit secrets, RPC URLs, owner wallets
+
 docker compose up --build
 ```
 
-Exposed services:
+Exposed endpoints (default):
 
-- `http://localhost:8545` – Anvil testnet
-- `http://localhost:8000` – Meta API (FastAPI)
-- `http://localhost:8080` – Orchestrator + OneBox endpoints
-- `http://localhost:8090` – Agent Gateway
-- `http://localhost:3000` – Validator UI
-- `http://localhost:3001` – Enterprise Portal
+- `http://localhost:8545` — Anvil testnet
+- `http://localhost:8000` — Meta API (FastAPI)
+- `http://localhost:8080` — Orchestrator & OneBox APIs
+- `http://localhost:8090` — Agent Gateway
+- `http://localhost:3000` — Validator UI
+- `http://localhost:3001` — Enterprise portal
 
-All Compose services consume [`deployment-config/oneclick.env`](deployment-config/oneclick.env) for contract addresses and relayer secrets.
+All compose services read [`deployment-config/oneclick.env`](deployment-config/oneclick.env) for contract addresses, relayers, and telemetry credentials.
 
-## Demo Command Deck
+## Demo Observatory
 
-The `demo/` root and Kardashev Python packages deliver deep-narrative simulations, each with launch scripts, telemetry exports, and CI harnesses. After installing Node and Python dependencies, use the `npm run demo:*` commands (TypeScript missions) or the packaged Python CLIs for Kardashev campaigns.
+The repository ships a deep catalog of cinematic simulations. After installing dependencies, launch them through `npm run demo:*`, bespoke shell scripts, or Python package CLIs. Search for `"demo:"` in [`package.json`](package.json) to discover the full manifest.
 
-```mermaid
-journey
-    title Demo Flight Plan
-    section Launchpad
-      Alpha Node Bootstrap: 4
-      Validator Alignment: 3
-    section Governance
-      Planetary Senate Cycle: 5
-      Economic Thermostat: 4
-    section Kardashev Ascension
-      Omega Upgrade Lattice: 5
-      Ultra-Scale Operator Run: 5
-    section Culture & Experience
-      Era of Experience: 4
-      Culture Graph Resonance: 3
-```
+### Launchpad & Operations
 
-### Launchpad Demos
-
-| Demo | Directory | Command |
+| Demo | Directory | Launch Command |
 | --- | --- | --- |
 | AGI Alpha Node v0 | [`demo/AGI-Alpha-Node-v0/`](demo/AGI-Alpha-Node-v0/) | `npm run demo:agi-alpha-node` |
-| OneBox Mission Runner | [`demo/One-Box/`](demo/One-Box/) | `npm run demo:onebox:launch` |
 | Validator Constellation v0 | [`demo/Validator-Constellation-v0/`](demo/Validator-Constellation-v0/) | `npm run demo:validator-constellation` |
+| OneBox Mission Runner | [`demo/One-Box/`](demo/One-Box/) | `npm run demo:onebox:launch` |
+| AGI Jobs Day-One Utility Benchmark | [`demo/AGIJobs-Day-One-Utility-Benchmark/`](demo/AGIJobs-Day-One-Utility-Benchmark/) | `make -C demo/AGIJobs-Day-One-Utility-Benchmark e2e` |
 | AGI Labor Market Control Room | [`demo/agi-labor-market-grand-demo/`](demo/agi-labor-market-grand-demo/) | `npm run demo:agi-labor-market:control-room` |
-| AGI OS First-Class Experience | [`scripts/v2/agiOsFirstClassDemo.ts`](scripts/v2/agiOsFirstClassDemo.ts) | `npm run demo:agi-os:first-class` |
 
-### Governance & Economic Simulations
+### Governance & Economics
 
-| Demo | Directory | Command |
+| Demo | Directory | Launch Command |
 | --- | --- | --- |
-| AGI Governance (Alpha) | [`demo/agi-governance/`](demo/agi-governance/) | `npm run demo:agi-governance:full` |
-| Economic Power v0 | [`demo/Economic-Power-v0/`](demo/Economic-Power-v0/) | `npm run demo:economic-power` |
-| Meta-Agentic Program Synthesis | [`demo/Meta-Agentic-Program-Synthesis-v0/`](demo/Meta-Agentic-Program-Synthesis-v0/) | `npm run demo:meta-agentic-program-synthesis:full` |
-| National Supply Chain | [`demo/National-Supply-Chain-v0/`](demo/National-Supply-Chain-v0/) | `npm run demo:national-supply-chain:control-room` |
+| AGI Governance (alpha v13–v17) | [`demo/agi-governance/`](demo/agi-governance/) | `npm run demo:agi-governance:alpha-v17` (latest) |
+| National Supply Chain v0 | [`demo/National-Supply-Chain-v0/`](demo/National-Supply-Chain-v0/) | `npm run demo:national-supply-chain:control-room` |
+| Economic Power Dominion | [`demo/Economic-Power-v0/`](demo/Economic-Power-v0/) | `npm run demo:economic-power:dominion` |
 | Redenomination Guardian Drill | [`demo/REDENOMINATION/`](demo/REDENOMINATION/) | `npm run demo:redenomination:guardian-drill` |
+| Trustless Economic Core | [`demo/Trustless-Economic-Core-v0/`](demo/Trustless-Economic-Core-v0/) | `npm run run:trustless-core` |
 
-### Kardashev-Class Expeditions
+### Kardashev & Omega Expeditions
 
 | Expedition | Package | Launch |
 | --- | --- | --- |
-| Kardashev II Platform Orchestration | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/`](demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/) | `npm run demo:kardashev-ii:orchestrate` |
+| Kardashev II Platform Orchestration | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/`](demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/) | `npm run demo:kardashev` |
 | Stellar Civilization Lattice | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/`](demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/) | `npm run demo:kardashev-ii-lattice:orchestrate` |
-| Kardashev Ω Upgrade (TypeScript orchestration) | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/`](demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/) | `npm run demo:kardashev` |
-| Kardashev Ω Operator Mesh | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega) | `npm run demo:kardashev-ii-omega-operator` |
-| Kardashev Ω Upgrade (v3) | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v3`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v3) | `npm run demo:kardashev-ii-omega-upgrade-v3` |
-| Kardashev Ω Upgrade (v5) | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5) | `npm run demo:kardashev-ii-omega-upgrade-v5` |
-| Kardashev Ω Ultra Run | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra) | `npm run demo:kardashev-ii-omega-ultra` |
-| Kardashev Ω K2 Campaign | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2) | `npm run demo:kardashev-ii-omega-k2` |
-| Kardashev Ω Omega-III Runtime | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3) | `npm run demo:kardashev-omega-iii:run` |
+| Omega Upgrade (TypeScript) | [`demo/Kardashev-II Omega-Grade-α-AGI Business-3/`](demo/Kardashev-II%20Omega-Grade-%CE%B1-AGI%20Business-3/) | `npm run demo:kardashev-ii-omega-upgrade` |
+| Omega Upgrade (Python v3/v4/v5) | [`kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v*`](kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5/) | `npm run demo:kardashev-ii-omega-upgrade-v5` (latest) |
+| Omega Ultra & Supreme Campaigns | [`demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/`](demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/) & [`demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/`](demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme/) | `npm run demo:kardashev-ii-omega-ultra` / `python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme launch` |
+| Omega K2 & Omega-III | [`demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2/`](demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2/) & [`demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/`](demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/) | `npm run demo:kardashev-ii-omega-k2` / `npm run demo:kardashev-ii-omega-operator` |
 
-> **Tip:** Each Kardashev package ships `ci`, `status`, and `owner` entrypoints. Append `ci`, `status`, or `owner` to the command for automated verification, health monitoring, or operator dashboards.
+### Sovereign Culture & Experience Labs
 
-### Experience, Culture & Research Labs
-
-| Demo | Directory | Command |
+| Demo | Directory | Launch Command |
 | --- | --- | --- |
 | Era of Experience v0 | [`demo/Era-Of-Experience-v0/`](demo/Era-Of-Experience-v0/) | `npm run demo:era-of-experience` |
-| Planetary Orchestrator Fabric v0 | [`demo/Planetary-Orchestrator-Fabric-v0/`](demo/Planetary-Orchestrator-Fabric-v0/) | `npm run demo:planetary-orchestrator-fabric` |
+| Planetary Orchestrator Fabric | [`demo/Planetary-Orchestrator-Fabric-v0/`](demo/Planetary-Orchestrator-Fabric-v0/) | `npm run demo:planetary-orchestrator-fabric` |
 | Sovereign Constellation Atlas | [`demo/sovereign-constellation/`](demo/sovereign-constellation/) | `npm run demo:sovereign-constellation:atlas` |
-| Zenith Hypernova | [`demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/`](demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/) | `npm run demo:zenith-hypernova:local` |
-| Zenith Sapience Planetary OS | [`demo/zenith-sapience-initiative-planetary-operating-system-governance/`](demo/zenith-sapience-initiative-planetary-operating-system-governance/) | `npm run demo:zenith-sapience-planetary-os:local` |
+| Zenith Sapience Hypernova | [`demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/`](demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/) | `npm run demo:zenith-hypernova:local` |
+| Omni Sovereign Ascension OS | [`demo/omni-sovereign-ascension-operating-system/`](demo/omni-sovereign-ascension-operating-system/) | `npm run demo:omni-sovereign` |
+| ASI Global & Take-Off Missions | [`demo/asi-global/`](demo/asi-global/) & [`demo/asi-takeoff/`](demo/asi-takeoff/) | `npm run demo:asi-global:local` / `npm run demo:asi-takeoff:local` |
 
-Search for `"demo:"` inside [`package.json`](package.json) to discover the full mission catalog, including celestial sovereignty arcs, zenith sapience suites, and cinematic orchestration runs.
+### Verification Flight Deck
 
-### Verification & Health Checks
-
-Many demos provide automated verification scripts:
+Mission suites expose audit, CI, and operator consoles:
 
 ```bash
+# TypeScript demo validation
 npm run test:agi-alpha-node
 npm run test:validator-constellation
 npm run test:economic-power
 npm run test:era-of-experience
+
+# Python/Kardashev CI
 python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra ci --config demo/'Kardashev-II Omega-Grade-α-AGI Business-3'/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/config/mission.json
+python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5.cli ci
 ```
 
-Python-heavy demos expose pytest suites in [`tests/demo/`](tests/demo/) and within each demo directory (for example [`demo/Huxley-Godel-Machine-v0/tests/`](demo/Huxley-Godel-Machine-v0/tests/)).
+Many demo directories embed additional pytest or node test suites (for example [`demo/Huxley-Godel-Machine-v0/tests/`](demo/Huxley-Godel-Machine-v0/tests/) and [`tests/demo/`](tests/demo/)). Owner dashboards, export scripts, and telemetry sinks are available through the `owner:*`, `verify:*`, and `*:*:ci` scripts in [`package.json`](package.json).
 
 ## Quality Gates
 
-Run the same checks enforced in CI before opening a pull request:
+Before submitting a pull request, mirror the CI guardrails:
 
 ```bash
-# Contract artefacts and generated types
+# Contracts & generated bindings
 npm run compile
 
 # TypeScript linting and tests
 npm run lint
 npm run test
 
-# Front-end bundles and accessibility smoke tests
+# Front-end smoke tests & accessibility
 npm run pretest
 
-# Python unit + integration coverage
+# Python unit and integration coverage
 COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc -m pytest \
   test/paymaster \
   test/tools \
   test/orchestrator \
   test/simulation
 COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc --append -m pytest tests
-COVERAGE_FILE=.coverage.unit coverage run --rcfile=.coveragerc --append -m pytest demo/Huxley-Godel-Machine-v0/tests
+# Append demo-specific coverage runs as needed (e.g. demo/Huxley-Godel-Machine-v0/tests)
 COVERAGE_FILE=.coverage.integration coverage run --rcfile=.coveragerc -m pytest \
   test/routes/test_agents.py \
   test/routes/test_analytics.py \
@@ -272,25 +299,21 @@ COVERAGE_FILE=.coverage.integration coverage run --rcfile=.coveragerc -m pytest 
 
 coverage combine .coverage.unit .coverage.integration
 coverage report --rcfile=.coveragerc
+
+# End-to-end web coverage
+npm run webapp:e2e
+
+# Foundry fuzzing
+(cd contracts && forge test)
 ```
 
-Add Foundry fuzzing with `forge test` inside [`contracts/`](contracts/) and execute Cypress end-to-end coverage via `npm run webapp:e2e`.
+## Documentation & Support
 
-## Documentation & Operations
+- **Architecture & systems:** [`docs/overview.md`](docs/overview.md), [`docs/architecture-v2.md`](docs/architecture-v2.md).
+- **Deployment operations:** [`docs/v2-deployment-and-operations.md`](docs/v2-deployment-and-operations.md), [`docs/deployment-production-guide.md`](docs/deployment-production-guide.md), [`docs/DEPLOYED_ADDRESSES.md`](docs/DEPLOYED_ADDRESSES.md).
+- **Owner & validator playbooks:** [`docs/owner-control-handbook.md`](docs/owner-control-handbook.md) plus the `docs/owner-control-*.md` companions.
+- **OneBox & mission UX:** [`docs/onebox/`](docs/onebox/), [`docs/onebox-ux.md`](docs/onebox-ux.md).
+- **Agent gateway & examples:** [`docs/agent-gateway.md`](docs/agent-gateway.md), [`examples/agentic/`](examples/agentic/).
+- **Security, runbooks & change history:** [`SECURITY.md`](SECURITY.md), [`RUNBOOK.md`](RUNBOOK.md), [`CHANGELOG.md`](CHANGELOG.md), [`MIGRATION.md`](MIGRATION.md).
 
-- **Architecture & Overview:** [`docs/overview.md`](docs/overview.md), [`docs/architecture-v2.md`](docs/architecture-v2.md).
-- **Deployment Guides:** [`docs/v2-deployment-and-operations.md`](docs/v2-deployment-and-operations.md), [`docs/deployment-production-guide.md`](docs/deployment-production-guide.md), [`docs/DEPLOYED_ADDRESSES.md`](docs/DEPLOYED_ADDRESSES.md).
-- **Owner & Validator Operations:** [`docs/owner-control-handbook.md`](docs/owner-control-handbook.md) plus the suite of `docs/owner-control-*.md` guides.
-- **OneBox & Experience Docs:** [`docs/onebox/`](docs/onebox/), [`docs/onebox-ux.md`](docs/onebox-ux.md).
-- **Agent Gateway & Examples:** [`docs/agent-gateway.md`](docs/agent-gateway.md), [`examples/agentic/`](examples/agentic/).
-- **Security & Compliance:** [`docs/security/`](docs/security/), [`SECURITY.md`](SECURITY.md), [`RUNBOOK.md`](RUNBOOK.md), [`CHANGELOG.md`](CHANGELOG.md), [`MIGRATION.md`](MIGRATION.md).
-
-## Contributing & Support
-
-1. Fork the repository and branch off `main`.
-2. Follow the [Quality Gates](#quality-gates) checklist locally.
-3. Open a pull request—ensure the `ci (v2)` workflow succeeds.
-
-Responsible disclosure lives in [`SECURITY.md`](SECURITY.md). For operational escalation see [`RUNBOOK.md`](RUNBOOK.md). New agent developers can begin with [`docs/AGENTIC_QUICKSTART.md`](docs/AGENTIC_QUICKSTART.md).
-
-AGIJobsv0 ships under the [MIT License](LICENSE).
+For responsible disclosure see [`SECURITY.md`](SECURITY.md). Operational escalations follow the paths in [`RUNBOOK.md`](RUNBOOK.md). The project is released under the [MIT License](LICENSE).
