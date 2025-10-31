@@ -267,6 +267,60 @@ stateDiagram-v2
 - **Fuzzing + Differential tests**: [`fuzz.yml`](.github/workflows/fuzz.yml), [`ci/foundry.toml`](ci/foundry.toml) orchestrate forge fuzz and echidna sweeps.
 - **SBOM & Release**: [`release.yml`](.github/workflows/release.yml) and [`ci/release/`](ci/) generate CycloneDX manifests, verify ABIs, and stage deployments.
 - **Branch protection**: runbooks in [`OperatorRunbook.md`](OperatorRunbook.md) and [`RUNBOOK.md`](RUNBOOK.md) prescribe gating rules (required statuses, reviews, deploy blocks) to keep the mainline fully green.
+## 🧪 Continuous Assurance & CI
+The V2 CI lattice keeps every subsystem green and verifiable:
+- **Green CI Gates** – [`ci/workflows/ci.yml`](ci/workflows/ci.yml) enforces linting, testing, type-checking, SBOM generation, and demo smoke suites on every PR and on `main`.
+- **JavaScript / TypeScript** – `npm run lint`, `npm run webapp:typecheck`, `npm run webapp:e2e`, and `npm run pretest` harden console surfaces, OneBox diagnostics, and demo verifiers.
+- **Contracts & Chain Logic** – `npm run test`, `forge test`, and targeted Hardhat suites (`npm run test:fork`, `npm run test:alpha-agi-mark`) validate protocol upgrades and sovereign controls.
+- **Python & Agent Services** – `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` spans `tests/`, `test/`, and demo-specific suites; additional CLI verifiers live under `scripts/v2/`.
+- **Security & Supply Chain** – `npm run security:audit`, `npm run sbom:generate`, `npm run release:manifest:validate`, and license verifiers within [`ci/`](ci/) sustain production trust.
+- **Branch Protection Checks** – `npm run ci:verify-contexts` guarantees the workflow job display names stay synchronised with branch protection, and `npm run ci:verify-branch-protection` (both in [`scripts/ci`](scripts/ci)) ensures all CI (v2) workflows remain mandatory before merges. [`ci/required-contexts.json`](ci/required-contexts.json) anchors the required status list so automation, docs, and GitHub rules stay in lockstep.【F:ci/required-contexts.json†L1-L23】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+
+### CI v2 — enforced gates
+`ci (v2)` now requires every surfaced check on pull requests and the `main` branch. The branch-protection guard asserts that the following contexts stay locked before merges are allowed:
+
+| Required check | Purpose |
+| --- | --- |
+| `ci (v2) / Lint & static checks` | ESLint, Prettier, sentinel templates, and toolchain verification. |
+| `ci (v2) / Tests` | Hardhat unit tests, ABI drift detection, and contract compilation. |
+| `ci (v2) / Python unit tests` | FastAPI, orchestrator, and simulation module unit coverage with 90%+ enforcement. |
+| `ci (v2) / Python integration tests` | Cross-service API flows, demo harnesses, and analytics routes. |
+| `ci (v2) / Load-simulation reports` | Monte Carlo sweeps for treasury burn/fee thermodynamics. |
+| `ci (v2) / Python coverage enforcement` | Aggregated unit + integration coverage gating. |
+| `ci (v2) / HGM guardrails` | High Governance Machine regression suite across orchestrators and demos. |
+| `ci (v2) / Foundry` | Forge-based fuzzing and ffi-enabled contract test battery. |
+| `ci (v2) / Coverage thresholds` | JavaScript/TypeScript lcov enforcement for shared packages. |
+| `ci (v2) / Phase 6 readiness` | Manifest and UI validation for Phase 6 expedition surfaces. |
+| `ci (v2) / Phase 8 readiness` | Phase 8 cinematic manifest verification. |
+| `ci (v2) / Kardashev II readiness` | Kardashev-scale readiness drills and operator UX checks. |
+| `ci (v2) / ASI Take-Off Demonstration` | Deterministic launch of the ASI take-off cinematic scenario. |
+| `ci (v2) / Zenith Sapience Demonstration` | Hyper-scale Zenith rehearsal, including local validator orchestration. |
+| `ci (v2) / AGI Labor Market Grand Demo` | Sovereign labour-market export suite with transcript artefacts. |
+| `ci (v2) / Sovereign Mesh Demo — build` | Sovereign Mesh orchestrator backend and console builds. |
+| `ci (v2) / Sovereign Constellation Demo — build` | Sovereign Constellation deterministic build verification. |
+| `ci (v2) / Celestial Archon Demonstration` | Celestial Archon sovereign rehearsal (deterministic + local). |
+| `ci (v2) / Hypernova Governance Demonstration` | Zenith Hypernova deterministic and local rehearsals. |
+| `ci (v2) / Branch protection guard` | Automated API audit of repository branch rules. |
+| `ci (v2) / CI summary` | Run-level digest capturing each job’s result and artefact pointers. |
+| `ci (v2) / Invariant tests` | Foundry invariant fuzzing for protocol safety envelopes. |
+
+## 📡 Operations & Observability
+- One-click deployments and infra recipes live in [`deploy/`](deploy/) and [`deployment-config/`](deployment-config/).
+- Alerting, notification, sentinel, and thermostat services operate under [`services/alerting`](services/alerting), [`services/notifications`](services/notifications), [`services/sentinel`](services/sentinel), and [`services/thermostat`](services/thermostat).
+- Runtime telemetry, Prometheus metrics, and Grafana dashboards are curated in [`monitoring/`](monitoring/).
+- [`RUNBOOK.md`](RUNBOOK.md) orchestrates incident drills; [`docs/AGIJobs-v2-Mainnet-Guide.md`](docs/AGIJobs-v2-Mainnet-Guide.md) captures production launch procedures.
+The V2 CI architecture enforces a fully green pipeline on every pull request and on `main`:
+The v2 CI lattice is relentlessly green on `main` and for every pull request, gating merges with required checks:
+The v2 CI lattice is relentlessly green on `main` and across all pull requests, locking in production-grade quality:
+
+- [`ci.yml`](.github/workflows/ci.yml) executes linting, type-checking, unit suites, Foundry tests, Python demos, and attestation verification in parallel.
+- Demo-specific workflows (for example [`demo-agi-alpha-node.yml`](.github/workflows/demo-agi-alpha-node.yml), [`demo-kardashev-ii-omega-ultra.yml`](.github/workflows/demo-kardashev-ii-omega-ultra.yml), [`demo-validator-constellation.yml`](.github/workflows/demo-validator-constellation.yml)) rehydrate their environments and run scenario scripts so cinematic launches never regress.
+- `static-analysis.yml`, `scorecard.yml`, `fuzz.yml`, and `contracts.yml` enforce SBOM generation, security scanning, fuzzing cadences, and Foundry invariants.
+- `webapp.yml`, `apps-images.yml`, and `containers.yml` build, scan, and push container + UI artefacts used across demos and production.
+
+Branch protection requires all blocking workflows to pass before merge, guaranteeing a fully green runway for every release.
+
+---
 
 ## 📡 Observability, Security & Governance
 - **Telemetry & Monitoring**: [`monitoring/`](monitoring/) bundles dashboards, Prometheus exporters, Grafana configs, and alert playbooks; `compose.yaml` wires exporters.

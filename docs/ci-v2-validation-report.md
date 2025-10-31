@@ -60,7 +60,7 @@ After validating the local run, audit branch protection (requires a token with `
 npm run ci:verify-branch-protection -- --token <GITHUB_TOKEN_WITH_REPO_SCOPE>
 ```
 
-Ensure the output contexts exactly match the checklist in `scripts/ci/verify-branch-protection.ts`. When the report shows the full context set, administrators and contributors cannot bypass the CI v2 matrix, keeping every job visible and required on `main` and all pull requests.
+Ensure the output contexts exactly match [`ci/required-contexts.json`](../ci/required-contexts.json). When the report shows the full context set, administrators and contributors cannot bypass the CI v2 matrix, keeping every job visible and required on `main` and all pull requests.【F:ci/required-contexts.json†L1-L23】
 
 ## Operational notes
 

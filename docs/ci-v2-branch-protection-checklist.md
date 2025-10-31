@@ -8,6 +8,9 @@
 
 ## Required status contexts
 
+The canonical list of required contexts lives in [`ci/required-contexts.json`](../ci/required-contexts.json). Update that file
+and the workflow in the same commit so automation, documentation, and branch protection stay aligned.【F:ci/required-contexts.json†L1-L23】
+
 ### Core execution gate
 
 | Context | Source job | Why it matters |
@@ -47,8 +50,8 @@
 
 | Context | Source job | Why it matters |
 | --- | --- | --- |
-| `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L872-L1044】 |
-| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator and surfaces permitted skips for forked PRs.【F:.github/workflows/ci.yml†L905-L1010】 |
+| `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L905-L1031】 |
+| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator and surfaces permitted skips for forked PRs.【F:.github/workflows/ci.yml†L1033-L1159】 |
 
 ### Companion workflows
 
@@ -57,7 +60,7 @@
 | `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
 | `static-analysis / CodeQL analysis` | [`codeql`](../.github/workflows/static-analysis.yml) | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
 
-The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist. The lint stage now executes `npm run ci:verify-contexts` to fail fast when `.github/workflows/ci.yml` and `scripts/ci/verify-branch-protection.ts` drift, giving administrators an immediate signal before a PR reaches review.【F:.github/workflows/ci.yml†L53-L60】【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
+The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist. The lint stage now executes `npm run ci:verify-contexts` to fail fast when `.github/workflows/ci.yml` and `ci/required-contexts.json` drift, giving administrators an immediate signal before a PR reaches review.【F:.github/workflows/ci.yml†L53-L60】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
 
 ---
 
@@ -80,7 +83,7 @@ npm run ci:verify-contexts
 npm run ci:verify-branch-protection
 ```
 
-- `npm run ci:verify-contexts` parses `.github/workflows/ci.yml` and confirms every job name maps to a required status context, preventing silent drift when contributors rename jobs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
+- `npm run ci:verify-contexts` parses `.github/workflows/ci.yml` and confirms every job name maps to a required status context, preventing silent drift when contributors rename jobs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
 - `npm run audit:final -- --full` runs this verifier automatically when assembling the release dossier, keeping non-technical owners aligned with branch policy. The command also records the outcome in `reports/audit/final-readiness.json` for auditors who track freeze evidence across releases.【F:scripts/audit/final-readiness.ts†L1-L305】
 
 - Save the ✅/❌ table output in your change ticket. It proves the required contexts, ordering, strict mode, and administrator enforcement all align with policy.
@@ -104,7 +107,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 3. Confirm the job is marked as **Required** in the run header. If it is missing, update branch protection immediately and re-run the workflow to refresh the badge.
 4. When troubleshooting, re-run the workflow with **Re-run failed jobs** so historical logs remain intact for incident reviews.
 5. Download the `ci-summary` artifact and archive `reports/ci/status.md` plus `status.json` with the change ticket; these files
-   mirror the on-screen table and prove which jobs were evaluated.【F:.github/workflows/ci.yml†L905-L1010】
+    mirror the on-screen table and prove which jobs were evaluated.【F:.github/workflows/ci.yml†L1033-L1159】
 
 ### 4. Double-check companion workflows
 

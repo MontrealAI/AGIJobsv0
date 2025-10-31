@@ -71,7 +71,7 @@ entire flow runs inside CI.
    ```
 
    This verifies that pull requests and `main` are already blocked on the
-   green CI suite described in `docs/ci-v2-branch-protection-checklist.md`.【F:scripts/ci/verify-branch-protection.ts†L19-L140】
+   green CI suite described in `docs/ci-v2-branch-protection-checklist.md`.【F:scripts/ci/verify-branch-protection.ts†L20-L200】
 
 ## 3. Planner and orchestrator execution
 
