@@ -56,6 +56,8 @@ jobs:
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Verify toolchain locks
         run: npm run ci:verify-toolchain
+      - name: Ensure branch protection contexts match workflow
+        run: npm run ci:verify-contexts
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite

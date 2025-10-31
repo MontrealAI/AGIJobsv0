@@ -288,7 +288,7 @@ The V2 CI lattice keeps every subsystem green and verifiable:
 - **Contracts & Chain Logic** – `npm run test`, `forge test`, and targeted Hardhat suites (`npm run test:fork`, `npm run test:alpha-agi-mark`) validate protocol upgrades and sovereign controls.
 - **Python & Agent Services** – `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` spans `tests/`, `test/`, and demo-specific suites; additional CLI verifiers live under `scripts/v2/`.
 - **Security & Supply Chain** – `npm run security:audit`, `npm run sbom:generate`, `npm run release:manifest:validate`, and license verifiers within [`ci/`](ci/) sustain production trust.
-- **Branch Protection Checks** – `npm run ci:verify-branch-protection` (in [`scripts/ci`](scripts/ci)) ensures all CI (v2) workflows remain mandatory before merges.
+- **Branch Protection Checks** – `npm run ci:verify-contexts` guarantees the workflow job display names stay synchronised with branch protection, and `npm run ci:verify-branch-protection` (both in [`scripts/ci`](scripts/ci)) ensures all CI (v2) workflows remain mandatory before merges.
 
 ### CI v2 — enforced gates
 `ci (v2)` now requires every surfaced check on pull requests and the `main` branch. The branch-protection guard asserts that the following contexts stay locked before merges are allowed:
