@@ -38,6 +38,8 @@ AGIJobsv0 fuses the entire AGI Jobs production stack into a single repository:
 - **Demo multiverse** with cinematic expeditions, sovereign-scale rituals, Monte-Carlo simulation kits, and narrative assets for every Kardashev tier.
 - **Operations & observability** ready for mainnet: Docker Compose clusters, deployment playbooks, monitoring stacks, SBOM tooling, and runbooks for incident response.
 
+Each subsystem coheres into a continuously learning, owner-directed intelligence engine that compounds strategic leverage beyond conventional capital frameworks, delivering the production-ready capabilities expected from a sovereign-scale AGI steward.
+
 ## 🛰️ System Nebula
 ```mermaid
 %% Interstellar systems map
@@ -171,6 +173,7 @@ Use `docker compose down -v` to reset the cluster. Compose wiring draws defaults
 ### Automation Playbooks
 - `Makefile` targets cover culture deployments (`make culture-bootstrap`), HGM guardrails (`make demo-hgm`), and Absolute Zero simulations (`make absolute-zero-demo`).
 - [`scripts/`](scripts/) bundles deployment aides, CI verifiers, sovereign readiness checks, and cinematic export tooling.
+- Owner consoles stay empowered through the [`owner:*`](package.json) script constellation (`owner:mission-control`, `owner:update-all`, `owner:system-pause`, etc.), wiring directly into the `OwnerConfigurator` facade so the contract owner can retune parameters, rotate governance, or pause the network without touching Solidity.
 - [`examples/`](examples/) contains agentic starter kits (validator swarms, orchestration loops) runnable via `npm run agent:*` scripts.
 
 ## 🎞️ Demo Constellation
@@ -300,6 +303,34 @@ Root-level packages such as [`kardashev_ii_omega_grade_alpha_agi_business_3_demo
 - `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
 - `npm run ci:verify-branch-protection` interrogates GitHub branch rules to ensure every `ci (v2)` gate remains enforced before merges land.
 - Coverage, gas, and scenario reports live in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
+
+### CI v2 — enforced gates
+`ci (v2)` now requires every surfaced check on pull requests and the `main` branch. The branch-protection guard asserts that the following contexts stay locked before merges are allowed:
+
+| Required check | Purpose |
+| --- | --- |
+| `ci (v2) / Lint & static checks` | ESLint, Prettier, sentinel templates, and toolchain verification. |
+| `ci (v2) / Tests` | Hardhat unit tests, ABI drift detection, and contract compilation. |
+| `ci (v2) / Python unit tests` | FastAPI, orchestrator, and simulation module unit coverage with 90%+ enforcement. |
+| `ci (v2) / Python integration tests` | Cross-service API flows, demo harnesses, and analytics routes. |
+| `ci (v2) / Load-simulation reports` | Monte Carlo sweeps for treasury burn/fee thermodynamics. |
+| `ci (v2) / Python coverage enforcement` | Aggregated unit + integration coverage gating. |
+| `ci (v2) / HGM guardrails` | High Governance Machine regression suite across orchestrators and demos. |
+| `ci (v2) / Foundry` | Forge-based fuzzing and ffi-enabled contract test battery. |
+| `ci (v2) / Coverage thresholds` | JavaScript/TypeScript lcov enforcement for shared packages. |
+| `ci (v2) / Phase 6 readiness` | Manifest and UI validation for Phase 6 expedition surfaces. |
+| `ci (v2) / Phase 8 readiness` | Phase 8 cinematic manifest verification. |
+| `ci (v2) / Kardashev II readiness` | Kardashev-scale readiness drills and operator UX checks. |
+| `ci (v2) / ASI Take-Off Demonstration` | Deterministic launch of the ASI take-off cinematic scenario. |
+| `ci (v2) / Zenith Sapience Demonstration` | Hyper-scale Zenith rehearsal, including local validator orchestration. |
+| `ci (v2) / AGI Labor Market Grand Demo` | Sovereign labour-market export suite with transcript artefacts. |
+| `ci (v2) / Sovereign Mesh Demo — build` | Sovereign Mesh orchestrator backend and console builds. |
+| `ci (v2) / Sovereign Constellation Demo — build` | Sovereign Constellation deterministic build verification. |
+| `ci (v2) / Celestial Archon Demonstration` | Celestial Archon sovereign rehearsal (deterministic + local). |
+| `ci (v2) / Hypernova Governance Demonstration` | Zenith Hypernova deterministic and local rehearsals. |
+| `ci (v2) / Branch protection guard` | Automated API audit of repository branch rules. |
+| `ci (v2) / CI summary` | Run-level digest capturing each job’s result and artefact pointers. |
+| `ci (v2) / Invariant tests` | Foundry invariant fuzzing for protocol safety envelopes. |
 
 ## 📡 Operations & Observability
 - One-click deployments and infrastructure recipes reside in [`deploy/`](deploy/) and [`deployment-config/`](deployment-config/).
