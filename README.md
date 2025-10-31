@@ -2,6 +2,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![CI v2 Matrix](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/ci.yml?branch=main&logo=github&label=CI%20%28v2%29)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Fuzz](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/fuzz.yml?branch=main&logo=github&label=Fuzz)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml)
+[![End-to-end](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/e2e.yml?branch=main&logo=github&label=E2E)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
+[![Webapp](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/webapp.yml?branch=main&logo=github&label=Webapp)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)
+[![Containers](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/containers.yml?branch=main&logo=github&label=Containers)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)
 [![Security](https://img.shields.io/badge/Security-hardened-0f172a.svg)](SECURITY.md)
 [![Docs](https://img.shields.io/badge/Docs-knowledge%20vault-7c3aed.svg)](docs/)
 [![Scorecard](https://img.shields.io/badge/Scorecard-SLSA%20ready-14532d.svg)](ci/)
@@ -200,6 +204,12 @@ Key `make` and npm automation entrypoints:
 | `npm run sbom:generate` | Emits CycloneDX SBOM in [`reports/sbom/`](reports/sbom/). |
 | `npm run security:audit` | Locks npm dependency posture using [`audit-ci.json`](audit-ci.json). |
 
+### Owner Command Authority
+- `npm run owner:parameters` updates validator quotas, treasury routing, and other contract tunables from a single wizard so the owner can retune economics without redeploying.【F:package.json†L360-L392】【F:scripts/v2/ownerParameterMatrix.ts†L1-L210】
+- `npm run owner:system-pause` and `npm run owner:upgrade` expose battle-tested pause/resume and staged-upgrade levers wired through [`scripts/v2/`](scripts/v2/).【F:package.json†L360-L392】【F:scripts/v2/systemPauseAction.ts†L1-L240】【F:scripts/v2/ownerUpgradeQueue.ts†L1-L220】
+- `npm run owner:update-all` and `npm run owner:dashboard` regenerate the complete owner control atlas, making it trivial to audit roles, addresses, and safes after any change.【F:package.json†L360-L392】【F:scripts/v2/updateAllModules.ts†L1-L200】【F:scripts/v2/owner-dashboard.ts†L1-L190】
+- The Owner Control Index ([`docs/OWNER_CONTROL_INDEX.md`](docs/OWNER_CONTROL_INDEX.md)) aggregates the entire contract owner toolkit—playbooks, diagrams, zero-downtime drills—so non-technical operators can execute every control path with confidence.【F:docs/OWNER_CONTROL_INDEX.md†L1-L169】
+
 ---
 
 ## 🎞️ Demo Multiverse
@@ -316,6 +326,21 @@ The V2 CI lattice keeps every subsystem green and verifiable:
 - Alerting, notification, sentinel, and thermostat services operate under [`services/alerting`](services/alerting), [`services/notifications`](services/notifications), [`services/sentinel`](services/sentinel), [`services/thermostat`](services/thermostat).
 - Runtime telemetry, Prometheus metrics, and Grafana dashboards are curated in [`monitoring/`](monitoring/).
 - [`RUNBOOK.md`](RUNBOOK.md) orchestrates incident drills; [`docs/AGIJobs-v2-Mainnet-Guide.md`](docs/AGIJobs-v2-Mainnet-Guide.md) captures production launch procedures.
+- The v2 CI lattice is relentlessly green on `main` and every pull request, locking in production-grade quality before merge:
+- [`ci.yml`](.github/workflows/ci.yml) executes linting, type-checking, unit suites, Foundry tests, Python demos, and attestation verification in parallel.
+- Demo-specific workflows (for example [`demo-agi-alpha-node.yml`](.github/workflows/demo-agi-alpha-node.yml), [`demo-kardashev-ii-omega-ultra.yml`](.github/workflows/demo-kardashev-ii-omega-ultra.yml), [`demo-validator-constellation.yml`](.github/workflows/demo-validator-constellation.yml)) rehydrate their environments and run scenario scripts so cinematic launches never regress.
+- `static-analysis.yml`, `scorecard.yml`, `fuzz.yml`, and `contracts.yml` enforce SBOM generation, security scanning, fuzzing cadences, and Foundry invariants.
+- `webapp.yml`, `apps-images.yml`, and `containers.yml` build, scan, and push container + UI artefacts used across demos and production.
+
+Branch protection requires all blocking workflows to pass before merge, guaranteeing a fully green runway for every release.
+
+---
+
+## 📡 Observability, Security & Governance
+- **Telemetry & Monitoring**: [`monitoring/`](monitoring/) bundles dashboards, Prometheus exporters, Grafana configs, and alert playbooks; `compose.yaml` wires exporters.
+- **Security Posture**: [`SECURITY.md`](SECURITY.md) codifies vulnerability reporting, dependency scanning (`npm run security:audit`), and risk triage. [`audit-ci.json`](audit-ci.json) backs npm allowlists.
+- **Incident Response**: [`RUNBOOK.md`](RUNBOOK.md) & [`OperatorRunbook.md`](OperatorRunbook.md) provide mission control procedures, pause/resume scripts (`npm run owner:system-pause`), and emergency governance levers.
+- **Governance Automation**: [`scripts/v2/`](scripts/v2/) contains owner, upgrade, reward, and thermostat command suites ready for `npx hardhat` or `ts-node` execution.
 - CI v2 remains fully green on every pull request and on `main` through [`ci.yml`](.github/workflows/ci.yml), demo workflows (for example [`demo-agi-alpha-node.yml`](.github/workflows/demo-agi-alpha-node.yml), [`demo-kardashev-ii-omega-ultra.yml`](.github/workflows/demo-kardashev-ii-omega-ultra.yml), [`demo-validator-constellation.yml`](.github/workflows/demo-validator-constellation.yml)), and specialized gates such as [`static-analysis.yml`](.github/workflows/static-analysis.yml), [`scorecard.yml`](.github/workflows/scorecard.yml), [`fuzz.yml`](.github/workflows/fuzz.yml), [`contracts.yml`](.github/workflows/contracts.yml), [`webapp.yml`](.github/workflows/webapp.yml), [`apps-images.yml`](.github/workflows/apps-images.yml), and [`containers.yml`](.github/workflows/containers.yml).
 
 ## 📚 Knowledge Vault
