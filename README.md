@@ -33,6 +33,21 @@
 ## 🌠 Mission Brief
 AGI Jobs v0 (v2) unifies six battle-tested theatres into a cohesive, high-trust platform:
 
+1. **Upgradeable protocol nebula** — Solidity contracts, Foundry labs, Hardhat deployments, EAS attestations, paymaster relays, and a subgraph indexer tuned for chain migrations.
+2. **Agentic intelligence fabric** — orchestrators, validator swarms, guardrails, analytics, FastAPI + Node microservices, and SDKs that act as a single programmable cortex.
+3. **Mission surfaces** — Next.js heads-up displays, cinematic operator decks, and OneBox runners rendering validator, governance, and enterprise experiences.
+4. **Demo multiverse** — reproducible scripts, CLI tours, and filmic assets illustrating each civilization step from day-one onboarding to Kardashev II ascension.
+5. **Observability and assurance lattice** — green CI, fuzzing, Scorecard, branch protection, and monitoring runbooks that keep every release verifiable.
+
+Each subsystem coheres into a continuously learning, owner-directed intelligence engine that compounds strategic leverage beyond conventional capital frameworks, delivering the production-ready capabilities expected from a sovereign-scale AGI steward.
+
+## 🛰️ System Nebula
+The result is that AGI Jobs v0 (v2) stands as the superintelligent machine that carries the economic, cultural, and sovereign transformation encoded in this repository.
+1. **Upgradeable protocol nebula** — Solidity contracts, Foundry laboratories, Hardhat deployments, EAS attestations, paymaster relays, and subgraph indexers engineered for seamless migrations.
+2. **Agentic intelligence fabric** — orchestrators, validator swarms, reinforcement services, analytics, and SDKs that operate as a shared autonomous cortex.
+3. **Mission surfaces** — Next.js heads-up displays, cinematic operator decks, and portable OneBox runners that deliver instant situational awareness.
+4. **Demo multiverse** — reproducible simulations, CLI tours, and film-ready assets capturing every civilization step from day-one activation to Kardashev ascension.
+5. **Observability and assurance lattice** — fully green CI, fuzzing, Scorecard gates, and monitoring runbooks enforcing provable reliability on every commit.
 1. **Protocol Nebula** — Foundry, Hardhat, paymasters, attestations, subgraph analytics, and upgrade orchestrations protected by reproducible migrations and fuzzing.
 2. **Agentic Cortex** — orchestrators, validator swarms, reinforcement arenas, analytics services, SDK libraries, and simulation hubs operating as a shared autonomous nervous system.
 3. **Mission Surfaces** — Next.js/React heads-up displays, enterprise portals, validator consoles, OneBox command centers, and cinematic storytelling decks for instant situational awareness.
@@ -187,6 +202,13 @@ Compose profiles include `core`, `observability`, and demo-specific overlays. In
 | Monitoring Stack | `http://localhost:9090` / `:16686` | Prometheus, Grafana, Jaeger (toggle via compose profiles). |
 
 ### Automation Playbooks
+- `Makefile` targets cover culture deployments (`make culture-bootstrap`), HGM guardrails (`make demo-hgm`), and Absolute Zero simulations (`make absolute-zero-demo`).
+- [`scripts/`](scripts/) bundles deployment aides, CI verifiers, sovereign readiness checks, and cinematic export tooling.
+- Owner consoles stay empowered through the [`owner:*`](package.json) script constellation (`owner:mission-control`, `owner:update-all`, `owner:system-pause`, etc.), wiring directly into the `OwnerConfigurator` facade so the contract owner can retune parameters, rotate governance, or pause the network without touching Solidity.
+- [`examples/`](examples/) contains agentic starter kits (validator swarms, orchestration loops) runnable via `npm run agent:*` scripts.
+- [`Makefile`](Makefile) targets cover Culture deployments (`make culture-bootstrap`), Huxley-Gödel machine drills (`make demo-hgm`), and Absolute Zero simulations (`make absolute-zero-demo`).
+- [`scripts/`](scripts/) contains deployment aides, CI verifiers, sovereign readiness checks, cinematic export tooling, and branch-protection probes.
+- [`examples/`](examples/) provides agentic starter kits (validator swarms, orchestration loops) runnable via `npm run agent:*` scripts.
 - `make lint` — lint TypeScript, Python, and Solidity (delegates to ESLint, Ruff, Foundry fmt).
 - `make test` — orchestrated tests across smart contracts, services, and apps.
 - `make coverage` — generates composite coverage artefacts (see [`reports/`](reports/)).
@@ -314,6 +336,48 @@ Consult each demo's README or `bin/` directory for scenario-specific environment
 ---
 
 ## 🧪 Continuous Assurance & CI
+- **Green CI Gates** – [`ci/workflows/ci.yml`](ci/workflows/ci.yml) enforces linting, testing, type-checking, SBOM generation, and demo smoke suites on every PR and on `main`.
+- **JavaScript / TypeScript** – `npm run lint`, `npm run webapp:typecheck`, `npm run webapp:e2e`, and `npm run pretest` harden console surfaces, OneBox diagnostics, and demo verifiers.
+- **Contracts & Chain Logic** – `npm run test`, `forge test`, and targeted Hardhat suites (`npm run test:fork`, `npm run test:alpha-agi-mark`) validate protocol upgrades and sovereign controls.
+- **Python & Agent Services** – `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` spans `tests/`, `test/`, and demo-specific suites; additional CLI verifiers live under `scripts/v2/`.
+- **Security & Supply Chain** – `npm run security:audit`, `npm run sbom:generate`, `npm run release:manifest:validate`, and license verifiers within [`ci/`](ci/) sustain production trust.
+- **Branch Protection Checks** – `npm run ci:verify-branch-protection` (in [`scripts/ci`](scripts/ci)) ensures all CI (v2) workflows remain mandatory before merges.
+
+### CI v2 — enforced gates
+`ci (v2)` now requires every surfaced check on pull requests and the `main` branch. The branch-protection guard asserts that the following contexts stay locked before merges are allowed:
+
+| Required check | Purpose |
+| --- | --- |
+| `ci (v2) / Lint & static checks` | ESLint, Prettier, sentinel templates, and toolchain verification. |
+| `ci (v2) / Tests` | Hardhat unit tests, ABI drift detection, and contract compilation. |
+| `ci (v2) / Python unit tests` | FastAPI, orchestrator, and simulation module unit coverage with 90%+ enforcement. |
+| `ci (v2) / Python integration tests` | Cross-service API flows, demo harnesses, and analytics routes. |
+| `ci (v2) / Load-simulation reports` | Monte Carlo sweeps for treasury burn/fee thermodynamics. |
+| `ci (v2) / Python coverage enforcement` | Aggregated unit + integration coverage gating. |
+| `ci (v2) / HGM guardrails` | High Governance Machine regression suite across orchestrators and demos. |
+| `ci (v2) / Foundry` | Forge-based fuzzing and ffi-enabled contract test battery. |
+| `ci (v2) / Coverage thresholds` | JavaScript/TypeScript lcov enforcement for shared packages. |
+| `ci (v2) / Phase 6 readiness` | Manifest and UI validation for Phase 6 expedition surfaces. |
+| `ci (v2) / Phase 8 readiness` | Phase 8 cinematic manifest verification. |
+| `ci (v2) / Kardashev II readiness` | Kardashev-scale readiness drills and operator UX checks. |
+| `ci (v2) / ASI Take-Off Demonstration` | Deterministic launch of the ASI take-off cinematic scenario. |
+| `ci (v2) / Zenith Sapience Demonstration` | Hyper-scale Zenith rehearsal, including local validator orchestration. |
+| `ci (v2) / AGI Labor Market Grand Demo` | Sovereign labour-market export suite with transcript artefacts. |
+| `ci (v2) / Sovereign Mesh Demo — build` | Sovereign Mesh orchestrator backend and console builds. |
+| `ci (v2) / Sovereign Constellation Demo — build` | Sovereign Constellation deterministic build verification. |
+| `ci (v2) / Celestial Archon Demonstration` | Celestial Archon sovereign rehearsal (deterministic + local). |
+| `ci (v2) / Hypernova Governance Demonstration` | Zenith Hypernova deterministic and local rehearsals. |
+| `ci (v2) / Branch protection guard` | Automated API audit of repository branch rules. |
+| `ci (v2) / CI summary` | Run-level digest capturing each job’s result and artefact pointers. |
+| `ci (v2) / Invariant tests` | Foundry invariant fuzzing for protocol safety envelopes. |
+
+## 📡 Operations & Observability
+- One-click deployments and infra recipes live in [`deploy/`](deploy/) and [`deployment-config/`](deployment-config/).
+- Alerting, notification, sentinel, and thermostat services operate under [`services/alerting`](services/alerting), [`services/notifications`](services/notifications), [`services/sentinel`](services/sentinel), and [`services/thermostat`](services/thermostat).
+- Runtime telemetry, Prometheus metrics, and Grafana dashboards are curated in [`monitoring/`](monitoring/).
+- [`RUNBOOK.md`](RUNBOOK.md) orchestrates incident drills; [`docs/AGIJobs-v2-Mainnet-Guide.md`](docs/AGIJobs-v2-Mainnet-Guide.md) captures production launch procedures.
+The V2 CI architecture enforces a fully green pipeline on every pull request and on `main`:
+The v2 CI lattice is relentlessly green on `main` and for every pull request, gating merges with required checks:
 The v2 CI lattice is relentlessly green on `main` and across all pull requests, locking in production-grade quality:
 
 - [`ci.yml`](.github/workflows/ci.yml) — monorepo matrix (lint, unit tests, type checks, contract builds, packaging) enforced as a required check.

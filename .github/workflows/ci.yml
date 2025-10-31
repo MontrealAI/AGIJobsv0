@@ -942,7 +942,7 @@ jobs:
             .map((line) => line.trim())
             .filter((line) => line.length > 0)
             .map((line) => line.replace(/[,\s]*$/u, ''))
-            .map((line) => line.replace(/^"/, '').replace(/"$/, ''))
+            .map((line) => line.replace(/^['"]/u, '').replace(/['"]$/u, ''))
             .filter((line) => line.length > 0);
 
           async function fetchProtection() {
@@ -1034,10 +1034,12 @@ jobs:
       - coverage
       - phase6
       - phase8
+      - kardashev_demo
       - asi_takeoff_demo
       - zenith_demo
       - agi_labor_market_demo
       - sovereign_mesh_demo
+      - sovereign_constellation_demo
       - celestial_archon_demo
       - hypernova_demo
       - invariants
@@ -1067,10 +1069,12 @@ jobs:
             coverage: 'Coverage thresholds',
             phase6: 'Phase 6 readiness',
             phase8: 'Phase 8 readiness',
+            kardashev_demo: 'Kardashev II Demo',
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',
             agi_labor_market_demo: 'AGI Labor Market Demo',
             sovereign_mesh_demo: 'Sovereign Mesh Demo',
+            sovereign_constellation_demo: 'Sovereign Constellation Demo',
             celestial_archon_demo: 'Celestial Archon Demo',
             hypernova_demo: 'Hypernova Governance Demo',
             invariants: 'Invariant tests'
