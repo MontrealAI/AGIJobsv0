@@ -50,7 +50,7 @@
 
 ## 5. CI v2 gate verification
 
-1. **Branch protection** – Confirm the five required CI contexts (`Lint`, `Tests`, `Foundry`, `Coverage thresholds`, `CI summary`) are enforced on `main`, using either the GitHub UI or `npm run ci:verify-branch-protection` / `gh api` commands.【F:docs/v2-ci-operations.md†L1-L70】
+1. **Branch protection** – Confirm the full CI v2 context set (`Lint`, `Tests`, `Python suites`, demos, guardrails, invariants, `CI summary`) is enforced on `main`, using either the GitHub UI or `npm run ci:verify-branch-protection` / `gh api` commands.【F:docs/v2-ci-operations.md†L1-L132】
 2. **Companion workflows** – Ensure the supplemental pipelines (`e2e`, `fuzz`, `webapp`, `containers`) remain required where applicable so UI, fuzzing, and container checks stay visible.【F:docs/v2-ci-operations.md†L71-L83】
 3. **Local dry run** – Before signing off a release, rerun the local CI approximation (`npm ci`, `npm run format:check`, `npm run lint:ci`, `npm test`, `npm run coverage`, `forge test -vvvv --ffi --fuzz-runs 256`) to mirror the GitHub workflow dependencies.【F:docs/v2-ci-operations.md†L92-L118】
 

@@ -54,8 +54,8 @@
 ## 4. CI v2 and test evidence
 
 1. **Confirm branch protection.** Run `npm run ci:verify-branch-protection` (with a scoped token) and
-   store the output showing all five required contexts and administrator enforcement, keeping the CI
-   summary gate authoritative.【F:docs/v2-ci-operations.md†L33-L91】
+   store the output showing the full CI v2 context set and administrator enforcement, keeping the CI
+   summary gate authoritative.【F:docs/v2-ci-operations.md†L33-L132】
 2. **Replay the pipeline locally.** Execute the CI-equivalent sequence (`format:check`, `lint:ci`,
    `test`, `coverage`, `forge test`) and archive logs for the release ticket. This reproduces the
    fully green signal required by institutional controls.【F:docs/asi-feasibility-verification-suite.md†L16-L32】

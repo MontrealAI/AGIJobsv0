@@ -87,7 +87,7 @@ Use the returned `jobId` and `planHash` to query `/onebox/status`.  The payload 
 
 ## 4. Continuous delivery safeguards
 
-- Follow the CI v2 workflows (`.github/workflows/ci.yml`) and keep the five required status checks enforced on `main`.  Use [`docs/v2-ci-operations.md`](v2-ci-operations.md) and [`docs/ci-v2-branch-protection-checklist.md`](ci-v2-branch-protection-checklist.md) when onboarding new maintainers or auditing branch protection.
+- Follow the CI v2 workflows (`.github/workflows/ci.yml`) and keep the full status-check set enforced on `main`.  Use [`docs/v2-ci-operations.md`](v2-ci-operations.md) and [`docs/ci-v2-branch-protection-checklist.md`](ci-v2-branch-protection-checklist.md) when onboarding new maintainers or auditing branch protection.
 - Before each deployment, re-run `npm run ci:verify-branch-protection` and a targeted orchestrator test suite (for example, `pytest test/routes/test_onebox.py`).  Both commands run offline and confirm that the simulated policies align with the deployed configuration.
 - Maintain a secure `.env` (or secrets manager entry) recording every environment variable listed above, together with rotation dates and change approvers.  Rotate API tokens and relayer keys after privileged staff changes or incident response drills.
 

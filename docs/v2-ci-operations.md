@@ -37,21 +37,51 @@ All three entry points converge on the same job graph, keeping the `CI summary` 
 
 ## Required jobs and branch protection
 
-Enable branch protection on `main` with these required status checks (copy the contexts exactly as they appear in the GitHub UI):
+Enable branch protection on `main` with every status context below. The list mirrors `scripts/ci/verify-branch-protection.ts` so automated audits and the GitHub UI stay synchronised.
+
+### Core execution gate
 
 | Check context | Source job | Notes |
 | --- | --- | --- |
-| `ci (v2) / Lint & static checks` | `lint` job | Blocks merge when linting fails. |
-| `ci (v2) / Tests` | `tests` job | Runs Hardhat compilation and the main test suite. |
-| `ci (v2) / HGM guardrails` | `hgm_guardrails` job | Exercises the Higher Governance Machine suite with shared Node + Python toolchains. |
-| `ci (v2) / Foundry` | `foundry` job | Always runs after the `tests` job, even when it fails, to expose fuzz failures. |
-| `ci (v2) / Coverage thresholds` | `coverage` job | Enforces `COVERAGE_MIN` and access-control coverage. |
-| `ci (v2) / Phase 6 readiness` | `phase6` job | Validates the Phase 6 manifest and UI bundle required for migrations. |
-| `ci (v2) / Phase 8 readiness` | `phase8` job | Confirms the Phase 8 expansion playbook stays reproducible. |
-| `ci (v2) / Branch protection guard` | `branch_protection` job | Audits GitHub branch protection via the API and fails if required contexts drift. |
-| `ci (v2) / CI summary` | `summary` job | Fails when any dependency job fails so the PR badge stays red. |
+| `ci (v2) / Lint & static checks` | `lint` job | Blocks merges when linting or formatting drifts. |
+| `ci (v2) / Tests` | `tests` job | Compiles contracts, regenerates constants, and runs the Hardhat suite. |
+| `ci (v2) / Foundry` | `foundry` job | Executes Foundry fuzzing even when upstream tests fail. |
+| `ci (v2) / Coverage thresholds` | `coverage` job | Enforces ≥90 % coverage and access-control reporting. |
+| `ci (v2) / Invariant tests` | `invariants` job | Runs the dedicated forge invariant harness with 512 fuzz runs. |
 
-> ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` to guarantee pull requests re-run the workflow when `main` advances.
+### Python intelligence lattice
+
+| Check context | Source job | Notes |
+| --- | --- | --- |
+| `ci (v2) / Python unit tests` | `python_unit` job | Covers paymaster, tools, orchestrator, and simulation tests under coverage. |
+| `ci (v2) / Python integration tests` | `python_integration` job | Exercises API routes and demo orchestrations with shared coverage. |
+| `ci (v2) / Load-simulation reports` | `python_load_sim` job | Generates Monte Carlo load sweeps and raises on unexpected dissipation optima. |
+| `ci (v2) / Python coverage enforcement` | `python_coverage` job | Combines unit/integration coverage and exports XML artefacts. |
+
+### Governance & readiness demonstrations
+
+| Check context | Source job | Notes |
+| --- | --- | --- |
+| `ci (v2) / HGM guardrails` | `hgm_guardrails` job | Runs the Higher Governance Machine regression suite across Node + Python toolchains. |
+| `ci (v2) / Phase 6 readiness` | `phase6` job | Validates the Phase 6 manifest and UI bundle. |
+| `ci (v2) / Phase 8 readiness` | `phase8` job | Confirms the Phase 8 expansion kit builds cleanly. |
+| `ci (v2) / Kardashev II readiness` | `kardashev_demo` job | Replays the Kardashev II demo manifests. |
+| `ci (v2) / ASI Take-Off Demonstration` | `asi_takeoff_demo` job | Executes the ASI take-off deterministic kit and uploads artefacts. |
+| `ci (v2) / Zenith Sapience Demonstration` | `zenith_demo` job | Runs deterministic + local Zenith Sapience rehearsals. |
+| `ci (v2) / Celestial Archon Demonstration` | `celestial_archon_demo` job | Exercises the Celestial Archon runbook and local rehearsal. |
+| `ci (v2) / Hypernova Governance Demonstration` | `hypernova_demo` job | Rebuilds and rehearses the Hypernova suite. |
+| `ci (v2) / AGI Labor Market Grand Demo` | `agi_labor_market_demo` job | Produces the labour market transcript export. |
+| `ci (v2) / Sovereign Mesh Demo — build` | `sovereign_mesh_demo` job | Builds the Sovereign Mesh server + React console. |
+| `ci (v2) / Sovereign Constellation Demo — build` | `sovereign_constellation_demo` job | Builds the Sovereign Constellation server + console. |
+
+### Policy enforcement & summary
+
+| Check context | Source job | Notes |
+| --- | --- | --- |
+| `ci (v2) / Branch protection guard` | `branch_protection` job | Audits GitHub branch protection via the API and fails if required contexts drift. |
+| `ci (v2) / CI summary` | `summary` job | Aggregates upstream job outcomes and fails when any dependency is non-success. |
+
+> ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` and **Include administrators** so every push re-runs the workflow and administrators respect the gate.
 
 ### Quick verification from the command line
 
@@ -70,7 +100,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-The first command should list the nine required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
+The first command should list the required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
 
 ### Companion workflow checks
 
@@ -87,11 +117,11 @@ Keep the rest of the release surface visible by marking the following workflows 
 
 ## Pull request hygiene checklist
 
-1. Confirm that the **Checks** tab shows all nine required `ci (v2)` contexts above plus the companion workflows you have marked as required.
+1. Confirm that the **Checks** tab shows every required `ci (v2)` context above plus the companion workflows you have marked as required.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
    `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
-   compliance records.【F:.github/workflows/ci.yml†L905-L953】
+   compliance records.【F:.github/workflows/ci.yml†L905-L960】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
 5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
 
