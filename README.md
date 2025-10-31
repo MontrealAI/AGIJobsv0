@@ -16,7 +16,6 @@
   - [Manual Bring-Up](#manual-bring-up)
   - [Mission Control via Docker Compose](#mission-control-via-docker-compose)
   - [Core Endpoints](#core-endpoints)
-- [🧪 Quality & Verification](#-quality--verification)
 - [🎞️ Demo Constellation](#-demo-constellation)
   - [Launch & Operations](#launch--operations)
   - [Economics & Governance](#economics--governance)
@@ -25,6 +24,7 @@
   - [Omega & Supra-Sovereign Ascension](#omega--supra-sovereign-ascension)
   - [Research & Simulation Labs](#research--simulation-labs)
   - [Python Bridge Packages](#python-bridge-packages)
+- [🧪 Quality & Verification](#-quality--verification)
 - [📡 Operations & Observability](#-operations--observability)
 - [📚 Documentation Signals](#-documentation-signals)
 
@@ -165,26 +165,11 @@ Use `docker compose down -v` to reset the cluster. Compose wiring sources defaul
 | Mission Console UI | `http://localhost:3000` | Primary operator HUD (`apps/console`). |
 | Enterprise Portal | `http://localhost:3001` | Partner & enterprise oversight (`apps/enterprise-portal`). |
 
-## 🧪 Quality & Verification
-- `npm run lint`, `npm run webapp:typecheck`, and `npm run webapp:e2e` guard the Next.js surfaces.
-- `npm run test` executes Hardhat unit tests; `forge test` runs Foundry profiles defined in [`foundry.toml`](foundry.toml).
-- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` covers Python demos (`tests/`, `demo/*/test/`).
-- `npm run pretest` orchestrates the cross-surface smoke suite, including OneBox diagnostics and demo verifiers.
-- `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
-- Coverage, gas, and scenario reports land in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
-
 ## 🎞️ Demo Constellation
 ```mermaid
 %% Celestial demo atlas
 mindmap
-  classDef launch fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,font-weight:bold,stroke-width:2px;
-  classDef economics fill:#1f2937,stroke:#f97316,color:#fff7ed,font-weight:bold,stroke-width:2px;
-  classDef culture fill:#22092C,stroke:#f472b6,color:#fff0f6,font-weight:bold,stroke-width:2px;
-  classDef sovereign fill:#1c1917,stroke:#facc15,color:#fef9c3,font-weight:bold,stroke-width:2px;
-  classDef omega fill:#111827,stroke:#a855f7,color:#ede9fe,font-weight:bold,stroke-width:2px;
-  classDef research fill:#052e16,stroke:#4ade80,color:#f0fdf4,font-weight:bold,stroke-width:2px;
-
-  root(("🌌 Demo Constellation"))
+  root((🌌 Demo Constellation))
     Launchpad:::launch
       "AGI-Alpha-Node-v0"
       "Validator-Constellation-v0"
@@ -211,7 +196,7 @@ mindmap
       "sovereign-mesh"
       "zenith-sapience-initiative-*"
       "validator_constellation_v0"
-    "Omega & Ascension Suites":::omega
+    "Omega & Ascension":::omega
       "Kardashev-II Omega-Grade-α-AGI Business-3"
       "Meta-Agentic-Program-Synthesis-v0"
       "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION"
@@ -226,6 +211,13 @@ mindmap
       "Open-Endedness-v0"
       "Tiny-Recursive-Model-v0"
       "Simulation Toolkit"
+
+classDef launch fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,font-weight:bold,stroke-width:2px;
+classDef economics fill:#1f2937,stroke:#f97316,color:#fff7ed,font-weight:bold,stroke-width:2px;
+classDef culture fill:#22092C,stroke:#f472b6,color:#fff0f6,font-weight:bold,stroke-width:2px;
+classDef sovereign fill:#1c1917,stroke:#facc15,color:#fef9c3,font-weight:bold,stroke-width:2px;
+classDef omega fill:#111827,stroke:#a855f7,color:#ede9fe,font-weight:bold,stroke-width:2px;
+classDef research fill:#052e16,stroke:#4ade80,color:#f0fdf4,font-weight:bold,stroke-width:2px;
 ```
 
 The `demo/` directory hosts cinematic launches, CLI simulations, dashboards, and scripted walkthroughs. Many scenarios expose npm scripts, Makefile targets, or Python entrypoints for fast reproduction.
@@ -287,6 +279,14 @@ The `demo/` directory hosts cinematic launches, CLI simulations, dashboards, and
 
 ### Python Bridge Packages
 Root-level packages such as [`kardashev_ii_omega_grade_alpha_agi_business_3_demo`](kardashev_ii_omega_grade_alpha_agi_business_3_demo) expose namespace packages that re-export their corresponding `demo/…` modules. They allow Python tooling to `import kardashev_ii_omega_grade_alpha_agi_business_3_demo` while keeping assets inside [`demo/`](demo/).
+
+## 🧪 Quality & Verification
+- `npm run lint`, `npm run webapp:typecheck`, and `npm run webapp:e2e` guard the Next.js surfaces.
+- `npm run test` executes Hardhat unit tests; `forge test` runs Foundry profiles defined in [`foundry.toml`](foundry.toml).
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` covers Python demos (`tests/`, `demo/*/test/`).
+- `npm run pretest` orchestrates the cross-surface smoke suite, including OneBox diagnostics and demo verifiers.
+- `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
+- Coverage, gas, and scenario reports land in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
 
 ## 📡 Operations & Observability
 - One-click deployments and infrastructure recipes live under [`deploy/`](deploy/) and [`deployment-config/`](deployment-config/).
