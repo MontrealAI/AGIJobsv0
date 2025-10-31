@@ -915,6 +915,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require('fs');
+          const path = require('path');
           const needs = JSON.parse(process.env.NEEDS_CONTEXT);
           const prettyNames = {
             lint: 'Lint & static checks',
@@ -937,6 +938,7 @@ jobs:
           };
           const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
           let failed = false;
+          const jobSummaries = [];
           for (const [jobId, info] of Object.entries(needs)) {
             const status = (info.result || 'unknown').toUpperCase();
             const label = prettyNames[jobId] || jobId;
@@ -944,13 +946,44 @@ jobs:
               failed = true;
             }
             lines.push(`| ${label} | ${status} |`);
+            jobSummaries.push({
+              id: jobId,
+              label,
+              result: info.result || 'unknown',
+              conclusion: info.conclusion || null,
+              url: info.url || null
+            });
           }
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          const markdown = lines.join('\n') + '\n';
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+
+          const outputDir = path.join('reports', 'ci');
+          fs.mkdirSync(outputDir, { recursive: true });
+          fs.writeFileSync(path.join(outputDir, 'status.md'), markdown, 'utf8');
+          const statusPayload = {
+            generatedAt: new Date().toISOString(),
+            workflow: process.env.GITHUB_WORKFLOW,
+            runId: process.env.GITHUB_RUN_ID,
+            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+            jobs: jobSummaries
+          };
+          fs.writeFileSync(
+            path.join(outputDir, 'status.json'),
+            JSON.stringify(statusPayload, null, 2) + '\n',
+            'utf8'
+          );
+
           if (failed) {
             console.error('One or more CI jobs failed.');
             process.exit(1);
           }
           NODE
+      - name: Upload CI status artefact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-summary
+          path: reports/ci
 
   invariants:
     name: Invariant tests
