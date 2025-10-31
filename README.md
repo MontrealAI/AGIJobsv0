@@ -4,12 +4,12 @@
 [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 [![HGM guardrails](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=HGM%20guardrails)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain+workflow%3A%22ci+%28v2%29%22)
 
-> The canonical production stack for the AGI Jobs protocol: upgradeable Ethereum contracts, agentic intelligence swarms, cinematic demos, and sovereign-scale orchestration.
+> The production reference stack for AGI Jobs: upgradeable Ethereum protocol, agentic intelligence fabric, cinematic demo atlas, and sovereign-scale operations.
 
-## Table of Contents
+## 🧭 Table of Contents
 - [🌠 Mission Brief](#-mission-brief)
 - [🛰️ System Nebula](#-system-nebula)
-- [🗂️ Repository Cartography](#-repository-cartography)
+- [🗂️ Repository Atlas](#-repository-atlas)
 - [⚙️ Getting Started](#-getting-started)
   - [Requirements](#requirements)
   - [Install & Bootstrap](#install--bootstrap)
@@ -29,16 +29,16 @@
 - [📚 Documentation Signals](#-documentation-signals)
 
 ## 🌠 Mission Brief
-AGIJobsv0 fuses every layer required to launch, operate, and evolve the AGI Jobs protocol in production environments.
+AGIJobsv0 fuses every layer required to launch, operate, and evolve the AGI Jobs protocol.
 
-- **Upgradeable protocol foundation** across Solidity contracts, Foundry/Hardhat workflows, EAS attestations, paymasters, relayers, and subgraphs.
-- **Agentic intelligence fabric** covering orchestrators, FastAPI/Node services, analytics pipelines, validators, scoring engines, and reusable SDKs in both TypeScript and Python.
-- **Mission surfaces & consoles** spanning Next.js applications, operator HUDs, OneBox deployments, validator dashboards, and enterprise portals.
-- **Demonstration multiverse** with launch-ready demos, omega-scale expeditions, cinematic walkthroughs, governance rituals, and research simulations.
+- **Upgradeable protocol core** spanning Solidity contracts, Foundry/Hardhat workflows, EAS attestations, paymasters, and a subgraph indexer.
+- **Agentic intelligence fabric** covering orchestrators, FastAPI/Node services, analytics pipelines, validators, scoring engines, and SDKs in both TypeScript and Python.
+- **Mission consoles** including Next.js HUDs for operators, validators, enterprise partners, and the OneBox mission runner.
+- **Demo constellation** with cinematic walkthroughs, omega-scale expeditions, governance rituals, and simulation labs.
 
 ## 🛰️ System Nebula
 ```mermaid
-%% Nebula-scale systems map
+%% Galactic architecture map
 flowchart LR
     classDef protocol fill:#0b1120,stroke:#6366f1,color:#e0e7ff,font-size:14px,font-weight:bold,stroke-width:2px;
     classDef agentic fill:#041b37,stroke:#38bdf8,color:#f8fafc,font-weight:bold,stroke-width:2px;
@@ -50,40 +50,40 @@ flowchart LR
         contracts[[contracts/]]:::protocol
         attestation[[attestation/]]:::protocol
         paymaster[[paymaster/]]:::protocol
-        subgraphSvc[[subgraph/]]:::protocol
         migrations[[migrations/]]:::protocol
+        subgraphSvc[[subgraph/]]:::protocol
     end
 
     subgraph "Agentic Intelligence"
         orchestrator[[orchestrator/]]:::agentic
-        backendSvc[[backend/]]:::agentic
         agentGateway[[agent-gateway/]]:::agentic
+        backendSvc[[backend/]]:::agentic
         servicesHub[[services/]]:::agentic
-        packagesHub[[packages/\nshared/]]:::agentic
+        packagesHub[[packages/\\nshared/]]:::agentic
         routesHub[[routes/]]:::agentic
     end
 
     subgraph "Mission Surfaces"
         appsConsole[[apps/console]]:::surfaces
         appsOperator[[apps/operator]]:::surfaces
-        appsValidator[[apps/validator\napps/validator-ui]]:::surfaces
-        appsEnterprise[[apps/enterprise-portal\napps/mission-control\napps/orchestrator]]:::surfaces
-        appsOnebox[[apps/onebox\napps/onebox-static]]:::surfaces
+        appsValidator[[apps/validator\\napps/validator-ui]]:::surfaces
+        appsEnterprise[[apps/enterprise-portal\\napps/mission-control\\napps/orchestrator]]:::surfaces
+        appsOnebox[[apps/onebox\\napps/onebox-static]]:::surfaces
     end
 
     subgraph "Ops & Reliability"
-        deploy[[deploy/\ndeployment-config/]]:::ops
-        ci[[ci/\nscripts/]]:::ops
-        monitoring[[monitoring/\nRUNBOOK.md]]:::ops
-        qa[[tests/\ntest/\nreports/]]:::ops
+        deploy[[deploy/\\ndeployment-config/]]:::ops
+        ci[[ci/\\nscripts/]]:::ops
+        monitoring[[monitoring/\\nRUNBOOK.md]]:::ops
+        qa[[tests/\\ntest/\\nreports/]]:::ops
     end
 
     subgraph "Demo & Simulation Multiverse"
         demoHub[[demo/]]:::demos
-        kardashev[[kardashev_*\n*.demo_*]]:::demos
+        kardashev[[kardashev_*\\n*.demo_*]]:::demos
         examples[[examples/]]:::demos
         simulation[[simulation/]]:::demos
-        dataVault[[data/\nstorage/]]:::demos
+        dataVault[[data/\\nstorage/]]:::demos
     end
 
     contracts --> orchestrator --> agentGateway --> appsConsole
@@ -94,13 +94,13 @@ flowchart LR
     demoHub --> kardashev
 ```
 
-## 🗂️ Repository Cartography
+## 🗂️ Repository Atlas
 | Domain | Primary Paths | Highlights |
 | --- | --- | --- |
-| Protocol & Chain Control | [`contracts/`](contracts/), [`attestation/`](attestation/), [`paymaster/`](paymaster/), [`subgraph/`](subgraph/), [`migrations/`](migrations/) | Upgradeable Solidity modules, Foundry & Hardhat dual toolchain, EAS attestations, subgraph indexers, deployment recipes. |
-| Agent Intelligence Fabric | [`orchestrator/`](orchestrator/), [`backend/`](backend/), [`agent-gateway/`](agent-gateway/), [`services/`](services/), [`routes/`](routes/), [`packages/`](packages/), [`shared/`](shared/) | Mission planners, analytics, gRPC/WebSocket relays, FastAPI+Node microservices, reusable SDKs, shared state machines. |
-| Mission Consoles & Portals | [`apps/console`](apps/console), [`apps/operator`](apps/operator), [`apps/validator`](apps/validator), [`apps/validator-ui`](apps/validator-ui), [`apps/enterprise-portal`](apps/enterprise-portal), [`apps/mission-control`](apps/mission-control), [`apps/orchestrator`](apps/orchestrator) | Next.js HUDs for operators, owners, validators, mission controllers, and cinematic demo playback. |
-| OneBox Surfaces & Tooling | [`apps/onebox`](apps/onebox), [`apps/onebox-static`](apps/onebox-static), [`packages/onebox-*`](packages/), [`demo/One-Box`](demo/One-Box) | Self-contained runner, CLI doctor, orchestrator harness, Docker templates, and CI validation. |
+| Protocol & Chain Control | [`contracts/`](contracts/), [`attestation/`](attestation/), [`paymaster/`](paymaster/), [`migrations/`](migrations/), [`subgraph/`](subgraph/) | Upgradeable Solidity modules, Foundry & Hardhat toolchains, EAS attestations, subgraph indexers, deployment recipes. |
+| Agent Intelligence Fabric | [`orchestrator/`](orchestrator/), [`backend/`](backend/), [`agent-gateway/`](agent-gateway/), [`services/`](services/), [`routes/`](routes/), [`packages/`](packages/), [`shared/`](shared/) | Mission planners, analytics, gRPC/WebSocket relays, FastAPI + Node microservices, reusable SDKs, shared state machines. |
+| Mission Consoles & Portals | [`apps/console`](apps/console), [`apps/operator`](apps/operator), [`apps/validator`](apps/validator), [`apps/validator-ui`](apps/validator-ui), [`apps/enterprise-portal`](apps/enterprise-portal), [`apps/mission-control`](apps/mission-control), [`apps/orchestrator`](apps/orchestrator) | Next.js HUDs for operators, validators, enterprise partners, and orchestrator command decks. |
+| OneBox Surfaces & Tooling | [`apps/onebox`](apps/onebox), [`apps/onebox-static`](apps/onebox-static), [`packages/onebox-*`](packages/), [`demo/One-Box`](demo/One-Box) | Self-contained runner, CLI doctor, orchestrator harness, Docker templates, and CI validation flows. |
 | Demo Atlas | [`demo/`](demo/), [`kardashev_*`](./), [`*.demo_*`](./), [`examples/`](examples/), [`simulation/`](simulation/), [`data/`](data/), [`storage/`](storage/) | Cinematic expeditions, Kardashev-grade upgrades, Monte Carlo simulations, mission data vaults. |
 | Operations & Assurance | [`deploy/`](deploy/), [`deployment-config/`](deployment-config/), [`ci/`](ci/), [`monitoring/`](monitoring/), [`scripts/`](scripts/), [`tests/`](tests/), [`test/`](test/) | One-click infrastructure, CI guardrails, observability, integration/pytest harnesses, SBOM & release tooling. |
 | Knowledge Base | [`docs/`](docs/), [`internal_docs/`](internal_docs/), [`RUNBOOK.md`](RUNBOOK.md), [`SECURITY.md`](SECURITY.md), [`MIGRATION.md`](MIGRATION.md), [`CHANGELOG.md`](CHANGELOG.md) | Architecture notes, operations manuals, compliance dossiers, release chronicles. |
@@ -121,7 +121,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements-python.txt
 python -m pip install -r requirements-agent.txt
 ```
-Optional demos expose additional `requirements.txt` within their directories (for example `demo/AGIJobs-Day-One-Utility-Benchmark/requirements.txt`).
+Optional demos expose additional `requirements.txt` inside their directories (for example `demo/AGIJobs-Day-One-Utility-Benchmark/requirements.txt`).
 
 ### Manual Bring-Up
 ```bash
@@ -149,7 +149,7 @@ Consult [`docs/quick-start.md`](docs/quick-start.md), [`docs/AGENTIC_QUICKSTART.
 ### Mission Control via Docker Compose
 ```bash
 cp deployment-config/oneclick.env.example deployment-config/oneclick.env
-# Fill RPC URLs, private keys, relayer secrets, telemetry tokens
+# Populate RPC URLs, private keys, relayer secrets, telemetry tokens
 
 docker compose up --build
 ```
@@ -165,20 +165,12 @@ Use `docker compose down -v` to reset the cluster. Compose wiring sources defaul
 | Mission Console UI | `http://localhost:3000` | Primary operator HUD (`apps/console`). |
 | Enterprise Portal | `http://localhost:3001` | Partner & enterprise oversight (`apps/enterprise-portal`). |
 
-## 🧪 Quality & Verification
-- `npm run lint`, `npm run webapp:typecheck`, and `npm run webapp:e2e` guard the Next.js surfaces.
-- `npm run test` executes Hardhat unit tests; `forge test` uses Foundry profiles from [`foundry.toml`](foundry.toml).
-- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` covers Python demos (`tests/`, `demo/*/test/`).
-- `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
-- `npm run ci:verify-branch-protection` interrogates GitHub's branch rules to ensure every `ci (v2)` gate (linting, tests, HGM guardrails, Foundry, coverage, Phase 6/8 readiness, the branch guard, and the CI summary) is enforced on pull requests and `main` before merges land.【F:.github/workflows/ci.yml†L872-L1044】【F:scripts/ci/verify-branch-protection.ts†L1-L164】
-- Coverage, gas, and scenario reports land in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
-
 ## 🎞️ Demo Constellation
 ```mermaid
 %% Celestial demo atlas
 mindmap
   root((🌌 Demo Constellation))
-    Launchpad:::launch
+    "Launchpad 🚀":::launch
       "AGI-Alpha-Node-v0"
       "Validator-Constellation-v0"
       "AGIJobs-Day-One-Utility-Benchmark"
@@ -186,25 +178,25 @@ mindmap
       "asi-global"
       "asi-takeoff"
       "One-Box"
-    "Economics & Governance":::economics
+    "Economics & Governance 💱":::economics
       "Economic-Power-v0"
       "Trustless-Economic-Core-v0"
       "AGI-Jobs-Platform-at-Kardashev-II-Scale"
       "REDENOMINATION"
       "Phase-6-Scaling-Multi-Domain-Expansion"
-    "Culture & Experience":::culture
+    "Culture & Experience ✨":::culture
       "Era-Of-Experience-v0"
       "CULTURE-v0"
       "AlphaEvolve-v0"
       "aurora"
       "AlphaEvolve_v0"
-    "Sovereign & Kardashev":::sovereign
+    "Sovereign & Kardashev 👑":::sovereign
       "Planetary-Orchestrator-Fabric-v0"
       "sovereign-constellation"
       "sovereign-mesh"
       "zenith-sapience-initiative-*"
       "validator_constellation_v0"
-    "Omega & Ascension":::omega
+    "Omega & Ascension 🜂":::omega
       "Kardashev-II Omega-Grade-α-AGI Business-3"
       "Meta-Agentic-Program-Synthesis-v0"
       "CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION"
@@ -213,7 +205,7 @@ mindmap
       "cosmic-omni-sovereign-symphony"
       "astral-omnidominion-operating-system"
       "imperatrix-celestia-operating-system"
-    "Research & Simulation":::research
+    "Research & Simulation 🔬":::research
       "Absolute-Zero-Reasoner-v0"
       "MuZero-style-v0"
       "Open-Endedness-v0"
@@ -286,14 +278,15 @@ The `demo/` directory hosts cinematic launches, CLI simulations, dashboards, and
 | Simulation Toolkit | [`simulation/`](simulation/) | Sharded Monte Carlo simulation harnesses, reports, and aggregator CLI (`python simulation/run_sharded_simulation.py`). |
 
 ### Python Bridge Packages
-Root-level packages such as [`kardashev_ii_omega_grade_alpha_agi_business_3_demo`](kardashev_ii_omega_grade_alpha_agi_business_3_demo) expose namespace packages that re-export their corresponding `demo/…` modules. They allow Python tooling to `import kardashev_ii_omega_grade_alpha_agi_business_3_demo` while keeping assets inside [`demo/`](demo/).
+Root-level packages such as [`kardashev_ii_omega_grade_alpha_agi_business_3_demo`](kardashev_ii_omega_grade_alpha_agi_business_3_demo) expose namespace packages that re-export their corresponding `demo/…` modules. They allow Python tooling to `import kardashev_ii_omega_grade_alpha_agi_business_3_demo` while keeping cinematic assets inside [`demo/`](demo/).
 
 ## 🧪 Quality & Verification
 - `npm run lint`, `npm run webapp:typecheck`, and `npm run webapp:e2e` guard the Next.js surfaces.
-- `npm run test` executes Hardhat unit tests; `forge test` runs Foundry profiles defined in [`foundry.toml`](foundry.toml).
+- `npm run test` executes Hardhat unit tests; `forge test` uses Foundry profiles from [`foundry.toml`](foundry.toml).
 - `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` covers Python demos (`tests/`, `demo/*/test/`).
 - `npm run pretest` orchestrates the cross-surface smoke suite, including OneBox diagnostics and demo verifiers.
 - `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
+- `npm run ci:verify-branch-protection` interrogates GitHub's branch rules to ensure every `ci (v2)` gate (linting, tests, HGM guardrails, Foundry, coverage, Phase 6/8 readiness, the branch guard, and the CI summary) is enforced on pull requests and `main` before merges land.
 - Coverage, gas, and scenario reports land in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
 
 ## 📡 Operations & Observability
