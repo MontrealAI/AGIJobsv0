@@ -54,6 +54,8 @@ jobs:
             **/package-lock.json
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Assert required contexts manifest is synchronised
+        run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
         run: npm run ci:verify-toolchain
       - name: Ensure branch protection contexts match workflow
@@ -1082,14 +1084,14 @@ jobs:
             coverage: 'Coverage thresholds',
             phase6: 'Phase 6 readiness',
             phase8: 'Phase 8 readiness',
-            kardashev_demo: 'Kardashev II Demo',
-            asi_takeoff_demo: 'ASI Take-Off Demo',
-            zenith_demo: 'Zenith Sapience Demo',
-            agi_labor_market_demo: 'AGI Labor Market Demo',
-            sovereign_mesh_demo: 'Sovereign Mesh Demo',
-            sovereign_constellation_demo: 'Sovereign Constellation Demo',
-            celestial_archon_demo: 'Celestial Archon Demo',
-            hypernova_demo: 'Hypernova Governance Demo',
+            kardashev_demo: 'Kardashev II readiness',
+            asi_takeoff_demo: 'ASI Take-Off Demonstration',
+            zenith_demo: 'Zenith Sapience Demonstration',
+            agi_labor_market_demo: 'AGI Labor Market Grand Demo',
+            sovereign_mesh_demo: 'Sovereign Mesh Demo — build',
+            sovereign_constellation_demo: 'Sovereign Constellation Demo — build',
+            celestial_archon_demo: 'Celestial Archon Demonstration',
+            hypernova_demo: 'Hypernova Governance Demonstration',
             invariants: 'Invariant tests'
           };
           const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
