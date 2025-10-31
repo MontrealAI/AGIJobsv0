@@ -65,8 +65,9 @@ runbooks close the safety loop highlighted in the feasibility assessment.
 ## 6. Production CI enforcement (v2)
 
 The `ci (v2)` workflow fans out into linting, Hardhat tests, Foundry fuzzing, coverage gates, and a
-summary barrier that stays visible on every pull request. Branch protection requires all five job
-contexts plus companion workflows for e2e, fuzz, webapp, and containers checks.【F:docs/v2-ci-operations.md†L1-L75】
+summary barrier that stays visible on every pull request. Branch protection requires the full
+context set documented in [docs/BRANCH_PROTECTION.md](BRANCH_PROTECTION.md) plus companion workflows for
+e2e, fuzz, webapp, and containers checks.【F:docs/v2-ci-operations.md†L1-L132】
 The README re-states the same enforcement list and self-test commands so any reviewer can confirm
 the checks before merging.【F:README.md†L17-L63】 A green pipeline therefore certifies that all
 quality bars in the ASI roadmap remain enforced.

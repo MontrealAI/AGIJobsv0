@@ -1082,20 +1082,37 @@ jobs:
           const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
           let failed = false;
           const jobSummaries = [];
+          const skippedJobs = [];
           for (const [jobId, info] of Object.entries(needs)) {
-            const status = (info.result || 'unknown').toUpperCase();
+            const status = String(info.result || 'unknown').toUpperCase();
+            const conclusion = info.conclusion ? String(info.conclusion).toUpperCase() : '';
+            let displayStatus = status;
+            const treatAsPass = status === 'SUCCESS' || status === 'SKIPPED';
+            if (status === 'SKIPPED') {
+              skippedJobs.push(prettyNames[jobId] || jobId);
+              displayStatus = 'SKIPPED (permitted)';
+            } else if (conclusion && conclusion !== status) {
+              displayStatus = `${status} (${conclusion})`;
+            }
             const label = prettyNames[jobId] || jobId;
-            if (status !== 'SUCCESS') {
+            if (!treatAsPass) {
               failed = true;
             }
-            lines.push(`| ${label} | ${status} |`);
+            lines.push(`| ${label} | ${displayStatus} |`);
             jobSummaries.push({
               id: jobId,
               label,
               result: info.result || 'unknown',
               conclusion: info.conclusion || null,
-              url: info.url || null
+              url: info.url || null,
+              status: displayStatus
             });
+          }
+          if (skippedJobs.length > 0) {
+            lines.push(
+              '',
+              '> _Note:_ Jobs marked as `SKIPPED (permitted)` bypass automatically on forks or other contexts where GitHub withholds the required permissions. Branch protection still enforces them on trusted branches.'
+            );
           }
           const markdown = lines.join('\n') + '\n';
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);

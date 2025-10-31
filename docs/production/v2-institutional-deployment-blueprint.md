@@ -63,17 +63,7 @@ flowchart LR
 ## 2. CI enforcement for a fully green v2 pipeline
 
 1. Open **Repository Settings → Branches → Branch protection rules → Edit `main`**.
-2. Require the following status checks (exact strings from the Checks tab):
-   - `ci (v2) / Lint & static checks`
-   - `ci (v2) / Tests`
-   - `ci (v2) / Foundry`
-   - `ci (v2) / Coverage thresholds`
-   - `ci (v2) / CI summary`
-   - `e2e / orchestrator-e2e`
-   - `fuzz / forge-fuzz`
-   - `webapp / webapp-ci`
-   - `containers / build`
-   - *(Optional, when `apps/**` changes)* `apps-images / console` and `apps-images / portal`.
+2. Require the status checks enumerated in [docs/BRANCH_PROTECTION.md](../BRANCH_PROTECTION.md) (exact strings from the Checks tab) together with the companion workflows listed there.
 3. Enable **Require branches to be up to date before merging** so rebases pick up the latest Solidity constants.
 4. Enable **Require approvals** (min 1 CODEOWNER), **Require signed commits**, **Restrict force pushes**, and **Require linear history** for auditability.
 5. Mirror the same rule to long-lived release branches (e.g., `release/v2`) if you cut staging builds. Run `gh api repos/:owner/:repo/branches/<branch>/protection --jq '{checks: .required_status_checks.contexts}'` after saving each rule to confirm the contexts above are present.
