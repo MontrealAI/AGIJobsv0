@@ -123,7 +123,7 @@ You now steward the unstoppable lattice that powers every demo and CI workflow.
 | **AGI Alpha Node** | `demo/AGI-Alpha-Node-v0` | `python demo/AGI-Alpha-Node-v0/src/agi_alpha_node_demo/cli.py --config demo/AGI-Alpha-Node-v0/config/default.toml status` | Autonomous franchise node lifecycle, MuZero++ planner reports, compliance scorecards. |
 | **Economic Power Expansion** | `demo/Economic-Power-v0` | `npm run demo:economic-power` | Planetary treasury posture, mission manifests, governance pulses. |
 | **Era of Experience** | `demo/Era-Of-Experience-v0` | `npm run demo:era-of-experience` | Narrative journey exports, audit reports, owner override hooks. |
-| **One-Box Mission Runner** | `demo/One-Box` | `node --test demo/One-Box/test/diagnostics.test.cjs` *(smoke)* / `node --import tsx demo/One-Box/scripts/runMission.ts` | Deterministic mission orchestration with operator diagnostics and RPC drills. |
+| **One-Box Mission Runner** | `demo/One-Box` | `node --test demo/One-Box/test/diagnostics.test.cjs` *(smoke)* / `npm run demo:onebox:launch` | Deterministic mission orchestration with operator diagnostics and RPC drills. |
 
 ### Strategy sweeps & advanced profiles
 - **Day-One Utility Benchmark** — explore `make alphaevolve`, `make hgm`, `make trm`, `make omni`, and `make scoreboard` for complete economic and guardrail coverage.
