@@ -9,7 +9,7 @@
 ## Required status contexts
 
 The canonical list of required contexts lives in [`ci/required-contexts.json`](../ci/required-contexts.json). Update that file
-and the workflow in the same commit so automation, documentation, and branch protection stay aligned.【F:ci/required-contexts.json†L1-L23】
+and the workflow in the same commit so automation, documentation, and branch protection stay aligned, then refresh the badge embeds in the [CI v2 badge map](ci-v2-badge-map.md) so every required check stays visible to reviewers and owners.【F:ci/required-contexts.json†L1-L23】【F:docs/ci-v2-badge-map.md†L1-L45】
 
 ### Core execution gate
 
