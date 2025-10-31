@@ -1,109 +1,132 @@
 # AGI Jobs v0 (v2) Operator Runbook — Green Path
 
-The **AGI Jobs v0 (v2)** platform you are piloting is the superintelligent machine that anchors our labour lattice. This playbook equips non-technical operators to launch the flagship Day-One Utility demo, capture a ✅ verdict, and review the cinematic evidence in just a few minutes.
+The **AGI Jobs v0 (v2)** platform you are piloting is the superintelligent machine anchoring our labour lattice. This briefing keeps non-technical operators on the happy path: spin up the environment, fire the Day-One Utility demo, read the ✅ verdict, and inspect the cinematic evidence.
 
 ---
 
-## 0. Launch the workspace (fastest path)
+## 0. Open the project (fastest path)
 
 **Codespaces (recommended)**
 1. Visit <https://github.com/MontrealAI/AGIJobsv0>.
-2. Click **Code ▸ Codespaces ▸ Create codespace on main**.
-3. Wait for the workspace to boot (Python 3.10+ and Node are pre-installed).
+2. Select **Code → Codespaces → Create codespace on main**.
+3. Wait for the workspace to initialise (Python 3.10+, Node.js, Make, and Git are preinstalled).
 
 **Local clone (optional)**
 ```bash
 git clone https://github.com/MontrealAI/AGIJobsv0
 cd AGIJobsv0
 ```
-Ensure Python 3.10+ is on your PATH. Node/npm are optional for the green path.
+Install Python 3.10+ on your PATH. Node/npm are optional for the green path.
 
 ---
 
-## 1. One-command green path
+## 1. Run the one-command green path
 
-From the repository root run:
+From the repository root execute:
 
 ```bash
 make operator:green
 ```
 
-This target orchestrates the demo end-to-end:
-- Upgrades pip and installs `demo/AGIJobs-Day-One-Utility-Benchmark/requirements.txt` (falls back to PyYAML + Matplotlib).
-- Executes `python3 run_demo.py` for the Day-One Utility scenario (retries with `python3 run_demo.py simulate --strategy e2e` if needed).
-- Streams artefacts into `demo/AGIJobs-Day-One-Utility-Benchmark/out/` (JSON telemetry, PNG snapshots, HTML dashboards).
-- Invokes `tools/operator_banner.py` to print a banner such as `✅ Day-One Utility +X.XX%` using the freshest JSON report.
-- Echoes absolute paths for the newest snapshot and telemetry so you can open them immediately.
+Behind the scenes the Make target performs the full production-strength flow:
 
-Sample output:
+- Upgrades `pip` and installs `demo/AGIJobs-Day-One-Utility-Benchmark/requirements.txt` (falls back to `pyyaml` + `matplotlib` if the file is missing).
+- Enters `demo/AGIJobs-Day-One-Utility-Benchmark/` and launches `python3 run_demo.py`; on any non-zero exit it immediately retries with `python3 run_demo.py simulate --strategy e2e`.
+- Runs the Day-One Utility orchestrator, enforcing guardrails and writing artefacts into `demo/AGIJobs-Day-One-Utility-Benchmark/out/`:
+  - `report_<strategy>.json` — canonical telemetry and guardrail verdicts (for the green path this is `report_e2e.json`).
+  - `dashboard_<strategy>.html` — mermaid-rich cinematic dashboard.
+  - `snapshot_<strategy>.png` — Baseline vs Candidate visual (rendered when Matplotlib is available).
+  - `owner_controls_snapshot.json` — live sovereign control snapshot.
+- Calls `tools/operator_banner.py out` to print `✅ Day-One Utility +X.XX%` (falls back to `✅ Day-One run complete` if uplift cannot be derived).
+- Echoes absolute paths to the freshest snapshot (PNG or HTML) and telemetry JSON so you can open them instantly.
+
+Typical output
 ```
-✅ Day-One Utility +09.87%
+✅ Day-One Utility +08.92%
 Snapshot: /workspaces/AGIJobsv0/demo/AGIJobs-Day-One-Utility-Benchmark/out/snapshot_e2e.png
-Telemetry: /workspaces/AGIJobsv0/demo/AGIJobs-Day-One-Utility-Benchmark/out/owner_controls_snapshot.json
+Telemetry: /workspaces/AGIJobsv0/demo/AGIJobs-Day-One-Utility-Benchmark/out/report_e2e.json
 ```
-(If the uplift cannot be parsed, you will still see `✅ Day-One run complete` along with the artefact paths.)
+(If no PNG exists, the Make target prints the latest HTML dashboard path instead.)
 
 ---
 
-## 2. Validate the run
+## 2. Verify the run (acceptance checklist)
 
-1. **Banner** — Confirm the banner begins with `✅ Day-One Utility`. Any uplift ≥ +5.00% satisfies the default guardrail in `config/rules.yaml`.
-2. **Snapshot** — Open the printed PNG path to review the Baseline vs Candidate comparison. If only an HTML dashboard is available, open it in your browser.
-3. **Telemetry** — Download the JSON path for guardrail verdicts, owner controls, and utility metrics. Archive it with the snapshot.
-4. **Artefact location** — All outputs accumulate inside `demo/AGIJobs-Day-One-Utility-Benchmark/out/`; the make target always surfaces the newest files.
+1. **Banner** — Confirm the terminal banner begins with `✅ Day-One Utility`. The default guardrail requires at least **+5.00%** uplift (`config/rules.yaml`).
+2. **Snapshot** — Open the printed `snapshot_*.png` path. Review Baseline vs Candidate acceptance, cost, latency, and treasury deltas. If no PNG is available, open the accompanying `dashboard_*.html` file for the same story.
+3. **Telemetry** — Open `report_e2e.json` and confirm:
+   - `guardrail_pass.utility_uplift`, `guardrail_pass.latency_delta`, and `guardrail_pass.reliability_score` are all `true`.
+   - `metrics.candidate.utility` exceeds `metrics.baseline.utility`.
+   - `owner_controls.utility_threshold_active` and `owner_controls.latency_threshold_active` mirror the guardrails you expect.
+   Archive this JSON with `owner_controls_snapshot.json` for audit continuity.
+4. **Artefact location** — All outputs live under `demo/AGIJobs-Day-One-Utility-Benchmark/out/`. The Make target always surfaces the most recent files, so you never hunt manually.
 
 ---
 
 ## 3. Daily operator cadence (≈5 minutes)
 
-1. `make operator:green`
-2. Read the uplift banner and guardrail verdict.
-3. Inspect the snapshot (PNG/HTML) for narrative alignment.
-4. File the snapshot + JSON in your decision log when uplift and guardrails are green.
-5. (Optional) Adjust owner controls before rerunning:
+1. Run `make operator:green`.
+2. Read the uplift banner and scan `report_e2e.json` for the guardrail verdict (`guardrail_pass` block) and treasury metrics (`metrics.candidate.treasury_bonus`).
+3. Open the snapshot (PNG or HTML) to validate the Baseline vs Candidate narrative.
+4. When uplift and guardrails are green, capture the snapshot plus `report_e2e.json` and `owner_controls_snapshot.json` in your decision log.
+5. (Optional) Tune sovereign owner controls between runs:
    ```bash
    cd demo/AGIJobs-Day-One-Utility-Benchmark
+   make owner-show                      # Inspect current controls and guardrails
    make owner-set KEY=platform_fee_bps VALUE=220
    make owner-set KEY=utility_threshold_override_bps VALUE=900
-   make owner-toggle   # Pause/resume instantly
-   make owner-reset    # Restore sovereign defaults
+   make owner-toggle                    # Pause or resume instantly
+   make owner-reset                     # Restore defaults from owner_controls.defaults.yaml
    ```
-   Active values live in `config/owner_controls.yaml`; the reset baseline is `config/owner_controls.defaults.yaml`.
-6. (Optional) Explore alternative launch profiles from the demo directory:
-   ```bash
-   make alphaevolve
-   make hgm
-   make trm
-   make omni
-   make scoreboard   # Generates out/scoreboard.json + out/scoreboard.html
-   ```
-   These targets reuse the same dataset, guardrail engine, and dashboard renderer to showcase AlphaEvolve/HGM/TRM/OMNI strategies.
+   All updates are validated before saving, guaranteeing safe inputs for non-technical operators.
 
 ---
 
-## 4. Troubleshooting checklist
+## 4. Explore additional launch profiles & dashboards
+
+Stay inside `demo/AGIJobs-Day-One-Utility-Benchmark/` to compare strategies that reuse the same dataset, guardrails, and renderer:
+
+```bash
+make alphaevolve
+make hgm
+make trm
+make omni
+```
+
+Generate a consolidated command-deck scoreboard when you need a multi-strategy briefing:
+
+```bash
+make scoreboard
+# or
+python3 run_demo.py scoreboard
+```
+
+This produces `out/scoreboard.json` plus a mermaid-rich dashboard at `out/scoreboard.html`, highlighting leaders in utility uplift, latency, treasury impact, reliability, and guardrail status. Consult `demo/AGIJobs-Day-One-Utility-Benchmark/README.md` for deeper storyline context and advanced CLI usage.
+
+---
+
+## 5. Troubleshooting quick hits
 
 | Symptom | Action |
 | --- | --- |
-| `python3` missing | Install Python 3.10+ (`sudo apt install python3 python3-pip`) or relaunch in Codespaces. |
-| Pip install errors | Re-run `make operator:green`; dependency installation is idempotent and recreates `out/` as needed. |
-| Banner missing uplift | Open the printed JSON path and confirm it includes `metrics.utility_uplift`; share the artefacts with engineering. |
-| No PNG path printed | The fallback HTML dashboard path will appear. Open it in a browser and export a screenshot if stakeholders need imagery. |
-| Demo paused | Run `cd demo/AGIJobs-Day-One-Utility-Benchmark && make owner-toggle` to resume, or `make owner-reset` to restore defaults. |
+| `python3: command not found` | Install Python 3.10+ locally or relaunch in Codespaces where it is preinstalled. |
+| Pip install failures | Re-run `make operator:green`; dependency installation is idempotent and recreates `out/` automatically. |
+| Banner prints `✅ Day-One run complete` | Open the printed JSON path and verify it contains `metrics.utility_uplift`; share the artefact with engineering if uplift is missing. |
+| No PNG snapshot reported | The HTML dashboard path is printed instead — open it in a browser and export a screenshot if stakeholders need imagery. |
+| Demo reports "paused" | Run `cd demo/AGIJobs-Day-One-Utility-Benchmark && make owner-toggle` to resume, or `make owner-reset` to restore the sovereign defaults. |
 
 ---
 
-## 5. Key directories & artefacts
+## 6. Key references
 
 | Path | Purpose |
 | --- | --- |
-| `Makefile` (repo root) | Hosts the `operator:green` target used by this runbook. |
-| `tools/operator_banner.py` | Parses the latest JSON report and prints the uplift banner. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/run_demo.py` | CLI entrypoint executed by `make operator:green`. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/demo_runner.py` | Simulation, guardrail enforcement, HTML rendering, charting. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/config/` | Microset, strategy, guardrail, and owner control YAMLs. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/out/` | JSON telemetry, PNG snapshots, HTML dashboards per run. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/tests/` | Pytest suite validating guardrails, artefact creation, owner controls. |
-| `demo/AGIJobs-Day-One-Utility-Benchmark/README.md` | Full deep-dive into additional demos and governance flows. |
+| `Makefile` (repo root) | Hosts the `operator:green` orchestration target for this runbook. |
+| `tools/operator_banner.py` | Parses the latest `out/*.json` report and prints the ✅ uplift banner. |
+| `demo/AGIJobs-Day-One-Utility-Benchmark/run_demo.py` | CLI entrypoint into the Day-One Utility orchestrator. |
+| `demo/AGIJobs-Day-One-Utility-Benchmark/demo_runner.py` | Full simulation engine: strategy maths, guardrail enforcement, dashboards, snapshots, and scoreboard generation. |
+| `demo/AGIJobs-Day-One-Utility-Benchmark/config/` | Microset dataset, guardrail rules, strategy profiles, and owner control snapshots. |
+| `demo/AGIJobs-Day-One-Utility-Benchmark/out/` | Latest JSON telemetry, dashboards, chart snapshots, and scoreboard exports. |
+| `demo/AGIJobs-Day-One-Utility-Benchmark/tests/` | Pytest suite proving guardrail enforcement, pausing, artefact creation, and owner control safety. |
 
-Stay on this rhythm and every operator will verify Day-One Utility uplift, capture artefacts, and steer **AGI Jobs v0 (v2)** with production-grade confidence.
+Stay on this rhythm and every operator will verify Day-One Utility uplift, capture the artefacts, and steer **AGI Jobs v0 (v2)** with production-grade confidence.
