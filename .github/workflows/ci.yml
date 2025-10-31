@@ -884,6 +884,7 @@ jobs:
 
   branch_protection:
     name: Branch protection guard
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
