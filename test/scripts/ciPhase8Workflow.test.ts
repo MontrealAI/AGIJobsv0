@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { load } from 'js-yaml';
 
 const WORKFLOW_PATH = join(__dirname, '..', '..', '.github', 'workflows', 'ci.yml');
-const BRANCH_PROTECTION_SCRIPT = join(__dirname, '..', '..', 'scripts', 'ci', 'verify-branch-protection.ts');
+const REQUIRED_CONTEXTS_PATH = join(__dirname, '..', '..', 'ci', 'required-contexts.json');
 
 describe('CI Phase 8 readiness workflow', function () {
   it('runs on pull requests and protects main with Phase 8 readiness', function () {
@@ -20,7 +20,7 @@ describe('CI Phase 8 readiness workflow', function () {
   });
 
   it('enforces Phase 8 readiness in branch protection expectations', function () {
-    const script = readFileSync(BRANCH_PROTECTION_SCRIPT, 'utf-8');
-    expect(script).to.contain('"ci (v2) / Phase 8 readiness"');
+    const contexts = JSON.parse(readFileSync(REQUIRED_CONTEXTS_PATH, 'utf-8')) as string[];
+    expect(contexts).to.include('ci (v2) / Phase 8 readiness');
   });
 });
