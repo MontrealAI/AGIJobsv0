@@ -2,6 +2,8 @@
 
 This guide describes the CI v2 pipeline that protects the AGI Jobs v0 codebase. It documents the workflows that run on `main` and every pull request, shows how the jobs depend on each other, and captures the branch protection settings that need to be enforced so the checks are always visible.
 
+For a hands-on validation log that you can hand to compliance or executive stakeholders, see the companion [CI v2 validation report template](ci-v2-validation-report.md). It walks through the exact commands, expected outputs, and artefact exports required to demonstrate a fully green run.
+
 ```mermaid
 flowchart LR
     classDef trigger fill:#f1f5f9,stroke:#1e293b,stroke-width:1px,color:#0f172a;
