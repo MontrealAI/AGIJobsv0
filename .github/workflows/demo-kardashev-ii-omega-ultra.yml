@@ -3,12 +3,12 @@ name: demo-kardashev-ii-omega-ultra
 on:
   pull_request:
     paths:
-      - "demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**"
-      - "demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**"
-      - "kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**"
-      - ".github/workflows/demo-kardashev-ii-omega-ultra.yml"
-      - "package.json"
-      - "package-lock.json"
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**'
+      - 'demo/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**'
+      - 'kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/**'
+      - '.github/workflows/demo-kardashev-ii-omega-ultra.yml'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:

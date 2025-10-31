@@ -29,7 +29,7 @@ jobs:
 
       - name: Run tests
         env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: |
           cd demo/Tiny-Recursive-Model-v0
           pytest -q

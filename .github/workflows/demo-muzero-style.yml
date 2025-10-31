@@ -28,7 +28,7 @@ jobs:
           pip install -r demo/MuZero-style-v0/requirements.txt
       - name: Run MuZero demo tests
         env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
           PYTHONPATH: demo/MuZero-style-v0
         run: |
           pytest demo/MuZero-style-v0/tests -q

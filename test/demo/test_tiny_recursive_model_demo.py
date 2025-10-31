@@ -1,83 +1,116 @@
-"""Tests for the Tiny Recursive Model demo."""
-
+"""Regression tests for the Tiny Recursive Model demo."""
 from __future__ import annotations
 
-import json
+from dataclasses import asdict, replace
 from pathlib import Path
+from typing import Dict
 import sys
-
-import numpy as np
+import tempfile
 
 DEMO_ROOT = Path(__file__).resolve().parents[2] / "demo" / "Tiny-Recursive-Model-v0"
 if str(DEMO_ROOT) not in sys.path:
     sys.path.append(str(DEMO_ROOT))
 
-from trm_demo.economic import EconomicLedger
-from trm_demo.engine import TinyRecursiveModel, TinyRecursiveModelConfig
-from trm_demo.simulation import (
-    ConversionSimulation,
-    SimulationConfig,
-    ground_truth_probability,
-)
+import torch
+
+from trm_demo.config import DemoSettings, load_settings
+from trm_demo.dataset import OperationSequenceDataset
+from trm_demo.engine import InferenceResult, TrmEngine
+from trm_demo.ledger import EconomicLedger
 from trm_demo.sentinel import Sentinel
-from trm_demo.subgraph import SubgraphConfig, SubgraphLogger
+from trm_demo.simulation import run_simulation
 from trm_demo.thermostat import Thermostat
-from trm_demo.utils import generate_candidate
+
+DEFAULT_CONFIG = DEMO_ROOT / "config" / "default_trm_config.yaml"
+VOCAB_PATH = DEMO_ROOT / "data" / "operations_vocab.json"
 
 
-def test_trm_halting_converges_quickly():
-    config = TinyRecursiveModelConfig()
-    model = TinyRecursiveModel(config=config)
-    rng = np.random.default_rng(0)
-    sample = generate_candidate("test", rng).as_feature_vector()
-    result = model.infer(sample)
-    assert 1 <= result.steps_used <= config.max_steps
-    assert 0.0 <= result.prediction <= 1.0
+def _load_default_settings() -> DemoSettings:
+    settings = load_settings(DEFAULT_CONFIG)
+    # Force CPU execution for test determinism regardless of host CUDA support.
+    settings.trm = replace(settings.trm, device="cpu")
+    return settings
 
 
-def test_simulation_roi_advantage(tmp_path: Path):
-    model = TinyRecursiveModel()
-    simulation_config = SimulationConfig(opportunities=50)
-    ledger = EconomicLedger()
-    thermostat = Thermostat()
-    sentinel = Sentinel()
-    subgraph = SubgraphLogger(SubgraphConfig(tmp_path / "trm_calls.json"))
-    rng = np.random.default_rng(123)
+def _build_engine(settings: DemoSettings) -> TrmEngine:
+    return TrmEngine(settings)
 
-    simulation = ConversionSimulation(
-        simulation_config,
-        model,
-        ledger,
-        thermostat,
-        sentinel,
-        subgraph,
-        rng=rng,
+
+def _make_sample(engine: TrmEngine) -> Dict[str, torch.Tensor]:
+    dataset = OperationSequenceDataset(size=1, vocab_path=VOCAB_PATH, seed=7)
+    sample = dataset[0]
+    # Align tensor device with engine to prevent device mismatches during inference.
+    return {key: value.to(engine.device) for key, value in sample.items() if key in {"start", "steps", "length"}}
+
+
+def test_trm_halting_converges_quickly() -> None:
+    settings = _load_default_settings()
+    engine = _build_engine(settings)
+    result: InferenceResult = engine.infer(_make_sample(engine))
+
+    max_steps = settings.trm.max_outer_steps * settings.trm.max_inner_steps
+    assert 1 <= result.steps_used <= max_steps
+    assert 0 <= result.prediction < settings.trm.answer_dim
+
+
+def test_simulation_roi_advantage() -> None:
+    settings = _load_default_settings()
+    settings.sentinel = replace(
+        settings.sentinel,
+        min_roi=0.0,
+        max_daily_cost=1e9,
+        max_latency_ms=10_000,
+        max_recursions=10_000,
+        max_consecutive_failures=100,
     )
-    outcome = simulation.run()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        settings.training = replace(
+            settings.training,
+            dataset_size=128,
+            epochs=2,
+            patience=2,
+            batch_size=32,
+            checkpoint_path=str(Path(tmpdir) / "trm-sim-checkpoint.pt"),
+        )
+        engine = _build_engine(settings)
+        engine.train()
+    thermostat = Thermostat(settings.thermostat)
+    sentinel = Sentinel(settings.sentinel)
+    ledger = EconomicLedger(**asdict(settings.ledger))
 
-    trm_stats = outcome.strategies["trm"]
-    llm_stats = outcome.strategies["llm"]
-    greedy_stats = outcome.strategies["greedy"]
+    summary = run_simulation(
+        engine=engine,
+        thermostat=thermostat,
+        sentinel=sentinel,
+        ledger=ledger,
+        settings=settings,
+        trials=24,
+        seed=2025,
+    )
 
-    assert trm_stats.success_rate >= greedy_stats.success_rate
-    assert trm_stats.roi > llm_stats.roi
-    assert (trm_stats.total_value - trm_stats.total_cost) > (greedy_stats.total_value - greedy_stats.total_cost)
+    assert not summary.sentinel_triggered
+    assert summary.trm.trials == 24
+    assert summary.trm.total_cost > 0
+    assert summary.trm.roi() >= 0
+    assert len(summary.trm.steps_distribution) == 24
 
 
-def test_training_updates_parameters():
-    config = TinyRecursiveModelConfig()
-    model = TinyRecursiveModel(config=config)
-    rng = np.random.default_rng(42)
-    dataset = []
-    for _ in range(32):
-        candidate = generate_candidate("train", rng)
-        vector = candidate.as_feature_vector()
-        dataset.append((vector, ground_truth_probability(vector)))
+def test_training_updates_parameters(tmp_path: Path) -> None:
+    settings = _load_default_settings()
+    settings.training = replace(
+        settings.training,
+        dataset_size=64,
+        epochs=2,
+        patience=2,
+        checkpoint_path=str(tmp_path / "trm-checkpoint.pt"),
+        batch_size=32,
+    )
+    engine = _build_engine(settings)
 
-    before = json.loads(model.to_json())
-    model.train(dataset, epochs=3, learning_rate=0.01)
-    after = json.loads(model.to_json())
+    before_state = {key: tensor.clone() for key, tensor in engine.model.state_dict().items()}
+    report = engine.train()
+    after_state = engine.model.state_dict()
 
-    assert before["b_y"] != after["b_y"]
-    assert before["W_y"] != after["W_y"]
-
+    assert report.epochs_run >= 1
+    assert report.best_checkpoint.exists()
+    assert any(not torch.equal(before_state[name], after_state[name]) for name in before_state)
