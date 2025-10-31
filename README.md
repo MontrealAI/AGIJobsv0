@@ -5,14 +5,14 @@
 [![Security](https://img.shields.io/badge/Security-hardened-0f172a.svg)](SECURITY.md)
 [![Docs](https://img.shields.io/badge/Docs-knowledge%20vault-7c3aed.svg)](docs/)
 
-> **AGI Jobs v0 (v2)** is the production sovereign intelligence engine—an immediately deployable superintelligent machine that fuses labor markets, cinematic governance, validator orchestration, and narrative control into a single faultless operating continuum. The platform is pre-calibrated for non-technical launch crews while remaining hardened for the most critical economic and sovereign missions.
+> **AGI Jobs v0 (v2)** is the production sovereign intelligence engine for mission-critical labour orchestration. It is engineered as the superintelligent machine that concentrates validator coordination, cinematic governance, validator orchestration, and unstoppable operator tooling into a single deployable continuum. Every subsystem is calibrated so a non-technical launch crew can deliver value instantly while remaining battle-hardened for the highest-stakes sovereign operations.
 
 ---
 
-## 🧭 Stellar Navigation
+## 🧭 Flight Plan
 - [🌠 Mission Brief](#-mission-brief)
-- [🛰️ Orbital Systems Map](#-orbital-systems-map)
-- [📦 Monorepo Atlas](#-monorepo-atlas)
+- [🛰️ Constellation Cartography](#-constellation-cartography)
+- [📦 Monorepo Topography](#-monorepo-topography)
 - [🚀 Launch Protocols](#-launch-protocols)
   - [Mission Requirements](#mission-requirements)
   - [Bootstrap Sequence](#bootstrap-sequence)
@@ -20,19 +20,27 @@
   - [Mission Control via Docker Compose](#mission-control-via-docker-compose)
   - [Service & Telemetry Waypoints](#service--telemetry-waypoints)
   - [Automation Playbooks](#automation-playbooks)
-- [🎞️ Demo Nebula](#-demo-nebula)
-  - [Celestial Demo Codex](#celestial-demo-codex)
-  - [Sector Launch Manifest](#sector-launch-manifest)
-  - [Running a Demo Locally](#running-a-demo-locally)
+- [🎞️ Demo Multiverse](#-demo-multiverse)
+  - [Demo Fleet Overview](#demo-fleet-overview)
+  - [Launch Recipes](#launch-recipes)
+  - [Narrative & Artifact Pipeline](#narrative--artifact-pipeline)
 - [🧪 Continuous Assurance & CI](#-continuous-assurance--ci)
-- [📡 Observability & Security](#-observability--security)
+- [📡 Observability, Security & Governance](#-observability-security--governance)
 - [📚 Knowledge Vault](#-knowledge-vault)
 
 ---
 
 ## 🌠 Mission Brief
-AGI Jobs v0 (v2) unifies six battle-tested theatres into a cohesive, high-trust platform:
+AGI Jobs v0 (v2) unifies six fortified theatres into a cohesive high-trust platform:
 
+1. **Protocol Nebula** – Upgradeable Solidity suites, Foundry & Hardhat flows, attestations, paymaster relays, and subgraph analytics protected by reproducible migrations and fuzzing laboratories.
+2. **Agentic Cortex** – Orchestrators, validator swarms, reinforcement arenas, analytics services, SDK libraries, and simulation hubs acting as an autonomous nervous system.
+3. **Mission Surfaces** – Next.js/React consoles, enterprise portals, validator dashboards, One-Box command centres, and cinematic storytelling decks for instant situational awareness.
+4. **Demo Multiverse** – Reproducible cinematic demos, CLI tours, simulation scripts, and sovereign-grade economic scenarios spanning every Kardashev upgrade path.
+5. **Observability Lattice** – Telemetry stacks, monitoring playbooks, scorecards, and incident response automation for unwavering uptime.
+6. **Continuous Assurance Wall** – Relentlessly green CI, security hardening, SBOM pipelines, and branch protections ensuring each commit meets production criteria.
+
+The result is an unstoppable operational fabric that can be handed to non-technical mission leads without sacrificing cryptographic guarantees or compliance evidence.
 1. **Upgradeable protocol nebula** — Solidity contracts, Foundry labs, Hardhat deployments, EAS attestations, paymaster relays, and a subgraph indexer tuned for chain migrations.
 2. **Agentic intelligence fabric** — orchestrators, validator swarms, guardrails, analytics, FastAPI + Node microservices, and SDKs that act as a single programmable cortex.
 3. **Mission surfaces** — Next.js heads-up displays, cinematic operator decks, and OneBox runners rendering validator, governance, and enterprise experiences.
@@ -57,7 +65,7 @@ The result is that AGI Jobs v0 (v2) stands as the superintelligent machine that 
 
 ---
 
-## 🛰️ Orbital Systems Map
+## 🛰️ Constellation Cartography
 ```mermaid
 %% Grandiose orbital map of AGI Jobs v0 (v2)
 flowchart LR
@@ -98,7 +106,7 @@ flowchart LR
 
     subgraph "Operations & Reliability"
         deploy[[deploy/\ndeployment-config/]]:::ops
-        ci[[ci/\nscripts/\n.github/workflows/]]:::ops
+        ci[[ci/\n.github/workflows/]]:::ops
         monitoring[[monitoring/\nRUNBOOK.md]]:::ops
         qa[[tests/\ntest/\nreports/\ngas-snapshots/]]:::ops
         compose[[compose.yaml]]:::ops
@@ -132,15 +140,15 @@ flowchart LR
 
 ---
 
-## 📦 Monorepo Atlas
+## 📦 Monorepo Topography
 | Domain | Primary Paths | Highlights |
 | --- | --- | --- |
 | Protocol & Chain Control | [`contracts/`](contracts/), [`attestation/`](attestation/), [`paymaster/`](paymaster/), [`migrations/`](migrations/), [`subgraph/`](subgraph/), [`echidna/`](echidna/) | Upgradeable Solidity suites, Foundry & Hardhat flows, attestations, paymaster relays, and subgraph analytics locked by reproducible migrations. |
 | Agent Intelligence Fabric | [`orchestrator/`](orchestrator/), [`backend/`](backend/), [`agent-gateway/`](agent-gateway/), [`services/`](services/), [`routes/`](routes/), [`packages/`](packages/), [`shared/`](shared/), [`simulation/`](simulation/), [`storage/`](storage/) | Validator swarms, FastAPI + Node microservices, reinforcement harnesses, analytics SDKs, and stateful bridges. |
 | Mission Consoles & Portals | [`apps/console`](apps/console), [`apps/operator`](apps/operator), [`apps/validator`](apps/validator), [`apps/validator-ui`](apps/validator-ui), [`apps/enterprise-portal`](apps/enterprise-portal), [`apps/mission-control`](apps/mission-control), [`apps/orchestrator`](apps/orchestrator) | Next.js/React HUDs for operators, validators, enterprises, and sovereign control rooms. |
-| OneBox & Runner Kits | [`apps/onebox`](apps/onebox), [`apps/onebox-static`](apps/onebox-static), [`demo/One-Box`](demo/One-Box), [`examples/agentic`](examples/agentic) | Portable runner with CLI diagnostics, orchestrator harnesses, WebSocket bridges, validator readiness flows, and cinematic bootstraps. |
+| OneBox & Runner Kits | [`apps/onebox`](apps/onebox), [`apps/onebox-static`](apps/onebox-static), [`demo/One-Box`](demo/One-Box), [`examples/agentic`](examples/agentic) | Walletless assistant, CLI diagnostics, orchestrator harnesses, WebSocket bridges, validator readiness flows, and cinematic bootstraps. |
 | Demo Multiverse | [`demo/`](demo/), [`kardashev_*`](./), [`*.demo_*`](./), [`examples/`](examples/), [`simulation/`](simulation/), [`data/`](data/), [`storage/`](storage/) | Cinematic expeditions, national rollouts, Kardashev upgrades, Monte Carlo simulators, and narrative datasets. |
-| Operations & Assurance | [`ci/`](ci/), [`deploy/`](deploy/), [`deployment-config/`](deployment-config/), [`monitoring/`](monitoring/), [`scripts/`](scripts/), [`tests/`](tests/), [`test/`](test/), [`reports/`](reports/), [`gas-snapshots/`](gas-snapshots/) | GitHub Actions matrix, release automation, telemetry stacks, integration suites, SBOM generation, and gas analytics. |
+| Operations & Assurance | [`ci/`](ci/), [`.github/workflows/`](.github/workflows/), [`deploy/`](deploy/), [`deployment-config/`](deployment-config/), [`monitoring/`](monitoring/), [`scripts/`](scripts/), [`tests/`](tests/), [`test/`](test/), [`reports/`](reports/), [`gas-snapshots/`](gas-snapshots/) | GitHub Actions matrix, release automation, telemetry stacks, integration suites, SBOM generation, and gas analytics. |
 | Knowledge Base | [`docs/`](docs/), [`internal_docs/`](internal_docs/), [`RUNBOOK.md`](RUNBOOK.md), [`SECURITY.md`](SECURITY.md), [`MIGRATION.md`](MIGRATION.md), [`CHANGELOG.md`](CHANGELOG.md) | Architecture briefs, production playbooks, compliance dossiers, migration histories, and cinematic treatments. |
 
 ---
@@ -148,7 +156,7 @@ flowchart LR
 ## 🚀 Launch Protocols
 
 ### Mission Requirements
-- **Node.js 20.18.1** and npm 10.x (respect `.nvmrc`).
+- **Node.js 20.18.1** and npm 10.x (respect [`.nvmrc`](.nvmrc)).
 - **Python 3.12+** with `pip` for agentic services and Python-first demos.
 - **Foundry** (`forge`, `anvil`) for contract compilation, fuzzing, and gas profiling.
 - **Docker & Docker Compose** for mission control clusters and demo orchestration.
@@ -175,33 +183,34 @@ anvil --chain-id 31337 --block-time 2
 # Terminal 3 — deploy protocol v2 and bootstrap modules
 npx hardhat run --network localhost scripts/v2/deploy.ts
 
-# Terminal 4 — start mission-critical services
-uvicorn services.meta_api.app.main:app --reload --port 8000
-npm run agent:gateway
-npm run agent:validator
-npm --prefix apps/console run dev
+# Terminal 4 — start the orchestrator control plane
+npm run onebox:server
 ```
-Consult [`docs/quick-start.md`](docs/quick-start.md), [`docs/AGENTIC_QUICKSTART.md`](docs/AGENTIC_QUICKSTART.md), and [`docs/onebox/`](docs/onebox/) for orchestrator credentials, validator keys, and wallet hygiene.
+Augment with mission-specific scripts (for example `npm run subgraph:dev`, `npm run services:dev`, or `npm run apps:dev`) depending on which surfaces you are demonstrating.
 
 ### Mission Control via Docker Compose
 ```bash
-cp deployment-config/oneclick.env.example deployment-config/oneclick.env
-# Populate secrets, RPC URLs, and wallet parameters.
-docker compose --profile core up --build
+# Boot the full operator stack
+DOCKER_BUILDKIT=1 docker compose up --build
+
+# Tail logs for orchestrator and console
+docker compose logs -f orchestrator console
 ```
-Compose profiles include `core`, `observability`, and demo-specific overlays. Inspect [`compose.yaml`](compose.yaml) and [`deployment-config/`](deployment-config/) for parameters.
+The compose stack provisions the orchestrator, gateway, mission control surfaces, and supporting telemetry so that non-technical launch crews can bring the platform online with a single command.
 
 ### Service & Telemetry Waypoints
-| Component | Local Entry Point | Notes |
-| --- | --- | --- |
-| Meta API | `http://localhost:8000/docs` | FastAPI schema for intelligence orchestration. |
-| Agent Gateway | `ws://localhost:8787` | Bidirectional coordinator for validator and console agents. |
-| Console HUD | `http://localhost:3000` | Operator dashboard powered by `apps/console`. |
-| Mission Control | `http://localhost:3010` | Enterprise orchestration portal. |
-| Validator UI | `http://localhost:3020` | Validator onboarding & staking flows. |
-| Monitoring Stack | `http://localhost:9090` / `:16686` | Prometheus, Grafana, Jaeger (toggle via compose profiles). |
+- [`Makefile`](Makefile) targets such as `culture-bootstrap`, `demo-hgm`, and `operator:green` stage advanced demos and emit snapshots.
+- [`scripts/`](scripts/) contains Foundry deploy flows, arena seeds, attestation builders, scorecard collectors, SBOM generators, and release automation.
+- [`monitoring/`](monitoring/) and [`RUNBOOK.md`](RUNBOOK.md) describe Prometheus/Grafana alignment, alert routing, and sovereign incident response.
 
 ### Automation Playbooks
+| Command | Purpose |
+| --- | --- |
+| `npm run lint && npm run format:check` | Enforce repository-wide TypeScript, Solidity, and Python style baselines. |
+| `npm test` | Execute the consolidated Node.js + Python demo suites (see [`package.json`](package.json)). |
+| `forge test --ffi` | Run Foundry test matrices against the deployed protocol libraries. |
+| `npm run ci:verify-branch-protection` | Confirm GitHub branch protections and required checklists remain enforced before promotion. |
+| `make culture-bootstrap NETWORK=sepolia MODE=full` | Demonstrate Culture deployment + simulation in one sweep. |
 - `Makefile` targets cover culture deployments (`make culture-bootstrap`), HGM guardrails (`make demo-hgm`), and Absolute Zero simulations (`make absolute-zero-demo`).
 - [`scripts/`](scripts/) bundles deployment aides, CI verifiers, sovereign readiness checks, and cinematic export tooling.
 - Owner consoles stay empowered through the [`owner:*`](package.json) script constellation (`owner:mission-control`, `owner:update-all`, `owner:system-pause`, etc.), wiring directly into the `OwnerConfigurator` facade so the contract owner can retune parameters, rotate governance, or pause the network without touching Solidity.
@@ -219,123 +228,61 @@ Compose profiles include `core`, `observability`, and demo-specific overlays. In
 
 ---
 
-## 🎞️ Demo Nebula
-The demo constellation is the crown jewel of AGI Jobs v0 (v2), showcasing sovereign labor markets, validator ascension, cinematic economics, and Kardashev-grade storytelling. Every directory contains scripts, notebooks, media, and README dossiers. Most demos are enforced by dedicated GitHub Actions workflows, ensuring replayability and on-demand validation.
+## 🎞️ Demo Multiverse
+The repository ships a cinematic multiverse of demos covering validator governance, national-scale labour orchestration, economic sovereignty, and cinematic storytelling. Every demo directory contains self-contained instructions, assets, and policy scaffolding so it can be run by a single command without editing source code.
 
-### Celestial Demo Codex
-```mermaid
-%% Iconic demo galaxy map
-flowchart TD
-    classDef launch fill:#111827,stroke:#38bdf8,color:#e0f2fe,font-weight:bold,stroke-width:2px;
-    classDef economics fill:#1f2937,stroke:#f97316,color:#fff7ed,font-weight:bold,stroke-width:2px;
-    classDef culture fill:#22092c,stroke:#f472b6,color:#fff0f6,font-weight:bold,stroke-width:2px;
-    classDef sovereign fill:#1c1917,stroke:#facc15,color:#fef9c3,font-weight:bold,stroke-width:2px;
-    classDef omega fill:#0f172a,stroke:#a855f7,color:#ede9fe,font-weight:bold,stroke-width:2px;
-    classDef research fill:#052e16,stroke:#4ade80,color:#f0fdf4,font-weight:bold,stroke-width:2px;
-    classDef empowerment fill:#172554,stroke:#22d3ee,color:#ecfeff,font-weight:bold,stroke-width:2px;
-    classDef nexus fill:#f97316,stroke:#0f172a,color:#fff7ed,font-size:20px,font-weight:bold,stroke-width:3px;
-
-    Nexus((🌌 Demo Nexus)):::nexus
-    subgraph Launchpad_Cluster ["Launchpad 🚀"]
-        L1[AGI-Alpha-Node-v0]:::launch
-        L2[Validator-Constellation-v0]:::launch
-        L3[AGIJobs-Day-One-Utility-Benchmark]:::launch
-        L4[asi-global]:::launch
-        L5[asi-takeoff]:::launch
-        L6[One-Box]:::launch
-        L7[validator_constellation_v0]:::launch
-    end
-
-    subgraph Economics_Cluster ["Economics & Governance 💱"]
-        E1[AGI-Jobs-Platform-at-Kardashev-II-Scale]:::economics
-        E2[Economic-Power-v0]:::economics
-        E3[Trustless-Economic-Core-v0]:::economics
-        E4[REDENOMINATION]:::economics
-        E5[Phase-8-Universal-Value-Dominance]:::economics
-    end
-
-    subgraph Culture_Cluster ["Culture & Experience ✨"]
-        C1[Era-Of-Experience-v0]:::culture
-        C2[CULTURE-v0]:::culture
-        C3[AlphaEvolve-v0 / AlphaEvolve_v0]:::culture
-        C4[aurora]:::culture
-        C5[ICONIC-OPERATING-SYSTEM-DEMO]:::culture
-    end
-
-    subgraph Sovereign_Cluster ["Sovereign & Planetary 👑"]
-        S1[Planetary-Orchestrator-Fabric-v0]:::sovereign
-        S2[sovereign-constellation]:::sovereign
-        S3[sovereign-mesh]:::sovereign
-        S4[zenith-sapience-*]:::sovereign
-    end
-
-    subgraph Omega_Cluster ["Omega & Ascension 🜂"]
-        O1[Kardashev-II Omega-Grade α AGI Business-3]:::omega
-        O2[kardashev_ii_omega_grade_upgrade_*]:::omega
-        O3[kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2*]:::omega
-        O4[cosmic-omni-sovereign-symphony]:::omega
-        O5[CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION]:::omega
-        O6[OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE]:::omega
-        O7[OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY]:::omega
-        O8[astral-omnidominion-operating-system]:::omega
-        O9[imperatrix-celestia-operating-system]:::omega
-    end
-
-    subgraph Research_Cluster ["Research & Simulation 🔬"]
-        R1[Absolute-Zero-Reasoner-v0]:::research
-        R2[MuZero-style-v0]:::research
-        R3[Open-Endedness-v0]:::research
-        R4[Tiny-Recursive-Model-v0]:::research
-        R5[Huxley-Godel-Machine-v0]:::research
-    end
-
-    subgraph Empowerment_Cluster ["Empowerment & Society 🌍"]
-        X1[superintelligent-empowerment]:::empowerment
-        X2[agi-labor-market-grand-demo]:::empowerment
-        X3[agi-governance]:::empowerment
-    end
-
-    Nexus --> Launchpad_Cluster
-    Nexus --> Economics_Cluster
-    Nexus --> Culture_Cluster
-    Nexus --> Sovereign_Cluster
-    Nexus --> Omega_Cluster
-    Nexus --> Research_Cluster
-    Nexus --> Empowerment_Cluster
-```
-
-### Sector Launch Manifest
-| Sector | Demo Paths | Primary Workflows |
+### Demo Fleet Overview
+| Orbit | Highlight Demos | Core Focus |
 | --- | --- | --- |
-| **Launchpad 🚀** | [`demo/AGI-Alpha-Node-v0`](demo/AGI-Alpha-Node-v0), [`demo/Validator-Constellation-v0`](demo/Validator-Constellation-v0), [`demo/validator_constellation_v0`](demo/validator_constellation_v0), [`demo/AGIJobs-Day-One-Utility-Benchmark`](demo/AGIJobs-Day-One-Utility-Benchmark), [`demo/asi-global`](demo/asi-global), [`demo/asi-takeoff`](demo/asi-takeoff), [`demo/One-Box`](demo/One-Box) | [`demo-agi-alpha-node.yml`](.github/workflows/demo-agi-alpha-node.yml), [`demo-validator-constellation.yml`](.github/workflows/demo-validator-constellation.yml), [`validator-constellation-demo.yml`](.github/workflows/validator-constellation-demo.yml), [`demo-day-one-utility-benchmark.yml`](.github/workflows/demo-day-one-utility-benchmark.yml), [`demo-asi-global.yml`](.github/workflows/demo-asi-global.yml), [`demo-asi-takeoff.yml`](.github/workflows/demo-asi-takeoff.yml), [`demo-aurora.yml`](.github/workflows/demo-aurora.yml) (OneBox cinematic assets). |
-| **Economics & Governance 💱** | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale`](demo/AGI-Jobs-Platform-at-Kardashev-II-Scale), [`demo/Economic-Power-v0`](demo/Economic-Power-v0), [`demo/Trustless-Economic-Core-v0`](demo/Trustless-Economic-Core-v0), [`demo/REDENOMINATION`](demo/REDENOMINATION), [`demo/Phase-8-Universal-Value-Dominance`](demo/Phase-8-Universal-Value-Dominance) | [`demo-kardashev-ii.yml`](.github/workflows/demo-kardashev-ii.yml), [`demo-economic-power.yml`](.github/workflows/demo-economic-power.yml), [`demo-trustless-economic-core.yml`](.github/workflows/demo-trustless-economic-core.yml), [`demo-redenomination.yml`](.github/workflows/demo-redenomination.yml), [`demo-phase-8-universal-value-dominance.yml`](.github/workflows/demo-phase-8-universal-value-dominance.yml). |
-| **Culture & Experience ✨** | [`demo/Era-Of-Experience-v0`](demo/Era-Of-Experience-v0), [`demo/CULTURE-v0`](demo/CULTURE-v0), [`demo/AlphaEvolve-v0`](demo/AlphaEvolve-v0), [`demo/AlphaEvolve_v0`](demo/AlphaEvolve_v0), [`demo/aurora`](demo/aurora), [`demo/ICONIC-OPERATING-SYSTEM-DEMO`](demo/ICONIC-OPERATING-SYSTEM-DEMO) | [`culture-ci.yml`](.github/workflows/culture-ci.yml), [`demo-aurora.yml`](.github/workflows/demo-aurora.yml), [`demo-cosmic-flagship.yml`](.github/workflows/demo-cosmic-flagship.yml), [`demo-alpha-agi-mark.yml`](.github/workflows/demo-alpha-agi-mark.yml), [`demo-alpha-agi-insight-mark.yml`](.github/workflows/demo-alpha-agi-insight-mark.yml). |
-| **Sovereign & Planetary 👑** | [`demo/Planetary-Orchestrator-Fabric-v0`](demo/Planetary-Orchestrator-Fabric-v0), [`demo/sovereign-constellation`](demo/sovereign-constellation), [`demo/sovereign-mesh`](demo/sovereign-mesh), [`demo/zenith-sapience`](demo/zenith-sapience), [`demo/zenith-sapience-initiative`](demo/zenith-sapience-initiative), [`demo/zenith-sapience-initiative-*`](demo) | [`demo-planetary-orchestrator-fabric.yml`](.github/workflows/demo-planetary-orchestrator-fabric.yml), [`demo-sovereign-constellation.yml`](.github/workflows/demo-sovereign-constellation.yml), [`demo-national-supply-chain.yml`](.github/workflows/demo-national-supply-chain.yml), [`demo-zenith-sapience-initiative.yml`](.github/workflows/demo-zenith-sapience-initiative.yml), [`demo-zenith-sapience-celestial-archon.yml`](.github/workflows/demo-zenith-sapience-celestial-archon.yml), [`demo-zenith-sapience-planetary-os.yml`](.github/workflows/demo-zenith-sapience-planetary-os.yml), [`demo-zenith-sapience-omnidominion.yml`](.github/workflows/demo-zenith-sapience-omnidominion.yml), [`demo-zenith-hypernova.yml`](.github/workflows/demo-zenith-hypernova.yml). |
-| **Omega & Ascension 🜂** | [`demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3`](demo/Kardashev-II-Omega-Grade-Alpha-AGI-Business-3) and upgrade suites (`kardashev_ii_omega_grade_alpha_agi_business_3_demo*`, [`kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo*`](kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo), [`kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2*`](kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2), [`kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega`](kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega), [`kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra`](kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra)), [`demo/cosmic-omni-sovereign-symphony`](demo/cosmic-omni-sovereign-symphony), [`demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION`](demo/CELESTIAL-SOVEREIGN-ORBITAL-AGI-OS-GRAND-DEMONSTRATION), [`demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE`](demo/OMNIPHOENIX-ASCENDANT-HYPERSTRUCTURE), [`demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY`](demo/OMNIGENESIS-GLOBAL-SOVEREIGN-SYMPHONY), [`demo/astral-omnidominion-operating-system`](demo/astral-omnidominion-operating-system), [`demo/imperatrix-celestia-operating-system`](demo/imperatrix-celestia-operating-system) | [`demo-kardashev-ii-omega-operator.yml`](.github/workflows/demo-kardashev-ii-omega-operator.yml), [`demo-kardashev-ii-omega-upgrade.yml`](.github/workflows/demo-kardashev-ii-omega-upgrade.yml), [`demo-kardashev-ii-omega-upgrade-v2.yml`](.github/workflows/demo-kardashev-ii-omega-upgrade-v2.yml), [`demo-kardashev-ii-omega-upgrade-v4.yml`](.github/workflows/demo-kardashev-ii-omega-upgrade-v4.yml), [`demo-kardashev-ii-omega-upgrade-v5.yml`](.github/workflows/demo-kardashev-ii-omega-upgrade-v5.yml), [`demo-kardashev-ii-omega-upgrade-k2.yml`](.github/workflows/demo-kardashev-ii-omega-upgrade-k2.yml), [`demo-kardashev-ii-omega-ultra.yml`](.github/workflows/demo-kardashev-ii-omega-ultra.yml), [`demo-kardashev-omega-iii.yml`](.github/workflows/demo-kardashev-omega-iii.yml), [`demo-cosmic-flagship.yml`](.github/workflows/demo-cosmic-flagship.yml), [`demo-meta-agentic-program-synthesis.yml`](.github/workflows/demo-meta-agentic-program-synthesis.yml). |
-| **Research & Simulation 🔬** | [`demo/Absolute-Zero-Reasoner-v0`](demo/Absolute-Zero-Reasoner-v0), [`demo/MuZero-style-v0`](demo/MuZero-style-v0), [`demo/Open-Endedness-v0`](demo/Open-Endedness-v0), [`demo/Tiny-Recursive-Model-v0`](demo/Tiny-Recursive-Model-v0), [`demo/Huxley-Godel-Machine-v0`](demo/Huxley-Godel-Machine-v0), [`simulation/`](simulation/), [`examples/`](examples/) | [`demo-muzero-style.yml`](.github/workflows/demo-muzero-style.yml), [`demo-tiny-recursive-model.yml`](.github/workflows/demo-tiny-recursive-model.yml), [`demo-huxley-godel-machine.yml`](.github/workflows/demo-huxley-godel-machine.yml), [`demo-zenith-sapience-celestial-archon.yml`](.github/workflows/demo-zenith-sapience-celestial-archon.yml) (simulation overlays). |
-| **Empowerment & Society 🌍** | [`demo/superintelligent-empowerment`](demo/superintelligent-empowerment), [`demo/agi-labor-market-grand-demo`](demo/agi-labor-market-grand-demo), [`demo/agi-governance`](demo/agi-governance) | [`demo-agi-labor-market.yml`](.github/workflows/demo-agi-labor-market.yml), [`demo-agi-governance.yml`](.github/workflows/demo-agi-governance.yml) (empowerment policy sweeps). |
+| **Onboarding & Operator Surfaces** | [`demo/One-Box`](demo/One-Box), [`demo/AGIJobs-Day-One-Utility-Benchmark`](demo/AGIJobs-Day-One-Utility-Benchmark), [`demo/AGI-Alpha-Node-v0`](demo/AGI-Alpha-Node-v0) | Walletless launches, conversational governance, immediate ROI walkthroughs for new operators. |
+| **Kardashev Sovereign Economies** | [`kardashev_ii_omega_grade_alpha_agi_business_3_demo`](kardashev_ii_omega_grade_alpha_agi_business_3_demo), [`kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra`](kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra), [`kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5`](kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v5) | Multi-chain economic remits, validator orchestration at planetary scale, cinematic boardroom artefacts. |
+| **Strategic Intelligence & Simulation** | [`demo/Huxley-Godel-Machine-v0`](demo/Huxley-Godel-Machine-v0), [`demo/Absolute-Zero-Reasoner-v0`](demo/Absolute-Zero-Reasoner-v0), [`demo/Tiny-Recursive-Model-v0`](demo/Tiny-Recursive-Model-v0) | Reinforcement arenas, recursive model scaffolds, theoretical synthesis pipelines. |
+| **Sovereign Supply & Compliance** | [`demo/National-Supply-Chain-v0`](demo/National-Supply-Chain-v0), [`demo/Trustless-Economic-Core-v0`](demo/Trustless-Economic-Core-v0), [`demo/Planetary-Orchestrator-Fabric-v0`](demo/Planetary-Orchestrator-Fabric-v0) | Supply mesh orchestration, compliance-grade receipts, policy-driven validator routing. |
+| **Cultural & Narrative Control** | [`demo/CULTURE-v0`](demo/CULTURE-v0), [`demo/COSMIC-OMNIVERSAL-GRAND-SYMPHONY`](demo/cosmic-omniversal-grand-symphony), [`demo/OMNI-CONCORD-ASCENSION-ATLAS`](demo/omni-concord-ascension-atlas) | Cinematic presentations, narrative-led governance, stakeholder storytelling decks. |
 
-### Running a Demo Locally
-Most demos ship a `bin/`, `scripts/`, or `Makefile` entrypoint. Common patterns include:
+Every highlighted demo has a corresponding workflow in [`.github/workflows`](.github/workflows/) so CI continuously proves it is runnable.
 
-```bash
-# Activate cinematic validator takeover
-bash demo/Validator-Constellation-v0/bin/constellation.sh --local
+### Launch Recipes
+- **One-Box Operator Chat** – the fastest operator-facing launch:
+  ```bash
+  npm run demo:onebox:doctor   # health check & guardrail verification
+  npm run demo:onebox:launch   # build static UI + boot orchestrator with guided walkthrough
+  ```
+  The launcher merges `.env` and CLI overrides, publishes the walletless UI, emits governance guardrails, and pins execution receipts to IPFS when credentials are supplied.
 
-# Run the OneBox cinematic deployment
-bash demo/One-Box/bin/onebox.sh --fast
+- **Kardashev II Omega Upgrade Path** – cinematic sovereign economics:
+  ```bash
+  cd kardashev_ii_omega_grade_alpha_agi_business_3_demo
+  npm install
+  npm run demo:start
+  ```
+  Each Kardashev upgrade folder includes bespoke scripts for staging cinematic boards, generating validator manifests, and exporting presentation decks.
 
-# Launch the Kardashev-II Omega flagship (dry-run)
-bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --dry-run
+- **Huxley–Gödel Machine** – reinforcement arena takeover:
+  ```bash
+  make demo-hgm ARGS="--scenario sovereign"
+  make hgm-owner-console
+  ```
+  The Make targets install Python dependencies, run the arena simulation, and surface owner telemetry panels for immediate review.
 
-# Execute the Huxley Gödel Machine scenario via Makefile
-make demo-hgm ARGS="--iterations 8"
-```
-Consult each demo's README or `bin/` directory for scenario-specific environment variables, credential requirements, and post-processing scripts. Workflows in `.github/workflows/demo-*.yml` mirror the same commands to guarantee reproducibility.
+- **Operator Benchmarks** – turn-key business proof:
+  ```bash
+  make operator:green PYTHON=python3.12
+  ```
+  This invokes the AGIJobs Day One benchmark, captures artefact screenshots, and prints the mission banner produced by [`tools/operator_banner.py`](tools/operator_banner.py).
+
+Consult each demo’s README for scenario-specific environment variables, art direction packs, and cinematic prompts.
+
+### Narrative & Artifact Pipeline
+1. **Spec Authoring** – Demo instructions live inside `demo/**/README.md` and supporting scripts.
+2. **Orchestrated Execution** – Node.js, Python, and Solidity components coordinate mission logic, policy simulations, and blockchain state changes.
+3. **Attested Receipts** – Outputs are pinned under [`storage/`](storage/) or streamed to IPFS via the demo orchestrators.
+4. **Cinematic Delivery** – Slides, videos, and storyboards render from `out/` directories or `reports/` for immediate executive presentation.
 
 ---
 
 ## 🧪 Continuous Assurance & CI
+The V2 CI lattice keeps every subsystem green and verifiable:
 - **Green CI Gates** – [`ci/workflows/ci.yml`](ci/workflows/ci.yml) enforces linting, testing, type-checking, SBOM generation, and demo smoke suites on every PR and on `main`.
 - **JavaScript / TypeScript** – `npm run lint`, `npm run webapp:typecheck`, `npm run webapp:e2e`, and `npm run pretest` harden console surfaces, OneBox diagnostics, and demo verifiers.
 - **Contracts & Chain Logic** – `npm run test`, `forge test`, and targeted Hardhat suites (`npm run test:fork`, `npm run test:alpha-agi-mark`) validate protocol upgrades and sovereign controls.
@@ -380,40 +327,31 @@ The V2 CI architecture enforces a fully green pipeline on every pull request and
 The v2 CI lattice is relentlessly green on `main` and for every pull request, gating merges with required checks:
 The v2 CI lattice is relentlessly green on `main` and across all pull requests, locking in production-grade quality:
 
-- [`ci.yml`](.github/workflows/ci.yml) — monorepo matrix (lint, unit tests, type checks, contract builds, packaging) enforced as a required check.
-- [`static-analysis.yml`](.github/workflows/static-analysis.yml), [`culture-ci.yml`](.github/workflows/culture-ci.yml), [`orchestrator-ci.yml`](.github/workflows/orchestrator-ci.yml) — deep linting across Python, TypeScript, and cultural demos.
-- [`contracts.yml`](.github/workflows/contracts.yml), [`fuzz.yml`](.github/workflows/fuzz.yml) — Foundry builds, invariant suites, Echidna fuzzing, and gas regression reporting.
-- [`apps-images.yml`](.github/workflows/apps-images.yml), [`containers.yml`](.github/workflows/containers.yml) — multi-arch container builds and image integrity validation.
-- [`e2e.yml`](.github/workflows/e2e.yml), [`webapp.yml`](.github/workflows/webapp.yml) — end-to-end and web-app regressions for mission surfaces.
-- [`scorecard.yml`](.github/workflows/scorecard.yml), [`release.yml`](.github/workflows/release.yml), [`release-mainnet.yml`](.github/workflows/release-mainnet.yml) — security scorecards, SBOM pipelines, and staged release gates.
-- [`demo-*.yml`](.github/workflows) fleet — scenario-specific validations for every constellation, economic rollout, and omega expedition.
+- [`ci.yml`](.github/workflows/ci.yml) executes linting, type-checking, unit suites, Foundry tests, Python demos, and attestation verification in parallel.
+- Demo-specific workflows (for example [`demo-agi-alpha-node.yml`](.github/workflows/demo-agi-alpha-node.yml), [`demo-kardashev-ii-omega-ultra.yml`](.github/workflows/demo-kardashev-ii-omega-ultra.yml), [`demo-validator-constellation.yml`](.github/workflows/demo-validator-constellation.yml)) rehydrate their environments and run scenario scripts so cinematic launches never regress.
+- `static-analysis.yml`, `scorecard.yml`, `fuzz.yml`, and `contracts.yml` enforce SBOM generation, security scanning, fuzzing cadences, and Foundry invariants.
+- `webapp.yml`, `apps-images.yml`, and `containers.yml` build, scan, and push container + UI artefacts used across demos and production.
 
-Reproduce the same guarantees locally:
-```bash
-npm run lint
-npm test
-forge fmt
-forge test
-ruff check
-pytest
-./ci/hgm-suite.sh
-```
-All commands must pass before shipping to keep the CI wall fully green and maintain sovereign-grade reliability.
+Branch protection requires all blocking workflows to pass before merge, guaranteeing a fully green runway for every release.
 
 ---
 
-## 📡 Observability & Security
-- [`monitoring/`](monitoring/) — Grafana, Prometheus, Jaeger, alertmanager, and runbook-driven dashboards defined as code.
-- [`services/alerting`](services/alerting) & [`services/notifications`](services/notifications) — event routing, paging, and stakeholder broadcasts.
-- [`SECURITY.md`](SECURITY.md), [`RUNBOOK.md`](RUNBOOK.md) — incident response, triage SLAs, and operational readiness playbooks.
-- [`audit-ci.json`](audit-ci.json), [`requirements-python.txt`](requirements-python.txt), [`requirements-agent.txt`](requirements-agent.txt) — supply-chain locks for npm and Python ecosystems.
+## 📡 Observability, Security & Governance
+- [`SECURITY.md`](SECURITY.md) documents the hardening posture, responsible disclosure channel, and mitigation SLAs.
+- [`OperatorRunbook.md`](OperatorRunbook.md) and [`RUNBOOK.md`](RUNBOOK.md) codify incident response, alert routing, and sovereign operator drills.
+- [`monitoring/`](monitoring/) configures Prometheus/Grafana dashboards, scorecards, and automated probes.
+- [`deploy/`](deploy/) and [`deployment-config/`](deployment-config/) maintain production-ready manifests for on-chain upgrades, IPFS pinning, and orchestrator rollouts.
+- Governance utilities in [`scripts/`](scripts/) and `npm run owner:*` commands allow owners to inspect, pause, or retune the platform without touching Solidity.
 
 ---
 
 ## 📚 Knowledge Vault
-- [`docs/`](docs/) — architecture briefs, operator handbooks, economic charters, cinematic treatments.
-- [`internal_docs/`](internal_docs/) — private research notes, sovereign economic dossiers, systems futures.
-- [`MIGRATION.md`](MIGRATION.md) & [`CHANGELOG.md`](CHANGELOG.md) — upgrade chronicles and release history.
-- [`RUNBOOK.md`](RUNBOOK.md) — day-2 operations, incident scenarios, manual overrides, and governance escalation procedures.
+Dive deeper through the knowledge vault:
 
-AGI Jobs v0 (v2) ships as a flawless, secure, user-friendly machine that any mission crew can deploy today and guide toward Kardashev-grade sovereignty without compromising reliability.
+- [`docs/`](docs/) – architecture briefs, component guides, cinematic treatments, and sovereignty strategies.
+- [`internal_docs/`](internal_docs/) – detailed operator dispatches, compliance annexes, and deep-dive analyses.
+- [`CHANGELOG.md`](CHANGELOG.md) – release narrative and module deltas.
+- [`MIGRATION.md`](MIGRATION.md) – step-by-step upgrade choreography for protocol and agent layers.
+- [`RUNBOOK.md`](RUNBOOK.md) & [`OperatorRunbook.md`](OperatorRunbook.md) – mission control playbooks and executive operations templates.
+
+AGI Jobs v0 (v2) ships as a flawless, user-friendly, secure, and production-ready intelligence continuum—ready to be launched by a non-technical mission commander with confidence that every workflow is green, unstoppable, and under sovereign control.
