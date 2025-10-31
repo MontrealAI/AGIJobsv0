@@ -58,3 +58,13 @@ flowchart TD
 - **Economic Singularity Engine**: Demonstrates a market optimizer capable of compounding improvements beyond conventional operational limits.
 
 See [`alphaevolve_runner.py`](alphaevolve_runner.py) and the `alphaevolve/` package for implementation details.
+
+## Verification Suite
+
+Run the hermetic AlphaEvolve tests with the dedicated runner so that pytest disables external plugin auto-discovery before initialisation:
+
+```bash
+python demo/AlphaEvolve-v0/tests/run_demo_tests.py
+```
+
+Additional arguments are forwarded directly to pytest, e.g. `python demo/AlphaEvolve-v0/tests/run_demo_tests.py -k trade_flow`.
