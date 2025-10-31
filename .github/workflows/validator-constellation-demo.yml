@@ -29,6 +29,6 @@ jobs:
 
       - name: Run pytest suite
         env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: |
           pytest demo/Validator-Constellation-v0/tests

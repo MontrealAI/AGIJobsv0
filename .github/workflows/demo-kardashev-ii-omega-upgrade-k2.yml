@@ -3,13 +3,13 @@ name: demo-kardashev-ii-omega-upgrade-k2
 on:
   pull_request:
     paths:
-      - "demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2_omega_upgrade/**"
-      - ".github/workflows/demo-kardashev-ii-omega-upgrade-k2.yml"
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2_omega_upgrade/**'
+      - '.github/workflows/demo-kardashev-ii-omega-upgrade-k2.yml'
   push:
     branches: [main]
     paths:
-      - "demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2_omega_upgrade/**"
-      - ".github/workflows/demo-kardashev-ii-omega-upgrade-k2.yml"
+      - 'demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2_omega_upgrade/**'
+      - '.github/workflows/demo-kardashev-ii-omega-upgrade-k2.yml'
   workflow_dispatch:
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Validate Omega Upgrade K2 demo
         run: >-
