@@ -1,0 +1,8 @@
+{
+  "policyURI": "ipfs://ci-tax-policy",
+  "acknowledgement": "Employers, agents, and validators accept responsibility for all applicable taxes.",
+  "acknowledgers": {
+    "0x2222222222222222222222222222222222222222": "2024-01-01T00:00:00Z"
+  },
+  "revokeAcknowledgements": []
+}

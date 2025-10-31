@@ -1,0 +1,42 @@
+{
+  "address": "0xF444444444444444444444444444444444444444",
+  "ens": {
+    "agentRoot": {
+      "name": "agent.ci.agi.eth",
+      "aliases": ["alpha.agent.ci.agi.eth"]
+    },
+    "clubRoot": {
+      "name": "club.ci.agi.eth",
+      "aliases": ["alpha.club.ci.agi.eth"]
+    }
+  },
+  "merkle": {
+    "agent": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "validator": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "reputationEngine": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+  "attestationRegistry": "0xF555555555555555555555555555555555555555",
+  "additionalAgents": {
+    "0x2222222222222222222222222222222222222222": {
+      "ens": "founder.agent.ci.agi.eth",
+      "notes": "Initial operator steward"
+    }
+  },
+  "additionalValidators": {
+    "0xA1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1A1": {
+      "ens": "validator1.ci.agi.eth",
+      "weight": 1
+    }
+  },
+  "agentTypes": {
+    "supply-chain": {
+      "description": "Supply chain orchestration agents"
+    }
+  },
+  "agentProfiles": {
+    "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC": {
+      "type": "supply-chain",
+      "metadataURI": "ipfs://example-profile"
+    }
+  }
+}

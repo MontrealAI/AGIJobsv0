@@ -34,24 +34,25 @@ and the workflow in the same commit so automation, documentation, and branch pro
 
 | Context | Source job | Why it matters |
 | --- | --- | --- |
-| `ci (v2) / HGM guardrails` | [`hgm_guardrails`](../.github/workflows/ci.yml) | Exercises Higher Governance Machine guardrails across Node + Python stacks so access control stays enforceable.【F:.github/workflows/ci.yml†L380-L450】 |
-| `ci (v2) / Phase 6 readiness` | [`phase6`](../.github/workflows/ci.yml) | Validates the Phase 6 manifest and UI bundle so migrations remain deterministic.【F:.github/workflows/ci.yml†L452-L486】 |
-| `ci (v2) / Phase 8 readiness` | [`phase8`](../.github/workflows/ci.yml) | Confirms the expansion manifest stays reproducible for the Phase 8 release kit.【F:.github/workflows/ci.yml†L488-L522】 |
-| `ci (v2) / Kardashev II readiness` | [`kardashev_demo`](../.github/workflows/ci.yml) | Replays both Kardashev II demos to ensure cinematic onboarding assets remain reproducible.【F:.github/workflows/ci.yml†L524-L574】 |
-| `ci (v2) / ASI Take-Off Demonstration` | [`asi_takeoff_demo`](../.github/workflows/ci.yml) | Executes the ASI take-off deterministic kit, archiving artefacts for institutional reviewers.【F:.github/workflows/ci.yml†L576-L642】 |
-| `ci (v2) / Zenith Sapience Demonstration` | [`zenith_demo`](../.github/workflows/ci.yml) | Runs deterministic and local Zenith Sapience rehearsals to prove end-to-end orchestration.【F:.github/workflows/ci.yml†L644-L722】 |
-| `ci (v2) / AGI Labor Market Grand Demo` | [`agi_labor_market_demo`](../.github/workflows/ci.yml) | Produces the labour market transcript export consumed by policy teams.【F:.github/workflows/ci.yml†L724-L768】 |
-| `ci (v2) / Sovereign Mesh Demo — build` | [`sovereign_mesh_demo`](../.github/workflows/ci.yml) | Builds the Sovereign Mesh orchestrator server and React console to detect drift.【F:.github/workflows/ci.yml†L770-L812】 |
-| `ci (v2) / Sovereign Constellation Demo — build` | [`sovereign_constellation_demo`](../.github/workflows/ci.yml) | Builds the Sovereign Constellation artefacts to guarantee rehearsal readiness.【F:.github/workflows/ci.yml†L814-L856】 |
-| `ci (v2) / Celestial Archon Demonstration` | [`celestial_archon_demo`](../.github/workflows/ci.yml) | Rehearses deterministic and local Celestial Archon flows for sovereignty drills.【F:.github/workflows/ci.yml†L858-L928】 |
-| `ci (v2) / Hypernova Governance Demonstration` | [`hypernova_demo`](../.github/workflows/ci.yml) | Exercises Hypernova deterministic + local flows to protect governance rehearsals.【F:.github/workflows/ci.yml†L930-L970】 |
+| `ci (v2) / HGM guardrails` | [`hgm_guardrails`](../.github/workflows/ci.yml) | Exercises Higher Governance Machine guardrails across Node + Python stacks so access control stays enforceable.【F:.github/workflows/ci.yml†L344-L385】 |
+| `ci (v2) / Owner control assurance` | [`owner_controls`](../.github/workflows/ci.yml) | Runs the owner control doctor + parameter matrix on the dedicated `ci` configuration to confirm pause, treasury, and governance controls stay wired for the contract owner.【F:.github/workflows/ci.yml†L387-L428】 |
+| `ci (v2) / Phase 6 readiness` | [`phase6`](../.github/workflows/ci.yml) | Validates the Phase 6 manifest and UI bundle so migrations remain deterministic.【F:.github/workflows/ci.yml†L530-L557】 |
+| `ci (v2) / Phase 8 readiness` | [`phase8`](../.github/workflows/ci.yml) | Confirms the expansion manifest stays reproducible for the Phase 8 release kit.【F:.github/workflows/ci.yml†L559-L586】 |
+| `ci (v2) / Kardashev II readiness` | [`kardashev_demo`](../.github/workflows/ci.yml) | Replays both Kardashev II demos to ensure cinematic onboarding assets remain reproducible.【F:.github/workflows/ci.yml†L588-L617】 |
+| `ci (v2) / ASI Take-Off Demonstration` | [`asi_takeoff_demo`](../.github/workflows/ci.yml) | Executes the ASI take-off deterministic kit, archiving artefacts for institutional reviewers.【F:.github/workflows/ci.yml†L619-L658】 |
+| `ci (v2) / Zenith Sapience Demonstration` | [`zenith_demo`](../.github/workflows/ci.yml) | Runs deterministic and local Zenith Sapience rehearsals to prove end-to-end orchestration.【F:.github/workflows/ci.yml†L660-L711】 |
+| `ci (v2) / AGI Labor Market Grand Demo` | [`agi_labor_market_demo`](../.github/workflows/ci.yml) | Produces the labour market transcript export consumed by policy teams.【F:.github/workflows/ci.yml†L713-L752】 |
+| `ci (v2) / Sovereign Mesh Demo — build` | [`sovereign_mesh_demo`](../.github/workflows/ci.yml) | Builds the Sovereign Mesh orchestrator server and React console to detect drift.【F:.github/workflows/ci.yml†L754-L788】 |
+| `ci (v2) / Sovereign Constellation Demo — build` | [`sovereign_constellation_demo`](../.github/workflows/ci.yml) | Builds the Sovereign Constellation artefacts to guarantee rehearsal readiness.【F:.github/workflows/ci.yml†L790-L824】 |
+| `ci (v2) / Celestial Archon Demonstration` | [`celestial_archon_demo`](../.github/workflows/ci.yml) | Rehearses deterministic and local Celestial Archon flows for sovereignty drills.【F:.github/workflows/ci.yml†L826-L877】 |
+| `ci (v2) / Hypernova Governance Demonstration` | [`hypernova_demo`](../.github/workflows/ci.yml) | Exercises Hypernova deterministic + local flows to protect governance rehearsals.【F:.github/workflows/ci.yml†L879-L930】 |
 
 ### Policy enforcement & summary
 
 | Context | Source job | Why it matters |
 | --- | --- | --- |
-| `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L905-L1031】 |
-| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator and surfaces permitted skips for forked PRs.【F:.github/workflows/ci.yml†L1033-L1159】 |
+| `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L932-L1076】 |
+| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator and surfaces permitted skips for forked PRs.【F:.github/workflows/ci.yml†L1078-L1159】 |
 
 ### Companion workflows
 

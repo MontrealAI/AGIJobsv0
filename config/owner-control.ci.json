@@ -1,0 +1,112 @@
+{
+  "governance": "0x1111111111111111111111111111111111111111",
+  "owner": "0x2222222222222222222222222222222222222222",
+  "modules": {
+    "hgmControlModule": {
+      "type": "ownable2step",
+      "address": "0x3333333333333333333333333333333333333333",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "notes": ["Owns PlatformRegistry and ReputationEngine", "Targets configured via config/hgm-control-module.json"]
+    },
+    "stakeManager": {
+      "type": "governable",
+      "address": "0x6666666666666666666666666666666666666666",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Treasury Safe: safe.agijobs.eth", "Validator committee rotates quarterly"]
+    },
+    "jobRegistry": {
+      "type": "governable",
+      "address": "0x7777777777777777777777777777777777777777",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Keep in sync with config/job-registry.ci.json", "Requires pauser ownership hand-off before SystemPause updates"]
+    },
+    "rewardEngine": {
+      "type": "governable",
+      "address": "0x8888888888888888888888888888888888888888",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "notes": ["Thermodynamics weights live in config/thermodynamics.ci.json", "Verify Gibbs parameters with npm run owner:dashboard"]
+    },
+    "thermostat": {
+      "type": "governable",
+      "address": "0x4444444444444444444444444444444444444444",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "notes": ["Pair changes with Thermodynamics update helper"]
+    },
+    "systemPause": {
+      "type": "governable",
+      "address": "0x5555555555555555555555555555555555555555",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "notes": ["All pausable modules must transfer ownership before wiring"]
+    },
+    "feePool": {
+      "type": "ownable",
+      "address": "0x9999999999999999999999999999999999999999",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Treasury allowlist lives in config/fee-pool.ci.json"]
+    },
+    "platformRegistry": {
+      "type": "ownable",
+      "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Mirrors config/platform-registry.json"]
+    },
+    "platformIncentives": {
+      "type": "ownable",
+      "address": "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Incentive weights defined in config/platform-incentives.ci.json"]
+    },
+    "jobRouter": {
+      "type": "ownable",
+      "address": "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+      "owner": "0x2222222222222222222222222222222222222222"
+    },
+    "validationModule": {
+      "type": "ownable",
+      "address": "0xDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+      "owner": "0x2222222222222222222222222222222222222222"
+    },
+    "reputationEngine": {
+      "type": "ownable",
+      "address": "0xEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+      "owner": "0x2222222222222222222222222222222222222222"
+    },
+    "disputeModule": {
+      "type": "ownable",
+      "address": "0xF000000000000000000000000000000000000000",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Committee membership tracked via config/dispute-module.json"]
+    },
+    "arbitratorCommittee": {
+      "type": "ownable",
+      "address": "0xF111111111111111111111111111111111111111",
+      "owner": "0x2222222222222222222222222222222222222222"
+    },
+    "certificateNFT": {
+      "type": "ownable",
+      "address": "0xF222222222222222222222222222222222222222",
+      "owner": "0x2222222222222222222222222222222222222222"
+    },
+    "taxPolicy": {
+      "type": "ownable2step",
+      "address": "0xF333333333333333333333333333333333333333",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Requires acceptOwnership call after governance rotation"]
+    },
+    "identityRegistry": {
+      "type": "ownable2step",
+      "address": "0xF444444444444444444444444444444444444444",
+      "governance": "0x1111111111111111111111111111111111111111",
+      "owner": "0x2222222222222222222222222222222222222222",
+      "notes": ["Ensure ENS controller matches config/identity-registry.ci.json"]
+    },
+    "attestationRegistry": {
+      "type": "ownable",
+      "address": "0xF555555555555555555555555555555555555555",
+      "owner": "0x2222222222222222222222222222222222222222"
+    }
+  }
+}

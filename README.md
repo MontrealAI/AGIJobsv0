@@ -281,6 +281,7 @@ Branch protection keeps every surfaced check green on pull requests and `main`. 
 | `ci (v2) / Load-simulation reports` | Monte Carlo sweeps for treasury burn/fee thermodynamics.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / Python coverage enforcement` | Aggregated coverage thresholds across demos and services.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / HGM guardrails` | Huxley-Gödel Machine regression suite across orchestrators and demos.【F:ci/required-contexts.json†L2-L23】 |
+| `ci (v2) / Owner control assurance` | Proves owner pause, parameter, and governance tooling stay green via scripted doctor & matrix reports.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / Foundry` | Forge-based fuzzing and invariant testing for protocol safety envelopes.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / Coverage thresholds` | JavaScript/TypeScript lcov enforcement for shared packages.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / Phase 6 readiness` | Expedition manifest validation for Phase 6 surfaces.【F:ci/required-contexts.json†L2-L23】 |
