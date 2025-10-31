@@ -1,6 +1,6 @@
 # Branch Protection Policy (AGI Jobs v2)
 
-To keep `main` deployable at all times, enable the following rules in the GitHub repository settings:
+To keep `main` deployable at all times, enable the following rules in the GitHub repository settings. The `npm run ci:verify-branch-protection` helper now reads `.github/workflows/ci.yml` directly, so any change to the CI matrix automatically updates the required context list.
 
 1. **Require status checks to pass before merging** — type the contexts exactly as they appear in the Checks tab. Group them as shown to keep the list manageable when auditing:
 

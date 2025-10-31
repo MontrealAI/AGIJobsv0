@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 import { execSync } from 'node:child_process';
 import { exit } from 'node:process';
+import { computeBranchProtectionContexts } from './branch-protection-contexts';
 
 type ResultRow = {
   label: string;
@@ -15,30 +16,7 @@ type Args = {
   token?: string;
 };
 
-const EXPECTED_CONTEXTS = [
-  'ci (v2) / Lint & static checks',
-  'ci (v2) / Tests',
-  'ci (v2) / Python unit tests',
-  'ci (v2) / Python integration tests',
-  'ci (v2) / Load-simulation reports',
-  'ci (v2) / Python coverage enforcement',
-  'ci (v2) / HGM guardrails',
-  'ci (v2) / Foundry',
-  'ci (v2) / Coverage thresholds',
-  'ci (v2) / Phase 6 readiness',
-  'ci (v2) / Phase 8 readiness',
-  'ci (v2) / Kardashev II readiness',
-  'ci (v2) / ASI Take-Off Demonstration',
-  'ci (v2) / Zenith Sapience Demonstration',
-  'ci (v2) / AGI Labor Market Grand Demo',
-  'ci (v2) / Sovereign Mesh Demo — build',
-  'ci (v2) / Sovereign Constellation Demo — build',
-  'ci (v2) / Celestial Archon Demonstration',
-  'ci (v2) / Hypernova Governance Demonstration',
-  'ci (v2) / Branch protection guard',
-  'ci (v2) / CI summary',
-  'ci (v2) / Invariant tests',
-] as const;
+const EXPECTED_CONTEXTS = computeBranchProtectionContexts();
 
 type BranchProtectionResponse = {
   required_status_checks?: {
