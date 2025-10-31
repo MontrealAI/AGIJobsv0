@@ -5,7 +5,7 @@ This log captures the reproducible validation sequence for AGI Jobs v0 (v2)'s se
 ## Scope and guarantees
 
 - ✅ Confirms every pinned toolchain component and lockfile alignment that the CI depends on.
-- ✅ Exercises the JavaScript/TypeScript linting lattice, ensuring Solidity linting, Prettier formatting, and sentinel template validation succeed together.
+- ✅ Exercises the JavaScript/TypeScript linting lattice, ensuring Solidity linting, Prettier formatting, and sentinel template validation succeed together across their dedicated commands.
 - ✅ Drives the full `npm test` contract + application harness, covering orchestrator owner controls, pause switches, and the validator coordination engines that the owner can reconfigure at runtime.
 - ✅ Documents the output artefacts so branch protection and the CI summary gate remain fully auditable and visible on pull requests and on `main`.
 
@@ -29,15 +29,27 @@ These steps augment the permanent references in [`docs/v2-ci-operations.md`](v2-
    ```bash
    npm run lint:ci
    ```
-   Solhint, ESLint, and sentinel template validation must report zero warnings. Any deviation indicates drift that would surface on pull requests.
+   Solhint and ESLint must report zero warnings. Any deviation indicates drift that would surface on pull requests.
 
-4. **Execute the full Node/Hardhat suite**
+4. **Confirm formatting alignment**
+   ```bash
+   npm run format:check
+   ```
+   Prettier verifies that the repository formatting matches the enforced CI baseline. Fix any reported files with `npm run format` before re-running the validation sequence.
+
+5. **Validate sentinel monitoring templates**
+   ```bash
+   npm run monitoring:validate
+   ```
+   Ensures the monitoring sentinels used for on-chain and service regressions continue to compile. A successful run mirrors the dedicated CI matrix step and is required for a green pipeline badge.
+
+6. **Execute the full Node/Hardhat suite**
    ```bash
    npm test
    ```
    This single command drives the orchestrator, owner control, validator governance, and Hardhat contract suites. It re-generates constants, compiles contracts, enforces ABI stability, and exercises the owner pause/resume controls that the contract owner can trigger from the CLI or dashboards.
 
-5. **Publish artefacts**
+7. **Publish artefacts**
    Upload the generated reports under `reports/` (for example the CI summary JSON) when running inside GitHub Actions so non-technical maintainers can inspect the run without reading logs.
 
 ## Branch protection alignment
