@@ -1,0 +1,24 @@
+# CI v2 Badge Map & Visibility Guide
+
+> **Purpose:** Provide a single source of truth for embedding, auditing, and validating every workflow badge that keeps AGI Jobs v0 (v2)'s unstoppable intelligence lattice fully visible to non-technical owners.
+
+The badge wall mirrors the workflows enforced by branch protection and the companion surfaces that keep contracts, demos, and runtime infrastructure relentlessly green. Copy the Markdown snippet beside each workflow to surface the badge in dashboards, PR descriptions, or downstream documentation.
+
+| Workflow | Required status / badge | Markdown snippet | Why it matters |
+| --- | --- | --- | --- |
+| `.github/workflows/ci.yml` | `ci (v2)` summary gate | `[![CI v2 Matrix](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/ci.yml?branch=main&logo=github&label=CI%20%28v2%29)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)` | Aggregates linting, tests, Foundry, coverage, demos, invariants, and policy guards into a single required status for branch protection.【F:.github/workflows/ci.yml†L1-L1120】【F:ci/required-contexts.json†L1-L23】 |
+| `.github/workflows/static-analysis.yml` | `static-analysis` (Slither + CodeQL) | `[![Static Analysis](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/static-analysis.yml?branch=main&logo=github&label=Static%20analysis)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)` | Chains Slither and CodeQL with SARIF uploads so critical findings block merges and stay archived for audits.【F:.github/workflows/static-analysis.yml†L20-L157】 |
+| `.github/workflows/fuzz.yml` | `fuzz / forge-fuzz` | `[![Fuzz](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/fuzz.yml?branch=main&logo=github&label=Fuzz)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml)` | Runs nightly-grade Foundry fuzzing on every PR, surfacing invariant regressions before release committees convene.【F:.github/workflows/fuzz.yml†L1-L114】 |
+| `.github/workflows/e2e.yml` | `e2e / orchestrator-e2e` | `[![End-to-end](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/e2e.yml?branch=main&logo=github&label=E2E)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)` | Exercises orchestrator, validator, and dispute flows end to end so the superintelligent workforce remains trustworthy under load.【F:.github/workflows/e2e.yml†L1-L160】 |
+| `.github/workflows/webapp.yml` | `webapp / webapp-ci` | `[![Webapp](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/webapp.yml?branch=main&logo=github&label=Webapp)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)` | Lints, type-checks, builds, and smoke-tests mission consoles consumed by non-technical owners steering the platform.【F:.github/workflows/webapp.yml†L1-L188】 |
+| `.github/workflows/containers.yml` | `containers / build` | `[![Containers](https://img.shields.io/github/actions/workflow/status/MontrealAI/AGIJobsv0/containers.yml?branch=main&logo=github&label=Containers)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)` | Builds Docker images with Trivy enforcement so production deploys stay reproducible and secure.【F:.github/workflows/containers.yml†L1-L174】 |
+| `.github/workflows/scorecard.yml` | `security-scorecard / OpenSSF Scorecard` | `[![Scorecard](https://img.shields.io/badge/Scorecard-SLSA%20ready-14532d.svg)](ci/)` | Publishes OpenSSF Scorecard SARIF so supply-chain posture remains independently auditable.【F:.github/workflows/scorecard.yml†L1-L52】 |
+| `.github/workflows/apps-images.yml` | `apps-images / console`, `apps-images / portal` | *(path filtered; embed when relevant)* | Produces signed container images for mission consoles so operators can audit provenance during UI-heavy releases.【F:.github/workflows/apps-images.yml†L1-L196】 |
+
+### Using the badge wall
+
+1. **Surface the grid** wherever stakeholders expect proof that the CI lattice is green (e.g., README, Ops runbooks, change tickets).
+2. **Cross-check branch protection** using `npm run ci:sync-contexts -- --check` and `npm run ci:verify-contexts` so every badge corresponds to a required status on `main` and PRs.【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+3. **Archive artefacts** – the `CI summary` job emits Markdown + JSON in `reports/ci/` for compliance records, matching the badge state at merge time.【F:.github/workflows/ci.yml†L1033-L1120】
+
+Keeping this badge map beside the branch-protection checklist ensures the unstoppable AGI Jobs v0 intelligence engine remains transparent, auditable, and fully controllable by the contract owner while projecting a permanently green CI wall.

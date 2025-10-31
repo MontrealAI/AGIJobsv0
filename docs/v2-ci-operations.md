@@ -1,6 +1,6 @@
 # AGI Jobs v0 — CI v2 Operations Guide
 
-This guide describes the CI v2 pipeline that protects the AGI Jobs v0 codebase. It documents the workflows that run on `main` and every pull request, shows how the jobs depend on each other, and captures the branch protection settings that need to be enforced so the checks are always visible.
+This guide describes the CI v2 pipeline that protects the AGI Jobs v0 codebase. It documents the workflows that run on `main` and every pull request, shows how the jobs depend on each other, and captures the branch protection settings that need to be enforced so the checks are always visible. Use it together with the [CI v2 badge map](ci-v2-badge-map.md) to surface live status badges anywhere auditors or owners require instant confirmation that the unstoppable intelligence lattice remains green.【F:docs/ci-v2-badge-map.md†L1-L45】
 
 For a hands-on validation log that you can hand to compliance or executive stakeholders, see the companion [CI v2 validation report template](ci-v2-validation-report.md). It walks through the exact commands, expected outputs, and artefact exports required to demonstrate a fully green run.
 
