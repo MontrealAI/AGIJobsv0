@@ -269,12 +269,12 @@ stateDiagram-v2
 - **Branch protection**: runbooks in [`OperatorRunbook.md`](OperatorRunbook.md) and [`RUNBOOK.md`](RUNBOOK.md) prescribe gating rules (required statuses, reviews, deploy blocks) to keep the mainline fully green.
 ## 🧪 Continuous Assurance & CI
 The V2 CI lattice keeps every subsystem green and verifiable:
-- **Green CI Gates** – [`ci/workflows/ci.yml`](ci/workflows/ci.yml) enforces linting, testing, type-checking, SBOM generation, and demo smoke suites on every PR and on `main`.
+- **Green CI Gates** – [`.github/workflows/ci.yml`](.github/workflows/ci.yml) enforces linting, testing, type-checking, SBOM generation, and demo smoke suites on every PR and on `main`.
 - **JavaScript / TypeScript** – `npm run lint`, `npm run webapp:typecheck`, `npm run webapp:e2e`, and `npm run pretest` harden console surfaces, OneBox diagnostics, and demo verifiers.
 - **Contracts & Chain Logic** – `npm run test`, `forge test`, and targeted Hardhat suites (`npm run test:fork`, `npm run test:alpha-agi-mark`) validate protocol upgrades and sovereign controls.
 - **Python & Agent Services** – `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` spans `tests/`, `test/`, and demo-specific suites; additional CLI verifiers live under `scripts/v2/`.
 - **Security & Supply Chain** – `npm run security:audit`, `npm run sbom:generate`, `npm run release:manifest:validate`, and license verifiers within [`ci/`](ci/) sustain production trust.
-- **Branch Protection Checks** – `npm run ci:verify-contexts` guarantees the workflow job display names stay synchronised with branch protection, and `npm run ci:verify-branch-protection` (both in [`scripts/ci`](scripts/ci)) ensures all CI (v2) workflows remain mandatory before merges. [`ci/required-contexts.json`](ci/required-contexts.json) anchors the required status list so automation, docs, and GitHub rules stay in lockstep.【F:ci/required-contexts.json†L1-L23】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+- **Branch Protection Checks** – `npm run ci:sync-contexts -- --check` keeps the manifest in lockstep with `.github/workflows/ci.yml`, while `npm run ci:verify-contexts` and `npm run ci:verify-branch-protection` (all in [`scripts/ci`](scripts/ci)) ensure the branch rule enforces every CI (v2) job before merges. [`ci/required-contexts.json`](ci/required-contexts.json) anchors the required status list so automation, docs, and GitHub rules stay synchronised.【F:ci/required-contexts.json†L1-L23】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】
 
 ### CI v2 — enforced gates
 `ci (v2)` now requires every surfaced check on pull requests and the `main` branch. The branch-protection guard asserts that the following contexts stay locked before merges are allowed:
