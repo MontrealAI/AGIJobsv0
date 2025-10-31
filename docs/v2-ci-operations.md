@@ -41,6 +41,8 @@ All three entry points converge on the same job graph, keeping the `CI summary` 
 
 Enable branch protection on `main` with every status context below. The list mirrors `scripts/ci/verify-branch-protection.ts` so automated audits and the GitHub UI stay synchronised.
 
+> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:verify-contexts`, which parses `.github/workflows/ci.yml` and fails the pipeline if any required job name drifts from the enforced context list. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L53-L60】【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
+
 ### Core execution gate
 
 | Check context | Source job | Notes |
@@ -90,8 +92,11 @@ Enable branch protection on `main` with every status context below. The list mir
 After applying or updating branch protection rules, verify them without leaving the terminal:
 
 ```bash
+npm run ci:verify-contexts
 npm run ci:verify-branch-protection
 ```
+
+Run `npm run ci:verify-contexts` after editing job display names to confirm the workflow and branch rule stay aligned before pushing a branch. It emits a concise ✅/❌ summary and surfaces duplicates or missing entries immediately.【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
 
 Set `GITHUB_TOKEN` (or `GH_TOKEN`) with `repo` scope first. The script auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote and prints a status table covering contexts, ordering, the `strict` flag, and the **Include administrators** toggle. Provide `--owner`, `--repo`, or `--branch` when auditing forks.
 

@@ -57,7 +57,7 @@
 | `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
 | `static-analysis / CodeQL analysis` | [`codeql`](../.github/workflows/static-analysis.yml) | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
 
-The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist.
+The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist. The lint stage now executes `npm run ci:verify-contexts` to fail fast when `.github/workflows/ci.yml` and `scripts/ci/verify-branch-protection.ts` drift, giving administrators an immediate signal before a PR reaches review.【F:.github/workflows/ci.yml†L53-L60】【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
 
 ---
 
@@ -73,12 +73,14 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 ### 2. Confirm enforcement with the GitHub CLI
 
-Run the automated audit (set `GITHUB_TOKEN` or `GH_TOKEN` with `repo` scope first):
+Run the automated audits (set `GITHUB_TOKEN` or `GH_TOKEN` with `repo` scope first):
 
 ```bash
+npm run ci:verify-contexts
 npm run ci:verify-branch-protection
 ```
 
+- `npm run ci:verify-contexts` parses `.github/workflows/ci.yml` and confirms every job name maps to a required status context, preventing silent drift when contributors rename jobs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L107】
 - `npm run audit:final -- --full` runs this verifier automatically when assembling the release dossier, keeping non-technical owners aligned with branch policy. The command also records the outcome in `reports/audit/final-readiness.json` for auditors who track freeze evidence across releases.【F:scripts/audit/final-readiness.ts†L1-L305】
 
 - Save the ✅/❌ table output in your change ticket. It proves the required contexts, ordering, strict mode, and administrator enforcement all align with policy.
