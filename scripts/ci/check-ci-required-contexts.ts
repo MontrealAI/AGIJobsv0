@@ -6,31 +6,38 @@ import { resolve } from 'node:path';
 import yaml from 'js-yaml';
 
 const WORKFLOW_PATH = resolve(__dirname, '../../.github/workflows/ci.yml');
-const BRANCH_GUARD_PATH = resolve(__dirname, 'verify-branch-protection.ts');
+const CONTEXTS_PATH = resolve(__dirname, '../../ci/required-contexts.json');
 
 function parseExpectedContexts(): string[] {
-  const source = readFileSync(BRANCH_GUARD_PATH, 'utf8');
-  const match = source.match(/const\s+EXPECTED_CONTEXTS\s*=\s*\[(.*?)\]\s*as\s+const/su);
-  if (!match) {
-    throw new Error('Unable to locate EXPECTED_CONTEXTS definition in verify-branch-protection.ts');
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(readFileSync(CONTEXTS_PATH, 'utf8'));
+  } catch (error) {
+    throw new Error(
+      `Unable to read ci/required-contexts.json: ${(error as Error).message}`
+    );
   }
 
-  const rawEntries = match[1]
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0 && !line.startsWith('//'))
-    .map((line) => line.replace(/[,\s]*$/u, ''))
-    .map((line) => line.replace(/^['"]/u, '').replace(/['"]$/u, ''))
-    .filter((line) => line.length > 0);
+  if (!Array.isArray(parsed)) {
+    throw new Error('ci/required-contexts.json must contain an array of strings.');
+  }
 
-  const invalid = rawEntries.filter((entry) => !entry.startsWith('ci (v2) / '));
+  const contexts = parsed.map((entry) => {
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      throw new Error('ci/required-contexts.json entries must be non-empty strings.');
+    }
+    return entry.trim();
+  });
+
+  const invalid = contexts.filter((entry) => !entry.startsWith('ci (v2) / '));
   if (invalid.length > 0) {
     throw new Error(
       `Expected every context to begin with "ci (v2) / ". Offending entries: ${invalid.join(', ')}`
     );
   }
 
-  return rawEntries;
+  return contexts;
 }
 
 function parseWorkflowJobNames(): Map<string, string> {

@@ -1,5 +1,7 @@
 #!/usr/bin/env ts-node
 import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { exit } from 'node:process';
 
 type ResultRow = {
@@ -15,30 +17,54 @@ type Args = {
   token?: string;
 };
 
-const EXPECTED_CONTEXTS = [
-  'ci (v2) / Lint & static checks',
-  'ci (v2) / Tests',
-  'ci (v2) / Python unit tests',
-  'ci (v2) / Python integration tests',
-  'ci (v2) / Load-simulation reports',
-  'ci (v2) / Python coverage enforcement',
-  'ci (v2) / HGM guardrails',
-  'ci (v2) / Foundry',
-  'ci (v2) / Coverage thresholds',
-  'ci (v2) / Phase 6 readiness',
-  'ci (v2) / Phase 8 readiness',
-  'ci (v2) / Kardashev II readiness',
-  'ci (v2) / ASI Take-Off Demonstration',
-  'ci (v2) / Zenith Sapience Demonstration',
-  'ci (v2) / AGI Labor Market Grand Demo',
-  'ci (v2) / Sovereign Mesh Demo — build',
-  'ci (v2) / Sovereign Constellation Demo — build',
-  'ci (v2) / Celestial Archon Demonstration',
-  'ci (v2) / Hypernova Governance Demonstration',
-  'ci (v2) / Branch protection guard',
-  'ci (v2) / CI summary',
-  'ci (v2) / Invariant tests',
-] as const;
+const CONTEXTS_PATH = resolve(__dirname, '../../ci/required-contexts.json');
+
+function loadExpectedContexts(): readonly string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(CONTEXTS_PATH, 'utf8'));
+  } catch (error) {
+    throw new Error(
+      `Unable to read ci/required-contexts.json: ${(error as Error).message}`
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error('ci/required-contexts.json must contain an array of strings.');
+  }
+
+  const contexts = parsed.map((entry) => {
+    if (typeof entry !== 'string' || entry.trim().length === 0) {
+      throw new Error('ci/required-contexts.json entries must be non-empty strings.');
+    }
+    const trimmed = entry.trim();
+    if (!trimmed.startsWith('ci (v2) / ')) {
+      throw new Error(
+        `Invalid context "${trimmed}". Expected entries to begin with "ci (v2) / ".`
+      );
+    }
+    return trimmed;
+  });
+
+  const duplicates = new Set<string>();
+  const seen = new Set<string>();
+  for (const context of contexts) {
+    if (seen.has(context)) {
+      duplicates.add(context);
+    }
+    seen.add(context);
+  }
+
+  if (duplicates.size > 0) {
+    throw new Error(
+      `Duplicate contexts detected in ci/required-contexts.json: ${Array.from(duplicates).join(', ')}`
+    );
+  }
+
+  return Object.freeze(contexts);
+}
+
+const EXPECTED_CONTEXTS = loadExpectedContexts();
 
 type BranchProtectionResponse = {
   required_status_checks?: {
