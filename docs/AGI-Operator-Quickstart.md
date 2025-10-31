@@ -1,216 +1,254 @@
 # AGI Operator Quickstart — AGI Jobs v0 (v2)
 
-> Operate AGI Jobs v0 (v2) – the superintelligent machine engineered to compound value, resilience, and governance far beyond traditional economics – from a clean checkout to cinematic demos in minutes. This playbook assumes no engineering background while insisting on production-grade safety, full CI observability, and instant access to every mission-critical dashboard.
+> Steward AGI Jobs v0 (v2) — the production-hardened superintelligent lattice that compounds value, autonomy, and governance the moment it boots — from a pristine checkout through the flagship demos, dashboards, and CI guardians. Every instruction below works for a non-technical operator while preserving enterprise-grade safety.
 
 ---
 
-## 🌌 Mission Synopsis
-- **Objective:** Command, observe, and tune the unstoppable AGI Jobs lattice without writing a line of code.
-- **Outcomes:** Launch flagship demos, regenerate telemetry, exercise owner controls, and keep every branch under all-green V2 CI.
-- **Guarantee:** Every step below leans on the repo’s hardened pipelines (see `.github/workflows/`) so Solidity, TypeScript, and Python suites, demo scorecards, security scans, and owner guardrails stay flawless.
+## 🌠 Strategic Briefing
+- **Prime directive:** Operate, audit, and extend the lattice with zero downtime and zero regressions.
+- **Success criteria:** Demos render cinematic artefacts, governance levers remain reversible, PRs stay all-green under the v2 CI shield, and dashboards deliver decision-ready evidence.
+- **Reliability pledge:** All commands align with the live repository (see [`package.json`](../package.json) and workflow manifests under [`.github/workflows/`](../.github/workflows/)).
 
 ```mermaid
 flowchart LR
-    classDef core fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,font-weight:bold,stroke-width:2px;
-    classDef demo fill:#052e16,stroke:#22c55e,color:#ecfdf5,font-weight:bold,stroke-width:2px;
-    classDef ops fill:#3f0f1f,stroke:#f472b6,color:#fff0f6,font-weight:bold,stroke-width:2px;
-    classDef surfaces fill:#7c2d12,stroke:#fb923c,color:#fff7ed,font-weight:bold,stroke-width:2px;
+  classDef nexus fill:#0f172a,stroke:#38bdf8,color:#e0f2fe,font-weight:bold;
+  classDef demos fill:#052e16,stroke:#22c55e,color:#ecfdf5,font-weight:bold;
+  classDef surfaces fill:#4c0519,stroke:#fb7185,color:#ffe4e6,font-weight:bold;
+  classDef ci fill:#111827,stroke:#a855f7,color:#ede9fe,font-weight:bold;
 
-    Repo[(AGIJobsv0)]:::core --> Protocol[contracts/\nattestation/\npaymaster/\nsubgraph/]:::core
-    Repo --> Intelligence[orchestrator/\nbackend/\nservices/\npackages/\nshared/]:::core
-    Repo --> Surfaces[apps/operator\napps/console\napps/mission-control\napps/onebox]:::surfaces
-    Repo --> DemoVerse[demo/\nsimulation/\nexamples/\nkardashev_*]:::demo
-    Repo --> Reliability[ci/\nscripts/\ntests/\n.github/workflows/]:::ops
+  Nexus[(AGI Jobs v0 (v2))]:::nexus --> Protocol[contracts/\nattestation/\npaymaster/\nsubgraph/]:::nexus
+  Nexus --> Intelligence[backend/\norchestrator/\nservices/\nagent-gateway/]:::nexus
+  Nexus --> Surfaces[apps/operator\napps/console\napps/mission-control\napps/onebox]:::surfaces
+  Nexus --> DemoVerse[demo/ + kardashev_*\n+ simulation/ + examples/]:::demos
+  Nexus --> Reliability[ci/\nscripts/\ntests/\nRUNBOOK.md]:::ci
 
-    DemoVerse -->|Summon| DayOne[AGIJobs Day-One Utility]
-    DemoVerse -->|Scale| Kardashev[Kardashev-II Command Deck]
-    DemoVerse -->|Govern| Governance[AGI Governance Suite]
-    DemoVerse -->|Verify| Validator[Validator Constellation]
-    DemoVerse -->|Monetise| Trustless[Trustless Economic Core]
-    DemoVerse -->|Autonomise| AlphaNode[AGI Alpha Node]
-    Reliability -->|CI Gates| GitHub[Protected PR Checks]
+  DemoVerse --> DayOne[AGIJobs Day-One Utility]
+  DemoVerse --> Kardashev[Kardashev-II Command Deck]
+  DemoVerse --> EconCore[Trustless Economic Core]
+  DemoVerse --> AlphaNode[AGI Alpha Node]
+  DemoVerse --> MetaAgentic[Meta-Agentic Expeditions]
+  DemoVerse --> Validator[Validator Constellation]
+  Reliability --> Actions[GitHub Actions — v2 CI]
 ```
 
 ---
 
-## 🔭 Fast Navigation
+## 🧭 Fast Navigation
 1. [Choose your environment](#-choose-your-environment)
-2. [Bootstrap the lattice](#-bootstrap-the-lattice)
-3. [Launch the cinematic demos](#-launch-the-cinematic-demos)
-4. [Command owner controls](#-command-owner-controls)
-5. [Collect artefacts like an operator](#-collect-artefacts-like-an-operator)
-6. [Keep CI impossibly green](#-keep-ci-impossibly-green)
-7. [Daily operations flight plan](#-daily-operations-flight-plan)
-8. [Troubleshooting beacons](#-troubleshooting-beacons)
-9. [Repository atlas](#-repository-atlas)
+2. [Prime the lattice](#-prime-the-lattice)
+3. [Mission map](#-mission-map)
+4. [Launch the demos](#-launch-the-demos)
+5. [Activate operator surfaces](#-activate-operator-surfaces)
+6. [Owner controls & governance](#-owner-controls--governance)
+7. [Artefact logistics](#-artefact-logistics)
+8. [Keep CI all-green](#-keep-ci-all-green)
+9. [Daily flight plan](#-daily-flight-plan)
+10. [Troubleshooting beacons](#-troubleshooting-beacons)
+11. [Repository atlas](#-repository-atlas)
 
 ---
 
 ## 🛰️ Choose your environment
 
 ### Option A — GitHub Codespaces *(zero install)*
-1. Navigate to <https://github.com/MontrealAI/AGIJobsv0>.
-2. Click **Code → Codespaces → Create codespace on main**.
-3. Wait for the devcontainer to provision Node.js 20.18.1, Python 3.12, Foundry, Docker CLI, and make.
-4. You land in VS Code for Web with authenticated shell, Docker-in-Docker, and cached dependencies.
+1. Visit <https://github.com/MontrealAI/AGIJobsv0> and click **Code → Codespaces → Create codespace on main**.
+2. The devcontainer provisions Node.js 20.18.1, Python 3.12, Foundry, Docker CLI, and make.
+3. You land inside VS Code for Web with Docker-in-Docker, cached dependencies, and CI helpers baked in.
+4. Stop or delete idle workspaces to manage usage.
 
-> Pause or delete idle Codespaces to control billing.
-
-### Option B — Local workstation
-1. Install **Git**, **Node.js 20.18.1** (via `nvm`), **Python 3.12+**, **Foundry** (`curl -L https://foundry.paradigm.xyz | bash`), and **Docker Desktop**.
-2. Clone and enter the repo:
+### Option B — Local workstation *(macOS/Linux/WSL)*
+1. Install **Git**, **Docker Desktop** (or compatible), **Node.js 20.18.1** (`nvm install 20.18.1`), **Python 3.12+**, **Foundry** (`curl -L https://foundry.paradigm.xyz | bash` then `foundryup`), and optional **Git LFS** for large datasets.
+2. Clone the repository:
    ```bash
    git clone https://github.com/MontrealAI/AGIJobsv0
    cd AGIJobsv0
    ```
 3. Install shared dependencies once:
    ```bash
-   nvm install && nvm use
+   nvm use || nvm install
    npm ci
    python -m pip install --upgrade pip
    python -m pip install -r requirements-python.txt
    python -m pip install -r requirements-agent.txt
    ```
-4. Optional: `foundryup`, `forge fmt`, `docker compose`, and Git LFS for `data/` or `storage/` payloads.
+4. Optional extras: `forge install`, `forge fmt`, or `docker compose version` for parity with CI.
 
 ---
 
-## 🚀 Bootstrap the lattice
+## ⚙️ Prime the lattice
 
-> Commands are copy–paste ready. Demo-specific Makefiles and `requirements.txt` files manage their own extras.
+> Commands are copy–paste ready. Run them from the repository root.
 
-1. **Prime the monorepo** (compile contracts, generate artefacts, bundle shared packages):
+1. **Compile & bundle everything** — builds TypeScript packages, compiles contracts, and ensures shared clients are ready:
    ```bash
    npm run build
    ```
-2. **(Optional) Spin up the local mission stack** to watch services interact while demos run:
+2. **Install Foundry toolchain** *(if not already cached)*:
    ```bash
-   # Terminal A – deterministic chain
+   foundryup
+   forge build
+   ```
+3. **Warm the deterministic stack** (optional, but mirrors demo execution flows):
+   ```bash
+   # Terminal A — local chain
    anvil --chain-id 31337 --block-time 2
 
-   # Terminal B – deploy protocol v2 modules
+   # Terminal B — deploy v2 protocol modules
    npx hardhat run --network localhost scripts/v2/deploy.ts
 
-   # Terminal C – agent gateway & services
+   # Terminal C — agent gateway & core services
    npm run agent:gateway
    python -m uvicorn services.meta_api.app.main:app --reload --port 8000
 
-   # Terminal D – operator HUDs
+   # Terminal D — operator HUDs
    npm --prefix apps/operator run dev
    npm --prefix apps/console run dev
    ```
-3. **One-click mission control (Docker Compose)** for production-grade parity:
+4. **Production-parity stack (Docker Compose)** — seeds end-to-end observability and mission services:
    ```bash
    cp deployment-config/oneclick.env.example deployment-config/oneclick.env
-   # populate RPC URLs, private keys, telemetry tokens
+   # populate RPC URLs, Safe keys, telemetry tokens
    docker compose up --build
    ```
 
-You now steward the unstoppable lattice that powers every demo and CI workflow.
+---
+
+## 🗺️ Mission map
+
+```mermaid
+gantt
+  title AGI Jobs v0 (v2) Operator Constellation
+  dateFormat  HH:mm
+  axisFormat  %H:%M
+  section Bootstrap
+  Checkout & dependency install      :done, 00:00, 00:05
+  Build lattice & compile contracts  :done, 00:05, 00:07
+  Launch deterministic stack          :active, 00:07, 00:12
+  section Demo Wave
+  Day-One Utility Benchmark          :crit, 00:12, 00:20
+  Kardashev-II Command Deck          :crit, 00:20, 00:32
+  Validator Constellation            :crit, 00:32, 00:42
+  AGI Alpha Node                     :crit, 00:42, 00:55
+  Meta-Agentic Expeditions           :crit, 00:55, 01:10
+  section Assurance
+  Owner control sweep                :milestone, 01:10, 00:00
+  CI verification                    :crit, 01:10, 01:20
+  Artefact archival                  :after owner control sweep, 00:10
+```
 
 ---
 
-## 🎞️ Launch the cinematic demos
+## 🎞️ Launch the demos
 
-### Flagship launchpad
-
-| Demo | Path | Primary Command | Outputs |
+| Demo | Path | Primary command | Key artefacts |
 | --- | --- | --- | --- |
-| **Day-One Utility Benchmark** | `demo/AGIJobs-Day-One-Utility-Benchmark` | `make e2e` | Strategy scorecards, HTML/PNG dashboards, owner snapshots. |
-| **Kardashev-II Command Deck** | `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale` | `npm run demo:kardashev-ii:orchestrate` | Safe calldata batches, Dyson telemetry, holographic UI assets. |
-| **Trustless Economic Core** | `demo/Trustless-Economic-Core-v0` | `npm run run:trustless-core` | Hardhat-driven escrow drills, governance slashing proofs. |
-| **Validator Constellation** | `demo/Validator-Constellation-v0` | `npm run demo:validator-constellation` | VRF committee tours, sentinel guardrails, compliance ledgers. |
-| **AGI Alpha Node** | `demo/AGI-Alpha-Node-v0` | `python demo/AGI-Alpha-Node-v0/src/agi_alpha_node_demo/cli.py --config demo/AGI-Alpha-Node-v0/config/default.toml status` | Autonomous franchise node lifecycle, MuZero++ planner reports, compliance scorecards. |
-| **Economic Power Expansion** | `demo/Economic-Power-v0` | `npm run demo:economic-power` | Planetary treasury posture, mission manifests, governance pulses. |
-| **Era of Experience** | `demo/Era-Of-Experience-v0` | `npm run demo:era-of-experience` | Narrative journey exports, audit reports, owner override hooks. |
-| **One-Box Mission Runner** | `demo/One-Box` | `node --test demo/One-Box/test/diagnostics.test.cjs` *(smoke)* / `npm run demo:onebox:launch` | Deterministic mission orchestration with operator diagnostics and RPC drills. |
+| **AGIJobs Day-One Utility Benchmark** | [`demo/AGIJobs-Day-One-Utility-Benchmark`](../demo/AGIJobs-Day-One-Utility-Benchmark) | `make e2e` (after `make deps`) | HTML dashboards (`out/dashboard_*.html`), PNG scorecards, JSON telemetry, owner snapshots. |
+| **Kardashev-II Command Deck** | [`demo/AGI-Jobs-Platform-at-Kardashev-II-Scale`](../demo/AGI-Jobs-Platform-at-Kardashev-II-Scale) | `npm run demo:kardashev-ii:orchestrate` | Safe calldata bundles, Dyson telemetry, Mermaid schematics, operator briefings under `output/`. |
+| **Trustless Economic Core** | [`demo/Trustless-Economic-Core-v0`](../demo/Trustless-Economic-Core-v0) | `npm run run:trustless-core` *(pair with `npm run demo:economic-power` for blended scenarios)* | Hardhat-driven settlement drills, governance proofs, compliance ledgers in `demo/Trustless-Economic-Core-v0/output/`. |
+| **Economic Power Vanguard** | [`demo/Economic-Power-v0`](../demo/Economic-Power-v0) | `npm run demo:economic-power` / `npm run demo:economic-power:ci` | Treasury posture reports, mission manifests, replay logs under `demo/Economic-Power-v0/output/`. |
+| **Validator Constellation** | [`demo/Validator-Constellation-v0`](../demo/Validator-Constellation-v0) | `npm run demo:validator-constellation` | VRF committee tours, sentinel guardrails, compliance ledgers in `output/`. |
+| **AGI Alpha Node** | [`demo/AGI-Alpha-Node-v0`](../demo/AGI-Alpha-Node-v0) | `npm run demo:agi-alpha-node` *(requires `ALPHA_NODE_PRIVATE_KEY`)* | Live dashboard (`http://localhost:<port>`), Prometheus metrics, staking and identity reports. |
+| **Meta-Agentic ALPHA Expedition** | [`demo/Meta-Agentic-ALPHA-AGI-Jobs-v0`](../demo/Meta-Agentic-ALPHA-AGI-Jobs-v0) | `npm run demo:meta-agentic-alpha` | Multi-agent synthesis logs, empowerment matrices, cinematic markdown briefs. |
+| **AGI Governance Alpha Series** | [`demo/agi-governance`](../demo/agi-governance) | `npm run demo:agi-governance` *(variant: `:alpha-v17`, `:full`, `:owner-diagnostics`)* | Regulatory drill transcripts, Safe payloads, attestation ledgers. |
+| **Era of Experience** | [`demo/Era-Of-Experience-v0`](../demo/Era-Of-Experience-v0) | `npm run demo:era-of-experience` | Narrative exports, audit reporters, and verification logs (`reports/`). |
+| **Culture-v0 Arena** | [`demo/CULTURE-v0`](../demo/CULTURE-v0) | `npm run culture:bootstrap` / `npm run culture:analytics` / `npm run culture:smoke` | Multimedia decks, timeline manifests, analytics packets. |
+| **One-Box Mission Runner** | [`demo/One-Box`](../demo/One-Box) | `node --test demo/One-Box/test/diagnostics.test.cjs` *(smoke)* / `npm run demo:onebox:launch` | Deterministic orchestration, RPC drills, operator diagnostics. |
 
-### Strategy sweeps & advanced profiles
-- **Day-One Utility Benchmark** — explore `make alphaevolve`, `make hgm`, `make trm`, `make omni`, and `make scoreboard` for complete economic and guardrail coverage.
-- **Kardashev-II Command Deck** — switch to the Sovereign Lattice by running `npm run demo:kardashev-ii-lattice:orchestrate` or append `--profile stellar-civilization-lattice`.
-- **AGI Governance Alpha Series** — execute `npm run demo:agi-governance`, `npm run demo:agi-governance:alpha-v17`, or the profile-specific `:ci` targets to replay the regulatory drills powering `.github/workflows/demo-agi-governance*.yml`.
-- **Meta-Agentic Expeditions** — run `npm run demo:meta-agentic-alpha` to witness multi-agent synthesis, or explore `demo/alpha-meta` and `demo/alpha-agi-mark` for dashboard generators, empowerment pulses, and Monte Carlo verifiers.
-- **CULTURE-v0 Immersive Arena** — rely on curated scripts: `npm run culture:bootstrap`, `npm run culture:analytics`, and `npm run culture:smoke` to stage the multimedia storytelling decks.
-
-### Spectacle architecture (Kardashev-II excerpt)
+### Tactical amplifiers
+- **Day-One Utility Benchmark** — explore `make alphaevolve`, `make hgm`, `make trm`, `make omni`, and `make scoreboard` for complete strategy coverage. `make ci` reproduces the GitHub workflow end-to-end.
+- **Kardashev-II Sovereign Lattice** — execute `npm run demo:kardashev-ii-lattice:orchestrate` for the `stellar-civilization-lattice` profile or `npm run demo:kardashev-ii:orchestrate -- --profile stellar-civilization-lattice` to switch on the fly. Use `npm run demo:kardashev-ii:ci` or `npm run demo:kardashev-ii-lattice:ci` for CI fidelity.
+- **Trustless Economic Core** — `npm run demo:economic-power:dominion` drills the mainnet dominion scenario; `npm run demo:economic-power:ci` is wired into `.github/workflows/demo-economic-power.yml`.
+- **AGI Alpha Node** — pass `--config demo/AGI-Alpha-Node-v0/config/testnet.json` for dry runs, or `npm run demo:agi-alpha-node -- heartbeat --config ...` to capture planner telemetry without launching the dashboard. Use `npm run demo:agi-alpha-node:prod` to build the TypeScript bundle first.
+- **Validator Constellation** — `npm run demo:validator-constellation:scenario` replays predefined VRF tours; `npm run demo:validator-constellation:operator-console` prints mission controls for regulators. `npm run demo:validator-constellation:ci` mirrors the workflow `demo-validator-constellation.yml`.
+- **Meta-Agentic Expeditions** — combine with `npm run test:meta-agentic-alpha` and `npm run demo:meta-agentic-alpha -- --interactive --scenario demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/scenario/baseline.json` to explore hybrid orchestration logs (duplicate `baseline.json` to craft bespoke sovereign meshes).
 
 ```mermaid
 sequenceDiagram
-    participant Operator
-    participant CLI as Kardashev CLI
-    participant Ledger as Stability Ledger
-    participant Safe as Safe Batch
-    participant Dyson as Dyson Scheduler
-    participant UI as Command Deck UI
-    Operator->>CLI: npm run demo:kardashev-ii:orchestrate
-    CLI->>Ledger: Recompute metrics, verify tolerances
-    CLI->>Safe: Generate guardian + pause calldata
-    CLI->>Dyson: Model energy + compute trajectories
-    CLI->>UI: Emit telemetry + Mermaid canvases
-    Ledger-->>CLI: Pass/Fail verdict
-    CLI-->>Operator: Mission briefing & incident alerts
-    UI-->>Operator: Interactive holographic control surface
+  participant Operator
+  participant DemoCLI as Demo Orchestrator
+  participant Ledger as Assurance Ledger
+  participant Safe as Safe Payload Forge
+  participant HUD as Operator HUD
+  Operator->>DemoCLI: npm run demo:kardashev-ii:orchestrate
+  DemoCLI->>DemoCLI: Schema + thermodynamic validation
+  DemoCLI->>Ledger: Emit telemetry + compliance ledgers
+  DemoCLI->>Safe: Synthesize calldata & pause bundles
+  DemoCLI->>HUD: Render dashboards + Mermaid canvases
+  Ledger-->>DemoCLI: Dominance + guardrail verdicts
+  DemoCLI-->>Operator: Mission briefing (stdout + markdown)
+  Operator-->>Safe: Execute verified batch on-chain
 ```
-
-Each demo README deepens the lore, enumerates required environment variables, and links to CI workflows enforcing parity.
 
 ---
 
-## 🎚️ Command owner controls
+## 🖥️ Activate operator surfaces
 
-The unstoppable Day-One Utility deck exemplifies non-technical governance:
+| Surface | Path | Start command | Notes |
+| --- | --- | --- | --- |
+| **Operator Console** | [`apps/operator`](../apps/operator) | `npm --prefix apps/operator run dev` | Next.js HUD for mission scheduling, integrates Kardashev & Day-One artefacts. |
+| **Console (analytics)** | [`apps/console`](../apps/console) | `npm --prefix apps/console run dev` | Visual analytics, scoreboard overlays, and governance monitors. |
+| **Mission Control** | [`apps/mission-control`](../apps/mission-control) | `npm --prefix apps/mission-control run dev` | Executive overview combining telemetry, CI, and owner controls. |
+| **OneBox UI** | [`apps/onebox`](../apps/onebox) | `npm --prefix apps/onebox run dev` | Mission runner for deterministic rehearsals; integrates with One-Box demo tests. |
+| **Validator UI** | [`apps/validator-ui`](../apps/validator-ui) | `npm --prefix apps/validator-ui run dev` | Visualises Validator Constellation scenarios; includes VRF dashboards. |
+| **Enterprise Portal** | [`apps/enterprise-portal`](../apps/enterprise-portal) | `npm --prefix apps/enterprise-portal run dev` | Contract deliverable verification for stakeholders; wired into CI smoke tests. |
 
+All surfaces honour `.env.example` files inside each application folder. Copy and customise them before `npm run dev` when connecting to external RPC endpoints.
+
+---
+
+## 🛡️ Owner controls & governance
+
+### Day-One Utility owner macros
 ```bash
+cd demo/AGIJobs-Day-One-Utility-Benchmark
+make deps
 make owner-show
 make owner-set KEY=platform_fee_bps VALUE=220
-make owner-set KEY=utility_threshold_override_bps VALUE=900
 make owner-toggle
 make owner-reset
 ```
+These mutate `config/owner_controls.yaml`, validate schemas, and mirror [`contracts/v2/modules/DayOneUtilityController.sol`](../contracts/v2/modules/DayOneUtilityController.sol).
 
-These commands mutate `config/owner_controls.yaml`, validate schemas, and mirror `contracts/v2/modules/DayOneUtilityController.sol`. Similar knobs exist across Kardashev, Economic Power, and Sovereign demos – look for `owner_controls.yaml`, `rules.yaml`, or `sovereign.yaml` files to reshape fees, risk posture, and narratives mid-flight.
-
-For system-wide diagnostics run the owner CI suite:
+### Repository-wide owner suites
+From the root:
 ```bash
 npm run owner:dashboard
 npm run owner:mission-control
 npm run owner:snapshot
 npm run owner:doctor
+npm run owner:guide
+npm run owner:plan:safe
 ```
-
-These scripts export dashboards, Safe-ready action bundles, compliance scorecards, and audit logs ready for regulated deployments.
+Each script inspects on-chain parameters, renders Safe bundles, and exports audit artefacts under `reports/` or `out/`. Combine `npm run owner:upgrade-status`, `npm run owner:command-center`, and `npm run owner:emergency` to prepare upgrade, pause, and incident responses with deterministic JSON proof.
 
 ---
 
-## 🛰️ Collect artefacts like an operator
-
-Every sanctioned run deposits artefacts inside its `out/`, `output/`, or `reports/` directories:
-
-- **Telemetry JSON** — mission metrics (GMV, utility, Dyson coverage, sentinel uptime, treasury share).
-- **HTML hyperdashboards** — immersive operator consoles with Mermaid canvases, animation timelines, and download buttons.
-- **PNG snapshots** — executive-ready slides for instant briefings.
-- **Scoreboards & ledgers** — JSON/Markdown packs ranking strategies, reconciliations, and compliance verdicts.
+## 📦 Artefact logistics
+- **Telemetry** — JSON ledgers in `out/`, `output/`, or `reports/` record mission metrics (GMV, utility, Dyson coverage, sentinel uptime, treasury state).
+- **Dashboards** — HTML hyperdashboards with embedded Mermaid diagrams are saved alongside PNG snapshots for executive briefings.
+- **Safe payloads** — JSON batches (e.g., `kardashev-safe-transaction-batch.json`) are ready for <https://app.safe.global> import.
+- **Compliance bundles** — Markdown/JSON packages for regulators live under each demo’s `output/` directory.
 
 Serve dashboards instantly:
 ```bash
 python3 -m http.server --directory demo/AGIJobs-Day-One-Utility-Benchmark/out 9000
-open http://localhost:9000/dashboard_e2e.html
+open http://localhost:9000/dashboard_e2e.html  # macOS
+# xdg-open http://localhost:9000/dashboard_e2e.html  # Linux
 ```
-
-Archive these artefacts daily for governance reviews, investor reporting, or regulator attestations.
+Archive artefacts daily for governance sign-off and investor briefings.
 
 ---
 
-## ✅ Keep CI impossibly green
+## ✅ Keep CI all-green
 
-AGI Jobs v0 (v2) enforces an all-green CI shield. Branch protection blocks merges unless every workflow passes, including:
+AGI Jobs v0 (v2) enforces fully visible, blocking CI on every PR via branch protection. Key workflows under [`.github/workflows/`](../.github/workflows/) include:
+- `ci.yml` — monorepo linting, typechecking, Jest/Playwright suites, Foundry tests, pytest, SBOM generation, dependency audits, and bespoke `ci:verify-*` scripts.
+- `contracts.yml` & `containers.yml` — solidity static analysis, gas sizing, container security scans.
+- Demo pipelines such as `demo-day-one-utility-benchmark.yml`, `demo-kardashev-ii.yml`, `demo-agi-alpha-node.yml`, `demo-economic-power.yml`, `demo-validator-constellation.yml`, and the Kardashev Omega upgrade series.
+- Frontier checks (`demo-meta-agentic-alpha-agi-jobs.yml`, `demo-agi-governance.yml`, `demo-zenith-*.yml`) that replay cinematic missions to guarantee parity.
+- Surface coverage: `webapp.yml`, `apps-images.yml`, `orchestrator-ci.yml`, `e2e.yml`, and `fuzz.yml` for generative assurance.
 
-- **Monorepo checks:** `.github/workflows/ci.yml` runs `npm run lint`, `npm run typecheck`, `npm test`, `pytest`, `forge test`, coverage checks, dependency locks, SBOM generation, and `ci:verify-*` scripts.
-- **Contracts & security:** `contracts.yml`, `containers.yml`, `codeql`, `security:audit`, `slither`, `audit-ci`, and `trivy` workflows.
-- **Demo pipelines:** Dedicated jobs such as `demo-day-one-utility-benchmark.yml`, `demo-kardashev-ii.yml`, `demo-agi-alpha-node.yml`, `demo-agi-labor-market.yml`, `demo-econ-power.yml`, and `demo-validator-constellation.yml` replay each scenario end-to-end.
-- **App surfaces:** `apps-images.yml`, web lint/typecheck pipelines, Cypress E2E via `webapp:e2e`, and OneBox smoke suites.
-
-Before opening a PR, replicate the critical subset locally:
+Before opening a PR, mirror the high-value subset locally:
 ```bash
 npm run lint
 npm run typecheck
@@ -221,50 +259,50 @@ npm run demo:kardashev-ii:ci
 make -C demo/AGIJobs-Day-One-Utility-Benchmark ci
 npm run demo:validator-constellation:ci
 npm run demo:economic-power:ci
+npm run demo:agi-governance:ci
+npm run demo:meta-agentic-alpha
 ```
-
-Ensure GitHub branch protection shows every check green, export the results, and attach dashboards to the PR description. The unstoppable lattice stays flawless only when these verifications remain unbroken.
+Confirm GitHub Actions shows every required check green, export dashboards where applicable, and attach artefacts to the PR description. The lattice remains flawless when these guardrails stay unbroken.
 
 ---
 
-## 🧭 Daily operations flight plan
+## 🗓️ Daily flight plan
+1. **Morning diagnostic** — run `make e2e` inside Day-One Utility, review the generated dashboard, and circulate the PNG snapshot.
+2. **Strategy sweep** — execute `make alphaevolve`, `make hgm`, `make trm`, `make omni`, then `make scoreboard` to refresh comparative analytics.
+3. **Sovereign tuning** — adjust owner controls (`npm run owner:wizard`), regenerate Kardashev or Economic Power artefacts, and archive the updated compliance pack.
+4. **CI pulse** — open GitHub → Actions, ensure `ci`, demo, and security workflows are green. If any fail, rerun the paired local command, correct drift, and push a fix.
+5. **Frontier expansion** — stage a Kardashev, Meta-Agentic, or Governance mission, publish the holographic dashboard, and brief stakeholders using the generated reports.
 
-1. **Morning diagnostic** — `make e2e` within Day-One Utility, review utility uplift and guardrail state.
-2. **Strategy sweep** — execute `make alphaevolve`, `make hgm`, `make trm`, `make omni`, regenerate the scoreboard, and circulate the PNG snapshot.
-3. **Sovereign tuning** — adjust owner controls, rerun the winning strategy, and archive the refreshed telemetry + compliance pack.
-4. **CI pulse** — open the Actions tab; if any workflow flickers red, replay the corresponding local script, correct drift, and push a fix.
-5. **Frontier expansion** — run a Kardashev or Governance demo, publish the holographic dashboard, and brief stakeholders on readiness.
-
-Repeat daily; the unstoppable machine compounds intelligence and economic gravity while remaining perfectly governable.
+Repeat daily; the superintelligent lattice compounds intelligence, capital efficiency, and governance fidelity in lockstep.
 
 ---
 
 ## 🛠️ Troubleshooting beacons
 
-| Symptom | Fix |
+| Symptom | Remedy |
 | --- | --- |
-| `make: command not found` (Windows) | Install `make` (`choco install make`) or run the Python/TypeScript entrypoints (`python run_demo.py simulate`, `npm run demo:...`). |
-| Python module import errors | `python -m pip install -r requirements.txt` inside the demo or `pip install -r requirements-python.txt` at repo root. |
-| HTML dashboard missing | Serve the generated file from `out/` or `output/` with `python -m http.server` and open in the browser. |
-| Guardrail ❌ banner | Expected safety stop. Review `config/rules.yaml` or `config/owner_controls.yaml`, adjust thresholds, rerun. |
-| Foundry/Hardhat mismatch | `foundryup`, `forge --version`, `npx hardhat --version`, ensure Node 20.18.1 via `nvm use`. |
-| Docker compose failure | Confirm `.env`/`deployment-config/oneclick.env`, free ports 8545/8000/3000, rerun `docker compose up --build`. |
-| Git hooks block commit | Run `npm run lint` / `npm test` to fix issues or use `HUSKY=0` for emergency commits (CI will still enforce checks). |
-| Branch protection rejects merge | Visit GitHub Actions, rerun failed jobs, ensure required checks (CI, demo workflows, security scans) succeed before merging. |
+| `make: command not found` (Windows) | Install `make` (`choco install make`) or use the Python/TypeScript entrypoints (`python run_demo.py simulate`, `npm run demo:...`). |
+| Missing Python modules | `python -m pip install -r requirements.txt` inside the demo or `pip install -r requirements-python.txt` at the repo root. |
+| HTML dashboard blank | Serve the generated file from `out/` or `output/` via `python -m http.server` and open in the browser. |
+| Guardrail ❌ banner | Expected safety halt. Inspect `config/owner_controls.yaml` or `config/rules.yaml`, adjust thresholds, rerun the demo, and document the override. |
+| Foundry/Hardhat mismatch | Run `foundryup`, `forge --version`, `npx hardhat --version`, and ensure `nvm use 20.18.1`. |
+| Docker Compose fails | Verify `deployment-config/oneclick.env`, free ports `8545`, `8000`, `3000`, then `docker compose up --build`. |
+| Git hooks block commit | Run `npm run lint` / `npm test` to resolve; as last resort set `HUSKY=0` temporarily (CI will revalidate). |
+| Branch protection rejects merge | Visit GitHub Actions, rerun failed workflows, or reproduce locally with the commands above until every required check is green. |
 
 ---
 
 ## 🗂️ Repository atlas
 
-| Domain | Paths | Notes |
+| Domain | Paths | Highlights |
 | --- | --- | --- |
-| Protocol & Chain Control | `contracts/`, `attestation/`, `paymaster/`, `migrations/`, `subgraph/` | Upgradeable Solidity modules, attestations, paymasters, and indexers. |
-| Agentic Intelligence Fabric | `orchestrator/`, `backend/`, `agent-gateway/`, `services/`, `routes/`, `packages/`, `shared/` | Mission planners, analytics pipelines, SDKs, and shared state machines. |
-| Mission Consoles | `apps/console`, `apps/operator`, `apps/mission-control`, `apps/orchestrator`, `apps/onebox`, `apps/validator`, `apps/validator-ui`, `apps/enterprise-portal`, `apps/onebox-static` | Next.js HUDs, operator dashboards, OneBox mission runner, validator UIs. |
-| Demo & Simulation Multiverse | `demo/`, `kardashev_*`, `*.demo_*`, `examples/`, `simulation/`, `data/`, `storage/` | Cinematic expeditions, omega upgrades, Monte Carlo labs, data vaults. |
-| Reliability & Assurance | `.github/workflows/`, `ci/`, `scripts/`, `tests/`, `test/`, `RUNBOOK.md`, `monitoring/` | GitHub Actions, local harnesses, pytest/Cypress reporters, observability runbooks. |
-| Documentation Signals | `docs/`, `internal_docs/`, `README.md`, `MIGRATION.md`, `CHANGELOG.md`, `SECURITY.md` | Deep dives, migration paths, governance notes, security posture. |
+| Protocol & Chain Control | [`contracts/`](../contracts), [`attestation/`](../attestation), [`paymaster/`](../paymaster), [`subgraph/`](../subgraph), [`migrations/`](../migrations) | Upgradeable Solidity modules, attestations, paymasters, and indexers wired into demos and CI. |
+| Agentic Intelligence Fabric | [`orchestrator/`](../orchestrator), [`backend/`](../backend), [`agent-gateway/`](../agent-gateway), [`services/`](../services), [`routes/`](../routes), [`packages/`](../packages), [`shared/`](../shared) | Mission planners, analytics pipelines, SDKs, shared domain models. |
+| Mission Consoles & HUDs | [`apps/console`](../apps/console), [`apps/operator`](../apps/operator), [`apps/mission-control`](../apps/mission-control), [`apps/orchestrator`](../apps/orchestrator), [`apps/onebox`](../apps/onebox), [`apps/validator-ui`](../apps/validator-ui), [`apps/enterprise-portal`](../apps/enterprise-portal), [`apps/onebox-static`](../apps/onebox-static) | Next.js/React command decks, mission runners, validator interfaces. |
+| Demo & Simulation Multiverse | [`demo/`](../demo), `kardashev_*`, `*.demo_*`, [`examples/`](../examples), [`simulation/`](../simulation), [`data/`](../data), [`storage/`](../storage) | Cinematic expeditions, omega upgrades, Monte Carlo labs, telemetry vaults. |
+| Reliability & Assurance | [`.github/workflows/`](../.github/workflows), [`ci/`](../ci), [`scripts/`](../scripts), [`tests/`](../tests), [`test/`](../test), [`RUNBOOK.md`](../RUNBOOK.md), [`monitoring/`](../monitoring) | GitHub Actions, local harnesses, pytest/Cypress reporters, observability dashboards. |
+| Documentation Signals | [`docs/`](../docs), [`internal_docs/`](../internal_docs), [`README.md`](../README.md), [`MIGRATION.md`](../MIGRATION.md), [`CHANGELOG.md`](../CHANGELOG.md), [`SECURITY.md`](../SECURITY.md) | Deep dives, migration paths, governance notes, security posture. |
 
 ---
 
-**You now command AGI Jobs v0 (v2)** — the unstoppable superintelligent lattice that remains production-ready, fully governed, and economically dominant the moment you execute these steps. Launch the demos, sculpt narratives, and let the all-green CI confirm every move.
+**You now command AGI Jobs v0 (v2)** — a superintelligent, production-ready lattice whose demos, dashboards, and CI guardians are instantly operable. Execute the missions, archive the evidence, and let the all-green pipelines confirm every decision.
