@@ -12,12 +12,13 @@
 | --- | --- | --- |
 | `ci (v2) / Lint & static checks` | [`lint`](../.github/workflows/ci.yml) | Blocks merges when formatting, ESLint, or Solhint find issues before tests run.【F:.github/workflows/ci.yml†L28-L60】 |
 | `ci (v2) / Tests` | [`tests`](../.github/workflows/ci.yml) | Runs Hardhat compilation, the unit test suite, ABI drift detection, and constants regeneration.【F:.github/workflows/ci.yml†L62-L116】 |
-| `ci (v2) / Foundry` | [`foundry`](../.github/workflows/ci.yml) | Executes fuzz tests after unit tests, even when they fail, to expose property violations.【F:.github/workflows/ci.yml†L118-L165】 |
-| `ci (v2) / Coverage thresholds` | [`coverage`](../.github/workflows/ci.yml) | Enforces ≥90 % coverage and access-control reporting while publishing LCOV artifacts.【F:.github/workflows/ci.yml†L167-L216】 |
-| `ci (v2) / ASI Take-Off Demo` | [`asi_takeoff_demo`](../.github/workflows/ci.yml) | Exercises the ASI take-off rehearsal so mission automation never regresses.【F:.github/workflows/ci.yml†L208-L248】 |
-| `ci (v2) / Zenith Sapience Demonstration` | [`zenith_demo`](../.github/workflows/ci.yml) | Validates the flagship Zenith parameterisation with deterministic kit + local rehearsal.【F:.github/workflows/ci.yml†L249-L300】 |
-| `ci (v2) / Hypernova Governance Demonstration` | [`hypernova_demo`](../.github/workflows/ci.yml) | Runs the Supra-Sovereign Hypernova drill, proving the new governance configuration stays green end-to-end.【F:.github/workflows/ci.yml†L302-L353】 |
-| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator required by branch protection.【F:.github/workflows/ci.yml†L355-L401】 |
+| `ci (v2) / HGM guardrails` | [`hgm_guardrails`](../.github/workflows/ci.yml) | Exercises Higher Governance Machine guardrails across Node + Python stacks so access control stays enforceable.【F:.github/workflows/ci.yml†L216-L276】 |
+| `ci (v2) / Foundry` | [`foundry`](../.github/workflows/ci.yml) | Executes fuzz tests after unit tests, even when they fail, to expose property violations.【F:.github/workflows/ci.yml†L278-L336】 |
+| `ci (v2) / Coverage thresholds` | [`coverage`](../.github/workflows/ci.yml) | Enforces ≥90 % coverage and access-control reporting while publishing LCOV artifacts.【F:.github/workflows/ci.yml†L338-L386】 |
+| `ci (v2) / Phase 6 readiness` | [`phase6`](../.github/workflows/ci.yml) | Validates the Phase 6 manifest and UI bundle so migrations remain deterministic.【F:.github/workflows/ci.yml†L388-L422】 |
+| `ci (v2) / Phase 8 readiness` | [`phase8`](../.github/workflows/ci.yml) | Confirms the expansion manifest stays reproducible for the Phase 8 release kit.【F:.github/workflows/ci.yml†L424-L458】 |
+| `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L872-L1044】 |
+| `ci (v2) / CI summary` | [`summary`](../.github/workflows/ci.yml) | Aggregates upstream job results into a single ✅/❌ indicator required by branch protection.【F:.github/workflows/ci.yml†L905-L953】 |
 | `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
 | `static-analysis / CodeQL analysis` | [`codeql`](../.github/workflows/static-analysis.yml) | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
 
@@ -31,7 +32,7 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 1. Navigate to **Settings → Branches**.
 2. Edit the rule that applies to `main`.
-3. Under **Require status checks to pass before merging**, verify the eight contexts above appear in the list, in order.
+3. Under **Require status checks to pass before merging**, verify the nine contexts above appear in the list, in order.
 4. Confirm **Require branches to be up to date before merging** and **Include administrators** are enabled. Both are required for audit compliance.
 5. Capture a screenshot or export the configuration for your change-control records.
 
@@ -55,7 +56,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-- The first command must output the eight contexts exactly as listed in the table above.
+- The first command must output the nine contexts exactly as listed in the table above.
 - The second must print `true`, proving administrators cannot bypass the checks.
 - Record the command output (copy/paste or redirect to a dated text file) for auditors.
 

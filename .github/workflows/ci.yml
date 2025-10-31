@@ -882,11 +882,147 @@ jobs:
             reports/localhost/zenith-hypernova/**
           if-no-files-found: warn
 
+  branch_protection:
+    name: Branch protection guard
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork != true }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      administration: read
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify branch protection configuration
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: main
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const repository = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GITHUB_TOKEN;
+          const branch = process.env.BRANCH_NAME || 'main';
+
+          if (!repository) {
+            console.error('GITHUB_REPOSITORY is not set.');
+            process.exit(1);
+          }
+
+          if (!token) {
+            console.error('GITHUB_TOKEN is required to query branch protection.');
+            process.exit(1);
+          }
+
+          const [owner, repo] = repository.split('/');
+          if (!owner || !repo) {
+            console.error(`Unable to derive owner/repo from ${repository}`);
+            process.exit(1);
+          }
+
+          const scriptPath = path.join(process.cwd(), 'scripts', 'ci', 'verify-branch-protection.ts');
+          const source = fs.readFileSync(scriptPath, 'utf8');
+          const match = source.match(/const\s+EXPECTED_CONTEXTS\s*=\s*\[(.*?)\]\s*as\s+const/s);
+          if (!match) {
+            console.error('Failed to locate EXPECTED_CONTEXTS in verify-branch-protection.ts');
+            process.exit(1);
+          }
+
+          const expected = match[1]
+            .split('\n')
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0)
+            .map((line) => line.replace(/[,\s]*$/u, ''))
+            .map((line) => line.replace(/^"/, '').replace(/"$/, ''))
+            .filter((line) => line.length > 0);
+
+          async function fetchProtection() {
+            const response = await fetch(
+              `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}/protection`,
+              {
+                headers: {
+                  Accept: 'application/vnd.github+json',
+                  Authorization: `Bearer ${token}`,
+                  'User-Agent': 'agijobs-ci-branch-guard',
+                },
+              },
+            );
+
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`GitHub API request failed with ${response.status} ${response.statusText}: ${body}`);
+            }
+
+            return response.json();
+          }
+
+          function extractContexts(protection) {
+            const contextList = protection?.required_status_checks?.contexts;
+            if (Array.isArray(contextList) && contextList.length > 0) {
+              return contextList;
+            }
+
+            const checks = protection?.required_status_checks?.checks;
+            if (Array.isArray(checks) && checks.length > 0) {
+              return checks.map((check) => check.context).filter(Boolean);
+            }
+
+            return [];
+          }
+
+          (async () => {
+            try {
+              const protection = await fetchProtection();
+              const contexts = extractContexts(protection);
+              const strict = Boolean(protection?.required_status_checks?.strict);
+              const admins = Boolean(protection?.enforce_admins?.enabled);
+
+              const missing = expected.filter((ctx) => !contexts.includes(ctx));
+              const unexpected = contexts.filter((ctx) => !expected.includes(ctx));
+
+              const filtered = contexts.filter((ctx) => expected.includes(ctx));
+              const orderMatches =
+                filtered.length === expected.length && expected.every((ctx, index) => filtered[index] === ctx);
+
+              console.log(`# Branch protection audit for ${owner}/${repo}@${branch}`);
+              console.log('');
+              console.table(
+                [
+                  { check: 'Missing required contexts', result: missing.length ? 'FAIL' : 'PASS', detail: missing.join(', ') || 'None' },
+                  { check: 'Unexpected additional contexts', result: unexpected.length ? 'WARN' : 'PASS', detail: unexpected.join(', ') || 'None' },
+                  { check: 'Context order matches policy', result: orderMatches ? 'PASS' : 'FAIL', detail: filtered.join(' → ') || '(none)' },
+                  { check: 'Require branches up to date', result: strict ? 'PASS' : 'FAIL', detail: `strict=${strict}` },
+                  { check: 'Admins must pass checks', result: admins ? 'PASS' : 'FAIL', detail: `admins_enforced=${admins}` },
+                ],
+              );
+
+              const failure = missing.length > 0 || !orderMatches || !strict || !admins;
+              if (failure) {
+                console.error('Branch protection does not satisfy CI v2 requirements.');
+                process.exit(1);
+              }
+            } catch (error) {
+              console.error(error instanceof Error ? error.message : error);
+              process.exit(1);
+            }
+          })();
+          NODE
+
   summary:
     name: CI summary
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     needs:
+      - branch_protection
       - lint
       - tests
       - python_unit
@@ -896,6 +1032,7 @@ jobs:
       - hgm_guardrails
       - foundry
       - coverage
+      - phase6
       - phase8
       - asi_takeoff_demo
       - zenith_demo
@@ -918,6 +1055,7 @@ jobs:
           const path = require('path');
           const needs = JSON.parse(process.env.NEEDS_CONTEXT);
           const prettyNames = {
+            branch_protection: 'Branch protection guard',
             lint: 'Lint & static checks',
             tests: 'Tests',
             python_unit: 'Python unit tests',
@@ -927,6 +1065,7 @@ jobs:
             hgm_guardrails: 'HGM guardrails',
             foundry: 'Foundry',
             coverage: 'Coverage thresholds',
+            phase6: 'Phase 6 readiness',
             phase8: 'Phase 8 readiness',
             asi_takeoff_demo: 'ASI Take-Off Demo',
             zenith_demo: 'Zenith Sapience Demo',

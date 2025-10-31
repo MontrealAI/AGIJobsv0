@@ -165,6 +165,14 @@ Use `docker compose down -v` to reset the cluster. Compose wiring sources defaul
 | Mission Console UI | `http://localhost:3000` | Primary operator HUD (`apps/console`). |
 | Enterprise Portal | `http://localhost:3001` | Partner & enterprise oversight (`apps/enterprise-portal`). |
 
+## 🧪 Quality & Verification
+- `npm run lint`, `npm run webapp:typecheck`, and `npm run webapp:e2e` guard the Next.js surfaces.
+- `npm run test` executes Hardhat unit tests; `forge test` uses Foundry profiles from [`foundry.toml`](foundry.toml).
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest` covers Python demos (`tests/`, `demo/*/test/`).
+- `npm run sbom:generate`, `npm run security:audit`, and `npm run release:manifest:validate` provide supply-chain checks.
+- `npm run ci:verify-branch-protection` interrogates GitHub's branch rules to ensure every `ci (v2)` gate (linting, tests, HGM guardrails, Foundry, coverage, Phase 6/8 readiness, the branch guard, and the CI summary) is enforced on pull requests and `main` before merges land.【F:.github/workflows/ci.yml†L872-L1044】【F:scripts/ci/verify-branch-protection.ts†L1-L164】
+- Coverage, gas, and scenario reports land in [`reports/`](reports/) and [`gas-snapshots/`](gas-snapshots/).
+
 ## 🎞️ Demo Constellation
 ```mermaid
 %% Celestial demo atlas

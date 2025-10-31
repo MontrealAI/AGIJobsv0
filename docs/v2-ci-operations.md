@@ -43,8 +43,12 @@ Enable branch protection on `main` with these required status checks (copy the c
 | --- | --- | --- |
 | `ci (v2) / Lint & static checks` | `lint` job | Blocks merge when linting fails. |
 | `ci (v2) / Tests` | `tests` job | Runs Hardhat compilation and the main test suite. |
+| `ci (v2) / HGM guardrails` | `hgm_guardrails` job | Exercises the Higher Governance Machine suite with shared Node + Python toolchains. |
 | `ci (v2) / Foundry` | `foundry` job | Always runs after the `tests` job, even when it fails, to expose fuzz failures. |
 | `ci (v2) / Coverage thresholds` | `coverage` job | Enforces `COVERAGE_MIN` and access-control coverage. |
+| `ci (v2) / Phase 6 readiness` | `phase6` job | Validates the Phase 6 manifest and UI bundle required for migrations. |
+| `ci (v2) / Phase 8 readiness` | `phase8` job | Confirms the Phase 8 expansion playbook stays reproducible. |
+| `ci (v2) / Branch protection guard` | `branch_protection` job | Audits GitHub branch protection via the API and fails if required contexts drift. |
 | `ci (v2) / CI summary` | `summary` job | Fails when any dependency job fails so the PR badge stays red. |
 
 > ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` to guarantee pull requests re-run the workflow when `main` advances.
@@ -66,7 +70,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks
 gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
 ```
 
-The first command should list the five required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
+The first command should list the nine required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
 
 ### Companion workflow checks
 
@@ -83,7 +87,7 @@ Keep the rest of the release surface visible by marking the following workflows 
 
 ## Pull request hygiene checklist
 
-1. Confirm that the **Checks** tab shows all five required `ci (v2)` contexts above plus the companion workflows you have marked as required.
+1. Confirm that the **Checks** tab shows all nine required `ci (v2)` contexts above plus the companion workflows you have marked as required.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
    `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
