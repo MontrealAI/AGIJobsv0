@@ -150,7 +150,7 @@ A new job in `.github/workflows/ci.yml` named **Phase 6 readiness** runs on ever
 3. Asserts the mermaid UI, ABI files, and config schema stay in sync.
 4. Publishes a short status summary to the GitHub Checks UI.
 
-`EXPECTED_CONTEXTS` in `scripts/ci/verify-branch-protection.ts` is updated so branch protection refuses merges without this signal.
+Branch protection contexts are derived directly from `.github/workflows/ci.yml` via `scripts/ci/verify-branch-protection.ts`, so the guard refuses merges whenever the Phase 6 checks drift from the workflow definition.
 
 ---
 
