@@ -65,6 +65,8 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 2. Verify the `CI summary` job lists every upstream job (Lint, Tests, Foundry, Coverage) with matching outcomes.
 3. Confirm the job is marked as **Required** in the run header. If it is missing, update branch protection immediately and re-run the workflow to refresh the badge.
 4. When troubleshooting, re-run the workflow with **Re-run failed jobs** so historical logs remain intact for incident reviews.
+5. Download the `ci-summary` artifact and archive `reports/ci/status.md` plus `status.json` with the change ticket; these files
+   mirror the on-screen table and prove which jobs were evaluated.【F:.github/workflows/ci.yml†L905-L953】
 
 ### 4. Double-check companion workflows
 

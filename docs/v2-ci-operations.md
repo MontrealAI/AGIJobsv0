@@ -85,7 +85,9 @@ Keep the rest of the release surface visible by marking the following workflows 
 
 1. Confirm that the **Checks** tab shows all five required `ci (v2)` contexts above plus the companion workflows you have marked as required.
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
-3. Review the `CI summary` job output for a condensed Markdown table of job results.
+3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
+   `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
+   compliance records.【F:.github/workflows/ci.yml†L905-L953】
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
 5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
 
