@@ -23,6 +23,7 @@ const EXPECTED_CONTEXTS = [
   "ci (v2) / Coverage thresholds",
   "ci (v2) / Phase 6 readiness",
   "ci (v2) / Phase 8 readiness",
+  "ci (v2) / Branch protection guard",
   "ci (v2) / CI summary",
 ] as const;
 
@@ -30,6 +31,7 @@ type BranchProtectionResponse = {
   required_status_checks?: {
     contexts?: string[];
     strict?: boolean;
+    checks?: { context?: string | null }[];
   };
   enforce_admins?: {
     enabled?: boolean;
@@ -144,7 +146,14 @@ async function fetchProtection(owner: string, repo: string, branch: string, toke
 
 function evaluate(protection: BranchProtectionResponse): ResultRow[] {
   const rows: ResultRow[] = [];
-  const contexts = protection.required_status_checks?.contexts ?? [];
+  const contextList = protection.required_status_checks?.contexts ?? [];
+  const checkList = protection.required_status_checks?.checks ?? [];
+  const contexts =
+    contextList.length > 0
+      ? contextList
+      : checkList
+          .map((entry) => entry.context)
+          .filter((entry): entry is string => Boolean(entry && entry.trim().length > 0));
   const strict = Boolean(protection.required_status_checks?.strict);
   const adminsEnabled = Boolean(protection.enforce_admins?.enabled);
 
