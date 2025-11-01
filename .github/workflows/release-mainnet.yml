@@ -54,7 +54,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      - run: npm ci
+      - run: CYPRESS_INSTALL_BINARY=0 npm ci
 
       - name: Compile (scripts & constants)
         run: |

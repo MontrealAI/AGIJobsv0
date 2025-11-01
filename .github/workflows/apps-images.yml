@@ -112,7 +112,7 @@ jobs:
           cache-dependency-path: apps/enterprise-portal/package-lock.json
 
       - name: Install portal deps
-        run: npm --prefix apps/enterprise-portal ci --no-audit --prefer-offline --progress=false
+        run: CYPRESS_INSTALL_BINARY=0 npm --prefix apps/enterprise-portal ci --no-audit --prefer-offline --progress=false
 
       - name: Webapp build
         run: npm --prefix apps/enterprise-portal run build

@@ -127,7 +127,7 @@ jobs:
             **/package-lock.json
 
       - name: Install node dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: CYPRESS_INSTALL_BINARY=0 npm ci --no-audit --prefer-offline --progress=false
 
       - name: Compile day-one controller
         run: npx hardhat compile --force

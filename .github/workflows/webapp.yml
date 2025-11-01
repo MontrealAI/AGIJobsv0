@@ -30,13 +30,13 @@ jobs:
           cache: npm
 
       - name: Install repository dependencies
-        run: npm ci
+        run: CYPRESS_INSTALL_BINARY=0 npm ci
 
       - name: Install console dependencies
-        run: npm ci --prefix apps/console
+        run: CYPRESS_INSTALL_BINARY=0 npm ci --prefix apps/console
 
       - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+        run: CYPRESS_INSTALL_BINARY=0 npm ci --prefix apps/enterprise-portal
 
       - name: Type-check webapp
         run: npm run webapp:typecheck

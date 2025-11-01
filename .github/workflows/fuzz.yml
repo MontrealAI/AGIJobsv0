@@ -35,7 +35,7 @@ jobs:
             **/package-lock.json
 
       - name: Install Node dependencies
-        run: npm ci
+        run: CYPRESS_INSTALL_BINARY=0 npm ci
 
       - name: Cache Foundry toolchain
         uses: actions/cache@v4
