@@ -69,7 +69,7 @@ jobs:
             hardhat-${{ runner.os }}-
 
       - name: Install dependencies
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
 
       - name: Compile
         env:
@@ -87,7 +87,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
 
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
