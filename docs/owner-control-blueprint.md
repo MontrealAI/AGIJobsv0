@@ -23,7 +23,7 @@
 ## Audience & Operating Posture
 
 - **Primary reader:** Protocol owner or change manager who approves configuration changes but does not ship Solidity.
-- **Environment:** Hardened workstation with Node.js 20.18.1, Git, and RPC credentials for the target network (`mainnet`, `sepolia`, or fork).
+- **Environment:** Hardened workstation with Node.js 20.19.0, Git, and RPC credentials for the target network (`mainnet`, `sepolia`, or fork).
 - **Safety stance:** Defence-in-depth. Every edit must be:
   1. Drafted in version-controlled JSON.
   2. Reviewed via dry-run diffs and Safe bundles.
