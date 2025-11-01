@@ -223,6 +223,8 @@ The `kardashev_*` and `zenith-sapience*` constellations map multi-phase, multi-c
 
 Every pull request and `main` commit must pass all required contexts, locking in a fully green CI v2 status before merge.
 
+The `owner control assurance` job additionally generates an authority matrix (`reports/owner-control/authority-matrix.md` / `.json`) that records each privileged module’s live address, controlling account, and the precise CLI commands the owner executes to pause, upgrade, or retune it without touching Solidity.【F:.github/workflows/ci.yml†L402-L416】【F:scripts/ci/render-owner-assurance.ts†L1-L213】
+
 > 🔐 Non-technical owners can follow the [CI v2 operations guide](docs/v2-ci-operations.md), reproducible [validation log](docs/ci-v2-validation-report.md), and [branch-protection checklist](docs/ci-v2-branch-protection-checklist.md) to keep every badge green while retaining full control over pause levers, parameter matrices, and upgrade orchestration.【F:docs/v2-ci-operations.md†L1-L133】【F:docs/ci-v2-validation-report.md†L1-L60】【F:docs/ci-v2-branch-protection-checklist.md†L1-L126】
 
 - Run `npm run ci:sync-contexts -- --check` followed by `npm run ci:verify-contexts` before opening a pull request to prove `.github/workflows/ci.yml` and `ci/required-contexts.json` stay perfectly aligned.【F:.github/workflows/ci.yml†L49-L63】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
