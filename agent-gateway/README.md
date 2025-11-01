@@ -83,6 +83,29 @@ uses `registerEvents` to broadcast validator assignments and job changes.【F:ag
   controls remain reachable.【F:.github/workflows/ci.yml†L386-L434】
 - `containers.yml` builds the Docker image (`Dockerfile`) and runs Trivy scans so production deployments remain reproducible.
 
+### Owner signal flow
+
+```mermaid
+sequenceDiagram
+    participant Owner as Contract owner
+    participant Console as owner:command-center
+    participant Gateway as Agent Gateway
+    participant Contracts as On-chain stack
+    participant CI as ci (v2)
+    Owner->>Console: npm run owner:command-center -- --network ci --out reports/owner-control
+    Console->>Gateway: Resolve manifests, gateway endpoints
+    Console->>Contracts: Prepare calldata for OwnerConfigurator
+    Gateway-->>Console: Surface health + endpoint telemetry
+    Owner->>Console: npm run owner:doctor -- --network ci
+    Console->>Gateway: Verify addresses, staking + dispute hooks
+    Owner->>Repo: Commit manifests + reports
+    Repo->>CI: Trigger ci (v2) / Owner control assurance
+    CI-->>Owner: Upload refreshed doctor.json + authority matrix
+```
+
+- `npm run owner:command-center` renders a consolidated dashboard (Markdown, JSON, and optional Mermaid) that cross-references gateway endpoints with the deployed contract addresses so the owner can confirm every lever prior to change control.【F:package.json†L359-L377】【F:scripts/v2/ownerCommandCenter.ts†L1-L120】
+- `npm run owner:doctor` repeats the same wiring checks executed in CI, failing locally if the gateway loses access to registry, validator, or thermostat contracts before any transaction is attempted.【F:package.json†L359-L375】【F:scripts/v2/ownerControlDoctor.ts†L1-L160】
+
 ## Operational runbook
 
 1. Launch the service with signed environment variables (see `.env.example`).

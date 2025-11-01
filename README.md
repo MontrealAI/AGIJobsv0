@@ -75,7 +75,15 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a
    npm run webapp:build --if-present
    make operator:green
    ```
-4. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
+4. Audit the PR gate locally before opening a pull request:
+   ```bash
+   npm run ci:sync-contexts -- --check
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
+   npm run ci:verify-branch-protection -- --branch main
+   ```
+   These checks guarantee the branch-protection rule matches the workflow job names, the companion workflows stay registered, and the guard fails fast if GitHub-side policy drifts.【F:package.json†L132-L139】
+5. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
 
 ## Architecture
 ```mermaid
@@ -195,6 +203,28 @@ flowchart LR
 - The summary job fans in from every required context, so a single failure keeps the workflow red and writes an auditable status table to `reports/ci/status.{md,json}` for administrators.【F:.github/workflows/ci.yml†L1130-L1199】
 - The branch protection guard audits the GitHub rule set against the JSON manifests, ensuring required contexts and companion workflows stay aligned with the enforced policy.【F:.github/workflows/ci.yml†L936-L1120】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
 - Python coverage consolidation depends explicitly on the unit and integration suites so coverage gates only report green when both analytics layers succeed.【F:.github/workflows/ci.yml†L280-L345】
+
+### Branch-protection ceremony
+
+```mermaid
+sequenceDiagram
+    participant Dev as Maintainer
+    participant Scripts as Local CI scripts
+    participant GH as GitHub Rule
+    participant Repo as Git remote
+    participant WF as ci (v2) workflow
+    Dev->>Scripts: npm run ci:sync-contexts -- --check
+    Scripts->>GH: Compare required contexts JSON
+    Dev->>Scripts: npm run ci:verify-branch-protection -- --branch main
+    Scripts->>GH: Fetch branch rule, validate contexts & apps
+    Dev->>Repo: push feature branch
+    Repo->>WF: Trigger ci (v2)
+    WF-->>GH: Publish 23 job statuses
+    GH-->>Dev: Block merge unless every required context is green
+```
+
+- Run the four `ci:verify*` commands whenever GitHub updates or new jobs ship. They read the JSON manifests and rule set so the on-chain owner experience stays audit-ready without manual dashboard clicks.【F:package.json†L132-L139】
+- The required-context manifest doubles as documentation for compliance. Attach `ci/required-contexts.json` to change-control tickets so reviewers can see exactly which jobs are enforced on `main`.【F:ci/required-contexts.json†L1-L23】
 
 ## Owner Command Surface
 - **On-chain authority:** The [`OwnerConfigurator`](contracts/v2/admin/OwnerConfigurator.sol) lets the contract owner batch immutable parameter changes while emitting structured audit events for every mutation.【F:contracts/v2/admin/OwnerConfigurator.sol†L1-L111】

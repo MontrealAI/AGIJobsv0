@@ -72,6 +72,29 @@ flowchart LR
 These contracts are wired to the `npm run owner:*` commands documented in [`config/README.md`](../config/README.md), ensuring the
 contract owner maintains total control over pause levers, treasury routing, and validator quotas.
 
+### Owner rehearsal cadence
+
+```mermaid
+sequenceDiagram
+    participant Owner as Contract owner
+    participant CLI as owner:* scripts
+    participant Config as config/*.json manifests
+    participant Chain as OwnerConfigurator
+    participant CI as ci (v2)
+    Owner->>CLI: npm run owner:doctor -- --network ci
+    CLI->>Config: Load manifests, audit parameters
+    CLI-->>Owner: Emit doctor.json with findings
+    Owner->>CLI: npm run owner:parameters -- --network ci --out reports/owner-control
+    CLI->>Chain: Prepare batched calldata
+    CLI-->>Owner: Render mermaid + JSON authority matrix
+    Owner->>Repo: Commit manifest + report updates
+    Repo->>CI: Trigger ci (v2) / Owner control assurance
+    CI-->>Owner: Upload refreshed authority artefacts
+```
+
+- `npm run owner:doctor` performs strict validation of every owner-controlled parameter and fails on missing treasury, validator, or thermostat wiring before changes ever reach the blockchain.【F:package.json†L359-L375】【F:scripts/v2/ownerControlDoctor.ts†L1-L160】
+- `npm run owner:parameters -- --out reports/owner-control` renders the same matrix that CI uploads, keeping local rehearsals aligned with branch-protection enforcement.【F:package.json†L359-L377】【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】
+
 ## Developer workflow
 
 ```bash
