@@ -1,46 +1,48 @@
-# AGI Jobs v0 (v2) — Services → Alpha Bridge
+# AGI Jobs v0 (v2) — Alpha Bridge gRPC Proxy
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/alpha-bridge`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)
 
-## Overview
-- **Path:** `services/alpha-bridge/README.md`
-- **Module Focus:** Anchors Services → Alpha Bridge inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+Alpha Bridge exposes a gRPC façade for the Alpha agent HTTP API. It normalises metadata headers, streams plan requests, and maps
+HTTP errors to canonical gRPC status codes so orchestrators and validators can integrate through a single binary interface.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `services/alpha-bridge` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Service behaviour
 
-## Systems Map
+- Loads the protobuf definition from `proto/alpha_bridge.proto` and publishes the `AlphaBridge` service via `@grpc/grpc-js`.【F:services/alpha-bridge/src/server.js†L1-L40】
+- Accepts plan requests, history payloads, and metadata, forwarding them to the configured HTTP endpoint while preserving trace
+  headers and consent flags.【F:services/alpha-bridge/src/server.js†L41-L140】
+- Converts HTTP error responses into gRPC statuses using an explicit map (400→INVALID_ARGUMENT, 503→UNAVAILABLE, etc.).【F:services/alpha-bridge/src/server.js†L19-L70】
+- Provides helper utilities for JSON parsing, metadata normalisation, and header projection to keep the adapter deterministic.
+
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> services_alpha_bridge[[Services → Alpha Bridge]]
-    services_alpha_bridge --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    gRPCClient --> AlphaBridgeServer
+    AlphaBridgeServer --> AlphaHTTP[Alpha Agent HTTP API]
+    AlphaBridgeServer -->|Status mapping| gRPCClient
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/alpha-bridge`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Running locally
 
-## Directory Guide
-### Key Directories
-- `proto`
-- `src`
-- `test`
-### Key Files
-- `Dockerfile`
+```bash
+cd services/alpha-bridge
+npm install
+node src/server.js
+```
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+Set `ALPHA_AGENT_URL` to point the proxy at your Alpha agent deployment. Use `grpcurl` to test the bridge:
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+```bash
+grpcurl -plaintext -d '{"utterance":"summarise the job"}' localhost:50051 agi.alpha.bridge.v1.AlphaBridge/Plan
+```
+
+## Docker image
+
+The root `containers.yml` workflow builds and scans the accompanying Dockerfile. To run locally:
+
+```bash
+docker build -t alpha-bridge .
+docker run --rm -p 50051:50051 -e ALPHA_AGENT_URL=https://alpha-agent alpha-bridge
+```
+
+This proxy keeps the superintelligent machine’s orchestration stack accessible to gRPC clients while retaining owner-level control
+over metadata, consent flags, and error handling.

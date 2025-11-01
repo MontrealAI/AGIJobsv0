@@ -1,53 +1,49 @@
-# AGI Jobs v0 (v2) — Apps → Validator UI
+# AGI Jobs v0 (v2) — Validator UI
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/validator-ui`.
+[![Webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `apps/validator-ui/README.md`
-- **Module Focus:** Anchors Apps → Validator UI inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The validator UI is a minimal Next.js interface for validators to review pending jobs, commit/reveal their decision, and verify ENS
+subdomains. It is optimised for fast onboarding and shares its configuration with the agent gateway and orchestrator manifests.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `apps/validator-ui` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Highlights
 
-## Systems Map
-```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> apps_validator_ui[[Apps → Validator UI]]
-    apps_validator_ui --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+- **Pending jobs feed** – Fetches jobs from the agent gateway, verifies token decimals against `config/agialpha.json`, and formats
+  rewards/stakes using ethers.js to avoid precision loss.【F:apps/validator-ui/pages/index.tsx†L1-L60】
+- **Commit/reveal automation** – Uses `generateCommit` and `scheduleReveal` to derive deterministic commitments and automatically
+  reveal after the configured delay, calling the validation module through the user’s wallet.【F:apps/validator-ui/pages/index.tsx†L60-L120】
+- **ENS guardrails** – `verifyEnsSubdomain` warns validators when their ENS proof is missing or invalid before they submit a vote.【F:apps/validator-ui/lib/ens.ts†L1-L120】
+- **Error surfacing** – Shared `useError` hook renders toasts for wallet or RPC issues so non-technical validators know how to
+  recover.【F:apps/validator-ui/lib/error.tsx†L1-L120】
+
+## Running locally
+
+```bash
+cd apps/validator-ui
+npm install
+npm run dev
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/validator-ui`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+Set these environment variables to point at your stack:
 
-## Directory Guide
-### Key Directories
-- `__tests__`
-- `components`
-- `lib`
-- `pages`
-### Key Files
-- `Dockerfile`
-- `next-env.d.ts`
-- `next.config.js`
-- `package-lock.json`
-- `package.json`
-- `tsconfig.json`
-- `vitest.config.ts`
+```bash
+export NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8545
+export NEXT_PUBLIC_GATEWAY_URL=http://localhost:3000
+export NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS=0x...
+export NEXT_PUBLIC_REVEAL_DELAY_MS=7500
+```
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+## Testing & CI
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+- `npm test` runs Vitest via `vitest.config.ts`.
+- The shared `webapp` workflow builds and type-checks the UI on every PR, while `ci (v2)` enforces linting and coverage to keep the
+  console production ready.【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/ci.yml†L44-L70】
+
+## Extending the UI
+
+1. Add new validator tools or dashboards under `pages/`.
+2. Update `lib/commit.js` if additional commit schemes are introduced.
+3. Keep environment variable names synchronised with `config/` so owner tooling and this UI stay aligned.
+
+Validators rely on this UI when orchestrating missions under pressure—keep it lean, deterministic, and tied to the same manifests
+that CI v2 validates.

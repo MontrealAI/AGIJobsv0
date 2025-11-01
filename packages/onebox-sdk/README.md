@@ -1,46 +1,50 @@
-# AGI Jobs v0 (v2) — Packages → Onebox SDK
+# AGI Jobs v0 (v2) — Onebox SDK
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `packages/onebox-sdk`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
 
-## Overview
-- **Path:** `packages/onebox-sdk/README.md`
-- **Module Focus:** Anchors Packages → Onebox SDK inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The Onebox SDK is a lightweight TypeScript client for the shard registry that powers the Onebox consoles and validator tooling. It
+wraps the registry ABI, normalises shard/job identifiers, and exposes typed helpers for creating, linking, and finalising jobs.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `packages/onebox-sdk` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Feature summary
 
-## Systems Map
-```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> packages_onebox_sdk[[Packages → Onebox SDK]]
-    packages_onebox_sdk --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+- **Typed adapters** – `ShardRegistryAdapter` exposes strongly typed methods for listing shards, creating jobs, assigning agents,
+  finalising work, and linking jobs across shards.【F:packages/onebox-sdk/src/shardRegistry.ts†L33-L137】
+- **Safety guards** – Helper methods normalise shard IDs, spec hashes, and bigint conversions before calling the contract to
+  prevent malformed calldata.【F:packages/onebox-sdk/src/shardRegistry.ts†L139-L214】
+- **Administrative controls** – Includes `pauseShard`, `setShardParameters`, and global `pause/unpause` helpers so the contract
+  owner or delegated operators can change capacity settings without crafting raw calldata.【F:packages/onebox-sdk/src/shardRegistry.ts†L169-L210】
+
+## Quick start
+
+```ts
+import { ethers } from "ethers";
+import { ShardRegistryAdapter, shardRegistryAbi } from "@agi/onebox-sdk";
+
+const provider = new ethers.JsonRpcProvider(process.env.RPC_URL!);
+const signer = new ethers.Wallet(process.env.OWNER_KEY!, provider);
+const registry = new ethers.Contract(process.env.SHARD_REGISTRY_ADDRESS!, shardRegistryAbi, signer);
+const adapter = new ShardRegistryAdapter(registry);
+
+const shards = await adapter.listShards();
+const { job } = await adapter.createJob(shards[0], ethers.id("spec"), "ipfs://metadata");
+await adapter.assignAgent(job, signer.address);
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `packages/onebox-sdk`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+All helpers return ethers.js transaction responses so callers can await confirmations or pipe them through owner dashboards.
 
-## Directory Guide
-### Key Directories
-- `src`
-### Key Files
-- `package-lock.json`
-- `package.json`
-- `tsconfig.json`
+## Testing
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+The SDK is covered by the shared lint/typecheck jobs in `ci (v2)` and is exercised indirectly by the Onebox apps’ integration
+suites. Add targeted unit tests under `packages/onebox-sdk/__tests__` if you introduce complex transformations.
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+## Extensibility
+
+- Export new helpers through `src/index.ts` when additional registry methods become available.
+- Keep method names aligned with on-chain function names so owner scripts (for example `npm run owner:command-center`) can import
+  them without adaptation.
+- Update the Onebox console documentation (`apps/onebox-static/README.md`) whenever the SDK surface changes so operators know how
+  to trigger the new capability.
+
+The SDK remains intentionally small: it is the reliable building block that lets non-technical owners operate the shard registry
+through console or CLI flows without touching raw ABI encodings.

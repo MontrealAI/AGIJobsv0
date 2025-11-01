@@ -1,53 +1,43 @@
-# AGI Jobs v0 (v2) — Contracts → Test
+# AGI Jobs v0 (v2) — Solidity Test Harness
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `contracts/test`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Fuzz](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml)
 
-## Overview
-- **Path:** `contracts/test/README.md`
-- **Module Focus:** Anchors Contracts → Test inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The `contracts/test/` toolkit contains deterministic mocks, harnesses, and Echidna fixtures that power the Hardhat, Foundry, and
+Echidna suites. These contracts isolate each subsystem—staking, dispute resolution, validation failovers—so regressions surface
+before they reach production deployments.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `contracts/test` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Layout
 
-## Systems Map
-```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> contracts_test[[Contracts → Test]]
-    contracts_test --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+| File | Purpose |
+| ---- | ------- |
+| `CommitRevealEchidna.sol` | Property-based harness that validates the commit/reveal lifecycle and feeds the nightly Echidna run. |
+| `ConfigurableModuleMock.sol` | Flexible proxy that lets tests simulate modules accepting arbitrary configuration calls. |
+| `DeterministicValidationModule.sol` | Lightweight validation module used to assert validator quorum paths under fuzz. |
+| `EmployerContract.sol` | Simulated employer contract exercising the registry APIs. |
+| `GovernanceRewardMock.sol` | Stub for governance reward distribution to validate HGM reward accounting. |
+| `StakeManagerHarness.sol` | Exposes internal stake manager calculations for invariant tests. |
+
+All helpers are pure Solidity with no external dependencies so they compile alongside production contracts.
+
+## Running the suites
+
+```bash
+npm test                          # Hardhat unit + integration tests (uses contracts/test mocks)
+forge test -vvvv --ffi            # Foundry fuzz suite (ci (v2) / Foundry job)
+forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512  # Invariant harness
+npm run test:fork                 # Optional fork-mode regression suite
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `contracts/test`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+CI v2 executes the Hardhat suite in the `Tests` job, the Foundry fuzz suite in `ci (v2) / Foundry`, and the dedicated invariant
+run in `ci (v2) / Invariant tests`, keeping every helper in this directory covered on each commit.【F:.github/workflows/ci.yml†L62-L152】【F:.github/workflows/ci.yml†L452-L641】【F:.github/workflows/ci.yml†L1208-L1339】
 
-## Directory Guide
-### Key Files
-- `AGIALPHAToken.sol`
-- `BadStakeManager.sol`
-- `CommitRevealEchidna.sol`
-- `ConfigurableModuleMock.sol`
-- `DeterministicValidationModule.sol`
-- `EchidnaHarness.sol`
-- `EmployerContract.sol`
-- `GovernanceRewardMock.sol`
-- `GovernanceTarget.sol`
-- `HGMJobRegistryMock.sol`
-- `HGMPlatformRegistryMock.sol`
-- `HGMReputationEngineMock.sol`
+## Extending the harness
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+1. Add your mock or harness contract under `contracts/test/` with a descriptive filename.
+2. Wire it into the Hardhat or Foundry test that exercises the new behaviour (`test/v2/**`).
+3. Export any helper types through `contracts/test/utils` if they will be reused across multiple specs.
+4. Update `npm run coverage` snapshots when the new harness changes branch counts.
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+The harness is intentionally modular so non-technical owners can rely on the CI signal without needing to understand the Solidity
+internals—every new scenario must integrate here to inherit the automated guarantees.

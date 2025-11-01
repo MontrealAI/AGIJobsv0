@@ -1,46 +1,46 @@
-# AGI Jobs v0 (v2) — Services → Sentinel
+# AGI Jobs v0 (v2) — Sentinel Monitor
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/sentinel`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Python unit tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `services/sentinel/README.md`
-- **Module Focus:** Anchors Services → Sentinel inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The sentinel service enforces guardrails around the Higher Governance Machine. It listens to expansion/evaluation events, tracks
+ROI, prunes risky agents, and emits alerts when owner intervention is required. The agent gateway and orchestrator feed events into
+this monitor during CI and production runs.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `services/sentinel` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Components
 
-## Systems Map
+- **`service.py`** – Defines `SentinelMonitor`, an asyncio-driven event processor that consumes expansion/evaluation events, keeps
+  ROI totals, manages pause reasons, and exposes a `snapshot()` for dashboards.【F:services/sentinel/service.py†L1-L160】
+- **`config.py`** – `SentinelConfig` dataclass describing thresholds (ROI caps, pause windows, max failures).【F:services/sentinel/config.py†L1-L160】
+- **`tests/`** – Pytest suite verifying pruning, ROI thresholds, and alert emission.
+
+## Event flow
+
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> services_sentinel[[Services → Sentinel]]
-    services_sentinel --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    Orchestrator --> Sentinel[SentinelMonitor]
+    AgentGateway --> Sentinel
+    Sentinel --> Alerts[services.alerting]
+    Sentinel --> Thermostat
+    Sentinel --> Snapshot[Dashboard snapshots]
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/sentinel`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Usage
 
-## Directory Guide
-### Key Directories
-- `tests`
-### Key Files
-- `__init__.py`
-- `config.py`
-- `service.py`
+```python
+from services.sentinel.service import SentinelMonitor
+from hgm_core.engine import HGMEngine
+from services.sentinel.config import SentinelConfig
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+monitor = SentinelMonitor(engine=HGMEngine(), config=SentinelConfig())
+await monitor.observe_expansion("mission/alpha", {"score": 0.8})
+await monitor.observe_evaluation("mission/alpha", {"reward": 1.2})
+snapshot = monitor.snapshot()
+```
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+The sentinel integrates with the thermostat and orchestrator to request pauses when ROI dips below the configured thresholds. CI v2
+runs these tests in `ci (v2) / Python unit tests` and the `HGM guardrails` job, guaranteeing the contract owner retains immediate
+control when anomalies arise.【F:.github/workflows/ci.yml†L118-L345】【F:.github/workflows/ci.yml†L352-L420】
+
+Keep the sentinel thresholds aligned with owner policy so the superintelligent machine flags anomalies before they impact mission
+outcomes.
