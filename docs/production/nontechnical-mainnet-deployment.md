@@ -22,7 +22,7 @@ Each stage is designed to expose a distinct failure mode: configuration drift, R
 
 1. ✅ You control a hardware wallet (Ledger, Safe, or similar) funded with >0.5 ETH for gas and protocol bootstrap costs.
 2. ✅ A second reviewer is on-call to confirm contract addresses and governance ownership before production traffic is enabled.
-3. ✅ You have cloned `https://github.com/MontrealAI/AGIJobsv0` to a secure workstation with Node.js **20.18.1** installed.
+3. ✅ You have cloned `https://github.com/MontrealAI/AGIJobsv0` to a secure workstation with Node.js **20.19.0** installed.
 4. ✅ The `.env` file is stored in an encrypted volume and never committed to Git.
 5. ✅ All commands below are executed from the repository root (`/workspace/AGIJobsv0`).
 
