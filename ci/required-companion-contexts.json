@@ -1,0 +1,11 @@
+[
+  "static-analysis / Slither static analysis",
+  "fuzz / forge-fuzz",
+  "webapp / webapp-ci",
+  "containers / build (node-runner)",
+  "containers / build (validator-runner)",
+  "containers / build (gateway)",
+  "containers / build (webapp)",
+  "containers / build (owner-console)",
+  "e2e / orchestrator-e2e"
+]

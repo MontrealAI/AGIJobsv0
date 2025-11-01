@@ -35,7 +35,11 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
      - `e2e / orchestrator-e2e`
      - `fuzz / forge-fuzz`
      - `webapp / webapp-ci`
-     - `containers / build`
+     - `containers / build (node-runner)`
+     - `containers / build (validator-runner)`
+     - `containers / build (gateway)`
+     - `containers / build (webapp)`
+     - `containers / build (owner-console)`
      - *(Optional, path-filtered)* `apps-images / console` and `apps-images / portal` for Docker image safety when `apps/**` changes.
 
    After saving the rule, verify the required contexts programmatically:

@@ -1,8 +1,12 @@
 #!/usr/bin/env ts-node
 
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+
+import {
+  readAllRequiredContexts,
+  readCompanionContexts,
+  readRequiredContexts,
+} from './utils/workflow';
 
 interface Args {
   owner?: string;
@@ -51,66 +55,12 @@ interface BranchProtectionMutationData {
   } | null;
 }
 
-const CONTEXTS_PATH = resolve(__dirname, '../../ci/required-contexts.json');
+const PRIMARY_CONTEXTS = readRequiredContexts();
+const COMPANION_CONTEXTS = readCompanionContexts();
+const EXPECTED_CONTEXTS = Object.freeze(readAllRequiredContexts());
 
-function loadExpectedContexts(): string[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(readFileSync(CONTEXTS_PATH, 'utf8'));
-  } catch (error) {
-    throw new Error(
-      `Unable to read ci/required-contexts.json: ${(error as Error).message}`
-    );
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new Error(
-      'ci/required-contexts.json must contain an array of strings.'
-    );
-  }
-
-  const contexts = parsed.map((entry, index) => {
-    if (typeof entry !== 'string') {
-      throw new Error(
-        `ci/required-contexts.json entry at index ${index} is not a string.`
-      );
-    }
-    const trimmed = entry.trim();
-    if (!trimmed) {
-      throw new Error(
-        `ci/required-contexts.json entry at index ${index} must not be empty.`
-      );
-    }
-    if (!trimmed.startsWith('ci (v2) / ')) {
-      throw new Error(
-        `ci/required-contexts.json entry "${trimmed}" must start with "ci (v2) / ".`
-      );
-    }
-    return trimmed;
-  });
-
-  const seen = new Set<string>();
-  const duplicates = new Set<string>();
-  for (const context of contexts) {
-    if (seen.has(context)) {
-      duplicates.add(context);
-    }
-    seen.add(context);
-  }
-
-  if (duplicates.size > 0) {
-    throw new Error(
-      `Duplicate contexts detected: ${Array.from(duplicates).join(', ')}`
-    );
-  }
-
-  if (contexts.length === 0) {
-    throw new Error(
-      'ci/required-contexts.json does not define any required contexts.'
-    );
-  }
-
-  return contexts;
+if (EXPECTED_CONTEXTS.length === 0) {
+  throw new Error('No required status check contexts are defined.');
 }
 
 function parseArgs(): Args {
@@ -353,6 +303,8 @@ function logPlan(
     }
   }
   console.log(`  Required contexts (${contexts.length}):`);
+  console.log(`    • Primary (ci.yml): ${PRIMARY_CONTEXTS.length}`);
+  console.log(`    • Companion workflows: ${COMPANION_CONTEXTS.length}`);
   for (const ctx of contexts) {
     console.log(`    - ${ctx}`);
   }
@@ -372,7 +324,7 @@ function logPlan(
 
 async function ensureBranchProtection(): Promise<void> {
   const args = parseArgs();
-  const contexts = loadExpectedContexts();
+  const contexts = EXPECTED_CONTEXTS;
   const { owner, repo } = deriveOwnerRepo(args.owner, args.repo);
   const token = resolveToken(args.token);
   const branch = args.branch;

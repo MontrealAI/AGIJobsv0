@@ -11,6 +11,10 @@
 The canonical list of required contexts lives in [`ci/required-contexts.json`](../ci/required-contexts.json). Update that file
 and the workflow in the same commit so automation, documentation, and branch protection stay aligned.【F:ci/required-contexts.json†L1-L23】
 
+Cross-workflow guardrails—fuzzing, static analysis, UI smoke tests, container builds, and deterministic e2e drills—are tracked
+in [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json). Keep both manifests current so GitHub’s
+branch protection UI matches the automation surface.【F:ci/required-companion-contexts.json†L1-L7】
+
 ### Core execution gate
 
 | Context                          | Source job                                  | Why it matters                                                                                                                                     |
@@ -56,10 +60,13 @@ and the workflow in the same commit so automation, documentation, and branch pro
 
 ### Companion workflows
 
-| Context                                     | Source job                                            | Why it matters                                                                                                                                                        |
-| ------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `static-analysis / Slither static analysis` | [`slither`](../.github/workflows/static-analysis.yml) | Fails the merge if Slither reports unapproved high-severity findings and uploads SARIF to the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】       |
-| `static-analysis / CodeQL analysis`         | [`codeql`](../.github/workflows/static-analysis.yml)  | Ensures CodeQL JavaScript/TypeScript scans succeed with the hardened config and SARIF upload before merges land.【F:.github/workflows/static-analysis.yml†L108-L157】 |
+| Context                               | Source workflow                                         | Why it matters |
+| ------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `static-analysis / Slither static analysis` | [`static-analysis.yml`](../.github/workflows/static-analysis.yml) | Slither runs on every PR and fails fast on critical contract findings while exporting SARIF for the security tab.【F:.github/workflows/static-analysis.yml†L20-L106】 |
+| `fuzz / forge-fuzz`                   | [`fuzz.yml`](../.github/workflows/fuzz.yml)             | Foundry fuzzing replays the property suite on each PR so invariants stay visible outside the main CI workflow.【F:.github/workflows/fuzz.yml†L1-L56】 |
+| `webapp / webapp-ci`                  | [`webapp.yml`](../.github/workflows/webapp.yml)         | Type-checks, lints, builds, and smoke-tests both operator UIs to catch regressions before merge.【F:.github/workflows/webapp.yml†L1-L84】 |
+| `containers / build (node-runner)`<br>`containers / build (validator-runner)`<br>`containers / build (gateway)`<br>`containers / build (webapp)`<br>`containers / build (owner-console)` | [`containers.yml`](../.github/workflows/containers.yml) | Confirms every production image builds under hardened scanning defaults so deployers and operators always have a green artifact.【F:.github/workflows/containers.yml†L1-L98】 |
+| `e2e / orchestrator-e2e`              | [`e2e.yml`](../.github/workflows/e2e.yml)               | Rehearses orchestrator flows against a forked chain (or deterministic anvil) so validator disputes stay production-ready.【F:.github/workflows/e2e.yml†L1-L80】 |
 
 The job display names in GitHub Actions must stay in sync with these contexts. Any rename requires updating branch protection and this checklist. The lint stage now executes `npm run ci:verify-contexts` to fail fast when `.github/workflows/ci.yml` and `ci/required-contexts.json` drift, giving administrators an immediate signal before a PR reaches review.【F:.github/workflows/ci.yml†L53-L60】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
 
@@ -81,11 +88,14 @@ Run the automated audits (set `GITHUB_TOKEN` or `GH_TOKEN` with `repo` scope fir
 
 ```bash
 npm run ci:verify-contexts
+npm run ci:verify-companion-contexts
 npm run ci:verify-branch-protection
 npm run ci:enforce-branch-protection -- --dry-run
 ```
 
-- `npm run ci:verify-contexts` parses `.github/workflows/ci.yml` and confirms every job name maps to a required status context, preventing silent drift when contributors rename jobs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+- `npm run ci:verify-contexts` parses `.github/workflows/ci.yml` and confirms every job name maps to a required status context,
+preventing silent drift when contributors rename jobs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+- `npm run ci:verify-companion-contexts` validates that each context in [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json) resolves to a real workflow/job pair before enforcement, catching typos the moment they are introduced.【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】
 - `npm run ci:verify-branch-protection` prints a ✅/❌ table via the REST API so you can confirm contexts, ordering, strict status checks, and administrator enforcement from the command line.【F:scripts/ci/verify-branch-protection.ts†L1-L220】
 - `npm run ci:enforce-branch-protection` applies the manifest via GitHub GraphQL. Start with `--dry-run` to inspect the proposed diff, then rerun without the flag to enable strict status checks and administrator enforcement automatically.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】
 - `npm run audit:final -- --full` runs this verifier automatically when assembling the release dossier, keeping non-technical owners aligned with branch policy. The command also records the outcome in `reports/audit/final-readiness.json` for auditors who track freeze evidence across releases.【F:scripts/audit/final-readiness.ts†L1-L305】
@@ -115,7 +125,7 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 
 ### 4. Double-check companion workflows
 
-If your governance policy also requires `e2e`, `fuzz`, `webapp`, or `containers` workflows, repeat the UI and CLI verification to ensure their contexts are enforced. Document any optional workflows in the change ticket associated with the release.
+Companion workflows are enforced via `ci/required-companion-contexts.json`; rerun the CLI audits after editing that manifest or renaming workflow jobs so the branch guard and branch protection stay aligned.
 
 ---
 
