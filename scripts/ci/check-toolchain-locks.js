@@ -56,6 +56,11 @@ function checkWorkflows() {
   for (const file of workflowFiles) {
     const filePath = path.join(workflowsDir, file);
     const contents = fs.readFileSync(filePath, 'utf8');
+    if (contents.includes('foundry-rs/foundry-toolchain')) {
+      problems.push(
+        `${file} still references foundry-rs/foundry-toolchain; use ./.github/actions/install-foundry instead`
+      );
+    }
     if (contents.includes('actions/setup-node')) {
       const hasNvmrc =
         contents.includes("node-version-file: '.nvmrc'") ||
@@ -76,9 +81,9 @@ function checkFoundryVersion() {
     return;
   }
 
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.0"/.test(foundryToml);
+  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.4"/.test(foundryToml);
   if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.0"');
+    problems.push('foundry.toml must pin forge_version = "1.4.4"');
   }
 }
 

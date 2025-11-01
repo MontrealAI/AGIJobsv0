@@ -60,10 +60,19 @@ jobs:
       - name: Install dependencies
         working-directory: demo/CULTURE-v0
         run: pnpm install --frozen-lockfile
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - name: Cache Foundry toolchain
+        uses: actions/cache@v4
         with:
-          version: stable
+          path: |
+            ~/.foundry
+            ~/.cache/foundry
+          key: culture-foundry-${{ runner.os }}-${{ hashFiles('demo/CULTURE-v0/foundry.toml') }}
+          restore-keys: |
+            culture-foundry-${{ runner.os }}-
+      - name: Install Foundry
+        uses: ./.github/actions/install-foundry
+        with:
+          version: 'v1.4.4'
       - name: Solhint lint
         working-directory: demo/CULTURE-v0
         run: pnpm exec solhint "contracts/**/*.sol"

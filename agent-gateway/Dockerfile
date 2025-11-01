@@ -2,7 +2,7 @@
 
 FROM node:20.18.1-alpine3.20 AS base-build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ \
+RUN apk add --no-cache git python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
     && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \
@@ -15,12 +15,13 @@ ENV PYTHON=/usr/bin/python3 \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=180000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000 \
     NPM_CI_MAX_ATTEMPTS=5 \
-    NPM_CI_RETRY_DELAY=10
+    NPM_CI_RETRY_DELAY=10 \
+    NPM_CI_ENABLE_INSTALL_FALLBACK=1
 COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \
