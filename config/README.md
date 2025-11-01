@@ -66,6 +66,18 @@ npm run ci:owner-authority -- --network ci --out reports/owner-control  # Regene
 CI v2 executes the same commands inside the `Lint & static checks` and `Owner control assurance` jobs, keeping the branch
 protection rule in lock-step with the manifests.【F:.github/workflows/ci.yml†L44-L70】【F:.github/workflows/ci.yml†L386-L434】
 
+### Branch-protection sync
+
+```bash
+npm run ci:sync-contexts -- --check
+npm run ci:verify-contexts
+npm run ci:verify-companion-contexts
+npm run ci:verify-branch-protection -- --branch main
+```
+
+- Run the four commands after changing manifests or shipping new workflows so GitHub’s branch rule mirrors the JSON manifest under `ci/`. The scripts diff job names, enforce companion workflows, and assert that the protected branch still requires every status you expect.【F:package.json†L132-L139】【F:ci/required-contexts.json†L1-L23】【F:ci/required-companion-contexts.json†L1-L11】
+- `ci:verify-branch-protection` reads the live rule via the GitHub API, which means it will fail fast if an administrator or automation drifts the policy without updating the repository—preserving owner control and CI visibility without dashboard spelunking.【F:package.json†L132-L139】
+
 ## Owner operations
 
 - **Pause / resume** – `npm run owner:system-pause -- --network <network>` toggles the global pause switch declared in

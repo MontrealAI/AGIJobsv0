@@ -62,6 +62,28 @@ auto-selects `FileRunStateStore` when no environment variables are provided.【F
   defaults.【F:.github/workflows/ci.yml†L352-L420】
 - `ci (v2) / Load-simulation reports` consumes orchestrator metrics to generate Monte Carlo dissipation sweeps for owners.【F:.github/workflows/ci.yml†L206-L272】
 
+### CI handshake
+
+```mermaid
+sequenceDiagram
+    participant Dev as Maintainer
+    participant Runner as ci/hgm-suite.sh
+    participant PyUnit as pytest suites
+    participant Demo as HGM guided demo
+    participant CI as ci (v2)
+    Dev->>Runner: ci/hgm-suite.sh
+    Runner->>PyUnit: pytest tests/backend tests/orchestrator tests/routes/test_hgm_routes.py
+    Runner->>PyUnit: pytest demo/Huxley-Godel-Machine-v0/tests
+    Runner->>PyUnit: pytest packages/hgm-core/tests
+    Runner->>Demo: node demo/Huxley-Godel-Machine-v0/scripts/demo_hgm.js --seed 3
+    Demo-->>Runner: Deterministic transcript + metrics
+    Runner-->>CI: Exit 0 with summary log
+    CI-->>Maintainer: ci (v2) / HGM guardrails status & artefacts
+```
+
+- `ci/hgm-suite.sh` is the canonical entry point for orchestrator regression testing; it lints manifests, runs every Python orchestrator suite, and executes the deterministic Huxley–Gödel guided demo with seeded randomness so CI can diff behaviour across runs.【F:ci/hgm-suite.sh†L1-L34】
+- The guided demo output is echoed to `/tmp/hgm-demo.log` during CI, making it easy for owners to inspect ROI dynamics and validator interactions directly from the run artefacts.【F:ci/hgm-suite.sh†L20-L34】
+
 ## Extending the orchestrator
 
 1. Model the new mission in `models.py` and encode steps as subclasses where necessary.
