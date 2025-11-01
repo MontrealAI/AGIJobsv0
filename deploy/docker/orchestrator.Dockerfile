@@ -8,7 +8,7 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache git python3 make g++
 COPY package*.json .npmrc ./
 RUN set -euo pipefail \
     && export CYPRESS_INSTALL_BINARY=0 \
@@ -31,7 +31,7 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache git python3 make g++
 COPY package*.json .npmrc ./
 RUN set -euo pipefail \
     && export CYPRESS_INSTALL_BINARY=0 \

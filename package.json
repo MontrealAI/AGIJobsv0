@@ -111,6 +111,8 @@
     "secp256k1": "^5.0.1",
     "semver": "^7.7.2",
     "tar": "^6.2.1",
+    "ethereumjs-abi": "https://github.com/ethereumjs/ethereumjs-abi.git#ee3994657fa7a427238e6ba92a84d0b529bbcde0",
+    "three-bmfont-text": "https://github.com/dmarcos/three-bmfont-text.git#eed4878795be9b3e38cf6aec6b903f56acd1f695",
     "tough-cookie": "^4.1.3",
     "ws": "^8.18.3"
   },
