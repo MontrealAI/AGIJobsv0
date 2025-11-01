@@ -40,6 +40,8 @@ jobs:
             github.com
             objects.githubusercontent.com
             raw.githubusercontent.com
+            release-assets.githubusercontent.com
+            foundry.paradigm.xyz
             registry.npmjs.org
             nodejs.org
 
@@ -52,8 +54,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Foundry toolchain
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.foundry
+            ~/.cache/foundry
+          key: foundry-demo-planetary-os-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
+          restore-keys: |
+            foundry-demo-planetary-os-${{ runner.os }}-
       - name: Setup Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+        uses: ./.github/actions/install-foundry
         with:
           version: 'v1.4.4'
 

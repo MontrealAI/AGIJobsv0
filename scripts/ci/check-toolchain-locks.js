@@ -56,6 +56,11 @@ function checkWorkflows() {
   for (const file of workflowFiles) {
     const filePath = path.join(workflowsDir, file);
     const contents = fs.readFileSync(filePath, 'utf8');
+    if (contents.includes('foundry-rs/foundry-toolchain')) {
+      problems.push(
+        `${file} still references foundry-rs/foundry-toolchain; use ./.github/actions/install-foundry instead`
+      );
+    }
     if (contents.includes('actions/setup-node')) {
       const hasNvmrc =
         contents.includes("node-version-file: '.nvmrc'") ||

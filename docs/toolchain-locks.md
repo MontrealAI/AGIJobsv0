@@ -9,7 +9,7 @@ versions, how they are enforced, and the safe procedure for updating them.
 | Tool | Version | Enforcement | Notes |
 | --- | --- | --- | --- |
 | Node.js | 20.18.1 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, and `npm run ci:verify-toolchain` | Matches Active LTS. Changing the file requires bumping `package-lock.json` via `npm ci` under the new runtime. |
-| Foundry toolchain | v1.4.4 | `foundry-rs/foundry-toolchain@v1` steps in every workflow explicitly request `v1.4.4`; `ci:verify-toolchain` asserts the pin | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
+| Foundry toolchain | v1.4.4 | `./.github/actions/install-foundry` composite action pins `v1.4.4` via `foundryup`; `ci:verify-toolchain` asserts the pin | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
 
 ## Why the lock matters
 
