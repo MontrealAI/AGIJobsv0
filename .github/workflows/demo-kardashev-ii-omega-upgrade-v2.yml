@@ -44,7 +44,9 @@ jobs:
             **/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
 
       - name: Omega Upgrade v2 CI validation
         run: npm run demo:kardashev-ii-omega-upgrade-v2:ci
