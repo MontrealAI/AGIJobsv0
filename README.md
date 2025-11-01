@@ -113,7 +113,7 @@ flowchart TD
 - **Single source of truth:** The `ci (v2)` workflow exposes 23 required contexts that map 1:1 with [`ci/required-contexts.json`](ci/required-contexts.json). The lint stage fails fast when display names drift so branch protection never hides a status for owners or reviewers.【F:.github/workflows/ci.yml†L33-L71】【F:ci/required-contexts.json†L1-L23】
 - **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L182】【F:docs/ci-v2-branch-protection-checklist.md†L1-L206】
 - **Companion workflows:** Static analysis, fuzzing, web application smoke tests, orchestrator rehearsals, and deterministic e2e drills are all surfaced as required checks so the Checks tab stays comprehensible to non-technical stakeholders. Each badge above links directly to its workflow for live status and history.【F:.github/workflows/static-analysis.yml†L1-L157】【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/orchestrator-ci.yml†L1-L214】【F:.github/workflows/e2e.yml†L1-L164】
-- **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub.【F:.github/workflows/ci.yml†L1130-L1199】
+- **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub. The upload step now fails the workflow if the artefacts are ever missing, guaranteeing the evidence is immutable and reviewable.【F:.github/workflows/ci.yml†L1130-L1259】
 
 ### Pipeline topology
 ```mermaid
@@ -192,7 +192,7 @@ flowchart LR
     branchGuard --> summary
 ```
 
-- The summary job fans in from every required context, so a single failure keeps the workflow red and writes an auditable status table to `reports/ci/status.{md,json}` for administrators.【F:.github/workflows/ci.yml†L1130-L1199】
+- The summary job fans in from every required context, so a single failure keeps the workflow red and writes an auditable status table to `reports/ci/status.{md,json}` for administrators. If the summary bundle is missing, the workflow now fails immediately, preserving the evidence trail for compliance teams.【F:.github/workflows/ci.yml†L1130-L1259】
 - The branch protection guard audits the GitHub rule set against the JSON manifests, ensuring required contexts and companion workflows stay aligned with the enforced policy.【F:.github/workflows/ci.yml†L936-L1120】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
 - Python coverage consolidation depends explicitly on the unit and integration suites so coverage gates only report green when both analytics layers succeed.【F:.github/workflows/ci.yml†L280-L345】
 

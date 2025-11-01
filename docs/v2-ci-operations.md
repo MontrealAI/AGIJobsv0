@@ -84,7 +84,7 @@ Enable branch protection on `main` with every status context below. The list mir
 | Check context                       | Source job              | Notes                                                                             |
 | ----------------------------------- | ----------------------- | --------------------------------------------------------------------------------- |
 | `ci (v2) / Branch protection guard` | `branch_protection` job | Audits GitHub branch protection via the API and fails if required contexts drift. |
-| `ci (v2) / CI summary`              | `summary` job           | Aggregates upstream job outcomes and fails when any dependency is non-success.    |
+| `ci (v2) / CI summary`              | `summary` job           | Aggregates upstream job outcomes, fails when any dependency is non-success, and now enforces the presence of the status artefact bundle.    |
 
 > ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` and **Include administrators** so every push re-runs the workflow and administrators respect the gate.
 
@@ -134,7 +134,7 @@ Keep the rest of the release surface visible by marking the following workflows 
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
    `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
-   compliance records.【F:.github/workflows/ci.yml†L905-L960】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
+   compliance records. The upload step is hardened with `if-no-files-found: error`, so missing artefacts flip the entire workflow red instead of silently succeeding.【F:.github/workflows/ci.yml†L1130-L1259】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
 5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
 
