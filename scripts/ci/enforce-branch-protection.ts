@@ -294,7 +294,35 @@ function findProtectionRule(
   rules: BranchProtectionRule[],
   branch: string
 ): BranchProtectionRule | undefined {
-  return rules.find((rule) => matchesBranch(rule, branch));
+  const matchingRules = rules.filter((rule) => matchesBranch(rule, branch));
+
+  const scoredRules = matchingRules.map((rule) => {
+    const pattern = normalisePattern(rule.pattern);
+    const matchesRef = rule.matchingRefs?.nodes?.some(
+      (node) => node?.name === branch
+    );
+    const isExactMatch = pattern === branch || matchesRef;
+
+    return {
+      rule,
+      isExactMatch,
+      patternLength: pattern.length,
+    };
+  });
+
+  scoredRules.sort((left, right) => {
+    if (left.isExactMatch !== right.isExactMatch) {
+      return left.isExactMatch ? -1 : 1;
+    }
+
+    if (left.patternLength !== right.patternLength) {
+      return right.patternLength - left.patternLength;
+    }
+
+    return 0;
+  });
+
+  return scoredRules[0]?.rule;
 }
 
 function arraysEqual(
