@@ -1,6 +1,6 @@
 [profile.default]
 solc_version = "0.8.25"
-forge_version = "1.4.0"
+forge_version = "1.6.0"
 src = 'contracts/v2'
 test = 'test/v2'
 libs = ['lib', 'node_modules']
@@ -18,4 +18,4 @@ remappings = ['@openzeppelin/contracts=node_modules/@openzeppelin/contracts']
 via_ir = true
 optimizer = true
 optimizer_runs = 200
-forge_version = "1.4.0"
+forge_version = "1.6.0"
