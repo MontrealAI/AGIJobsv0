@@ -1,45 +1,66 @@
-# AGI Jobs v0 (v2) — Packages → HGM Core
+# AGI Jobs v0 (v2) — Higher Governance Machine Core
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `packages/hgm-core`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Python unit tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `packages/hgm-core/README.md`
-- **Module Focus:** Anchors Packages → HGM Core inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+`packages/hgm-core` is the Python package that powers the Higher Governance Machine (HGM). It implements Thompson-sampling-based
+search, widening heuristics, and ROI-aware pruning that the orchestrator and thermostat services consume to steer missions safely.
 
 ## Capabilities
-- Provides opinionated configuration and assets tailored to `packages/hgm-core` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Systems Map
-```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> packages_hgm_core[[Packages → HGM Core]]
-    packages_hgm_core --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+- **Concurrency-safe engine** – `HGMEngine` tracks agent nodes, applies widening rules, and evaluates rewards while guarding
+  against concurrent mutation using asyncio locks.【F:packages/hgm-core/src/hgm_core/engine.py†L15-L118】
+- **Callbacks for observability** – Expansion/evaluation callbacks let the orchestrator stream metrics to sentinel monitors and
+  telemetry sinks without blocking core scheduling.【F:packages/hgm-core/src/hgm_core/engine.py†L19-L118】
+- **Beta-posterior sampling** – `sampling.py` provides Thompson sampling primitives with deterministic RNG seeding so CI runs are
+  reproducible.【F:packages/hgm-core/src/hgm_core/sampling.py†L1-L140】
+- **Comparative performance metrics** – `cmp.py` encodes cumulative mean performance snapshots used by the thermostat and
+  sentinel monitors to decide when to prune agents.【F:packages/hgm-core/src/hgm_core/cmp.py†L1-L160】
+
+## Layout
+
+| Path | Description |
+| ---- | ----------- |
+| `src/hgm_core/engine.py` | HGM engine entry point (state machine, sampling, pruning). |
+| `src/hgm_core/config.py` | Typed dataclasses describing tuning knobs (widening alpha, priors, thresholds). |
+| `src/hgm_core/types.py` | Pydantic dataclasses for agent nodes and metadata. |
+| `src/hgm_core/sampling.py` | Thompson sampling + beta posterior helpers. |
+| `src/hgm_core/cmp.py` | Comparative metrics tracker backing ROI dashboards. |
+| `tests/` | Pytest suite covering sampling maths and engine state transitions. |
+
+## Using the engine
+
+```python
+from hgm_core.engine import HGMEngine
+from hgm_core.config import EngineConfig
+
+engine = HGMEngine(EngineConfig(seed=42))
+next_action = await engine.next_action("mission/root", ["expand-l2", "harvest"])
+await engine.record_expansion("mission/root", next_action, payload={"score": 0.71})
+await engine.record_evaluation("mission/root/expand-l2", reward=0.9, weight=2.0)
+snapshot = await engine.snapshot()
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `packages/hgm-core`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+The orchestrator wires callbacks to `observe_expansion` / `observe_evaluation` so sentinel monitors can react in real time.
 
-## Directory Guide
-### Key Directories
-- `src`
-- `tests`
-### Key Files
-- `pyproject.toml`
+## Tests & CI
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+Run the local suite with:
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+```bash
+pip install -r requirements-python.txt
+pytest packages/hgm-core/tests -q
+```
+
+CI v2 executes these tests inside `ci (v2) / Python unit tests`, and the coverage job enforces global thresholds before merging.【F:.github/workflows/ci.yml†L118-L345】
+
+## Extending HGM
+
+1. Add new configuration parameters to `EngineConfig` and update its validators.
+2. Extend `HGMEngine` with the necessary state or callbacks.
+3. Write tests mirroring production behaviour in `packages/hgm-core/tests` and regenerate coverage artefacts with
+   `npm run coverage`.
+4. Update downstream orchestrator or thermostat modules to consume the new metrics so owner dashboards stay accurate.
+
+The core module remains lightweight, deterministic, and fully covered, ensuring the superintelligent machine’s governance layer
+responds instantly to owner-issued directives.

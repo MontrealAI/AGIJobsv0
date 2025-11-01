@@ -1,58 +1,73 @@
-# AGI Jobs v0 (v2) — Orchestrator
+# AGI Jobs v0 (v2) — Orchestrator Engine
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `orchestrator`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Python unit tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `orchestrator/README.md`
-- **Module Focus:** Anchors Orchestrator inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The Python orchestrator drives hierarchical generative missions across agents, validators, and owner guardrails. It manages
+checkpoints, run state, ROI-aware thermostats, and audit-safe persistence so the contract owner can trigger large-scale workflows
+without touching infrastructure.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `orchestrator` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Core responsibilities
 
-## Systems Map
+- **Mission planning** – Builds and executes orchestration plans (`OrchestrationPlan`) with deterministic step execution and
+  automatic resumption on restart.【F:orchestrator/runner.py†L1-L120】
+- **Checkpointing** – Serialises in-flight runs to disk/Redis/Postgres so the orchestrator can recover after interruptions without
+  losing progress.【F:orchestrator/runner.py†L57-L119】【F:orchestrator/state.py†L1-L130】
+- **Config reflection** – Reads fee and burn percentages from `config/` manifests or environment overrides so ROI calculations stay
+  aligned with owner-set parameters.【F:orchestrator/config.py†L1-L63】
+- **Scoreboard & analytics** – Maintains live run scoreboards and event reconciliation for dashboards and the agent gateway.
+
 ```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> orchestrator[[Orchestrator]]
-    orchestrator --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+flowchart TD
+    classDef svc fill:#ecfeff,stroke:#0284c7,color:#0c4a6e,stroke-width:1px;
+    classDef data fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef ctrl fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+
+    Plans[Mission plans]:::data --> Runner[Step executor]:::svc
+    Runner --> Thermostat[ROI thermostat]:::ctrl
+    Thermostat --> Runner
+    Runner --> Scoreboard[Scoreboard & state store]:::data
+    Scoreboard --> Gateway[Agent gateway]:::svc
+    Runner --> Checkpoint[Checkpoint manager]:::data
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `orchestrator`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../OperatorRunbook.md).
+## Directory tour
 
-## Directory Guide
-### Key Directories
-- `aa`
-- `extensions`
-- `tools`
-- `workflows`
-### Key Files
-- `__init__.py`
-- `agents.py`
-- `analytics.py`
-- `checkpoint.py`
-- `config.py`
-- `events.py`
-- `models.py`
-- `moderation.py`
-- `planner.py`
-- `policies.py`
-- `runner.py`
-- `scoreboard.py`
+| Path | Purpose |
+| ---- | ------- |
+| `models.py` | Pydantic models for orchestration plans, run status, scoreboards. |
+| `runner.py` | Step executor, watchdog, and checkpoint restore logic.【F:orchestrator/runner.py†L1-L160】 |
+| `state.py` | Pluggable persistence backends (filesystem, Redis, Postgres) for run state.【F:orchestrator/state.py†L1-L130】 |
+| `workflows/hgm/` | Higher Governance Machine workflow that integrates with `packages/hgm-core`. |
+| `extensions/` | Optional step plugins (notifications, analytics exports). |
+| `tools/` | Step execution helpers consumed by `runner.py` and tests. |
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../RUNBOOK.md) and [`OperatorRunbook.md`](../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+## Running locally
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-python.txt
+pytest test/orchestrator -q
+python -m orchestrator.scripts.demo_run  # optional dry run helper if defined
+```
+
+Set `ORCHESTRATOR_STATE_DIR`, `ORCHESTRATOR_REDIS_URL`, or `ORCHESTRATOR_PG_DSN` to switch persistence backends; the orchestrator
+auto-selects `FileRunStateStore` when no environment variables are provided.【F:orchestrator/state.py†L1-L130】
+
+## CI integration
+
+- `ci (v2) / Python unit tests` runs `pytest` over `test/orchestrator/**` with coverage enforced by the `python_coverage` job.【F:.github/workflows/ci.yml†L118-L345】
+- `ci (v2) / HGM guardrails` executes the higher-governance suite, validating orchestration flows against the AGI Alpha profile
+  defaults.【F:.github/workflows/ci.yml†L352-L420】
+- `ci (v2) / Load-simulation reports` consumes orchestrator metrics to generate Monte Carlo dissipation sweeps for owners.【F:.github/workflows/ci.yml†L206-L272】
+
+## Extending the orchestrator
+
+1. Model the new mission in `models.py` and encode steps as subclasses where necessary.
+2. Implement the orchestration logic under `workflows/` or `extensions/`.
+3. Add deterministic tests under `test/orchestrator/` or `packages/hgm-core/tests` so the CI lattice exercises the new workflow.
+4. Update owner tooling (for example `scripts/v2/ownerControlPlan.ts`) if the workflow exposes additional levers to the owner.
+
+By coupling deterministic plans, resilient checkpoints, and owner-driven configuration, the orchestrator keeps the superintelligent
+machine deployable by non-technical mission owners while remaining observable and auditable in CI.

@@ -1,56 +1,95 @@
-# AGI Jobs v0 (v2) — Agent Gateway
+# AGI Jobs v0 (v2) — Agent Gateway Service
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `agent-gateway`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)
 
-## Overview
-- **Path:** `agent-gateway/README.md`
-- **Module Focus:** Anchors Agent Gateway inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The agent gateway is the on-chain mission control bridge for the superintelligent platform. It exposes authenticated REST,
+WebSocket, and gRPC interfaces that orchestrate job creation, validator staking, telemetry ingestion, and audit anchoring against
+the deployed contracts. All configuration is driven from `config/` manifests so the contract owner can rotate parameters without
+changing code.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `agent-gateway` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
-
-## Systems Map
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> agent_gateway[[Agent Gateway]]
-    agent_gateway --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    classDef svc fill:#ecfeff,stroke:#0284c7,color:#0c4a6e,stroke-width:1px;
+    classDef chain fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef data fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    subgraph Gateway
+        API[REST + WebSocket router]:::svc
+        GRPC[gRPC bridge]:::svc
+        Planner[Job planner]:::svc
+        Telemetry[Telemetry pipeline]:::svc
+    end
+
+    API --> Planner
+    API --> Telemetry
+    GRPC --> Telemetry
+    Telemetry -->|Prometheus export| Metrics[(metrics / deliverables)]:::data
+    Planner --> Jobs[(Job plans)]:::data
+    API --> ChainContracts
+    GRPC --> ChainContracts
+    ChainContracts[Job registry, stake manager, validation module]:::chain
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `agent-gateway`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../OperatorRunbook.md).
+## Runtime features
 
-## Directory Guide
-### Key Directories
-- `protos`
-- `types`
-### Key Files
-- `.env.example`
-- `agentActions.ts`
-- `agentFactory.ts`
-- `agentRegistry.ts`
-- `apiHelpers.ts`
-- `attestation.ts`
-- `auditAnchoring.ts`
-- `certificateMetadata.ts`
-- `deliverableStore.ts`
-- `Dockerfile`
-- `employer.ts`
-- `ensRegistrar.ts`
+- **REST + WebSocket API** – `/jobs`, `/agents`, `/deliverables`, `/telemetry`, `/metrics`, and `/auth/challenge` endpoints power
+  agent UX and operator dashboards. Authentication accepts either an API key or signature-based challenge using the rotating
+  nonce defined in `utils.ts` (nonce rotates after each successful signature).【F:agent-gateway/routes.ts†L1-L115】
+- **gRPC control plane** – The gRPC server mirrors the REST surface for high-throughput integrations and streams results to the
+  Alpha Bridge client. All protobuf types live in `protos/agi/alpha/bridge/v1`. The service adapts HTTP errors back to canonical
+  gRPC codes so clients always receive deterministic error handling.【F:agent-gateway/grpc.ts†L1-L120】
+- **Telemetry + audit anchoring** – Incoming telemetry is validated, stored, and exported both via `/metrics` and the anchoring
+  tasks under `auditAnchoring.ts`, ensuring every deliverable carries an immutable record.【F:agent-gateway/auditAnchoring.ts†L1-L160】【F:agent-gateway/telemetry.ts†L1-L200】
+- **Staking automation** – `stakeCoordinator.ts` wraps the stake manager ABI so agents can top-up, withdraw, or restake directly
+  through the gateway (REST and gRPC endpoints use the same helpers).【F:agent-gateway/stakeCoordinator.ts†L1-L220】
+- **Job planning + opportunities** – The job planner persists multi-step execution plans and resumes them on startup, while the
+  opportunity forecaster modules expose economic intelligence to the UI.【F:agent-gateway/jobPlanner.ts†L1-L200】【F:agent-gateway/opportunities.ts†L1-L160】
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../RUNBOOK.md) and [`OperatorRunbook.md`](../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+## Environment configuration
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+Set the following variables before launching the service:
+
+| Variable | Purpose |
+| -------- | ------- |
+| `RPC_URL` | JSON-RPC endpoint for contract interactions (HTTP or WS).【F:agent-gateway/utils.ts†L9-L47】 |
+| `JOB_REGISTRY_ADDRESS` | Registry contract address controlling job lifecycle.【F:agent-gateway/utils.ts†L48-L75】 |
+| `VALIDATION_MODULE_ADDRESS` | Validator commit/reveal module used for quorum management.【F:agent-gateway/utils.ts†L48-L75】 |
+| `STAKE_MANAGER_ADDRESS` | Optional; enables reward logging + stake info feeds.【F:agent-gateway/utils.ts†L52-L74】 |
+| `DISPUTE_MODULE_ADDRESS` | Optional dispute integration for escalations.【F:agent-gateway/utils.ts†L52-L74】 |
+| `KEYSTORE_URL` + `KEYSTORE_TOKEN` | Remote keystore endpoint from which signing keys are fetched. HTTPS enforced.【F:agent-gateway/utils.ts†L76-L121】 |
+| `BOT_WALLET`, `ORCHESTRATOR_WALLET` | Optional hot wallets surfaced in startup logs for monitoring.【F:agent-gateway/utils.ts†L52-L74】 |
+| `PORT`, `GRPC_PORT` | HTTP and gRPC listener ports (default 3000 / 50051).【F:agent-gateway/utils.ts†L37-L47】 |
+| `GATEWAY_API_KEY` | Optional API key for non-signature automation flows.【F:agent-gateway/routes.ts†L94-L115】 |
+
+Token metadata (`TOKEN_DECIMALS`, symbol, name, address) are resolved from `config/agialpha*.json`, so updating those manifests
+automatically reconfigures the gateway after redeploy.【F:agent-gateway/utils.ts†L126-L153】
+
+## Local development
+
+```bash
+npm install
+npm run agent:gateway          # Start the service with live reload (uses ts-node + nodemon)
+PORT=4000 RPC_URL=http://127.0.0.1:8545 JOB_REGISTRY_ADDRESS=<addr> VALIDATION_MODULE_ADDRESS=<addr> KEYSTORE_URL=https://... npm run agent:gateway
+```
+
+A Prometheus-compatible metrics stream is available at `GET /metrics`. WebSocket clients connect to the same origin; the gateway
+uses `registerEvents` to broadcast validator assignments and job changes.【F:agent-gateway/index.ts†L1-L61】
+
+## Testing & CI
+
+- `npm run test` executes the Hardhat suite that consumes this service’s mocks.
+- `ci (v2) / Owner control assurance` regenerates owner doctor reports using the gateway helpers to guarantee that contract owner
+  controls remain reachable.【F:.github/workflows/ci.yml†L386-L434】
+- `containers.yml` builds the Docker image (`Dockerfile`) and runs Trivy scans so production deployments remain reproducible.
+
+## Operational runbook
+
+1. Launch the service with signed environment variables (see `.env.example`).
+2. Verify `/auth/challenge` and `/metrics` respond as expected.
+3. Tail `reports/owner-control/doctor.json` after CI to confirm owner levers resolved correctly.
+4. Use `npm run owner:command-center` to render the mermaid authority graph—gateway endpoints reflect the same contract addresses
+   when queried via `/system/health`.
+
+The gateway is the connective tissue between owners, agents, and validators. Keep its configuration aligned with the manifests
+and the superintelligent machine remains fully responsive to contract owner directives.

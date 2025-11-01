@@ -1,55 +1,62 @@
-# AGI Jobs v0 (v2) — Apps → Onebox
+# AGI Jobs v0 (v2) — Onebox Next.js Console
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/onebox`.
+[![Webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `apps/onebox/README.md`
-- **Module Focus:** Anchors Apps → Onebox inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The Onebox console is a Next.js 14 operator UI that guides mission owners through orchestrating jobs, staking, and governance
+scenarios. It renders streamed transcripts from the TypeScript orchestrator SDK, exposes onboarding for non-technical operators,
+and pulls live contract metadata from environment/runtime configuration.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `apps/onebox` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Features
 
-## Systems Map
+- **Mission cockpit** – `OneBoxMissionPanel` curates prompts, quick actions, and ENS onboarding for operators, while
+  `ChatWindow` streams the ICS transcript returned by the orchestrator router.【F:apps/onebox/src/app/page.tsx†L1-L60】
+- **Runtime configuration** – `readOneboxConfig()` merges server-provided JSON with `NEXT_PUBLIC_*` environment variables to
+  surface contract addresses, explorer links, and orchestrator endpoints inside the UI.【F:apps/onebox/src/lib/environment.ts†L1-L120】
+- **Governance intelligence** – `lib/governanceScenario.ts` and `lib/governanceSnapshot.ts` hydrate the dashboard with current
+  council compositions and snapshot proposals so owners can confirm authority before executing transactions.【F:apps/onebox/src/lib/governanceSnapshot.ts†L1-L160】
+- **Health surface** – `lib/orchestratorHealth.ts` polls the orchestrator status API and flags drift for the operator to resolve
+  before committing changes.【F:apps/onebox/src/lib/orchestratorHealth.ts†L1-L120】
+
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> apps_onebox[[Apps → Onebox]]
-    apps_onebox --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    Owner[Owner / Operator] --> UI[Next.js interface]
+    UI --> OrchestratorSDK[@agi/orchestrator]
+    OrchestratorSDK --> AgentGateway
+    UI --> Metrics[Gateway metrics & health]
+    Metrics --> UI
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/onebox`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Local development
 
-## Directory Guide
-### Key Directories
-- `scripts`
-- `src`
-- `test`
-### Key Files
-- `app.js`
-- `config.mjs`
-- `index.html`
-- `next-env.d.ts`
-- `next.config.mjs`
-- `package-lock.json`
-- `package.json`
-- `styles.css`
-- `tsconfig.json`
-- `url-overrides.js`
+```bash
+cd apps/onebox
+npm install
+npm run dev
+```
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+Set the following env variables to display contract wiring inside the cockpit:
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+```bash
+export NEXT_PUBLIC_ONEBOX_ORCHESTRATOR_URL="https://orchestrator.local"
+export NEXT_PUBLIC_JOB_REGISTRY_ADDRESS=0x...
+export NEXT_PUBLIC_SYSTEM_PAUSE_ADDRESS=0x...
+```
+
+Run `npm run lint` and `npm run typecheck` before committing; these commands are executed automatically inside `webapp.yml` and
+`ci (v2) / Lint & static checks`.
+
+## Testing
+
+Use Vitest or Playwright suites under `test/` to exercise conversational flows. The webapp workflow builds and smoke-tests the
+console on every pull request, ensuring the experience stays production-ready.
+
+## Extending the console
+
+1. Add new prompts or panels under `src/components/`.
+2. Extend the orchestrator SDK so transcripts include the new capability.
+3. Update `readOneboxConfig()` to surface any additional contract addresses required by the feature.
+4. Capture UI snapshots for documentation and update `apps/onebox-static` if the static export changes.
+
+The Onebox console remains the fast onboarding surface for the superintelligent machine—keep it aligned with the orchestrator SDK
+so operators retain end-to-end visibility and control.

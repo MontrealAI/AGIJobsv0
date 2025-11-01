@@ -1,44 +1,40 @@
-# AGI Jobs v0 (v2) — Apps → Onebox Static → V2
+# AGI Jobs v0 (v2) — Onebox Static Console v2
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/onebox-static/v2`.
+[![Webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `apps/onebox-static/v2/README.md`
-- **Module Focus:** Anchors Apps → Onebox Static → V2 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The `v2` variant is a single-file static dashboard optimised for kiosks and minimal environments. It stores configuration entirely
+in `localStorage`, renders orchestration transcripts inline, and provides an “expert mode” toggle for direct JSON editing.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `apps/onebox-static/v2` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Key capabilities
 
-## Systems Map
-```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> apps_onebox_static_v2[[Apps → Onebox Static → V2]]
-    apps_onebox_static_v2 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+- **Persistent settings** – Orchestrator URL, API token, and status refresh interval persist across sessions using storage keys
+  such as `ORCH_URL` and `ONEBOX_STATUS_INTERVAL`.【F:apps/onebox-static/v2/app.js†L1-L40】
+- **Expert mode** – Operators can toggle expert mode to unlock raw JSON intent editing, captured in the `ONEBOX_EXPERT_MODE` flag
+  so the interface remembers the preference.【F:apps/onebox-static/v2/app.js†L6-L34】
+- **Robust error context** – The console walks nested error objects to surface the most relevant message, status code, and error
+  code, giving non-technical owners actionable feedback without browser devtools.【F:apps/onebox-static/v2/app.js†L41-L120】
+- **Status polling** – Periodically fetches `/status` from the orchestrator and annotates the UI with the most recent events; the
+  interval is adjustable from the settings dialog.【F:apps/onebox-static/v2/app.js†L13-L34】【F:apps/onebox-static/v2/app.js†L121-L200】
+
+## Running locally
+
+Open `index.html` directly in a browser or serve the folder from any static host:
+
+```bash
+cd apps/onebox-static/v2
+python -m http.server 4173
+# Visit http://localhost:4173
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/onebox-static/v2`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
+Use the Settings button to point the console at your orchestrator and supply the API token (if required). Expert mode exposes a raw
+textbox for ICS payloads when you need to craft custom requests.
 
-## Directory Guide
-### Key Files
-- `app.js`
-- `index.html`
-- `styles.css`
+## Extending v2
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+1. Modify `app.js` to add new controls or validation logic.
+2. Update `styles.css` for any layout changes; the stylesheet is intentionally minimal.
+3. Keep the documentation in `apps/onebox-static/README.md` aligned if both static flavours should expose the same functionality.
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+This v2 bundle keeps the fallback experience simple yet powerful enough for owner-led interventions when the full Next.js console
+is unavailable.

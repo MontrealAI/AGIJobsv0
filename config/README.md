@@ -1,56 +1,91 @@
-# AGI Jobs v0 (v2) — Config
+# AGI Jobs v0 (v2) — Configuration Lattice
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `config`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
 
-## Overview
-- **Path:** `config/README.md`
-- **Module Focus:** Anchors Config inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The `config/` tree is the control surface that keeps the AGI Jobs v0 (v2) superintelligence parameterised for any deployment. It
+feeds every on-chain contract, off-chain agent, and analytics surface with deterministic JSON manifests that are continuously
+validated in CI v2. Repository owners can flip network parameters, pause levers, or sentinel tolerances by editing these
+manifests and then running the owner tooling—no TypeScript or Solidity edits required.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `config` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Responsibilities
 
-## Systems Map
+- Canonical token, registry, and sentinel manifests consumed by `scripts/config` and the Hardhat/Foundry suites.
+- Network overlays for `mainnet`, `sepolia`, `ci`, and profile-specific overrides driven by `AGIALPHA_PROFILE`.
+- Owner guardrails that make pausing, upgrading, or rotating keys auditable through `npm run owner:*` flows.
+- Machine-readable inputs for the Monte Carlo load simulations and Higher Governance Machine (HGM) controllers.
+
 ```mermaid
-flowchart LR
-    Operators((Mission Owners)) --> config[[Config]]
-    config --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+flowchart TD
+    classDef cfg fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef tool fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
+    classDef ci fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef chain fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+
+    cfg[config/*.json manifests]:::cfg --> scripts[TypeScript config loaders]:::tool
+    scripts --> ciJobs[ci (v2) validation jobs]:::ci
+    scripts --> ownerCli[npm run owner:* command surface]:::tool
+    ownerCli --> chain[Contracts + orchestration services]:::chain
+    ciJobs --> chain
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `config`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../OperatorRunbook.md).
+## File map
 
-## Directory Guide
-### Key Directories
-- `agents`
-- `agialpha`
-### Key Files
-- `__init__.py`
-- `agents.json`
-- `agialpha.ci.json`
-- `agialpha.json`
-- `agialpha.mainnet.json`
-- `agialpha.sepolia.json`
-- `attestation.eas.json`
-- `contracts.orchestrator.json`
-- `culture.json`
-- `dispute-module.json`
-- `energy-oracle.ci.json`
-- `energy-oracle.json`
+| Path | Purpose |
+| ---- | ------- |
+| [`__init__.py`](__init__.py) | Profile-aware loader that merges base JSON manifests with `AGIALPHA_PROFILE` overlays for Python services.【F:config/__init__.py†L1-L116】 |
+| [`agents.json`](agents.json) | Canonical catalog of production agent definitions consumed by orchestrator and gateway flows. |
+| [`agialpha*.json`](agialpha.json) | Token metadata (address, decimals, symbol) for each network. Used by contract compilation and the gateway wallet checks.【F:agent-gateway/utils.ts†L126-L153】 |
+| [`agialpha/`](agialpha) | Sub-manifests for the HGM profile: thermostat bounds, sentinel guardrails, energy oracle defaults, and reward tuning. |
+| [`contracts.orchestrator.json`](contracts.orchestrator.json) | Wiring diagram for orchestrator-facing contracts (registry, installers, pause switches) referenced by deployment scripts. |
+| [`energy-oracle*.json`](energy-oracle.json) | Calibration for the Hamiltonian energy oracle and Monte Carlo sweep ranges enforced in CI.【F:.github/workflows/ci.yml†L206-L272】 |
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../RUNBOOK.md) and [`OperatorRunbook.md`](../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+All manifests are JSON so that operators can modify them in approved change-management tools; Python and TypeScript loaders
+automatically coerce numeric types and validate enums.
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+## Editing parameters
+
+1. **Select the profile** – export `AGIALPHA_PROFILE=<profile>` to enable the overrides under `config/<profile>/` when running
+   local tooling.
+2. **Modify the manifest** – edit the relevant `*.json` file (for example `config/agialpha.json` to rotate the token treasury or
+   `config/agialpha/thermostat.json` to tighten ROI bounds).
+3. **Describe the change** – capture the intent in `docs/owner-control-change-ticket.md` and commit the updated JSON. Keep owner
+   signatures in the PR description for auditability.
+
+## Validation commands
+
+Run these helpers from the repository root after changing configuration:
+
+```bash
+npm run verify:wiring                  # Hardhat wiring + manifest sanity checks
+npm run verify:agialpha -- --network ci  # Token manifest validation (address checks, symbol/name presence)
+npm run owner:verify-control -- --network ci  # End-to-end owner authority audit and pause lever smoke test
+npm run ci:owner-authority -- --network ci --out reports/owner-control  # Regenerate the authority matrix referenced in CI
+```
+
+CI v2 executes the same commands inside the `Lint & static checks` and `Owner control assurance` jobs, keeping the branch
+protection rule in lock-step with the manifests.【F:.github/workflows/ci.yml†L44-L70】【F:.github/workflows/ci.yml†L386-L434】
+
+## Owner operations
+
+- **Pause / resume** – `npm run owner:system-pause -- --network <network>` toggles the global pause switch declared in
+  `config/system-pause.json`. The script emits structured JSON so non-technical owners can confirm the transaction before
+  broadcasting.【F:scripts/v2/systemPauseAction.ts†L1-L289】
+- **Parameter matrix** – `npm run owner:parameters -- --network <network>` renders the current treasury, fee, thermostat, and
+  validator settings from every manifest, matching the matrix generated in CI for compliance artefacts.【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】
+- **Bulk upgrades** – `npm run owner:update-all -- --network <network>` walks each manifest and applies the updated values
+  through the `OwnerConfigurator` contract with automatic dependency ordering.【F:scripts/v2/updateAllModules.ts†L1-L1233】
+
+Every owner command accepts `--dry-run` to preview calldata and `--out` to emit markdown + JSON reports, ensuring full control
+remains with the contract owner without editing source.
+
+## CI expectations
+
+- Configuration diffs must keep `npm run monitoring:validate` green so sentinel templates remain deployable.【F:.github/workflows/ci.yml†L71-L104】
+- Load simulation sweeps pull the fee and burn percentages from these manifests; unexpected optima raise in CI to catch
+  misconfiguration before release.【F:.github/workflows/ci.yml†L206-L272】
+- When adding a new manifest, extend `scripts/config/index.ts` loaders and update the relevant owner command so it appears in the
+  control matrix.
+
+By keeping the `config/` lattice authoritative, the superintelligent platform stays mutable by owners yet verifiable by CI v2,
+allowing immediate deployment in high-stakes environments.

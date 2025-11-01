@@ -1,48 +1,68 @@
-# AGI Jobs v0 (v2) — Packages → Orchestrator
+# AGI Jobs v0 (v2) — TypeScript Orchestrator SDK
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `packages/orchestrator`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml)
 
-## Overview
-- **Path:** `packages/orchestrator/README.md`
-- **Module Focus:** Anchors Packages → Orchestrator inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+`packages/orchestrator` exposes the Intent Control Specification (ICS) router and LLM helpers used by front-ends, CLI tooling, and
+agent services. It converts high-level intents (create job, stake, dispute) into deterministic execution plans with dry-run
+support so operators can preview calldata before broadcast.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `packages/orchestrator` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Highlights
 
-## Systems Map
+- **ICS validation** – `ICSSchema` validates intent payloads (job creation, staking, governance admin) and normalises ENS proofs
+  and metadata before execution.【F:packages/orchestrator/src/ics.ts†L1-L120】
+- **Router** – `route()` dispatches intents to typed helpers in `tools/`, emitting step-by-step transcripts that the UI renders.
+  Every helper exposes `dryRun` and `execute` variants so non-technical owners can approve calldata explicitly.【F:packages/orchestrator/src/router.ts†L1-L67】
+- **Governance actions** – `tools/governance.ts` loads on-chain snapshots and prepares admin-set transactions, including
+  simulations for owner consoles.【F:packages/orchestrator/src/tools/governance.ts†L1-L200】
+- **LLM integrations** – `llm.ts` and `providers/openai.ts` wrap deterministic prompts for the orchestration copilot experience.
+
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> packages_orchestrator[[Packages → Orchestrator]]
-    packages_orchestrator --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    Intent[Intents JSON] --> Validate[ICSSchema] --> Router[route()] --> Tools
+    Tools --> DryRun[Dry run transcript]
+    Tools --> Execute[Signed transaction payload]
+    DryRun --> UI[Owner console]
+    Execute --> Gateway[Agent gateway / CLI]
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `packages/orchestrator`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Usage
 
-## Directory Guide
-### Key Directories
-- `src`
-- `test`
-### Key Files
-- `package-lock.json`
-- `package.json`
-- `tsconfig.json`
-- `tsconfig.test.json`
+```ts
+import { ICSSchema, route } from "@agi/orchestrator";
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+const ics = ICSSchema.parse({
+  intent: "create_job",
+  params: {
+    job: { rewardAGIA: "100", deadline: Date.now() + 86_400_000, spec: { goal: "curate report" } },
+  },
+});
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+for await (const line of route(ics)) {
+  process.stdout.write(line);
+}
+```
+
+Callers can consume the async generator to render streaming transcripts in CLIs or web consoles. To execute transactions, invoke
+`createJobExecute`, `depositExecute`, or the equivalent helper exported from `tools/**`.
+
+## Testing & linting
+
+```bash
+npm install
+npm run lint -- --filter packages/orchestrator
+npm run test -- --packages orchestrator  # executes vitest suite if defined
+```
+
+The SDK is linted in `ci (v2) / Lint & static checks` and type-checked via the shared webapp workflow. Update snapshots in
+`packages/orchestrator/__tests__` (if present) whenever command transcripts change so CI stays green.【F:.github/workflows/ci.yml†L44-L70】
+
+## Extending the router
+
+1. Add the new intent shape to `ics.ts` and update the discriminated union.
+2. Implement matching helpers under `tools/` with `dryRun`/`execute` exports.
+3. Extend `route()` with the new branch so transcripts stream correctly.
+4. Regenerate documentation in owner tooling (`npm run owner:diagram`) to surface the new capability.
+
+Keeping this SDK authoritative means every interface—web, CLI, or automated agent—consumes the same deterministic orchestration
+logic the owner relies on for safe production roll-outs.

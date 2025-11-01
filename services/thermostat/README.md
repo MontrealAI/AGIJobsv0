@@ -1,46 +1,52 @@
-# AGI Jobs v0 (v2) — Services → Thermostat
+# AGI Jobs v0 (v2) — Thermostat Service
 
-> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/thermostat`.
+[![CI (v2)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
+[![Python unit tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml)
 
-## Overview
-- **Path:** `services/thermostat/README.md`
-- **Module Focus:** Anchors Services → Thermostat inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
-- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
+The thermostat keeps the Higher Governance Machine within owner-defined ROI bands. It consumes streaming metrics, adjusts HGM
+widening/Thompson parameters, and surfaces adjustments back to the orchestrator. Owners can tune the guardrails via `config/agialpha/`
+without changing code.
 
-## Capabilities
-- Provides opinionated configuration and assets tailored to `services/thermostat` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
-- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
-- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+## Core modules
 
-## Systems Map
+- **`controller.py`** – Implements `ThermostatController`, a feedback loop that ingests ROI samples, enforces cooldown windows, and
+  adjusts widening/Thompson parameters when ROI drifts outside the permitted margins.【F:services/thermostat/controller.py†L1-L160】
+- **`metrics.py`** – Defines the `MetricSample` dataclass and helpers for computing ROI snapshots delivered from orchestrator
+  workflows.【F:services/thermostat/metrics.py†L1-L160】
+- **`tests/`** – Pytest suite covering controller edge cases (cooldowns, boundary enforcement, concurrent updates).
+
 ```mermaid
 flowchart LR
-    Operators((Mission Owners)) --> services_thermostat[[Services → Thermostat]]
-    services_thermostat --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
-    Core --> Observability[[Unified CI / CD & Observability]]
-    Core --> Governance[[Owner Control Plane]]
+    Metrics[Metrics stream] --> Controller[ThermostatController]
+    Controller --> Adjustments[EngineConfig adjustments]
+    Adjustments --> OrchestratorWorkflow
+    OrchestratorWorkflow --> Metrics
 ```
 
-## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/thermostat`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+## Configuration
 
-## Directory Guide
-### Key Directories
-- `tests`
-### Key Files
-- `__init__.py`
-- `controller.py`
-- `metrics.py`
+Thermostat defaults live in `config/agialpha/thermostat.json`. CI regenerates the owner parameter matrix and fails if values fall
+outside safety thresholds, guaranteeing the contract owner can adjust targets at any time.【F:.github/workflows/ci.yml†L386-L434】
 
-## Quality & Governance
-- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
-- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
-- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+Key knobs:
 
-## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+- `target_roi` – Desired return-on-investment.
+- `lower_margin` / `upper_margin` – Permitted drift before adjustments trigger.
+- `widening_step` / `thompson_step` – Incremental adjustments applied to the HGM engine.
+
+## Local usage
+
+```python
+from services.thermostat.controller import ThermostatController, ThermostatConfig
+from orchestrator.workflows.hgm import HGMOrchestrationWorkflow
+
+controller = ThermostatController(workflow=workflow, config=ThermostatConfig())
+await controller.initialize()
+await controller.ingest(sample)  # sample is services.thermostat.metrics.MetricSample
+```
+
+CI v2 executes these tests as part of `ci (v2) / Python unit tests`, and the load-simulation job verifies ROI behaviour across
+Monte Carlo sweeps.【F:.github/workflows/ci.yml†L118-L345】【F:.github/workflows/ci.yml†L206-L272】
+
+Keep the thermostat aligned with owner requirements so mission owners can operate the superintelligent machine with predictable
+financial outcomes.
