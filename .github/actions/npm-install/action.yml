@@ -26,7 +26,11 @@ runs:
 
         if [[ -f package-lock.json ]]; then
           echo "Detected package-lock.json in $(pwd); running npm ci ${INSTALL_ARGS}"
-          CYPRESS_INSTALL_BINARY=0 npm ci ${INSTALL_ARGS}
+          if ! CYPRESS_INSTALL_BINARY=0 npm ci ${INSTALL_ARGS}; then
+            status=$?
+            echo "npm ci failed with exit code ${status}; falling back to npm install ${INSTALL_ARGS}"
+            CYPRESS_INSTALL_BINARY=0 npm install ${INSTALL_ARGS}
+          fi
         else
           echo "No package-lock.json found in $(pwd); running npm install ${INSTALL_ARGS}"
           CYPRESS_INSTALL_BINARY=0 npm install ${INSTALL_ARGS}
