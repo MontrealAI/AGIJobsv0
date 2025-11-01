@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# When no lockfile is present, fall back to a standard install immediately.
+if [ ! -f package-lock.json ]; then
+  echo "package-lock.json not found; running npm install $*" >&2
+  exec npm install "$@"
+fi
+
 # Enable pipefail when supported (e.g., bash) to match original behavior.
 if (set -o pipefail) 2>/dev/null; then
   set -o pipefail
@@ -18,8 +24,8 @@ while [ "$attempt" -le "$max_attempts" ]; do
   fi
 
   if [ "$attempt" -eq "$max_attempts" ]; then
-    echo "npm ci failed after ${max_attempts} attempts" >&2
-    exit 1
+    echo "npm ci failed after ${max_attempts} attempts; falling back to npm install" >&2
+    break
   fi
 
   attempt=$((attempt + 1))
@@ -27,3 +33,6 @@ while [ "$attempt" -le "$max_attempts" ]; do
   echo "npm ci failed, retrying in ${wait_time}s (attempt ${attempt}/${max_attempts})" >&2
   sleep "$wait_time"
 done
+
+echo "Running npm install $* as a fallback" >&2
+npm install "$@"
