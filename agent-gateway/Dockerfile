@@ -20,7 +20,8 @@ COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
-COPY package.json package-lock.json ./
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \
