@@ -50,7 +50,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: apps/console
-          file: Dockerfile
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
