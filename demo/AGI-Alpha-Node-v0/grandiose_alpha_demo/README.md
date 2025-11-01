@@ -1,159 +1,47 @@
-# AGI Alpha Node Demo (Grandiose Edition)
+# AGI Jobs v0 (v2) — Demo → AGI Alpha Node v0 → Grandiose Alpha Demo
 
-> A complete, operator-friendly simulation that demonstrates how AGI Jobs v0 (v2) empowers non-technical builders to orchestrate an institution-grade autonomous wealth engine in minutes.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/AGI-Alpha-Node-v0/grandiose_alpha_demo`.
 
-## Why this demo matters
+## Overview
+- **Path:** `demo/AGI-Alpha-Node-v0/grandiose_alpha_demo/README.md`
+- **Module Focus:** Anchors Demo → AGI Alpha Node v0 → Grandiose Alpha Demo inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-This demo shows an ENS-verified, governance-controlled AGI Alpha Node powering a swarm of superintelligent specialists. Operators can bootstrap, monitor, pause, and resume the node with a single command while collecting Prometheus metrics, structured audit logs, and a continuously improving compliance scorecard.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/AGI-Alpha-Node-v0/grandiose_alpha_demo` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Instant activation (non-technical friendly)
-
-```bash
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli bootstrap
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli run --job "Launch sovereign orbital refinery"
-```
-
-## Architecture
-
+## Systems Map
 ```mermaid
-flowchart TD
-    subgraph Identity & Governance
-        ENS[ENS Verification]
-        GOV[Governance Controller]
-    end
-    subgraph Economic Engine
-        STAKE[Stake Manager]
-        REWARD[Reward & Reinvestment]
-    end
-    subgraph Intelligence Swarm
-        PLAN[MuZero++ Planner]
-        ORCH[Orchestrator]
-        FIN[Finance Strategist]
-        BIO[Biotech Synthesist]
-        MAN[Manufacturing Optimizer]
-    end
-    subgraph Observability
-        METRICS[Metrics Server]
-        LOGS[Structured Logs]
-        SCORE[Compliance Scorecard]
-    end
-
-    ENS --> GOV --> ORCH
-    STAKE --> REWARD --> ORCH
-    PLAN --> ORCH
-    ORCH --> FIN
-    ORCH --> BIO
-    ORCH --> MAN
-    ORCH --> SCORE
-    SCORE --> METRICS
-    LOGS -.-> GOV
+flowchart LR
+    Operators((Mission Owners)) --> demo_AGI_Alpha_Node_v0_grandiose_alpha_demo[[Demo → AGI Alpha Node v0 → Grandiose Alpha Demo]]
+    demo_AGI_Alpha_Node_v0_grandiose_alpha_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Capabilities showcase
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/AGI-Alpha-Node-v0/grandiose_alpha_demo`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-- **Identity sovereignty**: ENS ownership is verified before any job cycle executes.
-- **Owner supremacy**: One-call pause/resume and governance transfer utilities keep the operator in full control.
-- **Autonomous wealth loop**: Rewards accrue, reinvest automatically, and strengthen stake positions.
-- **MuZero-inspired intelligence**: Planning history compounds performance, powering Finance, Biotech, and Manufacturing specialists.
-- **Collective memory**: Every specialist deposits new insights into a persistent Knowledge Lake.
-- **Zero-friction observability**: Prometheus-compatible metrics and JSONL audit trails are emitted by default.
-- **Governance-grade compliance**: Six dimensions (identity, governance, staking, economic engine, antifragility, strategic intelligence) are measured every cycle.
+## Directory Guide
+### Key Directories
+- `src`
+### Key Files
+- `docker-compose.yml`
+- `Dockerfile`
+- `requirements.txt`
+- `tests.py`
 
-## Directory structure
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```text
-grandiose_alpha_demo/
-├── README.md
-├── requirements.txt
-├── docker-compose.yml
-├── Dockerfile
-├── src/
-│   └── agi_alpha_node_demo/
-│       ├── alpha_node.py
-│       ├── cli.py
-│       ├── compliance.py
-│       ├── config.py
-│       ├── economy.py
-│       ├── governance.py
-│       ├── identity.py
-│       ├── knowledge.py
-│       ├── logging_utils.py
-│       ├── metrics.py
-│       ├── orchestrator.py
-│       ├── planner.py
-│       └── specialists/
-│           ├── __init__.py
-│           ├── biotech.py
-│           ├── finance.py
-│           └── manufacturing.py
-└── tests.py
-```
-
-## One-command container launch
-
-```bash
-docker compose -f grandiose_alpha_demo/docker-compose.yml up --build
-```
-
-This launches the Alpha Node demo, exposes metrics on `:9404/metrics`, and streams structured JSON logs to the console for effortless institutional monitoring.
-
-## Observability snapshot
-
-```mermaid
-sequenceDiagram
-    participant Operator
-    participant CLI
-    participant AlphaNode
-    participant Metrics
-
-    Operator->>CLI: run --job "Launch orbital refinery"
-    CLI->>AlphaNode: Verify ENS & governance
-    AlphaNode->>AlphaNode: Plan with MuZero++
-    AlphaNode->>AlphaNode: Delegate to specialists
-    AlphaNode->>Metrics: Publish agi_alpha_node_compliance_score
-    AlphaNode->>Operator: JSON summary of ROI, compliance, reinvestment
-```
-
-## Test drive script
-
-```bash
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli bootstrap
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli run
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli pause
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli resume
-PYTHONPATH=./grandiose_alpha_demo/src python -m agi_alpha_node_demo.cli state
-```
-
-Each command prints a richly structured JSON payload, guaranteeing that non-technical operators can audit and trust every action.
-
-## Compliance scoring example
-
-```json
-{
-  "dimensions": {
-    "identity": 1.0,
-    "governance": 1.0,
-    "staking": 1.0,
-    "economic_engine": 0.97,
-    "antifragility": 0.9,
-    "strategic_intelligence": 0.98
-  },
-  "overall": 0.975
-}
-```
-
-## Requirements
-
-Install the demo package and dependencies:
-
-```bash
-python -m pip install -r grandiose_alpha_demo/requirements.txt
-```
-
-## Deployment ready
-
-- Structured JSON audit logs with tx-ready placeholders
-- Prometheus-compatible metrics endpoint (`/metrics`)
-- Deterministic ENS verification simulation for offline demos
-- Fully scriptable CLI for onboarding, operations, and emergency response
-- Rich documentation and diagrams designed for executive and engineering stakeholders alike
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

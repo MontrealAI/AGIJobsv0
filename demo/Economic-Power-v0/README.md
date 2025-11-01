@@ -1,206 +1,46 @@
-# Economic Power v0 – Planetary-Scale Economic Acceleration Demo
+# AGI Jobs v0 (v2) — Demo → Economic Power v0
 
-> **Purpose** – empower a non-technical operator to command AGI Jobs v0 (v2) as a civilization-scale economic engine. This demo shows a complete, production-ready orchestration loop that the owner can tune, pause, or upgrade at will while AGI agents deliver compounding economic value across trustless rails.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Economic-Power-v0`.
 
-## Why this demo matters
+## Overview
+- **Path:** `demo/Economic-Power-v0/README.md`
+- **Module Focus:** Anchors Demo → Economic Power v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Showcases the superintelligent operating loop** – matching, execution, validation, settlement, and telemetry are all codified so a single command unleashes an economic swarm.
-- **Owner-first control fabric** – every critical parameter (duration caps, validator quorums, stablecoin adapters, pause controls) is surfaced with concrete scripts that the multi-sig can execute immediately.
-- **Non-technical friendly** – the CLI walks through scenario selection, the UI visualises token velocities, and every report is generated in human-readable and machine-ingestible formats.
-- **Audit-grade transparency** – deterministic CI verifies output parity with the curated baseline so regulators, partners, and the owner have mathematical guarantees of behavior.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Economic-Power-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Golden Path – activate the Economic Power loop
-
-```bash
-# from the repository root
-npm run demo:economic-power           # generates the full report set
-npm run demo:economic-power -- --interactive   # dial in multipliers and quorum uplifts live
-npm run demo:economic-power:ci        # deterministic CI run used by GitHub Actions
-npm run demo:economic-power:dominion  # mainnet dominion preset with maximal owner supremacy
-npm run test:economic-power           # deterministic simulation unit tests
-```
-
-Outputs land in `demo/Economic-Power-v0/reports/`:
-
-- `summary.json` – canonical metrics ledger (ROI, payback, validator confidence, automation score).
-- `flow.mmd` – architecture graph for immediate inclusion in runbooks and dashboards.
-- `timeline.mmd` – Gantt macro for orchestration cadence.
-- `owner-control.json` – up-to-the-minute control matrix for the owner’s multi-sig.
-- `owner-sovereignty.json` – sovereign safety mesh blueprint (pause/resume drills, circuit breakers, upgrade commands, and coverage metrics).
-- `deployment-map.json` – mainnet-ready custody catalogue listing each v2 module, owner, upgrade command, and audit freshness.
-- `owner-command.mmd` – owner command mermaid graph linking pause/resume authority, parameter scripts, and module custody.
-- `owner-command-plan.md` – markdown playbook summarising quick actions, scripted upgrades, circuit breakers, and capital checkpoints in plain language.
-- `owner-command-checklist.json` – machine-auditable coverage ledger detailing per-surface command coverage percentages for jobs, validators, adapters, modules, treasury, pause/resume, and orchestrator surfaces.
-- `owner-governance-ledger.json` – deterministic custody ledger detailing module ownership, audit freshness, scripts, and alertable coverage gaps for governance dashboards.
-- `owner-dominion.json` – composite dominion index fusing coverage, safety mesh readiness, custody, guardrails, and recommended actions for the owner multi-sig.
-- `sovereign-safety-mesh.json` – composite readiness diagnostics across pause/resume readiness, alerting, scripted coverage, and circuit breaker posture.
-- `treasury-trajectory.json` – treasury state, yield, validator confidence, and automation lift captured after each job.
-- `assertions.json` – machine-readable verification ledger covering owner dominance, custody, validator strength, and treasury solvency.
-- `owner-safe-transactions.json` – pre-encoded Safe transactions (to/data/value) covering job registry, stake manager, and validation module control surfaces.
-- `owner-safe-transactions.mmd` – mermaid execution graph wiring each safe to its target modules, highlighting coverage and custody.
-- `owner-safe-transactions.md` – operator-friendly walkthrough of every encoded transaction with prerequisites, CLI command, and custody posture.
-- `layer2-readiness.json` – layer-2 readiness dossier quantifying bridge guardrails, monitoring, playbooks, and readiness factors for the expansion mesh.
-- `layer2-readiness.mmd` – mermaid readiness lattice wiring owner authority to bridge, sequencer, watcher mesh, and encoded playbooks.
-- `layer2-readiness.md` – operator briefing translating the readiness dossier into actionable guardrails, playbooks, and recommended escalations.
-- `economic-dominance.json` – composite dominance index summarising ROI, capital velocity, sovereignty, safety, and automation posture with actionable recommendations.
-- `owner-autopilot.json` – cadence, guardrails, and deterministic command sequence for the owner autopilot along with telemetry mirrors.
-- `owner-autopilot.mmd` – mermaid control graph visualising cadence, guardrails, and command objectives.
-- `owner-autopilot-brief.md` – operator-friendly briefing that distils cadence, guardrails, telemetry checkpoints, dominance signals, and recommended multi-sig actions.
-- `global-expansion-plan.md` – markdown roadmap breaking down testnet supremacy, mainnet pilot, planetary expansion, and governance acceleration phases.
-- `global-expansion.mmd` – mermaid gantt of the expansion cadence, immediately embeddable into ops dashboards.
-- `shock-resilience.json` – fortified shock defence dossier detailing score, drivers, recommendations, and telemetry powering the resilience gauge.
-- `owner-control-supremacy.json` – supremacy ledger fusing coverage, custody, safety mesh, guardrail density, and program coverage into a single index for the owner multi-sig.
-- `owner-control-supremacy.mmd` – mermaid supremacy map wiring coverage surfaces, program categories, and quick commands directly to the multi-sig authority.
-- `owner-control-drills.json` – rehearsal ledger detailing readiness score, classification, per-surface drills, command catalogues, and recommended actions.
-- `owner-control-drills.mmd` – mermaid rehearsal lattice mapping readiness gauge to every drill node for instant embedding in dashboards.
-- `owner-control-drills.md` – markdown briefing distilling focus surfaces, directives, and drill catalogue for non-technical operator reviews.
-- `owner-economic-power-brief.json` – executive brief exposing dominance, supremacy, safety mesh posture, autopilot cadence, guardrails, and recommended actions in machine-readable form.
-- `owner-economic-power-brief.mmd` – mermaid executive lattice visualising dominance, guardrail coverage, safe coverage, and autopilot cadence for dashboards.
-- `owner-economic-power-brief.md` – operator-ready narrative summarising dominance metrics, guardrails, recommended actions, and emergency readiness.
-- `super-intelligence.json` – civilisation-scale superintelligence dossier quantifying dominance, supremacy, automation, safety, resilience, and expansion readiness.
-- `super-intelligence.mmd` – mermaid intelligence graph mapping dominance, supremacy, safety, automation, resilience, and expansion flows into the apex superintelligence node.
-- `cross-validation.json` – independent recomputation proof confirming metrics, coverage, and job assignments align across validation methods.
-- `deterministic-proof.json` – dual-run hash proof capturing metrics, command coverage, autonomy mesh, and safety mesh fingerprints for audit-grade determinism.
-- `deterministic-verification.json` – verification ledger confirming both runs align and surfacing any mismatches for immediate triage.
-
-> **Non-technical quick start** – run `npm run demo:economic-power` then open `demo/Economic-Power-v0/ui/index.html` with any static server (`npx http-server demo/Economic-Power-v0/ui`). The command refreshes `ui/data/default-summary.json`, so the dashboard autoloads the latest generated reports immediately.
-
-### Scenario presets for instant supremacy drills
-
-- `baseline` *(default)* – balanced launch posture used for CI verification.
-- `mainnet-dominion` – high-intensity mainnet execution profile tuned for maximal ROI, validator strength, and treasury velocity. Trigger it with `npm run demo:economic-power:dominion` or `npm run demo:economic-power -- --scenario mainnet-dominion`.
-
-The CLI accepts either preset names or explicit JSON paths, letting the owner rapidly pivot between blueprints without editing files.
-
-## Architecture in one glance
-
+## Systems Map
 ```mermaid
-graph TD
-    Owner[Owner Multi-Sig (4-of-7)] -->|Parameter programs| Orchestrator[Economic Power Orchestrator]
-    Owner -->|Treasury commands| Treasury[Treasury Escrow Vault]
-    Treasury -->|Stablecoin swap| Adapter[Stablecoin Adapter Layer]
-    Orchestrator -->|Job posts| Jobs(Job Registry Modules)
-    Jobs -->|Agent selection| Agents(Autonomous Agent Mesh)
-    Jobs -->|Validation| Validators(Validator Constellation)
-    Agents -->|Deliverables| Observability(Observability Stack)
-    Validators -->|Consensus events| Observability
-    Observability -->|Feedback| Owner
+flowchart LR
+    Operators((Mission Owners)) --> demo_Economic_Power_v0[[Demo → Economic Power v0]]
+    demo_Economic_Power_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Timeline of value creation
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Economic-Power-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-```mermaid
-gantt
-    title Economic Power Macro Cadence
-    dateFormat  X
-    section Acceleration
-      AI Lab Fusion Accelerator      :done,    ai_fusion,        0, 36h
-      Autonomous Supply Mesh         :active,  supply_mesh,     10, 30h
-      Governance Upgrade Launch      :active,  gov_upgrade,     18, 28h
-      Market Expansion Omniloop      :crit,    market_loop,     22, 24h
-      Oracle Integration Spine       :milestone, oracle_spine,  30, 22h
-```
+## Directory Guide
+### Key Directories
+- `reports`
+- `scenario`
+- `scripts`
+- `test`
+- `ui`
 
-## Owner supremacy toolkit
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-Every configuration switch the platform depends on is under explicit owner control. The generated `owner-control.json` mirrors the baseline table below.
-
-| Parameter | Current | Target | Command | Outcome |
-|-----------|---------|--------|---------|---------|
-| `jobDuration` | 72h | 48h | `npm run owner:parameters` | Compresses turnaround time and increases capital velocity. |
-| `validatorQuorum` | 3 | 5 | `npm run owner:upgrade` | Raises validation quorums for premium tasks, hardening trust. |
-| `stablecoinAdapter` | USDC v1 | USDC v2 | `npm run owner:update-all` | Upgrades fiat bridges with lower slippage and audit trails. |
-
-Additional safeguards:
-
-- **Emergency Pause** – `npm run owner:system-pause` halts execution globally.
-- **Full Module Upgrade** – `npm run owner:update-all` applies orchestrated module upgrades signed by the multi-sig.
-- **Parameter Diff & Verification** – `npm run owner:audit` produces a compliance diff of every mutable parameter before execution.
-- **Command Catalog Supremacy** – `npm run owner:program -- --list` enumerates deterministic programs for every job, validator, adapter, module, treasury motion, and orchestrator flow.
-- **Owner Autopilot** – `owner-autopilot.json`, `owner-autopilot.mmd`, and `owner-autopilot-brief.md` provide a mission-ready cadence, guardrails, recommended actions, and telemetry checkpoints the multi-sig can execute without additional authoring.
-
-## Interactive CLI – empowering the operator
-
-`npm run demo:economic-power -- --interactive` prompts for:
-
-1. **Economic multiplier** – scale projected value to stress test upside scenarios.
-2. **Validator quorum uplift** – command-level override to harden consensus.
-
-The CLI recalculates ROI, payback horizon, validator confidence, and writes the new telemetry set into `reports/` for the UI to ingest.
-
-## Owner autopilot CLI – instant mission briefings
-
-`npm run owner:autopilot:economic-power` synthesises the latest autopilot cadence straight from the simulation. Non-technical guardians receive the same Markdown briefing shipped automatically in `reports/owner-autopilot-brief.md`, refreshed on demand with updated guardrails, deterministic command sequences, safety mesh readiness, telemetry checkpoints, and recommended actions. Append `--json` for machine-readable output or `--save <path>` to persist additional briefings.
-
-## Command catalog – execute anything instantly
-
-- `npm run owner:program -- --list` – print every deterministic program with the exact `npm` command to run it.
-- `npm run owner:program -- --program job-ai-lab-fusion` – execute a specific job program (replace the id to trigger others).
-- Pass `--json` for machine-readable output to integrate with external multi-sig tooling.
-
-## UI flight deck
-
-The UI inside `demo/Economic-Power-v0/ui/` offers:
-
-- Metric cards covering ROI, net yield, validator confidence, throughput, and treasury position.
-- Economic power command lattice – rendered Mermaid view aligning dominance, supremacy, guardrails, autopilot cadence, and Safe transaction coverage for instant operator action.
-- Economic power verification grid surfacing every assertion outcome, severity badge, and supporting evidence.
-- Deterministic verification cockpit exposing dual-run hash proofs and mismatch telemetry for instant audit confidence.
-- Expanded metrics for **Stability Index** and **Owner Command Coverage** quantifying how completely the multi-sig governs the stack.
-- Command coverage detail table translating `owner-command-checklist.json` into per-surface readiness so non-technical operators can see exactly which levers are scripted.
-- Sovereign control gauge mirroring the custody score produced in CI alongside a live on-chain module inventory.
-- Interactive job-to-agent tables to inspect assignments and validator stakes.
-- Capital trajectory tracker visualising treasury strength, validator confidence, and automation lift after every job.
-- Live Mermaid rendering of the architecture and timeline.
-- Independent cross-validation cockpit exposing metric deltas, coverage alignment, and assignment verification from the new `cross-validation.json` proof.
-- Owner command Mermaid graph mapping multi-sig authority to every module, circuit breaker, and upgrade path.
-- Drag-and-drop support for alternative `summary.json` files for instant what-if exploration.
-- Sovereign safety mesh panel cataloguing pause/resume playbooks, emergency contacts, circuit breakers, and module upgrade routes.
-- Multi-sig execution kit visualising safe transaction coverage, CLI payloads, and the ownership graph generated in `owner-safe-transactions.*`.
-- Layer-2 readiness theatre revealing bridge guardrails, watcher coverage, monitoring feeds, encoded playbooks, and recommended escalations from the new readiness dossier.
-- Control drill readiness cockpit surfacing per-surface rehearsal status, command catalogues, and recommended owner actions.
-- Shock resilience cockpit rendering the new fortified index, classification chip, driver analysis, and recommended countermeasures.
-- Owner dominion index panel quantifying composite control, safety, and custody readiness with live guardrail and action feed.
-- Owner supremacy mesh quantifying the new supremacy index, guardrail density, and program coverage with a live mermaid map.
-- Superintelligence control layer exposing the civilisation-scale superintelligence index, dominance drivers, command assurances, and a live mermaid contribution graph.
-- Safety mesh diagnostics scoring response readiness, alert channel breadth, circuit breaker posture, command coverage depth, and scripted responses.
-- Governance ledger visual linking custody posture, audit staleness, and alert feed directly from `owner-governance-ledger.json`.
-- Command catalog grid enumerating every deterministic owner program so the operator can launch missions instantly.
-- Owner autopilot cadence view surfacing guardrails, cadence, and mission-critical command sequences.
-- Global expansion roadmap translating `global-expansion-plan.md` into an interactive readiness tracker for planetary rollout.
-
-Launch with:
-
-```bash
-npx http-server demo/Economic-Power-v0/ui -p 4175 --cors
-```
-
-Then open [http://localhost:4175](http://localhost:4175) for a full dashboard experience.
-
-## Deterministic CI guard-rails
-
-The GitHub workflow `.github/workflows/demo-economic-power.yml` enforces:
-
-1. `npm run demo:economic-power:ci` – builds fresh reports and compares metrics against the canonical baseline (±5% tolerance).
-2. `npm run test:economic-power` – validates scheduling, ROI, and owner matrix logic.
-3. Assertion pass rate locked at **100%** – deviations fail CI immediately, guaranteeing the verification deck always passes in PRs and on `main`.
-4. Deterministic proof comparison – `verifyDeterminism` replays the scenario and fails immediately on any hash divergence.
-
-This guarantees a **fully green v2 CI gate**. Pull requests and `main` share identical guard-rails, preventing regressions before production promotion.
-
-## Extend or customise
-
-- **New scenarios** – drop additional JSON files in `demo/Economic-Power-v0/scenario/` and pass them via `--scenario`.
-- **Tokenomics experiments** – tweak rewards and treasury balances to model various yield curves.
-- **Validator research** – extend the validator list to stress commit–reveal parameters and slashing tolerances.
-- **Observability** – wire `flow.mmd` and `timeline.mmd` directly into Grafana, Notion, or internal documentation.
-
-## Production readiness checklist
-
-- ✅ Modular architecture reflecting the v2 sprint blueprint.
-- ✅ Deterministic simulation and CI coverage.
-- ✅ Owner-first command catalog for every mutable lever plus sovereign custody scoring for every contract module.
-- ✅ Observability artefacts (Mermaid, JSON, HTML dashboard) plus sovereign safety diagnostics for instant incident readiness reviews.
-- ✅ Non-technical operations workflow from single command to actionable dashboard.
-
-Run the loop, inspect the telemetry, execute the owner change-set, and step into an economy-scale command role.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

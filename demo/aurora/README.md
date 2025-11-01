@@ -1,107 +1,49 @@
-# Project AURORA — AGI Jobs v0 (v2) ASI Take‑Off Demo
+# AGI Jobs v0 (v2) — Demo → Aurora
 
-**A planetary‑scale, auditable coordination sprint**: governed job posting, stake‑backed K‑of‑N validation with commit→reveal, dispute hooks, dynamic incentives via Thermostat/Energy Oracle, and operator dashboards — using only v2 capabilities.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/aurora`.
 
----
+## Overview
+- **Path:** `demo/aurora/README.md`
+- **Module Focus:** Anchors Demo → Aurora inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Quickstart
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/aurora` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-Local (Anvil):
-
-```bash
-cp demo/aurora/env.example .env
-npm run demo:aurora:local
-```
-
-Target network:
-
-```bash
-# ensure RPC + keys in env
-npm run demo:aurora:sepolia
-```
-
-**Outputs**
-
-* `reports/<network>/aurora/receipts/*.json`
-  * Includes `governance.json` capturing every forwarded + direct control action executed during the run
-* `reports/<network>/aurora/aurora-report.md`
-* Governance/owner snapshots can be generated via the existing owner tooling
-* Thermostat adjustments driven by [`config/aurora.thermostat@v2.json`](./config/aurora.thermostat@v2.json) are recorded in `governance.json`
-
----
-
-## System (high level)
-
+## Systems Map
 ```mermaid
 flowchart LR
-  subgraph Governance
-    G[Safe / Timelock]
-  end
-
-  subgraph Core v2
-    JR[JobRegistry]
-    SM[StakeManager]
-    VM[ValidationModule]
-    DM[DisputeModule]
-    RE[ReputationEngine]
-    SP[SystemPause]
-    TH[Thermostat]
-  end
-
-  subgraph Incentives
-    EO[EnergyOracle]
-    MB[RewardEngineMB]
-    FP[FeePool]
-  end
-
-  G --> JR & SM & DM & SP
-  G --> TH
-  EO --> MB --> FP
-  JR --> VM --> DM --> JR
-  JR --> SM
-  JR --> RE
+    Operators((Mission Owners)) --> demo_aurora[[Demo → Aurora]]
+    demo_aurora --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Lifecycle (AURORA)
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/aurora`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-```mermaid
-sequenceDiagram
-    participant Emp as Employer
-    participant Ag as Agent
-    participant Val as Validator
-    participant JR as JobRegistry
-    participant VM as ValidationModule
-    participant DM as DisputeModule
-    participant SM as StakeManager
-    participant TH as Thermostat/Oracle
-    participant MB as RewardEngineMB
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `docs`
+### Key Files
+- `aurora.demo.ts`
+- `env.example`
+- `Makefile`
+- `RUNBOOK.md`
 
-    Emp->>JR: postJob(specURI, payoutToken)
-    Ag->>SM: stake (worker)
-    Val->>SM: stake (validator)
-    Ag->>JR: submit(resultURI)
-    JR->>VM: select K-of-N validators
-    Val->>VM: commit vote
-    Val->>VM: reveal vote
-    VM->>JR: quorum reached
-    opt challenge window
-      *->>DM: raiseDispute(evidenceURI)
-      DM->>JR: resolve → outcome
-    end
-    JR->>SM: settle escrow
-    TH->>MB: provide T / energy
-    MB->>SM: distribute rewards
-```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
----
-
-## Runbook
-
-See [`RUNBOOK.md`](./RUNBOOK.md) for the step‑by‑step orchestration, including:
-
-* Wiring checks and deployment via `scripts/v2/deployDefaults.ts`
-* Automated module configuration and staking handled by `aurora.demo.ts`
-* Receipt collection and the Markdown mission report summarised by `aurora-report.ts`
-* Optional thermostat tuning (system + per-role temperatures, PID, KPI weights) executed by governance via `SystemPause`
-
-All receipts land under `reports/<net>/aurora/`. A Markdown summary is generated at `reports/<net>/aurora/aurora-report.md`.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

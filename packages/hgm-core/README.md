@@ -1,32 +1,45 @@
-# hgm-core
+# AGI Jobs v0 (v2) — Packages → HGM Core
 
-`hgm-core` implements the scheduling primitives shared between the agent
-orchestrator and the backend control plane. The package is intentionally
-minimalistic and pure Python so it can be embedded in services that do not
-ship with the full TypeScript orchestrator runtime.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `packages/hgm-core`.
 
-## Components
+## Overview
+- **Path:** `packages/hgm-core/README.md`
+- **Module Focus:** Anchors Packages → HGM Core inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **HGMEngine** – asynchronous safe scheduler that coordinates expansion and
-  evaluation phases using Monte-Carlo tree search style widening rules.
-- **AgentNode** – dataclass describing the state tracked for each node in the
-  search tree including Thompson sampling weights and CMP aggregates.
-- **CMP utilities** – helpers to compose cumulative metric propagation results
-  across the tree.
-- **Thompson sampling** – deterministic wrappers around the Beta distribution
-  sampling strategy used by the exploration policy.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `packages/hgm-core` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Usage
-
-```python
-from hgm_core import EngineConfig, HGMEngine
-
-engine = HGMEngine(EngineConfig(widening_alpha=0.5, seed=1234))
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> packages_hgm_core[[Packages → HGM Core]]
+    packages_hgm_core --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Both synchronous and asynchronous callbacks can be supplied through the
-constructor using `on_expansion_result` and `on_evaluation_result`. These
-callbacks are executed outside of the engine lock to preserve responsiveness.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `packages/hgm-core`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-Refer to `tests/` for a detailed walkthrough that mirrors the orchestrator's
-integration points.
+## Directory Guide
+### Key Directories
+- `src`
+- `tests`
+### Key Files
+- `pyproject.toml`
+
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

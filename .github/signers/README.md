@@ -1,18 +1,42 @@
-# Maintainer Signing Keys
+# AGI Jobs v0 (v2) — .github → Signers
 
-This directory stores the SSH allowed signers file used by CI to verify tag signatures.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `.github/signers`.
 
-1. Export the SSH or hardware-backed key you registered with GitHub:
-   ```bash
-   ssh-keygen -Y export -f ~/.ssh/id_ed25519.pub
-   ```
-2. Append the exported key to `allowed_signers` in this directory using the following format:
-   ```
-   maintainer@example.com namespaces="git" ssh-ed25519 AAAAC3...
-   ```
-3. Commit the updated `allowed_signers` file. The release workflow reads it automatically
-   and runs `git tag -v` during tag builds. If the file is missing or only contains
-   comments, the pipeline fails fast so unsigned or unverifiable tags can never slip
-   through.
+## Overview
+- **Path:** `.github/signers/README.md`
+- **Module Focus:** Anchors .github → Signers inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-If you rotate keys, update this file and rerun the release workflow to keep the provenance checks green.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `.github/signers` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> _github_signers[[.github → Signers]]
+    _github_signers --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
+
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `.github/signers`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+
+## Directory Guide
+### Key Files
+- `allowed_signers`
+
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,120 +1,52 @@
-# α-AGI Insight MARK Demo
+# AGI Jobs v0 (v2) — Demo → Alpha AGI Insight Mark
 
-α-AGI Insight MARK packages the foresight engine, Nova-Seed NFTs, and on-chain marketplace into a single command that any non-technical operator can execute. The demo showcases how AGI Jobs v0 (v2) empowers a team to mint cryptosealed predictions, reveal FusionPlans under owner control, and trade them through a fully-governed exchange where every lever is pauseable, updatable, and auditable.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/alpha-agi-insight-mark`.
 
-## Highlights
+## Overview
+- **Path:** `demo/alpha-agi-insight-mark/README.md`
+- **Module Focus:** Anchors Demo → Alpha AGI Insight Mark inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Push-button foresight** – `npm run demo:alpha-agi-insight-mark` deploys the Nova-Seed NFT, Insight Access Token, and Insight Exchange, executes the simulated meta-agent swarm, and exports recap dossiers, telemetry logs, mermaid diagrams, and owner control matrices.
-- **Absolute owner command** – The contract owner can pause every module, rotate the oracle, retarget the treasury, retune trading fees, and update or reveal FusionPlans at any time.
-- **Sentinel-grade emergency controls** – Owners can delegate a cross-contract SystemPause sentinel that can freeze the Nova-Seed, exchange, and settlement token instantly while the owner retains sole authority to resume operations.
-- **Tokenised disruption** – Each α-AGI Nova-Seed is minted from the meta-agent scenarios, sealed until the owner reveals it, and can be listed or traded through α-AGI MARK with automated manifest hashing for integrity proofs.
-- **Production rigor** – The Hardhat project includes unit tests covering minting, pausing, delegated minters, fixed-price trading, fee distribution, and oracle resolution. The GitHub workflow executes the tests, runs the demo end-to-end, and verifies the generated dossiers.
-- **Ledger-synchronised dossiers** – The recap `stats` block, operational metrics, CSV ledger, and owner brief are cross-checked by the verifier so any mismatch between reports and on-chain state is caught automatically.
-- **Regulatory superpowers** – Live repricing (`updateListingPrice`) and instant custody evacuation (`forceDelist`) ensure the owner can reshape liquidity or quarantine an asset mid-flight without downtime.
-- **Superintelligent foresight instrumentation** – The demo now surfaces composite AGI capability gauges, thermodynamic confidence bands, and a dedicated Meta-Agentic Tree Search mermaid constellation so operators can prove the machine is operating at post-human clarity.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/alpha-agi-insight-mark` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quickstart
-
-```bash
-npm run demo:alpha-agi-insight-mark
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_alpha_agi_insight_mark[[Demo → Alpha AGI Insight Mark]]
+    demo_alpha_agi_insight_mark --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The script:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/alpha-agi-insight-mark`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. Boots a Hardhat in-memory chain (unless custom RPC details are provided).
-2. Deploys the Insight Access Token (settlement token), Alpha Insight Nova-Seed, and Alpha Insight Exchange.
-3. Simulates the meta-agent pipeline, forging three Nova-Seeds with disruption forecasts.
-4. Lists the first two seeds on α-AGI MARK, reprices them live, processes a trade, force-delists the second to sentinel custody, resolves a prediction, drills the delegated sentinel pause/unpause flow, and logs telemetry.
-5. Generates Markdown/JSON dossiers under `demo/alpha-agi-insight-mark/reports/` with SHA-256 manifests for audit trails.
+## Directory Guide
+### Key Directories
+- `contracts`
+- `data`
+- `docs`
+- `reports`
+- `runbooks`
+- `scripts`
+- `test`
+### Key Files
+- `.gitignore`
+- `hardhat.config.ts`
+- `tsconfig.json`
 
-### Integrity Verification
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-npm run verify:alpha-agi-insight-mark
-```
-
-The verifier replays every CI dossier check locally: it validates the manifest fingerprints, ensures recap/telemetry payloads
-exist, confirms the executive HTML dashboard and Markdown brief include all superintelligence sections, and asserts that the
-owner control matrix and mermaid schematics enumerate the sentinel, oracle and exchange surfaces. Non-technical operators get a
-single ✅/❌ gate before sharing artefacts with stakeholders.
-
-Set `AGIJOBS_DEMO_DRY_RUN=false` to enable the explicit launch confirmation prompt before broadcasting to a live network. Custom networks can be targeted via:
-
-- `INSIGHT_MARK_NETWORK`
-- `INSIGHT_MARK_RPC_URL`
-- `INSIGHT_MARK_CHAIN_ID`
-- `INSIGHT_MARK_OWNER_KEY`
-- `INSIGHT_MARK_PARTICIPANT_KEYS`
-- `INSIGHT_MARK_ORACLE_KEYS`
-- `INSIGHT_MARK_SCENARIO_FILE`
-- `INSIGHT_MARK_EXPECTED_OWNER`
-
-When a custom scenario file is supplied via `INSIGHT_MARK_SCENARIO_FILE`, the demo validates the JSON exists, records its SHA-256 fingerprint, and embeds both the path and hash in the recap/manifest so operators can prove the data provenance. `INSIGHT_MARK_EXPECTED_OWNER` and `INSIGHT_MARK_CHAIN_ID` are enforced against the live Hardhat signer and connected network to prevent misconfigured mainnet deployments.
-
-## Tests
-
-```bash
-npm run test:alpha-agi-insight-mark
-```
-
-The suite covers:
-
-- Owner and delegated minter flows, metadata updates, and fusion-plan reveals and revisions.
-- Pause guards on the NFT contract including delegated sentinel authority.
-- Fixed-price listing, purchase execution, fee routing, and cancellation.
-- Oracle resolution governance on the exchange plus sentinel-driven pause drills.
-- Settlement token sentinel controls.
-
-## CI & Branch Protection
-
-Green CI is contractually enforced for this demo. After running the tests and demo, confirm that GitHub still requires every V2
-workflow before merges:
-
-```bash
-# Recommended: capture the token without echoing it or storing it in history
-read -s GITHUB_TOKEN && export GITHUB_TOKEN
-npm run ci:verify-branch-protection -- --branch main
-```
-
-Run `unset GITHUB_TOKEN` when the verification completes so the shell session no longer holds the secret.
-
-The command prints a ✅/❌ table verifying that linting, tests, Foundry fuzzing, coverage, and the dedicated α-AGI Insight MARK
-workflow are all marked as required contexts on `main` and on pull requests. Non-technical operators can paste the transcript
-into their evidence vault to prove that α-AGI Insight MARK remains gated by the full CI v2 policy.
-
-## Reports & Dossiers
-
-Running the demo produces:
-
-- `insight-recap.json` – network, contract addresses, minted seed states, telemetry, and a `stats` block validating counts,
-  confidence bands, capability index, and forecast mass against the ledger.
-- `insight-report.md` – executive summary with tables, an operational metrics section, and owner command hooks.
-- `insight-report.html` – shareable executive dashboard with disruption timeline visualisation and live operational metrics cards.
-- `insight-control-matrix.json` – machine-readable owner control registry.
-- `insight-control-map.mmd` – mermaid diagram for governance briefings.
-- `insight-governance.mmd` – meta-agent swarm and sentinel orchestration schematic.
-- `insight-superintelligence.mmd` – Meta-Agentic Tree Search + thermodynamic trigger mermaid capturing the superintelligent foresight engine.
-- `insight-telemetry.log` – time-stamped agent dialogue.
-- `insight-owner-brief.md` – rapid-response owner command checklist with custody overview.
-- `insight-safety-checklist.md` – contract command matrix, sentinel drill recap, parameter overrides, and integrity assertions confirming owner supremacy.
-- `insight-owner-supremacy.json` – machine-audited cross-check proving owner, sentinel, oracle, and treasury control alignment with on-chain custody and ledger attestations.
-- `insight-owner-lattice.mmd` – mermaid governance lattice visualising owner, sentinel, oracle, treasury and Nova-Seed custody flows.
-- `insight-market-matrix.csv` – CSV dataset for financial modelling and downstream analytics.
-- `insight-constellation.mmd` – mermaid constellation showing live custody, market, and sentinel linkages.
-- `insight-agency-orbit.mmd` – mermaid orbit of the meta-agent swarm mapping mint, custody, and market routing authority.
-- `insight-lifecycle.mmd` – end-to-end sequence diagram proving owner-dominated lifecycle control from swarm genesis to market settlement.
-- `insight-manifest.json` – SHA-256 hashes of every generated artefact and the scenario dataset that produced them.
-- `insight-ledger.json` – transaction-certified ledger binding each Nova-Seed to mint/list/reprice/settlement tx hashes plus sentinel pause drills.
-
-All outputs are designed for direct inclusion in boardroom briefings and investor packets.
-
-## Runbook & Governance Dossiers
-
-- [`runbooks/operator-runbook.md`](runbooks/operator-runbook.md) – step-by-step operator walkthrough.
-- [`docs/owner-control-briefing.md`](docs/owner-control-briefing.md) – governance levers, emergency response, and verification checklist.
-
-## Integration with AGI Jobs v0 (v2)
-
-The demo is additive and does not modify existing protocol modules. It relies exclusively on the toolchain shipped with AGI Jobs v0 (v2) and is covered by a dedicated GitHub Actions workflow that enforces unit tests, the demo run, and dossier verification on pull requests targeting this directory.
-
-The orchestration demonstrates a superintelligent economic oracle under full owner command: capability gauges quantify disruption certainty, thermodynamic triggers broadcast rupture timing, and every parameter can still be paused, re-keyed, or repriced instantly from the owner console.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

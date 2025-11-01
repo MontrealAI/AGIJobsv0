@@ -1,31 +1,53 @@
-# CULTURE Demo Automation Suite
+# AGI Jobs v0 (v2) — Demo → CULTURE v0 → Scripts
 
-The CULTURE toolkit ships with a set of Hardhat/TypeScript scripts that automate deployment, configuration, and analytics seedi
-ng.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0/scripts`.
 
-| Script | Purpose |
-| --- | --- |
-| `deploy.culture.ts` | Deploys `CultureRegistry` and `SelfPlayArena`, writes the resulting addresses to `config/deployments.loc
-al.json`, and patches `.env` so downstream services can boot without manual edits. |
-| `owner.setParams.ts` | Applies owner-governed parameters (allowed artifact kinds, citation limits, arena rewards, committee si
-ze, and thermostat targets) from `config/culture.json`. |
-| `owner.setRoles.ts` | Grants author/teacher/student/validator roles in the identity registry and whitelists orchestrator addre
-sses. |
-| `register.contracts.ts` | Verifies deployed contract bytecode on the target RPC and records the addresses in `config/culture.jso
-n`. |
-| `seed.culture.ts` | Mints the sample artifacts defined in `data/seed-artifacts.json` and primes the indexer via its admin API. |
-| `export.weekly.ts` | Generates reproducible weekly reports from the JSON exports in `data/analytics/`, writing Markdown files
- to `reports/`. |
+## Overview
+- **Path:** `demo/CULTURE-v0/scripts/README.md`
+- **Module Focus:** Anchors Demo → CULTURE v0 → Scripts inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-All scripts validate environment variables with `zod` and are idempotent—they skip updates when the on-chain state already matc
-hes the desired configuration. Run them through Hardhat to reuse the configured accounts and RPC settings:
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/CULTURE-v0/scripts` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-```bash
-npx hardhat run demo/CULTURE-v0/scripts/deploy.culture.ts --network localhost
-npx hardhat run demo/CULTURE-v0/scripts/owner.setParams.ts --network localhost
-npx hardhat run demo/CULTURE-v0/scripts/owner.setRoles.ts --network localhost
-npx hardhat run demo/CULTURE-v0/scripts/seed.culture.ts --network localhost
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_CULTURE_v0_scripts[[Demo → CULTURE v0 → Scripts]]
+    demo_CULTURE_v0_scripts --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The reporting export can be executed with `npm exec ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts` o
-r via the `culture-reports` compose profile.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/scripts`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
+
+## Directory Guide
+### Key Files
+- `check-budgets.ts`
+- `check-coverage-thresholds.mjs`
+- `check-env.mjs`
+- `deploy.culture.ts`
+- `Dockerfile.smoke-tests`
+- `export.weekly.ts`
+- `generate.analytics.ts`
+- `hardhat-utils.ts`
+- `owner.setParams.ts`
+- `owner.setRoles.ts`
+- `register.contracts.ts`
+- `run.arena.sample.ts`
+
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

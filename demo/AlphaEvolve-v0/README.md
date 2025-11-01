@@ -1,60 +1,51 @@
-# AlphaEvolve-v0 Grand Demo
+# AGI Jobs v0 (v2) — Demo → AlphaEvolve v0
 
-> A first-class, production-grade, self-evolving economic optimizer harnessing **AGI Jobs v0 (v2)**.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/AlphaEvolve-v0`.
 
-## Vision
+## Overview
+- **Path:** `demo/AlphaEvolve-v0/README.md`
+- **Module Focus:** Anchors Demo → AlphaEvolve v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-AlphaEvolve-v0 demonstrates how a non-technical operator can command AGI Jobs v0 (v2) to synthesize, evaluate, and roll out marketplace heuristics that continuously grow net economic utility. The demo packages:
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/AlphaEvolve-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- Automated instrumentation of evolvable heuristics (`EVOLVE-BLOCK`s).
-- An asynchronous AlphaEvolve controller with evolutionary islands and Pareto-scored elites.
-- Multi-stage evaluation harnesses and safety sentinels.
-- A canary/shadow rollout engine.
-- Prometheus-friendly telemetry.
-- A fully guided CLI for non-technical users.
-
-## Rapid Start
-
-```bash
-cd demo/AlphaEvolve-v0
-python -m alphaevolve_runner run --generations 40
-```
-
-The CLI:
-
-- Spins up sandboxed evaluators.
-- Streams telemetry and mermaid diagrams.
-- Outputs promotion-ready heuristics, changelogs, and guardrail attestations.
-
-## Architectural Symphony
-
+## Systems Map
 ```mermaid
-flowchart TD
-    A[Non-technical Operator]
-    B[Guided CLI Wizard]
-    C[AlphaEvolve Controller]
-    D[LLM Ensemble]
-    E[Evaluation Cascade]
-    F[Guardrail Sentinel]
-    G[Program Atlas (MAP-Elites DB)]
-    H[Shadow/Canary Rollout]
-    I[Marketplace Utility Uplift]
-
-    A --> B --> C --> D
-    D --> C --> E --> F
-    F -->|Pass| H --> I
-    F -->|Breach| C
-    E --> G --> D
-    H -->|Prometheus Telemetry| A
+flowchart LR
+    Operators((Mission Owners)) --> demo_AlphaEvolve_v0[[Demo → AlphaEvolve v0]]
+    demo_AlphaEvolve_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Demo Highlights
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/AlphaEvolve-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-- **Day-One Lift**: Generates measurable uplift against stored baselines in minutes.
-- **Safety First**: Automatic sandboxing, import allowlists, and SLO sentinels.
-- **Complete Control**: Owner-controlled thermostat, budgets, pause switches, and manual approvals.
-- **Explainable**: Markdown reports with diffs, rationales, and Pareto frontiers.
-- **Deployable**: Canary/shadow toggles wired for live operations.
-- **Economic Singularity Engine**: Demonstrates a market optimizer capable of compounding improvements beyond conventional operational limits.
+## Directory Guide
+### Key Directories
+- `alphaevolve`
+- `alphaevolve_demo`
+- `config`
+- `tests`
+- `web`
+### Key Files
+- `__init__.py`
+- `alphaevolve_manifest.json`
+- `alphaevolve_runner.py`
+- `alphaevolve_summary.json`
 
-See [`alphaevolve_runner.py`](alphaevolve_runner.py) and the `alphaevolve/` package for implementation details.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

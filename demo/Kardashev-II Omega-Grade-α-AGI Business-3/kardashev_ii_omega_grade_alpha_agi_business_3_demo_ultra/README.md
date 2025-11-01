@@ -1,122 +1,52 @@
-# Kardashev-II Omega-Grade Ultra Mission Demo
+# AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Ultra
 
-> **Purpose**: empower a non-technical operator to command a Kardashev-II scale AGI enterprise by
-> orchestrating autonomous agents, validators, and resource markets through AGI Jobs v0 (v2).
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra`.
 
-This demo layers a "mission control" experience on top of the proven
-`kardashev_ii_omega_grade_alpha_agi_business_3_demo` stack. Operators launch planetary-scale
-campaigns, define recursive job plans, checkpoint state for days-long autonomy, and steer
-governance parameters with one-line commands.
+## Overview
+- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra/README.md`
+- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Ultra inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Highlights
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Ultra-grade orchestration** – resilient loops maintain multi-day operation with runtime caps,
-  rotating archives, and mission-aware deadline alerts.
-- **Recursive job graph** – mission files declare nested jobs. The orchestrator posts the graph,
-  relays sub-jobs when parents finalise, and keeps lineage metadata for audit trails.
-- **Planetary treasury** – all activity flows through AGI Jobs v0 (v2) token, stake, and resource
-  controllers. Owners can retune budgets, validator stakes, and burn policies live.
-- **Owner command stream** – pause/resume, reconfigure governance, or cancel jobs instantly via the
-  `owner` CLI. Acknowledge files capture the full control history.
-- **Mission dashboards** – JSON snapshots stream to `artifacts/status/`. The included UI renders
-  metrics, mermaid diagrams, and operator briefings for non-technical stakeholders.
-
-## Quickstart
-
-```bash
-# Launch the Omega-grade ultra mission from the packaged plan
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra launch
-
-# Run the deterministic CI plan (used in GitHub Actions)
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra ci
-
-# Pause / resume the entire mission from the owner console
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra owner pause
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra owner resume
-
-# Update governance + resource parameters using declarative JSON
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra owner \
-    governance --payload mission-governance.json
-python -m demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra owner \
-    resources --payload mission-resources.json
-```
-
-## Mission plan structure
-
-Mission configuration lives in [`config/mission.json`](config/mission.json). It combines
-high-level directives with orchestrator overrides and a recursive job plan.
-
+## Systems Map
 ```mermaid
-graph TD
-    A[Mission Root: Dyson Swarm Acceleration] --> B[Energy Surge Initiative]
-    B --> B1[Deploy Helios Array]
-    B --> B2[Autonomous Reactor Commissioning]
-    A --> C[Logistics Renaissance]
-    C --> C1[Orbital Supply Mesh]
-    C --> C2[Validator Governance Drill]
+flowchart LR
+    Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Ultra]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Each job node accepts the same fields as the base demo (`title`, `description`,
-`required_skills`, `reward_tokens`, `deadline_hours`, `validation_window_hours`, etc.).
-Nested `children` arrays represent recursive delegation. Metadata such as `plan_path` and
-`mission` are automatically injected to preserve provenance.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_ultra`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-## Files & artefacts
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `ui`
+### Key Files
+- `__init__.py`
+- `__main__.py`
+- `cli.py`
+- `config.py`
+- `mission-governance.json`
+- `mission-resources.json`
+- `orchestrator.py`
 
-| Path | Description |
-|------|-------------|
-| `config/mission.json` | Canonical ultra mission plan with nested jobs and parameter overrides. |
-| `ui/dashboard.html` | Zero-dependency dashboard visualising mission state and resource telemetry. |
-| `bin/run.sh` | Convenience script for containerised launches. |
-| `README.md` | You are here. |
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Owner payload examples
-
-`mission-governance.json`:
-```json
-{
-  "governance": {
-    "worker_stake_ratio": 0.15,
-    "validator_stake": 3500,
-    "slash_ratio": 0.4,
-    "approvals_required": 2
-  }
-}
-```
-
-`mission-resources.json`:
-```json
-{
-  "resources": {
-    "energy_capacity": 5000000,
-    "compute_capacity": 9000000,
-    "accounts": [
-      {"name": "macro-strategist", "tokens": 120000},
-      {"name": "energy-architect", "tokens": 80000}
-    ]
-  }
-}
-```
-
-## Mission dashboard
-
-Open [`ui/dashboard.html`](ui/dashboard.html) in a browser to explore live metrics, mermaid flow
-charts, and operator annotations. The page reads JSONL/JSON artifacts emitted by the orchestrator,
-so it works offline and requires no web server.
-
-## Planetary-scale assurances
-
-- **Resilience** – checkpoints and mission archives rotate across `artifacts/status/`. Restart the
-  mission at any time; the orchestrator rehydrates jobs, reservations, and scheduled events.
-- **Governance** – validator commit/reveal windows, stake requirements, and pause controls all map
-  directly to AGI Jobs v0 (v2) modules. Owner commands are JSONL-auditable.
-- **Autonomy** – asynchronous loops juggle simulation ticks, validation deadlines, and long-running
-  jobs without blocking other agents. Mission runtime caps trigger graceful auto-shutdowns.
-
-## Support multi-hour/day operations
-
-This ultra mission is tuned for multi-day autonomy. Increase `mission.runtime_hours` in the config
-and deploy. The orchestrator maintains structured logging, rotating archives, resource telemetry,
-heartbeat monitoring, and operator controls continuously—no manual babysitting required.
-
-Enjoy orchestrating planetary-scale AGI labor markets!
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,41 +1,46 @@
-# @agijobs/onebox-sdk
+# AGI Jobs v0 (v2) — Packages → Onebox SDK
 
-TypeScript definitions shared between the AGI Jobs one-box front-end and the AGI-Alpha Orchestrator. These interfaces capture the JobIntent contract used by the planner and executor routes (`/onebox/plan`, `/onebox/execute`, `/onebox/status`).
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `packages/onebox-sdk`.
 
-## Usage
+## Overview
+- **Path:** `packages/onebox-sdk/README.md`
+- **Module Focus:** Anchors Packages → Onebox SDK inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-```ts
-import type { JobIntent, PlanResponse } from '@agijobs/onebox-sdk';
+## Capabilities
+- Provides opinionated configuration and assets tailored to `packages/onebox-sdk` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-async function submitIntent(intent: JobIntent): Promise<void> {
-  const res = await fetch('/onebox/execute', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ intent, mode: 'relayer' }),
-  });
-  const json = (await res.json()) as PlanResponse;
-  // ...
-}
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> packages_onebox_sdk[[Packages → Onebox SDK]]
+    packages_onebox_sdk --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Run `pnpm --filter @agijobs/onebox-sdk build` (or `npm run build --workspace=@agijobs/onebox-sdk`) to emit `.d.ts` files under `dist/`.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `packages/onebox-sdk`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-## Relationship to the orchestrator
+## Directory Guide
+### Key Directories
+- `src`
+### Key Files
+- `package-lock.json`
+- `package.json`
+- `tsconfig.json`
 
-The FastAPI service should export matching Pydantic models:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```py
-class JobAttachment(BaseModel):
-    name: str
-    ipfs: str | None = None
-    type: str | None = None
-    url: AnyUrl | None = None
-
-class JobIntent(BaseModel):
-    action: Literal['post_job', 'finalize_job', 'check_status', 'stake', 'validate', 'dispute']
-    payload: dict[str, Any]
-    constraints: dict[str, Any] | None = None
-    userContext: dict[str, Any] | None = Field(default=None, alias='userContext')
-```
-
-Keeping the schemas in sync avoids brittle JSON parsing in the UI and enables editor autocomplete.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

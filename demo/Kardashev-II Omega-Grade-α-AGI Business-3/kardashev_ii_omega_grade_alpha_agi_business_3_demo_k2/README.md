@@ -1,108 +1,49 @@
-# Kardashev-II Omega-Grade Upgrade for α-AGI Business 3 — K2 Demo
+# AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo K2
 
-> Planetary-scale orchestration that a non-technical operator can launch, steer, and evolve in minutes.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2`.
 
-## Why this demo matters
+## Overview
+- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2/README.md`
+- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo K2 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The K2 edition demonstrates how **AGI Jobs v0 (v2)** empowers an operator to spin up a Kardashev-II economy from a single configuration file. Every capability highlighted in the upgrade specification is implemented end-to-end:
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- 🌌 **Multi-hour/day autonomous orchestration** – resumable checkpoints, mission timers, and pause/resume controls
-- 🧬 **Recursive job graph** – parent/child jobs rendered as Mermaid diagrams and delegated via the existing Omega orchestrator
-- 🔋 **Planetary resource + token accounting** – dynamic quotas with governance-controlled staking, rewards, and slashing
-- 📡 **Agent-to-agent messaging** – powered by the existing async message bus, surfaced via human-readable status snapshots
-- 🛡️ **Validator governance** – commit/reveal workflow with stake updates exposed to the operator control panel
-- 🌍 **Planetary simulations** – synthetic economy hook surfaces energy/compute growth throughout long missions
-
-All of the heavy lifting is handled by the proven Omega-grade orchestrator. The K2 layer makes those superpowers accessible to founders, policy makers, and mission operators through delightful ergonomics and documentation.
-
-## Quick start for non-technical operators
-
-```bash
-npm run demo:kardashev-ii-omega-k2
-```
-
-The script loads `config/mission.json`, spins up the orchestrator, and streams structured JSONL snapshots to `status.jsonl`. Interrupt with <kbd>Ctrl+C</kbd> at any time; the orchestrator checkpoints state so you can resume seamlessly.
-
-### Control panel (no code required)
-
-Use the CLI to send secure control commands:
-
-```bash
-# Pause / resume the entire planetary labor market
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 control --pause
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 control --resume
-
-# Tune governance parameters on the fly
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 control \
-  --governance approvals_required=4 validator_stake=200
-
-# Expand planetary energy capacity
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 control \
-  --resources energy_capacity=8000000 energy_available=7200000
-
-# Cancel or reshape any job instantly
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 control \
-  --cancel-job "Dyson Swarm Launch" --reason "Operator pivot"
-```
-
-Latest telemetry is one command away:
-
-```bash
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 status --limit 2
-```
-
-### Mermaid blueprint
-
-Generate a living diagram of the mission plan:
-
-```bash
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 mermaid --output mission.mmd
-```
-
+## Systems Map
 ```mermaid
-graph TD
-    Dyson_Swarm_Launch[Dyson Swarm Launch]
-    Autonomous_Logistics_Mesh[Autonomous Logistics Mesh]
-    Planetary_Validator_Guild[Planetary Validator Guild]
-    Dyson_Swarm_Launch --> Autonomous_Logistics_Mesh
+flowchart LR
+    Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo K2]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Drop the generated `.mmd` into the included UI dashboard or any Mermaid renderer to share the strategy with stakeholders.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-## Files that matter
+## Directory Guide
+### Key Directories
+- `config`
+- `ui`
+### Key Files
+- `__init__.py`
+- `__main__.py`
+- `cli.py`
+- `config.py`
+- `control_panel.py`
 
-| Path | Purpose |
-| --- | --- |
-| `config/mission.json` | Mission blueprint a non-technical operator can edit |
-| `cli.py` | Friendly CLI with sub-commands (`launch`, `status`, `control`, `mermaid`, `ci`) |
-| `control_panel.py` | Safe operator API for pausing, resuming, slashing, or reallocating resources |
-| `config.py` | Declarative mission loader that wraps the Omega orchestrator |
-| `ui/dashboard.html` | Interactive briefing page with Mermaid canvas and onboarding prompts |
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## CI + reliability
-
-- Deterministic CI smoke test: `npm run demo:kardashev-ii-omega-k2:ci`
-- GitHub Actions workflow: `.github/workflows/demo-kardashev-ii-omega-k2.yml`
-- `python -m compileall demo/.../kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2` keeps bytecode healthy
-
-Every run captures checkpoints, audit logs, energy oracle telemetry, and status snapshots so multi-day missions can stop/start safely. Governance updates and emergency stops are just control-panel commands.
-
-## UI snapshot
-
-Open `ui/dashboard.html` in a browser (e.g. `python -m http.server` inside the directory). The dashboard includes:
-
-- Mission briefing + operator checklist
-- Mermaid canvas that renders the generated job graph
-- Panels describing control commands, validator staking, and planetary metrics
-
-This gives stakeholders a polished, comprehensible view of a civilization-scale AGI workforce.
-
----
-
-### Advanced automation scenarios
-
-1. **Multi-day mission** – Run `python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2 launch --duration-minutes 1440` for a fully autonomous 24-hour campaign.
-2. **Dynamic economics** – Continuously raise energy costs as usage spikes via `--resources energy_capacity=<value>` commands.
-3. **Validator upgrades** – Adjust commit/reveal windows in-flight to reflect risk appetite.
-
-Because it is built directly on top of the Omega orchestrator, the demo inherits every production-grade safeguard from AGI Jobs v0 (v2) while presenting them in a radically more human-friendly way.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

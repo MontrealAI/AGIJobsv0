@@ -1,52 +1,49 @@
-# Contracts control matrix
+# AGI Jobs v0 (v2) — Contracts
 
-AGI Jobs v0 ships with two distinct administrative surfaces:
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `contracts`.
 
-- **Governance-controlled modules** inherit `Governable` and expect all
-  privileged calls to flow through a timelock or multisig.
-- **Operator-owned modules** rely on `Ownable`/`Ownable2Step` and are now fronted
-  by the upgrade-ready [`HGMControlModule`](v2/admin/HGMControlModule.sol) so the
-  Huxley–Gödel Machine (HGM) deployment can exercise full parameter authority
-  without juggling many EOAs.
+## Overview
+- **Path:** `contracts/README.md`
+- **Module Focus:** Anchors Contracts inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The table below summarises the effective owner and the most important control
-points for each production contract.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `contracts` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-| Contract | Location | Ownership expectation | Primary control points | Notes |
-| --- | --- | --- | --- | --- |
-| `JobRegistry` | `contracts/v2/JobRegistry.sol` | Timelock via `Governable` | `setJobParameters`, `setFeePct`, `setValidatorRewardPct`, `setAgent/Validator*` roots, `setTaxPolicy`, `pause` | Custodies no funds; pausing is delegated to a pauser manager and the global [`SystemPause`]. |
-| `StakeManager` | `contracts/v2/StakeManager.sol` | Timelock via `Governable` | `setFeePct`, `setBurnPct`, `setValidatorRewardPct`, `setMinStake`, `setTreasury`, `setTreasuryAllowlist`, `pause` | Works in tandem with the registry for stake limits and treasury routing. |
-| `SystemPause` | `contracts/v2/SystemPause.sol` | Timelock via `Governable` | `pauseAll`, `unpauseAll`, `setGlobalPauser`, `refreshPausers` | Cascades pause signals across every core module. |
-| `ValidationModule` & `modules/*` | `contracts/v2/ValidationModule.sol`, `contracts/v2/modules/*.sol` | Timelock (many inherit `Governable` or `Ownable`) | Module-specific wiring helpers | Swapped or reconfigured via `ModuleInstaller`. |
-| `RewardEngineMB` & `Thermostat` | `contracts/v2/RewardEngineMB.sol`, `contracts/v2/Thermostat.sol` | Timelock | `setRoleShare`, `setThermostat`, `setPID`, `setTemperature*` | Aligns emissions with Hamiltonian telemetry. |
-| `PlatformRegistry` | `contracts/v2/PlatformRegistry.sol` | Ownable (now fronted by `HGMControlModule`) | `applyConfiguration`, `setPauser`, `setRegistrar`, `setBlacklist` | Tracks operator onboarding with per-registrar controls. |
-| `ReputationEngine` | `contracts/v2/ReputationEngine.sol` | Ownable (now fronted by `HGMControlModule`) | `setScoringWeights`, `setPremiumThreshold`, `setCaller`, `setBlacklist` | Handles routing heuristics and blacklist enforcement. |
-| `FeePool` | `contracts/v2/FeePool.sol` | Ownable | `setDistribution`, `setTreasury`, `setBurner` | No custody inside HGM; funds routed externally. |
-| `OwnerConfigurator` | `contracts/v2/admin/OwnerConfigurator.sol` | Ownable2Step (operator) | `configure`, `configureBatch` | Low-level ABI forwarder used by owner consoles and scripts. |
-| `HGMControlModule` | `contracts/v2/admin/HGMControlModule.sol` | Ownable2Step (timelock or Safe) | `pauseSystem`, `updateJobEconomics`, `updateJobAccess`, `updateJobFunding`, `configureStakeManager`, `configurePausers`, `configurePlatformRegistry`, `configureReputationEngine` | Aggregates governance knobs across registries, StakeManager, PlatformRegistry, and ReputationEngine. |
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> contracts[[Contracts]]
+    contracts --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-## Parameter ownership quick-reference
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `contracts`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../OperatorRunbook.md).
 
-- **Economic levers** (job fees, validator rewards, stake minimums) are owned by
-  governance and are accessible through `HGMControlModule.updateJobEconomics` and
-  `HGMControlModule.configureStakeManager`.
-- **Access metadata** (ENS/Merkle allow-lists, authentication cache windows)
-  live on `JobRegistry` and are controlled through
-  `HGMControlModule.updateJobAccess`.
-- **Treasury and fee routing** stay synchronised via
-  `HGMControlModule.updateJobFunding`, which updates both the registry and the
-  StakeManager and optionally refreshes the tax policy reference.
-- **Platform onboarding** knobs (`minPlatformStake`, registrar allow-list,
-  blacklist) are updated in a single call with
-  `HGMControlModule.configurePlatformRegistry`.
-- **Reputation tuning** (weights, premium thresholds, authorised callers,
-  blacklists) is centralised in
-  `HGMControlModule.configureReputationEngine`.
-- **Pausing** uses `HGMControlModule.configurePausers` to delegate pauser
-  addresses and `HGMControlModule.pauseSystem` / `resumeSystem` for full stop /
-  resume operations through `SystemPause`.
+## Directory Guide
+### Key Directories
+- `gas`
+- `legacy`
+- `mocks`
+- `test`
+- `v2`
+### Key Files
+- `CommitRevealMock.sol`
+- `Migrations.sol`
 
-These control points feed the operator tooling found under `scripts/v2` and the
-HGM demo playbooks so that contract owners can rotate governance, apply
-emergency brakes, or adjust market parameters with auditable, deterministic
-transactions.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../RUNBOOK.md) and [`OperatorRunbook.md`](../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

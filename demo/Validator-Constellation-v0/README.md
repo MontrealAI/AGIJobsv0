@@ -1,111 +1,58 @@
-# Validator Constellation v0 Demo
+# AGI Jobs v0 (v2) — Demo → Validator Constellation v0
 
-> A fully curated, non-technical friendly launch experience that lets any
-> operator command an autonomous validator super-network with safety guardrails,
-> zero-knowledge batching, and ENS-gated governance – entirely from AGI Jobs v0.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Validator-Constellation-v0`.
 
-## 🌌 Mission Profile
+## Overview
+- **Path:** `demo/Validator-Constellation-v0/README.md`
+- **Module Focus:** Anchors Demo → Validator Constellation v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-This demonstration proves that AGI Jobs v0 (v2) can assemble a production-grade
-validation constellation in minutes. It combines:
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Validator-Constellation-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Commit–Reveal Voting with VRF committees** for tamper-proof validator
-  consensus.
-- **ZK-batched attestations** capable of finalising 1000 jobs in one proof.
-- **Sentinel anomaly detection** that self-pauses unsafe domains instantly.
-- **Scoped emergency controls** for governance to recover specific domains.
-- **On-chain slashing telemetry** streamed to monitoring dashboards.
-- **ENS-enforced identities** so every validator, node, and agent is verified.
-
-Everything is pre-wired. A non-technical operator can run a single command and
-watch the entire constellation ignite.
-
-## 🧭 Quickstart
-
-```bash
-# 1. Enter the repo root
-cd AGIJobsv0
-
-# 2. Run the constellation orchestrator (import-safe shim)
-python -m demo.validator_constellation_v0.tour
-```
-
-The tour prints every step, produces a JSON mission report in
-`reports/validator-constellation-report.json`, and surfaces the mermaid diagram
-below so you can embed it directly into dashboards.
-
-## 🛰️ System Blueprint
-
+## Systems Map
 ```mermaid
-flowchart TD
-  subgraph IdentityGate[ENS Identity Gate]
-    agents[Agents<br/>*.agent.agi.eth]
-    nodes[Nodes<br/>*.node.agi.eth]
-    validators[Validators<br/>*.club.agi.eth]
-  end
-
-  subgraph Sentinel[Sentinel Guardrails]
-    detector[Budget & Call Detectors]
-    pause[Domain Pause Controller]
-  end
-
-  subgraph Consensus[Commit–Reveal Consensus]
-    vrf[VRF Committee Selector]
-    commit[Commit Phase]
-    reveal[Reveal Phase]
-    slash[Stake Manager & Slashing]
-  end
-
-  subgraph Throughput[ZK Throughput Engine]
-    batcher[ZK Batch Builder]
-    prover[Proof Submission]
-  end
-
-  IdentityGate --> Consensus
-  Consensus --> Throughput
-  Throughput -->|Aggregated Proof| ledger[Validation Module]
-  Consensus --> slash
-  slash --> dashboard[Subgraph / Monitoring]
-  Sentinel --> pause
-  pause -->|Scoped Halt| domains[Domain Runtime]
-  detector --> Sentinel
-  domains --> detector
-  governance[Governance Console] --> pause
+flowchart LR
+    Operators((Mission Owners)) --> demo_Validator_Constellation_v0[[Demo → Validator Constellation v0]]
+    demo_Validator_Constellation_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## 🛡️ Safety & Governance
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Validator-Constellation-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-- **Sentinel Monitors** guard every domain. Overspends or unsafe calls trigger
-  instantaneous pauses.
-- **Domain Scoped Pauses** isolate incidents without disrupting healthy
-  constellations.
-- **Governance Console** can resume domains after review.
-- **Immutable Audit Trail**: all slash, reward, and sentinel events are streamed
-  into the included Subgraph indexer.
+## Directory Guide
+### Key Directories
+- `config`
+- `scripts`
+- `src`
+- `tests`
+- `v2`
+- `validator_constellation`
+- `web`
+### Key Files
+- `.gitignore`
+- `__init__.py`
+- `demo_runner.py`
+- `identities.py`
+- `run_demo.py`
+- `tour.py`
+- `tsconfig.json`
+- `validation.py`
+- `validator_constellation.py`
 
-## 🧪 Tests
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-Run the dedicated validation suite:
-
-```bash
-pnpm test:validator-constellation:v0
-```
-
-The command is wired through the repository’s main test runner and executes the
-Pytest module found in `tests/demo/test_validator_constellation.py`.
-
-## 📦 Outputs
-
-Running the tour produces:
-
-- `reports/validator-constellation-report.json` – comprehensive mission report.
-- `reports/validator-constellation-events.json` – slashing and reward events.
-- Console logs describing committee formation, sentinel reactions, and ZK batch
-  digests.
-
-## ♾️ Extend
-
-The modules in this directory are pure Python and dependency-free. They can be
-swapped for production smart contract bindings or wired into the AGI Jobs agent
-runtime. The deterministic registry, VRF selection, and ZK batching interfaces
-mirror what on-chain components expect, making the upgrade path seamless.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,34 +1,46 @@
-# Alpha Bridge Service
+# AGI Jobs v0 (v2) — Services → Alpha Bridge
 
-A minimal gRPC façade that forwards planner and executor calls to the HTTP-based
-AGI-Alpha-Agent-v0 API. The bridge preserves trace identifiers, consent
-handshakes, and arbitrary metadata so downstream services can correlate requests
-end-to-end.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/alpha-bridge`.
 
-## Running locally
+## Overview
+- **Path:** `services/alpha-bridge/README.md`
+- **Module Focus:** Anchors Services → Alpha Bridge inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-```bash
-# ensure dependencies are installed from the repository root
-npm install
+## Capabilities
+- Provides opinionated configuration and assets tailored to `services/alpha-bridge` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-# run the bridge (defaults to http://localhost:8080 for the upstream agent)
-npm run alpha-bridge:start
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> services_alpha_bridge[[Services → Alpha Bridge]]
+    services_alpha_bridge --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Environment variables:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/alpha-bridge`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `ALPHA_AGENT_URL` | Base URL for the upstream AGI-Alpha-Agent-v0 service. | `http://localhost:8080` |
-| `ALPHA_BRIDGE_BIND` | gRPC bind address (host:port). | `0.0.0.0:50052` |
+## Directory Guide
+### Key Directories
+- `proto`
+- `src`
+- `test`
+### Key Files
+- `Dockerfile`
 
-## Testing
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-The bridge ships with integration tests that replay the canonical One-Box chat
-flows captured in `docs/onebox-sprint.md`. The tests stand up a stub HTTP agent
-that asserts the contract and ensures planner → simulator → runner transitions
-stay in lockstep through the gRPC hop.
-
-```bash
-npm run alpha-bridge:test
-```
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,37 +1,47 @@
-# Meta-Agentic α-AGI Jobs Demo V10 — Supremacy Console
+# AGI Jobs v0 (v2) — Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V10
 
-V10 unlocks the **Supremacy Console**. A non-technical owner runs one command and
-AGI Jobs v0 (v2) materialises an unstoppable, production-grade α-AGI operator:
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10`.
 
-- **Owner supremacy:** Timelock + multisig + guardian mesh with 95% unstoppable
-  threshold, emergency pause, circuit breakers, gasless controls, and instant
-  parameter overrides.
-- **Meta-agentic flywheel:** Identify → learn → think → design → strategise →
-  execute with autonomous mission threads, autopilot orchestration, curriculum
-  escalation, and antifragility feedback loops.
-- **Account abstraction fabric:** ERC-4337 bundler + sovereign paymaster with
-  rotating session keys, unstoppable treasury overdrive, and gasless override
-  scripts.
-- **Treasury supremacy:** 40% unstoppable reserves, cross-chain bridges, and five
-  high-yield capital streams with antifragility buffers.
-- **CI V2 enforcement:** pytest, orchestrator-ci, foundry, fuzzing, simulations,
-  treasury audit, guardian review, and gasless safety all green before execution.
-- **Auto-generated artefacts:** Supremacy dashboard, masterplan markdown deck,
-  Mermaid diagrams, telemetry JSON, and scoreboard payloads regenerated on every
-  run.
+## Overview
+- **Path:** `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10/README.md`
+- **Module Focus:** Anchors Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V10 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Run the Demo
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-```bash
-python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v10.py
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v10[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V10]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v10 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Key outputs:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v10`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-- `storage/latest_run_v10.json`
-- `meta_agentic_alpha_v10/ui/index.html`
-- `meta_agentic_alpha_v10/ui/dashboard-data-v10.json`
-- `meta_agentic_alpha_v10/reports/generated/alpha_meta_supremacy_masterplan.md`
+## Directory Guide
+### Key Directories
+- `config`
+- `data`
+- `playbooks`
+- `reports`
+- `storage`
+- `ui`
 
-Update `meta_agentic_alpha_v10/config/scenario.yaml`, rerun the CLI, and AGI Jobs
-v0 (v2) regenerates the entire Supremacy Console automatically.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

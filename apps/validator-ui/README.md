@@ -1,36 +1,53 @@
-# Validator UI
+# AGI Jobs v0 (v2) — Apps → Validator UI
 
-A minimal Next.js interface for validators to view pending jobs, commit votes, and automatically reveal them.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/validator-ui`.
 
-Job amounts are formatted with `ethers.formatUnits(..., decimals)` where `decimals` comes from the `NEXT_PUBLIC_AGIALPHA_DECIMALS` environment variable or defaults to the value in `config/agialpha.json`.
+## Overview
+- **Path:** `apps/validator-ui/README.md`
+- **Module Focus:** Anchors Apps → Validator UI inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Setup
+## Capabilities
+- Provides opinionated configuration and assets tailored to `apps/validator-ui` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-```bash
-npm install --prefix apps/validator-ui
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> apps_validator_ui[[Apps → Validator UI]]
+    apps_validator_ui --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Create a `.env.local` file with:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/validator-ui`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-```
-NEXT_PUBLIC_GATEWAY_URL=http://localhost:3000
-NEXT_PUBLIC_VALIDATION_MODULE_ADDRESS=0xYourValidationModule
-NEXT_PUBLIC_REVEAL_DELAY_MS=5000
-NEXT_PUBLIC_AGIALPHA_DECIMALS=18
-```
+## Directory Guide
+### Key Directories
+- `__tests__`
+- `components`
+- `lib`
+- `pages`
+### Key Files
+- `Dockerfile`
+- `next-env.d.ts`
+- `next.config.js`
+- `package-lock.json`
+- `package.json`
+- `tsconfig.json`
+- `vitest.config.ts`
 
-## Running
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-npm run dev --prefix apps/validator-ui
-```
-
-Connect a browser wallet and use the interface to approve or reject jobs. Commits are signed with a random salt and the reveal transaction is scheduled automatically.
-
-## Testing
-
-Run the commit/reveal integration test against a local Hardhat network:
-
-```bash
-npx hardhat test test/validator-ui/commitReveal.test.js
-```
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,128 +1,49 @@
-# ASI Take-Off Demonstration
+# AGI Jobs v0 (v2) — Demo → ASI Takeoff
 
-This directory houses the deterministic artefacts that back the **ASI Take-Off Demonstration for AGI Jobs v0**.  The goal is to
-produce a national-scale governance simulation using only the platform capabilities that already exist inside this repository.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/asi-takeoff`.
 
-The demonstration is orchestrated by the `scripts/v2/asiTakeoffDemo.ts` pipeline which automatically:
+## Overview
+- **Path:** `demo/asi-takeoff/README.md`
+- **Module Focus:** Anchors Demo → ASI Takeoff inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-1. Compiles the protocol and regenerates constants required by the governance scripts.
-2. Exercises the owner dry-run harness to simulate an end-to-end labour-market execution with staking, delivery, validation and payout.
-3. Captures live thermodynamic telemetry (role shares, entropy, temperature) for the epoch.
-4. Produces an owner mission-control report with a Mermaid governance diagram, safe-ready bundles, and change-surface analysis.
-5. Verifies the owner-control wiring to prove that the SystemPause, treasury, and thermostat permissions match the repo's hardening
-   playbooks.
-6. Emits an audit-grade summary that maps the deterministic outputs to the high-speed rail initiative defined in
-   `project-plan.json`.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/asi-takeoff` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-The demo uses the following canonical actors:
-
-- **engineering.agent.agi.eth** – parametric design lead
-- **north.contractor.agi.eth** – northern corridor builder
-- **south.contractor.agi.eth** – southern corridor builder
-- **inspection.validator.agi.eth** – primary validator quorum
-- **civic.validator.agi.eth** and **safety.validator.agi.eth** – supplemental auditors
-
-Outputs are collected under `reports/asi-takeoff` and can be published as CI artefacts or ingested into downstream dashboards.
-# ASI Take-Off Demonstration — Autonomous Nation Coordination
-
-**Mission scope:** Execute a multi-sector governance drill (agriculture, infrastructure, healthcare) using the AGI Jobs v2 one-box orchestrator, thermodynamic incentives, and validator governance entirely on-chain.
-
----
-
-## Quickstart
-
-Local (Anvil / Hardhat):
-
-```bash
-cp demo/asi-takeoff/env.example .env
-npm run demo:asi-takeoff:local
-
-# Optional: generate a governance kit for the deterministic artefacts
-npm run demo:asi-takeoff:kit -- --report-root reports/localhost/asi-takeoff --summary-md reports/localhost/asi-takeoff/asi-takeoff-report.md --bundle reports/localhost/asi-takeoff/receipts --logs reports/localhost/asi-takeoff/receipts
-```
-
-To run the planetary-scale energy coordination drill, point the orchestrator at
-the dedicated plan file before invoking the pipeline:
-
-```bash
-export ASI_TAKEOFF_PLAN_PATH=demo/asi-takeoff/project-plan.planetary.json
-npm run demo:asi-takeoff:local
-```
-
-Generate the Markdown mission report:
-
-```bash
-npm run demo:asi-takeoff:report
-```
-
-Artifacts:
-
-- `reports/<network>/asi-takeoff/receipts/mission.json`
-- `reports/<network>/asi-takeoff/receipts/jobs/<slug>/*.json`
-- `reports/<network>/asi-takeoff/asi-takeoff-report.md`
-- `reports/<network>/asi-takeoff/governance-kit.json`
-- `reports/<network>/asi-takeoff/governance-kit.md`
-
-The governance kit consolidates the plan of record, dry-run harness output, thermodynamic telemetry, mission-control dossier, and integrity hashes for auditors.  The kit is generated automatically by `npm run demo:asi-takeoff` and can be reproduced for any report root with `npm run demo:asi-takeoff:kit`.
-
-Planetary energy stabilization artefacts resolve to `*.planetary.*` files and
-mirror the standard receipt layout for long-term archival.
-
----
-
-## System Overview
-
+## Systems Map
 ```mermaid
-flowchart TD
-  subgraph Mission
-    M0[ASI Meta-Orchestrator]
-    M1[Agriculture Planner]
-    M2[Infrastructure Architect]
-    M3[Healthcare Marshal]
-  end
-
-  subgraph Core Protocol
-    JR[JobRegistry]
-    SM[StakeManager]
-    VM[ValidationModule]
-    DM[DisputeModule]
-    RE[ReputationEngine]
-    SP[SystemPause]
-    TH[Thermostat]
-    MB[RewardEngineMB]
-  end
-
-  subgraph Observability
-    RP[Mission Receipts]
-    OR[Owner Runbooks]
-  end
-
-  M0 -->|plan/sim/execute| JR
-  M1 -->|job intent| M0
-  M2 -->|job intent| M0
-  M3 -->|job intent| M0
-  JR --> VM --> DM --> JR
-  JR --> SM
-  JR --> RE
-  SP --> JR
-  TH --> MB
-  MB --> SM
-  VM --> RP
-  SM --> RP
-  M0 --> RP
-  OR --> RP
+flowchart LR
+    Operators((Mission Owners)) --> demo_asi_takeoff[[Demo → ASI Takeoff]]
+    demo_asi_takeoff --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Lifecycle
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/asi-takeoff`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. **Deploy defaults** – deterministic Hardhat script wires the v2 stack and pre-registers demo identities.
-2. **Mission planning** – `aurora.demo.ts` loads `mission@v2.json`, calculates cross-job stake/reward requirements, and stages governor drills (pause/unpause, role minimum updates).
-3. **Job loop** – each mission job posts, assigns, submits, validates, finalizes, and records receipts under `jobs/<slug>/` while maintaining backward-compatible single-job receipts for regression tooling.
-4. **Thermostat tuning** – optional `asi-takeoff.thermostat@v2.json` applies global + role temperatures to illustrate incentive steering.
-5. **Reporting** – `aurora-report.ts` renders the mission Markdown summary, merging deployment, stake, governance, and per-job records.
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+### Key Files
+- `env.example`
+- `Makefile`
+- `project-plan.json`
+- `project-plan.planetary.json`
+- `RUNBOOK.md`
 
----
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Runbook
-
-See [`RUNBOOK.md`](./RUNBOOK.md) for the step-by-step operator drill, including owner control verifications, validator proofs, and pausing procedures.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

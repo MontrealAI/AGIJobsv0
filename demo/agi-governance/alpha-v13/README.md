@@ -1,65 +1,47 @@
-# 🎖️ Solving α-AGI Governance — α-field v13 Mission Pack
+# AGI Jobs v0 (v2) — Demo → AGI Governance → Alpha V13
 
-This mission pack instantiates the mathematical programme outlined in `alpha_asi_governance_v13.tex` directly on top of **AGI Jobs v0 (v2)**. A non-technical owner can run a single command and watch the platform generate, validate, and certify a civilisation-scale governance dossier that fuses Hamiltonian thermodynamics, antifragile game theory, and Ethereum-grade owner controls.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/agi-governance/alpha-v13`.
 
-The pack is intentionally batteries-included:
+## Overview
+- **Path:** `demo/agi-governance/alpha-v13/README.md`
+- **Module Focus:** Anchors Demo → AGI Governance → Alpha V13 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Mission manifest** – `config/mission@v13.json` encodes thermodynamic constants, Gibbs envelopes, stake-aware incentives, antifragility curvature, and CI guard rails from the α-field proofs.
-- **Physics-grade dossier** – `scripts/runMission.ts` calls the production `generateGovernanceDemo` engine with v13 parameters, emitting Markdown, JSON, and a cinematic dashboard full of mermaid diagrams, alpha-field heatmaps, and owner capability matrices.
-- **Triple validation** – independent recomputation (`scripts/validateMission.ts`), CI shield auditing (`scripts/verifyCi.ts`), and owner diagnostic sweeps (`scripts/ownerDiagnostics.ts`) cross-check the dossier and record provenance in `reports/`.
-- **Full pipeline** – `scripts/fullPipeline.ts` stitches everything together so a board member can trigger the entire α-field drill and archive one aggregated JSON/Markdown bundle.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/agi-governance/alpha-v13` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quickstart
-
-```bash
-npm run demo:agi-governance:alpha-v13
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_agi_governance_alpha_v13[[Demo → AGI Governance → Alpha V13]]
+    demo_agi_governance_alpha_v13 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The command loads the v13 manifest, runs the Hamiltonian/statistical-physics stack, computes equilibrium by five independent methods, verifies Jarzynski equality versus the Landauer bound, and renders the α-field governance atlas. Outputs land in `demo/agi-governance/alpha-v13/reports/`:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/agi-governance/alpha-v13`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-- `governance-demo-report-v13.md`
-- `governance-demo-summary-v13.json`
-- `governance-demo-dashboard-v13.html`
+## Directory Guide
+### Key Directories
+- `config`
+- `reports`
+- `scripts`
+### Key Files
+- `RUNBOOK.md`
+- `tsconfig.json`
 
-## Deep validation
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-| Purpose | Command | Output |
-| --- | --- | --- |
-| Recompute all physics, equilibrium, and incentives | `npm run demo:agi-governance:alpha-v13:validate` | `reports/governance-demo-validation-v13.{json,md}` |
-| Confirm the CI (v2) enforcement shield | `npm run demo:agi-governance:alpha-v13:ci` | `reports/ci-verification-v13.json` |
-| Aggregate owner diagnostics (Hamiltonian audit, reward engine, upgrades, compliance) | `npm run demo:agi-governance:alpha-v13:owner-diagnostics` | `reports/owner-diagnostics-v13.{json,md}` |
-| Execute the entire α-field drill (generate → validate → CI → owner diagnostics) | `npm run demo:agi-governance:alpha-v13:full` | `reports/governance-demo-full-run-v13.{json,md}` |
-
-Every artefact is deterministic, timestamped, and ready for regulator packets or board reviews.
-
-## Why this empowers non-technical owners
-
-- **Physics without calculus** – all Hamiltonian, Gibbs, Landauer, and Jarzynski calculations are performed in code and summarised in plain language with callouts for any deviations beyond tolerance.
-- **Antifragility visualised** – the dossier includes mermaid mindmaps, antifragility SVG charts, and α-field confidence dashboards so stakeholders see how shocks increase welfare.
-- **Owner absolutism** – the manifest inventories every pause/resume/parameter/treasury/sentinel/upgrade/compliance command, checks the corresponding npm scripts exist, and reports readiness percentages.
-- **Ethereum mainnet ready** – the manifest assumes mainnet-level RPC infrastructure, timelocks, Safe modules, and pausable selectors. No toy addresses or short-cuts.
-- **CI enforcement guaranteed** – the CI verification step ensures the root `ci (v2)` workflow still runs lint, tests, Foundry, coverage, and summary jobs with concurrency guards on PRs and `main`.
-
-## File map
-
-```
-alpha-v13/
-├── config/
-│   └── mission@v13.json          # α-field governance manifest
-├── reports/                      # Generated artefacts (kept out of git via .gitkeep)
-├── scripts/
-│   ├── fullPipeline.ts           # Orchestrates the entire drill
-│   ├── ownerDiagnostics.ts       # Owner capability & readiness audit
-│   ├── runMission.ts             # Generates the governance dossier
-│   ├── validateMission.ts        # Independent recomputation & consistency checks
-│   └── verifyCi.ts               # Ensures the v2 CI shield remains enforced
-└── tsconfig.json                 # TypeScript config extending the parent demo settings
-```
-
-## Next steps
-
-1. Review the generated Markdown dossier and dashboard to align stakeholders on energy margins, antifragility curvature, and Stackelberg bounds.
-2. Attach `governance-demo-validation-v13.md`, `ci-verification-v13.json`, and `owner-diagnostics-v13.md` to governance packets as evidence that the α-field machine is locked to owner control.
-3. When ready for on-chain execution, follow `RUNBOOK.md` for a guided deployment using AGI Jobs v0 (v2) scripts, Safe batch transactions, or Etherscan calls.
-
-> **Confidence:** This mission pack proves that AGI Jobs v0 (v2) lets a non-technical owner conjure a thermodynamically grounded, antifragile, Ethereum-ready governance machine — exactly the superintelligent leverage promised by the α-field research.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

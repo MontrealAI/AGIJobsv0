@@ -1,79 +1,46 @@
-# Meta-Agentic α-AGI Jobs Demo V5 — Sovereign Meta-Conductor 👁️‍🗨️✨
+# AGI Jobs v0 (v2) — Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V5
 
-> **Objective:** Give a non-technical owner an instant command centre for orchestrating an
-> unstoppable α-AGI Jobs economy — all through AGI Jobs v0 (v2), without writing code.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5`.
 
-## 🚀 What this V5 demo proves
+## Overview
+- **Path:** `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5/README.md`
+- **Module Focus:** Anchors Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V5 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Meta-agentic autonomy** across identify → learn → think → design → strategise → execute
-  with real artefacts, dashboards, and on-chain ready payloads generated in one run.
-- **Owner primacy dialled to 11:** every guardian, treasury control, paymaster, and pause
-  switch is surfaced as a simple selector that can be tweaked live with
-  `scripts/owner_controls.py`.
-- **Mermaid-rich telemetry** powering the new Sovereign Meta-Conductor Console so the owner
-  can literally watch the alpha fabric assemble itself.
-- **Hard guarantees**: dry-run first, gasless-ready, timelock-governed, guardian-veto-able,
-  and antifragility-indexed.
-- **Owner Sovereignty Matrix** exposing quorum, circuit-breaker, unstoppable reserves, and
-  control levers in one glance — proving the owner can pause or retune everything instantly.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## 🗂️ Directory
-
-```
-meta_agentic_alpha_v5/
-├── README.md
-├── config/
-│   └── scenario.yaml              # Scenario definition consumed by the orchestrator
-├── data/                          # Static data powering dashboards & reports
-│   ├── alpha_signals.json
-│   ├── governance_matrix.json
-│   ├── guardian_mesh.json
-│   ├── opportunity_playbook.json
-│   └── timeline.json
-├── playbooks/
-│   └── sovereign_controls.md      # Operator quick-reference
-├── reports/
-│   ├── alpha_constellation.md     # Static manifesto
-│   └── generated/
-│       └── meta_conductor_masterplan.md
-└── ui/
-    ├── dashboard.js
-    ├── index.html
-    └── styles.css
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v5[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V5]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v5 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## 🧭 How a non-technical owner uses it
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v5`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-1. Run `python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_demo_v5.py`.
-2. The CLI prints the exact files to open (dashboard + report) and a copy-ready
-   `python -m http.server` command.
-3. Inspect the Owner Sovereignty Matrix panel to confirm quorum, emergency pause, and
-   unstoppable reserves before execution.
-4. Adjust any parameter via `scripts/owner_controls.py --config meta_agentic_alpha_v5/config/scenario.yaml --set ...`.
-5. Re-run the CLI — all dashboards & reports update automatically.
+## Directory Guide
+### Key Directories
+- `config`
+- `data`
+- `playbooks`
+- `reports`
+- `ui`
 
-No YAML editing. No smart contract calls. No manual staking. Everything is executed
-by the orchestrator and stored in the `storage/` namespace with v5 segregation to keep
-older runs intact.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## 🛡️ Safety & control guardrails
-
-- **Guardian mesh quorum** and timelocked approvals before anything touches on-chain.
-- **Emergency pause** accessible with a single `owner_controls` command.
-- **Dry-run + eth_call** enforced in plan steps. The CLI refuses to continue if any
-  simulation diverges from expectations.
-- **Mermaid anomaly radar**: the dashboard and report surface any stress events and
-  explicitly list the countermeasures, empowering humans to veto or adjust.
-
-## 📊 Artefacts generated per run
-
-- `storage/latest_run_v5.json` — full telemetry, approvals, alpha metrics.
-- `meta_agentic_alpha_v5/ui/dashboard-data-v5.json` — data lake powering the console.
-- `meta_agentic_alpha_v5/reports/generated/meta_conductor_masterplan.md` — markdown deck.
-- `storage/orchestrator_v5/scoreboard.json` — scoreboard snapshot for the run.
-- Owner Sovereignty Matrix metrics embedded across the dashboard and report for audit-ready
-  proof that every lever remains under owner command.
-
-All artefacts are deterministic, version-controlled, and suitable for investor-ready
-briefings right after execution.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

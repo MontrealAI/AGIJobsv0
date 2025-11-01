@@ -1,124 +1,57 @@
-# Kardashev-II Omega-Grade Upgrade for α-AGI Business 3 · V7
+# AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V7
 
-> **Purpose.** Prove that a non-technical operator can command a Kardashev-II enterprise with AGI Jobs v0 (v2) by launching a self-healing, planet-scale mission that checkpoints state, audits validators, tokenises energy, and shares live telemetry across a structured mesh bus – all from a single command.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7`.
 
-## 🌌 Mission Overview
+## Overview
+- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7/README.md`
+- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V7 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The V7 Omega upgrade extends the orchestration fabric with a **long-run scheduler** that survives day-long missions, a **planetary resource ledger** that tokenises energy and compute, and a **structured mesh bus** that records every agent-to-agent message. Operators gain JSONL structured logging, resumable checkpoints, and visual dashboards while thousands of recursive workers coordinate autonomously for hours or days.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
+## Systems Map
 ```mermaid
-flowchart TD
-    operator[(Operator Treasury)] --> wizard[MissionWizard Presets]
-    wizard --> config[(Mission JSON)]
-    operator --> control["Owner Control Stream"]
-    control --> guardian{{"Autonomy Guardian"}}
-    guardian --> orchestrator{{"Ω Orchestrator V7"}}
-    orchestrator --> mesh[["Ω Mesh Bus"]]
-    orchestrator --> ledger["Planetary Resource Ledger"]
-    orchestrator --> continuity["Continuity Vault"]
-    continuity --> replicas[("Multi-site Snapshots")]
-    orchestrator --> validators["Validator Council"]
-    orchestrator --> workers["Recursive Worker Swarms"]
-    orchestrator --> state["Long-Run State Manager"]
-    state --> history[(State History JSONL)]
-    orchestrator --> delegation["Delegation Engine"]
-    delegation --> workers
-    orchestrator --> watchdog["Validator Watchdog"]
-    watchdog --> validators
-    orchestrator --> sim["Simulation Bridge"]
-    sim --> telemetry["Simulation Telemetry"]
-    mesh --> meshLog[["Mesh History JSONL"]]
-    ledger --> ledgerLog[["Resource Ledger"]]
-    orchestrator --> structLog[["Structured Mission Log"]]
-    storyboard --> ui[["Mission Control UI"]]
+flowchart LR
+    Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V7]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## ✨ Key Capabilities
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v7`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-- **Long-run autonomy.** The background scheduler, checkpoint vault, and async task pool keep the mission running for multi-hour or multi-day windows with resumable state snapshots.
-- **Recursive delegation.** The `DelegationEngine` maintains parent/child DAG state, nudges unattended jobs on the mesh bus, and scales recursive hiring safely.
-- **Planetary ledger.** `PlanetaryResourceLedger` tokenises energy and compute usage, tracks stake movements, and persists every debit/credit event for audits.
-- **Structured mesh bus.** `OmegaMessageBus` emits JSONL logs of every agent message and supports targeted pub/sub channels for thousands of agents.
-- **Validator governance.** Commit–reveal windows, staking controls, and watchdog reminders mirror the AGI Jobs validation pipeline.
-- **Simulation telemetry.** The simulation bridge streams world updates into the mesh so dashboards and downstream agents react to planetary forecasts instantly.
-- **Operator tooling.** MissionWizard, upgraded CLI flags, and an animated mission control UI put orchestration, governance, and resource policy within reach of non-technical operators.
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `ui`
+### Key Files
+- `__init__.py`
+- `__main__.py`
+- `bus.py`
+- `cli.py`
+- `config.py`
+- `continuity.py`
+- `council.py`
+- `orchestrator.py`
+- `resilience.py`
+- `resources.py`
+- `storyboard.py`
+- `telemetry.py`
 
-## 🚀 Quickstart
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-# Install agent dependencies (virtualenv recommended)
-pip install -r requirements-agent.txt
-
-# Launch the Omega-grade demo with the default mission
-yarn demo:kardashev-ii-omega-upgrade-v7 -- launch
-
-# Print telemetry, Mermaid job graph, and guardian plan in another shell
-yarn demo:kardashev-ii-omega-upgrade-v7 -- status
-
-# Generate a ready-to-run mission preset without editing JSON
-yarn demo:kardashev-ii-omega-upgrade-v7 -- wizard --preset consortium --output mission.consortium.json
-
-# Operate the owner channel (pause/resume/emergency-stop)
-yarn demo:kardashev-ii-omega-upgrade-v7 -- owner pause
-yarn demo:kardashev-ii-omega-upgrade-v7 -- owner resume
-yarn demo:kardashev-ii-omega-upgrade-v7 -- owner emergency-stop
-```
-
-## 🧭 Owner Command Reference
-
-| Command | Effect |
-| --- | --- |
-| `owner governance --worker-stake-ratio 0.2` | Adjust worker staking ratio |
-| `owner governance --validator-timeout 1800` | Extend validator reveal grace period |
-| `owner resources --energy-capacity 2e6` | Expand planetary energy ceiling |
-| `owner mission --checkpoint-interval 90 --state-history 2048` | Tune long-run checkpoint cadence and retention |
-| `owner mission --background-limit 96 --delegation-retry 45` | Resize background work pool and retry window |
-| `owner mission --mesh-history-lines 4096` | Resize the retained mesh bus history |
-| `owner mission --structured-log-history 8192` | Resize structured log retention |
-| `owner mission --simulation-tick 20 --simulation-hours 4` | Sync simulation cadence and simulated hours per tick |
-| `owner mission --validator-commit 600 --validator-reveal 1200` | Redefine council commit/reveal windows |
-| `owner mission --continuity-interval 120 --continuity-history 2048` | Tune vault replication cadence and ledger retention |
-| `owner autonomy --guardian-interval 6 --resource-target 0.78` | Speed guardian scans & raise utilisation target |
-| `owner account operator --tokens 1.5e6` | Refill operator treasury |
-| `owner cancel JOB_ID --reason "Operator veto"` | Cancel any job with slash-safe audit |
-
-All commands append JSONL entries to the control stream for replay, governance, and incident response.
-
-## 🛡️ Resilience & Auditability
-
-- **State checkpoints.** `state-checkpoint.json` and `state-history.jsonl` keep the entire mission resumable.
-- **Structured mission log.** Every orchestrator event is written to `structured-log.jsonl` for programmatic audits.
-- **Mesh history.** The mesh bus records all agent-to-agent traffic in `mesh-history.jsonl` for governance review.
-- **Planetary ledger.** Resource debits, stakes, and burns are recorded in `resource-ledger.json` for transparent accounting.
-- **Continuity vault.** Replication events stream into `continuity-history.jsonl` so operators can audit redundancy at a glance.
-- **Mission storyboard.** Human-readable narratives live in `storyboard.json`, while `storyboard-history.jsonl` and `insights.jsonl` chronicle the operator storyline.
-- **CI mode.** `yarn demo:kardashev-ii-omega-upgrade-v7 -- ci` executes a deterministic, short mission for automated verification.
-
-## 🖥️ Mission Artifacts
-
-Artifacts default to `demo/.../artifacts/`:
-
-- `status/omega-upgrade-v7/telemetry.json` – full mission snapshot
-- `status/omega-upgrade-v7/telemetry-ui.json` – UI-friendly payload
-- `status/omega-upgrade-v7/job-graph.mmd` – Mermaid job DAG
-- `status/omega-upgrade-v7/autonomy-plan.json` – guardian plan of record
-- `status/omega-upgrade-v7/autonomy-history.jsonl` – guardian history stream
-- `status/omega-upgrade-v7/storyboard.json` – latest human-readable narrative
-- `status/omega-upgrade-v7/storyboard-history.jsonl` – storyboard history ledger
-- `status/omega-upgrade-v7/insights.jsonl` – recommended action journal
-- `status/omega-upgrade-v7/long-run-ledger.jsonl` – rotating long-run ledger
-- `status/omega-upgrade-v7/state-checkpoint.json` – latest planetary checkpoint
-- `status/omega-upgrade-v7/state-history.jsonl` – rolling state history stream
-- `status/omega-upgrade-v7/continuity-primary.json` – primary vault snapshot (with `secondary` and `tertiary` siblings)
-- `status/omega-upgrade-v7/resource-ledger.json` – planetary resource ledger
-- `status/omega-upgrade-v7/mesh-history.jsonl` – agent mesh message history
-- `status/omega-upgrade-v7/structured-log.jsonl` – structured mission log
-
-## ✅ Designed for Non-Technical Operators
-
-- **MissionWizard** answers “just make it work” in one command.
-- **Mission Control UI** renders confidence, phases, mermaid diagrams, and guardian plans with zero manual wiring.
-- **Owner supremacy** keeps pause/resume/stop/emergency-stop, governance tweaks, resource scaling, autonomy policy tuning, account management, mesh/log retention, and job cancellation at your fingertips.
-- **Production ready.** Everything aligns with AGI Jobs v0 (v2) primitives and Eth mainnet-ready infrastructure, including staking, slashing, and energy accounting.
-
-Harness the V7 upgrade to show that AGI Jobs v0 (v2) empowers any operator to build, steer, and audit planetary-scale AGI businesses with unprecedented clarity, continuity, and economic integrity.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

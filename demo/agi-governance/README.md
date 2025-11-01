@@ -1,139 +1,52 @@
-# 🎖️ Solving α-AGI Governance 👁️✨ — First-Class Demonstration
+# AGI Jobs v0 (v2) — Demo → AGI Governance
 
-> **Mission:** prove that AGI Jobs v0 (v2) lets a non-technical owner summon, command, and continuously govern a civilisation-scale α-AGI labour constellation with production-grade assurance.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/agi-governance`.
 
-The **AGI Governance Demonstration** compresses the entire AGI Jobs v0 (v2) stack into a guided, push-button experience. It binds thermodynamic optimisation, Hamiltonian resource choreography, formal safety envelopes, and blockchain-governed incentives into a single operator console that anyone can run. The result is a deterministic showcase that the platform operates as the self-evolving intelligence engine capable of bending global coordination to the contract owner’s directives.
+## Overview
+- **Path:** `demo/agi-governance/README.md`
+- **Module Focus:** Anchors Demo → AGI Governance inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Why this demo is different
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/agi-governance` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Superintelligent leverage, human interface.** Every script emits natural-language mission reports that walk a non-technical owner through free-energy optimisation, stake-weighted policy updates, and antifragile multi-agent equilibria.
-- **Thermodynamics + governance in code.** Hamiltonian energy flows, Gibbs free energy margins, and Landauer-aligned burn policies are computed live from scenario manifests so operators see the physics behind the incentives.
-- **Quantum coherence instrumentation.** Quantum free-energy margins, Noether charge drift, and coherence decay are evaluated alongside the classical thermodynamics so operators watch the Landauer envelope stay intact even under superpositioned incentive flows.
-- **Owner-first absolutism.** Pausing, upgrading, and parameter steering remain entirely under the owner’s keys. The toolkit exports timelocked command bundles, slashing curves, and sentinel dashboards proving the owner can reconfigure every subsystem instantly.
-- **Supremacy telemetry & alignment.** A new owner supremacy index fuses capability coverage, automation status, and verification wiring, while thermo ↔ quantum drift monitors prove the superintelligence lattice stays phase-locked to the classical energy envelope.
-- **CI-proven production fidelity.** A dedicated workflow (`demo-agi-governance.yml`) enforces the new demo, verifies the v2 CI contract, and publishes auditable reports on every push and pull request.
-- **Triangulated verification.** Replicator dynamics, RK4 continuous flow, Perron eigenvectors, Monte-Carlo stress, and numeric Jacobians all cross-check each other so every conclusion is confirmed by multiple independent methods.
-- **Alpha-field sovereignty.** Stackelberg payoffs, Gibbs tolerances, antifragility curvature, energy reserves, and owner coverage fuse into a quantified superintelligence index—with weighted thermo/governance/antifragility/owner assurances—that certifies the mission truly operates as a civilisation-scale intelligence field under owner command.
-
-## Contents
-
-| Path | Purpose |
-| --- | --- |
-| [`config/mission@v1.json`](config/mission@v1.json) | Canonical governance, physics, antifragility, quantum, risk, and blockchain manifest for the demo. |
-| [`scripts/executeDemo.ts`](scripts/executeDemo.ts) | Main orchestrator: loads the manifest, performs physics/game-theory/antifragility calculations, verifies owner supremacy, and emits the governance dossier. |
-| [`scripts/verifyCiStatus.ts`](scripts/verifyCiStatus.ts) | Audits `.github/workflows/ci.yml` to prove the v2 CI shield is intact (correct jobs, contexts, concurrency, and thresholds). |
-| [`scripts/validateReport.ts`](scripts/validateReport.ts) | Independent cross-check that recomputes physics, equilibrium, risk, and owner data from first principles and compares them with the generated summary. |
-| [`reports/`](reports) | Generated artefacts (`governance-demo-report.md`, `ci-verification.json`, etc.) are written here so they can be archived from CI. |
-| [`reports/governance-demo-dashboard.html`](reports/governance-demo-dashboard.html) | Immersive, mermaid-rich web console that renders the mission as an interactive UI for non-technical owners. |
-| [`alpha-v17/`](alpha-v17) | Singularity Dominion α-field v17 mission pack with hyperbolic energy leverage, variance-fed antifragility, and owner-absolute supremacy across twelve command categories. |
-| [`alpha-v16/`](alpha-v16) | ChronoSovereign α-field v16 mission pack with thermodynamic clocking, quantum alignment, and CI(v2) enforcement tuned for owner-dominant control. |
-| [`alpha-v15/`](alpha-v15) | OmegaSovereign α-field v15 mission pack with expansion governance, resilience drills, and the most aggressive physics/game-theory instrumentation yet. |
-| [`alpha-v14/`](alpha-v14) | HyperSovereign α-field v14 mission pack with unstoppable owner supremacy, quantum lattice instrumentation, and CI hardening. |
-| [`alpha-v13/`](alpha-v13) | Self-contained α-field v13 mission pack derived from the governance paper; includes its own manifest, scripts, and runbook for non-technical execution. |
-| [`RUNBOOK.md`](RUNBOOK.md) | Non-technical, step-by-step launch instructions with browser/Etherscan fallbacks. |
-
-## Quick start
-
-```bash
-npm run demo:agi-governance
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_agi_governance[[Demo → AGI Governance]]
+    demo_agi_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The command generates `reports/governance-demo-report.md` with:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/agi-governance`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. Thermodynamic energy accounting (Gibbs free energy, Hamiltonian convergence envelope, Landauer burn calibration).
-2. Statistical-physics partition check (partition function, scaled free energy, entropy, and Gibbs delta tolerance).
-3. Jarzynski equality verification (log-space ⟨e<sup>−βW</sup>⟩ vs e<sup>−βΔF</sup> with Landauer baseline and tolerance proof).
-4. Incentive free-energy flow (mint/burn/slash computation proving agent ↔ treasury parity and owner-tunable slashing curves).
-5. Five-way verified game-theory equilibrium (discrete replicator, RK4 continuous flow, closed-form solver, Perron eigenvector, Monte-Carlo stress sampling) with method-consistency scores.
-6. Analytic and numeric Jacobian comparison with Gershgorin, spectral radius, and max-delta checks plus antifragility curvature proving positive welfare response to adversarial shocks.
-7. Alpha-field sovereign assurance scoreboard confirming Stackelberg bounds, Gibbs envelopes, sigma gains, owner coverage, owner supremacy index, thermo ↔ quantum alignment, quantum confidence, superintelligence index, and composite confidence with per-signal assurances.
-8. Quantum governance lattice readout (coherence confidence, Landauer delta, Noether charge alignment, state entropy) with superposition tables you can hand to physics and security teams alike.
-9. Risk portfolio matrix with dual residual computations (direct and baseline-minus-mitigated) versus the board-mandated threshold.
-10. Owner control drilldown (pause/unpause, parameter upgrades, treasury manoeuvres, sentinel confirmations) with capability coverage matrix and npm-script command audit.
-11. Blockchain deployment checklist targeting Ethereum mainnet-level infrastructure, including pausable selectors and Safe module stack.
-12. **Grandiose mermaid visualisations** (energy → governance flowchart, quantum lattice, alpha-field mindmap, antifragility curve, owner command sequence, residual-risk pie) embedded directly in the Markdown dossier.
+## Directory Guide
+### Key Directories
+- `alpha-v13`
+- `alpha-v14`
+- `alpha-v15`
+- `alpha-v16`
+- `alpha-v17`
+- `config`
+- `reports`
+- `scripts`
+### Key Files
+- `RUNBOOK.md`
+- `tsconfig.json`
 
-Then confirm the dossier by replaying all analytics from scratch:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-npm run demo:agi-governance:validate
-```
-
-This verification script reloads the mission manifest, recomputes thermodynamics, statistical physics, Hamiltonian flows, equilibrium vectors, antifragility curvature, risk portfolio weights, incentive ledgers, and owner control coverage, and compares the results against `reports/governance-demo-summary.json`. The output (`reports/governance-demo-validation.json` and `.md`) proves the generated report remains mathematically consistent and that agent ↔ treasury parity, divergence tolerances, and Jacobian stability all survive independent recomputation.
-
-Then run the CI verification layer:
-
-```bash
-npm run demo:agi-governance:ci
-```
-
-This command checks that the repository’s v2 CI workflow still enforces the mandatory green path (`lint`, `tests`, `foundry`, `coverage`, `CI summary` contexts), concurrency guards, and environment seals. Any drift fails loudly.
-
-Finish by aggregating the owner diagnostics bundle:
-
-```bash
-npm run demo:agi-governance:owner-diagnostics
-```
-
-The aggregator executes the owner audit CLIs (`owner:audit-hamiltonian`, `reward-engine:report`, `owner:upgrade-status`, `owner:compliance-report`) with JSON output, normalises warnings (e.g., missing Hardhat artifacts or placeholder addresses), and writes both machine-readable and Markdown summaries to `reports/`. Non-technical operators can now forward a single dossier proving that every governance lever remains under the owner’s control.
-
-Finally, open the immersive HTML dashboard:
-
-```bash
-open reports/governance-demo-dashboard.html # or xdg-open on Linux
-```
-
-This UI renders all mermaid diagrams, antifragility charts, strategy tables, and CI shields in a cinematic control room the owner can navigate without touching source code.
-
-### One-command orchestration
-
-When you need the entire drill to run unattended—from dossier generation through validation, CI verification, and owner diagnostics—invoke the consolidated pipeline:
-
-```bash
-npm run demo:agi-governance:full
-```
-
-The command writes `reports/governance-demo-full-run.json` and `.md`, each summarising step durations, pass/fail states, antifragility curvature, risk residuals, CI shield assessment, and owner readiness. Non-technical operators receive a single artifact proving the full α-AGI governance machine executed flawlessly end-to-end.
-
-## Empowering non-technical operators
-
-- **No manual math.** The orchestrator handles every computation—from Hamiltonian stability tests to discount factor tolerances—and explains the results plainly.
-- **Copy‑paste governance.** Ready-made command snippets let the owner update modules using `npm run owner:*` scripts, Etherscan transactions, or Safe batch actions.
-- **Evidence by default.** Every run produces timestamped artefacts that prove compliance with thermodynamic limits, Jarzynski equality tolerances, governance divergence caps, antifragility curvature, residual risk bounds, and CI enforcement. Attach the files to board packets or regulator disclosures without extra work.
-- **Hyper-visual console.** Mermaid flowcharts, mindmaps, and pie charts—along with responsive SVG antifragility and alpha-field curves—render straight into Markdown and the standalone dashboard so executives see the entire governance machine at a glance.
-
-## Extending the mission
-
-1. Edit `config/mission@v1.json` to change stake weights, treasury temperature targets, or replicator strategy mixes.
-2. Re-run `npm run demo:agi-governance` to produce a new report. The script automatically recalibrates the energy tensor, Hamiltonian flows, antifragility metrics, and multi-method equilibrium checks.
-3. For on-chain execution, follow the `RUNBOOK.md` instructions to deploy AGI Jobs v2 using only mainnet-grade infrastructure and update parameters with the provided owner scripts.
-
-### α-field v17 Singularity Dominion mission pack
-
-Need the flagship Singularity Dominion configuration that proves a non-technical owner can steer civilisation-scale intelligence with hyperbolic energy leverage, variance-fed antifragility, and owner-absolute supremacy? Launch [`alpha-v17/`](alpha-v17). It packages the v17 manifest, glassmorphism dashboard, and full suite of orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) behind `npm run demo:agi-governance:alpha-v17*` commands so the owner can recompute Gibbs free energy, Hamiltonian equilibria, statistical-physics partitions, antifragility curvature, CI(v2) enforcement, and twelve governance categories without editing code.
-
-### α-field v16 ChronoSovereign mission pack
-
-Need thermodynamic clocking, quantum alignment guarantees, and CI(v2) enforcement tuned for unstoppable owner dominance? Launch [`alpha-v16/`](alpha-v16). It ships with the ChronoSovereign manifest, cinematic dashboard, and the full suite of orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) exposed through `npm run demo:agi-governance:alpha-v16*` so a non-technical owner can execute, verify, and archive the mission with a handful of copy-paste commands.
-
-### α-field v15 OmegaSovereign mission pack
-
-Need the most extreme Solving α-AGI Governance configuration—with expansion sweeps, resilience drills, enhanced quantum lattice instrumentation, and owner supremacy enforced across ten command categories? Launch [`alpha-v15/`](alpha-v15). It ships with the OmegaSovereign manifest, upgraded mermaid dashboard, and the full suite of orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) exposed through `npm run demo:agi-governance:alpha-v15*` so an executive can execute and archive the entire drill without touching code.
-
-### α-field v14 HyperSovereign mission pack
-
-When you need the unstoppable HyperSovereign configuration—with upgraded Hamiltonian couplings, antifragility curvature, quantum lattice guards, and enforced owner supremacy—use [`alpha-v14/`](alpha-v14). It layers the production engines with the new v14 manifest, mermaid-rich dashboard, and a full pipeline of TypeScript orchestrators (`runMission`, `validateMission`, `verifyCi`, `ownerDiagnostics`, `fullPipeline`) so non-technical owners can execute, verify, and archive the drill with a single command namespace `npm run demo:agi-governance:alpha-v14*`.
-
-### α-field v13 mission pack
-
-When you need the exact parameterisation described in the research paper (`alpha_asi_governance_v13.tex`), use the dedicated mission pack under [`alpha-v13/`](alpha-v13). It reuses the production engines exported in this directory but ships with its own manifest, validation commands, runbook, and aggregated reports tailored to the α-field proofs. All commands are namespaced via `npm run demo:agi-governance:alpha-v13*`.
-
-## Deterministic provenance
-
-Every commit that touches this demo is forced through:
-
-- `npm run demo:agi-governance`
-- `npm run demo:agi-governance:ci`
-- Root `ci (v2)` workflow gates (`Lint & static checks`, `Tests`, `Foundry`, `Coverage thresholds`, `CI summary`).
-
-Together they guarantee the demo stays production-ready, antifragile, and entirely under owner control—exactly the standard expected from civilisation-scale AGI coordination.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,140 +1,52 @@
-# Kardashev-II Omega-Grade Upgrade v2 for α-AGI Business 3
+# AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V2
 
-> **Purpose** — Give a non-technical owner a single command that brings a Kardashev-II labour market to life, keeps it stable for
-> multi-day missions, and surfaces every decision through rich telemetry and governance controls.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2`.
 
-## 🌌 Omega Architecture
+## Overview
+- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2/README.md`
+- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V2 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+
+## Systems Map
 ```mermaid
-flowchart TD
-    User["Non-technical Owner"] -->|CLI & UI| MissionControl{{"Ω Mission Control"}}
-    MissionControl -->|Commands| Orchestrator
-    MissionControl -->|Telemetry JSON| Dashboard
-    Orchestrator -->|Pub/Sub| Agents
-    Orchestrator -->|Mermaid Graph| Dashboard
-    Orchestrator -->|Long-Run Ledger| Ledger[(Resilience Ledger)]
-    Orchestrator -->|Checkpoints| Storage[(Checkpoint Vault)]
-    Agents -->|Recursive Jobs| JobGraph((Hierarchical Job DAG))
-    Validators -->|Commit/Reveal| Orchestrator
-    Orchestrator -->|Energy & Compute| Resources[[Planetary Resource Manager]]
-    Resources -->|Token Flows| Treasury[(AGIALPHA Treasury)]
-    Simulation[[Synthetic Economy]] --> Orchestrator
+flowchart LR
+    Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Upgrade FOR Alpha AGI Business 3 Demo V2]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## 🚀 One Command Launch
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-```bash
-cd demo/'Kardashev-II Omega-Grade-α-AGI Business-3'
-./kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2/bin/launch.sh
-```
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `ui`
+### Key Files
+- `__init__.py`
+- `__main__.py`
+- `cli.py`
+- `config.py`
+- `orchestrator.py`
+- `resilience.py`
+- `telemetry.py`
 
-The orchestrator boots with the defaults at `config/mission.json`, spawns workers, strategists, and validators, restores
-checkpoints, and begins multi-hour orchestration. Telemetry, ledgers, and dashboards populate automatically under
-`artifacts/status/omega-upgrade-v2/`.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-### Zero-Code Owner Console
-
-```bash
-# Pause or resume the entire planetary workforce
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner pause
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner resume
-
-# Tune validator and worker economics live
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner governance \
-  --worker-stake-ratio 0.2 --validator-stake 250 --slash-ratio 0.4
-
-# Expand planetary capacity and balance energy versus compute scarcity
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner resources \
-  --energy-capacity 2500000 --compute-capacity 9000000
-
-# Retune telemetry, ledgers, and forecast horizons while agents continue working
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner mission \
-  --telemetry-interval 10 --resilience-interval 15 --forecast-hours 36
-
-# Reward, slash, or top up any agent
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner account supply-chain --tokens 20000
-
-# Cancel a runaway sub-job gracefully
-python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2.cli owner cancel <job-id>
-```
-
-Every command is acknowledged through `artifacts/control/acknowledged-commands.jsonl`, giving the operator proof that the
-superstructure obeyed.
-
-### Immersive UI
-
-```bash
-cd demo/'Kardashev-II Omega-Grade-α-AGI Business-3'
-python -m http.server 9000
-# Visit http://localhost:9000/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2/ui/mission-control.html
-```
-
-The Mission Control page streams:
-
-- Resource burn and pricing dynamics.
-- Recursive job graph rendered with Mermaid in real time.
-- Integrity and governance snapshots for audit-grade transparency.
-- Forecast horizon analytics (jobs due inside X hours, uptime, background task count).
-
-## 🧠 Omega-Grade Capabilities
-
-### Multi-Day Autonomous Flight
-
-- **Checkpoint & Resilience Layer** — The orchestrator streams snapshots to a long-run ledger every few seconds, keeping the last
-  2,000+ entries ready for instant replay after restart.
-- **Async Task Registry** — Every background task (telemetry, ledger, simulations) is tracked and crash-reported; no silent
-  failures.
-- **Dynamic Retuning** — Telemetry cadence, ledger retention, and forecast horizons can be changed in-flight without pausing the
-  mission.
-
-### Recursive Meta-Agentic Economy
-
-- Strategists spawn sub-jobs recursively; workers decompose them further, forming a parent/child job DAG tracked in every
-  snapshot.
-- Validators enforce commit–reveal, staking, and slashing, mirroring AGI Jobs’ on-chain security guarantees.
-- Planetary resources are tokenised; scarcity feedback adjusts prices and prevents oversubscription.
-
-### Planetary Simulation Hooks
-
-The orchestrator continues to stream synthetic economy ticks (energy output, prosperity, sustainability) into the resource
-manager, automatically scaling energy and compute capacity. Plugging a richer simulator simply requires swapping the existing
-`SyntheticEconomySim`.
-
-## 🧪 CI & Production Confidence
-
-```bash
-npm run demo:kardashev-ii-omega-upgrade-v2:ci
-```
-
-The CI configuration (`config/ci.json`) runs a deterministic short mission, verifying agent coordination, job lifecycle, commit
-and reveal, telemetry emission, and graceful shutdown. A dedicated GitHub Action (`.github/workflows/demo-kardashev-ii-omega-upgrade-v2.yml`)
-keeps every PR green.
-
-## 📂 Directory Guide
-
-```
-kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo_v2/
-├── README.md                 # You are here
-├── __main__.py               # python -m entrypoint
-├── __init__.py               # Package metadata
-├── bin/launch.sh             # One-command launcher for non-technical operators
-├── cli.py                    # Rich owner CLI (launch, owner, status, diagram, ci)
-├── config.py                 # Configuration loader + artifact paths
-├── config/                   # Mission + CI presets
-├── orchestrator.py           # Resilience + telemetry upgrade atop Omega orchestrator
-├── resilience.py             # Async task registry + long-run ledger manager
-├── telemetry.py              # JSON + Mermaid telemetry writer
-└── ui/mission-control.html   # Ω Mission Control command deck
-```
-
-## 🛡️ Operator Runbook
-
-1. **Launch** — `bin/launch.sh` starts the mission and prints JSON logs.
-2. **Monitor** — Keep the Mission Control page open; integrity results stream automatically.
-3. **Control** — Use the CLI `owner` subcommands for pause/resume, governance, resources, mission tuning, and job control.
-4. **Audit** — Inspect `artifacts/status/omega-upgrade-v2/long-run-ledger.jsonl` for a second-by-second record of agent activity.
-5. **Shutdown** — `python -m ... cli owner stop` or `Ctrl+C`; the orchestrator flushes the ledger, telemetry, and checkpoints.
-
-With this upgrade, a single operator can command a Kardashev-II economy—complete with recursive AGI labour, validator
-cryptoeconomics, planetary resource accounting, and rich telemetry—using nothing more than familiar CLI commands and a web
-browser.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

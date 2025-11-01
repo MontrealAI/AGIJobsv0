@@ -1,146 +1,47 @@
-# Cosmic Omni-Sovereign Symphony
+# AGI Jobs v0 (v2) — Demo → Cosmic Omni Sovereign Symphony
 
-The **Cosmic Omni-Sovereign Symphony** demo packages a production-grade, automatable
-launch sequence for a multinational AGI Jobs v0 (v2) governance network. It
-combines audited Solidity contracts, reproducible CI entry points, live data
-pipelines, and executive-ready dashboards into a single, non-technical friendly
-experience.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/cosmic-omni-sovereign-symphony`.
 
-## Highlights
+## Overview
+- **Path:** `demo/cosmic-omni-sovereign-symphony/README.md`
+- **Module Focus:** Anchors Demo → Cosmic Omni Sovereign Symphony inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Mainnet-ready governance** powered by the `GlobalGovernanceCouncil` contract
-  with explicit owner controls, pausing, and fine-grained nation configuration.
-- **Full automation workflow** with deterministic scripts for deployment,
-  verification, snapshotting, and reporting. Every command is curated for
-  non-technical operators.
-- **Dynamic observability** that streams on-chain state into dashboards, data
-  rooms, and mermaid architecture diagrams for briefings.
-- **Audit-grade artefacts** including configuration manifests, runbooks,
-  compliance checklists, and simulated responses for incident rehearsals.
-- **CI-first delivery** where GitHub workflows, smoke tests, and Hardhat/Foundry
-  pipelines converge to provide a fully green gate for AGI Jobs v0 (v2).
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/cosmic-omni-sovereign-symphony` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Directory Layout
-
-| Path | Purpose |
-| --- | --- |
-| `bin/` | Single entry point shell scripts for non-technical operators. |
-| `config/` | JSON + env templates for mainnet and simulation. |
-| `dashboards/` | Grafana-compatible dashboards and data contracts. |
-| `docs/` | Architecture diagrams, runbooks, compliance checklists. |
-| `logs/` | Reserved directory for runtime artefacts. |
-| `scripts/` | Hardhat + Node automation for deployment and telemetry. |
-
-## Quickstart (Non-technical Operator)
-
-1. **Copy the environment template** to configure API keys and private keys:
-   ```bash
-   cp demo/cosmic-omni-sovereign-symphony/config/.env.example demo/cosmic-omni-sovereign-symphony/.env
-   ```
-2. **Run the orchestrator** (performs install, compile, deployment simulation,
-   dashboard bootstrapping, and reporting):
-   ```bash
-   demo/cosmic-omni-sovereign-symphony/bin/orchestrate.sh
-   ```
-3. **Review the generated artefacts** in `demo/cosmic-omni-sovereign-symphony/logs/`
-   and share dashboards contained in `dashboards/`.
-
-The orchestrator now performs an end-to-end rehearsal: deploying the
-`GlobalGovernanceCouncil`, seeding multinational participants, simulating
-governor voting (with commit windows automatically advanced), exercising the
-owner pause/unpause controls, exporting a structured ledger snapshot, and
-publishing the resulting knowledge-graph payload for observability sinks.
-
-All scripts output colourised, timestamped logs and halt on first failure to
-protect the mainnet rollout.
-
-### Flagship "Operating System for AGI Work" rehearsal
-
-For a complete, one-command walkthrough that combines the governance
-orchestration with the existing AGI Operating System demo and owner control
-audits, run the flagship launcher:
-
-```bash
-demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --dry-run
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_cosmic_omni_sovereign_symphony[[Demo → Cosmic Omni Sovereign Symphony]]
+    demo_cosmic_omni_sovereign_symphony --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-This wrapper coordinates the following steps end-to-end:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/cosmic-omni-sovereign-symphony`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-- Installs dependencies (`npm ci`) so the environment matches CI v2.
-- Executes `bin/orchestrate.sh` to deploy, seed, and exercise the
-  `GlobalGovernanceCouncil` scenario with real wallet impersonations.
-- Invokes `npm run demo:agi-os` from the repository root to replay the
-  labour-market simulation, validator commit/reveal flow, and mission bundle
-  assembly for non-technical operators.
-- Captures the owner parameter matrix via `npm run owner:parameters`, proving
-  that every adjustable surface remains under administrator control.
-- Optionally renders the governance architecture diagram to SVG when the
-  Mermaid CLI (`mmdc` or `@mermaid-js/mermaid-cli`) is installed locally.
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `dashboards`
+- `docs`
+- `logs`
+- `scripts`
 
-All output artefacts are summarised in
-`demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/summary.txt`, making it
-easy to brief stakeholders or attach the run evidence to compliance tickets.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-### Verification & evidence capture
-
-Run the verification harness to validate that every flagship artefact is
-present and populated with the expected data model:
-
-```bash
-node demo/cosmic-omni-sovereign-symphony/scripts/verify-flagship-report.mjs
-```
-
-The script checks the governance ledger, vote simulation log (including the
-owner pause/unpause drill), execution plan, flagship summary, and the AGI OS
-mission bundle (`reports/agi-os/`). It writes a machine-readable report to
-`demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/verification.json` and
-fails fast when required evidence is missing. This gives non-technical owners a
-single ✅/❌ indicator for compliance archives without re-running the full demo.
-
-## Contracts Delivered
-
-- [`contracts/v2/governance/GlobalGovernanceCouncil.sol`](../../contracts/v2/governance/GlobalGovernanceCouncil.sol)
-  - Owner-configurable pausing, role rotation, and mandate curation.
-  - Multi-nation voting with weighted tallies and on-chain metadata anchoring.
-  - Quorum introspection for downstream automation.
-
-## Dashboards & Visuals
-
-- `dashboards/global-governance.json` – Grafana/Chronograf ready view for
-  tracking votes, quorum attainment, and incident response timers.
-- `docs/architecture.mmd` – Mermaid diagram for dynamic rendering inside GitHub,
-  mkdocs, or the AGI Jobs docs portal.
-- `docs/observability-playbook.md` – How to wire data pipelines into the
-  monitoring stack.
-
-Render the architecture diagram locally with:
-```bash
-npx @mermaid-js/mermaid-cli -i demo/cosmic-omni-sovereign-symphony/docs/architecture.mmd -o demo/cosmic-omni-sovereign-symphony/docs/architecture.svg
-```
-
-## CI Alignment
-
-The repository already ships with Hardhat, Foundry, Echidna, and Cypress
-pipelines. The demo leverages them by exposing:
-
-- `bin/orchestrate.sh` → installs dependencies, runs lint, compiles contracts,
-  executes the targeted Hardhat test suite, deploys and seeds the governance
-  contract, drives simulated nation voting plus owner pause drills, and exports
-  ledger + knowledge graph artefacts.
-- `scripts/run-ci-checks.ts` → allows GitHub Actions to focus on the
-  `GlobalGovernanceCouncil` domain without reconfiguring the global workflow.
-
-Integrate with GitHub Actions by adding the following job snippet to
-`.github/workflows/agi-jobs-v2.yml` (example provided in `docs/ci-blueprint.md`).
-
-## Production Checklist
-
-- ✅ Owner can rotate pauser roles, pause/unpause, and update every parameter.
-- ✅ Scripts require explicit confirmation for mainnet private keys.
-- ✅ Dashboards and runbooks capture the decision log for regulators.
-- ✅ Tests assert mandate quorum, vote re-casting, and pause guards.
-
-> **Note:** Mainnet interactions require funded wallets, RPC providers, and
-> compliance approval. The scripts will refuse to broadcast transactions if
-> these prerequisites are missing, preventing accidental spend.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

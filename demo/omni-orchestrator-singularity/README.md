@@ -1,66 +1,44 @@
-# Omni-Orchestrator Singularity
+# AGI Jobs v0 (v2) — Demo → Omni Orchestrator Singularity
 
-> *Demonstrating AGI Jobs v0 (v2) as a planetary-scale coordination OS harnessing sovereign AI workforces while preserving absolute owner control.*
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/omni-orchestrator-singularity`.
 
-The **Omni-Orchestrator Singularity** experience composes existing AGI Jobs v0 (v2) capabilities into a deterministic, production-grade walkthrough that a non-technical operator can execute end-to-end. It packages deployment, governance, orchestration, validation, incentive tuning, and emergency drills behind guided scripts, configuration manifests, and IPFS-ready UI assets so the system can be demonstrated live or replayed inside CI.
+## Overview
+- **Path:** `demo/omni-orchestrator-singularity/README.md`
+- **Module Focus:** Anchors Demo → Omni Orchestrator Singularity inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The scenario simulates a multi-national council chartering an autonomous programme ("Project Meridian"), with sovereign agents and validators coordinated by the One-Box orchestrator. Contracts, identities, thermodynamic rewards, and governance levers are wired exactly as shipped in v2—no custom contract logic is introduced. Instead we harden the existing stack with defaults, runbooks, and integration glue that guarantees owner supremacy and pause coverage at all times.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/omni-orchestrator-singularity` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quickstart
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_omni_orchestrator_singularity[[Demo → Omni Orchestrator Singularity]]
+    demo_omni_orchestrator_singularity --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-1. **Install dependencies** (matches repository root instructions):
-   ```bash
-   npm install
-   ```
-2. **Copy environment templates** for orchestrator and deployment secrets if you have not already:
-   ```bash
-   cp orchestrator/.env.example orchestrator/.env
-   cp deployment-config/.env.example deployment-config/.env
-   ```
-3. **Dry-run the orchestration pipeline** using the provided helper script (no chain writes, safe for CI):
-   ```bash
-   demo/omni-orchestrator-singularity/bin/orchestrate.sh \
-     --network localhost \
-     --mode dry-run
-   ```
-4. **Review generated artifacts** inside `reports/omni-orchestrator-singularity/` for plan snapshots, governance payloads, pause verifications, and thermodynamic adjustments.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/omni-orchestrator-singularity`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-## Scenario Overview
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `docs`
 
-The walkthrough follows seven auditable phases:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-1. **Genesis** – Deploys the audited v2 contracts via `scripts/v2/oneclick-stack.ts`, wires `SystemPause`, and verifies owner control using `scripts/v2/verifyOwnerControl.ts`.
-2. **Identity Charter** – Registers sovereign agent and validator ENS handles via `npm run identity:update -- --config demo/omni-orchestrator-singularity/config/identities.example.json`.
-3. **Mandate Vote** – Boots the `GlobalGovernanceCouncil` template (optional) and scripts a unanimous vote authorising Project Meridian using the existing cosmic-symphony helpers.
-4. **One-Box Planning Loop** – Calls the `/onebox/plan`, `/simulate`, `/execute`, and `/status` endpoints via the orchestrator runner, producing deterministic IPFS receipts that the UI renders.
-5. **Execution Tapestry** – Drives agents and validators through opt-in, commit-reveal, settlement, and reward distribution using the same helper routines showcased in `demo/aurora/aurora.demo.ts`.
-6. **Thermostat Governance** – Exercises `RewardEngineMB` and `Thermostat` owner setters via `SystemPause.executeGovernanceCall`, proving live parameter adjustment while paused.
-7. **Emergency Drill & Recovery** – Triggers `pauseAll`, demonstrates orchestrator refusal while paused, then resumes operations and finalises reporting.
-
-Each phase emits machine-readable state to `reports/omni-orchestrator-singularity/` so auditors can replay or diff runs. All generated hashes are persisted with the SRI tooling already bundled in the repo.
-
-## Non-Technical Operator Path
-
-1. Open the [One-Box UI](../..//apps/onebox/README.md) and configure the orchestrator URL plus guest token provided by your deployment.
-2. Paste the scripted prompt from `docs/mandate-script.md` into the chat box and follow the confirmation prompts. No private key interaction is required in guest mode.
-3. Observe live status cards (auto-refreshes every 5 seconds) summarising job creation, validator tallies, and thermodynamic adjustments.
-4. Use the owner console instructions in `docs/owner-console.md` to try a governance action or emergency pause with a single click.
-
-## Artifacts
-
-| Artifact | Location | Description |
-| --- | --- | --- |
-| Deployment manifest | `reports/omni-orchestrator-singularity/latest/deployment.json` | Contract addresses, ENS roots, pause wiring proofs |
-| Governance journal | `reports/omni-orchestrator-singularity/latest/governance.json` | Parameter changes + tx hashes |
-| Plan bundle | `reports/omni-orchestrator-singularity/latest/plan.cid` | IPFS CID for plan/simulate/execute receipts |
-| Job lifecycle log | `reports/omni-orchestrator-singularity/latest/jobs.json` | Status for every job, validator quorum, settlement |
-| Thermodynamic summary | `reports/omni-orchestrator-singularity/latest/thermostat.json` | RewardEngineMB inputs/outputs |
-
-## Branch Protection & CI Alignment
-
-The orchestration script intentionally reuses existing NPM scripts so the default CI v2 pipeline (Lint, Tests, Foundry, Coverage, Summary) remains authoritative. A dedicated make target (`npm run test:demo:omni`) can be added to CI if deeper integration coverage is desired, but the demo is already compatible with `ci:verify-branch-protection` out of the box.
-
-## Status
-
-This directory supplies the orchestration harness, documentation, and configuration templates required to execute the grand demonstration. Implementers must still populate environment secrets, ENS ownership, and funding prior to a mainnet run. No core contracts were modified.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

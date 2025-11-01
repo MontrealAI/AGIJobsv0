@@ -1,47 +1,46 @@
-# Thermostat Control Service
+# AGI Jobs v0 (v2) — Services → Thermostat
 
-The thermostat service provides a feedback controller that monitors economic
-metrics (GMV, spend, ROI) and dynamically tunes the Hierarchical Generative
-Machine (HGM) orchestration parameters. The controller consumes metric streams
-from Prometheus or synthetic fixtures, computes rolling ROI averages, and
-applies heuristic adjustments to the HGM engine through the orchestrator's
-thread-safe APIs.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/thermostat`.
 
-## Components
+## Overview
+- **Path:** `services/thermostat/README.md`
+- **Module Focus:** Anchors Services → Thermostat inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **`ThermostatController`** – maintains a sliding window of ROI samples,
-  detects dips/surges around the configured target, and adjusts the engine's
-  `widening_alpha` and `thompson_prior` parameters. Adjustments are throttled by
-  a configurable cooldown.
-- **`MetricSample`** – lightweight data class for transporting ROI observations
-  from monitoring pipelines.
-- **Operator CLI** (`scripts/thermostat.py`) – offers `watch` and `replay`
-  subcommands to stream metrics from Prometheus or replay captured JSON logs.
-  Use `--dry-run` to inspect recommended actions without mutating the live
-  workflow.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `services/thermostat` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Tuning guidance
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> services_thermostat[[Services → Thermostat]]
+    services_thermostat --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-| Scenario              | Suggested tweak                                       |
-|-----------------------|--------------------------------------------------------|
-| ROI consistently low  | Increase `widening_alpha` and `thompson_prior` to encourage exploration.<br>The defaults apply a modest bump of `+0.05` and `+0.1` respectively per intervention. |
-| ROI consistently high | Decrease both parameters to reduce exploratory spend and favour exploitation. |
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/thermostat`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-The controller clamps adjustments within `[min, max]` bounds to prevent runaway
-values. Operators can tighten or loosen the response by modifying `--window`,
-`--cooldown`, or step sizes on the CLI.
+## Directory Guide
+### Key Directories
+- `tests`
+### Key Files
+- `__init__.py`
+- `controller.py`
+- `metrics.py`
 
-## Manual overrides
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-1. Run `scripts/thermostat.py watch --dry-run ...` to observe the proposed
-   adjustments without applying them.
-2. To enforce a specific configuration, supply smaller step sizes (e.g.
-   `--widening-step 0.01 --thompson-step 0.02`) and run in non dry-run mode. The
-   controller will converge to the new steady state over successive ROI windows.
-3. If an emergency freeze is needed, stop the thermostat process or run with
-   `--dry-run` so the workflow remains untouched while metrics continue to be
-   inspected.
-
-Synthetic fixtures for unit tests are available under
-`services/thermostat/tests/` and can be extended to cover additional edge
-cases.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
