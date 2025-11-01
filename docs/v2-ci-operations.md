@@ -119,14 +119,16 @@ The first command should list the required contexts above in order. The second c
 
 Keep the rest of the release surface visible by marking the following workflows as required checks as well:
 
-| Workflow                           | Job context              | Purpose                                                         |
-| ---------------------------------- | ------------------------ | --------------------------------------------------------------- |
-| `.github/workflows/e2e.yml`        | `e2e / orchestrator-e2e` | Executes forked-mainnet drills and dispute flows end to end.    |
-| `.github/workflows/fuzz.yml`       | `fuzz / forge-fuzz`      | Runs the nightly-grade Foundry fuzz suite on every PR.          |
-| `.github/workflows/webapp.yml`     | `webapp / webapp-ci`     | Lints, type-checks, builds, and smoke-tests both web frontends. |
-| `.github/workflows/containers.yml` | `containers / build (node-runner)`<br>`containers / build (validator-runner)`<br>`containers / build (gateway)`<br>`containers / build (webapp)`<br>`containers / build (owner-console)` | Asserts Docker images build and pass enforced Trivy scans for every published image.      |
+| Workflow                            | Job context              | Purpose |
+| ----------------------------------- | ------------------------ | ------- |
+| `.github/workflows/e2e.yml`         | `e2e / orchestrator-e2e` | Executes forked-mainnet drills and dispute flows end to end. |
+| `.github/workflows/fuzz.yml`        | `fuzz / forge-fuzz`      | Runs the nightly-grade Foundry fuzz suite on every PR. |
+| `.github/workflows/webapp.yml`      | `webapp / webapp-ci`     | Lints, type-checks, builds, and smoke-tests both web frontends. |
+| `.github/workflows/containers.yml`  | `containers / build (node-runner)`<br>`containers / build (validator-runner)`<br>`containers / build (gateway)`<br>`containers / build (webapp)`<br>`containers / build (owner-console)` | Asserts Docker images build and pass enforced Trivy scans for every published image. |
+| `.github/workflows/apps-images.yml` | `apps-images / console`<br>`apps-images / portal` | Builds the owner console and enterprise portal containers with Trivy enforcement and SLSA provenance so UI releases always ship with fresh, trusted digests. |
 
-> 📌 **Path-filtered option:** When you want Docker provenance for UI updates, also require `apps-images / console` and `apps-images / portal`. These jobs only trigger when files under `apps/**` change, so skip them if your project relies on wide fan-out PRs that seldom touch the UIs.
+> ✅ **Always require UI image checks:** The `apps-images` workflow is part of the enforced companion set. The two contexts above are path-filtered, so they only appear on pull requests that touch `apps/**` while still blocking merges on `main` when image builds or provenance fail. Keeping them required guarantees the latest digests remain visible to non-technical operators.
+
 
 ## Pull request hygiene checklist
 

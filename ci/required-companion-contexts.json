@@ -7,5 +7,7 @@
   "containers / build (gateway)",
   "containers / build (webapp)",
   "containers / build (owner-console)",
+  "apps-images / console",
+  "apps-images / portal",
   "e2e / orchestrator-e2e"
 ]
