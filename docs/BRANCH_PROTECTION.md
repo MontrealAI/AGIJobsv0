@@ -17,6 +17,7 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
      - `ci (v2) / Python coverage enforcement`
    - **Governance & readiness demonstrations**
      - `ci (v2) / HGM guardrails`
+     - `ci (v2) / Owner control assurance`
      - `ci (v2) / Phase 6 readiness`
      - `ci (v2) / Phase 8 readiness`
      - `ci (v2) / Kardashev II readiness`

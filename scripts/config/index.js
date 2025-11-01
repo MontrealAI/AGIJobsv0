@@ -80,6 +80,9 @@ function inferNetworkKey(value) {
       }
     } catch (_) {}
   }
+  if (/^[a-z0-9._-]+$/.test(lower)) {
+    return lower;
+  }
   return undefined;
 }
 

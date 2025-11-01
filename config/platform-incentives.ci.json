@@ -1,0 +1,11 @@
+{
+  "stakeManager": "0x6666666666666666666666666666666666666666",
+  "platformRegistry": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "jobRouter": "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+  "maxDiscountPct": 25,
+  "rewardMultipliers": {
+    "launchPartner": 150,
+    "coreContributor": 125,
+    "community": 110
+  }
+}

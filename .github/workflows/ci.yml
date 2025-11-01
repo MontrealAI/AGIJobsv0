@@ -384,6 +384,49 @@ jobs:
       - name: Run HGM suite
         run: ci/hgm-suite.sh
 
+  owner_controls:
+    name: Owner control assurance
+    needs:
+      - lint
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Install dependencies
+        run: npm ci --no-audit --prefer-offline --progress=false
+      - name: Generate owner control assurance reports
+        run: |
+          mkdir -p reports/owner-control
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts --network ci --strict --json \
+            > reports/owner-control/doctor.json
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
+            --network ci \
+            --format json \
+            --no-mermaid \
+            --out reports/owner-control/parameter-matrix.json
+      - name: Upload owner control artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: owner-control-ci
+          path: reports/owner-control
+
   foundry:
     name: Foundry
     needs: tests
@@ -1045,6 +1088,7 @@ jobs:
       - python_load_sim
       - python_coverage
       - hgm_guardrails
+      - owner_controls
       - foundry
       - coverage
       - phase6
@@ -1080,6 +1124,7 @@ jobs:
             python_load_sim: 'Load-simulation reports',
             python_coverage: 'Python coverage enforcement',
             hgm_guardrails: 'HGM guardrails',
+            owner_controls: 'Owner control assurance',
             foundry: 'Foundry',
             coverage: 'Coverage thresholds',
             phase6: 'Phase 6 readiness',
