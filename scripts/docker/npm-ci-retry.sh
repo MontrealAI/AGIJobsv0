@@ -10,7 +10,18 @@ attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
 
+lock_setting="$(npm config get package-lock 2>/dev/null || true)"
+if [ "${lock_setting}" != "true" ]; then
+  echo "npm config package-lock is '${lock_setting}', forcing it to 'true' for deterministic installs" >&2
+  npm config set package-lock true >/dev/null
+fi
+
 while [ "$attempt" -le "$max_attempts" ]; do
+  if [ ! -f package-lock.json ]; then
+    echo "package-lock.json not found in $(pwd). Contents:" >&2
+    ls -al >&2
+    exit 1
+  fi
   rm -rf node_modules
 
   if npm ci "$@"; then
