@@ -27,6 +27,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      - run: CYPRESS_INSTALL_BINARY=0 npm ci
+      - uses: ./.github/actions/npm-install
       - name: Orchestrator tsc
         run: npx tsc -p apps/orchestrator/tsconfig.json

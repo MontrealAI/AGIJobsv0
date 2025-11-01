@@ -25,7 +25,7 @@ jobs:
           node-version: 20.18.1
           cache: 'npm'
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci
+        uses: ./.github/actions/npm-install
       - name: Generate economic power reports
         run: npm run demo:economic-power:ci
       - name: Validate simulation logic

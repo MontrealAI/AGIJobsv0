@@ -45,7 +45,9 @@ jobs:
             **/package-lock.json
 
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
 
       - name: Run national supply chain export
         run: npm run demo:national-supply-chain:export

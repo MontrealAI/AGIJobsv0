@@ -40,7 +40,9 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci --ignore-scripts
+        uses: ./.github/actions/npm-install
+        with:
+          args: --ignore-scripts
 
       - name: Run Phase 8 Jest suite
         run: npx jest --config demo/Phase-8-Universal-Value-Dominance/jest.config.cjs --runInBand

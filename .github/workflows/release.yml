@@ -57,7 +57,7 @@ jobs:
           node scripts/ci/ensure-tag-signature.js "${GITHUB_REF}"
 
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci
+        uses: ./.github/actions/npm-install
 
       - name: Determine version
         id: version
@@ -180,7 +180,9 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
 
       - name: Configure AWS credentials for explorer secrets
         if: ${{ env.AWS_ROLE_TO_ASSUME != '' && env.AWS_REGION != '' }}
@@ -331,7 +333,7 @@ jobs:
 
       - name: Install dependencies
         if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        run: CYPRESS_INSTALL_BINARY=0 npm ci
+        uses: ./.github/actions/npm-install
 
       - name: Publish npm packages
         if: ${{ steps.npm-token.outputs.publish == 'true' }}

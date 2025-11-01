@@ -48,7 +48,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: CYPRESS_INSTALL_BINARY=0 npm ci
+        uses: ./.github/actions/npm-install
 
       - name: Cache Foundry toolchain
         uses: actions/cache@v4
