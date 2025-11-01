@@ -4,7 +4,7 @@ This runbook assumes zero Solidity or DevOps experience. Follow the steps to lau
 
 ## 1. Pre-flight Checklist
 
-1. Install Node.js 20.18 (matching `.nvmrc`).
+1. Install Node.js 20.19 (matching `.nvmrc`).
 2. Clone the AGI Jobs v0 (v2) repository and run `npm ci` at the root once.
 3. Ensure Docker is not required – the demo uses Hardhat’s in-memory chain by default.
 

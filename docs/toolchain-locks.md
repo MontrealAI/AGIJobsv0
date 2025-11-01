@@ -8,7 +8,8 @@ versions, how they are enforced, and the safe procedure for updating them.
 
 | Tool | Version | Enforcement | Notes |
 | --- | --- | --- | --- |
-| Node.js | 20.18.1 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, and `npm run ci:verify-toolchain` | Matches Active LTS. Changing the file requires bumping `package-lock.json` via `npm ci` under the new runtime. |
+| Node.js | 20.19.0 | `.nvmrc`, `package.json` `engines.node`, CI `actions/setup-node` steps, and `npm run ci:verify-toolchain` | Matches Active LTS. Changing the file requires bumping `package-lock.json` via `npm ci` under the new runtime. |
+| Cypress binary mirror | `https://github.com/cypress-io/cypress/releases/download/v13.17.0/cypress-linux-x64.zip` | README quick start, CI workflow `env` blocks (`CYPRESS_INSTALL_BINARY`) | Guarantees deterministic installs even when the default CDN rejects connections. |
 | Foundry toolchain | v1.4.0 | `foundry-rs/foundry-toolchain@v1` steps in every workflow explicitly request `v1.4.0`; `ci:verify-toolchain` asserts the pin | Guarantees that `forge`/`anvil`/`cast` behave consistently across CI, fuzzing, and release pipelines. |
 
 ## Why the lock matters

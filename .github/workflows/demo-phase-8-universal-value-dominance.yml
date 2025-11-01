@@ -10,6 +10,9 @@ on:
 permissions:
   contents: read
 
+env:
+  CYPRESS_INSTALL_BINARY: 'https://github.com/cypress-io/cypress/releases/download/v13.17.0/cypress-linux-x64.zip'
+
 jobs:
   phase8-demo:
     name: Phase 8 Universal Value Dominance Demo

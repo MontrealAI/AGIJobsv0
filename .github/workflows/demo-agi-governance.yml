@@ -23,6 +23,9 @@ concurrency:
   group: demo-agi-governance-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CYPRESS_INSTALL_BINARY: 'https://github.com/cypress-io/cypress/releases/download/v13.17.0/cypress-linux-x64.zip'
+
 jobs:
   governance-demo:
     name: Solving α-AGI Governance
