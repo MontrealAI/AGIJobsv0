@@ -1,0 +1,32 @@
+name: Install Foundry toolchain
+description: Install the Foundry toolchain using foundryup with caching-friendly defaults.
+inputs:
+  version:
+    description: Foundry release tag to install (for example v1.4.4)
+    default: v1.4.4
+runs:
+  using: composite
+  steps:
+    - name: Download foundryup
+      shell: bash
+      run: |
+        set -euo pipefail
+        export FOUNDRY_DIR="${FOUNDRY_DIR:-$HOME/.foundry}"
+        curl -sSfL https://foundry.paradigm.xyz | bash
+    - name: Install Foundry version
+      shell: bash
+      run: |
+        set -euo pipefail
+        export FOUNDRY_DIR="${FOUNDRY_DIR:-$HOME/.foundry}"
+        VERSION="${{ inputs.version }}"
+        if [[ -z "${VERSION}" ]]; then
+          VERSION="v1.4.4"
+        fi
+        "${FOUNDRY_DIR}/bin/foundryup" --install "${VERSION}"
+        "${FOUNDRY_DIR}/bin/foundryup" --use "${VERSION}"
+        echo "${FOUNDRY_DIR}/bin" >> "$GITHUB_PATH"
+    - name: Verify forge availability
+      shell: bash
+      run: |
+        set -euo pipefail
+        forge --version

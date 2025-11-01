@@ -53,7 +53,9 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Assert required contexts manifest is synchronised
         run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
@@ -99,7 +101,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Compile contracts
         run: |
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
@@ -378,7 +382,9 @@ jobs:
           cache: 'pip'
           cache-dependency-path: requirements-python.txt
       - name: Install Node dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -411,7 +417,9 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Generate owner control assurance reports
         run: |
           mkdir -p reports/owner-control
@@ -455,22 +463,24 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for Foundry
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
-        with:
-          version: 'v1.4.0'
-      - name: Cache Foundry build artifacts
+      - name: Cache Foundry toolchain
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
-            ~/.foundry/cache
+            ~/.foundry
             ~/.cache/foundry
           key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
           restore-keys: |
             foundry-${{ runner.os }}-
+      - name: Install Foundry
+        uses: ./.github/actions/install-foundry
+        with:
+          version: 'v1.4.4'
       - name: Ensure forge-std dependency
         run: |
           if [ ! -d lib/forge-std ]; then
@@ -512,7 +522,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for coverage
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
@@ -556,7 +568,9 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Validate Phase 6 manifest & UI
         run: npm run demo:phase6:ci
 
@@ -585,7 +599,9 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Validate Phase 8 manifest & UI
         run: npm run demo:phase8:ci
 
@@ -614,7 +630,9 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Validate Kardashev II demo
         run: npm run demo:kardashev-ii:ci
       - name: Validate Stellar Kardashev II demo
@@ -650,7 +668,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Run ASI take-off demonstration
         run: npm run demo:asi-takeoff
       - name: Upload ASI take-off artifacts
@@ -691,7 +711,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Run Zenith Sapience deterministic kit
         run: npm run demo:zenith-sapience-initiative
       - name: Run Zenith Sapience local rehearsal
@@ -744,7 +766,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Run grand labour market simulation
         run: npm run demo:agi-labor-market:export
       - name: Upload labour market transcript
@@ -779,14 +803,18 @@ jobs:
             demo/sovereign-mesh/server/package-lock.json
             demo/sovereign-mesh/app/package-lock.json
       - name: Install server dependencies
-        working-directory: demo/sovereign-mesh/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: demo/sovereign-mesh/server
+          args: --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-mesh/server
         run: npm run build
       - name: Install app dependencies
-        working-directory: demo/sovereign-mesh/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: demo/sovereign-mesh/app
+          args: --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-mesh/app
         run: npm run build
@@ -815,14 +843,18 @@ jobs:
             demo/sovereign-constellation/server/package-lock.json
             demo/sovereign-constellation/app/package-lock.json
       - name: Install server dependencies
-        working-directory: demo/sovereign-constellation/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: demo/sovereign-constellation/server
+          args: --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-constellation/server
         run: npm run build
       - name: Install app dependencies
-        working-directory: demo/sovereign-constellation/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: demo/sovereign-constellation/app
+          args: --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-constellation/app
         run: npm run build
@@ -857,7 +889,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Run Celestial Archon deterministic kit
         run: npm run demo:zenith-sapience-celestial-archon
       - name: Run Celestial Archon local rehearsal
@@ -910,7 +944,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
       - name: Run Hypernova local rehearsal
@@ -1281,22 +1317,24 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for invariants
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
-        with:
-          version: 'v1.4.0'
-      - name: Cache Foundry build artifacts
+      - name: Cache Foundry toolchain
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
           path: |
-            ~/.foundry/cache
+            ~/.foundry
             ~/.cache/foundry
           key: foundry-invariant-${{ runner.os }}-${{ hashFiles('foundry.toml', 'test/v2/invariant/**/*.sol') }}
           restore-keys: |
             foundry-invariant-${{ runner.os }}-
+      - name: Install Foundry
+        uses: ./.github/actions/install-foundry
+        with:
+          version: 'v1.4.4'
       - name: Ensure forge-std dependency
         run: |
           if [ ! -d lib/forge-std ]; then

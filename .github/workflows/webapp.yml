@@ -30,13 +30,17 @@ jobs:
           cache: npm
 
       - name: Install repository dependencies
-        run: npm ci
+        uses: ./.github/actions/npm-install
 
       - name: Install console dependencies
-        run: npm ci --prefix apps/console
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: apps/console
 
       - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+        uses: ./.github/actions/npm-install
+        with:
+          working-directory: apps/enterprise-portal
 
       - name: Type-check webapp
         run: npm run webapp:typecheck
