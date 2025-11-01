@@ -35,7 +35,7 @@ and the workflow in the same commit so automation, documentation, and branch pro
 | Context | Source job | Why it matters |
 | --- | --- | --- |
 | `ci (v2) / HGM guardrails` | [`hgm_guardrails`](../.github/workflows/ci.yml) | Exercises Higher Governance Machine guardrails across Node + Python stacks so access control stays enforceable.【F:.github/workflows/ci.yml†L344-L385】 |
-| `ci (v2) / Owner control assurance` | [`owner_controls`](../.github/workflows/ci.yml) | Runs the owner control doctor + parameter matrix on the dedicated `ci` configuration to confirm pause, treasury, and governance controls stay wired for the contract owner.【F:.github/workflows/ci.yml†L387-L428】 |
+| `ci (v2) / Owner control assurance` | [`owner_controls`](../.github/workflows/ci.yml) | Runs the owner control doctor + parameter matrix on the dedicated `ci` configuration and now fails immediately if any subsystem config is missing or malformed, keeping pause, treasury, and governance controls wired for the contract owner.【F:.github/workflows/ci.yml†L387-L428】【F:scripts/v2/ownerParameterMatrix.ts†L223-L370】【F:scripts/v2/ownerParameterMatrix.ts†L532-L569】 |
 | `ci (v2) / Phase 6 readiness` | [`phase6`](../.github/workflows/ci.yml) | Validates the Phase 6 manifest and UI bundle so migrations remain deterministic.【F:.github/workflows/ci.yml†L530-L557】 |
 | `ci (v2) / Phase 8 readiness` | [`phase8`](../.github/workflows/ci.yml) | Confirms the expansion manifest stays reproducible for the Phase 8 release kit.【F:.github/workflows/ci.yml†L559-L586】 |
 | `ci (v2) / Kardashev II readiness` | [`kardashev_demo`](../.github/workflows/ci.yml) | Replays both Kardashev II demos to ensure cinematic onboarding assets remain reproducible.【F:.github/workflows/ci.yml†L588-L617】 |

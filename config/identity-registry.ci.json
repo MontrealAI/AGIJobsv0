@@ -29,9 +29,8 @@
     }
   },
   "agentTypes": {
-    "supply-chain": {
-      "description": "Supply chain orchestration agents"
-    }
+    "0x2222222222222222222222222222222222222222": "human",
+    "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC": "ai"
   },
   "agentProfiles": {
     "0xCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC": {
