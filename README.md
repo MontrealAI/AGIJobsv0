@@ -298,6 +298,11 @@ Branch protection keeps every surfaced check green on pull requests and `main`. 
 | `ci (v2) / CI summary` | Run-level digest capturing job results and artifact pointers.【F:ci/required-contexts.json†L2-L23】 |
 | `ci (v2) / Invariant tests` | Foundry invariant fuzzing for protocol safety.【F:ci/required-contexts.json†L2-L23】 |
 
+> 🔐 Non-technical owners can follow the [CI v2 operations guide](docs/v2-ci-operations.md), reproducible [validation log](docs/ci-v2-validation-report.md), and [branch-protection checklist](docs/ci-v2-branch-protection-checklist.md) to keep every badge green while retaining full control over pause levers, parameter matrices, and upgrade orchestration.【F:docs/v2-ci-operations.md†L1-L133】【F:docs/ci-v2-validation-report.md†L1-L60】【F:docs/ci-v2-branch-protection-checklist.md†L1-L126】
+
+- Run `npm run ci:sync-contexts -- --check` followed by `npm run ci:verify-contexts` before opening a pull request to prove `.github/workflows/ci.yml` and `ci/required-contexts.json` stay perfectly aligned.【F:.github/workflows/ci.yml†L49-L63】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】
+- Use `npm run ci:verify-branch-protection` with a repository token to audit GitHub’s branch protection API and confirm the CI v2 contexts, strict rebases, and admin enforcement are still intact.【F:.github/workflows/ci.yml†L932-L1032】【F:docs/ci-v2-branch-protection-checklist.md†L97-L138】
+
 ---
 
 ## 📡 Observability, Security & Governance
