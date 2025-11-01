@@ -10,6 +10,12 @@ attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
 
+if [ ! -f package-lock.json ]; then
+  echo "npm-ci-retry.sh: package-lock.json not found in $(pwd)" >&2
+  ls -al >&2
+  exit 1
+fi
+
 while [ "$attempt" -le "$max_attempts" ]; do
   rm -rf node_modules
 

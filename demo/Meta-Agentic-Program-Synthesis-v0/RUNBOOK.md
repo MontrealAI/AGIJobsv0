@@ -5,7 +5,7 @@
 
 ## 1. Environment check
 
-1. Install Node.js 20.18.1 (matching `.nvmrc`).
+1. Install Node.js 20.19.0 (matching `.nvmrc`).
 2. Install dependencies once: `npm ci`.
 3. Optional: run Hardhat in a separate terminal if interacting with contracts (`npx hardhat node`).
 

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20.18.1-alpine3.20 AS base-build
+FROM node:20.19.0-alpine3.20 AS base-build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
@@ -20,14 +20,15 @@ COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
-COPY package.json package-lock.json ./
+WORKDIR /app
+COPY package.json package-lock.json .npmrc ./
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \
     && npm prune --omit=dev \
     && npm cache clean --force
 
-FROM node:20.18.1-alpine3.20 AS runner
+FROM node:20.19.0-alpine3.20 AS runner
 ENV NODE_ENV=production \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false

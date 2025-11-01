@@ -62,7 +62,7 @@ so operators can launch safely with minimal manual steps.
 
 ## Prerequisites
 
-1. **Node.js 20.18.1** – install dependencies and run the deployment scripts.
+1. **Node.js 20.19.0** – install dependencies and run the deployment scripts.
 2. **Docker 24+** – build and run the container stack.
 3. **Hardhat environment variables** – export a deployer private key (`PRIVATE_KEY`) and Ethereum RPC URL (`HARDHAT_NETWORK`
    or `--network` flag). The deployer must control the governance multisig or temporary owner address defined in your config.
