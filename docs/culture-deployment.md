@@ -7,7 +7,7 @@ hardware-wallet flows.
 
 ## Prerequisites
 
-- Node.js 20.18.1 (matching the repository engines requirement)
+- Node.js 20.19.0 (matching the repository engines requirement)
 - Hardhat toolchain (`npm install` from the repo root)
 - Network access to the target chain RPC endpoint specified in `config/culture.json`
 - Access to the IdentityRegistry, JobRegistry, StakeManager, and FeePool addresses
