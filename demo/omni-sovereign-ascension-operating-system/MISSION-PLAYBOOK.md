@@ -8,7 +8,7 @@ This playbook distils the governance, observability, and audit moves required to
 
 | Check | Command | Notes |
 | --- | --- | --- |
-| Verify Node.js version | `node --version` | Must read `v20.18.1` to match the locked toolchain. |
+| Verify Node.js version | `node --version` | Must read `v20.19.0` to match the locked toolchain. |
 | Verify Docker Engine | `docker --version` | Required for the one-click stack. |
 | Verify Docker Compose | `docker compose version` | Compose V2 or newer. |
 | Verify Git state | `git status --short` | Should be clean to guarantee reproducible mission bundles. |
