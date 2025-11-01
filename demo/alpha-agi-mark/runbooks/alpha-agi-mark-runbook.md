@@ -4,7 +4,7 @@ This runbook describes how a non-technical operator can execute the α-AGI MARK 
 
 ## Prerequisites
 
-- Node.js v20.18.1 (already enforced by repository engines)
+- Node.js v20.19.0 (already enforced by repository engines)
 - `npm install`
 
 ## Execution Steps
