@@ -130,6 +130,7 @@
     "check:access-control": "node scripts/ci/check-access-control-coverage.js",
     "check:coverage": "node scripts/check-coverage.js 90",
     "ci:verify-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/verify-branch-protection.ts",
+    "ci:enforce-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/enforce-branch-protection.ts",
     "ci:sync-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/update-ci-required-contexts.ts",
     "ci:owner-authority": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/render-owner-assurance.ts",
     "ci:verify-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-required-contexts.ts",

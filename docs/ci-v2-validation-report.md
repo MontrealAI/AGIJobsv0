@@ -14,39 +14,51 @@ These steps augment the permanent references in [`docs/v2-ci-operations.md`](v2-
 ## Reproduction steps
 
 1. **Install dependencies**
+
    ```bash
    npm ci --no-audit --prefer-offline --progress=false
    ```
+
    This ensures the locally pinned toolchain mirrors the CI runner before any tests execute.
 
 2. **Verify toolchain locks**
+
    ```bash
    npm run ci:verify-toolchain
    ```
+
    Confirms Node, Hardhat, Foundry, and auxiliary binaries remain pinned. A passing run prints `✅ Toolchain lock verification passed. All required versions are pinned.`
 
 3. **Run lint and static checks**
+
    ```bash
    npm run lint:ci
    ```
+
    Solhint and ESLint must report zero warnings. Any deviation indicates drift that would surface on pull requests.
 
 4. **Confirm formatting alignment**
+
    ```bash
    npm run format:check
    ```
+
    Prettier verifies that the repository formatting matches the enforced CI baseline. Fix any reported files with `npm run format` before re-running the validation sequence.
 
 5. **Validate sentinel monitoring templates**
+
    ```bash
    npm run monitoring:validate
    ```
+
    Ensures the monitoring sentinels used for on-chain and service regressions continue to compile. A successful run mirrors the dedicated CI matrix step and is required for a green pipeline badge.
 
 6. **Execute the full Node/Hardhat suite**
+
    ```bash
    npm test
    ```
+
    This single command drives the orchestrator, owner control, validator governance, and Hardhat contract suites. It re-generates constants, compiles contracts, enforces ABI stability, and exercises the owner pause/resume controls that the contract owner can trigger from the CLI or dashboards.
 
 7. **Publish artefacts**
@@ -58,9 +70,12 @@ After validating the local run, audit branch protection (requires a token with `
 
 ```bash
 npm run ci:verify-branch-protection -- --token <GITHUB_TOKEN_WITH_REPO_SCOPE>
+npm run ci:enforce-branch-protection -- --dry-run
 ```
 
 Ensure the output contexts exactly match [`ci/required-contexts.json`](../ci/required-contexts.json). When the report shows the full context set, administrators and contributors cannot bypass the CI v2 matrix, keeping every job visible and required on `main` and all pull requests.【F:ci/required-contexts.json†L1-L23】
+
+When the dry run looks correct, rerun `npm run ci:enforce-branch-protection` without `--dry-run` to push the manifest, strict status checks, and administrator enforcement back to GitHub automatically using the GraphQL API.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】
 
 ## Operational notes
 
