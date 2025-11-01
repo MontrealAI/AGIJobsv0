@@ -1,305 +1,50 @@
-# Sovereign Constellation Demo — AGI Jobs v0 (v2)
+# AGI Jobs v0 (v2) — Demo → Sovereign Constellation
 
-Sovereign Constellation is the flagship, civilization-scale demonstration for AGI Jobs v0 (v2). A single
-non-technical operator can command multiple autonomous labour hubs that live on different Ethereum networks,
-linking research, industrial execution, and civic governance into one orchestrated mission. The demo ships
-as code, configuration, documentation, automated tests, and CI hooks so that it is immediately deployable in a
-production-critical environment.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/sovereign-constellation`.
 
-> **Mission control for an intelligent economy.** Sovereign Constellation composes only the audited AGI Jobs v2
-> contracts. By wiring several full protocol stacks into one orchestration layer, it proves that anyone who can
-> run `npm run demo:sovereign-constellation` can manage a planetary workforce of specialised AGI hubs without
-> writing a single line of code.
-
-## Network-of-networks topology (Mermaid)
-
-```mermaid
-graph LR
-    Mission[Grand Mission Intent]
-    Playbooks[Constellation Playbooks]
-    Orchestrator[[Constellation Orchestrator Service]]
-    Console[Wallet-first Constellation Console]
-
-    subgraph HubA[Helios Research Hub — Ethereum Mainnet]
-        JR1[JobRegistry]
-        VM1[ValidationModule]
-        SM1[StakeManager]
-        ID1[IdentityRegistry]
-    end
-    subgraph HubB[Triton Industrial Hub — Arbitrum One]
-        JR2[JobRegistry]
-        VM2[ValidationModule]
-        SM2[StakeManager]
-        ID2[IdentityRegistry]
-    end
-    subgraph HubC[Athena Governance Hub — Optimism]
-        JR3[JobRegistry]
-        VM3[ValidationModule]
-        SM3[StakeManager]
-        ID3[IdentityRegistry]
-    end
-
-    Mission --> Playbooks
-    Playbooks --> Orchestrator
-    Orchestrator --> JR1
-    Orchestrator --> JR2
-    Orchestrator --> JR3
-    Console --> Orchestrator
-    Validators[Validators & Agents] --> Console
-    Validators --> SM1
-    Validators --> SM2
-    Validators --> SM3
-    Owners[Owner / Multisig] --> Console
-    Owners --> JR1
-    Owners --> JR2
-    Owners --> JR3
-```
-
-## Commit–reveal cadence with instant owner override (Mermaid)
-
-```mermaid
-sequenceDiagram
-    participant Owner
-    participant Mission
-    participant Orchestrator
-    participant Hub as Hub Contracts
-    participant Validators
-
-    Mission->>Orchestrator: Select playbook & review steps
-    Orchestrator->>Owner: Wallet prompts for createJob signatures
-    Owner->>Hub: createJob (reward, deadline, specHash, uri)
-    Hub-->>Validators: JobCreated events broadcast cross-network
-    loop Commit window
-        Validators->>Hub: commitValidation(jobId, hash, subdomain, proof)
-    end
-    loop Reveal window
-        Validators->>Hub: revealValidation(jobId, approve, salt)
-    end
-    Hub-->>Owner: JobFinalized / disputes ready
-    Owner->>Hub: pause(), setCommitRevealWindows(), setMinStake(), setDisputeModule() at will
-```
+## Overview
+- **Path:** `demo/sovereign-constellation/README.md`
+- **Module Focus:** Anchors Demo → Sovereign Constellation inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
 ## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/sovereign-constellation` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Multi-network orchestration** – hubs list their RPC endpoints and chain IDs. The orchestrator prepares unsigned
-  transactions tagged with the network metadata so a browser wallet can route each action to the correct chain.
-- **Playbook-driven missions** – curated JSON playbooks expand a single mission intent into cross-hub job flows that
-  cover research, manufacturing, governance, and crisis management.
-- **ASI Takes Off mission profiles** – five flagship mission archetypes live in `config/missionProfiles.json`, powering a
-  `/constellation/mission-profiles` API and the console's mission selector so a non-technical operator can load the
-  superintelligent launch plan in one click.
-- **Owner governance atlas** – every module across every hub is surfaced with direct `writeContract` links so the owner
-  can pause, reconfigure, or rotate governance instantly.
-- **Wallet-first UX** – no private keys ever touch the server. The console simply prepares payloads, the operator signs
-  from their wallet, and AGI Jobs v2 enforces escrow, staking, and validation.
-- **Full automation envelope** – scripts deploy constellations locally, seed demo data, and rotate governance to a Safe.
-- **Production readiness** – TypeScript builds, Hardhat integration tests, Cypress smoke checks, and CI wiring ensure the
-  constellation stays green on every commit.
-- **Thermostat autotune** – telemetry-driven recommendations automatically compute new commit/reveal windows, minimum
-  stake, dispute modules, and emergency pauses. The console pre-fills these values so an owner can apply them with one
-  click.
-- **ASI launch sequence** – `config/constellation.ui.config.json` enumerates a four-step "ASI Takes Off" ritual that the
-  console renders into step cards. Non-technical directors simply follow the instructions, run the provided commands, and
-  confirm the success signals and owner levers highlighted in the UI.
-- **ASI control deck** – `config/asiTakesOffMatrix.json` powers the `/constellation/asi-takes-off` API, the console's new
-  control deck, and the `npm run demo:sovereign-constellation:asi-takes-off` CLI briefing so stakeholders can rehearse the
-  entire deployment with zero manual coding.
-- **ASI flight plan** – `config/asiTakesOffFlightPlan.json` provides a five-phase, non-technical execution script surfaced via
-  `/constellation/asi-takes-off/flight-plan`, the React console, and the
-  `npm run demo:sovereign-constellation:asi-takes-off:flight-plan` CLI so every operator and owner lever is rehearsed in order.
-- **ASI launch manifest generator** – `demo/sovereign-constellation/asi-takes-off-demo/launch.mjs` composes a
-  non-technical, production-ready launch manifesto (`npm run demo:sovereign-constellation:asi-takes-off:launch`) that fuses
-  mission profiles, thermostat telemetry, and owner command matrices into a single artefact ready for executive sign-off.
-- **ASI launch manifest API** – `GET /constellation/asi-takes-off/manifest` returns the same unstoppable dataset (Markdown,
-  owner readiness, thermostat guidance, and automation checklist) so the console renders a copy-to-clipboard manifest for
-  non-technical directors.
-- **ASI systems matrix** – `config/asiTakesOffSystems.json` documents the five flagship pillars with operator workflows,
-  owner levers, automation commands, and verification artefacts. The server exposes `/constellation/asi-takes-off/systems`
-  and the console renders the dataset so every mission assurance remains transparent.
-- **Victory assurance plan** – `config/asiTakesOffVictoryPlan.json` captures the readiness gates, owner controls, and telemetry
-  metrics required for a "green across the board" launch. The server returns it from
-  `/constellation/asi-takes-off/victory-plan`, and the `npm run demo:sovereign-constellation:victory` CLI renders the playbook
-  for non-technical directors.
-- **Superintelligence assurance stack** – `config/asiTakesOffSuperintelligence.json` powers the `/constellation/asi-takes-off/superintelligence`
-  endpoint, a new React control deck, and the `npm run demo:sovereign-constellation:superintelligence` CLI briefing. It fuses
-  capability proofs, owner matrix readiness, automation guardrails, and readiness signals so a non-technical operator can
-  verify the constellation behaves as an unstoppable, owner-controlled superintelligence.
-- **Dominance protocol** – `config/asiTakesOffDominance.json` feeds the `/constellation/asi-takes-off/dominance` endpoint, the
-  new React dominance control deck, and the `npm run demo:sovereign-constellation:dominance` CLI. It documents dominance
-  vectors, automation guardrails, CI enforcement, owner directives, and telemetry indicators so the operator wins the AI race
-  while retaining total owner control.
-
-## Flagship mission — ASI Takes Off
-
-- `config/missionProfiles.json` captures five "ASI Takes Off" archetypes: meta-agentic orchestration, α-AGI governance,
-  making the chain disappear, recursive self-improvement, and winning the AI race. Each entry references the
-  `asi-takes-off` playbook and highlights the hub a director should focus on for the next command.
-- `GET /constellation/mission-profiles` returns the dataset for automation, and the React console renders the mission
-  cards so the flagship plan can be loaded with a single click by any non-technical operator.
-- The Node test suite (`npm run demo:sovereign-constellation:test:server`) asserts the endpoint stays wired, while the
-  Cypress smoke test verifies the UI autoloads the flagship mission.
-
-### Zero-code ASI Takes Off briefing
-
-- `npm run demo:sovereign-constellation:asi-takes-off` prints a mission briefing sourced from repository config, summarising
-  the pillars, automation spine, thermostat recommendations, and owner atlas synopsis for rapid stakeholder alignment.
-- The `/constellation/asi-takes-off` endpoint returns the same dataset (deck, owner atlas, autotune plan) so the React console
-  can render a control deck for non-technical operators.
-- `npm run demo:sovereign-constellation:victory` prints the readiness gates, telemetry metrics, and unstoppable assurances from
-  `asiTakesOffVictoryPlan.json`, ensuring the operator can prove the system remains battle-ready without coding.
-- `npm run demo:sovereign-constellation:owner` renders the **Owner Command Center** matrix, cross-referencing explorer links
-  for every ASI Takes Off governance lever so a director can exercise control without touching code.
-- `npm run demo:sovereign-constellation:superintelligence` delivers the sovereign assurance briefing with thermostat telemetry,
-  owner lever readiness counts, and unstoppable mission proofs sourced from repository config.
-- `npm run demo:sovereign-constellation:dominance` issues the dominance dossier combining mission vectors, CI guardrails,
-  owner directives, and thermostat metrics so executives see the superintelligent platform is production-ready and
-  completely owner-governed.
-- The React console consumes `/constellation/asi-takes-off/manifest` and surfaces the same launch manifest with a
-  copy-to-clipboard control so directors can broadcast the Markdown briefing without opening a terminal.
-
-### ASI superintelligence assurance layer
-
-- `config/asiTakesOffSuperintelligence.json` codifies the five flagship pillars into capability cards with operator focus,
-  owner authority levers, autonomy loops, and proof artefacts. Tests enforce the schema and guarantee unstoppable readiness
-  narratives stay in place.
-- `/constellation/asi-takes-off/superintelligence` combines the dataset with live owner atlas, thermostat recommendations, and
-  resolved owner matrix entries so the UI can display readiness counts and the latest governance levers without manual wiring.
-- The React console renders a dedicated **ASI Superintelligence Assurance** section showing capability cards, automation guardrails,
-  readiness signals, and owner matrix samples. Everything remains wallet-first and non-technical.
-- `bin/asi-superintelligence.mjs` prints the same assurance log to the terminal so executives can review proofs without opening
-  the UI. Server and CLI tests guarantee the artefact always mentions superintelligence, unstoppable readiness, and thermostat
-  guidance sourced from real telemetry.
-
-## Directory layout
-
-```
-demo/sovereign-constellation/
-├── README.md
-├── config/
-│   ├── constellation.ui.config.json
-│   ├── constellation.hubs.json
-│   ├── playbooks.json
-│   ├── missionProfiles.json
-│   ├── autotune.telemetry.json
-│   ├── asiTakesOffSystems.json
-│   ├── asiTakesOffOwnerMatrix.json
-│   ├── asiTakesOffDominance.json
-│   └── actors.json
-├── server/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── tsconfig.json
-│   └── index.ts
-├── app/
-│   ├── package.json
-│   ├── package-lock.json
-│   ├── vite.config.ts
-│   ├── index.html
-│   └── src/
-│       ├── main.tsx
-│       ├── App.tsx
-│       └── lib/
-├── scripts/
-│   ├── deployConstellation.ts
-│   ├── seedConstellation.ts
-│   ├── autotuneThermostat.mjs
-│   └── rotateConstellationGovernance.ts
-├── bin/
-│   ├── asi-owner-matrix.mjs
-│   ├── asi-takes-off.mjs
-│   ├── asi-victory-plan.mjs
-│   └── sovereign-constellation-local.mjs
-├── test/
-│   ├── AutotunePlan.t.ts
-│   ├── SovereignConstellation.t.ts
-│   └── server/
-│       └── missionProfiles.spec.js
-└── cypress/
-    └── e2e/
-        └── sovereign-constellation.cy.ts
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_sovereign_constellation[[Demo → Sovereign Constellation]]
+    demo_sovereign_constellation --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Quick start
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/sovereign-constellation`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. **Install dependencies**
-   ```bash
-   npm ci --no-audit --prefer-offline --progress=false
-   npm ci --prefix demo/sovereign-constellation/server --no-audit --prefer-offline --progress=false
-   npm ci --prefix demo/sovereign-constellation/app --no-audit --prefer-offline --progress=false
-   ```
-2. **Launch a local constellation**
-   ```bash
-   npm run demo:sovereign-constellation
-   ```
-   The helper script deploys three hubs to a local Hardhat node, seeds showcase jobs, regenerates the owner atlas, starts the orchestrator on
-   `http://localhost:8090`, and serves the console on `http://localhost:5179`.
-3. **Open the Sovereign Constellation console** and connect a wallet (e.g., MetaMask configured for `localhost:8545`).
-   Select a mission playbook, review all cross-network steps, and sign the prepared transactions as they appear.
-4. **Run telemetry autotune (optional)**
-   ```bash
-   npm run demo:sovereign-constellation:plan
-   ```
-   This generates `reports/sovereign-constellation/autotune-plan.json` and the console automatically ingests the
-   recommendations for commit windows, stakes, dispute modules, and pause triggers.
+## Directory Guide
+### Key Directories
+- `app`
+- `asi-takes-off-demo`
+- `bin`
+- `config`
+- `cypress`
+- `scripts`
+- `server`
+- `shared`
+- `test`
 
-## One-command runbook surfaced in the console
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-- `config/constellation.ui.config.json` now defines `launchSequence`, a structured, owner-first walkthrough that merges the
-  dependency install, constellation deployment, mission load, and governance verification flows.
-- The React console reads the launch sequence and renders it ahead of the hero metrics so directors can see exactly which
-  commands to run, what success looks like, and which owner controls to exercise next.
-- Cypress smoke tests assert that the launch sequence is always visible and that it includes the `demo:sovereign-constellation`
-  command so CI protects the non-technical onboarding story.
-
-## Owner control matrix & command center
-
-Regenerate the owner matrix any time configuration changes:
-
-```bash
-npm run demo:sovereign-constellation:atlas
-```
-
-The resulting `reports/sovereign-constellation/owner-atlas.md` documents every control surface. Highlights:
-
-- `SystemPause` + `JobRegistry.pause()` across all hubs for immediate halts.
-- `ValidationModule.setCommitRevealWindows()` to retune validation cadence in flight.
-- `StakeManager.setMinimumStake()` and `setDisputeModule()` to adjust validator economics.
-- `SystemPause.pause()` plus direct ownership rotation controls to reassign governance in seconds.
-- `IdentityRegistry.addAdditionalAgent/Validator()` to update allowlists live.
-
-All links route directly to the relevant explorer `writeContract` tab or the Hardhat script that performs the change.
-
-For a non-technical launch director, run the dedicated command center briefing:
-
-```bash
-npm run demo:sovereign-constellation:owner
-```
-
-This reads `config/asiTakesOffOwnerMatrix.json`, cross-checks every entry against the owner atlas, and prints a
-timestamped action log showing which levers are ready, which require address population, the exact explorer write
-panels, automation commands, and mission assurances. The Express server exposes the same dataset via
-`GET /constellation/asi-takes-off/owner-matrix`, empowering the React console (and automated governance bots) to
-surface every owner control with zero manual wiring.
-
-## Tests
-
-- `demo/sovereign-constellation/test/SovereignConstellation.t.ts` – spins up three hubs, runs a full playbook, commits
-  & reveals validations, and proves finalisation across networks.
-- `demo/sovereign-constellation/test/server/missionProfiles.spec.js` – verifies the flagship mission dataset in
-  `missionProfiles.json` stays wired to the ASI Takes Off playbook for downstream automation.
-- `demo/sovereign-constellation/test/server/asiOwnerMatrix.spec.js` – validates the owner matrix schema, ensures CLI output
-  renders without error, and confirms every listed lever maps to a real module/action pair.
-- `demo/sovereign-constellation/cypress/e2e/sovereign-constellation.cy.ts` – smoke test ensuring the UI loads hero
-  metrics, mission profiles, multi-network hub data, and playbook previews.
-
-## Continuous integration
-
-`.github/workflows/ci.yml` contains a dedicated **Sovereign Constellation** job. It installs server/app dependencies and
-ensures both build successfully on every PR and on main. Branch protections must require this job to stay green, guaranteeing
-that the constellation demo is always production-ready.
-
----
-
-Sovereign Constellation demonstrates that AGI Jobs v0 (v2) empowers operators to run civilization-scale AGI operations in
-minutes. Nothing new is deployed on-chain; everything is composed from hardened contracts, giving the owner absolute control
-while realising unprecedented reach.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

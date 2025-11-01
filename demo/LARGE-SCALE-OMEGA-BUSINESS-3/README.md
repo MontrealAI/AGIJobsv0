@@ -1,105 +1,46 @@
-# 🏛️ Large-Scale α-AGI Business 3 — Omega-Grade Edition
+# AGI Jobs v0 (v2) — Demo → Large Scale Omega Business 3
 
-This dossier packages an Omega-grade demonstration of AGI Jobs v0 (v2) without inventing a single new primitive. It layers the existing Trident orchestration engine, owner playbooks, validator simulators, and conversational UIs into a turnkey storyline where entire nations and treasury-controlled wallets transmute planetary free-energy gradients into compounding cash-flows.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/LARGE-SCALE-OMEGA-BUSINESS-3`.
 
-The deliverable is a non-technical command centre: run one script, open three familiar UIs, and watch three sovereign coalitions cooperate and get paid entirely on-chain. Every artefact lands under `reports/omega-business-3/` with deterministic hashes so compliance teams, investors, and auditors can trust the outcome.
+## Overview
+- **Path:** `demo/LARGE-SCALE-OMEGA-BUSINESS-3/README.md`
+- **Module Focus:** Anchors Demo → Large Scale Omega Business 3 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
----
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/LARGE-SCALE-OMEGA-BUSINESS-3` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quick Launch (zero new code)
-
-1. **Install prerequisites**
-   - Node.js v20.18.1 (same toolchain the repo enforces).
-   - Docker Engine/Desktop if you prefer the one-click stack (optional).
-   - An Ethereum wallet for mainnet deployment (MetaMask, Rabby, Ledger).
-2. **Clone + bootstrap**
-   ```bash
-   git clone https://github.com/MontrealAI/AGIJobsv0.git
-   cd AGIJobsv0
-   npm install
-   ```
-3. **Run the Omega orchestration**
-   ```bash
-   npm run demo:omega-business-3
-   ```
-   The orchestrator reuses production scripts to:
-   - Regenerate the complete owner control dossiers (quickstart, command centre, parameter matrix, surface map).
-   - Execute a sovereign wallet simulation (`test/demo/omegaBusinessSimulation.test.ts`) where three nations, two validator guilds, and a treasury coordinate jobs and payouts.
-   - Emit a cryptographically signed ledger plus a mission summary under `reports/omega-business-3/`.
-4. **Open the UI constellation**
-   ```bash
-   npm run demo:omega-business-3:ui
-   ```
-   The helper script now fans out every first-class interface at once (owner console, enterprise portal, validator desk) and tails the logs under `/tmp/` for audit evidence. See [`ui/non-technical-walkthrough.md`](./ui/non-technical-walkthrough.md) for a minute-by-minute tour tailored to non-technical operators.
-
-Everything you see is powered by code that already shipped with AGI Jobs v0 (v2). No forks, no experimental branches.
-
----
-
-## Mainnet mission (owner governed)
-
-When you are ready to run the Omega-grade scenario against Ethereum mainnet infrastructure, use the hardened deployment bundle:
-
-```bash
-npm run demo:omega-business-3:mainnet -- --tags omega-mission
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_LARGE_SCALE_OMEGA_BUSINESS_3[[Demo → Large Scale Omega Business 3]]
+    demo_LARGE_SCALE_OMEGA_BUSINESS_3 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The wrapper script:
-- Generates one-click `.env` files with production RPC endpoints.
-- Runs the official deployment checklist, wiring the StakeManager, JobRegistry, DisputeModule, ReputationEngine, CertificateNFT, and IdentityRegistry exactly as documented.
-- Boots the one-click automation (`npm run deploy:oneclick:auto -- --network mainnet`) so the stack is live with owner safeguards.
-- Captures a signed change-ticket in `reports/omega-business-3/mainnet-change-ticket.md` demonstrating complete owner control (pause, parameter updates, governance rotation).
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/LARGE-SCALE-OMEGA-BUSINESS-3`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-All privileged actions remain owner-gated. The owner can modify every parameter via the existing `owner:*` scripts or by using the Owner Console UI.
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `ui`
+### Key Files
+- `orchestrator.ts`
 
----
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Scenario wiring
-
-- **ENS Root:** `omega-business.eth`
-- **Nation actors:** Solaris Continuum, Arctic Quantum Accord, Celestial Silk Road Coalition.
-- **Validators:** Horizon Arbitration Collective, Atlas Integrity Guild.
-- **Treasury:** Omega Stewardship Treasury.
-- **Ledger:** `reports/omega-business-3/<scope>/simulation-ledger.ndjson`
-
-The orchestration produces:
-- Mission summary with execution timeline and SHA-256 integrity table.
-- Owner quickstart, command centre atlas, parameter matrix, and control surface snapshots.
-- Deterministic Hardhat test transcript proving wallet-level job creation, assignment, validator protection, and payouts.
-
----
-
-## Operator experience
-
-1. Launch the conversational portal (`npm run demo:omega-business-3:ui`).
-2. Connect a wallet (Hardhat default accounts when local, or your production wallet on mainnet).
-3. Use the chat assistant to publish the Solaris Continuum mission (reward `150000`, deadline `72` hours, validators `Horizon Arbitration Collective`).
-4. Watch validator guilds commit, reveal, and approve deliverables automatically (driven by the baked-in simulation harness).
-5. Open the Owner Console to pause/unpause modules or adjust timing windows via the documented toggles.
-6. Finalize payouts either from the UI or by rerunning the deterministic test harness.
-
-Every interaction is recorded, verifiable on-chain, and backed by the existing CI v2 controls.
-
----
-
-## Artifacts & evidence
-
-After each run, consult `reports/omega-business-3/<scope>/` for:
-
-- `mission-summary.md` – executive-grade overview with success ✅/failure ❌ markers.
-- `simulation-ledger.ndjson` – machine-readable journal of every nation job.
-- `owner-quickstart.md`, `owner-command-center.md`, `owner-control-surface.md` – governance dossiers proving total owner authority.
-- `parameter-matrix.json` – snapshot of all tunable parameters with current values.
-- `mainnet-change-ticket.md` (mainnet mode) – signed governance record for auditors.
-
-Pin these assets to IPFS/ENS and you have an immutable audit trail for investors, regulators, and ecosystem partners.
-
----
-
-## Safety & governance
-
-- The owner remains in full command via `owner:pause`, `owner:update-all`, `owner:rotate`, and the documented applyConfiguration flows.
-- Validators and agents follow the ENS naming policy (e.g., `*.agent.agi.eth`, `*.club.agi.eth`). Emergency allowlists are still available for testing only.
-- Every command executed by the orchestrator matches an existing CI pipeline step, so a green run implies the platform is production-ready.
-
-The result is a grandiose yet practical showcase of AGI Jobs v0 (v2) as the user-friendly machine that compounds wealth for entire nations.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

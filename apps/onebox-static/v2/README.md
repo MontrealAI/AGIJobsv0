@@ -1,21 +1,44 @@
-# AGI Jobs One-Box UI
+# AGI Jobs v0 (v2) — Apps → Onebox Static → V2
 
-A static, IPFS-friendly single-input interface for AGI Jobs v2. The page works in a demo mode out of the box and can be wired to the AGI-Alpha Orchestrator when the `/onebox/*` routes are deployed.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/onebox-static/v2`.
 
-## Features
+## Overview
+- **Path:** `apps/onebox-static/v2/README.md`
+- **Module Focus:** Anchors Apps → Onebox Static → V2 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- Single request box with conversational confirmations and planner warnings.
-- Walletless default flow with optional Expert Mode toggle.
-- Live status board that polls `/onebox/status` and a friendly error dictionary for common failures.
-- Accessible keyboard shortcuts and suggestion pills for quick prompts.
-- Zero build tooling — deploy the folder to any static host or IPFS pinner.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `apps/onebox-static/v2` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Usage
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> apps_onebox_static_v2[[Apps → Onebox Static → V2]]
+    apps_onebox_static_v2 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-1. Open `index.html` locally or via static hosting.
-2. Click **Settings** and enter the orchestrator URL. Leave it blank to stay in Demo Mode. Optionally paste an API token (stored securely in `localStorage`) and choose how frequently the status board should refresh.
-3. Send a natural-language instruction such as "Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days".
-4. Confirm the plan and wait for the orchestrator to execute. Expert Mode can be toggled at any time if you want calldata for a connected wallet.
-5. Monitor the recent activity panel at the bottom of the page or press **Refresh** to force a status update on demand.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/onebox-static/v2`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-When no orchestrator URL is configured the UI remains interactive using built-in demo responses, making it safe to embed in documentation or marketing materials before backend integration is ready.
+## Directory Guide
+### Key Files
+- `app.js`
+- `index.html`
+- `styles.css`
+
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
+
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

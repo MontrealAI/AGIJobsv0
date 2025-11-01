@@ -1,83 +1,51 @@
-# Meta-Agentic α-AGI Jobs Prime Demo
+# AGI Jobs v0 (v2) — Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha Prime Demo
 
-The Meta-Agentic α-AGI Jobs Prime demo is a self-contained, production-ready showcase that
-reveals how a non-technical owner can command AGI Jobs v0 (v2) to design, govern, and execute
-planet-scale opportunities with a single click. It packages an end-to-end agentic mission
-pipeline — Identify → Out-Learn → Out-Think → Out-Design → Out-Strategise → Out-Execute —
-into an approachable orchestration layer that emphasises clarity, safety, and administrative
-control.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo`.
 
-## Why this demo matters
+## Overview
+- **Path:** `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo/README.md`
+- **Module Focus:** Anchors Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha Prime Demo inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Empowers non-technical owners** – everything is configuration-driven, with no manual
-  coding required. Owner controls expose pause switches, risk limits, phase toggles, and
-  governance delays in plain language.
-- **Demonstrates the full α-AGI stack** – synthetic signals flow into anomaly detection,
-  world-modelling counterfactuals, agentic planning, autonomous blueprinting, portfolio
-  optimisation, and execution order generation.
-- **Ships with best-practice artefacts** – mermaid diagrams, Markdown dossiers, and an
-  immersive HTML dashboard give stakeholders immediate visibility.
-- **Production safe** – every stage validates inputs, stress-tests decisions, and honours
-  owner-defined guardrails before producing execution orders.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quickstart
-
-```bash
-# 1. Ensure dependencies are installed (already covered by repo requirements)
-python -m pip install -r requirements-python.txt
-
-# 2. Run the Prime orchestrator and export a report
-python demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo/run_prime_demo.py \
-  --report demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/prime_run.json \
-  --markdown demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/reports/prime_run.md \
-  --dashboard demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/ui/prime_dashboard.html
-```
-
-The command loads curated multi-domain signals, runs the complete meta-agentic pipeline,
-validates every phase, and writes artefacts to disk for owners to inspect or publish.
-
-## Visual pipeline
-
+## Systems Map
 ```mermaid
-flowchart TD
-  A[Identify multi-domain anomalies] --> B[Out-Learn counterfactual curriculum]
-  B --> C[Out-Think meta-agentic reasoning]
-  C --> D[Out-Design autonomous execution blueprints]
-  D --> E[Out-Strategise antifragile portfolio]
-  E --> F[Out-Execute gasless treasury-grade actions]
-  F --> G[Monitoring & feedback loop]
+flowchart LR
+    Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_prime_demo[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha Prime Demo]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_prime_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Owner controls
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_prime_demo`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-| Control | Description |
-| --- | --- |
-| `paused` | Instantly pauses autonomous execution while keeping monitoring live. |
-| `max_concurrent_initiatives` | Caps simultaneous initiatives to respect operational bandwidth. |
-| `risk_limit` | Sets the absolute risk appetite; portfolio allocations are scaled accordingly. |
-| `allowed_domains` | Restricts opportunities to vetted verticals (e.g. finance, biotech). |
-| `governance_delay_hours` | Requires a timelock delay before sensitive actions settle. |
-| `audit_required` | Forces independent validation before high-value execution orders. |
+## Directory Guide
+### Key Directories
+- `data`
+### Key Files
+- `__init__.py`
+- `config.py`
+- `data_sources.py`
+- `orchestrator.py`
+- `phases.py`
+- `reports.py`
+- `run_prime_demo.py`
+- `ui.py`
 
-Owners can edit these values via JSON overrides or interactively inside the upcoming
-Meta-Agentic Governance Console (placeholder API hooks provided in this demo).
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Artefacts produced
-
-- **JSON execution summary** – machine-readable payload for downstream automation.
-- **Markdown dossier** – human-readable narrative with embedded mermaid diagrams.
-- **HTML dashboard** – iconic, neon-lit interface suitable for investor demos or live ops.
-- **CI integration** – fully covered by the `demo-meta-agentic-alpha-agi-jobs` workflow.
-
-## Extending the demo
-
-1. Drop new signals into `data/sample_signals.json` or point the orchestrator to a live
-   feed.
-2. Adjust the configuration in `config.py` or pass overrides to the CLI to explore
-   different risk appetites and governance regimes.
-3. Plug additional execution tools into the orchestrator (e.g. Uniswap, LayerZero) by
-   extending the `OutExecutePhase` builder.
-
-This demo is ready for production-scale storytelling and can be deployed to a static hosting
-provider or integrated inside AGI Jobs’ governance portals immediately.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

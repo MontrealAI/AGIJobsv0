@@ -1,128 +1,59 @@
-# 🎖️ Tiny Recursive Model Demo — AGI Jobs v0 (v2)
+# AGI Jobs v0 (v2) — Demo → Tiny Recursive Model v0
 
-> A production-grade showcase proving how AGI Jobs v0 (v2) lets a non-technical founder spin up a profit-maximising Tiny Recursive Model (TRM) with thermostat governance, sentinel guardrails, and cinematic telemetry in minutes.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Tiny-Recursive-Model-v0`.
 
-## Why this matters
+## Overview
+- **Path:** `demo/Tiny-Recursive-Model-v0/README.md`
+- **Module Focus:** Anchors Demo → Tiny Recursive Model v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Recursive intelligence**: A 7M-parameter TRM repeatedly refines answers, matching or surpassing massive LLMs on reasoning while running on a laptop.
-- **Economic autopilot**: Adaptive thermostat and sentinel rules keep ROI above target, throttle recursion, and guarantee budget discipline.
-- **No-code empowerment**: YAML knobs, a CLI, and a Streamlit cockpit let operators deploy, monitor, and iterate without ML expertise.
-- **Full-stack integration**: Telemetry mirrors AGI Jobs v0 (v2) production patterns – ledgered ROI, guardrails, and orchestration-ready artifacts.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Tiny-Recursive-Model-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## System flow at a glance
-
+## Systems Map
 ```mermaid
 flowchart LR
-    A[Non-technical operator tweaks YAML / Streamlit] --> B(Thermostat Controller)
-    B --> C{TRM Engine}
-    C -->|recursive inference| D[Tiny Recursive Model]
-    D --> E[Ledger & ROI Telemetry]
-    E --> F{Sentinel Guardrails}
-    F -- safe --> B
-    F -- breach --> G[Auto-paused deployment + alert]
-    D --> H[Conversion Funnel Simulation]
-    H --> I[Comparative Insights: Greedy vs LLM vs TRM]
+    Operators((Mission Owners)) --> demo_Tiny_Recursive_Model_v0[[Demo → Tiny Recursive Model v0]]
+    demo_Tiny_Recursive_Model_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Quickstart
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Tiny-Recursive-Model-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. **Install dependencies**
-   ```bash
-   cd demo/Tiny-Recursive-Model-v0
-   python -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+## Directory Guide
+### Key Directories
+- `assets`
+- `config`
+- `data`
+- `notebooks`
+- `src`
+- `tests`
+- `trm_demo`
+- `ui`
+- `web`
+### Key Files
+- `__init__.py`
+- `demo_runner.py`
+- `main.py`
+- `Makefile`
+- `OPERATOR_PLAYBOOK.md`
+- `requirements.txt`
+- `run_demo.py`
+- `streamlit_app.py`
 
-2. **Train the Tiny Recursive Model (fast synthetic curriculum)**
-   ```bash
-   python run_demo.py train
-   ```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-3. **Simulate the business impact**
-   ```bash
-   python run_demo.py simulate --trials 200
-   ```
-
-4. **Launch the Streamlit cockpit**
-   ```bash
-   streamlit run streamlit_app.py
-   ```
-
-The CLI prints an ROI comparison table and the thermostat trace so operators immediately see how TRM beats a greedy heuristic and a costly LLM baseline on net profit.
-
-## What you get
-
-| Capability | Description |
-|------------|-------------|
-| **TrmEngine** | Full training + inference lifecycle with EMA checkpoints, ACT-style halting, and gradient clipping. |
-| **Thermostat** | ROI-driven feedback loop that dials recursion depth, halting threshold, and concurrency targets. |
-| **Sentinel** | Hard guardrails on ROI floor, latency, recursion depth, and consecutive failures. |
-| **EconomicLedger** | Transparent cost/value accounting for every inference, mirroring AGI Jobs v0 (v2) production telemetry. |
-| **Simulation Harness** | Conversion funnel simulator contrasting TRM, greedy baseline, and LLM with GMV-minus-cost metrics. |
-| **Streamlit UI** | A non-technical control room with sliders, dataframes, and charts – no code required. |
-
-## Configuration playground
-
-All knobs live in [`config/default_trm_config.yaml`](config/default_trm_config.yaml). Key sections:
-
-- `trm`: architecture + recursion (max inner/outer loops, halting threshold, EMA decay).
-- `training`: epochs, batch size, optimiser hyperparameters, and checkpoint path.
-- `thermostat`: ROI target plus bounds for adaptive recursion and halting.
-- `sentinel`: guardrails on ROI, latency, recursion depth, and failure streaks.
-- `ledger`: economic values per conversion and compute cost weights.
-
-Operators can copy this file, tweak parameters, and point the CLI/UI to the new YAML without touching code.
-
-## Demo scenario
-
-The simulator generates multi-step numerical puzzles. Each “task” is processed by three agents:
-
-1. **Greedy heuristic** – one-shot guess with negligible cost.
-2. **Large LLM** – higher accuracy but 50× compute cost.
-3. **Tiny Recursive Model** – recursive reasoning with adaptive halting and economic telemetry.
-
-Metrics captured per agent:
-
-- Conversions and success rate.
-- Compute cost + value generated.
-- ROI = value / cost.
-- Latency distribution and recursion depth (for TRM).
-
-TRM typically shows **>40% conversion uplift at <1% of the LLM cost**, producing dramatic profit gains.
-
-## Extending to production
-
-- Wire `TrmEngine.infer` into AGI Jobs v0 (v2) orchestrator workers – signatures match existing ML interfaces.
-- Forward `EconomicLedger` events into the on-chain/off-chain subgraph for analytics.
-- Attach `Thermostat.update` and `Sentinel.evaluate` to orchestrator loops for automatic economic tuning.
-- Use Streamlit outputs as stakeholder dashboards or embed them into internal portals.
-
-## Files & structure
-
-```
-Tiny-Recursive-Model-v0/
-├── config/                 # Editable YAML configuration packs
-├── data/                   # Operation vocabulary used by the synthetic curriculum
-├── trm_demo/               # Python package (engine, model, thermostat, sentinel…)
-├── tests/                  # Pytest suite ensuring halting, thermostat, and ledger correctness
-├── assets/checkpoints/     # Stores EMA checkpoints from training
-├── run_demo.py             # Typer CLI: train/simulate/explain
-├── streamlit_app.py        # Streamlit control room
-├── web/                    # Static marketing/visual collateral
-└── README.md               # You are here
-```
-
-## Safety and control commitments
-
-- Contract-style owner controls via configuration + CLI make every operational parameter adjustable at runtime.
-- Sentinel guardrails default to conservative ROI floors and latency caps, halting usage automatically.
-- Thermostat ensures the system never overspends compute budget when ROI dips.
-- Extensive logging (CLI table + Streamlit charts) surfaces telemetry instantly for audits.
-
-## Next steps
-
-- Plug in real datasets by swapping `OperationSequenceDataset` for your domain loader.
-- Feed TRM outputs into AGI Jobs v0 (v2) orchestrators for live job/candidate recommendations.
-- Extend the Streamlit cockpit with wallet/ledger visualisations to prove value on-chain.
-
-Welcome to the future of economically aligned recursive intelligence – now in the hands of every operator. 🚀
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

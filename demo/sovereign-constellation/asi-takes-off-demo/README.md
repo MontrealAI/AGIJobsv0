@@ -1,51 +1,44 @@
-# 🎖️ ASI Takes Off Demo Launcher — Sovereign Constellation
+# AGI Jobs v0 (v2) — Demo → Sovereign Constellation → ASI Takes OFF Demo
 
-The Sovereign Constellation already contains every contract, script, and UI required to run a civilization-scale
-mission. This launcher distills those assets into a single, non-technical control surface. Running
-`npm run demo:sovereign-constellation:asi-takes-off:launch` produces a complete "ASI Takes Off" launch manifest,
-verifies owner supremacy, and writes an executable mission briefing to `output/asi-takes-off-launch.md`.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/sovereign-constellation/asi-takes-off-demo`.
 
-## What this launcher guarantees
+## Overview
+- **Path:** `demo/sovereign-constellation/asi-takes-off-demo/README.md`
+- **Module Focus:** Anchors Demo → Sovereign Constellation → ASI Takes OFF Demo inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Meta-agentic orchestration** – the manifest maps each flagship mission pillar to the exact playbook steps, hubs,
-and validator cadences used by the Constellation Orchestrator.
-- **Owner-first α-AGI governance** – owner atlas data and command matrices are embedded so the operator can pause,
-upgrade, or reassign authority without touching raw ABIs.
-- **Invisible blockchain plumbing** – the generated briefing lists every wallet prompt and automation command in
-plain language so the chain disappears for non-technical directors.
-- **Recursive self-improvement** – telemetry and thermostat outputs are summarised with concrete owner actions,
-proving the system tunes itself through feedback.
-- **Winning the AI race** – CI guardrails, automation, and launch sequencing converge into a two-page playbook that a
-single wallet operator can execute immediately.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/sovereign-constellation/asi-takes-off-demo` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Usage
-
-```bash
-npm run demo:sovereign-constellation:asi-takes-off:launch
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_sovereign_constellation_asi_takes_off_demo[[Demo → Sovereign Constellation → ASI Takes OFF Demo]]
+    demo_sovereign_constellation_asi_takes_off_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The command prints a mission synopsis to STDOUT and emits a Markdown launch briefing that can be handed directly to
-stakeholders. The launcher is idempotent; re-running it refreshes the output with the latest telemetry and governance
-state without requiring any manual edits.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/sovereign-constellation/asi-takes-off-demo`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-Pair it with the step-by-step flight plan CLI for live rehearsals:
+## Directory Guide
+### Key Directories
+- `output`
+### Key Files
+- `launch.mjs`
 
-```bash
-npm run demo:sovereign-constellation:asi-takes-off:flight-plan
-```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-This prints each phase, non-technical step, owner lever, automation command, and verification signal in order so
-directors can walk through the launch before any signatures are collected.
-
-## Files
-
-- `launch.mjs` – orchestrates configuration loading, telemetry analysis, owner atlas synthesis, and manifest
-  generation. It proves how AGI Jobs v0 (v2) empowers non-technical teams to steer an ASI-grade workforce safely.
-- `output/asi-takes-off-launch.md` – generated artefact containing the actionable briefing, owner controls, telemetry
-  checkpoints, and CI guardrails required to deploy the Sovereign Constellation at the "ASI Takes Off" level.
-
-## Tests
-
-`npm run demo:sovereign-constellation:test` now executes
-`demo/sovereign-constellation/test/bin/asiTakesOffLaunch.spec.js` to guarantee the launcher keeps exporting the
-manifest successfully on every branch.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

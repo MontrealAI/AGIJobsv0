@@ -1,25 +1,55 @@
-# Culture Studio UI
+# AGI Jobs v0 (v2) — Demo → CULTURE v0 → Apps → Culture Studio
 
-A Vite + React control room for CULTURE-v0 that lets owners:
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0/apps/culture-studio`.
 
-- Stream new knowledge artifacts through a chat-style assistant, upload them to IPFS, and mint them on the CultureRegistry.
-- Visualise the CultureRegistry network with an interactive influence graph and one-click derivative job shortcuts.
-- Launch arena rounds with a guided wizard, live telemetry charts, and an owner control panel for pausing or re-tuning success targets.
+## Overview
+- **Path:** `demo/CULTURE-v0/apps/culture-studio/README.md`
+- **Module Focus:** Anchors Demo → CULTURE v0 → Apps → Culture Studio inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Getting started
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/CULTURE-v0/apps/culture-studio` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-```bash
-npm install
-npm run dev
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_CULTURE_v0_apps_culture_studio[[Demo → CULTURE v0 → Apps → Culture Studio]]
+    demo_CULTURE_v0_apps_culture_studio --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The UI expects the orchestrator and indexer mock services exposed by `server.mjs`, but the interface will fall back to friendly demo data if they are unavailable.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/apps/culture-studio`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../../OperatorRunbook.md).
 
-## Cypress end-to-end tests
+## Directory Guide
+### Key Directories
+- `cypress`
+- `src`
+### Key Files
+- `.eslintrc.cjs`
+- `.prettierrc`
+- `Dockerfile`
+- `index.html`
+- `nginx.conf`
+- `package-lock.json`
+- `package.json`
+- `server.mjs`
+- `tsconfig.json`
+- `vite.config.ts`
+- `vitest.config.ts`
 
-```bash
-npm run preview
-npx cypress run --config-file ../../../../cypress.config.ts --project .
-```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-The tests stub orchestrator endpoints to exercise the Create Artifact and Self-Play Arena flows with non-technical copy and responsive layout checks.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

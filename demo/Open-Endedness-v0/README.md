@@ -1,150 +1,60 @@
-# Open-endedness via Models of Human Notions of Interestingness Demo (Open-Endedness-v0)
+# AGI Jobs v0 (v2) — Demo → Open Endedness v0
 
-> A non-technical founder can orchestrate an omni-powerful, economically aligned AGI curriculum – end-to-end – from inside **AGI Jobs v0 (v2)**.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Open-Endedness-v0`.
 
-This demo shows how AGI Jobs v0 (v2) empowers anyone to stand up the full OMNI stack – curriculum engine, interestingness filters, thermostat, sentinels, telemetry, and blockchain-ready control plane – without custom coding. The deliverable is a complete, production-strength auto-curriculum that continuously discovers and scales the most profitable opportunities in a hiring marketplace.
+## Overview
+- **Path:** `demo/Open-Endedness-v0/README.md`
+- **Module Focus:** Anchors Demo → Open Endedness v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## ⚡️ Executive Overview
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Open-Endedness-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Audience**: Operators and founders who want superintelligent economic leverage without writing code.
-- **Outcome**: Launch a self-optimising intervention factory that maximises GMV, ROI, and user happiness.
-- **Stack**: Python + Mermaid docs, reproducible simulations, Ethereum-ready governance hooks, CI-ready tests.
-
-### Value Flow at a Glance
-
+## Systems Map
 ```mermaid
 flowchart LR
-    A[User configures demo YAML] --> B{AGI Jobs v0 (v2)}
-    B -->|Launches| C[OMNI Curriculum Engine]
-    C -->|Selects| D[High-LP Interesting Tasks]
-    D -->|Triggers| E[Smart Interventions]
-    E -->|Generates| F[Conversion + GMV Signals]
-    F -->|Feeds| G[Thermostat & Sentinels]
-    G -->|Adjusts| C
-    C -->|Logs| H[Subgraph Telemetry]
-    H -->|Surfaces| I[Executive Dashboards]
-    I -->|Informs| A
+    Operators((Mission Owners)) --> demo_Open_Endedness_v0[[Demo → Open Endedness v0]]
+    demo_Open_Endedness_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## 🧭 Directory Structure
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Open-Endedness-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-```
-Open-Endedness-v0/
-├── README.md                  # This guide
-├── config.demo.yaml           # Turn-key configuration
-├── engine.py                  # OMNI curriculum core (LP + MoI fusion)
-├── interestingness.py        # FM-backed interestingness oracle abstraction
-├── thermostat.py              # Economic control loop
-├── sentinels.py               # Hard safety rails
-├── simulator.py               # Business funnel simulator + evaluation harness
-├── run_demo.py                # CLI for non-technical operators
-├── report_template.md         # Markdown report generator
-└── dashboards/
-    └── omni_insights.json     # Example telemetry payload
-```
+## Directory Guide
+### Key Directories
+- `config`
+- `dashboards`
+- `prompts`
+- `results`
+- `tests`
+- `web`
+### Key Files
+- `__init__.py`
+- `config.demo.yaml`
+- `engine.py`
+- `interestingness.py`
+- `ledger.py`
+- `omni_config.yaml`
+- `omni_demo.py`
+- `omni_engine.py`
+- `report_template.md`
+- `run_demo.py`
+- `sentinel.py`
+- `sentinels.py`
 
-Each module is importable and can be re-used across AGI Jobs v0/v2 deployments.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## 🚀 Quick Start (10 minutes)
-
-```bash
-# 1. Activate Python environment (AGI Jobs v0 ships with everything)
-make venv
-source .venv/bin/activate
-
-# 2. Run the full-stack OMNI simulation demo
-python demo/Open-Endedness-v0/run_demo.py --config demo/Open-Endedness-v0/config.demo.yaml --output demo/Open-Endedness-v0/artifacts
-
-# 3. Explore the autogenerated report
-cat demo/Open-Endedness-v0/artifacts/omni_report.md
-```
-
-The CLI prints live status banners and writes:
-
-- **`omni_report.md`** – executive-ready summary with KPIs, GMV lift, ROI separation.
-- **`distribution_timeseries.csv`** – task sampling probabilities over time.
-- **`gmv_roi.png`** – chart comparing OMNI vs LP-only vs Uniform.
-- **`telemetry.json`** – telemetry bundle ready for dashboards.
-
-No code edits are necessary; non-technical users only adjust `config.demo.yaml`.
-
-## 🧠 How It Works
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant CLI as run_demo.py
-    participant Engine as OmniCurriculumEngine
-    participant Oracle as InterestingnessOracle
-    participant Thermostat
-    participant Sentinel
-    participant Sim as Funnel Simulator
-
-    User->>CLI: Provide config + desired output folder
-    CLI->>Engine: Initialise LP buffers and task registry
-    Engine->>Sim: Request baseline task performance
-    loop For each episode
-        Engine->>Engine: Update LP via fast/slow EMAs
-        Engine->>Oracle: Request interestingness verdicts (batched)
-        Oracle-->>Engine: JSON map (task -> interesting/boring)
-        Engine->>Sim: Sample task with OMNI distribution
-        Sim-->>Engine: Outcome (success flag, revenue)
-        Engine->>Thermostat: Stream metrics (ROI, budget usage)
-        Thermostat->>Engine: Tuned parameters (exploration, FM cadence)
-        Engine->>Sentinel: Submit safety heartbeat
-        Sentinel-->>Engine: Approvals or overrides
-        Engine->>CLI: Emit telemetry snapshot
-    end
-    CLI->>User: Autogenerated report, charts, raw data
-```
-
-### Core Principles
-
-1. **Learning Progress Mastery** – Double EMA tracking ensures OMNI only amplifies tasks that are getting better now.
-2. **Interestingness Safeguards** – FM prompts keep the curriculum away from trivial variants.
-3. **Thermostatic Governance** – ROI-targeted loop controls FM query cadence, exploration, and budgets.
-4. **Sentinel Backstops** – Hard stops protect profits, diversity, and API quotas.
-5. **Telemetry by Default** – Everything is logged to a subgraph-compatible bundle for analytics.
-
-## 🧪 KPIs Delivered
-
-- **GMV Lift** – OMNI outperforms LP-only and uniform strategies on cumulative revenue.
-- **ROI Separation** – Net profit after FM costs remains positive and dominant.
-- **Task Frontier Expansion** – Diverse set of mastered tasks with high LP.
-- **Budget Discipline** – Thermostat + Sentinels respect query caps and spend limits.
-
-The provided unit tests (`tests/demo/test_open_endedness_demo.py`) cover learning progress, interestingness fusion, thermostat adjustments, sentinel overrides, and deterministic simulation outcomes.
-
-## 🌐 Ethereum-Ready Control Surface
-
-The configuration format exposes:
-
-- **On-chain ownership toggles** (pause, resume, re-weight tasks).
-- **Budget + ROI floors** for compliance.
-- **Task allow/block lists** to reflect governance decisions.
-
-Contracts can consume the generated telemetry to trigger on-chain adjustments, enabling hybrid AI + blockchain orchestration.
-
-## 🛡️ Safety & Governance Defaults
-
-- **Fail-open design** – FM outages gracefully fall back to LP-only sampling.
-- **Deterministic seeds** – Repeatable outcomes for auditing.
-- **Cost ceilings** – Hard-coded sentinel limits stop runaway spend.
-- **Comprehensive logging** – Every decision is time-stamped and attributable.
-
-## 📈 Dashboards
-
-The demo emits a `dashboards/omni_insights.json` payload ready for ingestion by Grafana, Superset, or custom front-ends. Key charts include:
-
-- Task probability heatmaps.
-- ROI vs budget usage.
-- Interesting vs boring task counts over time.
-
-## 🗺️ Next Steps
-
-1. Run the demo end-to-end (takes ~30 seconds on a laptop).
-2. Review `omni_report.md` – share directly with stakeholders.
-3. Plug the generated telemetry into your preferred BI dashboard.
-4. Fork the configuration to your live AGI Jobs deployment.
-
-Welcome to the era of open-ended, economically aligned AGI operations.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,68 +1,46 @@
-# Meta-Agentic α-AGI Jobs Demo V2
+# AGI Jobs v0 (v2) — Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V2
 
-The **Meta-Agentic α-AGI Jobs Demo V2** showcases how a non-technical owner can command the AGI Jobs v0 (v2) stack to produce a fully-governed, meta-agentic economic operation that senses alpha signals, plans strategies, designs execution blueprints, and deploys them on-chain. Everything is packaged so that a single command generates artefacts, dashboards, and on-chain ready payloads.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2`.
 
-> ✅ No Solidity edits required. ✅ End-to-end automation. ✅ Owner retains total control with governance and pause levers.
+## Overview
+- **Path:** `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/README.md`
+- **Module Focus:** Anchors Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V2 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Highlights
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Meta-agentic planning tree** that coordinates Identify → Learn → Think → Design → Strategise → Execute phases.
-- **Owner-governed controls** – every high-impact action routes through approvals, guardian checks, and emergency pauses.
-- **Autonomous treasury telemetry** that tracks alpha scores, capital deployment, and antifragility indicators for each opportunity.
-- **User-facing command centre UI** rendered from Markdown + Mermaid diagrams for clarity and transparency.
-
-### Architecture Flow
-
+## Systems Map
 ```mermaid
-flowchart TD
-    A[Owner Initiates V2 Demo] --> B{Meta-Agentic Planner}
-    B -->|Identify| C[Signal Fusion Engine]
-    B -->|Learn| D[Open-Ended World Model]
-    B -->|Think| E[Meta-Tree Search]
-    B -->|Design| F[Creative Strategy Forge]
-    B -->|Strategise| G[Portfolio Meta-Strategist]
-    B -->|Execute| H[On-Chain Orchestrator]
-    C --> I[Alpha Opportunity Graph]
-    D --> I
-    E --> J[Risk & Ethics Sentinel]
-    F --> K[Simulation Feedback Loop]
-    G --> L[Treasury Autopilot]
-    H --> M[Gasless Executor]
-    M --> N[Timelock & Multisig Guardians]
-    N --> O[Owner Confirmation Console]
-    O --> P[Continuous Learning Ledger]
-    P --> B
+flowchart LR
+    Operators((Mission Owners)) --> demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v2[[Demo → Meta Agentic ALPHA AGI Jobs v0 → Meta Agentic Alpha V2]]
+    demo_Meta_Agentic_ALPHA_AGI_Jobs_v0_meta_agentic_alpha_v2 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Quickstart
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-```bash
-cd demo/Meta-Agentic-ALPHA-AGI-Jobs-v0
-python meta_agentic_demo_v2.py --config meta_agentic_alpha_v2/config/scenario.yaml --timeout 90
-```
+## Directory Guide
+### Key Directories
+- `config`
+- `reports`
+- `ui`
+### Key Files
+- `.gitignore`
 
-The command performs:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-1. Boots the orchestrator with production-grade storage defaults (no manual setup required).
-2. Registers demo agents with stakes, multisig controls, and antifragility guards.
-3. Builds a governance-aware plan with deterministic budget ceilings and approval checkpoints.
-4. Executes each phase (identify → learn → think → design → strategise → execute) with dry-run safeguards.
-5. Emits artefacts under `meta_agentic_alpha_v2/reports` and an interactive UI under `meta_agentic_alpha_v2/ui`.
-
-## Artefacts
-
-- `reports/alpha_masterplan.md` – executive deck with KPIs, diagrams, and opportunity intelligence.
-- `ui/index.html` – lightweight control tower UI for non-technical owners to inspect progress.
-- `storage/latest_run_v2.json` – machine-consumable ledger of the entire orchestration run.
-
-## Empowering Non-Technical Owners
-
-This demo is optimised for clarity and safety:
-
-- **Configurable everything** – budgets, approvals, treasury risk limits, antifragility policies, pause switches.
-- **Zero trust leap** – every transaction simulated with `eth_call`/dry-run mode before commit.
-- **Composable** – plug new data feeds, agents, or execution tools with declarative YAML.
-- **Audit ready** – summary JSON + Markdown reports capture each decision for compliance and investors.
-
-To explore advanced scenarios, duplicate `config/scenario.yaml`, tweak parameters (e.g., additional agents, new execution steps), and rerun the CLI. The orchestrator recalibrates automatically.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

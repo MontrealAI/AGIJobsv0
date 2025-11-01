@@ -1,140 +1,50 @@
-# MuZero-Style Planning Demo for AGI Jobs v0/v2
+# AGI Jobs v0 (v2) — Demo → MuZero style v0
 
-> **Mission Control Status**: Fully automated MuZero-style economic planner demonstrating how non-technical builders wield AGI Jobs v0/v2 to orchestrate superhuman job-market strategies.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/MuZero-style-v0`.
 
-## 1. Ultra-Deep Situation Analysis & Subtask Decomposition
+## Overview
+- **Path:** `demo/MuZero-style-v0/README.md`
+- **Module Focus:** Anchors Demo → MuZero style v0 inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-| Phase | Objective | Key Outputs |
-|-------|-----------|-------------|
-| Discovery | Capture MuZero requirements inside AGI Jobs economics. | Narrative brief, capability map. |
-| Architecture | Define network, environment, planner, and safeguards. | MuZero block diagram, module contracts. |
-| Implementation | Ship production-ready demo stack under `demo/MuZero-style-v0`. | Code, configs, CLI, notebooks. |
-| Validation | Quantify lift vs. greedy & policy-only baselines. | Simulation report, telemetry. |
-| Governance | Empower owner controls, safety sentinels, thermostat. | Config schema, guardrails. |
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/MuZero-style-v0` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-### Multi-Angle Reasoning Checklist
-
-- **Primary hypothesis**: MuZero-style search maximises long-horizon GMV − Cost when embedded in AGI Jobs economics.
-- **Counterfactual**: If MuZero underperforms greedy heuristics, thermostat + sentinels must detect drift and auto-fallback.
-- **Edge Scenarios**: scarce liquidity, volatile success probabilities, adversarial job feeds, contract owner policy changes.
-- **Verification Stack**: analytic calculations, simulation rollouts, statistical tests, config diffing, logging review.
-
-### Systems Blueprint
-
+## Systems Map
 ```mermaid
-diagram TB
-    subgraph User Journey
-        U[Non-technical operator] -->|Launches| CLI
-        CLI --> Dashboard
-        Dashboard --> Reports
-    end
-
-    subgraph MuZero Stack
-        ENV[Jobs Economy Environment]
-        NET[MuZero Network hθ/gθ/fθ]
-        MCTS[Production pUCT Planner]
-        THERM[ROI Thermostat]
-        SENT[Safety Sentinels]
-        TELE[Telemetry & Lineage]
-        TRAIN[Self-Play Training Loop]
-        REPLAY[Prioritised Replay Buffer]
-    end
-
-    U -->|Chooses Scenario| ENV
-    ENV -->|Observations| NET
-    NET -->|Latent state & priors| MCTS
-    MCTS -->|Action plan| ENV
-    TRAIN -->|Updates| NET
-    REPLAY --> TRAIN
-    TELE --> Dashboard
-    SENT -->|Constraints & Alerts| MCTS
-    THERM -->|Sim budget| MCTS
+flowchart LR
+    Operators((Mission Owners)) --> demo_MuZero_style_v0[[Demo → MuZero style v0]]
+    demo_MuZero_style_v0 --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## 2. Demo Highlights
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/MuZero-style-v0`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-- **Zero-Code Onboarding**: one command bootstraps environment, trains compact MuZero, and launches comparison dashboard.
-- **Real-Time Planning**: ROI-aware thermostat keeps compute in-budget while pUCT search hunts profitable futures.
-- **Owner Sovereignty**: declarative config grants full control—budgets, exploration, reward shaping, pause switch.
-- **Safety Net**: sentinels watch calibration, enforce capital discipline, and auto-fallback to trusted heuristics.
+## Directory Guide
+### Key Directories
+- `config`
+- `muzero_demo`
+- `notebooks`
+- `scripts`
+- `tests`
+- `web`
+### Key Files
+- `.gitignore`
+- `requirements.txt`
 
-## 3. Directory Layout
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```text
-demo/MuZero-style-v0/
-├── README.md
-├── config
-│   └── muzero_demo.yaml
-├── notebooks
-│   └── exploratory_planning.ipynb
-├── muzero_demo
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── environment.py
-│   ├── evaluation.py
-│   ├── mcts.py
-│   ├── network.py
-│   ├── planner.py
-│   ├── replay.py
-│   ├── sentinel.py
-│   ├── telemetry.py
-│   ├── thermostat.py
-│   └── training.py
-└── scripts
-    └── run_demo.py
-```
-
-## 4. Quickstart (Triple-Verified)
-
-```bash
-# 1) Install dependencies in an isolated environment
-pip install -r requirements-python.txt  # ensures torch + rich + typer
-
-# 2) Launch guided experience (auto-trains tiny model, runs evaluation, prints report)
-python demo/MuZero-style-v0/scripts/run_demo.py
-
-# 3) Inspect dashboard artifacts & telemetry
-ls demo/MuZero-style-v0/artifacts
-```
-
-Each step is automatically validated via:
-
-1. **Static checks** – schema + config validation.
-2. **Runtime assertions** – environment invariants, sentinel constraints.
-3. **Statistical tests** – Student-t comparison of strategies.
-
-## 5. Owner Controls & Safety Layers
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Planning : enable_muzero_planning=true
-    Planning --> ThermostatAdjust : ROI drift detected
-    ThermostatAdjust --> SentinelReview : constraint breach risk
-    SentinelReview --> SafeFallback : owner_pause=true OR drift_threshold exceeded
-    SentinelReview --> Planning : All clear
-    SafeFallback --> Idle : owner_resume
-```
-
-- **Pause / Resume**: `owner.pause_planning` flag in config halts MuZero instantly.
-- **Budget Guardrails**: dynamic capital ceilings enforced per action.
-- **Calibration Watchdogs**: value vs. realised return tracked with exponential smoothing; alerts on divergence.
-
-## 6. Verification Artifacts
-
-| Tool | Purpose | Location |
-|------|---------|----------|
-| Unit tests | Validate network/mcts environment contracts. | `PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli smoke-tests` |
-| Simulation trials | Compare MuZero vs greedy vs policy-only. | `PYTHONPATH=demo/MuZero-style-v0 python -m muzero_demo.cli eval` |
-| Metrics export | Prometheus-style JSON lines. | `demo/MuZero-style-v0/artifacts/telemetry/*.jsonl` |
-| Config diff | Snapshot owner overrides. | `demo/MuZero-style-v0/artifacts/config_diffs/` |
-
-## 7. Next Steps
-
-1. Scale replay buffer & actor count for larger economies.
-2. Hook into production AGI Jobs orchestrator via gRPC streaming interface.
-3. Extend thermostat with reinforcement meta-controller.
-
----
-
-**Result**: This demo operationalises MuZero inside AGI Jobs v0/v2, letting a non-technical leader command superhuman planning power safely, transparently, and profitably.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

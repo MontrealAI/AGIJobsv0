@@ -1,82 +1,42 @@
-# Astral Omnidominion Operating System Demo ✨
+# AGI Jobs v0 (v2) — Demo → Astral Omnidominion Operating System
 
-The **Astral Omnidominion Operating System Demo** packages the entire AGI Jobs v0 (v2) stack into an iconic, one-button showcase. It builds on the existing `demo:agi-os` mission rehearsal, layers in first-class owner tooling, and emits audit-grade bundles that non-technical operators can run locally or on a staging network with zero code changes.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/astral-omnidominion-operating-system`.
 
-> **Purpose** – prove that a business operator can deploy, govern, and audit an AGI labour market from a clean machine with a single command, while keeping absolute pause/update authority at all times.
+## Overview
+- **Path:** `demo/astral-omnidominion-operating-system/README.md`
+- **Module Focus:** Anchors Demo → Astral Omnidominion Operating System inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Feature Highlights
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/astral-omnidominion-operating-system` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- 🚀 **Push-button launch** – runs the one-click containerised stack, executes the ASI take-off simulation, and collects the mission bundle with live progress indicators.
-- 🛰️ **Owner mission control** – renders fresh Mermaid system maps, verifies the governance control surface, and synthesises an Owner Control Authority Matrix.
-- 📦 **Audit-ready evidence** – writes signed logs, SHA-256 manifests, Markdown + HTML dossiers, and pointers to the Owner Console, Enterprise Portal, and Validator Dashboard.
-- 🧭 **Triple-checked integrity** – cross-verifies the mission summary, owner control matrix, and manifest hashes before declaring success, surfacing any mismatch instantly.
-- 🛡️ **Safety first** – pauses the protocol by default, confirms every destructive action, and shows how to resume/adjust parameters with existing owner scripts.
-
-## Quick Start (Non-Technical Friendly)
-
-1. **Prerequisites** – install Docker Desktop (or Docker Engine + Compose). Node.js 20.18.1 is bundled in the repo, no global install required.
-2. **Clone** – `git clone https://github.com/MontrealAI/AGIJobsv0.git && cd AGIJobsv0`.
-3. **Launch** – run either command:
-   - `npm run demo:agi-os:first-class`
-   - `demo/astral-omnidominion-operating-system/bin/astral-omnidominion.sh`
-4. **Follow the prompts** – choose your target network (local Hardhat by default), confirm Docker Compose boot, and let the orchestration drive the deployment plus demo.
-5. **Open the dashboards** when prompted:
-   - Owner Console → `http://localhost:3000`
-   - Enterprise Portal → `http://localhost:3001`
-   - Validator Dashboard → `http://localhost:3002`
-6. **Review the bundle** – results land in `reports/agi-os/` with a dedicated `first-class/` subdirectory that contains logs, manifests, and an HTML version of the grand summary suitable for executive briefings.
-
-The script finishes by replaying every CI gate that the demo touches. A green run is equivalent to a green CI rehearsal.
-
-## Generated Artefacts
-
-| Artefact | Location | Notes |
-| --- | --- | --- |
-| Grand mission summary (Markdown) | `reports/agi-os/grand-summary.md` | Executive-level recap of the simulation run. |
-| Grand mission summary (HTML) | `reports/agi-os/grand-summary.html` | Rendered automatically for stakeholder sharing. |
-| Owner Control Matrix | `reports/agi-os/owner-control-matrix.json` | Enumerates every governable/ownable module and its update path. |
-| First-class run ledger | `reports/agi-os/first-class/first-class-run.json` | Structured telemetry for each orchestration step. |
-| Step logs | `reports/agi-os/first-class/logs/*.log` | Timestamped stdout/stderr for reproducibility. |
-| SHA-256 manifest | `reports/agi-os/first-class/first-class-manifest.json` | Audit trail linking all artefacts with hashes and byte sizes. |
-| Owner systems map (Mermaid) | `reports/agi-os/first-class/owner-control-map.mmd` | Graph of controllers, modules, and current owners. |
-
-All files include ISO 8601 timestamps so you can prove freshness.
-
-## End-to-End Flow
-
-1. **Preflight** – verifies Docker, Docker Compose, Node.js version, and repository cleanliness.
-2. **One-click deployment** – wraps `npm run deploy:oneclick:wizard` with sensible defaults, generating `deployment-config/latest-deployment.json` and updating the `.env` stack.
-3. **Mission execution** – invokes `npm run demo:agi-os` which compiles contracts, runs the thermodynamic ASI simulation, and writes the mission dossier.
-4. **Governance validation** – regenerates the owner systems map, runs `npm run owner:verify-control`, and snapshots the Owner Control Authority Matrix.
-5. **Audit packaging** – converts Markdown to HTML, builds the manifest, and consolidates logs for inspection.
-6. **Integrity verification** – re-reads the mission dossier, control matrix, and manifest to ensure counts, hashes, and artefact coverage all align before signing off.
-
-Every stage streams emoji-coded status lines so the operator always knows what is happening. Failures are trapped, logged, and reported alongside immediate remediation tips.
-
-## Operating the Platform After the Demo
-
-- Use the **Owner Console** to unpause modules, tweak fee/treasury settings, and submit governance transactions with wallet-based confirmation.
-- Visit the **Enterprise Portal** to submit a job via conversational form – the validator queue updates in real-time once the simulation data is loaded.
-- Trigger emergency stops at any time with `npm run owner:command-center -- --action pause-all --network <network>`; the demo leaves the timelock/owner account in full control so no functionality is removed.
-
-For the complete walk-through (including screenshots and troubleshooting), open [`docs/agi-os-first-class-demo.md`](../../docs/agi-os-first-class-demo.md).
-
-## Resetting Between Runs
-
-The demo is idempotent – simply rerun the command. To wipe local state completely:
-
-```bash
-rm -rf deployment-config/generated \
-       reports/agi-os \
-       reports/asi-takeoff
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_astral_omnidominion_operating_system[[Demo → Astral Omnidominion Operating System]]
+    demo_astral_omnidominion_operating_system --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Then re-run the demo to regenerate everything from scratch.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/astral-omnidominion-operating-system`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-## Support & Escalation
+## Directory Guide
+### Key Directories
+- `bin`
 
-- **Operational questions** – see [`docs/owner-control-non-technical-guide.md`](../../docs/owner-control-non-technical-guide.md).
-- **Incident response** – execute `npm run owner:emergency` for the emergency runbook.
-- **CI alignment** – the `first-class-run.json` report references each CI-equivalent step; verify branch protections with `npm run ci:verify-branch-protection` if needed.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-Run the Astral Omnidominion demo whenever you need to prove the platform’s readiness to stakeholders, auditors, or regulators.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

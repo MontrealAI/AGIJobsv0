@@ -1,93 +1,52 @@
-# Culture Graph Indexer
+# AGI Jobs v0 (v2) — Services → Culture Graph Indexer
 
-The Culture graph indexer ingests on-chain activity from `CultureRegistry` and
-`SelfPlayArena`, stores it in a SQLite database via Prisma, computes influence
-metrics, and exposes the results through a Fastify + Apollo GraphQL server.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `services/culture-graph-indexer`.
 
-## Features
+## Overview
+- **Path:** `services/culture-graph-indexer/README.md`
+- **Module Focus:** Anchors Services → Culture Graph Indexer inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Ethers.js ingestion** – streams `ArtifactMinted`, `ArtifactCited`, and
-  `RoundFinalized` events and keeps an incremental cursor for recovery.
-- **Incremental influence analytics** – recomputes PageRank-style scores using
-  previously persisted values as the starting state, and derives lineage depth
-  for each artifact.
-- **GraphQL API** – provides queries for artifacts, citations, lineage, top
-  influencers, and aggregate culture statistics.
-- **Weekly metrics CLI** – generates JSON snapshots that plug directly into the
-  CULTURE reporting pipeline (Subtask F) and can be scheduled through cron.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `services/culture-graph-indexer` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Installation
-
-```bash
-npm install
-npx prisma generate
-npx prisma migrate deploy
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> services_culture_graph_indexer[[Services → Culture Graph Indexer]]
+    services_culture_graph_indexer --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The indexer defaults to the SQLite database at `./data/culture-graph.db`. Set
-`DATABASE_URL` to point at a Postgres instance (e.g. `postgresql://user:pass@host/db`)
-or a custom SQLite path when needed.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `services/culture-graph-indexer`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-> ℹ️ **Using Postgres** – run `npx prisma generate --schema prisma/schema.postgres.prisma`
-> followed by `npx prisma db push --schema prisma/schema.postgres.prisma` to sync the
-> schema with your database before starting the service.
+## Directory Guide
+### Key Directories
+- `prisma`
+- `scripts`
+- `src`
+- `test`
+### Key Files
+- `.gitignore`
+- `Dockerfile`
+- `package-lock.json`
+- `package.json`
+- `tsconfig.json`
+- `vitest.config.ts`
 
-## Running the indexer
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-npm run build
-node dist/index.js
-```
-
-Environment variables:
-
-| Variable | Description |
-| --- | --- |
-| `INDEXER_PORT` | Port for the Fastify server (default `4100`). |
-| `RPC_URL` | Ethereum RPC endpoint used for event ingestion. |
-| `CULTURE_REGISTRY_ADDRESS` | Deployed `CultureRegistry` contract address. |
-| `SELF_PLAY_ARENA_ADDRESS` | Optional `SelfPlayArena` contract address. |
-| `DATABASE_URL` | SQLite connection string (default `file:./data/culture-graph.db`). |
-| `INFLUENCE_DAMPING_FACTOR` | Override for PageRank damping (default `0.85`). |
-| `INFLUENCE_ITERATIONS` | Max PageRank iterations (default `25`). |
-| `INFLUENCE_TOLERANCE` | Early-exit threshold for PageRank. |
-| `CULTURE_WEEKLY_METRICS` | Output path for weekly metrics JSON export. |
-
-## GraphQL API
-
-The GraphQL server is available at `http://localhost:4100/graphql` by default.
-The schema exposes the following queries:
-
-- `artifact(id: ID!)` – fetch a single artifact with influence metrics.
-- `artifacts(limit, offset, kind)` – paginate artifacts, optionally filtered by
-  kind.
-- `citations(artifactId, direction)` – list incoming or outgoing citations.
-- `lineage(artifactId)` – return the ancestor chain with depth annotations.
-- `topInfluential(limit)` – rank artifacts by influence score.
-- `cultureStats` – aggregate counts and the most recent finalized round.
-
-A simple query example:
-
-```graphql
-query TopInfluence {
-  topInfluential(limit: 5) {
-    id
-    kind
-    author
-    influenceScore
-    citationCount
-  }
-}
-```
-
-## Weekly metrics CLI
-
-Generate a metrics snapshot that integrates with the CULTURE weekly reports:
-
-```bash
-npm exec ts-node --esm src/cli/generate-weekly-metrics.ts --output storage/culture-graph-indexer/weekly-metrics.latest.json
-```
-
-The CLI recomputes influence scores before exporting and writes a JSON payload
-containing totals, lineage depth, a Gini coefficient, and the top influential
-artifacts. Schedule the command via cron to refresh the analytics pipeline.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

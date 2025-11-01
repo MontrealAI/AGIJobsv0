@@ -1,84 +1,50 @@
-# Kardashev-II Omega-Grade Upgrade for α-AGI Business 3 Demo (Operator Edition)
+# AGI Jobs v0 (v2) — Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Omega
 
-This demo shows how a non-technical operator can use **AGI Jobs v0 (v2)** to command a
-planetary-scale, validator-governed AGI labour market.  The mission ships with a
-curated configuration (`config/omega_mission.json`) that unlocks:
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega`.
 
-- A **multi-hour/day autonomous orchestrator** with checkpointing, pause/resume, and
-  structured JSON logging ready for audit.
-- Recursive **job graph spawning** so every agent can delegate to specialist crews.
-- A tokenised **energy and compute economy** with adjustable stakes and validator
-  oversight built directly into the control channel.
-- An async **agent-to-agent message bus** with commit–reveal validation and operator
-  override hooks that mirror the production AGI Jobs gateways.
-- Plug-and-play **planetary simulation hooks** that keep energy and prosperity metrics
-  synced with resource tokenomics.
+## Overview
+- **Path:** `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega/README.md`
+- **Module Focus:** Anchors Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Omega inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-> The goal is to demonstrate that AGI Jobs v0 (v2) empowers operators to run a
-> superintelligent economic machine without touching code.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Quickstart for Operators
-
-```bash
-# optional: clone the repo and install python dependencies
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega init --output-dir my-mission
-cd my-mission
-python -m kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega --config omega_mission.json --duration 120
-```
-
-During the run, the orchestrator writes JSON status snapshots to
-`storage/status.jsonl`.  Edit `storage/control-channel.jsonl` to issue governance
-commands (pause, resume, parameter updates) exactly like the mainnet system.
-
-## Mission Plan at a Glance
-
+## Systems Map
 ```mermaid
-flowchart TD
-    mission_core["Launch Stellar Infrastructure Programme\nReward: 16000 tokens\nEnergy: 280000 | Compute: 450000"]
-    mission_core --> mission_energy
-    mission_energy["Deploy Dyson Foundry Nodes\nReward: 9000 tokens\nEnergy: 180000 | Compute: 240000"]
-    mission_energy --> mission_energy_design
-    mission_energy_design["Design Dyson Swarm Blueprint\nReward: 3500 tokens\nEnergy: 65000 | Compute: 120000"]
-    mission_energy --> mission_energy_fabrication
-    mission_energy_fabrication["Coordinate Fabrication Supply Web\nReward: 3200 tokens\nEnergy: 48000 | Compute: 80000"]
-    mission_core --> mission_governance
-    mission_governance["Institutionalise Validator Syndicate\nReward: 6000 tokens\nEnergy: 80000 | Compute: 120000"]
-    mission_governance --> mission_governance_stake
-    mission_governance_stake["Configure Staking Ledgers\nReward: 2200 tokens\nEnergy: 20000 | Compute: 40000"]
-    mission_governance --> mission_governance_observatory
-    mission_governance_observatory["Activate Validator Observatory\nReward: 2400 tokens\nEnergy: 22000 | Compute: 42000"]
-    mission_core --> mission_supply
-    mission_supply["Orchestrate Interplanetary Supply Corridors\nReward: 7200 tokens\nEnergy: 120000 | Compute: 200000"]
-    mission_supply --> mission_supply_resourcing
-    mission_supply_resourcing["Secure Resource Offtake Contracts\nReward: 2600 tokens\nEnergy: 42000 | Compute: 60000"]
-    mission_supply --> mission_supply_telemetry
-    mission_supply_telemetry["Deploy Telemetry Mesh\nReward: 2800 tokens\nEnergy: 38000 | Compute: 58000"]
+flowchart LR
+    Operators((Mission Owners)) --> demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega[[Demo → Kardashev II Omega Grade α AGI Business 3 → Kardashev II Omega Grade Alpha AGI Business 3 Demo Omega]]
+    demo_Kardashev_II_Omega_Grade___AGI_Business_3_kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The CLI automatically refreshes the Mermaid plan in `ui/mission-plan.mmd` every
-launch, so operators always have an up-to-date visual of the delegated job graph.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-## Control Surface
+## Directory Guide
+### Key Directories
+- `bin`
+- `config`
+- `ui`
+### Key Files
+- `__init__.py`
+- `__main__.py`
+- `cli.py`
+- `scenario.py`
+- `visuals.py`
 
-- **Config** – Tune rewards, stakes, validator requirements, energy/compute caps, and
-  simulation behaviour by editing `config/omega_mission.json`.
-- **Checkpointing** – Snapshots persist in `storage/checkpoint.json`; the orchestrator
-  resumes automatically after restarts.
-- **Governance channel** – Append JSON commands to `storage/control-channel.jsonl`
-  (pause/resume, stake adjustments, or parameter updates).  Validators enforce
-  commit–reveal finalisation just like the deployed protocol.
-- **Audit** – Structured logs land in `storage/audit-log.jsonl` and can be hashed for
-  blockchain notarisation.
-
-## Continuous Integration
-
-The CLI exposes a `ci` command that validates configuration files and renders the
-Mermaid mission plan.  A dedicated GitHub Action ensures the Omega-grade operator
-experience stays green on every pull request.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
 ## Next Steps
-
-Connect the orchestrator to Ethereum mainnet infrastructure by providing
-RPC credentials and enabling the on-chain gateways in the configuration file.  The
-interfaces provided here already align with the AGI Jobs v0 (v2) gateway contracts
-and can be promoted to production without code changes.
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

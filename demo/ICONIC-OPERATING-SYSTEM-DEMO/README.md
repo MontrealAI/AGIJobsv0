@@ -1,72 +1,41 @@
-# AGI Jobs v0 (v2) – First-Class Operating System Demonstration
+# AGI Jobs v0 (v2) — Demo → Iconic Operating System Demo
 
-## Purpose
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/ICONIC-OPERATING-SYSTEM-DEMO`.
 
-This guide packages the existing `demo:agi-os` pipeline into a single reference that a non-technical operator can follow end-to-end. It leans entirely on the repository's battle-tested scripts and infrastructure so that no new smart-contract, agent, or UI logic needs to be introduced. The outcome is a reproducible "mission bundle" under `reports/agi-os/` which captures the full ASI take-off rehearsal, owner control audit, and executive summary artifacts produced by the AGI Jobs v0 (v2) stack.
+## Overview
+- **Path:** `demo/ICONIC-OPERATING-SYSTEM-DEMO/README.md`
+- **Module Focus:** Anchors Demo → Iconic Operating System Demo inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## High-Level Flow
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/ICONIC-OPERATING-SYSTEM-DEMO` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-1. Launch the one-click Docker environment that ships with the repository. This boots a local blockchain, orchestrator, web front-ends, and supporting services in isolated containers.
-2. Run the existing `npm run demo:agi-os` pipeline inside the container host. The script compiles contracts, executes the deterministic labor-market simulation, synthesizes the owner authority matrix, and assembles audit-grade bundles under `reports/agi-os/`.
-3. Review the generated artifacts – especially `grand-summary.md` for executives and the JSON manifest for auditors – to confirm the platform is production-ready.
-
-## Step-by-Step Checklist
-
-### 1. Prerequisites
-
-- Docker Engine 24+ with Compose plugin installed
-- Node.js 18+ (only required if you prefer executing NPM scripts directly on the host instead of through Docker)
-- At least 8 GB of free RAM and 15 GB of disk space for container images and reports
-
-### 2. Start the One-Click Stack
-
-From the repository root:
-
-```bash
-npm run deploy:oneclick:auto -- --network localhost --compose
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_ICONIC_OPERATING_SYSTEM_DEMO[[Demo → Iconic Operating System Demo]]
+    demo_ICONIC_OPERATING_SYSTEM_DEMO --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-This mirrors the documented "one-click" bootstrap, spinning up the full AGI Jobs environment with secure defaults (all modules paused until the owner resumes them) on a local Anvil chain while automatically starting the Docker Compose stack.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/ICONIC-OPERATING-SYSTEM-DEMO`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-### 3. Run the Grand Demo Pipeline
+## Directory Guide
+This module currently exposes its functionality programmatically; there are no additional files in this folder.
 
-With the stack online, execute:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-```bash
-npm run demo:agi-os
-```
-
-The script orchestrates the ASI take-off simulation and packages the mission bundle. Expect the run to take several minutes.
-
-### 4. Inspect the Mission Bundle
-
-Upon completion, review the generated assets:
-
-- `reports/agi-os/grand-summary.md`: executive overview of the mission, simulation outcomes, and owner authority matrix.
-- `reports/agi-os/grand-summary.json`: machine-readable mirror for dashboards and automation.
-- `reports/agi-os/manifest.json`: SHA-256 hashes of every artifact for audit verification.
-
-### 5. Optional User Interfaces
-
-If you started the stack with Docker, the following front-ends become available automatically:
-
-- **Owner Console** (`http://localhost:3000`): visualize governance status, pause/unpause modules, and submit owner updates.
-- **Enterprise Portal** (`http://localhost:3001`): conversational job creation with "Submit Job" workflow, demonstrating push-button AGI coordination.
-- **Validator Dashboard** (`http://localhost:3002`): monitor and action validator workloads for the simulated jobs.
-
-### 6. Clean Up
-
-When finished, tear down the stack and reclaim disk space:
-
-```bash
-docker compose down --remove-orphans
-```
-
-This stops and removes the containers while preserving mission bundles for future review.
-
-## Troubleshooting & Notes
-
-- The demo intentionally reuses the same compilation, testing, and verification steps enforced by CI v2. A green demo run therefore mirrors a green CI run.
-- If `npm run demo:agi-os` fails, rerun it after executing `npm install` to ensure dependencies are up to date.
-- To regenerate the bundle without Docker (for example in CI), run `npm run demo:agi-os` directly on a machine with Node.js 18+ and Hardhat prerequisites installed.
-
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

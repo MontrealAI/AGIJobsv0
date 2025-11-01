@@ -1,35 +1,56 @@
-# Arena Orchestrator Skeleton
+# AGI Jobs v0 (v2) — Demo → CULTURE v0 → Backend → Arena Orchestrator
 
-This directory contains the TypeScript orchestrator that automates teacher → student → critic self-play loops. The sprint playbook outlines modules (`arena.service.ts`, `difficulty.ts`, `elo.ts`, `qd.ts`, `ipfs.ts`, `agijobs.ts`) and accompanying tests.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0/backend/arena-orchestrator`.
 
-## Runtime overview
+## Overview
+- **Path:** `demo/CULTURE-v0/backend/arena-orchestrator/README.md`
+- **Module Focus:** Anchors Demo → CULTURE v0 → Backend → Arena Orchestrator inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The orchestrator exposes REST and WebSocket interfaces for managing automated CULTURE rounds. It coordinates teacher prompt generation, student/validator job creation, rating updates, and safety controls.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/CULTURE-v0/backend/arena-orchestrator` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-### REST endpoints
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_CULTURE_v0_backend_arena_orchestrator[[Demo → CULTURE v0 → Backend → Arena Orchestrator]]
+    demo_CULTURE_v0_backend_arena_orchestrator --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-| Method | Path | Description |
-| ------ | ---- | ----------- |
-| `POST` | `/arena/start` | Creates a new round and issues jobs for the teacher, students, and validators. |
-| `POST` | `/arena/close/:roundId` | Transitions the round into the review phase. |
-| `POST` | `/arena/submit/:roundId` | Records an off-chain submission CID for a participant. |
-| `POST` | `/arena/finalize/:roundId` | Finalises the round, updates Elo ratings, and produces an IPFS snapshot. |
-| `GET` | `/arena/scoreboard` | Returns difficulty, rating, and historical round data. |
-| `GET` | `/arena/status/:roundId` | Returns the state for a single round. |
-| `GET` | `/metrics` | Prometheus metrics. |
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/backend/arena-orchestrator`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../../OperatorRunbook.md).
 
-The `/ws/arena` websocket pushes scoreboard deltas whenever a round or rating change occurs.
+## Directory Guide
+### Key Directories
+- `scripts`
+- `src`
+- `test`
+### Key Files
+- `.eslintrc.cjs`
+- `.nycrc`
+- `.prettierrc`
+- `Dockerfile`
+- `healthcheck.js`
+- `jest.config.ts`
+- `package-lock.json`
+- `package.json`
+- `server.mjs`
+- `tsconfig.jest.json`
+- `tsconfig.json`
 
-### Safety & resilience
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-* All teacher prompts run through moderation and plagiarism filters prior to round creation.
-* Job lifecycle calls are wrapped in retry + timeout guards and emit structured logs for observability.
-* StakeManager hooks lock stakes for each participant and release or slash on finalisation.
-* A PID-style difficulty controller regulates round difficulty based on observed success rates, while Elo ratings persist to disk (`storage/culture/state/elo.json` by default).
-
-### Manual intervention runbook
-
-1. **Timeouts** – If an operation keeps timing out, call `POST /arena/close/:roundId` to halt intake and manually update submissions with `/arena/submit/:roundId` before retrying `/arena/finalize/:roundId`.
-2. **Safety filter trip** – Review the generated prompt in the logs (`component=arena-service action=round-started`). Adjust the artifact metadata or override with `difficultyOverride` and retry.
-3. **Stake adjustments** – When automated release/slash results look incorrect, replay the round by invoking `/arena/scoreboard` to gather state, then issue compensating transfers via the StakeManager admin CLI referenced in `services/stake-manager`.
-4. **Websocket recovery** – Restart the service (`npm run dev`) to rebuild the scoreboard subscription list; clients will automatically receive a fresh snapshot on reconnect.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,29 +1,42 @@
-# CULTURE Demo CI Strategy
+# AGI Jobs v0 (v2) — Demo → CULTURE v0 → CI
 
-`culture-ci.yml` defines the end-to-end workflow that gates every CULTURE pull request. The reusable workflow is mirrored under `.github/workflows/culture-ci.yml` so the pipeline is enforced on GitHub pull requests while remaining documented alongside the demo code.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/CULTURE-v0/ci`.
 
-## Jobs
+## Overview
+- **Path:** `demo/CULTURE-v0/ci/README.md`
+- **Module Focus:** Anchors Demo → CULTURE v0 → CI inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-1. **`lint`** – Installs the CULTURE workspace with `pnpm` and executes ESLint and Prettier across the orchestrator, indexer, and studio packages.
-2. **`solidity`** – Runs Solhint, Foundry tests (with gas snapshots and coverage), Hardhat tests + coverage, and enforces bytecode/gas budgets.
-3. **`static-analysis`** – Executes Slither in Docker and runs MythX if an API key is available.
-4. **`services`** – Executes the Jest/Vitest suites with coverage gating for the orchestrator, indexer, and studio packages.
-5. **`e2e`** – Boots the docker-compose stack (Anvil, IPFS, Postgres, orchestrator, indexer, studio) and runs the Cypress smoke test suite headlessly.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/CULTURE-v0/ci` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-All jobs run on Ubuntu 24.04 with Node.js 20.18.1. Coverage enforcement requires ≥90% line coverage for the contracts, orchestrator, indexer, and studio.
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_CULTURE_v0_ci[[Demo → CULTURE v0 → CI]]
+    demo_CULTURE_v0_ci --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-## Secrets
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/ci`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-- `MYTHX_API_KEY` (optional): If present, MythX analyses run as part of the `static-analysis` job. When omitted, the job reports a skipped status with clear messaging.
+## Directory Guide
+### Key Files
+- `culture-ci.yml`
 
-## Required Branch Protection Checks
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-To mirror branch protection the repository should require the following workflow names:
-
-- `CULTURE Demo CI / lint`
-- `CULTURE Demo CI / solidity`
-- `CULTURE Demo CI / static-analysis`
-- `CULTURE Demo CI / services`
-- `CULTURE Demo CI / e2e`
-
-These match the job names surfaced by GitHub’s status API.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

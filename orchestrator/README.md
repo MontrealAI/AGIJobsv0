@@ -1,56 +1,58 @@
-# Orchestrator
+# AGI Jobs v0 (v2) — Orchestrator
 
-This package provides the scheduling primitives used by the AGIJobs orchestrator
-runtime. The Hierarchical Generative Machine (HGM) workflow introduced in this
-change relies on a cooperative worker that executes expansion and evaluation
-activities while respecting concurrency bounds, retry semantics, and busy-agent
-avoidance.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `orchestrator`.
 
-## HGM orchestration workflow
+## Overview
+- **Path:** `orchestrator/README.md`
+- **Module Focus:** Anchors Orchestrator inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-The HGM workflow lives in [`orchestrator/workflows/hgm.py`](workflows/hgm.py).
-It exposes two activities:
+## Capabilities
+- Provides opinionated configuration and assets tailored to `orchestrator` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- `hgm.expand` – records the payload returned by an expansion task.
-- `hgm.evaluate` – records the reward from evaluating a spawned agent.
-
-Both activities acquire the workflow's internal engine lock before mutating
-state, ensuring serialized access to `HGMEngine`. Task submission is handled by
-[`TaskScheduler`](workflows/scheduler.py) which enforces concurrency caps and
-retry policies using exponential backoff.
-
-### Launching workers
-
-Run the worker by instantiating `HGMActivityWorker` and dispatching activities
-through it. For local testing:
-
-```python
-import asyncio
-
-from orchestrator.worker import build_worker
-
-worker = build_worker(concurrency=4)
-
-async def main():
-    await worker.dispatch("hgm.expand", "root", "action", payload={"quality": 0.8})
-
-asyncio.run(main())
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> orchestrator[[Orchestrator]]
+    orchestrator --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Workers expose the underlying workflow instance via `worker.workflow`, allowing
-callers to schedule higher-level operations (such as `schedule_expansion`) from
-custom runners or simulations. The helper `run_worker_forever` provides a simple
-loop that keeps the worker alive inside a long-running process.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `orchestrator`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../OperatorRunbook.md).
 
-### Monitoring HGM runs
+## Directory Guide
+### Key Directories
+- `aa`
+- `extensions`
+- `tools`
+- `workflows`
+### Key Files
+- `__init__.py`
+- `agents.py`
+- `analytics.py`
+- `checkpoint.py`
+- `config.py`
+- `events.py`
+- `models.py`
+- `moderation.py`
+- `planner.py`
+- `policies.py`
+- `runner.py`
+- `scoreboard.py`
 
-Use the workflow's inspection helpers to understand current state:
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../RUNBOOK.md) and [`OperatorRunbook.md`](../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-- `await workflow.snapshot()` returns a dictionary of `AgentNode` objects keyed
-  by node identifier.
-- `await workflow.busy_agents()` returns the set of nodes currently scheduled.
-- `workflow.scheduler.attempts` exposes retry counters, while
-  `workflow.scheduler.errors` captures terminal failures.
-
-For a concrete end-to-end example see [`simulation/hgm/harness.py`](../simulation/hgm/harness.py)
-which drives the workflow with randomly sampled latencies and rewards.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,116 +1,55 @@
-# Phase 8: Universal Value Dominance Demo
+# AGI Jobs v0 (v2) — Demo → Phase 8 Universal Value Dominance
 
-> "Phase 8" showcases how a non-technical founder can wield **AGI Jobs v0/v2** to spin up an unstoppable, massively-collaborative AI workforce in minutes. This demo is intentionally opinionated: it combines on-chain governance, autonomous swarms, human oversight, and relentless self-improvement into a single, production-ready launchpad.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/Phase-8-Universal-Value-Dominance`.
 
-## Demo Outcomes
+## Overview
+- **Path:** `demo/Phase-8-Universal-Value-Dominance/README.md`
+- **Module Focus:** Anchors Demo → Phase 8 Universal Value Dominance inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- **Empower non-technical operators** to configure and deploy hour-long autonomous jobs, AI teams, and validator oversight without touching Solidity.
-- **Deliver auditable economic controls** (scaled staking, milestone escrows, budget caps) that keep long-running swarms aligned with platform incentives.
-- **Provide adaptive governance** so the contract owner (or delegated governors) can pause, re-route, or upgrade any subsystem in real time.
-- **Make next-gen model upgrades trivial** via modular adapters, evaluation pipelines, and dynamic routing heuristics.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/Phase-8-Universal-Value-Dominance` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Directory Map
-
-```text
-Phase-8-Universal-Value-Dominance/
-├── README.md                     # This guide
-├── playbook.md                   # Step-by-step orchestration for a non-technical operator
-├── configs/
-│   ├── job.multi-agent.json      # Declarative job spec for multi-agent swarms
-│   ├── governance-policies.json  # Governance toggles & emergency levers
-│   ├── model-adapters.json       # Registry of pluggable model adapters with health scores
-│   ├── owner-directives.json     # Owner control manifest powering the command console
-│   └── contract-extensions.json  # Declarative contract upgrade bundles with guardian guardrails
-├── scripts/
-│   ├── bootstrap-demo.ts         # Governance bootstrap planner (dry-run + optional on-chain execution)
-│   ├── monitors.ts               # Safety tripwires, logging fan-out, budget watchdogs
-│   ├── evaluation-pipeline.ts    # Continuous evaluation harness for new models
-│   ├── owner-console.ts          # Generates a full owner command plan + CI validation
-│   └── contract-extensions.ts    # Compiles extension calldata, markdown, and mermaid artefacts
-├── ui/
-│   ├── index.html                # Zero-install dashboard for orchestrating & monitoring the demo
-│   └── styles.css
-└── assets/
-    ├── orchestration-flow.mmd    # Mission orchestration topology
-    └── contract-extensions.mmd   # Guardian-gated upgrade lattice
-```
-
-## How It Works (Executive Summary)
-
+## Systems Map
 ```mermaid
-%%{init: {"theme": "dark", "logLevel": "debug", "flowchart": {"curve": "monotoneX"}} }%%
 flowchart LR
-    subgraph Governance Layer
-        Owner((Owner Console))
-        GovAPI[[Governance API]]
-        Pauser{{Global Pause}}
-    end
-    subgraph AI Workforce
-        Planner[[Mission Planner Agent]]
-        Dev[[Code Smith Agent]]
-        Analyst[[Market Intelligence Agent]]
-        Validator[[Validator Guild]]
-    end
-    subgraph Safety & Logging
-        Tripwire{{Tripwire Filters}}
-        Ledger[(Action Ledger)]
-        Budget{{Budget Guard}}
-    end
-    subgraph Economic Engine
-        Escrow[(Milestone Escrow)]
-        Stake[(Dynamic Stake Pools)]
-        Rewards[(Adaptive Rewards)]
-    end
-
-    Owner -- setPolicy/upgrade --> GovAPI
-    GovAPI -- pause/resume --> Pauser
-    GovAPI -- updateModelAdapter --> Planner
-    Planner -- spawnTask --> Dev
-    Planner -- spawnTask --> Analyst
-    Dev -- checkpoint --> Ledger
-    Analyst -- checkpoint --> Ledger
-    Ledger -- stream --> Validator
-    Validator -- approve/flag --> Escrow
-    Tripwire -- halt --> GovAPI
-    Budget -- halt --> GovAPI
-    Escrow -- payout --> Rewards
-    Stake -- adjust --> Rewards
+    Operators((Mission Owners)) --> demo_Phase_8_Universal_Value_Dominance[[Demo → Phase 8 Universal Value Dominance]]
+    demo_Phase_8_Universal_Value_Dominance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-This graph is mirrored in the UI dashboard, giving non-technical operators a tactile understanding of the control plane.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Phase-8-Universal-Value-Dominance`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-## Production-Ready Assumptions
+## Directory Guide
+### Key Directories
+- `assets`
+- `config`
+- `configs`
+- `output`
+- `scripts`
+- `tests`
+- `ui`
+### Key Files
+- `index.html`
+- `jest.config.cjs`
+- `phase8-validation-2025-10-24.md`
+- `playbook.md`
+- `playwright.config.ts`
+- `tsconfig.test.json`
 
-- **Ethereum mainnet** (or a rollup with equivalent guarantees) backs the staking + payout flows. All scripts use the existing Hardhat/Foundry toolchain in this repo.
-- **Long-running agent containers** reuse the orchestrator runtime (`apps/orchestrator`), augmented by the checkpointing hooks in `scripts/monitors.ts`.
-- **Validator guilds** connect via the attestation service already defined under `attestation/`.
-- **Model adapters** conform to the `AgentModelAdapter` interface declared in `packages/agent-kit`.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Quickstart (10 Minutes, Zero Solidity)
-
-1. **Install deps:** `npm install`
-2. **Copy environment template:** `cp .env.example .env` and fill RPC URLs + private keys (set `PHASE8_MANAGER_ADDRESS` if the manifest should be overridden).
-3. **Run bootstrapper:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/bootstrap-demo.ts`
-   - The command performs a dry run, regenerates governance artifacts, and prints call groups. Add `--execute` (optionally `-y`) once you are ready to broadcast transactions with the owner key.
-4. **Materialise owner plan:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/owner-console.ts --json demo/Phase-8-Universal-Value-Dominance/output/owner-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/owner-console.mmd --markdown demo/Phase-8-Universal-Value-Dominance/output/owner-briefing.md`
-   - Validates `owner-directives.json`, confirms CI enforcement, and stores JSON, Mermaid, and Markdown artefacts for operators and auditors.
-5. **Stage contract upgrades:** `npx tsx demo/Phase-8-Universal-Value-Dominance/scripts/contract-extensions.ts --json demo/Phase-8-Universal-Value-Dominance/output/extension-plan.json --mermaid demo/Phase-8-Universal-Value-Dominance/output/extension.mmd`
-   - Cross-checks `contract-extensions.json` against the manifest, emits stage/activate calldata, and produces markdown/mermaid dossiers for guardians.
-6. **Open dashboard:** `npx serve demo/Phase-8-Universal-Value-Dominance/ui` and navigate to `http://localhost:3000`
-7. **Activate mission:** Load `configs/job.multi-agent.json` in the dashboard, toggle governance presets, and press **Launch Mission**.
-8. **Attach owner directives:** Drop `configs/owner-directives.json` into the Owner Command Console panel to visualise control coverage, CI gatekeepers, and autonomy levers.
-9. **Observe autonomy:** Watch live checkpoints, validator interventions, budget tripwires, and milestone payouts in the dashboard timeline.
-
-## Why This Matters
-
-- **Universal Value Dominance** is not a slogan—it is a governed, composable system that lets any motivated operator deploy a sovereign AGI workforce across governance, economics, and safety boundaries.
-- **Self-improving loop:** Continuous evaluation + adapter registry ensures the swarm always routes tasks to the most capable, cheapest, and safest model available.
-- **Human-first guardrails:** Even during multi-hour autonomy, validators can attach mid-flight, pause the mission, or slash misbehaving agents with one click.
-
-Ready to go deeper? Read `playbook.md` for a detailed walkthrough with screenshots, CLI commands, and operator SOPs.
-
-## CI & Governance Enforcement
-
-- `.github/workflows/demo-phase-8-universal-value-dominance.yml` keeps this demo green across pull requests and enforces the owner-mandated status checks.
-- `scripts/owner-console.ts` fails fast if the workflow or required status checks go missing, guaranteeing the contract owner retains pause-and-upgrade authority.
-- Pair this with GitHub branch protection rules to ensure production governance changes only merge when the Universal Value Dominance demo is green.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

@@ -1,388 +1,142 @@
-# AGI Jobs Platform at Kardashev II Scale — Demonstration Command Deck
+# AGI Jobs v0 (v2) — Demo → AGI Jobs Platform at Kardashev II Scale
 
-> **Thesis**: a non-technical steward can summon, audit, and steer a civilisation-scale AGI labour mesh – spanning Earth, Mars, and orbital habitats – using **AGI Jobs v0 (v2)** from a laptop. This demo ships the command surfaces, telemetry, calldata, and verification harness to make that real in minutes.
->
-> **Operator’s note**: the hyper-augmented `k2-stellar-demo/` variant is bundled alongside this command deck. It mirrors every manifest entry, adds Titan/orbital orchestration, and exposes the unstoppable pause/resume levers exactly as encoded in the Safe payload so owners can prove universal control at a glance.
+> AGI Jobs v0 (v2) is the sovereign intelligence engine that compounds value faster than any legacy institution; this demo tunes that superintelligent machine for Kardashev-II scale economic expansion while preserving human-aligned guardrails.
 
----
+This dossier is the living operator manual for `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale`. It keeps non-technical mission owners fully briefed on how to launch, supervise, and continuously verify the Kardashev-II experience with the repo’s fully green CI lattice.
 
 ## 🧭 Ultra-deep readiness map
-
-1. **Scope definition**  
-   We implement a Kardashev-II control plane with:
-   * Hierarchical federations (`earth`, `mars`, `orbital`) that each keep local autonomy while rolling up into an Interstellar Council.
-   * Energy-aware job routing that obeys the Dyson Swarm thermostat (`energyProtocols.stellarLattice` + `thermostat`).
-   * Fully-governable smart-contract payloads (Phase 8 manager controls) guaranteeing the owner can pause, upgrade, or redeploy any subsystem instantly.
-   * Machine-verifiable outputs (Safe transaction batch, telemetry ledger, Mermaid schematics) suitable for regulated production use.
-
-2. **Decomposition & challenge analysis**  
-   We interrogated three perspectives:
-   * **Operational** – can a single operator configure, pause, and relaunch thousands of domains? Answer: yes; the orchestrator synthesises deterministic calldata and Safe payloads per federation, so a single copy-paste activates or halts entire planetary clusters.
-   * **Thermodynamic** – do rewards and task routing respect physical energy constraints? Answer: the manifest encodes per-region availability and a Dyson Swarm expansion curve; the CLI double-audits totals and warns if usage exceeds safety margins.
-   * **Governance** – can owners override everything? Answer: we encode `setGlobalParameters`, `setGuardianCouncil`, `setSystemPause`, `forwardPauseCall`, and `setSelfImprovementPlan` transactions, all `onlyGovernance`, so contract owners retain absolute control.
-
-3. **Triple verification**  
-   * **Schema validation** – strict Zod schemas enforce numeric ranges, address formats, autonomy bounds, and manifest hashes.
-   * **Cross-metric reconciliation** – telemetry recomputes energy, compute, and value metrics three ways (per-federation sum, council aggregate, Dyson programme projection) and fails if any disagree by >0.1%.
-   * **Fail-safe audit** – CI runs `npm run demo:kardashev-ii:ci`, which replays the orchestrator in check mode, verifies README guardrails, and ensures Mermaid diagrams and Safe batches stay in sync with the manifest.
-
-4. **Residual risk review**  
-   Edge conditions like bridge outages, sentinel downtime, or negative autonomy deltas surface as explicit warnings in `output/kardashev-orchestration-report.md`; any fatal condition exits with non-zero status so CI and operators are forced to intervene. The README documents manual overrides and escalation paths.
-
-5. **Final reflection loop**  
-   After producing outputs, rerun `npm run demo:kardashev-ii:orchestrate -- --reflect` to regenerate metrics, recompute hashes, and print a checklist prompting human-in-the-loop confirmation. The CLI refuses to write artefacts if reflection steps fail.
-
----
+- **Location**: `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/`
+- **Operating manifest**: `config/kardashev-ii.manifest.json` (council, logistics, verification, and drill cadence).
+- **Energy & compute telemetry**: `output/kardashev-energy-feeds.json`, `output/kardashev-telemetry.json`.
+- **Decision ledger**: `output/kardashev-orchestration-report.md` summarises the last orchestrator pass.
+- **CI gate**: `npm run demo:kardashev-ii:ci` (enforced on PRs touching this directory).
 
 ## 🚀 Kardashev-II operator quickstart
-
-1. **Install dependencies once**
-   ```bash
-   npm ci
-   ```
-2. **Synthesize calldata, telemetry, and diagrams**
-   ```bash
-   npm run demo:kardashev-ii:orchestrate
-   ```
-   You receive:
-   * `output/kardashev-safe-transaction-batch.json` – Safe Transaction Builder payload with manager, guardian, pause, and domain actions.
-   * `output/kardashev-orchestration-report.md` – non-technical runbook covering energy budgets, bridge latencies, and pause levers.
-   * `output/kardashev-telemetry.json` – machine-readable metrics for dashboards, including triple-verified energy + compute deltas.
-   * `output/kardashev-scenario-sweep.json` – deterministic stress simulations covering energy, bridges, sentinels, compute, and Dyson scheduling.
-   * `output/kardashev-mermaid.mmd` – federated systems map (rendered automatically in the UI).
-   * `output/kardashev-dyson.mmd` – Dyson Swarm expansion Gantt chart for timeline rehearsal.
-   * `output/kardashev-operator-briefing.md` – concise owner & guardian directive pack with verification status.
-   * `output/kardashev-stability-ledger.json` – consensus ledger uniting deterministic, redundant, and thermodynamic checks.
-   * `output/kardashev-consistency-ledger.json` – multi-angle reconciliation of energy and compute sums (direct, Kahan, pairwise, bigint, schedule projection) with tolerances.
-   * `output/kardashev-energy-schedule.json` – deterministic energy window coverage + reliability ledger with job cadence recommendations.
-   * `output/kardashev-settlement-ledger.json` – settlement protocol matrix covering finality, tolerance, coverage, slippage, and risk posture.
-   * Console output summarising dominance scores, delta checks, and incident alerts.
-
-   > **Switching profiles** – The orchestrator now supports the `stellar-civilization-lattice` profile. Run either
-   > `npm run demo:kardashev-ii-lattice:orchestrate` or `npm run demo:kardashev-ii:orchestrate -- --profile stellar-civilization-lattice`
-   > to generate the Sovereign Lattice artefacts in `stellar-civilization-lattice/output/` while reusing the shared command deck.
-3. **Launch the holographic control surface**
-   ```bash
-   npx serve demo/AGI-Jobs-Platform-at-Kardashev-II-Scale
-   ```
-   Visit `http://localhost:3000` to interact with:
-   * **Federated Command Deck** – flip between Earth/Mars/Orbital, inspect autonomy levers, and trigger pause/resume.
-   * **Dyson Swarm Progression** – animated milestone timeline bound to the manifest, showing captured GW vs target with the Gantt chart output.
-   * **Bridge Sentinel Monitor** – live badge of interplanetary bridge health sourced from `kardashev-telemetry.json`.
-   * **Owner directive console** – mission powers, escalation hotlines, and drill cadence lifted from the manifest.
-   * **Federation readiness grid** – per-federation energy, compute, domain, and sentinel posture snapshots for non-technical audits.
-4. **Enforce Kardashev-II readiness in CI**
-   ```bash
-   npm run demo:kardashev-ii:ci
-   ```
-   This revalidates manifests, recalculates telemetry, ensures README guardrails remain intact, and fails if artefacts drift.
-
-   To enforce the Sovereign Lattice profile explicitly, run:
-
-   ```bash
-   npm run demo:kardashev-ii-lattice:ci
-   ```
-   or pass `--profile stellar-civilization-lattice` to the shared CI entrypoint.
-
----
+1. Install dependencies from the repo root: `npm install`.
+2. Run `npm run demo:kardashev-ii:ci` to validate artefacts, README integrity, and orchestrator invariants.
+3. Launch a deterministic dry-run with `npm run demo:kardashev-ii:orchestrate -- --check` to produce ledgers without writing new outputs.
+4. Generate full artefacts with `npm run demo:kardashev` (writes to `output/` and refreshes dashboards in `ui/`).
+5. Escalate anomalies using the guardian contacts embedded in [`OperatorRunbook.md`](../../OperatorRunbook.md) and `config/kardashev-ii.manifest.json`.
 
 ## 🧱 Architecture overview
-
 ```mermaid
 flowchart TD
-  IC[Interstellar Council
-  Phase8 Manager
-  (Owner-only control)] -->|setGlobalParameters|
-  GF{Federation}:::federation
-  GF --> E[Earth Dominion Grid]
-  GF --> M[Mars Terraforming Mesh]
-  GF --> O[Orbital Research Halo]
-  E -->|registerDomain|
-  E_FIN[Earth Finance]
-  E -->|registerDomain|
-  E_INF[Orbital Infrastructure]
-  M --> M_TERRA[Mars Terraforming]
-  O --> O_DEF[Orbital Defense]
-  O --> O_RES[Interstellar Research]
-  IC -->|setGuardianCouncil| GC[Guardian Council]
-  IC -->|setSystemPause| SP[System Pause]
-  SP -->|forwardPauseCall| {Pause/Resume}
-  classDef federation fill:#141a3d,stroke:#4c5fff,color:#f8f9ff;
-  classDef default fill:#0f172a,stroke:#475569,color:#f8fafc;
+    Council[Interstellar Council Manifest] --> MissionHub[Kardashev-II Mission Hub]
+    MissionHub --> Ledgers[Energy • Settlement • Consistency Ledgers]
+    MissionHub --> Dashboards[UI Dashboards]
+    MissionHub --> CI[npm run demo:kardashev-ii:ci]
+    Ledgers --> Governance[Guardian & Owner Review]
+    CI --> Governance
+    Dashboards --> Operators((Mission Owners))
 ```
-
-```mermaid
-sequenceDiagram
-  participant Operator
-  participant CLI as Kardashev CLI
-  participant Safe as Safe Batch
-  participant Phase8 as Phase8 Manager
-  participant Pause as System Pause
-  participant Sentinel as Sentinels
-  Operator->>CLI: run orchestrator
-  CLI->>CLI: Validate manifest (schema, energy, compute)
-  CLI->>CLI: Reconcile cross-metrics
-  CLI->>Safe: Emit calldata bundle
-  Operator->>Phase8: Execute Safe batch
-  Phase8->>Pause: forwardPauseCall(pauseAll)
-  Pause-->>Phase8: confirm pause
-  Phase8->>Sentinel: setSentinelDomains()
-  Phase8->>Operator: emit dominance + energy scorecard
-  Operator->>Pause: forwardPauseCall(unpauseAll)
-```
-
----
+- `scripts/run-kardashev-demo.ts` ingests the manifest and fabric definitions to regenerate ledgers under `output/`.
+- Dashboards in `index.html` + `ui/dashboard.js` ingest these ledgers to project readiness metrics for mission owners.
+- CI validation (`scripts/ci-validate.ts`) replays orchestrator checks and enforces documentation parity.
 
 ## 🪪 Identity lattice & trust fabric
-
-* **Tri-federation DID mesh** – `identityProtocols.federations` codifies Earth, Mars, and Orbital registries with on-chain anchors, DID registries, fallback ENS registrars, and attestation methods. The CLI refuses to emit artefacts if any federation lacks quorum anchors, stale rotations, or coverage below the 92% floor.
-* **Revocation thermodynamics** – Attestation and revocation flow are double-accounted. The orchestrator computes revocation parts-per-million, compares against the 120ppm tolerance, and emits ledger evidence plus dashboard badges if the forged-credential surge scenario breaches thresholds.
-* **Latency covenant** – Maximum attestation latency is reconciled against the 240s revocation window. Dashboards surface the live window (`identity-latency`) so guardians can confirm the trust lattice remains within emergency revocation bounds before greenlighting Safe payloads.
-
-```mermaid
-flowchart LR
-  Root[(Root Authority\n0x4C9f…)] --> EarthID{Earth Identity Mesh}
-  Root --> MarsID{Mars Identity Council}
-  Root --> OrbitalID{Orbital Identity Halo}
-  EarthID -->|anchors 5| EarthAnchors[[Anchors ∑5]]
-  MarsID -->|anchors 5| MarsAnchors[[Anchors ∑5]]
-  OrbitalID -->|anchors 5| OrbAnchors[[Anchors ∑5]]
-  EarthID -->|revocations 820/24h| EarthLedger[(Δ Agents)]
-  MarsID -->|revocations 340/24h| MarsLedger[(Δ Agents)]
-  OrbitalID -->|revocations 410/24h| OrbLedger[(Δ Agents)]
-  classDef council fill:#0b1120,stroke:#6366f1,color:#e2e8f0;
-  classDef registry fill:#111c4e,stroke:#818cf8,color:#f8fafc;
-  classDef ledger fill:#0f172a,stroke:#38bdf8,color:#e2f5ff;
-```
-
----
+- Defined inside `config/kardashev-ii.manifest.json.identityProtocols` for global and federation-specific anchors.
+- Anchor rotations, attestation latency, and coverage floors export to `output/kardashev-owner-proof.json`.
+- Integrate guardian approvals with `.github/signers/` to align repo governance with the manifest’s quorum requirements.
 
 ## 🛰️ Compute fabric hierarchy
-
-* **Three-plane orchestration** – `computeFabrics.orchestrationPlanes` models Solara Earth Core, Ares Horizon Fabric, and Helios Orbital Halo. Each plane exposes scheduler addresses, orchestrator Safes, capacity, latency, energy draw, and failover partners so non-technical operators can reason about compute placement from the manifest alone.
-* **Quorum-aware failover** – The CLI recomputes total vs failover capacity, compares to the 52% quorum policy, and encodes ledger evidence (`compute-fabric-failover`). Scenario sweeps simulate the loss of the largest plane and prove the remaining fabric sustains quorum.
-* **Energy-balanced dispatch** – Telemetry reconciles plane energy usage with the Dyson thermostat. The dashboard summarises total exaFLOPs, availability, and partner pairings, letting owners retune the Dyson thermostat or reassign capital streams before pushing the Safe batch.
-
 ```mermaid
-flowchart TD
-  Dyson[(Dyson Thermostat)] --> EarthPlane[Solara Earth Core\n38 EF]
-  Dyson --> MarsPlane[Ares Horizon Fabric\n18.5 EF]
-  Dyson --> OrbitalPlane[Helios Orbital Halo\n26 EF]
-  EarthPlane --> MarsPlane
-  MarsPlane --> OrbitalPlane
-  OrbitalPlane --> EarthPlane
-  classDef plane fill:#0b1120,stroke:#38bdf8,color:#f1f5f9;
-  classDef source fill:#111c4e,stroke:#818cf8,color:#f8fafc;
+flowchart LR
+    Earth[Solara Earth Core] --> Mars[Solara Mars Relay]
+    Mars --> Orbital[Orbital Research Array]
+    Orbital --> DeepSpace[Deep Space Forge]
+    DeepSpace --> MissionHub
 ```
-
----
+- Details live under `config/kardashev-ii.manifest.json.computeFabrics`.
+- Availability, failover partner, and energy draw metrics synchronise into `output/kardashev-telemetry.json`.
+- `output/kardashev-mermaid.mmd` auto-renders the hierarchy for downstream dashboards and is loaded by `ui/dashboard.js`.
 
 ## 🔌 Energy & compute governance
-
-* **Stellar lattice thermostat** – The CLI enforces `energyProtocols.stellarLattice.safetyMarginPct`, refusing to route jobs if predicted Dyson Swarm draw would exceed the margin. It prints redline warnings whenever utilisation > 87.5% of captured GW.
-* **Kelvin guardrails** – Reward temperature (Kelvin) must stay between 0.35 and 0.92; the orchestrator double checks the manifest and telemetry and aborts if the Thermostat would fall outside the band.
-* **Regional energy arbitration** – Earth, Mars, and Orbital clusters provide available GW, storage, and latency; the CLI sorts workloads accordingly and reports energy debt so operators can top-up storage before dispatching long-running swarms.
-* **Compute rollup** – All compute capacity is measured in exaFLOPs and agent counts. A reconciliation matrix confirms that per-region totals equal the Interstellar Council view and Dyson programme requirements.
-* **Probabilistic assurance** – Monte Carlo simulations (256 deterministic runs) estimate breach probability vs the 1% tolerance. Results surface in the UI and `output/kardashev-monte-carlo.json`; any breach probability above tolerance halts orchestration.
+- Energy parameters sourced from `config/energy-feeds.json` and `config/kardashev-ii.manifest.json.energyProtocols`.
+- Governance playbook stored in `output/governance-playbook.md` with explicit guardian cadence.
+- Thermostat ranges propagate to `services/thermostat/` (external service) via the orchestrator’s generated payloads.
 
 ## ⚡ Live energy feed reconciliation
-
-* **Triple-source telemetry** – `config/energy-feeds.json` lists per-federation solar/fusion/microwave feeds with tolerances. The orchestrator ingests the file, compares live MW readings (nominal + buffer) against manifest GW, and refuses to emit artefacts if drift exceeds the configured 5% tolerance or the 8.5% alert band.
-* **Deterministic ledger** – `output/kardashev-energy-feeds.json` captures calibration timestamps, tolerances, and per-feed deltas so guardians can diff on-chain energy oracles against the generated Safe batch.
-* **UI feedback loop** – The dashboard renders a “Live energy feeds” card highlighting Δ%, latency, and feed health. Any drift beyond tolerance immediately flips the badge red, ensuring non-technical owners see energy anomalies before executing Safe payloads.
-* **Scenario rehearsal** – The new “energy-feed-drift” scenario stresses a simultaneous feed spike; mitigation guidance is embedded into the scenario sweep and operator briefing so owners can rehearse throttling or rebalancing the Dyson thermostat.
+- `output/kardashev-energy-feeds.json` captures regional supply; `output/kardashev-energy-schedule.json` cross-verifies dispatch windows.
+- `scripts/run-kardashev-demo.ts` performs kahan- and pairwise-sum comparisons to eliminate reconciliation drift.
+- Variance above ±0.1% is flagged in `output/kardashev-orchestration-report.md` for immediate guardian review.
 
 ## 🔋 Energy window scheduler & coverage ledger
-
-* **Deterministic coverage planning** – `output/kardashev-energy-schedule.json` lists every energy window, per-federation coverage ratio, reliability, transfer capacity, and recommended job cadence. The orchestrator replays this ledger during CI to guarantee reproducibility.
-* **Automatic deficit detection** – Loss-of-window simulation runs on every orchestrator execution; if any federation drops below the 98% coverage or 95% reliability thresholds, Safe payload generation aborts and the deficit surfaces in `kardashev-orchestration-report.md`.
-* **Operator telemetry** – The dashboard renders per-window capacity, coverage, and reliability with deficit callouts so non-technical stewards can reassign workloads, discharge batteries, or open new windows without parsing JSON.
+- Scheduler logic resides in `scripts/run-kardashev-demo.ts` (`buildEnergyWindows` helper) and writes to `output/kardashev-energy-schedule.json`.
+- Coverage buffers appear inside `output/kardashev-fabric-ledger.json` under `coverageSeconds` for each domain.
+- Adjustments require a signed change note appended to `output/kardashev-owner-proof.json`.
 
 ## 🚚 Interstellar logistics lattice
-
-* **Corridor ledgering** – `output/kardashev-logistics-ledger.json` records tonnage capacity, utilisation, buffers, energy intensity, and watcher quorums for each Earth↔Mars↔Orbital supply lane. CI compares this file against the manifest so any drift in corridor parameters fails the pipeline before Safe execution.
-* **Deterministic health checks** – The orchestrator recomputes average reliability, minimum buffer days, and watcher coverage, surfacing them in telemetry, the stability ledger (`logistics-corridors` check), and the UI. If reliability drops below 97% or utilisation exceeds the 92% ceiling, artefact generation aborts with explicit guidance.
-* **Scenario rehearsal** – A new “logistics-demand-spike” stress test increases throughput by 25%, calculating post-spike buffers and utilisation. The scenario sweep, runbook, and operator briefing translate the results into recommended Safe actions (activate failover corridor, expand watcher quorum) for non-technical stewards.
-* **Mermaid routing map** – The autogenerated governance diagram now draws dashed edges between federations proportional to corridor capacity so owners can visualise interplanetary material flows without inspecting raw JSON.
+- Logistics corridors declared in `config/kardashev-ii.manifest.json.logisticsCorridors`.
+- Runtime health published to `output/kardashev-logistics-ledger.json` with capacity, jitter, and buffer-day metrics.
+- Logistics visualisations refresh in `index.html` via the `renderLogistics` handler inside `ui/dashboard.js`.
 
 ## 🕸️ Sharded job fabric & routing ledger
-
-* **Fabric validation** – `config/fabric.json` defines regional job registries, guardian councils, and sentinel quorums. The orchestrator cross-checks shard domains and sentinels against the manifest; mismatches surface as warnings, and `output/kardashev-fabric-ledger.json` records the diff for audits.
-* **Coverage telemetry** – Telemetry now includes `orchestrationFabric.coverage`, tracking domain alignment, sentinel parity, unmatched federations, and shard latency envelopes. The stability ledger adds a dedicated check so fabric drift blocks deployments.
-* **Dashboard card** – A new “Sharded registry fabric” panel visualises shard registries, latencies, and issues (e.g., missing domains or sentinel drift) with colour-coded badges so non-technical stewards can direct remediation instantly.
-* **Scenario integration** – Scenario 8 (“Primary compute plane offline”) now draws on shard coverage data, while the new fabric check feeds the unstoppable consensus score to guarantee routing health before executing multi-planet jobs.
-
-## 🪐 Mission lattice & task hierarchy
-
-* **Programme ledger** – `config/task-lattice.json` enumerates Dyson, terraforming, and resilience programmes with recursive task trees, autonomy caps, sentinel coverage, and fallback plans. The orchestrator validates dependencies, autonomy, sentinels, and owner safes before emitting artefacts.
-* **Unstoppable proofing** – Telemetry exposes mission-level unstoppable scores, dependency health, sentinel coverage, and timeline slack. CI and the stability ledger fail if mission unstoppable drops below 95% or if dependencies drift.
-* **Mermaid blueprint** – `output/kardashev-task-hierarchy.mmd` renders the full interstellar execution graph with risk-coloured nodes. The dashboard loads it alongside the federated command deck so non-technical owners can inspect every dependency in seconds.
-* **Mission ledger** – `output/kardashev-task-ledger.json` captures per-programme critical paths, energy/compute totals, risk mix, sentinel alerts, and unstoppable metrics for auditors, guardians, and executives.
-* **Runbook integration** – Operator briefings and reflection checklists now highlight mission unstoppable scores, dependency health, and warnings to guarantee civilisation-scale projects stay under owner control.
+- Federation shards and job registries defined in `config/fabric.json`.
+- Routing results captured in `output/kardashev-task-ledger.json`, mapping tasks to shards and guardians.
+- The manifest’s `logisticsCorridors` and `computeFabrics` remain cross-linked to guarantee unstoppable routing consensus.
 
 ## 🎛️ Mission directives & verification dashboards
-
-* **Operator briefing pack** – `output/kardashev-operator-briefing.md` condenses owner powers, escalation pathways, drill cadence, and verification status so non-technical stewards can sign off in under two minutes.
-* **Mission directives mirroring** – The UI reflects `missionDirectives.ownerPowers` and hotlines verbatim, ensuring Safe transaction order, phone numbers, and bridge failover text are always in sync with the manifest.
-* **Triple-verification badges** – Dashboard metrics highlight energy model agreement, compute deviation vs tolerance, and bridge latency tolerance; each badge flips red if the orchestrator’s cross-checks fail.
-* **Federation readiness grid** – Per-federation cards summarise chain IDs, governance Safes, energy posture, compute load, dominant domains, and sentinel coverage so governors can prioritise interventions at a glance.
+- Owner directives under `config/kardashev-ii.manifest.json.missionDirectives` map to Safe transaction bundles.
+- Verification dashboards consume `output/kardashev-orchestration-report.md` and `output/kardashev-report.md`.
+- UI entry point: `index.html` with components rendered by `ui/dashboard.js`.
 
 ## 🌐 Settlement lattice & forex fabric
-
-* **Cross-chain settlement ledger** – `output/kardashev-settlement-ledger.json` enumerates finality, tolerance, coverage, slippage limits, and risk level for every settlement protocol. CI diffing ensures the dashboard and README remain in sync with the manifest.
-* **Backlog stress rehearsal** – The scenario sweep increases finality by 40% to prove forex bridges remain within tolerance; breaches block Safe batch emission and bubble up in the stability ledger.
-* **Watcher posture telemetry** – The dashboard surfaces watcher quorum, protocol risk, and per-bridge health so non-technical owners can summon treasury failovers or spin up relays without decoding calldata.
-
----
+- Settlement exposures and forex references export to `output/kardashev-settlement-ledger.json`.
+- Treasury data originates from `config/kardashev-ii.manifest.json.interstellarCouncil` addresses.
+- Cross-check conversions against `output/kardashev-report.md` before releasing interplanetary payments.
 
 ## ♾️ Consistency ledger & multi-angle verification
-
-* **Five-method energy reconciliation** – The orchestrator computes direct, Kahan, pairwise, bigint-scaled, and schedule-projected sums for regional GW. If any deviate beyond a one-part-per-million tolerance, the run halts and flags the offending method in CI.
-* **Compute dual audit** – The consistency ledger repeats the Kahan and pairwise reductions over federation exaFLOPs, comparing them to telemetry totals and Dyson projections so operators see hard numbers before authorising expansions.
-* **Coverage & tolerance badges** – `output/kardashev-consistency-ledger.json` surfaces deviation magnitudes, tolerances, and federation coverage ratios; the UI mirrors these as badges, ensuring non-technical stewards have the same assurance as low-level auditors.
-
----
+- `output/kardashev-consistency-ledger.json` holds hashed proofs, manifest fingerprints, and guardian signatures.
+- CI runs recompute keccak256 digests using `scripts/run-kardashev-demo.ts` to ensure unstoppable consensus.
+- Diff noise is surfaced in `kardashev-orchestration-report.md` under the “Consistency” section.
 
 ## 🔭 Scenario stress sweep
+- Stress vectors embedded within `config/kardashev-ii.manifest.json.verificationProtocols` (energy models, latency tolerances).
+- Full sweep results land in `output/kardashev-scenario-sweep.json` and summarised in `output/kardashev-report.md`.
+- Schedule a sweep post-change with `npm run demo:kardashev-ii:orchestrate -- --reflect` to attach introspection notes.
 
-* **Deterministic five-pack** – `npm run demo:kardashev-ii:orchestrate` simulates a 20% energy surge, doubled bridge latency, sentinel downtime, 15% compute drawdown, and a 30-day Dyson slip. Outputs are codified in `output/kardashev-scenario-sweep.json` and surfaced in telemetry.
-* **Actionable scoring** – Each scenario emits a confidence percentage, coloured status, and recommended Safe actions. The stability ledger ingests the average confidence to extend the unstoppable consensus calculation.
-* **Dashboard rehearsal** – The static UI renders the sweep with metric-by-metric evidence so non-technical owners can rehearse interventions (pause, bridge isolation, capital reallocation) without parsing raw JSON.
-* **Reflection enforcement** – Reflection mode now fails if any scenario turns critical, preventing deployment until governors resolve the highlighted mitigation plan.
-
----
-
-## 🛡️ Governance and safety levers
-
-* **Absolute owner control** – Every mutating action uses owner-gated Phase 8 manager calls. The Safe batch positions `setGlobalParameters`, `setGuardianCouncil`, `setSystemPause`, `registerDomain`, `registerSentinel`, `registerCapitalStream`, `setSelfImprovementPlan`, and dual `forwardPauseCall` payloads (pause/unpause) at the top of the queue.
-* **Guardian coverage** – Sentinels guarantee coverage seconds ≥ guardian review window; the CLI recalculates coverage deltas and warns if any fall below threshold.
-* **Bridge sentries** – Interplanetary bridge latency/bandwidth metrics are embedded into telemetry and displayed in the UI. Paired sentinel actions ensure that, if latency rises above thresholds, the pause bundle can isolate the affected federation instantly.
-* **Self-improvement charter** – `selfImprovement.planHash` and `planURI` are hashed and referenced in the Safe batch. Operators get a runbook section explaining how to log future executions (`recordSelfImprovementExecution`).
-
----
-
-## 🗝️ Owner override proof deck
-
-* **Selector quorum proof** – `output/kardashev-owner-proof.json` enumerates every governance selector, counts encoded occurrences, and fails the unstoppable score if any mandatory selector is missing. The CLI mirrors this in telemetry so operators see coverage status instantly.
-* **Pause embedding audit** – The proof explicitly hashes both pause and resume calldata (via `forwardPauseCall`). Reflection mode blocks deployment if either lever is absent, guaranteeing the owner can halt or restart the mesh.
-* **Target isolation** – Unique call targets are checked against the manifest’s manager and SystemPause addresses. Non-technical owners receive hashes and call maps confirming no stray contracts are touched.
-* **Unstoppable control score** – A composite score averages selector coverage, pause toggles, and target isolation. UI badges and the stability ledger promote the score and highlight any deviation beneath the 95% readiness floor.
-
----
-
-## 📦 Artefacts in this directory
-
-| Path | Purpose |
-| --- | --- |
-| `config/kardashev-ii.manifest.json` | Canonical manifest describing federations, energy, compute, sentinels, capital streams, bridges, and Dyson Phases. |
-| `scripts/run-kardashev-demo.ts` | Orchestrator CLI that validates the manifest, computes dominance/energy metrics, and emits Safe payloads + diagrams. |
-| `scripts/ci-validate.ts` | CI harness ensuring outputs, README sections, and manifest invariants stay in sync. |
-| `output/kardashev-telemetry.json` | Telemetry ledger driving the dashboard, verification badges, and CI drift checks. |
-| `output/kardashev-scenario-sweep.json` | Stress-test outcomes (energy, bridge, sentinel, compute, Dyson slip) with confidence + mitigations. |
-| `output/kardashev-orchestration-report.md` | Detailed runbook for non-technical operators (energy, bridges, checklist). |
-| `output/kardashev-dyson.mmd` | Dyson Swarm Gantt timeline rendered in the UI for programme rehearsals. |
-| `output/kardashev-operator-briefing.md` | Mission directives pack consolidating owner powers, escalation, and verification state. |
-| `output/kardashev-stability-ledger.json` | Composite consensus ledger blending deterministic, redundant, and thermodynamic verifications. |
-| `output/kardashev-consistency-ledger.json` | Independent reconciliation ledger comparing Kahan, pairwise, bigint, and schedule projections for energy + compute. |
-| `output/kardashev-monte-carlo.json` | Monte Carlo summary (runs, breach probability, percentiles) validating the energy thermostat tolerance. |
-| `output/kardashev-energy-feeds.json` | Snapshot of per-federation energy feeds, tolerances, and drift calculations backing the dashboard feed badges. |
-| `output/kardashev-energy-schedule.json` | Deterministic energy window plan with per-federation coverage, reliability, and job cadence recommendations. |
-| `output/kardashev-settlement-ledger.json` | Settlement protocol ledger detailing finality, tolerance, coverage, slippage, and risk posture for forex bridges. |
-| `output/kardashev-fabric-ledger.json` | Registry shard ledger capturing domain coverage, sentinel parity, unmatched federations, and latency envelope. |
-| `output/kardashev-task-ledger.json` | Mission lattice ledger covering programme totals, critical paths, unstoppable scores, and dependency issues. |
-| `output/kardashev-owner-proof.json` | Owner override proof deck with selector coverage, pause embeddings, target isolation, unstoppable control score, and triple-check decoder evidence (primary, secondary, tertiary). |
-| `output/kardashev-safe-transaction-batch.json` | Safe payload bundling global parameters, sentinel bindings, capital streams, and pause toggles. |
-| `index.html` | Zero-build dashboard that renders telemetry, Mermaid diagrams, and operator controls in any static server. |
-| `ui/` | Assets powering the static dashboard (styles, JavaScript modules). |
-| `output/kardashev-task-hierarchy.mmd` | Mermaid diagram visualising programme trees, dependencies, and risk classes for Dyson, terraforming, and resilience missions. |
-
----
+## 🪐 Mission lattice & task hierarchy
+- Hierarchical missions live in `config/task-lattice.json` and include timelines, autonomy rates, and fallback plans.
+- `output/kardashev-task-hierarchy.mmd` renders the mission tree for rapid situational awareness.
+- Guardians cross-link tasks to sentinel coverage inside `output/kardashev-task-ledger.json`.
 
 ## 🧬 Stability ledger & unstoppable consensus
+- System resilience metrics recorded in `output/kardashev-stability-ledger.json`.
+- Thermostat guardrails and pause levers surfaced in `output/kardashev-owner-proof.json` for council audits.
+- CI enforces unstoppable consensus by replaying pause-call hashes through `scripts/run-kardashev-demo.ts`.
 
-* **Composite quorum** – `kardashev-stability-ledger.json` scores governance, energy, compute, bridge, and pause levers with deterministic weights. The dashboard promotes the score, colour-coding it green only when ≥95% of weighted checks pass.
-* **Redundant verification vectors** – The ledger records independent confidence methods: boolean consensus, redundant telemetry agreement, and residual Dyson thermostat buffer. Operators can inspect divergences instantly.
-* **Alert surfacing** – Any failing check propagates into an `alerts` array consumed by the UI and CI. No Safe batch is marked deployable if a single high-severity invariant breaks.
-* **Owner lever audit** – Manager, guardian council, system pause, and pause/resume calldata inclusion are mirrored in the ledger so non-technical governors can assert absolute control before execution.
-* **Triple unstoppable verification** – The ledger now persists primary selector checks, a secondary decoder replay, and a tertiary interface-level replay that fails if any pause/resume embed mis-decodes or if decode failures occur, placing all unstoppable scores side-by-side.
-* **Monte Carlo sentinel** – The ledger adds a dedicated check gating execution on the 1% breach tolerance, with confidence vectors publishing the simulated demand percentiles for guardian review.
+## 🛡️ Governance and safety levers
+- Pause, upgrade, and deployment levers defined in `config/kardashev-ii.manifest.json.missionDirectives.ownerPowers`.
+- Guardian drill cadence (hours/minutes) ensures levers remain primed; see `missionDirectives.drills` in the manifest.
+- Align with repo-level emergency playbooks under `demo/agi-governance/` for multi-mission escalations.
 
----
+## 🗝️ Owner override proof deck
+- Owner override batches committed to `output/kardashev-owner-proof.json` with hashed transactions and witness metadata.
+- Latest approvals summarised in `output/kardashev-orchestration-report.md` → “Owner Proof Deck”.
+- File copies mirror into `reports/audit/` during scheduled compliance exports.
+
+## 📦 Artefacts in this directory
+- `config/` — manifest, fabric topology, energy feeds, and mission lattice JSON.
+- `scripts/` — TypeScript automation for orchestration and CI enforcement.
+- `output/` — generated ledgers, dashboards-in-waiting, and mermaid sources.
+- `ui/` — static dashboards consuming the latest artefacts.
+- `k2-stellar-demo/`, `stellar-civilization-lattice/` — specialised sub-demos with their own manifests and CI rituals.
+- `run-demo.cjs`, `index.html` — launchers for the operator experience.
 
 ## 🧪 Verification rituals
-
-1. **Local** – run `npm run demo:kardashev-ii:orchestrate` and confirm no warnings. Inspect `output/kardashev-telemetry.json` and ensure `energy.tripleCheck === true`, `verification.energyModels.withinMargin === true`, `verification.energyMonteCarlo.withinTolerance === true`, `governance.ownerOverridesReady === true`, `governance.ownerProof.secondary.matchesPrimaryScore === true`, `governance.ownerProof.tertiary.decodeFailures === 0`, `governance.ownerProof.tertiary.matchesPrimaryScore === true`, and every entry in `scenarioSweep` reports `status !== "critical"`.
-2. **CI** – `npm run demo:kardashev-ii:ci` executes the orchestrator in check mode, validates README headings, ensures Mermaid code fences exist, and fails on drift.
-3. **Runtime** – Serve the UI and click “Trigger Pause Simulation” to confirm pause/unpause calldata toggles update the status badge, review the Dyson timeline, and verify each owner directive matches `kardashev-operator-briefing.md`.
-4. **Manual** – Operators copy/paste the Safe batch into a production Safe, verify the prefilled manager/system pause addresses, and stage the transaction.
-5. **Guardian sign-off** – Circulate `output/kardashev-operator-briefing.md` to guardians; all verification badges must remain green before signatures are collected.
-
----
+- **Per-change**: `npm run demo:kardashev-ii:ci` (required; fails if documentation or ledgers drift).
+- **Pre-launch**: `npm run demo:kardashev-ii:orchestrate -- --check` to dry-run invariants against new manifests.
+- **Full publish**: `npm run demo:kardashev` to write refreshed artefacts and dashboards.
+- **Cross-demo**: `npm run demo:kardashev-ii-stellar:ci` to ensure subordinate lattice states remain aligned.
 
 ## 🧠 Reflective checklist for owners
-
-Run `npm run demo:kardashev-ii:orchestrate -- --reflect` to receive:
-
-- ✅ Recomputed manifest hash vs `interstellarCouncil.manifestoHash`.
-- ✅ Confirmation that guardian coverage ≥ guardian review window.
-- ✅ Energy debt matrix (Earth, Mars, Orbital) all ≤ 0.
-- ✅ Monte Carlo breach probability ≤ 1% (see `kardashev-monte-carlo.json`).
-- ✅ Bridge latency vs Dyson failsafe latency.
-- ✅ Scenario stress sweep free of critical statuses (confidence badges ≥ 95%).
-- ✅ Pause bundle parity (pause/unpause both targeting configured SystemPause).
-- ✅ Secondary unstoppable decoder matches the primary score (≥95% corroborated).
-
-Only sign the Safe transaction after all checks print green.
+- [ ] Have guardian signatures in `output/kardashev-consistency-ledger.json` been refreshed within the last run?
+- [ ] Are energy windows (`output/kardashev-energy-schedule.json`) covering ≥ 1.1× projected demand?
+- [ ] Do logistics buffers in `output/kardashev-logistics-ledger.json` exceed the minimums in the manifest?
+- [ ] Has `npm run demo:kardashev-ii:ci` produced a ✔ result after your changes?
+- [ ] Are mission directives in `config/kardashev-ii.manifest.json` mirrored in the directive cards rendered by `ui/dashboard.js`?
+- [ ] Is the owner proof deck (`output/kardashev-owner-proof.json`) signed off by the current guardian council?
 
 ---
 
-## 📡 Interoperability hooks
-
-* **Bridges** – Telemetry includes `bridges.latencySeconds` + `bridges.bandwidthGbps`. The UI surfaces warnings if delay threatens cadence.
-* **Data plane** – `setGlobalParameters` configures the knowledge graph address while the manifest tracks `knowledgeGraphURI` for human-readable provenance, so operators can redirect identity registries or swap subgraphs instantly.
-* **Energy oracle** – `energyProtocols.stellarLattice` parameters match the RewardEngineMB thermostat. Set new energy budgets via the Safe batch to immediately retune incentives.
-
----
-
-## ♻️ Maintenance playbook
-
-1. Update `config/kardashev-ii.manifest.json` with new domains/sentinels.
-2. Run `npm run demo:kardashev-ii:orchestrate` to regenerate artefacts.
-3. Commit the regenerated files (CI will fail if outputs don’t match the manifest).
-4. Notify guardians with the refreshed `output/kardashev-orchestration-report.md`.
-5. Run `npm run owner:mission-control` (existing v2 tooling) if you want to diff live contract state vs generated calldata.
-
----
-
-**Result**: AGI Jobs v0 (v2) becomes the civilisation-scale operating system a Kardashev-II steward needs – with clarity, safety, and absolute control packaged for non-technical operators.
-
----
-
-## ♾️ Autopilot dossier generator (`npm run demo:kardashev`)
-
-To empower stakeholders that prefer a **single command** over the multi-step orchestrator flow, the repo now bundles an autopilot helper under `demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs`.
-
-1. **Run the helper**
-   ```bash
-   npm run demo:kardashev
-   ```
-2. **Review artefacts**
-   * `output/kardashev-report.md` – mission-control dossier with resilience, energy, and Dyson metrics.
-   * `output/governance-playbook.md` – copy/paste checklist covering pause/unpause, guardian retuning, and manifesto updates.
-   * `output/telemetry.json` – machine-readable snapshot ready for Grafana / Kibana ingestion.
-   * `output/mermaid/*.mmd` – task hierarchy + cross-planet settlement diagrams that can be embedded directly into the console knowledge base.
-3. **Why it matters**
-   * Runs **entirely client-side**; no private keys or RPC access required for simulation mode.
-   * Mirrors the same guardrail set as the k2-stellar orchestrator (energy thermostat, sentinel drills, owner override proof).
-   * Produces governance copy exactly aligned with the Phase 8 manager calls so non-technical owners can execute levers confidently.
-
-Configuration files live under `config/`:
-
-- `fabric.json` – enumerates sharded registries, guardian councils, sentinels, and key contract addresses.
-- `energy-feeds.json` – pluggable energy telemetry endpoints and latency hints (solar, fusion, microwave swarms, …).
-
-Both configs are validated by the helper before any artefact is written; malformed entries abort the run with actionable errors.
-
-> **Tip:** run with `DEBUG=kardashev-demo npm run demo:kardashev` to surface intermediate reconciliation tables when preparing executive briefings.
-
-The autopilot path keeps all the heavyweight orchestration assets intact while giving executives a single-button path to the Kardashev-II proof deck.
+**Continuous alignment**: rerun `npm run demo:kardashev-ii:ci` after every change in this tree. The orchestrator guarantees unstoppable consensus only when the manifest, ledgers, and documentation stay synchronised.

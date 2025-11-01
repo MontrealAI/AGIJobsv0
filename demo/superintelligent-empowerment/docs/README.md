@@ -1,81 +1,41 @@
-# Superintelligent Empowerment Demo
+# AGI Jobs v0 (v2) — Demo → Superintelligent Empowerment → Docs
 
-Welcome to a narrative-rich demonstration that proves how superintelligent
-copilots can amplify human sovereignty. Inside this demo you will find code,
-configurations, assets, and automation scripts that together tell a story of
-impactful deployment.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/superintelligent-empowerment/docs`.
 
-## Directory Layout
+## Overview
+- **Path:** `demo/superintelligent-empowerment/docs/README.md`
+- **Module Focus:** Anchors Demo → Superintelligent Empowerment → Docs inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-- `code/` – Python source that loads the scenario and generates a structured
-  impact report.
-- `configs/` – YAML configuration describing initiatives, beneficiaries, and
-  capability vectors.
-- `scripts/` – Automation entry points, including a single-command setup and
-  deployment script plus manual fallbacks.
-- `docs/` – Documentation, runbooks, and storytelling artifacts.
-- `assets/` – Visual resources such as Mermaid diagrams and UI previews that
-  help you communicate the vision.
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/superintelligent-empowerment/docs` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## One-Command Setup & Deploy
-
-To experience the full flow, execute the following from the repository root:
-
-```bash
-./demo/superintelligent-empowerment/scripts/setup_and_deploy.sh
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_superintelligent_empowerment_docs[[Demo → Superintelligent Empowerment → Docs]]
+    demo_superintelligent_empowerment_docs --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-The script provisions an isolated virtual environment, installs dependencies,
-invokes the orchestrator, and leaves behind an impact report under
-`demo/superintelligent-empowerment/output/`.
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/superintelligent-empowerment/docs`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
-### Manual Fallback Steps
+## Directory Guide
+This module currently exposes its functionality programmatically; there are no additional files in this folder.
 
-1. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv demo/superintelligent-empowerment/.venv
-   source demo/superintelligent-empowerment/.venv/bin/activate
-   pip install --upgrade pip
-   ```
-2. Install demo dependencies:
-   ```bash
-   pip install -r demo/superintelligent-empowerment/code/requirements.txt
-   ```
-3. Run the orchestrator manually:
-   ```bash
-   python demo/superintelligent-empowerment/code/run_demo.py \
-     --config demo/superintelligent-empowerment/configs/mission.yaml \
-     --output demo/superintelligent-empowerment/output/report.json
-   ```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../../RUNBOOK.md) and [`OperatorRunbook.md`](../../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Storytelling: Empowerment, Impact, Superintelligence
-
-> *Communities awaken as AGI copilots weave equitable prosperity. Founders
-> co-design moonshot economies with empathic intelligences that translate vision
-> into reality. Public institutions witness cascading benefits, from sovereign
-> supply networks to rapid climate resilience. This demo channels that future
-> by making the orchestration legible, measurable, and repeatable.*
-
-Each initiative in the configuration highlights people-first empowerment,
-measurable impact, and the tangible feel of superintelligent capability vectors.
-
-## Validation Run
-
-The setup script was executed in a clean environment using the commands below:
-
-```bash
-rm -rf demo/superintelligent-empowerment/.venv demo/superintelligent-empowerment/output
-./demo/superintelligent-empowerment/scripts/setup_and_deploy.sh
-```
-
-**Outcome:** A fresh virtual environment was created, dependencies were
-installed, the empowerment table rendered in the console, and an impact report
-was written to `demo/superintelligent-empowerment/output/report.json`. The
-report captures the executive summary, initiative breakdowns, and projected
-outcomes ready for downstream storytelling.
-
-For a quick glance at the visual language, open
-`demo/superintelligent-empowerment/assets/ui-preview.html` in your browser and
-embed the Mermaid diagram located at
-`demo/superintelligent-empowerment/assets/architecture.mmd` into your favorite
-knowledge base.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

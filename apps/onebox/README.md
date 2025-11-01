@@ -1,66 +1,55 @@
-# AGI Jobs One-Box UI
+# AGI Jobs v0 (v2) — Apps → Onebox
 
-A static, IPFS-friendly front-end that wraps the AGI Jobs workflow behind a single natural-language input. It calls the AGI-Alpha orchestrator (`/onebox/*`) to translate human requests into actionable job intents and execute them via the relayer (guest mode) or wallet signing (expert mode).
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `apps/onebox`.
 
-The build now fingerprints assets, injects Subresource Integrity (SRI) hashes, and emits a hardened Content Security Policy (CSP) so releases can be safely pinned to IPFS and surfaced through ENS gateways.
+## Overview
+- **Path:** `apps/onebox/README.md`
+- **Module Focus:** Anchors Apps → Onebox inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Features
+## Capabilities
+- Provides opinionated configuration and assets tailored to `apps/onebox` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Single text box UX**: type what you need, receive a plan, confirm, execute.
-- **Walletless by default**: guest mode uses the orchestrator relayer; expert mode exposes wallet signing flows.
-- **Expert Mode toggle**: enables EIP-1193 wallets (MetaMask, Rabby, etc.) for self-signing.
-- **Local persistence**: orchestrator URL and API token are stored in `localStorage` for quick reconnects.
-- **Humanised errors**: maps common on-chain failures to plain-language hints.
-- **Pure static assets**: ships as `index.html` + `app.js` without build tooling so it can be pinned straight to IPFS.
-
-## Getting started
-
-1. Build the static bundle (fingerprinted assets land in `apps/onebox/dist`):
-   ```sh
-   npm run onebox:build
-   ```
-2. Serve the `dist/` directory locally (any static web server works). Example using Python:
-   ```sh
-   cd apps/onebox/dist
-   python -m http.server 4173
-   ```
-3. Open the page in your browser and fill out the **Advanced** section with your orchestrator URL and optional API token.
-4. Submit a request such as “Post a labeling job for 500 images; pay 5 AGIALPHA; 7 days.”
-5. Confirm the plan and watch for the on-chain receipt link.
-
-### Hosting on IPFS & ENS
-
-Use the automated publisher to package the build into a CAR file, upload to web3.storage, pin with Pinata, probe gateway health, and (optionally) update an ENS contenthash:
-
-```sh
-npm run onebox:publish
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> apps_onebox[[Apps → Onebox]]
+    apps_onebox --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-Environment variables control optional steps:
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `apps/onebox`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-| Purpose | Variables |
-| --- | --- |
-| web3.storage upload | `WEB3_STORAGE_TOKEN` or `W3S_TOKEN` |
-| Pinata pin | `PINATA_JWT` (or `PINATA_API_KEY` + `PINATA_SECRET_API_KEY`) |
-| ENS contenthash | `ENS_NAME`, `ENS_PRIVATE_KEY`, `ENS_RPC_URL` *(and optionally `ENS_RESOLVER`/`ENS_REGISTRY`)* |
+## Directory Guide
+### Key Directories
+- `scripts`
+- `src`
+- `test`
+### Key Files
+- `app.js`
+- `config.mjs`
+- `index.html`
+- `next-env.d.ts`
+- `next.config.mjs`
+- `package-lock.json`
+- `package.json`
+- `styles.css`
+- `tsconfig.json`
+- `url-overrides.js`
 
-Add `--dry-run` to inspect the flow without writing anything on-chain or uploading to the pinning services.
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-## Accessibility & UX
-
-- Form controls include labels and keyboard focus states.
-- The chat log is marked `aria-live="polite"` to announce updates.
-- Confirmation prompts expose explicit buttons for yes/no decisions.
-
-## Directory structure
-
-```
-apps/onebox/
-├── app.js          # UI logic, planner/executor calls
-├── config.mjs      # CSP connect-src allow list & gateway probes
-├── dist/           # Build artefacts (fingerprinted assets + release metadata)
-├── index.html      # Build template (placeholders resolved by scripts/build.mjs)
-├── README.md       # This file
-├── scripts/        # Build, integrity verification, and publish workflows
-└── styles.css      # Theme tokens (extracted from the original inline styles)
-```
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

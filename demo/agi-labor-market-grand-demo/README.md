@@ -1,221 +1,42 @@
-# AGI Jobs v2 – AI Labor Market Grand Demo (CLI Edition)
+# AGI Jobs v0 (v2) — Demo → AGI Labor Market Grand Demo
 
-This grand demonstration bootstraps an **entire AGI Jobs v2 stack** on a local
-Hardhat network and walks through two complete cross-border labour market
-scenarios using only the production contracts that already ship in this
-repository. The automation lives in
-[`scripts/v2/agiLaborMarketGrandDemo.ts`](../../scripts/v2/agiLaborMarketGrandDemo.ts)
-and performs the following:
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/agi-labor-market-grand-demo`.
 
-- Deploys and wires the **JobRegistry**, **StakeManager**, **ValidationModule**,
-  **ReputationEngine**, **FeePool**, **DisputeModule**, and **CertificateNFT**
-  exactly as they would run in production.
-- Seeds AGIALPHA balances, registers emergency identities, and pre-stakes
-  multiple actors that represent **nations, AI agents, and validator oracles**.
-- Executes two full job lifecycles:
-  1. *Cooperative climate coordination* — validators unanimously approve the
-     work, treasury fees burn, and the worker receives a certificate NFT.
-  2. *Contentious translation dispute* — validators disagree, a moderator panel
-     resolves the dispute in favour of the agent, and finalization distributes
-     escrow while slashing the non-revealing validator.
-- Emits human-readable summaries for each stage so non-technical users can
-  follow funds, NFT minting, reputation enforcement, and dispute outcomes.
+## Overview
+- **Path:** `demo/agi-labor-market-grand-demo/README.md`
+- **Module Focus:** Anchors Demo → AGI Labor Market Grand Demo inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/agi-labor-market-grand-demo` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
+
+## Systems Map
 ```mermaid
-sequenceDiagram
-    actor NationA as Nation A (Employer)
-    actor Alice as Alice (AI Agent)
-    actor Validators as Validator Council
-    participant Registry as JobRegistry
-    participant Stake as StakeManager
-    participant Validation as ValidationModule
-    participant Dispute as DisputeModule
-    participant Certificate as CertificateNFT
-
-    NationA->>Registry: createJob()
-    Registry->>Stake: lockReward()
-    Alice->>Registry: applyForJob()
-    Alice->>Registry: submit(result)
-    Registry->>Validation: initiateRound()
-    Validators->>Validation: commitValidation()
-    Validators->>Validation: revealValidation()
-    Validation->>Registry: finalizeRound(success)
-    NationA->>Registry: finalize(jobId)
-    Registry->>Stake: releaseEscrow()
-    Registry->>Certificate: mint(agent, jobId)
-    alt Dispute raised
-        Agent->>Registry: raiseDispute()
-        Registry->>Dispute: escalate()
-        Dispute->>Registry: resolve(employerWins?)
-        NationA->>Registry: finalize(jobId)
-    end
+flowchart LR
+    Operators((Mission Owners)) --> demo_agi_labor_market_grand_demo[[Demo → AGI Labor Market Grand Demo]]
+    demo_agi_labor_market_grand_demo --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
 ```
 
-## Prerequisites
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/agi-labor-market-grand-demo`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-- Node.js 20+ with the repository dependencies installed (`npm install`).
-- No external infrastructure is required; Hardhat spins up an ephemeral network
-  and injects the canonical `$AGIALPHA` token bytecode at the configured
-  address.
-- The demo bundles pre-built v2 module bytecode and ABIs so **no local Solidity
-  compilation is required**.
+## Directory Guide
+### Key Directories
+- `ui`
 
-## Running the demonstration
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-From the repository root run:
-
-```bash
-npx hardhat run --no-compile scripts/v2/agiLaborMarketGrandDemo.ts --network hardhat
-```
-
-The script:
-
-1. Boots the entire v2 module suite and displays initial balances.
-2. Demonstrates **owner mission control** — live updates to protocol fees,
-   validator incentives, staking guardrails, treasury allowlists, non-reveal
-   penalties, and emergency pause delegation to a trusted operator — proving
-   that the platform owner can steer every parameter and capital flow in real
-   time. Every configuration change is immediately asserted, so the script halts
-   if any module fails to reflect the owner’s command.
-3. Walks through the happy-path job where all validators approve.
-4. Runs a contested job where governance resolves a dispute in favour of the
-   agent.
-5. Verifies that each agent receives exactly one credential NFT, that burn
-   accounting reconciles against total supply, and that the dispute flow mints
-   credentials even when moderation is required.
-6. Prints a full telemetry dashboard – validator/agent stakes, fee pool state,
-   burn totals, reputation scores, and certificate ownership – so a
-   non-technical operator sees the market outcome at a glance.
-
-The output is intentionally narrative, providing contextual breadcrumbs (job
-state transitions, committee selections, dispute escalations) so a non-technical
-operator can follow the on-chain flow without reading contract code.
-
-### Continuous verification for non-technical operators
-
-The repository ships a dedicated GitHub Actions workflow,
-[`demo-agi-labor-market.yml`](../../.github/workflows/demo-agi-labor-market.yml),
-that replays the export on every pull request touching this demo. The job
-produces an artefact containing `export/latest.json` and fails if:
-
-- the Hardhat script does not emit a transcript,
-- owner actions, scenarios, or timeline events are missing, or
-- the sovereign control snapshot omits baseline parameters.
-
-This guarantees that the showcased workflow remains fully functional and
-accessible without requiring local manual testing.
-
-### One-command sovereign control room (non-technical friendly)
-
-Launch the full simulation **and** a static control room UI in a single step:
-
-```bash
-npm run demo:agi-labor-market:control-room
-```
-
-The helper script performs the following with friendly prompts:
-
-1. Exports a fresh transcript to `demo/agi-labor-market-grand-demo/ui/export/latest.json`.
-2. Boots an embedded HTTPS-free static server at `http://127.0.0.1:4173` that
-   renders the transcript via the bundled UI.
-3. Opens an interactive prompt where pressing <kbd>Enter</kbd> replays the full
-   Hardhat scenario (refreshing the transcript and UI), while typing `q` cleanly
-   shuts everything down.
-
-This workflow is designed so a non-technical owner can run the end-to-end
-experience without learning Hardhat CLI flags or spinning up a custom web
-server.
-
-### Exporting a transcript for the grand demo UI
-
-The CLI can emit a structured transcript that powers the accompanying
-`demo/agi-labor-market-grand-demo/ui` experience. Export to the pre-wired
-location with:
-
-```bash
-npm run demo:agi-labor-market:export
-```
-
-This writes `demo/agi-labor-market-grand-demo/ui/export/latest.json`, capturing the
-timeline, actor roster, owner actions, and aggregated telemetry. To export to a
-different location set the `AGI_JOBS_DEMO_EXPORT=/path/to/file.json`
-environment variable before running the script.
-
-### Launching the sovereign labour market control room UI
-
-1. Export a fresh transcript as described above (or copy an existing JSON file
-   into `demo/agi-labor-market-grand-demo/ui/export/latest.json`).
-2. Serve the UI locally – any static server works. Example:
-
-   ```bash
-   npx serve demo/agi-labor-market-grand-demo/ui
-   ```
-
-3. Visit the printed URL (defaults to `http://localhost:3000`). The interface
-   loads `export/latest.json`, rendering:
-
-   - Nation and validator wallet dashboards with balances, stakes, and
-     reputation.
-   - A "Mission-critical insights" board summarising owner control drills,
-     agent wins, dispute outcomes, and market telemetry so executives grasp the
-     narrative instantly.
-   - Live **agent and validator portfolios** summarising liquidity, locked
-     capital, reputation, and credential NFTs minted during the simulation so a
-     non-technical operator can confirm payouts and performance instantly.
-   - Owner action logs highlighting every governance lever exercised during the
-     simulation.
-   - A **sovereign control snapshot** comparing baseline configuration, live
-     drill adjustments, and restored settings, including pauser delegation and
-     emergency pause outcomes so non-technical owners can verify authority at a
-     glance.
-   - A **sovereign control matrix** summarising which module is delegated to
-     which operator, the live capability set (treasury routing, pauser control,
-     staking guardrails), and the status proven by the latest drill so owners can
-     audit capital and safety levers instantly.
-   - An **autonomous mission control** board with resilience and unstoppable
-     scores, recommended owner/agent/validator directives, and a one-command
-     launch checklist so executives know exactly which scripts to run next.
-   - Scenario timelines for the cooperative and disputed job lifecycles.
-   - Certificate issuance, burn telemetry, and fee economics derived from the
-     Hardhat run.
-
-Non-technical operators can replay the Hardhat simulation and immediately see a
-production-style control room without wiring additional infrastructure.
-
-### Autonomous mission control dataset
-
-Every export now includes an `automation` block that summarises the sovereign
-playbook in plain English:
-
-- `resilienceScore` / `unstoppableScore` quantify the owner’s ability to pause,
-  tune, dispute, and relaunch the market instantly.
-- `autopilot.ownerDirectives` enumerates critical owner commands such as
-  rerunning the control-room drill or refreshing branch protection gates.
-- `autopilot.agentOpportunities`, `validatorSignals`, and `treasuryAlerts`
-  translate raw telemetry into actionable steps for agents, validator councils,
-  and treasuries.
-- `verification.requiredChecks` lists the **exact CI v2 job names** that must be
-  enforced on `main`, making it effortless for non-technical owners to verify
-  branch protection.
-- `commands` captures single-line scripts to replay the demo, export a fresh
-  transcript, launch the UI, or print the owner dashboard.
-
-To confirm branch protection mirrors the workflow, run:
-
-```bash
-npm run ci:verify-branch-protection -- --branch main
-```
-
-The CLI compares GitHub’s required contexts against the five jobs documented in
-`docs/v2-ci-operations.md` and blocks if the `CI summary` aggregator or its
-dependencies drift. The automation panel surfaces the same expectation in the
-UI so a non-technical owner can trust the pipeline is fully green before
-approving merges.
-
-## Extending or replaying
-
-- Re-run the command to replay the scenario with fresh accounts.
-- Adjust role behaviour (e.g. validator votes or dispute decisions) by editing
-  the script — no contract changes are required.
-- For GUI front-ends or further automation, the script can serve as the
-  authoritative reference for contract sequencing and parameterisation.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.

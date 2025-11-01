@@ -1,117 +1,46 @@
-# Zenith Sapience Initiative – Supra-Sovereign Hypernova Governance Demonstration
+# AGI Jobs v0 (v2) — Demo → Zenith Sapience Initiative Supra Sovereign Hypernova Governance
 
-The **Supra-Sovereign Hypernova** rehearsal pushes the repository's ASI governance stack
-into a high-energy, multi-epoch stress test without introducing any new contracts or
-custom executors. It is engineered as a turnkey experience for non-technical owners:
-every command delegates to battle-tested scripts that already ship with AGI Jobs v0 (v2),
-wrapping them in mission-specific configuration, diagrams, and audit bundles.
+> AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance`.
 
-> **Prime directive:** Orchestrate a five-continent resilience surge, exercising every
-> owner override (pause, thermostat, treasury, validator rotation) while proving that the
-> canonical `npm run demo:asi-global` tooling can sustain repeated thermodynamic shock
-> adjustments under continuous CI enforcement.
+## Overview
+- **Path:** `demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance/README.md`
+- **Module Focus:** Anchors Demo → Zenith Sapience Initiative Supra Sovereign Hypernova Governance inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
+- **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
-## Scenario Snapshot
+## Capabilities
+- Provides opinionated configuration and assets tailored to `demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
+- Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
+- Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-- **Mission frame** – A coalition of nation blocs funds the Hypernova Transition Grid,
-  demanding verifiable delivery of climate, infrastructure, and humanitarian milestones
-  across synchronized epochs.
-- **Governance spine** – Multisig + timelock authority confirmed through Mission Control
-  dossiers, mermaid topology renders, and owner command matrices generated directly from
-  repository scripts.
-- **Economic kernel** – RewardEngineMB, StakeManager, and Dispute workflows handle
-  incentives, slashing, and treasury routing with thermodynamic steering toggled live.
-- **Automation loop** – Plan → simulate → dry-run → reporting executed through the
-  existing `scripts/v2/asiGlobalDemo.ts` harness; this demo only adjusts environment
-  variables.
-- **Audit surface** – Deterministic governance kit, SHA-256 manifests, Mission Control
-  briefings, and thermodynamic reports stored under `reports/zenith-hypernova/`.
+## Systems Map
+```mermaid
+flowchart LR
+    Operators((Mission Owners)) --> demo_zenith_sapience_initiative_supra_sovereign_hypernova_governance[[Demo → Zenith Sapience Initiative Supra Sovereign Hypernova Governance]]
+    demo_zenith_sapience_initiative_supra_sovereign_hypernova_governance --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
+    Core --> Observability[[Unified CI / CD & Observability]]
+    Core --> Governance[[Owner Control Plane]]
+```
 
-## Operator Quickstart
+## Working With This Module
+1. From the repository root run `npm install` once to hydrate all workspaces.
+2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/zenith-sapience-initiative-supra-sovereign-hypernova-governance`.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
-1. **Install prerequisites** – Node.js 20+, npm, Hardhat/Foundry toolchain as documented
-   in [docs/setup.md](../../docs/setup.md).
-2. **Generate the deterministic kit**:
+## Directory Guide
+### Key Directories
+- `bin`
+### Key Files
+- `OWNER-CONTROL.md`
+- `project-plan.json`
+- `RUNBOOK.md`
 
-   ```bash
-   npm run demo:zenith-hypernova
-   ```
+## Quality & Governance
+- Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
+- Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.
+- Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
-   This wrapper sets Hypernova-specific environment overrides for
-   `scripts/v2/asiGlobalDemo.ts`, emitting artefacts to
-   `reports/zenith-hypernova/` and packaging a governance kit named
-   `zenith-hypernova-governance-kit`.
-3. **(Optional) Execute the local rehearsal loop** – spins up an ephemeral Hardhat node
-   with scripted agents and validators:
-
-   ```bash
-   npm run demo:zenith-hypernova:local
-   ```
-
-4. **Inspect the artefacts** under `reports/zenith-hypernova/`:
-   - `summary.md` – executive KPI brief.
-   - `mission-control.md` – pause status, treasury wiring, multisig authorities.
-   - `command-center.md` – owner command cheat sheet.
-   - `governance.mmd` / `governance.md` – mermaid topology and rendered view.
-   - `zenith-hypernova-governance-kit.*` – hashed manifest and markdown bundle for
-     auditors.
-
-All owner scripts default to preview/dry-run behaviour. Adding `--execute` is a deliberate
-act requiring multisig approval and is captured in the Mission Control output.
-
-## Assets Included
-
-| File | Purpose |
-| --- | --- |
-| [`project-plan.json`](./project-plan.json) | Structured orchestration brief consumed by `scripts/v2/asiGlobalDemo.ts`. |
-| [`RUNBOOK.md`](./RUNBOOK.md) | End-to-end operator drill, covering dry-runs, pauses, disputes, and thermodynamic swings. |
-| [`OWNER-CONTROL.md`](./OWNER-CONTROL.md) | Owner authority matrix with ready-to-execute CLI commands. |
-| [`bin/zenith-hypernova.sh`](./bin/zenith-hypernova.sh) | Deterministic kit wrapper for CI and manual runs. |
-| [`bin/zenith-hypernova-local.sh`](./bin/zenith-hypernova-local.sh) | Local rehearsal harness targeting an Anvil/Hardhat fork. |
-
-## Configuration Strategy
-
-The wrapper scripts only export environment variables already supported by the global
-demo pipeline:
-
-- `ASI_GLOBAL_PLAN_PATH` → points at this folder's `project-plan.json`.
-- `ASI_GLOBAL_REPORT_ROOT` → relocates artefacts to `reports/zenith-hypernova/`.
-- `ASI_GLOBAL_OUTPUT_BASENAME` → renames the governance kit to
-  `zenith-hypernova-governance-kit`.
-- `ASI_GLOBAL_BUNDLE_NAME` & `ASI_GLOBAL_MERMAID_TITLE` → retitle the bundle and
-  diagrams without touching rendering logic.
-- `ASI_GLOBAL_REFERENCE_DOCS_APPEND` & `ASI_GLOBAL_ADDITIONAL_ARTIFACTS_APPEND` → inject
-  this runbook and owner dossier into the generated kit.
-
-No contracts, migrations, or novel code paths are introduced – we strictly parameterise
-existing automation to maintain production parity.
-
-## Governance & Safety
-
-`OWNER-CONTROL.md` enumerates every owner-facing toggle (system pause, thermostat,
-reward splits, identity registry updates, validator rotation, quadratic governance tools)
-with explicit CLI usage. Mission Control outputs confirm the multisig + timelock
-hierarchy, ensuring human governors retain absolute authority over automation at all
-moments.
-
-## Continuous Integration
-
-`.github/workflows/demo-zenith-hypernova.yml` runs both Hypernova wrappers on pull
-requests touching this demo or the shared ASI tooling. The job uploads artefacts for
-reviewers and feeds into the main `ci (v2)` workflow, which now blocks merges until the
-Hypernova rehearsal is green. Branch protection guidance in
-[docs/ci-v2-branch-protection-checklist.md](../../docs/ci-v2-branch-protection-checklist.md)
-has been updated accordingly so non-technical owners can verify enforcement.
-
-## Follow-on Actions
-
-- Execute `npm run demo:zenith-hypernova` whenever plan, governance docs, or owner
-  guidance changes.
-- Embed `reports/zenith-hypernova/governance.md` into dashboards so executives can review
-  live topology diagrams.
-- Run `npm run owner:verify-control -- --network hardhat` after deployments to confirm the
-  wiring still matches the Hypernova specification.
-
-The Supra-Sovereign Hypernova drill therefore delivers a spectacular yet controlled
-planetary governance showcase, staying inside the repo's existing battle-tested surfaces
-while maximising auditability and owner supremacy.
+## Next Steps
+- Review this module's issue board for open automation, data, or research threads.
+- Link new deliverables back to the central manifest via `npm run release:manifest`.
+- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
