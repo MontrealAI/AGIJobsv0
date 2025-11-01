@@ -170,6 +170,22 @@ function collectTargets(
   return { owner, governance };
 }
 
+function deriveModuleTitle(key: string): string {
+  const withSpaces = key
+    .replace(/([a-z\d])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z]+)([A-Z][a-z\d]+)/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .trim();
+  if (!withSpaces) {
+    return key;
+  }
+  return withSpaces
+    .split(' ')
+    .filter(Boolean)
+    .map((segment) => segment[0].toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   const networkKey =
@@ -185,18 +201,29 @@ async function main(): Promise<void> {
   const { config, path: configPath } = loadOwnerControlConfig({ network: networkKey });
   const modules = (config.modules ?? {}) as Record<string, OwnerControlModuleConfig>;
   const snapshots: ModuleSnapshot[] = [];
-  const missingModules: string[] = [];
   const fieldIssues: string[] = [];
 
   const fallbackOwner = normaliseAddress(config.owner as string | undefined);
   const fallbackGovernance = normaliseAddress(config.governance as string | undefined);
 
-  for (const [key, spec] of Object.entries(REQUIRED_MODULES)) {
+  const orderedModuleKeys: string[] = [];
+  for (const key of Object.keys(REQUIRED_MODULES)) {
+    if (modules[key]) {
+      orderedModuleKeys.push(key);
+    }
+  }
+  for (const key of Object.keys(modules)) {
+    if (!orderedModuleKeys.includes(key)) {
+      orderedModuleKeys.push(key);
+    }
+  }
+
+  for (const key of orderedModuleKeys) {
     const moduleConfig = modules[key];
     if (!moduleConfig) {
-      missingModules.push(`${key} — ${spec.description}`);
       continue;
     }
+    const spec = REQUIRED_MODULES[key];
 
     const type = moduleConfig.type ?? 'governable';
     if (typeof type !== 'string' || type.trim().length === 0) {
@@ -220,21 +247,27 @@ async function main(): Promise<void> {
 
     snapshots.push({
       key,
-      title: spec.title,
+      title: spec?.title ?? deriveModuleTitle(key),
       type,
       ownerTarget: targets.owner,
       governanceTarget: targets.governance,
       address: address ?? undefined,
-      commands: spec.commands,
+      commands: spec?.commands ?? [],
       notes: Array.isArray(moduleConfig.notes)
         ? moduleConfig.notes.map((note) => String(note))
         : [],
     });
   }
 
-  if (missingModules.length > 0) {
+  const missingRequiredModules = Object.entries(REQUIRED_MODULES)
+    .filter(([key]) => !modules[key])
+    .map(([key, spec]) => `${key} — ${spec.description}`);
+
+  if (missingRequiredModules.length > 0) {
     throw new Error(
-      `Owner control configuration is missing required modules: ${missingModules.join(', ')}`
+      `Owner control configuration is missing required modules: ${missingRequiredModules.join(
+        ', '
+      )}`
     );
   }
 
