@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..', '..');
+const REQUIRED_FORGE_VERSION = '1.4.4';
 
 const problems = [];
 
@@ -76,9 +77,13 @@ function checkFoundryVersion() {
     return;
   }
 
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.0"/.test(foundryToml);
+  const escapedVersion = REQUIRED_FORGE_VERSION.replace(/\./g, '\\.');
+  const forgeVersionPattern = new RegExp(
+    `forge_version\\s*=\\s*"${escapedVersion}` + '"'
+  );
+  const forgeVersionMatches = forgeVersionPattern.test(foundryToml);
   if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.0"');
+    problems.push(`foundry.toml must pin forge_version = "${REQUIRED_FORGE_VERSION}"`);
   }
 }
 
