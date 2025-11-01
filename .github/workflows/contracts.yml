@@ -69,7 +69,7 @@ jobs:
             hardhat-${{ runner.os }}-
 
       - name: Install dependencies
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
 
       - name: Compile
         env:
