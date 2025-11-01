@@ -53,7 +53,16 @@ These steps augment the permanent references in [`docs/v2-ci-operations.md`](v2-
 
    Ensures the monitoring sentinels used for on-chain and service regressions continue to compile. A successful run mirrors the dedicated CI matrix step and is required for a green pipeline badge.
 
-6. **Execute the full Node/Hardhat suite**
+6. **Confirm branch protection manifests**
+
+   ```bash
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
+   ```
+
+   `ci:verify-contexts` parses `.github/workflows/ci.yml` and proves every job display name has a matching required status context, while `ci:verify-companion-contexts` checks the cross-workflow manifest for typos before enforcement.【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L83】 A clean run guarantees the branch guard job will block merges if contexts ever drift.【F:.github/workflows/ci.yml†L936-L1120】
+
+7. **Execute the full Node/Hardhat suite**
 
    ```bash
    npm test
@@ -61,7 +70,7 @@ These steps augment the permanent references in [`docs/v2-ci-operations.md`](v2-
 
    This single command drives the orchestrator, owner control, validator governance, and Hardhat contract suites. It re-generates constants, compiles contracts, enforces ABI stability, and exercises the owner pause/resume controls that the contract owner can trigger from the CLI or dashboards.
 
-7. **Publish artefacts**
+8. **Publish artefacts**
    Upload the generated reports under `reports/` (for example the CI summary JSON) when running inside GitHub Actions so non-technical maintainers can inspect the run without reading logs.
 
 ## Branch protection alignment

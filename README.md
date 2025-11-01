@@ -110,10 +110,91 @@ flowchart TD
 - **Thermal Stability:** [`services/thermostat/`](services/thermostat/README.md) documents the thermal regulation engine that guards systemic health.
 
 ## Always-Green CI Signal Deck
-- **Single source of truth:** The `ci (v2)` workflow exposes 23 required contexts that map 1:1 with [`ci/required-contexts.json`](ci/required-contexts.json). The lint stage fails fast when display names drift so branch protection never hides a status for owners or reviewers.【F:.github/workflows/ci.yml†L28-L117】【F:ci/required-contexts.json†L1-L23】
-- **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L164】【F:docs/ci-v2-branch-protection-checklist.md†L1-L168】
+- **Single source of truth:** The `ci (v2)` workflow exposes 23 required contexts that map 1:1 with [`ci/required-contexts.json`](ci/required-contexts.json). The lint stage fails fast when display names drift so branch protection never hides a status for owners or reviewers.【F:.github/workflows/ci.yml†L33-L71】【F:ci/required-contexts.json†L1-L23】
+- **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L182】【F:docs/ci-v2-branch-protection-checklist.md†L1-L206】
 - **Companion workflows:** Static analysis, fuzzing, web application smoke tests, orchestrator rehearsals, and deterministic e2e drills are all surfaced as required checks so the Checks tab stays comprehensible to non-technical stakeholders. Each badge above links directly to its workflow for live status and history.【F:.github/workflows/static-analysis.yml†L1-L157】【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/orchestrator-ci.yml†L1-L214】【F:.github/workflows/e2e.yml†L1-L164】
-- **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub.【F:.github/workflows/ci.yml†L904-L1159】
+- **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub.【F:.github/workflows/ci.yml†L1130-L1199】
+
+### Pipeline topology
+```mermaid
+flowchart LR
+    classDef base fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef audit fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef demo fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef analytics fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+
+    lint["Lint & static checks"]:::base
+    tests["Tests"]:::base
+    pyUnit["Python unit tests"]:::analytics
+    pyInt["Python integration tests"]:::analytics
+    pyLoad["Load-simulation reports"]:::analytics
+    pyCov["Python coverage enforcement"]:::analytics
+    foundry["Foundry"]:::base
+    coverage["Coverage thresholds"]:::base
+    invariants["Invariant tests"]:::base
+    hgm["HGM guardrails"]:::audit
+    ownerCtl["Owner control assurance"]:::audit
+    phase6["Phase 6 readiness"]:::demo
+    phase8["Phase 8 readiness"]:::demo
+    kardashev["Kardashev II readiness"]:::demo
+    asi["ASI Take-Off Demonstration"]:::demo
+    zenith["Zenith Sapience Demonstration"]:::demo
+    labor["AGI Labor Market Grand Demo"]:::demo
+    mesh["Sovereign Mesh Demo — build"]:::demo
+    constellation["Sovereign Constellation Demo — build"]:::demo
+    archon["Celestial Archon Demonstration"]:::demo
+    hypernova["Hypernova Governance Demonstration"]:::demo
+    branchGuard["Branch protection guard"]:::audit
+    summary["CI summary"]:::audit
+
+    pyUnit --> pyCov
+    pyInt --> pyCov
+    lint --> hgm
+    lint --> ownerCtl
+    lint --> phase6
+    lint --> phase8
+    lint --> kardashev
+    tests --> hgm
+    tests --> foundry
+    tests --> coverage
+    tests --> phase6
+    tests --> phase8
+    tests --> kardashev
+    tests --> asi
+    tests --> zenith
+    tests --> labor
+    tests --> mesh
+    tests --> constellation
+    tests --> archon
+    tests --> hypernova
+    tests --> invariants
+    pyCov --> summary
+    pyLoad --> summary
+    pyUnit --> summary
+    pyInt --> summary
+    lint --> summary
+    tests --> summary
+    foundry --> summary
+    coverage --> summary
+    invariants --> summary
+    hgm --> summary
+    ownerCtl --> summary
+    phase6 --> summary
+    phase8 --> summary
+    kardashev --> summary
+    asi --> summary
+    zenith --> summary
+    labor --> summary
+    mesh --> summary
+    constellation --> summary
+    archon --> summary
+    hypernova --> summary
+    branchGuard --> summary
+```
+
+- The summary job fans in from every required context, so a single failure keeps the workflow red and writes an auditable status table to `reports/ci/status.{md,json}` for administrators.【F:.github/workflows/ci.yml†L1130-L1199】
+- The branch protection guard audits the GitHub rule set against the JSON manifests, ensuring required contexts and companion workflows stay aligned with the enforced policy.【F:.github/workflows/ci.yml†L936-L1120】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
+- Python coverage consolidation depends explicitly on the unit and integration suites so coverage gates only report green when both analytics layers succeed.【F:.github/workflows/ci.yml†L280-L345】
 
 ## Owner Command Surface
 - **On-chain authority:** The [`OwnerConfigurator`](contracts/v2/admin/OwnerConfigurator.sol) lets the contract owner batch immutable parameter changes while emitting structured audit events for every mutation.【F:contracts/v2/admin/OwnerConfigurator.sol†L1-L111】
