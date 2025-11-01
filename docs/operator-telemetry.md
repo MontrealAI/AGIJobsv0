@@ -22,7 +22,7 @@ through `agent-gateway/operator.ts` using `ethers`.
 
 ## Prerequisites
 
-- Node.js 20.18.1
+- Node.js 20.19.0
 - Access to the keystore service that returns orchestrator private keys.
 - RPC endpoint for the network hosting the `EnergyOracle` contract.
 - Deployed contract addresses for the gateway (JobRegistry, ValidationModule,

@@ -11,6 +11,11 @@ max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
 
 while [ "$attempt" -le "$max_attempts" ]; do
+  if [ ! -f package-lock.json ]; then
+    echo "package-lock.json not found in $(pwd). Contents:" >&2
+    ls -al >&2
+    exit 1
+  fi
   rm -rf node_modules
 
   if npm ci "$@"; then

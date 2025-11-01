@@ -7,7 +7,7 @@ This runbook choreographs the Helios mission so operators, auditors, and regulat
 ## 1. Pre-Flight Checklist
 
 1. **Environment**
-   - `nvm use` to pin Node.js 20.18.1 as required by the repository.【F:README.md†L18-L25】
+   - `nvm use` to pin Node.js 20.19.0 as required by the repository.【F:README.md†L18-L25】
    - Copy secrets: export RPC URLs, signer keys, and storage tokens expected by the existing demo pipelines (`asi-takeoff`, `asi-global`).【F:demo/asi-takeoff/README.md†L23-L49】【F:docs/asi-global-orchestrator-demo.md†L20-L40】
    - Verify Hardhat toolchain locks with `npm run ci:verify-toolchain` to pre-empt CI drift.【F:package.json†L52-L58】
 2. **Identity posture**
