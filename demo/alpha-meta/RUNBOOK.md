@@ -4,7 +4,7 @@ This runbook enables a non-technical owner to execute the entire Alpha-Meta Sove
 
 ## 0. Prerequisites
 
-- **Node.js 20.18.1** (matching `package.json#engines`).
+- **Node.js 20.19.0** (matching `package.json#engines`).
 - **npm 10.x**.
 - **Docker + Docker Compose** (for dashboards).
 - **A browser wallet** (MetaMask/Rabby) configured for `http://127.0.0.1:8545` when using the local Anvil chain.
