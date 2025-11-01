@@ -93,7 +93,7 @@ turnaround tight even with a large job fan-out.
 
 ## Local rehearsal
 
-1. Install Node.js 20.18.1 and enable npm caching via `actions/setup-node`, matching the
+1. Install Node.js 20.19.0 and enable npm caching via `actions/setup-node`, matching the
    pipeline toolchain.
 2. Run the same lint entry point the workflow executes:
    ```bash

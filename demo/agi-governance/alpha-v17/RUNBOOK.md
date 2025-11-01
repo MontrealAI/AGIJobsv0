@@ -16,7 +16,7 @@ This runbook lets a non-technical owner execute the entire Singularity Dominion 
    ```bash
    npm run ci:verify-toolchain
    ```
-   Confirms Node 20.18.1, Hardhat, Foundry, and auxiliary utilities match the pinned versions.
+   Confirms Node 20.19.0, Hardhat, Foundry, and auxiliary utilities match the pinned versions.
 3. **Owner signer ready** — control the Safe or hardware wallet referenced in [`config/mission@v17.json`](config/mission@v17.json).
 
 ---
