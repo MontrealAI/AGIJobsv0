@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20.18.1-alpine3.20 AS base-build
+FROM node:20.19.0-alpine3.20 AS base-build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
@@ -27,7 +27,7 @@ RUN npm run build:gateway \
     && npm prune --omit=dev \
     && npm cache clean --force
 
-FROM node:20.18.1-alpine3.20 AS runner
+FROM node:20.19.0-alpine3.20 AS runner
 ENV NODE_ENV=production \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false
