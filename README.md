@@ -196,6 +196,18 @@ Every storyline ships reproducible CLI launchers, local rehearsals, export manif
 
 ---
 
+## 🧪 Continuous Assurance
+- **CI v2 lattice** – [`ci.yml`](.github/workflows/ci.yml) coordinates linting, type-checking, Foundry suites, Python simulations, coverage thresholds, attestation verification, and artifact bundling for both PRs and `main`.
+- **Specialized workflows** – [`contracts.yml`](.github/workflows/contracts.yml), [`fuzz.yml`](.github/workflows/fuzz.yml), [`webapp.yml`](.github/workflows/webapp.yml), [`containers.yml`](.github/workflows/containers.yml), [`static-analysis.yml`](.github/workflows/static-analysis.yml), [`scorecard.yml`](.github/workflows/scorecard.yml), and dedicated demo pipelines enforce total coverage across surfaces.
+- **Required contexts** – [`ci/required-contexts.json`](ci/required-contexts.json) is synchronized by [`scripts/ci/update-ci-required-contexts.ts`](scripts/ci/update-ci-required-contexts.ts) and audited via [`scripts/ci/check-ci-required-contexts.ts`](scripts/ci/check-ci-required-contexts.ts), ensuring every PR remains fully green.
+- **Release guardianship** – [`release.yml`](.github/workflows/release.yml) and [`release-mainnet.yml`](.github/workflows/release-mainnet.yml) produce CycloneDX SBOMs (`npm run sbom:generate`), ABI diffs (`npm run abi:diff`), and manifest dossiers for production deployments.
+- **Culture network rehearsals** – [`culture-ci.yml`](.github/workflows/culture-ci.yml) works alongside `make culture-bootstrap` to extend sovereign coverage.
+
+The `owner control assurance` job additionally generates an authority matrix (`reports/owner-control/authority-matrix.md` / `.json`) that records each privileged module’s live address, controlling account, and the precise CLI commands the owner executes to pause, upgrade, or retune it without touching Solidity—and the matrix generator now fails the run if any subsystem configuration is missing or malformed, guaranteeing the owner’s pause and governance levers stay intact.【F:.github/workflows/ci.yml†L402-L416】【F:scripts/ci/render-owner-assurance.ts†L1-L213】【F:scripts/v2/ownerParameterMatrix.ts†L218-L364】【F:scripts/v2/ownerParameterMatrix.ts†L520-L544】
+> 🔐 Non-technical commanders can follow the CI v2 playbooks in [`docs/v2-ci-operations.md`](docs/v2-ci-operations.md), [`docs/ci-v2-validation-report.md`](docs/ci-v2-validation-report.md), and [`docs/ci-v2-branch-protection-checklist.md`](docs/ci-v2-branch-protection-checklist.md) to keep every badge green while retaining direct control over pause levers, upgrade matrices, and compliance routines.
+The `owner control assurance` job additionally generates an authority matrix (`reports/owner-control/authority-matrix.md` / `.json`) that records each privileged module’s live address, controlling account, and the precise CLI commands the owner executes to pause, upgrade, or retune it without touching Solidity.【F:.github/workflows/ci.yml†L402-L416】【F:scripts/ci/render-owner-assurance.ts†L1-L213】
+
+> 🔐 Non-technical owners can follow the [CI v2 operations guide](docs/v2-ci-operations.md), reproducible [validation log](docs/ci-v2-validation-report.md), and [branch-protection checklist](docs/ci-v2-branch-protection-checklist.md) to keep every badge green while retaining full control over pause levers, parameter matrices, and upgrade orchestration.【F:docs/v2-ci-operations.md†L1-L133】【F:docs/ci-v2-validation-report.md†L1-L60】【F:docs/ci-v2-branch-protection-checklist.md†L1-L126】
 ## 🧪 Continuous Verification
 The CI v2 lattice keeps every badge green, every context enforced, and every artefact exportable.
 

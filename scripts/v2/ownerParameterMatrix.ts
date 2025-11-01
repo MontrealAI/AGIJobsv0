@@ -45,6 +45,11 @@ interface SubsystemMatrix {
   rows: MatrixRow[];
 }
 
+interface SubsystemBuildResult {
+  matrix: SubsystemMatrix;
+  error?: string;
+}
+
 interface SubsystemDescriptor {
   id: string;
   title: string;
@@ -215,7 +220,7 @@ function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], dept
   return rows;
 }
 
-async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix[]> {
+async function buildSubsystemMatrices(network?: string): Promise<SubsystemBuildResult[]> {
   const descriptors: SubsystemDescriptor[] = [
     {
       id: 'token',
@@ -352,39 +357,44 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemMatrix
     },
   ];
 
-  const results: SubsystemMatrix[] = [];
+  const results: SubsystemBuildResult[] = [];
   for (const descriptor of descriptors) {
     try {
       const loaded = descriptor.loader(network);
       results.push({
-        id: descriptor.id,
-        title: descriptor.title,
-        summary: descriptor.summary,
-        documentation: descriptor.documentation,
-        updateCommands: descriptor.updateCommands,
-        verifyCommands: descriptor.verifyCommands,
-        configPath: path.relative(process.cwd(), loaded.path),
-        rows: flattenConfig(loaded.config),
+        matrix: {
+          id: descriptor.id,
+          title: descriptor.title,
+          summary: descriptor.summary,
+          documentation: descriptor.documentation,
+          updateCommands: descriptor.updateCommands,
+          verifyCommands: descriptor.verifyCommands,
+          configPath: path.relative(process.cwd(), loaded.path),
+          rows: flattenConfig(loaded.config),
+        },
       });
     } catch (error) {
       const fallback = path.relative(process.cwd(), descriptor.fallbackConfigPath);
       const message =
         error instanceof Error ? error.message : 'Unknown error loading configuration';
       results.push({
-        id: descriptor.id,
-        title: descriptor.title,
-        summary: descriptor.summary,
-        documentation: descriptor.documentation,
-        updateCommands: descriptor.updateCommands,
-        verifyCommands: descriptor.verifyCommands,
-        configPath: fallback,
-        rows: [
-          {
-            path: '<error>',
-            value: message,
-            notes: 'Fix the configuration file then rerun owner:parameters.',
-          },
-        ],
+        matrix: {
+          id: descriptor.id,
+          title: descriptor.title,
+          summary: descriptor.summary,
+          documentation: descriptor.documentation,
+          updateCommands: descriptor.updateCommands,
+          verifyCommands: descriptor.verifyCommands,
+          configPath: fallback,
+          rows: [
+            {
+              path: '<error>',
+              value: message,
+              notes: 'Fix the configuration file then rerun owner:parameters.',
+            },
+          ],
+        },
+        error: `${descriptor.id}: ${message}`,
       });
     }
   }
@@ -519,7 +529,8 @@ async function main(): Promise<void> {
   const hardhat = await resolveHardhatContext();
   const selectedNetwork = options.network ?? process.env.HARDHAT_NETWORK ?? hardhat.name;
 
-  const subsystems = await buildSubsystemMatrices(selectedNetwork);
+  const buildResults = await buildSubsystemMatrices(selectedNetwork);
+  const subsystems = buildResults.map((entry) => entry.matrix);
   const matrix: MatrixPayload = {
     network: selectedNetwork,
     subsystems: subsystems.map((entry) => ({
@@ -545,6 +556,18 @@ async function main(): Promise<void> {
   }
 
   await writeOutput(output, options.outPath);
+
+  const errors = buildResults
+    .map((entry) => entry.error)
+    .filter((value): value is string => typeof value === 'string' && value.length > 0);
+  if (errors.length > 0) {
+    console.error(
+      `Owner parameter matrix encountered ${errors.length} configuration issue${
+        errors.length === 1 ? '' : 's'
+      }: ${errors.join('; ')}`
+    );
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {

@@ -67,7 +67,7 @@ Enable branch protection on `main` with every status context below. The list mir
 | Check context | Source job | Notes |
 | --- | --- | --- |
 | `ci (v2) / HGM guardrails` | `hgm_guardrails` job | Runs the Higher Governance Machine regression suite across Node + Python toolchains. |
-| `ci (v2) / Owner control assurance` | `owner_controls` job | Executes the owner control doctor and parameter matrix against the `ci` configuration set, proving pause/governance levers remain operable. |
+| `ci (v2) / Owner control assurance` | `owner_controls` job | Executes the owner control doctor and parameter matrix against the `ci` configuration set, failing fast if any subsystem config is missing or malformed so pause/governance levers remain operable. |
 | `ci (v2) / Phase 6 readiness` | `phase6` job | Validates the Phase 6 manifest and UI bundle. |
 | `ci (v2) / Phase 8 readiness` | `phase8` job | Confirms the Phase 8 expansion kit builds cleanly. |
 | `ci (v2) / Kardashev II readiness` | `kardashev_demo` job | Replays the Kardashev II demo manifests. |
