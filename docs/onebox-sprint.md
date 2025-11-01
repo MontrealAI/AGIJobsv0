@@ -103,7 +103,7 @@ sequenceDiagram
 * **Create app & services**
 
   * `apps/onebox` (Next.js 14 / App Router) scaffold with CSR chat pane, system messages, file uploads.
-  * `services/chain-adapter` (Node 20.18.1 runtime, Fastify) with routes: `/simulate`, `/execute`, `/estimate`, `/events/subscribe`.
+  * `services/chain-adapter` (Node 20.19.0 runtime, Fastify) with routes: `/simulate`, `/execute`, `/estimate`, `/events/subscribe`.
   * `services/alpha-bridge` (Python 3.11, FastAPI) proxy to AGI‑Alpha‑Agent‑v0 `/:plan`, `/:tools` endpoints; add JWT guard. ([GitHub][3])
 * **Orchestrator package**
 

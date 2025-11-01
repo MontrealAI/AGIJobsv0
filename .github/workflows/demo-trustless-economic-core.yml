@@ -21,6 +21,9 @@ on:
 permissions:
   contents: read
 
+env:
+  CYPRESS_INSTALL_BINARY: 'https://github.com/cypress-io/cypress/releases/download/v13.17.0/cypress-linux-x64.zip'
+
 jobs:
   trustless-core-demo:
     runs-on: ubuntu-24.04
