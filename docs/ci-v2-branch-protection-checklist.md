@@ -56,7 +56,7 @@ branch protection UI matches the automation surface.【F:ci/required-companion-c
 | Context                             | Source job                                         | Why it matters                                                                                                                                       |
 | ----------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci (v2) / Branch protection guard` | [`branch_protection`](../.github/workflows/ci.yml) | Calls the GitHub API to verify branch protection matches these contexts and keeps administrators gated.【F:.github/workflows/ci.yml†L932-L1076】     |
-| `ci (v2) / CI summary`              | [`summary`](../.github/workflows/ci.yml)           | Aggregates upstream job results into a single ✅/❌ indicator and surfaces permitted skips for forked PRs.【F:.github/workflows/ci.yml†L1078-L1159】 |
+| `ci (v2) / CI summary`              | [`summary`](../.github/workflows/ci.yml)           | Aggregates upstream job results into a single ✅/❌ indicator, surfaces permitted skips for forked PRs, and fails if the status artefact bundle is missing.【F:.github/workflows/ci.yml†L1130-L1259】 |
 
 ### Companion workflows
 
@@ -121,7 +121,8 @@ gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled
 3. Confirm the job is marked as **Required** in the run header. If it is missing, update branch protection immediately and re-run the workflow to refresh the badge.
 4. When troubleshooting, re-run the workflow with **Re-run failed jobs** so historical logs remain intact for incident reviews.
 5. Download the `ci-summary` artifact and archive `reports/ci/status.md` plus `status.json` with the change ticket; these files
-   mirror the on-screen table and prove which jobs were evaluated.【F:.github/workflows/ci.yml†L1033-L1159】
+   mirror the on-screen table and prove which jobs were evaluated. The upload step uses `if-no-files-found: error`, so a missing
+   artefact automatically fails the workflow and surfaces during review.【F:.github/workflows/ci.yml†L1130-L1259】
 
 ### 4. Double-check companion workflows
 

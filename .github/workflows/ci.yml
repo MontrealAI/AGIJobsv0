@@ -1256,6 +1256,7 @@ jobs:
         with:
           name: ci-summary
           path: reports/ci
+          if-no-files-found: error
 
   invariants:
     name: Invariant tests
