@@ -60,6 +60,8 @@ jobs:
         run: npm run ci:verify-toolchain
       - name: Ensure branch protection contexts match workflow
         run: npm run ci:verify-contexts
+      - name: Verify companion workflow contexts
+        run: npm run ci:verify-companion-contexts
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite
@@ -979,30 +981,78 @@ jobs:
           }
 
           const contextsPath = path.join(process.cwd(), 'ci', 'required-contexts.json');
-          let expected;
-          try {
-            expected = JSON.parse(fs.readFileSync(contextsPath, 'utf8'));
-          } catch (error) {
-            console.error(`Unable to read ${contextsPath}:`, error instanceof Error ? error.message : error);
-            process.exit(1);
-          }
+          const companionPath = path.join(process.cwd(), 'ci', 'required-companion-contexts.json');
 
-          if (!Array.isArray(expected)) {
-            console.error('ci/required-contexts.json must contain an array of strings.');
-            process.exit(1);
-          }
-
-          for (const value of expected) {
-            if (typeof value !== 'string' || value.trim().length === 0) {
-              console.error('ci/required-contexts.json entries must be non-empty strings.');
+          function readJsonArray(filePath, { enforcePrefix } = { enforcePrefix: null }) {
+            let parsed;
+            try {
+              parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            } catch (error) {
+              console.error(`Unable to read ${filePath}:`, error instanceof Error ? error.message : error);
               process.exit(1);
             }
-            if (!value.trim().startsWith('ci (v2) / ')) {
-              console.error(
-                `Invalid context "${value}" detected. Entries must begin with "ci (v2) / " to match branch protection.`
-              );
+
+            if (!Array.isArray(parsed)) {
+              console.error(`${path.relative(process.cwd(), filePath)} must contain an array of strings.`);
               process.exit(1);
             }
+
+            return parsed.map((value, index) => {
+              if (typeof value !== 'string') {
+                console.error(
+                  `${path.relative(process.cwd(), filePath)} entry at index ${index} must be a string.`
+                );
+                process.exit(1);
+              }
+              const trimmed = value.trim();
+              if (!trimmed) {
+                console.error(
+                  `${path.relative(process.cwd(), filePath)} entry at index ${index} must not be empty.`
+                );
+                process.exit(1);
+              }
+              if (enforcePrefix && !trimmed.startsWith(enforcePrefix)) {
+                console.error(
+                  `Invalid context "${trimmed}" detected. Entries must begin with "${enforcePrefix}" to match branch protection.`
+                );
+                process.exit(1);
+              }
+              return trimmed;
+            });
+          }
+
+          function readCompanionContexts() {
+            if (!fs.existsSync(companionPath)) {
+              return [];
+            }
+            const contexts = readJsonArray(companionPath);
+            for (const context of contexts) {
+              if (!context.includes(' / ')) {
+                console.error(
+                  `Companion context "${context}" must include a workflow and job name separated by " / ".`
+                );
+                process.exit(1);
+              }
+            }
+            return contexts;
+          }
+
+          const primary = readJsonArray(contextsPath, { enforcePrefix: 'ci (v2) / ' });
+          const companion = readCompanionContexts();
+          const expected = primary.concat(companion);
+
+          const seen = new Set();
+          const duplicates = [];
+          for (const context of expected) {
+            if (seen.has(context)) {
+              duplicates.push(context);
+            }
+            seen.add(context);
+          }
+
+          if (duplicates.length > 0) {
+            console.error(`Duplicate contexts detected across manifests: ${duplicates.join(', ')}`);
+            process.exit(1);
           }
 
           async function fetchProtection() {

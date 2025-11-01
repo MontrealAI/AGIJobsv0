@@ -134,6 +134,7 @@
     "ci:sync-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/update-ci-required-contexts.ts",
     "ci:owner-authority": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/render-owner-assurance.ts",
     "ci:verify-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-required-contexts.ts",
+    "ci:verify-companion-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-companion-contexts.ts",
     "ci:verify-signers": "node scripts/ci/check-signers.js",
     "ci:verify-toolchain": "node scripts/ci/check-toolchain-locks.js",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",

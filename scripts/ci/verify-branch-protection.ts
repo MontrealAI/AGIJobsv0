@@ -1,8 +1,12 @@
 #!/usr/bin/env ts-node
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { exit } from 'node:process';
+
+import {
+  readAllRequiredContexts,
+  readCompanionContexts,
+  readRequiredContexts,
+} from './utils/workflow';
 
 type ResultRow = {
   label: string;
@@ -17,54 +21,13 @@ type Args = {
   token?: string;
 };
 
-const CONTEXTS_PATH = resolve(__dirname, '../../ci/required-contexts.json');
+const PRIMARY_CONTEXTS = readRequiredContexts();
+const COMPANION_CONTEXTS = readCompanionContexts();
+const EXPECTED_CONTEXTS = Object.freeze(readAllRequiredContexts());
 
-function loadExpectedContexts(): readonly string[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(readFileSync(CONTEXTS_PATH, 'utf8'));
-  } catch (error) {
-    throw new Error(
-      `Unable to read ci/required-contexts.json: ${(error as Error).message}`
-    );
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new Error('ci/required-contexts.json must contain an array of strings.');
-  }
-
-  const contexts = parsed.map((entry) => {
-    if (typeof entry !== 'string' || entry.trim().length === 0) {
-      throw new Error('ci/required-contexts.json entries must be non-empty strings.');
-    }
-    const trimmed = entry.trim();
-    if (!trimmed.startsWith('ci (v2) / ')) {
-      throw new Error(
-        `Invalid context "${trimmed}". Expected entries to begin with "ci (v2) / ".`
-      );
-    }
-    return trimmed;
-  });
-
-  const duplicates = new Set<string>();
-  const seen = new Set<string>();
-  for (const context of contexts) {
-    if (seen.has(context)) {
-      duplicates.add(context);
-    }
-    seen.add(context);
-  }
-
-  if (duplicates.size > 0) {
-    throw new Error(
-      `Duplicate contexts detected in ci/required-contexts.json: ${Array.from(duplicates).join(', ')}`
-    );
-  }
-
-  return Object.freeze(contexts);
+if (EXPECTED_CONTEXTS.length === 0) {
+  throw new Error('No required status check contexts are defined.');
 }
-
-const EXPECTED_CONTEXTS = loadExpectedContexts();
 
 type BranchProtectionResponse = {
   required_status_checks?: {
@@ -299,6 +262,10 @@ function printReport(
       .join('');
     console.log(formatted.trimEnd());
   }
+  console.log('');
+  console.log(
+    `Primary contexts: ${PRIMARY_CONTEXTS.length}; companion contexts: ${COMPANION_CONTEXTS.length}; total enforced: ${EXPECTED_CONTEXTS.length}.`
+  );
   console.log('');
 }
 

@@ -39,9 +39,9 @@ All three entry points converge on the same job graph, keeping the `CI summary` 
 
 ## Required jobs and branch protection
 
-Enable branch protection on `main` with every status context below. The list mirrors [`ci/required-contexts.json`](../ci/required-contexts.json) so automated audits and the GitHub UI stay synchronised.【F:ci/required-contexts.json†L1-L23】
+Enable branch protection on `main` with every status context below. The list mirrors [`ci/required-contexts.json`](../ci/required-contexts.json) so automated audits and the GitHub UI stay synchronised.【F:ci/required-contexts.json†L1-L23】 Companion workflows (`fuzz`, `static-analysis`, `webapp`, `containers`, `e2e`) are tracked in [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json) and enforced alongside the primary CI jobs.【F:ci/required-companion-contexts.json†L1-L7】
 
-> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:sync-contexts -- --check` followed by `npm run ci:verify-contexts`, parsing `.github/workflows/ci.yml` and failing the pipeline if the manifest or branch rule contexts drift. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L53-L63】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】
+> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:sync-contexts -- --check`, `npm run ci:verify-contexts`, and `npm run ci:verify-companion-contexts`, parsing `.github/workflows/ci.yml` plus the companion manifest to fail the pipeline when required check lists drift. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L53-L64】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】
 
 ### Core execution gate
 
@@ -95,6 +95,7 @@ After applying or updating branch protection rules, verify them without leaving 
 ```bash
 npm run ci:sync-contexts -- --check
 npm run ci:verify-contexts
+npm run ci:verify-companion-contexts
 npm run ci:verify-branch-protection
 npm run ci:enforce-branch-protection -- --dry-run
 ```
