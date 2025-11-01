@@ -44,7 +44,19 @@ function main(): void {
 
     workflowCache.set(workflow, jobs);
 
-    const match = jobs.find((candidate) => candidate.name === job || candidate.id === job);
+    const match = jobs.find((candidate) => {
+      if (candidate.name === job || candidate.id === job) {
+        return true;
+      }
+
+      const matrixSuffixIndex = job.indexOf(' (');
+      if (matrixSuffixIndex === -1) {
+        return false;
+      }
+
+      const jobPrefix = job.slice(0, matrixSuffixIndex);
+      return candidate.name === jobPrefix || candidate.id === jobPrefix;
+    });
     if (!match) {
       const available = jobs.map((candidate) => candidate.name).join(', ');
       missingJobs.push(

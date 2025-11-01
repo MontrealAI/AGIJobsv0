@@ -124,7 +124,7 @@ Keep the rest of the release surface visible by marking the following workflows 
 | `.github/workflows/e2e.yml`        | `e2e / orchestrator-e2e` | Executes forked-mainnet drills and dispute flows end to end.    |
 | `.github/workflows/fuzz.yml`       | `fuzz / forge-fuzz`      | Runs the nightly-grade Foundry fuzz suite on every PR.          |
 | `.github/workflows/webapp.yml`     | `webapp / webapp-ci`     | Lints, type-checks, builds, and smoke-tests both web frontends. |
-| `.github/workflows/containers.yml` | `containers / build`     | Asserts Docker images build and pass enforced Trivy scans.      |
+| `.github/workflows/containers.yml` | `containers / build (node-runner)`<br>`containers / build (validator-runner)`<br>`containers / build (gateway)`<br>`containers / build (webapp)`<br>`containers / build (owner-console)` | Asserts Docker images build and pass enforced Trivy scans for every published image.      |
 
 > 📌 **Path-filtered option:** When you want Docker provenance for UI updates, also require `apps-images / console` and `apps-images / portal`. These jobs only trigger when files under `apps/**` change, so skip them if your project relies on wide fan-out PRs that seldom touch the UIs.
 
