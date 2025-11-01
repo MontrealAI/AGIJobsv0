@@ -1,182 +1,163 @@
-# AGI Jobs v0 — CI v2 Operations Guide
+# CI v2 Operations Playbook
 
-This guide describes the CI v2 pipeline that protects the AGI Jobs v0 codebase. It documents the workflows that run on `main` and every pull request, shows how the jobs depend on each other, and captures the branch protection settings that need to be enforced so the checks are always visible.
+The `ci (v2)` workflow is the canonical gating pipeline for AGI Jobs v0 (v2). It fans out
+across linting, contract verification, demo rehearsals, and governance audits while
+feeding a single summary signal back to branch protection.
 
-For a hands-on validation log that you can hand to compliance or executive stakeholders, see the companion [CI v2 validation report template](ci-v2-validation-report.md). It walks through the exact commands, expected outputs, and artefact exports required to demonstrate a fully green run.
+## Workflow topology
 
 ```mermaid
 flowchart LR
-    classDef trigger fill:#f1f5f9,stroke:#1e293b,stroke-width:1px,color:#0f172a;
-    classDef job fill:#ecfeff,stroke:#06b6d4,stroke-width:1px,color:#0e7490;
-    classDef gate fill:#f5f3ff,stroke:#7c3aed,stroke-width:1px,color:#5b21b6;
+    classDef core fill:#ecfeff,stroke:#0ea5e9,color:#0f172a,stroke-width:1px;
+    classDef analytics fill:#ede9fe,stroke:#7c3aed,color:#312e81,stroke-width:1px;
+    classDef assurance fill:#fef2f2,stroke:#dc2626,color:#7f1d1d,stroke-width:1px;
+    classDef demos fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1px;
 
-    subgraph Events
-        PR[PR to <code>main</code>]:::trigger
-        Main[Push to <code>main</code>]:::trigger
-        Manual[Manual run]:::trigger
-    end
+    lint[Lint & static checks]:::core
+    tests[Tests]:::core
+    foundry[Foundry]:::core
+    coverage[Coverage thresholds]:::core
+    invariants[Invariant tests]:::core
 
-    subgraph "GitHub Actions — ci (v2)"
-        direction LR
-        Lint[Lint & static checks]:::job --> Summary{{CI summary}}:::gate
-        Tests[Tests]:::job --> Foundry[Foundry]:::job --> Summary
-        Tests --> Coverage[Coverage thresholds]:::job --> Summary
-    end
+    pyUnit[Python unit tests]:::analytics
+    pyInt[Python integration tests]:::analytics
+    pyLoad[Load-simulation reports]:::analytics
+    pyCov[Python coverage enforcement]:::analytics
 
-    PR & Main & Manual --> Lint
-    PR & Main & Manual --> Tests
+    ownerCtl[Owner control assurance]:::assurance
+    branchGuard[Branch protection guard]:::assurance
+    hgm[HGM guardrails]:::assurance
+
+    phase6[Phase 6 readiness]:::demos
+    phase8[Phase 8 readiness]:::demos
+    kardashev[Kardashev II readiness]:::demos
+    asi[ASI Take-Off Demonstration]:::demos
+    zenith[Zenith Sapience Demonstration]:::demos
+    labor[AGI Labor Market Grand Demo]:::demos
+    mesh[Sovereign Mesh Demo — build]:::demos
+    constellation[Sovereign Constellation Demo — build]:::demos
+    archon[Celestial Archon Demonstration]:::demos
+    hypernova[Hypernova Governance Demonstration]:::demos
+
+    summary[CI summary]
+
+    lint --> hgm
+    lint --> ownerCtl
+    lint --> phase6
+    lint --> phase8
+    lint --> kardashev
+
+    tests --> foundry
+    tests --> coverage
+    tests --> phase6
+    tests --> phase8
+    tests --> kardashev
+    tests --> asi
+    tests --> zenith
+    tests --> labor
+    tests --> mesh
+    tests --> constellation
+    tests --> archon
+    tests --> hypernova
+    tests --> invariants
+
+    pyUnit --> pyCov
+    pyInt --> pyCov
+
+    branchGuard --> summary
+    lint --> summary
+    tests --> summary
+    pyUnit --> summary
+    pyInt --> summary
+    pyLoad --> summary
+    pyCov --> summary
+    hgm --> summary
+    ownerCtl --> summary
+    foundry --> summary
+    coverage --> summary
+    invariants --> summary
+    phase6 --> summary
+    phase8 --> summary
+    kardashev --> summary
+    asi --> summary
+    zenith --> summary
+    labor --> summary
+    mesh --> summary
+    constellation --> summary
+    archon --> summary
+    hypernova --> summary
 ```
 
-## Workflow triggers
+The workflow enforces concurrency, hardened runners, and aggressive caching to keep
+turnaround tight even with a large job fan-out.
 
-The [`ci.yml`](../.github/workflows/ci.yml) workflow runs when:
+## Local rehearsal
 
-- A pull request targets `main`.
-- A push lands on `main`.
-- A maintainer manually triggers a run with **Run workflow**.
+1. Install Node.js 20.18.1 and enable npm caching via `actions/setup-node`, matching the
+   pipeline toolchain.
+2. Run the same lint entry point the workflow executes:
+   ```bash
+   npm ci --no-audit --prefer-offline --progress=false
+   npm run ci:verify-toolchain
+   npm run ci:sync-contexts -- --check
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
+   npm run lint:ci
+   ```
+   These commands mirror the `lint` job steps so pull requests fail locally before they
+   hit the queue.
+3. Execute contract and Foundry suites:
+   ```bash
+   npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+   npm test
+   forge test -vvvv --ffi --fuzz-runs 256
+   ```
+   This reproduces the `tests`, `foundry`, and `invariants` jobs end-to-end.
+4. Run the Python analytics surface with coverage:
+   ```bash
+   pip install -r requirements-python.txt
+   coverage run --rcfile=.coveragerc -m pytest test/paymaster test/tools test/orchestrator test/simulation
+   coverage run --rcfile=.coveragerc --append -m pytest tests packages/hgm-core/tests demo/Huxley-Godel-Machine-v0/tests
+   coverage xml --rcfile=.coveragerc -o reports/python-coverage/unit.xml
+   ```
+   Combine coverage using `coverage combine` and enforce thresholds exactly as the
+   workflow does.
+5. For governance demos, run the deterministic rehearsal scripts via npm targets such as
+   `npm run demo:zenith-sapience-initiative:local` before pushing. The CI jobs wire in
+   the same environment variables and RPC endpoints shown in the workflow file.
 
-All three entry points converge on the same job graph, keeping the `CI summary` gate visible on every pull request—even when a maintainer forces a manual dry run.
+## Status context manifest
 
-## Required jobs and branch protection
+Branch protection derives its required contexts from JSON manifests committed in the
+repository. Update them through typed scripts instead of editing by hand:
 
-Enable branch protection on `main` with every status context below. The list mirrors [`ci/required-contexts.json`](../ci/required-contexts.json) so automated audits and the GitHub UI stay synchronised.【F:ci/required-contexts.json†L1-L23】 Companion workflows (`fuzz`, `static-analysis`, `webapp`, `containers`, `e2e`) are tracked in [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json) and enforced alongside the primary CI jobs.【F:ci/required-companion-contexts.json†L1-L7】
+- `ci/required-contexts.json` enumerates every `ci (v2)` job enforced on the main rule.
+- `ci/required-companion-contexts.json` lists workflows such as fuzzing and static analysis
+  that branch protection must also surface.
+- `npm run ci:sync-contexts` regenerates both manifests from the workflow definition and
+  fails when checked-in data drifts.
+- `npm run ci:verify-contexts` and `npm run ci:verify-companion-contexts` assert the stored
+  manifests match the actual workflow graph.
 
-> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:sync-contexts -- --check`, `npm run ci:verify-contexts`, and `npm run ci:verify-companion-contexts`, parsing `.github/workflows/ci.yml` plus the companion manifest to fail the pipeline when required check lists drift. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L53-L64】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】
+## Branch protection and enforcement
 
-### Core execution gate
-
-| Check context                    | Source job       | Notes                                                                  |
-| -------------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| `ci (v2) / Lint & static checks` | `lint` job       | Blocks merges when linting or formatting drifts.                       |
-| `ci (v2) / Tests`                | `tests` job      | Compiles contracts, regenerates constants, and runs the Hardhat suite. |
-| `ci (v2) / Foundry`              | `foundry` job    | Executes Foundry fuzzing even when upstream tests fail.                |
-| `ci (v2) / Coverage thresholds`  | `coverage` job   | Enforces ≥90 % coverage and access-control reporting.                  |
-| `ci (v2) / Invariant tests`      | `invariants` job | Runs the dedicated forge invariant harness with 512 fuzz runs.         |
-
-### Python intelligence lattice
-
-| Check context                           | Source job               | Notes                                                                          |
-| --------------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
-| `ci (v2) / Python unit tests`           | `python_unit` job        | Covers paymaster, tools, orchestrator, and simulation tests under coverage.    |
-| `ci (v2) / Python integration tests`    | `python_integration` job | Exercises API routes and demo orchestrations with shared coverage.             |
-| `ci (v2) / Load-simulation reports`     | `python_load_sim` job    | Generates Monte Carlo load sweeps and raises on unexpected dissipation optima. |
-| `ci (v2) / Python coverage enforcement` | `python_coverage` job    | Combines unit/integration coverage and exports XML artefacts.                  |
-
-### Governance & readiness demonstrations
-
-| Check context                                    | Source job                         | Notes                                                                                                                                                                                               |
-| ------------------------------------------------ | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci (v2) / HGM guardrails`                       | `hgm_guardrails` job               | Runs the Higher Governance Machine regression suite across Node + Python toolchains.                                                                                                                |
-| `ci (v2) / Owner control assurance`              | `owner_controls` job               | Executes the owner control doctor and parameter matrix against the `ci` configuration set, failing fast if any subsystem config is missing or malformed so pause/governance levers remain operable. |
-| `ci (v2) / Phase 6 readiness`                    | `phase6` job                       | Validates the Phase 6 manifest and UI bundle.                                                                                                                                                       |
-| `ci (v2) / Phase 8 readiness`                    | `phase8` job                       | Confirms the Phase 8 expansion kit builds cleanly.                                                                                                                                                  |
-| `ci (v2) / Kardashev II readiness`               | `kardashev_demo` job               | Replays the Kardashev II demo manifests.                                                                                                                                                            |
-| `ci (v2) / ASI Take-Off Demonstration`           | `asi_takeoff_demo` job             | Executes the ASI take-off deterministic kit and uploads artefacts.                                                                                                                                  |
-| `ci (v2) / Zenith Sapience Demonstration`        | `zenith_demo` job                  | Runs deterministic + local Zenith Sapience rehearsals.                                                                                                                                              |
-| `ci (v2) / Celestial Archon Demonstration`       | `celestial_archon_demo` job        | Exercises the Celestial Archon runbook and local rehearsal.                                                                                                                                         |
-| `ci (v2) / Hypernova Governance Demonstration`   | `hypernova_demo` job               | Rebuilds and rehearses the Hypernova suite.                                                                                                                                                         |
-| `ci (v2) / AGI Labor Market Grand Demo`          | `agi_labor_market_demo` job        | Produces the labour market transcript export.                                                                                                                                                       |
-| `ci (v2) / Sovereign Mesh Demo — build`          | `sovereign_mesh_demo` job          | Builds the Sovereign Mesh server + React console.                                                                                                                                                   |
-| `ci (v2) / Sovereign Constellation Demo — build` | `sovereign_constellation_demo` job | Builds the Sovereign Constellation server + console.                                                                                                                                                |
-
-### Policy enforcement & summary
-
-| Check context                       | Source job              | Notes                                                                             |
-| ----------------------------------- | ----------------------- | --------------------------------------------------------------------------------- |
-| `ci (v2) / Branch protection guard` | `branch_protection` job | Audits GitHub branch protection via the API and fails if required contexts drift. |
-| `ci (v2) / CI summary`              | `summary` job           | Aggregates upstream job outcomes, fails when any dependency is non-success, and now enforces the presence of the status artefact bundle.    |
-
-> ✅ **Tip:** In GitHub branch protection, mark `Require branches to be up to date` and **Include administrators** so every push re-runs the workflow and administrators respect the gate.
-
-### Quick verification from the command line
-
-After applying or updating branch protection rules, verify them without leaving the terminal:
+The `branch_protection` job runs on trusted branches and validates that GitHub’s rule-set
+matches the manifests above, requiring strict checks and admin enforcement.
+Administrators can patch misconfigured rules locally with:
 
 ```bash
-npm run ci:sync-contexts -- --check
-npm run ci:verify-contexts
-npm run ci:verify-companion-contexts
-npm run ci:verify-branch-protection
-npm run ci:enforce-branch-protection -- --dry-run
+npm run ci:enforce-branch-protection -- --branch main --token <ghp_...>
 ```
 
-Run `npm run ci:verify-contexts` after editing job display names to confirm the workflow and branch rule stay aligned before pushing a branch. It emits a concise ✅/❌ summary and surfaces duplicates or missing entries immediately.【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】
+The script updates or creates the protection rule through GitHub’s GraphQL API while
+respecting the context manifests.
 
-Use `npm run ci:enforce-branch-protection` with a maintainer token to push the manifested contexts to GitHub automatically. Pass `--dry-run` first to review the diff, then rerun without the flag to update the rule with strict status checks and administrator enforcement preserved.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】
+## Artefacts and reporting
 
-Set `GITHUB_TOKEN` (or `GH_TOKEN`) with `repo` scope first. The script auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote and prints a status table covering contexts, ordering, the `strict` flag, and the **Include administrators** toggle. Provide `--owner`, `--repo`, or `--branch` when auditing forks.
+Every job uploads deterministic artefacts (coverage, owner-control matrices, demo
+transcripts). The `summary` job fans in from all required jobs, publishes a Markdown
+status table to the run summary, and stores `reports/ci/status.{md,json}`. Missing
+artefacts fail the run so audit trails remain intact.
 
-Prefer the GitHub CLI? These equivalent commands still work:
-
-```bash
-gh api repos/:owner/:repo/branches/main/protection --jq '{required_status_checks: .required_status_checks.contexts}'
-gh api repos/:owner/:repo/branches/main/protection --jq '.enforce_admins.enabled'
-```
-
-The first command should list the required contexts above in order. The second confirms admins are also blocked when the pipeline is red.
-
-### Companion workflow checks
-
-Keep the rest of the release surface visible by marking the following workflows as required checks as well:
-
-| Workflow                           | Job context              | Purpose                                                         |
-| ---------------------------------- | ------------------------ | --------------------------------------------------------------- |
-| `.github/workflows/e2e.yml`        | `e2e / orchestrator-e2e` | Executes forked-mainnet drills and dispute flows end to end.    |
-| `.github/workflows/fuzz.yml`       | `fuzz / forge-fuzz`      | Runs the nightly-grade Foundry fuzz suite on every PR.          |
-| `.github/workflows/webapp.yml`     | `webapp / webapp-ci`     | Lints, type-checks, builds, and smoke-tests both web frontends. |
-| `.github/workflows/containers.yml` | `containers / build (node-runner)`<br>`containers / build (validator-runner)`<br>`containers / build (gateway)`<br>`containers / build (webapp)`<br>`containers / build (owner-console)` | Asserts Docker images build and pass enforced Trivy scans for every published image.      |
-
-> 📌 **Path-filtered option:** When you want Docker provenance for UI updates, also require `apps-images / console` and `apps-images / portal`. These jobs only trigger when files under `apps/**` change, so skip them if your project relies on wide fan-out PRs that seldom touch the UIs.
-
-## Pull request hygiene checklist
-
-1. Confirm that the **Checks** tab shows every required `ci (v2)` context above plus the companion workflows you have marked as required.
-2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
-3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
-   `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
-   compliance records. The upload step is hardened with `if-no-files-found: error`, so missing artefacts flip the entire workflow red instead of silently succeeding.【F:.github/workflows/ci.yml†L1130-L1259】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
-4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
-5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
-
-## Local dry run for contributors
-
-Developers can approximate the pipeline locally with:
-
-```bash
-npm ci
-npm run format:check
-npm run lint:ci
-npm test
-npm run coverage
-forge test -vvvv --ffi --fuzz-runs 256
-```
-
-Running the commands in this order matches the GitHub workflow dependencies, letting contributors catch failures before opening a pull request.
-
-### Environment guardrails enforced by CI
-
-The workflow pins several environment variables so simulation runs stay aligned with production expectations. Operators can adjust the source JSON config files and rely on CI to confirm the invariants below.
-
-| Variable                                                                     | Purpose                                                        | Where enforced                                     |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
-| `COVERAGE_MIN`                                                               | Minimum overall coverage percentage (currently `90`).          | `coverage` job → `node scripts/check-coverage.js`. |
-| `ACCESS_CONTROL_PATHS`                                                       | Directories that must meet access-control coverage thresholds. | `coverage` job → `npm run check:access-control`.   |
-| `FEE_PCT`, `BURN_PCT`, `TREASURY`                                            | Default fee routing constants consumed by Hardhat tests.       | `tests` job → `scripts/generate-constants.ts`.     |
-| `VALIDATORS_PER_JOB`, `REQUIRED_APPROVALS`, `COMMIT_WINDOW`, `REVEAL_WINDOW` | Validator defaults surfaced in Hardhat + Foundry suites.       | `tests` & `foundry` jobs.                          |
-
-Any change to those values inside `config/` or environment overrides forces the workflow to regenerate constants, rerun tests, and verify access-control coverage so non-technical maintainers get immediate feedback.
-
-## Operational playbook
-
-- **Incident response:** When a CI job fails on `main`, triage by inspecting the job logs, then open an incident ticket using the `owner-control-change-ticket.md` template.
-- **Temporarily skipping jobs:** Use GitHub's `workflow_dispatch` trigger to run a targeted branch with fixes instead of editing the workflow file.
-- **Infrastructure updates:** Record any changes to cache keys or environment variables in `docs/release-checklist.md` and attach a PR link for traceability.
-- **Hypernova drill:** If the `hypernova_demo` job regresses, rerun `npm run demo:zenith-hypernova` locally to reproduce, capture the reports in `reports/zenith-hypernova/`, and attach them to the incident ticket for non-technical owners.
-
-## Audit checkpoints
-
-- CI secrets should be scoped to read-only access; verify them quarterly and record the review in `docs/owner-control-audit.md`.
-- Review branch protection rules weekly to ensure required checks still match the workflow job names.
-- Capture coverage threshold decisions in `docs/green-path-checklist.md` so downstream owners understand the rationale for the configured `COVERAGE_MIN`.
-
-Maintaining these guardrails keeps AGI Jobs v0 deployable by non-technical stakeholders while satisfying the "fully green" CI expectation.
+Always download the summary bundle when preparing release notes—the JSON payload is ready
+for ingestion into downstream governance dashboards.

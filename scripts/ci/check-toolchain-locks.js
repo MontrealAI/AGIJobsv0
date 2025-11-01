@@ -76,9 +76,9 @@ function checkFoundryVersion() {
     return;
   }
 
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.0"/.test(foundryToml);
+  const forgeVersionMatches = /forge_version\s*=\s*"1\.6\.0"/.test(foundryToml);
   if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.0"');
+    problems.push('foundry.toml must pin forge_version = "1.6.0"');
   }
 }
 
