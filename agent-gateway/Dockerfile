@@ -4,7 +4,9 @@ FROM node:20.19.0-alpine3.20 AS base-build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
-    && ln -sf python3 /usr/bin/python
+    && ln -sf python3 /usr/bin/python \
+    && npm install -g npm@11.4.2 \
+    && npm --version
 ENV PYTHON=/usr/bin/python3 \
     CYPRESS_INSTALL_BINARY=0 \
     npm_config_cypress_skip_binary_download=1 \
