@@ -1,4 +1,6 @@
 {
+  "engines": {"node": "20.18.x", "npm": ">=10.8.0 <11"},
+  "packageManager": "npm@10.8.2",
   "author": "",
   "dependencies": {
     "@apollo/client": "^3.13.1",

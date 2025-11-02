@@ -52,4 +52,4 @@ jobs:
             demo/cosmic-omni-sovereign-symphony/logs/ledger-latest.json
             demo/cosmic-omni-sovereign-symphony/logs/vote-simulation.json
             reports/agi-os/**
-        if-no-files-found: ignore
+          if-no-files-found: ignore
