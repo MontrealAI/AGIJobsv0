@@ -4,7 +4,7 @@ This runbook guides a non-technical operator through the end-to-end Meta-Agentic
 
 ## 0. Prerequisites
 
-- **Node.js 20.18.1** (matching the repo `engines.node` requirement).
+- **Node.js 20.19.0** (matching the repo `engines.node` requirement).
 - **Docker + Docker Compose** (the first-class demo checks both binaries).
 - **Wallet** in browser (MetaMask or Rabby) configured for `http://127.0.0.1:8545`.
 - Run `npm install` in the repository root if dependencies are missing.
