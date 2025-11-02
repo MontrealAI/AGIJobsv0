@@ -40,21 +40,50 @@ if [ -n "$current_node_version" ] && [ -f "$version_check_script" ]; then
   fi
 fi
 
-if command -v corepack >/dev/null 2>&1; then
-  corepack_npm_version="${NPM_CI_NPM_VERSION:-11.4.2}"
+required_npm_version="${NPM_CI_NPM_VERSION:-11.4.2}"
+use_npx_fallback=false
+
+ensure_desired_npm() {
+  if [ "${NPM_CI_FORCE_NPX:-0}" = "1" ]; then
+    use_npx_fallback=true
+    return 1
+  fi
+
   current_npm_version="$(npm -v 2>/dev/null || printf '')"
-  if [ "$current_npm_version" != "$corepack_npm_version" ]; then
-    if corepack enable >/dev/null 2>&1; then
-      if corepack prepare "npm@${corepack_npm_version}" --activate >/dev/null 2>&1; then
-        current_npm_version="$(npm -v 2>/dev/null || printf '')"
-      else
-        echo "[docker-npm-ci] WARNING: corepack prepare npm@${corepack_npm_version} failed; continuing with npm $current_npm_version" >&2
+
+  if [ "$current_npm_version" = "$required_npm_version" ]; then
+    return 0
+  fi
+
+  if command -v corepack >/dev/null 2>&1; then
+    if corepack enable >/dev/null 2>&1 && \
+       corepack prepare "npm@${required_npm_version}" --activate >/dev/null 2>&1; then
+      current_npm_version="$(npm -v 2>/dev/null || printf '')"
+      if [ "$current_npm_version" = "$required_npm_version" ]; then
+        return 0
       fi
     else
-      echo "[docker-npm-ci] WARNING: Failed to enable corepack; continuing with npm $current_npm_version" >&2
+      echo "[docker-npm-ci] WARNING: corepack failed to activate npm@${required_npm_version}; attempting alternate upgrade path" >&2
     fi
   fi
-fi
+
+  if command -v npm >/dev/null 2>&1; then
+    if npm install --location=global "npm@${required_npm_version}" >/dev/null 2>&1; then
+      hash -r 2>/dev/null || true
+      current_npm_version="$(npm -v 2>/dev/null || printf '')"
+      if [ "$current_npm_version" = "$required_npm_version" ]; then
+        return 0
+      fi
+    else
+      echo "[docker-npm-ci] WARNING: npm install --location=global npm@${required_npm_version} failed; falling back to npx" >&2
+    fi
+  fi
+
+  use_npx_fallback=true
+  return 1
+}
+
+ensure_desired_npm || true
 
 attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
@@ -64,15 +93,29 @@ export npm_config_package_lock=true
 export npm_config_fund=false
 export npm_config_audit=false
 
+current_npm_version="$(npm -v 2>/dev/null || printf '')"
+
 echo "[docker-npm-ci] node $(node -v 2>/dev/null || printf 'unknown')" >&2
-echo "[docker-npm-ci] npm $(npm -v 2>/dev/null || printf 'unknown')" >&2
+if [ "$use_npx_fallback" = true ]; then
+  echo "[docker-npm-ci] npm (via npx) ${required_npm_version}" >&2
+else
+  echo "[docker-npm-ci] npm ${current_npm_version:-unknown}" >&2
+fi
 echo "[docker-npm-ci] installing in ${project_root}" >&2
 echo "[docker-npm-ci] lockfile: ${lockfile_path}" >&2
+
+run_install() {
+  if [ "$use_npx_fallback" = true ]; then
+    (cd "$project_root" && npx --yes "npm@${required_npm_version}" ci "$@")
+  else
+    (cd "$project_root" && npm ci "$@")
+  fi
+}
 
 while [ "$attempt" -le "$max_attempts" ]; do
   rm -rf "${project_root}/node_modules"
 
-  if (cd "$project_root" && npm ci "$@"); then
+  if run_install "$@"; then
     exit 0
   fi
 

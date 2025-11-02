@@ -61,32 +61,77 @@ if ! node "$SCRIPT_DIR/version-check.mjs" "$CURRENT_NODE_VERSION" "$REQUIRED_NOD
   echo "[npm-ci] Upgrade your Node runtime (nvm install $REQUIRED_NODE_VERSION) to avoid engine conflicts" >&2
 fi
 
-if command -v corepack >/dev/null 2>&1; then
-  COREPACK_NPM_VERSION="${NPM_CI_NPM_VERSION:-11.4.2}"
-  CURRENT_NPM_VERSION="$(npm -v 2>/dev/null || true)"
-  if [ "$CURRENT_NPM_VERSION" != "$COREPACK_NPM_VERSION" ]; then
-    if ! corepack enable >/dev/null 2>&1; then
-      echo "[npm-ci] WARNING: Failed to enable corepack; continuing with npm $CURRENT_NPM_VERSION" >&2
-    else
-      if corepack prepare "npm@${COREPACK_NPM_VERSION}" --activate >/dev/null 2>&1; then
-        CURRENT_NPM_VERSION="$(npm -v 2>/dev/null || true)"
-      else
-        echo "[npm-ci] WARNING: corepack prepare npm@${COREPACK_NPM_VERSION} failed; continuing with npm $CURRENT_NPM_VERSION" >&2
+REQUIRED_NPM_VERSION="${NPM_CI_NPM_VERSION:-11.4.2}"
+USE_NPX_FALLBACK=false
+
+ensure_desired_npm() {
+  local current_version
+
+  if [ "${NPM_CI_FORCE_NPX:-0}" = "1" ]; then
+    USE_NPX_FALLBACK=true
+    return 1
+  fi
+
+  current_version="$(npm -v 2>/dev/null || true)"
+
+  if [ "$current_version" = "$REQUIRED_NPM_VERSION" ]; then
+    return 0
+  fi
+
+  if command -v corepack >/dev/null 2>&1; then
+    if corepack enable >/dev/null 2>&1 && \
+       corepack prepare "npm@${REQUIRED_NPM_VERSION}" --activate >/dev/null 2>&1; then
+      current_version="$(npm -v 2>/dev/null || true)"
+      if [ "$current_version" = "$REQUIRED_NPM_VERSION" ]; then
+        return 0
       fi
+    else
+      echo "[npm-ci] WARNING: corepack failed to activate npm@${REQUIRED_NPM_VERSION}; attempting alternate upgrade path" >&2
     fi
   fi
-fi
+
+  if command -v npm >/dev/null 2>&1; then
+    if npm install --location=global "npm@${REQUIRED_NPM_VERSION}" >/dev/null 2>&1; then
+      hash -r 2>/dev/null || true
+      current_version="$(npm -v 2>/dev/null || true)"
+      if [ "$current_version" = "$REQUIRED_NPM_VERSION" ]; then
+        return 0
+      fi
+    else
+      echo "[npm-ci] WARNING: npm install --location=global npm@${REQUIRED_NPM_VERSION} failed; falling back to npx" >&2
+    fi
+  fi
+
+  USE_NPX_FALLBACK=true
+  return 1
+}
+
+ensure_desired_npm || true
 
 export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
 export npm_config_package_lock=true
 export npm_config_fund=false
 export npm_config_audit=false
 
+CURRENT_NPM_VERSION="$(npm -v 2>/dev/null || true)"
+
 echo "[npm-ci] node $(node -v)" >&2
-echo "[npm-ci] npm $(npm -v)" >&2
+if [ "$USE_NPX_FALLBACK" = true ]; then
+  echo "[npm-ci] npm (via npx) $REQUIRED_NPM_VERSION" >&2
+else
+  echo "[npm-ci] npm ${CURRENT_NPM_VERSION:-unknown}" >&2
+fi
 echo "[npm-ci] installing in $WORKDIR" >&2
 echo "[npm-ci] lockfile: $LOCKFILE_PATH" >&2
 
+run_install() {
+  if [ "$USE_NPX_FALLBACK" = true ]; then
+    npx --yes "npm@${REQUIRED_NPM_VERSION}" ci "${FILTERED_ARGS[@]}"
+  else
+    npm ci "${FILTERED_ARGS[@]}"
+  fi
+}
+
 pushd "$WORKDIR" >/dev/null
-npm ci "${FILTERED_ARGS[@]}"
+run_install
 popd >/dev/null
