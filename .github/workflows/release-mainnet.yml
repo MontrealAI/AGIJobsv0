@@ -54,7 +54,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      - run: npm ci
+      - run: ./scripts/ci/npm-ci.sh
 
       - name: Compile (scripts & constants)
         run: |

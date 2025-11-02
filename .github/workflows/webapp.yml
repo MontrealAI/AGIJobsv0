@@ -33,13 +33,13 @@ jobs:
         run: npm run ci:preflight
 
       - name: Install repository dependencies
-        run: npm ci
+        run: ./scripts/ci/npm-ci.sh
 
       - name: Install console dependencies
-        run: npm ci --prefix apps/console
+        run: NPM_CI_PROJECT_ROOT=apps/console ./scripts/ci/npm-ci.sh --prefix apps/console
 
       - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+        run: NPM_CI_PROJECT_ROOT=apps/enterprise-portal ./scripts/ci/npm-ci.sh --prefix apps/enterprise-portal
 
       - name: Type-check webapp
         run: npm run webapp:typecheck

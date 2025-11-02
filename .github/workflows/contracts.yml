@@ -72,7 +72,7 @@ jobs:
         run: npm run ci:preflight
 
       - name: Install dependencies
-        run: npm ci
+        run: ./scripts/ci/npm-ci.sh
 
       - name: Compile
         env:

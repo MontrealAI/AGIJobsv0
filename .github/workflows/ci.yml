@@ -55,7 +55,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Assert required contexts manifest is synchronised
         run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
@@ -103,7 +103,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Compile contracts
         run: |
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
@@ -382,7 +382,7 @@ jobs:
           cache: 'pip'
           cache-dependency-path: requirements-python.txt
       - name: Install Node dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -417,7 +417,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Generate owner control assurance reports
         run: |
           mkdir -p reports/owner-control
@@ -463,7 +463,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for Foundry
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry
@@ -522,7 +522,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for coverage
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
@@ -568,7 +568,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Phase 6 manifest & UI
         run: npm run demo:phase6:ci
 
@@ -599,7 +599,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Phase 8 manifest & UI
         run: npm run demo:phase8:ci
 
@@ -630,7 +630,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Kardashev II demo
         run: npm run demo:kardashev-ii:ci
       - name: Validate Stellar Kardashev II demo
@@ -668,7 +668,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run ASI take-off demonstration
         run: npm run demo:asi-takeoff
       - name: Upload ASI take-off artifacts
@@ -711,7 +711,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Zenith Sapience deterministic kit
         run: npm run demo:zenith-sapience-initiative
       - name: Run Zenith Sapience local rehearsal
@@ -766,7 +766,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run grand labour market simulation
         run: npm run demo:agi-labor-market:export
       - name: Upload labour market transcript
@@ -804,13 +804,13 @@ jobs:
         run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-mesh/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-mesh/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-mesh/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-mesh/app
         run: npm run build
@@ -842,13 +842,13 @@ jobs:
         run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-constellation/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-constellation/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-constellation/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-constellation/app
         run: npm run build
@@ -885,7 +885,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Celestial Archon deterministic kit
         run: npm run demo:zenith-sapience-celestial-archon
       - name: Run Celestial Archon local rehearsal
@@ -940,7 +940,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
       - name: Run Hypernova local rehearsal
@@ -1314,7 +1314,7 @@ jobs:
       - name: Preflight toolchain locks
         run: npm run ci:preflight
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for invariants
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry

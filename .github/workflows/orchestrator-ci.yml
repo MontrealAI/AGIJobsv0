@@ -27,6 +27,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      - run: npm ci
+      - run: ./scripts/ci/npm-ci.sh
       - name: Orchestrator tsc
         run: npx tsc -p apps/orchestrator/tsconfig.json
