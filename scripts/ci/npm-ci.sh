@@ -99,11 +99,15 @@ export npm_config_package_lock=true
 export npm_config_fund=false
 export npm_config_audit=false
 
-# npx may set a transient prefix that points outside the workspace and causes
-# `npm ci` to look for the lockfile in the wrong directory. Strip any inherited
-# overrides so installs always target the resolved working directory.
+# npx may set prefix overrides that redirect installs outside of the workspace,
+# which in turn prevents npm from seeing the repository lockfile. Normalise the
+# environment so the local prefix always resolves to the selected workdir.
 unset npm_config_prefix
 unset NPM_CONFIG_PREFIX
+unset npm_config_local_prefix
+unset NPM_CONFIG_LOCAL_PREFIX
+unset PREFIX
+export npm_config_local_prefix="$WORKDIR"
 
 echo "[npm-ci] node $(node -v)" >&2
 echo "[npm-ci] npm ${CURRENT_NPM_VERSION}" >&2

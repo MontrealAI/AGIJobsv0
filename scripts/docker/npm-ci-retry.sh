@@ -87,6 +87,10 @@ export npm_config_audit=false
 # lockfile relative to the intended project root.
 unset npm_config_prefix
 unset NPM_CONFIG_PREFIX
+unset npm_config_local_prefix
+unset NPM_CONFIG_LOCAL_PREFIX
+unset PREFIX
+export npm_config_local_prefix="$project_root"
 
 echo "[docker-npm-ci] node $(node -v 2>/dev/null || printf 'unknown')" >&2
 echo "[docker-npm-ci] npm ${current_npm_version}" >&2
