@@ -5,7 +5,7 @@ This runbook provides operational guidance for the CULTURE demo, enabling the pl
 ## 1. Prerequisites
 
 - Docker 24+
-- Node.js 20.18.1
+- Node.js 20.19.0
 - Access to an Ethereum RPC endpoint (local Anvil, Sepolia, or mainnet fork)
 - IPFS pinning provider credentials (e.g., web3.storage, Pinata) if using managed storage
 - Owner wallet with sufficient ETH for deployments and gas
