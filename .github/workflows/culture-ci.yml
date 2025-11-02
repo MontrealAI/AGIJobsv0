@@ -115,23 +115,10 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
-      - name: Prepare MythX API key
-        id: prepare_mythx
-        env:
-          MYTHX_SECRET: ${{ secrets.MYTHX_API_KEY }}
-        shell: bash
-        run: |
-          if [ -n "${MYTHX_SECRET}" ]; then
-            echo "::add-mask::${MYTHX_SECRET}"
-            echo "MYTHX_API_KEY=${MYTHX_SECRET}" >> "$GITHUB_ENV"
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          elif [ -n "${MYTHX_API_KEY:-}" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
       - name: MythX analysis
-        if: ${{ steps.prepare_mythx.outputs.present == 'true' }}
+        if: ${{ secrets.MYTHX_API_KEY != '' || env.MYTHX_API_KEY != '' }}
+        env:
+          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY != '' && secrets.MYTHX_API_KEY || env.MYTHX_API_KEY }}
         working-directory: demo/CULTURE-v0
         run: |
           docker run --rm \
@@ -140,7 +127,7 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
-        if: ${{ steps.prepare_mythx.outputs.present != 'true' }}
+        if: ${{ secrets.MYTHX_API_KEY == '' && env.MYTHX_API_KEY == '' }}
         run: echo 'MythX API key not provided; skipping MythX analysis.'
 
   services:
