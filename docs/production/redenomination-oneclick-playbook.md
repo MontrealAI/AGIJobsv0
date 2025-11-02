@@ -6,7 +6,7 @@
 > and archive the artefacts auditors require before flipping the AGI Jobs v0
 > platform live.
 
-The steps below assume you have cloned the repository, installed Node.js 20.18.1, and
+The steps below assume you have cloned the repository, installed Node.js 20.19.0, and
 have Docker 24+ available. Commands are copy/pasteable on macOS, Linux, or WSL.
 Each phase emits Markdown/JSON evidence under `reports/` so governance can review
 and sign before advancing.
