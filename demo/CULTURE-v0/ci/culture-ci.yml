@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -54,7 +54,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -108,7 +108,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -149,7 +149,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -192,7 +192,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
