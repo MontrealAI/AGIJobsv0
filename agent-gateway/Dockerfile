@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20.18.1-alpine3.20 AS base-build
+FROM node:20.19.0-alpine3.20 AS base-build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
@@ -10,24 +10,27 @@ ENV PYTHON=/usr/bin/python3 \
     npm_config_cypress_skip_binary_download=1 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
+    NPM_CONFIG_PACKAGE_LOCK=true \
     NPM_CONFIG_FETCH_RETRIES=5 \
     NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=180000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000 \
     NPM_CI_MAX_ATTEMPTS=5 \
-    NPM_CI_RETRY_DELAY=10
+    NPM_CI_RETRY_DELAY=10 \
+    NPM_CI_PROJECT_ROOT=/app \
+    NPM_CI_LOCK_PATH=/app/package-lock.json
 COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \
     && npm prune --omit=dev \
     && npm cache clean --force
 
-FROM node:20.18.1-alpine3.20 AS runner
+FROM node:20.19.0-alpine3.20 AS runner
 ENV NODE_ENV=production \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false

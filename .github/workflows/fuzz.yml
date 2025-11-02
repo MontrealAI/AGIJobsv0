@@ -35,12 +35,12 @@ jobs:
             **/package-lock.json
 
       - name: Install Node dependencies
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
 
       - name: Cache forge libraries
         id: cache
