@@ -40,6 +40,7 @@
     "zod": "^3.25.76"
   },
   "description": "[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![CI](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=branch%3Amain)",
+  "packageManager": "npm@10.8.2",
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
     "@axe-core/react": "^4.8.3",
@@ -95,7 +96,8 @@
     "whatwg-fetch": "^3.6.20"
   },
   "engines": {
-    "node": "20.18.1"
+    "node": "20.18.x",
+    "npm": ">=10.8.0 <11"
   },
   "keywords": [],
   "license": "MIT",
@@ -137,6 +139,8 @@
     "ci:verify-companion-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-companion-contexts.ts",
     "ci:verify-signers": "node scripts/ci/check-signers.js",
     "ci:verify-toolchain": "node scripts/ci/check-toolchain-locks.js",
+    "ci:lock-integrity": "node scripts/ci/check-lock-integrity.js",
+    "ci:preflight": "npm run ci:verify-toolchain --silent && npm run ci:lock-integrity --silent",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",
     "compile:mainnet": "npm run compile -- --network mainnet",
     "compile:sepolia": "npm run compile -- --network sepolia",

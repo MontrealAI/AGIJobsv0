@@ -98,9 +98,12 @@ npm run ci:verify-contexts
 npm run ci:verify-companion-contexts
 npm run ci:verify-branch-protection
 npm run ci:enforce-branch-protection -- --dry-run
+npm run ci:preflight
 ```
 
 Run `npm run ci:verify-contexts` after editing job display names to confirm the workflow and branch rule stay aligned before pushing a branch. It emits a concise ✅/❌ summary and surfaces duplicates or missing entries immediately.【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】
+
+> 🧠 **Deterministic toolchain check:** `npm run ci:preflight` validates `.nvmrc`, `package.json` engine pins, the `packageManager` declaration, and every `package-lock.json` before any dependencies install. It mirrors the GitHub Actions guard so local edits surface problems instantly.【F:package.json†L3-L7】【F:scripts/ci/check-toolchain-locks.js†L1-L120】【F:scripts/ci/check-lock-integrity.js†L1-L78】
 
 Use `npm run ci:enforce-branch-protection` with a maintainer token to push the manifested contexts to GitHub automatically. Pass `--dry-run` first to review the diff, then rerun without the flag to update the rule with strict status checks and administrator enforcement preserved.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】
 

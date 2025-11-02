@@ -68,6 +68,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
 
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+
       - name: Install dependencies
         run: npm ci
 
@@ -87,7 +90,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
 
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'

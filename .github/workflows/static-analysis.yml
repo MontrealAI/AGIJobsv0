@@ -51,6 +51,9 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
 
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
 

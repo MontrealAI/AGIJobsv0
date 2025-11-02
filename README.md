@@ -68,14 +68,20 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a
    npm install
    python -m pip install -r requirements-python.txt
    ```
-3. Validate the full CI workflow locally:
+3. Run the deterministic toolchain preflight to confirm lockfile and runtime parity:
+   ```bash
+   npm run ci:preflight
+   ```
+4. Validate the full CI workflow locally:
    ```bash
    npm run lint --if-present
    npm test
    npm run webapp:build --if-present
    make operator:green
    ```
-4. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
+5. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
+
+> **Guardrail:** Never hand-edit `package-lock.json`. If a dependency changes, run `npm install --package-lock-only` from the affected workspace so `ci:preflight` stays green.
 
 ## Architecture
 ```mermaid
@@ -114,6 +120,7 @@ flowchart TD
 - **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L182】【F:docs/ci-v2-branch-protection-checklist.md†L1-L206】
 - **Companion workflows:** Static analysis, fuzzing, web application smoke tests, orchestrator rehearsals, and deterministic e2e drills are all surfaced as required checks so the Checks tab stays comprehensible to non-technical stakeholders. Each badge above links directly to its workflow for live status and history.【F:.github/workflows/static-analysis.yml†L1-L157】【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/orchestrator-ci.yml†L1-L214】【F:.github/workflows/e2e.yml†L1-L164】
 - **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub. The upload step now fails the workflow if the artefacts are ever missing, guaranteeing the evidence is immutable and reviewable.【F:.github/workflows/ci.yml†L1130-L1259】
+- **Preflight enforcement:** Contributors must run `npm run ci:preflight` locally and in automation. The script validates `.nvmrc`, `package.json` engine pins, `packageManager`, and every `package-lock.json` to ensure the orchestration remains reproducible.【F:package.json†L3-L7】【F:package.json†L135-L142】【F:scripts/ci/check-toolchain-locks.js†L1-L120】【F:scripts/ci/check-lock-integrity.js†L1-L78】
 
 ### Pipeline topology
 ```mermaid
