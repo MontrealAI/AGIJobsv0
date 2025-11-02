@@ -53,7 +53,7 @@ jobs:
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: '1.4.0'
+          version: 'v1.4.4'
 
       - name: Run ASI Global demo (deterministic kit)
         run: npm run demo:asi-global

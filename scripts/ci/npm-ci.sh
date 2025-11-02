@@ -26,8 +26,13 @@ PY
 fi
 
 if [ "${CI:-false}" != "false" ]; then
-  export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
-  export npm_config_cypress_skip_binary_install="${npm_config_cypress_skip_binary_install:-1}"
+  if [ "${AGIJOBS_CYPRESS_INSTALL:-0}" != "0" ]; then
+    export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-1}"
+    unset npm_config_cypress_skip_binary_install || true
+  else
+    export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
+    export npm_config_cypress_skip_binary_install="${npm_config_cypress_skip_binary_install:-1}"
+  fi
 fi
 
 npm ci --no-audit --prefer-offline --progress=false "$@"
