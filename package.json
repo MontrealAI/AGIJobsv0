@@ -1,4 +1,6 @@
 {
+  "engines": {"node": "20.18.x", "npm": ">=10.8.0 <11"},
+  "packageManager": "npm@10.8.2",
   "author": "",
   "dependencies": {
     "@apollo/client": "^3.13.1",
@@ -108,7 +110,7 @@
     "cookie": "^1.0.2",
     "cross-spawn": "^7.0.5",
     "form-data": "^4.0.0",
-    "nanoid": "^5.1.6",
+    "nanoid": "^3.3.7",
     "parse-duration": "^2.1.4",
     "secp256k1": "^5.0.1",
     "semver": "^7.7.2",

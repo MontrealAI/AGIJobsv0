@@ -62,7 +62,7 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a
 - `hardhat.config.js`
 
 ## Getting Started
-1. Ensure you are running Node.js 20.18.1 (matching `.nvmrc`) and Python 3.11+.
+1. Ensure you are running Node.js 20.18.x (matching `.nvmrc`), npm 10.8.2 (via `corepack enable`), and Python 3.11+.
 2. Bootstrap dependencies:
    ```bash
    npm install
