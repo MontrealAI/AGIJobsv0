@@ -16,7 +16,7 @@ The Astral Omnidominion demo is the flagship showcase of the AGI Jobs v0 (v2) op
 | Git | To clone the repository. |
 | Unix shell (macOS, Linux, WSL) | The helper script is POSIX-friendly; Windows users can run it inside WSL2 or Git Bash. |
 
-Node.js 20.18.1, Hardhat, Foundry, and other toolchains are bundled inside the repository scripts. You do not need to install them globally.
+Node.js 20.19.0, Hardhat, Foundry, and other toolchains are bundled inside the repository scripts. You do not need to install them globally.
 
 ## Launching the Demo
 
