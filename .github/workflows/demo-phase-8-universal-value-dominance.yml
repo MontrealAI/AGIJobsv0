@@ -36,11 +36,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          node-version: '20.18.1'
+          node-version: '20.19.0'
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --ignore-scripts
 
       - name: Run Phase 8 Jest suite
         run: npx jest --config demo/Phase-8-Universal-Value-Dominance/jest.config.cjs --runInBand

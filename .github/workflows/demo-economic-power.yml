@@ -22,10 +22,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version: 20.19.0
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
       - name: Generate economic power reports
         run: npm run demo:economic-power:ci
       - name: Validate simulation logic
