@@ -20,7 +20,7 @@ flowchart TD
 
 | Item                | Command / Action                                   | Notes |
 | ------------------- | -------------------------------------------------- | ----- |
-| Node.js 20.18.1     | `node -v`                                          | Matches the pinned CI/runtime version |
+| Node.js 20.19.0     | `node -v`                                          | Matches the pinned CI/runtime version |
 | NPM clean install   | `npm ci`                                           | Must be run from repo root |
 | Automated preflight | `npm run migrate:preflight -- --network mainnet`   | Runs 40+ deterministic checks (use `--json` for export) |
 | Environment secrets | `.env`                                             | See §3.1 for template |
@@ -33,7 +33,7 @@ flowchart TD
 mindmap
   root((Launch Readiness))
     Tooling
-      Node 20.18.1
+      Node 20.19.0
       NPM ci
       Hardhat cache cleaned
     Secrets
