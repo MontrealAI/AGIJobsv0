@@ -152,6 +152,27 @@ The branch protection rule enforces the following `ci (v2)` contexts, guaranteei
 
 Companion workflows are also required (`static-analysis`, `fuzz`, `webapp`, `containers`, `e2e`), guaranteeing the checks tab mirrors the entire assurance surface.【F:ci/required-companion-contexts.json†L1-L11】
 
+### Companion workflow lattice
+```mermaid
+flowchart TD
+    classDef main fill:#ecfeff,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef companion fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef checks fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    ciSummary[ci (v2) / CI summary]:::main --> checksWall[GitHub checks wall]:::checks
+    staticAnalysis[static-analysis / Slither static analysis]:::companion --> checksWall
+    fuzzSuite[fuzz / forge-fuzz]:::companion --> checksWall
+    webappCi[webapp / webapp-ci]:::companion --> checksWall
+    containersNode[containers / build (node-runner)]:::companion --> checksWall
+    containersValidator[containers / build (validator-runner)]:::companion --> checksWall
+    containersGateway[containers / build (gateway)]:::companion --> checksWall
+    containersWebapp[containers / build (webapp)]:::companion --> checksWall
+    containersOwner[containers / build (owner-console)]:::companion --> checksWall
+    e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
+```
+
+The manifest in `ci/required-companion-contexts.json` marks every companion workflow as required so the PR checks wall cannot go green unless they all pass beside the `ci (v2)` contexts, and `npm run ci:verify-companion-contexts` fails if the manifest drifts from GitHub's configuration.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】
+
 ### Enforcing branch protection
 1. Generate or refresh required contexts:
    ```bash

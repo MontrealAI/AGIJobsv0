@@ -108,6 +108,27 @@ The manifest lives in [`required-contexts.json`](required-contexts.json). `npm r
 
 Use `npm run ci:verify-companion-contexts` to make sure the manifest stays synchronised with GitHub configuration.【F:package.json†L135-L146】
 
+### Companion lattice visualised
+```mermaid
+flowchart TD
+    classDef main fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef companion fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef checks fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    ciSummary[ci (v2) / CI summary]:::main --> checksWall[GitHub checks wall]:::checks
+    staticAnalysis[static-analysis / Slither static analysis]:::companion --> checksWall
+    fuzzSuite[fuzz / forge-fuzz]:::companion --> checksWall
+    webappCi[webapp / webapp-ci]:::companion --> checksWall
+    containersNode[containers / build (node-runner)]:::companion --> checksWall
+    containersValidator[containers / build (validator-runner)]:::companion --> checksWall
+    containersGateway[containers / build (gateway)]:::companion --> checksWall
+    containersWebapp[containers / build (webapp)]:::companion --> checksWall
+    containersOwner[containers / build (owner-console)]:::companion --> checksWall
+    e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
+```
+
+Every arrow represents a required status entry on the pull-request checks wall. The `ci (v2) / CI summary` job aggregates the internal lattice, while the companion workflows deliver hardened linting, fuzzing, containers, and E2E rehearsals that branch protection refuses to ignore.【F:.github/workflows/ci.yml†L1266-L1324】【F:ci/required-companion-contexts.json†L1-L11】
+
 ## Branch protection automation
 1. Dry-run the rule to inspect drift without applying changes:
    ```bash
