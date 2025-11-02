@@ -8,9 +8,15 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache git python3 make g++
 COPY package*.json .npmrc ./
-RUN npm ci
+RUN set -euo pipefail \
+    && export CYPRESS_INSTALL_BINARY=0 \
+    && if [ -f package-lock.json ]; then \
+        npm ci || npm install; \
+    else \
+        npm install; \
+    fi
 COPY . .
 RUN npx tsc -p apps/orchestrator/tsconfig.json
 
@@ -25,9 +31,15 @@ ENV \
     NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=300000 \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache git python3 make g++
 COPY package*.json .npmrc ./
-RUN npm ci --omit=dev
+RUN set -euo pipefail \
+    && export CYPRESS_INSTALL_BINARY=0 \
+    && if [ -f package-lock.json ]; then \
+        npm ci --omit=dev || npm install --omit=dev; \
+    else \
+        npm install --omit=dev; \
+    fi
 COPY --from=build /srv/app/apps/orchestrator/dist ./apps/orchestrator/dist
 COPY --from=build /srv/app/apps/orchestrator/*.json ./apps/orchestrator/
 CMD ["node", "apps/orchestrator/dist/main.js"]

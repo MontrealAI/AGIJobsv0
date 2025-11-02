@@ -1,0 +1,37 @@
+name: npm-install
+description: Install Node dependencies with Cypress binary download disabled, preferring npm ci when a lockfile is present.
+inputs:
+  working-directory:
+    description: Directory to run npm commands in.
+    required: false
+    default: .
+  args:
+    description: Additional arguments to pass to npm.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      env:
+        WORKING_DIRECTORY: ${{ inputs.working-directory }}
+        INSTALL_ARGS: ${{ inputs.args }}
+      run: |
+        set -euo pipefail
+
+        if [[ -n "${WORKING_DIRECTORY}" && "${WORKING_DIRECTORY}" != "." ]]; then
+          cd "${WORKING_DIRECTORY}"
+        fi
+
+        if [[ -f package-lock.json ]]; then
+          echo "Detected package-lock.json in $(pwd); running npm ci ${INSTALL_ARGS}"
+          if ! CYPRESS_INSTALL_BINARY=0 npm ci ${INSTALL_ARGS}; then
+            status=$?
+            echo "npm ci failed with exit code ${status}; falling back to npm install ${INSTALL_ARGS}"
+            CYPRESS_INSTALL_BINARY=0 npm install ${INSTALL_ARGS}
+          fi
+        else
+          echo "No package-lock.json found in $(pwd); running npm install ${INSTALL_ARGS}"
+          CYPRESS_INSTALL_BINARY=0 npm install ${INSTALL_ARGS}
+        fi

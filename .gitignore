@@ -48,6 +48,8 @@ scripts/**/*.js
 !scripts/release/run-etherscan-verification.js
 !scripts/release/validate-manifest.js
 !scripts/utils/parseDuration.js
+!scripts/cypress/install.js
+!scripts/cypress/run-e2e.js
 build/
 lib/*
 !lib/forge-std/
