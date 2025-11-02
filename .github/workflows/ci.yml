@@ -804,13 +804,13 @@ jobs:
         run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-mesh/server
-        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-mesh/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-mesh/app
-        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-mesh/app
         run: npm run build
@@ -842,13 +842,13 @@ jobs:
         run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-constellation/server
-        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-constellation/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-constellation/app
-        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+        run: $GITHUB_WORKSPACE/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-constellation/app
         run: npm run build
