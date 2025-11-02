@@ -31,7 +31,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -54,7 +54,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -101,7 +101,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -142,7 +142,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -185,7 +185,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -241,7 +241,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.18.1
+          node-version-file: '.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: demo/CULTURE-v0/pnpm-lock.yaml
       - name: Install dependencies
@@ -250,7 +250,7 @@ jobs:
       - name: Seed deployment artifacts
         working-directory: demo/CULTURE-v0
         env:
-          RPC_URL: http://127.0.0.1:8545
+          RPC_URL: 'http://127.0.0.1:8545'
           CULTURE_DEPLOY_OUTPUT: ${{ runner.temp }}/deployments.json
           CULTURE_ENV_FILE: ${{ runner.temp }}/.env.ci
         run: |

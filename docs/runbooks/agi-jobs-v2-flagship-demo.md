@@ -22,7 +22,7 @@ market automation, owner control validation, and observability outputs.
 ## Pre-flight Checklist
 
 1. **Node.js toolchain** – Install the Node version pinned in `.nvmrc` (currently
-   `20.18.1`).
+   `20.19.0`).
 2. **Environment template** – Copy the packaged `.env` template and adjust RPC
    endpoints or private keys when broadcasting is desired:
    ```bash
