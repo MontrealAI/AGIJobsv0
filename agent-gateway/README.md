@@ -82,6 +82,7 @@ uses `registerEvents` to broadcast validator assignments and job changes.【F:ag
 - `ci (v2) / Owner control assurance` regenerates owner doctor reports using the gateway helpers to guarantee that contract owner
   controls remain reachable.【F:.github/workflows/ci.yml†L386-L434】
 - `containers.yml` builds the Docker image (`Dockerfile`) and runs Trivy scans so production deployments remain reproducible.
+- The multi-stage [`Dockerfile`](Dockerfile) now pins Node.js 20.18.1 and npm 10.8.2, runs installs through [`scripts/ci/npm-ci.sh`](../scripts/ci/npm-ci.sh), and uses BuildKit caching for deterministic container builds that mirror CI.【F:agent-gateway/Dockerfile†L1-L46】
 
 ## Operational runbook
 

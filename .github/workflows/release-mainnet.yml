@@ -22,13 +22,13 @@ jobs:
   guardrails:
     runs-on: ubuntu-24.04
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Confirm
-        run: |
-          test "${{ inputs.confirm }}" = "YES" || { echo "Deployment not confirmed"; exit 1; }
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - name: Confirm
+      run: |
+        test "${{ inputs.confirm }}" = "YES" || { echo "Deployment not confirmed"; exit 1; }
 
   build-plan:
     needs: guardrails
@@ -42,34 +42,30 @@ jobs:
       COMMIT_WINDOW: '30m'
       REVEAL_WINDOW: '30m'
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      - run: npm ci
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: ./.github/actions/setup-node-ci
+    - uses: ./.github/actions/npm-ci
+    - name: Compile (scripts & constants)
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
 
-      - name: Compile (scripts & constants)
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+    - name: Build Safe execution plan
+      env:
+        RPC_URL: ${{ inputs.network == 'mainnet' && secrets.MAINNET_RPC_URL || secrets.SEPOLIA_RPC_URL }}
+        SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
+      run: |
+        npx hardhat run scripts/v2/plan-deploy.ts --network ${{ inputs.network }} > plan.json
+        jq -r . plan.json >/dev/null 2>&1 || echo "{}" > plan.json
 
-      - name: Build Safe execution plan
-        env:
-          RPC_URL: ${{ inputs.network == 'mainnet' && secrets.MAINNET_RPC_URL || secrets.SEPOLIA_RPC_URL }}
-          SAFE_ADDRESS: ${{ secrets.SAFE_ADDRESS }}
-        run: |
-          npx hardhat run scripts/v2/plan-deploy.ts --network ${{ inputs.network }} > plan.json
-          jq -r . plan.json >/dev/null 2>&1 || echo "{}" > plan.json
-
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: safe-bundle-${{ inputs.network }}
-          path: plan.json
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: safe-bundle-${{ inputs.network }}
+        path: plan.json

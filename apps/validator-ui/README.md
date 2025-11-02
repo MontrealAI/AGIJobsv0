@@ -36,8 +36,9 @@ export NEXT_PUBLIC_REVEAL_DELAY_MS=7500
 ## Testing & CI
 
 - `npm test` runs Vitest via `vitest.config.ts`.
-- The shared `webapp` workflow builds and type-checks the UI on every PR, while `ci (v2)` enforces linting and coverage to keep the
-  console production ready.【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/ci.yml†L44-L70】
+ - The shared `webapp` workflow builds and type-checks the UI on every PR, while `ci (v2)` enforces linting and coverage to keep the
+   console production ready.【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/ci.yml†L44-L70】
+ - Container builds reuse the shared Node guard by executing installs through [`scripts/ci/npm-ci.sh`](../scripts/ci/npm-ci.sh) inside the pinned Node.js 20.18.1/ npm 10.8.2 [`Dockerfile`](Dockerfile).【F:apps/validator-ui/Dockerfile†L1-L35】
 
 ## Extending the UI
 

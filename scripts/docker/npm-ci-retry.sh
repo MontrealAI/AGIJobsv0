@@ -10,10 +10,16 @@ attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
 
+if [ -x scripts/ci/npm-ci.sh ]; then
+  npm_ci_cmd="scripts/ci/npm-ci.sh"
+else
+  npm_ci_cmd="npm ci"
+fi
+
 while [ "$attempt" -le "$max_attempts" ]; do
   rm -rf node_modules
 
-  if npm ci "$@"; then
+  if $npm_ci_cmd "$@"; then
     exit 0
   fi
 

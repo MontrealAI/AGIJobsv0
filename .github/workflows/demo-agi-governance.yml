@@ -3,17 +3,17 @@ name: demo-agi-governance
 on:
   pull_request:
     paths:
-      - 'demo/agi-governance/**'
-      - '.github/workflows/demo-agi-governance.yml'
-      - 'package.json'
-      - 'package-lock.json'
+    - 'demo/agi-governance/**'
+    - '.github/workflows/demo-agi-governance.yml'
+    - 'package.json'
+    - 'package-lock.json'
   push:
     branches: [main]
     paths:
-      - 'demo/agi-governance/**'
-      - '.github/workflows/demo-agi-governance.yml'
-      - 'package.json'
-      - 'package-lock.json'
+    - 'demo/agi-governance/**'
+    - '.github/workflows/demo-agi-governance.yml'
+    - 'package.json'
+    - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
@@ -29,81 +29,73 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
 
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
+    - name: Setup Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Generate governance dossier
+      run: npm run demo:agi-governance
 
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+    - name: Verify CI enforcement
+      run: npm run demo:agi-governance:ci
 
-      - name: Generate governance dossier
-        run: npm run demo:agi-governance
+    - name: Aggregate owner diagnostics
+      run: npm run demo:agi-governance:owner-diagnostics
 
-      - name: Verify CI enforcement
-        run: npm run demo:agi-governance:ci
+    - name: Generate α-field v15 OmegaSovereign dossier
+      run: npm run demo:agi-governance:alpha-v15
 
-      - name: Aggregate owner diagnostics
-        run: npm run demo:agi-governance:owner-diagnostics
+    - name: Validate α-field v15 OmegaSovereign dossier
+      run: npm run demo:agi-governance:alpha-v15:validate
 
-      - name: Generate α-field v15 OmegaSovereign dossier
-        run: npm run demo:agi-governance:alpha-v15
+    - name: Verify α-field v15 CI enforcement
+      run: npm run demo:agi-governance:alpha-v15:ci
 
-      - name: Validate α-field v15 OmegaSovereign dossier
-        run: npm run demo:agi-governance:alpha-v15:validate
+    - name: Aggregate α-field v15 owner diagnostics
+      run: npm run demo:agi-governance:alpha-v15:owner-diagnostics
 
-      - name: Verify α-field v15 CI enforcement
-        run: npm run demo:agi-governance:alpha-v15:ci
+    - name: Generate α-field v14 HyperSovereign dossier
+      run: npm run demo:agi-governance:alpha-v14
 
-      - name: Aggregate α-field v15 owner diagnostics
-        run: npm run demo:agi-governance:alpha-v15:owner-diagnostics
+    - name: Validate α-field v14 HyperSovereign dossier
+      run: npm run demo:agi-governance:alpha-v14:validate
 
-      - name: Generate α-field v14 HyperSovereign dossier
-        run: npm run demo:agi-governance:alpha-v14
+    - name: Verify α-field v14 CI enforcement
+      run: npm run demo:agi-governance:alpha-v14:ci
 
-      - name: Validate α-field v14 HyperSovereign dossier
-        run: npm run demo:agi-governance:alpha-v14:validate
+    - name: Aggregate α-field v14 owner diagnostics
+      run: npm run demo:agi-governance:alpha-v14:owner-diagnostics
 
-      - name: Verify α-field v14 CI enforcement
-        run: npm run demo:agi-governance:alpha-v14:ci
+    - name: Generate α-field v13 governance dossier
+      run: npm run demo:agi-governance:alpha-v13
 
-      - name: Aggregate α-field v14 owner diagnostics
-        run: npm run demo:agi-governance:alpha-v14:owner-diagnostics
+    - name: Validate α-field v13 dossier
+      run: npm run demo:agi-governance:alpha-v13:validate
 
-      - name: Generate α-field v13 governance dossier
-        run: npm run demo:agi-governance:alpha-v13
+    - name: Verify α-field v13 CI enforcement
+      run: npm run demo:agi-governance:alpha-v13:ci
 
-      - name: Validate α-field v13 dossier
-        run: npm run demo:agi-governance:alpha-v13:validate
+    - name: Aggregate α-field v13 owner diagnostics
+      run: npm run demo:agi-governance:alpha-v13:owner-diagnostics
 
-      - name: Verify α-field v13 CI enforcement
-        run: npm run demo:agi-governance:alpha-v13:ci
-
-      - name: Aggregate α-field v13 owner diagnostics
-        run: npm run demo:agi-governance:alpha-v13:owner-diagnostics
-
-      - name: Upload governance artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: agi-governance-reports
-          path: |
-            demo/agi-governance/reports/**
-            demo/agi-governance/alpha-v15/reports/**
-            demo/agi-governance/alpha-v14/reports/**
-            demo/agi-governance/alpha-v13/reports/**
-          if-no-files-found: error
+    - name: Upload governance artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: agi-governance-reports
+        path: |
+          demo/agi-governance/reports/**
+          demo/agi-governance/alpha-v15/reports/**
+          demo/agi-governance/alpha-v14/reports/**
+          demo/agi-governance/alpha-v13/reports/**
+        if-no-files-found: error

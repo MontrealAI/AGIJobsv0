@@ -3,13 +3,13 @@ name: orchestrator-ci
 on:
   pull_request:
     paths:
-      - 'apps/orchestrator/**'
-      - '.github/workflows/orchestrator-ci.yml'
+    - 'apps/orchestrator/**'
+    - '.github/workflows/orchestrator-ci.yml'
   push:
     branches: [main]
     paths:
-      - 'apps/orchestrator/**'
-      - '.github/workflows/orchestrator-ci.yml'
+    - 'apps/orchestrator/**'
+    - '.github/workflows/orchestrator-ci.yml'
 
 permissions:
   contents: read
@@ -22,11 +22,8 @@ jobs:
   tsc:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-      - run: npm ci
-      - name: Orchestrator tsc
-        run: npx tsc -p apps/orchestrator/tsconfig.json
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/setup-node-ci
+    - uses: ./.github/actions/npm-ci
+    - name: Orchestrator tsc
+      run: npx tsc -p apps/orchestrator/tsconfig.json

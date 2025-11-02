@@ -3,11 +3,11 @@ name: demo-national-supply-chain
 on:
   pull_request:
     paths:
-      - 'scripts/v2/nationalSupplyChainGrandDemo.ts'
-      - 'scripts/v2/launchNationalSupplyChainControlRoom.ts'
-      - 'demo/National-Supply-Chain-v0/**'
-      - 'package.json'
-      - '.github/workflows/demo-national-supply-chain.yml'
+    - 'scripts/v2/nationalSupplyChainGrandDemo.ts'
+    - 'scripts/v2/launchNationalSupplyChainControlRoom.ts'
+    - 'demo/National-Supply-Chain-v0/**'
+    - 'package.json'
+    - '.github/workflows/demo-national-supply-chain.yml'
   workflow_dispatch:
 
 permissions:
@@ -18,46 +18,38 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
 
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: block
-          allowed-endpoints: |
-            api.github.com
-            github.com
-            objects.githubusercontent.com
-            raw.githubusercontent.com
-            registry.npmjs.org
-            nodejs.org
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: block
+        allowed-endpoints: |
+          api.github.com
+          github.com
+          objects.githubusercontent.com
+          raw.githubusercontent.com
+          registry.npmjs.org
+          nodejs.org
 
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run national supply chain export
+      run: npm run demo:national-supply-chain:export
 
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+    - name: Cross-verify transcript with schema auditor
+      run: npm run demo:national-supply-chain:cross-verify
 
-      - name: Run national supply chain export
-        run: npm run demo:national-supply-chain:export
+    - name: Validate supply chain transcript
+      run: npm run demo:national-supply-chain:validate
 
-      - name: Cross-verify transcript with schema auditor
-        run: npm run demo:national-supply-chain:cross-verify
-
-      - name: Validate supply chain transcript
-        run: npm run demo:national-supply-chain:validate
-
-      - name: Upload transcript artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: national-supply-chain-transcript
-          path: demo/National-Supply-Chain-v0/ui/export/latest.json
+    - name: Upload transcript artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: national-supply-chain-transcript
+        path: demo/National-Supply-Chain-v0/ui/export/latest.json

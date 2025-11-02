@@ -1,0 +1,26 @@
+name: npm ci with deterministic guardrails
+inputs:
+  working-directory:
+    description: Directory to install dependencies in.
+    required: false
+    default: .
+  args:
+    description: Extra arguments passed to npm ci (space separated).
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Install Node.js dependencies
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set -Eeuo pipefail
+        ROOT="$(git rev-parse --show-toplevel)"
+        ARGS_INPUT="${{ inputs.args }}"
+        if [ -n "$ARGS_INPUT" ]; then
+          read -r -a EXTRA_ARGS <<<"$ARGS_INPUT"
+        else
+          EXTRA_ARGS=()
+        fi
+        NPM_CI_PROJECT_ROOT="$PWD" "$ROOT/scripts/ci/npm-ci.sh" "${EXTRA_ARGS[@]}"

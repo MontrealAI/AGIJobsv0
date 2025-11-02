@@ -3,17 +3,17 @@ name: demo-alpha-agi-insight-mark
 on:
   pull_request:
     paths:
-      - 'demo/alpha-agi-insight-mark/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/demo-alpha-agi-insight-mark.yml'
+    - 'demo/alpha-agi-insight-mark/**'
+    - 'package.json'
+    - 'package-lock.json'
+    - '.github/workflows/demo-alpha-agi-insight-mark.yml'
   push:
     branches: [main]
     paths:
-      - 'demo/alpha-agi-insight-mark/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/demo-alpha-agi-insight-mark.yml'
+    - 'demo/alpha-agi-insight-mark/**'
+    - 'package.json'
+    - 'package-lock.json'
+    - '.github/workflows/demo-alpha-agi-insight-mark.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,180 +24,172 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
 
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: block
-          allowed-endpoints: |
-            api.github.com
-            github.com
-            objects.githubusercontent.com
-            raw.githubusercontent.com
-            registry.npmjs.org
-            nodejs.org
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: block
+        allowed-endpoints: |
+          api.github.com
+          github.com
+          objects.githubusercontent.com
+          raw.githubusercontent.com
+          registry.npmjs.org
+          nodejs.org
 
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
+    - name: Setup Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run α-AGI Insight MARK unit tests
+      run: npm run test:alpha-agi-insight-mark
 
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+    - name: Execute α-AGI Insight MARK demo
+      run: npm run demo:alpha-agi-insight-mark:ci
 
-      - name: Run α-AGI Insight MARK unit tests
-        run: npm run test:alpha-agi-insight-mark
+    - name: Validate recap dossier
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const recapPath = 'demo/alpha-agi-insight-mark/reports/insight-recap.json';
+        if (!fs.existsSync(recapPath)) {
+          throw new Error('recap file missing');
+        }
+        const data = JSON.parse(fs.readFileSync(recapPath, 'utf8'));
+        if (!data.contracts || !data.contracts.novaSeed || !data.contracts.foresightExchange || !data.contracts.settlementToken) {
+          throw new Error('contract addresses missing from recap');
+        }
+        if (!Array.isArray(data.minted) || data.minted.length < 3) {
+          throw new Error('expected at least three minted insights');
+        }
+        if (!Array.isArray(data.telemetry) || data.telemetry.length === 0) {
+          throw new Error('telemetry missing');
+        }
+        console.log('Recap dossier validated.');
+        NODE
 
-      - name: Execute α-AGI Insight MARK demo
-        run: npm run demo:alpha-agi-insight-mark:ci
+    - name: Validate markdown dossier
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const reportPath = 'demo/alpha-agi-insight-mark/reports/insight-report.md';
+        if (!fs.existsSync(reportPath)) {
+          throw new Error('insight report missing');
+        }
+        const content = fs.readFileSync(reportPath, 'utf8');
+        const required = ['# α-AGI Insight MARK Recap', '## Superintelligent Engine Summary', '## Owner Command Hooks', '## Telemetry Snapshot'];
+        for (const token of required) {
+          if (!content.includes(token)) {
+            throw new Error(`missing section: ${token}`);
+          }
+        }
+        console.log('Markdown dossier validated.');
+        NODE
 
-      - name: Validate recap dossier
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const recapPath = 'demo/alpha-agi-insight-mark/reports/insight-recap.json';
-          if (!fs.existsSync(recapPath)) {
-            throw new Error('recap file missing');
+    - name: Validate executive HTML dashboard
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const path = 'demo/alpha-agi-insight-mark/reports/insight-report.html';
+        if (!fs.existsSync(path)) {
+          throw new Error('executive report HTML missing');
+        }
+        const content = fs.readFileSync(path, 'utf8');
+        if (!content.includes('α-AGI Insight MARK Executive Report')) {
+          throw new Error('executive report title missing');
+        }
+        const requiredSnippets = ['Superintelligent Engine Pulse', 'Disruption Timeline', 'Nova-Seed Market Matrix', 'Owner Command Hooks'];
+        for (const snippet of requiredSnippets) {
+          if (!content.includes(snippet)) {
+            throw new Error(`expected section not found in HTML report: ${snippet}`);
           }
-          const data = JSON.parse(fs.readFileSync(recapPath, 'utf8'));
-          if (!data.contracts || !data.contracts.novaSeed || !data.contracts.foresightExchange || !data.contracts.settlementToken) {
-            throw new Error('contract addresses missing from recap');
-          }
-          if (!Array.isArray(data.minted) || data.minted.length < 3) {
-            throw new Error('expected at least three minted insights');
-          }
-          if (!Array.isArray(data.telemetry) || data.telemetry.length === 0) {
-            throw new Error('telemetry missing');
-          }
-          console.log('Recap dossier validated.');
-          NODE
+        }
+        console.log('Executive HTML dossier validated.');
+        NODE
 
-      - name: Validate markdown dossier
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const reportPath = 'demo/alpha-agi-insight-mark/reports/insight-report.md';
-          if (!fs.existsSync(reportPath)) {
-            throw new Error('insight report missing');
+    - name: Validate control matrix
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const matrixPath = 'demo/alpha-agi-insight-mark/reports/insight-control-matrix.json';
+        if (!fs.existsSync(matrixPath)) {
+          throw new Error('control matrix missing');
+        }
+        const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
+        if (!Array.isArray(matrix.contracts) || matrix.contracts.length !== 3) {
+          throw new Error('unexpected contract count in control matrix');
+        }
+        const requiredNames = ['InsightAccessToken', 'AlphaInsightNovaSeed', 'AlphaInsightExchange'];
+        for (const name of requiredNames) {
+          if (!matrix.contracts.find((entry) => entry.name === name)) {
+            throw new Error(`contract ${name} missing from control matrix`);
           }
-          const content = fs.readFileSync(reportPath, 'utf8');
-          const required = ['# α-AGI Insight MARK Recap', '## Superintelligent Engine Summary', '## Owner Command Hooks', '## Telemetry Snapshot'];
-          for (const token of required) {
-            if (!content.includes(token)) {
-              throw new Error(`missing section: ${token}`);
-            }
-          }
-          console.log('Markdown dossier validated.');
-          NODE
+        }
+        console.log('Control matrix validated.');
+        NODE
 
-      - name: Validate executive HTML dashboard
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const path = 'demo/alpha-agi-insight-mark/reports/insight-report.html';
-          if (!fs.existsSync(path)) {
-            throw new Error('executive report HTML missing');
+    - name: Validate manifest hashes
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const crypto = require('crypto');
+        const manifestPath = 'demo/alpha-agi-insight-mark/reports/insight-manifest.json';
+        if (!fs.existsSync(manifestPath)) {
+          throw new Error('manifest missing');
+        }
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        if (!Array.isArray(manifest.files) || manifest.files.length < 4) {
+          throw new Error('manifest incomplete');
+        }
+        for (const entry of manifest.files) {
+          const filePath = `demo/alpha-agi-insight-mark/${entry.path}`;
+          if (!fs.existsSync(filePath)) {
+            throw new Error(`manifest references missing file: ${filePath}`);
           }
-          const content = fs.readFileSync(path, 'utf8');
-          if (!content.includes('α-AGI Insight MARK Executive Report')) {
-            throw new Error('executive report title missing');
+          const fileHash = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
+          if (fileHash !== entry.sha256) {
+            throw new Error(`hash mismatch for ${entry.path}`);
           }
-          const requiredSnippets = ['Superintelligent Engine Pulse', 'Disruption Timeline', 'Nova-Seed Market Matrix', 'Owner Command Hooks'];
-          for (const snippet of requiredSnippets) {
-            if (!content.includes(snippet)) {
-              throw new Error(`expected section not found in HTML report: ${snippet}`);
-            }
-          }
-          console.log('Executive HTML dossier validated.');
-          NODE
+        }
+        console.log('Manifest integrity verified.');
+        NODE
 
-      - name: Validate control matrix
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const matrixPath = 'demo/alpha-agi-insight-mark/reports/insight-control-matrix.json';
-          if (!fs.existsSync(matrixPath)) {
-            throw new Error('control matrix missing');
+    - name: Validate superintelligence mermaid
+      run: |
+        node - <<'NODE'
+        const fs = require('fs');
+        const mermaidPath = 'demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd';
+        if (!fs.existsSync(mermaidPath)) {
+          throw new Error('superintelligence mermaid missing');
+        }
+        const content = fs.readFileSync(mermaidPath, 'utf8');
+        const required = ['Meta-Agentic Tree Search', 'Thermodynamic Rupture Trigger', 'AGI Capability Index'];
+        for (const token of required) {
+          if (!content.includes(token)) {
+            throw new Error(`missing mermaid token: ${token}`);
           }
-          const matrix = JSON.parse(fs.readFileSync(matrixPath, 'utf8'));
-          if (!Array.isArray(matrix.contracts) || matrix.contracts.length !== 3) {
-            throw new Error('unexpected contract count in control matrix');
-          }
-          const requiredNames = ['InsightAccessToken', 'AlphaInsightNovaSeed', 'AlphaInsightExchange'];
-          for (const name of requiredNames) {
-            if (!matrix.contracts.find((entry) => entry.name === name)) {
-              throw new Error(`contract ${name} missing from control matrix`);
-            }
-          }
-          console.log('Control matrix validated.');
-          NODE
+        }
+        console.log('Superintelligence mermaid validated.');
+        NODE
 
-      - name: Validate manifest hashes
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const crypto = require('crypto');
-          const manifestPath = 'demo/alpha-agi-insight-mark/reports/insight-manifest.json';
-          if (!fs.existsSync(manifestPath)) {
-            throw new Error('manifest missing');
-          }
-          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-          if (!Array.isArray(manifest.files) || manifest.files.length < 4) {
-            throw new Error('manifest incomplete');
-          }
-          for (const entry of manifest.files) {
-            const filePath = `demo/alpha-agi-insight-mark/${entry.path}`;
-            if (!fs.existsSync(filePath)) {
-              throw new Error(`manifest references missing file: ${filePath}`);
-            }
-            const fileHash = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex');
-            if (fileHash !== entry.sha256) {
-              throw new Error(`hash mismatch for ${entry.path}`);
-            }
-          }
-          console.log('Manifest integrity verified.');
-          NODE
+    - name: Run α-AGI Insight MARK dossier verifier
+      run: npm run verify:alpha-agi-insight-mark
 
-      - name: Validate superintelligence mermaid
-        run: |
-          node - <<'NODE'
-          const fs = require('fs');
-          const mermaidPath = 'demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd';
-          if (!fs.existsSync(mermaidPath)) {
-            throw new Error('superintelligence mermaid missing');
-          }
-          const content = fs.readFileSync(mermaidPath, 'utf8');
-          const required = ['Meta-Agentic Tree Search', 'Thermodynamic Rupture Trigger', 'AGI Capability Index'];
-          for (const token of required) {
-            if (!content.includes(token)) {
-              throw new Error(`missing mermaid token: ${token}`);
-            }
-          }
-          console.log('Superintelligence mermaid validated.');
-          NODE
-
-      - name: Run α-AGI Insight MARK dossier verifier
-        run: npm run verify:alpha-agi-insight-mark
-
-      - name: Upload α-AGI Insight MARK dossiers
-        uses: actions/upload-artifact@v4
-        with:
-          name: alpha-agi-insight-mark-dossiers
-          path: |
-            demo/alpha-agi-insight-mark/reports/insight-recap.json
-            demo/alpha-agi-insight-mark/reports/insight-report.md
-            demo/alpha-agi-insight-mark/reports/insight-report.html
-            demo/alpha-agi-insight-mark/reports/insight-control-matrix.json
-            demo/alpha-agi-insight-mark/reports/insight-control-map.mmd
-            demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd
-            demo/alpha-agi-insight-mark/reports/insight-lifecycle.mmd
-            demo/alpha-agi-insight-mark/reports/insight-manifest.json
-            demo/alpha-agi-insight-mark/reports/insight-telemetry.log
+    - name: Upload α-AGI Insight MARK dossiers
+      uses: actions/upload-artifact@v4
+      with:
+        name: alpha-agi-insight-mark-dossiers
+        path: |
+          demo/alpha-agi-insight-mark/reports/insight-recap.json
+          demo/alpha-agi-insight-mark/reports/insight-report.md
+          demo/alpha-agi-insight-mark/reports/insight-report.html
+          demo/alpha-agi-insight-mark/reports/insight-control-matrix.json
+          demo/alpha-agi-insight-mark/reports/insight-control-map.mmd
+          demo/alpha-agi-insight-mark/reports/insight-superintelligence.mmd
+          demo/alpha-agi-insight-mark/reports/insight-lifecycle.mmd
+          demo/alpha-agi-insight-mark/reports/insight-manifest.json
+          demo/alpha-agi-insight-mark/reports/insight-telemetry.log

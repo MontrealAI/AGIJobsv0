@@ -4,9 +4,9 @@ on:
   pull_request:
   push:
     branches:
-      - main
+    - main
   schedule:
-    - cron: '0 1 * * *'
+  - cron: '0 1 * * *'
 
 permissions:
   contents: read
@@ -20,57 +20,49 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
+    - name: Setup Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
 
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
+    - name: Install Node dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: 'v1.4.4'
 
-      - name: Install Node dependencies
-        run: npm ci
+    - name: Cache forge libraries
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: lib
+        key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
+        restore-keys: ${{ runner.os }}-foundry-
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: 'v1.4.4'
+    - name: Install forge libraries
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir -p lib
+        if [ ! -d lib/forge-std ]; then
+          forge install foundry-rs/forge-std --no-git
+        else
+          echo 'forge-std already present; skipping install.'
+        fi
 
-      - name: Cache forge libraries
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: lib
-          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml') }}
-          restore-keys: ${{ runner.os }}-foundry-
+    - name: Compile
+      env:
+        COVERAGE_MIN: 90
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
 
-      - name: Install forge libraries
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p lib
-          if [ ! -d lib/forge-std ]; then
-            forge install foundry-rs/forge-std --no-git
-          else
-            echo 'forge-std already present; skipping install.'
-          fi
-
-      - name: Compile
-        env:
-          COVERAGE_MIN: 90
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
-
-      - name: Foundry fuzz tests
-        env:
-          FOUNDRY_PROFILE: default
-        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
+    - name: Foundry fuzz tests
+      env:
+        FOUNDRY_PROFILE: default
+      run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'

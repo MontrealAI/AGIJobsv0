@@ -36,84 +36,72 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Assert required contexts manifest is synchronised
-        run: npm run ci:sync-contexts -- --check
-      - name: Verify toolchain locks
-        run: npm run ci:verify-toolchain
-      - name: Ensure branch protection contexts match workflow
-        run: npm run ci:verify-contexts
-      - name: Verify companion workflow contexts
-        run: npm run ci:verify-companion-contexts
-      - name: Prettier formatting check
-        run: npm run format:check
-      - name: Targeted lint suite
-        run: npm run lint:ci
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Assert required contexts manifest is synchronised
+      run: npm run ci:sync-contexts -- --check
+    - name: Verify toolchain locks
+      run: npm run ci:verify-toolchain
+    - name: Ensure branch protection contexts match workflow
+      run: npm run ci:verify-contexts
+    - name: Verify companion workflow contexts
+      run: npm run ci:verify-companion-contexts
+    - name: Prettier formatting check
+      run: npm run format:check
+    - name: Targeted lint suite
+      run: npm run lint:ci
 
-      - name: Validate sentinel templates
-        run: npm run monitoring:validate
+    - name: Validate sentinel templates
+      run: npm run monitoring:validate
 
   tests:
     name: Tests
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Compile contracts
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
-      - name: Regenerate constants for tests
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Hardhat tests
-        run: npm test
-      - name: ABI diff check
-        run: npm run abi:diff
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Compile contracts
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
+    - name: Regenerate constants for tests
+      run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+    - name: Hardhat tests
+      run: npm test
+    - name: ABI diff check
+      run: npm run abi:diff
 
   python_unit:
     name: Python unit tests
@@ -124,46 +112,46 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       PYTHON_VERSION: '3.12'
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: requirements-python.txt
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-python.txt
-      - name: Run unit test suite
-        run: |
-          coverage run --rcfile=.coveragerc -m pytest \
-            test/paymaster \
-            test/tools \
-            test/orchestrator \
-            test/simulation
-          coverage run --rcfile=.coveragerc --append -m pytest tests
-          coverage run --rcfile=.coveragerc --append -m pytest packages/hgm-core/tests
-          coverage run --rcfile=.coveragerc --append -m pytest demo/Huxley-Godel-Machine-v0/tests
-      - name: Export unit coverage data
-        run: |
-          mkdir -p reports/python-coverage
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/unit.xml
-      - name: Upload unit coverage artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: python-coverage-unit
-          path: |
-            .coverage.unit
-            reports/python-coverage/unit.xml
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: requirements-python.txt
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-python.txt
+    - name: Run unit test suite
+      run: |
+        coverage run --rcfile=.coveragerc -m pytest \
+          test/paymaster \
+          test/tools \
+          test/orchestrator \
+          test/simulation
+        coverage run --rcfile=.coveragerc --append -m pytest tests
+        coverage run --rcfile=.coveragerc --append -m pytest packages/hgm-core/tests
+        coverage run --rcfile=.coveragerc --append -m pytest demo/Huxley-Godel-Machine-v0/tests
+    - name: Export unit coverage data
+      run: |
+        mkdir -p reports/python-coverage
+        coverage xml --rcfile=.coveragerc -o reports/python-coverage/unit.xml
+    - name: Upload unit coverage artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: python-coverage-unit
+        path: |
+          .coverage.unit
+          reports/python-coverage/unit.xml
 
   python_integration:
     name: Python integration tests
@@ -174,44 +162,44 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       PYTHON_VERSION: '3.12'
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: requirements-python.txt
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-python.txt
-      - name: Run integration suite
-        run: |
-          coverage run --rcfile=.coveragerc -m pytest \
-            test/routes/test_agents.py \
-            test/routes/test_analytics.py \
-            test/routes/test_onebox_health.py \
-            test/demo \
-            demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests
-      - name: Export integration coverage data
-        run: |
-          mkdir -p reports/python-coverage
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/integration.xml
-      - name: Upload integration coverage artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: python-coverage-integration
-          path: |
-            .coverage.integration
-            reports/python-coverage/integration.xml
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: requirements-python.txt
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-python.txt
+    - name: Run integration suite
+      run: |
+        coverage run --rcfile=.coveragerc -m pytest \
+          test/routes/test_agents.py \
+          test/routes/test_analytics.py \
+          test/routes/test_onebox_health.py \
+          test/demo \
+          demo/Meta-Agentic-Program-Synthesis-v0/meta_agentic_demo/tests
+    - name: Export integration coverage data
+      run: |
+        mkdir -p reports/python-coverage
+        coverage xml --rcfile=.coveragerc -o reports/python-coverage/integration.xml
+    - name: Upload integration coverage artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: python-coverage-integration
+        path: |
+          .coverage.integration
+          reports/python-coverage/integration.xml
 
   python_load_sim:
     name: Load-simulation reports
@@ -221,80 +209,80 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       PYTHON_VERSION: '3.12'
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: requirements-python.txt
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-python.txt
-      - name: Run Monte Carlo load simulation
-        run: |
-          python - <<'PY'
-          import csv
-          import json
-          from pathlib import Path
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: requirements-python.txt
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-python.txt
+    - name: Run Monte Carlo load simulation
+      run: |
+        python - <<'PY'
+        import csv
+        import json
+        from pathlib import Path
 
-          from simulation.montecarlo import sweep_parameters
+        from simulation.montecarlo import sweep_parameters
 
-          results = sweep_parameters()
-          out_dir = Path("reports/load-sim")
-          out_dir.mkdir(parents=True, exist_ok=True)
-          csv_path = out_dir / "montecarlo.csv"
-          with csv_path.open("w", newline="", encoding="utf-8") as handle:
-              writer = csv.DictWriter(handle, fieldnames=["burn_pct", "fee_pct", "avg_dissipation"])
-              writer.writeheader()
-              for burn, fee, avg in results:
-                  writer.writerow({
-                      "burn_pct": round(burn, 4),
-                      "fee_pct": round(fee, 4),
-                      "avg_dissipation": round(avg, 6),
-                  })
-          best = min(results, key=lambda entry: entry[2])
-          summary_path = out_dir / "summary.json"
-          summary_path.write_text(
-              json.dumps(
-                  {
-                      "iterations": 1000,
-                      "results_count": len(results),
-                      "best": {
-                          "burn_pct": best[0],
-                          "fee_pct": best[1],
-                          "avg_dissipation": best[2],
-                      },
-                  },
-                  indent=2,
-                  sort_keys=True,
-              )
-              + "\n",
-              encoding="utf-8",
-          )
-          if best[0] > 0.15 or best[1] > 0.08:
-              raise SystemExit("Unexpected dissipation optimum detected")
-          PY
-      - name: Upload load-simulation artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: python-load-sim-report
-          path: reports/load-sim
+        results = sweep_parameters()
+        out_dir = Path("reports/load-sim")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = out_dir / "montecarlo.csv"
+        with csv_path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["burn_pct", "fee_pct", "avg_dissipation"])
+            writer.writeheader()
+            for burn, fee, avg in results:
+                writer.writerow({
+                    "burn_pct": round(burn, 4),
+                    "fee_pct": round(fee, 4),
+                    "avg_dissipation": round(avg, 6),
+                })
+        best = min(results, key=lambda entry: entry[2])
+        summary_path = out_dir / "summary.json"
+        summary_path.write_text(
+            json.dumps(
+                {
+                    "iterations": 1000,
+                    "results_count": len(results),
+                    "best": {
+                        "burn_pct": best[0],
+                        "fee_pct": best[1],
+                        "avg_dissipation": best[2],
+                    },
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        if best[0] > 0.15 or best[1] > 0.08:
+            raise SystemExit("Unexpected dissipation optimum detected")
+        PY
+    - name: Upload load-simulation artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: python-load-sim-report
+        path: reports/load-sim
 
   python_coverage:
     name: Python coverage enforcement
     needs:
-      - python_unit
-      - python_integration
+    - python_unit
+    - python_integration
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -302,56 +290,56 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       PYTHON_VERSION: '3.12'
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: requirements-python.txt
-      - name: Install coverage tooling
-        run: |
-          python -m pip install --upgrade pip
-          pip install coverage==7.6.4
-      - name: Download unit coverage data
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
-        with:
-          name: python-coverage-unit
-          path: coverage-data/unit
-      - name: Download integration coverage data
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
-        with:
-          name: python-coverage-integration
-          path: coverage-data/integration
-      - name: Combine coverage results
-        run: |
-          coverage combine coverage-data/unit coverage-data/integration
-      - name: Enforce Python coverage threshold
-        run: |
-          mkdir -p reports/python-coverage
-          coverage report --rcfile=.coveragerc
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/combined.xml
-      - name: Upload combined coverage artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: python-coverage-combined
-          path: |
-            .coverage
-            reports/python-coverage/combined.xml
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: requirements-python.txt
+    - name: Install coverage tooling
+      run: |
+        python -m pip install --upgrade pip
+        pip install coverage==7.6.4
+    - name: Download unit coverage data
+      uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+      with:
+        name: python-coverage-unit
+        path: coverage-data/unit
+    - name: Download integration coverage data
+      uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+      with:
+        name: python-coverage-integration
+        path: coverage-data/integration
+    - name: Combine coverage results
+      run: |
+        coverage combine coverage-data/unit coverage-data/integration
+    - name: Enforce Python coverage threshold
+      run: |
+        mkdir -p reports/python-coverage
+        coverage report --rcfile=.coveragerc
+        coverage xml --rcfile=.coveragerc -o reports/python-coverage/combined.xml
+    - name: Upload combined coverage artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: python-coverage-combined
+        path: |
+          .coverage
+          reports/python-coverage/combined.xml
 
   hgm_guardrails:
     name: HGM guardrails
     needs:
-      - lint
-      - tests
+    - lint
+    - tests
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
@@ -359,83 +347,71 @@ jobs:
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
       AGIALPHA_PROFILE: agialpha
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Setup Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-          cache-dependency-path: requirements-python.txt
-      - name: Install Node dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-python.txt
-      - name: Run HGM suite
-        run: ci/hgm-suite.sh
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Setup Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        cache-dependency-path: requirements-python.txt
+    - name: Install Node dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-python.txt
+    - name: Run HGM suite
+      run: ci/hgm-suite.sh
 
   owner_controls:
     name: Owner control assurance
     needs:
-      - lint
+    - lint
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Generate owner control assurance reports
-        run: |
-          mkdir -p reports/owner-control
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts --network ci --strict --json \
-            > reports/owner-control/doctor.json
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
-            --network ci \
-            --format json \
-            --no-mermaid \
-            --out reports/owner-control/parameter-matrix.json
-      - name: Render owner authority matrix
-        run: npm run ci:owner-authority -- --network ci --out reports/owner-control
-      - name: Upload owner control artefacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: owner-control-ci
-          path: reports/owner-control
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Generate owner control assurance reports
+      run: |
+        mkdir -p reports/owner-control
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts --network ci --strict --json \
+          > reports/owner-control/doctor.json
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
+          --network ci \
+          --format json \
+          --no-mermaid \
+          --out reports/owner-control/parameter-matrix.json
+    - name: Render owner authority matrix
+      run: npm run ci:owner-authority -- --network ci --out reports/owner-control
+    - name: Upload owner control artefacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: owner-control-ci
+        path: reports/owner-control
 
   foundry:
     name: Foundry
@@ -444,50 +420,44 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Regenerate constants for Foundry
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
-        with:
-          version: 'v1.4.4'
-      - name: Cache Foundry build artifacts
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: |
-            ~/.foundry/cache
-            ~/.cache/foundry
-          key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
-          restore-keys: |
-            foundry-${{ runner.os }}-
-      - name: Ensure forge-std dependency
-        run: |
-          if [ ! -d lib/forge-std ]; then
-            forge install foundry-rs/forge-std;
-          else
-            echo 'forge-std already present; skipping install.';
-          fi
-      - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Regenerate constants for Foundry
+      run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
+      with:
+        version: 'v1.4.4'
+    - name: Cache Foundry build artifacts
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: |
+          ~/.foundry/cache
+          ~/.cache/foundry
+        key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
+        restore-keys: |
+          foundry-${{ runner.os }}-
+    - name: Ensure forge-std dependency
+      run: |
+        if [ ! -d lib/forge-std ]; then
+          forge install foundry-rs/forge-std;
+        else
+          echo 'forge-std already present; skipping install.';
+        fi
+    - name: Foundry tests
+      run: forge test -vvvv --ffi --fuzz-runs 256
 
   coverage:
     name: Coverage thresholds
@@ -496,145 +466,121 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Regenerate constants for coverage
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Generate coverage report
-        run: npm run coverage
-      - name: Map coverage entries to access-control modules
-        run: node scripts/ci/remap-coverage-paths.js
-      - name: Check access control coverage
-        run: npm run check:access-control
-      - name: Upload coverage artifact
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: coverage-lcov
-          path: coverage/lcov.info
-          if-no-files-found: error
-      - name: Enforce coverage threshold
-        run: node scripts/check-coverage.js "$COVERAGE_MIN"
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Regenerate constants for coverage
+      run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+    - name: Generate coverage report
+      run: npm run coverage
+    - name: Map coverage entries to access-control modules
+      run: node scripts/ci/remap-coverage-paths.js
+    - name: Check access control coverage
+      run: npm run check:access-control
+    - name: Upload coverage artifact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: coverage-lcov
+        path: coverage/lcov.info
+        if-no-files-found: error
+    - name: Enforce coverage threshold
+      run: node scripts/check-coverage.js "$COVERAGE_MIN"
 
   phase6:
     name: Phase 6 readiness
     needs:
-      - lint
-      - tests
+    - lint
+    - tests
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Validate Phase 6 manifest & UI
-        run: npm run demo:phase6:ci
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Validate Phase 6 manifest & UI
+      run: npm run demo:phase6:ci
 
   phase8:
     name: Phase 8 readiness
     needs:
-      - lint
-      - tests
+    - lint
+    - tests
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Validate Phase 8 manifest & UI
-        run: npm run demo:phase8:ci
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Validate Phase 8 manifest & UI
+      run: npm run demo:phase8:ci
 
   kardashev_demo:
     name: Kardashev II readiness
     needs:
-      - lint
-      - tests
+    - lint
+    - tests
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Validate Kardashev II demo
-        run: npm run demo:kardashev-ii:ci
-      - name: Validate Stellar Kardashev II demo
-        run: npm run demo:kardashev-ii-stellar:ci
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Validate Kardashev II demo
+      run: npm run demo:kardashev-ii:ci
+    - name: Validate Stellar Kardashev II demo
+      run: npm run demo:kardashev-ii-stellar:ci
 
   asi_takeoff_demo:
     name: ASI Take-Off Demonstration
@@ -642,42 +588,36 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Run ASI take-off demonstration
-        run: npm run demo:asi-takeoff
-      - name: Upload ASI take-off artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: asi-takeoff-reports
-          path: reports/asi-takeoff
-          if-no-files-found: warn
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run ASI take-off demonstration
+      run: npm run demo:asi-takeoff
+    - name: Upload ASI take-off artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: asi-takeoff-reports
+        path: reports/asi-takeoff
+        if-no-files-found: warn
 
   zenith_demo:
     name: Zenith Sapience Demonstration
@@ -685,54 +625,48 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Run Zenith Sapience deterministic kit
-        run: npm run demo:zenith-sapience-initiative
-      - name: Run Zenith Sapience local rehearsal
-        env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
-          CHAIN_ID: '31337'
-        run: npm run demo:zenith-sapience-initiative:local
-      - name: Upload Zenith Sapience artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: zenith-sapience-reports
-          path: |
-            reports/zenith-sapience/**
-            reports/localhost/zenith-sapience/**
-          if-no-files-found: warn
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run Zenith Sapience deterministic kit
+      run: npm run demo:zenith-sapience-initiative
+    - name: Run Zenith Sapience local rehearsal
+      env:
+        PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+        AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+        AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+        AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+        AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+        RPC_URL: http://127.0.0.1:8545
+        CHAIN_ID: '31337'
+      run: npm run demo:zenith-sapience-initiative:local
+    - name: Upload Zenith Sapience artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: zenith-sapience-reports
+        path: |
+          reports/zenith-sapience/**
+          reports/localhost/zenith-sapience/**
+        if-no-files-found: warn
 
   agi_labor_market_demo:
     name: AGI Labor Market Grand Demo
@@ -740,42 +674,36 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Run grand labour market simulation
-        run: npm run demo:agi-labor-market:export
-      - name: Upload labour market transcript
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: agi-labor-market-transcript
-          path: demo/agi-labor-market-grand-demo/ui/export/
-          if-no-files-found: error
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run grand labour market simulation
+      run: npm run demo:agi-labor-market:export
+    - name: Upload labour market transcript
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: agi-labor-market-transcript
+        path: demo/agi-labor-market-grand-demo/ui/export/
+        if-no-files-found: error
 
   sovereign_mesh_demo:
     name: Sovereign Mesh Demo — build
@@ -783,37 +711,32 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            demo/sovereign-mesh/server/package-lock.json
-            demo/sovereign-mesh/app/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install server dependencies
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install server dependencies
+      uses: ./.github/actions/npm-ci
+      with:
         working-directory: demo/sovereign-mesh/server
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Build orchestrator server
-        working-directory: demo/sovereign-mesh/server
-        run: npm run build
-      - name: Install app dependencies
+    - name: Build orchestrator server
+      working-directory: demo/sovereign-mesh/server
+      run: npm run build
+    - name: Install app dependencies
+      uses: ./.github/actions/npm-ci
+      with:
         working-directory: demo/sovereign-mesh/app
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Build React console
-        working-directory: demo/sovereign-mesh/app
-        run: npm run build
+    - name: Build React console
+      working-directory: demo/sovereign-mesh/app
+      run: npm run build
 
   sovereign_constellation_demo:
     name: Sovereign Constellation Demo — build
@@ -821,37 +744,32 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            demo/sovereign-constellation/server/package-lock.json
-            demo/sovereign-constellation/app/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install server dependencies
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install server dependencies
+      uses: ./.github/actions/npm-ci
+      with:
         working-directory: demo/sovereign-constellation/server
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Build orchestrator server
-        working-directory: demo/sovereign-constellation/server
-        run: npm run build
-      - name: Install app dependencies
+    - name: Build orchestrator server
+      working-directory: demo/sovereign-constellation/server
+      run: npm run build
+    - name: Install app dependencies
+      uses: ./.github/actions/npm-ci
+      with:
         working-directory: demo/sovereign-constellation/app
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Build React console
-        working-directory: demo/sovereign-constellation/app
-        run: npm run build
+    - name: Build React console
+      working-directory: demo/sovereign-constellation/app
+      run: npm run build
 
   celestial_archon_demo:
     name: Celestial Archon Demonstration
@@ -859,54 +777,48 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Run Celestial Archon deterministic kit
-        run: npm run demo:zenith-sapience-celestial-archon
-      - name: Run Celestial Archon local rehearsal
-        env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
-          CHAIN_ID: '31337'
-        run: npm run demo:zenith-sapience-celestial-archon:local
-      - name: Upload Celestial Archon artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: zenith-celestial-archon-reports
-          path: |
-            reports/zenith-celestial-archon/**
-            reports/localhost/zenith-celestial-archon/**
-          if-no-files-found: warn
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run Celestial Archon deterministic kit
+      run: npm run demo:zenith-sapience-celestial-archon
+    - name: Run Celestial Archon local rehearsal
+      env:
+        PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+        AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+        AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+        AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+        AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+        RPC_URL: http://127.0.0.1:8545
+        CHAIN_ID: '31337'
+      run: npm run demo:zenith-sapience-celestial-archon:local
+    - name: Upload Celestial Archon artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: zenith-celestial-archon-reports
+        path: |
+          reports/zenith-celestial-archon/**
+          reports/localhost/zenith-celestial-archon/**
+        if-no-files-found: warn
 
   hypernova_demo:
     name: Hypernova Governance Demonstration
@@ -914,54 +826,48 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Run Hypernova deterministic kit
-        run: npm run demo:zenith-hypernova
-      - name: Run Hypernova local rehearsal
-        env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
-          CHAIN_ID: '31337'
-        run: npm run demo:zenith-hypernova:local
-      - name: Upload Hypernova artifacts
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: zenith-hypernova-reports
-          path: |
-            reports/zenith-hypernova/**
-            reports/localhost/zenith-hypernova/**
-          if-no-files-found: warn
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Run Hypernova deterministic kit
+      run: npm run demo:zenith-hypernova
+    - name: Run Hypernova local rehearsal
+      env:
+        PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+        AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
+        AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+        AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
+        AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
+        RPC_URL: http://127.0.0.1:8545
+        CHAIN_ID: '31337'
+      run: npm run demo:zenith-hypernova:local
+    - name: Upload Hypernova artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: zenith-hypernova-reports
+        path: |
+          reports/zenith-hypernova/**
+          reports/localhost/zenith-hypernova/**
+        if-no-files-found: warn
 
   branch_protection:
     name: Branch protection guard
@@ -973,320 +879,320 @@ jobs:
       pull-requests: read
       administration: read
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Verify branch protection configuration
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: main
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Verify branch protection configuration
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH_NAME: main
+      run: |
+        node <<'NODE'
+        const fs = require('fs');
+        const path = require('path');
 
-          const repository = process.env.GITHUB_REPOSITORY;
-          const token = process.env.GITHUB_TOKEN;
-          const branch = process.env.BRANCH_NAME || 'main';
+        const repository = process.env.GITHUB_REPOSITORY;
+        const token = process.env.GITHUB_TOKEN;
+        const branch = process.env.BRANCH_NAME || 'main';
 
-          if (!repository) {
-            console.error('GITHUB_REPOSITORY is not set.');
+        if (!repository) {
+          console.error('GITHUB_REPOSITORY is not set.');
+          process.exit(1);
+        }
+
+        if (!token) {
+          console.error('GITHUB_TOKEN is required to query branch protection.');
+          process.exit(1);
+        }
+
+        const [owner, repo] = repository.split('/');
+        if (!owner || !repo) {
+          console.error(`Unable to derive owner/repo from ${repository}`);
+          process.exit(1);
+        }
+
+        const contextsPath = path.join(process.cwd(), 'ci', 'required-contexts.json');
+        const companionPath = path.join(process.cwd(), 'ci', 'required-companion-contexts.json');
+
+        function readJsonArray(filePath, { enforcePrefix } = { enforcePrefix: null }) {
+          let parsed;
+          try {
+            parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+          } catch (error) {
+            console.error(`Unable to read ${filePath}:`, error instanceof Error ? error.message : error);
             process.exit(1);
           }
 
-          if (!token) {
-            console.error('GITHUB_TOKEN is required to query branch protection.');
+          if (!Array.isArray(parsed)) {
+            console.error(`${path.relative(process.cwd(), filePath)} must contain an array of strings.`);
             process.exit(1);
           }
 
-          const [owner, repo] = repository.split('/');
-          if (!owner || !repo) {
-            console.error(`Unable to derive owner/repo from ${repository}`);
-            process.exit(1);
-          }
-
-          const contextsPath = path.join(process.cwd(), 'ci', 'required-contexts.json');
-          const companionPath = path.join(process.cwd(), 'ci', 'required-companion-contexts.json');
-
-          function readJsonArray(filePath, { enforcePrefix } = { enforcePrefix: null }) {
-            let parsed;
-            try {
-              parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            } catch (error) {
-              console.error(`Unable to read ${filePath}:`, error instanceof Error ? error.message : error);
+          return parsed.map((value, index) => {
+            if (typeof value !== 'string') {
+              console.error(
+                `${path.relative(process.cwd(), filePath)} entry at index ${index} must be a string.`
+              );
               process.exit(1);
             }
-
-            if (!Array.isArray(parsed)) {
-              console.error(`${path.relative(process.cwd(), filePath)} must contain an array of strings.`);
+            const trimmed = value.trim();
+            if (!trimmed) {
+              console.error(
+                `${path.relative(process.cwd(), filePath)} entry at index ${index} must not be empty.`
+              );
               process.exit(1);
             }
-
-            return parsed.map((value, index) => {
-              if (typeof value !== 'string') {
-                console.error(
-                  `${path.relative(process.cwd(), filePath)} entry at index ${index} must be a string.`
-                );
-                process.exit(1);
-              }
-              const trimmed = value.trim();
-              if (!trimmed) {
-                console.error(
-                  `${path.relative(process.cwd(), filePath)} entry at index ${index} must not be empty.`
-                );
-                process.exit(1);
-              }
-              if (enforcePrefix && !trimmed.startsWith(enforcePrefix)) {
-                console.error(
-                  `Invalid context "${trimmed}" detected. Entries must begin with "${enforcePrefix}" to match branch protection.`
-                );
-                process.exit(1);
-              }
-              return trimmed;
-            });
-          }
-
-          function readCompanionContexts() {
-            if (!fs.existsSync(companionPath)) {
-              return [];
+            if (enforcePrefix && !trimmed.startsWith(enforcePrefix)) {
+              console.error(
+                `Invalid context "${trimmed}" detected. Entries must begin with "${enforcePrefix}" to match branch protection.`
+              );
+              process.exit(1);
             }
-            const contexts = readJsonArray(companionPath);
-            for (const context of contexts) {
-              if (!context.includes(' / ')) {
-                console.error(
-                  `Companion context "${context}" must include a workflow and job name separated by " / ".`
-                );
-                process.exit(1);
-              }
-            }
-            return contexts;
-          }
+            return trimmed;
+          });
+        }
 
-          const primary = readJsonArray(contextsPath, { enforcePrefix: 'ci (v2) / ' });
-          const companion = readCompanionContexts();
-          const expected = primary.concat(companion);
-
-          const seen = new Set();
-          const duplicates = [];
-          for (const context of expected) {
-            if (seen.has(context)) {
-              duplicates.push(context);
-            }
-            seen.add(context);
-          }
-
-          if (duplicates.length > 0) {
-            console.error(`Duplicate contexts detected across manifests: ${duplicates.join(', ')}`);
-            process.exit(1);
-          }
-
-          async function fetchProtection() {
-            const response = await fetch(
-              `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}/protection`,
-              {
-                headers: {
-                  Accept: 'application/vnd.github+json',
-                  Authorization: `Bearer ${token}`,
-                  'User-Agent': 'agijobs-ci-branch-guard',
-                },
-              },
-            );
-
-            if (!response.ok) {
-              const body = await response.text();
-              throw new Error(`GitHub API request failed with ${response.status} ${response.statusText}: ${body}`);
-            }
-
-            return response.json();
-          }
-
-          function extractContexts(protection) {
-            const contextList = protection?.required_status_checks?.contexts;
-            if (Array.isArray(contextList) && contextList.length > 0) {
-              return contextList;
-            }
-
-            const checks = protection?.required_status_checks?.checks;
-            if (Array.isArray(checks) && checks.length > 0) {
-              return checks.map((check) => check.context).filter(Boolean);
-            }
-
+        function readCompanionContexts() {
+          if (!fs.existsSync(companionPath)) {
             return [];
           }
-
-          (async () => {
-            try {
-              const protection = await fetchProtection();
-              const contexts = extractContexts(protection);
-              const strict = Boolean(protection?.required_status_checks?.strict);
-              const admins = Boolean(protection?.enforce_admins?.enabled);
-
-              const missing = expected.filter((ctx) => !contexts.includes(ctx));
-              const unexpected = contexts.filter((ctx) => !expected.includes(ctx));
-
-              const filtered = contexts.filter((ctx) => expected.includes(ctx));
-              const orderMatches =
-                filtered.length === expected.length && expected.every((ctx, index) => filtered[index] === ctx);
-
-              console.log(`# Branch protection audit for ${owner}/${repo}@${branch}`);
-              console.log('');
-              console.table(
-                [
-                  { check: 'Missing required contexts', result: missing.length ? 'FAIL' : 'PASS', detail: missing.join(', ') || 'None' },
-                  { check: 'Unexpected additional contexts', result: unexpected.length ? 'WARN' : 'PASS', detail: unexpected.join(', ') || 'None' },
-                  { check: 'Context order matches policy', result: orderMatches ? 'PASS' : 'FAIL', detail: filtered.join(' → ') || '(none)' },
-                  { check: 'Require branches up to date', result: strict ? 'PASS' : 'FAIL', detail: `strict=${strict}` },
-                  { check: 'Admins must pass checks', result: admins ? 'PASS' : 'FAIL', detail: `admins_enforced=${admins}` },
-                ],
+          const contexts = readJsonArray(companionPath);
+          for (const context of contexts) {
+            if (!context.includes(' / ')) {
+              console.error(
+                `Companion context "${context}" must include a workflow and job name separated by " / ".`
               );
-
-              const failure = missing.length > 0 || !orderMatches || !strict || !admins;
-              if (failure) {
-                console.error('Branch protection does not satisfy CI v2 requirements.');
-                process.exit(1);
-              }
-            } catch (error) {
-              console.error(error instanceof Error ? error.message : error);
               process.exit(1);
             }
-          })();
-          NODE
+          }
+          return contexts;
+        }
+
+        const primary = readJsonArray(contextsPath, { enforcePrefix: 'ci (v2) / ' });
+        const companion = readCompanionContexts();
+        const expected = primary.concat(companion);
+
+        const seen = new Set();
+        const duplicates = [];
+        for (const context of expected) {
+          if (seen.has(context)) {
+            duplicates.push(context);
+          }
+          seen.add(context);
+        }
+
+        if (duplicates.length > 0) {
+          console.error(`Duplicate contexts detected across manifests: ${duplicates.join(', ')}`);
+          process.exit(1);
+        }
+
+        async function fetchProtection() {
+          const response = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(branch)}/protection`,
+            {
+              headers: {
+                Accept: 'application/vnd.github+json',
+                Authorization: `Bearer ${token}`,
+                'User-Agent': 'agijobs-ci-branch-guard',
+              },
+            },
+          );
+
+          if (!response.ok) {
+            const body = await response.text();
+            throw new Error(`GitHub API request failed with ${response.status} ${response.statusText}: ${body}`);
+          }
+
+          return response.json();
+        }
+
+        function extractContexts(protection) {
+          const contextList = protection?.required_status_checks?.contexts;
+          if (Array.isArray(contextList) && contextList.length > 0) {
+            return contextList;
+          }
+
+          const checks = protection?.required_status_checks?.checks;
+          if (Array.isArray(checks) && checks.length > 0) {
+            return checks.map((check) => check.context).filter(Boolean);
+          }
+
+          return [];
+        }
+
+        (async () => {
+          try {
+            const protection = await fetchProtection();
+            const contexts = extractContexts(protection);
+            const strict = Boolean(protection?.required_status_checks?.strict);
+            const admins = Boolean(protection?.enforce_admins?.enabled);
+
+            const missing = expected.filter((ctx) => !contexts.includes(ctx));
+            const unexpected = contexts.filter((ctx) => !expected.includes(ctx));
+
+            const filtered = contexts.filter((ctx) => expected.includes(ctx));
+            const orderMatches =
+              filtered.length === expected.length && expected.every((ctx, index) => filtered[index] === ctx);
+
+            console.log(`# Branch protection audit for ${owner}/${repo}@${branch}`);
+            console.log('');
+            console.table(
+              [
+                { check: 'Missing required contexts', result: missing.length ? 'FAIL' : 'PASS', detail: missing.join(', ') || 'None' },
+                { check: 'Unexpected additional contexts', result: unexpected.length ? 'WARN' : 'PASS', detail: unexpected.join(', ') || 'None' },
+                { check: 'Context order matches policy', result: orderMatches ? 'PASS' : 'FAIL', detail: filtered.join(' → ') || '(none)' },
+                { check: 'Require branches up to date', result: strict ? 'PASS' : 'FAIL', detail: `strict=${strict}` },
+                { check: 'Admins must pass checks', result: admins ? 'PASS' : 'FAIL', detail: `admins_enforced=${admins}` },
+              ],
+            );
+
+            const failure = missing.length > 0 || !orderMatches || !strict || !admins;
+            if (failure) {
+              console.error('Branch protection does not satisfy CI v2 requirements.');
+              process.exit(1);
+            }
+          } catch (error) {
+            console.error(error instanceof Error ? error.message : error);
+            process.exit(1);
+          }
+        })();
+        NODE
 
   summary:
     name: CI summary
     runs-on: ubuntu-24.04
     if: ${{ always() }}
     needs:
-      - branch_protection
-      - lint
-      - tests
-      - python_unit
-      - python_integration
-      - python_load_sim
-      - python_coverage
-      - hgm_guardrails
-      - owner_controls
-      - foundry
-      - coverage
-      - phase6
-      - phase8
-      - kardashev_demo
-      - asi_takeoff_demo
-      - zenith_demo
-      - agi_labor_market_demo
-      - sovereign_mesh_demo
-      - sovereign_constellation_demo
-      - celestial_archon_demo
-      - hypernova_demo
-      - invariants
+    - branch_protection
+    - lint
+    - tests
+    - python_unit
+    - python_integration
+    - python_load_sim
+    - python_coverage
+    - hgm_guardrails
+    - owner_controls
+    - foundry
+    - coverage
+    - phase6
+    - phase8
+    - kardashev_demo
+    - asi_takeoff_demo
+    - zenith_demo
+    - agi_labor_market_demo
+    - sovereign_mesh_demo
+    - sovereign_constellation_demo
+    - celestial_archon_demo
+    - hypernova_demo
+    - invariants
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Publish pipeline summary
-        env:
-          NEEDS_CONTEXT: ${{ toJson(needs) }}
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const needs = JSON.parse(process.env.NEEDS_CONTEXT);
-          const prettyNames = {
-            branch_protection: 'Branch protection guard',
-            lint: 'Lint & static checks',
-            tests: 'Tests',
-            python_unit: 'Python unit tests',
-            python_integration: 'Python integration tests',
-            python_load_sim: 'Load-simulation reports',
-            python_coverage: 'Python coverage enforcement',
-            hgm_guardrails: 'HGM guardrails',
-            owner_controls: 'Owner control assurance',
-            foundry: 'Foundry',
-            coverage: 'Coverage thresholds',
-            phase6: 'Phase 6 readiness',
-            phase8: 'Phase 8 readiness',
-            kardashev_demo: 'Kardashev II readiness',
-            asi_takeoff_demo: 'ASI Take-Off Demonstration',
-            zenith_demo: 'Zenith Sapience Demonstration',
-            agi_labor_market_demo: 'AGI Labor Market Grand Demo',
-            sovereign_mesh_demo: 'Sovereign Mesh Demo — build',
-            sovereign_constellation_demo: 'Sovereign Constellation Demo — build',
-            celestial_archon_demo: 'Celestial Archon Demonstration',
-            hypernova_demo: 'Hypernova Governance Demonstration',
-            invariants: 'Invariant tests'
-          };
-          const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
-          let failed = false;
-          const jobSummaries = [];
-          const skippedJobs = [];
-          for (const [jobId, info] of Object.entries(needs)) {
-            const status = String(info.result || 'unknown').toUpperCase();
-            const conclusion = info.conclusion ? String(info.conclusion).toUpperCase() : '';
-            let displayStatus = status;
-            const treatAsPass = status === 'SUCCESS' || status === 'SKIPPED';
-            if (status === 'SKIPPED') {
-              skippedJobs.push(prettyNames[jobId] || jobId);
-              displayStatus = 'SKIPPED (permitted)';
-            } else if (conclusion && conclusion !== status) {
-              displayStatus = `${status} (${conclusion})`;
-            }
-            const label = prettyNames[jobId] || jobId;
-            if (!treatAsPass) {
-              failed = true;
-            }
-            lines.push(`| ${label} | ${displayStatus} |`);
-            jobSummaries.push({
-              id: jobId,
-              label,
-              result: info.result || 'unknown',
-              conclusion: info.conclusion || null,
-              url: info.url || null,
-              status: displayStatus
-            });
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - name: Publish pipeline summary
+      env:
+        NEEDS_CONTEXT: ${{ toJson(needs) }}
+      run: |
+        node <<'NODE'
+        const fs = require('fs');
+        const path = require('path');
+        const needs = JSON.parse(process.env.NEEDS_CONTEXT);
+        const prettyNames = {
+          branch_protection: 'Branch protection guard',
+          lint: 'Lint & static checks',
+          tests: 'Tests',
+          python_unit: 'Python unit tests',
+          python_integration: 'Python integration tests',
+          python_load_sim: 'Load-simulation reports',
+          python_coverage: 'Python coverage enforcement',
+          hgm_guardrails: 'HGM guardrails',
+          owner_controls: 'Owner control assurance',
+          foundry: 'Foundry',
+          coverage: 'Coverage thresholds',
+          phase6: 'Phase 6 readiness',
+          phase8: 'Phase 8 readiness',
+          kardashev_demo: 'Kardashev II readiness',
+          asi_takeoff_demo: 'ASI Take-Off Demonstration',
+          zenith_demo: 'Zenith Sapience Demonstration',
+          agi_labor_market_demo: 'AGI Labor Market Grand Demo',
+          sovereign_mesh_demo: 'Sovereign Mesh Demo — build',
+          sovereign_constellation_demo: 'Sovereign Constellation Demo — build',
+          celestial_archon_demo: 'Celestial Archon Demonstration',
+          hypernova_demo: 'Hypernova Governance Demonstration',
+          invariants: 'Invariant tests'
+        };
+        const lines = ['# AGI Jobs v0 — CI v2 status', '', '| Job | Result |', '| --- | --- |'];
+        let failed = false;
+        const jobSummaries = [];
+        const skippedJobs = [];
+        for (const [jobId, info] of Object.entries(needs)) {
+          const status = String(info.result || 'unknown').toUpperCase();
+          const conclusion = info.conclusion ? String(info.conclusion).toUpperCase() : '';
+          let displayStatus = status;
+          const treatAsPass = status === 'SUCCESS' || status === 'SKIPPED';
+          if (status === 'SKIPPED') {
+            skippedJobs.push(prettyNames[jobId] || jobId);
+            displayStatus = 'SKIPPED (permitted)';
+          } else if (conclusion && conclusion !== status) {
+            displayStatus = `${status} (${conclusion})`;
           }
-          if (skippedJobs.length > 0) {
-            lines.push(
-              '',
-              '> _Note:_ Jobs marked as `SKIPPED (permitted)` bypass automatically on forks or other contexts where GitHub withholds the required permissions. Branch protection still enforces them on trusted branches.'
-            );
+          const label = prettyNames[jobId] || jobId;
+          if (!treatAsPass) {
+            failed = true;
           }
-          const markdown = lines.join('\n') + '\n';
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
-
-          const outputDir = path.join('reports', 'ci');
-          fs.mkdirSync(outputDir, { recursive: true });
-          fs.writeFileSync(path.join(outputDir, 'status.md'), markdown, 'utf8');
-          const statusPayload = {
-            generatedAt: new Date().toISOString(),
-            workflow: process.env.GITHUB_WORKFLOW,
-            runId: process.env.GITHUB_RUN_ID,
-            runAttempt: process.env.GITHUB_RUN_ATTEMPT,
-            jobs: jobSummaries
-          };
-          fs.writeFileSync(
-            path.join(outputDir, 'status.json'),
-            JSON.stringify(statusPayload, null, 2) + '\n',
-            'utf8'
+          lines.push(`| ${label} | ${displayStatus} |`);
+          jobSummaries.push({
+            id: jobId,
+            label,
+            result: info.result || 'unknown',
+            conclusion: info.conclusion || null,
+            url: info.url || null,
+            status: displayStatus
+          });
+        }
+        if (skippedJobs.length > 0) {
+          lines.push(
+            '',
+            '> _Note:_ Jobs marked as `SKIPPED (permitted)` bypass automatically on forks or other contexts where GitHub withholds the required permissions. Branch protection still enforces them on trusted branches.'
           );
+        }
+        const markdown = lines.join('\n') + '\n';
+        fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
 
-          if (failed) {
-            console.error('One or more CI jobs failed.');
-            process.exit(1);
-          }
-          NODE
-      - name: Upload CI status artefact
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ci-summary
-          path: reports/ci
-          if-no-files-found: error
+        const outputDir = path.join('reports', 'ci');
+        fs.mkdirSync(outputDir, { recursive: true });
+        fs.writeFileSync(path.join(outputDir, 'status.md'), markdown, 'utf8');
+        const statusPayload = {
+          generatedAt: new Date().toISOString(),
+          workflow: process.env.GITHUB_WORKFLOW,
+          runId: process.env.GITHUB_RUN_ID,
+          runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+          jobs: jobSummaries
+        };
+        fs.writeFileSync(
+          path.join(outputDir, 'status.json'),
+          JSON.stringify(statusPayload, null, 2) + '\n',
+          'utf8'
+        );
+
+        if (failed) {
+          console.error('One or more CI jobs failed.');
+          process.exit(1);
+        }
+        NODE
+    - name: Upload CI status artefact
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: ci-summary
+        path: reports/ci
+        if-no-files-found: error
 
   invariants:
     name: Invariant tests
@@ -1295,47 +1201,41 @@ jobs:
     if: ${{ always() }}
     timeout-minutes: 60
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            **/package-lock.json
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Regenerate constants for invariants
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
-        with:
-          version: 'v1.4.4'
-      - name: Cache Foundry build artifacts
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: |
-            ~/.foundry/cache
-            ~/.cache/foundry
-          key: foundry-invariant-${{ runner.os }}-${{ hashFiles('foundry.toml', 'test/v2/invariant/**/*.sol') }}
-          restore-keys: |
-            foundry-invariant-${{ runner.os }}-
-      - name: Ensure forge-std dependency
-        run: |
-          if [ ! -d lib/forge-std ]; then
-            forge install foundry-rs/forge-std;
-          else
-            echo 'forge-std already present; skipping install.';
-          fi
-      - name: Run invariant suite
-        run: forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Regenerate constants for invariants
+      run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
+      with:
+        version: 'v1.4.4'
+    - name: Cache Foundry build artifacts
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: |
+          ~/.foundry/cache
+          ~/.cache/foundry
+        key: foundry-invariant-${{ runner.os }}-${{ hashFiles('foundry.toml', 'test/v2/invariant/**/*.sol') }}
+        restore-keys: |
+          foundry-invariant-${{ runner.os }}-
+    - name: Ensure forge-std dependency
+      run: |
+        if [ ! -d lib/forge-std ]; then
+          forge install foundry-rs/forge-std;
+        else
+          echo 'forge-std already present; skipping install.';
+        fi
+    - name: Run invariant suite
+      run: forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512
