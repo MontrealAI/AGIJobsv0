@@ -4,7 +4,7 @@ This monitor periodically calculates KPI errors and updates the on-chain `Thermo
 
 ## Prerequisites
 
-- Node.js 20.18.1
+- Node.js 20.19.0
 - access to an Ethereum RPC endpoint
 - deployed `Thermostat` contract address
 - governance timelock or authorised executor to call `tick`
