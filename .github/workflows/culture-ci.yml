@@ -94,6 +94,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: solidity
     timeout-minutes: 30
+    env:
+      MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - name: Enable Corepack
@@ -116,10 +118,10 @@ jobs:
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
       - name: MythX analysis
-        if: ${{ env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '' }}
+        if: ${{ env.MYTHX_API_KEY != '' }}
         working-directory: demo/CULTURE-v0
         env:
-          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY || env.MYTHX_API_KEY }}
+          MYTHX_API_KEY: ${{ env.MYTHX_API_KEY }}
         run: |
           docker run --rm \
             -e MYTHX_API_KEY \
@@ -127,7 +129,7 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
-        if: ${{ !(env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '') }}
+        if: ${{ env.MYTHX_API_KEY == '' }}
         run: echo 'MythX API key not provided; skipping MythX analysis.'
 
   services:
@@ -204,29 +206,17 @@ jobs:
       - solidity
       - services
     timeout-minutes: 60
-    services:
-      anvil:
-        image: ghcr.io/foundry-rs/foundry:latest
-        options: >-
-          --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
-        ports:
-          - 8545:8545
-        command:
-          [
-            'anvil',
-            '--host',
-            '0.0.0.0',
-            '--port',
-            '8545',
-            '--chain-id',
-            '31337',
-            '--block-time',
-            '2',
-          ]
-      ipfs:
-        image: ipfs/kubo:latest
-        ports:
-          - 8080:8080
+      services:
+        anvil:
+          image: ghcr.io/foundry-rs/foundry:latest
+          options: >-
+            --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
+          ports:
+            - 8545:8545
+        ipfs:
+          image: ipfs/kubo:latest
+          ports:
+            - 8080:8080
           - 5001:5001
       postgres:
         image: postgres:16-alpine
