@@ -8,6 +8,17 @@ fi
 
 project_root=${NPM_CI_PROJECT_ROOT:-$(pwd)}
 lockfile_path=${NPM_CI_LOCK_PATH:-${project_root}/package-lock.json}
+package_json_path=${NPM_CI_PACKAGE_JSON_PATH:-${project_root}/package.json}
+
+if [ ! -f "$package_json_path" ]; then
+  echo "package.json not found at ${package_json_path}" >&2
+  echo "Current directory: $(pwd)" >&2
+  if [ -d "$project_root" ]; then
+    echo "Project root contents:" >&2
+    ls -al "$project_root" >&2
+  fi
+  exit 1
+fi
 
 if [ ! -f "$lockfile_path" ]; then
   echo "package-lock.json not found at ${lockfile_path}" >&2
@@ -22,6 +33,10 @@ fi
 attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
+
+if [ -z "${npm_config_package_lock:-}" ]; then
+  export npm_config_package_lock=true
+fi
 
 while [ "$attempt" -le "$max_attempts" ]; do
   rm -rf "${project_root}/node_modules"
