@@ -40,8 +40,30 @@ if [ -n "$current_node_version" ] && [ -f "$version_check_script" ]; then
   fi
 fi
 
-corepack_npm_version="${NPM_CI_NPM_VERSION:-11.4.2}"
+lockfile_version=""
+if command -v node >/dev/null 2>&1; then
+  lockfile_version="$(node -e 'try { const fs = require("fs"); const raw = fs.readFileSync(process.argv[1], "utf8"); const parsed = JSON.parse(raw); if (parsed && parsed.lockfileVersion !== undefined) { process.stdout.write(String(parsed.lockfileVersion)); } } catch (err) { process.stderr.write(`[docker-npm-ci] WARNING: failed to read lockfile version: ${err.message}\n`); }' "$lockfile_path" 2>/dev/null || printf '')"
+fi
+
+corepack_npm_version_default="11.4.2"
+corepack_npm_version="${NPM_CI_NPM_VERSION:-$corepack_npm_version_default}"
 current_npm_version="$(npm -v 2>/dev/null || printf '')"
+
+if [ -z "${NPM_CI_NPM_VERSION:-}" ] && [ -n "$lockfile_version" ]; then
+  case "$lockfile_version" in
+    ''|*[!0-9]*) ;;
+    *)
+      if [ "$lockfile_version" -le 3 ] 2>/dev/null; then
+        if [ -n "$current_npm_version" ]; then
+          if [ "$current_npm_version" != "$corepack_npm_version" ]; then
+            echo "[docker-npm-ci] lockfileVersion $lockfile_version detected; staying on bundled npm $current_npm_version for compatibility" >&2
+          fi
+          corepack_npm_version="$current_npm_version"
+        fi
+      fi
+      ;;
+  esac
+fi
 
 if command -v corepack >/dev/null 2>&1; then
   if [ "$current_npm_version" != "$corepack_npm_version" ]; then

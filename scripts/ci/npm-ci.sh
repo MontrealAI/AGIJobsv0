@@ -61,8 +61,30 @@ if ! node "$SCRIPT_DIR/version-check.mjs" "$CURRENT_NODE_VERSION" "$REQUIRED_NOD
   echo "[npm-ci] Upgrade your Node runtime (nvm install $REQUIRED_NODE_VERSION) to avoid engine conflicts" >&2
 fi
 
-COREPACK_NPM_VERSION="${NPM_CI_NPM_VERSION:-11.4.2}"
+LOCKFILE_VERSION=""
+if command -v node >/dev/null 2>&1; then
+  LOCKFILE_VERSION="$(node -e 'try { const fs = require("fs"); const raw = fs.readFileSync(process.argv[1], "utf8"); const parsed = JSON.parse(raw); if (parsed && parsed.lockfileVersion !== undefined) { process.stdout.write(String(parsed.lockfileVersion)); } } catch (err) { process.stderr.write(`[npm-ci] WARNING: failed to read lockfile version: ${err.message}\n`); }' "$LOCKFILE_PATH" 2>/dev/null || true)"
+fi
+
+COREPACK_NPM_VERSION_DEFAULT="11.4.2"
+COREPACK_NPM_VERSION="${NPM_CI_NPM_VERSION:-$COREPACK_NPM_VERSION_DEFAULT}"
 CURRENT_NPM_VERSION="$(npm -v 2>/dev/null || true)"
+
+if [ -z "${NPM_CI_NPM_VERSION:-}" ] && [ -n "$LOCKFILE_VERSION" ]; then
+  case "$LOCKFILE_VERSION" in
+    ''|*[!0-9]*) ;;
+    *)
+      if [ "$LOCKFILE_VERSION" -le 3 ] 2>/dev/null; then
+        if [ -n "$CURRENT_NPM_VERSION" ]; then
+          if [ "$CURRENT_NPM_VERSION" != "$COREPACK_NPM_VERSION" ]; then
+            echo "[npm-ci] lockfileVersion $LOCKFILE_VERSION detected; staying on bundled npm $CURRENT_NPM_VERSION for compatibility" >&2
+          fi
+          COREPACK_NPM_VERSION="$CURRENT_NPM_VERSION"
+        fi
+      fi
+      ;;
+  esac
+fi
 
 if command -v corepack >/dev/null 2>&1; then
   if [ "$CURRENT_NPM_VERSION" != "$COREPACK_NPM_VERSION" ]; then
