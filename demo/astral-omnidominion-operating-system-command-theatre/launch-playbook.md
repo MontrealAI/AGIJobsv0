@@ -7,7 +7,7 @@ This playbook is designed for **non-technical operators**. Follow the steps in o
 | Requirement | Verification method |
 | --- | --- |
 | Docker Desktop ≥ 4.29 **or** Docker Engine ≥ 24 with Compose plugin | Run `docker --version` and `docker compose version`. Both commands must succeed. |
-| Node.js 20.18.1 LTS | Run `node --version` and confirm the version matches the repository’s `package.json`. |
+| Node.js 20.19.0 LTS | Run `node --version` and confirm the version matches the repository’s `package.json`. |
 | npm 10.x (bundled with Node 20) | Run `npm --version`. |
 | Git | Run `git status`. |
 | 20 GB free disk space | `df -h .` |

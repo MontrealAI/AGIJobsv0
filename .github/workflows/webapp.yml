@@ -30,13 +30,26 @@ jobs:
           cache: npm
 
       - name: Install repository dependencies
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
 
       - name: Install console dependencies
-        run: npm ci --prefix apps/console
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --prefix apps/console
 
       - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --prefix apps/enterprise-portal
+
+      - name: Restore Cypress cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json', 'apps/console/package-lock.json') }}
+          restore-keys: |
+            cypress-${{ runner.os }}-
+
+      - name: Install Cypress binary
+        env:
+          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+        run: ${{ github.workspace }}/scripts/ci/install-cypress.sh
 
       - name: Type-check webapp
         run: npm run webapp:typecheck
