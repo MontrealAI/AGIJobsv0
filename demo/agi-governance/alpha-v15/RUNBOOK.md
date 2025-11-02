@@ -17,7 +17,7 @@ assumes Ethereum mainnet-grade infrastructure, and keeps the contract owner in a
    ```bash
    npm run ci:verify-toolchain
    ```
-   Confirms Node 20.18.1, Hardhat, Foundry, and auxiliary utilities match the locked versions.
+   Confirms Node 20.19.0, Hardhat, Foundry, and auxiliary utilities match the locked versions.
 3. **Owner signer ready** — control the Safe or hardware wallet referenced in [`config/mission@v15.json`](config/mission@v15.json).
 
 ---
