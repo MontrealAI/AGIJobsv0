@@ -57,10 +57,10 @@ auto-selects `FileRunStateStore` when no environment variables are provided.【F
 
 ## CI integration
 
-- `ci (v2) / Python unit tests` runs `pytest` over `test/orchestrator/**` with coverage enforced by the `python_coverage` job.【F:.github/workflows/ci.yml†L118-L345】
+- `ci (v2) / Python unit tests` runs `pytest` over `test/orchestrator/**` with coverage enforced by the `python_coverage` job.【F:.github/workflows/ci.yml†L118-L349】
 - `ci (v2) / HGM guardrails` executes the higher-governance suite, validating orchestration flows against the AGI Alpha profile
-  defaults.【F:.github/workflows/ci.yml†L352-L420】
-- `ci (v2) / Load-simulation reports` consumes orchestrator metrics to generate Monte Carlo dissipation sweeps for owners.【F:.github/workflows/ci.yml†L206-L272】
+  defaults.【F:.github/workflows/ci.yml†L350-L439】
+- `ci (v2) / Load-simulation reports` consumes orchestrator metrics to generate Monte Carlo dissipation sweeps for owners.【F:.github/workflows/ci.yml†L216-L292】
 
 ## Extending the orchestrator
 

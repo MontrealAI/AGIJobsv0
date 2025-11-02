@@ -80,7 +80,7 @@ uses `registerEvents` to broadcast validator assignments and job changes.【F:ag
 
 - `npm run test` executes the Hardhat suite that consumes this service’s mocks.
 - `ci (v2) / Owner control assurance` regenerates owner doctor reports using the gateway helpers to guarantee that contract owner
-  controls remain reachable.【F:.github/workflows/ci.yml†L386-L434】
+  controls remain reachable.【F:.github/workflows/ci.yml†L393-L439】
 - `containers.yml` builds the Docker image (`Dockerfile`) and runs Trivy scans so production deployments remain reproducible.
 
 ## Operational runbook

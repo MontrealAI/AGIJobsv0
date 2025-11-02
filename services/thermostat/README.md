@@ -26,7 +26,7 @@ flowchart LR
 ## Configuration
 
 Thermostat defaults live in `config/agialpha/thermostat.json`. CI regenerates the owner parameter matrix and fails if values fall
-outside safety thresholds, guaranteeing the contract owner can adjust targets at any time.【F:.github/workflows/ci.yml†L386-L434】
+outside safety thresholds, guaranteeing the contract owner can adjust targets at any time.【F:.github/workflows/ci.yml†L393-L439】
 
 Key knobs:
 
@@ -46,7 +46,7 @@ await controller.ingest(sample)  # sample is services.thermostat.metrics.MetricS
 ```
 
 CI v2 executes these tests as part of `ci (v2) / Python unit tests`, and the load-simulation job verifies ROI behaviour across
-Monte Carlo sweeps.【F:.github/workflows/ci.yml†L118-L345】【F:.github/workflows/ci.yml†L206-L272】
+Monte Carlo sweeps.【F:.github/workflows/ci.yml†L118-L349】【F:.github/workflows/ci.yml†L216-L292】
 
 Keep the thermostat aligned with owner requirements so mission owners can operate the superintelligent machine with predictable
 financial outcomes.

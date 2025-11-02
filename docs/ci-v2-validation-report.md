@@ -60,7 +60,7 @@ These steps augment the permanent references in [`docs/v2-ci-operations.md`](v2-
    npm run ci:verify-companion-contexts
    ```
 
-   `ci:verify-contexts` parses `.github/workflows/ci.yml` and proves every job display name has a matching required status context, while `ci:verify-companion-contexts` checks the cross-workflow manifest for typos before enforcement.【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L83】 A clean run guarantees the branch guard job will block merges if contexts ever drift.【F:.github/workflows/ci.yml†L936-L1120】
+   `ci:verify-contexts` parses `.github/workflows/ci.yml` and proves every job display name has a matching required status context, while `ci:verify-companion-contexts` checks the cross-workflow manifest for typos before enforcement.【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L83】 A clean run guarantees the branch guard job will block merges if contexts ever drift.【F:.github/workflows/ci.yml†L966-L1130】
 
 7. **Execute the full Node/Hardhat suite**
 

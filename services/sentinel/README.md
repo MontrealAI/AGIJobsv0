@@ -40,7 +40,7 @@ snapshot = monitor.snapshot()
 
 The sentinel integrates with the thermostat and orchestrator to request pauses when ROI dips below the configured thresholds. CI v2
 runs these tests in `ci (v2) / Python unit tests` and the `HGM guardrails` job, guaranteeing the contract owner retains immediate
-control when anomalies arise.【F:.github/workflows/ci.yml†L118-L345】【F:.github/workflows/ci.yml†L352-L420】
+control when anomalies arise.【F:.github/workflows/ci.yml†L118-L349】【F:.github/workflows/ci.yml†L350-L439】
 
 Keep the sentinel thresholds aligned with owner policy so the superintelligent machine flags anomalies before they impact mission
 outcomes.

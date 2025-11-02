@@ -71,7 +71,7 @@ All outputs land in `reports/helios-omniversal-symphony/owner/` for downstream n
 
 ## 6. CI Handoff
 
-- Wire the `mission` target into a workflow job that depends on the existing `ci.yml` lint/test/foundry/coverage fan-out so Helios artefacts surface only after core checks pass.【F:README.md†L20-L37】【F:.github/workflows/ci.yml†L1-L120】
+- Wire the `mission` target into a workflow job that depends on the existing `ci.yml` lint/test/foundry/coverage fan-out so Helios artefacts surface only after core checks pass.【F:README.md†L20-L37】【F:.github/workflows/ci.yml†L1-L118】
 - Publish artefacts and SHA sums as job outputs; use branch protection to treat the Helios job as a required status, mirroring the CI v2 operations guide.【F:README.md†L20-L52】
 - Encourage reviewers to load Mermaid diagrams directly from the Markdown bundles to validate governance wiring visually before sign-off.
 
