@@ -89,7 +89,7 @@ existing artefacts with freshly computed outputs while preserving consistent pat
 
 ## Troubleshooting
 
-- Ensure Node.js 20.18.1 (from `.nvmrc`) is active before running the command.
+- Ensure Node.js 20.19.0 (from `.nvmrc`) is active before running the command.
 - If Hardhat fails to compile due to stale generated constants, run `npm run compile`
   once and retry.
 - When configuration files are intentionally omitted (for example, modules not yet
