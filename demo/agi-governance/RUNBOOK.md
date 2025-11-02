@@ -16,7 +16,7 @@ This runbook lets a non-technical owner execute the entire AGI Governance Demons
    ```bash
    npm run ci:verify-toolchain
    ```
-   Confirms Node 20.18.1, Hardhat, Foundry, and auxiliary utilities match the pinned versions.
+   Confirms Node 20.19.0, Hardhat, Foundry, and auxiliary utilities match the pinned versions.
 3. **Owner signer ready:** ensure you control the owner key or multisig referenced in [`config/mission@v1.json`](config/mission@v1.json).
 
 ---
