@@ -74,6 +74,12 @@ The job display names in GitHub Actions must stay in sync with these contexts. A
 
 ## Verification steps
 
+### 0. Run deterministic toolchain preflight
+
+1. From the repository root, execute `npm run ci:preflight`.
+2. Confirm the output prints `✅ All package-lock.json files are valid and deterministic.` along with the toolchain lock success banner.
+3. If the command fails, regenerate the affected lockfiles with `npm install --package-lock-only` or align `.nvmrc`, `package.json` engines, and the `packageManager` pin before proceeding.
+
 ### 1. Inspect branch protection in the GitHub UI
 
 1. Navigate to **Settings → Branches**.

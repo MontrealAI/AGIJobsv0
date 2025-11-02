@@ -34,13 +34,16 @@ jobs:
             package-lock.json
             **/package-lock.json
 
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+
       - name: Install Node dependencies
         run: npm ci
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
 
       - name: Cache forge libraries
         id: cache

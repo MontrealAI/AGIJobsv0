@@ -52,6 +52,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Assert required contexts manifest is synchronised
@@ -98,6 +100,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Compile contracts
@@ -410,6 +414,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Generate owner control assurance reports
@@ -454,6 +460,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for Foundry
@@ -461,7 +469,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
       - name: Cache Foundry build artifacts
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
@@ -511,6 +519,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for coverage
@@ -555,6 +565,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Validate Phase 6 manifest & UI
@@ -584,6 +596,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Validate Phase 8 manifest & UI
@@ -613,6 +627,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Validate Kardashev II demo
@@ -649,6 +665,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Run ASI take-off demonstration
@@ -690,6 +708,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Run Zenith Sapience deterministic kit
@@ -743,6 +763,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Run grand labour market simulation
@@ -778,6 +800,8 @@ jobs:
             package-lock.json
             demo/sovereign-mesh/server/package-lock.json
             demo/sovereign-mesh/app/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-mesh/server
         run: npm ci --no-audit --prefer-offline --progress=false
@@ -814,6 +838,8 @@ jobs:
             package-lock.json
             demo/sovereign-constellation/server/package-lock.json
             demo/sovereign-constellation/app/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install server dependencies
         working-directory: demo/sovereign-constellation/server
         run: npm ci --no-audit --prefer-offline --progress=false
@@ -856,6 +882,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Run Celestial Archon deterministic kit
@@ -909,6 +937,8 @@ jobs:
           key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
           restore-keys: |
             hardhat-${{ runner.os }}-
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Run Hypernova deterministic kit
@@ -1281,6 +1311,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
       - name: Install dependencies
         run: npm ci --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for invariants
@@ -1288,7 +1320,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
       - name: Cache Foundry build artifacts
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
