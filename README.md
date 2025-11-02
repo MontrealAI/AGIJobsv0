@@ -9,222 +9,195 @@
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
 
-AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a superintelligent machine engineered to compound value, command critical infrastructure, and realign global-scale operations with verifiable safety.
+AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform behaves like the reference superintelligent system for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios.
 
-## Why It Matters
-- **Unified Intelligence:** Orchestrates smart contracts, agent gateways, validators, and observability into a cohesive mission fabric.
-- **Operator Ready:** Non-technical mission owners can activate playbooks through curated runbooks and one-click demos.
-- **Safety First:** Every component inherits deterministic guardrails, sentinel monitoring, and immutable audit flows.
+## Executive signal
+- **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators.【F:agent-gateway/README.md†L1-L53】【F:apps/validator-ui/README.md†L1-L40】【F:services/thermostat/README.md†L1-L60】
+- **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】【F:package.json†L135-L226】
+- **Evergreen assurance:** CI v2 enforces a wall of 23 required contexts plus companion workflows, uploads audit artefacts, and verifies branch protection so every release inherits a fully green, enforceable policy.【F:.github/workflows/ci.yml†L24-L144】【F:.github/workflows/ci.yml†L936-L1339】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
 
-## Repository Structure
-### Strategic Directories
-- `.github`
-- `agent-gateway`
-- `apps`
-- `attestation`
-- `backend`
-- `ci`
-- `config`
-- `contracts`
-- `cypress`
-- `data`
-- `demo`
-- `deploy`
-- `deployment-config`
-- `docs`
-- `echidna`
-- `examples`
-- `gas-snapshots`
-- `internal_docs`
-- `kardashev_ii_omega_grade_alpha_agi_business_3_demo`
-- `kardashev_ii_omega_grade_alpha_agi_business_3_demo_k2`
-
-### Key Files
-- `.coveragerc`
-- `.dockerignore`
-- `.env`
-- `.env.example`
-- `.gitignore`
-- `.npmrc`
-- `.nvmrc`
-- `.prettierrc`
-- `.solcover.js`
-- `.solhint.ci.json`
-- `.solhint.json`
-- `.trivyignore`
-- `audit-ci.json`
-- `CHANGELOG.md`
-- `compose.yaml`
-- `cypress.config.ts`
-- `echidna.yaml`
-- `eslint.config.js`
-- `foundry.toml`
-- `hardhat.config.js`
-
-## Getting Started
-1. Ensure you are running Node.js 20.18.1 (matching `.nvmrc`) and Python 3.11+.
-2. Bootstrap dependencies:
+## Quickstart for operators
+1. Use Node.js 20.18.1 (`.nvmrc`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L141-L188】
+2. Hydrate dependencies:
    ```bash
    npm install
+   python -m pip install --upgrade pip
    python -m pip install -r requirements-python.txt
    ```
-3. Run the deterministic toolchain preflight to confirm lockfile and runtime parity:
+3. Confirm the deterministic toolchain locks before coding:
    ```bash
    npm run ci:preflight
+   npm run ci:verify-toolchain
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
    ```
-4. Validate the full CI workflow locally:
+   All four commands are wired into CI v2, so keeping them green locally mirrors branch protection expectations.【F:package.json†L138-L150】【F:.github/workflows/ci.yml†L44-L133】
+4. Validate the critical suites:
    ```bash
-   npm run lint --if-present
    npm test
-   npm run webapp:build --if-present
-   make operator:green
+   npm run lint:ci
+   npm run coverage
+   forge test -vvvv --ffi --fuzz-runs 256
    ```
-5. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
+   These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires.【F:package.json†L233-L245】【F:.github/workflows/ci.yml†L62-L552】
+5. When the signal is green, push signed commits and open a pull request—CI v2 enforces the exact same contexts on `main` and PRs.
 
-> **Guardrail:** Never hand-edit `package-lock.json`. If a dependency changes, run `npm install --package-lock-only` from the affected workspace so `ci:preflight` stays green.
-
-## Architecture
+## Repository atlas
 ```mermaid
-flowchart TD
-    subgraph Owners[Owner Control Plane]
-        Runbooks --> Policy
-        Policy --> Upgrades
-    end
+flowchart LR
+    classDef core fill:#ecfeff,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef ops fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef demos fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef svc fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
 
-    subgraph Core[AGI Jobs v0 (v2) Core Intelligence]
-        Contracts[[Smart Contracts]]
-        Services[[Node & API Services]]
-        Apps[[Operator & Validator Apps]]
-        DataLake[(Knowledge Graph & Telemetry)]
-    end
-
-    subgraph Frontiers[Mission Demos & Scenarios]
-        Demos[[High-Stakes Scenarios]]
-    end
-
-    Owners --> Core
-    Core --> Observability[[CI / CD, Security, QA]]
-    Core --> Governance[[Sentinel & Thermostat]]
-    Core --> Frontiers
-    Frontiers --> Feedback[[Learning & Alignment Loop]]
+    contracts[contracts/]:::core --> ci[ci/]:::ops
+    agentGateway[agent-gateway/]:::svc --> services[services/]:::svc
+    apps[apps/]:::svc --> demos[demo/]:::demos
+    backend[backend/]:::svc --> deploy[deploy/]:::ops
+    docs[docs/]:::ops --> reports[reports/]:::ops
+    ci --> .github[.github/workflows/]:::ops
+    demos --> orchestrator[orchestrator/]:::svc
 ```
 
-## Mission Operations
-- **Owner Control:** Use the scripts under `scripts/v2/` (`owner:*`, `platform:*`, `thermostat:*`) to steer upgrades, registry changes, and emergency responses.
-- **Agent Gateway:** Reference [`agent-gateway/`](agent-gateway/README.md) for mission-to-agent integration patterns.
-- **Validator Mesh:** See [`apps/validator-ui/`](apps/validator-ui/README.md) and [`demo/Validator-Constellation-v0/`](demo/Validator-Constellation-v0/README.md) for validator orchestration.
-- **Thermal Stability:** [`services/thermostat/`](services/thermostat/README.md) documents the thermal regulation engine that guards systemic health.
+| Domain | Highlights |
+| ------ | ---------- |
+| Contracts (`contracts/`) | Solidity kernel, modules, admin façades, and invariant harnesses tested through Hardhat + Foundry with owner-first controls.【F:contracts/README.md†L1-L82】 |
+| Agent Gateway (`agent-gateway/`) | TypeScript service providing REST, WebSocket, and gRPC bridges into the contract stack with deterministic telemetry exports.【F:agent-gateway/README.md†L1-L86】 |
+| Apps (`apps/`) | Operator and validator UIs that consume the gateway and orchestrator APIs for mission dashboards.【F:apps/validator-ui/README.md†L1-L40】 |
+| Services (`services/`) | Sentinels, thermostat, culture indexers, and auxiliary control planes feeding observability and safeguards.【F:services/thermostat/README.md†L1-L60】 |
+| CI (`ci/` + `.github/workflows/`) | Scripts, manifests, and workflows that lock toolchains, enforce branch protection, and publish compliance artefacts.【F:ci/required-contexts.json†L1-L24】【F:.github/workflows/ci.yml†L24-L552】 |
+| Demo constellation (`demo/`) | High-stakes rehearsals (Kardashev, ASI take-off, Zenith sapience, etc.) codified as reproducible scripts and UI bundles.【F:.github/workflows/ci.yml†L552-L938】 |
 
-## Always-Green CI Signal Deck
-- **Single source of truth:** The `ci (v2)` workflow exposes 23 required contexts that map 1:1 with [`ci/required-contexts.json`](ci/required-contexts.json). The lint stage fails fast when display names drift so branch protection never hides a status for owners or reviewers.【F:.github/workflows/ci.yml†L33-L71】【F:ci/required-contexts.json†L1-L23】
-- **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L182】【F:docs/ci-v2-branch-protection-checklist.md†L1-L206】
-- **Companion workflows:** Static analysis, fuzzing, web application smoke tests, orchestrator rehearsals, and deterministic e2e drills are all surfaced as required checks so the Checks tab stays comprehensible to non-technical stakeholders. Each badge above links directly to its workflow for live status and history.【F:.github/workflows/static-analysis.yml†L1-L157】【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/orchestrator-ci.yml†L1-L214】【F:.github/workflows/e2e.yml†L1-L164】
-- **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub. The upload step now fails the workflow if the artefacts are ever missing, guaranteeing the evidence is immutable and reviewable.【F:.github/workflows/ci.yml†L1130-L1259】
-- **Preflight enforcement:** Contributors must run `npm run ci:preflight` locally and in automation. The script validates `.nvmrc`, `package.json` engine pins, `packageManager`, and every `package-lock.json` to ensure the orchestration remains reproducible.【F:package.json†L3-L7】【F:package.json†L135-L142】【F:scripts/ci/check-toolchain-locks.js†L1-L120】【F:scripts/ci/check-lock-integrity.js†L1-L78】
-- **Deterministic installs:** Every workflow job calls [`scripts/ci/npm-ci.sh`](scripts/ci/npm-ci.sh), which validates the targeted lockfile with `jq`, wipes `node_modules` safely, and then executes `npm ci` with reproducible flags. Sub-workspaces set `NPM_CI_PROJECT_ROOT` so `apps/console`, `apps/enterprise-portal`, and other packages inherit the same guardrails.【F:scripts/ci/npm-ci.sh†L1-L28】【F:.github/workflows/webapp.yml†L33-L43】
+## Owner command authority
+```mermaid
+flowchart TD
+    classDef owner fill:#fefce8,stroke:#ca8a04,color:#713f12,stroke-width:1px;
+    classDef script fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef contract fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
 
-### Pipeline topology
+    Owner((Contract Owner)):::owner --> CommandCenter[owner:command-center]:::script
+    CommandCenter --> OwnerConfigurator[[OwnerConfigurator]]:::contract
+    Owner --> OwnerUpdate[owner:update-all]:::script --> Registry[[JobRegistry]]:::contract
+    Owner --> OwnerPause[owner:system-pause]:::script --> SystemPause[[SystemPause]]:::contract
+    Owner --> Authority[ci:owner-authority]:::script --> Matrix[(Owner authority matrix)]:::contract
+```
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run owner:system-pause -- --network <network>` | Toggle pause levers across kernel and module contracts in one transaction, enforcing ownership checks before execution.【F:package.json†L180-L195】【F:contracts/v2/SystemPause.sol†L15-L157】 |
+| `npm run owner:update-all -- --network <network>` | Reconcile manifests against on-chain parameters through the `OwnerConfigurator`, emitting structured audit logs per change.【F:package.json†L195-L215】【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】 |
+| `npm run owner:command-center` | Render a consolidated mission-control report (mermaid + JSON) so non-technical owners can approve operations before broadcasting.【F:package.json†L165-L190】 |
+| `npm run owner:parameters -- --network <network>` | Export the full parameter matrix referenced in CI and compliance reviews.【F:package.json†L165-L208】【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】 |
+| `npm run ci:owner-authority -- --network ci --out reports/owner-control` | Regenerate the authority matrix consumed by CI artefacts and branch protection guards.【F:package.json†L138-L149】【F:.github/workflows/ci.yml†L386-L434】 |
+
+Every command supports `--dry-run` and report exports, ensuring the contract owner retains absolute control while the automation stays auditable.【F:scripts/v2/ownerControlDoctor.ts†L1-L252】【F:scripts/v2/ownerControlQuickstart.ts†L1-L220】
+
+## CI v2 orchestration
 ```mermaid
 flowchart LR
     classDef base fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
-    classDef audit fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
-    classDef demo fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
     classDef analytics fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef demo fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef guard fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
 
-    lint["Lint & static checks"]:::base
-    tests["Tests"]:::base
-    pyUnit["Python unit tests"]:::analytics
-    pyInt["Python integration tests"]:::analytics
-    pyLoad["Load-simulation reports"]:::analytics
-    pyCov["Python coverage enforcement"]:::analytics
-    foundry["Foundry"]:::base
-    coverage["Coverage thresholds"]:::base
-    invariants["Invariant tests"]:::base
-    hgm["HGM guardrails"]:::audit
-    ownerCtl["Owner control assurance"]:::audit
-    phase6["Phase 6 readiness"]:::demo
-    phase8["Phase 8 readiness"]:::demo
-    kardashev["Kardashev II readiness"]:::demo
-    asi["ASI Take-Off Demonstration"]:::demo
-    zenith["Zenith Sapience Demonstration"]:::demo
-    labor["AGI Labor Market Grand Demo"]:::demo
-    mesh["Sovereign Mesh Demo — build"]:::demo
-    constellation["Sovereign Constellation Demo — build"]:::demo
-    archon["Celestial Archon Demonstration"]:::demo
-    hypernova["Hypernova Governance Demonstration"]:::demo
-    branchGuard["Branch protection guard"]:::audit
-    summary["CI summary"]:::audit
-
-    pyUnit --> pyCov
-    pyInt --> pyCov
-    lint --> hgm
-    lint --> ownerCtl
-    lint --> phase6
-    lint --> phase8
-    lint --> kardashev
-    tests --> hgm
-    tests --> foundry
-    tests --> coverage
-    tests --> phase6
-    tests --> phase8
-    tests --> kardashev
-    tests --> asi
-    tests --> zenith
-    tests --> labor
-    tests --> mesh
-    tests --> constellation
-    tests --> archon
-    tests --> hypernova
-    tests --> invariants
-    pyCov --> summary
-    pyLoad --> summary
-    pyUnit --> summary
-    pyInt --> summary
-    lint --> summary
-    tests --> summary
+    lint[Lint & static checks]:::base --> hgm[HGM guardrails]:::guard
+    lint --> ownerCtl[Owner control assurance]:::guard
+    tests[Tests]:::base --> foundry[Foundry]:::base
+    tests --> coverage[Coverage thresholds]:::base
+    tests --> invariants[Invariant tests]:::guard
+    tests --> demos[Phase + demo suites]:::demo
+    pyUnit[Python unit tests]:::analytics --> pyCov[Python coverage enforcement]:::analytics
+    pyInt[Python integration tests]:::analytics --> pyCov
+    pyLoad[Load-simulation reports]:::analytics --> summary[CI summary]:::guard
+    branchGuard[Branch protection guard]:::guard --> summary
     foundry --> summary
     coverage --> summary
     invariants --> summary
     hgm --> summary
     ownerCtl --> summary
-    phase6 --> summary
-    phase8 --> summary
-    kardashev --> summary
-    asi --> summary
-    zenith --> summary
-    labor --> summary
-    mesh --> summary
-    constellation --> summary
-    archon --> summary
-    hypernova --> summary
-    branchGuard --> summary
+    demos --> summary
+    pyCov --> summary
+    lint --> summary
+    tests --> summary
 ```
 
-- The summary job fans in from every required context, so a single failure keeps the workflow red and writes an auditable status table to `reports/ci/status.{md,json}` for administrators. If the summary bundle is missing, the workflow now fails immediately, preserving the evidence trail for compliance teams.【F:.github/workflows/ci.yml†L1130-L1259】
-- The branch protection guard audits the GitHub rule set against the JSON manifests, ensuring required contexts and companion workflows stay aligned with the enforced policy.【F:.github/workflows/ci.yml†L936-L1120】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
-- Python coverage consolidation depends explicitly on the unit and integration suites so coverage gates only report green when both analytics layers succeed.【F:.github/workflows/ci.yml†L280-L345】
+### Required contexts
+The branch protection rule enforces the following `ci (v2)` contexts, guaranteeing a visible, fully green wall before merge:
 
-## Owner Command Surface
-- **On-chain authority:** The [`OwnerConfigurator`](contracts/v2/admin/OwnerConfigurator.sol) lets the contract owner batch immutable parameter changes while emitting structured audit events for every mutation.【F:contracts/v2/admin/OwnerConfigurator.sol†L1-L111】
-- **Immediate controls:** Run `npm run owner:system-pause`, `npm run owner:update-all`, or `npm run owner:command-center` to exercise treasury, pause, and module wiring scripts; these commands backstop emergency playbooks for non-technical operators.【F:package.json†L1-L332】
-- **Authority matrix:** Generate or reference the [owner control authority matrix](docs/owner-control-authority-reference.md) to confirm every governable module, pausable subsystem, and treasury lever resolves to the correct owner addresses before upgrades. The matrix is refreshed in CI via `ci (v2) / Owner control assurance` and also renders locally with `npm run ci:owner-authority` for independent verification.【F:docs/owner-control-authority-reference.md†L1-L120】【F:.github/workflows/ci.yml†L386-L434】
-- **Branch protection automation:** Administrators can enforce required contexts from the terminal with `npm run ci:enforce-branch-protection -- --dry-run` followed by a live run. This keeps non-technical owners in control of the safety rails while retaining full auditability.【F:docs/ci-v2-branch-protection-checklist.md†L118-L162】
+| Context | Description |
+| ------- | ----------- |
+| Lint & static checks | Hardhat/TypeScript linting, manifest validation, and lock enforcement.【F:.github/workflows/ci.yml†L44-L133】 |
+| Tests | Hardhat compilation, test execution, ABI drift detection.【F:.github/workflows/ci.yml†L150-L206】 |
+| Python unit tests | Unit-level analytics covering paymaster, tools, orchestrator, and simulation suites.【F:.github/workflows/ci.yml†L188-L260】 |
+| Python integration tests | Route-level API integration, demo rehearsal validation, and deterministic analytics.【F:.github/workflows/ci.yml†L206-L318】 |
+| Load-simulation reports | Monte Carlo sweeps producing CSV + JSON artefacts for economic stress tests.【F:.github/workflows/ci.yml†L318-L378】 |
+| Python coverage enforcement | Combines unit/integration coverage and enforces thresholds.【F:.github/workflows/ci.yml†L378-L434】 |
+| HGM guardrails | Higher Governance Machine regression suite spanning Node + Python controllers.【F:.github/workflows/ci.yml†L434-L486】 |
+| Owner control assurance | Owner doctor reports and parameter matrices proving the owner retains ultimate authority.【F:.github/workflows/ci.yml†L486-L538】 |
+| Foundry | Forge test harness with fuzz + invariant coverage for Solidity contracts.【F:.github/workflows/ci.yml†L538-L592】 |
+| Coverage thresholds | Solidity coverage plus access-control remapping and enforcement.【F:.github/workflows/ci.yml†L592-L646】 |
+| Phase 6 readiness | Scenario validation for the Phase 6 expansion demo.【F:.github/workflows/ci.yml†L646-L690】 |
+| Phase 8 readiness | Scenario validation for the Phase 8 dominance demo.【F:.github/workflows/ci.yml†L690-L732】 |
+| Kardashev II readiness | Kardashev II + Stellar rehearsals to keep planetary demos deployable.【F:.github/workflows/ci.yml†L732-L780】 |
+| ASI Take-Off Demonstration | Full-length ASI take-off run with artefact exports.【F:.github/workflows/ci.yml†L780-L826】 |
+| Zenith Sapience Demonstration | Deterministic + local rehearsal for Zenith Sapience initiatives.【F:.github/workflows/ci.yml†L826-L892】 |
+| AGI Labor Market Grand Demo | Exports transcripts for the labour market grand simulation.【F:.github/workflows/ci.yml†L892-L938】 |
+| Sovereign Mesh Demo — build | Builds sovereign mesh server + console bundles.【F:.github/workflows/ci.yml†L938-L1000】 |
+| Sovereign Constellation Demo — build | Builds constellation orchestrator + console assets.【F:.github/workflows/ci.yml†L1000-L1062】 |
+| Celestial Archon Demonstration | Deterministic + local rehearsals for Celestial Archon governance.【F:.github/workflows/ci.yml†L1062-L1128】 |
+| Hypernova Governance Demonstration | Hypernova rehearsal with local deterministic replay.【F:.github/workflows/ci.yml†L1128-L1194】 |
+| Branch protection guard | Audits GitHub branch protection live against the manifests and fails on drift.【F:.github/workflows/ci.yml†L1194-L1266】【F:ci/required-contexts.json†L1-L24】 |
+| CI summary | Aggregates every job outcome, writes Markdown + JSON status artefacts, and fails if any job was red or artefacts are missing.【F:.github/workflows/ci.yml†L1266-L1324】 |
+| Invariant tests | Dedicated Forge invariant suite with cached build graph and fuzz tuning.【F:.github/workflows/ci.yml†L1324-L1389】 |
 
-## Quality Gates & CI
-- Pull requests run linting, unit tests, security scans (`npm run security:audit`), SBOM generation, and scenario demos.
-- Branch protection blocks merges unless **every** required workflow reports green, mirroring our mandate for a flawless, production-critical deployment.
-- Use `npm run release:verify` and `npm run release:notes` before tagging to guarantee verifiable releases.
+Companion workflows are also required (`static-analysis`, `fuzz`, `webapp`, `containers`, `e2e`), guaranteeing the checks tab mirrors the entire assurance surface.【F:ci/required-companion-contexts.json†L1-L11】
 
-## Documentation & Support
-- Deep-dive handbooks live in `docs/` (see [`docs/user-guides/`](docs/user-guides/README.md)).
-- Operational safety escalations are codified in [`OperatorRunbook.md`](OperatorRunbook.md) and [`RUNBOOK.md`](RUNBOOK.md).
-- Security posture, threat models, and disclosure process are in [`SECURITY.md`](SECURITY.md).
+### Enforcing branch protection
+1. Generate or refresh required contexts:
+   ```bash
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
+   ```
+2. Audit the live rule without mutations:
+   ```bash
+   npm run ci:enforce-branch-protection -- --dry-run --branch main
+   ```
+3. Apply the rule (requires repo admin token):
+   ```bash
+   npm run ci:enforce-branch-protection -- --branch main
+   ```
+   The branch protection guard job revalidates these expectations on every push to `main`, keeping policy and automation in sync.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L1194-L1266】
 
-## Contributing
-1. Fork the repository and create a feature branch.
-2. Keep commits small, signed, and well-documented.
-3. Update any impacted module README using `python tools/update_readmes.py` to keep documentation synchronized.
-4. Open a pull request; link dashboards, datasets, or mermaid diagrams that showcase the mission impact.
+### Artefacts
+- `reports/ci/status.{md,json}` – machine-readable run summaries consumed by release captains and compliance audits.【F:.github/workflows/ci.yml†L1266-L1324】
+- `reports/owner-control/**` – authority matrices, doctor reports, and parameter plans proving owner command coverage.【F:.github/workflows/ci.yml†L486-L538】
+- `reports/load-sim/**` – Monte Carlo CSV + JSON payloads with economic dissipation analysis.【F:.github/workflows/ci.yml†L318-L378】
+
+## Architecture panorama
+```mermaid
+flowchart TD
+    classDef ops fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef core fill:#ecfeff,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef demos fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef obs fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    Owners((Mission Owners)):::ops --> OwnerPlane[Owner Control Plane]:::ops
+    OwnerPlane --> Contracts[[Solidity Kernel + Modules]]:::core
+    Contracts --> Services[[Agent Gateway & Services]]:::core
+    Services --> Apps[[Operator / Validator Apps]]:::core
+    Services --> Demos[[Strategic Demos]]:::demos
+    Contracts --> Observability[[Sentinel, Thermostat, Load Sims]]:::obs
+    Observability --> CI[[CI v2 + Companion Workflows]]:::obs
+    CI --> Owners
+    Demos --> Observability
+```
+
+## Documentation & support
+- [`OperatorRunbook.md`](OperatorRunbook.md) – live incident and escalation procedures for mission owners.
+- [`RUNBOOK.md`](RUNBOOK.md) – consolidated runbooks for validators, agents, and deployment captains.
+- [`SECURITY.md`](SECURITY.md) – disclosure policy, threat model, and contact instructions.
+- [`docs/user-guides/`](docs/user-guides/README.md) – curated mission guides that plug directly into the owner control plane.
+- [`ci/`](ci/README.md) – detailed CI v2 manifest, branch protection checklist, and verification commands.
 
 ## License
 Released under the MIT License. See [`LICENSE`](LICENSE) for details.
