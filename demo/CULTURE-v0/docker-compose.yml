@@ -56,7 +56,7 @@ services:
       start_period: 20s
 
   culture-contracts:
-    image: node:20.18.1
+    image: node:20.19.0
     profiles: [setup]
     working_dir: /workspace
     <<: *default-env
@@ -176,7 +176,7 @@ services:
         condition: service_healthy
 
   culture-reports:
-    image: node:20.18.1
+    image: node:20.19.0
     profiles: [reports]
     working_dir: /workspace
     <<: *default-env
@@ -191,7 +191,7 @@ services:
       npx ts-node --project tsconfig.json demo/CULTURE-v0/scripts/export.weekly.ts"
 
   culture-analytics:
-    image: node:20.18.1
+    image: node:20.19.0
     working_dir: /workspace
     <<: *default-env
     environment:
