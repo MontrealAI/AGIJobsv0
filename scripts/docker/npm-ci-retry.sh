@@ -10,6 +10,64 @@ project_root=${NPM_CI_PROJECT_ROOT:-$(pwd)}
 lockfile_path=${NPM_CI_LOCK_PATH:-${project_root}/package-lock.json}
 package_json_path=${NPM_CI_PACKAGE_JSON_PATH:-${project_root}/package.json}
 
+relpath() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "$1" "$2" <<'PY'
+import os
+import sys
+
+base, target = sys.argv[1], sys.argv[2]
+try:
+    print(os.path.relpath(target, base))
+except ValueError:
+    print(os.path.basename(target))
+PY
+  else
+    case $2 in
+      "$1"/*)
+        stripped=${2#"$1"/}
+        printf '%s\n' "$stripped" ;;
+      *)
+        basename -- "$2" ;;
+    esac
+  fi
+}
+
+restore_lockfile_if_missing() {
+  if [ -s "$lockfile_path" ]; then
+    return 0
+  fi
+
+  if git -C "$project_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    rel_lock=$(relpath "$project_root" "$lockfile_path")
+    if git -C "$project_root" ls-files --error-unmatch "$rel_lock" >/dev/null 2>&1; then
+      echo "[docker-npm-ci] lockfile missing on disk; restoring ${rel_lock} from git" >&2
+      if ! git -C "$project_root" checkout -- "$rel_lock" >/dev/null 2>&1; then
+        echo "[docker-npm-ci] WARNING: unable to restore ${rel_lock} from git" >&2
+      fi
+    fi
+  fi
+}
+
+validate_lockfile() {
+  if [ ! -s "$lockfile_path" ]; then
+    return 1
+  fi
+
+  node - <<'NODE' "$lockfile_path" >/dev/null 2>&1
+const fs = require('fs');
+const path = process.argv[2];
+try {
+  const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+  if (typeof data.lockfileVersion !== 'number' || data.lockfileVersion < 1) {
+    process.exit(1);
+  }
+} catch (error) {
+  process.exit(2);
+}
+NODE
+}
+
 if [ ! -f "$package_json_path" ]; then
   echo "package.json not found at ${package_json_path}" >&2
   echo "Current directory: $(pwd)" >&2
@@ -20,8 +78,12 @@ if [ ! -f "$package_json_path" ]; then
   exit 1
 fi
 
-if [ ! -f "$lockfile_path" ]; then
-  echo "package-lock.json not found at ${lockfile_path}" >&2
+if [ ! -f "$lockfile_path" ] || [ ! -s "$lockfile_path" ]; then
+  restore_lockfile_if_missing
+fi
+
+if ! validate_lockfile; then
+  echo "package-lock.json missing or invalid at ${lockfile_path}" >&2
   echo "Current directory: $(pwd)" >&2
   if [ -d "$project_root" ]; then
     echo "Project root contents:" >&2
