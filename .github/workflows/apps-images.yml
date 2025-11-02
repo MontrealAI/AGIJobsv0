@@ -26,12 +26,17 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
+      owner: ${{ steps.normalize_registry_owner.outputs.value }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Normalize registry owner
+        id: normalize_registry_owner
         shell: bash
-        run: echo "REGISTRY_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "REGISTRY_OWNER=$OWNER" >> "$GITHUB_ENV"
+          echo "value=$OWNER" >> "$GITHUB_OUTPUT"
 
       - name: Login to GHCR (main)
         if: github.ref == 'refs/heads/main'
@@ -90,12 +95,17 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
+      owner: ${{ steps.normalize_registry_owner.outputs.value }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Normalize registry owner
+        id: normalize_registry_owner
         shell: bash
-        run: echo "REGISTRY_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "REGISTRY_OWNER=$OWNER" >> "$GITHUB_ENV"
+          echo "value=$OWNER" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node for web build
         uses: actions/setup-node@v4
@@ -171,7 +181,7 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', env.REGISTRY_OWNER, needs.console.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', needs.console.outputs.owner, needs.console.outputs.digest)) }}
 
   provenance-portal:
     if: github.ref == 'refs/heads/main'
@@ -182,4 +192,4 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', env.REGISTRY_OWNER, needs.portal.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', needs.portal.outputs.owner, needs.portal.outputs.digest)) }}

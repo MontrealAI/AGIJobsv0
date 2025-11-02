@@ -206,17 +206,17 @@ jobs:
       - solidity
       - services
     timeout-minutes: 60
-      services:
-        anvil:
-          image: ghcr.io/foundry-rs/foundry:latest
-          options: >-
-            --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
-          ports:
-            - 8545:8545
-        ipfs:
-          image: ipfs/kubo:latest
-          ports:
-            - 8080:8080
+    services:
+      anvil:
+        image: ghcr.io/foundry-rs/foundry:latest
+        options: >-
+          --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
+        ports:
+          - 8545:8545
+      ipfs:
+        image: ipfs/kubo:latest
+        ports:
+          - 8080:8080
           - 5001:5001
       postgres:
         image: postgres:16-alpine
