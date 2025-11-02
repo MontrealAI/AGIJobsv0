@@ -38,7 +38,7 @@ The diagram illustrates how the `Deployer` contract fans out into every core mod
 
 ## Prerequisites
 
-- **Node.js 20.18.1 & npm 10+** – run `nvm use` to match the version in `.nvmrc`.
+- **Node.js 20.19.x & npm 11+** – run `nvm use` to match `.nvmrc`, then let `scripts/ci/npm-ci.sh` activate npm 11.4.2 via Corepack/global fallback.
 - **Install dependencies** – clone the repository and run `npm install`.
 - **Truffle & plugins** – Truffle is already configured in `truffle-config.js` with the `truffle-plugin-verify` plugin. No global install is required; use the local `npx truffle` binary.
 - **Mainnet RPC & key** – set `MAINNET_RPC_URL` and `MAINNET_PRIVATE_KEY` in a `.env` file. The private key funds must cover deployment gas.

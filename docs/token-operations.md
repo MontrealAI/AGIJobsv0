@@ -33,7 +33,7 @@ sequenceDiagram
 
 ## Prerequisites
 
-- Node.js 20.18.1 and npm 10+ (run `nvm use` from the repo root).
+- Node.js 20.19.x and npm 11+ (run `nvm use` from the repo root and let the npm CI helper activate 11.4.2).
 - Access to the governance signer capable of executing deployments.
 - RPC endpoint for the target network with archive or full-node access for
   verification (HTTPS or WebSocket).
