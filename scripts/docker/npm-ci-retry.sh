@@ -6,14 +6,116 @@ if (set -o pipefail) 2>/dev/null; then
   set -o pipefail
 fi
 
+project_root=${NPM_CI_PROJECT_ROOT:-$(pwd)}
+lockfile_path=${NPM_CI_LOCK_PATH:-${project_root}/package-lock.json}
+package_json_path=${NPM_CI_PACKAGE_JSON_PATH:-${project_root}/package.json}
+
+if [ ! -f "$package_json_path" ]; then
+  echo "package.json not found at ${package_json_path}" >&2
+  echo "Current directory: $(pwd)" >&2
+  if [ -d "$project_root" ]; then
+    echo "Project root contents:" >&2
+    ls -al "$project_root" >&2
+  fi
+  exit 1
+fi
+
+if [ ! -f "$lockfile_path" ]; then
+  echo "package-lock.json not found at ${lockfile_path}" >&2
+  echo "Current directory: $(pwd)" >&2
+  if [ -d "$project_root" ]; then
+    echo "Project root contents:" >&2
+    ls -al "$project_root" >&2
+  fi
+  exit 1
+fi
+
+required_node_version="${NPM_CI_MIN_NODE_VERSION:-20.19.0}"
+current_node_version="$(node -v 2>/dev/null || printf '')"
+version_check_script="${project_root}/scripts/ci/version-check.mjs"
+
+if [ -n "$current_node_version" ] && [ -f "$version_check_script" ]; then
+  if ! node "$version_check_script" "$current_node_version" "$required_node_version"; then
+    echo "[docker-npm-ci] WARNING: Node $current_node_version is older than required $required_node_version" >&2
+  fi
+fi
+
+required_npm_version="${NPM_CI_NPM_VERSION:-11.4.2}"
+use_npx_fallback=false
+
+ensure_desired_npm() {
+  if [ "${NPM_CI_FORCE_NPX:-0}" = "1" ]; then
+    use_npx_fallback=true
+    return 1
+  fi
+
+  current_npm_version="$(npm -v 2>/dev/null || printf '')"
+
+  if [ "$current_npm_version" = "$required_npm_version" ]; then
+    return 0
+  fi
+
+  if command -v corepack >/dev/null 2>&1; then
+    if corepack enable >/dev/null 2>&1 && \
+       corepack prepare "npm@${required_npm_version}" --activate >/dev/null 2>&1; then
+      current_npm_version="$(npm -v 2>/dev/null || printf '')"
+      if [ "$current_npm_version" = "$required_npm_version" ]; then
+        return 0
+      fi
+    else
+      echo "[docker-npm-ci] WARNING: corepack failed to activate npm@${required_npm_version}; attempting alternate upgrade path" >&2
+    fi
+  fi
+
+  if command -v npm >/dev/null 2>&1; then
+    if npm install --location=global "npm@${required_npm_version}" >/dev/null 2>&1; then
+      hash -r 2>/dev/null || true
+      current_npm_version="$(npm -v 2>/dev/null || printf '')"
+      if [ "$current_npm_version" = "$required_npm_version" ]; then
+        return 0
+      fi
+    else
+      echo "[docker-npm-ci] WARNING: npm install --location=global npm@${required_npm_version} failed; falling back to npx" >&2
+    fi
+  fi
+
+  use_npx_fallback=true
+  return 1
+}
+
+ensure_desired_npm || true
+
 attempt=1
 max_attempts=${NPM_CI_MAX_ATTEMPTS:-5}
 base_delay=${NPM_CI_RETRY_DELAY:-5}
 
-while [ "$attempt" -le "$max_attempts" ]; do
-  rm -rf node_modules
+export npm_config_package_lock=true
+export npm_config_fund=false
+export npm_config_audit=false
 
-  if npm ci "$@"; then
+current_npm_version="$(npm -v 2>/dev/null || printf '')"
+
+echo "[docker-npm-ci] node $(node -v 2>/dev/null || printf 'unknown')" >&2
+if [ "$use_npx_fallback" = true ]; then
+  echo "[docker-npm-ci] npm (via npx) ${required_npm_version}" >&2
+else
+  echo "[docker-npm-ci] npm ${current_npm_version:-unknown}" >&2
+fi
+echo "[docker-npm-ci] installing in ${project_root}" >&2
+echo "[docker-npm-ci] lockfile: ${lockfile_path}" >&2
+
+run_install() {
+  if [ "$use_npx_fallback" = true ]; then
+    (cd "$project_root" && npx --yes "npm@${required_npm_version}" ci "$@")
+  else
+    (cd "$project_root" && npm ci "$@")
+  fi
+}
+
+while [ "$attempt" -le "$max_attempts" ]; do
+  rm -rf "${project_root}/node_modules"
+
+  if run_install "$@"; then
     exit 0
   fi
 
@@ -26,4 +128,5 @@ while [ "$attempt" -le "$max_attempts" ]; do
   wait_time=$((base_delay * attempt))
   echo "npm ci failed, retrying in ${wait_time}s (attempt ${attempt}/${max_attempts})" >&2
   sleep "$wait_time"
+
 done
