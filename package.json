@@ -95,7 +95,7 @@
     "whatwg-fetch": "^3.6.20"
   },
   "engines": {
-    "node": "20.19.0"
+    "node": ">=20.19.0"
   },
   "keywords": [],
   "license": "MIT",
