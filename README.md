@@ -162,7 +162,12 @@ Companion workflows are also required (`static-analysis`, `fuzz`, `webapp`, `con
    ```bash
    npm run ci:enforce-branch-protection -- --dry-run --branch main
    ```
-3. Apply the rule (requires repo admin token):
+3. Verify the GitHub rule via the public API without mutating anything (requires a fine-grained PAT or GitHub App token with `administration:read` scope):
+   ```bash
+   GITHUB_TOKEN=<token> npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main
+   ```
+   The script confirms the live protection rule matches `ci/required-contexts.json` and `ci/required-companion-contexts.json`, failing if the GitHub configuration is stale or missing contexts.【F:package.json†L138-L146】【F:scripts/ci/verify-branch-protection.ts†L1-L239】
+4. Apply the rule (requires repo admin token):
    ```bash
    npm run ci:enforce-branch-protection -- --branch main
    ```
