@@ -105,6 +105,8 @@ Run `npm run ci:verify-contexts` after editing job display names to confirm the 
 
 > 🧠 **Deterministic toolchain check:** `npm run ci:preflight` validates `.nvmrc`, `package.json` engine pins, the `packageManager` declaration, and every `package-lock.json` before any dependencies install. It mirrors the GitHub Actions guard so local edits surface problems instantly.【F:package.json†L3-L7】【F:scripts/ci/check-toolchain-locks.js†L1-L120】【F:scripts/ci/check-lock-integrity.js†L1-L78】
 
+> 🛡️ **Lockfile integrity enforcement:** All workflows call [`./scripts/ci/npm-ci.sh`](../scripts/ci/npm-ci.sh) instead of raw `npm ci`. The wrapper validates the resolved lockfile with `jq`, purges stale `node_modules`, and then runs `npm ci --no-audit --prefer-offline --progress=false`, ensuring a corrupted or missing lock fails fast across every workspace (including UI subprojects that set `NPM_CI_PROJECT_ROOT`).【F:scripts/ci/npm-ci.sh†L1-L28】【F:.github/workflows/webapp.yml†L33-L43】
+
 Use `npm run ci:enforce-branch-protection` with a maintainer token to push the manifested contexts to GitHub automatically. Pass `--dry-run` first to review the diff, then rerun without the flag to update the rule with strict status checks and administrator enforcement preserved.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】
 
 Set `GITHUB_TOKEN` (or `GH_TOKEN`) with `repo` scope first. The script auto-detects the repository from `GITHUB_REPOSITORY` or the local git remote and prints a status table covering contexts, ordering, the `strict` flag, and the **Include administrators** toggle. Provide `--owner`, `--repo`, or `--branch` when auditing forks.

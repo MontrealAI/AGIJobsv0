@@ -50,7 +50,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: ./scripts/ci/npm-ci.sh
 
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1

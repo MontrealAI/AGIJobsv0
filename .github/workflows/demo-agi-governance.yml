@@ -49,7 +49,7 @@ jobs:
             **/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
 
       - name: Generate governance dossier
         run: npm run demo:agi-governance

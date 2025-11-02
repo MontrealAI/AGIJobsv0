@@ -38,7 +38,7 @@ jobs:
         run: npm run ci:preflight
 
       - name: Install Node dependencies
-        run: npm ci
+        run: ./scripts/ci/npm-ci.sh
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
