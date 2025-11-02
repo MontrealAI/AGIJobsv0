@@ -2,7 +2,7 @@
 
 FROM node:20.18.1-alpine3.20 AS base-build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ \
+RUN apk add --no-cache git python3 make g++ \
     && apk upgrade --no-cache libssl3 libcrypto3 \
     && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \

@@ -22,6 +22,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        uses: ./.github/actions/npm-install
+        with:
+          args: --no-audit --prefer-offline --progress=false
       - name: Sovereign Constellation CI
         run: npm run demo:sovereign-constellation:ci
