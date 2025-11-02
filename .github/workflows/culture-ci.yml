@@ -118,12 +118,9 @@ jobs:
       - name: MythX analysis
         if: ${{ secrets.MYTHX_API_KEY != '' || env.MYTHX_API_KEY != '' }}
         env:
-          MYTHX_API_KEY_SECRET: ${{ secrets.MYTHX_API_KEY }}
+          MYTHX_API_KEY: ${{ (secrets.MYTHX_API_KEY != '' && secrets.MYTHX_API_KEY) || env.MYTHX_API_KEY }}
         working-directory: demo/CULTURE-v0
         run: |
-          if [ -n "${MYTHX_API_KEY_SECRET}" ]; then
-            export MYTHX_API_KEY="${MYTHX_API_KEY_SECRET}"
-          fi
           docker run --rm \
             -e MYTHX_API_KEY \
             -v "${PWD}":/workspace \
