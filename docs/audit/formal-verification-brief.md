@@ -43,7 +43,7 @@ Document any Scribble or Certora annotations beside the Solidity contracts under
    npx scribble contracts/v2 --output-mode files --output contracts/v2/annotations
    forge test -vvvv --ffi --fuzz-runs 256
    ```
-   Integrate generated instrumentation into `forge` profiles to reuse the existing fuzz suites (already orchestrated in CI via the Foundry job).【F:.github/workflows/ci.yml†L68-L120】
+   Integrate generated instrumentation into `forge` profiles to reuse the existing fuzz suites (already orchestrated in CI via the Foundry job).【F:.github/workflows/ci.yml†L75-L117】
 
 2. **Certora Prover run**
    * Export ABIs with `npm run abi:export` (part of the CI pipeline).【F:package.json†L10-L101】

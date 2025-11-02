@@ -8,7 +8,7 @@ This status dossier records how the repository satisfies the "Institutional Depl
 - **Artifact attestation.** `docs/release-signing.md` & `docs/release-artifacts.md` capture the Cosign/SLSA procedure and the reporting inputs emitted by CI.
 
 ## CI & supply-chain hardening
-- **Green-only merges.** Branch policy expectations are codified in `docs/ci-v2-branch-protection-checklist.md`; reviewers can run `npm run ci:verify-branch-protection` locally to confirm GitHub settings until the script is wired into CI.
+- **Green-only merges.** Branch policy expectations are codified in `docs/ci-v2-branch-protection-checklist.md`; the CI branch guard runs `npm run ci:verify-branch-protection` on every push while reviewers can rerun the script locally for manual audits.【F:docs/ci-v2-branch-protection-checklist.md†L5-L156】【F:.github/workflows/ci.yml†L966-L999】
 - **Pinned GitHub Actions + hardened runners.** All workflows (see `.github/workflows/*.yml`) pin Actions to SHAs and start with `step-security/harden-runner` to restrict egress.
 - **Static analysis + SARIF uploads.** `.github/workflows/static-analysis.yml` runs Slither, validates an allowlist, and uploads SARIF results to GitHub code scanning.
 - **Toolchain immutability.** `docs/toolchain-locks.md` documents pinned versions; `.nvmrc`, `foundry.toml`, and `scripts/ci/check-toolchain-locks.js` enforce the same versions during automation.

@@ -9,8 +9,8 @@ The Omega Omni Operating System inherits the repository's "CI v2" discipline. Th
 | Enforce linting and static analysis | `.github/workflows/ci.yml` → `lint` job | `npm run lint:ci` | CLI output confirming ESLint + Solhint success. |
 | Guarantee unit coverage | `.github/workflows/ci.yml` → `coverage` job | `npm run coverage:check` | Console log emitted by `scripts/check-coverage.js`. |
 | Exercise Foundry fuzzing | `.github/workflows/ci.yml` → `foundry` job | `forge test` | Forge summary verifying reward/stake invariants. |
-| Validate branch protections | `.github/workflows/ci.yml` → `ci-verify` job | `npm run ci:verify-branch-protection` | JSON diff of GitHub required checks to policy baseline. |
-| Confirm access-control coverage | `.github/workflows/ci.yml` → `access-control` job | `npm run check:access-control` | Output from `scripts/ci/check-access-control-coverage.js`. |
+| Validate branch protections | `.github/workflows/ci.yml` → `branch_protection` job ("Branch protection guard") | `npm run ci:verify-branch-protection` | JSON diff of GitHub required checks to policy baseline produced inside CI and for local audits.【F:.github/workflows/ci.yml†L966-L999】 |
+| Confirm access-control coverage | `.github/workflows/ci.yml` → `coverage` job | `npm run check:access-control` | Output from `scripts/ci/check-access-control-coverage.js` uploaded during the coverage stage.【F:.github/workflows/ci.yml†L492-L543】 |
 | Run demo smoke tests | `.github/workflows/ci.yml` → `demo-zenith`, `demo-asi-takeoff` jobs | `npm run demo:zenith-sapience-initiative:local`, `npm run demo:asi-takeoff:local` | Deterministic aurora reports published as CI artefacts. |
 | Probe observability | `.github/workflows/ci.yml` → `observability` job | `npm run observability:smoke` | CLI output validating metrics + notification wiring. |
 

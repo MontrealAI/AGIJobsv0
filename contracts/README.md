@@ -83,23 +83,23 @@ npm run coverage         # Generates lcov + access-control coverage reports
 
 The Hardhat tests exercise the registry, governance, and module flows defined under `test/v2/**` and the shared fixtures under
 `contracts/test/`. Foundry invariants extend this by fuzzing stateful interactions and validating owner guardrails before CI marks
-a run green.【F:.github/workflows/ci.yml†L62-L189】【F:.github/workflows/ci.yml†L478-L552】
+a run green.【F:.github/workflows/ci.yml†L75-L167】【F:.github/workflows/ci.yml†L440-L543】
 
 ## Quality gates
 
 - **Coverage** – `ci (v2) / Coverage thresholds` enforces ≥90 % Solidity coverage and maps results back to the access-control
-  modules listed in `ci.yml`, catching regressions in pause/governance paths.【F:.github/workflows/ci.yml†L500-L552】
+  modules listed in `ci.yml`, catching regressions in pause/governance paths.【F:.github/workflows/ci.yml†L492-L543】
 - **Fuzzing** – The dedicated [`fuzz.yml`](../.github/workflows/fuzz.yml) workflow and the `ci (v2) / Invariant tests` job run
-  Foundry fuzz cases on every PR for continuous assurance.【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/ci.yml†L1208-L1339】
+  Foundry fuzz cases on every PR for continuous assurance.【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/ci.yml†L911-L1181】
 - **Owner control assurance** – The CI job regenerates calldata through the owner doctor scripts so any missing configurator
-  wiring fails fast.【F:.github/workflows/ci.yml†L386-L434】
+  wiring fails fast.【F:.github/workflows/ci.yml†L393-L439】
 
 ## Artefact outputs
 
 - **ABIs** – `npm run abi:export` writes JSON ABIs under `artifacts/` for downstream services.
 - **Gas reports** – `npm run gas:report` produces deterministic gas snapshots under `gas-snapshots/`.
 - **Authority matrix** – `npm run ci:owner-authority` exports Markdown and JSON matrices describing every owner lever; the CI job
-  uploads them as artefacts for release management.【F:.github/workflows/ci.yml†L418-L434】
+  uploads them as artefacts for release management.【F:.github/workflows/ci.yml†L420-L439】
 
 The contract stack is designed to remain flawless under owner-led configuration changes and to emit the artefacts regulators and
 operators need to deploy AGI Jobs v0 (v2) at production scale.

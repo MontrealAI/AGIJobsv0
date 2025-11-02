@@ -52,7 +52,7 @@ pip install -r requirements-python.txt
 pytest packages/hgm-core/tests -q
 ```
 
-CI v2 executes these tests inside `ci (v2) / Python unit tests`, and the coverage job enforces global thresholds before merging.【F:.github/workflows/ci.yml†L118-L345】
+CI v2 executes these tests inside `ci (v2) / Python unit tests`, and the coverage job enforces global thresholds before merging.【F:.github/workflows/ci.yml†L118-L349】
 
 ## Extending HGM
 

@@ -55,7 +55,7 @@ npm run test -- --packages orchestrator  # executes vitest suite if defined
 ```
 
 The SDK is linted in `ci (v2) / Lint & static checks` and type-checked via the shared webapp workflow. Update snapshots in
-`packages/orchestrator/__tests__` (if present) whenever command transcripts change so CI stays green.【F:.github/workflows/ci.yml†L44-L70】
+`packages/orchestrator/__tests__` (if present) whenever command transcripts change so CI stays green.【F:.github/workflows/ci.yml†L44-L74】
 
 ## Extending the router
 

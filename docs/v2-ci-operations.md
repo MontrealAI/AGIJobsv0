@@ -41,7 +41,7 @@ All three entry points converge on the same job graph, keeping the `CI summary` 
 
 Enable branch protection on `main` with every status context below. The list mirrors [`ci/required-contexts.json`](../ci/required-contexts.json) so automated audits and the GitHub UI stay synchronised.【F:ci/required-contexts.json†L1-L23】 Companion workflows (`fuzz`, `static-analysis`, `webapp`, `containers`, `e2e`) are tracked in [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json) and enforced alongside the primary CI jobs.【F:ci/required-companion-contexts.json†L1-L7】
 
-> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:sync-contexts -- --check`, `npm run ci:verify-contexts`, and `npm run ci:verify-companion-contexts`, parsing `.github/workflows/ci.yml` plus the companion manifest to fail the pipeline when required check lists drift. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L53-L64】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】
+> 🔄 **Self-checking contexts:** The lint job now runs `npm run ci:sync-contexts -- --check`, `npm run ci:verify-contexts`, and `npm run ci:verify-companion-contexts`, parsing `.github/workflows/ci.yml` plus the companion manifest to fail the pipeline when required check lists drift. This keeps non-technical approvers from encountering missing checks in the UI.【F:.github/workflows/ci.yml†L55-L66】【F:scripts/ci/update-ci-required-contexts.ts†L1-L98】【F:scripts/ci/check-ci-required-contexts.ts†L1-L72】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】
 
 ### Core execution gate
 
@@ -139,7 +139,7 @@ Keep the rest of the release surface visible by marking the following workflows 
 2. Inspect the **Artifacts** section for `coverage-lcov` when coverage needs auditing.
 3. Review the `CI summary` job output for a condensed Markdown table of job results. The job now also archives the same table as
    `reports/ci/status.md` together with a machine-readable `status.json`, both available in the `ci-summary` artifact for
-   compliance records. The upload step is hardened with `if-no-files-found: error`, so missing artefacts flip the entire workflow red instead of silently succeeding.【F:.github/workflows/ci.yml†L1130-L1259】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
+   compliance records. The upload step is hardened with `if-no-files-found: error`, so missing artefacts flip the entire workflow red instead of silently succeeding.【F:.github/workflows/ci.yml†L1000-L1130】 The table labels branch-protection skips on forks as `SKIPPED (permitted)` so reviewers know the guardrail remains enforced on `main`.
 4. When re-running failed jobs, choose **Re-run failed jobs** to keep historical logs.
 5. If a dependent job unexpectedly skips, inspect the workflow definition to confirm the `if: ${{ always() }}` guard is still present.
 

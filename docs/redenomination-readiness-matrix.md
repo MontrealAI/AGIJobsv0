@@ -69,7 +69,7 @@ when certifying a release.
 
 | Requirement | Implementation evidence | Verification artifacts |
 | --- | --- | --- |
-| Extensive automated tests | CI compiles contracts, runs Hardhat/Foundry suites, checks ABIs, coverage, gas snapshots, and E2E workflows on every PR.【F:.github/workflows/ci.yml†L1-L220】 | Confirm the **CI summary** badge is green and inspect stored artefacts per the [CI v2 operations guide](v2-ci-operations.md). |
+| Extensive automated tests | CI compiles contracts, runs Hardhat/Foundry suites, checks ABIs, coverage, gas snapshots, and E2E workflows on every PR.【F:.github/workflows/ci.yml†L1-L118】 | Confirm the **CI summary** badge is green and inspect stored artefacts per the [CI v2 operations guide](v2-ci-operations.md). |
 | Security drills & audits | The security handbook enumerates multisig transfers, emergency procedures, and audit vectors, with runbooks for replaying fork drills and dispute escalations.【F:SECURITY.md†L1-L60】【F:docs/security/audit-test-vectors.md†L1-L120】 | Execute `npm run test:fork` quarterly and log outcomes plus remediation tasks in `docs/owner-control-audit.md`. |
 | Static analysis & dependency checks | Security guidelines list mandatory Slither, Foundry, and audit-ci commands to keep dependencies patched and bytecode analysed.【F:SECURITY.md†L28-L66】 | Run `audit-ci --config ./audit-ci.json` and attach reports to the release ticket before tagging. |
 | Economic & load simulations | Thermodynamic operations docs and Monte Carlo scripts stress test reward splits, burn percentages, and validator behaviour before mainnet pushes.【F:docs/thermodynamics-operations.md†L1-L140】【F:simulation/montecarlo.py†L1-L45】 | Store simulation outputs in `reports/<date>-thermodynamics.csv` alongside governance approvals. |

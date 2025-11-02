@@ -30,7 +30,7 @@ npm run test:fork                 # Optional fork-mode regression suite
 ```
 
 CI v2 executes the Hardhat suite in the `Tests` job, the Foundry fuzz suite in `ci (v2) / Foundry`, and the dedicated invariant
-run in `ci (v2) / Invariant tests`, keeping every helper in this directory covered on each commit.【F:.github/workflows/ci.yml†L62-L152】【F:.github/workflows/ci.yml†L452-L641】【F:.github/workflows/ci.yml†L1208-L1339】
+run in `ci (v2) / Invariant tests`, keeping every helper in this directory covered on each commit.【F:.github/workflows/ci.yml†L75-L167】【F:.github/workflows/ci.yml†L440-L543】【F:.github/workflows/ci.yml†L911-L1181】
 
 ## Extending the harness
 

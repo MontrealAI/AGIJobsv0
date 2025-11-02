@@ -64,7 +64,7 @@ npm run ci:owner-authority -- --network ci --out reports/owner-control  # Regene
 ```
 
 CI v2 executes the same commands inside the `Lint & static checks` and `Owner control assurance` jobs, keeping the branch
-protection rule in lock-step with the manifests.【F:.github/workflows/ci.yml†L44-L70】【F:.github/workflows/ci.yml†L386-L434】
+protection rule in lock-step with the manifests.【F:.github/workflows/ci.yml†L44-L74】【F:.github/workflows/ci.yml†L393-L439】
 
 ## Owner operations
 
