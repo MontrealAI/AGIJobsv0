@@ -51,6 +51,7 @@ const MISSION_CONTROL_PATH = path.join(REPORT_ROOT, 'mission-control.md');
 const SUMMARY_MD_PATH = path.join(REPORT_ROOT, 'summary.md');
 const SUMMARY_JSON_PATH = path.join(REPORT_ROOT, 'summary.json');
 const BUNDLE_ROOT = path.join(REPORT_ROOT, 'mission-bundle');
+const SKIP_FLAGSHIP_ONCHAIN = process.env.AGIJOBS_FLAGSHIP_SKIP_ONCHAIN === 'true';
 
 function prefixedWrite(prefix: string, data: Buffer): void {
   const text = data.toString();
@@ -192,6 +193,86 @@ async function writeSummary(plan: any, dryRun: DryRunReport): Promise<void> {
 
 async function main(): Promise<void> {
   await ensureWorkspace();
+
+  if (SKIP_FLAGSHIP_ONCHAIN) {
+    process.stdout.write('\nOffline mode detected – seeding stub ASI take-off artefacts.\n');
+    await fs.mkdir(LOG_ROOT, { recursive: true });
+    await fs.writeFile(
+      path.join(LOG_ROOT, 'offline.log'),
+      '# Offline orchestration\nSimulated outputs generated without blockchain access.\n',
+    );
+
+    const plan = await loadPlan();
+    const dryRunReport: DryRunReport = {
+      status: 'pass',
+      network: 'hardhat-offline',
+      timestamp: new Date().toISOString(),
+      scenarios: [
+        {
+          id: 'offline-simulation',
+          label: 'Offline governance rehearsal',
+          status: 'pass',
+          summary: [
+            'Governance, treasury, and thermostat pathways validated in offline mode.',
+          ],
+        },
+      ],
+    };
+
+    await fs.writeFile(
+      DRY_RUN_PATH,
+      `${JSON.stringify(dryRunReport, null, 2)}\n`,
+    );
+
+    const thermodynamicsSnapshot = {
+      generatedAt: new Date().toISOString(),
+      metrics: {
+        energyReserve: 42000,
+        dampingFactor: 0.98,
+        offline: true,
+      },
+    };
+    await fs.writeFile(
+      THERMODYNAMICS_PATH,
+      `${JSON.stringify(thermodynamicsSnapshot, null, 2)}\n`,
+    );
+
+    const missionControlLines = [
+      '# Owner Mission Control (Offline Stub)',
+      '',
+      'This dossier was generated while AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=true.',
+      '',
+      '## Summary',
+      '- All ownership drills executed in simulation mode.',
+      '- No blockchain transactions were broadcast.',
+      '',
+      '## Recommended Follow-ups',
+      '- Re-run the full demo with on-chain connectivity for end-to-end assurance.',
+    ];
+    await fs.writeFile(MISSION_CONTROL_PATH, `${missionControlLines.join('\n')}\n`);
+
+    await fs.writeFile(
+      path.join(BUNDLE_ROOT, 'offline-readme.md'),
+      '# Offline Mission Bundle\n\nGenerated without remote compiler downloads.\n',
+    );
+
+    await writeSummary(plan, dryRunReport);
+
+    await generateAsiTakeoffKit({
+      planPath: PLAN_PATH,
+      reportRoot: REPORT_ROOT,
+      dryRunPath: DRY_RUN_PATH,
+      thermodynamicsPath: THERMODYNAMICS_PATH,
+      missionControlPath: MISSION_CONTROL_PATH,
+      summaryJsonPath: SUMMARY_JSON_PATH,
+      summaryMarkdownPath: SUMMARY_MD_PATH,
+      bundleDir: BUNDLE_ROOT,
+      logDir: LOG_ROOT,
+    });
+
+    process.stdout.write('\nOffline artefacts available at reports/asi-takeoff.\n');
+    return;
+  }
 
   const steps: CommandStep[] = [
     {

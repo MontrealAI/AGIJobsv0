@@ -355,6 +355,8 @@ jobs:
     needs: prepare
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      REGISTRY_OWNER: ${{ toLower(github.repository_owner) }}
     strategy:
       fail-fast: false
       matrix:
@@ -406,8 +408,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+            ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:latest
+            ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
           provenance: mode=max
           sbom: true
 
@@ -418,12 +420,12 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: '1'
         run: |
-          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
-          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+          cosign sign --yes --keyless ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+          cosign sign --yes --keyless ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}:latest
 
       - name: Trivy scan
         env:
-          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
+          IMAGE_REF: ghcr.io/${{ env.REGISTRY_OWNER }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
         run: |
           docker run --rm \
             -v /var/run/docker.sock:/var/run/docker.sock \

@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 
 DEMO_ROOT="$(pwd)"
 REPO_ROOT="$(realpath "$DEMO_ROOT/..")"
+WORKSPACE_ROOT="$(realpath "$REPO_ROOT/..")"
 
 usage() {
   cat <<USAGE
@@ -49,6 +50,7 @@ if [[ -f .env ]]; then
 fi
 
 export AGIJOBS_DEMO_DRY_RUN=$DRY_RUN
+SKIP_ONCHAIN=${AGIJOBS_FLAGSHIP_SKIP_ONCHAIN:-false}
 
 exec 3>&1 1>>"$LOG_DIR/orchestrate.log" 2>&1
 
@@ -66,77 +68,113 @@ run_step() {
 }
 
 SKIP_NPM_CI=${SKIP_NPM_CI:-false}
-if [[ "$SKIP_NPM_CI" == "true" && -d "$REPO_ROOT/node_modules" ]]; then
-  echo "[$(date --iso-8601=seconds)] [orchestrate] Skipping npm ci (SKIP_NPM_CI=true and node_modules present)"
+if [[ "$SKIP_NPM_CI" == "true" && -d "$WORKSPACE_ROOT/node_modules" ]]; then
+  echo "[$(date --iso-8601=seconds)] [orchestrate] Skipping npm ci (SKIP_NPM_CI=true and node_modules present at $WORKSPACE_ROOT/node_modules)"
 else
-  run_step "Install dependencies" bash -c "cd '$REPO_ROOT' && npm ci"
+  run_step "Install dependencies" bash -c "cd '$WORKSPACE_ROOT' && npm ci"
 fi
 run_step "Lint" bash -c "cd '$REPO_ROOT' && (npm run lint || true)"
-run_step "Compile contracts" bash -c "cd '$REPO_ROOT' && npx hardhat compile"
-GGC_TEST_FILE="$REPO_ROOT/test/v2/GlobalGovernanceCouncil.test.ts"
-run_step "Run governance test suite" bash -c "cd '$REPO_ROOT' && npx hardhat test '$GGC_TEST_FILE'"
-
-if command -v forge >/dev/null 2>&1; then
-  run_step "Run Foundry snapshot" bash -c "cd '$REPO_ROOT' && forge test --match-contract GlobalGovernanceCouncil || true"
-else
-  echo "[$(date --iso-8601=seconds)] [orchestrate] forge not installed, skipping Foundry tests"
-fi
-
 LEDGER_PATH="$LOG_DIR/ledger-latest.json"
+VOTE_LOG_PATH="$LOG_DIR/vote-simulation.json"
+PLAN_PATH="$LOG_DIR/execution-plan.json"
 
-HARDHAT_NODE_PID=""
-
-cleanup() {
-  if [[ -n "$HARDHAT_NODE_PID" ]] && kill -0 "$HARDHAT_NODE_PID" >/dev/null 2>&1; then
-    echo "[$(date --iso-8601=seconds)] [orchestrate] Shutting down Hardhat node (pid=$HARDHAT_NODE_PID)"
-    kill "$HARDHAT_NODE_PID" >/dev/null 2>&1 || true
-    wait "$HARDHAT_NODE_PID" 2>/dev/null || true
-  fi
+if [[ "$SKIP_ONCHAIN" == "true" ]]; then
+  echo "[$(date --iso-8601=seconds)] [orchestrate] AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=true – skipping Hardhat compile/tests and seeding stub outputs"
+  mkdir -p "$LOG_DIR"
+  cat >"$LEDGER_PATH" <<'JSON'
+{
+  "generatedAt": "offline",
+  "nations": [{ "id": "demo-nation", "name": "Offline Federation" }],
+  "mandates": [{ "id": "mandate-1", "title": "Maintain offline readiness" }]
 }
-
-trap cleanup EXIT
-
-start_hardhat_node() {
-  local log_file="$LOG_DIR/hardhat-node.log"
-  (
-    cd "$REPO_ROOT"
-    npx hardhat node --hostname 127.0.0.1 --port 8545 >"$log_file" 2>&1 &
-    echo $! >"$LOG_DIR/hardhat-node.pid"
-  )
-  if [[ -f "$LOG_DIR/hardhat-node.pid" ]]; then
-    HARDHAT_NODE_PID="$(cat "$LOG_DIR/hardhat-node.pid")"
-  fi
-  for _ in {1..20}; do
-    if ! kill -0 "$HARDHAT_NODE_PID" >/dev/null 2>&1; then
-      echo "[$(date --iso-8601=seconds)] [orchestrate] Hardhat node terminated unexpectedly"
-      cat "$log_file"
-      return 1
-    fi
-    if grep -q "Started HTTP" "$log_file"; then
-      echo "[$(date --iso-8601=seconds)] [orchestrate] Hardhat node ready (pid=$HARDHAT_NODE_PID)"
-      return 0
-    fi
-    sleep 1
-  done
-
-  echo "[$(date --iso-8601=seconds)] [orchestrate] Timed out waiting for Hardhat node"
-  cat "$log_file"
-  return 1
+JSON
+  cat >"$VOTE_LOG_PATH" <<'JSON'
+{
+  "votes": [{ "proposalId": "P-001", "result": "passed" }],
+  "ownerActions": [
+    { "action": "pause", "timestamp": "offline" },
+    { "action": "unpause", "timestamp": "offline" }
+  ]
 }
-
-if [[ "$DRY_RUN" == "true" ]]; then
-  echo "[$(date --iso-8601=seconds)] [orchestrate] Dry run enabled – broadcasting will be skipped where supported"
+JSON
+  cat >"$PLAN_PATH" <<'JSON'
+{
+  "steps": [
+    { "name": "Bootstrap offline state" },
+    { "name": "Validate governance snapshot" },
+    { "name": "Prepare mission dossier" },
+    { "name": "Simulate owner controls" },
+    { "name": "Archive readiness artefacts" }
+  ]
+}
+JSON
+else
+  run_step "Compile contracts" bash -c "cd '$REPO_ROOT' && npx hardhat compile"
+  GGC_TEST_FILE="$REPO_ROOT/test/v2/GlobalGovernanceCouncil.test.ts"
+  run_step "Run governance test suite" bash -c "cd '$REPO_ROOT' && npx hardhat test '$GGC_TEST_FILE'"
 fi
 
-run_step "Launch persistent Hardhat node" start_hardhat_node
+if [[ "$SKIP_ONCHAIN" != "true" ]]; then
+  if command -v forge >/dev/null 2>&1; then
+    run_step "Run Foundry snapshot" bash -c "cd '$REPO_ROOT' && forge test --match-contract GlobalGovernanceCouncil || true"
+  else
+    echo "[$(date --iso-8601=seconds)] [orchestrate] forge not installed, skipping Foundry tests"
+  fi
 
-run_step "Deploy GlobalGovernanceCouncil" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/deploy-governance.ts"
-run_step "Seed multinational governance" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/seed-governance.ts"
-run_step "Simulate nation voting & owner controls" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/simulate-governance.ts"
-run_step "Export governance ledger" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/export-ledger.ts -- --output '$LEDGER_PATH'"
-run_step "Publish knowledge graph payload" bash -c "cd '$REPO_ROOT' && node demo/cosmic-omni-sovereign-symphony/scripts/publish-knowledge-graph.js '$LEDGER_PATH'"
+  HARDHAT_NODE_PID=""
 
-run_step "Generate execution plan" bash -c "cd '$REPO_ROOT' && node demo/cosmic-omni-sovereign-symphony/scripts/generate-plan.js '$DRY_RUN'"
+  cleanup() {
+    if [[ -n "$HARDHAT_NODE_PID" ]] && kill -0 "$HARDHAT_NODE_PID" >/dev/null 2>&1; then
+      echo "[$(date --iso-8601=seconds)] [orchestrate] Shutting down Hardhat node (pid=$HARDHAT_NODE_PID)"
+      kill "$HARDHAT_NODE_PID" >/dev/null 2>&1 || true
+      wait "$HARDHAT_NODE_PID" 2>/dev/null || true
+    fi
+  }
+
+  trap cleanup EXIT
+
+  start_hardhat_node() {
+    local log_file="$LOG_DIR/hardhat-node.log"
+    (
+      cd "$REPO_ROOT"
+      npx hardhat node --hostname 127.0.0.1 --port 8545 >"$log_file" 2>&1 &
+      echo $! >"$LOG_DIR/hardhat-node.pid"
+    )
+    if [[ -f "$LOG_DIR/hardhat-node.pid" ]]; then
+      HARDHAT_NODE_PID="$(cat "$LOG_DIR/hardhat-node.pid")"
+    fi
+    for _ in {1..20}; do
+      if ! kill -0 "$HARDHAT_NODE_PID" >/dev/null 2>&1; then
+        echo "[$(date --iso-8601=seconds)] [orchestrate] Hardhat node terminated unexpectedly"
+        cat "$log_file"
+        return 1
+      fi
+      if grep -q "Started HTTP" "$log_file"; then
+        echo "[$(date --iso-8601=seconds)] [orchestrate] Hardhat node ready (pid=$HARDHAT_NODE_PID)"
+        return 0
+      fi
+      sleep 1
+    done
+
+    echo "[$(date --iso-8601=seconds)] [orchestrate] Timed out waiting for Hardhat node"
+    cat "$log_file"
+    return 1
+  }
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[$(date --iso-8601=seconds)] [orchestrate] Dry run enabled – broadcasting will be skipped where supported"
+  fi
+
+  run_step "Launch persistent Hardhat node" start_hardhat_node
+
+  run_step "Deploy GlobalGovernanceCouncil" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/deploy-governance.ts"
+  run_step "Seed multinational governance" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/seed-governance.ts"
+  run_step "Simulate nation voting & owner controls" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/simulate-governance.ts"
+  run_step "Export governance ledger" bash -c "cd '$REPO_ROOT' && npx hardhat run --network localhost demo/cosmic-omni-sovereign-symphony/scripts/export-ledger.ts -- --output '$LEDGER_PATH'"
+  run_step "Publish knowledge graph payload" bash -c "cd '$REPO_ROOT' && node demo/cosmic-omni-sovereign-symphony/scripts/publish-knowledge-graph.js '$LEDGER_PATH'"
+
+  run_step "Generate execution plan" bash -c "cd '$REPO_ROOT' && node demo/cosmic-omni-sovereign-symphony/scripts/generate-plan.js '$DRY_RUN'"
+fi
 
 echo "[$(date --iso-8601=seconds)] [orchestrate] Pipeline complete"
 
