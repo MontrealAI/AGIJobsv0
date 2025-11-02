@@ -113,7 +113,12 @@ Use `npm run ci:verify-companion-contexts` to make sure the manifest stays synch
    ```bash
    npm run ci:enforce-branch-protection -- --dry-run --branch main
    ```
-2. Apply enforcement after reviewing the dry-run output:
+2. Verify the live GitHub rule against the manifests (requires a fine-grained PAT with `administration:read` scope or a GitHub App token):
+   ```bash
+   GITHUB_TOKEN=<token> npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main
+   ```
+   The script fetches branch protection via the REST API, compares the enforced contexts to `required-contexts.json` and `required-companion-contexts.json`, and fails if any item is missing or out of order.【F:package.json†L138-L146】【F:scripts/ci/verify-branch-protection.ts†L1-L239】
+3. Apply enforcement after reviewing the dry-run output:
    ```bash
    npm run ci:enforce-branch-protection -- --branch main
    ```
