@@ -1,5 +1,7 @@
 # AGI Jobs v0 (v2) — Demo → ASI Global
 
+[![ASI Global Demo](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml)
+
 > AGI Jobs v0 (v2) is our sovereign intelligence engine; this module extends that superintelligent machine with specialised capabilities for `demo/asi-global`.
 
 ## Overview
@@ -12,6 +14,10 @@
 - Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
 - Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
+### CI Signal
+- `.github/workflows/demo-asi-global.yml` executes deterministic and local rehearsals, pins toolchain versions, and ships artefacts to the PR checks wall.【F:.github/workflows/demo-asi-global.yml†L1-L76】
+- The workflow badge above stays green only when the planetary demo passes every stage on `main` and on affected pull requests, mirroring the assurance pattern documented in [`docs/asi-global-orchestrator-demo.md`](../../docs/asi-global-orchestrator-demo.md).【F:docs/asi-global-orchestrator-demo.md†L1-L86】
+
 ## Systems Map
 ```mermaid
 flowchart LR
@@ -19,6 +25,8 @@ flowchart LR
     demo_asi_global --> Core[[AGI Jobs v0 (v2) Core Intelligence]]
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
+    Observability --> DemoChecks[(demo-asi-global CI)]
+    DemoChecks --> Operators
 ```
 
 ## Working With This Module

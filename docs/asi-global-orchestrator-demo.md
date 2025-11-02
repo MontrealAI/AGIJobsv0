@@ -1,5 +1,7 @@
 # Global Autonomous Economic Orchestrator – ASI Take-Off Demonstration
 
+[![ASI Global Demo](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml)
+
 The **ASI Global Take-Off** drill elevates the AGI Jobs v0 (v2) stack from a single-
 nation rehearsal to a planetary coordination exercise.  The demonstration stays entirely
 within the repository’s battle-tested primitives while orchestrating five continental
@@ -18,6 +20,24 @@ programmes and a global audit loop.
   operations.
 - **Audit-grade artefacts.** Produce immutable artefacts (JSON, Markdown, Mermaid,
   mission bundles) hashed into the governance kit for CI and reviewer verification.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Owner as Mission Owner
+    participant Demo as ASI Global Demo Runner
+    participant Kernel as Solidity Kernel
+    participant Thermo as Thermodynamic Sentinel
+    participant CI as CI v2 Deck
+
+    Owner->>Demo: Trigger `npm run demo:asi-global`
+    Demo->>Kernel: Deploy deterministic kit + simulators
+    Kernel-->>Demo: Emit receipts, job registry state
+    Demo->>Thermo: Sample incentive + temperature vectors
+    Thermo-->>Demo: Telemetry snapshots
+    Demo->>CI: Upload governance + thermodynamic artefacts
+    CI-->>Owner: Checks wall + artefact links
+```
 
 ## Running the Demonstration
 
@@ -56,6 +76,11 @@ The demonstration is wired into CI via `.github/workflows/demo-asi-global.yml`. 
 runs on every pull request touching the demo or scripts and on the main branch, ensuring
 that artefacts, governance controls, and thermodynamic telemetry remain reproducible.
 Generated artefacts are uploaded to the PR for reviewer inspection.
+
+### Signals captured
+- **Deterministic rehearsal:** `npm run demo:asi-global` executes with Foundry 1.4.0 and Node 20.18.1, mirroring the automated toolchain.【F:.github/workflows/demo-asi-global.yml†L40-L67】
+- **Local sovereignty:** `npm run demo:asi-global:local` exercises the Anvil deployment with deterministic private keys and the `31337` chain id so reviewers can replay every log offline.【F:.github/workflows/demo-asi-global.yml†L57-L67】
+- **Immutable artefacts:** `actions/upload-artifact@v4` publishes both deterministic and local receipts for compliance review.【F:.github/workflows/demo-asi-global.yml†L69-L76】
 
 ## Owner Control Guarantees
 

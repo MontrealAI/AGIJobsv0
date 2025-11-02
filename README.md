@@ -8,6 +8,7 @@
 [![Orchestrator](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/orchestrator-ci.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/orchestrator-ci.yml)
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
+[![ASI Global Demo](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml)
 
 AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform behaves like the reference superintelligent system for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios.
 
@@ -15,6 +16,7 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fu
 - **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators.【F:agent-gateway/README.md†L1-L53】【F:apps/validator-ui/README.md†L1-L40】【F:services/thermostat/README.md†L1-L60】
 - **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】【F:package.json†L135-L226】
 - **Evergreen assurance:** CI v2 enforces a wall of 23 required contexts plus companion workflows, uploads audit artefacts, and verifies branch protection so every release inherits a fully green, enforceable policy.【F:.github/workflows/ci.yml†L22-L779】【F:.github/workflows/ci.yml†L966-L1181】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
+- **Planetary rehearsals:** The ASI Global drill runs on every qualifying PR and the main branch, shipping reproducible artefacts that prove global orchestration, thermodynamic stewardship, and owner supremacy stay executable by non-technical stakeholders.【F:.github/workflows/demo-asi-global.yml†L1-L76】【F:docs/asi-global-orchestrator-demo.md†L1-L66】
 
 ## Quickstart for operators
 1. Use Node.js 20.18.1 (`.nvmrc`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】
@@ -172,6 +174,11 @@ flowchart TD
 ```
 
 The manifest in `ci/required-companion-contexts.json` marks every companion workflow as required so the PR checks wall cannot go green unless they all pass beside the `ci (v2)` contexts, and `npm run ci:verify-companion-contexts` fails if the manifest drifts from GitHub's configuration.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】
+
+### Demonstration invariants
+| Workflow | Purpose |
+| -------- | ------- |
+| `demo-asi-global` | Executes deterministic and local ASI Global drills, uploads artefacts, and validates the planetary orchestration kit on every relevant PR and the main branch.【F:.github/workflows/demo-asi-global.yml†L1-L76】【F:docs/asi-global-orchestrator-demo.md†L1-L66】 |
 
 ### Enforcing branch protection
 1. Generate or refresh required contexts:
