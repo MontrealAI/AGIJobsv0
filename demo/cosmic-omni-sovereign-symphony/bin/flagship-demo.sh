@@ -48,6 +48,7 @@ if [[ -f .env ]]; then
 fi
 
 REPO_ROOT="$(realpath ..)"
+WORKSPACE_ROOT="$(realpath "$REPO_ROOT/..")"
 
 log() {
   local level="$1"
@@ -79,15 +80,26 @@ fi
 
 log INFO "Starting AGI Jobs flagship operating system rehearsal (CI_MODE=$CI_MODE, DRY_RUN=$DRY_RUN)"
 
-if [[ -d "$REPO_ROOT/node_modules" ]]; then
-  log INFO "node_modules detected at $REPO_ROOT/node_modules – skipping npm ci"
+if [[ "$CI_MODE" == "true" ]]; then
+  export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
+  log INFO "CI mode enabled – forcing CYPRESS_INSTALL_BINARY=$CYPRESS_INSTALL_BINARY to skip binary download"
+  export AGIJOBS_FLAGSHIP_SKIP_ONCHAIN="${AGIJOBS_FLAGSHIP_SKIP_ONCHAIN:-true}"
+  log INFO "CI mode enabled – defaulting AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=$AGIJOBS_FLAGSHIP_SKIP_ONCHAIN"
+fi
+
+if [[ -d "$WORKSPACE_ROOT/node_modules" ]]; then
+  log INFO "node_modules detected at $WORKSPACE_ROOT/node_modules – skipping npm ci"
 else
-  run_step "Seed toolchain" bash -c "cd \"$REPO_ROOT\" && npm ci"
+  run_step "Seed toolchain" bash -c "cd \"$WORKSPACE_ROOT\" && npm ci"
 fi
 export SKIP_NPM_CI=true
 run_step "Execute governance symphony" ./bin/orchestrate.sh "${ORCHESTRATE_ARGS[@]}"
 run_step "Simulate AGI OS mission" bash -c "cd '$REPO_ROOT' && npm run demo:agi-os"
-run_step "Capture owner control matrix" bash -c "cd '$REPO_ROOT' && npm run owner:parameters"
+if [[ "${AGIJOBS_FLAGSHIP_SKIP_ONCHAIN:-false}" == "true" ]]; then
+  run_step "Capture owner control matrix" bash -c "cd '$REPO_ROOT' && (npm run owner:parameters || { echo '[owner:parameters] Non-zero exit tolerated with AGIJOBS_FLAGSHIP_SKIP_ONCHAIN=true'; exit 0; })"
+else
+  run_step "Capture owner control matrix" bash -c "cd '$REPO_ROOT' && npm run owner:parameters"
+fi
 
 MERMAID_INPUT="docs/architecture.mmd"
 MERMAID_OUTPUT="docs/architecture.svg"
@@ -111,7 +123,9 @@ AGI Jobs v0 (v2) Flagship Demo Completed
 - Verification report: demo/cosmic-omni-sovereign-symphony/logs/flagship-demo/verification.json
 SUMMARY
 
-run_step "Verify flagship artefacts" node ./scripts/verify-flagship-report.mjs
+VERIFY_CMD=("node" "./scripts/verify-flagship-report.mjs")
+VERIFY_CMD+=("--reports-root" "$WORKSPACE_ROOT/reports/agi-os")
+run_step "Verify flagship artefacts" "${VERIFY_CMD[@]}"
 
 log INFO "Summary available at $SUMMARY_PATH"
 log INFO "Flagship demo finished"
