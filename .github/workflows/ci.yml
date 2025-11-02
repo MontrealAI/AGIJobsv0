@@ -965,7 +965,6 @@ jobs:
 
   branch_protection:
     name: Branch protection guard
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -973,15 +972,29 @@ jobs:
       pull-requests: read
       administration: read
     steps:
+      - name: Detect fork context
+        id: fork_context
+        run: |
+          if [ "${IS_FORK}" = "true" ]; then
+            echo "Detected forked pull_request context; branch protection audit will be skipped because the token lacks administration:read scope."
+            echo "fork=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "fork=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
       - name: Harden runner
+        if: steps.fork_context.outputs.fork == 'false'
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
           egress-policy: audit
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        if: steps.fork_context.outputs.fork == 'false'
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Setup Node
+        if: steps.fork_context.outputs.fork == 'false'
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
@@ -990,12 +1003,21 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
+        if: steps.fork_context.outputs.fork == 'false'
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Verify branch protection configuration
+        if: steps.fork_context.outputs.fork == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH_NAME: main
         run: npm run ci:verify-branch-protection -- --branch "$BRANCH_NAME"
+      - name: Record fork bypass for summary
+        if: steps.fork_context.outputs.fork == 'true'
+        run: |
+          mkdir -p reports/ci
+          cat <<'EOF' >> reports/ci/status.md
+          > Branch protection audit skipped automatically because this run originates from a forked pull request without the required administrative scope. The required context remains green on protected branches.
+          EOF
 
   summary:
     name: CI summary

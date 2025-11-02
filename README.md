@@ -146,7 +146,7 @@ The branch protection rule enforces the following `ci (v2)` contexts, guaranteei
 | Sovereign Constellation Demo — build | Builds constellation orchestrator + console assets.【F:.github/workflows/ci.yml†L818-L855】 |
 | Celestial Archon Demonstration | Deterministic + local rehearsals for Celestial Archon governance.【F:.github/workflows/ci.yml†L856-L910】 |
 | Hypernova Governance Demonstration | Hypernova rehearsal with local deterministic replay.【F:.github/workflows/ci.yml†L911-L965】 |
-| Branch protection guard | Audits GitHub branch protection live against the manifests and fails on drift.【F:.github/workflows/ci.yml†L966-L999】【F:ci/required-contexts.json†L1-L24】 |
+| Branch protection guard | Audits GitHub branch protection live against the manifests and fails on drift. Forked PRs log a bypass note yet keep the required context green so protected branches still enforce the policy.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】 |
 | CI summary | Aggregates every job outcome, writes Markdown + JSON status artefacts, and fails if any job was red or artefacts are missing.【F:.github/workflows/ci.yml†L1000-L1130】 |
 | Invariant tests | Dedicated Forge invariant suite with cached build graph and fuzz tuning.【F:.github/workflows/ci.yml†L1131-L1181】 |
 
@@ -192,7 +192,7 @@ The manifest in `ci/required-companion-contexts.json` marks every companion work
    ```bash
    npm run ci:enforce-branch-protection -- --branch main
    ```
-   The branch protection guard job revalidates these expectations on every push to `main`, keeping policy and automation in sync.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L999】
+   The branch protection guard job revalidates these expectations on every push to `main`, keeping policy and automation in sync while gracefully bypassing forked PRs that lack administrative scope.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
 ### Artefacts
 - `reports/ci/status.{md,json}` – machine-readable run summaries consumed by release captains and compliance audits.【F:.github/workflows/ci.yml†L1000-L1130】

@@ -91,7 +91,7 @@ flowchart LR
 | `sovereign_constellation_demo` | `ci (v2) / Sovereign Constellation Demo — build` | Constellation orchestrator + console build.【F:.github/workflows/ci.yml†L818-L855】 |
 | `celestial_archon_demo` | `ci (v2) / Celestial Archon Demonstration` | Celestial Archon deterministic + local rehearsals.【F:.github/workflows/ci.yml†L856-L910】 |
 | `hypernova_demo` | `ci (v2) / Hypernova Governance Demonstration` | Hypernova deterministic + local rehearsals.【F:.github/workflows/ci.yml†L911-L965】 |
-| `branch_protection` | `ci (v2) / Branch protection guard` | Live GitHub branch protection audit against manifests.【F:.github/workflows/ci.yml†L966-L999】【F:ci/required-contexts.json†L1-L24】 |
+| `branch_protection` | `ci (v2) / Branch protection guard` | Live GitHub branch protection audit against manifests. Fork pull requests emit a bypass note yet leave the required context green so enforcement still lands on protected branches.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】 |
 | `summary` | `ci (v2) / CI summary` | Aggregates job outcomes, writes `reports/ci/status.{md,json}`, fails on missing artefacts or red jobs.【F:.github/workflows/ci.yml†L1000-L1130】 |
 | `invariants` | `ci (v2) / Invariant tests` | Forge invariant harness with fuzz-runs 512.【F:.github/workflows/ci.yml†L1131-L1181】 |
 
@@ -143,7 +143,7 @@ Every arrow represents a required status entry on the pull-request checks wall. 
    ```bash
    npm run ci:enforce-branch-protection -- --branch main
    ```
-   The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L999】
+   The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations while still succeeding on forked PRs that cannot call the admin API.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
 ## Artefacts & forensic trail
 - `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1000-L1130】
