@@ -87,7 +87,8 @@ function checkWorkflows() {
   for (const file of workflowFiles) {
     const filePath = path.join(workflowsDir, file);
     const contents = fs.readFileSync(filePath, 'utf8');
-    if (contents.includes('actions/setup-node')) {
+    const directUsage = /uses:\s*actions\/setup-node@/g.test(contents);
+    if (directUsage) {
       const hasNvmrc =
         contents.includes("node-version-file: '.nvmrc'") ||
         contents.includes('node-version-file: ".nvmrc"');

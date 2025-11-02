@@ -3,21 +3,21 @@ name: contracts-ci
 on:
   pull_request:
     paths:
-      - 'contracts/**'
-      - 'scripts/**'
-      - 'test/**'
-      - 'hardhat.config.*'
-      - 'package*.json'
-      - '.github/workflows/contracts.yml'
+    - 'contracts/**'
+    - 'scripts/**'
+    - 'test/**'
+    - 'hardhat.config.*'
+    - 'package*.json'
+    - '.github/workflows/contracts.yml'
   push:
     branches: [main]
     paths:
-      - 'contracts/**'
-      - 'scripts/**'
-      - 'test/**'
-      - 'hardhat.config.*'
-      - 'package*.json'
-      - '.github/workflows/contracts.yml'
+    - 'contracts/**'
+    - 'scripts/**'
+    - 'test/**'
+    - 'hardhat.config.*'
+    - 'package*.json'
+    - '.github/workflows/contracts.yml'
 
 permissions:
   contents: read
@@ -43,59 +43,54 @@ jobs:
       REVEAL_WINDOW: '30m'
 
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
 
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-          persist-credentials: false
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+        persist-credentials: false
 
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+    - name: Setup Node
+      uses: ./.github/actions/setup-node-ci
+    - name: Cache Hardhat compilers
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+      with:
+        path: ~/.cache/hardhat-nodejs
+        key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
+        restore-keys: |
+          hardhat-${{ runner.os }}-
 
-      - name: Cache Hardhat compilers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ~/.cache/hardhat-nodejs
-          key: hardhat-${{ runner.os }}-${{ hashFiles('hardhat.config.js', 'package-lock.json') }}
-          restore-keys: |
-            hardhat-${{ runner.os }}-
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
 
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Compile
+      env:
+        COVERAGE_MIN: 90
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Regenerate constants for tests
+      run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
 
-      - name: Compile
-        env:
-          COVERAGE_MIN: 90
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+    - name: Node/Hardhat tests
+      run: npm test
 
-      - name: Regenerate constants for tests
-        run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
+      with:
+        version: 'v1.4.4'
 
-      - name: Node/Hardhat tests
-        run: npm test
+    - name: Foundry tests
+      run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
-        with:
-          version: 'v1.4.4'
-
-      - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
-
-      - name: Foundry invariant tests
-        env:
-          FOUNDRY_INVARIANT_RUNS: 256
-        run: forge test -vvvv --ffi --match-path 'test/v2/invariant/*.t.sol'
+    - name: Foundry invariant tests
+      env:
+        FOUNDRY_INVARIANT_RUNS: 256
+      run: forge test -vvvv --ffi --match-path 'test/v2/invariant/*.t.sol'

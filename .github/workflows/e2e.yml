@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+    - main
 
 permissions:
   contents: read
@@ -21,84 +21,79 @@ jobs:
       TERM: xterm
       CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+    - name: Setup Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
 
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Orchestrator tsc
+      run: npx tsc -p apps/orchestrator/tsconfig.json
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
+      with:
+        version: 'v1.4.4'
 
-      - name: Orchestrator tsc
-        run: npx tsc -p apps/orchestrator/tsconfig.json
+    - name: Compile
+      env:
+        COVERAGE_MIN: 90
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: 'v1.4.4'
+    - name: Start anvil mainnet fork
+      id: anvil
+      env:
+        MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+      run: |
+        set -euo pipefail
+        if [ -n "${MAINNET_RPC_URL:-}" ]; then
+          echo "Starting anvil with mainnet fork"
+          anvil --fork-url "$MAINNET_RPC_URL" --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
+        else
+          echo "Starting local anvil without fork"
+          anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
+        fi
+        echo "anvil-pid=$!" >> "$GITHUB_OUTPUT"
+        sleep 5
 
-      - name: Compile
-        env:
-          COVERAGE_MIN: 90
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+    - name: Local gateway orchestration
+      env:
+        NODE_OPTIONS: --max_old_space_size=4096
+      run: npm run e2e:local
 
-      - name: Start anvil mainnet fork
-        id: anvil
-        env:
-          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-        run: |
-          set -euo pipefail
-          if [ -n "${MAINNET_RPC_URL:-}" ]; then
-            echo "Starting anvil with mainnet fork"
-            anvil --fork-url "$MAINNET_RPC_URL" --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
-          else
-            echo "Starting local anvil without fork"
-            anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --block-time 2 &
-          fi
-          echo "anvil-pid=$!" >> "$GITHUB_OUTPUT"
-          sleep 5
+    - name: Mainnet fork drill
+      env:
+        MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+        SKIP_MOCK_AGIALPHA: '1'
+      run: npm run test:fork
 
-      - name: Local gateway orchestration
-        env:
-          NODE_OPTIONS: --max_old_space_size=4096
-        run: npm run e2e:local
+    - name: Job lifecycle with dispute
+      run: npx hardhat test --no-compile test/v2/jobLifecycleWithDispute.integration.test.ts
 
-      - name: Mainnet fork drill
-        env:
-          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-          SKIP_MOCK_AGIALPHA: '1'
-        run: npm run test:fork
+    - name: End-to-end dispute flow
+      run: npx hardhat test --no-compile test/v2/endToEnd.integration.test.js
 
-      - name: Job lifecycle with dispute
-        run: npx hardhat test --no-compile test/v2/jobLifecycleWithDispute.integration.test.ts
+    - name: Upload e2e logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-logs
+        path: |
+          test/e2e
+          test/v2
+          reports/*.log
 
-      - name: End-to-end dispute flow
-        run: npx hardhat test --no-compile test/v2/endToEnd.integration.test.js
-
-      - name: Upload e2e logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-logs
-          path: |
-            test/e2e
-            test/v2
-            reports/*.log
-
-      - name: Shutdown anvil
-        if: always()
-        run: |
-          if [ -n "${{ steps.anvil.outputs.anvil-pid }}" ]; then
-            kill ${{ steps.anvil.outputs.anvil-pid }} || true
-          fi
+    - name: Shutdown anvil
+      if: always()
+      run: |
+        if [ -n "${{ steps.anvil.outputs.anvil-pid }}" ]; then
+          kill ${{ steps.anvil.outputs.anvil-pid }} || true
+        fi

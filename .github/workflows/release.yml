@@ -13,11 +13,11 @@ on:
         default: mainnet
         type: choice
         options:
-          - mainnet
-          - sepolia
+        - mainnet
+        - sepolia
   push:
     tags:
-      - 'v*'
+    - 'v*'
 
 permissions:
   contents: write
@@ -36,112 +36,107 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       network: ${{ steps.network.outputs.network }}
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+    - name: Set up Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Enforce signed release tag
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        node scripts/ci/ensure-tag-signature.js "${GITHUB_REF}"
 
-      - name: Enforce signed release tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          node scripts/ci/ensure-tag-signature.js "${GITHUB_REF}"
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Determine version
+      id: version
+      run: |
+        if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        else
+          VERSION="${{ github.event.inputs.version }}"
+        fi
+        if [[ -z "$VERSION" ]]; then
+          echo "::error::Version is required."; exit 1; fi
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+          echo "::error::Version must follow semver."; exit 1; fi
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Determine network
+      id: network
+      run: |
+        NETWORK="${{ github.event.inputs.network }}"
+        if [[ -z "$NETWORK" ]]; then
+          NETWORK="mainnet"
+        fi
+        echo "network=$NETWORK" >> "$GITHUB_OUTPUT"
 
-      - name: Determine version
-        id: version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          else
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-          if [[ -z "$VERSION" ]]; then
-            echo "::error::Version is required."; exit 1; fi
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Version must follow semver."; exit 1; fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    - name: Verify changelog contains version
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        if ! grep -q "^## v$VERSION" CHANGELOG.md; then
+          echo "::error::CHANGELOG.md missing section for v$VERSION";
+          exit 1;
+        fi
 
-      - name: Determine network
-        id: network
-        run: |
-          NETWORK="${{ github.event.inputs.network }}"
-          if [[ -z "$NETWORK" ]]; then
-            NETWORK="mainnet"
-          fi
-          echo "network=$NETWORK" >> "$GITHUB_OUTPUT"
+    - name: Compile
+      env:
+        COVERAGE_MIN: 90
+      run: |
+        npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
+        npx hardhat compile
 
-      - name: Verify changelog contains version
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          if ! grep -q "^## v$VERSION" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md missing section for v$VERSION";
-            exit 1;
-          fi
+    - name: Package TypeChain artifacts
+      run: |
+        npx hardhat typechain
+        npm run abi:export -- --out reports/abis/head
 
-      - name: Compile
-        env:
-          COVERAGE_MIN: 90
-        run: |
-          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
-          npx hardhat compile
+    - name: Generate release manifest
+      run: |
+        npm run release:manifest -- \
+          --network "${{ steps.network.outputs.network }}" \
+          --deployment-config "deployment-config/${{ steps.network.outputs.network }}.json"
 
-      - name: Package TypeChain artifacts
-        run: |
-          npx hardhat typechain
-          npm run abi:export -- --out reports/abis/head
+    - name: Validate release manifest
+      run: |
+        node scripts/release/validate-manifest.js \
+          --manifest reports/release/manifest.json \
+          --fail-on-warnings \
+          --require-addresses
 
-      - name: Generate release manifest
-        run: |
-          npm run release:manifest -- \
-            --network "${{ steps.network.outputs.network }}" \
-            --deployment-config "deployment-config/${{ steps.network.outputs.network }}.json"
+    - name: Generate release notes
+      run: |
+        npm run release:notes -- \
+          --manifest reports/release/manifest.json \
+          --out reports/release/notes.md \
+          --network "${{ steps.network.outputs.network }}" \
+          --version "${{ steps.version.outputs.version }}"
 
-      - name: Validate release manifest
-        run: |
-          node scripts/release/validate-manifest.js \
-            --manifest reports/release/manifest.json \
-            --fail-on-warnings \
-            --require-addresses
+    - name: Render manifest summary
+      run: |
+        npm run release:manifest:summary -- \
+          --manifest reports/release/manifest.json \
+          --out reports/release/manifest-summary.md
 
-      - name: Generate release notes
-        run: |
-          npm run release:notes -- \
-            --manifest reports/release/manifest.json \
-            --out reports/release/notes.md \
-            --network "${{ steps.network.outputs.network }}" \
-            --version "${{ steps.version.outputs.version }}"
+    - name: Generate SBOM
+      run: npm run sbom:generate
 
-      - name: Render manifest summary
-        run: |
-          npm run release:manifest:summary -- \
-            --manifest reports/release/manifest.json \
-            --out reports/release/manifest-summary.md
-
-      - name: Generate SBOM
-        run: npm run sbom:generate
-
-      - name: Upload release preparation artefacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: release-prep
-          path: |
-            reports/abis/head
-            reports/sbom
-            reports/release
-            typechain-types
-            deployment-config
+    - name: Upload release preparation artefacts
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: release-prep
+        path: |
+          reports/abis/head
+          reports/sbom
+          reports/release
+          typechain-types
+          deployment-config
 
   verify-contracts:
     name: Verify deployed contracts
@@ -163,193 +158,182 @@ jobs:
       AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ETHERSCAN_ROLE_ARN }}
       AWS_REGION: ${{ secrets.AWS_ETHERSCAN_REGION }}
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
 
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
 
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+    - name: Set up Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Configure AWS credentials for explorer secrets
+      if: ${{ env.AWS_ROLE_TO_ASSUME != '' && env.AWS_REGION != '' }}
+      uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+      with:
+        role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ env.AWS_REGION }}
+        role-session-name: release-etherscan-${{ github.run_id }}
+        role-duration-seconds: 900
 
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-
-      - name: Configure AWS credentials for explorer secrets
-        if: ${{ env.AWS_ROLE_TO_ASSUME != '' && env.AWS_REGION != '' }}
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
-        with:
-          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-          role-session-name: release-etherscan-${{ github.run_id }}
-          role-duration-seconds: 900
-
-      - name: Fetch explorer API key via AWS Secrets Manager
-        if: ${{ env.ETHERSCAN_SECRET_NAME != '' }}
-        env:
-          SECRET_NAME: ${{ env.ETHERSCAN_SECRET_NAME }}
-          SECRET_JSON_KEY: ${{ env.ETHERSCAN_SECRET_JSON_KEY }}
-        run: |
-          set -euo pipefail
-          SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
-          export SECRET_VALUE
-          node <<'NODE'
-          const fs = require('fs');
-          const secret = process.env.SECRET_VALUE || '';
-          const jsonKey = process.env.SECRET_JSON_KEY || '';
-          const envFile = process.env.GITHUB_ENV;
-          const summaryFile = process.env.GITHUB_STEP_SUMMARY;
-          const addMask = (value) => {
-            process.stdout.write(`::add-mask::${value}\n`);
-          };
-          const appendEnv = (key, value) => {
-            if (!value || typeof value !== 'string') {
-              return;
-            }
-            const trimmed = value.trim();
-            if (!trimmed) {
-              return;
-            }
-            fs.appendFileSync(envFile, `${key}=${trimmed}\n`);
-            addMask(trimmed);
-          };
-          const appendSummary = (message) => {
-            if (summaryFile) {
-              fs.appendFileSync(summaryFile, `${message}\n`);
-            } else {
-              console.log(message);
-            }
-          };
-          let parsed;
-          try {
-            parsed = JSON.parse(secret);
-          } catch (error) {
-            parsed = secret;
+    - name: Fetch explorer API key via AWS Secrets Manager
+      if: ${{ env.ETHERSCAN_SECRET_NAME != '' }}
+      env:
+        SECRET_NAME: ${{ env.ETHERSCAN_SECRET_NAME }}
+        SECRET_JSON_KEY: ${{ env.ETHERSCAN_SECRET_JSON_KEY }}
+      run: |
+        set -euo pipefail
+        SECRET_VALUE=$(aws secretsmanager get-secret-value --secret-id "$SECRET_NAME" --query SecretString --output text)
+        export SECRET_VALUE
+        node <<'NODE'
+        const fs = require('fs');
+        const secret = process.env.SECRET_VALUE || '';
+        const jsonKey = process.env.SECRET_JSON_KEY || '';
+        const envFile = process.env.GITHUB_ENV;
+        const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+        const addMask = (value) => {
+          process.stdout.write(`::add-mask::${value}\n`);
+        };
+        const appendEnv = (key, value) => {
+          if (!value || typeof value !== 'string') {
+            return;
           }
-          if (typeof parsed === 'string') {
-            appendEnv('ETHERSCAN_API_KEY', parsed);
-            appendSummary('✅ Loaded default explorer API key from AWS Secrets Manager.');
-          } else if (parsed && typeof parsed === 'object') {
-            if (jsonKey) {
-              if (!Object.prototype.hasOwnProperty.call(parsed, jsonKey)) {
-                throw new Error(`Secret JSON missing key: ${jsonKey}`);
-              }
-              const target = parsed[jsonKey];
-              if (target && typeof target === 'object') {
-                appendEnv('ETHERSCAN_API_KEY', target.default || target.apiKey || target.key || '');
-                appendEnv('ETHERSCAN_API_KEY_MAINNET', target.mainnet || target.mainnetKey || '');
-                appendEnv('ETHERSCAN_API_KEY_SEPOLIA', target.sepolia || target.sepoliaKey || target.testnet || '');
-              } else {
-                appendEnv('ETHERSCAN_API_KEY', String(target));
-              }
-              appendSummary(`✅ Loaded explorer API credentials using selector "${jsonKey}".`);
-            } else {
-              appendEnv('ETHERSCAN_API_KEY', parsed.default || parsed.apiKey || parsed.key || '');
-              appendEnv('ETHERSCAN_API_KEY_MAINNET', parsed.mainnet || parsed.mainnetKey || '');
-              appendEnv('ETHERSCAN_API_KEY_SEPOLIA', parsed.sepolia || parsed.sepoliaKey || parsed.testnet || '');
-              appendSummary('✅ Loaded explorer API credentials from JSON secret.');
-            }
+          const trimmed = value.trim();
+          if (!trimmed) {
+            return;
+          }
+          fs.appendFileSync(envFile, `${key}=${trimmed}\n`);
+          addMask(trimmed);
+        };
+        const appendSummary = (message) => {
+          if (summaryFile) {
+            fs.appendFileSync(summaryFile, `${message}\n`);
           } else {
-            throw new Error('Unsupported secret format for explorer credentials.');
+            console.log(message);
           }
-          NODE
-          unset SECRET_VALUE
+        };
+        let parsed;
+        try {
+          parsed = JSON.parse(secret);
+        } catch (error) {
+          parsed = secret;
+        }
+        if (typeof parsed === 'string') {
+          appendEnv('ETHERSCAN_API_KEY', parsed);
+          appendSummary('✅ Loaded default explorer API key from AWS Secrets Manager.');
+        } else if (parsed && typeof parsed === 'object') {
+          if (jsonKey) {
+            if (!Object.prototype.hasOwnProperty.call(parsed, jsonKey)) {
+              throw new Error(`Secret JSON missing key: ${jsonKey}`);
+            }
+            const target = parsed[jsonKey];
+            if (target && typeof target === 'object') {
+              appendEnv('ETHERSCAN_API_KEY', target.default || target.apiKey || target.key || '');
+              appendEnv('ETHERSCAN_API_KEY_MAINNET', target.mainnet || target.mainnetKey || '');
+              appendEnv('ETHERSCAN_API_KEY_SEPOLIA', target.sepolia || target.sepoliaKey || target.testnet || '');
+            } else {
+              appendEnv('ETHERSCAN_API_KEY', String(target));
+            }
+            appendSummary(`✅ Loaded explorer API credentials using selector "${jsonKey}".`);
+          } else {
+            appendEnv('ETHERSCAN_API_KEY', parsed.default || parsed.apiKey || parsed.key || '');
+            appendEnv('ETHERSCAN_API_KEY_MAINNET', parsed.mainnet || parsed.mainnetKey || '');
+            appendEnv('ETHERSCAN_API_KEY_SEPOLIA', parsed.sepolia || parsed.sepoliaKey || parsed.testnet || '');
+            appendSummary('✅ Loaded explorer API credentials from JSON secret.');
+          }
+        } else {
+          throw new Error('Unsupported secret format for explorer credentials.');
+        }
+        NODE
+        unset SECRET_VALUE
 
-      - name: Download release bundle
-        uses: actions/download-artifact@4cb1d0de87d15f5f9492c2ab5a8c5e2d06cc1f6d
-        with:
-          name: release-prep
-          path: reports/prep
+    - name: Download release bundle
+      uses: actions/download-artifact@4cb1d0de87d15f5f9492c2ab5a8c5e2d06cc1f6d
+      with:
+        name: release-prep
+        path: reports/prep
 
-      - name: Restore manifest for verification
-        run: |
-          if [ ! -f reports/prep/reports/release/manifest.json ]; then
-            echo "::error::Release manifest missing from preparation artefacts.";
-            exit 1;
-          fi
-          mkdir -p reports/release
-          cp reports/prep/reports/release/manifest.json reports/release/manifest.json
+    - name: Restore manifest for verification
+      run: |
+        if [ ! -f reports/prep/reports/release/manifest.json ]; then
+          echo "::error::Release manifest missing from preparation artefacts.";
+          exit 1;
+        fi
+        mkdir -p reports/release
+        cp reports/prep/reports/release/manifest.json reports/release/manifest.json
 
-      - name: Run automated contract verification
-        run: |
-          node scripts/release/run-etherscan-verification.js \
-            --network "$RELEASE_NETWORK" \
-            --manifest reports/release/manifest.json \
-            --config "deployment-config/verification/$RELEASE_NETWORK.json"
+    - name: Run automated contract verification
+      run: |
+        node scripts/release/run-etherscan-verification.js \
+          --network "$RELEASE_NETWORK" \
+          --manifest reports/release/manifest.json \
+          --config "deployment-config/verification/$RELEASE_NETWORK.json"
 
-      - name: Upload verification summary
-        if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: release-verification
-          path: reports/release/verification-summary.json
-          if-no-files-found: warn
+    - name: Upload verification summary
+      if: ${{ always() }}
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: release-verification
+        path: reports/release/verification-summary.json
+        if-no-files-found: warn
 
   npm-publish:
     needs: prepare
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - name: Detect npm token
-        id: npm-token
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [[ -n "${NPM_TOKEN}" ]]; then
-            echo "publish=true" >> "$GITHUB_OUTPUT"
-            echo "✅ NPM token detected. Proceeding with publish job." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "publish=false" >> "$GITHUB_OUTPUT"
-            echo "⚠️ NPM token not provided. Skipping npm publish." >> "$GITHUB_STEP_SUMMARY"
+    - name: Detect npm token
+      id: npm-token
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        if [[ -n "${NPM_TOKEN}" ]]; then
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "✅ NPM token detected. Proceeding with publish job." >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "publish=false" >> "$GITHUB_OUTPUT"
+          echo "⚠️ NPM token not provided. Skipping npm publish." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Harden runner
+      if: ${{ steps.npm-token.outputs.publish == 'true' }}
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - name: Checkout
+      if: ${{ steps.npm-token.outputs.publish == 'true' }}
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
+
+    - name: Set up Node.js
+      if: ${{ steps.npm-token.outputs.publish == 'true' }}
+      uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      if: ${{ steps.npm-token.outputs.publish == 'true' }}
+      uses: ./.github/actions/npm-ci
+    - name: Publish npm packages
+      if: ${{ steps.npm-token.outputs.publish == 'true' }}
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        set -euo pipefail
+        for pkg in packages/onebox-sdk packages/onebox-orchestrator packages/storage; do
+          if jq -e '.private == true' "$pkg/package.json" >/dev/null 2>&1; then
+            echo "Skipping $pkg (private)";
+            continue;
           fi
-
-      - name: Harden runner
-        if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Checkout
-        if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node.js
-        if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Install dependencies
-        if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        run: npm ci
-
-      - name: Publish npm packages
-        if: ${{ steps.npm-token.outputs.publish == 'true' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          set -euo pipefail
-          for pkg in packages/onebox-sdk packages/onebox-orchestrator packages/storage; do
-            if jq -e '.private == true' "$pkg/package.json" >/dev/null 2>&1; then
-              echo "Skipping $pkg (private)";
-              continue;
-            fi
-            if ! jq -e '.version' "$pkg/package.json" >/dev/null 2>&1; then
-              echo "Skipping $pkg (missing version)";
-              continue;
-            fi
-            npm publish "$pkg" --access public --provenance;
-          done
+          if ! jq -e '.version' "$pkg/package.json" >/dev/null 2>&1; then
+            echo "Skipping $pkg (missing version)";
+            continue;
+          fi
+          npm publish "$pkg" --access public --provenance;
+        done
 
   docker-publish:
     needs: prepare
@@ -359,160 +343,160 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: node-runner
-            context: .
-            dockerfile: deploy/docker/orchestrator.Dockerfile
-          - name: validator-runner
-            context: .
-            dockerfile: deploy/docker/attester.Dockerfile
-          - name: gateway
-            context: .
-            dockerfile: agent-gateway/Dockerfile
-          - name: webapp
-            context: .
-            dockerfile: apps/enterprise-portal/Dockerfile
-          - name: owner-console
-            context: apps/console
-            dockerfile: apps/console/Dockerfile
+        - name: node-runner
+          context: .
+          dockerfile: deploy/docker/orchestrator.Dockerfile
+        - name: validator-runner
+          context: .
+          dockerfile: deploy/docker/attester.Dockerfile
+        - name: gateway
+          context: .
+          dockerfile: agent-gateway/Dockerfile
+        - name: webapp
+          context: .
+          dockerfile: apps/enterprise-portal/Dockerfile
+        - name: owner-console
+          context: apps/console
+          dockerfile: apps/console/Dockerfile
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
 
-      - name: Log in to GHCR
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Log in to GHCR
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push ${{ matrix.name }}
-        id: build
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
-          provenance: mode=max
-          sbom: true
+    - name: Build and push ${{ matrix.name }}
+      id: build
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
+      with:
+        context: ${{ matrix.context }}
+        file: ${{ matrix.dockerfile }}
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+          ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+        provenance: mode=max
+        sbom: true
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+    - name: Install cosign
+      uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
 
-      - name: Sign container images
-        env:
-          COSIGN_EXPERIMENTAL: '1'
-        run: |
-          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
-          cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
+    - name: Sign container images
+      env:
+        COSIGN_EXPERIMENTAL: '1'
+      run: |
+        cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ needs.prepare.outputs.version }}
+        cosign sign --yes --keyless ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:latest
 
-      - name: Trivy scan
-        env:
-          IMAGE_REF: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 \
-            image --exit-code 1 --severity HIGH,CRITICAL \
-            "$IMAGE_REF"
+    - name: Trivy scan
+      env:
+        IMAGE_REF: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:0.53.0 \
+          image --exit-code 1 --severity HIGH,CRITICAL \
+          "$IMAGE_REF"
 
-      - name: Write image digest file
-        run: echo "${{ steps.build.outputs.digest }}" > digest.txt
+    - name: Write image digest file
+      run: echo "${{ steps.build.outputs.digest }}" > digest.txt
 
-      - name: Publish image digests
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: ${{ matrix.name }}-release-digest
-          path: digest.txt
+    - name: Publish image digests
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: ${{ matrix.name }}-release-digest
+        path: digest.txt
 
   github-release:
     needs:
-      - prepare
-      - docker-publish
+    - prepare
+    - docker-publish
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       contents: write
       id-token: write
     steps:
-      - name: Harden runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-        with:
-          egress-policy: audit
+    - name: Harden runner
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+      with:
+        egress-policy: audit
 
-      - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-        with:
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+      with:
+        fetch-depth: 0
 
-      - name: Download release preparation artefacts
-        uses: actions/download-artifact@71f31b0d0be45612bc1db53de9b1aa6dc10e30f2
-        with:
-          name: release-prep
-          path: release-prep
+    - name: Download release preparation artefacts
+      uses: actions/download-artifact@71f31b0d0be45612bc1db53de9b1aa6dc10e30f2
+      with:
+        name: release-prep
+        path: release-prep
 
-      - name: Assemble release bundle
-        id: bundle
-        run: |
-          set -euo pipefail
-          VERSION="${{ needs.prepare.outputs.version }}"
-          mkdir -p dist
-          tar -czf "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" \
-            -C release-prep \
-            reports/abis/head \
-            reports/sbom \
-            reports/release \
-            typechain-types \
-            deployment-config
-          sha256sum "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sha256"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+    - name: Assemble release bundle
+      id: bundle
+      run: |
+        set -euo pipefail
+        VERSION="${{ needs.prepare.outputs.version }}"
+        mkdir -p dist
+        tar -czf "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" \
+          -C release-prep \
+          reports/abis/head \
+          reports/sbom \
+          reports/release \
+          typechain-types \
+          deployment-config
+        sha256sum "dist/agi-jobs-v${VERSION}-artifacts.tar.gz" > "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sha256"
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
+    - name: Install cosign
+      uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
 
-      - name: Sign release bundle
-        env:
-          COSIGN_EXPERIMENTAL: '1'
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.bundle.outputs.version }}"
-          cosign sign-blob --yes --keyless \
-            --output-signature "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sig" \
-            --output-certificate "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.pem" \
-            "dist/agi-jobs-v${VERSION}-artifacts.tar.gz"
+    - name: Sign release bundle
+      env:
+        COSIGN_EXPERIMENTAL: '1'
+      run: |
+        set -euo pipefail
+        VERSION="${{ steps.bundle.outputs.version }}"
+        cosign sign-blob --yes --keyless \
+          --output-signature "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.sig" \
+          --output-certificate "dist/agi-jobs-v${VERSION}-artifacts.tar.gz.pem" \
+          "dist/agi-jobs-v${VERSION}-artifacts.tar.gz"
 
-      - name: Generate build provenance
-        id: provenance
-        uses: actions/attest-build-provenance@128a63446a19441284efb5146ee5d521349b7ab6
-        with:
-          subject-path: dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
+    - name: Generate build provenance
+      id: provenance
+      uses: actions/attest-build-provenance@128a63446a19441284efb5146ee5d521349b7ab6
+      with:
+        subject-path: dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
 
-      - name: Publish signed release assets
-        uses: softprops/action-gh-release@39a9d95fda3fcb043b4d29d79d046a9e12dfc2a7
-        with:
-          tag_name: v${{ steps.bundle.outputs.version }}
-          name: AGI Jobs v${{ steps.bundle.outputs.version }}
-          draft: false
-          prerelease: ${{ contains(steps.bundle.outputs.version, '-') }}
-          body_path: release-prep/reports/release/notes.md
-          files: |
-            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
-            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256
-            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sig
-            dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.pem
-            ${{ steps.provenance.outputs.bundle-path }}
+    - name: Publish signed release assets
+      uses: softprops/action-gh-release@39a9d95fda3fcb043b4d29d79d046a9e12dfc2a7
+      with:
+        tag_name: v${{ steps.bundle.outputs.version }}
+        name: AGI Jobs v${{ steps.bundle.outputs.version }}
+        draft: false
+        prerelease: ${{ contains(steps.bundle.outputs.version, '-') }}
+        body_path: release-prep/reports/release/notes.md
+        files: |
+          dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz
+          dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sha256
+          dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.sig
+          dist/agi-jobs-v${{ steps.bundle.outputs.version }}-artifacts.tar.gz.pem
+          ${{ steps.provenance.outputs.bundle-path }}

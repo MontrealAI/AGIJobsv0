@@ -3,25 +3,22 @@ name: demo-sovereign-constellation
 on:
   push:
     branches:
-      - main
-      - 'release/**'
+    - main
+    - 'release/**'
   pull_request:
     paths:
-      - demo/sovereign-constellation/**
-      - .github/workflows/demo-sovereign-constellation.yml
-      - package.json
-      - package-lock.json
+    - demo/sovereign-constellation/**
+    - .github/workflows/demo-sovereign-constellation.yml
+    - package.json
+    - package-lock.json
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
-      - name: Sovereign Constellation CI
-        run: npm run demo:sovereign-constellation:ci
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/setup-node-ci
+    - name: Install dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Sovereign Constellation CI
+      run: npm run demo:sovereign-constellation:ci

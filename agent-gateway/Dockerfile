@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20.18.1-alpine3.20 AS base-build
+ARG NODE_VERSION=20.18.1
+ARG NPM_VERSION=10.8.2
+
+FROM node:${NODE_VERSION}-alpine3.20 AS base-build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ \
+RUN apk add --no-cache python3 make g++ jq \
     && apk upgrade --no-cache libssl3 libcrypto3 \
+    && npm install -g npm@${NPM_VERSION} \
     && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \
     CYPRESS_INSTALL_BINARY=0 \
@@ -20,14 +24,16 @@ COPY scripts/docker/npm-ci-retry.sh /usr/local/bin/npm-ci-retry.sh
 RUN chmod +x /usr/local/bin/npm-ci-retry.sh
 
 FROM base-build AS builder
-COPY package.json package-lock.json ./
-RUN npm-ci-retry.sh
+COPY .nvmrc package.json package-lock.json .npmrc ./
+COPY scripts/ci/npm-ci.sh scripts/ci/npm-ci.sh
+RUN chmod +x scripts/ci/npm-ci.sh
+RUN --mount=type=cache,target=/root/.npm npm-ci-retry.sh
 COPY . .
 RUN npm run build:gateway \
     && npm prune --omit=dev \
     && npm cache clean --force
 
-FROM node:20.18.1-alpine3.20 AS runner
+FROM node:${NODE_VERSION}-alpine3.20 AS runner
 ENV NODE_ENV=production \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false

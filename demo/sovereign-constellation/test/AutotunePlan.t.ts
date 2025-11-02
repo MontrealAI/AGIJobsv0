@@ -23,7 +23,10 @@ describe("Sovereign Constellation autotune plan", () => {
       }
     };
 
-    const { computeAutotunePlan } = await import("../shared/autotune.mjs");
+    const loadAutotuneModule = new Function(
+      "return import('../shared/autotune.mjs')"
+    ) as () => Promise<typeof import("../shared/autotune.mjs")>;
+    const { computeAutotunePlan } = await loadAutotuneModule();
     const plan = computeAutotunePlan(telemetry, {});
 
     expect(plan.summary.commitWindowSeconds).to.be.greaterThan(3600);

@@ -3,13 +3,13 @@ name: apps-images
 on:
   pull_request:
     paths:
-      - 'apps/**'
-      - '.github/workflows/apps-images.yml'
+    - 'apps/**'
+    - '.github/workflows/apps-images.yml'
   push:
     branches: [main]
     paths:
-      - 'apps/**'
-      - '.github/workflows/apps-images.yml'
+    - 'apps/**'
+    - '.github/workflows/apps-images.yml'
 
 permissions:
   contents: read
@@ -27,132 +27,127 @@ jobs:
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Login to GHCR (main)
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Login to GHCR (main)
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Console image
-        id: build_console
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/console/Dockerfile
-          platforms: linux/amd64
-          push: ${{ github.ref == 'refs/heads/main' }}
-          load: ${{ github.ref != 'refs/heads/main' }}
-          tags: |
+    - name: Build Console image
+      id: build_console
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: apps/console/Dockerfile
+        platforms: linux/amd64
+        push: ${{ github.ref == 'refs/heads/main' }}
+        load: ${{ github.ref != 'refs/heads/main' }}
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/owner-console:latest
+        provenance: false
+        sbom: false
+        outputs: type=docker
+
+    - name: Get Console digest (main)
+      id: get_digest
+      if: github.ref == 'refs/heads/main'
+      run: |
+        REF="ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}"
+        DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
+        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+    - name: Trivy (OS – enforce)
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:0.53.0 image \
+            --vuln-type os \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
             ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/owner-console:latest
-          provenance: false
-          sbom: false
-          outputs: type=docker
 
-      - name: Get Console digest (main)
-        id: get_digest
-        if: github.ref == 'refs/heads/main'
-        run: |
-          REF="ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}"
-          DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-
-      - name: Trivy (OS – enforce)
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type os \
-              --severity HIGH,CRITICAL \
-              --exit-code 1 \
-              ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
-
-      - name: Trivy (libraries – audit only)
-        continue-on-error: true
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type library \
-              --severity HIGH,CRITICAL \
-              --exit-code 0 \
-              ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
+    - name: Trivy (libraries – audit only)
+      continue-on-error: true
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:0.53.0 image \
+            --vuln-type library \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
 
   portal:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Setup Node for web build
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+    - name: Setup Node for web build
+      uses: ./.github/actions/setup-node-ci
+    - name: Install root deps
+      uses: ./.github/actions/npm-ci
+    - name: Webapp build
+      run: npm --prefix apps/enterprise-portal run build
 
-      - name: Install root deps
-        run: npm ci
+    - name: Login to GHCR (main)
+      if: github.ref == 'refs/heads/main'
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Webapp build
-        run: npm --prefix apps/enterprise-portal run build
+    - name: Build Portal image
+      id: build_portal
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: apps/enterprise-portal/Dockerfile
+        platforms: linux/amd64
+        push: ${{ github.ref == 'refs/heads/main' }}
+        load: ${{ github.ref != 'refs/heads/main' }}
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/webapp:latest
+        provenance: false
+        sbom: false
+        outputs: type=docker
 
-      - name: Login to GHCR (main)
-        if: github.ref == 'refs/heads/main'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Get Portal digest (main)
+      id: get_digest
+      if: github.ref == 'refs/heads/main'
+      run: |
+        REF="ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}"
+        DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
+        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
-      - name: Build Portal image
-        id: build_portal
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: apps/enterprise-portal/Dockerfile
-          platforms: linux/amd64
-          push: ${{ github.ref == 'refs/heads/main' }}
-          load: ${{ github.ref != 'refs/heads/main' }}
-          tags: |
+    - name: Trivy (OS – enforce)
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:0.53.0 image \
+            --vuln-type os \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
             ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner }}/webapp:latest
-          provenance: false
-          sbom: false
-          outputs: type=docker
 
-      - name: Get Portal digest (main)
-        id: get_digest
-        if: github.ref == 'refs/heads/main'
-        run: |
-          REF="ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}"
-          DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-
-      - name: Trivy (OS – enforce)
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type os \
-              --severity HIGH,CRITICAL \
-              --exit-code 1 \
-              ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
-
-      - name: Trivy (libraries – audit only)
-        continue-on-error: true
-        run: |
-          docker run --rm \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            aquasec/trivy:0.53.0 image \
-              --vuln-type library \
-              --severity HIGH,CRITICAL \
-              --exit-code 0 \
-              ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
+    - name: Trivy (libraries – audit only)
+      continue-on-error: true
+      run: |
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:0.53.0 image \
+            --vuln-type library \
+            --severity HIGH,CRITICAL \
+            --exit-code 0 \
+            ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
 
   provenance-console:
     if: github.ref == 'refs/heads/main'

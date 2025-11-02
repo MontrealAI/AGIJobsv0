@@ -81,7 +81,7 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence platform—a
    ```
 5. Commit using signed commits and open a pull request—CI on main enforces the same suite to guarantee an evergreen, fully green signal.
 
-> **Guardrail:** Never hand-edit `package-lock.json`. If a dependency changes, run `npm install --package-lock-only` from the affected workspace so `ci:preflight` stays green.
+> **Guardrail:** Never hand-edit `package-lock.json`. If a dependency changes, run `npm install --package-lock-only` from the affected workspace so `ci:preflight` stays green. The shared [`scripts/ci/npm-ci.sh`](scripts/ci/npm-ci.sh) gate keeps each install and aborts when Node.js or npm drift from `.nvmrc`/`package.json`, preventing mixed toolchains before they land in CI.
 
 ## Architecture
 ```mermaid
@@ -117,6 +117,7 @@ flowchart TD
 
 ## Always-Green CI Signal Deck
 - **Single source of truth:** The `ci (v2)` workflow exposes 23 required contexts that map 1:1 with [`ci/required-contexts.json`](ci/required-contexts.json). The lint stage fails fast when display names drift so branch protection never hides a status for owners or reviewers.【F:.github/workflows/ci.yml†L33-L71】【F:ci/required-contexts.json†L1-L23】
+- **Deterministic Node toolchain:** Every workflow now reuses local composite actions—[`setup-node-ci`](.github/actions/setup-node-ci/action.yml) and [`npm-ci`](.github/actions/npm-ci/action.yml)—so GitHub Actions reads `.nvmrc`, caches every lockfile, and runs the guarded installer uniformly across 40+ jobs.【F:.github/actions/setup-node-ci/action.yml†L1-L15】【F:.github/actions/npm-ci/action.yml†L1-L20】
 - **Operations guide:** [CI v2 operations](docs/v2-ci-operations.md) and the [branch protection checklist](docs/ci-v2-branch-protection-checklist.md) walk administrators through enforcing the checks on `main`, including CLI commands that sync the rule and export an auditable status table for compliance teams.【F:docs/v2-ci-operations.md†L1-L182】【F:docs/ci-v2-branch-protection-checklist.md†L1-L206】
 - **Companion workflows:** Static analysis, fuzzing, web application smoke tests, orchestrator rehearsals, and deterministic e2e drills are all surfaced as required checks so the Checks tab stays comprehensible to non-technical stakeholders. Each badge above links directly to its workflow for live status and history.【F:.github/workflows/static-analysis.yml†L1-L157】【F:.github/workflows/fuzz.yml†L1-L144】【F:.github/workflows/webapp.yml†L1-L196】【F:.github/workflows/orchestrator-ci.yml†L1-L214】【F:.github/workflows/e2e.yml†L1-L164】
 - **Summary artefacts:** Every CI run uploads `reports/ci/status.md` and `status.json`, letting release captains attach a machine-readable audit trail to their change tickets without leaving GitHub. The upload step now fails the workflow if the artefacts are ever missing, guaranteeing the evidence is immutable and reviewable.【F:.github/workflows/ci.yml†L1130-L1259】

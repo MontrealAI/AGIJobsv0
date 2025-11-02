@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+    - main
 
 permissions:
   contents: read
@@ -18,50 +18,47 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+    - name: Setup Node.js
+      uses: ./.github/actions/setup-node-ci
+    - name: Preflight toolchain locks
+      run: npm run ci:preflight
 
-      - name: Preflight toolchain locks
-        run: npm run ci:preflight
+    - name: Install repository dependencies
+      uses: ./.github/actions/npm-ci
+    - name: Install console dependencies
+      uses: ./.github/actions/npm-ci
+      with:
+        working-directory: apps/console
+    - name: Install enterprise portal dependencies
+      uses: ./.github/actions/npm-ci
+      with:
+        working-directory: apps/enterprise-portal
+    - name: Type-check webapp
+      run: npm run webapp:typecheck
 
-      - name: Install repository dependencies
-        run: npm ci
+    - name: Lint webapp
+      run: npm run webapp:lint
 
-      - name: Install console dependencies
-        run: npm ci --prefix apps/console
+    - name: Owner console build
+      run: npm run webapp:build
 
-      - name: Install enterprise portal dependencies
-        run: npm ci --prefix apps/enterprise-portal
+    - name: Webapp build
+      run: npm --prefix apps/enterprise-portal run build
 
-      - name: Type-check webapp
-        run: npm run webapp:typecheck
+    - name: Cypress E2E
+      env:
+        TERM: xterm
+        CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
+      run: npm run webapp:e2e
 
-      - name: Lint webapp
-        run: npm run webapp:lint
-
-      - name: Owner console build
-        run: npm run webapp:build
-
-      - name: Webapp build
-        run: npm --prefix apps/enterprise-portal run build
-
-      - name: Cypress E2E
-        env:
-          TERM: xterm
-          CYPRESS_CACHE_FOLDER: ~/.cache/Cypress
-        run: npm run webapp:e2e
-
-      - name: Upload webapp artefacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owner-console-dist
-          path: apps/console/dist
+    - name: Upload webapp artefacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: owner-console-dist
+        path: apps/console/dist

@@ -1,0 +1,17 @@
+name: Setup Node.js with repo standards
+inputs:
+  cache-dependency-path:
+    description: Multi-line glob specifying lockfiles to seed the npm cache with.
+    required: false
+    default: |
+      package-lock.json
+      **/package-lock.json
+runs:
+  using: "composite"
+  steps:
+    - name: Use repo-pinned Node.js version
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version-file: .nvmrc
+        cache: npm
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
