@@ -115,10 +115,24 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
-      - name: MythX analysis
-        if: ${{ secrets.MYTHX_API_KEY != '' || env.MYTHX_API_KEY != '' }}
+      - name: Resolve MythX API key
+        id: mythx-key
         env:
-          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY != '' && secrets.MYTHX_API_KEY || env.MYTHX_API_KEY }}
+          MYTHX_SECRET: ${{ secrets.MYTHX_API_KEY }}
+        run: |
+          if [ -n "${MYTHX_SECRET:-}" ]; then
+            echo "::add-mask::${MYTHX_SECRET}"
+            echo "api_key=${MYTHX_SECRET}" >> "${GITHUB_OUTPUT}"
+          elif [ -n "${MYTHX_API_KEY:-}" ]; then
+            echo "::add-mask::${MYTHX_API_KEY}"
+            echo "api_key=${MYTHX_API_KEY}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "No MythX API key available; skipping analysis."
+          fi
+      - name: MythX analysis
+        if: ${{ steps.mythx-key.outputs.api_key != '' }}
+        env:
+          MYTHX_API_KEY: ${{ steps.mythx-key.outputs.api_key }}
         working-directory: demo/CULTURE-v0
         run: |
           docker run --rm \
@@ -127,7 +141,7 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
-        if: ${{ secrets.MYTHX_API_KEY == '' && env.MYTHX_API_KEY == '' }}
+        if: ${{ steps.mythx-key.outputs.api_key == '' }}
         run: echo 'MythX API key not provided; skipping MythX analysis.'
 
   services:
