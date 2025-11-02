@@ -16,7 +16,7 @@ This runbook lets a non-technical owner execute the entire HyperSovereign drill 
    ```bash
    npm run ci:verify-toolchain
    ```
-   Confirms Node 20.18.1, Hardhat, Foundry, and auxiliary utilities match locked versions.
+   Confirms Node 20.19.0, Hardhat, Foundry, and auxiliary utilities match locked versions.
 3. **Owner signer ready** — control the Safe or hardware wallet referenced in [`config/mission@v14.json`](config/mission@v14.json).
 
 ---

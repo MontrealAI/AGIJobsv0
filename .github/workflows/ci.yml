@@ -53,7 +53,7 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Assert required contexts manifest is synchronised
         run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
@@ -99,7 +99,7 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Compile contracts
         run: |
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
@@ -378,7 +378,7 @@ jobs:
           cache: 'pip'
           cache-dependency-path: requirements-python.txt
       - name: Install Node dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -411,7 +411,7 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Generate owner control assurance reports
         run: |
           mkdir -p reports/owner-control
@@ -455,13 +455,13 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for Foundry
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
       - name: Cache Foundry build artifacts
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:
@@ -512,7 +512,7 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for coverage
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Generate coverage report
@@ -556,7 +556,7 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Phase 6 manifest & UI
         run: npm run demo:phase6:ci
 
@@ -585,7 +585,7 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Phase 8 manifest & UI
         run: npm run demo:phase8:ci
 
@@ -614,7 +614,7 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate Kardashev II demo
         run: npm run demo:kardashev-ii:ci
       - name: Validate Stellar Kardashev II demo
@@ -650,7 +650,7 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run ASI take-off demonstration
         run: npm run demo:asi-takeoff
       - name: Upload ASI take-off artifacts
@@ -691,17 +691,17 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Zenith Sapience deterministic kit
         run: npm run demo:zenith-sapience-initiative
       - name: Run Zenith Sapience local rehearsal
         env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
+          PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+          AURORA_WORKER_KEY: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
+          AURORA_VALIDATOR1_KEY: '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a'
+          AURORA_VALIDATOR2_KEY: '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6'
+          AURORA_VALIDATOR3_KEY: '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a'
+          RPC_URL: 'http://127.0.0.1:8545'
           CHAIN_ID: '31337'
         run: npm run demo:zenith-sapience-initiative:local
       - name: Upload Zenith Sapience artifacts
@@ -744,7 +744,7 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run grand labour market simulation
         run: npm run demo:agi-labor-market:export
       - name: Upload labour market transcript
@@ -780,13 +780,13 @@ jobs:
             demo/sovereign-mesh/app/package-lock.json
       - name: Install server dependencies
         working-directory: demo/sovereign-mesh/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-mesh/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-mesh/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-mesh/app
         run: npm run build
@@ -816,13 +816,13 @@ jobs:
             demo/sovereign-constellation/app/package-lock.json
       - name: Install server dependencies
         working-directory: demo/sovereign-constellation/server
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build orchestrator server
         working-directory: demo/sovereign-constellation/server
         run: npm run build
       - name: Install app dependencies
         working-directory: demo/sovereign-constellation/app
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Build React console
         working-directory: demo/sovereign-constellation/app
         run: npm run build
@@ -857,17 +857,17 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Celestial Archon deterministic kit
         run: npm run demo:zenith-sapience-celestial-archon
       - name: Run Celestial Archon local rehearsal
         env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
+          PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+          AURORA_WORKER_KEY: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
+          AURORA_VALIDATOR1_KEY: '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a'
+          AURORA_VALIDATOR2_KEY: '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6'
+          AURORA_VALIDATOR3_KEY: '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a'
+          RPC_URL: 'http://127.0.0.1:8545'
           CHAIN_ID: '31337'
         run: npm run demo:zenith-sapience-celestial-archon:local
       - name: Upload Celestial Archon artifacts
@@ -910,17 +910,17 @@ jobs:
           restore-keys: |
             hardhat-${{ runner.os }}-
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
       - name: Run Hypernova local rehearsal
         env:
-          PRIVATE_KEY: 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-          AURORA_WORKER_KEY: 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d
-          AURORA_VALIDATOR1_KEY: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
-          AURORA_VALIDATOR2_KEY: 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6
-          AURORA_VALIDATOR3_KEY: 0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a
-          RPC_URL: http://127.0.0.1:8545
+          PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+          AURORA_WORKER_KEY: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'
+          AURORA_VALIDATOR1_KEY: '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a'
+          AURORA_VALIDATOR2_KEY: '0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6'
+          AURORA_VALIDATOR3_KEY: '0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a'
+          RPC_URL: 'http://127.0.0.1:8545'
           CHAIN_ID: '31337'
         run: npm run demo:zenith-hypernova:local
       - name: Upload Hypernova artifacts
@@ -1282,13 +1282,13 @@ jobs:
             package-lock.json
             **/package-lock.json
       - name: Install dependencies
-        run: npm ci --no-audit --prefer-offline --progress=false
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Regenerate constants for invariants
         run: npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
-          version: 'v1.4.0'
+          version: 'v1.4.4'
       - name: Cache Foundry build artifacts
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
         with:

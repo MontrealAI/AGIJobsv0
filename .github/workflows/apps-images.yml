@@ -96,7 +96,7 @@ jobs:
           cache: 'npm'
 
       - name: Install root deps
-        run: npm ci
+        run: ${{ github.workspace }}/scripts/ci/npm-ci.sh
 
       - name: Webapp build
         run: npm --prefix apps/enterprise-portal run build
