@@ -19,6 +19,7 @@ interface CliOptions {
   format: OutputFormat;
   includeMermaid: boolean;
   help?: boolean;
+  strict?: boolean;
 }
 
 type OutputFormat = 'markdown' | 'json' | 'human';
@@ -90,6 +91,7 @@ function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = {
     format: DEFAULT_FORMAT,
     includeMermaid: true,
+    strict: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -133,6 +135,10 @@ function parseArgs(argv: string[]): CliOptions {
       }
       case '--no-mermaid':
         options.includeMermaid = false;
+        break;
+      case '--strict':
+      case '--fail-on-warn':
+        options.strict = true;
         break;
       default:
         if (arg.startsWith('-')) {
@@ -520,6 +526,7 @@ async function main(): Promise<void> {
       '  --format <format>      Output format: markdown (default), json, human',
       '  --out <path>           Write to file instead of stdout',
       '  --no-mermaid           Omit Mermaid diagrams in markdown mode',
+      '  --strict               Treat configuration degradations as hard errors',
       '  -h, --help             Show this message',
     ].join(NEWLINE);
     process.stdout.write(`${helpText}\n`);
@@ -561,12 +568,17 @@ async function main(): Promise<void> {
     .map((entry) => entry.error)
     .filter((value): value is string => typeof value === 'string' && value.length > 0);
   if (errors.length > 0) {
-    console.error(
+    const message =
       `Owner parameter matrix encountered ${errors.length} configuration issue${
         errors.length === 1 ? '' : 's'
-      }: ${errors.join('; ')}`
-    );
-    process.exitCode = 1;
+      }: ${errors.join('; ')}`;
+
+    if (options.strict) {
+      console.error(message);
+      process.exitCode = 1;
+    } else {
+      console.warn(`${message}. Re-run with --strict to fail on these warnings.`);
+    }
   }
 }
 
