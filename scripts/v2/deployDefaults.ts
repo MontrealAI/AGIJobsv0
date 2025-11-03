@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ethers, network, run } from 'hardhat';
-import { AGIALPHA_DECIMALS } from '../constants';
+import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig } from '../config';
+import agialphaToken from './lib/agialphaToken.json';
 
 type CliArgs = Record<string, string | boolean>;
 
@@ -300,8 +301,55 @@ async function verify(address: string, args: any[] = []) {
   }
 }
 
+async function ensureAgialphaToken(ownerAddress: string) {
+  const provider = ethers.provider;
+  const existingCode = await provider.getCode(AGIALPHA);
+  if (existingCode && existingCode !== '0x') {
+    return;
+  }
+
+  const runtime = (agialphaToken as { runtime?: string }).runtime;
+  if (!runtime || runtime === '0x') {
+    throw new Error('AGIALPHA runtime bytecode unavailable for local bootstrap');
+  }
+
+  const setCodeMethods = ['hardhat_setCode', 'anvil_setCode'] as const;
+  let codeInjected = false;
+  for (const method of setCodeMethods) {
+    try {
+      await provider.send(method, [AGIALPHA, runtime]);
+      codeInjected = true;
+      break;
+    } catch (err) {
+      if (method === setCodeMethods[setCodeMethods.length - 1]) {
+        throw err;
+      }
+    }
+  }
+  if (!codeInjected) {
+    throw new Error('Failed to inject AGIALPHA runtime for local deployment');
+  }
+
+  const ownerSlot = ethers.toBeHex(5, 32);
+  const ownerValue = ethers.zeroPadValue(ownerAddress, 32);
+  const setStorageMethods = ['hardhat_setStorageAt', 'anvil_setStorageAt'] as const;
+  for (const method of setStorageMethods) {
+    try {
+      await provider.send(method, [AGIALPHA, ownerSlot, ownerValue]);
+      break;
+    } catch (err) {
+      if (method === setStorageMethods[setStorageMethods.length - 1]) {
+        throw err;
+      }
+    }
+  }
+
+  console.log(`Injected local AGIALPHA token stub at ${AGIALPHA}`);
+}
+
 async function main() {
   const [owner] = await ethers.getSigners();
+  await ensureAgialphaToken(owner.address);
   const cli = parseArgs(process.argv.slice(2));
   const envOutput = toStringOrUndefined(process.env.DEPLOY_DEFAULTS_OUTPUT);
   const skipVerifyEnv = (process.env.DEPLOY_DEFAULTS_SKIP_VERIFY || '').toLowerCase();
