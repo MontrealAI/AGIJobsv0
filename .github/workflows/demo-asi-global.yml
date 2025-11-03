@@ -36,6 +36,7 @@ jobs:
             github.com
             objects.githubusercontent.com
             raw.githubusercontent.com
+            release-assets.githubusercontent.com
             registry.npmjs.org
             nodejs.org
             download.cypress.io
