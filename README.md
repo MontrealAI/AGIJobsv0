@@ -206,6 +206,32 @@ flowchart TD
 
 The manifest in `ci/required-companion-contexts.json` marks every companion workflow as required so the PR checks wall cannot go green unless they all pass beside the `ci (v2)` contexts, and `npm run ci:verify-companion-contexts` fails if the manifest drifts from GitHub's configuration.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】
 
+### Branch protection autopilot
+
+```mermaid
+flowchart LR
+    classDef manifest fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef guard fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef summary fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
+
+    manifestDeck[ci/required-contexts.json\nci/required-companion-contexts.json]:::manifest --> branchGuard[ci (v2) / Branch protection guard]:::guard
+    branchGuard --> githubAPI[GitHub Branch Protection API\n(enforced contexts)]:::guard
+    branchGuard --> ciSummary[ci (v2) / CI summary]:::summary
+    ciSummary --> checksTab[Protected branch checks wall]:::summary
+```
+
+Run the manifest + enforcement bundle whenever you add or rename CI jobs to keep PRs and `main` locked to the green wall:
+
+| Step | Command | Purpose |
+| ---- | ------- | ------- |
+| 1 | `npm run ci:sync-contexts -- --check` | Assert that `ci/required-contexts.json` mirrors `.github/workflows/ci.yml`; rerun without `--check` to regenerate after intentional changes.【F:ci/required-contexts.json†L1-L24】【F:package.json†L135-L146】 |
+| 2 | `npm run ci:verify-contexts` | Validate the friendly names used in branch protection so badge text and required contexts stay aligned.【F:package.json†L135-L146】 |
+| 3 | `npm run ci:verify-companion-contexts` | Confirm the companion workflows stay registered as required alongside the main CI lattice.【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】 |
+| 4 | `npm run ci:verify-branch-protection -- --branch main` | Fetch the live branch protection rule via the GitHub API and fail on missing contexts before merges slip through.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1057】 |
+| 5 | `npm run ci:enforce-branch-protection -- --branch main` | Apply the manifest to GitHub branch protection so the checks wall must remain fully green on `main` and protected release branches.【F:package.json†L135-L146】 |
+
+The `ci (v2) / Branch protection guard` job re-runs step 4 inside every workflow execution and writes a bypass notice when forks lack administrative scopes, while the `ci (v2) / CI summary` job fails the run if any required job or artefact is missing—ensuring the enforcement wall is both visible and blocking.【F:.github/workflows/ci.yml†L966-L1155】
+
 ### CI badge wall (ci (v2))
 
 | Job | Live badge |
