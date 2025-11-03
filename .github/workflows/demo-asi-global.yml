@@ -41,6 +41,8 @@ jobs:
             nodejs.org
             download.cypress.io
             api.cypress.io
+            binaries.soliditylang.org
+            solc-bin.ethereum.org
 
       - name: Setup Node
         uses: actions/setup-node@v4
