@@ -899,14 +899,19 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
       Array.isArray(module.metrics) &&
       module.metrics.some((metric: any) => metric.label === 'error')
   );
+  const warned = data.modules.filter(
+    (module: any) =>
+      Array.isArray(module.metrics) &&
+      module.metrics.some((metric: any) => metric.label === 'warning')
+  );
   const missing = data.modules.filter((module: any) => module.address === null);
   let status: StepStatus = 'success';
   if (errored.length > 0) {
     status = 'error';
-  } else if (missing.length > 0) {
+  } else if (missing.length > 0 || warned.length > 0) {
     status = 'warning';
   }
-  const summary = `${moduleCount} modules inspected — ${missing.length} without addresses, ${errored.length} reported errors`;
+  const summary = `${moduleCount} modules inspected — ${missing.length} without addresses, ${warned.length} warnings, ${errored.length} reported errors`;
   const details: string[] = [];
   if (errored.length > 0) {
     errored.slice(0, 5).forEach((module: any) => {
@@ -925,6 +930,17 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
         `${module.name || module.key}: address not in deployment records`
       );
     });
+  } else if (warned.length > 0) {
+    warned.slice(0, 5).forEach((module: any) => {
+      const firstWarning = module.metrics.find(
+        (metric: any) => metric.label === 'warning'
+      );
+      details.push(
+        `${module.name || module.key}: ${
+          firstWarning?.value || 'Module responded with warnings'
+        }`
+      );
+    });
   }
   if (details.length === 0) {
     details.push('All modules returned telemetry successfully');
@@ -936,6 +952,7 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
     metrics: {
       modules: moduleCount,
       missing: missing.length,
+      warnings: warned.length,
       errored: errored.length,
     },
   };
