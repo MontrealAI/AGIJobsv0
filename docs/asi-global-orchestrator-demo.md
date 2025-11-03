@@ -68,6 +68,8 @@ is available with:
 npm run demo:asi-global:local
 ```
 
+> ℹ️  Export `AURORA_LOCAL_GAS_LIMIT=1000000000` (and optionally `AURORA_LOCAL_CODE_SIZE_LIMIT=1048576`) before launching the local rehearsal to match the CI-grade execution envelope; the bootstrap script prints the detected values so reviewers can confirm the expanded block budget and code-size allowance in real time.【F:demo/asi-global/bin/asi-global-local.sh†L20-L40】【F:.github/workflows/demo-asi-global.yml†L60-L76】
+
 See `demo/asi-global/RUNBOOK.md` for the full operator drill.
 
 ## Continuous Integration

@@ -31,9 +31,10 @@ flowchart LR
 
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.
-2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/asi-global`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
-4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+2. Export `AURORA_LOCAL_GAS_LIMIT=1000000000` (and optionally `AURORA_LOCAL_CODE_SIZE_LIMIT=1048576`) before invoking `npm run demo:asi-global:local` to mirror the CI rehearsal envelope; the launch script echoes these values so operators can verify the expanded block budget at a glance.【F:demo/asi-global/bin/asi-global-local.sh†L20-L40】【F:.github/workflows/demo-asi-global.yml†L60-L76】
+3. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/asi-global`.
+4. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+5. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide
 ### Key Directories
