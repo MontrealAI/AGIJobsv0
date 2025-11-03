@@ -42,13 +42,15 @@ To keep `main` deployable at all times, enable the following rules in the GitHub
      - `containers / build (owner-console)`
      - *(Optional, path-filtered)* `apps-images / console` and `apps-images / portal` for Docker image safety when `apps/**` changes.
 
-   After saving the rule, verify the required contexts programmatically:
+   After saving the rule, verify the required contexts programmatically. The fastest option is to run the repository scripts that parse `.github/workflows/ci.yml` and compare it with the live rule:
 
    ```bash
-   gh api repos/:owner/:repo/branches/main/protection --jq '{checks: .required_status_checks.contexts}'
+   npm run ci:verify-contexts
+   npm run ci:verify-companion-contexts
+   npm run ci:verify-branch-protection -- --branch main
    ```
 
-   The response must list the contexts above in the same order. If the API returns a subset, rerun `npm run ci:verify-branch-protection` to surface the exact delta and restore parity with the workflow job names.
+   Each command prints a ✅/❌ table and exits non-zero if drift is detected, making them ideal for change tickets and runbooks.【F:scripts/ci/check-ci-required-contexts.ts†L1-L117】【F:scripts/ci/check-ci-companion-contexts.ts†L1-L74】【F:scripts/ci/verify-branch-protection.ts†L1-L220】 If you prefer raw API output, `gh api repos/:owner/:repo/branches/main/protection --jq '{checks: .required_status_checks.contexts}'` must list the contexts above in the same order. Any mismatch means the rule needs to be updated immediately.
 
    > **Fork pull requests:** `ci (v2) / Branch protection guard` requires elevated repository permissions. When a forked PR runs the workflow, that job skips automatically and the CI summary labels it as “SKIPPED (permitted)”. Branch protection still enforces the job on `main` and trusted branches.
 

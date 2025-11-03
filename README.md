@@ -33,14 +33,15 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fu
    npm run ci:verify-companion-contexts
    ```
    The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, so keeping this quartet green locally mirrors branch protection expectations.【F:package.json†L135-L150】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:.github/workflows/ci.yml†L34-L74】
-4. Validate the critical suites:
+4. Validate the critical suites (prime the Hardhat cache once so local runs mirror CI performance):
    ```bash
-   npm test
+   npm run compile           # generates artifacts exactly like the tests job
+   npm test                  # reuses the compiled artefacts, matching ci (v2) / Tests
    npm run lint:ci
    npm run coverage
    forge test -vvvv --ffi --fuzz-runs 256
    ```
-   These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires.【F:package.json†L233-L245】【F:.github/workflows/ci.yml†L75-L546】
+   Compiling first avoids the local fallback where `hardhat test --no-compile` triggers a fresh Solidity build, bringing the experience in line with the workflow’s dedicated compile step before `npm test`. These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires.【F:package.json†L233-L245】【F:.github/workflows/ci.yml†L75-L546】
 5. When the signal is green, push signed commits and open a pull request—CI v2 enforces the exact same contexts on `main` and PRs.
 
 ## Repository atlas
