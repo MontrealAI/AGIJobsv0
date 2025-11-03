@@ -1039,19 +1039,26 @@ function classifyModuleError(
     };
   }
 
-  if (
+  const callExceptionLike =
     code === 'CALL_EXCEPTION' ||
-    code === 'BAD_DATA' ||
     /CALL_EXCEPTION/.test(message) ||
+    /call (revert|exception)/i.test(message);
+  const badDataLike = code === 'BAD_DATA' || /BAD_DATA/.test(message);
+  const missingContractMessage =
     /missing code/i.test(message) ||
-    /execution reverted/i.test(message) ||
+    /no contract/i.test(message) ||
+    /does not contain bytecode/i.test(message) ||
     /could not decode result data/i.test(message) ||
-    /call (revert|exception)/i.test(message) ||
-    /missing revert data/i.test(message)
-  ) {
+    /missing revert data/i.test(message) ||
+    /result data too short/i.test(message);
+
+  if (callExceptionLike || badDataLike) {
+    const hint = missingContractMessage
+      ? `${moduleTitle}${addressHint} — no contract detected at the configured address. Update docs/deployment-addresses.json or provide the module address via environment overrides.`
+      : `${moduleTitle}${addressHint} — telemetry call reverted: ${message || 'Failed to load module state'}`;
     return {
-      label: 'warning',
-      value: `${moduleTitle}${addressHint} — no contract detected at the configured address. Update docs/deployment-addresses.json or provide the module address via environment overrides.`,
+      label: 'error',
+      value: hint,
     };
   }
 
