@@ -413,6 +413,26 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      - name: Prepare SLSA provenance subjects
+        if: startsWith(github.ref, 'refs/tags/')
+        id: provenance
+        run: |
+          set -euo pipefail
+          subject="ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}@${{ steps.build.outputs.digest }}"
+          echo "Subject: $subject"
+          if [ -z "${{ steps.build.outputs.digest }}" ]; then
+            echo "::error::Missing image digest for provenance generation" >&2
+            exit 1
+          fi
+          printf "%s" "$subject" | base64 -w0 > subjects.b64
+          echo "encoded=$(cat subjects.b64)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SLSA provenance (tags only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: slsa-framework/slsa-github-generator/actions/delegator-generic@v2.0.0
+        with:
+          base64-subjects: ${{ steps.provenance.outputs.encoded }}
+
       - name: Install cosign
         uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac
 
