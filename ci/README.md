@@ -37,7 +37,7 @@ Every required context publishes its own badge so the assurance wall is visible 
 | CI summary | [![CI summary](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22CI+summary%22) |
 | Invariant tests | [![Invariant tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=Invariant%20tests)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22Invariant+tests%22) |
 
-The `ci/` deck defines the manifest, verification scripts, and artefacts that keep AGI Jobs v0 (v2) permanently green. Required contexts here mirror the branch protection rule; automation in `.github/workflows/ci.yml` fails immediately when drift is detected, so release captains always see the full assurance wall.【F:.github/workflows/ci.yml†L22-L292】【F:.github/workflows/ci.yml†L966-L1130】
+The `ci/` deck defines the manifest, verification scripts, and artefacts that keep AGI Jobs v0 (v2) permanently green. Required contexts here mirror the branch protection rule; automation in `.github/workflows/ci.yml` fails immediately when drift is detected, so release captains always see the full assurance wall.【F:.github/workflows/ci.yml†L22-L292】【F:.github/workflows/ci.yml†L970-L1155】
 
 ## Workflow topology
 ```mermaid
@@ -71,29 +71,29 @@ flowchart LR
 ## Required contexts (`ci (v2)`)
 | Job | Context name | Focus |
 | --- | ------------- | ----- |
-| `lint` | `ci (v2) / Lint & static checks` | Hardhat + TypeScript lint, manifest validation, toolchain lock enforcement.【F:.github/workflows/ci.yml†L44-L74】 |
+| `lint` | `ci (v2) / Lint & static checks` | Hardhat + TypeScript lint, manifest validation, toolchain lock enforcement.【F:.github/workflows/ci.yml†L34-L74】 |
 | `tests` | `ci (v2) / Tests` | Contract compilation, test execution, ABI drift guard.【F:.github/workflows/ci.yml†L75-L117】 |
 | `python_unit` | `ci (v2) / Python unit tests` | Paymaster, tools, orchestrator, and simulation unit analytics with coverage export.【F:.github/workflows/ci.yml†L118-L167】 |
 | `python_integration` | `ci (v2) / Python integration tests` | API + demo integrations plus coverage export.【F:.github/workflows/ci.yml†L168-L215】 |
 | `python_load_sim` | `ci (v2) / Load-simulation reports` | Monte Carlo sweeps writing CSV + JSON stress reports.【F:.github/workflows/ci.yml†L216-L292】 |
 | `python_coverage` | `ci (v2) / Python coverage enforcement` | Combines analytics coverage sets and enforces thresholds.【F:.github/workflows/ci.yml†L293-L349】 |
 | `hgm_guardrails` | `ci (v2) / HGM guardrails` | Node + Python governance regression suite.【F:.github/workflows/ci.yml†L350-L392】 |
-| `owner_controls` | `ci (v2) / Owner control assurance` | Owner doctor + authority matrix regeneration.【F:.github/workflows/ci.yml†L393-L439】 |
-| `foundry` | `ci (v2) / Foundry` | Forge fuzz testing for Solidity surface.【F:.github/workflows/ci.yml†L440-L491】 |
-| `coverage` | `ci (v2) / Coverage thresholds` | Solidity coverage enforcement and access-control remapping.【F:.github/workflows/ci.yml†L492-L543】 |
-| `phase6` | `ci (v2) / Phase 6 readiness` | Phase 6 scenario rehearse.【F:.github/workflows/ci.yml†L544-L574】 |
-| `phase8` | `ci (v2) / Phase 8 readiness` | Phase 8 dominance rehearsal.【F:.github/workflows/ci.yml†L575-L605】 |
-| `kardashev_demo` | `ci (v2) / Kardashev II readiness` | Kardashev II + Stellar demos.【F:.github/workflows/ci.yml†L606-L638】 |
-| `asi_takeoff_demo` | `ci (v2) / ASI Take-Off Demonstration` | Autonomous take-off drill with artefacts.【F:.github/workflows/ci.yml†L639-L681】 |
-| `zenith_demo` | `ci (v2) / Zenith Sapience Demonstration` | Deterministic + local Zenith sapience rehearsals.【F:.github/workflows/ci.yml†L682-L736】 |
-| `agi_labor_market_demo` | `ci (v2) / AGI Labor Market Grand Demo` | Labour market transcript export.【F:.github/workflows/ci.yml†L737-L779】 |
-| `sovereign_mesh_demo` | `ci (v2) / Sovereign Mesh Demo — build` | Sovereign mesh server + console build.【F:.github/workflows/ci.yml†L780-L817】 |
-| `sovereign_constellation_demo` | `ci (v2) / Sovereign Constellation Demo — build` | Constellation orchestrator + console build.【F:.github/workflows/ci.yml†L818-L855】 |
-| `celestial_archon_demo` | `ci (v2) / Celestial Archon Demonstration` | Celestial Archon deterministic + local rehearsals.【F:.github/workflows/ci.yml†L856-L910】 |
+| `owner_controls` | `ci (v2) / Owner control assurance` | Owner doctor, command center digest, and authority matrix regeneration.【F:.github/workflows/ci.yml†L393-L440】 |
+| `foundry` | `ci (v2) / Foundry` | Forge fuzz testing for Solidity surface.【F:.github/workflows/ci.yml†L444-L494】 |
+| `coverage` | `ci (v2) / Coverage thresholds` | Solidity coverage enforcement and access-control remapping.【F:.github/workflows/ci.yml†L496-L546】 |
+| `phase6` | `ci (v2) / Phase 6 readiness` | Phase 6 scenario rehearse.【F:.github/workflows/ci.yml†L548-L577】 |
+| `phase8` | `ci (v2) / Phase 8 readiness` | Phase 8 dominance rehearsal.【F:.github/workflows/ci.yml†L580-L608】 |
+| `kardashev_demo` | `ci (v2) / Kardashev II readiness` | Kardashev II + Stellar demos.【F:.github/workflows/ci.yml†L610-L641】 |
+| `asi_takeoff_demo` | `ci (v2) / ASI Take-Off Demonstration` | Autonomous take-off drill with artefacts.【F:.github/workflows/ci.yml†L644-L684】 |
+| `zenith_demo` | `ci (v2) / Zenith Sapience Demonstration` | Deterministic + local Zenith sapience rehearsals.【F:.github/workflows/ci.yml†L686-L736】 |
+| `agi_labor_market_demo` | `ci (v2) / AGI Labor Market Grand Demo` | Labour market transcript export.【F:.github/workflows/ci.yml†L742-L782】 |
+| `sovereign_mesh_demo` | `ci (v2) / Sovereign Mesh Demo — build` | Sovereign mesh server + console build.【F:.github/workflows/ci.yml†L785-L819】 |
+| `sovereign_constellation_demo` | `ci (v2) / Sovereign Constellation Demo — build` | Constellation orchestrator + console build.【F:.github/workflows/ci.yml†L822-L858】 |
+| `celestial_archon_demo` | `ci (v2) / Celestial Archon Demonstration` | Celestial Archon deterministic + local rehearsals.【F:.github/workflows/ci.yml†L860-L910】 |
 | `hypernova_demo` | `ci (v2) / Hypernova Governance Demonstration` | Hypernova deterministic + local rehearsals.【F:.github/workflows/ci.yml†L911-L965】 |
 | `branch_protection` | `ci (v2) / Branch protection guard` | Live GitHub branch protection audit against manifests. Fork pull requests emit a bypass note yet leave the required context green so enforcement still lands on protected branches.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】 |
-| `summary` | `ci (v2) / CI summary` | Aggregates job outcomes, writes `reports/ci/status.{md,json}`, fails on missing artefacts or red jobs.【F:.github/workflows/ci.yml†L1000-L1130】 |
-| `invariants` | `ci (v2) / Invariant tests` | Forge invariant harness with fuzz-runs 512.【F:.github/workflows/ci.yml†L1131-L1181】 |
+| `summary` | `ci (v2) / CI summary` | Aggregates job outcomes, writes `reports/ci/status.{md,json}`, fails on missing artefacts or red jobs.【F:.github/workflows/ci.yml†L1026-L1155】 |
+| `invariants` | `ci (v2) / Invariant tests` | Forge invariant harness with fuzz-runs 512.【F:.github/workflows/ci.yml†L1157-L1181】 |
 
 The manifest lives in [`required-contexts.json`](required-contexts.json). `npm run ci:verify-contexts` validates that the workflow display names match this file before CI ever runs.【F:ci/required-contexts.json†L1-L24】【F:package.json†L135-L146】
 
@@ -127,7 +127,7 @@ flowchart TD
     e2eSuite[e2e / orchestrator-e2e]:::companion --> checksWall
 ```
 
-Every arrow represents a required status entry on the pull-request checks wall. The `ci (v2) / CI summary` job aggregates the internal lattice, while the companion workflows deliver hardened linting, fuzzing, containers, and E2E rehearsals that branch protection refuses to ignore.【F:.github/workflows/ci.yml†L1000-L1130】【F:ci/required-companion-contexts.json†L1-L11】
+Every arrow represents a required status entry on the pull-request checks wall. The `ci (v2) / CI summary` job aggregates the internal lattice, while the companion workflows deliver hardened linting, fuzzing, containers, and E2E rehearsals that branch protection refuses to ignore.【F:.github/workflows/ci.yml†L1026-L1155】【F:ci/required-companion-contexts.json†L1-L11】
 
 ## Branch protection automation
 1. Dry-run the rule to inspect drift without applying changes:
@@ -146,8 +146,8 @@ Every arrow represents a required status entry on the pull-request checks wall. 
    The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations while still succeeding on forked PRs that cannot call the admin API.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
 ## Artefacts & forensic trail
-- `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1000-L1130】
-- `reports/owner-control/**` – Owner doctor, authority matrix, and parameter matrix outputs uploaded on every run.【F:.github/workflows/ci.yml†L393-L439】
+- `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1026-L1155】
+- `reports/owner-control/**` – Owner doctor, authority matrix, command center digest, and parameter matrix outputs uploaded on every run.【F:.github/workflows/ci.yml†L393-L440】
 - `reports/load-sim/**` – Monte Carlo CSV + JSON results for economic dissipation analysis.【F:.github/workflows/ci.yml†L216-L292】
 
 ## Local verification checklist
@@ -158,9 +158,9 @@ npm run ci:verify-contexts         # Required context manifest sync
 npm run ci:verify-companion-contexts  # Companion workflow manifest sync
 npm run ci:owner-authority -- --network ci --out reports/owner-control  # Authority matrix regeneration
 ```
-Every command feeds directly into CI v2 so local runs reproduce the enforcement envelope.【F:package.json†L135-L149】【F:.github/workflows/ci.yml†L44-L543】
+Every command feeds directly into CI v2 so local runs reproduce the enforcement envelope.【F:package.json†L135-L149】【F:.github/workflows/ci.yml†L34-L546】
 
 ## Governance notes
 - Keep Node.js (20.18.x) and npm (≥10.8.0 <11) aligned with `.nvmrc` and `package.json` engines before running scripts.【F:.nvmrc†L1-L1】【F:package.json†L121-L134】
-- CI jobs harden the runner, cache deterministic artefacts, and upload evidence. Do not remove upload steps—branch protection will fail the run if artefacts are missing.【F:.github/workflows/ci.yml†L44-L439】【F:.github/workflows/ci.yml†L1000-L1130】
+- CI jobs harden the runner, cache deterministic artefacts, and upload evidence. Do not remove upload steps—branch protection will fail the run if artefacts are missing.【F:.github/workflows/ci.yml†L34-L440】【F:.github/workflows/ci.yml†L1026-L1155】
 - Update `required-contexts.json` and `required-companion-contexts.json` whenever new jobs are introduced. The verification scripts and branch guard will block merges until the manifests and workflow stay in sync.【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】【F:.github/workflows/ci.yml†L966-L1181】

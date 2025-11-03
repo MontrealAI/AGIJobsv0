@@ -430,6 +430,10 @@ jobs:
             --out reports/owner-control/parameter-matrix.json
       - name: Render owner authority matrix
         run: npm run ci:owner-authority -- --network ci --out reports/owner-control
+      - name: Render owner command center digest
+        run: |
+          mkdir -p reports/owner-control
+          npm run owner:command-center -- --network ci --format markdown --out reports/owner-control/command-center.md --no-mermaid
       - name: Upload owner control artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
