@@ -19,9 +19,10 @@ pkill -f "hardhat node" >/dev/null 2>&1 || true
 
 start_node() {
   local log_file=$1
+  local gas_limit="${AURORA_LOCAL_GAS_LIMIT:-1000000000}"
   if command -v anvil >/dev/null 2>&1; then
     echo "ℹ️  Starting Anvil node" >&2
-    anvil --silent --block-time 1 >"$log_file" 2>&1 &
+    anvil --silent --block-time 1 --gas-limit "$gas_limit" >"$log_file" 2>&1 &
     NODE_PID=$!
     NODE_KIND="anvil"
   else
