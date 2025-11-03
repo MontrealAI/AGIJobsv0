@@ -1135,11 +1135,18 @@ async function main() {
       const balance = await provider.getBalance(identityOwnerAddress);
       const minimumBalance = ethers.parseEther('0.1');
       if (balance < minimumBalance) {
-        const fundTx = await employer.sendTransaction({
-          to: identityOwnerAddress,
-          value: minimumBalance,
-        });
-        await fundTx.wait();
+        try {
+          const fundTx = await employer.sendTransaction({
+            to: identityOwnerAddress,
+            value: minimumBalance,
+          });
+          await fundTx.wait();
+        } catch (fundErr) {
+          console.warn(
+            '⚠️  Unable to fund identity owner automatically:',
+            (fundErr as Error).message
+          );
+        }
       }
       identityCleanup = () => stopImpersonating(provider, identityOwnerAddress);
     }
