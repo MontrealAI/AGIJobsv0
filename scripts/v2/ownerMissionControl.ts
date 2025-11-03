@@ -907,7 +907,7 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
   const missing = data.modules.filter((module: any) => module.address === null);
   let status: StepStatus = 'success';
   if (errored.length > 0) {
-    status = 'warning';
+    status = 'error';
   } else if (missing.length > 0 || warned.length > 0) {
     status = 'warning';
   }
@@ -924,9 +924,7 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
         }`
       );
     });
-    details.push(
-      'Critical telemetry alerts were downgraded to warnings for this mission dossier. Re-run with --strict to fail on these conditions.'
-    );
+    details.push('Critical telemetry alerts detected — aborting dossier.');
   } else if (missing.length > 0) {
     missing.slice(0, 5).forEach((module: any) => {
       details.push(
