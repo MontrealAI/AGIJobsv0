@@ -125,6 +125,30 @@ flowchart TD
 
 Every command supports `--dry-run` and report exports, ensuring the contract owner retains absolute control while the automation stays auditable.【F:scripts/v2/ownerControlDoctor.ts†L1-L252】【F:scripts/v2/ownerControlQuickstart.ts†L1-L220】
 
+## Parameter recalibration pipeline
+```mermaid
+flowchart LR
+    classDef inputs fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef analysis fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef command fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef execution fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
+
+    configs[Config manifests\n(config/, storage/)]:::inputs --> surface[owner:surface]:::analysis
+    surface --> matrix[owner:parameters]:::analysis
+    matrix --> doctor[owner:doctor]:::analysis
+    doctor --> mission[owner:mission-control]:::command
+    mission --> updateAll[owner:update-all]:::execution
+    updateAll --> contractsCore[contracts/v2 core modules]:::execution
+```
+
+- **Surface scan:** `npm run owner:surface` fingerprints every config file, normalises addresses, and highlights drift against the deployed control plane so owners see exactly which modules need attention before touching the chain.【F:scripts/v2/ownerControlSurface.ts†L1-L120】【F:scripts/v2/ownerControlSurface.ts†L121-L248】
+- **Matrix export:** `npm run owner:parameters` renders markdown, JSON, and mermaid matrices that map every subsystem to its calibration commands and verification steps, ready to drop into compliance reports or mission reviews.【F:scripts/v2/ownerParameterMatrix.ts†L1-L120】【F:scripts/v2/ownerParameterMatrix.ts†L121-L240】
+- **Doctor triage:** `npm run owner:doctor` scores each subsystem with `pass/warn/fail`, escalates on missing keys, and recommends remediation commands, enforcing deterministic ownership of the entire lattice.【F:scripts/v2/ownerControlDoctor.ts†L1-L120】【F:scripts/v2/ownerControlDoctor.ts†L121-L248】
+- **Mission orchestration:** `npm run owner:mission-control` condenses the owner dossier, parameter diffs, and pause levers into a single decision brief for final sign-off.【F:scripts/v2/ownerMissionControl.ts†L1-L200】
+- **Deterministic execution:** `npm run owner:update-all` streams the plan into Hardhat transactions or Safe bundles so parameter updates and address rotations land atomically, with artifacts saved alongside the CI owner-control reports.【F:scripts/v2/updateAllModules.ts†L1-L120】【F:scripts/v2/updateAllModules.ts†L121-L240】
+
+Each stage emits markdown and JSON artefacts beneath `reports/owner-control/`, the same directory uploaded by CI v2 to prove the owner still wields ultimate authority while the automation remains fully transparent.【F:.github/workflows/ci.yml†L393-L440】
+
 ## CI v2 orchestration
 ```mermaid
 flowchart LR
