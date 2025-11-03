@@ -95,7 +95,7 @@ flowchart LR
 | `summary` | `ci (v2) / CI summary` | Aggregates job outcomes, writes `reports/ci/status.{md,json}`, fails on missing artefacts or red jobs.【F:.github/workflows/ci.yml†L1026-L1155】 |
 | `invariants` | `ci (v2) / Invariant tests` | Forge invariant harness with fuzz-runs 512.【F:.github/workflows/ci.yml†L1157-L1181】 |
 
-The manifest lives in [`required-contexts.json`](required-contexts.json). `npm run ci:verify-contexts` validates that the workflow display names match this file before CI ever runs.【F:ci/required-contexts.json†L1-L24】【F:package.json†L135-L146】
+The manifest lives in [`required-contexts.json`](required-contexts.json). `npm run ci:sync-contexts -- --check` ensures the JSON stays in lockstep with `ci.yml`, and `npm run ci:verify-contexts` validates the display names before CI ever runs.【F:ci/required-contexts.json†L1-L24】【F:package.json†L135-L146】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】
 
 ## Companion workflows
 | Workflow | Required job | Purpose |
@@ -106,7 +106,7 @@ The manifest lives in [`required-contexts.json`](required-contexts.json). `npm r
 | `containers` | `build (node-runner)` / `build (validator-runner)` / `build (gateway)` / `build (webapp)` / `build (owner-console)` | Hardened container builds for every runtime surface.【F:ci/required-companion-contexts.json†L1-L9】 |
 | `e2e` | `orchestrator-e2e` | Deterministic orchestrator E2E rehearsal.【F:ci/required-companion-contexts.json†L1-L11】 |
 
-Use `npm run ci:verify-companion-contexts` to make sure the manifest stays synchronised with GitHub configuration.【F:package.json†L135-L146】
+Use `npm run ci:sync-contexts -- --check` followed by `npm run ci:verify-companion-contexts` to make sure the manifest stays synchronised with GitHub configuration; run `npm run ci:sync-contexts` without `--check` when you intentionally add or rename jobs so the JSON is regenerated deterministically.【F:package.json†L135-L146】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】
 
 ### Companion lattice visualised
 ```mermaid
@@ -154,6 +154,7 @@ Every arrow represents a required status entry on the pull-request checks wall. 
 ```bash
 npm run ci:preflight               # Toolchain + lock enforcement
 npm run ci:verify-toolchain        # Hardhat, Foundry, npm version parity
+npm run ci:sync-contexts -- --check # Ensure ci/required-contexts.json matches ci.yml
 npm run ci:verify-contexts         # Required context manifest sync
 npm run ci:verify-companion-contexts  # Companion workflow manifest sync
 npm run ci:owner-authority -- --network ci --out reports/owner-control  # Authority matrix regeneration
@@ -163,4 +164,4 @@ Every command feeds directly into CI v2 so local runs reproduce the enforcement 
 ## Governance notes
 - Keep Node.js (20.18.x) and npm (≥10.8.0 <11) aligned with `.nvmrc` and `package.json` engines before running scripts.【F:.nvmrc†L1-L1】【F:package.json†L121-L134】
 - CI jobs harden the runner, cache deterministic artefacts, and upload evidence. Do not remove upload steps—branch protection will fail the run if artefacts are missing.【F:.github/workflows/ci.yml†L34-L440】【F:.github/workflows/ci.yml†L1026-L1155】
-- Update `required-contexts.json` and `required-companion-contexts.json` whenever new jobs are introduced. The verification scripts and branch guard will block merges until the manifests and workflow stay in sync.【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】【F:.github/workflows/ci.yml†L966-L1181】
+- Update `required-contexts.json` and `required-companion-contexts.json` whenever new jobs are introduced. Prefer `npm run ci:sync-contexts` to regenerate the main manifest; the verification scripts and branch guard will block merges until both JSON manifests align with the workflow.【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】【F:package.json†L135-L146】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:.github/workflows/ci.yml†L966-L1181】
