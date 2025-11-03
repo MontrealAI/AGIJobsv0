@@ -149,6 +149,7 @@ Every arrow represents a required status entry on the pull-request checks wall. 
 - Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links.
 - Add `--include-companion` when you want the static analysis, fuzz, webapp, containers, and e2e workflows verified in the same sweep. Each companion manifest entry is grouped by workflow, and the command fails fast when any job drops below green.
 - Override `--branch` or `--workflow` for release branches or bespoke CI environments; all options mirror the enforcement logic in the branch protection guard so local validation matches the automation running on `main`.
+- Append `--output <path>` (default `--format json`, or `--format markdown` for an instant table) to emit an immutable verification bundle ready to archive alongside `reports/ci/status.{md,json}`.
 
 ## Artefacts & forensic trail
 - `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1026-L1155】

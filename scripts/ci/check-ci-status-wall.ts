@@ -1,5 +1,8 @@
 #!/usr/bin/env ts-node
 
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, resolve as resolvePath } from 'node:path';
+
 import {
   readCompanionContexts,
   readRequiredContexts,
@@ -41,6 +44,8 @@ interface CliArguments {
   token?: string;
   requireSuccess: boolean;
   includeCompanion: boolean;
+  output?: string;
+  format: string;
 }
 
 interface WorkflowVerificationDescriptor {
@@ -49,9 +54,20 @@ interface WorkflowVerificationDescriptor {
   jobNames: string[];
 }
 
-interface VerificationOutput {
-  summary: string[];
+interface JobVerificationResult {
+  job: string;
+  label: string;
+  conclusion: string;
+  status: string;
+  isSuccess: boolean;
+  url?: string;
+}
+
+interface WorkflowVerificationResult {
+  workflow: string;
+  label: string;
   runUrl?: string;
+  jobs: JobVerificationResult[];
 }
 
 async function githubJson<T>(url: string, token: string): Promise<T> {
@@ -94,11 +110,7 @@ function buildRunsUrl(
   return `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/runs?${params.toString()}`;
 }
 
-function buildJobsUrl(
-  owner: string,
-  repo: string,
-  runId: number
-): string {
+function buildJobsUrl(owner: string, repo: string, runId: number): string {
   const params = new URLSearchParams({
     per_page: '100',
   });
@@ -117,7 +129,7 @@ async function verifyWorkflow(
   descriptor: WorkflowVerificationDescriptor,
   argv: CliArguments,
   token: string
-): Promise<VerificationOutput> {
+): Promise<WorkflowVerificationResult> {
   const runsUrl = buildRunsUrl(
     argv.owner,
     argv.repo,
@@ -139,7 +151,11 @@ async function verifyWorkflow(
 
   if (argv.requireSuccess && run.conclusion !== 'success') {
     throw new Error(
-      `Latest successful run for ${descriptor.workflow} not found; most recent run concluded with ${run.conclusion ?? 'unknown'} (${run.status ?? 'unknown'}).`
+      `Latest successful run for ${
+        descriptor.workflow
+      } not found; most recent run concluded with ${
+        run.conclusion ?? 'unknown'
+      } (${run.status ?? 'unknown'}).`
     );
   }
 
@@ -155,6 +171,7 @@ async function verifyWorkflow(
 
   const failures: string[] = [];
   const missing: string[] = [];
+  const jobSummaries: JobVerificationResult[] = [];
 
   for (const jobName of descriptor.jobNames) {
     const job = jobs.find((entry) => entry.name === jobName);
@@ -168,10 +185,21 @@ async function verifyWorkflow(
       const detail = job.conclusion ?? job.status ?? 'unknown';
       failures.push(`${jobName} → ${detail}`);
     }
+
+    jobSummaries.push({
+      job: jobName,
+      label: jobName,
+      conclusion,
+      status: (job.status ?? job.conclusion ?? 'unknown').toString(),
+      isSuccess: conclusion === 'success' || conclusion === 'skipped',
+      url: job.html_url,
+    });
   }
 
   if (missing.length > 0 || failures.length > 0) {
-    const lines = [`CI status wall verification failed for ${descriptor.label}.`];
+    const lines = [
+      `CI status wall verification failed for ${descriptor.label}.`,
+    ];
     if (missing.length > 0) {
       lines.push(`Missing jobs: ${missing.join(', ')}`);
     }
@@ -184,36 +212,123 @@ async function verifyWorkflow(
     throw new Error(lines.join('\n'));
   }
 
-  const summary = descriptor.jobNames.map((jobName) => {
-    const job = jobs.find((entry) => entry.name === jobName);
-    const conclusion = job ? normaliseConclusion(job) : 'missing';
-    const marker = conclusion === 'success' ? '✅' : '⚠️';
-    const link = job?.html_url ?? run.html_url ?? 'n/a';
-    return `${marker} ${descriptor.label} → ${jobName} — ${conclusion.toUpperCase()} (${link})`;
-  });
-
-  return { summary, runUrl: run.html_url };
+  return {
+    workflow: descriptor.workflow,
+    label: descriptor.label,
+    runUrl: run.html_url,
+    jobs: jobSummaries,
+  };
 }
 
 function groupCompanionContexts(contexts: string[]): Map<string, string[]> {
   const grouped = new Map<string, string[]>();
 
   for (const context of contexts) {
-    const [workflow, jobName] = context.split(' / ', 2).map((entry) => entry.trim());
+    const [workflow, jobName] = context
+      .split(' / ', 2)
+      .map((entry) => entry.trim());
     if (!workflow || !jobName) {
       throw new Error(
         `Invalid companion context "${context}". Expected format "workflow / job".`
       );
     }
-    const workflowFile = workflow.endsWith('.yml') || workflow.endsWith('.yaml')
-      ? workflow
-      : `${workflow}.yml`;
+    const workflowFile =
+      workflow.endsWith('.yml') || workflow.endsWith('.yaml')
+        ? workflow
+        : `${workflow}.yml`;
     const existing = grouped.get(workflowFile) ?? [];
     existing.push(jobName);
     grouped.set(workflowFile, existing);
   }
 
   return grouped;
+}
+
+function renderConsoleSummary(result: WorkflowVerificationResult): string[] {
+  return result.jobs.map((job) => {
+    const marker = job.conclusion === 'success' ? '✅' : '⚠️';
+    const outcome =
+      job.conclusion === 'skipped'
+        ? 'SKIPPED (permitted)'
+        : job.conclusion.toUpperCase();
+    const link = job.url ?? result.runUrl ?? 'n/a';
+    return `${marker} ${result.label} → ${job.label} — ${outcome} (${link})`;
+  });
+}
+
+type OutputFormat = 'json' | 'markdown';
+
+function writeOutput(
+  format: OutputFormat,
+  outputPath: string,
+  argv: CliArguments,
+  results: WorkflowVerificationResult[]
+): void {
+  const resolvedPath = resolvePath(outputPath);
+  mkdirSync(dirname(resolvedPath), { recursive: true });
+
+  if (format === 'json') {
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      repository: `${argv.owner}/${argv.repo}`,
+      branch: argv.branch,
+      requireSuccess: argv.requireSuccess,
+      includeCompanion: argv.includeCompanion,
+      workflows: results.map((result) => ({
+        workflow: result.workflow,
+        label: result.label,
+        runUrl: result.runUrl ?? null,
+        jobs: result.jobs.map((job) => ({
+          name: job.job,
+          conclusion: job.conclusion,
+          status: job.status,
+          success: job.isSuccess,
+          url: job.url ?? null,
+        })),
+      })),
+    };
+
+    writeFileSync(
+      resolvedPath,
+      JSON.stringify(payload, null, 2) + '\n',
+      'utf8'
+    );
+    return;
+  }
+
+  const lines = [
+    '# CI status wall verification',
+    '',
+    `- Generated: ${new Date().toISOString()}`,
+    `- Repository: ${argv.owner}/${argv.repo}`,
+    `- Branch: ${argv.branch}`,
+    `- Require success: ${argv.requireSuccess ? 'yes' : 'no'}`,
+    `- Include companion workflows: ${argv.includeCompanion ? 'yes' : 'no'}`,
+    '',
+  ];
+
+  for (const result of results) {
+    lines.push(`## ${result.label}`, '');
+    lines.push(`- Workflow: ${result.workflow}`);
+    if (result.runUrl) {
+      lines.push(`- Run: [${result.runUrl}](${result.runUrl})`);
+    }
+    lines.push('', '| Job | Outcome | Logs |', '| --- | ------- | ---- |');
+
+    for (const job of result.jobs) {
+      const marker = job.conclusion === 'success' ? '✅' : '⚠️';
+      const outcome =
+        job.conclusion === 'skipped'
+          ? 'SKIPPED (permitted)'
+          : job.conclusion.toUpperCase();
+      const link = job.url ? `[Open logs](${job.url})` : 'n/a';
+      lines.push(`| ${job.label} | ${marker} ${outcome} | ${link} |`);
+    }
+
+    lines.push('');
+  }
+
+  writeFileSync(resolvedPath, lines.join('\n') + '\n', 'utf8');
 }
 
 async function main(): Promise<void> {
@@ -254,6 +369,16 @@ async function main(): Promise<void> {
       describe:
         'Verify companion workflow contexts in addition to the primary ci (v2) manifest.',
     })
+    .option('output', {
+      type: 'string',
+      describe: 'Write the verification summary to the provided file path.',
+    })
+    .option('format', {
+      type: 'string',
+      choices: ['json', 'markdown', 'md'],
+      default: 'json',
+      describe: 'Output format when --output is provided.',
+    })
     .help()
     .alias('help', 'h')
     .parseSync() as CliArguments;
@@ -268,7 +393,9 @@ async function main(): Promise<void> {
   }
 
   const primaryContexts = readRequiredContexts();
-  const ciJobNames = primaryContexts.map((context) => stripContextPrefix(context));
+  const ciJobNames = primaryContexts.map((context) =>
+    stripContextPrefix(context)
+  );
   const descriptors: WorkflowVerificationDescriptor[] = [
     {
       workflow: argv.workflow,
@@ -290,19 +417,31 @@ async function main(): Promise<void> {
   }
 
   const overallSummary: string[] = [];
+  const verificationResults: WorkflowVerificationResult[] = [];
 
   for (const descriptor of descriptors) {
-    const output = await verifyWorkflow(descriptor, argv, token);
-    overallSummary.push(...output.summary);
-    if (output.runUrl) {
+    const result = await verifyWorkflow(descriptor, argv, token);
+    verificationResults.push(result);
+    overallSummary.push(...renderConsoleSummary(result));
+    if (result.runUrl) {
       console.log(
-        `Verified ${descriptor.label} via run ${output.runUrl ?? 'unknown run URL'}.`
+        `Verified ${descriptor.label} via run ${
+          result.runUrl ?? 'unknown run URL'
+        }.`
       );
     }
   }
 
   console.log('CI status wall verified. Context breakdown:');
   console.log(overallSummary.join('\n'));
+
+  if (argv.output) {
+    const rawFormat = (argv.format || 'json').toLowerCase();
+    const format: OutputFormat =
+      rawFormat === 'md' ? 'markdown' : (rawFormat as OutputFormat);
+    writeOutput(format, argv.output, argv, verificationResults);
+    console.log(`Wrote ${format} summary to ${resolvePath(argv.output)}.`);
+  }
 }
 
 main().catch((error) => {
