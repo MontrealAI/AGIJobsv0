@@ -84,13 +84,12 @@ function buildRunsUrl(
   owner: string,
   repo: string,
   workflow: string,
-  branch: string,
-  requireSuccess: boolean
+  branch: string
 ): string {
   const params = new URLSearchParams({
     branch,
     per_page: '1',
-    status: requireSuccess ? 'success' : 'completed',
+    status: 'completed',
   });
   return `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/runs?${params.toString()}`;
 }
@@ -123,8 +122,7 @@ async function verifyWorkflow(
     argv.owner,
     argv.repo,
     descriptor.workflow,
-    argv.branch,
-    argv.requireSuccess
+    argv.branch
   );
   const runResponse = await githubJson<WorkflowRunsResponse>(runsUrl, token);
 
