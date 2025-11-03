@@ -28,10 +28,11 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fu
    ```bash
    npm run ci:preflight
    npm run ci:verify-toolchain
+   npm run ci:sync-contexts -- --check
    npm run ci:verify-contexts
    npm run ci:verify-companion-contexts
    ```
-   All four commands are wired into CI v2, so keeping them green locally mirrors branch protection expectations.【F:package.json†L138-L150】【F:.github/workflows/ci.yml†L34-L74】
+   The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, so keeping this quartet green locally mirrors branch protection expectations.【F:package.json†L135-L150】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:.github/workflows/ci.yml†L34-L74】
 4. Validate the critical suites:
    ```bash
    npm test
@@ -206,9 +207,11 @@ The badge query filters directly on the workflow run logs, so PR reviewers and r
 ### Enforcing branch protection
 1. Generate or refresh required contexts:
    ```bash
+   npm run ci:sync-contexts -- --check
    npm run ci:verify-contexts
    npm run ci:verify-companion-contexts
    ```
+   Use `npm run ci:sync-contexts` (without `--check`) if you add or rename CI jobs; it rewrites the manifest deterministically and fails when duplicates slip in.【F:package.json†L135-L146】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】
 2. Audit the live rule without mutations:
    ```bash
    npm run ci:enforce-branch-protection -- --dry-run --branch main
