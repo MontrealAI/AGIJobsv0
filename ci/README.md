@@ -146,7 +146,7 @@ Every arrow represents a required status entry on the pull-request checks wall. 
    The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations while still succeeding on forked PRs that cannot call the admin API.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
 ## Live status wall verification
-- Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links.
+- Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links. Add `--format json` when exporting structured data for dashboards or automated gatekeeping.
 - Add `--include-companion` when you want the static analysis, fuzz, webapp, containers, and e2e workflows verified in the same sweep. Each companion manifest entry is grouped by workflow, and the command fails fast when any job drops below green.
 - Override `--branch` or `--workflow` for release branches or bespoke CI environments; all options mirror the enforcement logic in the branch protection guard so local validation matches the automation running on `main`.
 

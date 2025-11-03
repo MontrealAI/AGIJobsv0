@@ -41,6 +41,7 @@ interface CliArguments {
   token?: string;
   requireSuccess: boolean;
   includeCompanion: boolean;
+  format: 'text' | 'json';
 }
 
 interface WorkflowVerificationDescriptor {
@@ -52,6 +53,14 @@ interface WorkflowVerificationDescriptor {
 interface VerificationOutput {
   summary: string[];
   runUrl?: string;
+  jobs: JobDetail[];
+}
+
+interface JobDetail {
+  workflowLabel: string;
+  job: string;
+  status: string;
+  url: string;
 }
 
 async function githubJson<T>(url: string, token: string): Promise<T> {
@@ -184,15 +193,25 @@ async function verifyWorkflow(
     throw new Error(lines.join('\n'));
   }
 
-  const summary = descriptor.jobNames.map((jobName) => {
+  const summary: string[] = [];
+  const jobsSummary: JobDetail[] = [];
+
+  for (const jobName of descriptor.jobNames) {
     const job = jobs.find((entry) => entry.name === jobName);
     const conclusion = job ? normaliseConclusion(job) : 'missing';
     const marker = conclusion === 'success' ? '✅' : '⚠️';
     const link = job?.html_url ?? run.html_url ?? 'n/a';
-    return `${marker} ${descriptor.label} → ${jobName} — ${conclusion.toUpperCase()} (${link})`;
-  });
+    const status = conclusion.toUpperCase();
+    summary.push(`${marker} ${descriptor.label} → ${jobName} — ${status} (${link})`);
+    jobsSummary.push({
+      workflowLabel: descriptor.label,
+      job: jobName,
+      status,
+      url: link,
+    });
+  }
 
-  return { summary, runUrl: run.html_url };
+  return { summary, runUrl: run.html_url, jobs: jobsSummary };
 }
 
 function groupCompanionContexts(contexts: string[]): Map<string, string[]> {
@@ -254,6 +273,13 @@ async function main(): Promise<void> {
       describe:
         'Verify companion workflow contexts in addition to the primary ci (v2) manifest.',
     })
+    .option('format', {
+      type: 'string',
+      choices: ['text', 'json'],
+      default: 'text',
+      describe:
+        'Output mode. Text prints a human-readable wall; json emits structured data for automation.',
+    })
     .help()
     .alias('help', 'h')
     .parseSync() as CliArguments;
@@ -290,15 +316,38 @@ async function main(): Promise<void> {
   }
 
   const overallSummary: string[] = [];
+  const structuredOutputs: {
+    workflow: string;
+    workflowFile: string;
+    runUrl?: string;
+    jobs: JobDetail[];
+  }[] = [];
 
   for (const descriptor of descriptors) {
     const output = await verifyWorkflow(descriptor, argv, token);
     overallSummary.push(...output.summary);
-    if (output.runUrl) {
+    structuredOutputs.push({
+      workflow: descriptor.label,
+      workflowFile: descriptor.workflow,
+      runUrl: output.runUrl,
+      jobs: output.jobs,
+    });
+    if (argv.format === 'text' && output.runUrl) {
       console.log(
         `Verified ${descriptor.label} via run ${output.runUrl ?? 'unknown run URL'}.`
       );
     }
+  }
+
+  if (argv.format === 'json') {
+    const payload = {
+      owner: argv.owner,
+      repo: argv.repo,
+      branch: argv.branch,
+      workflows: structuredOutputs,
+    };
+    console.log(JSON.stringify(payload, null, 2));
+    return;
   }
 
   console.log('CI status wall verified. Context breakdown:');
