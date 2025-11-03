@@ -33,12 +33,18 @@ jobs:
         run: npm run ci:preflight
 
       - name: Install repository dependencies
+        env:
+          AGIJOBS_CYPRESS_INSTALL: 1
         run: ./scripts/ci/npm-ci.sh
 
       - name: Install console dependencies
+        env:
+          AGIJOBS_CYPRESS_INSTALL: 1
         run: NPM_CI_PROJECT_ROOT=apps/console ./scripts/ci/npm-ci.sh --prefix apps/console
 
       - name: Install enterprise portal dependencies
+        env:
+          AGIJOBS_CYPRESS_INSTALL: 1
         run: NPM_CI_PROJECT_ROOT=apps/enterprise-portal ./scripts/ci/npm-ci.sh --prefix apps/enterprise-portal
 
       - name: Type-check webapp

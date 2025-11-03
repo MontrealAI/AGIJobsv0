@@ -972,6 +972,81 @@ const COLLECTORS: Record<string, (address: string) => Promise<ModuleSummary>> =
     thermostat: collectThermostatSummary,
   };
 
+const MODULE_TITLES: Record<string, string> = {
+  stakeManager: 'StakeManager',
+  feePool: 'FeePool',
+  taxPolicy: 'TaxPolicy',
+  jobRegistry: 'JobRegistry',
+  validationModule: 'ValidationModule',
+  platformRegistry: 'PlatformRegistry',
+  systemPause: 'SystemPause',
+  reputationEngine: 'ReputationEngine',
+  identityRegistry: 'IdentityRegistry',
+  platformIncentives: 'PlatformIncentives',
+  randaoCoordinator: 'RandaoCoordinator',
+  rewardEngine: 'RewardEngineMB',
+  thermostat: 'Thermostat',
+};
+
+function resolveModuleTitle(key: string): string {
+  const title = MODULE_TITLES[key];
+  if (title) {
+    return title;
+  }
+  if (!key) {
+    return 'Module';
+  }
+  const cleaned = key
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, ' ')
+    .trim();
+  return cleaned.length > 0
+    ? cleaned
+        .split(' ')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : key;
+}
+
+function classifyModuleError(
+  key: string,
+  address: string | null,
+  error: unknown
+): ModuleMetric {
+  const rawMessage =
+    error instanceof Error
+      ? error.message || error.toString()
+      : error === null || error === undefined
+      ? 'Unknown error'
+      : String(error);
+  const message = rawMessage.trim();
+  const moduleTitle = resolveModuleTitle(key);
+  const addressHint = address ? ` (${address})` : '';
+
+  if (/HH700/.test(message) || /artifact\s+for\s+contract/i.test(message)) {
+    return {
+      label: 'warning',
+      value: `${moduleTitle}${addressHint} — contract artifact unavailable. Run \`npx hardhat compile\` before mission control or ensure the module sources are included in the build.`,
+    };
+  }
+
+  if (
+    /CALL_EXCEPTION/.test(message) ||
+    /missing code/i.test(message) ||
+    /execution reverted/i.test(message)
+  ) {
+    return {
+      label: 'warning',
+      value: `${moduleTitle}${addressHint} — no contract detected at the configured address. Update docs/deployment-addresses.json or provide the module address via environment overrides.`,
+    };
+  }
+
+  return {
+    label: 'error',
+    value: `${moduleTitle}${addressHint} — ${message || 'Failed to load module state'}`,
+  };
+}
+
 function printModule(summary: ModuleSummary): void {
   if (!summary.address) {
     console.log(`\n${summary.name}\n  address: (not configured)`);
@@ -1073,8 +1148,9 @@ async function main() {
   for (const [key, collector] of Object.entries(COLLECTORS)) {
     const rawAddress = addressBook[key];
     const address = normaliseAddress(rawAddress);
+    const name = resolveModuleTitle(key);
     if (!address) {
-      summaries.push({ key, name: key, address: null, metrics: [] });
+      summaries.push({ key, name, address: null, metrics: [] });
       continue;
     }
     try {
@@ -1083,17 +1159,9 @@ async function main() {
     } catch (error) {
       summaries.push({
         key,
-        name: key,
+        name,
         address,
-        metrics: [
-          {
-            label: 'error',
-            value:
-              error instanceof Error
-                ? error.message
-                : 'Failed to load module state',
-          },
-        ],
+        metrics: [classifyModuleError(key, address, error)],
       });
     }
   }

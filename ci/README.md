@@ -6,6 +6,7 @@
 [![Webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml)
 [![Containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml)
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
+[![ASI Global Demo](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/demo-asi-global.yml)
 
 ## Live status wall
 
@@ -105,6 +106,11 @@ The manifest lives in [`required-contexts.json`](required-contexts.json). `npm r
 | `webapp` | `webapp-ci` | Next.js console lint/build/test smoke.【F:ci/required-companion-contexts.json†L1-L5】 |
 | `containers` | `build (node-runner)` / `build (validator-runner)` / `build (gateway)` / `build (webapp)` / `build (owner-console)` | Hardened container builds for every runtime surface.【F:ci/required-companion-contexts.json†L1-L9】 |
 | `e2e` | `orchestrator-e2e` | Deterministic orchestrator E2E rehearsal.【F:ci/required-companion-contexts.json†L1-L11】 |
+
+### Demonstration workflows
+| Workflow | Jobs | Purpose |
+| -------- | ---- | ------- |
+| `demo-asi-global` | `ASI Global Take-Off Demonstration` | Guarantees the planetary drill executes deterministic and local runs, exports artefacts, and proves owner supremacy on every qualifying PR and `main`.【F:.github/workflows/demo-asi-global.yml†L1-L76】【F:docs/asi-global-orchestrator-demo.md†L1-L66】 |
 
 Use `npm run ci:verify-companion-contexts` to make sure the manifest stays synchronised with GitHub configuration.【F:package.json†L135-L146】
 
