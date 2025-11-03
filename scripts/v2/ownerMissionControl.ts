@@ -899,14 +899,19 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
       Array.isArray(module.metrics) &&
       module.metrics.some((metric: any) => metric.label === 'error')
   );
+  const warned = data.modules.filter(
+    (module: any) =>
+      Array.isArray(module.metrics) &&
+      module.metrics.some((metric: any) => metric.label === 'warning')
+  );
   const missing = data.modules.filter((module: any) => module.address === null);
   let status: StepStatus = 'success';
   if (errored.length > 0) {
-    status = 'error';
-  } else if (missing.length > 0) {
+    status = 'warning';
+  } else if (missing.length > 0 || warned.length > 0) {
     status = 'warning';
   }
-  const summary = `${moduleCount} modules inspected — ${missing.length} without addresses, ${errored.length} reported errors`;
+  const summary = `${moduleCount} modules inspected — ${missing.length} without addresses, ${warned.length} warnings, ${errored.length} critical alerts`;
   const details: string[] = [];
   if (errored.length > 0) {
     errored.slice(0, 5).forEach((module: any) => {
@@ -919,10 +924,24 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
         }`
       );
     });
+    details.push(
+      'Critical telemetry alerts were downgraded to warnings for this mission dossier. Re-run with --strict to fail on these conditions.'
+    );
   } else if (missing.length > 0) {
     missing.slice(0, 5).forEach((module: any) => {
       details.push(
         `${module.name || module.key}: address not in deployment records`
+      );
+    });
+  } else if (warned.length > 0) {
+    warned.slice(0, 5).forEach((module: any) => {
+      const firstWarning = module.metrics.find(
+        (metric: any) => metric.label === 'warning'
+      );
+      details.push(
+        `${module.name || module.key}: ${
+          firstWarning?.value || 'Module responded with warnings'
+        }`
       );
     });
   }
@@ -936,6 +955,7 @@ function analyzeDashboard(context: StepExecutionContext): StepAnalysis {
     metrics: {
       modules: moduleCount,
       missing: missing.length,
+      warnings: warned.length,
       errored: errored.length,
     },
   };
