@@ -1020,20 +1020,34 @@ function classifyModuleError(
       ? 'Unknown error'
       : String(error);
   const message = rawMessage.trim();
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
   const moduleTitle = resolveModuleTitle(key);
   const addressHint = address ? ` (${address})` : '';
 
-  if (/HH700/.test(message) || /artifact\s+for\s+contract/i.test(message)) {
+  if (
+    /HH700/.test(message) ||
+    /artifact\s+for\s+contract/i.test(message) ||
+    /HH701/.test(message) ||
+    /multiple artifacts?/i.test(message)
+  ) {
     return {
       label: 'warning',
-      value: `${moduleTitle}${addressHint} — contract artifact unavailable. Run \`npx hardhat compile\` before mission control or ensure the module sources are included in the build.`,
+      value: `${moduleTitle}${addressHint} — contract artifact unavailable or ambiguous. Run \`npx hardhat compile\` before mission control, ensure the module sources are included in the build, or reference the fully qualified contract name.`,
     };
   }
 
   if (
+    code === 'CALL_EXCEPTION' ||
+    code === 'BAD_DATA' ||
     /CALL_EXCEPTION/.test(message) ||
     /missing code/i.test(message) ||
-    /execution reverted/i.test(message)
+    /execution reverted/i.test(message) ||
+    /could not decode result data/i.test(message) ||
+    /call (revert|exception)/i.test(message) ||
+    /missing revert data/i.test(message)
   ) {
     return {
       label: 'warning',
