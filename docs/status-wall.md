@@ -3,7 +3,7 @@
 The status wall published in [`README.md`](../README.md) and [`ci/README.md`](../ci/README.md) is sourced from the
 required-context manifest [`ci/required-contexts.json`](../ci/required-contexts.json) and executed by
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). Each wall entry below links directly to the job badge for the
-`main` branch together with the workflow job identifier you would update when editing the pipeline.
+`main` branch together with the workflow job identifier you would update when editing the pipeline. Operators treat this as a live operations console: the wall must be entirely green before branch protection allows merges, and the linked jobs and runbooks form the remediation spine when a signal ever flips.
 
 ## Job mapping
 

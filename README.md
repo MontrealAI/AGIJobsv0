@@ -10,11 +10,11 @@
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
 
-AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform behaves like the reference superintelligent system for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios.
+AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform is the canonical intelligence engine for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios—while remaining fully operator-governed so the contract owner can retune every vector on demand.
 
 ## Documentation lattice
 
-The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】
+The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】【F:.github/workflows/ci.yml†L34-L1181】
 
 ## CI v2 status wall (live)
 
@@ -63,18 +63,18 @@ Companion workflows complete the assurance wall: [static analysis](https://githu
 
 ```mermaid
 flowchart TD
-    classDef entry fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
-    classDef api fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
-    classDef guard fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
-    classDef artefact fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef entry fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef api fill:#6366f1,stroke:#312e81,color:#e0e7ff,stroke-width:1px;
+    classDef guard fill:#facc15,stroke:#ca8a04,color:#1e1b4b,stroke-width:1px;
+    classDef artefact fill:#10b981,stroke:#064e3b,color:#f0fdf4,stroke-width:1px;
 
-    statusWall[ci:status-wall CLI]:::entry --> ghRuns[GitHub Actions runs API]:::api
-    statusWall --> ghJobs[GitHub Actions jobs API]:::api
-    ghJobs --> manifest[ci/required-contexts.json]:::guard
-    ghJobs --> companion[ci/required-companion-contexts.json]:::guard
-    manifest --> verdict[Branch protection guard parity]:::guard
+    statusWall["ci:status-wall CLI\n(Operator command)"]:::entry --> ghRuns["GitHub Actions\nruns API"]:::api
+    statusWall --> ghJobs["GitHub Actions\njobs API"]:::api
+    ghRuns --> manifest["ci/required-contexts.json\n(required wall)"]:::guard
+    ghJobs --> companion["ci/required-companion-contexts.json\n(companion wall)"]:::guard
+    manifest --> verdict["Branch protection guard\nparity check"]:::guard
     companion --> verdict
-    verdict --> artefacts[reports/ci/status.{md,json}]:::artefact
+    verdict --> artefacts["reports/ci/status.{md,json}\nmission artefacts"]:::artefact
 ```
 
 The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】
@@ -116,18 +116,21 @@ The same manifest powers the branch-protection guard inside CI v2 and the local 
 ## Repository atlas
 ```mermaid
 flowchart LR
-    classDef core fill:#ecfeff,stroke:#0284c7,color:#0f172a,stroke-width:1px;
-    classDef ops fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
-    classDef demos fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
-    classDef svc fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
+    classDef core fill:#0ea5e9,stroke:#0369a1,color:#f8fafc,stroke-width:1px;
+    classDef ops fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
+    classDef demos fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
+    classDef svc fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
     contracts[contracts/]:::core --> ci[ci/]:::ops
+    contracts --> contractsOwner[contracts/v2/admin/]:::core
     agentGateway[agent-gateway/]:::svc --> services[services/]:::svc
     apps[apps/]:::svc --> demos[demo/]:::demos
     backend[backend/]:::svc --> deploy[deploy/]:::ops
     docs[docs/]:::ops --> reports[reports/]:::ops
-    ci --> .github[.github/workflows/]:::ops
+    ci --> workflows[.github/workflows/]:::ops
     demos --> orchestrator[orchestrator/]:::svc
+    ownerScripts[scripts/v2/]:::ops --> contractsOwner
+    ownerScripts --> workflows
 ```
 
 | Domain | Highlights |
@@ -143,14 +146,15 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    classDef entry fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:1px;
-    classDef contract fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b,stroke-width:1px;
-    classDef service fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
-    classDef ci fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef entry fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef contract fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
+    classDef service fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
+    classDef ci fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
     subgraph Operator Surface
         gateway[Agent gateway APIs]:::service
         consoles[Operator consoles (`apps/`)]:::service
+        ownerDeck[Owner CLI + control scripts]:::entry
     end
 
     subgraph Intelligence Core
@@ -163,10 +167,11 @@ flowchart TD
         ciMain[CI v2 pipelines]:::ci
         companion[Companion workflows]:::ci
         reports[Audit & CI reports]:::ci
+        branchGuard[Branch protection guard]:::ci
     end
 
-    owners[Owner CLI + control scripts]:::entry --> gateway
-    owners --> orchestratorSvc
+    ownerDeck --> gateway
+    ownerDeck --> orchestratorSvc
     consoles --> gateway
     gateway --> contractsStack
     orchestratorSvc --> contractsStack
@@ -174,7 +179,8 @@ flowchart TD
     sentinels --> reports
     ciMain --> reports
     companion --> reports
-    reports --> owners
+    branchGuard --> reports
+    reports --> ownerDeck
     reports --> consoles
 ```
 

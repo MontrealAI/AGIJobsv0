@@ -9,7 +9,7 @@
 
 ## Live status wall
 
-Every required context publishes its own badge so the assurance wall is visible on PRs, the default branch, and in external dashboards. Each badge links directly to the CI v2 workflow with the job pre-filtered, making drift obvious at a glance. A job-to-badge cross-reference with maintenance guidance lives in [`docs/status-wall.md`](../docs/status-wall.md).
+Every required context publishes its own badge so the assurance wall is visible on PRs, the default branch, and in external dashboards. Each badge links directly to the CI v2 workflow with the job pre-filtered, making drift obvious at a glance. A job-to-badge cross-reference with maintenance guidance lives in [`docs/status-wall.md`](../docs/status-wall.md). The wall doubles as the operator cockpit: if any tile falls red, owners follow the linked remediation runbook before the branch protection guard permits merges, guaranteeing that production stays synchronised with the intelligence engine.
 
 | Job | Badge |
 | --- | --- |
@@ -44,10 +44,10 @@ Run `npm run ci:verify-summary-needs` whenever you touch `.github/workflows/ci.y
 ## Workflow topology
 ```mermaid
 flowchart LR
-    classDef base fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
-    classDef analytics fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
-    classDef demo fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
-    classDef guard fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef base fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef analytics fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
+    classDef demo fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
+    classDef guard fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
     lint[Lint & static checks]:::base --> hgm[HGM guardrails]:::guard
     lint --> ownerCtl[Owner control assurance]:::guard
@@ -113,9 +113,9 @@ Use `npm run ci:sync-contexts -- --check` followed by `npm run ci:verify-compani
 ### Companion lattice visualised
 ```mermaid
 flowchart TD
-    classDef main fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
-    classDef companion fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
-    classDef checks fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef main fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef companion fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
+    classDef checks fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
     ciSummary[ci (v2) / CI summary]:::main --> checksWall[GitHub checks wall]:::checks
     staticAnalysis[static-analysis / Slither static analysis]:::companion --> checksWall
@@ -151,10 +151,10 @@ Every arrow represents a required status entry on the pull-request checks wall. 
 
 ```mermaid
 flowchart TD
-    classDef manifest fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:1px;
-    classDef cli fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
-    classDef guard fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
-    classDef reports fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef manifest fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef cli fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
+    classDef guard fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
+    classDef reports fill:#f97316,stroke:#9a3412,color:#fff7ed,stroke-width:1px;
 
     manifests[ci/required-contexts.json + ci/required-companion-contexts.json]:::manifest --> sync[ci:sync-contexts]:::cli
     sync --> verify[ci:verify-contexts / ci:verify-companion-contexts]:::cli
@@ -188,9 +188,9 @@ Use `--format markdown`, `--format json`, or the default text mode to control th
 
 ```mermaid
 flowchart TD
-    classDef artefact fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
-    classDef cli fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
-    classDef downstream fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef artefact fill:#0ea5e9,stroke:#0284c7,color:#f8fafc,stroke-width:1px;
+    classDef cli fill:#6366f1,stroke:#312e81,color:#eef2ff,stroke-width:1px;
+    classDef downstream fill:#22c55e,stroke:#166534,color:#ecfdf5,stroke-width:1px;
 
     summaryJob[ci (v2) / CI summary]:::cli --> jsonFeed[reports/ci/status.json]:::artefact
     summaryJob --> markdownFeed[reports/ci/status.md]:::artefact
