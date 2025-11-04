@@ -18,6 +18,9 @@ The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`
 
 ## CI v2 status wall (live)
 
+The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in
+[`docs/status-wall.md`](docs/status-wall.md).
+
 | Required job | Status badge |
 | ------------ | ------------ |
 | Lint & static checks | [![Lint & static checks](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=Lint%20%26%20static%20checks)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22Lint+%26+static+checks%22) |

@@ -9,7 +9,7 @@
 
 ## Live status wall
 
-Every required context publishes its own badge so the assurance wall is visible on PRs, the default branch, and in external dashboards. Each badge links directly to the CI v2 workflow with the job pre-filtered, making drift obvious at a glance.
+Every required context publishes its own badge so the assurance wall is visible on PRs, the default branch, and in external dashboards. Each badge links directly to the CI v2 workflow with the job pre-filtered, making drift obvious at a glance. A job-to-badge cross-reference with maintenance guidance lives in [`docs/status-wall.md`](../docs/status-wall.md).
 
 | Job | Badge |
 | --- | --- |
