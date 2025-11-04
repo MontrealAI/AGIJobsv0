@@ -128,62 +128,62 @@ jobs:
       - name: Run HGM suite
         run: ci/hgm-suite.sh
 
-    owner_controls:
-      name: Owner control assurance
-      runs-on: ubuntu-24.04
-      timeout-minutes: 25
-      needs: lint
-      steps:
-        - name: Harden runner
-          uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
-          with:
-            egress-policy: audit
-        - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
-          with:
-            fetch-depth: 0
-            persist-credentials: false
-        - name: Setup Node
-          uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-          with:
-            node-version-file: '.nvmrc'
-            cache: npm
-            cache-dependency-path: |
-              package-lock.json
-              **/package-lock.json
-        - name: Preflight toolchain locks
-          run: npm run ci:preflight
-        - name: Install dependencies
-          run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
-        - name: Generate owner control assurance reports
-          run: |
-            mkdir -p reports/owner-control
-            npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts \
-              --network ci \
-              --strict \
-              --json \
-              > reports/owner-control/doctor.json
-            npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
-              --network ci \
-              --format json \
-              --no-mermaid \
-              --out reports/owner-control/parameter-matrix.json
-        - name: Render owner authority matrix
-          run: |
-            npm run ci:owner-authority -- --network ci \
-              --out reports/owner-control
-        - name: Render owner command center digest
-          run: |
-            mkdir -p reports/owner-control
-            npm run owner:command-center -- --network ci \
-              --format markdown \
-              --out reports/owner-control/command-center.md \
-              --no-mermaid
-        - name: Upload owner control artefacts
-          if: ${{ always() }}
-          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-          with:
-            name: owner-control-ci
-            path: reports/owner-control
+  owner_controls:
+    name: Owner control assurance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    needs: lint
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Generate owner control assurance reports
+        run: |
+          mkdir -p reports/owner-control
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerControlDoctor.ts \
+            --network ci \
+            --strict \
+            --json \
+            > reports/owner-control/doctor.json
+          npx ts-node --compiler-options '{"module":"commonjs"}' scripts/v2/ownerParameterMatrix.ts \
+            --network ci \
+            --format json \
+            --no-mermaid \
+            --out reports/owner-control/parameter-matrix.json
+      - name: Render owner authority matrix
+        run: |
+          npm run ci:owner-authority -- --network ci \
+            --out reports/owner-control
+      - name: Render owner command center digest
+        run: |
+          mkdir -p reports/owner-control
+          npm run owner:command-center -- --network ci \
+            --format markdown \
+            --out reports/owner-control/command-center.md \
+            --no-mermaid
+      - name: Upload owner control artefacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: owner-control-ci
+          path: reports/owner-control
 
   branch_protection:
     name: Branch protection guard
