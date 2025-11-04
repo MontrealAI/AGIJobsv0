@@ -85,3 +85,27 @@ the manifests.
 When introducing a brand-new workflow (for example a companion pipeline), also update
 [`ci/required-companion-contexts.json`](../ci/required-companion-contexts.json) and document the badge in the relevant README
 section. Use `npm run ci:status-wall -- --include-companion` to confirm the broader wall is green before merging.
+
+## External API audit drill
+
+Operators who need an out-of-band confirmation can interrogate the GitHub REST API directly:
+
+```bash
+# Step 1 — Inspect the most recent ci (v2) workflow run on main
+curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].status, .workflow_runs[0].conclusion'
+
+# Step 2 — Capture the run identifier for job-level analysis
+RUN_ID=$(curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].id')
+
+# Step 3 — Enumerate every job conclusion within that run
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -r '.jobs[] | "\(.name): \(.conclusion)"'
+
+# Step 4 — Assert the wall is entirely green
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -e 'all(.jobs[].conclusion == "success")'
+```
+
+These commands replicate the checks executed by `ci:status-wall` and the `CI summary` job, but they do so using only HTTP requests and shell primitives. Archive the output alongside `reports/ci/status.{md,json}` so independent auditors can reconcile both views of the wall.【F:.github/workflows/ci.yml†L1009-L1155】【F:scripts/ci/check-ci-status-wall.ts†L73-L387】
