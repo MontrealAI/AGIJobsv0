@@ -79,6 +79,30 @@ flowchart TD
 
 The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】
 
+### Double-green enforcement drill
+1. **Interrogate the wall:** `npm run ci:status-wall -- --token <github_token> --require-success --include-companion` must return all ✅ lines and regenerate both Markdown and JSON artefacts in `reports/ci/`. Cross-check the printed run ID with the Actions UI so the command and GitHub agree on the latest passing workflow.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
+2. **Lock the manifest:** Immediately execute `npm run ci:sync-contexts -- --check` to prove that the required context manifest still mirrors `.github/workflows/ci.yml`. The command fails fast on any drift so branch protection cannot silently fall behind.【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:ci/required-contexts.json†L1-L24】
+3. **Audit the rule:** Finish with `npm run ci:verify-branch-protection -- --owner MontrealAI --repo AGIJobsv0 --branch main --require` and archive the console output. The script queries the GitHub REST API and enforces parity with the manifest, so a single invocation validates CI status, manifests, and the live protection rule in one sweep.【F:scripts/ci/verify-branch-protection.ts†L1-L239】
+
+```mermaid
+flowchart TD
+    classDef cli fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef api fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef guard fill:#fefce8,stroke:#ca8a04,color:#713f12,stroke-width:1px;
+    classDef artefact fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+
+    statusCLI[ci:status-wall]:::cli --> ghRunsAPI[GitHub Actions runs API]:::api
+    statusCLI --> statusArtefacts[reports/ci/status.{md,json}]:::artefact
+    manifestCheck[ci:sync-contexts --check]:::cli --> workflowFile[.github/workflows/ci.yml]:::guard
+    manifestCheck --> manifestJSON[ci/required-contexts.json]:::guard
+    branchAudit[ci:verify-branch-protection]:::cli --> githubBranchAPI[GitHub branch protection API]:::api
+    manifestJSON --> branchAudit
+    workflowFile --> branchAudit
+    branchAudit --> enforcementReceipt[Archived enforcement log]:::artefact
+```
+
+Running the drill before every release forces status verification, manifest locking, and branch protection auditing to agree, creating a triple-check loop that mirrors CI v2’s internal guard rails.【F:.github/workflows/ci.yml†L1026-L1155】【F:ci/required-contexts.json†L1-L24】
+
 ## Executive signal
 - **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators.【F:agent-gateway/README.md†L1-L53】【F:apps/validator-ui/README.md†L1-L40】【F:services/thermostat/README.md†L1-L60】
 - **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】【F:package.json†L135-L226】
