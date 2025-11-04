@@ -145,6 +145,27 @@ Every arrow represents a required status entry on the pull-request checks wall. 
    ```
    The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations while still succeeding on forked PRs that cannot call the admin API.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
+### Enforcement feedback loop
+
+```mermaid
+flowchart TD
+    classDef manifest fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef cli fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef guard fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef reports fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    manifests[ci/required-contexts.json + ci/required-companion-contexts.json]:::manifest --> sync[ci:sync-contexts]:::cli
+    sync --> verify[ci:verify-contexts / ci:verify-companion-contexts]:::cli
+    verify --> guardJob[ci (v2) / Branch protection guard]:::guard
+    guardJob --> githubRule[GitHub branch protection rule]:::guard
+    githubRule --> summaryJob[ci (v2) / CI summary]:::guard
+    summaryJob --> artefacts[reports/ci/status.{md,json}]:::reports
+    artefacts --> oncall[On-call + release captains]:::cli
+    artefacts --> dashboards[External dashboards]:::reports
+```
+
+Verification scripts, branch protection, and the `CI summary` job form a closed loop: manifests are regenerated locally, enforced via GitHub API calls, and audited in CI so on-call operators always consume up-to-date artefacts.【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:scripts/ci/verify-branch-protection.ts†L1-L239】【F:.github/workflows/ci.yml†L1026-L1155】
+
 ## Live status wall verification
 - Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links. Add `--format markdown` for README-ready tables or `--format json` when exporting structured data for dashboards or automated gatekeeping.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 - Add `--include-companion` when you want the static analysis, fuzz, webapp, containers, and e2e workflows verified in the same sweep. Each companion manifest entry is grouped by workflow, and the command fails fast when any job drops below green.
