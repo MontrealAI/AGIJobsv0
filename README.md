@@ -43,7 +43,7 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fu
 Companion workflows complete the assurance wall: [static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml), [fuzz](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml), [webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml), [containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml), and [e2e](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml). Required contexts for those workflows are defined in [`ci/required-companion-contexts.json`](ci/required-companion-contexts.json) and enforced by `npm run ci:verify-companion-contexts`.
 
 ### Live verification CLI
-- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format json` when you need structured output for dashboards or automated release gates.【F:scripts/ci/check-ci-status-wall.ts†L1-L332】
+- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format markdown` to render a README-ready table or `--format json` when you need structured output for dashboards or automated release gates.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 - Pass `--include-companion` to extend the check across the companion workflows (static-analysis, fuzz, webapp, containers, e2e) so the full assurance wall is verified in one sweep.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】【F:ci/required-companion-contexts.json†L1-L10】
 - Use `--branch <name>` or `--workflow <file>` when validating release branches or pre-flight changes in forks. All options mirror the automation that the branch-protection guard enforces on protected branches.【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
 
@@ -51,7 +51,8 @@ Companion workflows complete the assurance wall: [static analysis](https://githu
 | --- | --- | --- |
 | Enforce success on `main` | `npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success` | Fails fast unless every job finished in `success` or `skipped` state.【F:scripts/ci/check-ci-status-wall.ts†L93-L199】 |
 | Include companion lattice | `npm run ci:status-wall -- --token $GITHUB_TOKEN --include-companion` | Adds static-analysis, fuzz, webapp, containers, and e2e to the report.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】 |
-| Export dashboards | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format json > reports/ci/status.wall.json` | Emits machine-readable payload for dashboards and alerting.【F:scripts/ci/check-ci-status-wall.ts†L110-L332】 |
+| Export dashboards | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format json > reports/ci/status.wall.json` | Emits machine-readable payload for dashboards and alerting.【F:scripts/ci/check-ci-status-wall.ts†L312-L387】 |
+| Refresh README table | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format markdown > reports/ci/status-wall.md` | Generates a GitHub-flavoured table matching the live status wall for direct embedding.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】 |
 
 ```mermaid
 flowchart TD
@@ -224,7 +225,7 @@ flowchart LR
 
 - `reports/ci/status.json` exposes a machine-readable feed of the latest CI lattice; it is generated in every run and uploaded as an artefact so dashboards and compliance monitors can subscribe without scraping GitHub.【F:.github/workflows/ci.yml†L1026-L1155】
 - `reports/ci/status.md` mirrors the JSON feed in Markdown for direct inclusion in release notes, investor updates, or PR discussions.【F:.github/workflows/ci.yml†L1026-L1155】
-- `npm run ci:status-wall -- --token <github_token> --require-success --include-companion --format json` fetches the same data from the GitHub API on demand, giving mission owners and release captains a deterministic way to gate deployments or cut dashboards from their local terminal.【F:scripts/ci/check-ci-status-wall.ts†L1-L200】【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
+- `npm run ci:status-wall -- --token <github_token> --require-success --include-companion --format json` fetches the same data from the GitHub API on demand, giving mission owners and release captains a deterministic way to gate deployments or cut dashboards from their local terminal. Swap in `--format markdown` to reproduce the README tables programmatically.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 - The artefacts capture the full badge wall, including fork bypass annotations, so anyone consuming the feed has the same visibility as the GitHub checks tab without needing repo admin permissions.【F:.github/workflows/ci.yml†L966-L1155】
 
 ### Required contexts
