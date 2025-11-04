@@ -128,6 +128,7 @@ jobs:
       - name: Run HGM suite
         run: ci/hgm-suite.sh
 
+  # Keep this job defined at the top level so that other jobs can depend on it.
   owner_controls:
     name: Owner control assurance
     runs-on: ubuntu-24.04
