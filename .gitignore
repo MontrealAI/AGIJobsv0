@@ -37,6 +37,7 @@ scripts/**/*.js
 !scripts/ci/check-lock-integrity.js
 !scripts/ci/ensure-tag-signature.js
 !scripts/ci/check-signers.js
+!scripts/ci/check-summary-needs.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js

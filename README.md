@@ -99,8 +99,9 @@ The same manifest powers the branch-protection guard inside CI v2 and the local 
    npm run ci:sync-contexts -- --check
    npm run ci:verify-contexts
    npm run ci:verify-companion-contexts
+   npm run ci:verify-summary-needs
    ```
-   The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, so keeping this quartet green locally mirrors branch protection expectations.【F:package.json†L135-L150】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:.github/workflows/ci.yml†L34-L74】
+   The sync command confirms `ci/required-contexts.json` matches the workflow before the verification scripts enforce ordering, and the summary check proves the wall coverage is intact—keeping this quintet green locally mirrors branch protection expectations.【F:package.json†L135-L150】【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:scripts/ci/check-summary-needs.js†L1-L79】【F:.github/workflows/ci.yml†L34-L74】【F:.github/workflows/ci.yml†L1009-L1077】
 4. Validate the critical suites (prime the Hardhat cache once so local runs mirror CI performance):
    ```bash
    npm run compile           # generates artifacts exactly like the tests job

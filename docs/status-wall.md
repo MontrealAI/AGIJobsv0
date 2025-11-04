@@ -38,14 +38,15 @@ required-context manifest [`ci/required-contexts.json`](../ci/required-contexts.
 Follow this checklist whenever you add, rename, or remove a required status context:
 
 1. Update [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) with the new job definition or edits.
-2. Run `npm run ci:sync-contexts -- --check` to ensure the manifest is in sync. If the job list changes, regenerate it with
+2. Run `npm run ci:verify-summary-needs` to ensure the `CI summary` job references every non-summary job. The script fails fast when the wall would lose coverage, so catch drift before manifests are regenerated.【F:scripts/ci/check-summary-needs.js†L1-L79】【F:package.json†L135-L143】【F:.github/workflows/ci.yml†L1009-L1077】
+3. Run `npm run ci:sync-contexts -- --check` to ensure the manifest is in sync. If the job list changes, regenerate it with
    `npm run ci:sync-contexts` and commit the updated [`ci/required-contexts.json`](../ci/required-contexts.json).
-3. Re-run `npm run ci:verify-contexts` and `npm run ci:verify-companion-contexts` to confirm the enforcement scripts agree with
+4. Re-run `npm run ci:verify-contexts` and `npm run ci:verify-companion-contexts` to confirm the enforcement scripts agree with
 the manifests.
-4. Refresh the wall output for documentation by executing
+5. Refresh the wall output for documentation by executing
    `npm run ci:status-wall -- --token $GITHUB_TOKEN --format markdown > reports/ci/status-wall.md` and copy the table into the
    README or release briefings as needed.
-5. Update [`README.md`](../README.md), [`ci/README.md`](../ci/README.md), and this document so that the mapping, job IDs, and
+6. Update [`README.md`](../README.md), [`ci/README.md`](../ci/README.md), and this document so that the mapping, job IDs, and
    badges match the manifest.
 
 When introducing a brand-new workflow (for example a companion pipeline), also update
