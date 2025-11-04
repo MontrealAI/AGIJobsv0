@@ -29,7 +29,13 @@ flowchart LR
 
 ## Directory Guide
 ### Key Files
-- `allowed_signers`
+- `allowed_signers` — production guardian registry consumed by release workflows and `git tag -v`.
+
+| Principal | Key type | Notes |
+| --- | --- | --- |
+| `maintainer1@example.com` | `ssh-ed25519` | Sample hardware-ready entry; replace with a live guardian key before shipping. |
+| `maintainer2@example.com` | `sk-ssh-ed25519@openssh.com` | Demonstrates security-key namespaces for biometric-protected signers. |
+| `maintainer3@example.com` | `ssh-ed25519` + `valid-before` | Shows how to stage expiring emergency keys for high-velocity launches. |
 
 ## Quality & Governance
 - Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
@@ -37,6 +43,6 @@ flowchart LR
 - Keep secrets outside the tree; use the secure parameter stores wired to the AGI Jobs v0 (v2) guardian mesh.
 
 ## Next Steps
-- Review this module's issue board for open automation, data, or research threads.
-- Link new deliverables back to the central manifest via `npm run release:manifest`.
-- Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+- Run `npm run ci:verify-signers` after modifying the registry; CI enforces namespace scopes and base64 validity so only authentic guardians can sign releases.【F:package.json†L137-L143】【F:scripts/ci/check-signers.js†L1-L120】
+- Capture the updated hardware fingerprints inside your governance vault and update multisig playbooks accordingly.
+- Link new deliverables back to the central manifest via `npm run release:manifest` so provenance stays synchronised with mission telemetry.

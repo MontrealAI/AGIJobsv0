@@ -89,6 +89,26 @@ sequenceDiagram
 
 The resulting artefacts feed the `Owner control assurance` CI job and the branch protection guard so every production deployment is traceable back to an approved owner command path.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L970-L1089】
 
+## Release provenance lattice
+
+Every release tag must be cryptographically attributable to the guardians who shepherd AGI Jobs v0 (v2). The `.github/signers/allowed_signers` register now ships pre-populated with hardware-key ready examples so operators can bootstrap provenance checks instantly while still replacing the values with their own guardians’ keys before production cuts.【F:.github/signers/allowed_signers†L1-L3】 Execute `npm run ci:verify-signers` to enforce formatting, namespace scoping, and duplicate detection before CI ever attempts a release build.【F:package.json†L137-L143】【F:scripts/ci/check-signers.js†L1-L120】【F:scripts/ci/check-signers.js†L120-L183】
+
+```mermaid
+flowchart LR
+    classDef register fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef guardian fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1px;
+    classDef ci fill:#0ea5e9,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef release fill:#ede9fe,stroke:#7c3aed,color:#312e81,stroke-width:1px;
+
+    Guardians((Guardian hardware keys)):::guardian --> SignerRegistry[[`.github/signers/allowed_signers`]]:::register
+    SignerRegistry --> ProvenanceCheck[[`npm run ci:verify-signers`]]:::ci
+    ProvenanceCheck --> BranchGuard[[Branch protection guard]]:::ci
+    BranchGuard --> ReleaseTag[[`git tag -v` release verification]]:::release
+    ReleaseTag --> Guardians
+```
+
+The release workflow fails closed if a maintainer attempts to publish a tag without a registered key, preserving the intelligence engine’s audit trail while giving the owner full power to rotate, pause, or expand the guardian set at will.【F:scripts/ci/check-signers.js†L29-L120】【F:scripts/ci/check-signers.js†L120-L183】
+
 ## CI v2 status wall (live)
 
 The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). The wall is enforced twice: GitHub branch protection consumes `ci/required-contexts.json`, and the `CI summary` job fails fast when any upstream signal degrades. Release captains regenerate the wall locally with `npm run ci:status-wall -- --require-success --include-companion --format markdown` so this table mirrors the live GitHub truth at all times.【F:ci/README.md†L19-L129】【F:scripts/ci/check-ci-status-wall.ts†L73-L210】
