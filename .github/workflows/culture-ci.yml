@@ -115,11 +115,25 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
-      - name: MythX analysis
-        if: ${{ env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '' }}
-        working-directory: demo/CULTURE-v0
+      - name: Resolve MythX API key
+        id: mythx-key
         env:
-          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY || env.MYTHX_API_KEY }}
+          MYTHX_SECRET: ${{ secrets.MYTHX_API_KEY }}
+        run: |
+          if [ -n "${MYTHX_SECRET:-}" ]; then
+            echo "::add-mask::${MYTHX_SECRET}"
+            echo "api_key=${MYTHX_SECRET}" >> "${GITHUB_OUTPUT}"
+          elif [ -n "${MYTHX_API_KEY:-}" ]; then
+            echo "::add-mask::${MYTHX_API_KEY}"
+            echo "api_key=${MYTHX_API_KEY}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "No MythX API key available; skipping analysis."
+          fi
+      - name: MythX analysis
+        if: ${{ steps.mythx-key.outputs.api_key != '' }}
+        env:
+          MYTHX_API_KEY: ${{ steps.mythx-key.outputs.api_key }}
+        working-directory: demo/CULTURE-v0
         run: |
           docker run --rm \
             -e MYTHX_API_KEY \
@@ -127,7 +141,7 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
-        if: ${{ !(env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '') }}
+        if: ${{ steps.mythx-key.outputs.api_key == '' }}
         run: echo 'MythX API key not provided; skipping MythX analysis.'
 
   services:
@@ -211,18 +225,16 @@ jobs:
           --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
         ports:
           - 8545:8545
-        command:
-          [
-            'anvil',
-            '--host',
-            '0.0.0.0',
-            '--port',
-            '8545',
-            '--chain-id',
-            '31337',
-            '--block-time',
-            '2',
-          ]
+        entrypoint: ['anvil']
+        args:
+          - --host
+          - 0.0.0.0
+          - --port
+          - '8545'
+          - --chain-id
+          - '31337'
+          - --block-time
+          - '2'
       ipfs:
         image: ipfs/kubo:latest
         ports:
