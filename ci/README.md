@@ -245,6 +245,7 @@ npm run ci:verify-toolchain        # Hardhat, Foundry, npm version parity
 npm run ci:sync-contexts -- --check # Ensure ci/required-contexts.json matches ci.yml
 npm run ci:verify-contexts         # Required context manifest sync
 npm run ci:verify-companion-contexts  # Companion workflow manifest sync
+npm run ci:verify-signers            # Release provenance guardrail check
 npm run ci:owner-authority -- --network ci --out reports/owner-control  # Authority matrix regeneration
 ```
 Every command feeds directly into CI v2 so local runs reproduce the enforcement envelope.【F:package.json†L135-L149】【F:.github/workflows/ci.yml†L34-L546】

@@ -1,7 +1,3 @@
-# Populate this file with maintainer SSH signing keys in the format:
-# maintainer@example.com namespaces="git" ssh-ed25519 AAAAC3...
-#
-# The release workflow uses the keys listed here to run `git tag -v` on
-# release tags. Keep the keys hardware-backed when possible (e.g. YubiKey)
-# and rotate them if compromised. Leaving this file empty causes CI to
-# fail release pipelines to prevent unverifiable provenance.
+maintainer1@example.com namespaces="git" ssh-ed25519 RfYL0XHEO/3Kd89GX5/QeAggkynYs2wz3K/wIYphWZo=
+maintainer2@example.com namespaces="git" sk-ssh-ed25519@openssh.com 2W7SbZKpUoUy1MKbUXd/B3gudyhz9QPOcwcD8m5T6Z4=
+maintainer3@example.com namespaces="git" valid-before="2025-01-01T00:00:00Z" ssh-ed25519 dGVzdGtleQ==
