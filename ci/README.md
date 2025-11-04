@@ -150,6 +150,17 @@ Every arrow represents a required status entry on the pull-request checks wall. 
 - Add `--include-companion` when you want the static analysis, fuzz, webapp, containers, and e2e workflows verified in the same sweep. Each companion manifest entry is grouped by workflow, and the command fails fast when any job drops below green.
 - Override `--branch` or `--workflow` for release branches or bespoke CI environments; all options mirror the enforcement logic in the branch protection guard so local validation matches the automation running on `main`.
 
+```bash
+$ npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success --include-companion
+✅ ci (v2) / Lint & static checks — success
+✅ ci (v2) / Tests — success
+...
+✅ containers / build (owner-console) — success
+Summary written to reports/ci/status.json and reports/ci/status.md
+```
+
+Use `--format json` or `--format text` to control the output layout; the CLI always mirrors the enforcement logic in `ci (v2) / Branch protection guard`, so a green local report guarantees a green GitHub wall.【F:scripts/ci/check-ci-status-wall.ts†L93-L332】【F:.github/workflows/ci.yml†L966-L1089】
+
 ## Artefacts & forensic trail
 - `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1026-L1155】
 - `reports/owner-control/**` – Owner doctor, authority matrix, command center digest, and parameter matrix outputs uploaded on every run.【F:.github/workflows/ci.yml†L393-L440】

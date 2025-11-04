@@ -43,9 +43,33 @@ AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fu
 Companion workflows complete the assurance wall: [static analysis](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/static-analysis.yml), [fuzz](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/fuzz.yml), [webapp](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/webapp.yml), [containers](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/containers.yml), and [e2e](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml). Required contexts for those workflows are defined in [`ci/required-companion-contexts.json`](ci/required-companion-contexts.json) and enforced by `npm run ci:verify-companion-contexts`.
 
 ### Live verification CLI
-- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format json` when you need structured output for dashboards or automated release gates.
-- Pass `--include-companion` to extend the check across the companion workflows (static-analysis, fuzz, webapp, containers, e2e) so the full assurance wall is verified in one sweep.
-- Use `--branch <name>` or `--workflow <file>` when validating release branches or pre-flight changes in forks. All options mirror the automation that the branch-protection guard enforces on protected branches.
+- Run `npm run ci:status-wall -- --token <github_token>` to confirm the latest `ci (v2)` run on `main` succeeded across every required job. The command inspects the GitHub Actions API, flags missing or red jobs, and prints a breakdown with direct links to each job log. Add `--format json` when you need structured output for dashboards or automated release gates.【F:scripts/ci/check-ci-status-wall.ts†L1-L332】
+- Pass `--include-companion` to extend the check across the companion workflows (static-analysis, fuzz, webapp, containers, e2e) so the full assurance wall is verified in one sweep.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】【F:ci/required-companion-contexts.json†L1-L10】
+- Use `--branch <name>` or `--workflow <file>` when validating release branches or pre-flight changes in forks. All options mirror the automation that the branch-protection guard enforces on protected branches.【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
+
+| Scenario | Command | Notes |
+| --- | --- | --- |
+| Enforce success on `main` | `npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success` | Fails fast unless every job finished in `success` or `skipped` state.【F:scripts/ci/check-ci-status-wall.ts†L93-L199】 |
+| Include companion lattice | `npm run ci:status-wall -- --token $GITHUB_TOKEN --include-companion` | Adds static-analysis, fuzz, webapp, containers, and e2e to the report.【F:scripts/ci/check-ci-status-wall.ts†L262-L332】 |
+| Export dashboards | `npm run ci:status-wall -- --token $GITHUB_TOKEN --format json > reports/ci/status.wall.json` | Emits machine-readable payload for dashboards and alerting.【F:scripts/ci/check-ci-status-wall.ts†L110-L332】 |
+
+```mermaid
+flowchart TD
+    classDef entry fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef api fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef guard fill:#fef2f2,stroke:#b91c1c,color:#7f1d1d,stroke-width:1px;
+    classDef artefact fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    statusWall[ci:status-wall CLI]:::entry --> ghRuns[GitHub Actions runs API]:::api
+    statusWall --> ghJobs[GitHub Actions jobs API]:::api
+    ghJobs --> manifest[ci/required-contexts.json]:::guard
+    ghJobs --> companion[ci/required-companion-contexts.json]:::guard
+    manifest --> verdict[Branch protection guard parity]:::guard
+    companion --> verdict
+    verdict --> artefacts[reports/ci/status.{md,json}]:::artefact
+```
+
+The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】
 
 ## Executive signal
 - **Unification:** Smart contracts, agent gateways, demos, and analytics are orchestrated as one lattice, keeping governance, telemetry, and delivery in lockstep for non-technical operators.【F:agent-gateway/README.md†L1-L53】【F:apps/validator-ui/README.md†L1-L40】【F:services/thermostat/README.md†L1-L60】
