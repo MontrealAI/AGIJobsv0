@@ -83,7 +83,9 @@ function main() {
       issues.push(`unexpected needs entries: ${extra.join(', ')}`);
     }
     throw new Error(
-      `ci (v2) summary needs list does not match job set (${issues.join('; ')}).`
+      `ci (v2) summary needs list does not match job set (${issues.join(
+        '; '
+      )}).`
     );
   }
 

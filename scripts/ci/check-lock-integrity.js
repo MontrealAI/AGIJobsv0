@@ -19,7 +19,9 @@ function checkLockfile(relPath) {
   }
 
   if (Buffer.byteLength(contents, 'utf8') < 128) {
-    failures.push(`${relPath} is unexpectedly small; regenerate with npm install --package-lock-only`);
+    failures.push(
+      `${relPath} is unexpectedly small; regenerate with npm install --package-lock-only`
+    );
   }
 
   let data;
@@ -31,20 +33,34 @@ function checkLockfile(relPath) {
   }
 
   if (data.lockfileVersion !== 3) {
-    failures.push(`${relPath} must set lockfileVersion = 3 (found ${data.lockfileVersion ?? 'undefined'})`);
+    failures.push(
+      `${relPath} must set lockfileVersion = 3 (found ${
+        data.lockfileVersion ?? 'undefined'
+      })`
+    );
   }
 
   if (!data.packages || typeof data.packages !== 'object') {
-    failures.push(`${relPath} is missing the "packages" map; run npm install --package-lock-only`);
+    failures.push(
+      `${relPath} is missing the "packages" map; run npm install --package-lock-only`
+    );
   }
 }
 
 function main() {
   let stdout = '';
   try {
-    stdout = execSync("git ls-files '**/package-lock.json'", { cwd: repoRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    stdout = execSync("git ls-files '**/package-lock.json'", {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
   } catch (error) {
-    failures.push(`Unable to enumerate package-lock.json files: ${error.stderr || error.message}`);
+    failures.push(
+      `Unable to enumerate package-lock.json files: ${
+        error.stderr || error.message
+      }`
+    );
   }
 
   const files = stdout
@@ -65,7 +81,9 @@ function main() {
     for (const failure of failures) {
       console.error(` - ${failure}`);
     }
-    console.error('\nRun npm install --package-lock-only in each affected workspace.');
+    console.error(
+      '\nRun npm install --package-lock-only in each affected workspace.'
+    );
     process.exit(1);
   }
 
