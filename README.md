@@ -12,6 +12,10 @@
 
 AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform behaves like the reference superintelligent system for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios.
 
+## Documentation lattice
+
+The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】
+
 ## CI v2 status wall (live)
 
 | Required job | Status badge |
@@ -131,6 +135,47 @@ flowchart LR
 | CI (`ci/` + `.github/workflows/`) | Scripts, manifests, and workflows that lock toolchains, enforce branch protection, and publish compliance artefacts.【F:ci/required-contexts.json†L1-L24】【F:.github/workflows/ci.yml†L24-L546】 |
 | Demo constellation (`demo/`) | High-stakes rehearsals (Kardashev, ASI take-off, Zenith sapience, etc.) codified as reproducible scripts and UI bundles.【F:.github/workflows/ci.yml†L548-L965】 |
 
+### Control-plane architecture
+
+```mermaid
+flowchart TD
+    classDef entry fill:#e0f2fe,stroke:#0284c7,color:#0f172a,stroke-width:1px;
+    classDef contract fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b,stroke-width:1px;
+    classDef service fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+    classDef ci fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+
+    subgraph Operator Surface
+        gateway[Agent gateway APIs]:::service
+        consoles[Operator consoles (`apps/`)]:::service
+    end
+
+    subgraph Intelligence Core
+        contractsStack[Contracts kernel + modules]:::contract
+        orchestratorSvc[Orchestrator services]:::service
+        sentinels[Sentinel & thermostat services]:::service
+    end
+
+    subgraph Assurance Lattice
+        ciMain[CI v2 pipelines]:::ci
+        companion[Companion workflows]:::ci
+        reports[Audit & CI reports]:::ci
+    end
+
+    owners[Owner CLI + control scripts]:::entry --> gateway
+    owners --> orchestratorSvc
+    consoles --> gateway
+    gateway --> contractsStack
+    orchestratorSvc --> contractsStack
+    sentinels --> orchestratorSvc
+    sentinels --> reports
+    ciMain --> reports
+    companion --> reports
+    reports --> owners
+    reports --> consoles
+```
+
+The control plane ties owners, operators, and automation into one verifiable surface: owners drive changes through deterministic CLI entry points, agent services marshal those commands into contract-safe transactions, and sentinel services plus CI pipelines export signed artefacts for audits.【F:package.json†L138-L215】【F:agent-gateway/README.md†L1-L86】【F:services/sentinel/README.md†L1-L67】【F:services/thermostat/README.md†L1-L60】
+
 ## Owner command authority
 ```mermaid
 flowchart TD
@@ -154,6 +199,27 @@ flowchart TD
 | `npm run ci:owner-authority -- --network ci --out reports/owner-control` | Regenerate the authority matrix consumed by CI artefacts and branch protection guards.【F:package.json†L138-L149】【F:.github/workflows/ci.yml†L393-L440】 |
 
 Every command supports `--dry-run` and report exports, ensuring the contract owner retains absolute control while the automation stays auditable.【F:scripts/v2/ownerControlDoctor.ts†L1-L252】【F:scripts/v2/ownerControlQuickstart.ts†L1-L220】
+
+### Governance oversight loop
+
+```mermaid
+flowchart LR
+    classDef actor fill:#fefce8,stroke:#ca8a04,color:#713f12,stroke-width:1px;
+    classDef auto fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef guard fill:#eff6ff,stroke:#2563eb,color:#1e3a8a,stroke-width:1px;
+    classDef repo fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    OwnerCouncil((Owner council)):::actor --> ControlDoctor[Owner control doctor]:::auto
+    ControlDoctor --> AuthorityMatrix[(Owner authority matrix)]:::guard
+    AuthorityMatrix --> BranchGuard[Branch protection guard]:::guard
+    BranchGuard --> GitHub[GitHub branch protection]:::repo
+    GitHub --> CIWall[ci (v2) / CI summary]:::guard
+    CIWall --> Reports[reports/ci/status.{md,json}]:::repo
+    Reports --> OwnerCouncil
+    Reports --> Operators[Operator consoles]:::auto
+```
+
+The governance loop keeps owner supremacy verifiable: owner council scripts regenerate the authority matrix, CI v2 enforces branch protection parity, and the resulting artefacts cycle back into operator consoles and decision briefings.【F:.github/workflows/ci.yml†L393-L1155】【F:reports/audit/README.md†L1-L76】【F:scripts/v2/ownerControlDoctor.ts†L1-L252】
 
 ## Parameter recalibration pipeline
 ```mermaid
