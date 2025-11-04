@@ -1,0 +1,75 @@
+name: ci (v2)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node – lint / type / build / test / audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Clean install
+        run: npm ci
+      - name: Lint
+        run: npm run lint --if-present
+      - name: Typecheck
+        run: npm run typecheck --if-present
+      - name: Build
+        run: npm run build --if-present
+      - name: Test
+        run: npm test --if-present -- --ci --reporters=default --coverage
+      - name: Audit (enforce high & critical)
+        run: npm audit --audit-level=high
+      - name: Upload coverage
+        if: success() && hashFiles('coverage/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+
+  foundry:
+    name: Foundry – fmt / build / test / gas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+      - name: Format check
+        run: forge fmt --check
+      - name: Build (with build-info)
+        run: forge build --build-info
+      - name: Tests
+        run: forge test -vvv
+      - name: Gas snapshot (if configured)
+        run: |
+          if [ -f gas-snapshot ]; then forge snapshot --check; fi
+
+  solhint:
+    name: Solidity lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          npx --yes solhint -V || npm i -D solhint
+          npx solhint "contracts/**/*.sol" || true
