@@ -7,10 +7,10 @@ This guide walks contract owners and program managers through deploying the AGI 
 | Phase | Command(s) | Artefacts |
 | --- | --- | --- |
 | Preflight | `npm install`<br>`npm run deploy:checklist` | Verifies toolchain locks, configs, and deployment inputs. |
-| Contracts | `npm run deploy:oneclick:auto -- --config deployment-config/<network>.json --network <network> --deployment-output reports/deployments/<date>.json --compose` | Broadcasts contracts, rewrites `deployment-config/oneclick.env`, optionally launches Docker Compose. |
+| Contracts | `npm run deploy:oneclick:auto -- --config deployment-config/<network>.json --network <network> --compose` | Broadcasts contracts, rewrites `deployment-config/oneclick.env`, optionally launches Docker Compose. |
 | Runtime | `docker compose --env-file deployment-config/oneclick.env up --build -d` | Spins up APIs, gateways, UIs, and support services defined in `compose.yaml`. |
 | Monitoring | `npm run observability:smoke` | Confirms Prometheus, Alertmanager, and Grafana templates ship with expected jobs, alerts, and dashboards. |
-| Rollback | `docker compose --env-file deployment-config/oneclick.env down`<br>`git checkout <previous-tag>`<br>`npm run deploy:env -- --input reports/deployments/<date>.json --output deployment-config/oneclick.env --force` | Restores prior release artefacts and environment wiring. |
+| Rollback | `docker compose --env-file deployment-config/oneclick.env down`<br>`git checkout <previous-tag>`<br>`npm run deploy:env -- --input <path-to-archived-manifest>.json --output deployment-config/oneclick.env --force` | Restores prior release artefacts and environment wiring. |
 
 ## 1. Prerequisites
 
@@ -49,14 +49,14 @@ This guide walks contract owners and program managers through deploying the AGI 
 
 1. Launch the wizard in non-interactive mode when you are ready to deploy:
    ```bash
-   npm run deploy:oneclick:auto -- --config deployment-config/<network>.json --network <network> --deployment-output reports/deployments/<date>.json --compose --detach
+   npm run deploy:oneclick:auto -- --config deployment-config/<network>.json --network <network> --compose --detach
    ```
 2. The wrapper script chains three actions:
    - Ensures `deployment-config/oneclick.env` exists (copying from the template if necessary).【F:scripts/v2/oneclick-wizard.ts†L48-L88】
    - Executes `npm run deploy:oneclick` with your JSON manifest and network so contracts deploy with the intended parameters.【F:scripts/v2/oneclick-wizard.ts†L104-L133】
    - Rewrites `deployment-config/oneclick.env` with the emitted addresses by invoking the generator above.【F:scripts/v2/oneclick-wizard.ts†L135-L147】
    - Optionally calls Docker Compose using the repo’s `compose.yaml` bundle; pass `--no-compose` if you prefer to launch services manually later.【F:scripts/v2/oneclick-stack.ts†L34-L79】【F:scripts/v2/oneclick-wizard.ts†L149-L180】
-3. Capture the generated manifest under `reports/deployments/` (or your preferred archive folder) so you can restore specific releases during rollbacks.
+3. Capture the generated manifest under `reports/deployments/` (or your preferred archive folder) so you can restore specific releases during rollbacks. The wizard writes the latest manifest to `deployment-config/latest-deployment.json`; copy or move that file to your archival location after each run.
 
 ## 4. Launch and manage the runtime stack
 
@@ -117,7 +117,7 @@ This guide walks contract owners and program managers through deploying the AGI 
    ```
 3. **Rehydrate environment:** Use the archived manifest to repopulate `deployment-config/oneclick.env`:
    ```bash
-   npm run deploy:env -- --input reports/deployments/<date>.json --output deployment-config/oneclick.env --force
+   npm run deploy:env -- --input <path-to-archived-manifest>.json --output deployment-config/oneclick.env --force
    ```
    This rewrites address keys (registry, stake manager, reputation engine, etc.) to the previous values so containers reconnect to the stable contracts.【F:scripts/v2/generate-oneclick-env.ts†L18-L120】
 4. **Re-deploy (if required):** Re-run the wizard with `--no-compose` to redeploy contracts matching the archived config. If no on-chain changes are needed, skip this step and relaunch Compose with the restored env file.
