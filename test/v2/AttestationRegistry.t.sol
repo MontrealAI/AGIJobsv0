@@ -105,6 +105,7 @@ contract AttestationRegistryTest is Test {
         vm.prank(caller);
         attest.pause();
 
+        vm.expectRevert("Pausable: paused");
         attest.pause();
 
         vm.expectRevert(Pausable.EnforcedPause.selector);
