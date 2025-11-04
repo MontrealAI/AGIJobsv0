@@ -41,7 +41,7 @@ interface CliArguments {
   token?: string;
   requireSuccess: boolean;
   includeCompanion: boolean;
-  format: 'text' | 'json';
+  format: 'text' | 'json' | 'markdown';
 }
 
 interface WorkflowVerificationDescriptor {
@@ -61,6 +61,42 @@ interface JobDetail {
   job: string;
   status: string;
   url: string;
+}
+
+interface StructuredWorkflowSummary {
+  workflow: string;
+  workflowFile: string;
+  runUrl?: string;
+  jobs: JobDetail[];
+}
+
+function escapeMarkdownCell(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+}
+
+function renderMarkdownSummary(outputs: StructuredWorkflowSummary[]): string {
+  const lines: string[] = [
+    '| Workflow | Job | Status | URL |',
+    '| --- | --- | --- | --- |',
+  ];
+
+  for (const output of outputs) {
+    for (const job of output.jobs) {
+      const statusLower = job.status.toLowerCase();
+      const marker =
+        statusLower === 'success'
+          ? '✅'
+          : statusLower === 'skipped'
+            ? '➖'
+            : '❌';
+      const link = job.url && job.url !== 'n/a' ? `[log](${job.url})` : 'n/a';
+      lines.push(
+        `| ${escapeMarkdownCell(output.workflow)} | ${escapeMarkdownCell(job.job)} | ${marker} ${job.status} | ${link} |`
+      );
+    }
+  }
+
+  return lines.join('\n');
 }
 
 async function githubJson<T>(url: string, token: string): Promise<T> {
@@ -275,10 +311,10 @@ async function main(): Promise<void> {
     })
     .option('format', {
       type: 'string',
-      choices: ['text', 'json'],
+      choices: ['text', 'json', 'markdown'],
       default: 'text',
       describe:
-        'Output mode. Text prints a human-readable wall; json emits structured data for automation.',
+        'Output mode. Text prints a human-readable wall; json emits structured data for automation; markdown renders a status table.',
     })
     .help()
     .alias('help', 'h')
@@ -316,12 +352,7 @@ async function main(): Promise<void> {
   }
 
   const overallSummary: string[] = [];
-  const structuredOutputs: {
-    workflow: string;
-    workflowFile: string;
-    runUrl?: string;
-    jobs: JobDetail[];
-  }[] = [];
+  const structuredOutputs: StructuredWorkflowSummary[] = [];
 
   for (const descriptor of descriptors) {
     const output = await verifyWorkflow(descriptor, argv, token);
@@ -347,6 +378,11 @@ async function main(): Promise<void> {
       workflows: structuredOutputs,
     };
     console.log(JSON.stringify(payload, null, 2));
+    return;
+  }
+
+  if (argv.format === 'markdown') {
+    console.log(renderMarkdownSummary(structuredOutputs));
     return;
   }
 

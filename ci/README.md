@@ -146,7 +146,7 @@ Every arrow represents a required status entry on the pull-request checks wall. 
    The branch protection guard job uses the same manifests and fails the workflow if enforcement is misconfigured, keeping `main` locked to the manifest expectations while still succeeding on forked PRs that cannot call the admin API.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1089】
 
 ## Live status wall verification
-- Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links. Add `--format json` when exporting structured data for dashboards or automated gatekeeping.
+- Confirm the latest production signal before shipping by running `npm run ci:status-wall -- --token <github_token>`. The script hits the GitHub Actions API, checks every `ci (v2)` job listed in [`ci/required-contexts.json`](required-contexts.json), and prints a ✅/⚠️ breakdown with deep links. Add `--format markdown` for README-ready tables or `--format json` when exporting structured data for dashboards or automated gatekeeping.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 - Add `--include-companion` when you want the static analysis, fuzz, webapp, containers, and e2e workflows verified in the same sweep. Each companion manifest entry is grouped by workflow, and the command fails fast when any job drops below green.
 - Override `--branch` or `--workflow` for release branches or bespoke CI environments; all options mirror the enforcement logic in the branch protection guard so local validation matches the automation running on `main`.
 
@@ -159,7 +159,7 @@ $ npm run ci:status-wall -- --token $GITHUB_TOKEN --require-success --include-co
 Summary written to reports/ci/status.json and reports/ci/status.md
 ```
 
-Use `--format json` or `--format text` to control the output layout; the CLI always mirrors the enforcement logic in `ci (v2) / Branch protection guard`, so a green local report guarantees a green GitHub wall.【F:scripts/ci/check-ci-status-wall.ts†L93-L332】【F:.github/workflows/ci.yml†L966-L1089】
+Use `--format markdown`, `--format json`, or the default text mode to control the output layout; the CLI always mirrors the enforcement logic in `ci (v2) / Branch protection guard`, so a green local report guarantees a green GitHub wall.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】【F:.github/workflows/ci.yml†L966-L1089】
 
 ### Status feed integration
 
@@ -177,7 +177,7 @@ flowchart TD
 ```
 
 - `ci (v2) / CI summary` writes `reports/ci/status.{json,md}` on every run, then uploads them as artefacts alongside the workflow logs so downstream dashboards can consume the data without custom scrapers.【F:.github/workflows/ci.yml†L1026-L1155】
-- `npm run ci:status-wall -- --format json` reproduces the feed locally, letting you wire the same data into compliance sign-offs, data warehouses, or release management bots before merge.【F:scripts/ci/check-ci-status-wall.ts†L93-L332】
+- `npm run ci:status-wall -- --format json` reproduces the feed locally, letting you wire the same data into compliance sign-offs, data warehouses, or release management bots before merge. Pair it with `--format markdown` to cut-and-paste the latest wall into READMEs or governance briefings.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 - The JSON payload includes job URLs and pass/fail metadata, making it trivial to colour live dashboards or send webhooks when any part of the assurance wall drops below green.【F:.github/workflows/ci.yml†L1026-L1155】【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
 
 ## Artefacts & forensic trail
