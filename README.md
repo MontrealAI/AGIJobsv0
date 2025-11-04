@@ -10,16 +10,88 @@
 [![E2E](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/e2e.yml)
 [![Security Scorecard](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml/badge.svg?branch=main)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/scorecard.yml)
 
-AGI Jobs v0 (v2) is delivered as a production-hardened intelligence core that fuses contracts, agents, demos, and observability into a single command surface for mission owners. The platform is the canonical intelligence engine for the ecosystem—autonomous, accountable, and ready to deploy in boardroom-level scenarios—while remaining fully operator-governed so the contract owner can retune every vector on demand.
+AGI Jobs v0 (v2) operates as the unified intelligence engine for the ecosystem—an always-on command lattice that synthesises agents, contracts, paymasters, orchestrators, simulations, and demos into a single, production-grade surface. Every subsystem is instrumented, audit-backed, and continuously enforced by CI v2 so launch captains treat `main` as deployable truth. Ownership is never ceded: the contract owner wields deterministic control over all vectors (pausing, upgrades, economic parameters, orchestration mesh, telemetry exports) through the verified command center described below.
+
+```mermaid
+flowchart LR
+    classDef core fill:#f3e8ff,stroke:#7c3aed,color:#2e1065,stroke-width:1px;
+    classDef guard fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1px;
+    classDef ops fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e,stroke-width:1px;
+    classDef owner fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+
+    OwnerConsole[[Owner command center CLI]]:::owner --> AuthorityMatrix[Owner authority matrix<br/>`npm run owner:verify-control`]:::guard
+    AuthorityMatrix --> Contracts{{Contracts + Paymasters}}:::core
+    Contracts --> Agents{{Agent gateway & orchestrators}}:::core
+    Agents --> Demos{{Demonstration suites + simulations}}:::core
+    Demos --> Observability[[Observability fabric<br/>`reports/**`]]:::ops
+    Observability --> CIStatus[[CI v2 status wall]]:::guard
+    CIStatus --> BranchProtection[[Branch protection guard]]:::guard
+    BranchProtection --> OwnerConsole
+```
+
+The loop above is enforced in automation: CI v2 verifies the owner authority manifests, generates telemetry artefacts, and blocks merges when anything drifts. Operators inherit a continuously self-auditing intelligence platform rather than a loose toolkit.
 
 ## Documentation lattice
 
 The repository’s manuals, runbooks, and subsystem READMEs are catalogued in [`docs/readme-catalog.md`](docs/readme-catalog.md). The inventory spans 169 markdown guides (129 READMEs, 40 runbooks) so release captains can locate operator instructions, demo briefings, and subsystem diagrams without spelunking through the tree. Every document is synchronised with the repository tree; CI fails fast if a referenced README is missing, keeping the narrative aligned with the code that powers it.【F:docs/readme-catalog.md†L1-L71】【F:docs/readme-catalog.md†L73-L169】【F:.github/workflows/ci.yml†L34-L1181】
 
+```mermaid
+mindmap
+  root((Knowledge lattice))
+    Operator runbooks
+      OperatorRunbook.md
+      RUNBOOK.md
+      Operator console quickstarts
+    Intelligence dossiers
+      docs/AUDIT_DOSSIER.md
+      docs/AGI_Jobs_v0_Whitepaper_v2.md
+      docs/legal-regulatory.md
+    CI manifest
+      ci/README.md
+      docs/status-wall.md
+      reports/ci/status.md
+    Owner authority
+      scripts/v2/ownerControl*.ts
+      reports/owner-control/**
+```
+
+Use the catalogue to jump directly into any subsystem; the documents are regenerated whenever directories shift so the map never falls out of sync with the codebase.
+
+## Owner command authority
+
+The contract owner maintains unilateral, auditable control over the entire platform. Every command emits deterministic artefacts (`reports/owner-control/**`) and is enforced by CI so branch protection never accepts a regression.
+
+| Capability | Command | Output |
+| ---------- | ------- | ------ |
+| Prove governance posture | `npm run owner:verify-control` | Authority matrix, role bindings, guardian quorum reports.【F:package.json†L365-L397】【F:.github/workflows/ci.yml†L393-L440】 |
+| Pause or resume execution | `npm run owner:system-pause` / `npm run owner:emergency` | Transaction scripts + pause certificates ready for multisig execution.【F:package.json†L376-L390】【F:scripts/v2/systemPauseAction.ts†L1-L162】 |
+| Reconfigure parameters | `npm run owner:parameters` | Parameter matrix CSV/JSON for rapid reprogramming across contracts, agents, and paymasters.【F:package.json†L381-L383】【F:scripts/v2/ownerParameterMatrix.ts†L1-L210】 |
+| Stage upgrades | `npm run owner:upgrade` / `npm run owner:upgrade-status` | Upgrade queue diffs, bytecode fingerprints, upgrade state proofs.【F:package.json†L393-L396】【F:scripts/v2/ownerUpgradeQueue.ts†L1-L188】 |
+| Generate dashboards | `npm run owner:dashboard` / `npm run owner:command-center` | Owner dashboards, command plans, and compliance briefings for non-technical operators.【F:package.json†L372-L375】【F:scripts/v2/ownerCommandCenter.ts†L1-L212】 |
+
+Every CLI entrypoint is safe to execute from air-gapped control rooms or automated pipelines; commands support `--out` targets so artefacts can be archived alongside governance approvals. Combine them with `npm run owner:plan:safe` to produce multisig-ready transaction bundles when deploying from custodial safes.【F:package.json†L381-L385】【F:scripts/v2/run-owner-plan.js†L1-L118】
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant CommandCenter as Owner command center
+    participant Ledger as Contracts & paymasters
+    participant Guardians as Multisig / guardian set
+    participant CI as CI v2 guard
+
+    Owner->>CommandCenter: Trigger owner:* command
+    CommandCenter->>Ledger: Prepare signed transaction set
+    Ledger-->>CommandCenter: Emit state proofs + receipts
+    CommandCenter->>Guardians: Publish approval packets / safe bundle
+    CommandCenter->>CI: Upload authority artefacts
+    CI-->>Owner: Gate merge until verification passes
+```
+
+The resulting artefacts feed the `Owner control assurance` CI job and the branch protection guard so every production deployment is traceable back to an approved owner command path.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L970-L1089】
+
 ## CI v2 status wall (live)
 
-The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in
-[`docs/status-wall.md`](docs/status-wall.md).
+The full mapping between wall entries, workflow job identifiers, and maintenance steps lives in [`docs/status-wall.md`](docs/status-wall.md). The wall is enforced twice: GitHub branch protection consumes `ci/required-contexts.json`, and the `CI summary` job fails fast when any upstream signal degrades. Release captains regenerate the wall locally with `npm run ci:status-wall -- --require-success --include-companion --format markdown` so this table mirrors the live GitHub truth at all times.【F:ci/README.md†L19-L129】【F:scripts/ci/check-ci-status-wall.ts†L73-L210】
 
 | Required job | Status badge |
 | ------------ | ------------ |
