@@ -127,5 +127,6 @@ This produces `out/scoreboard.json` plus a mermaid-rich executive dashboard at `
 | `demo/AGIJobs-Day-One-Utility-Benchmark/config/` | Microset dataset, strategy profiles, guardrail rules, and owner control snapshots. |
 | `demo/AGIJobs-Day-One-Utility-Benchmark/out/` | Latest JSON telemetry, dashboards, chart snapshots, and scoreboard exports. |
 | `demo/AGIJobs-Day-One-Utility-Benchmark/tests/` | Pytest suite covering guardrails, pausing, artefact creation, and owner control safety. |
+| `docs/non-technical-deployment-guide.md` | Step-by-step playbook for launching, monitoring, and rolling back the production stack without touching code. |
 
 Stay on this cadence and every operator will verify Day-One Utility uplift, capture the artefacts, and steer **AGI Jobs v0 (v2)** with production-grade confidence.
