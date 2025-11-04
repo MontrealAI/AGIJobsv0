@@ -207,6 +207,26 @@ flowchart LR
     tests --> summary
 ```
 
+### CI telemetry feed & dashboards
+
+```mermaid
+flowchart LR
+    classDef artefact fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef cli fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef surface fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    summaryJob[ci (v2) / CI summary]:::cli --> statusJson[reports/ci/status.json]:::artefact
+    summaryJob --> statusMarkdown[reports/ci/status.md]:::artefact
+    statusJson --> dashboards[Mission dashboards\n& release control rooms]:::surface
+    statusMarkdown --> briefings[Owner briefings\n& PR threads]:::surface
+    cliProbe[npm run ci:status-wall]:::cli --> statusJson
+```
+
+- `reports/ci/status.json` exposes a machine-readable feed of the latest CI lattice; it is generated in every run and uploaded as an artefact so dashboards and compliance monitors can subscribe without scraping GitHub.【F:.github/workflows/ci.yml†L1026-L1155】
+- `reports/ci/status.md` mirrors the JSON feed in Markdown for direct inclusion in release notes, investor updates, or PR discussions.【F:.github/workflows/ci.yml†L1026-L1155】
+- `npm run ci:status-wall -- --token <github_token> --require-success --include-companion --format json` fetches the same data from the GitHub API on demand, giving mission owners and release captains a deterministic way to gate deployments or cut dashboards from their local terminal.【F:scripts/ci/check-ci-status-wall.ts†L1-L200】【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
+- The artefacts capture the full badge wall, including fork bypass annotations, so anyone consuming the feed has the same visibility as the GitHub checks tab without needing repo admin permissions.【F:.github/workflows/ci.yml†L966-L1155】
+
 ### Required contexts
 The branch protection rule enforces the following `ci (v2)` contexts, guaranteeing a visible, fully green wall before merge:
 

@@ -161,6 +161,25 @@ Summary written to reports/ci/status.json and reports/ci/status.md
 
 Use `--format json` or `--format text` to control the output layout; the CLI always mirrors the enforcement logic in `ci (v2) / Branch protection guard`, so a green local report guarantees a green GitHub wall.【F:scripts/ci/check-ci-status-wall.ts†L93-L332】【F:.github/workflows/ci.yml†L966-L1089】
 
+### Status feed integration
+
+```mermaid
+flowchart TD
+    classDef artefact fill:#ecfeff,stroke:#0369a1,color:#0f172a,stroke-width:1px;
+    classDef cli fill:#f5f3ff,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef downstream fill:#f1f5f9,stroke:#1e293b,color:#0f172a,stroke-width:1px;
+
+    summaryJob[ci (v2) / CI summary]:::cli --> jsonFeed[reports/ci/status.json]:::artefact
+    summaryJob --> markdownFeed[reports/ci/status.md]:::artefact
+    jsonFeed --> grafana[Grafana / Looker / Metabase decks]:::downstream
+    markdownFeed --> briefings[Daily briefings & PR templates]:::downstream
+    cliProbe[npm run ci:status-wall]:::cli --> jsonFeed
+```
+
+- `ci (v2) / CI summary` writes `reports/ci/status.{json,md}` on every run, then uploads them as artefacts alongside the workflow logs so downstream dashboards can consume the data without custom scrapers.【F:.github/workflows/ci.yml†L1026-L1155】
+- `npm run ci:status-wall -- --format json` reproduces the feed locally, letting you wire the same data into compliance sign-offs, data warehouses, or release management bots before merge.【F:scripts/ci/check-ci-status-wall.ts†L93-L332】
+- The JSON payload includes job URLs and pass/fail metadata, making it trivial to colour live dashboards or send webhooks when any part of the assurance wall drops below green.【F:.github/workflows/ci.yml†L1026-L1155】【F:scripts/ci/check-ci-status-wall.ts†L200-L332】
+
 ## Artefacts & forensic trail
 - `reports/ci/status.{md,json}` – Consolidated run summary and JSON feed for downstream dashboards.【F:.github/workflows/ci.yml†L1026-L1155】
 - `reports/owner-control/**` – Owner doctor, authority matrix, command center digest, and parameter matrix outputs uploaded on every run.【F:.github/workflows/ci.yml†L393-L440】
