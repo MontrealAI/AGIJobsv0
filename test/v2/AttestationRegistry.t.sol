@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import "forge-std/Test.sol";
 import {AttestationRegistry, ZeroAddress} from "../../contracts/v2/AttestationRegistry.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IdentityRegistry} from "../../contracts/v2/IdentityRegistry.sol";
 import {IENS} from "../../contracts/v2/interfaces/IENS.sol";
 import {INameWrapper} from "../../contracts/v2/interfaces/INameWrapper.sol";
@@ -90,6 +91,45 @@ contract AttestationRegistryTest is Test {
         );
         vm.prank(caller);
         attest.setNameWrapper(address(wrapper));
+    }
+
+    function testPauseAndUnpause() public {
+        bytes32 node = _node(agentRoot, "alice");
+        wrapper.setOwner(uint256(node), owner);
+
+        // Non-owners cannot pause or unpause.
+        address caller = address(0xBEEF);
+        vm.expectRevert(
+            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", caller)
+        );
+        vm.prank(caller);
+        attest.pause();
+
+        attest.pause();
+
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(owner);
+        attest.attest(node, AttestationRegistry.Role.Agent, agent);
+
+        attest.unpause();
+        vm.prank(owner);
+        attest.attest(node, AttestationRegistry.Role.Agent, agent);
+
+        attest.pause();
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vm.prank(owner);
+        attest.revoke(node, AttestationRegistry.Role.Agent, agent);
+
+        attest.unpause();
+        vm.prank(owner);
+        attest.revoke(node, AttestationRegistry.Role.Agent, agent);
+        assertFalse(attest.isAttested(node, AttestationRegistry.Role.Agent, agent));
+
+        vm.expectRevert(
+            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", caller)
+        );
+        vm.prank(caller);
+        attest.unpause();
     }
 }
 

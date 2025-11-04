@@ -234,4 +234,63 @@ describe('AttestationRegistry', function () {
       .to.emit(registry, 'NameWrapperUpdated')
       .withArgs(await wrapper.getAddress());
   });
+
+  it('allows the owner to pause mutations and blocks everyone else', async () => {
+    const [owner, agent, other] = await ethers.getSigners();
+
+    const ENS = await ethers.getContractFactory(
+      'contracts/legacy/MockENS.sol:MockENS'
+    );
+    const ens = await ENS.deploy();
+
+    const Wrapper = await ethers.getContractFactory(
+      'contracts/legacy/MockNameWrapper.sol:MockNameWrapper'
+    );
+    const wrapper = await Wrapper.deploy();
+
+    const Registry = await ethers.getContractFactory(
+      'contracts/v2/AttestationRegistry.sol:AttestationRegistry'
+    );
+    const registry = await Registry.deploy(
+      await ens.getAddress(),
+      await wrapper.getAddress()
+    );
+
+    const label = 'alice';
+    const node = ethers.keccak256(
+      ethers.solidityPacked(
+        ['bytes32', 'bytes32'],
+        [ethers.ZeroHash, ethers.id(label)]
+      )
+    );
+    await wrapper.setOwner(BigInt(node), owner.address);
+
+    await expect(registry.connect(other).pause())
+      .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount')
+      .withArgs(other.address);
+
+    await registry.connect(owner).pause();
+    await expect(
+      registry.connect(owner).attest(node, 0, agent.address)
+    )
+      .to.be.revertedWithCustomError(registry, 'EnforcedPause');
+
+    await expect(registry.connect(other).unpause())
+      .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount')
+      .withArgs(other.address);
+
+    await registry.connect(owner).unpause();
+    await registry.connect(owner).attest(node, 0, agent.address);
+    expect(await registry.isAttested(node, 0, agent.address)).to.equal(true);
+
+    await registry.connect(owner).pause();
+    await expect(
+      registry.connect(owner).revoke(node, 0, agent.address)
+    )
+      .to.be.revertedWithCustomError(registry, 'EnforcedPause');
+
+    await registry.connect(owner).unpause();
+    await registry.connect(owner).revoke(node, 0, agent.address);
+    expect(await registry.isAttested(node, 0, agent.address)).to.equal(false);
+  });
 });

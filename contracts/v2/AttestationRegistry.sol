@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {IENS} from "./interfaces/IENS.sol";
 import {INameWrapper} from "./interfaces/INameWrapper.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 error UnauthorizedAttestor();
 error ZeroAddress();
@@ -11,7 +12,7 @@ error ZeroAddress();
 /// @title AttestationRegistry
 /// @notice Allows ENS name owners to grant and revoke attestations
 /// for specific roles to other addresses.
-contract AttestationRegistry is Ownable {
+contract AttestationRegistry is Ownable, Pausable {
     /// @dev Roles that can be attested for a name.
     enum Role {
         Agent,
@@ -74,7 +75,7 @@ contract AttestationRegistry is Ownable {
     }
 
     /// @notice Attest that `who` holds `role` for `node`.
-    function attest(bytes32 node, Role role, address who) external {
+    function attest(bytes32 node, Role role, address who) external whenNotPaused {
         if (who == address(0)) {
             revert ZeroAddress();
         }
@@ -86,12 +87,22 @@ contract AttestationRegistry is Ownable {
     }
 
     /// @notice Revoke a previously granted attestation.
-    function revoke(bytes32 node, Role role, address who) external {
+    function revoke(bytes32 node, Role role, address who) external whenNotPaused {
         if (_ownerOf(node) != msg.sender) {
             revert UnauthorizedAttestor();
         }
         attestations[node][role][who] = false;
         emit Revoked(node, role, who, msg.sender);
+    }
+
+    /// @notice Pause attestation mutations in case of compromise.
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Resume attestation mutations after recovery.
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @notice Check whether `who` has been attested for `role` on `node`.

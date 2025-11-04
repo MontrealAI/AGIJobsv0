@@ -113,6 +113,7 @@ This produces `out/scoreboard.json` plus a mermaid-rich executive dashboard at `
 | Banner prints `✅ Day-One run complete` | Open the surfaced JSON and confirm it contains `metrics.utility_uplift`; share the artefact with engineering if uplift is missing. |
 | No PNG snapshot reported | The HTML dashboard path is printed instead — open it in a browser and export a screenshot if stakeholders need imagery. |
 | Demo reports "paused" | Run `cd demo/AGIJobs-Day-One-Utility-Benchmark && make owner-toggle` to resume, or `make owner-reset` to restore the sovereign defaults. |
+| ENS attestation compromise detected | Freeze delegated access: `npx hardhat --network <network> console` → `const att = await ethers.getContractAt('AttestationRegistry', '<address>'); await att.pause();`. After rotation/remediation, run `await att.unpause();` to restore attestations. |
 
 ---
 
