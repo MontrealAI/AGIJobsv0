@@ -55,11 +55,11 @@ When a validator, orchestrator, or governance key is compromised:
    npm run owner:doctor -- --network <network>
    ```
    The report enumerates every role, signer, and contract binding using the same diagnostics consumed by CI.【F:package.json†L165-L215】【F:scripts/v2/ownerControlDoctor.ts†L1-L248】
-2. **Rotate or revoke:**
+2. **Rotate or revoke:** Update the owner-control manifest (for example `config/owner-control.<network>.json`) with the desired governance and owner assignments, then run:
    ```bash
-   npm run owner:rotate -- --network <network> --from <old_signer> --to <new_signer> --dry-run
+   npm run owner:rotate -- --network <network> [--governance <address>] [--owner <address>]
    ```
-   Re-run without `--dry-run` once stakeholders approve the replacement set. The script propagates updates through the registry, OwnerConfigurator, and guardian mesh in one transaction set.【F:package.json†L200-L220】【F:scripts/v2/rotateGovernance.ts†L1-L220】【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】
+   Review the dry-run output, export a Safe bundle if needed, and re-run with `--execute` when approvals land. The script propagates the manifest changes through the registry, OwnerConfigurator, and guardian mesh in one transaction set.【F:package.json†L200-L220】【F:scripts/v2/rotateGovernance.ts†L1-L360】【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】
 3. **Reconverge automation:** regenerate `reports/owner-control/authority-matrix.md` via `npm run ci:owner-authority -- --network <network>` so future CI runs confirm the new assignments.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L393-L440】
 
 ## 3. Parameter adjustments & fee splits
@@ -76,9 +76,9 @@ When a validator, orchestrator, or governance key is compromised:
    Review the proposed transactions, ROI projections, and guardrail impacts before executing.【F:scripts/v2/ownerMissionControl.ts†L1-L200】
 3. **Execute atomically:**
    ```bash
-   npm run owner:update-all -- --network <network> --plan reports/owner-control/mission/plan.json
+   npm run owner:update-all -- --network <network>
    ```
-   The transaction bundle updates fee splits, stakes, thermostat bands, and registry entries in one approved wave, exporting receipts beside the plan.【F:package.json†L195-L215】【F:scripts/v2/updateAllModules.ts†L1-L240】
+   Confirm the preview aligns with the mission-control briefing, then add `--execute` (or Safe bundle flags) to broadcast the approved transactions. The script rebuilds the bundle from the owner-control manifest and applies fee splits, stakes, thermostat bands, and registry updates in one wave, exporting receipts alongside the summary.【F:package.json†L195-L215】【F:scripts/v2/updateAllModules.ts†L1-L360】
 
 ## 4. Manual slashing & scoreboard reconciliation
 
