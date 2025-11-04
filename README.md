@@ -78,7 +78,7 @@ The same manifest powers the branch-protection guard inside CI v2 and the local 
 
 ## Quickstart for operators
 1. Use Node.js 20.18.1 (`.nvmrc`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】
-2. Hydrate dependencies:
+2. Hydrate dependencies (do **not** omit optional packages—the Hardhat toolbox requires the platform-specific `@nomicfoundation/solidity-analyzer-*` binary and will fail exactly like CI if you pass `--omit=optional`):
    ```bash
    npm install
    python -m pip install --upgrade pip
