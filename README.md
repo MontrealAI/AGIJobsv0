@@ -111,6 +111,7 @@ The same manifest powers the branch-protection guard inside CI v2 and the local 
    forge test -vvvv --ffi --fuzz-runs 256
    ```
    Compiling first avoids the local fallback where `hardhat test --no-compile` triggers a fresh Solidity build, bringing the experience in line with the workflow’s dedicated compile step before `npm test`. These commands reproduce the Hardhat, linting, coverage, and Foundry stages the pipeline requires.【F:package.json†L233-L245】【F:.github/workflows/ci.yml†L75-L546】
+   The Python coverage harness additionally exercises the HGM worker dispatcher and sharded simulation CLI so CI’s 85% gate reflects the orchestrator workloads developers rehearse locally.【F:test/orchestrator/test_worker.py†L1-L41】【F:test/simulation/test_harness.py†L1-L19】【F:test/simulation/test_sharded_simulation.py†L1-L68】
 5. When the signal is green, push signed commits and open a pull request—CI v2 enforces the exact same contexts on `main` and PRs.
 
 ## Repository atlas
