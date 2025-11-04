@@ -39,6 +39,27 @@ Every required context publishes its own badge so the assurance wall is visible 
 
 The `ci/` deck defines the manifest, verification scripts, and artefacts that keep AGI Jobs v0 (v2) permanently green. Required contexts here mirror the branch protection rule; automation in `.github/workflows/ci.yml` fails immediately when drift is detected, so release captains always see the full assurance wall.【F:.github/workflows/ci.yml†L22-L292】【F:.github/workflows/ci.yml†L970-L1155】
 
+## Modular workflow topology
+
+`ci.yml` remains the canonical monolithic pipeline, but the same job lattice is
+now available in modular GitHub Actions workflows so teams can iterate on
+individual assurance surfaces without waiting for the entire suite. The modular
+files live under `.github/workflows/ci-*.yml` and mirror the status wall names
+used by branch protection. Each workflow is self-contained and can be triggered
+independently or composed through `workflow_call`.
+
+| Workflow file | Jobs included | Status wall mapping |
+| ------------- | ------------- | ------------------- |
+| `ci-lint.yml` | `Lint & static checks` | `ci (v2) / Lint & static checks` |
+| `ci-tests.yml` | `Tests` | `ci (v2) / Tests` |
+| `ci-simulation.yml` | `Python unit tests`, `Python integration tests`, `Load-simulation reports`, `Python coverage enforcement` | `ci (v2) / Python unit tests`, `ci (v2) / Python integration tests`, `ci (v2) / Load-simulation reports`, `ci (v2) / Python coverage enforcement` |
+
+Teams can extend the pattern for the remaining status wall entries (demos,
+governance checks, invariant harness) by copying the relevant job definition
+from `ci.yml` into a new `.github/workflows/ci-<category>.yml` file. The
+manifest synchronisation scripts in `package.json` continue to enforce naming
+parity so that modular and monolithic pipelines expose the same check titles.
+
 ## Workflow topology
 ```mermaid
 flowchart LR

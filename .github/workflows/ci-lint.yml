@@ -1,0 +1,68 @@
+---
+# yamllint disable rule:truthy
+name: ci (modular) / lint
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: ci-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint & static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a  # yamllint disable-line rule:line-length
+        with:
+          egress-policy: audit
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955  # yamllint disable-line rule:line-length
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # yamllint disable-line rule:line-length
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Check contexts manifest parity
+        run: npm run ci:sync-contexts -- --check
+      - name: Verify toolchain locks
+        run: npm run ci:verify-toolchain
+      - name: Validate branch protection contexts
+        run: npm run ci:verify-contexts
+      - name: Validate companion workflow contexts
+        run: npm run ci:verify-companion-contexts
+      - name: Prettier formatting check
+        run: npm run format:check
+      - name: Targeted lint suite
+        run: npm run lint:ci
+      - name: Validate sentinel templates
+        run: npm run monitoring:validate
