@@ -37,6 +37,8 @@ def _inject_onebox_stub() -> None:
 
 _inject_onebox_stub()
 
+import routes.analytics as analytics_module
+from orchestrator.analytics import AnalyticsError
 from services.meta_api.app.main import create_app
 
 
@@ -72,3 +74,22 @@ def test_history_exports(tmp_path, monkeypatch):
         assert "artifact_count" in contents
         parquet_response = client.get("/analytics/history.parquet")
         assert parquet_response.status_code in {200, 404}
+
+
+@pytest.mark.skipif(TestClient is None, reason="FastAPI application not available")
+def test_history_missing_and_refresh_error(monkeypatch):
+    app = create_app()
+    with TestClient(app) as client:
+        def boom():
+            raise AnalyticsError("boom")
+
+        monkeypatch.setattr(analytics_module, "run_once", boom)
+        refresh = client.post("/analytics/refresh")
+        assert refresh.status_code == 503
+        assert refresh.json()["detail"]["code"] == "ANALYTICS_UNAVAILABLE"
+
+        csv_path = Path("storage/analytics/history.csv")
+        if csv_path.exists():
+            csv_path.unlink()
+        history = client.get("/analytics/history.csv")
+        assert history.status_code == 404

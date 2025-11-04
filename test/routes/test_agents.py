@@ -11,7 +11,12 @@ except Exception:  # pragma: no cover - FastAPI optional in CI
     FastAPI = None  # type: ignore
     TestClient = None  # type: ignore
 
-from orchestrator.agents import reset_registry
+from orchestrator.agents import (
+    AgentAssignmentError,
+    AgentUnauthorizedError,
+    reset_registry,
+)
+from routes import agents as agents_module
 from routes.agents import router
 
 
@@ -84,3 +89,50 @@ def test_heartbeat_secret_validation(client: TestClient) -> None:
     client.post("/agents", json=registration, headers=headers)
     resp = client.post("/agents/agent-sec/heartbeat", json={"secret": "badsecret"})
     assert resp.status_code == 401
+
+
+@pytest.mark.skipif(FastAPI is None, reason="FastAPI not available")
+def test_owner_token_enforcement(client: TestClient, monkeypatch) -> None:
+    registration = {
+        "agent_id": "agent-owner-check",
+        "owner": "owner",
+        "region": "us-east",
+        "capabilities": ["execution"],
+        "stake": {"amount": "100", "token": "AGIALPHA"},
+        "security": {"requires_kyc": False, "multisig": False, "isolation_level": "process"},
+        "router": "default",
+        "operator_secret": "secret-token",
+    }
+
+    headers = {"X-Owner-Token": "owner-token"}
+    monkeypatch.delenv("AGENT_REGISTRY_OWNER_TOKEN", raising=False)
+    response = client.post("/agents", json=registration, headers=headers)
+    assert response.status_code == 503
+    assert response.json()["detail"] == "OWNER_TOKEN_NOT_CONFIGURED"
+
+    monkeypatch.setenv("AGENT_REGISTRY_OWNER_TOKEN", "owner-token")
+    bad_headers = {"X-Owner-Token": "wrong"}
+    response = client.post("/agents", json=registration, headers=bad_headers)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "OWNER_TOKEN_INVALID"
+
+
+@pytest.mark.skipif(FastAPI is None, reason="FastAPI not available")
+def test_error_mapping_for_registry_failures(client: TestClient, monkeypatch) -> None:
+    class ExplodingRegistry:
+        def update(self, agent_id, payload):
+            raise AgentAssignmentError("busy")
+
+        def record_heartbeat(self, agent_id, payload):
+            raise AgentUnauthorizedError("bad secret")
+
+    monkeypatch.setattr(agents_module, "get_registry", lambda: ExplodingRegistry())
+
+    headers = {"X-Owner-Token": "owner-token"}
+    resp = client.put("/agents/agent-a", json={"region": "eu"}, headers=headers)
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "busy"
+
+    hb_resp = client.post("/agents/agent-a/heartbeat", json={"secret": "token-123"})
+    assert hb_resp.status_code == 401
+    assert hb_resp.json()["detail"] == "bad secret"
