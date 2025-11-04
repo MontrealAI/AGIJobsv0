@@ -137,6 +137,7 @@
     "ci:owner-authority": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/render-owner-assurance.ts",
     "ci:verify-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-required-contexts.ts",
     "ci:verify-companion-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-companion-contexts.ts",
+    "ci:verify-summary-needs": "node scripts/ci/check-summary-needs.js",
     "ci:status-wall": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-status-wall.ts",
     "ci:verify-signers": "node scripts/ci/check-signers.js",
     "ci:verify-toolchain": "node scripts/ci/check-toolchain-locks.js",

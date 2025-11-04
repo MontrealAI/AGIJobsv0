@@ -39,6 +39,8 @@ Every required context publishes its own badge so the assurance wall is visible 
 
 The `ci/` deck defines the manifest, verification scripts, and artefacts that keep AGI Jobs v0 (v2) permanently green. Required contexts here mirror the branch protection rule; automation in `.github/workflows/ci.yml` fails immediately when drift is detected, so release captains always see the full assurance wall.【F:.github/workflows/ci.yml†L22-L292】【F:.github/workflows/ci.yml†L970-L1155】
 
+Run `npm run ci:verify-summary-needs` whenever you touch `.github/workflows/ci.yml` to double-check that the `CI summary` job’s `needs` array spans every non-summary job. The script parses the workflow, confirms the lattice is complete, and fails fast if any required job is omitted or duplicated so the wall cannot silently degrade.【F:package.json†L135-L143】【F:scripts/ci/check-summary-needs.js†L1-L79】【F:.github/workflows/ci.yml†L1009-L1077】
+
 ## Workflow topology
 ```mermaid
 flowchart LR

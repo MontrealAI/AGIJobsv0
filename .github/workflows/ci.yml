@@ -64,6 +64,8 @@ jobs:
         run: npm run ci:verify-contexts
       - name: Verify companion workflow contexts
         run: npm run ci:verify-companion-contexts
+      - name: Verify CI summary coverage vs workflow
+        run: npm run ci:verify-summary-needs
       - name: Prettier formatting check
         run: npm run format:check
       - name: Targeted lint suite
@@ -1055,6 +1057,14 @@ jobs:
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
           egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate summary needs coverage
+        env:
+          NEEDS_CONTEXT: ${{ toJson(needs) }}
+        run: node scripts/ci/check-summary-needs.js
       - name: Publish pipeline summary
         env:
           NEEDS_CONTEXT: ${{ toJson(needs) }}
