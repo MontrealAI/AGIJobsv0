@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - `RandaoCoordinator.random` now mixes the XORed seed with `block.prevrandao` for block-dependent entropy.
 - Default identity cache durations for agents and validators are now zero so every job application and validation commit requires a fresh ENS proof; governance can extend the cache via on-chain setters if necessary.
 - Added scripted ABI exports with diff checking, ensured coverage enforcement scripts skip gracefully when artifacts are absent, and vendored forge-std so Foundry fuzzing runs without extra setup.
+- Expanded the Python coverage harness with worker and simulation regression tests and ensured the editable `hgm_core` package is installed via `requirements-python.txt` so the CI parity instructions stay reproducible.
 
 ## v1
 

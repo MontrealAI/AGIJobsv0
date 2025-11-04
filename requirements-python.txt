@@ -1,4 +1,5 @@
 -r services/meta_api/requirements.txt
+-e packages/hgm-core
 
 # Testing toolchain
 coverage==7.6.4
