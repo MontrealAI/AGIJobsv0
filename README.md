@@ -211,6 +211,10 @@ flowchart TD
 
 Every command supports `--dry-run` and report exports, ensuring the contract owner retains absolute control while the automation stays auditable.【F:scripts/v2/ownerControlDoctor.ts†L1-L252】【F:scripts/v2/ownerControlQuickstart.ts†L1-L220】
 
+### Attestation registry safety lever
+
+- `AttestationRegistry.pause()` / `unpause()` — owner-only circuit breaker that halts ENS-backed delegation while responding to compromised subdomains. Use the OwnerConfigurator (`owner:update-all`) or Hardhat console to invoke the pause, then resume once the attestor set is remediated. The mutation path is guarded by OpenZeppelin `Ownable` + `Pausable`, and attestation calls revert with `Pausable: paused` until unpaused.【F:contracts/v2/AttestationRegistry.sol†L11-L108】
+
 ### Governance oversight loop
 
 ```mermaid
