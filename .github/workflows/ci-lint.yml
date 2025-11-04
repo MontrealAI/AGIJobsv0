@@ -181,7 +181,7 @@ jobs:
             --no-mermaid
       - name: Upload owner control artefacts
         if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a
         with:
           name: owner-control-ci
           path: reports/owner-control
@@ -297,7 +297,7 @@ jobs:
           NODE
       - name: Upload lint lattice artefact
         if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a
         with:
           name: lint-lattice-status
           path: reports/ci/lint-lattice.md
