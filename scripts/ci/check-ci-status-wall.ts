@@ -71,7 +71,7 @@ interface StructuredWorkflowSummary {
 }
 
 function escapeMarkdownCell(value: string): string {
-  return value.replace(/\|/g, '\\|');
+  return value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
 }
 
 function renderMarkdownSummary(outputs: StructuredWorkflowSummary[]): string {
