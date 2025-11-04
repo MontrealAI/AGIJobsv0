@@ -71,6 +71,30 @@ flowchart TD
 
 Executing the drill keeps the local environment, CI automation, and GitHub branch protection rule in perfect sync—if any step fails, the associated PR cannot merge until the wall is green again.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1077】
 
+#### REST API cross-checks
+
+For redundant assurance, use the public GitHub REST API to audit the wall outside of the repository toolchain:
+
+```bash
+# Fetch the newest ci (v2) run on main and inspect its terminal status
+curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].status, .workflow_runs[0].conclusion'
+
+# Capture the run id for downstream interrogation
+RUN_ID=$(curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].id')
+
+# Enumerate each job conclusion in that run
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -r '.jobs[] | "\(.name): \(.conclusion)"'
+
+# Assert the entire wall is green (returns true + exit 0 on success)
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -e 'all(.jobs[].conclusion == "success")'
+```
+
+These commands mirror what the automation does internally, granting air-gapped control rooms and third-party auditors a zero-trust pathway to confirm the wall’s health. Embed them into operational playbooks alongside `npm run ci:status-wall -- --require-success --include-companion` for a double-blind verification loop.【F:scripts/ci/check-ci-status-wall.ts†L73-L387】
+
 ## Workflow topology
 ```mermaid
 flowchart LR

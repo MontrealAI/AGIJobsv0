@@ -171,6 +171,30 @@ flowchart TD
 
 The same manifest powers the branch-protection guard inside CI v2 and the local verification CLI, so green walls locally guarantee green walls on GitHub before merge.【F:.github/workflows/ci.yml†L966-L1089】【F:ci/required-contexts.json†L1-L24】
 
+#### API-level verification
+
+Executive operators can independently corroborate the wall without local tooling by interrogating the GitHub REST API. With `curl` and `jq` installed:
+
+```bash
+# 1. Inspect the most recent workflow result on main
+curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].status, .workflow_runs[0].conclusion'
+
+# 2. Capture the run identifier for downstream job queries
+RUN_ID=$(curl -s 'https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/runs?branch=main&per_page=1' \
+  | jq -r '.workflow_runs[0].id')
+
+# 3. Enumerate job conclusions for that run
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -r '.jobs[] | "\(.name): \(.conclusion)"'
+
+# 4. Assert every job concluded successfully (exit code 0 means green wall)
+curl -s "https://api.github.com/repos/MontrealAI/AGIJobsv0/actions/runs/${RUN_ID}/jobs?per_page=100" \
+  | jq -e 'all(.jobs[].conclusion == "success")'
+```
+
+The final check returns `true` and a zero exit status only when each required context is green, enabling air-gapped compliance suites or third-party dashboards to verify the wall without invoking repository scripts. Combine the API snapshot with `npm run ci:status-wall -- --require-success --include-companion` to cross-check manifest-driven expectations against the live Actions event stream.【F:scripts/ci/check-ci-status-wall.ts†L73-L387】
+
 ### Double-green enforcement drill
 1. **Interrogate the wall:** `npm run ci:status-wall -- --token <github_token> --require-success --include-companion` must return all ✅ lines and regenerate both Markdown and JSON artefacts in `reports/ci/`. Cross-check the printed run ID with the Actions UI so the command and GitHub agree on the latest passing workflow.【F:scripts/ci/check-ci-status-wall.ts†L73-L100】【F:scripts/ci/check-ci-status-wall.ts†L312-L387】
 2. **Lock the manifest:** Immediately execute `npm run ci:sync-contexts -- --check` to prove that the required context manifest still mirrors `.github/workflows/ci.yml`. The command fails fast on any drift so branch protection cannot silently fall behind.【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】【F:ci/required-contexts.json†L1-L24】
