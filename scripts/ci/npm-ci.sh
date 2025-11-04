@@ -25,4 +25,7 @@ PY
   fi
 fi
 
+# Default to skipping Cypress binary downloads in CI environments that block network access.
+: "${CYPRESS_INSTALL_BINARY:=0}"
+
 npm ci --no-audit --prefer-offline --progress=false "$@"
