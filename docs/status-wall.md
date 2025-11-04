@@ -33,6 +33,39 @@ required-context manifest [`ci/required-contexts.json`](../ci/required-contexts.
 | CI summary | [`ci.yml`](../.github/workflows/ci.yml#L1026-L1156) | `summary` | [![CI summary](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=CI%20summary)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22CI+summary%22) |
 | Invariant tests | [`ci.yml`](../.github/workflows/ci.yml#L1157-L1207) | `invariants` | [![Invariant tests](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml/badge.svg?branch=main&job=Invariant%20tests)](https://github.com/MontrealAI/AGIJobsv0/actions/workflows/ci.yml?query=workflow%3A%22ci+%28v2%29%22+is%3Asuccess+branch%3Amain+job%3A%22Invariant+tests%22) |
 
+### Summary job dependency mesh
+
+```mermaid
+flowchart TD
+    classDef job fill:#f0f9ff,stroke:#0ea5e9,color:#0c4a6e,stroke-width:1px;
+    classDef guard fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+
+    lint[Lint & static checks]:::job --> summary[CI summary]:::guard
+    tests[Tests]:::job --> summary
+    pythonUnit[Python unit tests]:::job --> summary
+    pythonIntegration[Python integration tests]:::job --> summary
+    loadSim[Load-simulation reports]:::job --> summary
+    pythonCoverage[Python coverage enforcement]:::job --> summary
+    hgm[HGM guardrails]:::job --> summary
+    ownerCtl[Owner control assurance]:::job --> summary
+    foundry[Foundry]:::job --> summary
+    coverage[Coverage thresholds]:::job --> summary
+    phase6[Phase 6 readiness]:::job --> summary
+    phase8[Phase 8 readiness]:::job --> summary
+    kardashev[Kardashev II readiness]:::job --> summary
+    asi[ASI Take-Off Demonstration]:::job --> summary
+    zenith[Zenith Sapience Demonstration]:::job --> summary
+    labor[AGI Labor Market Grand Demo]:::job --> summary
+    mesh[Sovereign Mesh Demo — build]:::job --> summary
+    constellation[Sovereign Constellation Demo — build]:::job --> summary
+    archon[Celestial Archon Demonstration]:::job --> summary
+    hypernova[Hypernova Governance Demonstration]:::job --> summary
+    branchGuard[Branch protection guard]:::guard --> summary
+    invariants[Invariant tests]:::job --> summary
+```
+
+The `CI summary` stage refuses to pass until every upstream job is green, which is why the manifest scripts (`ci:verify-summary-needs` and `ci:status-wall`) parse its `needs` array when guarding the branch protection rule.【F:.github/workflows/ci.yml†L1009-L1155】【F:scripts/ci/check-summary-needs.js†L1-L79】【F:scripts/ci/check-ci-status-wall.ts†L73-L210】
+
 ## Updating or extending the wall
 
 Follow this checklist whenever you add, rename, or remove a required status context:
