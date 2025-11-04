@@ -41,6 +41,36 @@ The `ci/` deck defines the manifest, verification scripts, and artefacts that ke
 
 Run `npm run ci:verify-summary-needs` whenever you touch `.github/workflows/ci.yml` to double-check that the `CI summary` job’s `needs` array spans every non-summary job. The script parses the workflow, confirms the lattice is complete, and fails fast if any required job is omitted or duplicated so the wall cannot silently degrade.【F:package.json†L135-L143】【F:scripts/ci/check-summary-needs.js†L1-L79】【F:.github/workflows/ci.yml†L1009-L1077】
 
+### Triple-green verification drill
+
+```mermaid
+flowchart TD
+    classDef cmd fill:#f0f9ff,stroke:#0ea5e9,color:#0c4a6e,stroke-width:1px;
+    classDef api fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef artefact fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+    classDef guard fill:#dcfce7,stroke:#16a34a,color:#166534,stroke-width:1px;
+
+    sync[ci:sync-contexts --check]:::cmd --> workflow[.github/workflows/ci.yml]:::guard
+    sync --> manifest[ci/required-contexts.json]:::guard
+    verifyContext[ci:verify-contexts]:::cmd --> manifest
+    verifyCompanion[ci:verify-companion-contexts]:::cmd --> companionManifest[ci/required-companion-contexts.json]:::guard
+    summaryNeeds[ci:verify-summary-needs]:::cmd --> workflow
+    statusWall[ci:status-wall --require-success --include-companion]:::cmd --> ghApi[GitHub Actions API]:::api
+    statusWall --> wallArtefact[reports/ci/status.{md,json}]:::artefact
+    enforce[ci:enforce-branch-protection]:::cmd --> ghApi
+```
+
+| Sequence | Command | Guarantee |
+| -------- | ------- | --------- |
+| 1 | `npm run ci:sync-contexts -- --check` | Confirms `.github/workflows/ci.yml` and `ci/required-contexts.json` enumerate the same required jobs before any GitHub calls are made.【F:scripts/ci/update-ci-required-contexts.ts†L1-L83】 |
+| 2 | `npm run ci:verify-contexts` | Asserts the branch protection manifest uses the exact display names GitHub emits, matching the status wall seen on PRs.【F:scripts/ci/check-ci-required-contexts.ts†L1-L133】 |
+| 3 | `npm run ci:verify-companion-contexts` | Validates every companion workflow context is registered so the checks wall stays fully green even outside `ci (v2)`.【F:scripts/ci/check-ci-companion-contexts.ts†L1-L115】 |
+| 4 | `npm run ci:verify-summary-needs` | Ensures the `CI summary` job models all upstream jobs, preventing silent drift in the status export that feeds branch protection.【F:scripts/ci/check-summary-needs.js†L1-L79】【F:.github/workflows/ci.yml†L1009-L1077】 |
+| 5 | `npm run ci:status-wall -- --token <token> --require-success --include-companion` | Pulls the latest run via the Actions API, verifying every wall tile is green and regenerating the Markdown/JSON artefacts consumed by executive dashboards.【F:scripts/ci/check-ci-status-wall.ts†L73-L387】 |
+| 6 | `npm run ci:enforce-branch-protection -- --branch main` | Applies the manifest to GitHub so PRs and `main` both enforce the full context wall with strict checks and admin bypass protection.【F:scripts/ci/enforce-branch-protection.ts†L1-L279】 |
+
+Executing the drill keeps the local environment, CI automation, and GitHub branch protection rule in perfect sync—if any step fails, the associated PR cannot merge until the wall is green again.【F:package.json†L135-L146】【F:.github/workflows/ci.yml†L966-L1077】
+
 ## Workflow topology
 ```mermaid
 flowchart LR

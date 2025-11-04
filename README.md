@@ -108,6 +108,32 @@ Running the drill before every release forces status verification, manifest lock
 - **Owner supremacy:** Every critical lever is surfaced through deterministic owner tooling so the contract owner can pause, upgrade, and retune parameters on demand, without redeploying or editing code.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】【F:package.json†L135-L226】
 - **Evergreen assurance:** CI v2 enforces a wall of 23 required contexts plus companion workflows, uploads audit artefacts, and verifies branch protection so every release inherits a fully green, enforceable policy.【F:.github/workflows/ci.yml†L22-L965】【F:.github/workflows/ci.yml†L970-L1181】【F:ci/required-contexts.json†L1-L24】【F:ci/required-companion-contexts.json†L1-L11】
 
+## Owner dominion console
+The platform’s operator CLI renders full-spectrum control to the contract owner without touching Solidity or TypeScript. Each command combines deterministic manifests from [`config/`](config/README.md) with the governance façades inside [`contracts/v2/admin`](contracts/README.md) so pauses, treasury updates, and validator quotas can be reconfigured in minutes while CI records immutable artefacts.【F:config/README.md†L1-L117】【F:contracts/README.md†L38-L80】【F:.github/workflows/ci.yml†L393-L443】
+
+```mermaid
+flowchart LR
+    classDef deck fill:#f0f9ff,stroke:#0ea5e9,color:#0c4a6e,stroke-width:1px;
+    classDef manifest fill:#ecfdf5,stroke:#10b981,color:#064e3b,stroke-width:1px;
+    classDef contract fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,stroke-width:1px;
+    classDef ci fill:#fef3c7,stroke:#d97706,color:#7c2d12,stroke-width:1px;
+
+    manifests[config manifests]:::manifest --> ownerCli[owner:* CLI deck]:::deck
+    ownerCli --> configurator[OwnerConfigurator<br/>+ owner-control scripts]:::contract
+    ownerCli --> pauseSwitch[SystemPause<br/>+ thermostat orchestration]:::contract
+    configurator --> ciArtefacts[CI owner assurance<br/>artefacts]:::ci
+    pauseSwitch --> ciArtefacts
+```
+
+| Command | Capability | Execution surface |
+| ------- | ---------- | ----------------- |
+| `npm run owner:parameters -- --network <net>` | Regenerates the full fee, treasury, validator, and thermostat matrix that CI stores under `reports/owner-control/`, ensuring executives can validate every toggle before signing transactions.【F:scripts/v2/ownerParameterMatrix.ts†L1-L612】【F:.github/workflows/ci.yml†L420-L439】 | Owner CLI + CI artefact wall |
+| `npm run owner:system-pause -- --network <net>` | Emits pause/unpause calldata, previews the transaction JSON, and enforces module ownership so a single command can freeze or resume the lattice safely.【F:scripts/v2/systemPauseAction.ts†L1-L289】【F:contracts/v2/SystemPause.sol†L15-L157】 | Owner CLI |
+| `npm run owner:update-all -- --network <net>` | Applies manifest diffs through `OwnerConfigurator` with dependency ordering and dry-run previews, matching the upgrades rehearsed in CI’s owner assurance job.【F:scripts/v2/updateAllModules.ts†L1-L1233】【F:.github/workflows/ci.yml†L393-L439】 | Owner CLI + CI |
+| `npm run ci:owner-authority -- --network <net> --out reports/owner-control` | Regenerates Markdown/JSON authority matrices so the contract owner and auditors both see a living, CI-backed digest of who controls every lever.【F:package.json†L135-L226】【F:.github/workflows/ci.yml†L420-L439】 | CI pipelines + local drill |
+
+The same commands run automatically in the `Owner control assurance` job, so the checks wall refuses a merge unless the owner retains total dominion over pause switches, treasury routing, and upgrade paths.【F:.github/workflows/ci.yml†L393-L443】
+
 ## Quickstart for operators
 1. Use Node.js 20.18.1 (`.nvmrc`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】
 2. Hydrate dependencies (do **not** omit optional packages—the Hardhat toolbox requires the platform-specific `@nomicfoundation/solidity-analyzer-*` binary and will fail exactly like CI if you pass `--omit=optional`):
