@@ -5,6 +5,18 @@ ROOT="${NPM_CI_PROJECT_ROOT:-$PWD}"
 LOCK="${NPM_CI_LOCK_PATH:-$ROOT/package-lock.json}"
 
 if [ ! -f "$LOCK" ]; then
+  if [ -z "${NPM_CI_LOCK_PATH+x}" ] && [ -z "${NPM_CI_PROJECT_ROOT+x}" ]; then
+    if command -v git >/dev/null 2>&1; then
+      GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+      if [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/package-lock.json" ]; then
+        ROOT="$GIT_ROOT"
+        LOCK="$ROOT/package-lock.json"
+      fi
+    fi
+  fi
+fi
+
+if [ ! -f "$LOCK" ]; then
   echo "::error ::package-lock.json missing or invalid at $LOCK" >&2
   exit 1
 fi
