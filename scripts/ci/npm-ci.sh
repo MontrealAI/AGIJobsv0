@@ -44,6 +44,20 @@ if [ ! -f "$LOCK" ] && [ -n "${GITHUB_WORKSPACE:-}" ]; then
 fi
 
 if [ ! -f "$LOCK" ]; then
+  if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    if [[ "$LOCK" == "$ROOT/"* ]]; then
+      RELATIVE_PATH="${LOCK#$ROOT/}"
+    else
+      RELATIVE_PATH="$LOCK"
+    fi
+
+    if git -C "$ROOT" ls-files --error-unmatch "$RELATIVE_PATH" >/dev/null 2>&1; then
+      git -C "$ROOT" checkout -- "$RELATIVE_PATH" >/dev/null 2>&1 || true
+    fi
+  fi
+fi
+
+if [ ! -f "$LOCK" ]; then
   echo "::error ::package-lock.json missing or invalid at $LOCK" >&2
   exit 1
 fi
