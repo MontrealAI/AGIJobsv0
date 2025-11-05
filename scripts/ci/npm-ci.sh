@@ -25,4 +25,7 @@ PY
   fi
 fi
 
+# Skip Cypress binary downloads in sandboxed CI environments unless explicitly enabled.
+export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
+
 npm ci --no-audit --prefer-offline --progress=false "$@"
