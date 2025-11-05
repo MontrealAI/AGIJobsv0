@@ -2,17 +2,37 @@
 set -Eeuo pipefail
 
 ROOT="${NPM_CI_PROJECT_ROOT:-$PWD}"
-LOCK="${NPM_CI_LOCK_PATH:-$ROOT/package-lock.json}"
 
-if [ ! -f "$LOCK" ]; then
-  if [ -z "${NPM_CI_LOCK_PATH+x}" ] && [ -z "${NPM_CI_PROJECT_ROOT+x}" ]; then
-    if command -v git >/dev/null 2>&1; then
-      GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-      if [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/package-lock.json" ]; then
-        ROOT="$GIT_ROOT"
-        LOCK="$ROOT/package-lock.json"
+if command -v git >/dev/null 2>&1; then
+  GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+else
+  GIT_ROOT=""
+fi
+
+# Normalise the lockfile path, preferring explicit overrides, then ROOT, then git root.
+if [ -n "${NPM_CI_LOCK_PATH+x}" ]; then
+  case "$NPM_CI_LOCK_PATH" in
+    /*)
+      LOCK="$NPM_CI_LOCK_PATH"
+      ;;
+    *)
+      if [ -f "$ROOT/$NPM_CI_LOCK_PATH" ]; then
+        LOCK="$ROOT/$NPM_CI_LOCK_PATH"
+      elif [ -n "$GIT_ROOT" ] && [ -f "$GIT_ROOT/$NPM_CI_LOCK_PATH" ]; then
+        LOCK="$GIT_ROOT/$NPM_CI_LOCK_PATH"
+      else
+        LOCK="$NPM_CI_LOCK_PATH"
       fi
-    fi
+      ;;
+  esac
+else
+  LOCK="$ROOT/package-lock.json"
+fi
+
+if [ ! -f "$LOCK" ] && [ -n "$GIT_ROOT" ]; then
+  if [ -f "$GIT_ROOT/package-lock.json" ]; then
+    ROOT="$GIT_ROOT"
+    LOCK="$ROOT/package-lock.json"
   fi
 fi
 
