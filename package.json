@@ -445,7 +445,7 @@
     "verify:sri": "node apps/onebox-static/scripts/verify-sri.mjs",
     "verify:wiring": "npm run wire:verify",
     "webapp:build": "npm run build --prefix apps/console",
-    "webapp:e2e": "jest --config jest.webapp.config.js",
+    "webapp:e2e": "jest --config jest.webapp.config.js --runInBand --watchAll=false",
     "webapp:lint": "npm run lint --prefix apps/console",
     "webapp:typecheck": "npm run typecheck --prefix apps/console",
     "wire:verify": "node scripts/run-wire-verify.js",
