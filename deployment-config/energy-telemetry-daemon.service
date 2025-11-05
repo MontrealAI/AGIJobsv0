@@ -7,9 +7,9 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=/opt/agijobs
 Environment=ENERGY_LOG_DIR=/opt/agijobs/logs/energy
-Environment=ENERGY_ORACLE_ADDRESS=0xOracle
+Environment="ENERGY_ORACLE_ADDRESS=0xOracle"
 Environment=ENERGY_ORACLE_RPC_URL=https://rpc.example
-Environment=ENERGY_ORACLE_SIGNER_KEY=0xabcdef...
+Environment="ENERGY_ORACLE_SIGNER_KEY=0xabcdef..."
 Environment=TELEMETRY_POLL_INTERVAL_MS=10000
 ExecStart=/usr/bin/env npx ts-node --transpile-only scripts/monitor/energy-telemetry-daemon.ts
 Restart=on-failure
