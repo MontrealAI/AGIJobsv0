@@ -4,13 +4,13 @@ set -Eeuo pipefail
 ROOT="${NPM_CI_PROJECT_ROOT:-$PWD}"
 LOCK="${NPM_CI_LOCK_PATH:-$ROOT/package-lock.json}"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "::error ::jq is required to validate npm lockfiles" >&2
+if [ ! -f "$LOCK" ]; then
+  echo "::error ::package-lock.json missing at $LOCK" >&2
   exit 1
 fi
 
-if ! jq -e . "$LOCK" >/dev/null 2>&1; then
-  echo "::error ::package-lock.json missing or invalid at $LOCK" >&2
+if ! node -e 'const fs = require("fs"); JSON.parse(fs.readFileSync(process.argv[1], "utf8"));' "$LOCK"; then
+  echo "::error ::package-lock.json invalid JSON at $LOCK" >&2
   exit 1
 fi
 
