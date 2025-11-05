@@ -55,7 +55,7 @@ jobs:
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: '1.4.4'
+          version: 'v1.4.4'
 
       - name: Run Hypernova deterministic kit
         run: npm run demo:zenith-hypernova
