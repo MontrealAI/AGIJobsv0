@@ -43,6 +43,15 @@ if [ ! -f "$LOCK" ] && [ -n "${GITHUB_WORKSPACE:-}" ]; then
   fi
 fi
 
+if [ ! -f "$LOCK" ] && [ -n "${GITHUB_WORKSPACE:-}" ]; then
+  CANDIDATE="$(find "$GITHUB_WORKSPACE" -maxdepth 2 -name package-lock.json -print 2>/dev/null | head -n1 || true)"
+
+  if [ -n "$CANDIDATE" ] && [ -f "$CANDIDATE" ]; then
+    ROOT="$(dirname "$CANDIDATE")"
+    LOCK="$CANDIDATE"
+  fi
+fi
+
 if [ ! -f "$LOCK" ]; then
   if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     if [[ "$LOCK" == "$ROOT/"* ]]; then
