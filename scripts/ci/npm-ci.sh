@@ -53,6 +53,14 @@ if [ ! -f "$LOCK" ]; then
 
     if git -C "$ROOT" ls-files --error-unmatch "$RELATIVE_PATH" >/dev/null 2>&1; then
       git -C "$ROOT" checkout -- "$RELATIVE_PATH" >/dev/null 2>&1 || true
+
+      if [ ! -f "$LOCK" ]; then
+        git config --global --add safe.directory "$ROOT" >/dev/null 2>&1 || true
+        if git -C "$ROOT" rev-parse HEAD >/dev/null 2>&1; then
+          mkdir -p "$(dirname "$LOCK")"
+          git -C "$ROOT" show "HEAD:$RELATIVE_PATH" >"$LOCK" 2>/dev/null || true
+        fi
+      fi
     fi
   fi
 fi
