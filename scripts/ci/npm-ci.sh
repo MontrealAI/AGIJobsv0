@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-ROOT="${NPM_CI_PROJECT_ROOT:-$PWD}"
+ROOT="${NPM_CI_PROJECT_ROOT:-${GITHUB_WORKSPACE:-$PWD}}"
 
 if command -v git >/dev/null 2>&1; then
   GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
@@ -32,6 +32,13 @@ fi
 if [ ! -f "$LOCK" ] && [ -n "$GIT_ROOT" ]; then
   if [ -f "$GIT_ROOT/package-lock.json" ]; then
     ROOT="$GIT_ROOT"
+    LOCK="$ROOT/package-lock.json"
+  fi
+fi
+
+if [ ! -f "$LOCK" ] && [ -n "${GITHUB_WORKSPACE:-}" ]; then
+  if [ -f "$GITHUB_WORKSPACE/package-lock.json" ]; then
+    ROOT="$GITHUB_WORKSPACE"
     LOCK="$ROOT/package-lock.json"
   fi
 fi
