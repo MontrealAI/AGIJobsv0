@@ -355,8 +355,6 @@ jobs:
     needs: prepare
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    env:
-      REGISTRY_OWNER: ${{ toLower(github.repository_owner) }}
     strategy:
       fail-fast: false
       matrix:
@@ -377,6 +375,9 @@ jobs:
             context: apps/console
             dockerfile: apps/console/Dockerfile
     steps:
+      - name: Normalize registry owner
+        shell: bash
+        run: echo "REGISTRY_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
