@@ -50,15 +50,15 @@ flowchart LR
     VM --> Dispute
 ```
 
-| Directory | Contents |
-| --------- | -------- |
-| `v2/kernel/` | Core runtime (job registry, validation module, stake manager, reward engine) with ownable governance shims and pause hooks.【F:contracts/v2/JobRegistry.sol†L4-L157】 |
-| `v2/modules/` | Auxiliary governance modules (dispute resolution, thermostat, culture registry, quadratic voting) that plug into the kernel interfaces. |
-| `v2/admin/` | Owner-focused façade contracts such as `OwnerConfigurator` for batched parameter updates.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】 |
-| `v2/governance/` | Commit-reveal governance, quadratic voting, and council scaffolding for validator assemblies. |
-| `v2/utils/` & `v2/libraries/` | Shared math, encoding, and Ownable2Step primitives that keep the surface area small and auditable. |
-| `coverage/` | Solidity coverage instrumentation used by `npm run coverage`. |
-| `test/` | Solidity mocks and fixtures consumed by the Hardhat + Foundry suites. |
+| Directory                     | Contents                                                                                                                                                              |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v2/kernel/`                  | Core runtime (job registry, validation module, stake manager, reward engine) with ownable governance shims and pause hooks.【F:contracts/v2/JobRegistry.sol†L4-L157】 |
+| `v2/modules/`                 | Auxiliary governance modules (dispute resolution, thermostat, culture registry, quadratic voting) that plug into the kernel interfaces.                               |
+| `v2/admin/`                   | Owner-focused façade contracts such as `OwnerConfigurator` for batched parameter updates.【F:contracts/v2/admin/OwnerConfigurator.sol†L7-L112】                       |
+| `v2/governance/`              | Commit-reveal governance, quadratic voting, and council scaffolding for validator assemblies.                                                                         |
+| `v2/utils/` & `v2/libraries/` | Shared math, encoding, and Ownable2Step primitives that keep the surface area small and auditable.                                                                    |
+| `coverage/`                   | Solidity coverage instrumentation used by `npm run coverage`.                                                                                                         |
+| `test/`                       | Solidity mocks and fixtures consumed by the Hardhat + Foundry suites.                                                                                                 |
 
 ## Owner control surface
 
@@ -79,6 +79,7 @@ npm run compile          # Hardhat compile with profile-aware constants
 npm test                 # Hardhat test suite (see test/v2/**)
 forge test -vvvv --ffi   # Foundry fuzz + invariant harness
 npm run coverage         # Generates lcov + access-control coverage reports
+npx truffle migrate --network mainnet --f 1 --to 5  # Deterministic mainnet deployment with canonical token guard
 ```
 
 The Hardhat tests exercise the registry, governance, and module flows defined under `test/v2/**` and the shared fixtures under
@@ -100,6 +101,12 @@ a run green.【F:.github/workflows/ci.yml†L75-L167】【F:.github/workflows/ci
 - **Gas reports** – `npm run gas:report` produces deterministic gas snapshots under `gas-snapshots/`.
 - **Authority matrix** – `npm run ci:owner-authority` exports Markdown and JSON matrices describing every owner lever; the CI job
   uploads them as artefacts for release management.【F:.github/workflows/ci.yml†L420-L439】
+
+## Truffle mainnet guardrails
+
+- `migrations/2a_validate_mainnet_token.js` halts migrations unless the configuration targets the canonical 18-decimal AGIALPHA token (`0xa61a3b3a130a9c20768eebf97e21515a6046a1fa`) and confirms on-chain metadata before deploying new modules.【F:migrations/2a_validate_mainnet_token.js†L1-L118】
+- `migrations/2_deploy_protocol.js` and `migrations/3_wire_protocol.js` read `config/agialpha.mainnet.json` + `deployment-config/mainnet.json` so governance wiring, pause defaults, and economic levers respect owner-approved manifests out of the box.【F:migrations/2_deploy_protocol.js†L1-L45】【F:migrations/3_wire_protocol.js†L1-L120】
+- Truffle network credentials are sourced from `truffle-config.js`, allowing non-technical operators to drop secrets into `.env` without editing code while still inheriting the CI-enforced guardrails.【F:truffle-config.js†L1-L66】
 
 The contract stack is designed to remain flawless under owner-led configuration changes and to emit the artefacts regulators and
 operators need to deploy AGI Jobs v0 (v2) at production scale.
