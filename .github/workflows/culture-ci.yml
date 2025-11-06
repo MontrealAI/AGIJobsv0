@@ -250,7 +250,7 @@ jobs:
       - name: Seed deployment artifacts
         working-directory: demo/CULTURE-v0
         env:
-          RPC_URL: http://127.0.0.1:8545
+          RPC_URL: 'http://127.0.0.1:8545'
           CULTURE_DEPLOY_OUTPUT: ${{ runner.temp }}/deployments.json
           CULTURE_ENV_FILE: ${{ runner.temp }}/.env.ci
         run: |
