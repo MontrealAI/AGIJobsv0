@@ -65,7 +65,11 @@ const IPFS_GATEWAYS = Array.isArray(Config.IPFS_GATEWAYS) && Config.IPFS_GATEWAY
   ? Config.IPFS_GATEWAYS
   : ["https://w3s.link/ipfs/"];
 
-const MAX_HISTORY = 10;
+const MAX_HISTORY = (() => {
+  const raw = Config.HISTORY_LENGTH;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 10;
+})();
 const STATUS_REFRESH_MS = (() => {
   const raw =
     Config.STATUS_REFRESH_MS ?? Config.STATUS_REFRESH_INTERVAL_MS ?? Config.STATUS_POLL_INTERVAL_MS;
