@@ -1,6 +1,12 @@
+require('ts-node').register({
+  project: require('path').resolve(
+    __dirname,
+    '../../agent-gateway/tsconfig.json'
+  ),
+  transpileOnly: true,
+  compilerOptions: { module: 'commonjs' },
+});
 const { expect } = require('chai');
-process.env.TS_NODE_PROJECT = 'agent-gateway/tsconfig.json';
-require('ts-node/register/transpile-only');
 
 describe('memory cleanup', function () {
   let utils;
