@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 const { AGIALPHA } = require('../../scripts/constants');
 
 describe('RewardEngineMB', function () {
@@ -10,7 +11,7 @@ describe('RewardEngineMB', function () {
     [owner, agent, validator, operator, employer, treasury] =
       await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [

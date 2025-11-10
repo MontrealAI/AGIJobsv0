@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('StakeManager validator slash rewards', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -11,7 +12,7 @@ describe('StakeManager validator slash rewards', function () {
   beforeEach(async () => {
     [owner, treasury, agent, val1, val2, employer] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [

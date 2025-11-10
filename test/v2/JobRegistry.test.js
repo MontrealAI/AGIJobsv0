@@ -1,8 +1,9 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
 const { time } = require('@nomicfoundation/hardhat-network-helpers');
 const { anyValue } = require('@nomicfoundation/hardhat-chai-matchers/withArgs');
 const { enrichJob } = require('../utils/jobMetadata');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('JobRegistry integration', function () {
   let token,
@@ -24,7 +25,7 @@ describe('JobRegistry integration', function () {
 
   beforeEach(async () => {
     [owner, employer, agent, treasury, auditor] = await ethers.getSigners();
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

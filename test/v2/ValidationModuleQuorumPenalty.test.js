@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 const { AGIALPHA } = require('../../scripts/constants');
 
@@ -59,7 +60,7 @@ describe('ValidationModule quorum penalties', function () {
     [owner, employer, agent, ...validators] = await ethers.getSigners();
     validators = validators.slice(0, 3);
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/AGIALPHAToken.sol:AGIALPHAToken'
     );
     await network.provider.send('hardhat_setCode', [

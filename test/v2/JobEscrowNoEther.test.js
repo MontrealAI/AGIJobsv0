@@ -1,5 +1,6 @@
 const { expect } = require('chai');
-const { ethers, artifacts, network } = require('hardhat');
+const { ethers, network } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('JobEscrow ether rejection', function () {
   const { AGIALPHA, AGIALPHA_DECIMALS } = require('../../scripts/constants');
@@ -8,7 +9,7 @@ describe('JobEscrow ether rejection', function () {
   beforeEach(async () => {
     [owner, employer, operator] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/test/MockERC20.sol:MockERC20'
     );
     await network.provider.send('hardhat_setCode', [

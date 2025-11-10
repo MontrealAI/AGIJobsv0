@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { readArtifact } = require('../utils/artifacts');
 
 describe('StakeManager reentrancy', function () {
   const { AGIALPHA } = require('../../scripts/constants');
@@ -9,7 +10,7 @@ describe('StakeManager reentrancy', function () {
   beforeEach(async () => {
     [owner, employer, agent, validator, treasury] = await ethers.getSigners();
 
-    const artifact = await artifacts.readArtifact(
+    const artifact = await readArtifact(
       'contracts/legacy/ReentrantERC206.sol:ReentrantERC206'
     );
     await network.provider.send('hardhat_setCode', [
