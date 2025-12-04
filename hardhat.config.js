@@ -5,6 +5,37 @@ require('hardhat-gas-reporter');
 require('solidity-coverage');
 require('hardhat-contract-sizer');
 
+function parseMochaReporterOptions(name) {
+  const raw = process.env[name];
+  if (!raw) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    const pairs = raw
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    const options = {};
+    for (const pair of pairs) {
+      const [key, ...rest] = pair.split('=');
+      if (!key || rest.length === 0) {
+        continue;
+      }
+      options[key.trim()] = rest.join('=').trim();
+    }
+
+    if (Object.keys(options).length === 0) {
+      throw new Error(`Invalid reporter options provided in ${name}: ${error.message}`);
+    }
+
+    return options;
+  }
+}
+
 function normalisePrivateKey(value) {
   if (value === undefined || value === null) {
     return null;
@@ -73,6 +104,12 @@ const pathsConfig = coverageOnly
   ? { sources: './contracts/coverage', tests: './test' }
   : { sources: './contracts', tests: './test' };
 
+const mochaReporter =
+  process.env.MOCHA_REPORTER || process.env.npm_config_reporter;
+const mochaReporterOptions =
+  parseMochaReporterOptions('MOCHA_REPORTER_OPTIONS') ||
+  parseMochaReporterOptions('npm_config_reporter_options');
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: solidityConfig,
@@ -111,6 +148,8 @@ module.exports = {
   },
   mocha: {
     require: ['ts-node/register', './test/setup.js'],
+    reporter: mochaReporter,
+    reporterOptions: mochaReporterOptions,
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS === 'true',

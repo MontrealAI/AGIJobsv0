@@ -432,7 +432,7 @@
     "security:audit": "audit-ci --config ./audit-ci.json",
     "subgraph:e2e": "node scripts/subgraph-e2e.js",
     "superintelligence:alpha-agi-mark": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/alpha-agi-mark/scripts/generateSuperintelligenceBrief.ts",
-    "test": "hardhat test --no-compile",
+    "test": "node scripts/run-hardhat-tests.cjs",
     "test:alpha-agi-insight-mark": "npx hardhat test --config demo/alpha-agi-insight-mark/hardhat.config.ts",
     "test:alpha-agi-mark": "npx hardhat test --config demo/alpha-agi-mark/hardhat.config.ts",
     "test:planetary-orchestrator-fabric": "node --import tsx demo/Planetary-Orchestrator-Fabric-v0/tests/planetary_fabric.test.ts",
