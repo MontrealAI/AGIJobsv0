@@ -57,10 +57,10 @@ contract DeterministicValidationModule {
 
     event Finalized(uint256 indexed jobId, bool result);
 
-    function setValidators(address[] calldata validators) external {
+    function setValidators(address[] calldata newValidators) external {
         delete validatorSet;
-        for (uint256 i = 0; i < validators.length; i++) {
-            validatorSet.push(validators[i]);
+        for (uint256 i = 0; i < newValidators.length; i++) {
+            validatorSet.push(newValidators[i]);
         }
     }
 

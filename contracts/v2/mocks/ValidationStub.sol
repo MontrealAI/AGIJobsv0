@@ -32,7 +32,7 @@ contract ValidationStub is IValidationModule {
     function start(
         uint256 jobId,
         uint256 entropy
-    ) external override returns (address[] memory vals) {
+    ) external view override returns (address[] memory vals) {
         vals = selectValidators(jobId, entropy);
     }
 
