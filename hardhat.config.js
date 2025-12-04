@@ -5,15 +5,34 @@ require('hardhat-gas-reporter');
 require('solidity-coverage');
 require('hardhat-contract-sizer');
 
-function parseJsonEnv(name) {
+function parseMochaReporterOptions(name) {
   const raw = process.env[name];
   if (!raw) {
     return undefined;
   }
+
   try {
     return JSON.parse(raw);
   } catch (error) {
-    throw new Error(`Invalid JSON provided in ${name}: ${error.message}`);
+    const pairs = raw
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    const options = {};
+    for (const pair of pairs) {
+      const [key, ...rest] = pair.split('=');
+      if (!key || rest.length === 0) {
+        continue;
+      }
+      options[key.trim()] = rest.join('=').trim();
+    }
+
+    if (Object.keys(options).length === 0) {
+      throw new Error(`Invalid reporter options provided in ${name}: ${error.message}`);
+    }
+
+    return options;
   }
 }
 
@@ -88,8 +107,8 @@ const pathsConfig = coverageOnly
 const mochaReporter =
   process.env.MOCHA_REPORTER || process.env.npm_config_reporter;
 const mochaReporterOptions =
-  parseJsonEnv('MOCHA_REPORTER_OPTIONS') ||
-  parseJsonEnv('npm_config_reporter_options');
+  parseMochaReporterOptions('MOCHA_REPORTER_OPTIONS') ||
+  parseMochaReporterOptions('npm_config_reporter_options');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
