@@ -70,19 +70,21 @@ contract SimpleJobRegistry {
             bytes32 resultHash
         )
     {
-        Job storage job = jobStore[jobId];
-        employer = job.employer;
-        agent = job.agent;
-        reward = uint128(job.reward);
+        Job storage storedJob = jobStore[jobId];
+        employer = storedJob.employer;
+        agent = storedJob.agent;
+        reward = uint128(storedJob.reward);
         stake = 0;
         feePct = 0;
-        state = job.finalized ? 5 : (job.submitted ? 3 : (job.agent == address(0) ? 1 : 2));
-        success = job.finalized;
+        state = storedJob.finalized
+            ? 5
+            : (storedJob.submitted ? 3 : (storedJob.agent == address(0) ? 1 : 2));
+        success = storedJob.finalized;
         agentTypes = 0;
-        deadline = job.deadline;
-        assignedAt = job.agent == address(0) ? 0 : uint64(block.timestamp);
-        uriHash = job.specHash;
-        resultHash = job.resultHash;
+        deadline = storedJob.deadline;
+        assignedAt = storedJob.agent == address(0) ? 0 : uint64(block.timestamp);
+        uriHash = storedJob.specHash;
+        resultHash = storedJob.resultHash;
     }
 
     function taxPolicy() external pure returns (address) {
@@ -118,11 +120,11 @@ contract SimpleJobRegistry {
         string calldata subdomain,
         bytes calldata /* proof */
     ) external {
-        Job storage job = jobStore[jobId];
-        require(job.employer != address(0), "job missing");
-        require(job.agent == address(0), "already assigned");
-        job.agent = msg.sender;
-        job.subdomain = subdomain;
+        Job storage storedJob = jobStore[jobId];
+        require(storedJob.employer != address(0), "job missing");
+        require(storedJob.agent == address(0), "already assigned");
+        storedJob.agent = msg.sender;
+        storedJob.subdomain = subdomain;
         emit AgentAssigned(jobId, msg.sender, subdomain);
     }
 
@@ -133,21 +135,24 @@ contract SimpleJobRegistry {
         string calldata /* subdomain */,
         bytes calldata /* proof */
     ) external {
-        Job storage job = jobStore[jobId];
-        require(job.agent == msg.sender, "not agent");
-        job.submitted = true;
-        job.resultHash = resultHash;
-        job.resultURI = resultURI;
-        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, job.subdomain);
+        Job storage storedJob = jobStore[jobId];
+        require(storedJob.agent == msg.sender, "not agent");
+        storedJob.submitted = true;
+        storedJob.resultHash = resultHash;
+        storedJob.resultURI = resultURI;
+        emit ResultSubmitted(jobId, msg.sender, resultHash, resultURI, storedJob.subdomain);
     }
 
     function finalizeJob(uint256 jobId, string calldata resultRef) external {
-        Job storage job = jobStore[jobId];
-        require(job.submitted, "not submitted");
-        require(!job.finalized, "finalized");
-        require(msg.sender == job.agent || msg.sender == job.employer, "unauthorized");
-        job.finalized = true;
-        token.transfer(job.agent, job.reward);
+        Job storage storedJob = jobStore[jobId];
+        require(storedJob.submitted, "not submitted");
+        require(!storedJob.finalized, "finalized");
+        require(
+            msg.sender == storedJob.agent || msg.sender == storedJob.employer,
+            "unauthorized"
+        );
+        storedJob.finalized = true;
+        token.transfer(storedJob.agent, storedJob.reward);
         emit JobFinalized(jobId, resultRef);
     }
 

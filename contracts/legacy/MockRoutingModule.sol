@@ -10,7 +10,7 @@ contract MockRoutingModule {
         operator = _operator;
     }
 
-    function selectOperator(bytes32, bytes32) external returns (address) {
+    function selectOperator(bytes32, bytes32) external view returns (address) {
         return operator;
     }
 }
