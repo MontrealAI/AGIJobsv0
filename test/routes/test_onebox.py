@@ -11,8 +11,12 @@ from typing import Any, Dict, Optional
 from unittest import mock
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
+os.environ.setdefault("ONEBOX_TEST_FORCE_STUB_WEB3", "1")
 
 _force_stub_fastapi = os.getenv("ONEBOX_TEST_FORCE_STUB_FASTAPI") == "1"
+# ONEBOX_TEST_FORCE_STUB_PYDANTIC allows toggling the lightweight shim when the real
+# dependency is unavailable.
+_force_stub_pydantic = os.getenv("ONEBOX_TEST_FORCE_STUB_PYDANTIC") == "1"
 # ONEBOX_TEST_FORCE_STUB_WEB3 allows the suite to replace the real Web3 implementation
 # with a minimal stub so unit tests do not require a live JSON-RPC endpoint.
 _force_stub_web3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3") == "1"
@@ -292,6 +296,8 @@ except ModuleNotFoundError:
     sys.modules["httpx"] = httpx_module
 
 try:
+    if _force_stub_pydantic:
+        raise ModuleNotFoundError
     from pydantic import BaseModel, Field  # type: ignore  # noqa: F401
 except ModuleNotFoundError:
     _MISSING = object()
