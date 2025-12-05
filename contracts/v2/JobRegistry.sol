@@ -663,6 +663,31 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         emit AgentAuthCacheDurationUpdated(duration);
     }
 
+    function _verifyAndCacheAgentIdentity(
+        address agent,
+        string calldata subdomain,
+        bytes32[] calldata proof
+    ) internal returns (bytes32 node, bool viaWrapper, bool viaMerkle) {
+        if (bytes(subdomain).length == 0) revert EmptySubdomain();
+        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
+
+        string memory cachedSubdomain = agentSubdomains[agent];
+        bytes32 providedHash = keccak256(bytes(subdomain));
+        bool cachedMatches = bytes(cachedSubdomain).length != 0 &&
+            keccak256(bytes(cachedSubdomain)) == providedHash;
+
+        (bool authorized, bytes32 resolvedNode, bool wrapper, bool merkle) =
+            identityRegistry.verifyAgent(agent, subdomain, proof);
+        if (!authorized) revert NotAuthorizedAgent();
+
+        if (!cachedMatches) {
+            agentSubdomains[agent] = subdomain;
+            emit AgentSubdomainUpdated(agent, subdomain);
+        }
+
+        return (resolvedNode, wrapper, merkle);
+    }
+
     function _bumpAgentAuthCacheVersionInternal() internal {
         unchecked {
             ++agentAuthCacheVersion;
@@ -1940,37 +1965,19 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
             if (reputationEngine.isBlacklisted(msg.sender)) revert BlacklistedAgent();
             if (reputationEngine.isBlacklisted(job.employer)) revert BlacklistedEmployer();
         }
-        if (bytes(subdomain).length == 0) revert EmptySubdomain();
-        if (address(identityRegistry) == address(0)) revert IdentityRegistryNotSet();
-        string memory cachedSubdomain = agentSubdomains[msg.sender];
-        bool hasCached = bytes(cachedSubdomain).length != 0;
-        bytes32 cachedHash;
-        if (hasCached) {
-            cachedHash = keccak256(bytes(cachedSubdomain));
-        }
-        bytes32 providedHash = keccak256(bytes(subdomain));
-        bool cachedMatches = hasCached && cachedHash == providedHash;
-        (bool authorized, bytes32 node, bool viaWrapper, bool viaMerkle) =
-            identityRegistry.verifyAgent(msg.sender, subdomain, proof);
-        if (!authorized) revert NotAuthorizedAgent();
-        emit AgentIdentityVerified(
-            msg.sender,
-            node,
-            subdomain,
-            viaWrapper,
-            viaMerkle
-        );
-        if (!cachedMatches) {
-            agentSubdomains[msg.sender] = subdomain;
-            emit AgentSubdomainUpdated(msg.sender, subdomain);
-        }
-        uint8 agentTypes = _getAgentTypes(job);
-        if (agentTypes > 0) {
-            IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
-                msg.sender
-            );
-            if ((agentTypes & (1 << uint8(aType))) == 0)
-                revert AgentTypeNotAllowed();
+        {
+            (bytes32 node, bool viaWrapper, bool viaMerkle) =
+                _verifyAndCacheAgentIdentity(msg.sender, subdomain, proof);
+            emit AgentIdentityVerified(msg.sender, node, subdomain, viaWrapper, viaMerkle);
+
+            uint8 agentTypes = _getAgentTypes(job);
+            if (agentTypes > 0) {
+                IIdentityRegistry.AgentType aType = identityRegistry.getAgentType(
+                    msg.sender
+                );
+                if ((agentTypes & (1 << uint8(aType))) == 0)
+                    revert AgentTypeNotAllowed();
+            }
         }
         job.resultHash = resultHash;
         _setState(job, State.Submitted);

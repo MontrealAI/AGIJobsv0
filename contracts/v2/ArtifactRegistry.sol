@@ -95,17 +95,14 @@ contract ArtifactRegistry is ERC721, Ownable, AccessControl, Pausable, Reentranc
         if (bytes(cid).length == 0) revert EmptyCID();
         if (bytes(kind).length == 0) revert EmptyKind();
 
-        uint256 citationCount = citations.length;
-        if (citationCount > maxCitations) revert MaxCitationsExceeded(citationCount, maxCitations);
+        if (citations.length > maxCitations) revert MaxCitationsExceeded(citations.length, maxCitations);
 
         if (_lineageToToken[lineageHash] != 0) {
             revert LineageHashInUse(lineageHash, _lineageToToken[lineageHash]);
         }
 
-        tokenId = _nextTokenId + 1;
+        tokenId = ++_nextTokenId;
         _enforceCitationInvariants(tokenId, citations);
-
-        _nextTokenId = tokenId;
         Artifact storage artifact = _artifacts[tokenId];
         artifact.cid = cid;
         artifact.kind = kind;
