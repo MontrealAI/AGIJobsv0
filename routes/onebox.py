@@ -301,7 +301,9 @@ EXPLORER_TX_TPL = os.getenv(
 PINNER_KIND = os.getenv("PINNER_KIND", "").lower()
 PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
-ALLOW_PINNING_STUB = os.getenv("ONEBOX_ALLOW_PINNING_STUB", "1") == "1"
+# Default to failing fast when no providers are configured; the in-memory pinning stub must be
+# explicitly enabled via ONEBOX_ALLOW_PINNING_STUB=1 for test environments.
+ALLOW_PINNING_STUB = os.getenv("ONEBOX_ALLOW_PINNING_STUB", "0") == "1"
 WEB3_STORAGE_TOKEN = (
     os.getenv("WEB3_STORAGE_TOKEN")
     or os.getenv("WEB3STORAGE_TOKEN")
