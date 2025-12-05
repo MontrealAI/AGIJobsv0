@@ -7,12 +7,37 @@ import hmac
 import json
 import logging
 import os
+import hashlib
+import hmac
+import json
+import logging
+import os
 import time
+import types
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import Deque, Dict, Optional
 
-from fastapi import Header, HTTPException, Request
+try:  # pragma: no cover - exercised in test shims
+    from fastapi import Header, HTTPException, Request
+except Exception:  # pragma: no cover - fallback for environments without FastAPI
+    class HTTPException(Exception):
+        def __init__(self, status_code: int, detail=None) -> None:
+            super().__init__(detail)
+            self.status_code = status_code
+            self.detail = detail
+
+    class Request:
+        def __init__(self):
+            self.state = types.SimpleNamespace()
+            self.url = types.SimpleNamespace(path="")
+            self.method = ""
+
+        async def body(self):  # type: ignore[override]
+            return b""
+
+    def Header(default=None, **_kwargs):  # type: ignore[override]
+        return default
 
 
 @dataclass(frozen=True)

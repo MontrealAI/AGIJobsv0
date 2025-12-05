@@ -13,6 +13,10 @@ from unittest import mock
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
 os.environ.setdefault("ONEBOX_TEST_FORCE_STUB_WEB3", "1")
 
+# Clear any stubs injected by earlier tests (e.g., analytics) so this module
+# exercises the real implementation.
+sys.modules.pop("routes.onebox", None)
+
 _force_stub_fastapi = os.getenv("ONEBOX_TEST_FORCE_STUB_FASTAPI") == "1"
 # ONEBOX_TEST_FORCE_STUB_PYDANTIC allows toggling the lightweight shim when the real
 # dependency is unavailable.

@@ -7,6 +7,7 @@ import pytest
 import hashlib
 import hmac
 import json
+import sys
 import time
 
 pytest.importorskip("fastapi")
@@ -18,6 +19,10 @@ from fastapi.testclient import TestClient
 from orchestrator.config import get_burn_fraction, get_fee_fraction
 from orchestrator.models import JobIntent, OrchestrationPlan, Step
 from routes.meta_orchestrator import router as meta_router
+
+# Ensure the real onebox module is loaded instead of a stub injected by other
+# tests (e.g., analytics).
+sys.modules.pop("routes.onebox", None)
 import routes.onebox as onebox
 from routes.security import reload_security_settings, reset_rate_limits
 
