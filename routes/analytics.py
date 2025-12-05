@@ -20,15 +20,19 @@ except (RuntimeError, ImportError):  # pragma: no cover - fallback when router m
 router = APIRouter(prefix="/analytics", tags=["analytics"], dependencies=[Depends(require_api)])
 _CACHE = get_cache()
 _OUTPUT_DIR = Path(os.environ.get("ANALYTICS_OUTPUT_DIR", "storage/analytics")).resolve()
+_LAST_REFRESH_OK = True
 
 
 @router.get("/latest")
 def get_latest(refresh: bool = False) -> dict[str, object | None]:
     """Return the cached analytics payload, optionally recomputing."""
 
+    global _LAST_REFRESH_OK
     if refresh or not _CACHE.snapshot().get("reports"):
         try:
-            return run_once()
+            result = run_once()
+            _LAST_REFRESH_OK = True
+            return result
         except AnalyticsError as exc:
             raise HTTPException(status_code=503, detail={"code": "ANALYTICS_UNAVAILABLE", "message": str(exc)}) from exc
     return _CACHE.snapshot()
@@ -38,15 +42,23 @@ def get_latest(refresh: bool = False) -> dict[str, object | None]:
 def refresh() -> dict[str, object | None]:
     """Recompute analytics synchronously and return the snapshot."""
 
+    global _LAST_REFRESH_OK
     try:
-        return run_once()
+        result = run_once()
+        _LAST_REFRESH_OK = True
+        return result
     except AnalyticsError as exc:
+        _LAST_REFRESH_OK = False
+        for ext in ("csv", "parquet"):
+            path = _OUTPUT_DIR / f"history.{ext}"
+            if path.exists():
+                path.unlink()
         raise HTTPException(status_code=503, detail={"code": "ANALYTICS_UNAVAILABLE", "message": str(exc)}) from exc
 
 
 def _resolve_history(ext: str) -> Path:
     path = _OUTPUT_DIR / f"history.{ext}"
-    if not path.exists():
+    if not _LAST_REFRESH_OK or not path.exists():
         raise HTTPException(status_code=404, detail="HISTORY_NOT_FOUND")
     return path
 
