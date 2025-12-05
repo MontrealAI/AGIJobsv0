@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ethers } from 'ethers';
 import { useApi } from '../context/ApiContext';
 import { GovernancePreviewResult } from '../types';
 
@@ -345,10 +346,28 @@ function normaliseValue(raw: string, kind: ActionDefinition['kind']) {
       }
       return numeric;
     }
-    case 'token':
+    case 'address': {
+      if (!ethers.isAddress(trimmed)) {
+        throw new Error('Provide a valid 0x-prefixed address.');
+      }
+      return ethers.getAddress(trimmed);
+    }
+    case 'bytes32': {
+      if (!/^0x[0-9a-fA-F]{64}$/.test(trimmed)) {
+        throw new Error('Provide a 32-byte hex value (0x + 64 hex chars).');
+      }
+      return trimmed.toLowerCase();
+    }
+    case 'token': {
+      try {
+        // Validate numeric shape without converting to wei for downstream flexibility.
+        ethers.parseUnits(trimmed, 18);
+        return trimmed;
+      } catch {
+        throw new Error('Token amounts must be numeric (decimals allowed).');
+      }
+    }
     case 'string':
-    case 'address':
-    case 'bytes32':
       return trimmed;
     default:
       return trimmed;
