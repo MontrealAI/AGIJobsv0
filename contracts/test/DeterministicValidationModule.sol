@@ -168,7 +168,7 @@ contract DeterministicValidationModule {
         external
         view
         returns (
-            address[] memory validators,
+            address[] memory roundValidators,
             address[] memory participants,
             uint256 commitDeadline,
             uint256 revealDeadline,
@@ -179,7 +179,7 @@ contract DeterministicValidationModule {
         )
     {
         RoundConfig storage config = roundConfig[jobId];
-        validators = validatorSet;
+        roundValidators = validatorSet;
         participants = validatorSet;
         commitDeadline = config.commitDeadline;
         revealDeadline = config.revealDeadline;
