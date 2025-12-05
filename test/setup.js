@@ -28,37 +28,39 @@ before(async function () {
     'MockERC20.sol',
     'MockERC20.json'
   );
-  let artifact;
-  try {
-    artifact = await artifacts.readArtifact(
-      'contracts/test/MockERC20.sol:MockERC20'
-    );
-  } catch (error) {
-    if (
-      error?.message?.includes('Artifact for contract') ||
-      error?.message?.includes('not found')
-    ) {
-      if (!fs.existsSync(mockArtifactPath)) {
-        const originalCompilers = hre.config.solidity.compilers.map((compiler) => ({
-          ...compiler,
-          settings: { ...compiler.settings },
-        }));
-        try {
-          if (originalCompilers.length > 0) {
-            hre.config.solidity.compilers = [
-              {
-                ...originalCompilers[0],
-                settings: { ...originalCompilers[0].settings },
-              },
-            ];
+      let artifact;
+      try {
+        artifact = await artifacts.readArtifact(
+          'contracts/test/MockERC20.sol:MockERC20'
+        );
+      } catch (error) {
+        if (
+          error?.message?.includes('Artifact for contract') ||
+          error?.message?.includes('not found')
+        ) {
+          if (!fs.existsSync(mockArtifactPath)) {
+            const originalCompilers = hre.config.solidity.compilers.map((compiler) => ({
+              ...compiler,
+              settings: { ...compiler.settings },
+            }));
+            try {
+              if (originalCompilers.length > 0) {
+                const fastTestCompiler = {
+                  ...originalCompilers[0],
+                  // Reuse the first configured compiler so we only download and run a single
+                  // toolchain when bootstrapping tests that need MockERC20. This keeps the
+                  // compilation step leaner without deviating from the project's defaults.
+                  settings: { ...originalCompilers[0].settings },
+                };
+                hre.config.solidity.compilers = [fastTestCompiler];
+              }
+              await hre.run('compile');
+            } finally {
+              hre.config.solidity.compilers = originalCompilers;
+            }
           }
-          await hre.run('compile');
-        } finally {
-          hre.config.solidity.compilers = originalCompilers;
-        }
-      }
-      artifact = await artifacts.readArtifact(
-        'contracts/test/MockERC20.sol:MockERC20'
+          artifact = await artifacts.readArtifact(
+            'contracts/test/MockERC20.sol:MockERC20'
       );
     } else {
       throw error;
