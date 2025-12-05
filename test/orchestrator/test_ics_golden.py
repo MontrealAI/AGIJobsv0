@@ -1,7 +1,10 @@
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from orchestrator import planner
 from orchestrator.models import PlanIn
@@ -11,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_create_job_ics_matches_fixture(monkeypatch, tmp_path):
+    if shutil.which("node") is None:
+        pytest.skip("Node.js runtime is required for ICS validation")
+
     monkeypatch.setattr(
         planner,
         "_generate_trace_id",

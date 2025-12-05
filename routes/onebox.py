@@ -468,17 +468,28 @@ def _context_from_request(request: Request) -> SecurityContext:
 
 logger = logging.getLogger(__name__)
 
+
+_METRICS_REGISTRY: prometheus_client.CollectorRegistry | None = prometheus_client.CollectorRegistry()
+
+
+def _metrics_registry() -> prometheus_client.CollectorRegistry:
+    global _METRICS_REGISTRY
+    if _METRICS_REGISTRY is None:
+        _METRICS_REGISTRY = prometheus_client.CollectorRegistry()
+    return _METRICS_REGISTRY
+
+
 _PLAN_TOTAL = prometheus_client.Counter(
-    "plan_total", "Total /onebox/plan requests", ["intent_type", "http_status"]
+    "plan_total", "Total /onebox/plan requests", ["intent_type", "http_status"], registry=_metrics_registry()
 )
 _EXECUTE_TOTAL = prometheus_client.Counter(
-    "execute_total", "Total /onebox/execute requests", ["intent_type", "http_status"]
+    "execute_total", "Total /onebox/execute requests", ["intent_type", "http_status"], registry=_metrics_registry()
 )
 _SIMULATE_TOTAL = prometheus_client.Counter(
-    "simulate_total", "Total /onebox/simulate requests", ["intent_type", "http_status"]
+    "simulate_total", "Total /onebox/simulate requests", ["intent_type", "http_status"], registry=_metrics_registry()
 )
 _TTO_SECONDS = prometheus_client.Histogram(
-    "onebox_tto_seconds", "Onebox endpoint turnaround time (seconds)", ["endpoint"]
+    "onebox_tto_seconds", "Onebox endpoint turnaround time (seconds)", ["endpoint"], registry=_metrics_registry()
 )
 
 class Attachment(BaseModel):
@@ -2844,7 +2855,7 @@ def _log_event(level: int, event: str, correlation_id: str, **kwargs: Any) -> No
     logger.log(level, f"{event} | cid={correlation_id} | " + " ".join(f"{k}={v}" for k, v in kwargs.items()), extra=extra)
 
 @health_router.get("/healthz")
-async def healthz(request: Request) -> Dict[str, bool]:
+async def healthz() -> Dict[str, bool]:
     try:
         block_attr = getattr(w3.eth, "block_number", None)
         if callable(block_attr):
@@ -2855,11 +2866,17 @@ async def healthz(request: Request) -> Dict[str, bool]:
         raise HTTPException(status_code=503, detail={"code": "RPC_UNAVAILABLE", "message": str(e)})
     return {"ok": True}
 
+async def _healthcheck(request: Request | None = None) -> Dict[str, bool]:
+    return await healthz()
+
 @health_router.get("/metrics")
 def metrics():
-    return Response(prometheus_client.generate_latest(), media_type=prometheus_client.CONTENT_TYPE_LATEST)
+    return Response(
+        prometheus_client.generate_latest(_metrics_registry()),
+        media_type=prometheus_client.CONTENT_TYPE_LATEST,
+    )
 
-healthcheck = healthz
+healthcheck = _healthcheck
 metrics_endpoint = metrics
 
 _STATE_MAP = {
