@@ -85,30 +85,46 @@ const isCoverageRun =
 const isFastCompile = process.env.HARDHAT_FAST_COMPILE === '1';
 const viaIROverride = process.env.HARDHAT_VIA_IR;
 // Prefer viaIR to avoid stack-depth issues in larger contracts. Allow explicit
-// opt-out via HARDHAT_VIA_IR=false, but default to enabling when coverage is
-// not running regardless of FAST_COMPILE.
-const viaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
+// opt-out via HARDHAT_VIA_IR=false. Fast compile runs keep viaIR enabled by
+// default to preserve correctness while other toggles (like reduced compiler
+// sets) keep turnaround times manageable.
+const baseViaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
+const compilerViaIR = baseViaIR;
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
-const solidityVersions = isCoverageRun
+const solidityVersions = isCoverageRun || isFastCompile
   ? [SOLIDITY_VERSIONS[0]]
   : SOLIDITY_VERSIONS;
 
-const solidityConfig = {
-  compilers: solidityVersions.map((version) => ({
-    version,
-    settings: {
-      optimizer: {
-        enabled: !isCoverageRun,
-        runs: isFastCompile ? 50 : isCoverageRun ? 0 : 200,
-      },
-      viaIR,
-      evmVersion: 'cancun',
-      metadata: isFastCompile ? { bytecodeHash: 'none' } : undefined,
+const solidityCompilers = solidityVersions.map((version) => ({
+  version,
+  settings: {
+    optimizer: {
+      enabled: !isCoverageRun,
+      runs: isFastCompile ? 50 : isCoverageRun ? 0 : 200,
     },
-  })),
+    viaIR: compilerViaIR,
+    evmVersion: 'cancun',
+    metadata: isFastCompile ? { bytecodeHash: 'none' } : undefined,
+  },
+}));
+
+const solidityConfig = {
+  compilers: solidityCompilers,
 };
+
+if (isFastCompile && solidityCompilers.length > 0) {
+  // Keep viaIR enabled for deeply nested contracts while allowing the majority
+  // of the codebase to compile quickly without it during rapid test runs.
+  const primaryCompiler = solidityCompilers[0];
+  solidityConfig.overrides = {
+    'contracts/v2/JobRegistry.sol': {
+      version: primaryCompiler.version,
+      settings: { ...primaryCompiler.settings, viaIR: true },
+    },
+  };
+}
 
 const pathsConfig = coverageOnly
   ? { sources: './contracts/coverage', tests: './test' }
