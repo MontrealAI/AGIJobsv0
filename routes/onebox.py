@@ -469,16 +469,28 @@ def _context_from_request(request: Request) -> SecurityContext:
 logger = logging.getLogger(__name__)
 
 _PLAN_TOTAL = prometheus_client.Counter(
-    "plan_total", "Total /onebox/plan requests", ["intent_type", "http_status"]
+    "plan_total",
+    "Total /onebox/plan requests",
+    ["intent_type", "http_status"],
+    registry=prometheus_client.REGISTRY,
 )
 _EXECUTE_TOTAL = prometheus_client.Counter(
-    "execute_total", "Total /onebox/execute requests", ["intent_type", "http_status"]
+    "execute_total",
+    "Total /onebox/execute requests",
+    ["intent_type", "http_status"],
+    registry=prometheus_client.REGISTRY,
 )
 _SIMULATE_TOTAL = prometheus_client.Counter(
-    "simulate_total", "Total /onebox/simulate requests", ["intent_type", "http_status"]
+    "simulate_total",
+    "Total /onebox/simulate requests",
+    ["intent_type", "http_status"],
+    registry=prometheus_client.REGISTRY,
 )
 _TTO_SECONDS = prometheus_client.Histogram(
-    "onebox_tto_seconds", "Onebox endpoint turnaround time (seconds)", ["endpoint"]
+    "onebox_tto_seconds",
+    "Onebox endpoint turnaround time (seconds)",
+    ["endpoint"],
+    registry=prometheus_client.REGISTRY,
 )
 
 class Attachment(BaseModel):
@@ -2855,11 +2867,19 @@ async def healthz(request: Request) -> Dict[str, bool]:
         raise HTTPException(status_code=503, detail={"code": "RPC_UNAVAILABLE", "message": str(e)})
     return {"ok": True}
 
+
+async def healthcheck(request: Optional[Request] = None) -> Dict[str, bool]:
+    """Programmatic health helper that tolerates a missing Request object."""
+
+    if request is None:
+        request = Request({"type": "http", "headers": []})
+
+    return await healthz(request)
+
 @health_router.get("/metrics")
 def metrics():
     return Response(prometheus_client.generate_latest(), media_type=prometheus_client.CONTENT_TYPE_LATEST)
 
-healthcheck = healthz
 metrics_endpoint = metrics
 
 _STATE_MAP = {
