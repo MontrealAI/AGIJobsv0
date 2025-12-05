@@ -1,8 +1,13 @@
 import json
 import os
+import sys
 import pytest
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
+
+# Remove any stubbed onebox module so OrgPolicyStore loads from the real router
+# implementation during this test module's import.
+sys.modules.pop("routes.onebox", None)
 
 from routes.onebox import OrgPolicyStore
 

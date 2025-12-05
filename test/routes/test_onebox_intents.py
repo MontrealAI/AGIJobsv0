@@ -8,6 +8,10 @@ import pytest
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
 
+# Clear any onebox stub injected by earlier modules so this suite exercises the
+# real router implementation.
+sys.modules.pop("routes.onebox", None)
+
 if "fastapi" not in sys.modules:
     fastapi = types.ModuleType("fastapi")
 
