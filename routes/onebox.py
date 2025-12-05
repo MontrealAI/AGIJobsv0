@@ -95,9 +95,6 @@ CORS_ALLOW_ORIGINS = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "*").sp
 
 AGIALPHA_SYMBOL = os.getenv("AGIALPHA_SYMBOL", "AGIALPHA")
 
-if not RPC_URL:
-    raise RuntimeError("RPC_URL is required")
-
 _UINT64_MAX = (1 << 64) - 1
 
 _MIN_ABI = [
@@ -155,21 +152,56 @@ _MIN_ABI = [
     },
 ]
 
-w3 = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 30}))
-try:
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
-except ValueError:
-    pass
+_web3_instance: Optional[Web3] = None
 
-relayer = None
-if _RELAYER_PK:
+
+def _get_web3() -> Web3:
+    """Return a configured Web3 provider or raise a clear HTTP error."""
+
+    global _web3_instance
+    if _web3_instance is None:
+        if not RPC_URL:
+            raise HTTPException(status_code=503, detail="RPC_URL is not configured")
+
+        _web3_instance = Web3(Web3.HTTPProvider(RPC_URL, request_kwargs={"timeout": 30}))
+        try:
+            _web3_instance.middleware_onion.inject(geth_poa_middleware, layer=0)
+        except ValueError:
+            pass
+
+    return _web3_instance
+
+
+def _get_relayer():
+    if not _RELAYER_PK:
+        return None
+
     try:
-        relayer = w3.eth.account.from_key(_RELAYER_PK)
-    except Exception as e:
-        logging.error("Failed to load relayer key: %s", str(e))
-        relayer = None
+        return _get_web3().eth.account.from_key(_RELAYER_PK)
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logging.error("Failed to load relayer key: %s", exc)
+        return None
 
-_registry_contract = w3.eth.contract(address=JOB_REGISTRY, abi=_MIN_ABI)
+
+relayer = _get_relayer()
+
+_registry_contract = None
+_registry_wrapper: Optional["_RegistryWrapper"] = None
+
+
+def _get_registry_contract():
+    global _registry_contract
+    if _registry_contract is None:
+        _registry_contract = _get_web3().eth.contract(address=JOB_REGISTRY, abi=_MIN_ABI)
+    return _registry_contract
+
+
+def _get_registry() -> "_RegistryWrapper":
+    global _registry_wrapper
+    contract = _get_registry_contract()
+    if _registry_wrapper is None or _registry_wrapper.address != contract.address:
+        _registry_wrapper = _RegistryWrapper(contract)
+    return _registry_wrapper
 
 
 class _RegistryWrapper:
@@ -180,9 +212,6 @@ class _RegistryWrapper:
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._contract, name)
-
-
-registry = _RegistryWrapper(_registry_contract)
 
 
 _AA_EXECUTOR_SENTINEL = object()
@@ -1326,7 +1355,7 @@ def _get_fee_policy(*, allow_network: bool = True) -> Tuple[Optional[str], Optio
         return _load_fee_policy_from_env()
 
     try:
-        burn_pct_uint = registry.functions.burnPct().call()
+        burn_pct_uint = _get_registry().functions.burnPct().call()
         burn_pct_dec = Decimal(burn_pct_uint) / Decimal(100)
         fee_pct_dec = Decimal(2)
         policy = _format_percentage(fee_pct_dec), _format_percentage(burn_pct_dec)
@@ -1622,6 +1651,7 @@ async def _pin_json(data: dict, file_name: str) -> dict:
     logging.error("All pinning attempts failed: %s", errors)
     raise PinningError("All configured pinning services failed", provider="all")
 def _build_tx(func, sender: str) -> dict:
+    w3 = _get_web3()
     tx = func.build_transaction({"from": sender, "nonce": w3.eth.get_transaction_count(sender)})
     if CHAIN_ID:
         tx["chainId"] = CHAIN_ID
@@ -1661,6 +1691,7 @@ async def _send_relayer_tx(
 
     signed = await asyncio.to_thread(relayer.sign_transaction, tx)
 
+    w3 = _get_web3()
     raw_tx_hash = await asyncio.to_thread(w3.eth.send_raw_transaction, signed.rawTransaction)
     if hasattr(raw_tx_hash, "hex") and callable(raw_tx_hash.hex):
         tx_hash = raw_tx_hash.hex()
@@ -2337,7 +2368,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
 
             if req.mode != "wallet":
-                func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
+                func = _get_registry().functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
                 sender = None
                 if relayer:
                     sender = relayer.address
@@ -2424,7 +2455,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
 
             if req.mode != "wallet":
-                func = registry.functions.finalize(job_id_int)
+                func = _get_registry().functions.finalize(job_id_int)
                 sender = None
                 if relayer:
                     sender = relayer.address
@@ -2530,7 +2561,7 @@ async def status(request: Request, jobId: int):
     context = _context_from_request(request)
 
     try:
-        job = registry.functions.jobs(job_id).call()
+        job = _get_registry().functions.jobs(job_id).call()
     except Exception as e:
         logger.error("Job status retrieval failed for job %s: %s", job_id, e)
         audit_event(
@@ -2600,6 +2631,7 @@ def _log_event(level: int, event: str, correlation_id: str, **kwargs: Any) -> No
 
 @health_router.get("/healthz")
 async def healthz() -> Dict[str, bool]:
+    w3 = _get_web3()
     try:
         block_attr = getattr(w3.eth, "block_number", None)
         if callable(block_attr):
@@ -2649,10 +2681,10 @@ def _compute_spec_hash(payload: Dict[str, Any]) -> bytes:
 
 def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
     try:
-        func = getattr(registry.functions, method)(*args)
+        func = getattr(_get_registry().functions, method)(*args)
     except AttributeError as exc:
         raise _http_error(400, "UNSUPPORTED_ACTION") from exc
-    tx = func.build_transaction({"from": registry.address})
+    tx = func.build_transaction({"from": _get_registry().address})
     data = tx.get("data")
     if not data and hasattr(func, "_encode_transaction_data"):
         try:
@@ -2665,11 +2697,11 @@ def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
         data = Web3.to_hex(data)
     if not isinstance(data, str):
         data = "0x"
-    return registry.address, data
+    return _get_registry().address, data
 
 def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
     try:
-        event = registry.events.JobCreated()
+        event = _get_registry().events.JobCreated()
         try:
             processed = event.process_receipt(receipt)
         except Exception:
@@ -2683,13 +2715,13 @@ def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
     except Exception as exc:
         logger.warning("Failed to decode JobCreated event: %s", exc)
     try:
-        return int(registry.functions.nextJobId().call())
+        return int(_get_registry().functions.nextJobId().call())
     except Exception:
         return None
 
 async def _read_status(job_id: int) -> StatusResponse:
     try:
-        job = registry.functions.jobs(job_id).call()
+        job = _get_registry().functions.jobs(job_id).call()
     except Exception:
         response = StatusResponse(jobId=job_id, state="unknown")
         _cache_status(response)

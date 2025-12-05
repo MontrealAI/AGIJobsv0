@@ -78,3 +78,7 @@ absolute-zero-demo:
 	python -m venv .venv-demo-azr
 	. .venv-demo-azr/bin/activate && pip install --upgrade pip && pip install -r requirements-python.txt && pip install pytest
 	. .venv-demo-azr/bin/activate && python demo/Absolute-Zero-Reasoner-v0/scripts/run_demo.py --iterations 6
+
+.PHONY: pytest
+pytest:
+	PYTHONPATH=".:$(PWD)/packages/hgm-core/src" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest test
