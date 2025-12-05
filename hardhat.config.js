@@ -84,7 +84,9 @@ const isCoverageRun =
   process.env.HARDHAT_COVERAGE === '1';
 const isFastCompile = process.env.HARDHAT_FAST_COMPILE === '1';
 const viaIROverride = process.env.HARDHAT_VIA_IR;
-const viaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
+// Keep fast/CI runs responsive by defaulting viaIR off when FAST_COMPILE is set,
+// while still allowing explicit overrides for production builds or coverage.
+const viaIR = viaIROverride === undefined ? !isCoverageRun && !isFastCompile : viaIROverride === 'true';
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
