@@ -34,7 +34,7 @@ class _FailingEth:
 def test_healthz_reports_success(onebox_module: object, monkeypatch: pytest.MonkeyPatch) -> None:
     module = onebox_module
     monkeypatch.setattr(module, "w3", type("DummyWeb3", (), {"eth": _DummyEth()})())
-    result = asyncio.run(module.healthz())
+    result = asyncio.run(module.healthcheck())
     assert result == {"ok": True}
 
 
@@ -43,7 +43,7 @@ def test_healthz_surfaces_rpc_failure(onebox_module: object, monkeypatch: pytest
     monkeypatch.setattr(module, "w3", type("FailingWeb3", (), {"eth": _FailingEth()})())
 
     with pytest.raises(module.HTTPException) as exc:
-        asyncio.run(module.healthz())
+        asyncio.run(module.healthcheck())
 
     assert exc.value.status_code == 503
     assert exc.value.detail == {"code": "RPC_UNAVAILABLE", "message": "rpc down"}

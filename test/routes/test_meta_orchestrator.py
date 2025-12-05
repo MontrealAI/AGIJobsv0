@@ -1,5 +1,6 @@
 """Black-box tests for the meta-orchestrator router."""
 
+import os
 from decimal import Decimal
 
 import pytest
@@ -12,17 +13,29 @@ import time
 pytest.importorskip("fastapi")
 pytest.importorskip("fastapi.testclient")
 
+os.environ.setdefault("ONEBOX_API_TOKEN", "test-token")
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from orchestrator.config import get_burn_fraction, get_fee_fraction
-from orchestrator.models import JobIntent, OrchestrationPlan, Step
+from orchestrator.models import JobIntent, OrchestrationPlan, Receipt, RunInfo, StatusOut, Step
+import routes.meta_orchestrator as meta_module
 from routes.meta_orchestrator import router as meta_router
 import routes.onebox as onebox
 from routes.security import reload_security_settings, reset_rate_limits
 
 FEE_FRACTION = get_fee_fraction()
 BURN_FRACTION = get_burn_fraction()
+API_TOKEN = os.environ["ONEBOX_API_TOKEN"]
+AUTH_HEADERS = {"Authorization": f"Bearer {API_TOKEN}"}
+
+
+@pytest.fixture(autouse=True)
+def _reset_security(monkeypatch):
+    monkeypatch.setenv("ONEBOX_API_TOKEN", API_TOKEN)
+    reload_security_settings()
+    reset_rate_limits()
 
 
 def create_app() -> FastAPI:
@@ -31,9 +44,45 @@ def create_app() -> FastAPI:
     return app
 
 
-def test_plan_simulate_execute_flow():
+@pytest.fixture
+def authed_client(monkeypatch):
     app = create_app()
-    client = TestClient(app)
+
+    status_store: dict[str, StatusOut] = {}
+
+    def _start_run(plan, approvals):  # type: ignore[no-untyped-def]
+        del approvals
+        run = RunInfo(
+            id="run-1",
+            plan_id=plan.plan_id,
+            state="running",
+            created_at=time.time(),
+            started_at=time.time(),
+        )
+        status_store[run.id] = StatusOut(
+            run=run,
+            steps=[],
+            receipts=Receipt(plan_id=plan.plan_id),
+            plan=plan,
+        )
+        return run
+
+    def _get_status(run_id: str) -> StatusOut:
+        status = status_store[run_id]
+        status.run.state = "succeeded"
+        status.run.completed_at = time.time()
+        return status
+
+    monkeypatch.setattr(meta_module, "start_run", _start_run)
+    monkeypatch.setattr(meta_module, "get_status", _get_status)
+
+    with TestClient(app) as client:
+        client.headers.update(AUTH_HEADERS)
+        yield client
+
+
+def test_plan_simulate_execute_flow(authed_client):
+    client = authed_client
 
     plan_resp = client.post(
         "/onebox/plan",
@@ -94,25 +143,19 @@ def _build_finalize_plan() -> OrchestrationPlan:
     return OrchestrationPlan.from_intent(intent, steps, "0")
 
 
-def test_simulate_allows_finalize_with_zero_budget():
-    app = create_app()
-    client = TestClient(app)
-
+def test_simulate_allows_finalize_with_zero_budget(authed_client):
     plan = _build_finalize_plan()
-    response = client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
+    response = authed_client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["blockers"] == []
 
 
-def test_simulate_blocks_post_job_without_budget():
-    app = create_app()
-    client = TestClient(app)
-
+def test_simulate_blocks_post_job_without_budget(authed_client):
     plan = _build_post_job_plan()
     plan.budget.max = "0"
-    response = client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
+    response = authed_client.post("/onebox/simulate", json={"plan": _serialize_plan(plan)})
 
     assert response.status_code == 422
     payload = response.json()
