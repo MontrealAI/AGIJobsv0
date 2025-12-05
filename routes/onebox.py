@@ -112,6 +112,11 @@ except Exception:  # pragma: no cover - exercised in test shims
 
         def add_exception_handler(self, exc_class, handler):  # type: ignore[no-untyped-def]
             self.exception_handlers[exc_class] = handler
+# Flag that forces the module to fall back to the lightweight Web3 stub. This must be
+# defined before the guarded import below to avoid NameError short-circuiting the
+# check and forcing the stub unintentionally.
+_FORCE_STUB_WEB3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3", "1") == "1"
+
 try:
     if _FORCE_STUB_WEB3 or (
         isinstance(_pydantic_module, types.ModuleType) and not getattr(_pydantic_module, "__file__", None)
@@ -252,7 +257,6 @@ _ERROR_CATALOG_PATH = os.path.abspath(
 
 _RELAYER_PK = os.getenv("ONEBOX_RELAYER_PRIVATE_KEY") or os.getenv("RELAYER_PK", "")
 _API_TOKEN = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN", "")
-_FORCE_STUB_WEB3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3", "1") == "1"
 
 EXPLORER_TX_TPL = os.getenv(
     "ONEBOX_EXPLORER_TX_BASE",
