@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 const { spawnSync } = require('child_process');
 
+// Accept invocations from npm/yarn that tack on testing flags meant for Jest
+// or other runners (for example "--runInBand" or "--maxWorkers=50"). Hardhat
+// rejects non-lowercase CLI params, so we filter out any arguments that are not
+// meaningful for Hardhat to keep the test harness robust.
 const passthroughArgs = [];
+const ignoredPrefixes = ['--runinband', '--maxworkers', '--silent'];
 let reporterOption;
 
 for (let i = 0; i < process.argv.length; i += 1) {
@@ -31,6 +36,17 @@ for (let i = 0; i < process.argv.length; i += 1) {
     // Skip the node binary and script path
     continue;
   }
+
+  const normalised = arg.toLowerCase();
+  if (ignoredPrefixes.some((prefix) => normalised.startsWith(prefix))) {
+    // Drop Jest/npm convenience flags that Hardhat doesn't understand
+    if (arg.includes('=') === false && process.argv[i + 1] && !process.argv[i + 1].startsWith('-')) {
+      // If the ignored flag expects a value (e.g. --maxWorkers 4), skip the next token too
+      i += 1;
+    }
+    continue;
+  }
+
   passthroughArgs.push(arg);
 }
 
