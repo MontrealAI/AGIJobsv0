@@ -54,12 +54,21 @@ if (reporterOption) {
   process.env.MOCHA_REPORTER_OPTIONS = reporterOption;
 }
 
+const env = { ...process.env };
+
+// Speed up test-time compilation by allowing the Solidity optimizer and viaIR
+// settings to be relaxed when HARDHAT_FAST_COMPILE is set. Default to the
+// faster profile during CI/unit runs to keep the suite responsive.
+if (!env.HARDHAT_FAST_COMPILE) {
+  env.HARDHAT_FAST_COMPILE = '1';
+}
+
 const result = spawnSync(
   'npx',
   ['hardhat', 'test', '--no-compile', ...passthroughArgs],
   {
     stdio: 'inherit',
-    env: process.env,
+    env,
   }
 );
 

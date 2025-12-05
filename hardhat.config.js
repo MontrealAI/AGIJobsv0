@@ -82,6 +82,9 @@ const coverageOnly = process.env.COVERAGE_ONLY === '1';
 const isCoverageRun =
   process.env.HARDHAT_COVERAGE === 'true' ||
   process.env.HARDHAT_COVERAGE === '1';
+const isFastCompile = process.env.HARDHAT_FAST_COMPILE === '1';
+const viaIROverride = process.env.HARDHAT_VIA_IR;
+const viaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
@@ -93,9 +96,13 @@ const solidityConfig = {
   compilers: solidityVersions.map((version) => ({
     version,
     settings: {
-      optimizer: { enabled: !isCoverageRun, runs: isCoverageRun ? 0 : 200 },
-      viaIR: !isCoverageRun,
+      optimizer: {
+        enabled: !isCoverageRun,
+        runs: isFastCompile ? 50 : isCoverageRun ? 0 : 200,
+      },
+      viaIR,
       evmVersion: 'cancun',
+      metadata: isFastCompile ? { bytecodeHash: 'none' } : undefined,
     },
   })),
 };
