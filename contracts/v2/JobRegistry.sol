@@ -297,6 +297,40 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
         uint256 ackModulesAdded;
     }
 
+    function _encodeConfigurationFlags(ConfigUpdateFlags memory flags) internal pure returns (uint256) {
+        uint256 bitmap;
+
+        if (flags.pauserUpdated) bitmap |= 1 << 0;
+        if (flags.modulesUpdated) bitmap |= 1 << 1;
+        if (flags.pauserManagerUpdated) bitmap |= 1 << 2;
+        if (flags.identityRegistryUpdated) bitmap |= 1 << 3;
+        if (flags.disputeModuleUpdated) bitmap |= 1 << 4;
+        if (flags.validationModuleUpdated) bitmap |= 1 << 5;
+        if (flags.stakeManagerUpdated) bitmap |= 1 << 6;
+        if (flags.reputationModuleUpdated) bitmap |= 1 << 7;
+        if (flags.certificateNFTUpdated) bitmap |= 1 << 8;
+        if (flags.auditModuleUpdated) bitmap |= 1 << 9;
+        if (flags.feePoolUpdated) bitmap |= 1 << 10;
+        if (flags.taxPolicyUpdated) bitmap |= 1 << 11;
+        if (flags.treasuryUpdated) bitmap |= 1 << 12;
+        if (flags.jobStakeUpdated) bitmap |= 1 << 13;
+        if (flags.minAgentStakeUpdated) bitmap |= 1 << 14;
+        if (flags.feePctUpdated) bitmap |= 1 << 15;
+        if (flags.validatorRewardPctUpdated) bitmap |= 1 << 16;
+        if (flags.maxJobRewardUpdated) bitmap |= 1 << 17;
+        if (flags.maxJobDurationUpdated) bitmap |= 1 << 18;
+        if (flags.maxActiveJobsUpdated) bitmap |= 1 << 19;
+        if (flags.expirationGracePeriodUpdated) bitmap |= 1 << 20;
+        if (flags.agentRootUpdated) bitmap |= 1 << 21;
+        if (flags.agentMerkleUpdated) bitmap |= 1 << 22;
+        if (flags.validatorRootUpdated) bitmap |= 1 << 23;
+        if (flags.validatorMerkleUpdated) bitmap |= 1 << 24;
+        if (flags.agentAuthCacheDurationUpdated) bitmap |= 1 << 25;
+        if (flags.agentAuthCacheVersionBumped) bitmap |= 1 << 26;
+
+        return bitmap;
+    }
+
     /// @notice Tracks the number of active jobs assigned to each agent.
     mapping(address => uint256) public activeJobs;
     /// @notice Optional governance-configured limit on active jobs per agent. Zero disables the limit.
@@ -915,33 +949,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
 
     event ConfigurationApplied(
         address indexed caller,
-        bool pauserUpdated,
-        bool pauserManagerUpdated,
-        bool modulesUpdated,
-        bool identityRegistryUpdated,
-        bool disputeModuleUpdated,
-        bool validationModuleUpdated,
-        bool stakeManagerUpdated,
-        bool reputationModuleUpdated,
-        bool certificateNFTUpdated,
-        bool auditModuleUpdated,
-        bool feePoolUpdated,
-        bool taxPolicyUpdated,
-        bool treasuryUpdated,
-        bool jobStakeUpdated,
-        bool minAgentStakeUpdated,
-        bool feePctUpdated,
-        bool validatorRewardPctUpdated,
-        bool maxJobRewardUpdated,
-        bool maxJobDurationUpdated,
-        bool maxActiveJobsUpdated,
-        bool expirationGracePeriodUpdated,
-        bool agentRootUpdated,
-        bool agentMerkleUpdated,
-        bool validatorRootUpdated,
-        bool validatorMerkleUpdated,
-        bool agentAuthCacheDurationUpdated,
-        bool agentAuthCacheVersionBumped,
+        uint256 flags,
         uint256 acknowledgerUpdates,
         uint256 ackModulesAdded
     );
@@ -1649,38 +1657,7 @@ contract JobRegistry is Governable, ReentrancyGuard, TaxAcknowledgement, Pausabl
     function _emitConfigurationApplied(ConfigUpdateFlags memory flags, uint256 ackUpdateLen)
         internal
     {
-        emit ConfigurationApplied(
-            msg.sender,
-            flags.pauserUpdated,
-            flags.pauserManagerUpdated,
-            flags.modulesUpdated,
-            flags.identityRegistryUpdated,
-            flags.disputeModuleUpdated,
-            flags.validationModuleUpdated,
-            flags.stakeManagerUpdated,
-            flags.reputationModuleUpdated,
-            flags.certificateNFTUpdated,
-            flags.auditModuleUpdated,
-            flags.feePoolUpdated,
-            flags.taxPolicyUpdated,
-            flags.treasuryUpdated,
-            flags.jobStakeUpdated,
-            flags.minAgentStakeUpdated,
-            flags.feePctUpdated,
-            flags.validatorRewardPctUpdated,
-            flags.maxJobRewardUpdated,
-            flags.maxJobDurationUpdated,
-            flags.maxActiveJobsUpdated,
-            flags.expirationGracePeriodUpdated,
-            flags.agentRootUpdated,
-            flags.agentMerkleUpdated,
-            flags.validatorRootUpdated,
-            flags.validatorMerkleUpdated,
-            flags.agentAuthCacheDurationUpdated,
-            flags.agentAuthCacheVersionBumped,
-            ackUpdateLen,
-            flags.ackModulesAdded
-        );
+        emit ConfigurationApplied(msg.sender, _encodeConfigurationFlags(flags), ackUpdateLen, flags.ackModulesAdded);
     }
 
     // ---------------------------------------------------------------------
