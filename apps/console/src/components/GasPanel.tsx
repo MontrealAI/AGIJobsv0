@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ethers } from 'ethers';
 import { useApi } from '../context/ApiContext';
 
@@ -156,15 +156,41 @@ export function GasPanel() {
     [metrics]
   );
 
+  const refreshMetrics = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!config) return;
+      setRefreshing(true);
+      setError(null);
+      try {
+        const response = await request<string>('metrics', { signal }, 'text');
+        if (signal?.aborted) return;
+        setMetrics(response);
+        const info = extractPaymasterInfo(response);
+        setPaymasterInfo(info);
+        if (info?.address && !paymasterAddress) {
+          setPaymasterAddress(info.address);
+        }
+      } catch (err) {
+        if (signal?.aborted) return;
+        setError(err instanceof Error ? err.message : 'Failed to load metrics');
+      } finally {
+        if (signal?.aborted) return;
+        setRefreshing(false);
+      }
+    },
+    [config, paymasterAddress, request]
+  );
+
   useEffect(() => {
     if (!config) {
       setMetrics('');
       setPaymasterInfo(null);
       return;
     }
-    refreshMetrics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config?.baseUrl, config?.token]);
+    const controller = new AbortController();
+    refreshMetrics(controller.signal);
+    return () => controller.abort();
+  }, [config, refreshMetrics]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -190,25 +216,6 @@ export function GasPanel() {
       console.warn('Failed to persist paymaster address', storageError);
     }
   }, [paymasterAddress]);
-
-  async function refreshMetrics() {
-    if (!config) return;
-    setRefreshing(true);
-    setError(null);
-    try {
-      const response = await request<string>('metrics', undefined, 'text');
-      setMetrics(response);
-      const info = extractPaymasterInfo(response);
-      setPaymasterInfo(info);
-      if (info?.address && !paymasterAddress) {
-        setPaymasterAddress(info.address);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load metrics');
-    } finally {
-      setRefreshing(false);
-    }
-  }
 
   const topUpResult = useMemo(() => {
     try {
@@ -239,13 +246,17 @@ export function GasPanel() {
     ? 'Balance below 25 AGIA. Top up soon to keep account-abstraction sponsorship healthy.'
     : null;
 
+  const handleRefreshClick = useCallback(() => {
+    void refreshMetrics();
+  }, [refreshMetrics]);
+
   return (
     <div className="panel">
       <h2>Gas &amp; Paymaster</h2>
       <div className="actions-row">
         <button
           type="button"
-          onClick={refreshMetrics}
+          onClick={handleRefreshClick}
           disabled={refreshing || !config}
         >
           {refreshing ? 'Refreshing…' : 'Refresh Metrics'}
