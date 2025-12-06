@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from prometheus_client import Counter, Histogram
 
 from orchestrator.models import ExecIn, PlanIn, PlanOut, SimIn, SimOut, StatusOut
@@ -13,16 +13,54 @@ from orchestrator.runner import get_status, start_run
 from orchestrator.simulator import simulate_plan
 from .security import SecurityContext, audit_event
 
-try:  # pragma: no cover - import guard for test environments
-    from .onebox import require_api  # type: ignore
-except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
-    def require_api() -> None:  # type: ignore
-        return None
+async def _require_api_dependency(
+    request: Request,
+    auth: str | None = Header(None, alias="Authorization"),
+    signature: str | None = Header(None, alias="X-Signature"),
+    timestamp: str | None = Header(None, alias="X-Timestamp"),
+    actor: str | None = Header(None, alias="X-Actor"),
+):
+    """Resolve and invoke ``onebox.require_api`` at request time.
+
+    Test suites monkeypatch the ``routes.onebox`` module (for example, to
+    adjust the configured API token). Importing ``require_api`` eagerly would
+    bind the dependency to the pre-monkeypatched module, causing security
+    checks to be silently skipped. By looking up the dependency when FastAPI
+    evaluates it we ensure the latest configuration is honoured.
+    """
+
+    try:  # pragma: no cover - import guard for test environments
+        from . import onebox  # type: ignore
+        from .onebox import _context_from_request as _onebox_context  # type: ignore
+        from .onebox import require_api as _require_api  # type: ignore
+        from .security import _SETTINGS  # type: ignore
+    except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
+        async def _require_api(*_args, **_kwargs):  # type: ignore
+            return None
+        _SETTINGS = None  # type: ignore
+        _onebox_context = None  # type: ignore
+        onebox = None  # type: ignore
+
+    # Allow anonymous access when no tokens or signing secret are configured.
+    if (
+        _SETTINGS
+        and not _SETTINGS.tokens
+        and not _SETTINGS.signing_secret
+        and not ((onebox and onebox._API_TOKEN) or _SETTINGS.default_token)
+    ):
+        context = _onebox_context(request) if _onebox_context else None  # type: ignore[arg-type]
+        if context is not None:
+            request.state.security_context = context
+        return context
+
+    return await _require_api(request, auth, signature, timestamp, actor)
 
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/onebox", tags=["meta-orchestrator"], dependencies=[Depends(require_api)])
+router = APIRouter(
+    prefix="/onebox", tags=["meta-orchestrator"], dependencies=[Depends(_require_api_dependency)]
+)
 
 _PLAN_LATENCY = Histogram(
     "plan_latency_seconds",
