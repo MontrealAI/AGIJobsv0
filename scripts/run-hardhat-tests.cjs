@@ -38,6 +38,11 @@ for (let i = 0; i < process.argv.length; i += 1) {
     continue;
   }
 
+  if (arg === '--') {
+    // Ignore bare argument separators passed through npm/node runners
+    continue;
+  }
+
   const normalised = arg.toLowerCase();
   if (ignoredPrefixes.some((prefix) => normalised.startsWith(prefix))) {
     if (normalised.startsWith('--listtests')) {
@@ -80,6 +85,11 @@ const hardhatTimeoutMs = Number.parseInt(env.HARDHAT_TEST_TIMEOUT_MS ?? '600000'
 if (!env.HARDHAT_FAST_COMPILE) {
   env.HARDHAT_FAST_COMPILE = '1';
 }
+
+const displayedArgs = passthroughArgs.length === 0 ? '(none)' : passthroughArgs.join(' ');
+console.log(
+  `Running Hardhat tests with HARDHAT_FAST_COMPILE=${env.HARDHAT_FAST_COMPILE} and timeout ${hardhatTimeoutMs}ms (args: ${displayedArgs})`,
+);
 
 const result = spawnSync(
   'npx',
