@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 import importlib
+import sys
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from prometheus_client import Counter, Histogram
@@ -35,7 +36,10 @@ async def _require_api_dependency(
         module = importlib.import_module("routes.onebox")
         # Reload lightweight stubs injected by other test modules so that
         # security checks always execute against the real implementation.
-        if not hasattr(module, "require_api") or not hasattr(module, "_context_from_request"):
+        if getattr(module, "__spec__", None) is None:
+            sys.modules.pop("routes.onebox", None)
+            module = importlib.import_module("routes.onebox")
+        elif not hasattr(module, "require_api") or not hasattr(module, "_context_from_request"):
             module = importlib.reload(module)
 
         onebox = module  # type: ignore
