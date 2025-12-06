@@ -50,6 +50,19 @@ def _load_backend():
 
 _backend = _load_backend()
 
+# Mirror package metadata so imports of ``eth_typing.<submodule>`` continue to
+# resolve via the backend package.
+__file__ = getattr(_backend, "__file__", None)
+__path__ = list(getattr(_backend, "__path__", []))
+if __spec__ is not None and getattr(_backend, "__spec__", None) is not None:
+    __spec__.submodule_search_locations = getattr(
+        _backend.__spec__, "submodule_search_locations", __path__
+    )
+
+# Keep the backend importable for debugging while the shim stays registered as
+# the public package.
+sys.modules.setdefault("eth_typing.__backend__", _backend)
+
 # Re-export everything from the backend to preserve behaviour for downstream
 # imports. We avoid clobbering dunder attributes to keep module metadata intact.
 for _name in dir(_backend):
