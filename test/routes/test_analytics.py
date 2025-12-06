@@ -65,6 +65,12 @@ from orchestrator.analytics import AnalyticsError
 from services.meta_api.app.main import create_app
 
 
+def teardown_module() -> None:
+    """Ensure analytics' onebox stub does not leak into other modules."""
+
+    sys.modules.pop("routes.onebox", None)
+
+
 @pytest.mark.skipif(TestClient is None, reason="FastAPI application not available")
 def test_refresh_and_latest(tmp_path, monkeypatch):
     app = create_app()
