@@ -251,7 +251,7 @@ flowchart LR
 The same commands run automatically in the `Owner control assurance` job, so the checks wall refuses a merge unless the owner retains total dominion over pause switches, treasury routing, and upgrade paths.【F:.github/workflows/ci.yml†L393-L443】
 
 ## Quickstart for operators
-1. Use Node.js 20.18.1 (`.nvmrc`/`.node-version`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】 If your base image is missing `node`/`npm`, install the pinned version explicitly so tests don’t fall back to distro defaults:
+1. Use Node.js 20.18.1 (`.nvmrc`/`.node-version`) and Python 3.12 to match the automated toolchain.【F:.nvmrc†L1-L1】【F:.github/workflows/ci.yml†L118-L145】 If your base image is missing `node`/`npm`, install the pinned version explicitly so tests don’t fall back to distro defaults, then validate the toolchain with `npm run doctor:node` so Hardhat builds don’t silently run under the wrong runtime.【F:scripts/check-node.js†L1-L90】【F:package.json†L125-L137】
    ```bash
    # Debian/Ubuntu
    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -260,6 +260,7 @@ The same commands run automatically in the `Owner control assurance` job, so the
    # or via nvm (honours .nvmrc)
    command -v nvm >/dev/null || curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
    nvm install
+   npm run doctor:node
    ```
 2. Hydrate dependencies (do **not** omit optional packages—the Hardhat toolbox requires the platform-specific `@nomicfoundation/solidity-analyzer-*` binary and will fail exactly like CI if you pass `--omit=optional`):
    ```bash
