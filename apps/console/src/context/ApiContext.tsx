@@ -113,17 +113,27 @@ export function ApiProvider({ children }: { children: React.ReactNode }) {
           `(${response.status}) ${errorText || response.statusText}`
         );
       }
-      if (mode === 'text') {
-        return (await response.text()) as unknown as T;
-      }
       if (response.status === 204) {
         return undefined as T;
       }
+
+      const contentType = response.headers.get('content-type') ?? '';
       const text = await response.text();
+
       if (!text) {
         return undefined as T;
       }
-      return JSON.parse(text) as T;
+
+      if (mode === 'text' || !contentType.includes('application/json')) {
+        return text as unknown as T;
+      }
+
+      try {
+        return JSON.parse(text) as T;
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to parse JSON response: ${reason}`);
+      }
     },
     [config]
   );
