@@ -33,6 +33,7 @@ scripts/**/*.js
 !scripts/ci/export-abis.js
 !scripts/ci/abi-targets.js
 !scripts/ci/remap-coverage-paths.js
+!scripts/check-node-version.js
 !scripts/ci/check-toolchain-locks.js
 !scripts/ci/check-lock-integrity.js
 !scripts/ci/ensure-tag-signature.js
