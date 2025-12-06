@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import logging
 
+import importlib
+import sys
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from prometheus_client import Counter, Histogram
 
@@ -30,9 +33,18 @@ async def _require_api_dependency(
     """
 
     try:  # pragma: no cover - import guard for test environments
-        from . import onebox  # type: ignore
-        from .onebox import _context_from_request as _onebox_context  # type: ignore
-        from .onebox import require_api as _require_api  # type: ignore
+        module = importlib.import_module("routes.onebox")
+        # Reload lightweight stubs injected by other test modules so that
+        # security checks always execute against the real implementation.
+        if getattr(module, "__spec__", None) is None:
+            sys.modules.pop("routes.onebox", None)
+            module = importlib.import_module("routes.onebox")
+        elif not hasattr(module, "require_api") or not hasattr(module, "_context_from_request"):
+            module = importlib.reload(module)
+
+        onebox = module  # type: ignore
+        _onebox_context = module._context_from_request  # type: ignore[attr-defined]
+        _require_api = module.require_api  # type: ignore[attr-defined]
         from .security import _SETTINGS  # type: ignore
     except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
         async def _require_api(*_args, **_kwargs):  # type: ignore
@@ -41,13 +53,10 @@ async def _require_api_dependency(
         _onebox_context = None  # type: ignore
         onebox = None  # type: ignore
 
+    api_token = getattr(onebox, "_API_TOKEN", "") if onebox else ""
+
     # Allow anonymous access when no tokens or signing secret are configured.
-    if (
-        _SETTINGS
-        and not _SETTINGS.tokens
-        and not _SETTINGS.signing_secret
-        and not ((onebox and onebox._API_TOKEN) or _SETTINGS.default_token)
-    ):
+    if _SETTINGS and not _SETTINGS.tokens and not _SETTINGS.signing_secret and not (api_token or _SETTINGS.default_token):
         context = _onebox_context(request) if _onebox_context else None  # type: ignore[arg-type]
         if context is not None:
             request.state.security_context = context
