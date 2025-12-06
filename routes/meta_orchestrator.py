@@ -31,8 +31,8 @@ async def _require_api_dependency(
 
     try:  # pragma: no cover - import guard for test environments
         from . import onebox  # type: ignore
+        from .onebox import _context_from_request as _onebox_context  # type: ignore
         from .onebox import require_api as _require_api  # type: ignore
-        from .security import _context_from_request as _onebox_context  # type: ignore
         from .security import _SETTINGS  # type: ignore
     except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
         async def _require_api(*_args, **_kwargs):  # type: ignore
