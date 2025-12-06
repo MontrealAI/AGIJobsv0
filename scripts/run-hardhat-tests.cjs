@@ -6,7 +6,8 @@ const { spawnSync } = require('child_process');
 // rejects non-lowercase CLI params, so we filter out any arguments that are not
 // meaningful for Hardhat to keep the test harness robust.
 const passthroughArgs = [];
-const ignoredPrefixes = ['--runinband', '--maxworkers', '--silent'];
+const ignoredPrefixes = ['--runinband', '--maxworkers', '--silent', '--listtests'];
+let shouldSkipHardhat = false;
 let reporterOption;
 
 for (let i = 0; i < process.argv.length; i += 1) {
@@ -39,6 +40,9 @@ for (let i = 0; i < process.argv.length; i += 1) {
 
   const normalised = arg.toLowerCase();
   if (ignoredPrefixes.some((prefix) => normalised.startsWith(prefix))) {
+    if (normalised.startsWith('--listtests')) {
+      shouldSkipHardhat = true;
+    }
     // Drop Jest/npm convenience flags that Hardhat doesn't understand
     if (arg.includes('=') === false && process.argv[i + 1] && !process.argv[i + 1].startsWith('-')) {
       // If the ignored flag expects a value (e.g. --maxWorkers 4), skip the next token too
@@ -52,6 +56,11 @@ for (let i = 0; i < process.argv.length; i += 1) {
 
 if (reporterOption) {
   process.env.MOCHA_REPORTER_OPTIONS = reporterOption;
+}
+
+if (shouldSkipHardhat) {
+  console.log('Skipping Hardhat test run because --listTests is a Jest-only flag.');
+  process.exit(0);
 }
 
 const env = { ...process.env };
