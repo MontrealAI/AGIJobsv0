@@ -91,6 +91,11 @@ const viaIROverride = process.env.HARDHAT_VIA_IR;
 const baseViaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
 const compilerViaIR = baseViaIR;
 
+// JobRegistry relies on viaIR to avoid stack depth issues in several
+// configuration and settlement paths, so keep it enabled even during fast
+// compiles.
+const jobRegistryViaIR = compilerViaIR;
+
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
 const solidityVersions = isCoverageRun || isFastCompile
@@ -121,7 +126,7 @@ if (isFastCompile && solidityCompilers.length > 0) {
   solidityConfig.overrides = {
     'contracts/v2/JobRegistry.sol': {
       version: primaryCompiler.version,
-      settings: { ...primaryCompiler.settings, viaIR: true },
+      settings: { ...primaryCompiler.settings, viaIR: jobRegistryViaIR },
     },
   };
 }
