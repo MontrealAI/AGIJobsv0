@@ -9,9 +9,12 @@ test shims used by the Onebox routes.
 
 from __future__ import annotations
 
+import importlib
 import os
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent
 
@@ -22,3 +25,30 @@ if str(ROOT) not in sys.path:
 # Standardize environment defaults for local runs.
 os.environ.setdefault("PYTHONPATH", str(ROOT))
 os.environ.setdefault("ONEBOX_TEST_FORCE_STUB_WEB3", "1")
+
+
+@pytest.fixture(autouse=True)
+def _reset_onebox_state():
+    """Ensure ``routes.onebox`` does not leak state between tests.
+
+    Several suites monkeypatch module globals (for example API tokens or
+    stubbed registries). Without reloading, those mutations bleed into
+    later tests and cause unexpected pass-throughs of security checks or
+    cached blockchain state. By ejecting the module before and after each
+    test we guarantee a clean import and re-run of configuration loaders,
+    while also resetting rate limits to their defaults.
+    """
+
+    sys.modules.pop("routes.onebox", None)
+    yield
+
+    sys.modules.pop("routes.onebox", None)
+    try:
+        from routes import security
+
+        importlib.reload(security)
+        security.reset_rate_limits()
+    except Exception:
+        # Test environments without FastAPI or optional deps may hit import
+        # errors; failures here would mask the original assertion.
+        pass
