@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type SyntheticEvent, useCallback, useEffect, useState } from 'react';
 import ConnectionPanel from './components/ConnectionPanel';
 import PoliciesPanel from './components/PoliciesPanel';
 import GovernanceActionForm from './components/GovernanceActionForm';
@@ -13,33 +13,52 @@ function AppShell() {
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
-  const refreshSnapshot = useCallback(async () => {
-    if (!config) {
-      setSnapshot(null);
-      return;
-    }
-    setSnapshotLoading(true);
-    setSnapshotError(null);
-    try {
-      const data = await request<GovernanceSnapshot>('governance/snapshot');
-      setSnapshot(data);
-    } catch (error) {
-      setSnapshotError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to load governance snapshot.'
-      );
-    } finally {
-      setSnapshotLoading(false);
-    }
-  }, [config, request]);
+  const refreshSnapshot = useCallback(
+    async (input?: AbortSignal | SyntheticEvent) => {
+      const signal = input instanceof AbortSignal ? input : undefined;
+      if (input && 'preventDefault' in input) {
+        input.preventDefault();
+      }
+
+      if (!config) {
+        setSnapshot(null);
+        setSnapshotLoading(false);
+        setSnapshotError(null);
+        return;
+      }
+      setSnapshotLoading(true);
+      setSnapshotError(null);
+      try {
+        const data = await request<GovernanceSnapshot>(
+          'governance/snapshot',
+          signal ? { signal } : undefined
+        );
+        if (signal?.aborted) return;
+        setSnapshot(data);
+      } catch (error) {
+        if (signal?.aborted) return;
+        setSnapshotError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load governance snapshot.'
+        );
+      } finally {
+        if (signal?.aborted) return;
+        setSnapshotLoading(false);
+      }
+    },
+    [config, request]
+  );
 
   useEffect(() => {
     if (!config) {
       setSnapshot(null);
+      setSnapshotLoading(false);
       return;
     }
-    refreshSnapshot();
+    const controller = new AbortController();
+    refreshSnapshot(controller.signal);
+    return () => controller.abort();
   }, [config, refreshSnapshot]);
 
   return (
