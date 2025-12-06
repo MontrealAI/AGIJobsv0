@@ -18,7 +18,30 @@ except Exception:  # pragma: no cover
 
 os.environ.setdefault("RPC_URL", "http://localhost:8545")
 os.environ.setdefault("ONEBOX_RELAYER_PRIVATE_KEY", "0x" + "1" * 64)
-os.environ.setdefault("ONEBOX_API_TOKEN", "test-token")
+
+
+@pytest.fixture(autouse=True)
+def _isolate_api_token(monkeypatch: pytest.MonkeyPatch):
+    """Prevent ONEBOX_API_TOKEN leakage into other test modules.
+
+    Analytics loads a lightweight stub of the ``routes.onebox`` module and sets
+    an API token for its own requests. Without scoping that environment change
+    the token persists for the entire pytest process, causing later suites
+    (notably the meta-orchestrator endpoints) to reject unauthenticated
+    requests with ``401 AUTH_MISSING``. The autouse fixture ensures the token is
+    applied only for the lifetime of these tests and automatically restored
+    afterwards.
+    """
+
+    prior = os.environ.get("ONEBOX_API_TOKEN")
+    monkeypatch.setenv("ONEBOX_API_TOKEN", "test-token")
+    try:
+        yield
+    finally:
+        if prior is None:
+            monkeypatch.delenv("ONEBOX_API_TOKEN", raising=False)
+        else:
+            monkeypatch.setenv("ONEBOX_API_TOKEN", prior)
 
 
 def _inject_onebox_stub() -> None:

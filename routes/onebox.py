@@ -189,6 +189,7 @@ except Exception:  # pragma: no cover - shim for lightweight test environments
         chain_id = 0
         max_priority_fee = 1
         account = types.SimpleNamespace(from_key=lambda *_args, **_kwargs: _DummyAccount())
+        gas_price = 1
 
         def __init__(self) -> None:
             self._contract = _DummyContract()
@@ -200,7 +201,9 @@ except Exception:  # pragma: no cover - shim for lightweight test environments
             return 0
 
         def get_block(self, *_args, **_kwargs):
-            return {}
+            # Provide attribute access so gas limit lookups behave like the real
+            # web3 response shape in lightweight test environments.
+            return types.SimpleNamespace(gasLimit=5000000)
 
         def send_raw_transaction(self, *_args, **_kwargs):
             return b""
