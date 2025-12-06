@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type SyntheticEvent, useCallback, useEffect, useState } from 'react';
 import ConnectionPanel from './components/ConnectionPanel';
 import PoliciesPanel from './components/PoliciesPanel';
 import GovernanceActionForm from './components/GovernanceActionForm';
@@ -14,7 +14,12 @@ function AppShell() {
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
   const refreshSnapshot = useCallback(
-    async (signal?: AbortSignal) => {
+    async (input?: AbortSignal | SyntheticEvent) => {
+      const signal = input instanceof AbortSignal ? input : undefined;
+      if (input && 'preventDefault' in input) {
+        input.preventDefault();
+      }
+
       if (!config) {
         setSnapshot(null);
         setSnapshotLoading(false);
@@ -26,7 +31,7 @@ function AppShell() {
       try {
         const data = await request<GovernanceSnapshot>(
           'governance/snapshot',
-          { signal }
+          signal ? { signal } : undefined
         );
         if (signal?.aborted) return;
         setSnapshot(data);
