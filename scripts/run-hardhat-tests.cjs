@@ -91,15 +91,17 @@ console.log(
   `Running Hardhat tests with HARDHAT_FAST_COMPILE=${env.HARDHAT_FAST_COMPILE} and timeout ${hardhatTimeoutMs}ms (args: ${displayedArgs})`,
 );
 
-const result = spawnSync(
-  'npx',
-  ['hardhat', 'test', '--no-compile', ...passthroughArgs],
-  {
-    stdio: 'inherit',
-    env,
-    timeout: hardhatTimeoutMs,
-  }
+const startedAt = Date.now();
+
+console.log(
+  '⏳ Launching Hardhat tests (first-time Solidity compilation can take a few minutes)...',
 );
+
+const result = spawnSync('npx', ['hardhat', 'test', '--no-compile', ...passthroughArgs], {
+  stdio: 'inherit',
+  env,
+  timeout: hardhatTimeoutMs,
+});
 
 if (result.error) {
   console.error(result.error.message);
@@ -108,5 +110,12 @@ if (result.error) {
 if (result.signal === 'SIGTERM' || result.signal === 'SIGKILL') {
   console.error(`Hardhat test run exceeded ${hardhatTimeoutMs}ms and was terminated.`);
 }
+
+const durationMs = Date.now() - startedAt;
+if (result.status !== 0) {
+  console.error(`Hardhat tests failed after ${durationMs}ms (exit code ${result.status ?? 'unknown'}).`);
+}
+
+console.log(`⏱️ Hardhat test runner completed in ${Math.round(durationMs / 1000)}s.`);
 
 process.exit(result.status ?? 1);
