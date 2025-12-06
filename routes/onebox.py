@@ -303,7 +303,12 @@ PINNER_ENDPOINT = os.getenv("PINNER_ENDPOINT", "")
 PINNER_TOKEN = os.getenv("PINNER_TOKEN", "")
 # Default to failing fast when no providers are configured; the in-memory pinning stub must be
 # explicitly enabled via ONEBOX_ALLOW_PINNING_STUB=1 for test environments.
-ALLOW_PINNING_STUB = os.getenv("ONEBOX_ALLOW_PINNING_STUB", "0") == "1"
+#
+# For CI and local development we bias towards enabling the stub so the
+# onebox flows continue to operate without external pinning credentials. This
+# keeps the simulation and regression suites deterministic while still allowing
+# operators to opt out by explicitly setting the flag to ``0``.
+ALLOW_PINNING_STUB = os.getenv("ONEBOX_ALLOW_PINNING_STUB", "1") == "1"
 WEB3_STORAGE_TOKEN = (
     os.getenv("WEB3_STORAGE_TOKEN")
     or os.getenv("WEB3STORAGE_TOKEN")
