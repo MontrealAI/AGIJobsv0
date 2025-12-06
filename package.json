@@ -96,7 +96,7 @@
     "whatwg-fetch": "^3.6.20"
   },
   "engines": {
-    "node": "20.18.x",
+    "node": "20.18.1",
     "npm": ">=10.8.0 <11"
   },
   "keywords": [],
@@ -119,6 +119,7 @@
   "scripts": {
     "abi:diff": "node scripts/ci/check-abi-diff.js",
     "abi:export": "node scripts/ci/export-abis.js",
+    "doctor:node": "node scripts/check-node.js",
     "agent:gateway": "node examples/agentic/v2-agent-gateway.js",
     "agent:validator": "node examples/agentic/v2-validator.js",
     "alpha-bridge:start": "node services/alpha-bridge/src/server.js",

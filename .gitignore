@@ -41,6 +41,7 @@ scripts/**/*.js
 !scripts/verify-wiring.js
 !scripts/run-wire-verify.js
 !scripts/subgraph-e2e.js
+!scripts/check-node.js
 !scripts/docs/check-links.js
 !scripts/observability-smoke-check.js
 !scripts/audit/check-freeze.js
