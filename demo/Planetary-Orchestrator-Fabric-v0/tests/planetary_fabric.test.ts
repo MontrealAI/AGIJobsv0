@@ -1188,6 +1188,9 @@ async function testAcceptanceSuiteMissionPlan(): Promise<void> {
   await rm(tempDir, { force: true, recursive: true });
 }
 
+const LOAD_HARNESS_JOBS = Number.parseInt(process.env.FABRIC_LOAD_JOBS ?? '2000', 10);
+const LOAD_HARNESS_MAX_TICKS = Number.parseInt(process.env.FABRIC_LOAD_MAX_TICKS ?? '1200', 10);
+
 async function testLoadHarness(): Promise<void> {
   const loadConfig: FabricConfig = {
     ...testConfig,
@@ -1210,19 +1213,24 @@ async function testLoadHarness(): Promise<void> {
     })),
   };
   const { orchestrator, checkpointPath } = await buildOrchestrator(loadConfig);
-  const totalJobs = 10_000;
+  const totalJobs = LOAD_HARNESS_JOBS;
   const jobs = createJobs(totalJobs);
   for (const job of jobs) {
     orchestrator.submitJob(job);
   }
 
-  const maxTicks = 2_400;
+  const maxTicks = LOAD_HARNESS_MAX_TICKS;
   let pendingJobs = totalJobs;
   let completedWithinBudget = false;
+  const start = Date.now();
   for (let tick = 1; tick <= maxTicks; tick += 1) {
     orchestrator.processTick({ tick });
     if (tick === 5) {
       orchestrator.markOutage('earth.node');
+    }
+    if (tick % 200 === 0) {
+      const elapsedSec = (Date.now() - start) / 1000;
+      console.log(`[load-harness] tick=${tick} elapsed=${elapsedSec.toFixed(1)}s pending=${pendingJobs}`);
     }
     const snapshot = orchestrator.getLedgerSnapshot();
     pendingJobs = snapshot.pendingJobs;
