@@ -23,14 +23,7 @@ async def _require_api_dependency(
     timestamp: str | None = Header(None, alias="X-Timestamp"),
     actor: str | None = Header(None, alias="X-Actor"),
 ):
-    """Resolve and invoke ``onebox.require_api`` at request time.
-
-    Test suites monkeypatch the ``routes.onebox`` module (for example, to
-    adjust the configured API token). Importing ``require_api`` eagerly would
-    bind the dependency to the pre-monkeypatched module, causing security
-    checks to be silently skipped. By looking up the dependency when FastAPI
-    evaluates it we ensure the latest configuration is honoured.
-    """
+    """Resolve and invoke ``onebox.require_api`` at request time."""
 
     try:  # pragma: no cover - import guard for test environments
         module = importlib.import_module("routes.onebox")
@@ -46,17 +39,23 @@ async def _require_api_dependency(
         _onebox_context = module._context_from_request  # type: ignore[attr-defined]
         _require_api = module.require_api  # type: ignore[attr-defined]
         from .security import _SETTINGS  # type: ignore
-    except (RuntimeError, ImportError):  # pragma: no cover - fallback when core router not configured
-        async def _require_api(*_args, **_kwargs):  # type: ignore
-            return None
-        _SETTINGS = None  # type: ignore
-        _onebox_context = None  # type: ignore
-        onebox = None  # type: ignore
+    except (RuntimeError, ImportError) as exc:  # pragma: no cover - fail closed when core router is unavailable
+        raise HTTPException(status_code=503, detail="ONEBOX_UNAVAILABLE") from exc
 
     api_token = getattr(onebox, "_API_TOKEN", "") if onebox else ""
+    security_configured = bool(
+        api_token
+        or (_SETTINGS and (_SETTINGS.tokens or _SETTINGS.signing_secret or _SETTINGS.default_token))
+    )
 
-    # Allow anonymous access when no tokens or signing secret are configured.
-    if _SETTINGS and not _SETTINGS.tokens and not _SETTINGS.signing_secret and not (api_token or _SETTINGS.default_token):
+    if security_configured and not auth:
+        # Require an explicit bearer token whenever security is configured. This mirrors
+        # ``onebox.require_api`` and prevents earlier anonymous calls from caching a
+        # permissive security context for later requests in the same app instance.
+        raise HTTPException(status_code=401, detail="AUTH_MISSING")
+
+    # Allow anonymous access only when no security configuration is present at all.
+    if _SETTINGS and not security_configured:
         context = _onebox_context(request) if _onebox_context else None  # type: ignore[arg-type]
         if context is not None:
             request.state.security_context = context
