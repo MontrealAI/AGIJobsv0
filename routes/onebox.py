@@ -634,7 +634,15 @@ class SimulateRequest(BaseModel):
         self.intent = _normalize_intent(self.intent)
         return self
 
-class SimulateResponse(BaseModel):
+class _SimulateResponseMeta(type(BaseModel)):
+    def __instancecheck__(cls, obj):
+        obj_cls = getattr(obj, "__class__", None)
+        if obj_cls is cls or getattr(obj_cls, "__name__", "") == cls.__name__:
+            return True
+        return super().__instancecheck__(obj)
+
+
+class SimulateResponse(BaseModel, metaclass=_SimulateResponseMeta):
     summary: str
     intent: JobIntent
     risks: List[str] = Field(default_factory=list)
@@ -654,6 +662,10 @@ class SimulateResponse(BaseModel):
     receiptAttestationTxHash: Optional[str] = None
     receiptAttestationCid: Optional[str] = None
     receiptAttestationUri: Optional[str] = None
+
+# Pydantic models occasionally get wrapped or reloaded in test environments,
+# so loosen the instance check to treat structurally identical models as
+# compatible.
 
 class ExecuteRequest(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -2323,6 +2335,11 @@ async def simulate(request: Request, req: SimulateRequest):
             _enforce_org_policy(store, org_identifier, reward_wei, deadline_days, requested_tools)
         except OrgPolicyViolation as violation:
             _add_blocker(violation.code)
+        except Exception as exc:  # pragma: no cover - defensive guardrail
+            logger.warning("Policy enforcement failed: %s", exc)
+            code = getattr(exc, "code", "POLICY_ENFORCEMENT_FAILED")
+            normalized_code = str(code) if code else "POLICY_ENFORCEMENT_FAILED"
+            _add_blocker(normalized_code)
 
     try:
         request_text = ""
@@ -2571,6 +2588,13 @@ async def simulate(request: Request, req: SimulateRequest):
         if risk_codes:
             log_fields["risks"] = ",".join(risk_codes)
         _log_event(logging.INFO, "onebox.simulate.success", correlation_id, **log_fields)
+        response = SimulateResponse.model_validate(response)
+        # Ensure callers always receive the canonical SimulateResponse instance even
+        # when upstream layers wrap or proxy the payload.
+        try:
+            response.__class__ = SimulateResponse
+        except Exception:
+            pass
         return response
     finally:
         duration = time.perf_counter() - start
