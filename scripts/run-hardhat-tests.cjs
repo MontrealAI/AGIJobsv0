@@ -86,10 +86,15 @@ if (!env.HARDHAT_FAST_COMPILE) {
   env.HARDHAT_FAST_COMPILE = '1';
 }
 
+const skipCompile = env.HARDHAT_SKIP_COMPILE === '1';
+
 const displayedArgs = passthroughArgs.length === 0 ? '(none)' : passthroughArgs.join(' ');
 console.log(
   `Running Hardhat tests with HARDHAT_FAST_COMPILE=${env.HARDHAT_FAST_COMPILE} and timeout ${hardhatTimeoutMs}ms (args: ${displayedArgs})`,
 );
+console.log(skipCompile
+  ? '⚡️ HARDHAT_SKIP_COMPILE=1 detected: assuming existing artifacts and skipping compilation.'
+  : '🧰 Compilation is enabled to ensure artifacts are fresh before running tests.');
 
 const startedAt = Date.now();
 
@@ -99,7 +104,15 @@ console.log(
 
 function runHardhatWithHeartbeat(timeoutMs) {
   return new Promise((resolve) => {
-    const child = spawn('npx', ['hardhat', 'test', '--no-compile', ...passthroughArgs], {
+    const args = ['hardhat', 'test'];
+
+    if (skipCompile) {
+      args.push('--no-compile');
+    }
+
+    args.push(...passthroughArgs);
+
+    const child = spawn('npx', args, {
       stdio: 'inherit',
       env,
     });
