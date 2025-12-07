@@ -31,6 +31,7 @@ BURN_FRACTION = get_burn_fraction()
 
 
 def create_app() -> FastAPI:
+    sys.modules["routes.onebox"] = onebox
     app = FastAPI()
     app.include_router(meta_router)
     return app

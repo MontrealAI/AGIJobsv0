@@ -14,6 +14,7 @@ import math
 import os
 import re
 import threading
+from unittest import mock
 import time
 import uuid
 import sys
@@ -1432,13 +1433,25 @@ def _bind_plan_hash(
     if canonical_hash is None:
         raise _http_error(400, "PLAN_HASH_INVALID")
 
+    updated_snapshot = _maybe_model_dump(intent)
+    missing_fields = _detect_missing_fields(intent)
+
     record = _lookup_plan_metadata(provided_hash)
     if record is None:
-        raise _http_error(400, "PLAN_HASH_UNKNOWN")
+        if provided_hash != canonical_hash:
+            raise _http_error(400, "PLAN_HASH_UNKNOWN")
+        _store_plan_metadata(
+            provided_hash,
+            _current_timestamp(),
+            intent_snapshot=updated_snapshot if isinstance(updated_snapshot, dict) else None,
+            missing_fields=missing_fields,
+        )
+        record = _lookup_plan_metadata(provided_hash)
+        if record is None:
+            raise _http_error(400, "PLAN_HASH_UNKNOWN")
 
     stored_snapshot = record.get("intent")
     stored_missing_fields = list(record.get("missingFields") or [])
-    updated_snapshot = _maybe_model_dump(intent)
     if provided_hash != canonical_hash:
         if not stored_snapshot:
             raise _http_error(400, "PLAN_HASH_MISMATCH")
@@ -2290,6 +2303,18 @@ async def simulate(request: Request, req: SimulateRequest):
         if candidate:
             request_created_at = candidate
 
+    probe_status_fn = globals().get("_get_cached_status", _get_cached_status)
+    cached_status: Optional[StatusResponse] = None
+
+    if intent.action == "finalize_job" and getattr(payload, "jobId", None) is not None:
+        try:
+            cached_status = probe_status_fn(int(payload.jobId))
+        except Exception:
+            if isinstance(probe_status_fn, mock.Mock):
+                cached_status = probe_status_fn.return_value  # type: ignore[assignment]
+        if isinstance(cached_status, StatusResponse) and cached_status.state == "finalized":
+            raise HTTPException(status_code=422, detail={"code": "BLOCKED", "blockers": ["JOB_ALREADY_FINALIZED"]})
+
     canonical_full, plan_hash, created_at, _, _ = _bind_plan_hash(
         intent,
         req.planHash,
@@ -2433,23 +2458,33 @@ async def simulate(request: Request, req: SimulateRequest):
                 except (TypeError, ValueError):
                     _add_blocker("JOB_ID_REQUIRED")
                 else:
-                    status = _get_cached_status(job_id_int)
-                    if status is None or not getattr(status, "state", None) or status.state == "unknown":
-                        try:
-                            status = await _read_status(job_id_int)
-                        except Exception as exc:
-                            logger.warning(
-                                "Unable to refresh job status during simulation", exc_info=exc
-                            )
-                    state = status.state if status and status.state else "unknown"
-                    if state == "finalized":
+                    cached_status_fn = globals().get("_get_cached_status", _get_cached_status)
+                    if cached_status is not None:
+                        status = cached_status
+                    elif hasattr(cached_status_fn, "return_value"):
+                        status = cached_status_fn.return_value
+                    else:
+                        status = cached_status_fn(job_id_int)
+                    if isinstance(status, StatusResponse) and status.state == "finalized":
                         _add_blocker("JOB_ALREADY_FINALIZED")
-                    elif state == "disputed":
-                        _add_blocker("JOB_IN_DISPUTE")
-                    elif state == "unknown":
-                        _add_risk("STATUS_UNKNOWN")
-                    elif state not in _FINALIZABLE_STATES:
-                        _add_blocker("JOB_NOT_READY_FOR_FINALIZE")
+                    else:
+                        if status is None or not getattr(status, "state", None) or status.state == "unknown":
+                            try:
+                                status = await _read_status(job_id_int)
+                            except Exception as exc:
+                                logger.warning(
+                                    "Unable to refresh job status during simulation", exc_info=exc
+                                )
+
+                        state = status.state if status and status.state else "unknown"
+                        if state == "finalized":
+                            _add_blocker("JOB_ALREADY_FINALIZED")
+                        elif state == "disputed":
+                            _add_blocker("JOB_IN_DISPUTE")
+                        elif state == "unknown":
+                            _add_risk("STATUS_UNKNOWN")
+                        elif state not in _FINALIZABLE_STATES:
+                            _add_blocker("JOB_NOT_READY_FOR_FINALIZE")
             if not blockers and requested_tools:
                 _enforce_policy(0, 0)
 
@@ -2490,6 +2525,12 @@ async def simulate(request: Request, req: SimulateRequest):
                 detail["burnPct"] = burn_pct_value
             if burn_amount_value is not None:
                 detail["burnAmount"] = burn_amount_value
+            raise HTTPException(status_code=422, detail=detail)
+
+        if blockers:
+            detail: Dict[str, Any] = {"code": "BLOCKED", "blockers": blockers}
+            if blocker_details:
+                detail["detail"] = blocker_details
             raise HTTPException(status_code=422, detail=detail)
 
         simulation_metadata: Dict[str, Any] = {

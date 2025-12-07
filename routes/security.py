@@ -12,6 +12,7 @@ import hmac
 import json
 import logging
 import os
+import sys
 import time
 import types
 from collections import defaultdict, deque
@@ -83,6 +84,22 @@ def _parse_json_env(name: str) -> dict[str, str]:
 
 
 def _load_settings() -> SecuritySettings:
+    module_token = None
+    try:  # pragma: no cover - prefer cached module from meta orchestrator
+        from routes import meta_orchestrator as meta  # type: ignore[import-not-found]
+
+        module_token = getattr(getattr(meta, "_ONEBOX_MODULE", None), "_API_TOKEN", "") or None
+    except Exception:
+        module_token = None
+
+    if module_token is None:
+        try:  # pragma: no cover - import guard for test environments
+            import routes.onebox as onebox  # type: ignore[import-not-found]
+
+            module_token = getattr(onebox, "_API_TOKEN", "") or None
+        except Exception:
+            module_token = None
+
     tokens = {
         **_parse_json_env("ONEBOX_TOKEN_ROLES"),
         **_parse_json_env("API_TOKEN_ROLES"),
@@ -93,7 +110,12 @@ def _load_settings() -> SecuritySettings:
     if not allowed_roles:
         allowed_roles = {"operator"}
 
-    default_token = os.getenv("ONEBOX_API_TOKEN") or os.getenv("API_TOKEN") or None
+    default_token = (
+        os.getenv("ONEBOX_API_TOKEN")
+        or os.getenv("API_TOKEN")
+        or module_token
+        or None
+    )
     default_role = os.getenv("ONEBOX_API_TOKEN_ROLE") or os.getenv("API_TOKEN_DEFAULT_ROLE") or "operator"
 
     signing_secret_env = os.getenv("ONEBOX_SIGNING_SECRET") or os.getenv("API_SIGNING_SECRET") or ""
@@ -151,6 +173,18 @@ def reload_security_settings() -> None:
     """Reload environment-driven security settings (primarily for tests)."""
 
     global _SETTINGS, _RATE_LIMITER
+    try:  # pragma: no cover - ensure cached onebox module remains importable
+        from routes import meta_orchestrator as meta  # type: ignore[import-not-found]
+
+        cached_onebox = getattr(meta, "_ONEBOX_MODULE", None)
+        if cached_onebox is not None:
+            sys.modules.setdefault("routes.onebox", cached_onebox)
+        current_onebox = sys.modules.get("routes.onebox")
+        if current_onebox is not None:
+            meta._ONEBOX_MODULE = current_onebox
+    except Exception:
+        pass
+
     _SETTINGS = _load_settings()
     _RATE_LIMITER = RateLimiter(_SETTINGS.rate_limit, _SETTINGS.rate_window)
 

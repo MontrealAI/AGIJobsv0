@@ -15,6 +15,8 @@ from .scoreboard import get_scoreboard
 from .state import RunStateError, RunStateStore, get_store
 from .tools import StepExecutor
 
+logger = logging.getLogger(__name__)
+
 _RUNS: Dict[str, StatusOut] = {}
 _PLANS: Dict[str, OrchestrationPlan] = {}
 _LOCK = threading.RLock()
@@ -285,10 +287,24 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
             current_status.run.started_at = time.time()
             _RUNS[status.run.id] = current_status
             _persist(current_status)
-        _resume_run(plan, current_status, status.run.id)
 
-    thread = threading.Thread(target=_worker, daemon=True, name=f"orchestrator-run-{status.run.id}")
-    thread.start()
+        final_state: str | None = "succeeded"
+        try:
+            _resume_run(plan, current_status, status.run.id)
+        except Exception:  # pragma: no cover - defensive guard for background failures
+            logger.exception("Run %s failed during resume", status.run.id)
+            final_state = None
+        finally:
+            with _LOCK:
+                latest_status = _RUNS.get(status.run.id, current_status)
+                if final_state:
+                    latest_status.run.state = final_state  # type: ignore[assignment]
+                    if hasattr(latest_status.run, "finished_at"):
+                        latest_status.run.finished_at = time.time()
+                _RUNS[status.run.id] = latest_status
+                _persist(latest_status)
+
+    _worker()
     return status.run
 
 
