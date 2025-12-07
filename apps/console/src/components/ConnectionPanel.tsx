@@ -105,14 +105,9 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
   }
 
   async function registerPasskey() {
-    if (
-      !('credentials' in navigator) ||
-      typeof PublicKeyCredential === 'undefined'
-    ) {
-      setPasskeyStatus({
-        state: 'error',
-        message: 'WebAuthn APIs are not available in this browser.',
-      });
+    const support = await ensurePasskeySupport();
+    if (!support.ok) {
+      setPasskeyStatus({ state: 'error', message: support.message });
       return;
     }
     try {
@@ -145,23 +140,15 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     } catch (error) {
       setPasskeyStatus({
         state: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to register passkey.',
+        message: formatPasskeyError(error, 'Failed to register passkey.'),
       });
     }
   }
 
   async function verifyPasskey() {
-    if (
-      !('credentials' in navigator) ||
-      typeof PublicKeyCredential === 'undefined'
-    ) {
-      setPasskeyStatus({
-        state: 'error',
-        message: 'WebAuthn APIs are not available in this browser.',
-      });
+    const support = await ensurePasskeySupport();
+    if (!support.ok) {
+      setPasskeyStatus({ state: 'error', message: support.message });
       return;
     }
     try {
@@ -197,8 +184,7 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     } catch (error) {
       setPasskeyStatus({
         state: 'error',
-        message:
-          error instanceof Error ? error.message : 'Failed to verify passkey.',
+        message: formatPasskeyError(error, 'Failed to verify passkey.'),
       });
     }
   }
@@ -304,6 +290,66 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
       </section>
     </div>
   );
+}
+
+async function ensurePasskeySupport(): Promise<
+  { ok: true } | { ok: false; message: string }
+> {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { ok: false, message: 'Passkeys require a browser environment.' };
+  }
+
+  if (!window.isSecureContext) {
+    return {
+      ok: false,
+      message: 'Passkeys are only available in secure (https) contexts.',
+    };
+  }
+
+  if (
+    !('credentials' in navigator) ||
+    typeof PublicKeyCredential === 'undefined'
+  ) {
+    return {
+      ok: false,
+      message: 'WebAuthn APIs are not available in this browser.',
+    };
+  }
+
+  if (
+    typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable ===
+    'function'
+  ) {
+    try {
+      const available =
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      if (!available) {
+        return {
+          ok: false,
+          message: 'No platform authenticator is available on this device.',
+        };
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        message: formatPasskeyError(error, 'Unable to check passkey support.'),
+      };
+    }
+  }
+
+  return { ok: true };
+}
+
+function formatPasskeyError(error: unknown, fallback: string): string {
+  if (error instanceof DOMException) {
+    if (error.name === 'NotAllowedError') {
+      return 'Passkey request was cancelled or timed out. Please try again.';
+    }
+    if (error.name === 'InvalidStateError') {
+      return 'Passkey is already registered or unavailable. Remove it and try again.';
+    }
+  }
+  return error instanceof Error ? error.message : fallback;
 }
 
 function bufferToBase64Url(buffer: ArrayBuffer): string {
