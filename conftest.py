@@ -27,60 +27,67 @@ os.environ.setdefault("PYTHONPATH", str(ROOT))
 os.environ.setdefault("ONEBOX_TEST_FORCE_STUB_WEB3", "1")
 
 
-@pytest.fixture(autouse=True)
-def _reset_onebox_state():
-    """Ensure ``routes.onebox`` does not leak state between tests.
+_SECURITY_ENV_KEYS = [
+    "API_TOKEN",
+    "ONEBOX_API_TOKEN",
+    "ONEBOX_API_TOKEN_ROLE",
+    "API_TOKEN_DEFAULT_ROLE",
+    "API_TOKEN_ROLES",
+    "ONEBOX_TOKEN_ROLES",
+    "API_SIGNING_SECRET",
+    "ONEBOX_SIGNING_SECRET",
+    "API_RATE_LIMIT_PER_MINUTE",
+    "ONEBOX_RATE_LIMIT_PER_MINUTE",
+]
 
-    Several suites monkeypatch module globals (for example API tokens or
-    stubbed registries). Without reloading, those mutations bleed into
-    later tests and cause unexpected pass-throughs of security checks or
-    cached blockchain state. By ejecting the module before and after each
-    test we guarantee a clean import and re-run of configuration loaders,
-    while also resetting rate limits to their defaults.
+
+def _prime_onebox_state() -> None:
+    """Reload ``routes.onebox`` with a clean configuration surface.
+
+    Pytest fixtures do not execute for ``unittest``-style tests, so we rely on
+    the runtest hooks below to scrub environment variables, reload the Onebox
+    module, and reset rate limiting before *every* test item. This avoids
+    cross-test leakage of API tokens, cached registry state, or security
+    settings that would otherwise cause the meta-orchestrator and AA tests to
+    behave inconsistently when the full suite runs.
     """
 
-    # Instead of removing the module entirely (which causes subsequent
-    # imports to ignore monkeypatched attributes like ``_API_TOKEN``), reload
-    # it so each test gets a clean instance that still lives in
-    # ``sys.modules``. This preserves per-test overrides while avoiding state
-    # leakage from prior runs.
-    # Clear configuration env vars that can leak between tests and influence
-    # security settings. Tests that need specific values will re-apply them
-    # via ``monkeypatch.setenv``.
-    for key in [
-        "API_TOKEN",
-        "ONEBOX_API_TOKEN",
-        "ONEBOX_API_TOKEN_ROLE",
-        "API_TOKEN_DEFAULT_ROLE",
-        "API_TOKEN_ROLES",
-        "ONEBOX_TOKEN_ROLES",
-        "API_SIGNING_SECRET",
-        "ONEBOX_SIGNING_SECRET",
-        "API_RATE_LIMIT_PER_MINUTE",
-        "ONEBOX_RATE_LIMIT_PER_MINUTE",
-    ]:
+    for key in _SECURITY_ENV_KEYS:
         os.environ.pop(key, None)
 
     try:
-        import routes.onebox as onebox  # type: ignore
-
+        onebox = sys.modules.get("routes.onebox")
+        if onebox is None:
+            import routes.onebox as onebox  # type: ignore
         importlib.reload(onebox)
         sys.modules["routes.onebox"] = onebox
     except Exception:
-        # Environments without FastAPI or the optional deps used by the
-        # routes may legitimately fail to import; let the test control flow
-        # continue so those suites can skip or stub as needed.
-        sys.modules.pop("routes.onebox", None)
+        # Leave the module untouched when optional dependencies are missing; the
+        # tests that require it will handle skips explicitly.
+        pass
 
-    yield
-
-    sys.modules.pop("routes.onebox", None)
     try:
         from routes import security
 
         importlib.reload(security)
         security.reset_rate_limits()
     except Exception:
-        # Test environments without FastAPI or optional deps may hit import
-        # errors; failures here would mask the original assertion.
         pass
+
+
+def _cleanup_onebox_state() -> None:
+    try:
+        from routes import security
+
+        importlib.reload(security)
+        security.reset_rate_limits()
+    except Exception:
+        pass
+
+
+def pytest_runtest_setup(item):
+    _prime_onebox_state()
+
+
+def pytest_runtest_teardown(item):
+    _cleanup_onebox_state()
