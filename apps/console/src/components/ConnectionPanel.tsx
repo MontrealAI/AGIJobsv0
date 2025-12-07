@@ -293,8 +293,7 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
 }
 
 async function ensurePasskeySupport(): Promise<
-  | { ok: true }
-  | { ok: false; message: string }
+  { ok: true } | { ok: false; message: string }
 > {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return { ok: false, message: 'Passkeys require a browser environment.' };
@@ -307,16 +306,23 @@ async function ensurePasskeySupport(): Promise<
     };
   }
 
-  if (!('credentials' in navigator) || typeof PublicKeyCredential === 'undefined') {
+  if (
+    !('credentials' in navigator) ||
+    typeof PublicKeyCredential === 'undefined'
+  ) {
     return {
       ok: false,
       message: 'WebAuthn APIs are not available in this browser.',
     };
   }
 
-  if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+  if (
+    typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable ===
+    'function'
+  ) {
     try {
-      const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      const available =
+        await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
       if (!available) {
         return {
           ok: false,
