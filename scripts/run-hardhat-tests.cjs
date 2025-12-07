@@ -1,5 +1,47 @@
 #!/usr/bin/env node
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+const repoRoot = path.resolve(__dirname, '..');
+const contractsDir = path.join(repoRoot, 'contracts');
+const buildInfoDir = path.join(repoRoot, 'artifacts', 'build-info');
+
+function getLatestMtime(rootPath) {
+  if (!fs.existsSync(rootPath)) {
+    return null;
+  }
+
+  const queue = [rootPath];
+  let latest = 0;
+
+  while (queue.length > 0) {
+    const current = queue.pop();
+    let stats;
+
+    try {
+      stats = fs.statSync(current);
+    } catch (error) {
+      console.warn(`⚠️  Skipping path ${current}: ${error.message}`);
+      continue;
+    }
+
+    if (stats.isDirectory()) {
+      const entries = fs.readdirSync(current, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.name === 'node_modules' || entry.name === '.git') {
+          continue;
+        }
+        queue.push(path.join(current, entry.name));
+      }
+      continue;
+    }
+
+    latest = Math.max(latest, stats.mtimeMs);
+  }
+
+  return latest === 0 ? null : latest;
+}
 
 // Accept invocations from npm/yarn that tack on testing flags meant for Jest
 // or other runners (for example "--runInBand" or "--maxWorkers=50"). Hardhat
@@ -86,7 +128,20 @@ if (!env.HARDHAT_FAST_COMPILE) {
   env.HARDHAT_FAST_COMPILE = '1';
 }
 
-const skipCompile = env.HARDHAT_SKIP_COMPILE === '1';
+let skipCompile = env.HARDHAT_SKIP_COMPILE === '1';
+
+if (!skipCompile && env.CI !== 'true') {
+  const latestSourceMtime = getLatestMtime(contractsDir);
+  const latestBuildMtime = getLatestMtime(buildInfoDir);
+
+  if (latestSourceMtime && latestBuildMtime && latestBuildMtime >= latestSourceMtime) {
+    skipCompile = true;
+    env.HARDHAT_SKIP_COMPILE = '1';
+    console.log(
+      '⚡️ Detected up-to-date Solidity artifacts; enabling HARDHAT_SKIP_COMPILE=1 for this run.',
+    );
+  }
+}
 
 const displayedArgs = passthroughArgs.length === 0 ? '(none)' : passthroughArgs.join(' ');
 console.log(
@@ -106,7 +161,9 @@ function runHardhatWithHeartbeat(timeoutMs) {
   return new Promise((resolve) => {
     const args = ['hardhat', 'test'];
 
-    if (skipCompile) {
+    const hasNoCompileFlag = passthroughArgs.some((arg) => arg === '--no-compile');
+
+    if (skipCompile && !hasNoCompileFlag) {
       args.push('--no-compile');
     }
 
