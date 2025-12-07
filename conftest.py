@@ -39,7 +39,39 @@ def _reset_onebox_state():
     while also resetting rate limits to their defaults.
     """
 
-    sys.modules.pop("routes.onebox", None)
+    # Instead of removing the module entirely (which causes subsequent
+    # imports to ignore monkeypatched attributes like ``_API_TOKEN``), reload
+    # it so each test gets a clean instance that still lives in
+    # ``sys.modules``. This preserves per-test overrides while avoiding state
+    # leakage from prior runs.
+    # Clear configuration env vars that can leak between tests and influence
+    # security settings. Tests that need specific values will re-apply them
+    # via ``monkeypatch.setenv``.
+    for key in [
+        "API_TOKEN",
+        "ONEBOX_API_TOKEN",
+        "ONEBOX_API_TOKEN_ROLE",
+        "API_TOKEN_DEFAULT_ROLE",
+        "API_TOKEN_ROLES",
+        "ONEBOX_TOKEN_ROLES",
+        "API_SIGNING_SECRET",
+        "ONEBOX_SIGNING_SECRET",
+        "API_RATE_LIMIT_PER_MINUTE",
+        "ONEBOX_RATE_LIMIT_PER_MINUTE",
+    ]:
+        os.environ.pop(key, None)
+
+    try:
+        import routes.onebox as onebox  # type: ignore
+
+        importlib.reload(onebox)
+        sys.modules["routes.onebox"] = onebox
+    except Exception:
+        # Environments without FastAPI or the optional deps used by the
+        # routes may legitimately fail to import; let the test control flow
+        # continue so those suites can skip or stub as needed.
+        sys.modules.pop("routes.onebox", None)
+
     yield
 
     sys.modules.pop("routes.onebox", None)
