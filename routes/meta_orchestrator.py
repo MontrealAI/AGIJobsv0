@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import logging
 
-import importlib
-import sys
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from prometheus_client import Counter, Histogram
 
@@ -15,6 +12,8 @@ from orchestrator.planner import make_plan
 from orchestrator.runner import get_status, start_run
 from orchestrator.simulator import simulate_plan
 from .security import SecurityContext, audit_event
+from .security import require_security
+
 
 async def _require_api_dependency(
     request: Request,
@@ -23,45 +22,41 @@ async def _require_api_dependency(
     timestamp: str | None = Header(None, alias="X-Timestamp"),
     actor: str | None = Header(None, alias="X-Actor"),
 ):
-    """Resolve and invoke ``onebox.require_api`` at request time."""
+    """Authenticate meta-orchestrator calls using the shared onebox settings."""
 
     try:  # pragma: no cover - import guard for test environments
-        module = importlib.import_module("routes.onebox")
-        # Reload lightweight stubs injected by other test modules so that
-        # security checks always execute against the real implementation.
-        if getattr(module, "__spec__", None) is None:
-            sys.modules.pop("routes.onebox", None)
-            module = importlib.import_module("routes.onebox")
-        elif not hasattr(module, "require_api") or not hasattr(module, "_context_from_request"):
-            module = importlib.reload(module)
-
-        onebox = module  # type: ignore
-        _onebox_context = module._context_from_request  # type: ignore[attr-defined]
-        _require_api = module.require_api  # type: ignore[attr-defined]
-        from .security import _SETTINGS  # type: ignore
-    except (RuntimeError, ImportError) as exc:  # pragma: no cover - fail closed when core router is unavailable
+        import routes.onebox as onebox
+    except Exception as exc:  # pragma: no cover - fail closed when core router is unavailable
         raise HTTPException(status_code=503, detail="ONEBOX_UNAVAILABLE") from exc
 
-    api_token = getattr(onebox, "_API_TOKEN", "") if onebox else ""
+    api_token = getattr(onebox, "_API_TOKEN", "")
+    try:  # re-read settings to honor reloads
+        from routes import security as security
+    except Exception as exc:  # pragma: no cover - fail closed if security module breaks
+        raise HTTPException(status_code=503, detail="SECURITY_UNAVAILABLE") from exc
+
+    settings = getattr(security, "_SETTINGS", None)
     security_configured = bool(
         api_token
-        or (_SETTINGS and (_SETTINGS.tokens or _SETTINGS.signing_secret or _SETTINGS.default_token))
+        or (settings and (settings.tokens or settings.signing_secret or settings.default_token))
     )
 
-    if security_configured and not auth:
-        # Require an explicit bearer token whenever security is configured. This mirrors
-        # ``onebox.require_api`` and prevents earlier anonymous calls from caching a
-        # permissive security context for later requests in the same app instance.
-        raise HTTPException(status_code=401, detail="AUTH_MISSING")
-
-    # Allow anonymous access only when no security configuration is present at all.
-    if _SETTINGS and not security_configured:
-        context = _onebox_context(request) if _onebox_context else None  # type: ignore[arg-type]
-        if context is not None:
-            request.state.security_context = context
+    if not security_configured:
+        context = onebox._context_from_request(request)  # type: ignore[attr-defined]
+        request.state.security_context = context
         return context
 
-    return await _require_api(request, auth, signature, timestamp, actor)
+    if not auth:
+        raise HTTPException(status_code=401, detail="AUTH_MISSING")
+
+    return await require_security(
+        request,
+        authorization=auth,
+        signature=signature,
+        timestamp=timestamp,
+        actor_header=actor,
+        fallback_token=api_token or None,
+    )
 
 
 logger = logging.getLogger(__name__)
