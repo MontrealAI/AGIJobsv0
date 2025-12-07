@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 
 // Accept invocations from npm/yarn that tack on testing flags meant for Jest
 // or other runners (for example "--runInBand" or "--maxWorkers=50"). Hardhat
@@ -97,25 +97,57 @@ console.log(
   '⏳ Launching Hardhat tests (first-time Solidity compilation can take a few minutes)...',
 );
 
-const result = spawnSync('npx', ['hardhat', 'test', '--no-compile', ...passthroughArgs], {
-  stdio: 'inherit',
-  env,
-  timeout: hardhatTimeoutMs,
+function runHardhatWithHeartbeat(timeoutMs) {
+  return new Promise((resolve) => {
+    const child = spawn('npx', ['hardhat', 'test', '--no-compile', ...passthroughArgs], {
+      stdio: 'inherit',
+      env,
+    });
+
+    const heartbeatIntervalMs = Number.parseInt(process.env.HARDHAT_HEARTBEAT_MS ?? '60000', 10);
+    let elapsed = 0;
+    const heartbeat = setInterval(() => {
+      elapsed += heartbeatIntervalMs;
+      console.log(
+        `⏱️  Hardhat tests still running after ${Math.round(elapsed / 1000)}s... ` +
+          `timeout in ${Math.max(timeoutMs - elapsed, 0)}ms`,
+      );
+    }, heartbeatIntervalMs);
+
+    const killTimer = setTimeout(() => {
+      console.error(`Hardhat test run exceeded ${timeoutMs}ms. Sending SIGTERM...`);
+      child.kill('SIGTERM');
+    }, timeoutMs);
+
+    child.on('exit', (code, signal) => {
+      clearInterval(heartbeat);
+      clearTimeout(killTimer);
+      resolve({ status: code, signal });
+    });
+
+    child.on('error', (error) => {
+      clearInterval(heartbeat);
+      clearTimeout(killTimer);
+      console.error(error.message);
+      resolve({ status: 1, signal: null });
+    });
+  });
+}
+
+runHardhatWithHeartbeat(hardhatTimeoutMs).then(({ status, signal }) => {
+  const durationMs = Date.now() - startedAt;
+
+  if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+    console.error(`Hardhat test run exceeded ${hardhatTimeoutMs}ms and was terminated.`);
+  }
+
+  if (status !== 0) {
+    console.error(
+      `Hardhat tests failed after ${durationMs}ms (exit code ${status ?? 'unknown'}).`,
+    );
+  }
+
+  console.log(`⏱️ Hardhat test runner completed in ${Math.round(durationMs / 1000)}s.`);
+
+  process.exit(status ?? 1);
 });
-
-if (result.error) {
-  console.error(result.error.message);
-}
-
-if (result.signal === 'SIGTERM' || result.signal === 'SIGKILL') {
-  console.error(`Hardhat test run exceeded ${hardhatTimeoutMs}ms and was terminated.`);
-}
-
-const durationMs = Date.now() - startedAt;
-if (result.status !== 0) {
-  console.error(`Hardhat tests failed after ${durationMs}ms (exit code ${result.status ?? 'unknown'}).`);
-}
-
-console.log(`⏱️ Hardhat test runner completed in ${Math.round(durationMs / 1000)}s.`);
-
-process.exit(result.status ?? 1);
