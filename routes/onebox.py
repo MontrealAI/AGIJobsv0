@@ -28,6 +28,8 @@ from urllib.parse import quote
 import httpx
 import prometheus_client
 from pydantic import BaseModel, Field
+from pydantic import ConfigDict
+from pydantic import field_validator, model_validator
 
 # Lightweight pydantic shim for environments that preload a minimal stub (e.g. unit
 # tests that monkeypatch sys.modules["pydantic"]). FastAPI expects create_model and a
@@ -582,6 +584,24 @@ class JobIntent(BaseModel):
     userContext: Optional[Dict[str, Any]] = None
 
 
+def _normalize_intent(intent: Any) -> JobIntent:
+    """Coerce incoming intent payloads into a JobIntent instance.
+
+    Tests often supply already-materialised JobIntent objects while API callers
+    may provide plain dictionaries. Pydantic's default validation does not
+    recognise pre-built BaseModel instances when stubs are active, so this
+    helper performs a small manual normalisation to keep both paths aligned.
+    """
+
+    if isinstance(intent, JobIntent):
+        return intent
+    if isinstance(intent, dict):
+        return JobIntent.model_validate(intent)
+    if isinstance(intent, BaseModel):
+        return JobIntent.model_validate(intent.model_dump())
+    raise TypeError("intent must be JobIntent or dict-like")
+
+
 # Backwards-compatible alias for tests and external callers expecting Payload symbol
 Payload = JobPayload
 
@@ -603,9 +623,16 @@ class PlanResponse(BaseModel):
     receiptAttestationUri: Optional[str] = None
 
 class SimulateRequest(BaseModel):
-    intent: JobIntent
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    intent: Any
     planHash: Optional[str] = None
     createdAt: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _normalise_intent(self) -> "SimulateRequest":
+        self.intent = _normalize_intent(self.intent)
+        return self
 
 class SimulateResponse(BaseModel):
     summary: str
@@ -629,10 +656,17 @@ class SimulateResponse(BaseModel):
     receiptAttestationUri: Optional[str] = None
 
 class ExecuteRequest(BaseModel):
-    intent: JobIntent
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    intent: Any
     planHash: Optional[str] = None
     createdAt: Optional[str] = None
     mode: Literal["relayer", "wallet"] = "relayer"
+
+    @model_validator(mode="after")
+    def _normalise_intent(self) -> "ExecuteRequest":
+        self.intent = _normalize_intent(self.intent)
+        return self
 
 class ExecuteResponse(BaseModel):
     ok: bool = True
@@ -1421,11 +1455,14 @@ def _bind_plan_hash(
     return canonical_full, canonical_hash, created_at, updated_snapshot, stored_missing_fields
 
 
+_STATUS_CACHE_ENABLED = not _FORCE_STUB_WEB3
 _STATUS_CACHE: Dict[int, "StatusResponse"] = {}
 _STATUS_CACHE_LOCK = threading.Lock()
 
 
 def _cache_status(status: "StatusResponse") -> None:
+    if not _STATUS_CACHE_ENABLED:
+        return
     try:
         job_id = int(status.jobId)
     except (TypeError, ValueError):
@@ -1435,6 +1472,8 @@ def _cache_status(status: "StatusResponse") -> None:
 
 
 def _get_cached_status(job_id: int) -> Optional["StatusResponse"]:
+    if not _STATUS_CACHE_ENABLED:
+        return None
     with _STATUS_CACHE_LOCK:
         return _STATUS_CACHE.get(job_id)
 
@@ -2512,7 +2551,7 @@ async def simulate(request: Request, req: SimulateRequest):
     except Exception as exc:
         status_code = 500
         audit_event(
-            context,
+            security_context,
             "onebox.simulate.error",
             intent=intent_type,
             status=status_code,
