@@ -13,7 +13,6 @@ from orchestrator.runner import get_status, start_run
 from orchestrator.simulator import simulate_plan
 from .security import SecurityContext, audit_event
 from .security import require_security
-from .security import _SETTINGS
 
 
 async def _require_api_dependency(
@@ -31,8 +30,15 @@ async def _require_api_dependency(
         raise HTTPException(status_code=503, detail="ONEBOX_UNAVAILABLE") from exc
 
     api_token = getattr(onebox, "_API_TOKEN", "")
+    try:  # re-read settings to honor reloads
+        from routes import security as security
+    except Exception as exc:  # pragma: no cover - fail closed if security module breaks
+        raise HTTPException(status_code=503, detail="SECURITY_UNAVAILABLE") from exc
+
+    settings = getattr(security, "_SETTINGS", None)
     security_configured = bool(
-        api_token or (_SETTINGS and (_SETTINGS.tokens or _SETTINGS.signing_secret or _SETTINGS.default_token))
+        api_token
+        or (settings and (settings.tokens or settings.signing_secret or settings.default_token))
     )
 
     if not security_configured:
