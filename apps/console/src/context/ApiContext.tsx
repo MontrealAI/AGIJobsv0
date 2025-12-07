@@ -28,7 +28,7 @@ const STORAGE_KEY = 'agi-console.api-config';
 
 const ApiContext = createContext<ApiContextValue | undefined>(undefined);
 
-function normalizeBaseUrl(value: string): string {
+export function normalizeBaseUrl(value: string): string {
   const trimmed = value.trim().replace(/\/$/, '');
   if (!trimmed) {
     return '';

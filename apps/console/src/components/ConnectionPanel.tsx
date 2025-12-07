@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ApiConfig, useApi } from '../context/ApiContext';
+import { ApiConfig, normalizeBaseUrl, useApi } from '../context/ApiContext';
 
 type WalletStatus =
   | { state: 'idle' }
@@ -57,8 +57,20 @@ export function ConnectionPanel({ onConfigSaved }: ConnectionPanelProps) {
     setSaving(true);
     setMessage(null);
     try {
+      const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+      if (!normalizedBaseUrl) {
+        throw new Error('Provide a valid orchestrator base URL.');
+      }
+      try {
+        new URL(normalizedBaseUrl);
+      } catch {
+        throw new Error(
+          'Base URL must include a valid host (https://example.com).'
+        );
+      }
+
       const cleaned: ApiConfig = {
-        baseUrl: baseUrl.trim(),
+        baseUrl: normalizedBaseUrl,
         token: token.trim(),
       };
       setConfig(cleaned);
