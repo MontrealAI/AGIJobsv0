@@ -116,10 +116,10 @@ const env = { ...process.env };
 // Hardhat test runner. Developers can override this via HARDHAT_TEST_TIMEOUT_MS
 // if they need a longer window on constrained machines. A generous default is
 // required because first-time Solidity compilation can legitimately take
-// several minutes on shared CI hosts; giving Hardhat 10 minutes by default
-// avoids spurious ETIMEDOUT failures while still protecting against runaway
-// jobs.
-const hardhatTimeoutMs = Number.parseInt(env.HARDHAT_TEST_TIMEOUT_MS ?? '600000', 10);
+// several minutes on shared CI hosts; giving Hardhat 15 minutes by default
+// avoids spurious ETIMEDOUT failures on slower builders while still protecting
+// against runaway jobs.
+const hardhatTimeoutMs = Number.parseInt(env.HARDHAT_TEST_TIMEOUT_MS ?? '900000', 10);
 
 // Speed up test-time compilation by allowing the Solidity optimizer and viaIR
 // settings to be relaxed when HARDHAT_FAST_COMPILE is set. Default to the
