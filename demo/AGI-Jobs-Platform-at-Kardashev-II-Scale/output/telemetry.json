@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2125-01-01T08:19:21.838Z",
+  "generatedAt": "2125-01-01T05:53:52.716Z",
   "dominanceScore": 99.9,
   "shards": [
     {
       "shardId": "earth",
-      "throughput": 755788,
-      "validators": 151,
+      "throughput": 668431,
+      "validators": 133,
       "settlementLagMinutes": 6,
       "resilience": 0.999,
-      "utilisation": 93.79,
-      "surplusMw": 136000
+      "utilisation": 99.54,
+      "surplusMw": 81125000
     },
     {
       "shardId": "mars",
-      "throughput": 106051,
+      "throughput": 112364,
       "validators": 120,
       "settlementLagMinutes": 17,
       "resilience": 0.999,
-      "utilisation": 90.83,
-      "surplusMw": 16350
+      "utilisation": 98.73,
+      "surplusMw": 23300000
     },
     {
       "shardId": "orbital",
-      "throughput": 688849,
-      "validators": 137,
+      "throughput": 600104,
+      "validators": 120,
       "settlementLagMinutes": 6,
       "resilience": 0.999,
-      "utilisation": 91.67,
-      "surplusMw": 412500
+      "utilisation": 99.16,
+      "surplusMw": 133375000
     }
   ],
   "sentinelFindings": [
@@ -37,61 +37,78 @@
       "action": "SystemPause.PAUSE_DOMAIN",
       "reason": "Energy utilisation breached 92% threshold – initiating cooldown window.",
       "mttrMinutes": 14
+    },
+    {
+      "domain": "mars-energy",
+      "severity": "moderate",
+      "action": "SystemPause.PAUSE_DOMAIN",
+      "reason": "Energy utilisation breached 92% threshold – initiating cooldown window.",
+      "mttrMinutes": 14
+    },
+    {
+      "domain": "orbital-energy",
+      "severity": "moderate",
+      "action": "SystemPause.PAUSE_DOMAIN",
+      "reason": "Energy utilisation breached 92% threshold – initiating cooldown window.",
+      "mttrMinutes": 14
     }
   ],
   "dyson": {
     "totalSatellites": 10000,
-    "built": 2919,
+    "built": 2669,
     "assemblyRatePerDay": 96,
-    "projectedCompletionDays": 74,
+    "projectedCompletionDays": 77,
     "energyPerSatelliteMw": 45,
-    "capturedMw": 131355,
-    "coveragePercent": 29.19
+    "capturedMw": 120105,
+    "coveragePercent": 26.69
   },
   "energyMonteCarlo": {
     "runs": 256,
     "breachProbability": 0,
-    "tolerance": 0.01,
+    "tolerance": 0.05,
     "withinTolerance": true,
-    "capturedGw": 613,
-    "marginGw": 76.625,
-    "peakDemandGw": 497.31924606092264,
-    "averageDemandGw": 485.9969112264529,
+    "capturedGw": 239600,
+    "marginGw": 11980,
+    "peakDemandGw": 209493.73197896255,
+    "averageDemandGw": 189984.19801850518,
     "percentileGw": {
-      "p50": 486.2788814702444,
-      "p95": 494.3491990757454,
-      "p99": 496.096386420615
+      "p50": 190500.86161427197,
+      "p95": 204806.78086873138,
+      "p99": 208209.50439558143
     }
   },
   "configs": {
-    "knowledgeGraph": "0x0000000000000000000000000000000000Kn0wG",
-    "energyOracle": "0x0000000000000000000000000000000000En0rg",
-    "rewardEngine": "0x0000000000000000000000000000000000Therm",
-    "phase8Manager": "0x0000000000000000000000000000000000Ph8Mgr"
+    "knowledgeGraph": "0xea0000000000000000000000000000000000d0a1",
+    "energyOracle": "0xea0000000000000000000000000000000000d0b1",
+    "rewardEngine": "0xea0000000000000000000000000000000000d0c1",
+    "phase8Manager": "0xea0000000000000000000000000000000000d0d1"
   },
   "energyFeeds": [
     {
+      "federationSlug": "earth",
       "region": "earth-grid",
       "telemetry": "https://energy.example/earth/live",
       "type": "solar",
-      "nominalMw": 145000,
-      "bufferMw": 12000,
+      "nominalMw": 81500000,
+      "bufferMw": 500000,
       "latencyMs": 1200
     },
     {
+      "federationSlug": "mars",
       "region": "mars-dome",
       "telemetry": "https://energy.example/mars/live",
       "type": "fusion",
-      "nominalMw": 18000,
-      "bufferMw": 2200,
+      "nominalMw": 23600000,
+      "bufferMw": 400000,
       "latencyMs": 720000
     },
     {
+      "federationSlug": "orbital",
       "region": "orbital-swarm",
       "telemetry": "https://energy.example/orbital/live",
       "type": "microwave-solar",
-      "nominalMw": 450000,
-      "bufferMw": 50000,
+      "nominalMw": 134500000,
+      "bufferMw": 1500000,
       "latencyMs": 3200
     }
   ]
