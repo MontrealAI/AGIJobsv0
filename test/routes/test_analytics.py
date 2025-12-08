@@ -69,6 +69,9 @@ def teardown_module() -> None:
     """Ensure analytics' onebox stub does not leak into other modules."""
 
     sys.modules.pop("routes.onebox", None)
+    import importlib
+
+    importlib.import_module("routes.onebox")
 
 
 @pytest.mark.skipif(TestClient is None, reason="FastAPI application not available")

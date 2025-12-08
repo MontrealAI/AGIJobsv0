@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from prometheus_client import Counter, Histogram
@@ -14,6 +15,11 @@ from orchestrator.simulator import simulate_plan
 from .security import SecurityContext, audit_event
 from .security import require_security
 
+try:  # Prefer a stable reference even if other tests purge sys.modules entries
+    import routes.onebox as _ONEBOX_MODULE
+except Exception:  # pragma: no cover - falls back to dynamic import in the dependency
+    _ONEBOX_MODULE = None
+
 
 async def _require_api_dependency(
     request: Request,
@@ -24,10 +30,21 @@ async def _require_api_dependency(
 ):
     """Authenticate meta-orchestrator calls using the shared onebox settings."""
 
-    try:  # pragma: no cover - import guard for test environments
-        import routes.onebox as onebox
-    except Exception as exc:  # pragma: no cover - fail closed when core router is unavailable
-        raise HTTPException(status_code=503, detail="ONEBOX_UNAVAILABLE") from exc
+    # Reuse a stable reference to the onebox module when available so test fixtures
+    # that remove the module from ``sys.modules`` do not silently drop monkeypatched
+    # API tokens. If a fresh import succeeds, keep that version to capture any
+    # updated configuration; otherwise fall back to the cached module.
+    target_onebox = sys.modules.get("routes.onebox") or _ONEBOX_MODULE
+    if target_onebox is None:
+        try:  # pragma: no cover - import guard for test environments
+            import routes.onebox as target_onebox  # type: ignore[no-redef]
+        except Exception:
+            raise HTTPException(status_code=503, detail="ONEBOX_UNAVAILABLE")
+
+    if target_onebox is not None:
+        globals()["_ONEBOX_MODULE"] = target_onebox
+
+    onebox = target_onebox
 
     api_token = getattr(onebox, "_API_TOKEN", "")
     try:  # re-read settings to honor reloads
@@ -36,26 +53,31 @@ async def _require_api_dependency(
         raise HTTPException(status_code=503, detail="SECURITY_UNAVAILABLE") from exc
 
     settings = getattr(security, "_SETTINGS", None)
-    security_configured = bool(
-        api_token
-        or (settings and (settings.tokens or settings.signing_secret or settings.default_token))
+
+    logger.info(
+        "meta.auth.debug",
+        extra={
+            "auth_provided": bool(auth),
+            "token_configured": bool(getattr(target_onebox, "_API_TOKEN", None)),
+            "default_token_configured": bool(getattr(settings, "default_token", None)),
+        },
     )
 
-    if not security_configured:
-        context = onebox._context_from_request(request)  # type: ignore[attr-defined]
-        request.state.security_context = context
-        return context
+    fallback_token = api_token or (settings.default_token if settings else None)
+    fallback_role = settings.default_role if settings else None
 
-    if not auth:
-        raise HTTPException(status_code=401, detail="AUTH_MISSING")
-
+    # Always delegate to the shared security helper so dynamically reloaded tokens
+    # (including test monkeypatches) are respected even if earlier modules injected
+    # a lightweight onebox stub. When no tokens or signing secrets are configured,
+    # ``require_security`` returns an anonymous public context.
     return await require_security(
         request,
         authorization=auth,
         signature=signature,
         timestamp=timestamp,
         actor_header=actor,
-        fallback_token=api_token or None,
+        fallback_token=fallback_token or None,
+        fallback_role=fallback_role,
     )
 
 
