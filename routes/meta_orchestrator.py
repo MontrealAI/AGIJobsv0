@@ -57,9 +57,9 @@ async def _require_api_dependency(
     logger.info(
         "meta.auth.debug",
         extra={
-            "api_token": getattr(target_onebox, "_API_TOKEN", None),
-            "settings_default": getattr(settings, "default_token", None),
             "auth_provided": bool(auth),
+            "token_configured": bool(getattr(target_onebox, "_API_TOKEN", None)),
+            "default_token_configured": bool(getattr(settings, "default_token", None)),
         },
     )
 

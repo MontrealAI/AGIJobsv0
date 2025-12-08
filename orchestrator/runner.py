@@ -304,7 +304,8 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
                 _RUNS[status.run.id] = latest_status
                 _persist(latest_status)
 
-    _worker()
+    thread = threading.Thread(target=_worker, name=f"plan-runner-{status.run.id}", daemon=True)
+    thread.start()
     return status.run
 
 
