@@ -24,7 +24,7 @@ flowchart LR
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/AGI-Alpha-Node-v0`.
-3. Run the demo's test suite with `make test` (which invokes `python -m pytest` with plugin autoloading disabled) to avoid interference from globally installed pytest plugins.
+3. Run the demo's test suite with `make test` (which invokes `python -m pytest` with plugin autoloading disabled) to avoid interference from globally installed pytest plugins. If you need a direct call, use `python run_tests.py` so the environment is pre-seeded with the guardrails (pinned `PYTHONPATH` and `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`).
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide
