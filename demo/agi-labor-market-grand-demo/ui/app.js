@@ -6,6 +6,134 @@ const state = {
   data: null,
 };
 
+const toArray = (value) => (Array.isArray(value) ? value : []);
+const toObject = (value) => (value && typeof value === 'object' ? value : {});
+
+const defaultOwnerControlState = {
+  feePct: '—',
+  validatorRewardPct: '—',
+  burnPct: '—',
+  commitWindowFormatted: '—',
+  revealWindowFormatted: '—',
+  revealQuorumPct: '—',
+  minRevealers: '—',
+  nonRevealPenaltyBps: '—',
+  nonRevealBanBlocks: '—',
+  minStake: '—',
+  maxStakePerAddress: '—',
+  unbondingPeriodFormatted: '—',
+  stakeTreasury: '—',
+  stakeTreasuryAllowed: false,
+  registryPauser: '—',
+  stakePauser: '—',
+  validationPauser: '—',
+  stakePauserManager: '—',
+  feePoolTreasury: '—',
+  feePoolTreasuryAllowed: false,
+};
+
+function normaliseOwnerControl(raw) {
+  if (!raw) return null;
+
+  const modules = toObject(raw.modules);
+  const normaliseState = (state) => ({ ...defaultOwnerControlState, ...toObject(state) });
+  const normalisePauseDrill = (entry = {}) => ({
+    registry: Boolean(entry.registry),
+    stake: Boolean(entry.stake),
+    validation: Boolean(entry.validation),
+  });
+
+  return {
+    ownerAddress: raw.ownerAddress || '—',
+    moderatorAddress: raw.moderatorAddress || '—',
+    modules: {
+      registry: modules.registry || '—',
+      stake: modules.stake || '—',
+      validation: modules.validation || '—',
+      feePool: modules.feePool || '—',
+      dispute: modules.dispute || '—',
+      certificate: modules.certificate || '—',
+      reputation: modules.reputation || '—',
+      identity: modules.identity || '—',
+    },
+    drillCompletedAt: raw.drillCompletedAt || new Date().toISOString(),
+    baseline: normaliseState(raw.baseline),
+    upgraded: normaliseState(raw.upgraded),
+    restored: normaliseState(raw.restored),
+    pauseDrill: {
+      owner: normalisePauseDrill(raw.pauseDrill?.owner),
+      moderator: normalisePauseDrill(raw.pauseDrill?.moderator),
+    },
+    controlMatrix: toArray(raw.controlMatrix),
+  };
+}
+
+function normaliseAutomation(raw) {
+  if (!raw) return null;
+  const autopilot = toObject(raw.autopilot);
+  const commands = toObject(raw.commands);
+  const verification = toObject(raw.verification);
+  const telemetry = toObject(raw.telemetry);
+  return {
+    missionSummary: raw.missionSummary || 'Automation summary unavailable. Export the latest run to populate.',
+    resilienceScore: raw.resilienceScore ?? '—',
+    unstoppableScore: raw.unstoppableScore ?? '—',
+    telemetry: {
+      totalJobs: telemetry.totalJobs ?? '0',
+      mintedCertificates: telemetry.mintedCertificates ?? '0',
+    },
+    autopilot: {
+      ownerDirectives: toArray(autopilot.ownerDirectives),
+      agentOpportunities: toArray(autopilot.agentOpportunities),
+      validatorSignals: toArray(autopilot.validatorSignals),
+      treasuryAlerts: toArray(autopilot.treasuryAlerts),
+    },
+    commands: {
+      replayDemo: commands.replayDemo || 'npm run demo:economic-power',
+      exportTranscript: commands.exportTranscript || 'npm run demo:economic-power -- --export',
+      launchControlRoom: commands.launchControlRoom || 'npx --yes http-server -p 8080',
+      ownerDashboard: commands.ownerDashboard || 'npm run owner:dashboard',
+    },
+    verification: {
+      requiredChecks: toArray(verification.requiredChecks),
+      recommendedCommands: toArray(verification.recommendedCommands),
+      docs: toArray(verification.docs),
+    },
+  };
+}
+
+function normaliseMarket(raw) {
+  const market = toObject(raw);
+  return {
+    totalJobs: market.totalJobs ?? '0',
+    totalBurned: market.totalBurned ?? '0',
+    finalSupply: market.finalSupply ?? '0',
+    feePct: market.feePct ?? 0,
+    validatorRewardPct: market.validatorRewardPct ?? 0,
+    pendingFees: market.pendingFees ?? '0',
+    totalAgentStake: market.totalAgentStake ?? '0',
+    totalValidatorStake: market.totalValidatorStake ?? '0',
+    mintedCertificates: toArray(market.mintedCertificates),
+    agentPortfolios: toArray(market.agentPortfolios),
+    validatorCouncil: toArray(market.validatorCouncil),
+  };
+}
+
+function normaliseTranscript(raw) {
+  return {
+    generatedAt: raw.generatedAt,
+    network: raw.network || 'Unknown network',
+    actors: toArray(raw.actors),
+    automation: normaliseAutomation(raw.automation),
+    insights: toArray(raw.insights),
+    market: normaliseMarket(raw.market),
+    ownerActions: toArray(raw.ownerActions),
+    ownerControl: normaliseOwnerControl(raw.ownerControl),
+    scenarios: toArray(raw.scenarios),
+    timeline: toArray(raw.timeline),
+  };
+}
+
 const formatTime = (iso) =>
   new Date(iso).toLocaleString(undefined, {
     hour12: false,
@@ -68,7 +196,7 @@ async function loadData() {
           '⚠️  Using bundled sample transcript. Export a fresh run for live data or drop export/latest.json next to index.html.'
         );
       }
-      return json;
+      return normaliseTranscript(json);
     } catch (error) {
       errors.push(`${url}: ${error.message}`);
       console.warn(`Failed to load ${url}:`, error);
@@ -556,6 +684,15 @@ function renderActors(container, actors, market, ownerControl) {
 }
 
 function renderOwnerActions(container, ownerActions) {
+  if (!Array.isArray(ownerActions) || ownerActions.length === 0) {
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.textContent =
+      'No owner actions recorded. Re-run the grand demo with owner command logging enabled to populate this table.';
+    container.appendChild(notice);
+    return;
+  }
+
   const wrapper = document.createElement('div');
   wrapper.className = 'owner-actions';
   const table = document.createElement('table');
@@ -594,7 +731,15 @@ function renderOwnerActions(container, ownerActions) {
 }
 
 function renderOwnerControlSnapshot(container, ownerControl) {
-  if (!ownerControl) {
+  const hasStates =
+    ownerControl &&
+    ownerControl.modules &&
+    ownerControl.baseline &&
+    ownerControl.upgraded &&
+    ownerControl.restored &&
+    ownerControl.pauseDrill;
+
+  if (!hasStates) {
     const notice = document.createElement('div');
     notice.className = 'notice';
     notice.textContent =
@@ -858,6 +1003,14 @@ function renderOwnerControlSnapshot(container, ownerControl) {
 }
 
 function renderScenarios(container, scenarios, data) {
+  if (!Array.isArray(scenarios) || scenarios.length === 0) {
+    const notice = document.createElement('div');
+    notice.className = 'notice';
+    notice.textContent = 'No scenario narratives available. Export a transcript to unlock timeline filters and cards.';
+    container.appendChild(notice);
+    return;
+  }
+
   const timelineOptions = document.createElement('div');
   timelineOptions.className = 'timeline-controls';
   const filters = [
@@ -913,6 +1066,13 @@ function renderTimeline(container, timeline) {
   const timelineContainer = document.getElementById('timeline');
   if (!timelineContainer) return;
   clearNode(timelineContainer);
+  if (!Array.isArray(timeline) || timeline.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'notice';
+    empty.textContent = 'No events available yet. Re-run the export with timeline logging enabled.';
+    timelineContainer.appendChild(empty);
+    return;
+  }
   const template = document.getElementById('timeline-entry-template');
   const filtered = timeline.filter((entry) => {
     if (state.filter === 'all') return true;
