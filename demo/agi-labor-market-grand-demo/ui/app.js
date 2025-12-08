@@ -1,5 +1,5 @@
 const TRANSCRIPT_PATHS = ['export/latest.json', '../export/latest.json'];
-const FALLBACK_URL = 'sample.json';
+const FALLBACK_URL = new URL('./sample.json', import.meta.url);
 
 const state = {
   filter: 'all',
@@ -52,21 +52,33 @@ function renderCertificates(dd, certificates) {
 }
 
 async function loadData() {
-  const responses = [...TRANSCRIPT_PATHS, FALLBACK_URL];
-  for (const url of responses) {
+  const attempts = [
+    ...TRANSCRIPT_PATHS.map((path) => new URL(path, window.location.href)),
+    FALLBACK_URL,
+  ];
+  const errors = [];
+
+  for (const url of attempts) {
     try {
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const json = await res.json();
-      if (url === FALLBACK_URL) {
-        console.warn('⚠️  Using bundled sample transcript. Export a fresh run for live data.');
+      if (url.href === FALLBACK_URL.href) {
+        console.warn(
+          '⚠️  Using bundled sample transcript. Export a fresh run for live data or drop export/latest.json next to index.html.'
+        );
       }
       return json;
     } catch (error) {
+      errors.push(`${url}: ${error.message}`);
       console.warn(`Failed to load ${url}:`, error);
     }
   }
-  throw new Error('No transcript file available.');
+
+  throw new Error(
+    `No transcript file available. Tried:\n${errors.join('\n')}\n` +
+      'Start a static server in demo/agi-labor-market-grand-demo/ui with `npx --yes http-server -p 8080` and export a fresh run.'
+  );
 }
 
 function clearNode(node) {
