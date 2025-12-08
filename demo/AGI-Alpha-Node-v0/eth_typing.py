@@ -1,28 +1,32 @@
-"""Local shim that proxies to the repository-level :mod:`eth_typing` patch."""
+"""Local compatibility shim to stabilise pytest plugin imports.
+
+The global repository already ships ``eth_typing.py`` at the root to restore
+legacy aliases (for example ``ContractName``) expected by third-party pytest
+plugins. When tests in this demo run from a nested working directory, Python's
+import resolution does not pick up the root shim before site-packages. That can
+cause ``web3.tools.pytest_ethereum`` to crash during plugin autoloading.
+
+By delegating to the repository-level shim we ensure the same behaviour is
+available locally without duplicating implementation. Keeping the dependency
+chain explicit here guards against brittle environment differences while
+honouring the centralised shim logic.
+"""
 from __future__ import annotations
 
-import importlib.util
+import runpy
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-SHIM_PATH = REPO_ROOT / "eth_typing.py"
-if not SHIM_PATH.exists():
-    raise ImportError(f"Shared eth_typing shim missing at {SHIM_PATH}")
+_ROOT_SHIM = Path(__file__).resolve().parents[2] / "eth_typing.py"
+if not _ROOT_SHIM.exists():  # pragma: no cover - defensive guard for unusual layouts
+    raise ImportError(f"Expected eth_typing shim missing at {_ROOT_SHIM}")
 
-_spec = importlib.util.spec_from_file_location("agi_jobs_eth_typing", SHIM_PATH)
-if _spec is None or _spec.loader is None:
-    raise ImportError("Unable to load shared eth_typing shim")
+_globals = runpy.run_path(str(_ROOT_SHIM))
 
-_module = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_module)
-
-for _name in dir(_module):
+# Re-export everything except dunder attributes to emulate the upstream module
+# surface for callers that import ``eth_typing`` from this demo directory.
+for _name, _value in _globals.items():
     if _name.startswith("__"):
         continue
-    globals()[_name] = getattr(_module, _name)
+    globals()[_name] = _value
 
-__all__ = [name for name in globals() if not name.startswith("_")]
-__file__ = str(SHIM_PATH)
-
-# Keep a reference around for debugging.
-BACKEND_MODULE = _module
+__all__ = [name for name in globals() if not name.startswith("__")]
