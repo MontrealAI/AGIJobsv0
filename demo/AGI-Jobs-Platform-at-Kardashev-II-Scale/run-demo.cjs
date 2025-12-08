@@ -144,10 +144,12 @@ function simulateDysonSwarm(rng) {
   return progress;
 }
 
-function simulateEnergyMonteCarlo(fabric, energyFeeds, rng, runs = 256) {
-  const safetyMarginPct = 0.125;
+function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs = 256) {
+  const safetyMarginPct = (energyConfig?.tolerancePct ?? 5) / 100;
+  const driftPct = (energyConfig?.driftAlertPct ?? 8.5) / 100;
   const capturedGw = energyFeeds.reduce((sum, feed) => sum + feed.nominalMw, 0) / 1000;
-  const marginGw = capturedGw * safetyMarginPct;
+  const reserveGw = energyFeeds.reduce((sum, feed) => sum + feed.bufferMw, 0) / 1000;
+  const marginGw = Math.max(capturedGw * safetyMarginPct, reserveGw * 0.5);
   let breaches = 0;
   let totalDemand = 0;
   let peakDemand = 0;
@@ -158,12 +160,16 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, rng, runs = 256) {
     for (const feed of energyFeeds) {
       const baseGw = feed.nominalMw / 1000;
       const bufferGw = feed.bufferMw / 1000;
-      const latencyPenalty = Math.min(0.2, feed.latencyMs / 1_200_000) * 0.25;
-      const jitter = (rng() - 0.5) * 0.04; // ±2%
-      const regionalDemand = Math.max(0, baseGw * (1 + jitter + latencyPenalty) - bufferGw * 2);
+      const latencyDrag = 1 - Math.min(0.18, feed.latencyMs / 1_200_000);
+      const demandLoad = 0.72 + rng() * 0.18; // target 72–90% utilisation
+      const jitter = (rng() - 0.5) * driftPct; // ± drift/2
+      const regionalDemand = Math.max(
+        0,
+        baseGw * demandLoad * latencyDrag * (1 + jitter) - bufferGw * 0.5
+      );
       demandGw += regionalDemand;
     }
-    const remainingBuffer = capturedGw - demandGw;
+    const remainingBuffer = capturedGw + reserveGw - demandGw;
     if (remainingBuffer < marginGw) {
       breaches += 1;
     }
@@ -185,8 +191,8 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, rng, runs = 256) {
   const summary = {
     runs,
     breachProbability,
-    tolerance: 0.01,
-    withinTolerance: breachProbability <= 0.01,
+    tolerance: safetyMarginPct,
+    withinTolerance: breachProbability <= safetyMarginPct,
     capturedGw,
     marginGw,
     peakDemandGw: peakDemand,
@@ -271,7 +277,7 @@ function main() {
   const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
-  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, rng);
+  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng);
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
