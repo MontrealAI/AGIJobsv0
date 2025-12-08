@@ -62,14 +62,18 @@ function checkNodeVersion() {
   if (!enginesNpm) {
     problems.push('package.json is missing engines.npm pin');
   } else if (!/^>=10\.8\.0\s*<11/.test(enginesNpm.trim())) {
-    problems.push(`package.json engines.npm must bound npm 10.x (found "${enginesNpm}")`);
+    problems.push(
+      `package.json engines.npm must bound npm 10.x (found "${enginesNpm}")`
+    );
   }
 
   const packageManager = pkg?.packageManager;
   if (!packageManager) {
     problems.push('package.json is missing packageManager declaration');
   } else if (!/^npm@10\.8\.[0-9]+$/.test(packageManager.trim())) {
-    problems.push(`package.json packageManager must pin npm@10.8.x (found "${packageManager}")`);
+    problems.push(
+      `package.json packageManager must pin npm@10.8.x (found "${packageManager}")`
+    );
   }
 }
 
@@ -124,7 +128,9 @@ function checkRootLockfile() {
     const contents = fs.readFileSync(lockfilePath, 'utf8');
     JSON.parse(contents);
     if (Buffer.byteLength(contents, 'utf8') < MIN_ROOT_LOCKFILE_BYTES) {
-      problems.push('Root package-lock.json is unexpectedly small; regenerate it with npm install --package-lock-only');
+      problems.push(
+        'Root package-lock.json is unexpectedly small; regenerate it with npm install --package-lock-only'
+      );
     }
   } catch (error) {
     problems.push(`Root package-lock.json is invalid JSON: ${error.message}`);
