@@ -89,14 +89,13 @@ class DayOneUtilityOrchestrator:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._owner_config_path = self.config_dir / "owner_controls.yaml"
         self._owner_defaults_path = self.config_dir / "owner_controls.defaults.yaml"
-        if not self._owner_config_path.exists():
-            raise FileNotFoundError(
-                "Owner controls file is missing. Re-run `make bootstrap` to restore defaults."
-            )
         if not self._owner_defaults_path.exists():
             raise FileNotFoundError(
                 "Owner control defaults missing. Ensure owner_controls.defaults.yaml is present."
             )
+        if not self._owner_config_path.exists():
+            self._restore_owner_controls_from_defaults()
+        self._validate_owner_controls(self.load_owner_controls())
 
     # ------------------------------------------------------------------
     # Configuration helpers
@@ -189,6 +188,13 @@ class DayOneUtilityOrchestrator:
             raise TypeError("owner_controls.defaults.yaml must contain a mapping")
         return defaults
 
+    def _restore_owner_controls_from_defaults(self) -> Dict[str, Any]:
+        defaults = self._load_owner_defaults()
+        snapshot = {key: defaults[key] for key in self.OWNER_SCHEMA.keys()}
+        self._validate_owner_controls(snapshot)
+        self.save_owner_controls(snapshot)
+        return snapshot
+
     def _coerce_owner_value(self, key: str, value: str) -> Any:
         if key not in self.OWNER_SCHEMA:
             raise KeyError(f"Unknown owner control: {key}")
@@ -227,11 +233,7 @@ class DayOneUtilityOrchestrator:
         return snapshot
 
     def reset_owner_controls(self) -> Dict[str, Any]:
-        defaults = self._load_owner_defaults()
-        snapshot = {key: defaults[key] for key in self.OWNER_SCHEMA.keys()}
-        self._validate_owner_controls(snapshot)
-        self.save_owner_controls(snapshot)
-        return snapshot
+        return self._restore_owner_controls_from_defaults()
 
     def _validate_owner_controls(self, snapshot: Mapping[str, Any]) -> None:
         fee = int(snapshot["platform_fee_bps"])

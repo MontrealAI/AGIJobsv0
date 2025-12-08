@@ -1,8 +1,8 @@
 import json
+import sys
 from pathlib import Path
 
 import pytest
-import sys
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -97,6 +97,24 @@ def test_owner_reset_restores_defaults():
     )
     for key in orchestrator.OWNER_SCHEMA.keys():
         assert live_payload[key] == defaults_payload[key]
+
+
+def test_missing_owner_controls_file_is_self_healed():
+    base_path = Path(__file__).resolve().parents[1]
+    orchestrator = DayOneUtilityOrchestrator(base_path)
+    controls_path = base_path / "config" / "owner_controls.yaml"
+    defaults_path = base_path / "config" / "owner_controls.defaults.yaml"
+
+    original = controls_path.read_text(encoding="utf-8")
+    controls_path.unlink()
+
+    restored = DayOneUtilityOrchestrator(base_path).load_owner_controls()
+    defaults = yaml.safe_load(defaults_path.read_text(encoding="utf-8"))
+
+    for key in orchestrator.OWNER_SCHEMA.keys():
+        assert restored[key] == defaults[key]
+
+    controls_path.write_text(original, encoding="utf-8")
 
 
 def test_owner_utility_guardrail_override():
