@@ -16,7 +16,7 @@ compliance:
 	python -m alpha_node.cli compliance
 
 test:
-	$(TEST_ENV) pytest tests
+	$(TEST_ENV) python -m pytest tests
 
 docker:
 	docker build -t agi-alpha-node .
