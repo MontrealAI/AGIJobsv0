@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Sequence
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+# Resolve to the repository root (``.../AGIJobsv0``), not the ``demo`` folder.
+REPO_ROOT = Path(__file__).resolve().parents[2]
 TEST_PATH = Path(__file__).resolve().parent / "tests"
 
 
