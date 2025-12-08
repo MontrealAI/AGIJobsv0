@@ -1,13 +1,13 @@
 # Kardashev II Scale Control Dossier
 
-Generated: 2125-01-01T05:53:52.716Z
+Generated: 2125-01-01T19:05:39.398Z
 
 ## Executive Summary
 
 - **Universal Dominance Score:** 99.9/100 (targets met across all shards).
 - **Dyson Swarm Progress:** 2669/10000 satellites assembled (26.69% coverage).
 - **Captured Power:** 120,105 MW available for reallocation.
-- **Energy Monte Carlo:** 0.00% breach probability across 256 runs (tolerance 5.00%).
+- **Energy Monte Carlo:** 3.91% breach probability across 256 runs (tolerance 5.00%).
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
