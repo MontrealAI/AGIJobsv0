@@ -161,11 +161,12 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
       const baseGw = feed.nominalMw / 1000;
       const bufferGw = feed.bufferMw / 1000;
       const latencyDrag = 1 - Math.min(0.18, feed.latencyMs / 1_200_000);
-      const demandLoad = 0.72 + rng() * 0.18; // target 72–90% utilisation
-      const jitter = (rng() - 0.5) * driftPct; // ± drift/2
+      const demandLoad = 0.88 + rng() * 0.28; // target 88–116% utilisation to surface stress
+      const jitter = (rng() - 0.5) * driftPct * 2; // ± full drift
+      const bufferDraw = bufferGw * (0.15 + rng() * 0.55); // probabilistic buffer draw
       const regionalDemand = Math.max(
         0,
-        baseGw * demandLoad * latencyDrag * (1 + jitter) - bufferGw * 0.5
+        baseGw * demandLoad * latencyDrag * (1 + jitter) + bufferDraw
       );
       demandGw += regionalDemand;
     }
