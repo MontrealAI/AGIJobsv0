@@ -64,7 +64,7 @@ function runOrchestratorCheck() {
     [
       "ts-node",
       "--compiler-options",
-      '{"module":"commonjs"}',
+      '{"module":"node16","moduleResolution":"node16"}',
       ORCHESTRATOR,
       "--check",
       ...(PROFILE ? ["--profile", PROFILE] : []),
