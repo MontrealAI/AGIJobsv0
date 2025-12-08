@@ -34,12 +34,19 @@ _ALLOWED_IMPORTS = {"math", "statistics"}
 
 def _sandbox_guard(diff: ProposedDiff) -> None:
     for block in diff.blocks:
-        if "import" in block.replace:
-            for line in block.replace.splitlines():
-                if line.strip().startswith("import"):
-                    module = line.split()[1]
-                    if module not in _ALLOWED_IMPORTS:
-                        raise SandboxViolation(f"Import '{module}' not permitted")
+        for line in block.replace.splitlines():
+            stripped = line.strip()
+            if "__import__(" in stripped:
+                raise SandboxViolation("Dynamic imports are not permitted")
+            if stripped.startswith("import "):
+                module = stripped.split()[1].split(".", 1)[0]
+            elif stripped.startswith("from ") and " import " in stripped:
+                module = stripped.split()[1].split(".", 1)[0]
+            else:
+                module = None
+
+            if module and module not in _ALLOWED_IMPORTS:
+                raise SandboxViolation(f"Import '{module}' not permitted")
 
 
 def _simulate_market(agents: Sequence[Agent], jobs: Sequence[Job]) -> SimulationResults:
