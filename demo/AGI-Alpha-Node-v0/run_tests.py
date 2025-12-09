@@ -1,43 +1,33 @@
-"""Run Alpha Node demo tests with a clean, deterministic pytest environment.
-
-This runner pins the PYTHONPATH to the repository root so our local
-compatibility shims (for example ``eth_typing.py``) are discovered before any
-third-party packages. It also disables pytest's plugin autoloading to prevent
-globally installed plugins from injecting unwanted dependencies.
-"""
-
 from __future__ import annotations
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Sequence
 
 
-# Resolve to the repository root (``.../AGIJobsv0``), not the ``demo`` folder.
-REPO_ROOT = Path(__file__).resolve().parents[2]
-TEST_PATH = Path(__file__).resolve().parent / "tests"
-
-
-def _build_env() -> dict[str, str]:
+def _build_env(repo_root: Path) -> dict[str, str]:
     env = os.environ.copy()
     env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
-    # Ensure our repository-level shims and modules take precedence over any
-    # globally installed packages (notably the eth_typing compatibility shim).
-    env["PYTHONPATH"] = str(REPO_ROOT)
+    env.setdefault("PYTHONPATH", str(repo_root))
     return env
 
 
-def run_pytest(args: Sequence[str]) -> int:
-    cmd = ["python", "-m", "pytest", *args, str(TEST_PATH)]
-    process = subprocess.run(cmd, env=_build_env())
+def _build_command(args: Sequence[str]) -> list[str]:
+    base = [sys.executable, "-m", "pytest"]
+    if args:
+        return [*base, *args]
+    return [*base, "tests"]
+
+
+def main() -> int:
+    repo_root = Path(__file__).resolve().parents[1]
+    env = _build_env(repo_root)
+    cmd = _build_command(sys.argv[1:])
+    process = subprocess.run(cmd, cwd=Path(__file__).parent, env=env)
     return process.returncode
 
 
-def main() -> None:
-    exit_code = run_pytest([])
-    raise SystemExit(exit_code)
-
-
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
