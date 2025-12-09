@@ -78,6 +78,12 @@ def load_simulation_config(config_dict: Mapping[str, object]) -> SimulationConfi
     thermostat = config_dict["thermostat"]
     sentinels = config_dict["sentinels"]
     simulation = config_dict["simulation"]
+    min_moi_interval = thermostat.get("min_moi_interval")
+    max_moi_interval = thermostat.get("max_moi_interval")
+    if min_moi_interval is None or max_moi_interval is None:
+        bounds = thermostat.get("moi_interval_bounds", {})
+        min_moi_interval = bounds.get("min")
+        max_moi_interval = bounds.get("max")
     return SimulationConfig(
         seed=int(config_dict.get("seed", 0)),
         episodes=int(config_dict.get("episodes", 1)),
@@ -96,6 +102,8 @@ def load_simulation_config(config_dict: Mapping[str, object]) -> SimulationConfi
         thermostat_config=ThermostatConfig(
             roi_target=float(thermostat["roi_target"]),
             roi_floor=float(thermostat["roi_floor"]),
+            min_moi_interval=int(min_moi_interval),
+            max_moi_interval=int(max_moi_interval),
             fm_cost_per_call=float(thermostat["fm_cost_per_call"]),
             max_daily_fm_cost=float(thermostat["max_daily_fm_cost"]),
             epsilon_range=dict(thermostat["epsilon_range"]),
@@ -126,11 +134,10 @@ def _initialise_engine(sim_config: SimulationConfig, interestingness_config: Map
     return engine
 
 
-def _initialise_thermostat(sim_config: SimulationConfig) -> ThermostatController:
+def _initialise_thermostat(sim_config: SimulationConfig, engine: OmniCurriculumEngine) -> ThermostatController:
     return ThermostatController(
+        engine=engine,
         config=sim_config.thermostat_config,
-        initial_epsilon=sim_config.omni_config.exploration_epsilon,
-        initial_interval=sim_config.omni_config.partition_update_interval,
     )
 
 
@@ -148,7 +155,7 @@ class FunnelSimulator:
         self._config = sim_config
         self._rng = random.Random(sim_config.seed)
         self._engine = _initialise_engine(sim_config, interestingness_config)
-        self._thermostat = _initialise_thermostat(sim_config)
+        self._thermostat = _initialise_thermostat(sim_config, self._engine)
         self._sentinels = _initialise_sentinels(sim_config)
         self._strategy = strategy
         self._cohort_map: Dict[str, CohortConfig] = {cohort.name: cohort for cohort in sim_config.cohorts}
