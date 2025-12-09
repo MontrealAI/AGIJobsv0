@@ -410,10 +410,13 @@ function main() {
     energyFeeds: energy.feeds,
   };
   debugLog('telemetry', telemetry);
-  fs.writeFileSync(
-    path.join(outputDir, 'telemetry.json'),
-    `${JSON.stringify(telemetry, null, 2)}\n`
-  );
+  const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
+  fs.writeFileSync(telemetryPath, `${JSON.stringify(telemetry, null, 2)}\n`);
+
+  const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
+  if (fs.existsSync(legacyTelemetryPath)) {
+    fs.rmSync(legacyTelemetryPath);
+  }
 
   if (process.argv.includes('--print-commands')) {
     const commands = [
@@ -444,7 +447,9 @@ function main() {
   console.log('✅ Kardashev II scale dossier generated successfully.');
   console.log('   - Report: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-report.md');
   console.log('   - Governance playbook: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/governance-playbook.md');
-  console.log('   - Telemetry: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/telemetry.json');
+  console.log(
+    '   - Telemetry: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-telemetry.json'
+  );
   console.log(
     `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
   );
