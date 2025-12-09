@@ -103,61 +103,6 @@
       "data": "0xffd9f74c0000000000000000000000000000000000000000000000000000000065540eb00000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000003e697066733a2f2f6167692d6a6f62732f7068617365382f73656c662d696d70726f76656d656e742f7265706f7274732f65706f63682d3134342e6a736f6e0000"
     },
     {
-      "label": "removeDomain",
-      "slug": "planetary-finance",
-      "data": "0x07651776d9e39c30daefdf2b66a5fc2d23a438ab55777ffe0c215d9d2a46eb3cfc82c06f"
-    },
-    {
-      "label": "removeDomain",
-      "slug": "climate-harmonizer",
-      "data": "0x0765177646536b6c6f44ac145f0bde3cdd743a4be6ce7abd35e992d3134a7ee1ff4439d8"
-    },
-    {
-      "label": "removeDomain",
-      "slug": "health-sovereign",
-      "data": "0x076517760a59527e1ce029d2e79110dd0273ed58cc7ee16b2130c5fb90f6ab4b9f31254b"
-    },
-    {
-      "label": "removeDomain",
-      "slug": "infrastructure-synthesis",
-      "data": "0x0765177633c470fa3fa88ac3833dd053c8dc2e42597596107d65e254e8262a2e551abd33"
-    },
-    {
-      "label": "removeDomain",
-      "slug": "knowledge-lattice",
-      "data": "0x0765177632c88df4098f15fe1f4815e1e0b954f483bd3eeb6a979c1db1d863ffac07e1bc"
-    },
-    {
-      "label": "removeSentinel",
-      "slug": "solar-shield",
-      "data": "0x148a829ef9bb50c4d2e480305feb99fe7a362216030d2c046044d943eb5230daeb8d9d0f"
-    },
-    {
-      "label": "removeSentinel",
-      "slug": "capital-watch",
-      "data": "0x148a829edc905f837bd1d9bdab444fcc21e352740a5a871109742e401c80a3aa58a820be"
-    },
-    {
-      "label": "removeSentinel",
-      "slug": "bio-sentinel",
-      "data": "0x148a829eaf17939ad344289a2b596f63429103a33a69ce4b56f18f8cdc4f666372ee23e8"
-    },
-    {
-      "label": "removeCapitalStream",
-      "slug": "climate-stabilization",
-      "data": "0x41363e8411a7df437e109242c949b82aa9b4bdca0251d67e16094399ae9c974ce5b5d1ed"
-    },
-    {
-      "label": "removeCapitalStream",
-      "slug": "planetary-resilience",
-      "data": "0x41363e84b28124d856c1b43a2ae8a3bec07b4664e3364fdde52fdfdd7b4ccb66a0db3f86"
-    },
-    {
-      "label": "removeCapitalStream",
-      "slug": "innovation-thrust",
-      "data": "0x41363e841fde1001e23e552218ddc62341e0d259420f964096d9aeef3f04bd05491f126f"
-    },
-    {
       "label": "setSentinelDomains",
       "slug": "solar-shield",
       "data": "0xb41ba9fcf9bb50c4d2e480305feb99fe7a362216030d2c046044d943eb5230daeb8d9d0f0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000246536b6c6f44ac145f0bde3cdd743a4be6ce7abd35e992d3134a7ee1ff4439d833c470fa3fa88ac3833dd053c8dc2e42597596107d65e254e8262a2e551abd33"
