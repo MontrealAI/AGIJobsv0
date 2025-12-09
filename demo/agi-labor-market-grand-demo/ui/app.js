@@ -1,9 +1,13 @@
 const TRANSCRIPT_PATHS = ['export/latest.json', '../export/latest.json'];
 const FALLBACK_URL = new URL('./sample.json', import.meta.url);
+const EMBEDDED_SAMPLE_PROMISE = import('./sample.json', { assert: { type: 'json' } })
+  .then((module) => module.default)
+  .catch(() => null);
 
 const state = {
   filter: 'all',
   data: null,
+  source: 'live',
 };
 
 const toArray = (value) => (Array.isArray(value) ? value : []);
@@ -192,15 +196,27 @@ async function loadData() {
       if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       const json = await res.json();
       if (url.href === FALLBACK_URL.href) {
+        state.source = 'bundled-sample';
         console.warn(
           '⚠️  Using bundled sample transcript. Export a fresh run for live data or drop export/latest.json next to index.html.'
         );
+      } else {
+        state.source = 'live';
       }
       return normaliseTranscript(json);
     } catch (error) {
       errors.push(`${url}: ${error.message}`);
       console.warn(`Failed to load ${url}:`, error);
     }
+  }
+
+  const embeddedSample = await EMBEDDED_SAMPLE_PROMISE;
+  if (embeddedSample) {
+    state.source = 'embedded-sample';
+    console.warn(
+      '⚠️  Network fetches failed; rendering embedded sample transcript. Start a static server with `npx --yes http-server -p 8080` for live data.'
+    );
+    return normaliseTranscript(embeddedSample);
   }
 
   throw new Error(
@@ -1107,6 +1123,16 @@ function renderApp(data) {
   state.data = data;
   const app = document.getElementById('app');
   clearNode(app);
+
+  if (state.source !== 'live') {
+    const banner = document.createElement('div');
+    banner.className = 'notice notice-inline';
+    banner.textContent =
+      state.source === 'bundled-sample'
+        ? 'Rendering bundled sample transcript. Drop export/latest.json next to index.html to view a fresh run.'
+        : 'Offline mode: rendering embedded sample transcript. Start a local server and re-export to stream live data.';
+    app.appendChild(banner);
+  }
 
   const summaryCard = createCard(
     'Sovereign market pulse',

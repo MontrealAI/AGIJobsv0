@@ -708,6 +708,14 @@ main {
   color: #fca5a5;
 }
 
+.notice-inline {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #bfdbfe;
+}
+
 @media (max-width: 720px) {
   .hero {
     padding: 2.5rem 1.25rem 1.5rem;
