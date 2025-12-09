@@ -20,6 +20,7 @@ class SimulationResult:
     shard_depths: Dict[str, List[int]]
     reassigned_jobs: int
     total_runtime: float
+    total_jobs: int
 
     def max_depth_delta(self) -> int:
         if not self.shard_depths:
@@ -36,15 +37,20 @@ class SimulationResult:
         return statistics.mean(depths) if depths else 0.0
 
 
-async def _populate_jobs(orchestrator: PlanetaryOrchestrator, job_count: int, regions: Iterable[str]) -> None:
+async def _populate_jobs(
+    orchestrator: PlanetaryOrchestrator,
+    job_count: int,
+    regions: Iterable[str],
+    rng: random.Random,
+) -> None:
     regions_cycle = list(regions)
     for i in range(job_count):
         region = regions_cycle[i % len(regions_cycle)]
         payload = DemoJobPayload(
             description=f"Autonomous task #{i} for {region}",
-            complexity=random.choice(["low", "medium", "high"]),
+            complexity=rng.choice(["low", "medium", "high"]),
             reward=f"{5 + (i % 3)}.0 ETH",
-            metadata={"kardashev": "II", "category": random.choice(["science", "logistics", "governance"])}
+            metadata={"kardashev": "II", "category": rng.choice(["science", "logistics", "governance"])}
         )
         job = Job(job_id=f"job-{i}", region=region, payload=payload, priority=i % 5)
         await orchestrator.register_job(job)
@@ -65,17 +71,18 @@ async def _prepare_orchestrator(config: SimulationConfig, resume: bool = False) 
 
 async def run_high_load_simulation(
     base_dir: Path,
-    job_count: int = 10_000,
+    job_count: int = 3_000,
     kill_and_resume: bool = True,
+    seed: int | None = 1337,
 ) -> SimulationResult:
     """Execute a canonical scenario showing resilience under load."""
 
-    random.seed(1337)
+    rng = random.Random(seed)
     config = SimulationConfig.demo(base_dir)
     orchestrator = await _prepare_orchestrator(config)
     shard_metrics: Dict[str, List[int]] = {region.name: [] for region in config.regions}
 
-    await _populate_jobs(orchestrator, job_count, [r.name for r in config.regions])
+    await _populate_jobs(orchestrator, job_count, [r.name for r in config.regions], rng)
 
     async def record_metrics() -> None:
         while True:
@@ -114,16 +121,23 @@ async def run_high_load_simulation(
         shard_depths=shard_metrics,
         reassigned_jobs=snapshot["metrics"]["reassigned_jobs"],
         total_runtime=snapshot["metrics"]["runtime_seconds"],
+        total_jobs=snapshot["metrics"]["total_jobs"],
     )
 
 
 def run_high_load_blocking(
     base_dir: Path,
-    job_count: int = 10_000,
+    job_count: int = 3_000,
     kill_and_resume: bool = True,
+    seed: int | None = 1337,
 ) -> SimulationResult:
     return asyncio.run(
-        run_high_load_simulation(base_dir, job_count=job_count, kill_and_resume=kill_and_resume)
+        run_high_load_simulation(
+            base_dir,
+            job_count=job_count,
+            kill_and_resume=kill_and_resume,
+            seed=seed,
+        )
     )
 
 

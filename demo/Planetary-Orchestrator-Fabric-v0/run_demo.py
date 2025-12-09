@@ -27,8 +27,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--jobs",
         type=int,
-        default=10_000,
+        default=3_000,
         help="Number of jobs to simulate across shards.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1337,
+        help="Seed for deterministic orchestration and job generation.",
     )
     parser.add_argument(
         "--no-restart",
@@ -46,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         args.base_dir,
         job_count=args.jobs,
         kill_and_resume=not args.no_restart,
+        seed=args.seed,
     )
     output = {
         "completion_rate": result.completion_rate,
