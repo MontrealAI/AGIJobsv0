@@ -10,7 +10,7 @@
 2. Verify manager, guardian council, and system pause addresses in review modals.
 3. Stage pause + resume transactions but leave them unsent until incident drills.
 4. Confirm self-improvement plan hash matches guardian-approved digest.
-5. Confirm unstoppable owner score 100.00% (pause true, resume true, secondary corroboration aligned @ 100.00%).
+5. Confirm unstoppable owner score 100.00% (pause true, resume true, secondary corroboration aligned @ 100.00%, tertiary decode aligned @ 100.00% · decode failures 0).
 
 ---
 
@@ -41,6 +41,14 @@
 * **MARS** – 6.10 EF, 720,000,000 agents, resilience 93.50%.
 * **ORBITAL** – 24.60 EF, 960,000,000 agents, resilience 95.90%.
 * **LUNA** – 7.60 EF, 420,000,000 agents, resilience 93.80%.
+
+---
+
+## Mission lattice & task hierarchy
+* 3 programmes · 14 tasks · 583,000 GW · 59.70 EF.
+* Unstoppable score 100.00% · dependencies resolved true · sentinel coverage true.
+* Lead programme Helios Lattice Stewardship (orbital) — 6 tasks, 398000 GW, unstoppable 100.00%.
+* Mission advisories: none — autonomy, sentinel coverage, and timelines are nominal.
 
 ---
 

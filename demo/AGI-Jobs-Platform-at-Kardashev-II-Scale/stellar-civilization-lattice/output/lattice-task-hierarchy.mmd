@@ -1,0 +1,59 @@
+---
+title Mission Lattice Orchestration
+---
+flowchart TD
+  subgraph programme_helios_lattice[Helios Lattice Stewardship]
+    helios_lattice_helios_command[Helios Lattice Command Spine\n420d · 210000 GW]
+    helios_lattice_dyson_array_sequencer[Dyson Array Sequencer\n160d · 88000 GW]
+    helios_lattice_mirror_hubs[Mirror Hub Calibration\n60d · 22000 GW]
+    helios_lattice_dyson_array_sequencer --> helios_lattice_mirror_hubs
+    helios_lattice_heat_dump[Thermal Dump Lattice\n80d · 18000 GW]
+    helios_lattice_dyson_array_sequencer --> helios_lattice_heat_dump
+    helios_lattice_helios_command --> helios_lattice_dyson_array_sequencer
+    helios_lattice_bridge_hardening[Interplanetary Bridge Hardening\n140d · 36000 GW]
+    helios_lattice_helios_command --> helios_lattice_bridge_hardening
+    helios_lattice_guardian_autonomy[Guardian Autonomy Harmoniser\n120d · 24000 GW]
+    helios_lattice_helios_command --> helios_lattice_guardian_autonomy
+  end
+  subgraph programme_luna_supply_gateway[Luna Supply Gateway]
+    luna_supply_gateway_luna_logistics_core[Luna Logistics Core\n260d · 42000 GW]
+    luna_supply_gateway_mass_driver[Mass Driver Throughput\n120d · 18000 GW]
+    luna_supply_gateway_luna_logistics_core --> luna_supply_gateway_mass_driver
+    luna_supply_gateway_cryo_buffer[Cryogenic Buffer Network\n90d · 8000 GW]
+    luna_supply_gateway_luna_logistics_core --> luna_supply_gateway_cryo_buffer
+    luna_supply_gateway_guardian_corridors[Guardian Corridor Drills\n70d · 6000 GW]
+    luna_supply_gateway_luna_logistics_core --> luna_supply_gateway_guardian_corridors
+  end
+  subgraph programme_ares_lifeline[Ares Terraforming Lifeline]
+    ares_lifeline_ares_hub[Ares Terraforming Hub\n360d · 62000 GW]
+    ares_lifeline_regolith_chain[Regolith Chain\n150d · 26000 GW]
+    ares_lifeline_ares_hub --> ares_lifeline_regolith_chain
+    ares_lifeline_habitat_shielding[Habitat Shielding\n120d · 14000 GW]
+    ares_lifeline_ares_hub --> ares_lifeline_habitat_shielding
+    ares_lifeline_dyson_feedstock[Dyson Feedstock Harmonisation\n110d · 9000 GW]
+    ares_lifeline_ares_hub --> ares_lifeline_dyson_feedstock
+  end
+  helios_lattice_heat_dump -.-> helios_lattice_mirror_hubs
+  helios_lattice_bridge_hardening -.-> helios_lattice_dyson_array_sequencer
+  helios_lattice_guardian_autonomy -.-> helios_lattice_bridge_hardening
+  luna_supply_gateway_cryo_buffer -.-> luna_supply_gateway_mass_driver
+  luna_supply_gateway_guardian_corridors -.-> luna_supply_gateway_cryo_buffer
+  ares_lifeline_habitat_shielding -.-> ares_lifeline_regolith_chain
+  ares_lifeline_dyson_feedstock -.-> ares_lifeline_habitat_shielding
+  classDef risk-low fill:#0b3b31,stroke:#34d399,color:#ecfeff;
+  classDef risk-medium fill:#1f2937,stroke:#fbbf24,color:#f8fafc;
+  classDef risk-high fill:#7f1d1d,stroke:#f87171,color:#fef2f2;
+class helios_lattice_helios_command risk-medium;
+class helios_lattice_dyson_array_sequencer risk-medium;
+class helios_lattice_mirror_hubs risk-low;
+class helios_lattice_heat_dump risk-medium;
+class helios_lattice_bridge_hardening risk-high;
+class helios_lattice_guardian_autonomy risk-medium;
+class luna_supply_gateway_luna_logistics_core risk-medium;
+class luna_supply_gateway_mass_driver risk-medium;
+class luna_supply_gateway_cryo_buffer risk-low;
+class luna_supply_gateway_guardian_corridors risk-low;
+class ares_lifeline_ares_hub risk-high;
+class ares_lifeline_regolith_chain risk-medium;
+class ares_lifeline_habitat_shielding risk-medium;
+class ares_lifeline_dyson_feedstock risk-low;

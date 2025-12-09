@@ -23,7 +23,9 @@
 * Bridge latency tolerance (120s): true
 * Settlement finality 4.73 min (max 12.00 min) · slippage threshold 75 bps.
 * Logistics corridors 4 active — avg reliability 98.58% · min buffer 14.00d · watchers 12 (nominal).
-* Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%).
+* Mission unstoppable 100.00% across 3 programmes (dependencies resolved true).
+* Mission advisories: none — autonomy, sentinel, and timeline guardrails nominal.
+* Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
 * Scenario sweep: 8/11 nominal, 3 warning, 0 critical.
   - Interplanetary bridge outage simulation: Failover latency 220s leaves 20s slack within 240s failsafe.
   - Primary energy window offline: Coverage remains 82.49% after losing orbital 8h window.

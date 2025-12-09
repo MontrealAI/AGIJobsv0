@@ -29,6 +29,186 @@
         "resumeDecoded": true,
         "unstoppableScore": 1,
         "matchesPrimaryScore": true
+      },
+      "tertiary": {
+        "selectorsMatch": true,
+        "pauseDecoded": true,
+        "resumeDecoded": true,
+        "singleOwnerTargets": true,
+        "unstoppableScore": 1,
+        "matchesPrimaryScore": true,
+        "matchesSecondaryScore": true,
+        "decodeFailures": 0,
+        "decodedCalls": [
+          {
+            "index": 0,
+            "signature": "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 1,
+            "signature": "setGuardianCouncil(address)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 2,
+            "signature": "setSystemPause(address)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 3,
+            "signature": "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 4,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 5,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 6,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 7,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 8,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 9,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 10,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 11,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 12,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 13,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 14,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 15,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 16,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 17,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 18,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 19,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 20,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 21,
+            "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 22,
+            "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 23,
+            "signature": "setSentinelDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 24,
+            "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 25,
+            "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 26,
+            "signature": "forwardPauseCall(bytes)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          },
+          {
+            "index": 27,
+            "signature": "forwardPauseCall(bytes)",
+            "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+            "matched": true
+          }
+        ]
       }
     }
   },
@@ -1405,7 +1585,295 @@
       "resumeDecoded": true,
       "unstoppableScore": 1,
       "matchesPrimaryScore": true
+    },
+    "tertiary": {
+      "selectorsMatch": true,
+      "pauseDecoded": true,
+      "resumeDecoded": true,
+      "singleOwnerTargets": true,
+      "unstoppableScore": 1,
+      "matchesPrimaryScore": true,
+      "matchesSecondaryScore": true,
+      "decodeFailures": 0,
+      "decodedCalls": [
+        {
+          "index": 0,
+          "signature": "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 1,
+          "signature": "setGuardianCouncil(address)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 2,
+          "signature": "setSystemPause(address)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 3,
+          "signature": "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 4,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 5,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 6,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 7,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 8,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 9,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 10,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 11,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 12,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 13,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 14,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 15,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 16,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 17,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 18,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 19,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 20,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 21,
+          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 22,
+          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 23,
+          "signature": "setSentinelDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 24,
+          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 25,
+          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 26,
+          "signature": "forwardPauseCall(bytes)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        },
+        {
+          "index": 27,
+          "signature": "forwardPauseCall(bytes)",
+          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
+          "matched": true
+        }
+      ]
     }
+  },
+  "missionLattice": {
+    "version": "agi-jobs.kardashev-ii.lattice.tasks.v1",
+    "generatedAt": "2025-04-01T00:00:00Z",
+    "totals": {
+      "programmes": 3,
+      "tasks": 14,
+      "energyGw": 583000,
+      "computeExaflops": 59.7,
+      "agentQuorum": 3132000000,
+      "averageTimelineDays": 346.67
+    },
+    "verification": {
+      "dependenciesResolved": true,
+      "sentinelCoverage": true,
+      "fallbackCoverage": true,
+      "ownerAlignment": true,
+      "autonomyWithinBounds": true,
+      "timelineAligned": true,
+      "programmeDependenciesResolved": true,
+      "unstoppableScore": 1,
+      "warnings": []
+    },
+    "programmes": [
+      {
+        "id": "helios-lattice",
+        "name": "Helios Lattice Stewardship",
+        "objective": "Stitch Dyson power, orbital research, and guardian autonomy into a resilient stellar civilisation mesh.",
+        "federation": "orbital",
+        "ownerSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+        "taskCount": 6,
+        "totalEnergyGw": 398000,
+        "totalComputeExaflops": 39,
+        "totalAgentQuorum": 1950000000,
+        "criticalPathDays": 420,
+        "timelineSlackDays": 0,
+        "unstoppableScore": 1,
+        "riskDistribution": {
+          "low": 1,
+          "medium": 4,
+          "high": 1
+        },
+        "dependencies": [],
+        "missingDependencies": [],
+        "missingProgrammeDependencies": [],
+        "sentinelAlerts": [],
+        "ownerAlerts": [],
+        "timelineOk": true,
+        "autonomyOk": true
+      },
+      {
+        "id": "luna-supply-gateway",
+        "name": "Luna Supply Gateway",
+        "objective": "Scale regolith supply, propellant depots, and emergency buffers for the stellar lattice.",
+        "federation": "luna",
+        "ownerSafe": "0x2b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c",
+        "taskCount": 4,
+        "totalEnergyGw": 74000,
+        "totalComputeExaflops": 9.6,
+        "totalAgentQuorum": 484000000,
+        "criticalPathDays": 260,
+        "timelineSlackDays": 0,
+        "unstoppableScore": 1,
+        "riskDistribution": {
+          "low": 2,
+          "medium": 2,
+          "high": 0
+        },
+        "dependencies": [
+          "helios-lattice"
+        ],
+        "missingDependencies": [],
+        "missingProgrammeDependencies": [],
+        "sentinelAlerts": [],
+        "ownerAlerts": [],
+        "timelineOk": true,
+        "autonomyOk": true
+      },
+      {
+        "id": "ares-lifeline",
+        "name": "Ares Terraforming Lifeline",
+        "objective": "Protect Mars terraforming throughput while feeding Helios Dyson demand with stable resources.",
+        "federation": "mars",
+        "ownerSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+        "taskCount": 4,
+        "totalEnergyGw": 111000,
+        "totalComputeExaflops": 11.1,
+        "totalAgentQuorum": 698000000,
+        "criticalPathDays": 360,
+        "timelineSlackDays": 0,
+        "unstoppableScore": 1,
+        "riskDistribution": {
+          "low": 1,
+          "medium": 2,
+          "high": 1
+        },
+        "dependencies": [
+          "helios-lattice",
+          "luna-supply-gateway"
+        ],
+        "missingDependencies": [],
+        "missingProgrammeDependencies": [],
+        "sentinelAlerts": [],
+        "ownerAlerts": [],
+        "timelineOk": true,
+        "autonomyOk": true
+      }
+    ]
   },
   "missionDirectives": {
     "ownerPowers": [
@@ -1630,6 +2098,17 @@
       "federationsOk": true,
       "unmatchedFederations": [],
       "unmatchedShards": []
+    },
+    "missionLattice": {
+      "dependenciesResolved": true,
+      "sentinelCoverage": true,
+      "fallbackCoverage": true,
+      "ownerAlignment": true,
+      "autonomyWithinBounds": true,
+      "timelineAligned": true,
+      "programmeDependenciesResolved": true,
+      "unstoppableScore": 1,
+      "warnings": []
     },
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
   },
