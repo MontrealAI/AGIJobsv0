@@ -116,7 +116,17 @@ for (let i = 0; i < process.argv.length; i += 1) {
     continue;
   }
 
-  passthroughArgs.push(normalised === arg ? arg : normalised);
+  if (arg.startsWith('-')) {
+    // Hardhat insists on lowercase flag names but values can be case-sensitive
+    // (for example Mocha grep patterns or file paths). Preserve the original
+    // casing after any '=' delimiter while lowercasing only the flag name.
+    const [flag, ...rest] = arg.split('=');
+    const loweredFlag = flag.toLowerCase();
+    passthroughArgs.push(rest.length > 0 ? `${loweredFlag}=${rest.join('=')}` : loweredFlag);
+  } else {
+    // Positional arguments should retain their original casing.
+    passthroughArgs.push(arg);
+  }
 }
 
 if (reporterOption) {
