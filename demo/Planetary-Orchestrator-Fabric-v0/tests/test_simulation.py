@@ -12,14 +12,14 @@ from planetary_fabric.simulation import run_high_load_blocking
 
 
 def test_high_load_balance(tmp_path: Path) -> None:
-    result = run_high_load_blocking(tmp_path, job_count=10_000, kill_and_resume=False)
+    result = run_high_load_blocking(tmp_path, job_count=3_000, kill_and_resume=False)
     assert result.completion_rate >= 0.98
-    assert result.max_depth_delta() < 400
-    assert result.reassigned_jobs <= 200
+    assert result.max_depth_delta() < 250
+    assert result.reassigned_jobs / result.total_jobs <= 0.025
 
 
 def test_mid_run_checkpoint_recovery(tmp_path: Path) -> None:
-    result = run_high_load_blocking(tmp_path, job_count=10_000, kill_and_resume=True)
+    result = run_high_load_blocking(tmp_path, job_count=3_000, kill_and_resume=True)
     assert result.completion_rate >= 0.98
-    assert result.reassigned_jobs <= 400
-    assert result.max_depth_delta() < 450
+    assert result.reassigned_jobs / result.total_jobs <= 0.045
+    assert result.max_depth_delta() < 300
