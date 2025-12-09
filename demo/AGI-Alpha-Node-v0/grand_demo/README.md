@@ -27,6 +27,17 @@ flowchart LR
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
 
+### Testing locally
+Run the Python-focused demo tests with the repository shimmed environment to
+avoid third-party pytest plugins importing incompatible global dependencies:
+
+```bash
+PYTHONPATH="$(pwd)/.." PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest
+```
+
+This enables the bundled `eth_typing` compatibility module before any optional
+plugins load, preventing `ContractName` import errors on fresh machines.
+
 ## Directory Guide
 ### Key Directories
 - `abis`
