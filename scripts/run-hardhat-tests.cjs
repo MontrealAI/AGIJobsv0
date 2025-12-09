@@ -49,6 +49,7 @@ function getLatestMtime(rootPath) {
 // meaningful for Hardhat to keep the test harness robust.
 const passthroughArgs = [];
 const ignoredPrefixes = ['--runinband', '--maxworkers', '--silent', '--listtests'];
+const translatedArgs = [];
 let shouldSkipHardhat = false;
 let reporterOption;
 
@@ -86,6 +87,23 @@ for (let i = 0; i < process.argv.length; i += 1) {
   }
 
   const normalised = arg.toLowerCase();
+
+  if (normalised.startsWith('--runtestsbypath')) {
+    // Jest forwards --runTestsByPath to filter JS/TS suites; translate this to
+    // Hardhat's --test-files flag so developers can scope Solidity runs
+    // without tripping Hardhat's lowercase-only parser.
+    const value = arg.includes('=') ? arg.split('=')[1] : process.argv[i + 1];
+    if (!arg.includes('=') && value && !value.startsWith('-')) {
+      i += 1;
+    }
+
+    if (value) {
+      // Hardhat accepts test file globs as positional arguments.
+      translatedArgs.push(value);
+    }
+    continue;
+  }
+
   if (ignoredPrefixes.some((prefix) => normalised.startsWith(prefix))) {
     if (normalised.startsWith('--listtests')) {
       shouldSkipHardhat = true;
@@ -98,7 +116,7 @@ for (let i = 0; i < process.argv.length; i += 1) {
     continue;
   }
 
-  passthroughArgs.push(arg);
+  passthroughArgs.push(normalised === arg ? arg : normalised);
 }
 
 if (reporterOption) {
@@ -143,7 +161,8 @@ if (!skipCompile && env.CI !== 'true') {
   }
 }
 
-const displayedArgs = passthroughArgs.length === 0 ? '(none)' : passthroughArgs.join(' ');
+const allArgs = [...passthroughArgs, ...translatedArgs];
+const displayedArgs = allArgs.length === 0 ? '(none)' : allArgs.join(' ');
 console.log(
   `Running Hardhat tests with HARDHAT_FAST_COMPILE=${env.HARDHAT_FAST_COMPILE} and timeout ${hardhatTimeoutMs}ms (args: ${displayedArgs})`,
 );
@@ -167,7 +186,7 @@ function runHardhatWithHeartbeat(timeoutMs) {
       args.push('--no-compile');
     }
 
-    args.push(...passthroughArgs);
+    args.push(...passthroughArgs, ...translatedArgs);
 
     const child = spawn('npx', args, {
       stdio: 'inherit',
