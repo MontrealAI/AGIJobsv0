@@ -3171,16 +3171,25 @@ function computeTelemetry(
   const coverageOk = domainCoverages.every(
     (coverage) => coverage >= manifest.interstellarCouncil.guardianReviewWindow
   );
-  const bridgeTelemetry: Record<string, any> = {};
-  for (const [bridgeName, data] of Object.entries(manifest.interplanetaryBridges)) {
-    bridgeTelemetry[bridgeName] = {
-      latencySeconds: data.latencySeconds,
-      bandwidthGbps: data.bandwidthGbps,
-      bridgeOperator: data.bridgeOperator,
-      protocol: data.protocol,
-      withinFailsafe: data.latencySeconds <= manifest.dysonProgram.safety.failsafeLatencySeconds,
+
+  type BridgeTelemetry = Manifest["interplanetaryBridges"][string] & { withinFailsafe: boolean };
+  const bridgeTelemetryEntries = Object.entries(
+    manifest.interplanetaryBridges as Record<string, Manifest["interplanetaryBridges"][string]>
+  ).map(([bridgeName, bridgeData]) => {
+    const metrics: BridgeTelemetry = {
+      latencySeconds: bridgeData.latencySeconds,
+      bandwidthGbps: bridgeData.bandwidthGbps,
+      bridgeOperator: bridgeData.bridgeOperator,
+      protocol: bridgeData.protocol,
+      withinFailsafe:
+        bridgeData.latencySeconds <= manifest.dysonProgram.safety.failsafeLatencySeconds,
     };
-  }
+    return [bridgeName, metrics] as const;
+  });
+  const bridgeTelemetry = Object.fromEntries(bridgeTelemetryEntries) as Record<
+    string,
+    BridgeTelemetry
+  >;
 
   const totalExaflops = manifest.federations.reduce((sum, f) => sum + f.compute.exaflops, 0);
   const dysonComputeEstimate = dysonYield / 10_000;
