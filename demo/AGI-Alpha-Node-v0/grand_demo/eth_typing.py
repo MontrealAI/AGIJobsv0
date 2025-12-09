@@ -18,6 +18,9 @@ if ROOT_SHIM is None:  # pragma: no cover
     raise ImportError("Unable to locate repository-level eth_typing shim")
 
 module_globals = runpy.run_path(str(ROOT_SHIM))
+for name in ("__file__", "__path__", "__spec__", "__package__", "__loader__", "__doc__"):
+    if name in module_globals:
+        globals()[name] = module_globals[name]
 for name, value in module_globals.items():
     if name.startswith("__"):
         continue
