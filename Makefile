@@ -82,3 +82,7 @@ absolute-zero-demo:
 .PHONY: pytest
 pytest:
 	PYTHONPATH=".:$(PWD)/packages/hgm-core/src" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest test
+
+.PHONY: alpha-node-test
+alpha-node-test:
+	PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH="$(PWD)" python -m pytest demo/AGI-Alpha-Node-v0/tests
