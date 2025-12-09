@@ -22,7 +22,7 @@ def _build_command(args: Sequence[str]) -> list[str]:
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
+    repo_root = Path(__file__).resolve().parents[2]
     env = _build_env(repo_root)
     cmd = _build_command(sys.argv[1:])
     process = subprocess.run(cmd, cwd=Path(__file__).parent, env=env)
