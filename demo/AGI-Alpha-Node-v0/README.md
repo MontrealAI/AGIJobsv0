@@ -24,7 +24,7 @@ flowchart LR
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/AGI-Alpha-Node-v0`.
-3. Run the demo's test suite with `make test` inside this folder, `make alpha-node-test` from the repository root, or simply `python run_tests.py`. All three paths invoke `python -m pytest` with plugin autoloading disabled so global plugins cannot break collection, and they pin `PYTHONPATH` so the local `eth_typing` shim loads before third-party packages. The `run_tests.py` helper also defaults to the `tests/` folder when no arguments are provided, mirroring the make target behaviour.
+3. Run the demo's test suite with `make test` inside this folder, `make alpha-node-test` from the repository root, `python run_tests.py`, **or** `./pytest.sh`. All four paths invoke `python -m pytest` with plugin autoloading disabled so global plugins cannot break collection, and they pin `PYTHONPATH` so the local `eth_typing` shim loads before third-party packages. The `run_tests.py` helper also defaults to the `tests/` folder when no arguments are provided, mirroring the make target behaviour, while `pytest.sh` matches that environment even when you reach for the global `pytest` console script out of habit.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide
