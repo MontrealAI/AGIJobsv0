@@ -1,0 +1,109 @@
+{
+  "version": "agi-jobs.kardashev-ii.lattice.tasks.v1",
+  "generatedAt": "2025-04-01T00:00:00Z",
+  "totals": {
+    "programmes": 3,
+    "tasks": 14,
+    "energyGw": 583000,
+    "computeExaflops": 59.7,
+    "agentQuorum": 3132000000,
+    "averageTimelineDays": 346.67
+  },
+  "verification": {
+    "dependenciesResolved": true,
+    "sentinelCoverage": true,
+    "fallbackCoverage": true,
+    "ownerAlignment": true,
+    "autonomyWithinBounds": true,
+    "timelineAligned": true,
+    "programmeDependenciesResolved": true,
+    "unstoppableScore": 1,
+    "warnings": []
+  },
+  "programmes": [
+    {
+      "id": "helios-lattice",
+      "name": "Helios Lattice Stewardship",
+      "federation": "orbital",
+      "ownerSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
+      "taskCount": 6,
+      "totalEnergyGw": 398000,
+      "totalComputeExaflops": 39,
+      "totalAgentQuorum": 1950000000,
+      "criticalPathDays": 420,
+      "timelineDays": 420,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 1,
+      "riskDistribution": {
+        "low": 1,
+        "medium": 4,
+        "high": 1
+      },
+      "dependencies": [],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": true,
+      "autonomyOk": true
+    },
+    {
+      "id": "luna-supply-gateway",
+      "name": "Luna Supply Gateway",
+      "federation": "luna",
+      "ownerSafe": "0x2b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c",
+      "taskCount": 4,
+      "totalEnergyGw": 74000,
+      "totalComputeExaflops": 9.6,
+      "totalAgentQuorum": 484000000,
+      "criticalPathDays": 260,
+      "timelineDays": 260,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 1,
+      "riskDistribution": {
+        "low": 2,
+        "medium": 2,
+        "high": 0
+      },
+      "dependencies": [
+        "helios-lattice"
+      ],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": true,
+      "autonomyOk": true
+    },
+    {
+      "id": "ares-lifeline",
+      "name": "Ares Terraforming Lifeline",
+      "federation": "mars",
+      "ownerSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
+      "taskCount": 4,
+      "totalEnergyGw": 111000,
+      "totalComputeExaflops": 11.1,
+      "totalAgentQuorum": 698000000,
+      "criticalPathDays": 360,
+      "timelineDays": 360,
+      "timelineSlackDays": 0,
+      "unstoppableScore": 1,
+      "riskDistribution": {
+        "low": 1,
+        "medium": 2,
+        "high": 1
+      },
+      "dependencies": [
+        "helios-lattice",
+        "luna-supply-gateway"
+      ],
+      "missingDependencies": [],
+      "missingProgrammeDependencies": [],
+      "sentinelAlerts": [],
+      "ownerAlerts": [],
+      "timelineOk": true,
+      "autonomyOk": true
+    }
+  ],
+  "dependencyCycles": []
+}
