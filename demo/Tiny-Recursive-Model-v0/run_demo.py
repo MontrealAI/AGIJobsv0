@@ -16,7 +16,10 @@ from trm_demo.sentinel import Sentinel
 from trm_demo.simulation import run_simulation
 from trm_demo.thermostat import Thermostat
 
-app = typer.Typer(help="Tiny Recursive Model demo orchestrated by AGI Jobs v0 (v2)")
+app = typer.Typer(
+    help="Tiny Recursive Model demo orchestrated by AGI Jobs v0 (v2)",
+    invoke_without_command=True,
+)
 console = Console()
 
 
@@ -34,6 +37,24 @@ def _ensure_checkpoint(engine: TrmEngine, checkpoint_path: Path) -> None:
         console.print(
             "[yellow]No checkpoint found. Run `python run_demo.py train` first for best results.[/yellow]"
         )
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context) -> None:
+    """Show guidance when no command is provided."""
+    if ctx.invoked_subcommand is not None:
+        return
+
+    console.print(
+        """
+[bold cyan]Tiny Recursive Model Demo[/bold cyan]
+This CLI powers the AGI Jobs v0 (v2) Tiny Recursive Model experience. Choose a command:
+• [green]train[/green] — learn a lightweight recursive reasoner on synthetic tasks.
+• [green]simulate[/green] — benchmark TRM versus baselines with guardrails engaged.
+• [green]explain[/green] — recap what operators can do with this demo.
+        """
+    )
+    typer.echo(ctx.get_help())
 
 
 @app.command()
