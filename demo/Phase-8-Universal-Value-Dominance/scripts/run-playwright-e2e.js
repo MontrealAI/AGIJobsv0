@@ -9,7 +9,7 @@
  */
 const { spawnSync } = require('child_process');
 const { existsSync } = require('fs');
-const { chromium } = require('playwright');
+const { chromium } = require('@playwright/test');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options });
