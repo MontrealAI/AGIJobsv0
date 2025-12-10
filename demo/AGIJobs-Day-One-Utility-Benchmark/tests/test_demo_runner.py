@@ -77,6 +77,15 @@ def test_unknown_strategy_raises():
         orchestrator.simulate("unknown")
 
 
+def test_core_alias_maps_to_e2e():
+    orchestrator = _orchestrator()
+    core_report = orchestrator.simulate("core")
+    e2e_report = orchestrator.simulate("e2e")
+
+    assert core_report["strategy"] == "e2e"
+    assert core_report["strategy_profile"] == e2e_report["strategy_profile"]
+
+
 def test_owner_reset_restores_defaults():
     orchestrator = _orchestrator()
     orchestrator.update_owner_control("platform_fee_bps", "240")

@@ -27,6 +27,12 @@ flowchart LR
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
+## Quickstart Simulation
+- Run a flagship benchmark from the repo root:
+  - JSON report: `python demo/AGIJobs-Day-One-Utility-Benchmark/demo_runner.py simulate --strategy e2e --format json`
+  - Human-readable narrative: `python demo/AGIJobs-Day-One-Utility-Benchmark/demo_runner.py simulate --strategy e2e --format human`
+- For newcomers, the CLI also accepts `--strategy core` or `--strategy default`, which both map to the canonical `e2e` configuration while still surfacing the correct strategy name in the output payloads.
+
 ## Directory Guide
 ### Key Directories
 - `config`

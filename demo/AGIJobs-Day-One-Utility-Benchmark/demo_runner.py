@@ -159,9 +159,20 @@ class DayOneUtilityOrchestrator:
             except (KeyError, TypeError, ValueError) as exc:  # pragma: no cover - configuration guard
                 raise ValueError(f"Invalid strategy configuration for {key}") from exc
             profiles[key.lower()] = profile
+        self._add_strategy_aliases(profiles)
         if not profiles:
             raise ValueError("At least one strategy must be defined in strategies.yaml")
         return profiles
+
+    @staticmethod
+    def _add_strategy_aliases(profiles: Dict[str, StrategyProfile]) -> None:
+        """Inject forgiving aliases for the flagship configurations."""
+
+        aliases = {"core": "e2e", "default": "e2e"}
+        for alias, target in aliases.items():
+            target_key = target.lower()
+            if target_key in profiles and alias not in profiles:
+                profiles[alias] = profiles[target_key]
 
     # ------------------------------------------------------------------
     # Owner controls management
@@ -270,7 +281,8 @@ class DayOneUtilityOrchestrator:
         strategies = self.load_strategies()
         profile = strategies.get(strategy_name.lower())
         if profile is None:
-            raise StrategyNotFoundError(strategy_name)
+            available = ", ".join(sorted(strategies))
+            raise StrategyNotFoundError(f"Unknown strategy '{strategy_name}'. Available: {available}")
 
         jobs = self.load_jobs()
         rules = self.load_rules()
