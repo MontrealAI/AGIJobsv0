@@ -110,7 +110,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="AlphaEvolve grand demo")
     sub = parser.add_subparsers(dest="command")
     run_cmd = sub.add_parser("run", help="execute the self-evolution loop")
-    run_cmd.add_argument("--generations", type=int, default=30)
+    run_cmd.add_argument(
+        "--generations",
+        dest="generations",
+        type=int,
+        default=30,
+        help="number of generations to simulate",
+    )
+    # Users frequently reach for --iterations in other demos; support it as an alias
+    # so the CLI is forgiving while still wiring into the same destination.
+    run_cmd.add_argument(
+        "--iterations",
+        dest="generations",
+        type=int,
+        help="alias for --generations",
+    )
     run_cmd.add_argument("--seed", type=int, default=7)
     run_cmd.add_argument("--config", type=str, default=None)
     run_cmd.add_argument("--output", type=str, default="alphaevolve_report.json")
@@ -123,6 +137,8 @@ def main() -> None:
     if args.command != "run":
         parser.print_help()
         return
+    if args.generations < 1:
+        parser.error("--generations/--iterations must be at least 1")
     run_demo(args)
 
 
