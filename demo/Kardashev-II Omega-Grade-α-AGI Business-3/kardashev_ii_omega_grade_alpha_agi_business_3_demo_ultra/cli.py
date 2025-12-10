@@ -29,8 +29,11 @@ def _build_launch_parser(subparsers: argparse._SubParsersAction[argparse.Argumen
     launch.add_argument(
         "--cycles",
         type=int,
-        default=0,
-        help="Optional cycle limit for the orchestrator (0 = governed by mission)",
+        default=10,
+        help=(
+            "Optional cycle limit for the orchestrator (0 = governed by mission). "
+            "Defaults to 10 for fast demo runs."
+        ),
     )
     launch.add_argument(
         "--runtime-hours",
@@ -82,6 +85,9 @@ async def _run_orchestrator(config: UltraDemoConfig) -> None:
     try:
         await orchestrator.start()
         await orchestrator.wait_until_stopped()
+    except asyncio.CancelledError:
+        # Gracefully handle Ctrl+C and cooperative shutdown requests
+        raise
     finally:
         await orchestrator.shutdown()
 
@@ -156,6 +162,9 @@ def main(argv: Optional[list[str]] = None) -> None:
             asyncio.run(_run_launch(args))
     except UltraConfigError as exc:
         raise SystemExit(str(exc)) from exc
+    except KeyboardInterrupt:
+        # Avoid noisy stack traces when operators abort interactive runs
+        print("\nReceived interrupt. Shutting down ultra orchestrator...")
 
 
 if __name__ == "__main__":  # pragma: no cover - CLI entrypoint
