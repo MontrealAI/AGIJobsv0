@@ -53,3 +53,10 @@ flowchart LR
 - Review this module's issue board for open automation, data, or research threads.
 - Link new deliverables back to the central manifest via `npm run release:manifest`.
 - Publish artefacts (dashboards, mermaid charts, datasets) into `reports/` for downstream intelligence alignment.
+
+## Testing & Playwright Browsers
+
+- Before running `npx playwright test --config=playwright.config.ts`, provision the bundled Chromium binary once with:
+  - `./scripts/install_playwright_browsers.sh`
+- The script installs the headless shell and OS-level dependencies Playwright needs so the dashboard e2e suite runs without manual
+  intervention on fresh machines.
