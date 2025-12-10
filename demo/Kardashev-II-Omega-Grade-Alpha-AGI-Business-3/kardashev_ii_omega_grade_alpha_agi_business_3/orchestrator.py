@@ -142,7 +142,7 @@ class Orchestrator:
         while self._running:
             await self._paused.wait()
             self._cycle += 1
-            if self.config.max_cycles and self._cycle > self.config.max_cycles:
+            if self.config.max_cycles and self._cycle >= self.config.max_cycles:
                 self._info("cycle_limit_reached", cycle=self._cycle)
                 self._running = False
                 self._paused.set()
