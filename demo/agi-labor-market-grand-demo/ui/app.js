@@ -1018,6 +1018,13 @@ function renderOwnerControlSnapshot(container, ownerControl) {
   }
 }
 
+function normaliseFilterState(scenarios) {
+  const validFilters = new Set(['all', 'setup', ...scenarios.map((scenario) => scenario.title)]);
+  if (!validFilters.has(state.filter)) {
+    state.filter = 'all';
+  }
+}
+
 function renderScenarios(container, scenarios, data) {
   if (!Array.isArray(scenarios) || scenarios.length === 0) {
     const notice = document.createElement('div');
@@ -1026,6 +1033,8 @@ function renderScenarios(container, scenarios, data) {
     container.appendChild(notice);
     return;
   }
+
+  normaliseFilterState(scenarios);
 
   const timelineOptions = document.createElement('div');
   timelineOptions.className = 'timeline-controls';
@@ -1079,8 +1088,9 @@ function renderScenarios(container, scenarios, data) {
 }
 
 function renderTimeline(container, timeline) {
-  const timelineContainer = document.getElementById('timeline');
+  const timelineContainer = container || document.getElementById('timeline');
   if (!timelineContainer) return;
+
   clearNode(timelineContainer);
   if (!Array.isArray(timeline) || timeline.length === 0) {
     const empty = document.createElement('div');
@@ -1090,6 +1100,13 @@ function renderTimeline(container, timeline) {
     return;
   }
   const template = document.getElementById('timeline-entry-template');
+  if (!template) {
+    const empty = document.createElement('div');
+    empty.className = 'notice';
+    empty.textContent = 'Timeline template missing from DOM. Ensure the HTML includes #timeline-entry-template.';
+    timelineContainer.appendChild(empty);
+    return;
+  }
   const filtered = timeline.filter((entry) => {
     if (state.filter === 'all') return true;
     if (state.filter === 'setup') return !entry.scenario;
@@ -1121,6 +1138,8 @@ function renderTimeline(container, timeline) {
 
 function renderApp(data) {
   state.data = data;
+  // Reset the filter when a new transcript loads to avoid stale state between exports.
+  state.filter = 'all';
   const app = document.getElementById('app');
   clearNode(app);
 
