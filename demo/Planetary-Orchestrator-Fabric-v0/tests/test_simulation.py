@@ -16,6 +16,7 @@ def test_high_load_balance(tmp_path: Path) -> None:
     assert result.completion_rate >= 0.98
     assert result.max_depth_delta() < 250
     assert result.reassigned_jobs / result.total_jobs <= 0.025
+    assert result.total_runtime > 0.0
 
 
 def test_mid_run_checkpoint_recovery(tmp_path: Path) -> None:
@@ -23,3 +24,4 @@ def test_mid_run_checkpoint_recovery(tmp_path: Path) -> None:
     assert result.completion_rate >= 0.98
     assert result.reassigned_jobs / result.total_jobs <= 0.045
     assert result.max_depth_delta() < 300
+    assert result.total_runtime > 0.0

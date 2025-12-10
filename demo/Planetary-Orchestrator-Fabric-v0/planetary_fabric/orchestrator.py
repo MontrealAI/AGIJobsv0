@@ -28,7 +28,10 @@ class FabricMetrics:
         return self.completed_jobs / self.total_jobs
 
     def runtime_seconds(self) -> float:
-        return max(0.0, self.end_time - self.start_time)
+        if self.start_time <= 0:
+            return 0.0
+        reference_time = self.end_time or time.monotonic()
+        return max(0.0, reference_time - self.start_time)
 
 
 class PlanetaryOrchestrator:
