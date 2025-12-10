@@ -5,7 +5,7 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Dict, Iterable, Optional
+from typing import Callable, Dict, Iterable, Optional
 
 from .economic import EconomicSimulator
 from .executor import SandboxViolation, SafeExecutor
@@ -18,8 +18,8 @@ from .telemetry import TelemetryTracker
 
 DEFAULT_CONFIG: Dict[str, object] = {
     "seed": 1234,
-    "runtime": {"iterations": 15, "tasks_per_iteration": 3},
-    "executor": {"time_limit": 3.0, "memory_limit_mb": 256},
+    "runtime": {"iterations": 10, "tasks_per_iteration": 2},
+    "executor": {"time_limit": 2.0, "memory_limit_mb": 256},
     "rewards": {"economic_weight": 0.15, "format_penalty": 0.6},
     "guardrails": {"target_success": 0.55, "tolerance": 0.2, "difficulty_step": 0.12},
     "policy": {"baseline_lr": 0.2, "base_temperature": 0.85},
@@ -43,8 +43,20 @@ def load_config(path: Optional[Path]) -> Dict[str, object]:
 class AbsoluteZeroReasonerDemo:
     """Executable orchestrator for the user-facing demo."""
 
-    def __init__(self, config: Dict[str, object]) -> None:
+    def __init__(
+        self,
+        config: Dict[str, object],
+        *,
+        max_seconds: float | None = None,
+        progress_interval: int = 1,
+        verbose: bool = True,
+        clock: Callable[[], float] | None = None,
+    ) -> None:
         self.config = config
+        self.max_seconds = max_seconds
+        self.progress_interval = max(1, progress_interval)
+        self.verbose = verbose
+        self._clock = clock or time.perf_counter
         self.executor = SafeExecutor(
             time_limit=float(config["executor"]["time_limit"]),
             memory_limit_mb=int(config["executor"]["memory_limit_mb"]),
@@ -76,6 +88,10 @@ class AbsoluteZeroReasonerDemo:
         runtime = config["runtime"]
         self.iterations = int(runtime["iterations"])
         self.tasks_per_iteration = int(runtime["tasks_per_iteration"])
+
+    def _log(self, message: str) -> None:
+        if self.verbose:
+            print(message, flush=True)
 
     def _validate_task(self, task: AZRTask) -> bool:
         try:
@@ -124,8 +140,17 @@ class AbsoluteZeroReasonerDemo:
         return False
 
     def run(self) -> Dict[str, object]:
+        start_time = self._clock()
         iteration = 0
         while iteration < self.iterations and not self.guardrails.should_pause():
+            if self.max_seconds is not None:
+                elapsed = self._clock() - start_time
+                if elapsed >= self.max_seconds:
+                    self.guardrails.pause()
+                    self._log(
+                        f"⏱️  Wall-clock limit reached after {elapsed:.2f}s; stopping early."
+                    )
+                    break
             iteration += 1
             batch = self.library.sample(
                 count=self.tasks_per_iteration,
@@ -174,6 +199,16 @@ class AbsoluteZeroReasonerDemo:
                 )
             aggregates = self.telemetry.aggregates()
             self.guardrails.register_iteration(aggregates.get("success_rate", 0.0))
+            if iteration % self.progress_interval == 0:
+                self._log(
+                    "→ iteration {iter}: success_rate={success:.2f} gmv={gmv:.2f} "
+                    "roi={roi:.2f}".format(
+                        iter=iteration,
+                        success=aggregates.get("success_rate", 0.0),
+                        gmv=aggregates.get("gmv_total", 0.0),
+                        roi=aggregates.get("roi", 0.0),
+                    )
+                )
         payload = {
             "config": self.config,
             "policy": self.policy.snapshot(),
@@ -197,6 +232,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional path for dumping the telemetry payload as JSON.",
     )
+    parser.add_argument(
+        "--max-seconds",
+        type=float,
+        help="Optional wall-clock limit for the run to prevent long hangs.",
+    )
+    parser.add_argument(
+        "--progress-interval",
+        type=int,
+        default=1,
+        help="How frequently to print iteration progress (in iterations).",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress progress logging for non-interactive environments.",
+    )
     return parser
 
 
@@ -204,7 +255,12 @@ def main(argv: Optional[Iterable[str]] = None) -> Dict[str, object]:
     parser = build_arg_parser()
     args = parser.parse_args(list(argv) if argv is not None else None)
     config = load_config(args.config)
-    demo = AbsoluteZeroReasonerDemo(config)
+    demo = AbsoluteZeroReasonerDemo(
+        config,
+        max_seconds=args.max_seconds,
+        progress_interval=args.progress_interval,
+        verbose=not args.quiet,
+    )
     payload = demo.run()
     if args.output:
         args.output.write_text(json.dumps(payload, indent=2), encoding="utf-8")

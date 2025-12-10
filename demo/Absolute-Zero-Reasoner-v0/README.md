@@ -40,6 +40,10 @@ flowchart LR
 - `run_demo.py`
 - `RUNBOOK.md`
 
+## Running the demo safely
+- Use `python run_demo.py --max-seconds 15 --output reports/azr_payload.json` to execute the accelerated Absolute Zero loop with a wall-clock cap and a persisted telemetry payload.
+- The CLI accepts `--progress-interval` to tune how often iteration metrics print to the console and `--quiet` when embedding the demo inside CI without logs.
+
 ## Quality & Governance
 - Every change must land through a pull request with all required checks green (unit, integration, linting, security scan).
 - Reference [`RUNBOOK.md`](../../RUNBOOK.md) and [`OperatorRunbook.md`](../../OperatorRunbook.md) for escalation patterns and owner approvals.

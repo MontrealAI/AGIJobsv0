@@ -59,6 +59,11 @@ class GuardrailManager:
         if self._state.unsafe_events >= self._unsafe_threshold:
             self._state.paused = True
 
+    def pause(self) -> None:
+        """Force a pause due to external constraints."""
+
+        self._state.paused = True
+
     def should_pause(self) -> bool:
         return self._state.paused
 
