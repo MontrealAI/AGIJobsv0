@@ -36,6 +36,55 @@ function applyStatus(element, status) {
   }
 }
 
+function renderGlobalFailure(message) {
+  const main = document.querySelector("main");
+  if (!main) return;
+
+  const alert = document.createElement("section");
+  alert.classList.add("card", "status-fail");
+  alert.innerHTML = `
+    <div class="section-title">
+      <h2>Telemetry unavailable</h2>
+    </div>
+    <p class="lede">${message}</p>
+    <p class="lede">Regenerate artefacts with <code>npm run demo:kardashev-ii:orchestrate</code> and refresh the dashboard.</p>
+  `;
+
+  main.prepend(alert);
+}
+
+function renderLedgerUnavailable(reason) {
+  const summary = document.querySelector("#ledger-summary");
+  if (!summary) return;
+  summary.textContent = `Stability ledger unavailable: ${reason}`;
+  applyStatus(summary, "status-fail");
+
+  const checks = document.querySelector("#ledger-checks");
+  if (checks) {
+    checks.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Re-run the orchestrator to regenerate ledger evidence.";
+    li.classList.add("status-warn");
+    checks.appendChild(li);
+  }
+}
+
+function renderOwnerProofUnavailable(reason) {
+  const score = document.querySelector("#owner-proof-score");
+  if (!score) return;
+  score.textContent = `Owner proof deck unavailable: ${reason}`;
+  applyStatus(score, "status-fail");
+
+  const summary = document.querySelector("#owner-proof-summary");
+  if (summary) {
+    summary.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Owner signatures could not be loaded. Refresh after regenerating artefacts.";
+    li.classList.add("status-warn");
+    summary.appendChild(li);
+  }
+}
+
 function renderMetrics(telemetry) {
   document.querySelector("#dominance-score").textContent = `${telemetry.dominance.score.toFixed(1)} / 100`;
   document.querySelector("#monthly-value").textContent = `$${formatNumber(telemetry.dominance.monthlyValueUSD / 1_000_000_000_000)}T monthly throughput`;
@@ -752,49 +801,61 @@ function renderOwnerProof(ownerProof, telemetry) {
 }
 
 async function bootstrap() {
-  try {
-    const [telemetry, ledger, ownerProof] = await Promise.all([
-      fetchJson("./output/kardashev-telemetry.json"),
-      fetchJson("./output/kardashev-stability-ledger.json"),
-      fetchJson("./output/kardashev-owner-proof.json"),
-    ]);
-    renderMetrics(telemetry);
-    attachReflectionButton(telemetry);
-    renderOwnerDirectives(telemetry);
-    renderFederations(telemetry);
-    renderIdentity(telemetry.identity);
-    renderComputeFabric(telemetry.computeFabric);
-    renderOrchestrationFabric(telemetry.orchestrationFabric);
-    renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
-    renderMissionLattice(telemetry.missionLattice);
-    renderLogistics(telemetry.logistics, telemetry.verification.logistics);
-    renderSettlement(telemetry.settlement, telemetry.verification.settlement);
-    renderScenarioSweep(telemetry);
-    renderLedger(ledger);
-    renderOwnerProof(ownerProof, telemetry);
-    await renderMermaidDiagram(
-      "./output/kardashev-task-hierarchy.mmd",
-      "mission-mermaid",
-      "mission-hierarchy-diagram"
-    );
-    await renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram");
-    await renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram");
-  } catch (error) {
-    console.error(error);
-    const container = document.querySelector("#mermaid-container");
-    container.textContent = `Failed to load assets: ${error}`;
-    container.classList.add("status-fail");
-    const missionContainer = document.querySelector("#mission-mermaid");
-    if (missionContainer) {
-      missionContainer.textContent = "Mission hierarchy unavailable.";
-      missionContainer.classList.add("status-fail");
-    }
-    const dysonContainer = document.querySelector("#dyson-container");
-    if (dysonContainer) {
-      dysonContainer.textContent = "Dyson timeline unavailable.";
-      dysonContainer.classList.add("status-fail");
-    }
+  const [telemetryResult, ledgerResult, ownerProofResult] = await Promise.allSettled([
+    fetchJson("./output/kardashev-telemetry.json"),
+    fetchJson("./output/kardashev-stability-ledger.json"),
+    fetchJson("./output/kardashev-owner-proof.json"),
+  ]);
+
+  if (telemetryResult.status !== "fulfilled") {
+    console.error("Failed to load telemetry", telemetryResult.reason);
+    renderGlobalFailure(telemetryResult.reason);
+    return;
   }
+
+  const telemetry = telemetryResult.value;
+  renderMetrics(telemetry);
+  attachReflectionButton(telemetry);
+  renderOwnerDirectives(telemetry);
+  renderFederations(telemetry);
+  renderIdentity(telemetry.identity);
+  renderComputeFabric(telemetry.computeFabric);
+  renderOrchestrationFabric(telemetry.orchestrationFabric);
+  renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+  renderMissionLattice(telemetry.missionLattice);
+  renderLogistics(telemetry.logistics, telemetry.verification.logistics);
+  renderSettlement(telemetry.settlement, telemetry.verification.settlement);
+  renderScenarioSweep(telemetry);
+
+  if (ledgerResult.status === "fulfilled") {
+    renderLedger(ledgerResult.value);
+  } else {
+    console.warn("Ledger unavailable", ledgerResult.reason);
+    renderLedgerUnavailable(ledgerResult.reason);
+  }
+
+  if (ownerProofResult.status === "fulfilled") {
+    renderOwnerProof(ownerProofResult.value, telemetry);
+  } else {
+    console.warn("Owner proof unavailable", ownerProofResult.reason);
+    renderOwnerProofUnavailable(ownerProofResult.reason);
+  }
+
+  const diagrams = await Promise.allSettled([
+    renderMermaidDiagram("./output/kardashev-task-hierarchy.mmd", "mission-mermaid", "mission-hierarchy-diagram"),
+    renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram"),
+    renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram"),
+  ]);
+
+  diagrams.forEach((result, index) => {
+    if (result.status === "fulfilled") return;
+    const targets = ["mission-mermaid", "mermaid-container", "dyson-container"];
+    const target = document.querySelector(`#${targets[index]}`);
+    if (target) {
+      target.textContent = "Diagram unavailable: " + result.reason;
+      target.classList.add("status-fail");
+    }
+  });
 }
 
 bootstrap();
