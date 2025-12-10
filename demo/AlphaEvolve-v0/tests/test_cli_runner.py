@@ -20,3 +20,11 @@ def test_iterations_alias_creates_report(tmp_path):
     payload = json.loads(output_path.read_text())
     assert payload["history"][0]["generation"] == 1
     assert payload["champion"]["Utility"] > 0
+
+
+def test_default_generations_preserved():
+    parser = build_parser()
+
+    args = parser.parse_args(["run"])
+
+    assert args.generations == 30

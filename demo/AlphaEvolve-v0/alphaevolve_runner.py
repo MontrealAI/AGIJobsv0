@@ -123,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--iterations",
         dest="generations",
         type=int,
+        default=argparse.SUPPRESS,
         help="alias for --generations",
     )
     run_cmd.add_argument("--seed", type=int, default=7)
