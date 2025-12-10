@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -173,6 +173,51 @@ if (!skipCompile && env.CI !== 'true') {
 
 const allArgs = [...passthroughArgs, ...translatedArgs];
 const displayedArgs = allArgs.length === 0 ? '(none)' : allArgs.join(' ');
+
+const phase8PlaywrightRoot = path.join(
+  repoRoot,
+  'demo',
+  'Phase-8-Universal-Value-Dominance',
+);
+const phase8PlaywrightTests = path.join(phase8PlaywrightRoot, 'tests');
+
+const playwrightSpecs = allArgs
+  .map((arg) => path.resolve(repoRoot, arg))
+  .filter((resolved) => resolved.startsWith(phase8PlaywrightTests));
+
+if (playwrightSpecs.length > 0) {
+  const configPath = path.join(phase8PlaywrightRoot, 'playwright.config.ts');
+  const cmd = [
+    'npx',
+    'playwright',
+    'test',
+    '--config',
+    configPath,
+    ...playwrightSpecs,
+  ];
+  console.log(
+    '🎭 Detected Playwright demo selection; delegating to Playwright test runner.',
+  );
+  console.log('⬇️  Ensuring Playwright Chromium binary is installed...');
+  const installResult = spawnSync('npx', ['playwright', 'install', '--with-deps', 'chromium'], {
+    stdio: 'inherit',
+    env,
+  });
+  if (installResult.status !== 0) {
+    console.error('❌ Failed to install Playwright browsers.');
+    process.exit(installResult.status ?? 1);
+  }
+  console.log(`→ ${cmd.join(' ')}`);
+  const child = spawn(cmd[0], cmd.slice(1), { stdio: 'inherit', env });
+  child.on('close', (code) => {
+    process.exit(code ?? 1);
+  });
+  child.on('error', (error) => {
+    console.error('❌ Failed to launch Playwright tests:', error);
+    process.exit(1);
+  });
+  return;
+}
 console.log(
   `Running Hardhat tests with HARDHAT_FAST_COMPILE=${env.HARDHAT_FAST_COMPILE} and timeout ${hardhatTimeoutMs}ms (args: ${displayedArgs})`,
 );
