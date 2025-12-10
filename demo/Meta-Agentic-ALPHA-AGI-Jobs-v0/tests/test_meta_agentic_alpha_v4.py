@@ -3,45 +3,38 @@
 from __future__ import annotations
 
 import json
-import sys
+import shutil
 from importlib import import_module
 from pathlib import Path
 
 import pytest
 
 
-def _ensure_paths() -> None:
-    tests_dir = Path(__file__).resolve().parent
-    demo_root = tests_dir.parent
-    python_dir = demo_root / "python"
-    scripts_dir = demo_root / "scripts"
-    repo_root = demo_root.parent.parent
-    for candidate in (python_dir, repo_root, scripts_dir):
-        if str(candidate) not in sys.path:
-            sys.path.insert(0, str(candidate))
+@pytest.fixture()
+def v4_working_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Provide an isolated copy of the demo to keep tests self-contained."""
 
-
-_ensure_paths()
-
-from meta_agentic_alpha_demo.v4 import load_configuration, run_demo  # noqa: E402  pylint: disable=wrong-import-position
-
-owner_controls = import_module("owner_controls")
+    source_dir = Path(__file__).resolve().parents[1]
+    working_copy = tmp_path / "Meta-Agentic-ALPHA-AGI-Jobs-v0"
+    shutil.copytree(source_dir, working_copy)
+    monkeypatch.syspath_prepend(str(working_copy / "python"))
+    monkeypatch.syspath_prepend(str(working_copy / "scripts"))
+    return working_copy
 
 
 @pytest.fixture()
-def v4_config_path() -> Path:
-    return (
-        Path(__file__)
-        .resolve()
-        .parent
-        .parent
-        / "meta_agentic_alpha_v4"
-        / "config"
-        / "scenario.yaml"
-    )
+def v4_config_path(v4_working_copy: Path) -> Path:
+    return v4_working_copy / "meta_agentic_alpha_v4" / "config" / "scenario.yaml"
+
+
+@pytest.fixture()
+def owner_controls_module(v4_working_copy: Path) -> object:
+    return import_module("owner_controls")
 
 
 def test_load_configuration_v4_shape(v4_config_path: Path) -> None:
+    from meta_agentic_alpha_demo.v4 import load_configuration
+
     config = load_configuration(v4_config_path)
     assert config.scenario.title.startswith("Meta-Agentic α-AGI Jobs Demo")
     assert config.mission.alpha_goal == "sovereign-alpha-synthesis"
@@ -52,7 +45,9 @@ def test_load_configuration_v4_shape(v4_config_path: Path) -> None:
     assert "alpha_dominion_manifesto.md" in next(iter(config.attachments))
 
 
-def test_run_demo_v4_creates_summary(tmp_path: Path, v4_config_path: Path) -> None:
+def test_run_demo_v4_creates_summary(v4_config_path: Path) -> None:
+    from meta_agentic_alpha_demo.v4 import load_configuration, run_demo
+
     config = load_configuration(v4_config_path)
     outcome = run_demo(config, timeout=60)
     summary_path = Path(outcome.summary_path)
@@ -69,24 +64,26 @@ def test_run_demo_v4_creates_summary(tmp_path: Path, v4_config_path: Path) -> No
     assert Path(outcome.metadata["dashboardDataPath"]).exists()
 
 
-def test_owner_controls_v4_updates(tmp_path: Path, v4_config_path: Path) -> None:
-    payload = owner_controls.load_yaml(v4_config_path)
-    owner_controls.apply_assignment(payload, "plan.budget.max", 950000)
-    owner_controls.apply_assignment(
+def test_owner_controls_v4_updates(
+    v4_config_path: Path, owner_controls_module: object
+) -> None:
+    payload = owner_controls_module.load_yaml(v4_config_path)
+    owner_controls_module.apply_assignment(payload, "plan.budget.max", 950000)
+    owner_controls_module.apply_assignment(
         payload,
         "unstoppable.multi_agent_mesh.quorum",
         11,
     )
-    owner_controls.apply_assignment(
+    owner_controls_module.apply_assignment(
         payload,
         "control_tower.guardian_mesh.unstoppable_pause_seconds",
         30,
     )
-    rendered = owner_controls.dump_yaml(payload)
+    rendered = owner_controls_module.dump_yaml(payload)
     assert "max: 950000" in rendered
     assert "quorum: 11" in rendered
     assert "unstoppable_pause_seconds: 30" in rendered
-    assert owner_controls.main(
+    assert owner_controls_module.main(
         [
             "--config",
             str(v4_config_path),
