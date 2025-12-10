@@ -82,6 +82,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "js-yaml": "^4.1.0",
     "license-checker": "^25.0.1",
+    "playwright": "^1.57.0",
     "postcss": "^8.4.49",
     "prettier": "^2.8.8",
     "solhint": "^6.0.0",
