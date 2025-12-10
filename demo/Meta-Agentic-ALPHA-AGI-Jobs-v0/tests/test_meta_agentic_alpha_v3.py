@@ -3,45 +3,38 @@
 from __future__ import annotations
 
 import json
-import sys
+import shutil
 from importlib import import_module
 from pathlib import Path
 
 import pytest
 
 
-def _ensure_paths() -> None:
-    tests_dir = Path(__file__).resolve().parent
-    demo_root = tests_dir.parent
-    python_dir = demo_root / "python"
-    scripts_dir = demo_root / "scripts"
-    repo_root = demo_root.parent.parent
-    for candidate in (python_dir, repo_root, scripts_dir):
-        if str(candidate) not in sys.path:
-            sys.path.insert(0, str(candidate))
+@pytest.fixture()
+def v3_working_copy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Provide an isolated copy of the demo to avoid polluting the repo checkout."""
 
-
-_ensure_paths()
-
-from meta_agentic_alpha_demo.v3 import load_configuration, run_demo  # noqa: E402  pylint: disable=wrong-import-position
-
-owner_controls = import_module("owner_controls")
+    source_dir = Path(__file__).resolve().parents[1]
+    working_copy = tmp_path / "Meta-Agentic-ALPHA-AGI-Jobs-v0"
+    shutil.copytree(source_dir, working_copy)
+    monkeypatch.syspath_prepend(str(working_copy / "python"))
+    monkeypatch.syspath_prepend(str(working_copy / "scripts"))
+    return working_copy
 
 
 @pytest.fixture()
-def v3_config_path() -> Path:
-    return (
-        Path(__file__)
-        .resolve()
-        .parent
-        .parent
-        / "meta_agentic_alpha_v3"
-        / "config"
-        / "scenario.yaml"
-    )
+def v3_config_path(v3_working_copy: Path) -> Path:
+    return v3_working_copy / "meta_agentic_alpha_v3" / "config" / "scenario.yaml"
+
+
+@pytest.fixture()
+def owner_controls_module(v3_working_copy: Path) -> object:
+    return import_module("owner_controls")
 
 
 def test_load_configuration_v3_shape(v3_config_path: Path) -> None:
+    from meta_agentic_alpha_demo.v3 import load_configuration
+
     config = load_configuration(v3_config_path)
     assert config.scenario.title.startswith("Meta-Agentic α-AGI Jobs Demo")
     assert config.mission.alpha_goal == "compound-global-alpha"
@@ -61,7 +54,9 @@ def test_load_configuration_v3_shape(v3_config_path: Path) -> None:
     assert "meta_mission_deck.md" in next(iter(config.attachments))
 
 
-def test_run_demo_v3_creates_summary(tmp_path: Path, v3_config_path: Path) -> None:
+def test_run_demo_v3_creates_summary(v3_config_path: Path) -> None:
+    from meta_agentic_alpha_demo.v3 import load_configuration, run_demo
+
     config = load_configuration(v3_config_path)
     outcome = run_demo(config, timeout=40)
     summary_path = Path(outcome.summary_path)
@@ -78,24 +73,26 @@ def test_run_demo_v3_creates_summary(tmp_path: Path, v3_config_path: Path) -> No
     assert Path(outcome.metadata["dashboardDataPath"]).exists()
 
 
-def test_owner_controls_v3_updates(tmp_path: Path, v3_config_path: Path) -> None:
-    payload = owner_controls.load_yaml(v3_config_path)
-    owner_controls.apply_assignment(payload, "plan.budget.max", 1200000)
-    owner_controls.apply_assignment(
+def test_owner_controls_v3_updates(
+    v3_config_path: Path, owner_controls_module: object
+) -> None:
+    payload = owner_controls_module.load_yaml(v3_config_path)
+    owner_controls_module.apply_assignment(payload, "plan.budget.max", 1200000)
+    owner_controls_module.apply_assignment(
         payload,
         "phases[execute-onchain].step.params.job.reward",
         333000,
     )
-    owner_controls.apply_assignment(
+    owner_controls_module.apply_assignment(
         payload,
         "mission.ica_score_target",
         0.97,
     )
-    rendered = owner_controls.dump_yaml(payload)
+    rendered = owner_controls_module.dump_yaml(payload)
     assert "max: 1200000" in rendered
     assert "reward: 333000" in rendered
     assert "ica_score_target: 0.97" in rendered
-    assert owner_controls.main(
+    assert owner_controls_module.main(
         [
             "--config",
             str(v3_config_path),
