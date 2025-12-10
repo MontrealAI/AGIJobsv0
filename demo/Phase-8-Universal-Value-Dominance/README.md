@@ -56,7 +56,9 @@ flowchart LR
 
 ## Testing & Playwright Browsers
 
-- Before running `npx playwright test --config=playwright.config.ts`, provision the bundled Chromium binary once with:
+- Before running `npx playwright test --config=playwright.config.ts`, you can provision the bundled Chromium binary once with:
   - `./scripts/install_playwright_browsers.sh`
-- The script installs the headless shell and OS-level dependencies Playwright needs so the dashboard e2e suite runs without manual
-  intervention on fresh machines.
+- The suite also includes a lightweight global setup that will automatically download the Chromium headless shell (via `npx playwrigh
+t install --with-deps chromium`) if it is missing, so CI and fresh environments stay green without extra steps.
+- Both paths install the OS-level dependencies Playwright needs so the dashboard e2e suite runs without manual intervention on fresh
+  machines.
