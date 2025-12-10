@@ -4,11 +4,14 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: __dirname,
   testMatch: ['<rootDir>/scripts/**/*.test.ts'],
-  globals: {
-    'ts-jest': {
-      tsconfig: '<rootDir>/tsconfig.test.json',
-      diagnostics: true,
-    },
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.test.json',
+        diagnostics: true,
+      },
+    ],
   },
   snapshotFormat: {
     printBasicPrototype: false,
