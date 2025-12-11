@@ -80,13 +80,14 @@ class MuZeroTrainer:
             discount_power = 1.0
             episode: List[Transition] = []
             while not env.done:
+                pre_action_observation = observation.vector.tolist()
                 action, policy, meta = planner.plan(env, observation)
                 step = env.step(action)
                 reward = step.reward * discount_power
                 expected_value = float(meta.get("expected_value", reward)) if isinstance(meta, dict) else float(reward)
                 episode.append(
                     Transition(
-                        observation=observation.vector.tolist(),
+                        observation=pre_action_observation,
                         action=action,
                         reward=float(reward),
                         policy=list(policy),
