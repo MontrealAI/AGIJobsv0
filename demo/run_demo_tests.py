@@ -46,6 +46,8 @@ def _run_suite(demo_root: Path, tests_dir: Path) -> int:
     cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
     print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
     result = subprocess.run(cmd, env=env, check=False)
+    # ``pytest`` returns ``5`` when no tests are collected; treat that as a
+    # successful (albeit empty) suite so the aggregated status is accurate.
     return 0 if result.returncode == 5 else result.returncode
 
 
@@ -59,13 +61,18 @@ def _discover_tests(demo_root: Path) -> Iterable[tuple[Path, Path]]:
 
 def main() -> int:
     demo_root = Path(__file__).resolve().parent
-    failures = 0
+    results: list[tuple[Path, int]] = []
     for demo_dir, tests_dir in _discover_tests(demo_root):
-        failures += _run_suite(demo_dir, tests_dir)
-    if failures:
-        print(f"\n⚠️  Demo test runs completed with {failures} failures.")
+        results.append((tests_dir, _run_suite(demo_dir, tests_dir)))
+
+    failed = [(path, code) for path, code in results if code]
+    if failed:
+        print("\n⚠️  Demo test runs completed with failures:")
+        for tests_dir, code in failed:
+            print(f"   • {tests_dir} (exit code {code})")
         return 1
-    print("\n✅ All demo test suites passed.")
+
+    print(f"\n✅ All demo test suites passed ({len(results)} suites).")
     return 0
 
 
