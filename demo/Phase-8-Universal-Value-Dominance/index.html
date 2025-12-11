@@ -4,13 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Phase 8 — Universal Value Dominance Console</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" defer></script>
+    <script src="./assets/mermaid.min.js" defer></script>
     <style>
       :root {
         color-scheme: dark;
@@ -23,7 +17,7 @@
         --muted: #9bbad8;
         --critical: #ff6b6b;
         --warning: #ffd43b;
-        font-family: "Inter", system-ui, sans-serif;
+        font-family: "Inter", "Inter var", "Segoe UI", system-ui, sans-serif;
         line-height: 1.6;
       }
 
@@ -4021,7 +4015,14 @@
             container.setAttribute("data-rendered", "pending");
             window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
             Promise.resolve(window.mermaid.run({ nodes: [container] }))
-              .then(() => container.setAttribute("data-rendered", "true"))
+              .then(() => {
+                const renderedSvg = container.querySelector("svg");
+                if (renderedSvg) {
+                  container.setAttribute("data-rendered", "true");
+                } else {
+                  markFallback();
+                }
+              })
               .catch((error) => {
                 markFallback(error);
               });
