@@ -11,6 +11,7 @@ entire demo gallery.
 
 from __future__ import annotations
 
+import argparse
 import os
 import subprocess
 import sys
@@ -70,8 +71,18 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
-def _discover_tests(demo_root: Path) -> Iterable[tuple[Path, Path]]:
+def _discover_tests(
+    demo_root: Path, *, include: set[str] | None = None
+) -> Iterable[tuple[Path, Path]]:
+    def _matches_filter(path: Path) -> bool:
+        if include is None:
+            return True
+        name = path.name.lower()
+        return any(token in name for token in include)
+
     for demo_dir in sorted(p for p in demo_root.iterdir() if p.is_dir()):
+        if not _matches_filter(demo_dir):
+            continue
         for tests_dir in demo_dir.rglob("tests"):
             if not tests_dir.is_dir() or "node_modules" in tests_dir.parts:
                 continue
@@ -81,10 +92,46 @@ def _discover_tests(demo_root: Path) -> Iterable[tuple[Path, Path]]:
             yield demo_dir, tests_dir
 
 
-def main() -> int:
-    demo_root = Path(__file__).resolve().parent
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--demo",
+        action="append",
+        default=[],
+        help=(
+            "Only run demos whose directory names contain the provided substring. "
+            "Can be supplied multiple times."
+        ),
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List discovered suites (after filtering) without running them.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
+    args = _parse_args(argv)
+    include = {token.lower() for token in args.demo} or None
+    demo_root = demo_root or Path(__file__).resolve().parent
+    suites = list(_discover_tests(demo_root, include=include))
+
+    if args.list:
+        if not suites:
+            print("No demo test suites found for the provided filters.")
+            return 1
+        print("Discovered demo test suites:")
+        for _, tests_dir in suites:
+            print(f" - {tests_dir}")
+        return 0
+
+    if not suites:
+        print("No demo test suites found for the provided filters.")
+        return 1
+
     results: list[tuple[Path, int]] = []
-    for demo_dir, tests_dir in _discover_tests(demo_root):
+    for demo_dir, tests_dir in suites:
         results.append((tests_dir, _run_suite(demo_dir, tests_dir)))
 
     failed = [(path, code) for path, code in results if code]
