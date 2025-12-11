@@ -71,6 +71,33 @@ class MuZeroTrainer:
     def store_episode(self, episode: Iterable[Transition]) -> None:
         self.replay.extend_episode(episode)
 
+    def self_play(self, env: AGIJobsPlanningEnv, planner: "MuZeroPlanner", episodes: int = 1) -> None:
+        """Generate experience by rolling out the planner inside ``env``."""
+
+        for _ in range(episodes):
+            observation = env.reset()
+            planner.reset_episode()
+            discount_power = 1.0
+            episode: List[Transition] = []
+            while not env.done:
+                action, policy, meta = planner.plan(env, observation)
+                step = env.step(action)
+                reward = step.reward * discount_power
+                expected_value = float(meta.get("expected_value", reward)) if isinstance(meta, dict) else float(reward)
+                episode.append(
+                    Transition(
+                        observation=step.observation.vector.tolist(),
+                        action=action,
+                        reward=float(reward),
+                        policy=list(policy),
+                        value=expected_value,
+                    )
+                )
+                planner.observe_outcome(expected_value, reward)
+                observation = step.observation
+                discount_power *= self.config.environment.discount
+            self.store_episode(episode)
+
     def train_step(self) -> Dict[str, float]:
         if len(self.replay) == 0:
             return {"loss": 0.0, "policy_loss": 0.0, "value_loss": 0.0, "reward_loss": 0.0}
@@ -103,6 +130,14 @@ class MuZeroTrainer:
             "value_loss": float(value_loss.item()),
             "reward_loss": float(reward_loss.item()),
         }
+
+    def save_checkpoint(self, path: str) -> None:
+        checkpoint = {
+            "model_state": self.network.state_dict(),
+            "optimizer_state": self.optimizer.state_dict(),
+            "config": self.config,
+        }
+        torch.save(checkpoint, path)
 
 
 __all__ = ["Episode", "MuZeroTrainer", "TrainingConfig", "discount_returns"]

@@ -7,7 +7,7 @@ from typing import Deque, Dict, Iterable, List
 
 import numpy as np
 
-from .environment import EnvironmentConfig
+from .environment import EnvironmentConfig, config_from_dict
 from .training import Episode
 
 
@@ -76,3 +76,48 @@ class SentinelMonitor:
 
 
 __all__ = ["SentinelConfig", "SentinelMonitor", "SentinelStatus"]
+
+
+class Sentinel:
+    """Runtime guard that monitors prediction error and budget health."""
+
+    def __init__(self, config: Dict) -> None:
+        sentinel_conf = config.get("sentinel", {})
+        env_conf = config.get("environment", {})
+        self.config = SentinelConfig(
+            window=int(sentinel_conf.get("window", SentinelConfig.window)),
+            alert_mae=float(sentinel_conf.get("alert_mae", SentinelConfig.alert_mae)),
+            fallback_mae=float(sentinel_conf.get("fallback_mae", SentinelConfig.fallback_mae)),
+            min_episodes=int(sentinel_conf.get("min_episodes", SentinelConfig.min_episodes)),
+            budget_floor=float(sentinel_conf.get("budget_floor", SentinelConfig.budget_floor)),
+        )
+        env_config = config_from_dict(config)
+        self.monitor = SentinelMonitor(self.config, env_config)
+        self._predictions: List[float] = []
+        self._returns: List[float] = []
+
+    def update(self, predicted_value: float, realised_return: float) -> None:
+        self._predictions.append(predicted_value)
+        self._returns.append(realised_return)
+        episode = Episode(
+            observations=[],
+            actions=[],
+            rewards=[],
+            policies=[],
+            values=[predicted_value],
+            returns=[realised_return],
+            simulations=[],
+            summary={"remaining_budget": realised_return},
+        )
+        self.monitor.record_episode(episode)
+
+    def should_fallback(self) -> bool:
+        status = self.monitor.status()
+        return status.fallback_required or status.budget_floor_breached
+
+    def reset(self) -> None:
+        self._predictions.clear()
+        self._returns.clear()
+
+
+__all__ += ["Sentinel"]

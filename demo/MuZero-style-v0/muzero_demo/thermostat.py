@@ -53,6 +53,11 @@ class PlanningThermostat:
         simulations = min(self.config.max_simulations, simulations)
         return simulations
 
+    def entropy(self, policy: Iterable[float]) -> float:
+        """Expose entropy calculation for telemetry/reporting."""
+
+        return self._entropy(policy)
+
     def _entropy(self, policy: Iterable[float]) -> float:
         if isinstance(policy, torch.Tensor):
             probs = policy.detach().to(dtype=torch.float64, device="cpu")

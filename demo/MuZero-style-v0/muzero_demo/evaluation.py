@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 
 import torch
 
-from .environment import JobsEnvironment
+from .environment import JobsEnvironment, config_from_dict
 from .planner import MuZeroPlanner
 from .network import MuZeroNetwork
 from .telemetry import summarise_runs
@@ -15,7 +15,9 @@ def greedy_policy(env: JobsEnvironment, bias: float) -> int:
     best_action = 0
     best_score = float("-inf")
     for idx, job in enumerate(env._jobs):  # pylint: disable=protected-access
-        score = job.gmv - (1 + bias) * job.cost
+        reward = float(job.get("reward", getattr(job, "gmv", 0.0))) if isinstance(job, dict) else float(getattr(job, "gmv", 0.0))
+        cost = float(job.get("cost", getattr(job, "cost", 0.0))) if isinstance(job, dict) else float(getattr(job, "cost", 0.0))
+        score = reward - (1 + bias) * cost
         if score > best_score:
             best_score = score
             best_action = idx
@@ -23,17 +25,19 @@ def greedy_policy(env: JobsEnvironment, bias: float) -> int:
 
 
 def policy_head_action(network: MuZeroNetwork, observation: List[float], temperature: float, device: torch.device) -> int:
-    obs = torch.tensor(observation, dtype=torch.float32, device=device)
+    obs_vector = observation.vector if hasattr(observation, "vector") else observation
+    obs = torch.tensor(obs_vector, dtype=torch.float32, device=device)
     output = network.initial_inference(obs)
     policy = torch.softmax(output.policy_logits.squeeze(0) / max(temperature, 1e-6), dim=-1)
     return int(torch.multinomial(policy, 1).item())
 
 
 def run_strategy(env_config: Dict, config: Dict, network: MuZeroNetwork, device: torch.device, strategy: str) -> float:
-    env = JobsEnvironment(config)
+    parsed_env = config_from_dict(config)
+    env = JobsEnvironment(parsed_env)
     env.seed(config.get("experiment", {}).get("seed", 17))
     total_return = 0.0
-    discount = float(config.get("environment", {}).get("discount", 0.997))
+    discount = parsed_env.discount
     episodes = int(config.get("experiment", {}).get("evaluation_episodes", 32))
     bias = float(config.get("baselines", {}).get("greedy_immediacy_bias", 0.05))
     policy_temp = float(config.get("baselines", {}).get("policy_temperature", 0.7))
