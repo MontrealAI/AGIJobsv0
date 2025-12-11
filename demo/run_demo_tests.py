@@ -51,10 +51,29 @@ def _run_suite(demo_root: Path, tests_dir: Path) -> int:
     return 0 if result.returncode == 5 else result.returncode
 
 
+def _has_python_tests(tests_dir: Path) -> bool:
+    """Return True when a tests directory contains at least one Python test file.
+
+    Some demos include JavaScript/TypeScript test harnesses that are intentionally
+    outside our Python test runner's scope. Skipping those directories keeps the
+    run focused on actionable suites and avoids noisy "collected 0 items"
+    reports that make it harder to spot real failures.
+    """
+
+    for file in tests_dir.rglob("*.py"):
+        name = file.name
+        if name.startswith("test") or name.endswith("_test.py"):
+            return True
+    return False
+
+
 def _discover_tests(demo_root: Path) -> Iterable[tuple[Path, Path]]:
     for demo_dir in sorted(p for p in demo_root.iterdir() if p.is_dir()):
         for tests_dir in demo_dir.rglob("tests"):
             if not tests_dir.is_dir() or "node_modules" in tests_dir.parts:
+                continue
+            if not _has_python_tests(tests_dir):
+                print(f"→ Skipping {tests_dir} (no Python test files found)")
                 continue
             yield demo_dir, tests_dir
 
