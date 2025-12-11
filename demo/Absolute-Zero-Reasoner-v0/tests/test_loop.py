@@ -6,7 +6,9 @@ from absolute_zero_reasoner_demo.config_loader import load_config
 from absolute_zero_reasoner_demo.loop import AbsoluteZeroDemo
 
 
-def test_demo_runs_short_cycle(tmp_path) -> None:
+def test_demo_runs_short_cycle(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("AZR_OUTPUT_DIR", str(tmp_path))
+
     config = load_config()
     config.raw["azr"]["iterations"] = 3
     config.raw["azr"]["tasks_per_iteration"] = 2
