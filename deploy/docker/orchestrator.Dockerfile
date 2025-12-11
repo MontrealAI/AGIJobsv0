@@ -9,7 +9,7 @@ ENV \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
 RUN apk add --no-cache python3 make g++
-COPY package*.json .npmrc ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
 RUN npx tsc -p apps/orchestrator/tsconfig.json
@@ -26,7 +26,7 @@ ENV \
     NPM_CONFIG_FETCH_TIMEOUT=600000
 
 RUN apk add --no-cache python3 make g++
-COPY package*.json .npmrc ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci --omit=dev
 COPY --from=build /srv/app/apps/orchestrator/dist ./apps/orchestrator/dist
 COPY --from=build /srv/app/apps/orchestrator/*.json ./apps/orchestrator/
