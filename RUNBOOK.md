@@ -15,6 +15,8 @@ This deck guides incident commanders through the production controls that keep t
 | 3 | `npm run owner:command-center` | Generates the owner mission briefing, control matrix, and drift analysis so contract owners can approve or pause operations instantly.【F:package.json†L165-L190】【F:scripts/v2/ownerCommandCenter.ts†L1-L210】 |
 | 4 | `make operator:green` | Runs the Day-One utility benchmark to validate treasury uplift and guardrail posture with fresh artefacts.【F:Makefile†L70-L118】【F:tools/operator_banner.py†L1-L148】 |
 
+**Pytest safety harness** — Use `scripts/pytest_safe.sh <path>` when exercising demo suites directly (for example `scripts/pytest_safe.sh demo/AGI-Alpha-Node-v0/tests`). The wrapper disables third-party plugin autoloading and pins `PYTHONPATH` to the repo root so the local `eth_typing` shim and other compatibility layers load before global packages, preventing spurious import errors during collection.【F:scripts/pytest_safe.sh†L1-L24】
+
 Archive the resulting artefacts (`reports/ci/status.*`, `reports/owner-control/**`, demo outputs) with the incident log so every response starts from the same verified baseline.【F:.github/workflows/ci.yml†L393-L440】【F:.github/workflows/ci.yml†L1026-L1155】
 
 ## Incident topology
