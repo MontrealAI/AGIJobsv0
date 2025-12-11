@@ -1382,16 +1382,17 @@
       });
 
       const TEXT = {
-        copy: {
-          action: "Copy",
-          ariaDefault: "Copy to clipboard",
-          commandAria: "Copy command for step {step}",
-          controlAria: "Copy value for {label}",
-          diagramLabel: "Mermaid blueprint",
-          diagramAria: "Copy Mermaid architecture to clipboard",
-          success: "Copied to clipboard.",
-          error: "Copy failed. Use manual copy.",
-        },
+          copy: {
+            action: "Copy",
+            ariaDefault: "Copy to clipboard",
+            commandAria: "Copy command for step {step}",
+            controlAria: "Copy value for {label}",
+            diagramLabel: "Mermaid blueprint",
+            diagramAria: "Copy Mermaid architecture to clipboard",
+            success: "Copied to clipboard.",
+            error: "Copy failed. Use manual copy.",
+            insecure: "Clipboard unavailable in this context. Use manual copy.",
+          },
         headings: {
           hero: "Phase 8 · Universal Value Dominance",
           stats: "Strategic Metrics",
@@ -1726,49 +1727,61 @@
         button.setAttribute('aria-expanded', next ? 'true' : 'false');
       };
 
-      const writeToClipboard = async (value) => {
-        if (!value) return false;
-        try {
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(value);
-            return true;
-          }
-        } catch (error) {
-          console.warn('Clipboard API failed, falling back to execCommand', error);
-        }
-        try {
-          const textArea = document.createElement('textarea');
-          textArea.value = value;
-          textArea.setAttribute('aria-hidden', 'true');
-          textArea.style.position = 'fixed';
-          textArea.style.opacity = '0';
-          document.body.appendChild(textArea);
-          textArea.select();
-          const succeeded = document.execCommand('copy');
-          document.body.removeChild(textArea);
-          return succeeded;
-        } catch (error) {
-          console.warn('execCommand copy fallback failed', error);
-          return false;
-        }
-      };
+        const writeToClipboard = async (value) => {
+          if (!value) return { success: false, reason: 'empty' };
 
-      const handleCopy = async (button) => {
-        const payload = button.dataset.copyPayload ? decodeURIComponent(button.dataset.copyPayload) : "";
-        if (!payload) return;
-        const feedback = getCopyFeedback(button);
-        if (copyButtonTimers.has(button)) {
-          window.clearTimeout(copyButtonTimers.get(button));
-        }
-        const success = await writeToClipboard(payload);
-        const label = button.dataset.copyLabel || "";
-        button.setAttribute("data-copy-state", success ? "copied" : "error");
-        if (feedback) {
-          const template = success ? t("copy.success") : t("copy.error");
-          const message = label ? `${template} ${label}` : template;
-          feedback.textContent = message;
-          feedback.setAttribute("data-visible", "true");
-        }
+          const canUseClipboardApi =
+            typeof navigator !== 'undefined' &&
+            typeof navigator.clipboard?.writeText === 'function' &&
+            typeof window !== 'undefined' &&
+            window.isSecureContext;
+
+          if (canUseClipboardApi) {
+            try {
+              await navigator.clipboard.writeText(value);
+              return { success: true };
+            } catch (error) {
+              console.debug('Clipboard API failed, attempting fallback', error);
+            }
+          }
+
+          try {
+            const textArea = document.createElement('textarea');
+            textArea.value = value;
+            textArea.setAttribute('aria-hidden', 'true');
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            const succeeded = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return { success: succeeded, reason: succeeded ? undefined : canUseClipboardApi ? 'clipboard-error' : 'insecure-context' };
+          } catch (error) {
+            console.debug('execCommand copy fallback failed', error);
+            return { success: false, reason: canUseClipboardApi ? 'clipboard-error' : 'insecure-context' };
+          }
+        };
+
+        const handleCopy = async (button) => {
+          const payload = button.dataset.copyPayload ? decodeURIComponent(button.dataset.copyPayload) : "";
+          if (!payload) return;
+          const feedback = getCopyFeedback(button);
+          if (copyButtonTimers.has(button)) {
+            window.clearTimeout(copyButtonTimers.get(button));
+          }
+          const { success, reason } = await writeToClipboard(payload);
+          const label = button.dataset.copyLabel || "";
+          button.setAttribute("data-copy-state", success ? "copied" : "error");
+          if (feedback) {
+            const template = success
+              ? t("copy.success")
+              : reason === 'insecure-context'
+              ? t("copy.insecure")
+              : t("copy.error");
+            const message = label ? `${template} ${label}` : template;
+            feedback.textContent = message;
+            feedback.setAttribute("data-visible", "true");
+          }
         const timer = window.setTimeout(() => {
           resetCopyFeedback(button, feedback);
           copyButtonTimers.delete(button);
