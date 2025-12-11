@@ -101,6 +101,23 @@ def _apply_overrides(payload: Dict[str, Any], overrides: Iterable[Tuple[str, Any
     return updated
 
 
+def _resolve_path(path: Path) -> Path:
+    """Return an absolute path, falling back to the repo root when needed.
+
+    The demo is often invoked from ``demo/`` rather than the repository root,
+    which makes relative paths like ``demo/Huxley-Godel-Machine-v0/config``
+    appear missing. Anchoring lookups to the project root keeps the experience
+    robust regardless of the current working directory.
+    """
+
+    if path.is_absolute() or path.exists():
+        return path
+
+    repo_root = Path(__file__).resolve().parents[4]
+    candidate = repo_root / path
+    return candidate if candidate.exists() else path
+
+
 def load_config(path: Path, overrides: Iterable[Tuple[str, Any]] | None = None) -> DemoConfig:
     """Load a :class:`DemoConfig` from ``path``.
 
@@ -111,6 +128,8 @@ def load_config(path: Path, overrides: Iterable[Tuple[str, Any]] | None = None) 
         An immutable :class:`DemoConfig` wrapper that performs lightweight
         validation and exposes convenience accessors.
     """
+    path = _resolve_path(path)
+
     if not path.exists():
         raise ConfigError(f"Configuration file '{path}' does not exist.")
 

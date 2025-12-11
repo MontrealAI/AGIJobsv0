@@ -12,6 +12,13 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Also expose the demo package directory so ``import hgm_demo`` works when the
+# tests are invoked directly (e.g. ``pytest demo/Huxley-Godel-Machine-v0/tests``)
+# without relying on per-suite runners to adjust ``PYTHONPATH``.
+DEMO_ROOT = Path(__file__).resolve().parents[1]
+if str(DEMO_ROOT) not in sys.path:
+    sys.path.insert(0, str(DEMO_ROOT))
+
 # Importing ``sitecustomize`` applies any global interpreter tweaks (such as
 # disabling third-party pytest plugin auto-discovery) that developers expect
 # when running tests from the repository root.
