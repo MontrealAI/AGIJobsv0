@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 from dataclasses import dataclass
 from typing import Any, Dict
@@ -65,7 +66,32 @@ def load_config(path: str | pathlib.Path | None = None) -> AZRConfig:
         raw = yaml.safe_load(fh)
     if not isinstance(raw, dict) or "azr" not in raw:
         raise ValueError("Invalid AZR configuration: missing 'azr' root key")
+    _apply_output_dir_override(raw)
     return AZRConfig(raw=raw)
+
+
+def _apply_output_dir_override(raw: Dict[str, Any]) -> None:
+    """Optionally redirect telemetry output to an isolated directory.
+
+    The demo normally writes reports into ``reports/`` at the repository root.
+    During CI and test runs that can pollute the working tree with untracked
+    artefacts. If ``AZR_OUTPUT_DIR`` is defined we repoint the telemetry paths
+    to that directory while preserving the original filenames.
+    """
+
+    output_dir = os.environ.get("AZR_OUTPUT_DIR")
+    if not output_dir:
+        return
+
+    azr_section = raw.setdefault("azr", {})
+    telemetry = azr_section.setdefault("telemetry", {})
+    base = pathlib.Path(output_dir)
+
+    report_name = pathlib.Path(telemetry.get("report_path", "absolute_zero_reasoner_report.md")).name
+    json_name = pathlib.Path(telemetry.get("json_path", "absolute_zero_reasoner_metrics.json")).name
+
+    telemetry["report_path"] = str(base / report_name)
+    telemetry["json_path"] = str(base / json_name)
 
 
 __all__ = ["AZRConfig", "load_config"]
