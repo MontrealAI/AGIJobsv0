@@ -86,7 +86,7 @@ class MuZeroTrainer:
                 expected_value = float(meta.get("expected_value", reward)) if isinstance(meta, dict) else float(reward)
                 episode.append(
                     Transition(
-                        observation=step.observation.vector.tolist(),
+                        observation=observation.vector.tolist(),
                         action=action,
                         reward=float(reward),
                         policy=list(policy),
