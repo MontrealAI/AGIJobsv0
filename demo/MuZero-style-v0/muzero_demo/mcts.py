@@ -49,4 +49,49 @@ class MuZeroPlanner:
         return tensor.tolist()
 
 
-__all__ = ["MuZeroPlanner", "PlannerSettings"]
+class _SearchNode:
+    """Lightweight container mirroring the tree node interface used by the planner."""
+
+    def __init__(self, value: float) -> None:
+        self._value = value
+
+    def value(self) -> float:
+        return self._value
+
+
+class MCTS:
+    """Simplified Monte Carlo Tree Search used by the CLI/demo entrypoints.
+
+    The full MuZero search is intentionally compressed here: we estimate visit counts
+    directly from the policy head and propagate the scalar value for downstream
+    consumers. This keeps the public API compatible with the planner while avoiding
+    a heavy dependency graph for the runnable demo script.
+    """
+
+    def __init__(self, network: MuZeroNetwork, config: dict) -> None:
+        self.network = network
+        env_conf = config.get("environment", {})
+        self.action_space = int(env_conf.get("max_jobs", 5)) + 1
+
+    def run(self, observation: torch.Tensor, simulations: int) -> Tuple[_SearchNode, List[float]]:
+        if observation.dim() != 1:
+            observation = observation.view(-1)
+        with torch.no_grad():
+            output: NetworkOutput = self.network.initial_inference(observation.unsqueeze(0))
+        policy_logits = output.policy_logits.squeeze(0)
+        probabilities = torch.softmax(policy_logits, dim=-1)
+        visit_counts = (probabilities * float(simulations)).tolist()
+        root = _SearchNode(float(output.value.squeeze().item()))
+        return root, visit_counts
+
+    @staticmethod
+    def final_policy(visit_counts: Sequence[float], temperature: float) -> List[float]:
+        counts = torch.tensor(list(visit_counts), dtype=torch.float32)
+        temperature = max(temperature, 1e-6)
+        adjusted = counts / temperature
+        adjusted = torch.nan_to_num(adjusted, nan=1.0 / max(len(visit_counts), 1), posinf=1.0, neginf=1e-6)
+        probabilities = torch.softmax(adjusted, dim=0)
+        return probabilities.tolist()
+
+
+__all__ = ["MuZeroPlanner", "PlannerSettings", "MCTS"]

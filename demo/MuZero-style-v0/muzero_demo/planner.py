@@ -5,11 +5,11 @@ from typing import Dict, List, Tuple
 
 import torch
 
-from .environment import JobsEnvironment
-from .mcts import MCTS
+from .environment import JobsEnvironment, config_from_dict
+from .mcts import MCTS, PlannerSettings
 from .network import MuZeroNetwork
 from .sentinel import Sentinel
-from .thermostat import PlanningThermostat
+from .thermostat import PlanningThermostat, ThermostatConfig
 from .telemetry import TelemetrySink
 
 
@@ -23,14 +23,31 @@ class MuZeroPlanner:
         self.max_simulations = int(self.planner_conf.get("max_simulations", 128))
         self.temperature = float(self.planner_conf.get("temperature", 1.0))
         self.scheduler = self.planner_conf.get("visit_temperature_schedule", {})
+        self.env_config = config_from_dict(config)
+        self.settings = PlannerSettings(
+            num_simulations=self.default_simulations, temperature=self.temperature
+        )
         self.mcts = MCTS(self.network, config)
-        self.thermostat = PlanningThermostat(config)
+        thermo_conf = config.get("thermostat", {})
+        self.thermostat = PlanningThermostat(
+            ThermostatConfig(
+                min_simulations=int(thermo_conf.get("min_simulations", ThermostatConfig.min_simulations)),
+                max_simulations=int(thermo_conf.get("max_simulations", ThermostatConfig.max_simulations)),
+                low_entropy=float(thermo_conf.get("low_entropy_threshold", ThermostatConfig.low_entropy)),
+                high_entropy=float(thermo_conf.get("high_entropy_threshold", ThermostatConfig.high_entropy)),
+                budget_pressure_ratio=float(thermo_conf.get("budget_pressure_ratio", ThermostatConfig.budget_pressure_ratio)),
+                endgame_horizon_ratio=float(thermo_conf.get("endgame_horizon_ratio", ThermostatConfig.endgame_horizon_ratio)),
+            ),
+            self.env_config,
+            self.settings,
+        )
         self.sentinel = Sentinel(config)
         self.telemetry = TelemetrySink(config)
         self.episode_index = 0
 
     def plan(self, env: JobsEnvironment, observation: List[float], forced_simulations: int | None = None) -> Tuple[int, List[float], Dict[str, float]]:
-        obs_tensor = torch.tensor(observation, dtype=torch.float32, device=self.device)
+        obs_vector = observation.vector if hasattr(observation, "vector") else observation
+        obs_tensor = torch.tensor(obs_vector, dtype=torch.float32, device=self.device)
         base_simulations = forced_simulations if forced_simulations is not None else self.default_simulations
         root, visit_counts = self.mcts.run(obs_tensor, base_simulations)
         total_visits = sum(visit_counts) + 1e-6
@@ -40,7 +57,7 @@ class MuZeroPlanner:
         gap = 0.0
         if len(best_visits) > 1:
             gap = abs(best_visits[0] - best_visits[1]) / max(best_visits[0], 1e-6)
-        simulations = self.thermostat.decide(base_simulations, entropy, gap)
+        simulations = self.thermostat.recommend(observation, policy, observation.legal_actions)
         if simulations != base_simulations:
             root, visit_counts = self.mcts.run(obs_tensor, simulations)
             total_visits = sum(visit_counts) + 1e-6

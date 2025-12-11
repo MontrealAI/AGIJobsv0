@@ -6,6 +6,8 @@ from typing import Dict, List
 
 import numpy as np
 
+ConfigDict = Dict[str, object]
+
 FEATURES_PER_JOB = 5
 GLOBAL_FEATURES = 2
 
@@ -257,6 +259,27 @@ class AGIJobsPlanningEnv:
 JobsEnvironment = AGIJobsPlanningEnv
 
 
+def config_from_dict(config: ConfigDict) -> EnvironmentConfig:
+    """Translate a loose config dictionary into a structured ``EnvironmentConfig``."""
+
+    env_conf = config.get("environment", {}) if isinstance(config, dict) else {}
+    experiment = config.get("experiment", {}) if isinstance(config, dict) else {}
+    return EnvironmentConfig(
+        max_jobs=int(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.max_jobs)("job_pool_size", EnvironmentConfig.max_jobs)),
+        horizon=int(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.horizon)("episode_length", EnvironmentConfig.horizon)),
+        rng_seed=experiment.get("seed") if isinstance(experiment, dict) else None,
+        starting_budget=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.starting_budget)("max_budget", EnvironmentConfig.starting_budget)),
+        min_reward=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.min_reward)("min_reward", EnvironmentConfig.min_reward)),
+        max_reward=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.max_reward)("max_reward", EnvironmentConfig.max_reward)),
+        min_cost=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.min_cost)("min_cost", EnvironmentConfig.min_cost)),
+        max_cost=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.max_cost)("max_cost", EnvironmentConfig.max_cost)),
+        min_success_prob=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.min_success_prob)("min_success_prob", EnvironmentConfig.min_success_prob)),
+        max_success_prob=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.max_success_prob)("max_success_prob", EnvironmentConfig.max_success_prob)),
+        opportunity_std=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.opportunity_std)("success_noise", EnvironmentConfig.opportunity_std)),
+        discount=float(getattr(env_conf, "get", lambda *_, **__: EnvironmentConfig.discount)("discount", EnvironmentConfig.discount)),
+    )
+
+
 __all__ = [
     "AGIJobsPlanningEnv",
     "EnvironmentConfig",
@@ -264,4 +287,5 @@ __all__ = [
     "PlannerObservation",
     "StepResult",
     "vector_size",
+    "config_from_dict",
 ]
