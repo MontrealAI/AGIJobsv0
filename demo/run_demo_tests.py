@@ -45,7 +45,10 @@ def _run_suite(demo_root: Path, tests_dir: Path) -> int:
     env["PYTHONPATH"] = _build_pythonpath(demo_root)
     cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
     print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
-    result = subprocess.run(cmd, env=env, check=False)
+    # Execute from the suite's directory so sys.path[0] points at the demo under
+    # test, preventing sibling packages with the same name from taking
+    # precedence.
+    result = subprocess.run(cmd, env=env, check=False, cwd=tests_dir.parent)
     # ``pytest`` returns ``5`` when no tests are collected; treat that as a
     # successful (albeit empty) suite so the aggregated status is accurate.
     return 0 if result.returncode == 5 else result.returncode
