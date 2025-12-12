@@ -97,17 +97,36 @@ class QuietHTTPRequestHandler(SimpleHTTPRequestHandler):
         pass
 
 
-def run_server(port: int, open_browser: bool = True) -> None:
+class ReusableThreadingServer(socketserver.ThreadingTCPServer):
+    """Threaded TCP server that can be restarted without lingering sockets."""
+
+    allow_reuse_address = True
+
+
+def create_server(host: str, port: int) -> socketserver.TCPServer:
+    """Create a demo HTTP server bound to the provided host and port.
+
+    A dedicated factory keeps construction testable and enforces safer defaults:
+    - ``ThreadingTCPServer`` allows concurrent asset requests without blocking.
+    - ``allow_reuse_address`` prevents the common "Address already in use" error
+      when rerunning the demo quickly.
+    - Binding to ``127.0.0.1`` by default avoids unintentionally exposing the
+      demo outside the local machine.
+    """
+
+    class DemoHandler(QuietHTTPRequestHandler):
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            super().__init__(*args, directory=str(UI_DIR), **kwargs)
+
+    return ReusableThreadingServer((host, port), DemoHandler)
+
+
+def run_server(port: int, open_browser: bool = True, host: str = "127.0.0.1") -> None:
     """Serve the static UI and optionally open the browser."""
 
-    handler = type(
-        "DemoHandler",
-        (QuietHTTPRequestHandler,),
-        {"directory": str(UI_DIR)},
-    )
-
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        url = f"http://localhost:{port}/"
+    with create_server(host, port) as httpd:
+        resolved_host, resolved_port = httpd.server_address[:2]
+        url = f"http://{resolved_host}:{resolved_port}/"
         print(f"Serving AGI Labor Market Grand Demo UI at {url}")
         if open_browser:
             webbrowser.open_new_tab(url)
@@ -144,6 +163,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_parser.add_argument("--port", type=int, default=8000, help="Port to bind")
     serve_parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host/interface to bind (default: 127.0.0.1)",
+    )
+    serve_parser.add_argument(
         "--no-browser",
         action="store_true",
         help="Do not open a browser tab automatically",
@@ -163,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "serve":
-        run_server(port=args.port, open_browser=not args.no_browser)
+        run_server(port=args.port, open_browser=not args.no_browser, host=args.host)
         return 0
 
     parser.error("Unknown command")
