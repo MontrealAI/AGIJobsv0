@@ -109,24 +109,36 @@ class DayOneUtilityOrchestrator:
             yaml.safe_dump(payload, handle, sort_keys=False)
 
     def load_jobs(self) -> List[JobRecord]:
-        dataset = self._load_yaml(self.config_dir / "microset.yaml")
+        dataset_path = self.config_dir / "microset.yaml"
+        dataset = self._load_yaml(dataset_path)
+
+        if dataset is None:
+            raise ValueError(f"{dataset_path} is empty; define at least one job entry.")
+
         jobs: Iterable[Mapping[str, Any]]
         if isinstance(dataset, Mapping):
             jobs = dataset.get("jobs", [])  # type: ignore[assignment]
-        else:
+        elif isinstance(dataset, Sequence) and not isinstance(dataset, (str, bytes)):
             jobs = dataset  # type: ignore[assignment]
+        else:
+            raise TypeError("microset.yaml must contain a mapping or list of job definitions")
+
         records: List[JobRecord] = []
         for entry in jobs:
-            records.append(
-                JobRecord(
-                    job_id=str(entry["id"]),
-                    baseline_acceptance=float(entry["baseline_acceptance"]),
-                    baseline_cost=float(entry["baseline_cost"]),
-                    baseline_latency=float(entry["baseline_latency"]),
+            try:
+                records.append(
+                    JobRecord(
+                        job_id=str(entry["id"]),
+                        baseline_acceptance=float(entry["baseline_acceptance"]),
+                        baseline_cost=float(entry["baseline_cost"]),
+                        baseline_latency=float(entry["baseline_latency"]),
+                    )
                 )
-            )
+            except (KeyError, TypeError, ValueError) as exc:  # pragma: no cover - config guard
+                raise ValueError(f"Invalid job entry in {dataset_path}: {entry}") from exc
+
         if not records:
-            raise ValueError("No jobs configured in microset dataset")
+            raise ValueError(f"No jobs configured in {dataset_path}")
         return records
 
     def load_rules(self) -> Mapping[str, Any]:

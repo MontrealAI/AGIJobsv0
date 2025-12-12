@@ -1,4 +1,5 @@
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -228,3 +229,25 @@ def test_run_cli_positional_strategy(monkeypatch):
     payload, fmt = run_cli(["omni"])
     assert fmt == "json"
     assert payload["strategy"] == "omni"
+
+
+def test_load_jobs_rejects_empty_dataset(tmp_path):
+    base_path = tmp_path / "demo"
+    shutil.copytree(Path(__file__).resolve().parents[1], base_path)
+    microset_path = base_path / "config" / "microset.yaml"
+    microset_path.write_text("", encoding="utf-8")
+
+    orchestrator = DayOneUtilityOrchestrator(base_path)
+    with pytest.raises(ValueError, match="microset.yaml is empty"):
+        orchestrator.load_jobs()
+
+
+def test_load_jobs_validates_job_entries(tmp_path):
+    base_path = tmp_path / "demo"
+    shutil.copytree(Path(__file__).resolve().parents[1], base_path)
+    microset_path = base_path / "config" / "microset.yaml"
+    microset_path.write_text(yaml.safe_dump({"jobs": [{"id": "missing-baseline"}]}), encoding="utf-8")
+
+    orchestrator = DayOneUtilityOrchestrator(base_path)
+    with pytest.raises(ValueError, match="Invalid job entry"):
+        orchestrator.load_jobs()
