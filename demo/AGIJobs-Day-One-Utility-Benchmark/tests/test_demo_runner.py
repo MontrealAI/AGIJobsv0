@@ -126,6 +126,30 @@ def test_missing_owner_controls_file_is_self_healed():
     controls_path.write_text(original, encoding="utf-8")
 
 
+def test_missing_owner_field_is_healed_from_defaults():
+    orchestrator = _orchestrator()
+    controls_path = orchestrator.base_path / "config" / "owner_controls.yaml"
+    defaults_path = orchestrator.base_path / "config" / "owner_controls.defaults.yaml"
+
+    live_payload = yaml.safe_load(controls_path.read_text(encoding="utf-8"))
+    defaults_payload = yaml.safe_load(defaults_path.read_text(encoding="utf-8"))
+
+    # Drop a field to emulate a partially edited configuration file.
+    removed_value = live_payload.pop("narrative")
+    controls_path.write_text(yaml.safe_dump(live_payload, sort_keys=False), encoding="utf-8")
+
+    restored = orchestrator.load_owner_controls()
+
+    assert restored["narrative"] == defaults_payload["narrative"]
+    rewritten_payload = yaml.safe_load(controls_path.read_text(encoding="utf-8"))
+    assert rewritten_payload["narrative"] == defaults_payload["narrative"]
+    # Ensure we did not discard the remaining fields.
+    for key, value in live_payload.items():
+        assert restored[key] == value
+    # Restore original for fixture clean-up.
+    live_payload["narrative"] = removed_value
+
+
 def test_owner_utility_guardrail_override():
     orchestrator = _orchestrator()
     orchestrator.update_owner_control("utility_threshold_override_bps", "1200")

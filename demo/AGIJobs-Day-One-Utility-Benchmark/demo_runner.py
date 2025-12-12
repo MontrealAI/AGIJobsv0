@@ -181,12 +181,24 @@ class DayOneUtilityOrchestrator:
         payload = self._load_yaml(self._owner_config_path)
         if not isinstance(payload, MutableMapping):  # pragma: no cover - config guard
             raise TypeError("owner_controls.yaml must contain a mapping")
-        # Guarantee schema with defaults
+
+        defaults = self._load_owner_defaults()
         snapshot: Dict[str, Any] = {}
-        for key, expected in self.OWNER_SCHEMA.items():
-            if key not in payload:
+        repaired: list[str] = []
+        for key in self.OWNER_SCHEMA.keys():
+            if key in payload:
+                snapshot[key] = payload[key]
+            elif key in defaults:
+                snapshot[key] = defaults[key]
+                repaired.append(key)
+            else:  # pragma: no cover - schema guard
                 raise KeyError(f"Owner controls missing required field: {key}")
-            snapshot[key] = payload[key]
+
+        # Heal the on-disk configuration when we fill in missing defaults so future
+        # runs stay stable even if a manual edit dropped a field.
+        self._validate_owner_controls(snapshot)
+        if repaired:
+            self.save_owner_controls(snapshot)
         return snapshot
 
     def save_owner_controls(self, snapshot: Mapping[str, Any]) -> None:
