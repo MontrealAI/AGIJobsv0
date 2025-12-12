@@ -1109,6 +1109,12 @@ class DayOneUtilityOrchestrator:
             nargs="*",
             help="Optional list of strategy keys to include (defaults to all)",
         )
+        scoreboard.add_argument(
+            "--format",
+            choices=("json", "human"),
+            default="json",
+            help="Set to 'human' for a concise console summary",
+        )
         return parser
 
     def execute(self, args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
@@ -1141,6 +1147,10 @@ class DayOneUtilityOrchestrator:
         if command == "scoreboard":
             strategy_args = getattr(parsed, "strategies", None)
             scoreboard_payload = self.scoreboard(strategy_args)
+            output_format = getattr(parsed, "format", "json")
+            if output_format == "human":
+                summary = self._build_scoreboard_human_summary(scoreboard_payload)
+                return {"scoreboard": scoreboard_payload, "summary": summary}, "human"
             return scoreboard_payload, "json"
         raise ValueError(f"Unknown command {command}")
 
@@ -1176,6 +1186,35 @@ class DayOneUtilityOrchestrator:
                 f"  • Snapshot: {report['outputs']['chart']}",
             ]
         )
+        return "\n".join(lines)
+
+    def _build_scoreboard_human_summary(self, payload: Mapping[str, Any]) -> str:
+        leaders = payload["leaders"]
+        aggregates = payload["aggregates"]
+        guardrail_failures = payload.get("guardrail_failures", [])
+
+        lines = [
+            "Day-One Utility Scoreboard",
+            "Leaders:",
+            f"  • Utility uplift: {leaders['utility_uplift']['title']} ({leaders['utility_uplift']['value']['utility_uplift']*100:.2f}%)",
+            f"  • Treasury: {leaders['owner_treasury']['title']} ({leaders['owner_treasury']['value']['owner_treasury']:.2f})",
+            f"  • Reliability: {leaders['reliability']['title']} ({leaders['reliability']['value']['reliability_score']*100:.1f})",
+            f"  • Latency delta: {leaders['latency_delta']['title']} ({leaders['latency_delta']['value']['latency_delta']*100:.2f}%)",
+            f"  • P95 latency: {leaders['latency_p95']['title']} ({leaders['latency_p95']['value']['latency_p95']:.3f}s)",
+            "Aggregates:",
+            f"  • Total owner treasury: {aggregates['total_owner_treasury']:.2f}",
+            f"  • Average utility uplift: {aggregates['average_utility_uplift']*100:.2f}%",
+            f"  • Average latency delta: {aggregates['average_latency_delta']*100:.2f}%",
+            f"  • Average P95 latency: {aggregates['average_latency_p95']:.3f}s",
+        ]
+
+        if guardrail_failures:
+            lines.append("Guardrail alerts:")
+            for failure in guardrail_failures:
+                failed_list = ", ".join(failure["failed"])
+                lines.append(f"  • {failure['title']} ({failure['strategy']}): {failed_list}")
+
+        lines.append(f"Dashboard: {payload['outputs']['dashboard']}")
         return "\n".join(lines)
 
 
