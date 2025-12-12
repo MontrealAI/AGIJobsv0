@@ -33,6 +33,15 @@ _module = importlib.util.module_from_spec(_spec)
 sys.modules[__name__] = _module
 _spec.loader.exec_module(_module)
 
+# Ensure local helper modules (for example ``run_demo.py``) remain importable
+# alongside the canonical package contents. Without this, Python would only
+# search the Unicode-heavy source directory for submodules, preventing the
+# ASCII-safe wrapper from exposing convenience entrypoints.
+if hasattr(_module, "__path__"):
+    package_path = str(_THIS_DIR)
+    if package_path not in _module.__path__:
+        _module.__path__.append(package_path)
+
 __all__ = getattr(_module, "__all__", [])
 main = getattr(_module, "main")
 
