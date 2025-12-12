@@ -22,7 +22,13 @@ from simulator import (  # type: ignore
 )
 
 
+DEFAULT_CONFIG = CURRENT_DIR / "config.demo.yaml"
+DEFAULT_OUTPUT_DIR = CURRENT_DIR / "reports" / "omni_output"
+
+
 def _load_config(path: pathlib.Path) -> Mapping[str, object]:
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
@@ -91,14 +97,26 @@ def _write_artifacts(output_dir: pathlib.Path, config: Mapping[str, object], res
     if config["report"].get("write_telemetry", False):
         for strategy, summary in results.items():
             save_json(summary["telemetry"], output_dir / f"{strategy}_telemetry.json")
-    dashboards_path = CURRENT_DIR / "dashboards" / "omni_insights.json"
+    dashboards_dir = output_dir / "dashboards"
+    dashboards_dir.mkdir(parents=True, exist_ok=True)
+    dashboards_path = dashboards_dir / "omni_insights.json"
     save_json(results["omni"]["telemetry"], dashboards_path)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Open-Endedness demo")
-    parser.add_argument("--config", type=pathlib.Path, required=True, help="Path to YAML config")
-    parser.add_argument("--output", type=pathlib.Path, required=True, help="Directory to write artifacts")
+    parser.add_argument(
+        "--config",
+        type=pathlib.Path,
+        default=DEFAULT_CONFIG,
+        help=f"Path to YAML config (default: {DEFAULT_CONFIG})",
+    )
+    parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help=f"Directory to write artifacts (default: {DEFAULT_OUTPUT_DIR})",
+    )
     args = parser.parse_args()
 
     config_dict = _load_config(args.config)
