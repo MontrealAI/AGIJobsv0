@@ -159,6 +159,20 @@ def test_scoreboard_generates_dashboard():
     )
 
 
+def test_scoreboard_human_summary(monkeypatch):
+    base_path = Path(__file__).resolve().parents[1]
+    monkeypatch.chdir(base_path)
+
+    payload, fmt = run_cli(["scoreboard", "--format", "human", "--strategies", "e2e"])
+
+    assert fmt == "human"
+    summary = payload["summary"]
+    assert "Day-One Utility Scoreboard" in summary
+    assert "Utility uplift" in summary
+    assert "Dashboard:" in summary
+    assert "P95 latency" in summary
+
+
 def test_execute_human_format_summary():
     orchestrator = _orchestrator()
     payload, fmt = orchestrator.execute(["simulate", "--strategy", "e2e", "--format", "human"])
