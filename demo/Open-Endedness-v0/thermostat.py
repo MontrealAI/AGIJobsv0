@@ -14,7 +14,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Mapping, Optional
 
-from .omni_engine import OmniCurriculumEngine
+# The demo is executed as a loose script (the folder name includes hyphens), so
+# relative imports fail unless we provide a graceful fallback. Mirror the
+# sentinel module's approach so the thermostat works both when imported in
+# tests and when the CLI runs directly from the demo directory.
+try:  # pragma: no cover - exercised during CLI execution
+    from .omni_engine import OmniCurriculumEngine
+except ImportError:  # pragma: no cover - executed when run as a script
+    from omni_engine import OmniCurriculumEngine  # type: ignore[import-not-found]
 
 
 @dataclass
@@ -103,6 +110,25 @@ class ThermostatController:
         self.events: list[Mapping[str, object]] = []
         self._rolling_roi = 0.0
         self._adjustments = 0
+        self._fm_calls_today = 0
+        self._gmv_ema = 0.0
+        self._cost_ema = 0.0
+        self.config = config or ThermostatConfig(
+            roi_target=self.roi_target,
+            roi_floor=self.roi_floor,
+            min_moi_interval=self.min_moi_interval,
+            max_moi_interval=self.max_moi_interval,
+            smoothing_beta=self.smoothing_beta,
+            min_boring_weight=self.min_boring_weight,
+            max_boring_weight=self.max_boring_weight,
+        )
+        self.epsilon_range = dict(self.config.epsilon_range)
+        self.moi_interval_bounds = dict(self.config.moi_interval_bounds)
+        self.fm_cost_per_call = float(self.config.fm_cost_per_call)
+        self.max_daily_fm_cost = float(self.config.max_daily_fm_cost)
+        self.gmvs_smoothing_beta = float(self.config.gmvs_smoothing_beta)
+        self.cost_smoothing_beta = float(self.config.cost_smoothing_beta)
+        self._epsilon = float(self.epsilon_range.get("max", 1.0))
         self.current_interval = max(self.min_moi_interval, (self.min_moi_interval + self.max_moi_interval) // 2)
 
     # ------------------------------------------------------------------
@@ -122,6 +148,10 @@ class ThermostatController:
         next_weight = max(self.min_boring_weight, min(self.engine.moi_client.boring_weight * factor, self.max_boring_weight))
         self.engine.moi_client.boring_weight = next_weight
         return next_weight
+
+    def _clamp_epsilon(self, epsilon: float) -> float:
+        bounds = self.epsilon_range or {"min": 0.0, "max": 1.0}
+        return max(bounds.get("min", 0.0), min(epsilon, bounds.get("max", 1.0)))
 
     # ------------------------------------------------------------------
     def update(self, snapshot: EconomicSnapshot, *, ledger, step: int) -> Dict[str, float]:
@@ -178,3 +208,74 @@ class ThermostatController:
         # The refreshed partition ensures any boring weight changes propagate.
         self.engine.refresh_partition(force=True)
         return adjustments
+
+    # ------------------------------------------------------------------
+    # Backwards-compatible interface expected by the simulator.
+    def ingest_metrics(
+        self,
+        *,
+        roi: float,
+        fm_calls_today: int,
+        cumulative_gmv: float,
+        cumulative_cost: float,
+    ) -> None:
+        """Smooth incoming telemetry for subsequent adjustment decisions."""
+
+        self._fm_calls_today = fm_calls_today
+        # Use exponential smoothing to avoid reacting to single outliers.
+        if self._adjustments == 0:
+            self._gmv_ema = cumulative_gmv
+            self._cost_ema = cumulative_cost
+            self._rolling_roi = roi
+        else:
+            self._gmv_ema = (
+                self.config.gmvs_smoothing_beta * self._gmv_ema
+                + (1 - self.config.gmvs_smoothing_beta) * cumulative_gmv
+            )
+            self._cost_ema = (
+                self.config.cost_smoothing_beta * self._cost_ema
+                + (1 - self.config.cost_smoothing_beta) * cumulative_cost
+            )
+            self._update_rolling_roi(roi)
+
+    def adjust(self) -> Dict[str, float]:
+        """Return epsilon and MoI interval knobs tuned to ROI and cost."""
+
+        epsilon = self._epsilon
+        # If we're overspending on FM calls, stretch the interval to cool off.
+        if (self._fm_calls_today * self.config.fm_cost_per_call) > self.config.max_daily_fm_cost:
+            self.current_interval = min(self.current_interval + 1, self.max_moi_interval)
+            self.events.append(
+                {
+                    "action": "thermostat_fm_budget_guard",
+                    "fm_calls": self._fm_calls_today,
+                    "interval": self.current_interval,
+                }
+            )
+
+        if self._rolling_roi < self.roi_floor:
+            epsilon = self._clamp_epsilon(epsilon * 1.2)
+            self.current_interval = min(self.current_interval + 1, self.max_moi_interval)
+            self.events.append(
+                {
+                    "action": "thermostat_roi_recovery",
+                    "roi": self._rolling_roi,
+                    "epsilon": epsilon,
+                    "interval": self.current_interval,
+                }
+            )
+        elif self._rolling_roi > self.roi_target:
+            epsilon = self._clamp_epsilon(epsilon * 0.9)
+            self.current_interval = max(self.current_interval - 1, self.min_moi_interval)
+            self.events.append(
+                {
+                    "action": "thermostat_roi_compound",
+                    "roi": self._rolling_roi,
+                    "epsilon": epsilon,
+                    "interval": self.current_interval,
+                }
+            )
+
+        self._epsilon = epsilon
+        self._adjustments += 1
+        return {"epsilon": epsilon, "moi_interval": float(self.current_interval)}
