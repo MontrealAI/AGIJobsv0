@@ -6,9 +6,10 @@ async function loadMermaid() {
   }
 
   try {
-    mermaidModule = await import(
+    const mermaidNamespace = await import(
       "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
     );
+    mermaidModule = mermaidNamespace?.default ?? mermaidNamespace;
   } catch (error) {
     console.error("Failed to load mermaid from CDN", error);
     mermaidModule = null;
