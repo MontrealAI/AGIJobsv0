@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import http.client
 import importlib.util
+import threading
 from pathlib import Path
 
 import pytest
@@ -49,3 +51,22 @@ def test_format_summary_includes_key_metrics():
         "Pending fees: 20.425 AGIα",
     ]:
         assert phrase in summary
+
+
+def test_create_server_binds_localhost_and_serves_assets():
+    with run_demo.create_server("127.0.0.1", 0) as server:
+        host, port = server.server_address[:2]
+        assert server.allow_reuse_address is True
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        conn = http.client.HTTPConnection(host, port, timeout=2)
+        conn.request("GET", "/")
+        response = conn.getresponse()
+        body = response.read().decode()
+
+        server.shutdown()
+        thread.join(timeout=1)
+
+        assert response.status == 200
+        assert "AGI Jobs v2 Sovereign Labour Market Control Room" in body
