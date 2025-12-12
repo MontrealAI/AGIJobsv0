@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import importlib
 import json
 import random
@@ -192,7 +193,7 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
             job.worker or "unknown",
         )
         validation_task = asyncio.create_task(self._run_validation(job), name=f"validation-{job_id}")
-        self._validation_tasks.append(validation_task)
+        self._track_validation_task(validation_task, job_id)
 
     async def request_validation(self, job: Job) -> None:
         await self.bus.publish("validation:commit", {"job_id": job.job_id}, "orchestrator")
@@ -263,6 +264,28 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
                 }
             )
             await self._refresh_mermaid_dashboard()
+
+    def _track_validation_task(self, task: asyncio.Task, job_id: str) -> None:
+        """Track validation tasks and eagerly prune them once finished."""
+
+        self._validation_tasks.append(task)
+
+        def _cleanup(completed: asyncio.Future) -> None:
+            with contextlib.suppress(ValueError):
+                self._validation_tasks.remove(completed)
+            if completed.cancelled():
+                return
+            exc = completed.exception()
+            if exc:
+                asyncio.get_event_loop().call_exception_handler(
+                    {
+                        "message": "validation task failed",
+                        "exception": exc,
+                        "job_id": job_id,
+                    }
+                )
+
+        task.add_done_callback(_cleanup)
 
     async def _cycle_loop(self) -> None:
         target_cycles = self.config.cycles
