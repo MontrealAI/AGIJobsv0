@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     suites = list(_discover_tests(demo_root, include=include))
 
     with tempfile.TemporaryDirectory(prefix="demo-orchestrator-") as runtime_dir:
-        env_overrides = _configure_runtime_env(Path(runtime_dir))
+        runtime_root = Path(runtime_dir)
 
         if args.list:
             if not suites:
@@ -160,6 +160,10 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
 
         results: list[tuple[Path, int]] = []
         for demo_dir, tests_dir in suites:
+            # Allocate an isolated runtime sandbox per suite to eliminate
+            # cross-contamination between demos that rely on orchestrator state.
+            suite_runtime = runtime_root / tests_dir.parent.name
+            env_overrides = _configure_runtime_env(suite_runtime)
             results.append((tests_dir, _run_suite(demo_dir, tests_dir, env_overrides)))
 
         failed = [(path, code) for path, code in results if code]
