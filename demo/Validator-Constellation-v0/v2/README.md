@@ -22,7 +22,7 @@ flowchart LR
 ```
 
 ## Working With This Module
-1. From the repository root run `npm install` once to hydrate all workspaces.
+1. Run `npm install` inside this module (`demo/Validator-Constellation-v0/v2`) or let the new bootstrap hook handle it automatically when you execute `npm run demo` or `npm test`.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Validator-Constellation-v0/v2`.
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
