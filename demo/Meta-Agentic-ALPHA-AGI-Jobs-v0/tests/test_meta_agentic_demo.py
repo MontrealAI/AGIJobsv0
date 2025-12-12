@@ -23,13 +23,14 @@ def test_meta_agentic_demo_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
         outcome = run_demo(config, timeout=20.0)
 
         assert outcome.status.run.state == "succeeded"
-        summary_path = working_copy / "storage" / "latest_run.json"
+        storage_root = Path(outcome.metadata["storage_root"])
+        summary_path = storage_root.parent / "latest_run.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         assert summary["state"] == "succeeded"
         assert summary["completedSteps"] == summary["totalSteps"]
         assert summary["estimatedAlphaProbability"] > 0.5
 
-        scoreboard_path = working_copy / "storage" / "orchestrator" / "scoreboard.json"
+        scoreboard_path = storage_root / "scoreboard.json"
         assert scoreboard_path.exists()
         payload = json.loads(scoreboard_path.read_text(encoding="utf-8"))
         assert isinstance(payload, dict)

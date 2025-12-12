@@ -15,6 +15,7 @@ import argparse
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Iterable
 
@@ -41,8 +42,32 @@ def _build_pythonpath(demo_root: Path) -> str:
     return os.pathsep.join(dict.fromkeys(entries))
 
 
-def _run_suite(demo_root: Path, tests_dir: Path) -> int:
+def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
+    """Route orchestrator state into a temporary sandbox."""
+
+    storage_root = runtime_root / "orchestrator"
+    overrides = {
+        "ORCHESTRATOR_SCOREBOARD_PATH": storage_root / "scoreboard.json",
+        "ORCHESTRATOR_CHECKPOINT_PATH": storage_root / "checkpoint.json",
+        "ORCHESTRATOR_CHECKPOINT_LEVELDB": storage_root / "checkpoint.db",
+        "ORCHESTRATOR_GOVERNANCE_PATH": storage_root / "governance.json",
+        "ORCHESTRATOR_STATE_DIR": storage_root / "runs",
+        "AGENT_REGISTRY_PATH": storage_root / "agents" / "registry.json",
+    }
+
+    for path in overrides.values():
+        target = Path(path)
+        if target.suffix:
+            target.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            target.mkdir(parents=True, exist_ok=True)
+
+    return {key: str(value) for key, value in overrides.items()}
+
+
+def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) -> int:
     env = os.environ.copy()
+    env.update(env_overrides)
     env["PYTHONPATH"] = _build_pythonpath(demo_root)
     cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
     print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
@@ -117,32 +142,35 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(_discover_tests(demo_root, include=include))
 
-    if args.list:
+    with tempfile.TemporaryDirectory(prefix="demo-orchestrator-") as runtime_dir:
+        env_overrides = _configure_runtime_env(Path(runtime_dir))
+
+        if args.list:
+            if not suites:
+                print("No demo test suites found for the provided filters.")
+                return 1
+            print("Discovered demo test suites:")
+            for _, tests_dir in suites:
+                print(f" - {tests_dir}")
+            return 0
+
         if not suites:
             print("No demo test suites found for the provided filters.")
             return 1
-        print("Discovered demo test suites:")
-        for _, tests_dir in suites:
-            print(f" - {tests_dir}")
+
+        results: list[tuple[Path, int]] = []
+        for demo_dir, tests_dir in suites:
+            results.append((tests_dir, _run_suite(demo_dir, tests_dir, env_overrides)))
+
+        failed = [(path, code) for path, code in results if code]
+        if failed:
+            print("\n⚠️  Demo test runs completed with failures:")
+            for tests_dir, code in failed:
+                print(f"   • {tests_dir} (exit code {code})")
+            return 1
+
+        print(f"\n✅ All demo test suites passed ({len(results)} suites).")
         return 0
-
-    if not suites:
-        print("No demo test suites found for the provided filters.")
-        return 1
-
-    results: list[tuple[Path, int]] = []
-    for demo_dir, tests_dir in suites:
-        results.append((tests_dir, _run_suite(demo_dir, tests_dir)))
-
-    failed = [(path, code) for path, code in results if code]
-    if failed:
-        print("\n⚠️  Demo test runs completed with failures:")
-        for tests_dir, code in failed:
-            print(f"   • {tests_dir} (exit code {code})")
-        return 1
-
-    print(f"\n✅ All demo test suites passed ({len(results)} suites).")
-    return 0
 
 
 if __name__ == "__main__":

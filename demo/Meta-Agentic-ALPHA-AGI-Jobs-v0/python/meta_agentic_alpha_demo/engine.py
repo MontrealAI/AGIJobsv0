@@ -4,25 +4,27 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Iterable, List
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List
 
 import yaml
 
-from orchestrator.agents import AgentRegistryError, get_registry
-from orchestrator.models import (
-    AgentCapability,
-    AgentRegistrationIn,
-    AgentSecurityControls,
-    AgentStake,
-    Attachment,
-    JobIntent,
-    OrchestrationPlan,
-    Step,
-)
+if TYPE_CHECKING:  # pragma: no cover - type checking only
+    from orchestrator.agents import AgentRegistryError
+    from orchestrator.models import (
+        AgentCapability,
+        AgentRegistrationIn,
+        AgentSecurityControls,
+        AgentStake,
+        Attachment,
+        JobIntent,
+        OrchestrationPlan,
+        Step,
+    )
 
 
 @dataclass
@@ -80,12 +82,34 @@ def load_configuration(path: str | Path) -> DemoConfiguration:
     return DemoConfiguration(path=config_path, payload=payload)
 
 
-def _ensure_directories(base_dir: Path) -> Dict[str, Path]:
-    storage_root = base_dir / "storage" / "orchestrator"
-    storage_root.mkdir(parents=True, exist_ok=True)
-    (storage_root / "agents").mkdir(parents=True, exist_ok=True)
-    (storage_root / "runs").mkdir(parents=True, exist_ok=True)
+def _get_runtime_storage_root(base_dir: Path) -> Path:
+    """Return an isolated storage root for the orchestrator run.
+
+    The repo contains fixture data under ``storage/orchestrator``. To avoid
+    mutating tracked files during a demo run, we materialize a runtime copy
+    under ``storage/runtime/orchestrator`` and point all environment
+    variables at that location.
+    """
+
+    template_root = base_dir / "storage" / "orchestrator"
+    runtime_root = base_dir / "storage" / "runtime" / "orchestrator"
+    runtime_root.mkdir(parents=True, exist_ok=True)
+
+    if template_root.exists():
+        shutil.copytree(template_root, runtime_root, dirs_exist_ok=True)
+
+    (runtime_root / "agents").mkdir(parents=True, exist_ok=True)
+    (runtime_root / "runs").mkdir(parents=True, exist_ok=True)
     (base_dir / "reports").mkdir(parents=True, exist_ok=True)
+
+    scoreboard_file = runtime_root / "scoreboard.json"
+    scoreboard_file.touch(exist_ok=True)
+
+    return runtime_root
+
+
+def _ensure_directories(base_dir: Path) -> Dict[str, Path]:
+    storage_root = _get_runtime_storage_root(base_dir)
 
     defaults = {
         "ORCHESTRATOR_BRIDGE_MODE": "python",
@@ -100,10 +124,15 @@ def _ensure_directories(base_dir: Path) -> Dict[str, Path]:
     for key, value in defaults.items():
         os.environ.setdefault(key, str(value))
 
-    return {key: Path(str(value)) for key, value in defaults.items()}
+    resolved = {key: Path(str(value)) for key, value in defaults.items()}
+    resolved["ORCHESTRATOR_STORAGE_ROOT"] = storage_root
+    resolved["ORCHESTRATOR_STORAGE_RUNTIME_ROOT"] = storage_root.parent
+    return resolved
 
 
 def _hydrate_attachments(config: DemoConfiguration) -> List[Attachment]:
+    from orchestrator.models import Attachment
+
     attachments: List[Attachment] = []
     dashboards = config.demo.get("dashboards", [])
     for entry in dashboards:
@@ -123,6 +152,9 @@ def _hydrate_attachments(config: DemoConfiguration) -> List[Attachment]:
 
 
 def _register_agents(config: DemoConfiguration) -> List[str]:
+    from orchestrator.agents import AgentRegistryError, get_registry
+    from orchestrator.models import AgentCapability, AgentRegistrationIn, AgentSecurityControls, AgentStake
+
     registry = get_registry()
     existing = {agent.agent_id for agent in registry.list().agents}
     onboarded: List[str] = []
@@ -167,6 +199,8 @@ def _register_agents(config: DemoConfiguration) -> List[str]:
 
 
 def _build_plan(config: DemoConfiguration, attachments: Iterable[Attachment]) -> OrchestrationPlan:
+    from orchestrator.models import Attachment, JobIntent, OrchestrationPlan, Step
+
     intent = JobIntent(
         kind="custom",
         title=config.demo.get("name") or "Meta-Agentic α-AGI Jobs Demo",
@@ -199,7 +233,7 @@ def _await_completion(run_id: str, timeout: float = 30.0, poll: float = 0.2) -> 
 
 
 def _write_summary(
-    base_dir: Path,
+    storage_root: Path,
     status: Any,
     plan: OrchestrationPlan,
     onboarded_agents: List[str],
@@ -222,7 +256,7 @@ def _write_summary(
         "logs": status.logs,
         "steps": [step.model_dump() for step in plan.steps],
     }
-    summary_path = base_dir / "storage" / "latest_run.json"
+    summary_path = storage_root.parent / "latest_run.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.write_text(json.dumps(summary_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return summary_path
@@ -231,7 +265,7 @@ def _write_summary(
 def run_demo(config: DemoConfiguration, *, timeout: float = 60.0) -> DemoOutcome:
     """Execute the configured Meta-Agentic demo end-to-end."""
 
-    _ensure_directories(config.base_dir)
+    storage_paths = _ensure_directories(config.base_dir)
     attachments = _hydrate_attachments(config)
     onboarded_agents = _register_agents(config)
     plan = _build_plan(config, attachments)
@@ -241,7 +275,12 @@ def run_demo(config: DemoConfiguration, *, timeout: float = 60.0) -> DemoOutcome
 
     run_info = start_run(plan, approvals=config.approvals)
     status = _await_completion(run_info.id, timeout=timeout)
-    summary_path = _write_summary(config.base_dir, status, plan, onboarded_agents)
+    summary_path = _write_summary(
+        storage_paths["ORCHESTRATOR_SCOREBOARD_PATH"].parent,
+        status,
+        plan,
+        onboarded_agents,
+    )
 
     outcome = DemoOutcome(
         run_id=run_info.id,
@@ -252,6 +291,7 @@ def run_demo(config: DemoConfiguration, *, timeout: float = 60.0) -> DemoOutcome
         metadata={
             "attachments": [attachment.model_dump() for attachment in attachments],
             "onboarded_agents": onboarded_agents,
+            "storage_root": str(storage_paths["ORCHESTRATOR_SCOREBOARD_PATH"].parent),
         },
     )
     return outcome
