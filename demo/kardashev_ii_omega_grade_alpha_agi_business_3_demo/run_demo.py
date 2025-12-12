@@ -14,9 +14,17 @@ import sys
 from typing import Iterable, Optional
 
 
+PACKAGE_NAME = "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo"
+
+
 def _resolve_main():
-    package = importlib.import_module(__package__ or __name__.rsplit(".", 1)[0])
-    return package.main
+    package_name = __package__ or PACKAGE_NAME
+    package = importlib.import_module(package_name)
+
+    try:
+        return package.main
+    except AttributeError as exc:  # pragma: no cover - defensive
+        raise AttributeError(f"{package_name} does not expose a 'main' callable") from exc
 
 
 def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
