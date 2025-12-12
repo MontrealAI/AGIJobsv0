@@ -7,7 +7,7 @@ import asyncio
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
@@ -15,7 +15,12 @@ from .orchestrator import Orchestrator, OrchestratorConfig
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo")
-    parser.add_argument("--cycles", type=int, default=0, help="Number of cycles to execute (0 = run indefinitely)")
+    parser.add_argument(
+        "--cycles",
+        type=int,
+        default=5,
+        help="Number of cycles to execute (0 = run indefinitely). Default keeps demo runs finite.",
+    )
     parser.add_argument("--checkpoint", type=Path, default=Path("checkpoint.json"), help="Path to checkpoint file")
     parser.add_argument("--no-resume", action="store_true", help="Do not resume from checkpoint")
     parser.add_argument("--no-sim", action="store_true", help="Disable the synthetic planetary simulation")
@@ -86,8 +91,14 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     return build_parser().parse_args(argv)
 
 
-async def _run_async(args: argparse.Namespace) -> None:
-    overrides = {}
+def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] = None) -> OrchestratorConfig:
+    """Construct the orchestrator configuration from CLI args.
+
+    Exposed for tests so the default lifecycle (finite by default, opt-in infinite)
+    stays verifiable without driving the full async runtime.
+    """
+
+    overrides = overrides or {}
     if args.config:
         if not args.config.exists():
             raise FileNotFoundError(f"Config file not found: {args.config}")
@@ -132,7 +143,12 @@ async def _run_async(args: argparse.Namespace) -> None:
     }
     params.update(overrides)
 
-    config = OrchestratorConfig(**params)
+    return OrchestratorConfig(**params)
+
+
+async def _run_async(args: argparse.Namespace) -> None:
+    overrides: dict[str, Any] = {}
+    config = build_config(args, overrides)
     orchestrator = Orchestrator(config)
     try:
         await orchestrator.start()
