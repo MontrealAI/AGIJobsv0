@@ -1,4 +1,21 @@
-import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+let mermaidModule;
+
+async function loadMermaid() {
+  if (mermaidModule !== undefined) {
+    return mermaidModule;
+  }
+
+  try {
+    mermaidModule = await import(
+      "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
+    );
+  } catch (error) {
+    console.error("Failed to load mermaid from CDN", error);
+    mermaidModule = null;
+  }
+
+  return mermaidModule;
+}
 
 async function fetchJson(path) {
   const response = await fetch(path);
@@ -152,13 +169,27 @@ function renderMetrics(telemetry) {
 let mermaidInitialised = false;
 
 async function renderMermaidDiagram(path, containerId, renderId) {
+  const container = document.querySelector(`#${containerId}`);
+  if (!container) {
+    console.warn(`Mermaid container #${containerId} not found for ${path}`);
+    return;
+  }
+
   const source = await fetchText(path);
+  const mermaid = await loadMermaid();
+  if (!mermaid) {
+    container.textContent =
+      "Diagram renderer unavailable — check connectivity to the Mermaid CDN and retry.";
+    container.classList.add("status-warn");
+    return;
+  }
+
   if (!mermaidInitialised) {
     await mermaid.initialize({ theme: "dark", securityLevel: "loose", startOnLoad: false });
     mermaidInitialised = true;
   }
+
   const { svg } = await mermaid.render(renderId, source);
-  const container = document.querySelector(`#${containerId}`);
   container.innerHTML = svg;
 }
 
