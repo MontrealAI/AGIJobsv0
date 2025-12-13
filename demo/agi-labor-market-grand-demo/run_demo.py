@@ -166,12 +166,20 @@ def build_parser() -> argparse.ArgumentParser:
         description="Run the AGI Labor Market Grand Demo utilities",
     )
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    # Default to the quick "summarize" path so that `python run_demo.py`
+    # works out-of-the-box without extra flags. This mirrors the ergonomics of
+    # other demos in the repository and avoids surprising argparse failures.
+    parser.set_defaults(command="summarize", transcript=DEFAULT_TRANSCRIPT)
+
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.required = False
+    subparsers.default = "summarize"
 
     summary_parser = subparsers.add_parser(
         "summarize",
         help="Print telemetry derived from the bundled transcript",
     )
+    summary_parser.set_defaults(command="summarize")
     summary_parser.add_argument(
         "--transcript",
         type=Path,
@@ -183,6 +191,7 @@ def build_parser() -> argparse.ArgumentParser:
         "serve",
         help="Serve the static UI from the ui/ directory",
     )
+    serve_parser.set_defaults(command="serve")
     serve_parser.add_argument("--port", type=int, default=8000, help="Port to bind")
     serve_parser.add_argument(
         "--host",

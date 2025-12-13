@@ -54,6 +54,14 @@ def test_format_summary_includes_key_metrics():
         assert phrase in summary
 
 
+def test_main_defaults_to_summarize(capsys):
+    assert run_demo.main([]) == 0
+
+    out = capsys.readouterr().out
+    assert "AGI Labor Market Grand Demo" in out
+    assert "Total jobs" in out
+
+
 def test_create_server_binds_localhost_and_serves_assets():
     with run_demo.create_server("127.0.0.1", 0) as server:
         host, port = server.server_address[:2]
