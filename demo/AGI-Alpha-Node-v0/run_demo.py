@@ -8,6 +8,7 @@ additional arguments to reach the full interactive console.
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -20,10 +21,11 @@ spec.loader.exec_module(_run_alpha_node)
 
 
 def main(argv: Optional[Iterable[str]] = None) -> int:
-    if argv is None:
-        argv = ["--config", str(_run_alpha_node.DEFAULT_CONFIG), "--action", "status"]
-    return _run_alpha_node.main(argv)
+    args = list(argv) if argv is not None else None
+    if not args:
+        args = ["--config", str(_run_alpha_node.DEFAULT_CONFIG), "--action", "status"]
+    return _run_alpha_node.main(args)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
