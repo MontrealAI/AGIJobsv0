@@ -104,6 +104,8 @@ class AlphaNodeConfig:
             Location of the configuration file.
         """
 
+        config_dir = path.parent
+
         with path.open("rb") as fh:
             raw = tomllib.load(fh)
 
@@ -112,6 +114,10 @@ class AlphaNodeConfig:
                 return raw[section][key]
             except KeyError as exc:  # pragma: no cover - defensive
                 raise KeyError(f"Missing configuration value {section}.{key}") from exc
+
+        job_source = Path(_require("jobs", "job_source")).expanduser()
+        if not job_source.is_absolute():
+            job_source = (config_dir / job_source).resolve()
 
         return cls(
             ens=ENSSettings(
@@ -135,7 +141,7 @@ class AlphaNodeConfig:
                 polling_interval_seconds=float(
                     _require("jobs", "polling_interval_seconds")
                 ),
-                job_source=Path(_require("jobs", "job_source")).expanduser(),
+                job_source=job_source,
             ),
             knowledge=KnowledgeSettings(
                 storage_path=Path(_require("knowledge", "storage_path")).expanduser(),
