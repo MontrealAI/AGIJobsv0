@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import types
 from pathlib import Path
+import os
 
 import pytest
 
@@ -65,3 +66,33 @@ def test_list_flag_does_not_execute_suites(monkeypatch: pytest.MonkeyPatch, demo
     assert "Discovered demo test suites" in out
     assert "alpha-demo/tests" in out
     assert "beta-suite/tests" in out
+
+
+def test_pythonpath_deduplicates_and_filters_empty(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo-root"
+    (demo_root / "grand_demo" / "alpha_node").mkdir(parents=True)
+    (demo_root / "grand_demo").mkdir(exist_ok=True)
+    (demo_root / "src").mkdir()
+
+    extras = tmp_path / "extras"
+    extras.mkdir()
+
+    monkeypatch.setenv(
+        "PYTHONPATH",
+        os.pathsep.join([
+            str(demo_root / "src"),
+            "",  # empty entries should be filtered out
+            str(extras),
+        ]),
+    )
+
+    pythonpath = run_demo_tests._build_pythonpath(demo_root)
+    entries = pythonpath.split(os.pathsep)
+
+    assert entries == [
+        str((demo_root / "grand_demo" / "alpha_node").resolve()),
+        str((demo_root / "grand_demo").resolve()),
+        str((demo_root / "src").resolve()),
+        str(demo_root.resolve()),
+        str(extras.resolve()),
+    ]
