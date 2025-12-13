@@ -26,7 +26,6 @@ def test_run_forwards_arguments(monkeypatch):
 
 def test_run_as_script_uses_package_main(monkeypatch):
     repo_root = Path(__file__).resolve().parents[3]
-    monkeypatch.syspath_prepend(str(repo_root))
 
     script_path = repo_root / "demo" / "kardashev_ii_omega_grade_alpha_agi_business_3_demo" / "run_demo.py"
 
@@ -45,3 +44,4 @@ def test_run_as_script_uses_package_main(monkeypatch):
     runpy.run_path(str(script_path), run_name="__main__")
 
     assert captured["argv"] == []
+    assert str(repo_root) in sys.path

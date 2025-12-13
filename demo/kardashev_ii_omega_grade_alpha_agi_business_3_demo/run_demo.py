@@ -11,10 +11,14 @@ from __future__ import annotations
 
 import importlib
 import sys
+from pathlib import Path
 from typing import Iterable, Optional
 
 
 PACKAGE_NAME = "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo"
+THIS_DIR = Path(__file__).resolve().parent
+DEMO_ROOT = THIS_DIR.parent
+REPO_ROOT = DEMO_ROOT.parent
 
 
 def _resolve_main():
@@ -41,6 +45,11 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
 
     if argv is None:
         argv = sys.argv[1:]
+
+    for path in (REPO_ROOT, DEMO_ROOT):
+        path_str = str(path)
+        if path_str not in sys.path:
+            sys.path.insert(0, path_str)
 
     launcher = main_fn or _resolve_main()
     launcher(list(argv))
