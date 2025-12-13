@@ -35,11 +35,25 @@ def _candidate_paths(demo_root: Path) -> Iterable[Path]:
 
 
 def _build_pythonpath(demo_root: Path) -> str:
-    entries = [str(path) for path in _candidate_paths(demo_root)]
-    existing = os.environ.get("PYTHONPATH", "")
+    entries: list[str] = []
+    seen: set[str] = set()
+
+    def _remember(path: Path) -> None:
+        resolved = str(path.resolve())
+        if resolved and resolved not in seen:
+            seen.add(resolved)
+            entries.append(resolved)
+
+    for path in _candidate_paths(demo_root):
+        _remember(path)
+
+    existing = os.environ.get("PYTHONPATH")
     if existing:
-        entries.append(existing)
-    return os.pathsep.join(dict.fromkeys(entries))
+        for segment in existing.split(os.pathsep):
+            if segment:
+                _remember(Path(segment))
+
+    return os.pathsep.join(entries)
 
 
 def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
