@@ -8,6 +8,7 @@ command, matching the expectations set by the other demos in this repository.
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import re
 import socketserver
@@ -121,12 +122,33 @@ def create_server(host: str, port: int) -> socketserver.TCPServer:
     return ReusableThreadingServer((host, port), DemoHandler)
 
 
+def _bind_server_with_fallback(host: str, port: int) -> tuple[socketserver.TCPServer, str | None]:
+    """Return a server, retrying with an ephemeral port if the requested one is busy."""
+
+    try:
+        server = create_server(host, port)
+        return server, None
+    except OSError as exc:
+        if exc.errno == errno.EADDRINUSE and port != 0:
+            fallback_server = create_server(host, 0)
+            note = (
+                "Requested port %s was busy; using %s instead"
+                % (port, fallback_server.server_address[1])
+            )
+            return fallback_server, note
+        raise
+
+
 def run_server(port: int, open_browser: bool = True, host: str = "127.0.0.1") -> None:
     """Serve the static UI and optionally open the browser."""
 
-    with create_server(host, port) as httpd:
+    server, note = _bind_server_with_fallback(host, port)
+
+    with server as httpd:
         resolved_host, resolved_port = httpd.server_address[:2]
         url = f"http://{resolved_host}:{resolved_port}/"
+        if note:
+            print(note)
         print(f"Serving AGI Labor Market Grand Demo UI at {url}")
         if open_browser:
             webbrowser.open_new_tab(url)
