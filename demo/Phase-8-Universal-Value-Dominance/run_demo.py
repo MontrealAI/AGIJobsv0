@@ -4,10 +4,13 @@ This lightweight Python entrypoint mirrors the guardrails baked into the
 TypeScript console (`scripts/run-phase8-demo.ts`). It loads the manifest,
 validates key addresses, computes coverage + resilience heuristics, and
 emits a JSON report for operators. Running it locally ensures the demo
-stays runnable even without the Node.js toolchain.
+stays runnable even without the Node.js toolchain. The CLI intentionally
+stays minimal while supporting custom manifest/output paths to ease
+orchestration in CI runners or downstream simulations.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import statistics
@@ -132,8 +135,9 @@ def validate_addresses(global_section: Mapping[str, Any]) -> list[str]:
     return invalid_keys
 
 
-def save_report(metrics: PhaseMetrics, manifest: Mapping[str, Any]) -> None:
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+def save_report(metrics: PhaseMetrics, manifest: Mapping[str, Any], *, output_path: Path = REPORT_PATH) -> None:
+    output_path = output_path.resolve()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     report = {
         "totals": {
             "monthlyUSD": metrics.total_monthly_usd,
@@ -159,25 +163,59 @@ def save_report(metrics: PhaseMetrics, manifest: Mapping[str, Any]) -> None:
             "systemPause": normalise_address(manifest.get("global", {}).get("systemPause")),
         },
     }
-    REPORT_PATH.write_text(json.dumps(report, indent=2))
+    output_path.write_text(json.dumps(report, indent=2))
 
 
-def main() -> int:
-    manifest = load_manifest(MANIFEST_PATH)
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=MANIFEST_PATH,
+        help="Path to the universal value manifest JSON file to evaluate.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=REPORT_PATH,
+        help="Where to write the generated telemetry report (JSON).",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress human-readable telemetry output (still writes the report).",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+
+    manifest_path = args.manifest.resolve()
+    output_path = args.output.resolve()
+
+    manifest = load_manifest(manifest_path)
     invalid_addresses = validate_addresses(manifest.get("global", {}))
     metrics = compute_metrics(manifest)
-    save_report(metrics, manifest)
+    save_report(metrics, manifest, output_path=output_path)
 
-    print("🛰️  Phase 8 — Universal Value Dominance :: Telemetry")
-    print(f"• Monthly economic throughput (USD): {metrics.total_monthly_usd:,.0f}")
-    print(f"• Dominance score: {metrics.dominance_score:.1f} / 100")
-    print(f"• Coverage ratio: {metrics.coverage_ratio:.2%} across sentinels")
-    print(f"• Average resilience: {metrics.average_resilience:.2%}")
-    if invalid_addresses:
-        print(f"• ⚠️  Global address fields need review: {', '.join(sorted(invalid_addresses))}")
-    else:
-        print("• Global address fields validated")
-    print(f"• Report saved to {REPORT_PATH.relative_to(PHASE_ROOT)}")
+    if not args.quiet:
+        print("🛰️  Phase 8 — Universal Value Dominance :: Telemetry")
+        print(f"• Monthly economic throughput (USD): {metrics.total_monthly_usd:,.0f}")
+        print(f"• Dominance score: {metrics.dominance_score:.1f} / 100")
+        print(f"• Coverage ratio: {metrics.coverage_ratio:.2%} across sentinels")
+        print(f"• Average resilience: {metrics.average_resilience:.2%}")
+        if invalid_addresses:
+            print(f"• ⚠️  Global address fields need review: {', '.join(sorted(invalid_addresses))}")
+        else:
+            print("• Global address fields validated")
+        display_path = output_path
+        try:
+            display_path = output_path.relative_to(PHASE_ROOT)
+        except ValueError:
+            pass
+        print(f"• Report saved to {display_path}")
 
     return 1 if invalid_addresses else 0
 

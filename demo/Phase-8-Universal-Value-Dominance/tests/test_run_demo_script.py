@@ -36,3 +36,27 @@ def test_report_addresses_are_normalised():
     for field, value in payload["global"].items():
         assert value.startswith("0x"), f"{field} should look like an address"
         assert value == value.lower()
+
+
+def test_custom_output_and_quiet_mode(tmp_path):
+    custom_output = tmp_path / "custom_report.json"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_PATH),
+            "--output",
+            str(custom_output),
+            "--quiet",
+        ],
+        cwd=PHASE_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.strip() == ""
+    assert custom_output.exists()
+
+    payload = json.loads(custom_output.read_text())
+    assert payload["totals"]["monthlyUSD"] > 0
