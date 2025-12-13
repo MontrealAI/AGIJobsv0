@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import http.client
 import importlib.util
+import socket
 import threading
 from pathlib import Path
 
@@ -70,3 +71,31 @@ def test_create_server_binds_localhost_and_serves_assets():
 
         assert response.status == 200
         assert "AGI Jobs v2 Sovereign Labour Market Control Room" in body
+
+
+def test_bind_server_with_fallback_uses_ephemeral_port_when_busy():
+    blocker = socket.socket()
+    blocker.bind(("127.0.0.1", 0))
+    busy_port = blocker.getsockname()[1]
+
+    server, note = run_demo._bind_server_with_fallback("127.0.0.1", busy_port)
+
+    try:
+        assert note is not None
+        _, chosen_port = server.server_address[:2]
+        assert chosen_port != busy_port
+
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        conn = http.client.HTTPConnection("127.0.0.1", chosen_port, timeout=2)
+        conn.request("GET", "/")
+        response = conn.getresponse()
+
+        server.shutdown()
+        thread.join(timeout=1)
+
+        assert response.status == 200
+    finally:
+        server.server_close()
+        blocker.close()
