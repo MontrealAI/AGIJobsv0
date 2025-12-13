@@ -119,10 +119,11 @@ def _discover_tests(
         name = path.name.lower()
         return any(token in name for token in include)
 
-    for demo_dir in sorted(p for p in demo_root.iterdir() if p.is_dir()):
+    # Iterate in a deterministic order so CI logs remain stable across runs.
+    for demo_dir in sorted((p for p in demo_root.iterdir() if p.is_dir())):
         if not _matches_filter(demo_dir):
             continue
-        for tests_dir in demo_dir.rglob("tests"):
+        for tests_dir in sorted(demo_dir.rglob("tests")):
             if not tests_dir.is_dir() or "node_modules" in tests_dir.parts:
                 continue
             if not _has_python_tests(tests_dir):
