@@ -48,13 +48,16 @@ if (!config.global || !config.global.manifestURI) {
 }
 
 const addressPattern = /^0x[0-9a-fA-F]{40}$/;
+const bytes32Pattern = /^0x[0-9a-fA-F]{64}$/;
+
+function validateAddress(value, context) {
+  if (!value || typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
+    fail(`${context} must be a non-zero 0x-prefixed address.`);
+  }
+}
+
 ['iotOracleRouter', 'defaultL2Gateway', 'didRegistry', 'treasuryBridge', 'systemPause', 'escalationBridge'].forEach(
-  (key) => {
-    const value = config.global[key];
-    if (!value || typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
-      fail(`Global ${key} must be a non-zero 0x-prefixed address.`);
-    }
-  },
+  (key) => validateAddress(config.global[key], `Global ${key}`),
 );
 
 const guards = config.global.guards;
@@ -175,7 +178,7 @@ if (!globalTelemetry || typeof globalTelemetry !== 'object') {
 }
 ['manifestHash', 'metricsDigest'].forEach((field) => {
   const value = globalTelemetry[field];
-  if (!value || typeof value !== 'string' || value.length !== 66 || !value.startsWith('0x')) {
+  if (!value || typeof value !== 'string' || !bytes32Pattern.test(value)) {
     fail(`global.telemetry.${field} must be a bytes32 hex string.`);
   }
 });
@@ -191,10 +194,7 @@ if (!globalInfrastructure || typeof globalInfrastructure !== 'object') {
   fail('Global infrastructure configuration is required.');
 }
 ['meshCoordinator', 'dataLake', 'identityBridge'].forEach((field) => {
-  const value = globalInfrastructure[field];
-  if (!value || typeof value !== 'string' || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
-    fail(`global.infrastructure.${field} must be a non-zero 0x-prefixed address.`);
-  }
+  validateAddress(globalInfrastructure[field], `global.infrastructure.${field}`);
 });
 if (!globalInfrastructure.topologyURI || typeof globalInfrastructure.topologyURI !== 'string') {
   fail('global.infrastructure.topologyURI must be a non-empty string.');
@@ -238,13 +238,11 @@ config.domains.forEach((domain, idx) => {
   ['validationModule', 'oracle', 'l2Gateway', 'executionRouter'].forEach((key) => {
     const value = domain[key];
     if (key === 'validationModule') {
-      if (!value || !addressPattern.test(value) || /^0x0{40}$/i.test(value)) {
-        fail(`${context}: validationModule must be a non-zero 0x-prefixed address.`);
-      }
+      validateAddress(value, `${context}: validationModule`);
       return;
     }
-    if (value && (!addressPattern.test(value) || /^0x0{40}$/i.test(value))) {
-      fail(`${context}: ${key} must be a 0x-prefixed address when provided.`);
+    if (value) {
+      validateAddress(value, `${context}: ${key}`);
     }
   });
   if (typeof domain.heartbeatSeconds !== 'number' || domain.heartbeatSeconds < 30) {
@@ -336,13 +334,13 @@ config.domains.forEach((domain, idx) => {
   }
   ['sentinelOracle', 'settlementAsset'].forEach((field) => {
     const value = telemetry[field];
-    if (value && (!addressPattern.test(value) || /^0x0{40}$/i.test(value))) {
-      fail(`${context}: telemetry.${field} must be a valid 0x-prefixed address when provided.`);
+    if (value) {
+      validateAddress(value, `${context}: telemetry.${field}`);
     }
   });
   ['metricsDigest', 'manifestHash'].forEach((field) => {
     const value = telemetry[field];
-    if (!value || typeof value !== 'string' || value.length !== 66 || !value.startsWith('0x')) {
+    if (!value || typeof value !== 'string' || !bytes32Pattern.test(value)) {
       fail(`${context}: telemetry.${field} must be a bytes32 hex string.`);
     }
   });
