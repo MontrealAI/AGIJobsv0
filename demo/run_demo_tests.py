@@ -121,6 +121,8 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--demo",
+        "--include",
+        dest="demo",
         action="append",
         default=[],
         help=(
