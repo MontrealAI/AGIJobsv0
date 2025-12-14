@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import Dict
 
 from .base import Specialist, SpecialistContext
 from .results import ExecutionResult
 
 
-@dataclass(slots=True)
 class ManufacturingOptimizer(Specialist):
-    automation_factor: float = 0.78
+    __slots__ = ("automation_factor",)
 
     def __init__(self, name: str = "manufacturing-optimizer", automation_factor: float = 0.78) -> None:
         super().__init__(name)
