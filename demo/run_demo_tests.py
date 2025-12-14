@@ -79,6 +79,20 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
     return {key: str(value) for key, value in overrides.items()}
 
 
+def _suite_runtime_root(base_runtime: Path, demo_dir: Path, tests_dir: Path) -> Path:
+    """Derive a unique sandbox path for a demo test suite.
+
+    Multiple demos share common directory names such as ``grand_demo/tests``.
+    Using only the immediate parent directory for isolation can therefore
+    collapse distinct suites into the same runtime sandbox, allowing state to
+    bleed across runs. Anchoring the sandbox by demo name and the tests
+    directory's relative location keeps each suite hermetic.
+    """
+
+    relative_tests_path = tests_dir.relative_to(demo_dir)
+    return base_runtime / demo_dir.name / relative_tests_path
+
+
 def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) -> int:
     env = os.environ.copy()
     env.update(env_overrides)
@@ -188,7 +202,7 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
         for demo_dir, tests_dir in suites:
             # Allocate an isolated runtime sandbox per suite to eliminate
             # cross-contamination between demos that rely on orchestrator state.
-            suite_runtime = runtime_root / tests_dir.parent.name
+            suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
             env_overrides = _configure_runtime_env(suite_runtime)
             code = _run_suite(demo_dir, tests_dir, env_overrides)
             results.append((tests_dir, code))
