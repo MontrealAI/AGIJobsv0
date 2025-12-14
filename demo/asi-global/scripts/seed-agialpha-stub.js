@@ -32,8 +32,27 @@ async function main() {
   if (code !== '0x') {
     console.log(`AGIALPHA stub already deployed at ${AGIALPHA_ADDRESS}`);
   } else {
-    await provider.send('hardhat_setCode', [AGIALPHA_ADDRESS, artifact.deployedBytecode]);
-    console.log(`Injected LocalAgialpha bytecode at ${AGIALPHA_ADDRESS}`);
+    const rpcMethods = ['anvil_setCode', 'hardhat_setCode'];
+    let injected = false;
+
+    for (const method of rpcMethods) {
+      try {
+        await provider.send(method, [AGIALPHA_ADDRESS, artifact.deployedBytecode]);
+        console.log(
+          `Injected LocalAgialpha bytecode at ${AGIALPHA_ADDRESS} via ${method}`
+        );
+        injected = true;
+        break;
+      } catch (err) {
+        console.warn(`RPC ${method} failed: ${err.message || err}`);
+      }
+    }
+
+    if (!injected) {
+      throw new Error(
+        'Unable to inject LocalAgialpha bytecode: supported RPC method not found.'
+      );
+    }
   }
 
   const token = new ethers.Contract(AGIALPHA_ADDRESS, artifact.abi, signer);

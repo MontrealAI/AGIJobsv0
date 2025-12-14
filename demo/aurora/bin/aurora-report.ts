@@ -133,6 +133,71 @@ function renderKeyValues(record: Record<string, string>): string {
         );
       }
     }
+  } else {
+    for (const job of missionJobs) {
+      const jobName = typeof job.name === 'string' ? job.name : 'Mission Job';
+      const jobSlug =
+        typeof job.slug === 'string'
+          ? job.slug
+          : jobName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      parts.push(section(`Job — ${jobName}`));
+      if (job.notes) {
+        parts.push('*' + String(job.notes) + '*');
+      }
+
+      const post = job.receipts?.post
+        ? load(job.receipts.post)
+        : load(path.join('jobs', jobSlug, 'post.json'));
+      if (post) {
+        parts.push('- **Job ID**: ' + (post.jobId || 'n/a'));
+        if (post.txHash) parts.push('- **Transaction**: `' + post.txHash + '`');
+        if (post.reward) parts.push('- **Reward**: ' + post.reward);
+        if (post.deadline) parts.push('- **Deadline**: ' + post.deadline);
+        if (post.specHash) parts.push('- **Spec hash**: `' + post.specHash + '`');
+        if (post.specUri) parts.push('- **Spec URI**: ' + post.specUri);
+      }
+
+      const submit = job.receipts?.submit
+        ? load(job.receipts.submit)
+        : load(path.join('jobs', jobSlug, 'submit.json'));
+      if (submit) {
+        if (submit.worker) parts.push('- **Worker**: `' + submit.worker + '`');
+        if (submit.txHash)
+          parts.push('- **Submission tx**: `' + submit.txHash + '`');
+        if (submit.resultURI)
+          parts.push('- **Result URI**: ' + submit.resultURI);
+      }
+
+      const validate = job.receipts?.validate
+        ? load(job.receipts.validate)
+        : load(path.join('jobs', jobSlug, 'validate.json'));
+      if (validate?.validators && Array.isArray(validate.validators)) {
+        parts.push('- **Validators**:');
+        for (const validator of validate.validators as Array<Record<string, unknown>>) {
+          parts.push(
+            `  - ${validator.address}: commit \`${validator.commitTx}\`, reveal \`${validator.revealTx}\``
+          );
+        }
+        if (validate.finalizeTx) {
+          parts.push('- Finalize tx: `' + validate.finalizeTx + '`');
+        }
+      }
+
+      const finalize = job.receipts?.finalize
+        ? load(job.receipts.finalize)
+        : load(path.join('jobs', jobSlug, 'finalize.json'));
+      if (finalize?.payouts && Object.keys(finalize.payouts).length > 0) {
+        parts.push('- **Payouts**:');
+        for (const [address, payout] of Object.entries(
+          finalize.payouts as Record<string, any>
+        )) {
+          parts.push(
+            `  - ${address}: ${payout.before} → ${payout.after} (Δ ${payout.delta})`
+          );
+        }
+      }
+    }
   }
 
   if (stake?.entries && Array.isArray(stake.entries)) {
