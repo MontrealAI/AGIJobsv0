@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import random
 import statistics
 import time
@@ -93,28 +94,33 @@ async def run_high_load_simulation(
 
     monitor_task = asyncio.create_task(record_metrics())
 
-    if kill_and_resume:
-        await asyncio.sleep(config.kill_after_seconds)
-        await orchestrator.shutdown(persist_state=True)
+    async def _cancel_monitor() -> None:
+        if monitor_task.done():
+            return
         monitor_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await monitor_task
-        except asyncio.CancelledError:
-            pass
-        orchestrator = await _prepare_orchestrator(config, resume=True)
-        shard_metrics = {region.name: [] for region in config.regions}
-        monitor_task = asyncio.create_task(record_metrics())
 
-    await orchestrator.wait_for_all(timeout=120.0)
-    await asyncio.sleep(0.1)
-    monitor_task.cancel()
+    snapshot: dict | None = None
+
     try:
-        await monitor_task
-    except asyncio.CancelledError:
-        pass
+        if kill_and_resume:
+            await asyncio.sleep(config.kill_after_seconds)
+            await orchestrator.shutdown(persist_state=True)
+            await _cancel_monitor()
+            orchestrator = await _prepare_orchestrator(config, resume=True)
+            shard_metrics = {region.name: [] for region in config.regions}
+            monitor_task = asyncio.create_task(record_metrics())
 
-    snapshot = orchestrator.snapshot()
-    await orchestrator.shutdown()
+        await orchestrator.wait_for_all(timeout=120.0)
+        await asyncio.sleep(0.1)
+        snapshot = orchestrator.snapshot()
+    finally:
+        await _cancel_monitor()
+        with contextlib.suppress(Exception):
+            await orchestrator.shutdown()
+
+    snapshot = snapshot or orchestrator.snapshot()
 
     return SimulationResult(
         completion_rate=snapshot["metrics"]["completion_rate"],
