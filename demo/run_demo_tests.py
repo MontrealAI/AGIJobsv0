@@ -79,11 +79,23 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
     return {key: str(value) for key, value in overrides.items()}
 
 
-def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) -> int:
+def _run_suite(
+    demo_root: Path,
+    tests_dir: Path,
+    env_overrides: dict[str, str],
+    pytest_args: list[str],
+) -> int:
     env = os.environ.copy()
     env.update(env_overrides)
     env["PYTHONPATH"] = _build_pythonpath(demo_root)
-    cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        str(tests_dir),
+        "--import-mode=importlib",
+        *pytest_args,
+    ]
     print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
     # Execute from the suite's directory so sys.path[0] points at the demo under
     # test, preventing sibling packages with the same name from taking
@@ -150,12 +162,24 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="List discovered suites (after filtering) without running them.",
     )
+    parser.add_argument(
+        "pytest_args",
+        nargs=argparse.REMAINDER,
+        default=[],
+        help=(
+            "Additional arguments forwarded to each pytest invocation. Prefix "
+            "the list with `--` to separate runner flags from pytest options."
+        ),
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     args = _parse_args(argv)
     include = {token.lower() for token in args.demo} or None
+    pytest_args = args.pytest_args
+    if pytest_args and pytest_args[0] == "--":
+        pytest_args = pytest_args[1:]
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(_discover_tests(demo_root, include=include))
 
@@ -181,7 +205,17 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             # cross-contamination between demos that rely on orchestrator state.
             suite_runtime = runtime_root / tests_dir.parent.name
             env_overrides = _configure_runtime_env(suite_runtime)
-            results.append((tests_dir, _run_suite(demo_dir, tests_dir, env_overrides)))
+            results.append(
+                (
+                    tests_dir,
+                    _run_suite(
+                        demo_dir,
+                        tests_dir,
+                        env_overrides,
+                        pytest_args=pytest_args,
+                    ),
+                )
+            )
 
         failed = [(path, code) for path, code in results if code]
         if failed:
