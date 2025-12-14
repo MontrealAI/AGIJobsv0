@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
 from typing import Dict
 
 from .base import Specialist, SpecialistContext
 from .results import ExecutionResult
 
 
-@dataclass(slots=True)
 class BiotechSynthesist(Specialist):
-    synthesis_efficiency: float = 0.82
+    __slots__ = ("synthesis_efficiency",)
 
     def __init__(self, name: str = "biotech-synthesist", synthesis_efficiency: float = 0.82) -> None:
         super().__init__(name)

@@ -3,16 +3,14 @@ from __future__ import annotations
 
 import math
 import random
-from dataclasses import dataclass
 from typing import Dict
 
 from .base import Specialist, SpecialistContext
 from .results import ExecutionResult
 
 
-@dataclass(slots=True)
 class FinanceStrategist(Specialist):
-    risk_aversion: float = 0.35
+    __slots__ = ("risk_aversion",)
 
     def __init__(self, name: str = "finance-strategist", risk_aversion: float = 0.35) -> None:
         super().__init__(name)
