@@ -96,3 +96,38 @@ def test_pythonpath_deduplicates_and_filters_empty(monkeypatch: pytest.MonkeyPat
         str(demo_root.resolve()),
         str(extras.resolve()),
     ]
+
+
+def test_run_suite_disables_external_plugins(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    demo_root = tmp_path / "demo-root"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+
+    monkeypatch.setenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "0")
+
+    captured_env: dict[str, str] = {}
+
+    def fake_run(cmd, env, check, cwd):  # type: ignore[no-untyped-def]
+        captured_env.update(env)
+
+        class Result:
+            returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
+
+    code = run_demo_tests._run_suite(demo_root, tests_dir, {"EXTRA": "1"})
+
+    assert code == 0
+    assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "0"
+    assert captured_env["EXTRA"] == "1"
+
+    captured_env.clear()
+    monkeypatch.delenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
+
+    run_demo_tests._run_suite(demo_root, tests_dir, {})
+
+    assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "1"

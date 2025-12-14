@@ -82,6 +82,7 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
 def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) -> int:
     env = os.environ.copy()
     env.update(env_overrides)
+    env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
     env["PYTHONPATH"] = _build_pythonpath(demo_root)
     cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
     print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
