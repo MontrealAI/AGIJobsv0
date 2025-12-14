@@ -20,6 +20,12 @@ class TelemetrySink:
         self.flush_interval = int(telemetry_conf.get("flush_interval", 5))
         self._last_flush = time.time()
 
+    def __enter__(self) -> "TelemetrySink":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - simple delegation
+        self.close()
+
     def record(self, metric_name: str, payload: Dict) -> None:
         if not self.enabled:
             return
