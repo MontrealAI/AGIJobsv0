@@ -3,6 +3,7 @@ import { EnsRegistry } from './identity/ens-registry.js';
 import { Sentinel } from './sentinel/sentinel.js';
 import { AgentFactory } from './simulation/agent-factory.js';
 import { ValidationOrchestrator } from './simulation/validation-orchestrator.js';
+import { JobSpec } from './jobs/job-ledger.js';
 
 async function main() {
   const ensRegistry = new EnsRegistry([
@@ -55,33 +56,35 @@ async function main() {
     'research',
     { budgetLimit: 6_000_000_000_000_000_000n }
   );
-
-  orchestrator.submitJobs(
-    Array.from({ length: 6 }).map((_, index) => ({
-      jobId: `job-${index + 1}`,
-      domain: index % 2 === 0 ? 'research' : 'operations',
-      budget: 5_000_000_000_000_000_000n,
-      metadata: {
-        prompt: `Autonomous discovery task #${index + 1}`,
-        reward: '2500 USDC equivalent',
-        safeguards: ['human-review', 'sentinel'],
-      },
-    }))
+  const operationsAgent = agentFactory.createAgent(
+    '0xbbb0000000000000000000000000000000000002',
+    'eris.agent.agi.eth',
+    'operations',
+    { budgetLimit: 6_000_000_000_000_000_000n }
   );
 
-  const executedJobs = [];
-  for (const jobId of ['job-1', 'job-2', 'job-3', 'job-4', 'job-5', 'job-6']) {
-    const outcome = orchestrator.executeJob(
-      jobId,
-      { profile: researchAgent.profile },
-      true,
-      3_500_000_000_000_000_000n,
-      'call(bytes)'
-    );
-    executedJobs.push(outcome);
-  }
+  const jobBatch: JobSpec[] = Array.from({ length: 6 }).map((_, index) => ({
+    jobId: `job-${index + 1}`,
+    domain: index % 2 === 0 ? 'research' : 'operations',
+    budget: 5_000_000_000_000_000_000n,
+    metadata: {
+      prompt: `Autonomous discovery task #${index + 1}`,
+      reward: '2500 USDC equivalent',
+      safeguards: ['human-review', 'sentinel'],
+    },
+  }));
 
-  const { proof, committee, slashEvents } = orchestrator.runValidationRound('round-001', executedJobs.map((job) => job.jobId));
+  orchestrator.submitJobs(jobBatch);
+
+  const executedJobs = jobBatch.map((job) => {
+    const agent = job.domain === 'research' ? researchAgent : operationsAgent;
+    return orchestrator.executeJob(job.jobId, { profile: agent.profile }, true, 3_500_000_000_000_000_000n, 'call(bytes)');
+  });
+
+  const { proof, committee, slashEvents } = orchestrator.runValidationRound(
+    'round-001',
+    executedJobs.map((job) => job.jobId)
+  );
 
   console.log('\n=== Validator Committee ===');
   for (const member of committee) {
