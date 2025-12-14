@@ -40,11 +40,48 @@ cleanup() {
 
 trap cleanup EXIT
 
+STEP_TIMEOUT="${AURORA_STEP_TIMEOUT:-900}"
+RPC_URL="${AGI_RPC_URL:-http://127.0.0.1:8545}"
+
+run_step() {
+  local key=$1
+  local description=$2
+  shift 2
+
+  local log_path="${REPORT_DIR}/${key}.log"
+  mkdir -p "$(dirname "$log_path")"
+
+  echo "▶️  ${description} (timeout: ${STEP_TIMEOUT}s, log: ${log_path})" >&2
+
+  local env_parts=()
+  while (($# > 0)) && [[ $1 == *=* ]]; do
+    env_parts+=("$1")
+    shift
+  done
+
+  local cmd=("$@")
+  if ((${#env_parts[@]} > 0)); then
+    cmd=(env "${env_parts[@]}" "${cmd[@]}")
+  fi
+
+  if command -v timeout >/dev/null 2>&1; then
+    cmd=(timeout "${STEP_TIMEOUT}" "${cmd[@]}")
+  fi
+
+  if ! "${cmd[@]}" >"$log_path" 2>&1; then
+    echo "❌ ${description} failed; last 40 log lines:" >&2
+    tail -n 40 "$log_path" >&2 || true
+    exit 1
+  fi
+
+  echo "✅ ${description} completed" >&2
+}
+
 LOG_FILE="/tmp/asi-global-node.log"
 start_node "$LOG_FILE"
 
 for attempt in {1..120}; do
-  if nc -z 127.0.0.1 8545 >/dev/null 2>&1; then
+  if node -e "const { ethers } = require('ethers'); const provider = new ethers.JsonRpcProvider('${RPC_URL}'); provider.getBlockNumber().then(() => process.exit(0)).catch(() => process.exit(1));" >/dev/null 2>&1; then
     break
   fi
   sleep 0.5
@@ -58,30 +95,47 @@ for attempt in {1..120}; do
   fi
 done
 
+seed_agialpha() {
+  run_step \
+    "seed-agialpha" \
+    "Seeding local AGIALPHA token" \
+    node demo/asi-global/scripts/seed-agialpha-stub.js
+}
+
 dep_env() {
-  DEPLOY_DEFAULTS_SKIP_VERIFY=1 \
-  DEPLOY_DEFAULTS_CONFIG="demo/aurora/config/deployer.hardhat.json" \
-  DEPLOY_DEFAULTS_OUTPUT="$DEPLOY_OUTPUT" \
-  npx hardhat run --network localhost scripts/v2/deployDefaults.ts
+  run_step \
+    "deploy" \
+    "Deploying protocol defaults" \
+    NETWORK="$NET" \
+    AURORA_REPORT_SCOPE="$SCOPE" \
+    AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \
+    node demo/asi-global/scripts/deploy-stub.js
 }
 
 run_demo() {
-  AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \
-  AURORA_REPORT_SCOPE="$SCOPE" \
-  AURORA_MISSION_CONFIG="$MISSION_CONFIG" \
-  AURORA_THERMOSTAT_CONFIG="$THERMOSTAT_CONFIG" \
-  AURORA_REPORT_TITLE="$REPORT_TITLE" \
-  NETWORK="$NET" \
-  npx ts-node --transpile-only demo/aurora/aurora.demo.ts --network localhost
+  run_step \
+    "demo" \
+    "Executing Aurora mission drill" \
+    AURORA_DEPLOY_OUTPUT="$DEPLOY_OUTPUT" \
+    AURORA_REPORT_SCOPE="$SCOPE" \
+    AURORA_MISSION_CONFIG="$MISSION_CONFIG" \
+    AURORA_THERMOSTAT_CONFIG="$THERMOSTAT_CONFIG" \
+    AURORA_REPORT_TITLE="$REPORT_TITLE" \
+    NETWORK="$NET" \
+    node demo/asi-global/scripts/aurora-demo-stub.js
 }
 
 render_report() {
-  AURORA_REPORT_SCOPE="$SCOPE" \
-  AURORA_REPORT_TITLE="$REPORT_TITLE" \
-  NETWORK="$NET" \
-  npx ts-node --transpile-only demo/aurora/bin/aurora-report.ts
+  run_step \
+    "report" \
+    "Rendering global mission report" \
+    AURORA_REPORT_SCOPE="$SCOPE" \
+    AURORA_REPORT_TITLE="$REPORT_TITLE" \
+    NETWORK="$NET" \
+    npx ts-node --transpile-only demo/aurora/bin/aurora-report.ts
 }
 
+seed_agialpha
 dep_env
 run_demo
 render_report
