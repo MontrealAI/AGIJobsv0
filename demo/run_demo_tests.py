@@ -151,6 +151,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="List discovered suites (after filtering) without running them.",
     )
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        help=(
+            "Stop after the first failing suite instead of executing every demo. "
+            "Use this in local runs to get the fastest feedback loop."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -182,7 +190,12 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             # cross-contamination between demos that rely on orchestrator state.
             suite_runtime = runtime_root / tests_dir.parent.name
             env_overrides = _configure_runtime_env(suite_runtime)
-            results.append((tests_dir, _run_suite(demo_dir, tests_dir, env_overrides)))
+            code = _run_suite(demo_dir, tests_dir, env_overrides)
+            results.append((tests_dir, code))
+
+            if args.fail_fast and code:
+                print("\n⛔️  Halting remaining demo suites because --fail-fast is enabled.")
+                break
 
         failed = [(path, code) for path, code in results if code]
         if failed:
