@@ -26,6 +26,7 @@ flowchart LR
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Phase-6-Scaling-Multi-Domain-Expansion`.
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+5. For a single-command launch path, use the Python shim: `python demo/Phase-6-Scaling-Multi-Domain-Expansion/run_demo.py -- --config <path>` (arguments after `--` are forwarded to the TypeScript orchestrator).
 
 ## Directory Guide
 ### Key Directories
