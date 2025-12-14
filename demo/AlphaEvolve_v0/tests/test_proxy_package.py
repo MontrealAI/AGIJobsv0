@@ -15,3 +15,17 @@ def test_proxy_forwards_to_canonical_package(monkeypatch):
     agent_path = Path(alphaevolve_demo.agent.__file__).resolve()
     assert "AlphaEvolve-v0" in agent_path.parts
     assert agent_path.name == "agent.py"
+
+
+def test_run_demo_wrapper_forwards_arguments(monkeypatch):
+    calls: list[list[str]] = []
+
+    def fake_main(argv: list[str]) -> None:
+        calls.append(argv)
+
+    import demo.AlphaEvolve_v0.run_demo as wrapper
+
+    monkeypatch.setattr(wrapper, "_resolve_main", lambda: fake_main)
+    wrapper.run(["--foo", "bar"])
+
+    assert calls == [["--foo", "bar"]]
