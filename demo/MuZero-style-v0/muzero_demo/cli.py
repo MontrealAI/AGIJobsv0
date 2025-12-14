@@ -80,8 +80,8 @@ def run_demo(config_path: str) -> None:
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     trainer.save_checkpoint(str(checkpoint_path))
     results = compare_strategies(config, network, device)
-    TelemetrySink(config).record("demo_results", results)
-    TelemetrySink(config).flush()
+    with TelemetrySink(config) as telemetry:
+        telemetry.record("demo_results", results)
     print("=== MuZero Demo Results ===")
     for strategy, value in results.items():
         print(f"{strategy:>10}: {value:8.3f}")
