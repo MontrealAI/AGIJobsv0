@@ -39,8 +39,11 @@ def build_cli() -> argparse.ArgumentParser:
     parser.add_argument(
         "--duration",
         type=float,
-        default=None,
-        help="Optional duration in seconds to run before stopping (0 runs until manual stop).",
+        default=10.0,
+        help=(
+            "Optional duration in seconds to run before stopping. "
+            "Use 0 to run until manually stopped (default: 10s)."
+        ),
     )
     parser.add_argument(
         "--no-run",
@@ -93,9 +96,25 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         print("Configuration validated. No run performed.")
         return
 
-    duration = None if args.duration is None or args.duration <= 0 else float(args.duration)
+    duration = _resolve_duration(args.duration)
 
     asyncio.run(_run_orchestrator(scenario, duration=duration))
+
+
+def _resolve_duration(value: float | None) -> float | None:
+    """Normalise the requested runtime duration for the demo.
+
+    The demo previously ran indefinitely unless operators supplied ``--duration``. That
+    behaviour made quick validation runs cumbersome and risked leaving background
+    orchestrator tasks active. We now default to a 10 second showcase, while still
+    permitting indefinite runs by passing ``--duration 0``.
+    """
+
+    if value is None:
+        return 10.0
+    if value <= 0:
+        return None
+    return float(value)
 
 
 def _handle_init(args: argparse.Namespace) -> None:

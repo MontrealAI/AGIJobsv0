@@ -26,6 +26,7 @@ flowchart LR
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/Kardashev-II Omega-Grade-α-AGI Business-3/kardashev_ii_omega_grade_alpha_agi_business_3_demo_omega`.
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../OperatorRunbook.md).
+5. When running the demo interactively, the CLI now defaults to a 10-second showcase window; pass `--duration 0` for open-ended, Kardashev-scale simulations.
 
 ## Directory Guide
 ### Key Directories
