@@ -69,6 +69,7 @@ type StepDefinition = {
   title: string;
   optional?: boolean;
   skip?: (ctx: DemoContext) => boolean;
+  skipReason?: (ctx: DemoContext) => string | undefined;
   run: (ctx: DemoContext) => Promise<StepResult>;
 };
 
@@ -85,6 +86,8 @@ type DemoContext = {
   hardhatNetwork: string;
   autoYes: boolean;
   launchCompose: boolean;
+  dockerAvailable?: boolean;
+  runtimeUnavailable?: boolean;
   skipDeployment: boolean;
   startTimestamp: string;
   gitCommit?: string;
@@ -344,29 +347,60 @@ async function runPreflight(ctx: DemoContext): Promise<StepResult> {
 
   await fs.mkdir(LOG_ROOT, { recursive: true });
 
-  const dockerCheck = await tryCommandCapture('docker', ['--version']);
-  if (!dockerCheck.success) {
-    throw new Error(
-      'Docker is required but was not found in PATH. Install Docker Desktop or Docker Engine.'
-    );
-  }
-  ctx.dockerVersion = dockerCheck.stdout.trim();
-  details.dockerVersion = ctx.dockerVersion;
-
-  const composeCheck = await tryCommandCapture('docker', [
-    'compose',
-    'version',
-  ]);
-  if (!composeCheck.success) {
-    throw new Error(
-      'Docker Compose is required. Upgrade Docker Desktop or install the docker-compose plugin.'
-    );
-  }
-  ctx.composeVersion = composeCheck.stdout.trim();
-  details.composeVersion = ctx.composeVersion;
-
   ctx.nodeVersion = process.version;
   details.nodeVersion = ctx.nodeVersion;
+
+  const dockerCheck = await tryCommandCapture('docker', ['--version']);
+  const dockerRequired = ctx.launchCompose;
+  if (!dockerCheck.success) {
+    details.dockerAvailable = false;
+    notes.push(
+      'Docker is not available in PATH. Auto-launch for Compose will be skipped; start any required services manually.'
+    );
+    if (dockerRequired) {
+      const endedAt = new Date();
+      return {
+        key: 'preflight',
+        title: 'Preflight checks',
+        status: 'failed',
+        startedAt: startedAt.toISOString(),
+        endedAt: endedAt.toISOString(),
+        durationMs: endedAt.getTime() - startedAt.getTime(),
+        notes,
+        details,
+      };
+    }
+  } else {
+    details.dockerAvailable = true;
+    ctx.dockerVersion = dockerCheck.stdout.trim();
+    details.dockerVersion = ctx.dockerVersion;
+
+    const composeCheck = await tryCommandCapture('docker', [
+      'compose',
+      'version',
+    ]);
+    if (!composeCheck.success) {
+      notes.push(
+        'Docker Compose plugin is missing. Launch the stack manually or install the plugin to enable auto-launch.'
+      );
+      if (dockerRequired) {
+        const endedAt = new Date();
+        return {
+          key: 'preflight',
+          title: 'Preflight checks',
+          status: 'failed',
+          startedAt: startedAt.toISOString(),
+          endedAt: endedAt.toISOString(),
+          durationMs: endedAt.getTime() - startedAt.getTime(),
+          notes,
+          details,
+        };
+      }
+    } else {
+      ctx.composeVersion = composeCheck.stdout.trim();
+      details.composeVersion = ctx.composeVersion;
+    }
+  }
 
   const gitStatus = await tryCommandCapture('git', ['status', '--short'], {
     cwd: ROOT,
@@ -649,14 +683,28 @@ async function main() {
       autoYes
     ));
 
+  const dockerAvailable = (
+    await tryCommandCapture('docker', ['--version'])
+  ).success;
+
   const launchCompose =
     launchComposeOverride !== undefined
       ? launchComposeOverride
       : await promptYesNo(
           'Launch Docker Compose stack automatically?',
-          networkSelection.key === 'localhost',
+          dockerAvailable && networkSelection.key === 'localhost',
           autoYes
         );
+
+  const runtimeUnavailable =
+    !dockerAvailable && !launchCompose && networkSelection.key === 'localhost';
+  const skipDeployment = skipDeploy || runtimeUnavailable;
+
+  if (runtimeUnavailable) {
+    console.log(
+      'ℹ️  Deployment wizard disabled because no local node or Compose target is available.'
+    );
+  }
 
   const context: DemoContext = {
     network: networkSelection.key as NetworkKey,
@@ -665,7 +713,9 @@ async function main() {
     hardhatNetwork: networkSelection.hardhatNetwork,
     autoYes,
     launchCompose,
-    skipDeployment: skipDeploy,
+    dockerAvailable,
+    runtimeUnavailable,
+    skipDeployment,
     startTimestamp: new Date().toISOString(),
     nodeVersion: process.version,
   };
@@ -688,6 +738,8 @@ async function main() {
   await fs.mkdir(LOG_ROOT, { recursive: true });
   await ensureEnvFile(context.envPath);
 
+  const hasGrandSummary = await pathExists(GRAND_SUMMARY_MD);
+
   const results: StepResult[] = [];
 
   const steps: StepDefinition[] = [
@@ -700,6 +752,10 @@ async function main() {
       key: 'deployment',
       title: 'One-click deployment wizard',
       skip: (ctx) => ctx.skipDeployment,
+      skipReason: (ctx) =>
+        ctx.runtimeUnavailable
+          ? 'Runtime unavailable (no local node/Compose); deployment disabled.'
+          : 'Deployment skipped by operator flag.',
       run: async (ctx) => {
         const wizardArgs = [
           'run',
@@ -725,6 +781,9 @@ async function main() {
     {
       key: 'demo',
       title: 'AGI OS grand demonstration',
+      skip: (ctx) => ctx.runtimeUnavailable,
+      skipReason: () =>
+        'Runtime dependencies unavailable; start Hardhat/Anvil or enable Docker Compose to run the full demo.',
       run: async (ctx) =>
         runCommand(
           'demo',
@@ -739,6 +798,9 @@ async function main() {
     {
       key: 'owner-diagram',
       title: 'Owner systems map (Mermaid)',
+      skip: (ctx) => ctx.runtimeUnavailable,
+      skipReason: () =>
+        'Owner diagram generation requires runtime outputs; start the stack or enable Compose.',
       run: async (ctx) =>
         runCommand(
           'owner-diagram',
@@ -758,6 +820,9 @@ async function main() {
     {
       key: 'owner-verify',
       title: 'Verify owner control surface',
+      skip: (ctx) => ctx.runtimeUnavailable,
+      skipReason: () =>
+        'Owner control verification requires a reachable runtime; start the stack or enable Compose.',
       run: async (ctx) =>
         runCommand(
           'owner-verify',
@@ -772,6 +837,9 @@ async function main() {
     {
       key: 'html',
       title: 'Render mission summary HTML',
+      skip: () => !hasGrandSummary,
+      skipReason: () =>
+        'Grand summary markdown is missing; run the mission pipeline or provide reports before rendering HTML.',
       run: async () => {
         const startedAt = new Date();
         await generateHtmlSummary();
@@ -810,6 +878,34 @@ async function main() {
       title: 'Cross-verify mission artefacts',
       run: async () => {
         const startedAt = new Date();
+        const missing: string[] = [];
+        const requiredFiles = [
+          { path: OWNER_CONTROL_MATRIX, label: 'Owner control matrix' },
+          { path: GRAND_SUMMARY_JSON, label: 'Grand summary JSON' },
+          { path: FIRST_CLASS_MANIFEST, label: 'First-class manifest' },
+        ];
+
+        for (const file of requiredFiles) {
+          if (!(await pathExists(file.path))) {
+            missing.push(`${file.label} (${path.relative(ROOT, file.path)})`);
+          }
+        }
+
+        if (missing.length > 0) {
+          const endedAt = new Date();
+          return {
+            key: 'integrity-check',
+            title: 'Cross-verify mission artefacts',
+            status: 'skipped',
+            startedAt: startedAt.toISOString(),
+            endedAt: endedAt.toISOString(),
+            durationMs: endedAt.getTime() - startedAt.getTime(),
+            notes: [
+              `Missing artefacts: ${missing.join(', ')}. Run the demo stack or supply the files to enable integrity checks.`,
+            ],
+          };
+        }
+
         const matrix = await readJsonFile<ControlMatrix>(OWNER_CONTROL_MATRIX);
         const modules = matrix.modules ?? [];
         const derivedSummary = deriveSummaryFromModules(modules);
@@ -894,6 +990,7 @@ async function main() {
   for (const step of steps) {
     if (step.skip?.(context)) {
       const now = new Date();
+      const reason = step.skipReason?.(context);
       results.push({
         key: step.key,
         title: step.title,
@@ -901,7 +998,9 @@ async function main() {
         startedAt: now.toISOString(),
         endedAt: now.toISOString(),
         durationMs: 0,
-        notes: ['Step skipped by operator'],
+        notes: [
+          reason ?? 'Step skipped by operator or unavailable dependencies.',
+        ],
       });
       continue;
     }
@@ -951,6 +1050,8 @@ async function main() {
     configPath: path.resolve(context.configPath),
     envPath: path.resolve(context.envPath),
     launchCompose: context.launchCompose,
+    dockerAvailable: context.dockerAvailable ?? null,
+    runtimeUnavailable: context.runtimeUnavailable ?? false,
     skipDeployment: context.skipDeployment,
     gitCommit: context.gitCommit ?? null,
     gitBranch: context.gitBranch ?? null,
