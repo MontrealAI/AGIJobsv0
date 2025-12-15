@@ -54,3 +54,19 @@ def test_main_clears_existing_runtime_dir(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert not stale_artifact.exists()
+
+
+def test_list_mode_does_not_create_runtime_artifacts(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+
+    runtime_dir = tmp_path / "runtime"
+
+    exit_code = run_demo_tests.main(
+        ["--list", "--runtime-dir", str(runtime_dir)], demo_root=demo_root
+    )
+
+    assert exit_code == 0
+    assert not runtime_dir.exists()
