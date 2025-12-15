@@ -230,19 +230,30 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             return 1
 
         results: list[tuple[Path, int]] = []
-        for demo_dir, tests_dir in suites:
-            # Allocate an isolated runtime sandbox per suite to eliminate
-            # cross-contamination between demos that rely on orchestrator state.
-            suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
-            env_overrides = _configure_runtime_env(suite_runtime)
-            code = _run_suite(
-                demo_dir, tests_dir, env_overrides, timeout=args.timeout
-            )
-            results.append((tests_dir, code))
+        try:
+            for demo_dir, tests_dir in suites:
+                # Allocate an isolated runtime sandbox per suite to eliminate
+                # cross-contamination between demos that rely on orchestrator state.
+                suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
+                env_overrides = _configure_runtime_env(suite_runtime)
+                code = _run_suite(
+                    demo_dir, tests_dir, env_overrides, timeout=args.timeout
+                )
+                results.append((tests_dir, code))
 
-            if args.fail_fast and code:
-                print("\n⛔️  Halting remaining demo suites because --fail-fast is enabled.")
-                break
+                if args.fail_fast and code:
+                    print(
+                        "\n⛔️  Halting remaining demo suites because --fail-fast is enabled."
+                    )
+                    break
+        except KeyboardInterrupt:
+            completed = len(results)
+            remaining = len(suites) - completed
+            print(
+                f"\n⚠️  Interrupted after {completed} of {len(suites)} suites; "
+                f"{remaining} remaining."
+            )
+            return 130
 
         failed = [(path, code) for path, code in results if code]
         if failed:
