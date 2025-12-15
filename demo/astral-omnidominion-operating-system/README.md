@@ -26,6 +26,7 @@ flowchart LR
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/astral-omnidominion-operating-system`.
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
+5. Run the demo locally with `python demo/astral-omnidominion-operating-system/run_demo.py --help` to mirror the TypeScript workflow via the Python-friendly entrypoint.
 
 ## Directory Guide
 ### Key Directories
