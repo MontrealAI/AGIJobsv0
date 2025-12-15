@@ -277,6 +277,28 @@ function ensureDir(dirPath) {
   }
 }
 
+function parseArgs(argv) {
+  const args = { outputDir: process.env.OUTPUT_DIR };
+
+  for (let i = 0; i < argv.length; i += 1) {
+    const flag = argv[i];
+    if (flag === '--output-dir' && argv[i + 1]) {
+      args.outputDir = argv[i + 1];
+      i += 1;
+    }
+  }
+
+  return args;
+}
+
+function resolveOutputDir(rawOutputDir) {
+  const dir = rawOutputDir
+    ? path.resolve(rawOutputDir)
+    : path.join(__dirname, 'output');
+  ensureDir(dir);
+  return dir;
+}
+
 function main() {
   const fabric = loadJson('config/fabric.json');
   const energy = loadJson('config/energy-feeds.json');
@@ -294,7 +316,8 @@ function main() {
     2
   );
 
-  const outputDir = path.join(__dirname, 'output');
+  const { outputDir: cliOutputDir } = parseArgs(process.argv.slice(2));
+  const outputDir = resolveOutputDir(cliOutputDir);
   const mermaidDir = path.join(outputDir, 'mermaid');
   ensureDir(outputDir);
   ensureDir(mermaidDir);
@@ -445,11 +468,9 @@ function main() {
   }
 
   console.log('✅ Kardashev II scale dossier generated successfully.');
-  console.log('   - Report: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-report.md');
-  console.log('   - Governance playbook: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/governance-playbook.md');
-  console.log(
-    '   - Telemetry: demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/output/kardashev-telemetry.json'
-  );
+  console.log(`   - Report: ${path.join(outputDir, 'kardashev-report.md')}`);
+  console.log(`   - Governance playbook: ${path.join(outputDir, 'governance-playbook.md')}`);
+  console.log(`   - Telemetry: ${path.join(outputDir, 'kardashev-telemetry.json')}`);
   console.log(
     `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
   );
