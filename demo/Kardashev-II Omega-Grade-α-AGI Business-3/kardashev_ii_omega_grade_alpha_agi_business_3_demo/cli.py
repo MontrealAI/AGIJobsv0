@@ -13,6 +13,26 @@ from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
 
 
+def _require_positive(value: float, *, field: str, allow_zero: bool = False) -> None:
+    """Validate that numeric CLI arguments remain within safe bounds.
+
+    Args:
+        value: The numeric value to validate.
+        field: Human-readable field label for error messages.
+        allow_zero: Whether zero is considered a valid value.
+
+    Raises:
+        ValueError: If the value is outside the allowed range.
+    """
+
+    if allow_zero:
+        if value < 0:
+            raise ValueError(f"{field} must be non-negative (got {value})")
+    else:
+        if value <= 0:
+            raise ValueError(f"{field} must be positive (got {value})")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo")
     parser.add_argument(
@@ -120,6 +140,18 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
                 gov_data["validator_reveal_window"] = timedelta(seconds=float(gov_data["validator_reveal_window"]))
             data["governance"] = GovernanceParameters(**gov_data)
         overrides.update(data)
+
+    _require_positive(args.cycles, field="cycles", allow_zero=True)
+    _require_positive(args.insight_interval, field="insight_interval_seconds")
+    _require_positive(args.simulation_tick, field="simulation_tick_seconds")
+    _require_positive(args.simulation_hours, field="simulation_hours_per_tick")
+    _require_positive(args.simulation_energy_scale, field="simulation_energy_scale")
+    _require_positive(args.simulation_compute_scale, field="simulation_compute_scale")
+    _require_positive(args.heartbeat_interval, field="heartbeat_interval_seconds")
+    _require_positive(args.heartbeat_timeout, field="heartbeat_timeout_seconds")
+    _require_positive(args.health_check_interval, field="health_check_interval_seconds")
+    _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
+    _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
 
     params = {
         "max_cycles": args.cycles or None,
