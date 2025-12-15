@@ -125,6 +125,9 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
+_SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
+
+
 def _discover_tests(
     demo_root: Path, *, include: set[str] | None = None
 ) -> Iterable[tuple[Path, Path]]:
@@ -139,7 +142,9 @@ def _discover_tests(
         if not _matches_filter(demo_dir):
             continue
         for tests_dir in sorted(demo_dir.rglob("tests")):
-            if not tests_dir.is_dir() or "node_modules" in tests_dir.parts:
+            if not tests_dir.is_dir():
+                continue
+            if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
             if not _has_python_tests(tests_dir):
                 print(f"→ Skipping {tests_dir} (no Python test files found)")
