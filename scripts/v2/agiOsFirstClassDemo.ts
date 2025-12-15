@@ -2,7 +2,7 @@
 
 import { spawn } from 'child_process';
 import { createHash } from 'crypto';
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
@@ -738,8 +738,6 @@ async function main() {
   await fs.mkdir(LOG_ROOT, { recursive: true });
   await ensureEnvFile(context.envPath);
 
-  const hasGrandSummary = await pathExists(GRAND_SUMMARY_MD);
-
   const results: StepResult[] = [];
 
   const steps: StepDefinition[] = [
@@ -837,7 +835,7 @@ async function main() {
     {
       key: 'html',
       title: 'Render mission summary HTML',
-      skip: () => !hasGrandSummary,
+      skip: () => !existsSync(GRAND_SUMMARY_MD),
       skipReason: () =>
         'Grand summary markdown is missing; run the mission pipeline or provide reports before rendering HTML.',
       run: async () => {
