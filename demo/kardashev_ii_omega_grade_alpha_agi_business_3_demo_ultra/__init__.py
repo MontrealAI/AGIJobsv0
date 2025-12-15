@@ -28,6 +28,15 @@ _module = importlib.util.module_from_spec(_spec)
 sys.modules[__name__] = _module
 _spec.loader.exec_module(_module)
 
+# Ensure helper modules that live alongside this wrapper stay importable. Without
+# this, Python would only search the Unicode-heavy source directory for
+# submodules, preventing convenience entrypoints from being discovered.
+if hasattr(_module, "__path__"):
+    package_path = str(_THIS_DIR)
+    if package_path not in _module.__path__:
+        _module.__path__.append(package_path)
+
 from .cli import main  # type: ignore[attr-defined]  # noqa: E402
+from . import run_demo  # noqa: E402,F401  (re-exported for convenience)
 
 __all__ = getattr(_module, "__all__", [])
