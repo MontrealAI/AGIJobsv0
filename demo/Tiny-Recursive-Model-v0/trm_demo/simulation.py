@@ -98,6 +98,10 @@ def run_simulation(
     seed: int = 0,
 ) -> SimulationSummary:
     rng = random.Random(seed)
+    # Ensure deterministic behavior across numpy, torch, and Python's RNG so
+    # the sentinel consistently reflects guardrail breaches during testing.
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     greedy = GreedyBaseline()
     llm = LLMBaseline(rng=rng)
 
