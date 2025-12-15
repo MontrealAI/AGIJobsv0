@@ -225,6 +225,15 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(_discover_tests(demo_root, include=include))
 
+    if args.list:
+        if not suites:
+            print("No demo test suites found for the provided filters.")
+            return 1
+        print("Discovered demo test suites:")
+        for _, tests_dir in suites:
+            print(f" - {tests_dir}")
+        return 0
+
     runtime_context: contextlib.AbstractContextManager[str]
     if args.runtime_dir:
         runtime_dir = args.runtime_dir.expanduser().resolve()
@@ -235,15 +244,6 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
 
     with runtime_context as runtime_dir:
         runtime_root = Path(runtime_dir)
-
-        if args.list:
-            if not suites:
-                print("No demo test suites found for the provided filters.")
-                return 1
-            print("Discovered demo test suites:")
-            for _, tests_dir in suites:
-                print(f" - {tests_dir}")
-            return 0
 
         if not suites:
             print("No demo test suites found for the provided filters.")
