@@ -109,10 +109,12 @@ def _run_suite(
     # Execute from the suite's directory so sys.path[0] points at the demo under
     # test, preventing sibling packages with the same name from taking
     # precedence.
+    run_kwargs = {"env": env, "check": False, "cwd": tests_dir.parent}
+    if timeout is not None:
+        run_kwargs["timeout"] = timeout
+
     try:
-        result = subprocess.run(
-            cmd, env=env, check=False, cwd=tests_dir.parent, timeout=timeout
-        )
+        result = subprocess.run(cmd, **run_kwargs)
     except subprocess.TimeoutExpired:
         print(
             f"⏰  Timed out running {tests_dir} after {timeout}s; "

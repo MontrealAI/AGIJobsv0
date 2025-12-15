@@ -131,3 +131,31 @@ def test_run_suite_disables_external_plugins(
     run_demo_tests._run_suite(demo_root, tests_dir, {})
 
     assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "1"
+
+
+def test_run_suite_only_adds_timeout_when_requested(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    demo_root = tmp_path / "demo-root"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+
+    captured_kwargs: dict[str, object] = {}
+
+    def fake_run(cmd, **kwargs):  # type: ignore[no-untyped-def]
+        captured_kwargs.update(kwargs)
+
+        class Result:
+            returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
+
+    run_demo_tests._run_suite(demo_root, tests_dir, {}, timeout=None)
+    assert "timeout" not in captured_kwargs
+
+    captured_kwargs.clear()
+
+    run_demo_tests._run_suite(demo_root, tests_dir, {}, timeout=5.0)
+    assert captured_kwargs.get("timeout") == 5.0
