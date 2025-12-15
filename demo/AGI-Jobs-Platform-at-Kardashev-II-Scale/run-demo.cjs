@@ -278,24 +278,34 @@ function ensureDir(dirPath) {
 }
 
 function parseArgs(argv) {
-  const args = { outputDir: process.env.OUTPUT_DIR };
+  const args = {
+    outputDir: process.env.OUTPUT_DIR,
+    check: false,
+    printCommands: false,
+  };
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     if (flag === '--output-dir' && argv[i + 1]) {
       args.outputDir = argv[i + 1];
       i += 1;
+    } else if (flag === '--check') {
+      args.check = true;
+    } else if (flag === '--print-commands') {
+      args.printCommands = true;
     }
   }
 
   return args;
 }
 
-function resolveOutputDir(rawOutputDir) {
+function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
   const dir = rawOutputDir
     ? path.resolve(rawOutputDir)
     : path.join(__dirname, 'output');
-  ensureDir(dir);
+  if (ensure) {
+    ensureDir(dir);
+  }
   return dir;
 }
 
@@ -316,11 +326,18 @@ function main() {
     2
   );
 
-  const { outputDir: cliOutputDir } = parseArgs(process.argv.slice(2));
-  const outputDir = resolveOutputDir(cliOutputDir);
+  const { outputDir: cliOutputDir, check, printCommands } = parseArgs(
+    process.argv.slice(2)
+  );
+  const outputDir = resolveOutputDir(cliOutputDir, { ensure: !check });
   const mermaidDir = path.join(outputDir, 'mermaid');
-  ensureDir(outputDir);
-  ensureDir(mermaidDir);
+
+  if (!check) {
+    ensureDir(outputDir);
+    ensureDir(mermaidDir);
+  } else {
+    console.log('🔎 Check mode enabled – computing ledgers without writing artefacts.');
+  }
 
   const reportLines = [];
   reportLines.push('# Kardashev II Scale Control Dossier');
@@ -384,19 +401,6 @@ function main() {
   reportLines.push('');
 
   const crossChainDiagram = buildSequenceDiagram();
-  fs.writeFileSync(
-    path.join(mermaidDir, 'dyson-hierarchy.mmd'),
-    `${buildMermaidTaskHierarchy(dyson)}\n`
-  );
-  fs.writeFileSync(
-    path.join(mermaidDir, 'interplanetary-settlement.mmd'),
-    `${crossChainDiagram}\n`
-  );
-  fs.writeFileSync(
-    path.join(outputDir, 'kardashev-report.md'),
-    `${reportLines.join('\n')}\n`
-  );
-
   const governanceLines = [];
   governanceLines.push('# Kardashev II Governance Playbook');
   governanceLines.push('');
@@ -411,11 +415,6 @@ function main() {
   governanceLines.push('5. **Manifest evolution:** Upload the new manifesto to IPFS, call `updateManifesto(uri, hash)`, then append a fresh self-improvement cadence with zk-proof placeholders recorded.');
   governanceLines.push('');
   governanceLines.push('All actions are auditable; copy/paste-ready commands are available via `npm run demo:kardashev -- --print-commands`.');
-
-  fs.writeFileSync(
-    path.join(outputDir, 'governance-playbook.md'),
-    `${governanceLines.join('\n')}\n`
-  );
 
   const telemetry = {
     generatedAt,
@@ -433,15 +432,35 @@ function main() {
     energyFeeds: energy.feeds,
   };
   debugLog('telemetry', telemetry);
-  const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
-  fs.writeFileSync(telemetryPath, `${JSON.stringify(telemetry, null, 2)}\n`);
 
-  const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
-  if (fs.existsSync(legacyTelemetryPath)) {
-    fs.rmSync(legacyTelemetryPath);
+  if (!check) {
+    fs.writeFileSync(
+      path.join(mermaidDir, 'dyson-hierarchy.mmd'),
+      `${buildMermaidTaskHierarchy(dyson)}\n`
+    );
+    fs.writeFileSync(
+      path.join(mermaidDir, 'interplanetary-settlement.mmd'),
+      `${crossChainDiagram}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-report.md'),
+      `${reportLines.join('\n')}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'governance-playbook.md'),
+      `${governanceLines.join('\n')}\n`
+    );
+
+    const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
+    fs.writeFileSync(telemetryPath, `${JSON.stringify(telemetry, null, 2)}\n`);
+
+    const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
+    if (fs.existsSync(legacyTelemetryPath)) {
+      fs.rmSync(legacyTelemetryPath);
+    }
   }
 
-  if (process.argv.includes('--print-commands')) {
+  if (printCommands) {
     const commands = [
       `forwardPauseCall(SystemPause.PAUSE_ALL) via Phase8 manager ${fabric.phase8Manager}`,
       `setGlobalParameters({ guardianReviewWindow: 900, energyOracle: ${fabric.energyOracle} })`,
@@ -464,6 +483,14 @@ function main() {
       '   - Action: raise council review and rerun with updated feeds or widened reserves to restore thermodynamic headroom.'
     );
     process.exitCode = 1;
+    return;
+  }
+
+  if (check) {
+    console.log('✅ Kardashev II scale dossier validated (check mode).');
+    console.log(
+      `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
+    );
     return;
   }
 
