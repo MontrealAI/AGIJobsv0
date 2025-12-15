@@ -126,11 +126,14 @@ type ManifestReport = {
   entries?: ManifestEntry[];
 };
 
-function parseArgs(): CliArgs {
-  const argv = process.argv.slice(2);
+function parseArgs(argv: string[] = process.argv.slice(2)): CliArgs {
   const result: CliArgs = {};
   for (let i = 0; i < argv.length; i += 1) {
     const token = argv[i];
+    if (['-h', '-?', '--help'].includes(token)) {
+      result.help = true;
+      continue;
+    }
     if (!token.startsWith('--')) continue;
     const key = token.slice(2);
     const next = argv[i + 1];
@@ -152,6 +155,30 @@ function parseBool(value: string | boolean | undefined): boolean | undefined {
     if (['0', 'false', 'no', 'n', 'off'].includes(normalised)) return false;
   }
   return undefined;
+}
+
+function printUsage(): void {
+  console.log(buildUsage());
+}
+
+function buildUsage(): string {
+  return [
+    'Astral Omnidominion Operating System Demo',
+    '',
+    'Usage: ts-node scripts/v2/agiOsFirstClassDemo.ts [options]',
+    '',
+    'Options:',
+    '  -h, --help                 Show this help message and exit.',
+    '  --network <name>           Select network preset (localhost | sepolia).',
+    '  --yes, --non-interactive   Assume defaults for all prompts.',
+    '  --compose                  Launch Docker Compose automatically.',
+    '  --no-compose               Skip Docker Compose auto-launch.',
+    '  --skip-deploy              Run demo steps without the deployment wizard.',
+    '',
+    'Examples:',
+    '  ts-node ... --help',
+    '  ts-node ... --network localhost --yes --compose',
+  ].join('\n');
 }
 
 async function promptYesNo(
@@ -595,6 +622,10 @@ async function ensureEnvFile(envPath: string): Promise<void> {
 
 async function main() {
   const args = parseArgs();
+  if (args.help) {
+    printUsage();
+    return;
+  }
   const autoYes = Boolean(
     parseBool(args.yes) ?? parseBool(args['non-interactive'])
   );
@@ -955,7 +986,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error('Fatal error running Astral Omnidominion demo:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('Fatal error running Astral Omnidominion demo:', error);
+    process.exitCode = 1;
+  });
+}
+
+export { buildUsage, parseArgs, printUsage };
