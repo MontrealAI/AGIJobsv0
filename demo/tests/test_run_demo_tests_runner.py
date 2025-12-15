@@ -37,3 +37,20 @@ def test_main_respects_runtime_dir_option(tmp_path: Path, monkeypatch: pytest.Mo
     sandbox = runtime_dir / "example" / "tests" / "orchestrator"
     assert sandbox.exists()
     assert (sandbox / "agents").exists()
+
+
+def test_main_clears_existing_runtime_dir(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+
+    runtime_dir = tmp_path / "runtime"
+    stale_artifact = runtime_dir / "example" / "tests" / "orchestrator" / "checkpoint.json"
+    stale_artifact.parent.mkdir(parents=True)
+    stale_artifact.write_text("stale checkpoint")
+
+    exit_code = run_demo_tests.main(["--runtime-dir", str(runtime_dir)], demo_root=demo_root)
+
+    assert exit_code == 0
+    assert not stale_artifact.exists()

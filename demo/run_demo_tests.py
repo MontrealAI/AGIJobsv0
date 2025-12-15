@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -254,6 +255,8 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
                 # Allocate an isolated runtime sandbox per suite to eliminate
                 # cross-contamination between demos that rely on orchestrator state.
                 suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
+                if suite_runtime.exists():
+                    shutil.rmtree(suite_runtime)
                 env_overrides = _configure_runtime_env(suite_runtime)
                 code = _run_suite(
                     demo_dir, tests_dir, env_overrides, timeout=args.timeout
