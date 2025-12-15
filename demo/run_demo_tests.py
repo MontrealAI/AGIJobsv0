@@ -12,6 +12,7 @@ entire demo gallery.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import subprocess
 import sys
@@ -204,6 +205,16 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             "Use this to detect hanging demo tests early."
         ),
     )
+    parser.add_argument(
+        "--runtime-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Optional directory to store orchestrator runtime artifacts. "
+            "When provided, sandboxes are kept after the run to aid debugging; "
+            "otherwise a temporary directory is used and cleaned up automatically."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -213,7 +224,15 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(_discover_tests(demo_root, include=include))
 
-    with tempfile.TemporaryDirectory(prefix="demo-orchestrator-") as runtime_dir:
+    runtime_context: contextlib.AbstractContextManager[str]
+    if args.runtime_dir:
+        runtime_dir = args.runtime_dir.expanduser().resolve()
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+        runtime_context = contextlib.nullcontext(str(runtime_dir))
+    else:
+        runtime_context = tempfile.TemporaryDirectory(prefix="demo-orchestrator-")
+
+    with runtime_context as runtime_dir:
         runtime_root = Path(runtime_dir)
 
         if args.list:
