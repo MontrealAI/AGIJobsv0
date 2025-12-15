@@ -93,7 +93,13 @@ def _suite_runtime_root(base_runtime: Path, demo_dir: Path, tests_dir: Path) -> 
     return base_runtime / demo_dir.name / relative_tests_path
 
 
-def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) -> int:
+def _run_suite(
+    demo_root: Path,
+    tests_dir: Path,
+    env_overrides: dict[str, str],
+    *,
+    timeout: float | None = None,
+) -> int:
     env = os.environ.copy()
     env.update(env_overrides)
     env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
@@ -103,7 +109,18 @@ def _run_suite(demo_root: Path, tests_dir: Path, env_overrides: dict[str, str]) 
     # Execute from the suite's directory so sys.path[0] points at the demo under
     # test, preventing sibling packages with the same name from taking
     # precedence.
-    result = subprocess.run(cmd, env=env, check=False, cwd=tests_dir.parent)
+    run_kwargs = {"env": env, "check": False, "cwd": tests_dir.parent}
+    if timeout is not None:
+        run_kwargs["timeout"] = timeout
+
+    try:
+        result = subprocess.run(cmd, **run_kwargs)
+    except subprocess.TimeoutExpired:
+        print(
+            f"⏰  Timed out running {tests_dir} after {timeout}s; "
+            "investigate slow or hanging demos."
+        )
+        return 1
     # ``pytest`` returns ``5`` when no tests are collected; treat that as a
     # successful (albeit empty) suite so the aggregated status is accurate.
     return 0 if result.returncode == 5 else result.returncode
@@ -178,6 +195,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
             "Use this in local runs to get the fastest feedback loop."
         ),
     )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help=(
+            "Fail a suite if it exceeds the given runtime in seconds. "
+            "Use this to detect hanging demo tests early."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -209,7 +235,9 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             # cross-contamination between demos that rely on orchestrator state.
             suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
             env_overrides = _configure_runtime_env(suite_runtime)
-            code = _run_suite(demo_dir, tests_dir, env_overrides)
+            code = _run_suite(
+                demo_dir, tests_dir, env_overrides, timeout=args.timeout
+            )
             results.append((tests_dir, code))
 
             if args.fail_fast and code:
