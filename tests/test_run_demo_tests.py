@@ -49,6 +49,29 @@ def test_main_reports_missing_filters(demo_workspace: Path) -> None:
     assert code == 1
 
 
+def test_main_handles_keyboard_interrupt(
+    monkeypatch: pytest.MonkeyPatch,
+    demo_workspace: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    call_count = 0
+
+    def fake_run_suite(*_: object, **__: object) -> int:
+        nonlocal call_count
+        call_count += 1
+        if call_count > 1:
+            raise KeyboardInterrupt
+        return 0
+
+    monkeypatch.setattr(run_demo_tests, "_run_suite", fake_run_suite)
+
+    code = run_demo_tests.main([], demo_root=demo_workspace)
+
+    out = capsys.readouterr().out
+    assert "Interrupted after 1 of 2 suites" in out
+    assert code == 130
+
+
 def test_list_flag_does_not_execute_suites(monkeypatch: pytest.MonkeyPatch, demo_workspace: Path, capsys: pytest.CaptureFixture[str]) -> None:
     called = types.SimpleNamespace(count=0)
 
