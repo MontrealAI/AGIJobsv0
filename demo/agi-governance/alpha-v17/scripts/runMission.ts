@@ -9,17 +9,21 @@ const SUMMARY_FILE = path.join(REPORT_DIR, "governance-demo-summary-v17.json");
 const DASHBOARD_FILE = path.join(REPORT_DIR, "governance-demo-dashboard-v17.html");
 
 async function main(): Promise<void> {
+  const dryRun = process.argv.includes("--dry-run") || process.argv.includes("--dryRun") || process.argv.includes("--dryrun");
+
   const options: GovernanceDemoOptions = {
     missionFile: MISSION_FILE,
     reportDir: REPORT_DIR,
     reportFile: REPORT_FILE,
     summaryFile: SUMMARY_FILE,
     dashboardFile: DASHBOARD_FILE,
+    dryRun,
   };
 
   await generateGovernanceDemo(options);
 
-  console.log("✅ α-field v17 Singularity Dominion dossier generated.");
+  const prefix = dryRun ? "(dry run)" : "";
+  console.log(`✅ ${prefix} α-field v17 Singularity Dominion dossier generated.`.trim());
   console.log(`   Mission: ${MISSION_FILE}`);
   console.log(`   Report: ${REPORT_FILE}`);
   console.log(`   Summary: ${SUMMARY_FILE}`);

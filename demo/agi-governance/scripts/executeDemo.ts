@@ -18,6 +18,11 @@ export interface GovernanceDemoOptions {
   dashboardFile?: string;
   ownerMatrixJsonFile?: string;
   ownerMatrixMarkdownFile?: string;
+  /**
+   * When enabled, compute the dossier but avoid writing any artifacts to disk.
+   * Useful for smoke tests or CI probes where side effects are undesirable.
+   */
+  dryRun?: boolean;
 }
 
 function resolveMissionFile(customPath?: string): string {
@@ -3860,25 +3865,37 @@ export async function generateGovernanceDemo(options: GovernanceDemoOptions = {}
   const ownerMatrixMarkdownFile = path.resolve(
     options.ownerMatrixMarkdownFile ?? path.join(reportDir, path.basename(OWNER_MATRIX_MARKDOWN_FILE)),
   );
+  const dryRun = options.dryRun ?? false;
 
-  await mkdir(path.dirname(reportFile), { recursive: true });
-  await mkdir(path.dirname(summaryFile), { recursive: true });
-  await mkdir(path.dirname(dashboardFile), { recursive: true });
-  await mkdir(path.dirname(ownerMatrixJsonFile), { recursive: true });
-  await mkdir(path.dirname(ownerMatrixMarkdownFile), { recursive: true });
+  if (!dryRun) {
+    await mkdir(path.dirname(reportFile), { recursive: true });
+    await mkdir(path.dirname(summaryFile), { recursive: true });
+    await mkdir(path.dirname(dashboardFile), { recursive: true });
+    await mkdir(path.dirname(ownerMatrixJsonFile), { recursive: true });
+    await mkdir(path.dirname(ownerMatrixMarkdownFile), { recursive: true });
 
-  await writeFile(reportFile, buildMarkdown(bundle), "utf8");
-  await writeFile(summaryFile, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
-  await writeFile(dashboardFile, buildDashboardHtml(bundle), "utf8");
-  await writeFile(ownerMatrixJsonFile, JSON.stringify(buildOwnerMatrixJson(bundle), null, 2), "utf8");
-  await writeFile(ownerMatrixMarkdownFile, buildOwnerMatrixMarkdown(bundle), "utf8");
+    await writeFile(reportFile, buildMarkdown(bundle), "utf8");
+    await writeFile(summaryFile, JSON.stringify(buildSummary(bundle), null, 2), "utf8");
+    await writeFile(dashboardFile, buildDashboardHtml(bundle), "utf8");
+    await writeFile(ownerMatrixJsonFile, JSON.stringify(buildOwnerMatrixJson(bundle), null, 2), "utf8");
+    await writeFile(ownerMatrixMarkdownFile, buildOwnerMatrixMarkdown(bundle), "utf8");
+  }
 
   if (!process.env.CI) {
-    console.log(`↳ Report written to ${reportFile}`);
-    console.log(`↳ Summary JSON written to ${summaryFile}`);
-    console.log(`↳ Dashboard written to ${dashboardFile}`);
-    console.log(`↳ Owner matrix JSON written to ${ownerMatrixJsonFile}`);
-    console.log(`↳ Owner matrix Markdown written to ${ownerMatrixMarkdownFile}`);
+    if (dryRun) {
+      console.log("ℹ️ Dry run enabled — no artifacts were written.");
+      console.log(`   Report path: ${reportFile}`);
+      console.log(`   Summary JSON path: ${summaryFile}`);
+      console.log(`   Dashboard path: ${dashboardFile}`);
+      console.log(`   Owner matrix JSON path: ${ownerMatrixJsonFile}`);
+      console.log(`   Owner matrix Markdown path: ${ownerMatrixMarkdownFile}`);
+    } else {
+      console.log(`↳ Report written to ${reportFile}`);
+      console.log(`↳ Summary JSON written to ${summaryFile}`);
+      console.log(`↳ Dashboard written to ${dashboardFile}`);
+      console.log(`↳ Owner matrix JSON written to ${ownerMatrixJsonFile}`);
+      console.log(`↳ Owner matrix Markdown written to ${ownerMatrixMarkdownFile}`);
+    }
   }
 
   return bundle;
