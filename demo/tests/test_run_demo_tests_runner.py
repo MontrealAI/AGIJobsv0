@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -70,3 +71,27 @@ def test_list_mode_does_not_create_runtime_artifacts(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert not runtime_dir.exists()
+
+
+def test_top_level_tests_directory_is_discovered(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [(tests_dir, tests_dir)]
+
+
+def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+
+    pythonpath = run_demo_tests._build_pythonpath(tests_dir)
+
+    # Ensure the parent ``demo`` directory is present so imports like ``demo``
+    # or ``demo.run_demo_tests`` succeed when running the meta-suite in
+    # isolation.
+    assert str(demo_root.resolve()) in pythonpath.split(os.pathsep)

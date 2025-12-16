@@ -35,6 +35,11 @@ def _candidate_paths(demo_root: Path) -> Iterable[Path]:
         if candidate.is_dir():
             yield candidate
 
+    # Meta-suites live directly under ``demo/tests`` and need the demo root on
+    # ``sys.path`` to import the runner itself (``demo.run_demo_tests``).
+    if demo_root.name == "tests" and demo_root.parent.is_dir():
+        yield demo_root.parent
+
 
 def _build_pythonpath(demo_root: Path) -> str:
     entries: list[str] = []
@@ -150,6 +155,15 @@ _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
 def _discover_tests(
     demo_root: Path, *, include: set[str] | None = None
 ) -> Iterable[tuple[Path, Path]]:
+    def _iter_tests_dirs(root: Path) -> Iterable[Path]:
+        # Some suites (e.g., the runner's own tests) live directly under a
+        # ``tests`` directory instead of nested beneath a demo package. rglob
+        # does not yield the starting directory when it already matches the
+        # pattern, so we surface it explicitly.
+        if root.name == "tests":
+            yield root
+        yield from root.rglob("tests")
+
     def _matches_filter(path: Path) -> bool:
         if include is None:
             return True
@@ -160,7 +174,7 @@ def _discover_tests(
     for demo_dir in sorted((p for p in demo_root.iterdir() if p.is_dir())):
         if not _matches_filter(demo_dir):
             continue
-        for tests_dir in sorted(demo_dir.rglob("tests")):
+        for tests_dir in sorted(_iter_tests_dirs(demo_dir)):
             if not tests_dir.is_dir():
                 continue
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
