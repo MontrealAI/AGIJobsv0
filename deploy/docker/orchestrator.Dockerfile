@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.6
+
 FROM node:20-alpine AS build
 WORKDIR /srv/app
 
@@ -10,7 +12,10 @@ ENV \
 
 RUN apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    set -eu; \
+    npm ci --no-progress --registry=https://registry.npmjs.org/ \
+    || (echo "npm ci failed once, retrying after short backoff" && sleep 5 && npm ci --no-progress --registry=https://registry.npmjs.org/)
 COPY . .
 RUN npx tsc -p apps/orchestrator/tsconfig.json
 
@@ -27,7 +32,10 @@ ENV \
 
 RUN apk add --no-cache python3 make g++
 COPY package*.json .npmrc ./
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    set -eu; \
+    npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/ \
+    || (echo "npm ci --omit=dev failed once, retrying after short backoff" && sleep 5 && npm ci --omit=dev --no-progress --registry=https://registry.npmjs.org/)
 COPY --from=build /srv/app/apps/orchestrator/dist ./apps/orchestrator/dist
 COPY --from=build /srv/app/apps/orchestrator/*.json ./apps/orchestrator/
 CMD ["node", "apps/orchestrator/dist/main.js"]
