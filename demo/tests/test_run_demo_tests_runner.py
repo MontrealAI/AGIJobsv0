@@ -118,3 +118,22 @@ def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
             demo_root=project_dir, tests_dir=tests_dir, runner="node"
         )
     ]
+
+
+def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "node-demo"
+    nested_project = project_dir / "v2"
+    tests_dir = nested_project / "tests"
+    tests_dir.mkdir(parents=True)
+
+    (nested_project / "package.json").write_text("{}\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=nested_project, tests_dir=tests_dir, runner="node"
+        )
+    ]

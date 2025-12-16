@@ -180,6 +180,28 @@ def _has_node_tests(tests_dir: Path) -> bool:
     return False
 
 
+def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path:
+    """Return the nearest ancestor with a package.json, stopping at ``demo_dir``.
+
+    Some demos embed multiple Node projects (for example, ``v2`` rewrites). When
+    invoked from the top-level demo directory, ``npm`` will walk upward until it
+    finds a ``package.json``—often the repository root—which launches the wrong
+    test suite. Anchoring execution to the closest package root within the demo
+    keeps demo-specific tests isolated and avoids accidentally running the
+    monorepo's full Hardhat and web stacks.
+    """
+
+    for ancestor in [tests_dir, *tests_dir.parents]:
+        if ancestor == demo_dir.parent:
+            break
+        if (ancestor / "package.json").is_file():
+            return ancestor
+        if ancestor == demo_dir:
+            break
+
+    return demo_dir
+
+
 _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
 
 
@@ -214,7 +236,8 @@ def _discover_tests(
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
                 continue
             if _has_node_tests(tests_dir):
-                yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="node")
+                package_root = _node_package_root(tests_dir, demo_dir)
+                yield Suite(demo_root=package_root, tests_dir=tests_dir, runner="node")
                 continue
             print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
