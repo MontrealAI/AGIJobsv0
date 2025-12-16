@@ -90,6 +90,30 @@ def test_top_level_tests_directory_is_discovered(tmp_path: Path) -> None:
     ]
 
 
+def test_include_filter_matches_relative_paths(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    alpha_tests = demo_root / "alpha" / "tests"
+    beta_tests = demo_root / "beta" / "nested" / "tests"
+    alpha_tests.mkdir(parents=True)
+    beta_tests.mkdir(parents=True)
+    (alpha_tests / "test_alpha.py").write_text("def test_alpha():\n    assert True\n")
+    (beta_tests / "test_beta.py").write_text("def test_beta():\n    assert True\n")
+
+    suites = list(
+        run_demo_tests._discover_tests(
+            demo_root, include={"beta/nested", "does-not-match"}
+        )
+    )
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=demo_root / "beta",
+            tests_dir=beta_tests,
+            runner="python",
+        )
+    ]
+
+
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"
