@@ -220,8 +220,14 @@ def _discover_tests(
     def _matches_filter(path: Path) -> bool:
         if include is None:
             return True
+
         name = path.name.lower()
-        return any(token in name for token in include)
+        relative = str(path.relative_to(demo_root)).lower()
+
+        return any(
+            token in name or token in relative or relative in token
+            for token in include
+        )
 
     # Iterate in a deterministic order so CI logs remain stable across runs.
     for demo_dir in sorted((p for p in demo_root.iterdir() if p.is_dir())):
