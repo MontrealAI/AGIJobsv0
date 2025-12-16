@@ -19,7 +19,15 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Iterable, Literal
+
+
+@dataclass(frozen=True)
+class Suite:
+    demo_root: Path
+    tests_dir: Path
+    runner: Literal["python", "node"]
 
 
 def _candidate_paths(demo_root: Path) -> Iterable[Path]:
@@ -101,22 +109,33 @@ def _suite_runtime_root(base_runtime: Path, demo_dir: Path, tests_dir: Path) -> 
 
 
 def _run_suite(
-    demo_root: Path,
-    tests_dir: Path,
+    suite: Suite,
     env_overrides: dict[str, str],
     *,
     timeout: float | None = None,
 ) -> int:
     env = os.environ.copy()
     env.update(env_overrides)
-    env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
-    env["PYTHONPATH"] = _build_pythonpath(demo_root)
-    cmd = [sys.executable, "-m", "pytest", str(tests_dir), "--import-mode=importlib"]
-    print(f"\n→ Running {tests_dir} with PYTHONPATH={env['PYTHONPATH']}")
-    # Execute from the suite's directory so sys.path[0] points at the demo under
-    # test, preventing sibling packages with the same name from taking
-    # precedence.
-    run_kwargs = {"env": env, "check": False, "cwd": tests_dir.parent}
+
+    if suite.runner == "python":
+        env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
+        env["PYTHONPATH"] = _build_pythonpath(suite.demo_root)
+        cmd = [
+            sys.executable,
+            "-m",
+            "pytest",
+            str(suite.tests_dir),
+            "--import-mode=importlib",
+        ]
+        description = f"{suite.tests_dir} with PYTHONPATH={env['PYTHONPATH']}"
+        cwd = suite.tests_dir.parent
+    else:
+        cmd = ["npm", "test", "--", "--runInBand"]
+        description = f"{suite.tests_dir} via npm test"
+        cwd = suite.demo_root
+
+    print(f"\n→ Running {description}")
+    run_kwargs = {"env": env, "check": False, "cwd": cwd}
     if timeout is not None:
         run_kwargs["timeout"] = timeout
 
@@ -124,13 +143,11 @@ def _run_suite(
         result = subprocess.run(cmd, **run_kwargs)
     except subprocess.TimeoutExpired:
         print(
-            f"⏰  Timed out running {tests_dir} after {timeout}s; "
+            f"⏰  Timed out running {suite.tests_dir} after {timeout}s; "
             "investigate slow or hanging demos."
         )
         return 1
-    # ``pytest`` returns ``5`` when no tests are collected; treat that as a
-    # successful (albeit empty) suite so the aggregated status is accurate.
-    return 0 if result.returncode == 5 else result.returncode
+    return 0 if suite.runner == "python" and result.returncode == 5 else result.returncode
 
 
 def _has_python_tests(tests_dir: Path) -> bool:
@@ -149,12 +166,26 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
+def _has_node_tests(tests_dir: Path) -> bool:
+    has_package = (tests_dir.parent / "package.json").is_file()
+    if not has_package:
+        return False
+
+    for file in tests_dir.rglob("*.test.*"):
+        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
+            return True
+    for file in tests_dir.rglob("*.spec.*"):
+        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
+            return True
+    return False
+
+
 _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
 
 
 def _discover_tests(
     demo_root: Path, *, include: set[str] | None = None
-) -> Iterable[tuple[Path, Path]]:
+) -> Iterable[Suite]:
     def _iter_tests_dirs(root: Path) -> Iterable[Path]:
         # Some suites (e.g., the runner's own tests) live directly under a
         # ``tests`` directory instead of nested beneath a demo package. rglob
@@ -179,10 +210,13 @@ def _discover_tests(
                 continue
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
-            if not _has_python_tests(tests_dir):
-                print(f"→ Skipping {tests_dir} (no Python test files found)")
+            if _has_python_tests(tests_dir):
+                yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
                 continue
-            yield demo_dir, tests_dir
+            if _has_node_tests(tests_dir):
+                yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="node")
+                continue
+            print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -244,8 +278,8 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             print("No demo test suites found for the provided filters.")
             return 1
         print("Discovered demo test suites:")
-        for _, tests_dir in suites:
-            print(f" - {tests_dir}")
+        for suite in suites:
+            print(f" - {suite.tests_dir} [{suite.runner}]")
         return 0
 
     runtime_context: contextlib.AbstractContextManager[str]
@@ -263,19 +297,19 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             print("No demo test suites found for the provided filters.")
             return 1
 
-        results: list[tuple[Path, int]] = []
+        results: list[tuple[Suite, int]] = []
         try:
-            for demo_dir, tests_dir in suites:
+            for suite in suites:
                 # Allocate an isolated runtime sandbox per suite to eliminate
                 # cross-contamination between demos that rely on orchestrator state.
-                suite_runtime = _suite_runtime_root(runtime_root, demo_dir, tests_dir)
+                suite_runtime = _suite_runtime_root(
+                    runtime_root, suite.demo_root, suite.tests_dir
+                )
                 if suite_runtime.exists():
                     shutil.rmtree(suite_runtime)
                 env_overrides = _configure_runtime_env(suite_runtime)
-                code = _run_suite(
-                    demo_dir, tests_dir, env_overrides, timeout=args.timeout
-                )
-                results.append((tests_dir, code))
+                code = _run_suite(suite, env_overrides, timeout=args.timeout)
+                results.append((suite, code))
 
                 if args.fail_fast and code:
                     print(
@@ -291,11 +325,11 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             )
             return 130
 
-        failed = [(path, code) for path, code in results if code]
+        failed = [(suite, code) for suite, code in results if code]
         if failed:
             print("\n⚠️  Demo test runs completed with failures:")
-            for tests_dir, code in failed:
-                print(f"   • {tests_dir} (exit code {code})")
+            for suite, code in failed:
+                print(f"   • {suite.tests_dir} (exit code {code})")
             return 1
 
         print(f"\n✅ All demo test suites passed ({len(results)} suites).")

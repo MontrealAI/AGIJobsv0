@@ -81,7 +81,13 @@ def test_top_level_tests_directory_is_discovered(tmp_path: Path) -> None:
 
     suites = list(run_demo_tests._discover_tests(demo_root))
 
-    assert suites == [(tests_dir, tests_dir)]
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=tests_dir,
+            tests_dir=tests_dir,
+            runner="python",
+        )
+    ]
 
 
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
@@ -95,3 +101,20 @@ def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     # or ``demo.run_demo_tests`` succeed when running the meta-suite in
     # isolation.
     assert str(demo_root.resolve()) in pythonpath.split(os.pathsep)
+
+
+def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "node-demo"
+    tests_dir = project_dir / "tests"
+    tests_dir.mkdir(parents=True)
+    (project_dir / "package.json").write_text("{}\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir, tests_dir=tests_dir, runner="node"
+        )
+    ]
