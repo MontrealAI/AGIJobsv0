@@ -34,6 +34,7 @@ class Mission:
     payoff_matrix: Sequence[Sequence[float]]
     strategy_shares: Sequence[float]
     required_owner_categories: Sequence[str]
+    owner_control_categories: Sequence[str]
 
     @classmethod
     def from_payload(cls, payload: Mapping[str, object]) -> "Mission":
@@ -41,6 +42,10 @@ class Mission:
         stats = payload.get("statisticalPhysics", {})
         game = payload.get("gameTheory", {})
         owner_controls = payload.get("ownerControls", {})
+
+        def _owner_categories(block: Iterable[Mapping[str, object]]) -> list[str]:
+            return [str(item.get("category", "")) for item in block if "category" in item]
+
         return cls(
             title=str(payload.get("meta", {}).get("title", "")),
             enthalpy_kj=float(thermo.get("enthalpyKJ", 0.0)),
@@ -61,6 +66,8 @@ class Mission:
             required_owner_categories=[
                 str(cat) for cat in owner_controls.get("requiredCategories", [])
             ],
+            owner_control_categories=_owner_categories(owner_controls.get("criticalCapabilities", []))
+            + _owner_categories(owner_controls.get("upgradeActions", [])),
         )
 
 
@@ -89,10 +96,11 @@ def compute_governance_metrics(mission: Mission) -> dict[str, float | list[str]]
     gibbs_free_energy = mission.enthalpy_kj - mission.temperature_k * mission.entropy_kj_per_k
     partition, expected_energy = _stable_partition(mission.levels, mission.beta, mission.energy_scaling)
 
+    owner_categories = set(mission.owner_control_categories)
     missing_categories = [
         category
         for category in mission.required_owner_categories
-        if category not in {"pause", "resume", "parameter", "treasury", "sentinel", "upgrade", "compliance"}
+        if category not in owner_categories
     ]
 
     return {
