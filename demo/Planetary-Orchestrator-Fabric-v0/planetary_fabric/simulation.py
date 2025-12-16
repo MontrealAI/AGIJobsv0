@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import random
+import shutil
 import statistics
 import time
 from dataclasses import dataclass
@@ -57,7 +58,12 @@ async def _populate_jobs(
         await orchestrator.register_job(job)
 
 
-async def _prepare_orchestrator(config: SimulationConfig, resume: bool = False) -> PlanetaryOrchestrator:
+async def _prepare_orchestrator(
+    config: SimulationConfig, *, resume: bool = False
+) -> PlanetaryOrchestrator:
+    if not resume and config.checkpoint.directory.exists():
+        shutil.rmtree(config.checkpoint.directory)
+
     orchestrator = await PlanetaryOrchestrator.from_checkpoint(
         regions=list(config.regions),
         checkpoint=config.checkpoint,
@@ -121,6 +127,10 @@ async def run_high_load_simulation(
             await orchestrator.shutdown()
 
     snapshot = snapshot or orchestrator.snapshot()
+
+    for region, data in snapshot["shards"].items():
+        if not shard_metrics[region]:
+            shard_metrics[region].append(data.get("queued_jobs", 0))
 
     return SimulationResult(
         completion_rate=snapshot["metrics"]["completion_rate"],
