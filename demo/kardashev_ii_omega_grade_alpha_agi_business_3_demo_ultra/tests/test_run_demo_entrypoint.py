@@ -17,6 +17,16 @@ def test_run_forwards_arguments(monkeypatch):
     assert captured["argv"] == ["launch", "--cycles", "2"]
 
 
+def test_run_defaults_to_ci(monkeypatch):
+    captured = {}
+
+    def fake_main(argv):
+        captured["argv"] = argv
+
+    run_demo.run([], main_fn=fake_main)
+    assert captured["argv"] == ["ci"]
+
+
 def test_main_module_executes_as_script(tmp_path):
     script = Path(__file__).resolve().parent.parent / "__main__.py"
     result = subprocess.run(

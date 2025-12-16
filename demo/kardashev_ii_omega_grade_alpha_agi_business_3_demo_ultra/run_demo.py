@@ -34,6 +34,9 @@ def _resolve_main():
     raise AttributeError(f"{package_name} does not expose a 'main' callable")
 
 
+DEFAULT_COMMAND = "ci"
+
+
 def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
     """Execute the canonical demo CLI with optional arguments.
 
@@ -46,8 +49,13 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
             underlying package state.
     """
 
-    if argv is None:
-        argv = sys.argv[1:]
+    args = list(sys.argv[1:] if argv is None else argv)
+
+    # Provide a deterministic fast path when the operator hasn't supplied a
+    # subcommand. Defaulting to the CI-grade mission mirrors other demos and
+    # keeps ``python run_demo.py`` usable without memorizing the full CLI.
+    if not args:
+        args = [DEFAULT_COMMAND]
 
     for path in (REPO_ROOT, DEMO_ROOT):
         path_str = str(path)
@@ -55,7 +63,7 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
             sys.path.insert(0, path_str)
 
     launcher = main_fn or _resolve_main()
-    launcher(list(argv))
+    launcher(args)
 
 
 if __name__ == "__main__":
