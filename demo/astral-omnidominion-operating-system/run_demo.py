@@ -12,7 +12,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Iterable, Protocol
+from typing import Callable, Iterable, Protocol
 
 
 class _Runner(Protocol):
@@ -29,7 +29,12 @@ def build_command(args: Iterable[str]) -> list[str]:
     return ["npm", "run", "demo:agi-os:first-class", "--", *args]
 
 
-def run(argv: Iterable[str] | None = None, *, runner: _Runner | None = None) -> int:
+def run(
+    argv: Iterable[str] | None = None,
+    *,
+    runner: _Runner | None = None,
+    is_interactive: Callable[[], bool] | None = None,
+) -> int:
     """Execute the Astral Omnidominion demo through npm.
 
     Args:
@@ -43,6 +48,13 @@ def run(argv: Iterable[str] | None = None, *, runner: _Runner | None = None) -> 
     """
 
     args = list(argv) if argv is not None else sys.argv[1:]
+
+    # Default to a fully automated localhost rehearsal when stdin is not a TTY.
+    # This keeps CI and headless runs from hanging on interactive prompts while
+    # preserving the existing behaviour for humans running the demo directly.
+    is_interactive = is_interactive or sys.stdin.isatty
+    if not args and not is_interactive():
+        args = ["--network", "localhost", "--yes", "--no-compose", "--skip-deploy"]
     cmd = build_command(args)
     runner = runner or subprocess.run
     result = runner(cmd, check=False, cwd=str(REPO_ROOT))
