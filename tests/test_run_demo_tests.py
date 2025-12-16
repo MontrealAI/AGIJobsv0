@@ -34,7 +34,7 @@ def test_discover_tests_filters_by_name(demo_workspace: Path) -> None:
         run_demo_tests._discover_tests(demo_workspace, include={"alpha"})
     )
     assert len(discovered) == 1
-    assert discovered[0][0].name == "alpha-demo"
+    assert discovered[0].demo_root.name == "alpha-demo"
 
 
 def test_discover_tests_skips_non_python_suites(demo_workspace: Path, capsys: pytest.CaptureFixture[str]) -> None:
@@ -128,6 +128,10 @@ def test_run_suite_disables_external_plugins(
     tests_dir = demo_root / "tests"
     tests_dir.mkdir(parents=True)
 
+    suite = run_demo_tests.Suite(
+        demo_root=demo_root, tests_dir=tests_dir, runner="python"
+    )
+
     monkeypatch.setenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "0")
 
     captured_env: dict[str, str] = {}
@@ -142,7 +146,7 @@ def test_run_suite_disables_external_plugins(
 
     monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
 
-    code = run_demo_tests._run_suite(demo_root, tests_dir, {"EXTRA": "1"})
+    code = run_demo_tests._run_suite(suite, {"EXTRA": "1"})
 
     assert code == 0
     assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "0"
@@ -151,7 +155,7 @@ def test_run_suite_disables_external_plugins(
     captured_env.clear()
     monkeypatch.delenv("PYTEST_DISABLE_PLUGIN_AUTOLOAD")
 
-    run_demo_tests._run_suite(demo_root, tests_dir, {})
+    run_demo_tests._run_suite(suite, {})
 
     assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "1"
 
@@ -162,6 +166,10 @@ def test_run_suite_only_adds_timeout_when_requested(
     demo_root = tmp_path / "demo-root"
     tests_dir = demo_root / "tests"
     tests_dir.mkdir(parents=True)
+
+    suite = run_demo_tests.Suite(
+        demo_root=demo_root, tests_dir=tests_dir, runner="python"
+    )
 
     captured_kwargs: dict[str, object] = {}
 
@@ -175,10 +183,10 @@ def test_run_suite_only_adds_timeout_when_requested(
 
     monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
 
-    run_demo_tests._run_suite(demo_root, tests_dir, {}, timeout=None)
+    run_demo_tests._run_suite(suite, {}, timeout=None)
     assert "timeout" not in captured_kwargs
 
     captured_kwargs.clear()
 
-    run_demo_tests._run_suite(demo_root, tests_dir, {}, timeout=5.0)
+    run_demo_tests._run_suite(suite, {}, timeout=5.0)
     assert captured_kwargs.get("timeout") == 5.0
