@@ -7,6 +7,10 @@
 - **Module Focus:** Anchors Demo → Astral Omnidominion Operating System Command Theatre inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
 - **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
+### Quick start
+- `python demo/astral-omnidominion-operating-system-command-theatre/run_demo.py` produces a non-interactive JSON readiness report under `reports/astral-omnidominion-operating-system-command-theatre/`.
+- The runner is sandboxed and does not require Docker or blockchain endpoints, making it suitable for CI smoke checks.
+
 ## Capabilities
 - Provides opinionated configuration and assets tailored to `demo/astral-omnidominion-operating-system-command-theatre` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
 - Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
