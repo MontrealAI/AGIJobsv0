@@ -40,7 +40,7 @@ class Mission:
         thermo = payload.get("thermodynamics", {})
         stats = payload.get("statisticalPhysics", {})
         game = payload.get("gameTheory", {})
-        operations = payload.get("operations", {})
+        owner_controls = payload.get("ownerControls", {})
         return cls(
             title=str(payload.get("meta", {}).get("title", "")),
             enthalpy_kj=float(thermo.get("enthalpyKJ", 0.0)),
@@ -59,7 +59,7 @@ class Mission:
                 float(strat.get("initialShare", 0.0)) for strat in game.get("strategies", [])
             ],
             required_owner_categories=[
-                str(cat) for cat in operations.get("requiredCategories", [])
+                str(cat) for cat in owner_controls.get("requiredCategories", [])
             ],
         )
 
