@@ -92,6 +92,23 @@ def test_top_level_tests_directory_is_discovered(tmp_path: Path) -> None:
     ]
 
 
+def test_test_directory_is_discovered(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "test"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_ok.py").write_text("def test_ok():\n    assert True\n")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=demo_root / "example",
+            tests_dir=tests_dir,
+            runner="python",
+        )
+    ]
+
+
 def test_include_filter_matches_relative_paths(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     alpha_tests = demo_root / "alpha" / "tests"
@@ -158,6 +175,34 @@ def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
             demo_root=project_dir, tests_dir=tests_dir, runner="node"
         )
     ]
+
+
+def test_discovers_plain_js_suite_without_package(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "plain-js-demo"
+    tests_dir = project_dir / "test"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "diagnostics.test.cjs").write_text("import test from 'node:test';\n")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir, tests_dir=tests_dir, runner="node-direct"
+        )
+    ]
+
+
+def test_skips_typed_js_suite_without_package(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "ts-demo"
+    tests_dir = project_dir / "test"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "alpha.test.ts").write_text("describe('noop', () => {});\n")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == []
 
 
 def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
@@ -233,19 +278,29 @@ def test_main_reports_durations_and_slowest_suites(
     assert str(beta_tests) in output
 
 
-def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    demo_root = tmp_path / "demo"
-    tests_dir = demo_root / "example" / "tests"
-    tests_dir.mkdir(parents=True)
-
-    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+@pytest.mark.parametrize(
+    "suite",
+    [
+        run_demo_tests.Suite(
+            demo_root=Path("/demo"), tests_dir=Path("/demo/tests"), runner="node"
+        ),
+        run_demo_tests.Suite(
+            demo_root=Path("/demo"), tests_dir=Path("/demo/tests"), runner="node-direct"
+        ),
+    ],
+)
+def test_node_suites_run_in_ci_mode(
+    suite: run_demo_tests.Suite, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     captured_env: dict[str, str] = {}
+    captured_cmd: list[str] = []
 
     class _Result:
         returncode = 0
 
     def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
         captured_env.update(kwargs.get("env", {}))
+        captured_cmd.extend(cmd)
         return _Result()
 
     monkeypatch.setattr(subprocess, "run", _fake_run)
@@ -256,6 +311,10 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert captured_env["CI"].lower() in {"1", "true"}
     assert captured_env["npm_config_progress"] == "false"
     assert captured_env["npm_config_fund"] == "false"
+    if suite.runner == "node":
+        assert captured_cmd[:3] == ["npm", "test", "--"]
+    else:
+        assert captured_cmd[:2] == ["node", "--test"]
 
 
 def test_node_suite_reports_missing_runner(
