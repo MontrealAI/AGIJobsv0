@@ -57,3 +57,46 @@ def test_topological_detection_raises_on_cycles(tmp_path: Path) -> None:
         assert "Cyclic" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("Expected a cyclic dependency error but none was raised")
+
+
+def test_topological_order_is_stable() -> None:
+    run_demo = load_module()
+    jobs = [
+        run_demo.Job(
+            identifier="A",
+            title="No deps",
+            reward=1,
+            deadline_days=1,
+            dependencies=[],
+            energy_budget=1.0,
+            thermo=run_demo.ThermodynamicProfile(
+                expected_entropy=0.1, adjustment_on_delay="none"
+            ),
+        ),
+        run_demo.Job(
+            identifier="B",
+            title="No deps either",
+            reward=1,
+            deadline_days=1,
+            dependencies=[],
+            energy_budget=1.0,
+            thermo=run_demo.ThermodynamicProfile(
+                expected_entropy=0.2, adjustment_on_delay="none"
+            ),
+        ),
+        run_demo.Job(
+            identifier="C",
+            title="Depends on both",
+            reward=1,
+            deadline_days=1,
+            dependencies=["A", "B"],
+            energy_budget=1.0,
+            thermo=run_demo.ThermodynamicProfile(
+                expected_entropy=0.3, adjustment_on_delay="none"
+            ),
+        ),
+    ]
+
+    orderings = [run_demo.topological_order(jobs) for _ in range(5)]
+    assert all(ordering[0].identifier == "A" and ordering[1].identifier == "B" for ordering in orderings)
+    assert all(ordering[-1].identifier == "C" for ordering in orderings)
