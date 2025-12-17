@@ -28,7 +28,7 @@ from typing import Iterable, Literal
 class Suite:
     demo_root: Path
     tests_dir: Path
-    runner: Literal["python", "node"]
+    runner: Literal["python", "node", "node-direct"]
 
 
 def _candidate_paths(demo_root: Path) -> Iterable[Path]:
@@ -139,7 +139,7 @@ def _run_suite(
     env = os.environ.copy()
     env.update(env_overrides)
 
-    if suite.runner == "node":
+    if suite.runner in {"node", "node-direct"}:
         # Force non-interactive, reproducible npm runs. CI ensures tools like
         # Vitest or Jest avoid watch mode and exit after executing the suite,
         # while disabling progress and fund prompts removes noisy network
@@ -148,9 +148,14 @@ def _run_suite(
         env.setdefault("CI", "1")
         env.setdefault("npm_config_progress", "false")
         env.setdefault("npm_config_fund", "false")
-        cmd = ["npm", "test", "--", "--runInBand"]
-        description = f"{suite.tests_dir} via npm test"
-        cwd = suite.demo_root
+        if suite.runner == "node":
+            cmd = ["npm", "test", "--", "--runInBand"]
+            description = f"{suite.tests_dir} via npm test"
+            cwd = suite.demo_root
+        else:
+            cmd = ["node", "--test", str(suite.tests_dir)]
+            description = f"{suite.tests_dir} via node --test"
+            cwd = suite.demo_root
     else:
         env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
         env["PYTHONPATH"] = _build_pythonpath(suite.demo_root)
@@ -217,18 +222,37 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
-def _has_node_tests(tests_dir: Path) -> bool:
+def _node_test_runner(tests_dir: Path) -> Literal["node", "node-direct"] | None:
+    """Classify a tests directory that contains JavaScript/TypeScript specs.
+
+    We prefer npm-based runs when a package.json is available so that suites can
+    rely on local tooling (ts-node, Vitest, etc.). When no package manifest is
+    present, we fall back to Node's built-in test runner for plain JS/CJS
+    suites. Typed tests without a package manifest are skipped to avoid
+    surprising failures caused by missing transpilation layers.
+    """
+
     has_package = (tests_dir.parent / "package.json").is_file()
-    if not has_package:
-        return False
+    has_plain_js = False
+    has_typed_js = False
+
+    def _observe(file: Path) -> None:
+        nonlocal has_plain_js, has_typed_js
+        if file.suffix in {".js", ".cjs", ".mjs"}:
+            has_plain_js = True
+        elif file.suffix in {".ts", ".tsx", ".jsx"}:
+            has_typed_js = True
 
     for file in tests_dir.rglob("*.test.*"):
-        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return True
+        _observe(file)
     for file in tests_dir.rglob("*.spec.*"):
-        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return True
-    return False
+        _observe(file)
+
+    if has_package and (has_plain_js or has_typed_js):
+        return "node"
+    if not has_package and has_plain_js:
+        return "node-direct"
+    return None
 
 
 def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path:
@@ -256,17 +280,27 @@ def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path:
 _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
 
 
-def _discover_tests(
-    demo_root: Path, *, include: set[str] | None = None
-) -> Iterable[Suite]:
+_TEST_DIR_NAMES = ("tests", "test")
+
+
+def _discover_tests(demo_root: Path, *, include: set[str] | None = None) -> Iterable[Suite]:
     def _iter_tests_dirs(root: Path) -> Iterable[Path]:
         # Some suites (e.g., the runner's own tests) live directly under a
         # ``tests`` directory instead of nested beneath a demo package. rglob
         # does not yield the starting directory when it already matches the
-        # pattern, so we surface it explicitly.
-        if root.name == "tests":
-            yield root
-        yield from root.rglob("tests")
+        # pattern, so we surface it explicitly. We also include ``test`` to
+        # catch demos that follow Node's default convention.
+        seen: set[Path] = set()
+        for name in _TEST_DIR_NAMES:
+            if root.name == name:
+                seen.add(root.resolve())
+                yield root
+            for candidate in root.rglob(name):
+                resolved = candidate.resolve()
+                if resolved in seen:
+                    continue
+                seen.add(resolved)
+                yield candidate
 
     def _matches_filter(path: Path) -> bool:
         if include is None:
@@ -292,9 +326,17 @@ def _discover_tests(
             if _has_python_tests(tests_dir):
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
                 continue
-            if _has_node_tests(tests_dir):
-                package_root = _node_package_root(tests_dir, demo_dir)
-                yield Suite(demo_root=package_root, tests_dir=tests_dir, runner="node")
+            node_runner = _node_test_runner(tests_dir)
+            if node_runner:
+                if node_runner == "node":
+                    package_root = _node_package_root(tests_dir, demo_dir)
+                    yield Suite(
+                        demo_root=package_root, tests_dir=tests_dir, runner=node_runner
+                    )
+                else:
+                    yield Suite(
+                        demo_root=tests_dir.parent, tests_dir=tests_dir, runner=node_runner
+                    )
                 continue
             print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
