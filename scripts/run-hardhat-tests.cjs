@@ -133,6 +133,11 @@ if (reporterOption) {
   process.env.MOCHA_REPORTER_OPTIONS = reporterOption;
 }
 
+if (process.env.SKIP_HARDHAT_TESTS === '1' || process.env.HARDHAT_TESTS_ENABLED === '0') {
+  console.log('⏩ Skipping Hardhat test run because SKIP_HARDHAT_TESTS=1 was set.');
+  process.exit(0);
+}
+
 if (shouldSkipHardhat) {
   console.log('Skipping Hardhat test run because --listTests is a Jest-only flag.');
   process.exit(0);
