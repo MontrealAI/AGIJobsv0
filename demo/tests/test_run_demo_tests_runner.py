@@ -17,12 +17,16 @@ def test_suite_runtime_root_uses_demo_and_relative_path(tmp_path: Path) -> None:
         tests_dir = demo / "nested" / "tests"
         tests_dir.mkdir(parents=True)
 
-    suite_a = run_demo_tests._suite_runtime_root(tmp_path, demo_a, demo_a / "nested" / "tests")
-    suite_b = run_demo_tests._suite_runtime_root(tmp_path, demo_b, demo_b / "nested" / "tests")
+    suite_a = run_demo_tests._suite_runtime_root(
+        tmp_path, demo_a, demo_a / "nested" / "tests", runner="python"
+    )
+    suite_b = run_demo_tests._suite_runtime_root(
+        tmp_path, demo_b, demo_b / "nested" / "tests", runner="node"
+    )
 
     assert suite_a != suite_b
-    assert suite_a.relative_to(tmp_path) == Path("demo-a/nested/tests")
-    assert suite_b.relative_to(tmp_path) == Path("demo-b/nested/tests")
+    assert suite_a.relative_to(tmp_path) == Path("demo-a/nested/tests/python")
+    assert suite_b.relative_to(tmp_path) == Path("demo-b/nested/tests/node")
 
 
 def test_main_respects_runtime_dir_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -37,7 +41,7 @@ def test_main_respects_runtime_dir_option(tmp_path: Path, monkeypatch: pytest.Mo
     exit_code = run_demo_tests.main(["--runtime-dir", str(runtime_dir)], demo_root=demo_root)
 
     assert exit_code == 0
-    sandbox = runtime_dir / "example" / "tests" / "orchestrator"
+    sandbox = runtime_dir / "example" / "tests" / "python" / "orchestrator"
     assert sandbox.exists()
     assert (sandbox / "agents").exists()
 
@@ -49,7 +53,9 @@ def test_main_clears_existing_runtime_dir(tmp_path: Path) -> None:
     (tests_dir / "test_ok.py").write_text("def test_ok():\n    assert True\n")
 
     runtime_dir = tmp_path / "runtime"
-    stale_artifact = runtime_dir / "example" / "tests" / "orchestrator" / "checkpoint.json"
+    stale_artifact = (
+        runtime_dir / "example" / "tests" / "python" / "orchestrator" / "checkpoint.json"
+    )
     stale_artifact.parent.mkdir(parents=True)
     stale_artifact.write_text("stale checkpoint")
 
@@ -149,6 +155,7 @@ def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
     tests_dir = project_dir / "tests"
     tests_dir.mkdir(parents=True)
     (project_dir / "package.json").write_text("{}\n")
+    (project_dir / "package-lock.json").write_text("{}\n")
     (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
 
     suites = list(run_demo_tests._discover_tests(demo_root))
@@ -168,6 +175,7 @@ def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
     tests_dir.mkdir(parents=True)
 
     (nested_project / "package.json").write_text("{}\n")
+    (nested_project / "package-lock.json").write_text("{}\n")
     (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
 
     suites = list(run_demo_tests._discover_tests(demo_root))
@@ -175,6 +183,53 @@ def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
     assert suites == [
         run_demo_tests.Suite(
             demo_root=nested_project, tests_dir=tests_dir, runner="node"
+        )
+    ]
+
+
+def test_python_and_node_suites_can_share_tests_dir(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "shared" / "tests"
+    tests_dir.mkdir(parents=True)
+
+    (demo_root / "package.json").write_text("{}\n")
+    (demo_root / "package-lock.json").write_text("{}\n")
+    (tests_dir / "test_alpha.py").write_text("def test_alpha():\n    assert True\n")
+    (tests_dir / "alpha.test.ts").write_text("describe('ok', () => {});\n")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=demo_root / "shared",
+            tests_dir=tests_dir,
+            runner="python",
+        ),
+        run_demo_tests.Suite(
+            demo_root=demo_root,
+            tests_dir=tests_dir,
+            runner="node",
+        ),
+    ]
+
+
+def test_discovers_package_above_nested_tests_dir(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "node-demo"
+    nested_tests = project_dir / "subsystem" / "__tests__"
+    nested_tests.mkdir(parents=True)
+
+    (project_dir / "package.json").write_text("{}\n")
+    (project_dir / "package-lock.json").write_text("{}\n")
+    (nested_tests / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir,
+            tests_dir=nested_tests,
+            runner="node",
         )
     ]
 
@@ -256,6 +311,33 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert captured_env["CI"].lower() in {"1", "true"}
     assert captured_env["npm_config_progress"] == "false"
     assert captured_env["npm_config_fund"] == "false"
+
+
+def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+    (demo_root / "package.json").write_text('{"scripts": {"test": "vitest run"}}')
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+    commands: list[list[str]] = []
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        commands.append(cmd)
+        return _Result()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+
+    assert exit_code == 0
+    assert commands
+    command = commands[0]
+    assert "--runInBand" not in command
+    assert "--pool" in command
 
 
 def test_node_suite_reports_missing_runner(
