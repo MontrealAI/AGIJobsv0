@@ -109,24 +109,42 @@ class Plan:
 
 
 def topological_order(jobs: Iterable[Job]) -> List[Job]:
+    """Return a deterministic topological ordering for the job lattice.
+
+    The original implementation iterated over a ``set`` of pending nodes, which
+    allowed valid orderings but made the result dependent on hash iteration
+    order. That non-determinism occasionally produced shuffled readiness
+    reports and made it harder to compare runs. We now respect the incoming
+    sequence order whenever multiple nodes are simultaneously available.
+    """
+
     jobs_by_id = {job.identifier: job for job in jobs}
-    pending: Set[str] = set(jobs_by_id.keys())
+    # Maintain the discovery order instead of relying on set iteration.
+    pending_order: List[str] = list(jobs_by_id.keys())
+    pending_lookup: Set[str] = set(pending_order)
     resolved: Set[str] = set()
     ordered: List[Job] = []
 
-    while pending:
+    while pending_order:
         progressed = False
-        for job_id in list(pending):
+        next_round: List[str] = []
+        for job_id in pending_order:
             deps = set(jobs_by_id[job_id].dependencies)
             if deps.issubset(resolved):
                 ordered.append(jobs_by_id[job_id])
                 resolved.add(job_id)
-                pending.remove(job_id)
+                pending_lookup.remove(job_id)
                 progressed = True
+            else:
+                next_round.append(job_id)
+
         if not progressed:
             unresolved_pairs: List[Tuple[str, List[str]]] = [
-                (job_id, sorted(set(jobs_by_id[job_id].dependencies) - resolved))
-                for job_id in pending
+                (
+                    job_id,
+                    sorted(set(jobs_by_id[job_id].dependencies) - resolved),
+                )
+                for job_id in pending_lookup
             ]
             raise ValueError(
                 "Cyclic or missing dependencies detected: "
@@ -135,6 +153,9 @@ def topological_order(jobs: Iterable[Job]) -> List[Job]:
                     for job_id, missing in unresolved_pairs
                 )
             )
+
+        pending_order = next_round
+
     return ordered
 
 
