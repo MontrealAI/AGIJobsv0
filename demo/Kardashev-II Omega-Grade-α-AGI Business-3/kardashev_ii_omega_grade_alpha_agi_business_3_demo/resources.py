@@ -120,7 +120,7 @@ class ResourceManager:
         recipient_account.tokens += amount
 
     def lock_stake(self, name: str, amount: float) -> None:
-        account = self.ensure_account(name)
+        account = self.ensure_account(name, amount)
         account.ensure_budget(amount)
         account.tokens -= amount
         account.locked += amount
