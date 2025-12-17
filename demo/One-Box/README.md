@@ -24,7 +24,9 @@ flowchart LR
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/One-Box`.
-3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
+3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal. When
+   you only need a fast smoke pass and already trust the Solidity artifacts, set `SKIP_HARDHAT_TESTS=1 npm test` to bypass the
+   Hardhat suite without touching the other checks.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../OperatorRunbook.md).
 
 ## Directory Guide
