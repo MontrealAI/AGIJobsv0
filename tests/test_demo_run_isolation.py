@@ -18,9 +18,9 @@ def test_suite_runtime_root_is_unique(tmp_path: Path) -> None:
 
     runtime_root = tmp_path / "runtime"
 
-    path_a = run_demo_tests._suite_runtime_root(runtime_root, demo_a, tests_dir_a)
-    path_b = run_demo_tests._suite_runtime_root(runtime_root, demo_b, tests_dir_b)
+    path_a = run_demo_tests._suite_runtime_root(runtime_root, demo_a, tests_dir_a, runner="python")
+    path_b = run_demo_tests._suite_runtime_root(runtime_root, demo_b, tests_dir_b, runner="python")
 
     assert path_a != path_b
-    assert path_a == runtime_root / "demo_a" / "grand_demo" / "tests"
-    assert path_b == runtime_root / "demo_b" / "grand_demo" / "tests"
+    assert path_a == runtime_root / "demo_a" / "grand_demo" / "tests" / "python"
+    assert path_b == runtime_root / "demo_b" / "grand_demo" / "tests" / "python"

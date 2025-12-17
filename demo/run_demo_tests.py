@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import json
 import os
 import shutil
 import subprocess
@@ -115,7 +116,9 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
     return {key: str(value) for key, value in overrides.items()}
 
 
-def _suite_runtime_root(base_runtime: Path, demo_dir: Path, tests_dir: Path) -> Path:
+def _suite_runtime_root(
+    base_runtime: Path, demo_dir: Path, tests_dir: Path, *, runner: str | None = None
+) -> Path:
     """Derive a unique sandbox path for a demo test suite.
 
     Multiple demos share common directory names such as ``grand_demo/tests``.
@@ -126,7 +129,8 @@ def _suite_runtime_root(base_runtime: Path, demo_dir: Path, tests_dir: Path) -> 
     """
 
     relative_tests_path = tests_dir.relative_to(demo_dir)
-    return base_runtime / demo_dir.name / relative_tests_path
+    base = base_runtime / demo_dir.name / relative_tests_path
+    return base / runner if runner else base
 
 
 def _run_suite(
@@ -148,7 +152,7 @@ def _run_suite(
         env.setdefault("CI", "1")
         env.setdefault("npm_config_progress", "false")
         env.setdefault("npm_config_fund", "false")
-        cmd = ["npm", "test", "--", "--runInBand"]
+        cmd = ["npm", "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via npm test"
         cwd = suite.demo_root
     else:
@@ -217,43 +221,103 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
-def _has_node_tests(tests_dir: Path) -> bool:
-    has_package = (tests_dir.parent / "package.json").is_file()
-    if not has_package:
+def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path | None:
+    """Return the nearest ancestor with a package.json, stopping at ``demo_dir``."""
+
+    for ancestor in [tests_dir, *tests_dir.parents]:
+        if (ancestor / "package.json").is_file():
+            return ancestor
+        if ancestor == demo_dir.parent:
+            break
+
+    return None
+
+
+def _load_package_meta(package_root: Path) -> dict[str, object] | None:
+    try:
+        return json.loads((package_root / "package.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _node_suite_uses_npm(
+    package_root: Path, package_meta: dict[str, object] | None
+) -> bool:
+    if package_meta is None:
         return False
+
+    lockfiles = ("package-lock.json", "npm-shrinkwrap.json")
+    if any((package_root / name).is_file() for name in lockfiles):
+        return True
+
+    manager = str(package_meta.get("packageManager", "")).lower()
+    if manager.startswith("pnpm") or manager.startswith("yarn"):
+        return False
+
+    return bool(manager.startswith("npm"))
+
+
+def _requires_prisma_generation(package_meta: dict[str, object]) -> bool:
+    deps = package_meta.get("dependencies", {}) or {}
+    dev_deps = package_meta.get("devDependencies", {}) or {}
+    return "@prisma/client" in deps or "@prisma/client" in dev_deps
+
+
+def _has_prisma_client(package_root: Path) -> bool:
+    return (package_root / "node_modules" / ".prisma" / "client").exists()
+
+
+def _node_runner_args(package_root: Path) -> list[str]:
+    """Return npm arguments that encourage single-threaded runs when supported."""
+
+    package_json = package_root / "package.json"
+    try:
+        package_meta = json.loads(package_json.read_text())
+    except (OSError, json.JSONDecodeError):
+        return []
+
+    test_script = str(package_meta.get("scripts", {}).get("test", "")).lower()
+
+    if "vitest" in test_script:
+        return ["--", "--pool", "threads", "--poolOptions.threads.singleThread", "true"]
+    if "jest" in test_script or "run-tests.js" in test_script:
+        return ["--", "--runInBand"]
+
+    return []
+
+
+def _has_node_tests(tests_dir: Path, demo_dir: Path) -> Path | None:
+    package_root = _node_package_root(tests_dir, demo_dir)
+    if not package_root:
+        return None
+
+    package_meta = _load_package_meta(package_root)
+
+    if not _node_suite_uses_npm(package_root, package_meta):
+        print(
+            f"→ Skipping {tests_dir} (unsupported Node package manager; "
+            "add an npm lockfile to enable this suite)"
+        )
+        return None
+
+    if package_meta and _requires_prisma_generation(package_meta) and not _has_prisma_client(package_root):
+        print(
+            f"→ Skipping {tests_dir} (Prisma client artifacts not generated; "
+            "run `npx prisma generate` to enable tests)"
+        )
+        return None
 
     for file in tests_dir.rglob("*.test.*"):
         if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return True
+            return package_root
     for file in tests_dir.rglob("*.spec.*"):
         if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return True
-    return False
-
-
-def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path:
-    """Return the nearest ancestor with a package.json, stopping at ``demo_dir``.
-
-    Some demos embed multiple Node projects (for example, ``v2`` rewrites). When
-    invoked from the top-level demo directory, ``npm`` will walk upward until it
-    finds a ``package.json``—often the repository root—which launches the wrong
-    test suite. Anchoring execution to the closest package root within the demo
-    keeps demo-specific tests isolated and avoids accidentally running the
-    monorepo's full Hardhat and web stacks.
-    """
-
-    for ancestor in [tests_dir, *tests_dir.parents]:
-        if ancestor == demo_dir.parent:
-            break
-        if (ancestor / "package.json").is_file():
-            return ancestor
-        if ancestor == demo_dir:
-            break
-
-    return demo_dir
+            return package_root
+    return None
 
 
 _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}
+_TEST_DIR_NAMES = {"tests", "test", "__tests__"}
 
 
 def _discover_tests(
@@ -264,9 +328,19 @@ def _discover_tests(
         # ``tests`` directory instead of nested beneath a demo package. rglob
         # does not yield the starting directory when it already matches the
         # pattern, so we surface it explicitly.
-        if root.name == "tests":
-            yield root
-        yield from root.rglob("tests")
+        candidates: set[Path] = set()
+
+        if root.name in _TEST_DIR_NAMES:
+            candidates.add(root)
+
+        for current_dir, dirnames, _ in os.walk(root):
+            path_dir = Path(current_dir)
+            dirnames[:] = [name for name in dirnames if name not in _SKIP_TEST_PARTS]
+            for dirname in dirnames:
+                if dirname in _TEST_DIR_NAMES:
+                    candidates.add(path_dir / dirname)
+
+        yield from sorted(candidates)
 
     def _matches_filter(path: Path) -> bool:
         if include is None:
@@ -289,14 +363,17 @@ def _discover_tests(
                 continue
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
-            if _has_python_tests(tests_dir):
+            has_python = _has_python_tests(tests_dir)
+            node_package_root = _has_node_tests(tests_dir, demo_dir)
+
+            if has_python:
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
-                continue
-            if _has_node_tests(tests_dir):
-                package_root = _node_package_root(tests_dir, demo_dir)
-                yield Suite(demo_root=package_root, tests_dir=tests_dir, runner="node")
-                continue
-            print(f"→ Skipping {tests_dir} (no recognized test files found)")
+            if node_package_root:
+                yield Suite(
+                    demo_root=node_package_root, tests_dir=tests_dir, runner="node"
+                )
+            if not has_python and not node_package_root:
+                print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -391,7 +468,7 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
                 # Allocate an isolated runtime sandbox per suite to eliminate
                 # cross-contamination between demos that rely on orchestrator state.
                 suite_runtime = _suite_runtime_root(
-                    runtime_root, suite.demo_root, suite.tests_dir
+                    runtime_root, suite.demo_root, suite.tests_dir, runner=suite.runner
                 )
                 if suite_runtime.exists():
                     shutil.rmtree(suite_runtime)
