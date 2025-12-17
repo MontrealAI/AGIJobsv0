@@ -43,6 +43,8 @@ const ADDRESS_BOOK = path.join(
 );
 
 const ROLE_LABELS = ['Agent', 'Validator', 'Operator', 'Employer'] as const;
+const VALIDATION_MODULE_ARTIFACT =
+  'contracts/v2/ValidationModule.sol:ValidationModule';
 
 function parseBooleanEnv(value?: string | null): boolean | undefined {
   if (value === undefined || value === null) {
@@ -444,7 +446,7 @@ async function collectValidationModuleSummary(
   address: string
 ): Promise<ModuleSummary> {
   const validationModule = await ethers.getContractAt(
-    'ValidationModule',
+    VALIDATION_MODULE_ARTIFACT,
     address
   );
   const [ownerAddress, reputationEngine, committee] = await Promise.all([
