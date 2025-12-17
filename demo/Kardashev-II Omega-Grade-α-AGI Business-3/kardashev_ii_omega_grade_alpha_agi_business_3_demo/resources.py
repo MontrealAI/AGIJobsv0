@@ -60,6 +60,17 @@ class ResourceManager:
         return self._base_compute_capacity
 
     def ensure_account(self, name: str, initial_tokens: float = 0.0) -> Account:
+        """Return an account, minting tokens when topping up balances.
+
+        The orchestrator frequently calls this helper to guarantee that the
+        operator can fund new work. When an existing account falls below the
+        requested ``initial_tokens`` threshold we treat the delta as newly
+        minted supply and add it to ``token_supply`` so the integrity checker
+        sees a balanced ledger. Creating a brand new account does not adjust
+        supply because the initial minted balance is expected to be covered by
+        the configured ``base_token_supply``.
+        """
+
         account = self._accounts.get(name)
         if account is None:
             account = Account(
@@ -69,8 +80,12 @@ class ResourceManager:
                 compute_quota=self.compute_available,
             )
             self._accounts[name] = account
-        else:
-            account.tokens = max(account.tokens, initial_tokens)
+            return account
+
+        if initial_tokens > account.tokens:
+            delta = initial_tokens - account.tokens
+            account.tokens = initial_tokens
+            self.token_supply += delta
         return account
 
     def get_account(self, name: str) -> Account:
