@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -201,6 +202,31 @@ def test_allow_empty_downgrades_empty_suite_to_warning(tmp_path: Path) -> None:
     )
 
     assert exit_code == 0
+
+
+def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+    captured_env: dict[str, str] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured_env.update(kwargs.get("env", {}))
+        return _Result()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+
+    assert exit_code == 0
+    assert captured_env["CI"].lower() in {"1", "true"}
+    assert captured_env["npm_config_progress"] == "false"
+    assert captured_env["npm_config_fund"] == "false"
 
 
 def test_node_suite_reports_missing_runner(

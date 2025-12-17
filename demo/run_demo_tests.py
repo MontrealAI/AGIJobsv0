@@ -138,7 +138,19 @@ def _run_suite(
     env = os.environ.copy()
     env.update(env_overrides)
 
-    if suite.runner == "python":
+    if suite.runner == "node":
+        # Force non-interactive, reproducible npm runs. CI ensures tools like
+        # Vitest or Jest avoid watch mode and exit after executing the suite,
+        # while disabling progress and fund prompts removes noisy network
+        # calls that can otherwise hang or slow demos in sandboxed
+        # environments.
+        env.setdefault("CI", "1")
+        env.setdefault("npm_config_progress", "false")
+        env.setdefault("npm_config_fund", "false")
+        cmd = ["npm", "test", "--", "--runInBand"]
+        description = f"{suite.tests_dir} via npm test"
+        cwd = suite.demo_root
+    else:
         env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
         env["PYTHONPATH"] = _build_pythonpath(suite.demo_root)
         cmd = [
@@ -150,10 +162,6 @@ def _run_suite(
         ]
         description = f"{suite.tests_dir} with PYTHONPATH={env['PYTHONPATH']}"
         cwd = suite.tests_dir.parent
-    else:
-        cmd = ["npm", "test", "--", "--runInBand"]
-        description = f"{suite.tests_dir} via npm test"
-        cwd = suite.demo_root
 
     print(f"\n→ Running {description}")
     run_kwargs = {"env": env, "check": False, "cwd": cwd}
