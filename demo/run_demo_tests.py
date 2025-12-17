@@ -142,6 +142,14 @@ def _run_suite(
 
     try:
         result = subprocess.run(cmd, **run_kwargs)
+    except FileNotFoundError:
+        missing_binary = cmd[0]
+        print(
+            f"⛔️  Required executable '{missing_binary}' is not available on PATH "
+            f"while running {suite.tests_dir}. Install it or adjust PATH to "
+            "continue."
+        )
+        return 1
     except subprocess.TimeoutExpired:
         print(
             f"⏰  Timed out running {suite.tests_dir} after {timeout}s; "

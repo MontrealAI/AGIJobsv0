@@ -187,3 +187,24 @@ def test_allow_empty_downgrades_empty_suite_to_warning(tmp_path: Path) -> None:
     )
 
     assert exit_code == 0
+
+
+def test_node_suite_reports_missing_runner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    demo_root = tmp_path / "node-demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+
+    # Remove PATH entries to force a FileNotFoundError for npm during the run.
+    monkeypatch.setenv("PATH", str(tmp_path / "bin"))
+
+    exit_code = run_demo_tests._run_suite(suite, env_overrides={})
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "npm" in captured.out
+    assert "PATH" in captured.out
