@@ -17,6 +17,11 @@ ROOT = os.path.dirname(__file__)
 EXTRA_PATHS = [
     ROOT,
     os.path.join(ROOT, "packages", "hgm-core", "src"),
+    os.path.join(ROOT, "demo", "AGI-Alpha-Node-v0"),
+    os.path.join(ROOT, "demo", "AGI-Alpha-Node-v0", "src"),
+    os.path.join(ROOT, "demo", "AGI-Alpha-Node-v0", "grand_demo"),
+    os.path.join(ROOT, "demo", "AGI-Alpha-Node-v0", "grand_demo", "alpha_node"),
+    os.path.join(ROOT, "demo", "AGI-Alpha-Node-v0", "grandiose_alpha_demo", "src"),
 ]
 
 for _path in EXTRA_PATHS:

@@ -1,16 +1,58 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
+import sys
 import textwrap
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
-from alpha_node.config import AlphaNodeConfig
-from alpha_node.node import AlphaNode
 
-DEFAULT_CONFIG = Path(__file__).resolve().parent / "config.toml"
+PROJECT_ROOT = Path(__file__).resolve().parent
+_LOCAL_IMPORT_PATHS = [
+    PROJECT_ROOT,
+    PROJECT_ROOT / "src",
+    PROJECT_ROOT / "grand_demo",
+    PROJECT_ROOT / "grand_demo" / "alpha_node",
+    PROJECT_ROOT / "grandiose_alpha_demo" / "src",
+]
+
+for _path in _LOCAL_IMPORT_PATHS:
+    resolved = _path.resolve()
+    if resolved.exists() and str(resolved) not in sys.path:
+        sys.path.insert(0, str(resolved))
+
+def _load_module(module_name: str, module_path: Path, *, package: bool = False):
+    """Load a module directly from disk without relying on PYTHONPATH.
+
+    Pytest entrypoints executed from outside the demo directory do not receive
+    our project root on ``sys.path``. Loading the Alpha Node modules via
+    ``importlib`` ensures the CLI remains importable even when invoked through
+    ``importlib.util.spec_from_file_location`` in tests.
+    """
+
+    search_locations = [str(module_path.parent)] if package else None
+    spec = importlib.util.spec_from_file_location(
+        module_name, module_path, submodule_search_locations=search_locations
+    )
+    if spec is None or spec.loader is None:  # pragma: no cover - defensive
+        raise ImportError(f"Unable to load module: {module_name} from {module_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+_load_module("alpha_node", PROJECT_ROOT / "alpha_node" / "__init__.py", package=True)
+AlphaNodeConfig = _load_module(
+    "alpha_node.config", PROJECT_ROOT / "alpha_node" / "config.py"
+).AlphaNodeConfig
+AlphaNode = _load_module("alpha_node.node", PROJECT_ROOT / "alpha_node" / "node.py").AlphaNode
+
+DEFAULT_CONFIG = PROJECT_ROOT / "config.toml"
 
 
 def _prompt(prompt: str) -> str:
