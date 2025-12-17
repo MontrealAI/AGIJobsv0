@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
 
 /**
  * Thin Vitest wrapper that tolerates Jest-style flags (e.g. --runInBand) so
@@ -23,7 +25,19 @@ if (requestSerial) {
   translatedArgs.push('--pool', 'threads', '--poolOptions.threads.singleThread', 'true');
 }
 
-const result = spawnSync('npx', ['vitest', 'run', ...translatedArgs], {
+const localVitestBin = join(process.cwd(), 'node_modules', '.bin', 'vitest');
+const runner = existsSync(localVitestBin)
+  ? localVitestBin
+  : 'npx';
+const runnerArgs = existsSync(localVitestBin)
+  ? ['run', ...translatedArgs]
+  : ['vitest', 'run', ...translatedArgs];
+
+if (!existsSync(localVitestBin)) {
+  console.warn('⚠️  Local Vitest binary not found; falling back to npx. Run `npm ci` if tests fail to install dependencies.');
+}
+
+const result = spawnSync(runner, runnerArgs, {
   stdio: 'inherit',
   env: { ...process.env, FORCE_COLOR: '1' },
 });
