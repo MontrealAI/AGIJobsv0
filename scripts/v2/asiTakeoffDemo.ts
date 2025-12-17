@@ -52,6 +52,7 @@ const SUMMARY_MD_PATH = path.join(REPORT_ROOT, 'summary.md');
 const SUMMARY_JSON_PATH = path.join(REPORT_ROOT, 'summary.json');
 const BUNDLE_ROOT = path.join(REPORT_ROOT, 'mission-bundle');
 const SKIP_FLAGSHIP_ONCHAIN = process.env.AGIJOBS_FLAGSHIP_SKIP_ONCHAIN === 'true';
+const HARDHAT_ENV = { HARDHAT_DISABLE_TELEMETRY: '1' };
 
 function prefixedWrite(prefix: string, data: Buffer): void {
   const text = data.toString();
@@ -290,6 +291,7 @@ async function main(): Promise<void> {
       key: 'compile',
       title: 'Compile protocol',
       command: ['npx', 'hardhat', 'compile'],
+      env: HARDHAT_ENV,
     },
     {
       key: 'dry-run',
@@ -318,6 +320,7 @@ async function main(): Promise<void> {
         'hardhat',
       ],
       env: {
+        ...HARDHAT_ENV,
         THERMODYNAMICS_REPORT_FORMAT: 'json',
         THERMODYNAMICS_REPORT_OUT: THERMODYNAMICS_PATH,
       },
@@ -356,6 +359,7 @@ async function main(): Promise<void> {
         '--network',
         'hardhat',
       ],
+      env: HARDHAT_ENV,
     },
   ];
 
