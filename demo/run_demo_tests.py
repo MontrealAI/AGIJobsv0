@@ -112,6 +112,7 @@ def _run_suite(
     suite: Suite,
     env_overrides: dict[str, str],
     *,
+    allow_empty: bool = False,
     timeout: float | None = None,
 ) -> int:
     env = os.environ.copy()
@@ -147,7 +148,20 @@ def _run_suite(
             "investigate slow or hanging demos."
         )
         return 1
-    return 0 if suite.runner == "python" and result.returncode == 5 else result.returncode
+
+    if suite.runner == "python" and result.returncode == 5:
+        message = (
+            "⚠️  No tests were collected for this suite. "
+            "Confirm the tests directory contains runnable files."
+        )
+        if allow_empty:
+            print(message)
+            return 0
+
+        print(f"⛔️  {message}")
+        return result.returncode
+
+    return result.returncode
 
 
 def _has_python_tests(tests_dir: Path) -> bool:
@@ -275,6 +289,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help=(
+            "Treat suites with zero collected tests as a warning instead of an error. "
+            "Use this for in-progress demos that intentionally ship without tests."
+        ),
+    )
+    parser.add_argument(
         "--timeout",
         type=float,
         default=None,
@@ -337,7 +359,12 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
                 if suite_runtime.exists():
                     shutil.rmtree(suite_runtime)
                 env_overrides = _configure_runtime_env(suite_runtime)
-                code = _run_suite(suite, env_overrides, timeout=args.timeout)
+                code = _run_suite(
+                    suite,
+                    env_overrides,
+                    allow_empty=args.allow_empty,
+                    timeout=args.timeout,
+                )
                 results.append((suite, code))
 
                 if args.fail_fast and code:

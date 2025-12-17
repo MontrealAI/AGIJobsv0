@@ -161,3 +161,29 @@ def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
             demo_root=nested_project, tests_dir=tests_dir, runner="node"
         )
     ]
+
+
+def test_empty_suite_fails_without_allow_empty(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+    # Present a test file that collects nothing so pytest exits with code 5.
+    (tests_dir / "test_empty.py").write_text("# no tests yet\n")
+
+    exit_code = run_demo_tests.main(["--runtime-dir", str(tmp_path / "runtime")], demo_root=demo_root)
+
+    assert exit_code == 1
+
+
+def test_allow_empty_downgrades_empty_suite_to_warning(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+    (tests_dir / "test_empty.py").write_text("# no tests yet\n")
+
+    exit_code = run_demo_tests.main(
+        ["--runtime-dir", str(tmp_path / "runtime"), "--allow-empty"],
+        demo_root=demo_root,
+    )
+
+    assert exit_code == 0
