@@ -63,3 +63,47 @@ def test_run_autofills_non_interactive_defaults(monkeypatch) -> None:
         "--no-compose",
         "--skip-deploy",
     ]
+
+
+def test_auto_flag_skips_prompt_even_when_interactive(monkeypatch) -> None:
+    recorded: list[list[str]] = []
+
+    def fake_runner(cmd, *, check, cwd):  # noqa: ARG001
+        recorded.append(cmd)
+
+        class DummyResult:
+            returncode = 0
+
+        return DummyResult()
+
+    def always_true():
+        return True
+
+    run_demo.run(["--auto"], runner=fake_runner, is_interactive=always_true)
+
+    assert recorded[0][:3] == ["npm", "run", "demo:agi-os:first-class"]
+    assert "--network" in recorded[0]
+    assert "--yes" in recorded[0]
+
+
+def test_env_flag_enables_automation(monkeypatch) -> None:
+    recorded: list[list[str]] = []
+
+    def fake_runner(cmd, *, check, cwd):  # noqa: ARG001
+        recorded.append(cmd)
+
+        class DummyResult:
+            returncode = 0
+
+        return DummyResult()
+
+    def always_true():
+        return True
+
+    monkeypatch.setenv(run_demo.AUTO_ENV, "true")
+
+    run_demo.run([], runner=fake_runner, is_interactive=always_true)
+
+    assert recorded[0][:3] == ["npm", "run", "demo:agi-os:first-class"]
+    assert "--network" in recorded[0]
+    assert "--skip-deploy" in recorded[0]
