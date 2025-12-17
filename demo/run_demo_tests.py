@@ -18,8 +18,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
+import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, Literal
 
 
@@ -384,7 +385,7 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             print("No demo test suites found for the provided filters.")
             return 1
 
-        results: list[tuple[Suite, int]] = []
+        results: list[tuple[Suite, int, float]] = []
         try:
             for suite in suites:
                 # Allocate an isolated runtime sandbox per suite to eliminate
@@ -395,13 +396,17 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
                 if suite_runtime.exists():
                     shutil.rmtree(suite_runtime)
                 env_overrides = _configure_runtime_env(suite_runtime)
+                start = time.perf_counter()
                 code = _run_suite(
                     suite,
                     env_overrides,
                     allow_empty=args.allow_empty,
                     timeout=args.timeout,
                 )
-                results.append((suite, code))
+                duration = time.perf_counter() - start
+                results.append((suite, code, duration))
+
+                print(f"   ↳ Completed in {duration:.2f}s (exit code {code}).")
 
                 if args.fail_fast and code:
                     print(
@@ -417,14 +422,25 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             )
             return 130
 
-        failed = [(suite, code) for suite, code in results if code]
+        failed = [(suite, code, duration) for suite, code, duration in results if code]
         if failed:
             print("\n⚠️  Demo test runs completed with failures:")
-            for suite, code in failed:
-                print(f"   • {suite.tests_dir} (exit code {code})")
+            for suite, code, duration in failed:
+                print(f"   • {suite.tests_dir} (exit code {code}, {duration:.2f}s)")
             return 1
 
-        print(f"\n✅ All demo test suites passed ({len(results)} suites).")
+        total_duration = sum(duration for _, __, duration in results)
+        print(
+            f"\n✅ All demo test suites passed ({len(results)} suites, "
+            f"total {total_duration:.2f}s)."
+        )
+
+        if len(results) > 1:
+            slowest = sorted(results, key=lambda entry: entry[2], reverse=True)[:3]
+            print("   Slowest suites:")
+            for suite, _, duration in slowest:
+                print(f"   • {suite.tests_dir} — {duration:.2f}s")
+
         return 0
 
 

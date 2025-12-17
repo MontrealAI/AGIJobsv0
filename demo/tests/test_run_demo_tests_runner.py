@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+from typing import Iterable
 
 import pytest
 
@@ -202,6 +203,34 @@ def test_allow_empty_downgrades_empty_suite_to_warning(tmp_path: Path) -> None:
     )
 
     assert exit_code == 0
+
+
+def test_main_reports_durations_and_slowest_suites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture
+) -> None:
+    demo_root = tmp_path / "demo"
+    alpha_tests = demo_root / "alpha" / "tests"
+    beta_tests = demo_root / "beta" / "tests"
+    for tests_dir in (alpha_tests, beta_tests):
+        tests_dir.mkdir(parents=True)
+
+    suites: Iterable[run_demo_tests.Suite] = (
+        run_demo_tests.Suite(demo_root=alpha_tests.parent, tests_dir=alpha_tests, runner="python"),
+        run_demo_tests.Suite(demo_root=beta_tests.parent, tests_dir=beta_tests, runner="python"),
+    )
+
+    timings = iter([0.0, 0.25, 0.25, 1.0])
+    monkeypatch.setattr(run_demo_tests, "_discover_tests", lambda *_, **__: suites)
+    monkeypatch.setattr(run_demo_tests, "_run_suite", lambda *_, **__: 0)
+    monkeypatch.setattr(run_demo_tests.time, "perf_counter", lambda: next(timings))
+
+    exit_code = run_demo_tests.main(["--runtime-dir", str(tmp_path / "runtime")], demo_root=demo_root)
+
+    output = capsys.readouterr().out
+    assert exit_code == 0
+    assert "total 1.00s" in output
+    assert "Slowest suites:" in output
+    assert str(beta_tests) in output
 
 
 def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
