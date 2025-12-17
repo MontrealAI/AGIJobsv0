@@ -114,6 +114,20 @@ def test_include_filter_matches_relative_paths(tmp_path: Path) -> None:
     ]
 
 
+def test_demo_filter_normalizes_comma_separated_tokens() -> None:
+    include = run_demo_tests._normalize_include_filters([
+        " Alpha ,beta/nested ",
+        " ,gamma",
+    ])
+
+    assert include == {"alpha", "beta/nested", "gamma"}
+
+
+def test_demo_filter_returns_none_when_empty() -> None:
+    assert run_demo_tests._normalize_include_filters([]) is None
+    assert run_demo_tests._normalize_include_filters([" , "]) is None
+
+
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"

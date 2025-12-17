@@ -25,4 +25,10 @@ PY
   fi
 fi
 
+# Cypress attempts to download a heavyweight binary during installation, which
+# can fail in hermetic CI environments without internet access. Default to
+# skipping the binary fetch unless the caller explicitly opts in by setting
+# CYPRESS_INSTALL_BINARY.
+export CYPRESS_INSTALL_BINARY="${CYPRESS_INSTALL_BINARY:-0}"
+
 npm ci --no-audit --prefer-offline --progress=false "$@"
