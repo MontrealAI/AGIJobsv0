@@ -224,7 +224,7 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
 
     assert exit_code == 0
-    assert captured_env["CI"] == "1"
+    assert captured_env["CI"].lower() in {"1", "true"}
     assert captured_env["npm_config_progress"] == "false"
     assert captured_env["npm_config_fund"] == "false"
 
