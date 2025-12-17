@@ -71,6 +71,26 @@ def _build_pythonpath(demo_root: Path) -> str:
     return os.pathsep.join(entries)
 
 
+def _normalize_include_filters(raw: Iterable[str]) -> set[str] | None:
+    """Expand ``--demo`` filters, supporting comma-separated tokens.
+
+    Users sometimes pass multiple filter values in a single argument
+    (for example, ``--demo alpha,beta``). Normalizing here lets the
+    discovery layer remain simple while still honoring flexible CLI
+    input patterns.
+    """
+
+    tokens: set[str] = set()
+
+    for value in raw:
+        for part in value.split(","):
+            cleaned = part.strip()
+            if cleaned:
+                tokens.add(cleaned.lower())
+
+    return tokens or None
+
+
 def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
     """Route orchestrator state into a temporary sandbox."""
 
@@ -328,7 +348,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     args = _parse_args(argv)
-    include = {token.lower() for token in args.demo} or None
+    include = _normalize_include_filters(args.demo)
     demo_root = demo_root or Path(__file__).resolve().parent
     suites = list(_discover_tests(demo_root, include=include))
 
