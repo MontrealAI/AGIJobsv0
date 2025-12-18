@@ -275,9 +275,8 @@ def _requires_prisma_generation(package_meta: dict[str, object]) -> bool:
 
 def _has_prisma_client(package_root: Path) -> bool:
     node_modules = package_root / "node_modules"
-    legacy = node_modules / ".prisma" / "client"
-    modern = node_modules / "@prisma" / "client" / "runtime"
-    return legacy.exists() or modern.exists()
+    generated = node_modules / ".prisma" / "client"
+    return generated.exists()
 
 
 def _ensure_prisma_client(package_root: Path) -> bool:

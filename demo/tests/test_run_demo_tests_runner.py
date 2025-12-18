@@ -310,6 +310,19 @@ def test_prisma_client_generation_is_triggered(
     assert calls == [project_dir]
 
 
+def test_prisma_client_detection_requires_generated_artifacts(tmp_path: Path) -> None:
+    project_dir = tmp_path / "node-demo"
+    runtime = project_dir / "node_modules" / "@prisma" / "client" / "runtime"
+    runtime.mkdir(parents=True)
+
+    assert run_demo_tests._has_prisma_client(project_dir) is False
+
+    generated = project_dir / "node_modules" / ".prisma" / "client"
+    generated.mkdir(parents=True)
+
+    assert run_demo_tests._has_prisma_client(project_dir) is True
+
+
 def test_empty_suite_fails_without_allow_empty(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "example" / "tests"
