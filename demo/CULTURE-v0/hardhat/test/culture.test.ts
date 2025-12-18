@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
+import '@nomicfoundation/hardhat-chai-matchers';
 
 const AUTHOR_ROLE = ethers.id('AUTHOR_ROLE');
 const TEACHER_ROLE = ethers.id('TEACHER_ROLE');
