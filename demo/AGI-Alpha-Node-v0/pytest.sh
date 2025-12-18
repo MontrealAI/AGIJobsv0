@@ -9,7 +9,22 @@ set -euo pipefail
 # console-script wrapper sets sys.path[0] to the pyenv bin directory.
 
 REPO_ROOT="$(cd "$(dirname "$0")"/../.. && pwd)"
+DEMO_ROOT="${REPO_ROOT}/demo/AGI-Alpha-Node-v0"
+
 export PYTEST_DISABLE_PLUGIN_AUTOLOAD="${PYTEST_DISABLE_PLUGIN_AUTOLOAD:-1}"
-export PYTHONPATH="${PYTHONPATH:-${REPO_ROOT}}"
+
+DEMO_PATHS=(
+  "${DEMO_ROOT}"
+  "${DEMO_ROOT}/src"
+  "${DEMO_ROOT}/grand_demo"
+  "${DEMO_ROOT}/grand_demo/alpha_node"
+  "${DEMO_ROOT}/grandiose_alpha_demo/src"
+  "${REPO_ROOT}"
+  "${REPO_ROOT}/packages/hgm-core/src"
+)
+
+# Prepend demo paths so imports work even when pytest is executed from the
+# repository root via the console script wrapper.
+export PYTHONPATH="$(IFS=:; echo "${DEMO_PATHS[*]}")${PYTHONPATH:+:${PYTHONPATH}}"
 
 exec python -m pytest "$@"
