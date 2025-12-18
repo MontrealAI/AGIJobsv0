@@ -28,6 +28,14 @@ _module = importlib.util.module_from_spec(_spec)
 sys.modules[__name__] = _module
 _spec.loader.exec_module(_module)
 
+# Keep local helper modules (such as ``run_demo.py``) importable alongside the
+# canonical package contents.
+if hasattr(_module, "__path__"):
+    package_path = str(_THIS_DIR)
+    if package_path not in _module.__path__:
+        _module.__path__.append(package_path)
+
 __all__ = getattr(_module, "__all__", [])
 run_from_cli = getattr(_module, "run_from_cli", None)
 build_arg_parser = getattr(_module, "build_arg_parser", None)
+main = getattr(_module, "run_from_cli", None)
