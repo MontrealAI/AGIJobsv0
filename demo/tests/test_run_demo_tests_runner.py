@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -21,12 +22,12 @@ def test_suite_runtime_root_uses_demo_and_relative_path(tmp_path: Path) -> None:
         tmp_path, demo_a, demo_a / "nested" / "tests", runner="python"
     )
     suite_b = run_demo_tests._suite_runtime_root(
-        tmp_path, demo_b, demo_b / "nested" / "tests", runner="node"
+        tmp_path, demo_b, demo_b / "nested" / "tests", runner="npm"
     )
 
     assert suite_a != suite_b
     assert suite_a.relative_to(tmp_path) == Path("demo-a/nested/tests/python")
-    assert suite_b.relative_to(tmp_path) == Path("demo-b/nested/tests/node")
+    assert suite_b.relative_to(tmp_path) == Path("demo-b/nested/tests/npm")
 
 
 def test_main_respects_runtime_dir_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -162,9 +163,48 @@ def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
 
     assert suites == [
         run_demo_tests.Suite(
-            demo_root=project_dir, tests_dir=tests_dir, runner="node"
+            demo_root=project_dir, tests_dir=tests_dir, runner="npm"
         )
     ]
+
+
+def test_discovers_pnpm_suite(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "pnpm-demo"
+    tests_dir = project_dir / "__tests__"
+    tests_dir.mkdir(parents=True)
+
+    (project_dir / "package.json").write_text('{"packageManager": "pnpm@9.0.0"}\n')
+    (project_dir / "pnpm-lock.yaml").write_text("lockfileVersion: 9.0\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir, tests_dir=tests_dir, runner="pnpm"
+        )
+    ]
+
+
+def test_pnpm_workspace_root_is_skipped(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    demo_root = tmp_path / "demo"
+    workspace = demo_root / "workspace"
+    tests_dir = workspace / "tests"
+    tests_dir.mkdir(parents=True)
+
+    (workspace / "package.json").write_text('{"packageManager": "pnpm@9.0.0"}\n')
+    (workspace / "pnpm-lock.yaml").write_text("lockfileVersion: 9.0\n")
+    (workspace / "pnpm-workspace.yaml").write_text("packages:\n  - packages/*\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == []
+    output = capsys.readouterr().out.lower()
+    assert "workspace root" in output
 
 
 def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
@@ -182,7 +222,7 @@ def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
 
     assert suites == [
         run_demo_tests.Suite(
-            demo_root=nested_project, tests_dir=tests_dir, runner="node"
+            demo_root=nested_project, tests_dir=tests_dir, runner="npm"
         )
     ]
 
@@ -208,7 +248,7 @@ def test_python_and_node_suites_can_share_tests_dir(tmp_path: Path) -> None:
         run_demo_tests.Suite(
             demo_root=demo_root,
             tests_dir=tests_dir,
-            runner="node",
+            runner="npm",
         ),
     ]
 
@@ -229,9 +269,45 @@ def test_discovers_package_above_nested_tests_dir(tmp_path: Path) -> None:
         run_demo_tests.Suite(
             demo_root=project_dir,
             tests_dir=nested_tests,
-            runner="node",
+            runner="npm",
         )
     ]
+
+
+def test_prisma_client_generation_is_triggered(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "node-demo"
+    tests_dir = project_dir / "tests"
+    tests_dir.mkdir(parents=True)
+
+    package_json = {
+        "dependencies": {"@prisma/client": "latest"},
+        "packageManager": "npm@9.0.0",
+    }
+    (project_dir / "package.json").write_text(json.dumps(package_json))
+    (project_dir / "package-lock.json").write_text("{}\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    calls: list[Path] = []
+    monkeypatch.setattr(run_demo_tests, "_has_prisma_client", lambda _: False)
+    monkeypatch.setattr(
+        run_demo_tests,
+        "_ensure_prisma_client",
+        lambda root: calls.append(root) or True,
+    )
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir,
+            tests_dir=tests_dir,
+            runner="npm",
+        )
+    ]
+    assert calls == [project_dir]
 
 
 def test_empty_suite_fails_without_allow_empty(tmp_path: Path) -> None:
@@ -293,7 +369,7 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     tests_dir = demo_root / "example" / "tests"
     tests_dir.mkdir(parents=True)
 
-    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
     captured_env: dict[str, str] = {}
 
     class _Result:
@@ -319,7 +395,7 @@ def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, t
     tests_dir.mkdir(parents=True)
     (demo_root / "package.json").write_text('{"scripts": {"test": "vitest run"}}')
 
-    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
     commands: list[list[str]] = []
 
     class _Result:
@@ -348,7 +424,7 @@ def test_node_suite_reports_missing_runner(
     tests_dir.mkdir(parents=True)
     (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
 
-    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="node")
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
 
     # Remove PATH entries to force a FileNotFoundError for npm during the run.
     monkeypatch.setenv("PATH", str(tmp_path / "bin"))
