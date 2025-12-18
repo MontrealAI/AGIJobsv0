@@ -1,0 +1,20 @@
+{
+  "name": "culture-hardhat-suite",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isolated Hardhat test harness for the CULTURE-v0 demo to keep demo-wide pnpm workflows lightweight while still exercising contract logic in CI.",
+  "packageManager": "npm@10.8.2",
+  "scripts": {
+    "pretest": "npm ci --ignore-scripts --no-audit --no-fund",
+    "test": "./node_modules/.bin/hardhat test --config ../hardhat.config.ts --network hardhat"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.26.1",
+    "hardhat-contract-sizer": "^2.10.0",
+    "solidity-coverage": "^0.8.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
