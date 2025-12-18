@@ -4,9 +4,11 @@
   "description": "Jest harness for the Phase 8 Universal Value Dominance demo scripts.",
   "type": "commonjs",
   "scripts": {
+    "postinstall": "node scripts/patch-playwright-download.js",
     "pretest": "node scripts/patch-playwright-download.js",
     "test": "node scripts/run-tests.js",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.config.cjs",
+    "pretest:e2e": "node scripts/patch-playwright-download.js",
     "test:e2e": "playwright test"
   },
   "dependencies": {
