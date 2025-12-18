@@ -279,26 +279,64 @@ def _has_prisma_client(package_root: Path) -> bool:
     return generated.exists()
 
 
-def _ensure_prisma_client(package_root: Path) -> bool:
+def _prisma_cli_version(package_meta: dict[str, object] | None) -> str | None:
+    """Infer the Prisma CLI version from package metadata."""
+
+    if not package_meta:
+        return None
+
+    for section in ("devDependencies", "dependencies"):
+        deps = package_meta.get(section, {}) or {}
+        if isinstance(deps, dict):
+            version = deps.get("prisma")
+            if isinstance(version, str) and version.strip():
+                return version.strip()
+
+    # Fall back to the client version; Prisma keeps CLI/client pairs in lockstep.
+    deps = package_meta.get("dependencies", {}) or {}
+    if isinstance(deps, dict):
+        version = deps.get("@prisma/client")
+        if isinstance(version, str) and version.strip():
+            return version.strip()
+
+    return None
+
+
+def _ensure_prisma_client(
+    package_root: Path, package_meta: dict[str, object] | None
+) -> bool:
     if _has_prisma_client(package_root):
         return True
 
     print(f"→ Generating Prisma client for {package_root} (missing artifacts)")
     env = os.environ.copy()
     env.setdefault("CI", "1")
+    env.setdefault("NPM_CONFIG_YES", "true")
+    env.setdefault("npm_config_progress", "false")
+    env.setdefault("npm_config_fund", "false")
+
+    version = _prisma_cli_version(package_meta)
+    prisma_specifier = f"prisma@{version}" if version else "prisma"
 
     try:
         result = subprocess.run(
-            ["npx", "prisma", "generate"],
+            ["npx", "--yes", prisma_specifier, "generate"],
             cwd=package_root,
             env=env,
             check=False,
             capture_output=True,
             text=True,
+            timeout=120,
         )
     except FileNotFoundError:
         print(
             "→ Skipping Prisma-dependent suite because 'npx' is not available on PATH."
+        )
+        return False
+    except subprocess.TimeoutExpired:
+        print(
+            "→ Skipping Prisma-dependent suite because Prisma client generation "
+            "timed out; rerun `npx --yes prisma generate` manually to debug."
         )
         return False
 
@@ -334,7 +372,7 @@ def _node_runner_args(package_root: Path) -> list[str]:
 
 
 def _has_node_tests(
-    tests_dir: Path, demo_dir: Path
+    tests_dir: Path, demo_dir: Path, *, generate_prisma: bool = True
 ) -> tuple[Path, str] | bool | None:
     package_root = _node_package_root(tests_dir, demo_dir)
     if not package_root:
@@ -362,7 +400,7 @@ def _has_node_tests(
         return False
 
     if package_meta and _requires_prisma_generation(package_meta):
-        if not _ensure_prisma_client(package_root):
+        if generate_prisma and not _ensure_prisma_client(package_root, package_meta):
             return False
 
     for file in tests_dir.rglob("*.test.*"):
@@ -379,7 +417,7 @@ _TEST_DIR_NAMES = {"tests", "test", "__tests__"}
 
 
 def _discover_tests(
-    demo_root: Path, *, include: set[str] | None = None
+    demo_root: Path, *, include: set[str] | None = None, generate_prisma: bool = True
 ) -> Iterable[Suite]:
     def _iter_tests_dirs(root: Path) -> Iterable[Path]:
         # Some suites (e.g., the runner's own tests) live directly under a
@@ -422,7 +460,9 @@ def _discover_tests(
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
             has_python = _has_python_tests(tests_dir)
-            node_suite = _has_node_tests(tests_dir, demo_dir)
+            node_suite = _has_node_tests(
+                tests_dir, demo_dir, generate_prisma=generate_prisma
+            )
 
             if has_python:
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
@@ -495,7 +535,11 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
     args = _parse_args(argv)
     include = _normalize_include_filters(args.demo)
     demo_root = demo_root or Path(__file__).resolve().parent
-    suites = list(_discover_tests(demo_root, include=include))
+    suites = list(
+        _discover_tests(
+            demo_root, include=include, generate_prisma=not args.list
+        )
+    )
 
     if args.list:
         if not suites:
