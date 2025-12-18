@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +19,12 @@ import yaml
 from rich.console import Console
 from rich.table import Table
 
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CONFIG = PROJECT_ROOT / "configs" / "mission.yaml"
+DEFAULT_OUTPUT = PROJECT_ROOT / "output" / "report.json"
+ENV_CONFIG = "SUPER_EMPOWER_CONFIG"
+ENV_OUTPUT = "SUPER_EMPOWER_OUTPUT"
 
 console = Console()
 
@@ -121,25 +128,51 @@ def load_config(path: Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def parse_args() -> argparse.Namespace:
+def _default_paths() -> tuple[Path, Path]:
+    """Resolve configuration and output defaults.
+
+    Environment variables take precedence to keep CI and local runs
+    hermetic. Falling back to repository-relative defaults lets a
+    bare ``python run_demo.py`` succeed without extra flags.
+    """
+
+    config = Path(os.environ.get(ENV_CONFIG, DEFAULT_CONFIG)).expanduser()
+    output = Path(os.environ.get(ENV_OUTPUT, DEFAULT_OUTPUT)).expanduser()
+    return config, output
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the empowerment demo")
+    default_config, default_output = _default_paths()
     parser.add_argument(
         "--config",
         type=Path,
-        required=True,
-        help="Path to the YAML configuration file",
+        default=default_config,
+        help=(
+            "Path to the YAML configuration file. "
+            f"Defaults to {default_config} or ${ENV_CONFIG} if set."
+        ),
     )
     parser.add_argument(
         "--output",
         type=Path,
-        required=True,
-        help="Path for the generated JSON report",
+        default=default_output,
+        help=(
+            "Path for the generated JSON report. "
+            f"Defaults to {default_output} or ${ENV_OUTPUT} if set."
+        ),
     )
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
-def main() -> None:
-    args = parse_args()
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    if not args.config.exists():
+        raise FileNotFoundError(
+            f"Configuration file not found at {args.config}. "
+            "Provide --config or set ${ENV_CONFIG} to override."
+        )
+
     config = load_config(args.config)
     orchestrator = DemoOrchestrator(config)
     report = orchestrator.build_report()
