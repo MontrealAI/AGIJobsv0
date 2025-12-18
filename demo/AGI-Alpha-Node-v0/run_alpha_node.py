@@ -2,10 +2,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 import textwrap
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Optional
+
+THIS_DIR = Path(__file__).resolve().parent
+DEMO_ROOT = THIS_DIR
+DEMO_PARENT = DEMO_ROOT.parent
+
+for path in (DEMO_ROOT, DEMO_PARENT):
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
 
 from alpha_node.config import AlphaNodeConfig
 from alpha_node.node import AlphaNode
