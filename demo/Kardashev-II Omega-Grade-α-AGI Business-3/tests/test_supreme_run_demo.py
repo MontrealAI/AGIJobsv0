@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import importlib
 import os
 import runpy
@@ -24,6 +25,41 @@ def test_run_forwards_arguments(monkeypatch):
     module.run(["--cycles", "3", "--disable_simulation"], main_fn=fake_main)
 
     assert captured["argv"] == ["--cycles", "3", "--disable_simulation"]
+    assert str(repo_root) in sys.path
+
+
+def test_run_parses_cli_arguments_when_using_package_entrypoint(monkeypatch):
+    repo_root = Path(__file__).resolve().parents[3]
+    monkeypatch.syspath_prepend(str(repo_root))
+
+    captured = {}
+
+    def fake_main(namespace: argparse.Namespace):
+        captured["args"] = namespace
+
+    def fake_parser_builder():
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--cycles", type=int, default=0)
+        return parser
+
+    package = SimpleNamespace(main=fake_main, run_from_cli=fake_main, build_arg_parser=fake_parser_builder)
+
+    real_import_module = importlib.import_module
+
+    def fake_import(name):
+        if name == "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme":
+            return package
+        return real_import_module(name)
+
+    monkeypatch.setattr(importlib, "import_module", fake_import)
+
+    module = importlib.import_module(
+        "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme.run_demo"
+    )
+    module.run(["--cycles", "7"])
+
+    assert isinstance(captured["args"], argparse.Namespace)
+    assert captured["args"].cycles == 7
     assert str(repo_root) in sys.path
 
 
