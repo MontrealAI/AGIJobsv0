@@ -7,23 +7,31 @@ from pathlib import Path
 from typing import Sequence
 
 
-def _build_env(repo_root: Path) -> dict[str, str]:
+def _build_env(demo_root: Path) -> dict[str, str]:
     env = os.environ.copy()
     env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
-    env.setdefault("PYTHONPATH", str(repo_root))
+    pythonpath = os.pathsep.join(
+        segment
+        for segment in [str(demo_root), str(demo_root.parent), env.get("PYTHONPATH", "")]
+        if segment
+    )
+    env["PYTHONPATH"] = pythonpath
     return env
 
 
 def _build_command(args: Sequence[str]) -> list[str]:
     base = [sys.executable, "-m", "pytest"]
-    if args:
+
+    has_positional = any(arg and not arg.startswith("-") for arg in args)
+    if args and has_positional:
         return [*base, *args]
-    return [*base, "tests"]
+
+    return [*base, *args, "tests"]
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[2]
-    env = _build_env(repo_root)
+    demo_root = Path(__file__).resolve().parent
+    env = _build_env(demo_root)
     cmd = _build_command(sys.argv[1:])
     process = subprocess.run(cmd, cwd=Path(__file__).parent, env=env)
     return process.returncode
