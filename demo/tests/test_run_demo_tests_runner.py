@@ -168,6 +168,26 @@ def test_discovers_node_suite_when_python_tests_absent(tmp_path: Path) -> None:
     ]
 
 
+def test_discovers_foundry_suite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "foundry-demo"
+    tests_dir = project_dir / "test"
+    tests_dir.mkdir(parents=True)
+
+    (project_dir / "foundry.toml").write_text("[profile.default]\n")
+    (tests_dir / "Alpha.t.sol").write_text("// solidity test\n")
+
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: "/usr/bin/forge")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir, tests_dir=tests_dir, runner="forge"
+        )
+    ]
+
+
 def test_discovers_pnpm_suite(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     project_dir = demo_root / "pnpm-demo"
@@ -430,6 +450,40 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert captured_env["CI"].lower() in {"1", "true"}
     assert captured_env["npm_config_progress"] == "false"
     assert captured_env["npm_config_fund"] == "false"
+
+
+def test_foundry_suites_set_ci_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "test"
+    tests_dir.mkdir(parents=True)
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="forge")
+    captured: dict[str, object] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured.update(
+            {
+                "cmd": cmd,
+                "env": kwargs.get("env"),
+                "cwd": kwargs.get("cwd"),
+            }
+        )
+        return _Result()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+
+    assert exit_code == 0
+    assert captured["cmd"][:3] == ["forge", "test", "--root"]
+    assert captured["cmd"][3] == str(demo_root)
+    env = captured["env"]
+    assert isinstance(env, dict)
+    assert env["FOUNDRY_PROFILE"].lower() == "ci"
+    assert str(Path.home() / ".foundry" / "bin") in env["PATH"]
+    assert captured["cwd"] == demo_root
 
 
 def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

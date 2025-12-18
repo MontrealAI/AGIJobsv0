@@ -29,7 +29,7 @@ from typing import Iterable, Literal
 class Suite:
     demo_root: Path
     tests_dir: Path
-    runner: Literal["python", "npm", "pnpm", "yarn"]
+    runner: Literal["python", "npm", "pnpm", "yarn", "forge"]
 
 
 def _candidate_paths(demo_root: Path) -> Iterable[Path]:
@@ -156,6 +156,16 @@ def _run_suite(
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
         cwd = suite.demo_root
+    elif suite.runner == "forge":
+        forge_path = shutil.which("forge") or "forge"
+        default_foundry_path = Path.home() / ".foundry" / "bin"
+        env.setdefault("FOUNDRY_PROFILE", "ci")
+        env["PATH"] = os.pathsep.join(
+            [str(default_foundry_path), env.get("PATH", "")]
+        )
+        cmd = [forge_path, "test", "--root", str(suite.demo_root)]
+        description = f"{suite.tests_dir} via forge test"
+        cwd = suite.demo_root
     else:
         env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
         env["PYTHONPATH"] = _build_pythonpath(suite.demo_root)
@@ -227,6 +237,18 @@ def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path | None:
 
     for ancestor in [tests_dir, *tests_dir.parents]:
         if (ancestor / "package.json").is_file():
+            return ancestor
+        if ancestor == demo_dir.parent:
+            break
+
+    return None
+
+
+def _foundry_project_root(tests_dir: Path, demo_dir: Path) -> Path | None:
+    """Return the nearest ancestor with a foundry.toml, stopping at ``demo_dir``."""
+
+    for ancestor in [tests_dir, *tests_dir.parents]:
+        if (ancestor / "foundry.toml").is_file():
             return ancestor
         if ancestor == demo_dir.parent:
             break
@@ -371,6 +393,27 @@ def _node_runner_args(package_root: Path) -> list[str]:
     return []
 
 
+def _has_foundry_tests(
+    tests_dir: Path, demo_dir: Path
+) -> Path | bool | None:
+    project_root = _foundry_project_root(tests_dir, demo_dir)
+    if not project_root:
+        return None
+
+    has_tests = any(file.name.endswith(".t.sol") for file in tests_dir.rglob("*.sol"))
+    if not has_tests:
+        return False
+
+    if shutil.which("forge") is None:
+        print(
+            f"→ Skipping {tests_dir} (forge is not available on PATH; "
+            "install Foundry via foundryup to run these suites)"
+        )
+        return False
+
+    return project_root
+
+
 def _has_node_tests(
     tests_dir: Path, demo_dir: Path, *, generate_prisma: bool = True
 ) -> tuple[Path, str] | bool | None:
@@ -460,12 +503,17 @@ def _discover_tests(
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
             has_python = _has_python_tests(tests_dir)
+            foundry_suite = _has_foundry_tests(tests_dir, demo_dir)
             node_suite = _has_node_tests(
                 tests_dir, demo_dir, generate_prisma=generate_prisma
             )
 
             if has_python:
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
+            if foundry_suite:
+                yield Suite(
+                    demo_root=foundry_suite, tests_dir=tests_dir, runner="forge"
+                )
             if node_suite:
                 package_root, manager = node_suite
                 yield Suite(
