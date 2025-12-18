@@ -29,7 +29,7 @@ from typing import Iterable, Literal
 class Suite:
     demo_root: Path
     tests_dir: Path
-    runner: Literal["python", "node"]
+    runner: Literal["python", "npm", "pnpm", "yarn"]
 
 
 def _candidate_paths(demo_root: Path) -> Iterable[Path]:
@@ -143,8 +143,8 @@ def _run_suite(
     env = os.environ.copy()
     env.update(env_overrides)
 
-    if suite.runner == "node":
-        # Force non-interactive, reproducible npm runs. CI ensures tools like
+    if suite.runner in {"npm", "pnpm", "yarn"}:
+        # Force non-interactive, reproducible Node runs. CI ensures tools like
         # Vitest or Jest avoid watch mode and exit after executing the suite,
         # while disabling progress and fund prompts removes noisy network
         # calls that can otherwise hang or slow demos in sandboxed
@@ -152,8 +152,9 @@ def _run_suite(
         env.setdefault("CI", "1")
         env.setdefault("npm_config_progress", "false")
         env.setdefault("npm_config_fund", "false")
-        cmd = ["npm", "test", *_node_runner_args(suite.demo_root)]
-        description = f"{suite.tests_dir} via npm test"
+        binary = suite.runner
+        cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
+        description = f"{suite.tests_dir} via {binary} test"
         cwd = suite.demo_root
     else:
         env.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
@@ -240,21 +241,30 @@ def _load_package_meta(package_root: Path) -> dict[str, object] | None:
         return None
 
 
-def _node_suite_uses_npm(
+def _node_package_manager(
     package_root: Path, package_meta: dict[str, object] | None
-) -> bool:
+) -> str | None:
     if package_meta is None:
-        return False
+        return None
 
-    lockfiles = ("package-lock.json", "npm-shrinkwrap.json")
-    if any((package_root / name).is_file() for name in lockfiles):
-        return True
+    lockfiles = {
+        "npm": ("package-lock.json", "npm-shrinkwrap.json"),
+        "pnpm": ("pnpm-lock.yaml",),
+        "yarn": ("yarn.lock",),
+    }
+    for manager, names in lockfiles.items():
+        if any((package_root / name).is_file() for name in names):
+            return manager
 
     manager = str(package_meta.get("packageManager", "")).lower()
-    if manager.startswith("pnpm") or manager.startswith("yarn"):
-        return False
+    if manager.startswith("npm"):
+        return "npm"
+    if manager.startswith("pnpm"):
+        return "pnpm"
+    if manager.startswith("yarn"):
+        return "yarn"
 
-    return bool(manager.startswith("npm"))
+    return None
 
 
 def _requires_prisma_generation(package_meta: dict[str, object]) -> bool:
@@ -264,7 +274,44 @@ def _requires_prisma_generation(package_meta: dict[str, object]) -> bool:
 
 
 def _has_prisma_client(package_root: Path) -> bool:
-    return (package_root / "node_modules" / ".prisma" / "client").exists()
+    node_modules = package_root / "node_modules"
+    generated = node_modules / ".prisma" / "client"
+    return generated.exists()
+
+
+def _ensure_prisma_client(package_root: Path) -> bool:
+    if _has_prisma_client(package_root):
+        return True
+
+    print(f"→ Generating Prisma client for {package_root} (missing artifacts)")
+    env = os.environ.copy()
+    env.setdefault("CI", "1")
+
+    try:
+        result = subprocess.run(
+            ["npx", "prisma", "generate"],
+            cwd=package_root,
+            env=env,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        print(
+            "→ Skipping Prisma-dependent suite because 'npx' is not available on PATH."
+        )
+        return False
+
+    if result.returncode != 0:
+        stderr = (result.stderr or "").strip()
+        print(
+            "→ Skipping Prisma-dependent suite because client generation failed; "
+            "run `npx prisma generate` manually to debug.\n"
+            f"   stderr: {stderr or 'no stderr captured'}"
+        )
+        return False
+
+    return _has_prisma_client(package_root)
 
 
 def _node_runner_args(package_root: Path) -> list[str]:
@@ -286,33 +333,44 @@ def _node_runner_args(package_root: Path) -> list[str]:
     return []
 
 
-def _has_node_tests(tests_dir: Path, demo_dir: Path) -> Path | None:
+def _has_node_tests(
+    tests_dir: Path, demo_dir: Path
+) -> tuple[Path, str] | bool | None:
     package_root = _node_package_root(tests_dir, demo_dir)
     if not package_root:
         return None
 
     package_meta = _load_package_meta(package_root)
 
-    if not _node_suite_uses_npm(package_root, package_meta):
+    manager = _node_package_manager(package_root, package_meta)
+    if not manager:
         print(
             f"→ Skipping {tests_dir} (unsupported Node package manager; "
-            "add an npm lockfile to enable this suite)"
+            "add npm, pnpm, or yarn lock metadata to enable this suite)"
         )
-        return None
+        return False
 
-    if package_meta and _requires_prisma_generation(package_meta) and not _has_prisma_client(package_root):
+    if (
+        manager == "pnpm"
+        and (package_root / "pnpm-workspace.yaml").exists()
+        and package_root == demo_dir
+    ):
         print(
-            f"→ Skipping {tests_dir} (Prisma client artifacts not generated; "
-            "run `npx prisma generate` to enable tests)"
+            f"→ Skipping {tests_dir} (pnpm workspace root detected; "
+            "add a package-level package.json near these tests to enable them)"
         )
-        return None
+        return False
+
+    if package_meta and _requires_prisma_generation(package_meta):
+        if not _ensure_prisma_client(package_root):
+            return False
 
     for file in tests_dir.rglob("*.test.*"):
         if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return package_root
+            return package_root, manager
     for file in tests_dir.rglob("*.spec.*"):
         if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return package_root
+            return package_root, manager
     return None
 
 
@@ -364,15 +422,16 @@ def _discover_tests(
             if any(part in _SKIP_TEST_PARTS for part in tests_dir.parts):
                 continue
             has_python = _has_python_tests(tests_dir)
-            node_package_root = _has_node_tests(tests_dir, demo_dir)
+            node_suite = _has_node_tests(tests_dir, demo_dir)
 
             if has_python:
                 yield Suite(demo_root=demo_dir, tests_dir=tests_dir, runner="python")
-            if node_package_root:
+            if node_suite:
+                package_root, manager = node_suite
                 yield Suite(
-                    demo_root=node_package_root, tests_dir=tests_dir, runner="node"
+                    demo_root=package_root, tests_dir=tests_dir, runner=manager
                 )
-            if not has_python and not node_package_root:
+            if not has_python and node_suite is None:
                 print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
 
