@@ -2,7 +2,20 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import AxeBuilder from '@axe-core/playwright';
 
-test.describe('Phase 8 dashboard happy path', () => {
+const skipBrowser = process.env.PHASE8_SKIP_BROWSER === '1';
+const skipReason =
+  'Chromium is not available in this environment. Set PLAYWRIGHT_AUTO_INSTALL=1 to download browsers during tests.';
+
+if (skipBrowser) {
+  test.describe('Phase 8 dashboard happy path', () => {
+    test.skip(skipReason);
+  });
+
+  test('shows troubleshooting guidance when manifest fails to load', () => {
+    test.skip(skipReason);
+  });
+} else {
+  test.describe('Phase 8 dashboard happy path', () => {
   test.beforeEach(async ({ page }) => {
     page.on('console', (msg) => console.log(`console:${msg.type()}: ${msg.text()}`));
     page.on('pageerror', (err) => console.log(`pageerror:${err.name}:${err.message}:${err.stack}`));
@@ -179,20 +192,21 @@ test.describe('Phase 8 dashboard happy path', () => {
     await expect(governanceCards).toHaveCount(4);
     await expect(governanceCards.first()).toContainText('Governance interface');
   });
-});
-
-test('shows troubleshooting guidance when manifest fails to load', async ({ page }) => {
-  await page.route('**/config/universal.value.manifest.json', (route) => {
-    return route.fulfill({ status: 404, body: 'missing manifest' });
   });
-  await page.goto('/');
 
-  const errorPanel = page.locator('[data-test-id="error-panel"]');
-  await expect(errorPanel).toBeVisible();
-  await expect(errorPanel).toContainText('Manifest unavailable');
-  await expect(errorPanel).toContainText('Troubleshooting steps');
-  await expect(errorPanel.locator('ol li')).toHaveCount(3);
+  test('shows troubleshooting guidance when manifest fails to load', async ({ page }) => {
+    await page.route('**/config/universal.value.manifest.json', (route) => {
+      return route.fulfill({ status: 404, body: 'missing manifest' });
+    });
+    await page.goto('/');
 
-  await expect(page.locator('main')).toHaveAttribute('hidden', 'true');
-  await expect(page.locator('main')).toHaveAttribute('aria-hidden', 'true');
-});
+    const errorPanel = page.locator('[data-test-id="error-panel"]');
+    await expect(errorPanel).toBeVisible();
+    await expect(errorPanel).toContainText('Manifest unavailable');
+    await expect(errorPanel).toContainText('Troubleshooting steps');
+    await expect(errorPanel.locator('ol li')).toHaveCount(3);
+
+    await expect(page.locator('main')).toHaveAttribute('hidden', 'true');
+    await expect(page.locator('main')).toHaveAttribute('aria-hidden', 'true');
+  });
+}
