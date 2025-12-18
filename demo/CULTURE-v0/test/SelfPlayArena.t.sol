@@ -153,11 +153,13 @@ contract SelfPlayArenaTest is Test {
 
     function testRegisterParticipantRequiresJobMatch() public {
         uint256 roundId = _startRound();
-        jobRegistry.setJob(50, EMPLOYER, address(0xBEEF));
+        jobRegistry.setJob(50, EMPLOYER, TEACHER);
         identity.setRole(STUDENT_ROLE, address(0xBEEF), true);
 
         vm.prank(RELAYER);
-        vm.expectRevert(SelfPlayArena.JobAgentMismatch.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(SelfPlayArena.JobAgentMismatch.selector, 50, TEACHER, address(0xBEEF))
+        );
         arena.registerParticipant(roundId, SelfPlayArena.ParticipantKind.Student, 50, address(0xBEEF));
     }
 
@@ -170,10 +172,10 @@ contract SelfPlayArenaTest is Test {
         vm.prank(RELAYER);
         arena.reportValidatorMisconduct(roundId, VALIDATOR_ONE, 3 ether, OWNER, "late reveal");
 
-        (address validator, uint256 amount, address recipient) = stakeManager.slashCalls(0);
-        assertEq(validator, VALIDATOR_ONE);
-        assertEq(amount, 3 ether);
-        assertEq(recipient, OWNER);
+        MockStakeManager.SlashCall memory slashCall = stakeManager.slashCalls(0);
+        assertEq(slashCall.validator, VALIDATOR_ONE);
+        assertEq(slashCall.amount, 3 ether);
+        assertEq(slashCall.recipient, OWNER);
     }
 
     function testPausingBlocksStateTransitions() public {
@@ -266,4 +268,3 @@ contract SelfPlayArenaTest is Test {
         arena.finalizeRound(roundId, 0, 7_500, 11, true, new address[](0));
     }
 }
-
