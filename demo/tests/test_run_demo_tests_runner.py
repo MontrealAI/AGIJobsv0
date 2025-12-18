@@ -290,12 +290,12 @@ def test_prisma_client_generation_is_triggered(
     (project_dir / "package-lock.json").write_text("{}\n")
     (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
 
-    calls: list[Path] = []
+    calls: list[tuple[Path, dict[str, object] | None]] = []
     monkeypatch.setattr(run_demo_tests, "_has_prisma_client", lambda _: False)
     monkeypatch.setattr(
         run_demo_tests,
         "_ensure_prisma_client",
-        lambda root: calls.append(root) or True,
+        lambda root, meta: calls.append((root, meta)) or True,
     )
 
     suites = list(run_demo_tests._discover_tests(demo_root))
@@ -307,7 +307,37 @@ def test_prisma_client_generation_is_triggered(
             runner="npm",
         )
     ]
-    assert calls == [project_dir]
+    assert calls == [(project_dir, package_json)]
+
+
+def test_prisma_client_generation_is_skipped_for_list_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "node-demo"
+    tests_dir = project_dir / "tests"
+    tests_dir.mkdir(parents=True)
+
+    package_json = {
+        "dependencies": {"@prisma/client": "latest"},
+        "packageManager": "npm@9.0.0",
+    }
+    (project_dir / "package.json").write_text(json.dumps(package_json))
+    (project_dir / "package-lock.json").write_text("{}\n")
+    (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
+
+    monkeypatch.setattr(run_demo_tests, "_has_prisma_client", lambda _: False)
+    monkeypatch.setattr(
+        run_demo_tests,
+        "_ensure_prisma_client",
+        lambda *_: (_ for _ in ()).throw(
+            AssertionError("Prisma client generation should not run in --list mode")
+        ),
+    )
+
+    exit_code = run_demo_tests.main(["--list"], demo_root=demo_root)
+
+    assert exit_code == 0
 
 
 def test_prisma_client_detection_requires_generated_artifacts(tmp_path: Path) -> None:
