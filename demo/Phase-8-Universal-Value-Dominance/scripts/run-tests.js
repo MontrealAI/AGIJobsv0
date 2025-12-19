@@ -14,6 +14,10 @@ function runStep(command, args, options = {}) {
 
 function ensureChromiumAvailable({ autoInstall, installWithDeps }) {
   const { chromium } = require('@playwright/test');
+  const executablePath = chromium.executablePath();
+  if (executablePath && fs.existsSync(executablePath)) {
+    return;
+  }
 
   if (autoInstall) {
     const installArgs = ['playwright', 'install', 'chromium'];
@@ -24,7 +28,6 @@ function ensureChromiumAvailable({ autoInstall, installWithDeps }) {
     return;
   }
 
-  const executablePath = chromium.executablePath();
   if (!executablePath || !fs.existsSync(executablePath)) {
     console.error(
       [
