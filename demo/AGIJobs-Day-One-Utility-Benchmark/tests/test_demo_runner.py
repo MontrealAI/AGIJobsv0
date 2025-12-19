@@ -72,6 +72,17 @@ def test_owner_set_updates_fee():
     assert report["owner_controls"]["platform_fee_bps"] == 220
 
 
+def test_cli_output_dir_override(tmp_path: Path):
+    payload, fmt = run_cli(["simulate", "--output-dir", str(tmp_path)])
+
+    assert fmt == "json"
+    assert Path(payload["outputs"]["dashboard"]).parent == tmp_path
+
+    # Ensure key artefacts land in the requested directory for reproducible ops
+    assert (tmp_path / "report_e2e.json").exists()
+    assert (tmp_path / "owner_controls_snapshot.json").exists()
+
+
 def test_unknown_strategy_raises():
     orchestrator = _orchestrator()
     with pytest.raises(StrategyNotFoundError):

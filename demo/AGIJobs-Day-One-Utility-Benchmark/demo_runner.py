@@ -82,10 +82,10 @@ class DayOneUtilityOrchestrator:
         "narrative": str,
     }
 
-    def __init__(self, base_path: Optional[Path] = None) -> None:
+    def __init__(self, base_path: Optional[Path] = None, output_dir: Optional[Path] = None) -> None:
         self.base_path = base_path or Path(__file__).resolve().parent
         self.config_dir = self.base_path / "config"
-        self.output_dir = self.base_path / "out"
+        self.output_dir = (output_dir or self.base_path / "out").expanduser().resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._owner_config_path = self.config_dir / "owner_controls.yaml"
         self._owner_defaults_path = self.config_dir / "owner_controls.defaults.yaml"
@@ -1103,7 +1103,22 @@ class DayOneUtilityOrchestrator:
     @classmethod
     def build_parser(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="AGI Jobs Day-One Utility Benchmark")
+        parser.add_argument(
+            "--output-dir",
+            type=Path,
+            help="Optional directory for writing artefacts (reports, dashboards, checkpoints).",
+        )
         subparsers = parser.add_subparsers(dest="command", required=False)
+
+        def _attach_output_dir_flag(target: argparse.ArgumentParser) -> None:
+            target.add_argument(
+                "--output-dir",
+                type=Path,
+                help=(
+                    "Optional directory for writing artefacts (reports, dashboards, checkpoints). "
+                    "Useful when running subcommands directly."
+                ),
+            )
 
         simulate = subparsers.add_parser("simulate", help="Run a day-one utility simulation")
         simulate.add_argument("--strategy", default="e2e", help="Strategy key from strategies.yaml")
@@ -1113,6 +1128,8 @@ class DayOneUtilityOrchestrator:
             default="json",
             help="Output format for operator consoles. JSON remains automation-friendly, human emits a narrative summary.",
         )
+
+        _attach_output_dir_flag(simulate)
 
         owner = subparsers.add_parser("owner", help="View or update owner controls")
         owner.add_argument("--show", action="store_true", help="Display the current owner configuration")
@@ -1124,7 +1141,10 @@ class DayOneUtilityOrchestrator:
             "--reset", action="store_true", help="Restore owner controls to the default sovereign configuration"
         )
 
-        subparsers.add_parser("list", help="List available strategies")
+        _attach_output_dir_flag(owner)
+
+        list_cmd = subparsers.add_parser("list", help="List available strategies")
+        _attach_output_dir_flag(list_cmd)
         scoreboard = subparsers.add_parser(
             "scoreboard", help="Generate a multi-strategy scoreboard and dashboard"
         )
@@ -1139,11 +1159,15 @@ class DayOneUtilityOrchestrator:
             default="json",
             help="Set to 'human' for a concise console summary",
         )
+        _attach_output_dir_flag(scoreboard)
         return parser
 
     def execute(self, args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], str]:
         parser = self.build_parser()
         parsed = parser.parse_args(args=args)
+        if parsed.output_dir:
+            self.output_dir = Path(parsed.output_dir).expanduser().resolve()
+            self.output_dir.mkdir(parents=True, exist_ok=True)
         command = parsed.command or "simulate"
         if command == "simulate":
             report = self.simulate(parsed.strategy)
