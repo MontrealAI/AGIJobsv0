@@ -36,11 +36,46 @@ def load_manifest(path: Path) -> Mapping[str, Any]:
         raise SystemExit(f"Manifest at {path} is not valid JSON: {exc}") from exc
 
 
+def _is_address_candidate(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    stripped = value.strip()
+    return stripped.startswith("0x") and len(stripped) == 42
+
+
 def normalise_address(value: Any) -> str:
     """Return a checksummed-ish lowercase address or the zero address."""
     if isinstance(value, str) and ADDRESS_RE.match(value.strip()):
         return value.strip().lower()
     return ZERO_ADDRESS
+
+
+def normalise_manifest_addresses(manifest: Mapping[str, Any]) -> tuple[Mapping[str, Any], list[str], int]:
+    """
+    Lowercase all address-like fields while collecting validation errors.
+
+    Any value that looks like an address but fails the hex/length check is
+    replaced with the zero address and surfaced in the invalid_paths list.
+    """
+    invalid_paths: list[str] = []
+    total_addresses = 0
+
+    def _walk(node: Any, path: str) -> Any:
+        nonlocal total_addresses
+        if isinstance(node, Mapping):
+            return {key: _walk(value, f"{path}.{key}") for key, value in node.items()}
+        if isinstance(node, list):
+            return [_walk(value, f"{path}[{index}]") for index, value in enumerate(node)]
+        if _is_address_candidate(node):
+            total_addresses += 1
+            stripped = node.strip()
+            if ADDRESS_RE.match(stripped):
+                return stripped.lower()
+            invalid_paths.append(path)
+            return ZERO_ADDRESS
+        return node
+
+    return _walk(manifest, "manifest"), invalid_paths, total_addresses
 
 
 @dataclass(frozen=True)
@@ -122,22 +157,44 @@ def compute_metrics(manifest: Mapping[str, Any]) -> PhaseMetrics:
     )
 
 
-def validate_addresses(global_section: Mapping[str, Any]) -> list[str]:
-    invalid_keys: list[str] = []
-    for key, value in global_section.items():
-        if isinstance(value, str) and ADDRESS_RE.match(value.strip()):
-            continue
-        if isinstance(value, str) and value.strip() == "":
-            continue
-        # Only flag obvious address-like fields
-        if "address" in key.lower() or key.lower() in {"treasury", "universalVault", "phase8Manager", "systemPause"}:
-            invalid_keys.append(key)
-    return invalid_keys
+def extract_global_addresses(global_section: Mapping[str, Any]) -> dict[str, str]:
+    """Return only address-like entries from the global section, normalised."""
+    return {
+        key: normalise_address(value)
+        for key, value in global_section.items()
+        if isinstance(value, str) and _is_address_candidate(value)
+    }
 
 
-def save_report(metrics: PhaseMetrics, manifest: Mapping[str, Any], *, output_path: Path = REPORT_PATH) -> None:
+def extract_domain_addresses(manifest: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Surface core domain contract addresses for operator audits."""
+    domains = []
+    for index, domain in enumerate(manifest.get("domains", [])):
+        slug = domain.get("slug") or f"domain-{index}"
+        domains.append(
+            {
+                "slug": slug,
+                "orchestrator": normalise_address(domain.get("orchestrator")),
+                "capitalVault": normalise_address(domain.get("capitalVault")),
+                "validatorModule": normalise_address(domain.get("validatorModule")),
+                "policyKernel": normalise_address(domain.get("policyKernel")),
+            }
+        )
+    return domains
+
+
+def save_report(
+    metrics: PhaseMetrics,
+    manifest: Mapping[str, Any],
+    *,
+    output_path: Path = REPORT_PATH,
+    invalid_paths: Iterable[str] | None = None,
+    total_addresses: int = 0,
+) -> None:
     output_path = output_path.resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    invalid_paths = list(invalid_paths or [])
+    global_section = manifest.get("global", {})
     report = {
         "totals": {
             "monthlyUSD": metrics.total_monthly_usd,
@@ -157,10 +214,13 @@ def save_report(metrics: PhaseMetrics, manifest: Mapping[str, Any], *, output_pa
             "autonomyGuardCapBps": metrics.autonomy_guard_cap_bps,
         },
         "global": {
-            "treasury": normalise_address(manifest.get("global", {}).get("treasury")),
-            "phase8Manager": normalise_address(manifest.get("global", {}).get("phase8Manager")),
-            "validatorRegistry": normalise_address(manifest.get("global", {}).get("validatorRegistry")),
-            "systemPause": normalise_address(manifest.get("global", {}).get("systemPause")),
+            **extract_global_addresses(global_section),
+        },
+        "domains": extract_domain_addresses(manifest),
+        "addressAudit": {
+            "totalChecked": total_addresses,
+            "invalidCount": len(invalid_paths),
+            "invalidPaths": sorted(invalid_paths),
         },
     }
     output_path.write_text(json.dumps(report, indent=2))
@@ -196,9 +256,15 @@ def main(argv: list[str] | None = None) -> int:
     output_path = args.output.resolve()
 
     manifest = load_manifest(manifest_path)
-    invalid_addresses = validate_addresses(manifest.get("global", {}))
-    metrics = compute_metrics(manifest)
-    save_report(metrics, manifest, output_path=output_path)
+    normalised_manifest, invalid_addresses, total_addresses = normalise_manifest_addresses(manifest)
+    metrics = compute_metrics(normalised_manifest)
+    save_report(
+        metrics,
+        normalised_manifest,
+        output_path=output_path,
+        invalid_paths=invalid_addresses,
+        total_addresses=total_addresses,
+    )
 
     if not args.quiet:
         print("🛰️  Phase 8 — Universal Value Dominance :: Telemetry")
