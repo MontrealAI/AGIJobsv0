@@ -23,10 +23,34 @@ function runStep(command, args, options = {}) {
   }
 }
 
+function hasWorkingChromium(executablePath) {
+  if (!executablePath || !fs.existsSync(executablePath)) {
+    return false;
+  }
+
+  const probe = spawnSync(executablePath, ['--version'], { stdio: 'ignore' });
+  return probe.status === 0;
+}
+
+function installChromium({ withDeps, browsersPath }) {
+  const args = ['playwright', 'install', 'chromium'];
+  if (withDeps) {
+    args.push('--with-deps');
+  }
+
+  runStep('npx', args, {
+    env: {
+      PLAYWRIGHT_BROWSERS_PATH: browsersPath,
+    },
+  });
+}
+
 function ensureChromiumAvailable({
   autoInstall,
   installWithDeps,
   browsersPath = DEFAULT_PLAYWRIGHT_BROWSERS_PATH,
+  prober = hasWorkingChromium,
+  installer = installChromium,
 }) {
   // Keep Playwright downloads scoped to the project directory unless callers
   // explicitly override the location. This avoids writing into system
@@ -35,34 +59,33 @@ function ensureChromiumAvailable({
   process.env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
 
   const { chromium } = require('@playwright/test');
-  const executablePath = chromium.executablePath();
-  if (executablePath && fs.existsSync(executablePath)) {
+  const getExecutablePath = () => chromium.executablePath();
+
+  if (prober(getExecutablePath())) {
     return;
   }
 
   if (autoInstall) {
-    const installArgs = ['playwright', 'install', 'chromium'];
-    if (installWithDeps) {
-      installArgs.push('--with-deps');
+    installer({ withDeps: false, browsersPath });
+    if (prober(getExecutablePath())) {
+      return;
     }
-    runStep('npx', installArgs, {
-      env: {
-        PLAYWRIGHT_BROWSERS_PATH: browsersPath,
-      },
-    });
-    return;
+    if (installWithDeps) {
+      installer({ withDeps: true, browsersPath });
+      if (prober(getExecutablePath())) {
+        return;
+      }
+    }
   }
 
-  if (!executablePath || !fs.existsSync(executablePath)) {
-    console.error(
-      [
-        'Playwright Chromium is not installed. Either set PLAYWRIGHT_AUTO_INSTALL=1',
-        'to allow automatic installation, or install manually via:',
-        '  npx playwright install chromium --with-deps',
-      ].join('\n'),
-    );
-    process.exit(1);
-  }
+  console.error(
+    [
+      'Playwright Chromium is not installed. Either set PLAYWRIGHT_AUTO_INSTALL=1',
+      'to allow automatic installation, or install manually via:',
+      `  npx playwright install chromium${installWithDeps ? ' --with-deps' : ''}`,
+    ].join('\n'),
+  );
+  process.exit(1);
 }
 
 function main() {
@@ -91,6 +114,8 @@ function main() {
 module.exports = {
   buildPlaywrightEnv,
   ensureChromiumAvailable,
+  hasWorkingChromium,
+  installChromium,
   runStep,
   main,
 };
