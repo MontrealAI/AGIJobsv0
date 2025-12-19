@@ -1,19 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { JsonRpcProvider, Wallet, parseEther } from 'ethers';
 import { loadAlphaNodeConfig } from '../src/config';
 import {
   applyGovernanceUpdate,
   loadGovernanceUpdate,
 } from '../src/blockchain/governance';
+import { fixturePath } from './test-utils';
 
-const CONFIG_PATH = path.resolve(
-  'demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'
-);
-const GOVERNANCE_MANIFEST_PATH = path.resolve(
-  'demo/AGI-Alpha-Node-v0/config/governance.update.guide.json'
-);
+const CONFIG_PATH = fixturePath('mainnet.guide.json');
+const GOVERNANCE_MANIFEST_PATH = fixturePath('governance.update.guide.json');
 
 function createOfflineWallet(): Wallet {
   const provider = new JsonRpcProvider('http://127.0.0.1:8545');

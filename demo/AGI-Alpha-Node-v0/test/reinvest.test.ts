@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { Wallet } from 'ethers';
 import { loadAlphaNodeConfig } from '../src/config';
 import { reinvestRewards } from '../src/blockchain/reinvest';
 import type { RewardSnapshot } from '../src/blockchain/rewards';
 import type { StakeSnapshot } from '../src/blockchain/staking';
-
-const fixturePath = path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json');
+import { fixturePath } from './test-utils';
 
 class FakeTx {
   constructor(readonly hash: string) {}
@@ -79,7 +77,7 @@ function makeStakeSnapshot(): StakeSnapshot {
 }
 
 test('reinvestRewards skips when pending is below threshold', async () => {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const wallet = makeWallet();
   const pending = config.ai.reinvestThresholdWei - 1n;
   const report = await reinvestRewards(
@@ -102,7 +100,7 @@ test('reinvestRewards skips when pending is below threshold', async () => {
 });
 
 test('reinvestRewards dry run reports intended actions', async () => {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const wallet = makeWallet();
   const pending = config.ai.reinvestThresholdWei + 10n;
   const report = await reinvestRewards(
@@ -126,7 +124,7 @@ test('reinvestRewards dry run reports intended actions', async () => {
 });
 
 test('reinvestRewards claims and deposits with injected contracts', async () => {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const wallet = makeWallet();
   const feePool = new FakeFeePool();
   const stakeManager = new FakeStakeManager();

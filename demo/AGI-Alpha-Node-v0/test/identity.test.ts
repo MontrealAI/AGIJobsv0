@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { loadAlphaNodeConfig } from '../src/config';
 import { verifyNodeIdentity } from '../src/identity/verify';
 import type { EnsLookup, EnsResolution } from '../src/identity/types';
+import { fixturePath } from './test-utils';
 
 class StubLookup implements EnsLookup {
   constructor(private readonly resolution: EnsResolution) {}
@@ -13,7 +13,7 @@ class StubLookup implements EnsLookup {
 }
 
 test('identity verification succeeds for matching owner', async () => {
-  const config = await loadAlphaNodeConfig(path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'));
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const lookup = new StubLookup({
     owner: config.operator.address,
     wrapperOwner: config.operator.address,
@@ -27,7 +27,7 @@ test('identity verification succeeds for matching owner', async () => {
 });
 
 test('identity verification reports mismatches', async () => {
-  const config = await loadAlphaNodeConfig(path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json'));
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const lookup = new StubLookup({
     owner: '0x0000000000000000000000000000000000000001',
     wrapperOwner: '0x0000000000000000000000000000000000000001',

@@ -1,12 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { loadAlphaNodeConfig, makeEnsName } from '../src/config';
-
-const fixturePath = path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json');
+import { fixturePath } from './test-utils';
 
 test('loads and normalises alpha node config', async () => {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   assert.equal(makeEnsName(config), `${config.operator.ensLabel}.${config.operator.ensRoot}`);
   assert.equal(typeof config.operator.minimumStakeWei, 'bigint');
   assert.equal(typeof config.ai.reinvestThresholdWei, 'bigint');

@@ -1,11 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { Wallet } from 'ethers';
 import { loadAlphaNodeConfig } from '../src/config';
 import { JobLifecycle, JobLifecycleContext } from '../src/blockchain/jobs';
-
-const fixturePath = path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json');
+import { fixturePath } from './test-utils';
 
 class FakeTx {
   constructor(readonly hash: string) {}
@@ -69,7 +67,7 @@ function makeWallet(): Wallet {
 }
 
 async function makeLifecycle(registry: FakeJobRegistry): Promise<JobLifecycle> {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   const context: JobLifecycleContext = { signer: makeWallet(), config, registry: registry as any };
   return new JobLifecycle(context);
 }
