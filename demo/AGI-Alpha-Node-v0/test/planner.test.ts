@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
 import { loadAlphaNodeConfig } from '../src/config';
 import { AlphaPlanner, JobOpportunity } from '../src/ai/planner';
-
-const fixturePath = path.resolve('demo/AGI-Alpha-Node-v0/config/mainnet.guide.json');
+import { fixturePath } from './test-utils';
 
 async function makePlanner(): Promise<AlphaPlanner> {
-  const config = await loadAlphaNodeConfig(fixturePath);
+  const config = await loadAlphaNodeConfig(fixturePath('mainnet.guide.json'));
   return new AlphaPlanner(config);
 }
 

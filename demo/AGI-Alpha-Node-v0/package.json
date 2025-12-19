@@ -1,0 +1,16 @@
+{
+  "name": "agi-alpha-node-v0",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Alpha Node demo test harness",
+  "packageManager": "npm@11.4.2",
+  "type": "commonjs",
+  "scripts": {
+    "test": "TS_NODE_PROJECT=tsconfig.build.json node --test -r ts-node/register/transpile-only test/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
