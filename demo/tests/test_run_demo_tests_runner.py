@@ -207,6 +207,53 @@ def test_discovers_pnpm_suite(tmp_path: Path) -> None:
     ]
 
 
+def test_deduplicates_node_packages(tmp_path: Path) -> None:
+    demo_root = tmp_path / "demo"
+    scripts_tests = demo_root / "scripts" / "__tests__"
+    python_tests = demo_root / "tests"
+    scripts_tests.mkdir(parents=True)
+    python_tests.mkdir(parents=True)
+
+    (demo_root / "package.json").write_text(
+        '{"name": "phase-8", "scripts": {"test": "npm test"}}'
+    )
+    (demo_root / "package-lock.json").write_text("{}\n")
+
+    (scripts_tests / "orchestrator.test.ts").write_text(
+        "describe('node suite', () => { test('ok', () => {}); });\n"
+    )
+    (python_tests / "phase8.spec.ts").write_text(
+        "describe('e2e', () => { test('ok', () => {}); });\n"
+    )
+    (python_tests / "test_manifest.py").write_text(
+        "def test_manifest():\n    assert True\n"
+    )
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    python_suites = [
+        suite for suite in suites if suite.runner == "python"
+    ]
+    node_suites = [
+        suite for suite in suites if suite.runner == "npm"
+    ]
+
+    assert python_suites == [
+        run_demo_tests.Suite(
+            demo_root=python_tests,
+            tests_dir=python_tests,
+            runner="python",
+        )
+    ]
+    assert node_suites == [
+        run_demo_tests.Suite(
+            demo_root=demo_root,
+            tests_dir=scripts_tests,
+            runner="npm",
+        )
+    ]
+
+
 def test_pnpm_workspace_root_is_skipped(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
