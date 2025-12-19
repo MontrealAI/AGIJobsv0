@@ -81,5 +81,8 @@ demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/storage/ui/dashboard-data.json
 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/storage/
 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/meta_agentic_alpha_v2/
 demo/Meta-Agentic-ALPHA-AGI-Jobs-v0/meta_agentic_alpha_v2/reports/generated/
+demo/CULTURE-v0/typechain-types/
+demo/CULTURE-v0/hardhat/gasReporterOutput.json
+demo/Phase-8-Universal-Value-Dominance/test-results/
 __pycache__/
 **/__pycache__/
