@@ -38,6 +38,33 @@ def test_run_propagates_exit_code(monkeypatch) -> None:
     assert run_demo.run([], runner=failing_runner) == 7
 
 
+def test_run_defaults_to_auto_profile_even_when_interactive(monkeypatch) -> None:
+    recorded: list[list[str]] = []
+
+    def fake_runner(cmd, *, check, cwd):  # noqa: ARG001
+        recorded.append(cmd)
+
+        class DummyResult:
+            returncode = 0
+
+        return DummyResult()
+
+    def always_true():
+        return True
+
+    run_demo.run([], runner=fake_runner, is_interactive=always_true)
+
+    assert recorded[0][:3] == ["npm", "run", "demo:agi-os:first-class"]
+    assert recorded[0][3:] == [
+        "--",
+        "--network",
+        "localhost",
+        "--yes",
+        "--no-compose",
+        "--skip-deploy",
+    ]
+
+
 def test_run_autofills_non_interactive_defaults(monkeypatch) -> None:
     recorded: list[list[str]] = []
 
