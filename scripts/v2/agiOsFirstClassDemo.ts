@@ -160,6 +160,16 @@ function parseBool(value: string | boolean | undefined): boolean | undefined {
   return undefined;
 }
 
+function shouldAutoAccept(args: CliArgs): boolean {
+  const cliRequest =
+    parseBool(args.yes) ?? parseBool(args['non-interactive']);
+  const envRequest =
+    parseBool(process.env.ASTRAL_OS_AUTO) ?? parseBool(process.env.CI);
+  const nonInteractive = !process.stdin.isTTY;
+
+  return Boolean(cliRequest ?? envRequest ?? nonInteractive);
+}
+
 function printUsage(): void {
   console.log(buildUsage());
 }
@@ -660,9 +670,7 @@ async function main() {
     printUsage();
     return;
   }
-  const autoYes = Boolean(
-    parseBool(args.yes) ?? parseBool(args['non-interactive'])
-  );
+  const autoYes = shouldAutoAccept(args);
   const networkArg = args.network as string | undefined;
   const skipDeploy = Boolean(parseBool(args['skip-deploy']));
   const launchComposeOverride =
@@ -676,12 +684,14 @@ async function main() {
 
   const networkSelection =
     networkPreset ??
-    (await promptSelect(
-      'Select target network for the Astral Omnidominion demo:',
-      Object.values(NETWORK_PRESETS),
-      'localhost',
-      autoYes
-    ));
+    (autoYes
+      ? NETWORK_PRESETS.localhost
+      : await promptSelect(
+          'Select target network for the Astral Omnidominion demo:',
+          Object.values(NETWORK_PRESETS),
+          'localhost',
+          autoYes
+        ));
 
   const dockerAvailable = (
     await tryCommandCapture('docker', ['--version'])

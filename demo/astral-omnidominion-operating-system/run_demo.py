@@ -70,9 +70,11 @@ def _normalize_args(
     args = [arg for arg in args if arg != AUTO_FLAG]
 
     if not args:
-        if requested or not is_interactive():
-            return DEFAULT_ARGS, requested
-        return args, requested
+        # Default to the automation-friendly profile even in interactive
+        # shells so ``python run_demo.py`` never blocks on nested prompts.
+        # The caller can still override the behavior by explicitly passing
+        # interactive flags.
+        return DEFAULT_ARGS, requested or not is_interactive()
 
     if requested:
         args = _merge_defaults(args)
