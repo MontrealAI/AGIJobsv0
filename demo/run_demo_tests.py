@@ -462,6 +462,8 @@ _TEST_DIR_NAMES = {"tests", "test", "__tests__"}
 def _discover_tests(
     demo_root: Path, *, include: set[str] | None = None, generate_prisma: bool = True
 ) -> Iterable[Suite]:
+    node_packages_seen: set[tuple[Path, str]] = set()
+
     def _iter_tests_dirs(root: Path) -> Iterable[Path]:
         # Some suites (e.g., the runner's own tests) live directly under a
         # ``tests`` directory instead of nested beneath a demo package. rglob
@@ -516,9 +518,16 @@ def _discover_tests(
                 )
             if node_suite:
                 package_root, manager = node_suite
-                yield Suite(
-                    demo_root=package_root, tests_dir=tests_dir, runner=manager
-                )
+                key = (package_root, manager)
+                if key in node_packages_seen:
+                    print(
+                        f"→ Skipping {tests_dir} (already scheduled node suite at {package_root})"
+                    )
+                else:
+                    node_packages_seen.add(key)
+                    yield Suite(
+                        demo_root=package_root, tests_dir=tests_dir, runner=manager
+                    )
             if not has_python and node_suite is None:
                 print(f"→ Skipping {tests_dir} (no recognized test files found)")
 
