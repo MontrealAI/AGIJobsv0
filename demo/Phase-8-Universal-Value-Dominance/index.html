@@ -1727,6 +1727,17 @@
         button.setAttribute('aria-expanded', next ? 'true' : 'false');
       };
 
+        const hasClipboardPermission = async () => {
+          if (typeof navigator === 'undefined' || typeof navigator.permissions?.query !== 'function') return false;
+          try {
+            const status = await navigator.permissions.query({ name: 'clipboard-write' });
+            return status.state === 'granted' || status.state === 'prompt';
+          } catch (error) {
+            console.debug('Clipboard permission query unavailable, falling back to capability check', error);
+            return false;
+          }
+        };
+
         const writeToClipboard = async (value) => {
           if (!value) return { success: false, reason: 'empty' };
 
@@ -1734,14 +1745,17 @@
             typeof navigator !== 'undefined' &&
             typeof navigator.clipboard?.writeText === 'function' &&
             typeof window !== 'undefined' &&
-            window.isSecureContext;
+            window.isSecureContext &&
+            (await hasClipboardPermission());
 
           if (canUseClipboardApi) {
             try {
               await navigator.clipboard.writeText(value);
               return { success: true };
             } catch (error) {
-              console.debug('Clipboard API failed, attempting fallback', error);
+              if (error?.name !== 'NotAllowedError') {
+                console.debug('Clipboard API unavailable, using fallback', error);
+              }
             }
           }
 
@@ -1755,7 +1769,10 @@
             textArea.select();
             const succeeded = document.execCommand('copy');
             document.body.removeChild(textArea);
-            return { success: succeeded, reason: succeeded ? undefined : canUseClipboardApi ? 'clipboard-error' : 'insecure-context' };
+            return {
+              success: succeeded,
+              reason: succeeded ? undefined : canUseClipboardApi ? 'clipboard-error' : 'insecure-context',
+            };
           } catch (error) {
             console.debug('execCommand copy fallback failed', error);
             return { success: false, reason: canUseClipboardApi ? 'clipboard-error' : 'insecure-context' };
