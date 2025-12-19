@@ -68,6 +68,25 @@ function normalisePrefix(value, fallback = '/onebox') {
   return withLeading.replace(/\/+$/, '');
 }
 
+function formatHostForUrl(host) {
+  const trimmed = String(host ?? '').trim();
+  if (!trimmed) {
+    return '127.0.0.1';
+  }
+  // If the host already contains square brackets or no colons, it is safe to use as-is.
+  if (trimmed.startsWith('[') || !trimmed.includes(':')) {
+    return trimmed;
+  }
+  // IPv6 literals require brackets when embedded in URLs.
+  return `[${trimmed}]`;
+}
+
+function buildOrigin(host, port) {
+  const safeHost = formatHostForUrl(host);
+  const safePort = Number.isFinite(port) ? `:${port}` : '';
+  return `http://${safeHost}${safePort}`;
+}
+
 function isUnsetEnvValue(value, { treatZeroAddress = true } = {}) {
   if (value === undefined || value === null) {
     return true;
@@ -457,7 +476,7 @@ function resolveConfig(env, options = {}) {
 }
 
 function createDemoUrl(config) {
-  const base = `http://${config.uiHost}:${config.uiPort}/`;
+  const base = `${buildOrigin(config.uiHost, config.uiPort)}/`;
   const params = new URLSearchParams();
   params.set('orchestrator', config.publicOrchestratorUrl);
   if (config.prefix) {
@@ -545,7 +564,8 @@ function startStaticServer(distDir, config) {
   const demoQuery = new URL(createDemoUrl(config)).searchParams.toString();
   const server = http.createServer((req, res) => {
     try {
-      const requestUrl = new URL(req.url || '/', `http://${req.headers.host || config.uiHost}:${config.uiPort}`);
+      const base = req.headers.host ? `http://${req.headers.host}` : `${buildOrigin(config.uiHost, config.uiPort)}/`;
+      const requestUrl = new URL(req.url || '/', base);
       if (requestUrl.pathname === '/' && !requestUrl.searchParams.has('orchestrator')) {
         res.statusCode = 302;
         res.setHeader('Location', `/?${demoQuery}`);
@@ -811,6 +831,8 @@ async function runDemo(options = {}) {
 module.exports = {
   REQUIRED_ENV_KEYS,
   normalisePrefix,
+  formatHostForUrl,
+  buildOrigin,
   isUnsetEnvValue,
   loadEnvironment,
   resolveConfig,
