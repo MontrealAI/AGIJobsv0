@@ -25,6 +25,7 @@ const { chromium } = require('@playwright/test') as {
 describe('ensureChromiumAvailable', () => {
   let exitSpy: SpyInstance;
   let consoleErrorSpy: SpyInstance;
+  let canInstallDeps: jest.Mock;
 
   beforeEach(() => {
     jest.resetModules();
@@ -35,6 +36,7 @@ describe('ensureChromiumAvailable', () => {
     spawnSync.mockReturnValue({ status: 0 });
     exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    canInstallDeps = jest.fn().mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -47,14 +49,16 @@ describe('ensureChromiumAvailable', () => {
     const installer = jest.fn();
     const prober = jest.fn().mockReturnValue(true);
 
-    ensureChromiumAvailable({
+    const ready = ensureChromiumAvailable({
       autoInstall: true,
       installWithDeps: true,
       browsersPath: '.local-browsers',
       installer,
       prober,
+      canInstallDeps,
     });
 
+    expect(ready).toBe(true);
     expect(installer).not.toHaveBeenCalled();
     expect(prober).toHaveBeenCalledTimes(1);
     expect(exitSpy).not.toHaveBeenCalled();
@@ -62,20 +66,22 @@ describe('ensureChromiumAvailable', () => {
 
   test('installs chromium once when the binary becomes available without deps', () => {
     const { ensureChromiumAvailable } = require('../run-tests.js');
-    const installer = jest.fn();
+    const installer = jest.fn().mockReturnValue(true);
     const prober = jest
       .fn()
       .mockImplementationOnce(() => false)
       .mockImplementation(() => true);
 
-    ensureChromiumAvailable({
+    const ready = ensureChromiumAvailable({
       autoInstall: true,
       installWithDeps: true,
       browsersPath: '.local-browsers',
       installer,
       prober,
+      canInstallDeps,
     });
 
+    expect(ready).toBe(true);
     expect(installer).toHaveBeenCalledTimes(1);
     expect(installer).toHaveBeenCalledWith(
       expect.objectContaining({ withDeps: false, browsersPath: '.local-browsers' }),
@@ -86,21 +92,23 @@ describe('ensureChromiumAvailable', () => {
 
   test('falls back to installing chromium with deps when the first probe fails', () => {
     const { ensureChromiumAvailable } = require('../run-tests.js');
-    const installer = jest.fn();
+    const installer = jest.fn().mockReturnValue(true);
     const prober = jest
       .fn()
       .mockImplementationOnce(() => false)
       .mockImplementationOnce(() => false)
       .mockImplementation(() => true);
 
-    ensureChromiumAvailable({
+    const ready = ensureChromiumAvailable({
       autoInstall: true,
       installWithDeps: true,
       browsersPath: '.local-browsers',
       installer,
       prober,
+      canInstallDeps,
     });
 
+    expect(ready).toBe(true);
     expect(installer).toHaveBeenCalledTimes(2);
     expect(installer).toHaveBeenNthCalledWith(
       1,
@@ -112,5 +120,65 @@ describe('ensureChromiumAvailable', () => {
     );
     expect(prober).toHaveBeenCalledTimes(3);
     expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('returns false without exiting when installation is disabled', () => {
+    const { ensureChromiumAvailable } = require('../run-tests.js');
+    const installer = jest.fn();
+    const prober = jest.fn().mockReturnValue(false);
+
+    const ready = ensureChromiumAvailable({
+      autoInstall: false,
+      installWithDeps: false,
+      browsersPath: '.local-browsers',
+      installer,
+      prober,
+      canInstallDeps,
+    });
+
+    expect(ready).toBe(false);
+    expect(installer).not.toHaveBeenCalled();
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('canInstallPlaywrightDeps', () => {
+  const platform = process.platform;
+
+  beforeEach(() => {
+    jest.resetModules();
+    spawnSync.mockReset();
+    spawnSync.mockReturnValue({ status: 0 });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform });
+  });
+
+  test('returns true on linux when apt-get is available even for non-root users', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValue({ status: 0 });
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    expect(canInstallPlaywrightDeps()).toBe(true);
+    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+  });
+
+  test('returns false when apt-get is unavailable', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValue({ status: 1 });
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+  });
+
+  test('returns false on non-linux platforms', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).not.toHaveBeenCalledWith('which', ['apt-get'], expect.anything());
   });
 });
