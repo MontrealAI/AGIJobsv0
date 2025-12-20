@@ -135,11 +135,19 @@ function ensureChromiumAvailable({
   return false;
 }
 
+function shouldInstallPlaywrightDeps(env = process.env) {
+  const raw = env.PLAYWRIGHT_INSTALL_WITH_DEPS;
+  if (raw !== undefined) {
+    return raw !== '0' && raw.toString().toLowerCase() !== 'false';
+  }
+  return isCi(env);
+}
+
 function main() {
   // Forward npm-provided args to the Jest suite (demo runner passes --runInBand)
   const forwardedArgs = process.argv.slice(2);
   const playwrightAutoInstall = process.env.PLAYWRIGHT_AUTO_INSTALL !== '0';
-  const playwrightInstallWithDeps = process.env.PLAYWRIGHT_INSTALL_WITH_DEPS !== '0';
+  const playwrightInstallWithDeps = shouldInstallPlaywrightDeps();
 
   const playwrightEnv = buildPlaywrightEnv({ autoInstall: playwrightAutoInstall });
 
@@ -181,6 +189,7 @@ module.exports = {
   runStep,
   main,
   isOptionalE2E,
+  shouldInstallPlaywrightDeps,
 };
 
 if (require.main === module) {
