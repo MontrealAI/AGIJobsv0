@@ -449,7 +449,11 @@ def _has_foundry_tests(
 
 
 def _has_node_tests(
-    tests_dir: Path, demo_dir: Path, *, generate_prisma: bool = True
+    tests_dir: Path,
+    demo_dir: Path,
+    *,
+    generate_prisma: bool = True,
+    prisma_cache: dict[Path, bool] | None = None,
 ) -> tuple[Path, str] | bool | None:
     package_root = _node_package_root(tests_dir, demo_dir)
     if not package_root:
@@ -477,7 +481,17 @@ def _has_node_tests(
         return False
 
     if package_meta and _requires_prisma_generation(package_meta):
-        if generate_prisma and not _ensure_prisma_client(package_root, package_meta):
+        if prisma_cache is not None:
+            cached = prisma_cache.get(package_root)
+            if cached is False:
+                return False
+            if cached is None and generate_prisma:
+                prisma_cache[package_root] = _ensure_prisma_client(
+                    package_root, package_meta
+                )
+            if prisma_cache.get(package_root) is False:
+                return False
+        elif generate_prisma and not _ensure_prisma_client(package_root, package_meta):
             return False
 
     for file in tests_dir.rglob("*.test.*"):
@@ -497,6 +511,7 @@ def _discover_tests(
     demo_root: Path, *, include: set[str] | None = None, generate_prisma: bool = True
 ) -> Iterable[Suite]:
     node_packages_seen: set[tuple[Path, str]] = set()
+    prisma_cache: dict[Path, bool] = {}
 
     def _iter_tests_dirs(root: Path) -> Iterable[Path]:
         # Some suites (e.g., the runner's own tests) live directly under a
@@ -541,7 +556,10 @@ def _discover_tests(
             has_python = _has_python_tests(tests_dir)
             foundry_suite = _has_foundry_tests(tests_dir, demo_dir)
             node_suite = _has_node_tests(
-                tests_dir, demo_dir, generate_prisma=generate_prisma
+                tests_dir,
+                demo_dir,
+                generate_prisma=generate_prisma,
+                prisma_cache=prisma_cache,
             )
 
             if has_python:
