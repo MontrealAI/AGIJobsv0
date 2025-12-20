@@ -420,6 +420,38 @@ def test_prisma_client_detection_requires_generated_artifacts(tmp_path: Path) ->
     assert run_demo_tests._has_prisma_client(project_dir) is True
 
 
+def test_prisma_client_generation_is_cached_per_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    package_root = demo_root / "workspace"
+    tests_a = package_root / "alpha" / "tests"
+    tests_b = package_root / "beta" / "tests"
+    for path in (tests_a, tests_b):
+        path.mkdir(parents=True)
+        (path / "alpha.test.ts").write_text("// placeholder")
+
+    package_json = {
+        "dependencies": {"@prisma/client": "latest"},
+        "packageManager": "npm@9.0.0",
+    }
+    (package_root / "package.json").write_text(json.dumps(package_json))
+    (package_root / "package-lock.json").write_text("{}\n")
+
+    calls: list[tuple[Path, dict[str, object] | None]] = []
+    monkeypatch.setattr(run_demo_tests, "_has_prisma_client", lambda _: False)
+    monkeypatch.setattr(
+        run_demo_tests,
+        "_ensure_prisma_client",
+        lambda root, meta: calls.append((root, meta)) or True,
+    )
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert len(suites) == 1
+    assert calls == [(package_root, package_json)]
+
+
 def test_empty_suite_fails_without_allow_empty(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "example" / "tests"
