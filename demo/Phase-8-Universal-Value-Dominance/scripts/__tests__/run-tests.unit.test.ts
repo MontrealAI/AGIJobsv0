@@ -46,6 +46,7 @@ describe('ensureChromiumAvailable', () => {
     const { ensureChromiumAvailable } = require('../run-tests.js');
     const installer = jest.fn();
     const prober = jest.fn().mockReturnValue(true);
+    const launcher = jest.fn().mockReturnValue(true);
 
     ensureChromiumAvailable({
       autoInstall: true,
@@ -53,10 +54,12 @@ describe('ensureChromiumAvailable', () => {
       browsersPath: '.local-browsers',
       installer,
       prober,
+      launcher,
     });
 
     expect(installer).not.toHaveBeenCalled();
     expect(prober).toHaveBeenCalledTimes(1);
+    expect(launcher).toHaveBeenCalledTimes(1);
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
@@ -67,6 +70,7 @@ describe('ensureChromiumAvailable', () => {
       .fn()
       .mockImplementationOnce(() => false)
       .mockImplementation(() => true);
+    const launcher = jest.fn().mockReturnValue(true);
 
     ensureChromiumAvailable({
       autoInstall: true,
@@ -74,6 +78,7 @@ describe('ensureChromiumAvailable', () => {
       browsersPath: '.local-browsers',
       installer,
       prober,
+      launcher,
     });
 
     expect(installer).toHaveBeenCalledTimes(1);
@@ -81,6 +86,7 @@ describe('ensureChromiumAvailable', () => {
       expect.objectContaining({ withDeps: false, browsersPath: '.local-browsers' }),
     );
     expect(prober).toHaveBeenCalledTimes(2);
+    expect(launcher).toHaveBeenCalledTimes(1);
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
@@ -92,6 +98,7 @@ describe('ensureChromiumAvailable', () => {
       .mockImplementationOnce(() => false)
       .mockImplementationOnce(() => false)
       .mockImplementation(() => true);
+    const launcher = jest.fn().mockReturnValue(true);
 
     ensureChromiumAvailable({
       autoInstall: true,
@@ -99,6 +106,7 @@ describe('ensureChromiumAvailable', () => {
       browsersPath: '.local-browsers',
       installer,
       prober,
+      launcher,
     });
 
     expect(installer).toHaveBeenCalledTimes(2);
@@ -111,6 +119,40 @@ describe('ensureChromiumAvailable', () => {
       expect.objectContaining({ withDeps: true, browsersPath: '.local-browsers' }),
     );
     expect(prober).toHaveBeenCalledTimes(3);
+    expect(launcher).toHaveBeenCalledTimes(1);
+    expect(exitSpy).not.toHaveBeenCalled();
+  });
+
+  test('installs with deps when the chromium binary exists but cannot launch', () => {
+    const { ensureChromiumAvailable } = require('../run-tests.js');
+    const installer = jest.fn();
+    const prober = jest.fn().mockReturnValue(true);
+    const launcher = jest
+      .fn()
+      .mockImplementationOnce(() => false)
+      .mockImplementationOnce(() => false)
+      .mockImplementation(() => true);
+
+    ensureChromiumAvailable({
+      autoInstall: true,
+      installWithDeps: true,
+      browsersPath: '.local-browsers',
+      installer,
+      prober,
+      launcher,
+    });
+
+    expect(installer).toHaveBeenCalledTimes(2);
+    expect(installer).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ withDeps: false, browsersPath: '.local-browsers' }),
+    );
+    expect(installer).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ withDeps: true, browsersPath: '.local-browsers' }),
+    );
+    expect(prober).toHaveBeenCalledTimes(3);
+    expect(launcher).toHaveBeenCalledTimes(3);
     expect(exitSpy).not.toHaveBeenCalled();
   });
 });
