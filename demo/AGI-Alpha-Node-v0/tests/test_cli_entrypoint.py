@@ -9,8 +9,15 @@ from pathlib import Path
 import pytest
 
 DEMO_ROOT = Path(__file__).resolve().parents[1]
-if str(DEMO_ROOT) not in sys.path:
-    sys.path.insert(0, str(DEMO_ROOT))
+for module in ("alpha_node", "alpha_node.config", "alpha_node.node"):
+    sys.modules.pop(module, None)
+
+SRC_DIR = DEMO_ROOT / "src"
+for path in (SRC_DIR, DEMO_ROOT):
+    path_str = str(path)
+    if path_str in sys.path:
+        sys.path.remove(path_str)
+    sys.path.insert(0, path_str)
 
 MODULE_PATH = DEMO_ROOT / "run_alpha_node.py"
 spec = importlib.util.spec_from_file_location("agi_alpha_node_cli", MODULE_PATH)

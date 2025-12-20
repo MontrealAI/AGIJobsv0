@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import textwrap
 from dataclasses import asdict, is_dataclass
@@ -16,6 +17,12 @@ for path in (DEMO_ROOT, DEMO_PARENT):
     path_str = str(path)
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
+
+if os.environ.get("DEMO_SYS_PATH_DEBUG"):
+    import importlib.util
+
+    print("run_alpha_node sys.path head", sys.path[:10])
+    print("run_alpha_node alpha_node spec", importlib.util.find_spec("alpha_node"))
 
 from alpha_node.config import AlphaNodeConfig
 from alpha_node.node import AlphaNode
