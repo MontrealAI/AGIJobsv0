@@ -218,7 +218,7 @@ function computeThermodynamicHeadroom({ capturedGw, reserveGw, averageDemandGw, 
   const availableGw = Math.max(0, capturedGw + reserveGw - averageDemandGw);
   const peakBufferGw = Math.max(0, capturedGw + reserveGw - peakDemandGw);
   const gibbsFreeEnergyMj = round(
-    Math.max(0, availableGw * 3_600 - 310 * 0.42),
+    Math.max(0, availableGw * 3_600_000 - 310 * 0.42),
     2
   );
   return {
