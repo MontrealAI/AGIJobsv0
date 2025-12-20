@@ -1,7 +1,10 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
+const path = require('node:path');
 
-const DEFAULT_PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '0';
+const PROJECT_ROOT = path.resolve(__dirname, '..');
+const DEFAULT_PLAYWRIGHT_BROWSERS_PATH =
+  process.env.PLAYWRIGHT_BROWSERS_PATH ?? path.join(PROJECT_ROOT, '.cache', 'ms-playwright');
 
 function isCi(env = process.env) {
   return (env.CI ?? '').toString().toLowerCase() === 'true' || env.CI === '1';
@@ -21,8 +24,14 @@ const OPTIONAL_E2E = isOptionalE2E();
 
 function buildPlaywrightEnv({ autoInstall, env = process.env }) {
   const browsersPath = env.PLAYWRIGHT_BROWSERS_PATH ?? DEFAULT_PLAYWRIGHT_BROWSERS_PATH;
+  // Keep the cache stable across npm reinstalls by pinning to a repo-local
+  // folder instead of the default "0" (node_modules). This avoids repeated
+  // multi-hundred-MB browser downloads and makes it easier to persist the
+  // Playwright cache between CI steps.
+  const normalizedPath = path.resolve(browsersPath);
+  fs.mkdirSync(normalizedPath, { recursive: true });
   return {
-    PLAYWRIGHT_BROWSERS_PATH: browsersPath,
+    PLAYWRIGHT_BROWSERS_PATH: normalizedPath,
     PLAYWRIGHT_AUTO_INSTALL: autoInstall ? '1' : '0',
     ...(autoInstall ? {} : { PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1' }),
   };
