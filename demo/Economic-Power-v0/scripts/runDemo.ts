@@ -4215,18 +4215,37 @@ function resolveDeploymentConfigPath(
   if (path.isAbsolute(candidate)) {
     return candidate;
   }
+  const searchRoots = new Set<string>();
   const scenarioPath = getScenarioFilePath(scenario);
   if (scenarioPath) {
-    const scenarioRelative = path.resolve(path.dirname(scenarioPath), candidate);
-    if (existsSync(scenarioRelative)) {
-      return scenarioRelative;
+    searchRoots.add(path.dirname(scenarioPath));
+  }
+  searchRoots.add(process.cwd());
+  // Repository root sits three levels above this script (scripts/ -> demo root -> demo/ -> repo root).
+  searchRoots.add(path.resolve(__dirname, '..', '..', '..'));
+
+  for (const base of searchRoots) {
+    const resolved = path.resolve(base, candidate);
+    if (existsSync(resolved)) {
+      return resolved;
     }
   }
-  const cwdRelative = path.resolve(process.cwd(), candidate);
-  if (existsSync(cwdRelative)) {
-    return cwdRelative;
+
+  // As a final fallback, walk up the directory tree from the current working directory.
+  let current = path.resolve(process.cwd());
+  while (true) {
+    const resolved = path.resolve(current, candidate);
+    if (existsSync(resolved)) {
+      return resolved;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      break;
+    }
+    current = parent;
   }
-  return cwdRelative;
+
+  return null;
 }
 
 async function loadDeploymentConfig(

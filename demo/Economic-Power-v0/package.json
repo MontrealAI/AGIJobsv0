@@ -1,0 +1,23 @@
+{
+  "name": "economic-power-v0",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic economic power demo harness",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test --import tsx test/*.test.ts"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0",
+    "yargs": "^17.7.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
