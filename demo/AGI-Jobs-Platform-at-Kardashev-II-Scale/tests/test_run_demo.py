@@ -48,3 +48,6 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     telemetry_payload = json.loads(telemetry.read_text())
     assert telemetry_payload.get("energyMonteCarlo", {}).get("withinTolerance") is True
     assert telemetry_payload.get("dominanceScore")
+    thermodynamic = telemetry_payload.get("thermodynamicHeadroom", {})
+    assert thermodynamic.get("headroomPct") and thermodynamic["headroomPct"] > 0
+    assert thermodynamic.get("gibbsFreeEnergyMj") and thermodynamic["gibbsFreeEnergyMj"] > 0

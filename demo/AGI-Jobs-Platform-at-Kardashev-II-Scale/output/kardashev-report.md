@@ -9,6 +9,7 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Captured Power:** 120,105 MW available for reallocation.
 - **Energy Monte Carlo:** 3.91% breach probability across 256 runs (tolerance 5.00%).
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
+- **Thermodynamic headroom:** 8.97% reserve (77359363.46 MJ Gibbs-equivalent) after buffers.
 
 ## Shard Operations
 
@@ -45,4 +46,3 @@ Generated: 2125-01-01T19:05:39.398Z
 - Energy per satellite: 45 MW
 
 A detailed task hierarchy diagram is available at `output/mermaid/dyson-hierarchy.mmd`.
-

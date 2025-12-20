@@ -1570,11 +1570,23 @@
       "breachProbability": 0,
       "tolerance": 0.01,
       "withinTolerance": true,
+      "capturedGw": 239600,
+      "reserveGw": 2400,
+      "marginGw": 11980,
+      "peakDemandGw": 236071.28410087732,
+      "averageDemandGw": 220511.2517597387,
       "percentileGw": {
         "p50": 236349.67577342957,
         "p95": 252189.138782289,
         "p99": 255160.81119188174
       }
+    },
+    "thermodynamicHeadroom": {
+      "availableGw": 21488.74824026131,
+      "peakBufferGw": 5928.715899122675,
+      "gibbsFreeEnergyMj": 77359363.46,
+      "headroomPct": 8.97,
+      "peakBufferPct": 2.47
     },
     "energyFeeds": {
       "tolerancePct": 5,
