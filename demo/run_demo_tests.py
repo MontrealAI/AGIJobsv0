@@ -298,7 +298,33 @@ def _requires_prisma_generation(package_meta: dict[str, object]) -> bool:
 def _has_prisma_client(package_root: Path) -> bool:
     node_modules = package_root / "node_modules"
     generated = node_modules / ".prisma" / "client"
-    return generated.exists()
+    if generated.exists():
+        return True
+
+    client_package = node_modules / "@prisma" / "client"
+    runtime_library = client_package / "runtime" / "library.js"
+    if not runtime_library.exists():
+        return False
+
+    # Prisma 6+ may inline the client into the package runtime directory
+    # instead of emitting ``node_modules/.prisma``. The runtime files alone
+    # ship with the npm package, so require the client to confirm generation
+    # actually happened before skipping a generate pass.
+    try:
+        result = subprocess.run(
+            ["node", "-e", "require('@prisma/client')"],
+            cwd=package_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except FileNotFoundError:
+        return False
+    except subprocess.TimeoutExpired:
+        return False
+
+    return result.returncode == 0
 
 
 def _prisma_cli_version(package_meta: dict[str, object] | None) -> str | None:
@@ -371,7 +397,15 @@ def _ensure_prisma_client(
         )
         return False
 
-    return _has_prisma_client(package_root)
+    if not _has_prisma_client(package_root):
+        print(
+            "→ Skipping Prisma-dependent suite because generated client artifacts "
+            "were not detected even though `prisma generate` succeeded; inspect "
+            f"{package_root}/node_modules for Prisma outputs."
+        )
+        return False
+
+    return True
 
 
 def _node_runner_args(package_root: Path) -> list[str]:
