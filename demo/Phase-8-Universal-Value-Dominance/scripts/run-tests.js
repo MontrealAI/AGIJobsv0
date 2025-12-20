@@ -55,7 +55,11 @@ function canInstallPlaywrightDeps() {
   if (process.platform !== 'linux') return false;
   const hasApt = spawnSync('which', ['apt-get'], { stdio: 'ignore' }).status === 0;
   if (!hasApt) return false;
-  if (typeof process.getuid === 'function' && process.getuid() !== 0) return false;
+
+  // Allow attempts to install dependencies even when the current user is not
+  // root. Playwright's dependency installer will elevate via sudo when
+  // available and emit actionable errors otherwise, so gating on UID here
+  // would incorrectly skip runnable environments (e.g., passwordless sudo).
   return true;
 }
 

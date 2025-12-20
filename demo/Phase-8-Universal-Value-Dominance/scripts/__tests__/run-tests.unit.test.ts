@@ -142,3 +142,43 @@ describe('ensureChromiumAvailable', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('canInstallPlaywrightDeps', () => {
+  const platform = process.platform;
+
+  beforeEach(() => {
+    jest.resetModules();
+    spawnSync.mockReset();
+    spawnSync.mockReturnValue({ status: 0 });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform });
+  });
+
+  test('returns true on linux when apt-get is available even for non-root users', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValue({ status: 0 });
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    expect(canInstallPlaywrightDeps()).toBe(true);
+    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+  });
+
+  test('returns false when apt-get is unavailable', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValue({ status: 1 });
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+  });
+
+  test('returns false on non-linux platforms', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    Object.defineProperty(process, 'platform', { value: 'darwin' });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).not.toHaveBeenCalledWith('which', ['apt-get'], expect.anything());
+  });
+});
