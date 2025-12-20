@@ -8,6 +8,7 @@ custom main callable for fast verification.
 """
 from __future__ import annotations
 
+import os
 import importlib
 import sys
 from pathlib import Path
@@ -26,10 +27,23 @@ def _resolve_main():
 
 
 def _ensure_sys_path() -> None:
-    for path in reversed((REPO_ROOT, DEMO_ROOT)):
-        path_str = str(path)
-        if path_str not in sys.path:
-            sys.path.insert(0, path_str)
+    """Ensure demo and repo roots exist exactly once on ``sys.path``.
+
+    Pytest injects additional paths (via sitecustomize hooks) before this wrapper
+    runs, so idempotence must handle pre-existing entries and normalise any
+    ``pathlib.Path`` values injected by the runtime.
+    """
+
+    targets = [str(REPO_ROOT), str(DEMO_ROOT)]
+    target_set = set(targets)
+
+    preserved = [
+        entry
+        for entry in sys.path
+        if os.fspath(entry) not in target_set  # normalise Path entries too
+    ]
+
+    sys.path[:] = targets + preserved
 
 
 def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
