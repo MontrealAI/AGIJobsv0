@@ -152,10 +152,17 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     _require_positive(args.health_check_interval, field="health_check_interval_seconds")
     _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
     _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
+    checkpoint_interval = float(
+        overrides.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
+    )
+    _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
+    cycle_sleep = float(overrides.get("cycle_sleep_seconds", OrchestratorConfig.cycle_sleep_seconds))
+    _require_positive(cycle_sleep, field="cycle_sleep_seconds")
 
     params = {
         "max_cycles": args.cycles or None,
         "checkpoint_path": args.checkpoint,
+        "checkpoint_interval_seconds": checkpoint_interval,
         "resume_from_checkpoint": not args.no_resume,
         "enable_simulation": not args.no_sim,
         "control_channel_file": args.control,
@@ -164,6 +171,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "simulation_hours_per_tick": args.simulation_hours,
         "simulation_energy_scale": args.simulation_energy_scale,
         "simulation_compute_scale": args.simulation_compute_scale,
+        "cycle_sleep_seconds": cycle_sleep,
         "audit_log_path": args.audit_log,
         "status_output_path": args.status_output,
         "energy_oracle_path": args.energy_oracle,
@@ -174,6 +182,8 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "integrity_check_interval_seconds": args.integrity_interval,
     }
     params.update(overrides)
+    params["checkpoint_interval_seconds"] = checkpoint_interval
+    params["cycle_sleep_seconds"] = cycle_sleep
 
     return OrchestratorConfig(**params)
 

@@ -356,11 +356,15 @@ class Orchestrator:
     async def _cycle_loop(self) -> None:
         while self._running:
             await self._paused.wait()
-            self._cycle += 1
-            if self.config.max_cycles and self._cycle > self.config.max_cycles:
+            if (
+                self.config.max_cycles is not None
+                and self.config.max_cycles > 0
+                and self._cycle >= self.config.max_cycles
+            ):
                 self._info("cycle_limit_reached", cycle=self._cycle)
                 asyncio.create_task(self.shutdown(), name="shutdown-from-cycle")
                 break
+            self._cycle += 1
             await asyncio.sleep(self.config.cycle_sleep_seconds)
 
     async def _insight_loop(self) -> None:
@@ -1269,4 +1273,3 @@ class Orchestrator:
             await self._paused.wait()
             await self._run_integrity_suite()
             await asyncio.sleep(interval)
-
