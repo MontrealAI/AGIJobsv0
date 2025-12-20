@@ -145,6 +145,7 @@ describe('ensureChromiumAvailable', () => {
 
 describe('canInstallPlaywrightDeps', () => {
   const platform = process.platform;
+  const originalGetUid = process.getuid;
 
   beforeEach(() => {
     jest.resetModules();
@@ -153,30 +154,53 @@ describe('canInstallPlaywrightDeps', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(process, 'platform', { value: platform });
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+    Object.defineProperty(process, 'getuid', { value: originalGetUid, configurable: true });
   });
 
-  test('returns true on linux when apt-get is available even for non-root users', () => {
+  test('returns true on linux when apt-get is available for root users', () => {
     const { canInstallPlaywrightDeps } = require('../run-tests.js');
-    spawnSync.mockReturnValue({ status: 0 });
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(true);
     expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
   });
 
+  test('returns true on linux when apt-get and sudo are available for non-root users', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValueOnce({ status: 0 }).mockReturnValueOnce({ status: 0 });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
+
+    expect(canInstallPlaywrightDeps()).toBe(true);
+    expect(spawnSync).toHaveBeenNthCalledWith(1, 'which', ['apt-get'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['sudo'], { stdio: 'ignore' });
+  });
+
   test('returns false when apt-get is unavailable', () => {
     const { canInstallPlaywrightDeps } = require('../run-tests.js');
     spawnSync.mockReturnValue({ status: 1 });
-    Object.defineProperty(process, 'platform', { value: 'linux' });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(false);
     expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
   });
 
+  test('returns false when sudo is unavailable for non-root users', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync.mockReturnValueOnce({ status: 0 }).mockReturnValueOnce({ status: 1 });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).toHaveBeenCalledWith('which', ['sudo'], { stdio: 'ignore' });
+  });
+
   test('returns false on non-linux platforms', () => {
     const { canInstallPlaywrightDeps } = require('../run-tests.js');
-    Object.defineProperty(process, 'platform', { value: 'darwin' });
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(false);
     expect(spawnSync).not.toHaveBeenCalledWith('which', ['apt-get'], expect.anything());
