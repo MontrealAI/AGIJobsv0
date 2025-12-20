@@ -301,10 +301,30 @@ def _has_prisma_client(package_root: Path) -> bool:
     if generated.exists():
         return True
 
-    # Prisma 6+ no longer always writes to ``node_modules/.prisma``. The
-    # generated client and runtime live directly inside the package path.
-    runtime_library = node_modules / "@prisma" / "client" / "runtime" / "library.js"
-    return runtime_library.exists()
+    client_package = node_modules / "@prisma" / "client"
+    runtime_library = client_package / "runtime" / "library.js"
+    if not runtime_library.exists():
+        return False
+
+    # Prisma 6+ may inline the client into the package runtime directory
+    # instead of emitting ``node_modules/.prisma``. The runtime files alone
+    # ship with the npm package, so require the client to confirm generation
+    # actually happened before skipping a generate pass.
+    try:
+        result = subprocess.run(
+            ["node", "-e", "require('@prisma/client')"],
+            cwd=package_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except FileNotFoundError:
+        return False
+    except subprocess.TimeoutExpired:
+        return False
+
+    return result.returncode == 0
 
 
 def _prisma_cli_version(package_meta: dict[str, object] | None) -> str | None:
