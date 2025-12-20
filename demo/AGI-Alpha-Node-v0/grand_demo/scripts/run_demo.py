@@ -23,15 +23,22 @@ REPO_ROOT = PROJECT_ROOT.parent
 def _bootstrap_sys_path() -> None:
     """Ensure local packages import cleanly when executed directly."""
 
-    for path in (REPO_ROOT, PROJECT_ROOT):
+    for path in (PROJECT_ROOT, REPO_ROOT):
         path_str = str(path)
-        if path_str not in sys.path:
-            sys.path.insert(0, path_str)
+        if path_str in sys.path:
+            sys.path.remove(path_str)
+
+    sys.path.insert(0, str(PROJECT_ROOT))
+    sys.path.insert(1, str(REPO_ROOT))
 
 
 _bootstrap_sys_path()
 
 import uvicorn  # noqa: E402  (import after path bootstrap)
+for _name in list(sys.modules):
+    if _name.startswith("alpha_node"):
+        sys.modules.pop(_name, None)
+
 from alpha_node.console.cli import demo_job  # noqa: E402
 from alpha_node.web.app import app  # noqa: E402
 
