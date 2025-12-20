@@ -70,10 +70,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install slither-analyzer==0.10.4 solc-select==1.0.4
 
-      - name: Install solc versions
-        run: |
-          solc-select install 0.8.25 0.8.23 0.8.21
-          solc-select use 0.8.25
+      - name: Install solc versions (with mirror fallback)
+        run: python scripts/ci/install_solc_versions.py --default 0.8.25 0.8.25 0.8.23 0.8.21
+        env:
+          SOLC_SELECT_USER_AGENT: github-actions/solc-select
 
       - name: Warm Hardhat build cache
         run: |
