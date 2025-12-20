@@ -2,9 +2,22 @@ const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 
 const DEFAULT_PLAYWRIGHT_BROWSERS_PATH = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '0';
-const OPTIONAL_E2E =
-  process.env.PLAYWRIGHT_OPTIONAL_E2E === undefined ||
-  process.env.PLAYWRIGHT_OPTIONAL_E2E !== '0';
+
+function isCi(env = process.env) {
+  return (env.CI ?? '').toString().toLowerCase() === 'true' || env.CI === '1';
+}
+
+function isOptionalE2E(env = process.env) {
+  const flag = env.PLAYWRIGHT_OPTIONAL_E2E;
+  if (flag !== undefined) {
+    return flag !== '0' && flag.toString().toLowerCase() !== 'false';
+  }
+  // Default: enforce e2e in CI so demo regressions are caught, but allow
+  // developers to skip locally without extra configuration.
+  return !isCi(env);
+}
+
+const OPTIONAL_E2E = isOptionalE2E();
 
 function buildPlaywrightEnv({ autoInstall, env = process.env }) {
   const browsersPath = env.PLAYWRIGHT_BROWSERS_PATH ?? DEFAULT_PLAYWRIGHT_BROWSERS_PATH;
@@ -133,10 +146,14 @@ function main() {
     const message =
       'Skipping Playwright e2e tests because Chromium is unavailable and automatic installation failed.';
     if (OPTIONAL_E2E) {
-      console.warn(`${message} Set PLAYWRIGHT_OPTIONAL_E2E=0 to make this a hard failure.`);
+      console.warn(
+        `${message} Set PLAYWRIGHT_OPTIONAL_E2E=0 to require these checks even outside CI.`,
+      );
       return;
     }
-    console.error(message);
+    console.error(
+      `${message} Set PLAYWRIGHT_OPTIONAL_E2E=1 to allow skipping in constrained environments.`,
+    );
     process.exit(1);
   }
   runStep('npm', ['run', 'test:e2e'], {
@@ -152,6 +169,7 @@ module.exports = {
   installChromium,
   runStep,
   main,
+  isOptionalE2E,
 };
 
 if (require.main === module) {

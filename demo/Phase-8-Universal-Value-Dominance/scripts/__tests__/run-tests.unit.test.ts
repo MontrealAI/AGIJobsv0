@@ -182,3 +182,46 @@ describe('canInstallPlaywrightDeps', () => {
     expect(spawnSync).not.toHaveBeenCalledWith('which', ['apt-get'], expect.anything());
   });
 });
+
+describe('isOptionalE2E', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  test('defaults to required in CI', () => {
+    process.env.CI = '1';
+    const { isOptionalE2E } = require('../run-tests.js');
+
+    expect(isOptionalE2E()).toBe(false);
+  });
+
+  test('defaults to optional outside CI', () => {
+    delete process.env.CI;
+    const { isOptionalE2E } = require('../run-tests.js');
+
+    expect(isOptionalE2E()).toBe(true);
+  });
+
+  test('respects explicit opt-out flag', () => {
+    process.env.CI = '1';
+    process.env.PLAYWRIGHT_OPTIONAL_E2E = '1';
+    const { isOptionalE2E } = require('../run-tests.js');
+
+    expect(isOptionalE2E()).toBe(true);
+  });
+
+  test('respects explicit hard-fail flag', () => {
+    process.env.CI = '0';
+    process.env.PLAYWRIGHT_OPTIONAL_E2E = '0';
+    const { isOptionalE2E } = require('../run-tests.js');
+
+    expect(isOptionalE2E()).toBe(false);
+  });
+});

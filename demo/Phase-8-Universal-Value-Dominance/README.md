@@ -58,6 +58,6 @@ flowchart LR
 
 - Before running `npx playwright test --config=playwright.config.ts`, you can provision the bundled Chromium binary once with:
   - `./scripts/install_playwright_browsers.sh`
-- The suite includes a lightweight global setup that will automatically download Chromium if it is missing and has the privileges to install its OS-level dependencies. When the runner cannot install those dependencies (e.g., locked-down containers), it will skip the e2e suite instead of hard-failing; set `PLAYWRIGHT_OPTIONAL_E2E=0` to force a failure when the browser cannot be installed.
+- The suite includes a lightweight global setup that will automatically download Chromium if it is missing and has the privileges to install its OS-level dependencies. E2E checks are enforced by default in CI; locally you can opt out by setting `PLAYWRIGHT_OPTIONAL_E2E=1` or force a hard failure with `PLAYWRIGHT_OPTIONAL_E2E=0` when the browser cannot be installed.
 - Both paths install the OS-level dependencies Playwright needs so the dashboard e2e suite runs without manual intervention on fresh machines when permission is available.
 - Expect the first run to download browser artefacts and, when allowed, apt packages (fonts, headless display libraries). Subsequent runs reuse the cached binaries under `~/.cache/ms-playwright`, so reruns stay fast without additional flags.
