@@ -5,6 +5,8 @@ const path = require('node:path');
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_PLAYWRIGHT_BROWSERS_PATH =
   process.env.PLAYWRIGHT_BROWSERS_PATH ?? path.join(PROJECT_ROOT, '.cache', 'ms-playwright');
+const npmBinary = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npxBinary = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 function isCi(env = process.env) {
   return (env.CI ?? '').toString().toLowerCase() === 'true' || env.CI === '1';
@@ -64,7 +66,7 @@ function installChromium({ withDeps, browsersPath }) {
     args.push('--with-deps');
   }
 
-  const result = runStep('npx', args, {
+  const result = runStep(npxBinary, args, {
     env: {
       PLAYWRIGHT_BROWSERS_PATH: browsersPath,
     },
@@ -141,7 +143,7 @@ function main() {
 
   const playwrightEnv = buildPlaywrightEnv({ autoInstall: playwrightAutoInstall });
 
-  runStep('npm', ['run', 'test:unit', '--', ...forwardedArgs]);
+  runStep(npmBinary, ['run', 'test:unit', '--', ...forwardedArgs]);
   // Default to auto-installing Chromium so the Playwright suite actually runs in
   // CI and local environments without extra flags. Allows opt-out by explicitly
   // setting PLAYWRIGHT_AUTO_INSTALL=0 while still validating that a browser is
@@ -165,7 +167,7 @@ function main() {
     );
     process.exit(1);
   }
-  runStep('npm', ['run', 'test:e2e'], {
+  runStep(npmBinary, ['run', 'test:e2e'], {
     env: playwrightEnv,
   });
 }
