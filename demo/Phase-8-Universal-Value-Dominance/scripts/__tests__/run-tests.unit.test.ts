@@ -225,3 +225,46 @@ describe('isOptionalE2E', () => {
     expect(isOptionalE2E()).toBe(false);
   });
 });
+
+describe('shouldInstallPlaywrightDeps', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  test('defaults to installing deps in CI environments', () => {
+    process.env.CI = 'true';
+    const { shouldInstallPlaywrightDeps } = require('../run-tests.js');
+
+    expect(shouldInstallPlaywrightDeps()).toBe(true);
+  });
+
+  test('defaults to skipping system deps locally to avoid unexpected apt installs', () => {
+    delete process.env.CI;
+    const { shouldInstallPlaywrightDeps } = require('../run-tests.js');
+
+    expect(shouldInstallPlaywrightDeps()).toBe(false);
+  });
+
+  test('respects explicit opt-in flag even outside CI', () => {
+    delete process.env.CI;
+    process.env.PLAYWRIGHT_INSTALL_WITH_DEPS = '1';
+    const { shouldInstallPlaywrightDeps } = require('../run-tests.js');
+
+    expect(shouldInstallPlaywrightDeps()).toBe(true);
+  });
+
+  test('respects explicit opt-out flag even in CI', () => {
+    process.env.CI = '1';
+    process.env.PLAYWRIGHT_INSTALL_WITH_DEPS = '0';
+    const { shouldInstallPlaywrightDeps } = require('../run-tests.js');
+
+    expect(shouldInstallPlaywrightDeps()).toBe(false);
+  });
+});
