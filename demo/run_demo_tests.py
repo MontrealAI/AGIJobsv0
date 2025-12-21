@@ -162,7 +162,6 @@ def _run_suite(
         playwright_cache.mkdir(parents=True, exist_ok=True)
         env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
         env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
-        env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
