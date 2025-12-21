@@ -152,6 +152,17 @@ def _run_suite(
         env.setdefault("CI", "1")
         env.setdefault("npm_config_progress", "false")
         env.setdefault("npm_config_fund", "false")
+        # Playwright-heavy demos can attempt to install system dependencies
+        # when they see CI=1. Default to a repo-local browser cache and opt
+        # out of apt-get installs unless callers explicitly request them via
+        # PLAYWRIGHT_INSTALL_WITH_DEPS=1. This keeps the aggregate demo run
+        # fast and non-invasive while still allowing suites to download the
+        # browser binaries they need.
+        playwright_cache = suite.demo_root / ".cache" / "ms-playwright"
+        playwright_cache.mkdir(parents=True, exist_ok=True)
+        env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
+        env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
+        env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"

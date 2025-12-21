@@ -213,6 +213,8 @@ describe('isOptionalE2E', () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
+    delete process.env.PLAYWRIGHT_OPTIONAL_E2E;
+    delete process.env.PLAYWRIGHT_INSTALL_WITH_DEPS;
   });
 
   afterEach(() => {
@@ -256,6 +258,8 @@ describe('shouldInstallPlaywrightDeps', () => {
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
+    delete process.env.PLAYWRIGHT_OPTIONAL_E2E;
+    delete process.env.PLAYWRIGHT_INSTALL_WITH_DEPS;
   });
 
   afterEach(() => {
