@@ -154,6 +154,7 @@ function main() {
   const forwardedArgs = process.argv.slice(2);
   const playwrightAutoInstall = process.env.PLAYWRIGHT_AUTO_INSTALL !== '0';
   const playwrightInstallWithDeps = shouldInstallPlaywrightDeps();
+  const canInstallDeps = canInstallPlaywrightDeps();
 
   const playwrightEnv = buildPlaywrightEnv({ autoInstall: playwrightAutoInstall });
 
@@ -166,7 +167,27 @@ function main() {
     autoInstall: playwrightAutoInstall,
     installWithDeps: playwrightInstallWithDeps,
     browsersPath: playwrightEnv.PLAYWRIGHT_BROWSERS_PATH,
+    canInstallDeps: () => canInstallDeps,
   });
+  const missingDepsButRecoverable =
+    !chromiumReady && !OPTIONAL_E2E && !playwrightInstallWithDeps && canInstallDeps;
+  if (missingDepsButRecoverable) {
+    console.warn(
+      'Detected a Chromium installation without system dependencies; retrying with --with-deps to satisfy Playwright requirements.',
+    );
+    const recovered = ensureChromiumAvailable({
+      autoInstall: true,
+      installWithDeps: true,
+      browsersPath: playwrightEnv.PLAYWRIGHT_BROWSERS_PATH,
+      canInstallDeps: () => canInstallDeps,
+    });
+    if (recovered) {
+      runStep(npmBinary, ['run', 'test:e2e'], {
+        env: playwrightEnv,
+      });
+      return;
+    }
+  }
   if (!chromiumReady) {
     const message =
       'Skipping Playwright e2e tests because Chromium is unavailable and automatic installation failed.';
