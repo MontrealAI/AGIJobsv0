@@ -24,6 +24,14 @@ function isOptionalE2E(env = process.env) {
 
 const OPTIONAL_E2E = isOptionalE2E();
 
+function isDepsInstallExplicitlyDisabled(env = process.env) {
+  const raw = env.PLAYWRIGHT_INSTALL_WITH_DEPS;
+  if (raw === undefined) return false;
+
+  const normalized = raw.toString().toLowerCase();
+  return normalized === '0' || normalized === 'false';
+}
+
 function hasBinary(binary) {
   return spawnSync('which', [binary], { stdio: 'ignore' }).status === 0;
 }
@@ -155,6 +163,7 @@ function main() {
   const playwrightAutoInstall = process.env.PLAYWRIGHT_AUTO_INSTALL !== '0';
   const playwrightInstallWithDeps = shouldInstallPlaywrightDeps();
   const canInstallDeps = canInstallPlaywrightDeps();
+  const depsInstallExplicitlyDisabled = isDepsInstallExplicitlyDisabled();
 
   const playwrightEnv = buildPlaywrightEnv({ autoInstall: playwrightAutoInstall });
 
@@ -170,7 +179,11 @@ function main() {
     canInstallDeps: () => canInstallDeps,
   });
   const missingDepsButRecoverable =
-    !chromiumReady && !OPTIONAL_E2E && !playwrightInstallWithDeps && canInstallDeps;
+    !chromiumReady &&
+    !OPTIONAL_E2E &&
+    !playwrightInstallWithDeps &&
+    canInstallDeps &&
+    !depsInstallExplicitlyDisabled;
   if (missingDepsButRecoverable) {
     console.warn(
       'Detected a Chromium installation without system dependencies; retrying with --with-deps to satisfy Playwright requirements.',
@@ -187,6 +200,16 @@ function main() {
       });
       return;
     }
+  }
+  if (!chromiumReady && depsInstallExplicitlyDisabled) {
+    const message =
+      'Chromium is unavailable and PLAYWRIGHT_INSTALL_WITH_DEPS=0; re-run with PLAYWRIGHT_INSTALL_WITH_DEPS=1 to allow installing system dependencies or set PLAYWRIGHT_OPTIONAL_E2E=1 to skip Playwright checks.';
+    if (OPTIONAL_E2E) {
+      console.warn(message);
+      return;
+    }
+    console.error(message);
+    process.exit(1);
   }
   if (!chromiumReady) {
     const message =
@@ -216,6 +239,7 @@ module.exports = {
   runStep,
   main,
   isOptionalE2E,
+  isDepsInstallExplicitlyDisabled,
   shouldInstallPlaywrightDeps,
 };
 
