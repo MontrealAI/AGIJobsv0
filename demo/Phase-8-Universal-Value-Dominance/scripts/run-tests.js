@@ -22,8 +22,6 @@ function isOptionalE2E(env = process.env) {
   return !isCi(env);
 }
 
-const OPTIONAL_E2E = isOptionalE2E();
-
 function isDepsInstallExplicitlyDisabled(env = process.env) {
   const raw = env.PLAYWRIGHT_INSTALL_WITH_DEPS;
   if (raw === undefined) return false;
@@ -157,45 +155,56 @@ function shouldInstallPlaywrightDeps(env = process.env) {
   return isCi(env);
 }
 
-function main() {
+function main(options = {}) {
+  const {
+    argv = process.argv.slice(2),
+    env = process.env,
+    ensureChromiumAvailable: ensureChromium = ensureChromiumAvailable,
+    buildPlaywrightEnv: buildEnv = buildPlaywrightEnv,
+    runStep: run = runStep,
+    canInstallDeps: canInstallDepsImpl = canInstallPlaywrightDeps,
+  } = options;
+
   // Forward npm-provided args to the Jest suite (demo runner passes --runInBand)
-  const forwardedArgs = process.argv.slice(2);
-  const playwrightAutoInstall = process.env.PLAYWRIGHT_AUTO_INSTALL !== '0';
-  const playwrightInstallWithDeps = shouldInstallPlaywrightDeps();
-  const canInstallDeps = canInstallPlaywrightDeps();
-  const depsInstallExplicitlyDisabled = isDepsInstallExplicitlyDisabled();
+  const forwardedArgs = argv;
+  const playwrightAutoInstall = env.PLAYWRIGHT_AUTO_INSTALL !== '0';
+  const playwrightInstallWithDeps = shouldInstallPlaywrightDeps(env);
+  const depsInstallExplicitlyDisabled = isDepsInstallExplicitlyDisabled(env);
+  const optionalE2E = isOptionalE2E(env);
+  const canInstallDeps = () => canInstallDepsImpl();
 
-  const playwrightEnv = buildPlaywrightEnv({ autoInstall: playwrightAutoInstall });
+  const playwrightEnv = buildEnv({ autoInstall: playwrightAutoInstall, env });
 
-  runStep(npmBinary, ['run', 'test:unit', '--', ...forwardedArgs]);
+  run(npmBinary, ['run', 'test:unit', '--', ...forwardedArgs]);
   // Default to auto-installing Chromium so the Playwright suite actually runs in
   // CI and local environments without extra flags. Allows opt-out by explicitly
   // setting PLAYWRIGHT_AUTO_INSTALL=0 while still validating that a browser is
   // present.
-  const chromiumReady = ensureChromiumAvailable({
+  const chromiumReady = ensureChromium({
     autoInstall: playwrightAutoInstall,
     installWithDeps: playwrightInstallWithDeps,
     browsersPath: playwrightEnv.PLAYWRIGHT_BROWSERS_PATH,
-    canInstallDeps: () => canInstallDeps,
+    canInstallDeps,
   });
+  const canInstallDepsAvailable = canInstallDeps();
   const missingDepsButRecoverable =
     !chromiumReady &&
-    !OPTIONAL_E2E &&
+    !optionalE2E &&
     !playwrightInstallWithDeps &&
-    canInstallDeps &&
+    canInstallDepsAvailable &&
     !depsInstallExplicitlyDisabled;
   if (missingDepsButRecoverable) {
     console.warn(
       'Detected a Chromium installation without system dependencies; retrying with --with-deps to satisfy Playwright requirements.',
     );
-    const recovered = ensureChromiumAvailable({
+    const recovered = ensureChromium({
       autoInstall: true,
       installWithDeps: true,
       browsersPath: playwrightEnv.PLAYWRIGHT_BROWSERS_PATH,
-      canInstallDeps: () => canInstallDeps,
+      canInstallDeps,
     });
     if (recovered) {
-      runStep(npmBinary, ['run', 'test:e2e'], {
+      run(npmBinary, ['run', 'test:e2e'], {
         env: playwrightEnv,
       });
       return;
@@ -204,7 +213,7 @@ function main() {
   if (!chromiumReady && depsInstallExplicitlyDisabled) {
     const message =
       'Chromium is unavailable and PLAYWRIGHT_INSTALL_WITH_DEPS=0; re-run with PLAYWRIGHT_INSTALL_WITH_DEPS=1 to allow installing system dependencies or set PLAYWRIGHT_OPTIONAL_E2E=1 to skip Playwright checks.';
-    if (OPTIONAL_E2E) {
+    if (optionalE2E) {
       console.warn(message);
       return;
     }
@@ -214,7 +223,7 @@ function main() {
   if (!chromiumReady) {
     const message =
       'Skipping Playwright e2e tests because Chromium is unavailable and automatic installation failed.';
-    if (OPTIONAL_E2E) {
+    if (optionalE2E) {
       console.warn(
         `${message} Set PLAYWRIGHT_OPTIONAL_E2E=0 to require these checks even outside CI.`,
       );
@@ -225,7 +234,7 @@ function main() {
     );
     process.exit(1);
   }
-  runStep(npmBinary, ['run', 'test:e2e'], {
+  run(npmBinary, ['run', 'test:e2e'], {
     env: playwrightEnv,
   });
 }
