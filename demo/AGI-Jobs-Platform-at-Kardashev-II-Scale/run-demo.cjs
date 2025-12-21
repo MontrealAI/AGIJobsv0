@@ -152,6 +152,7 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   const capturedGw = energyFeeds.reduce((sum, feed) => sum + feed.nominalMw, 0) / 1000;
   const reserveGw = energyFeeds.reduce((sum, feed) => sum + feed.bufferMw, 0) / 1000;
   const marginGw = Math.max(capturedGw * safetyMarginPct, reserveGw * 0.5);
+  const availableGw = capturedGw + reserveGw;
   let breaches = 0;
   let totalDemand = 0;
   let peakDemand = 0;
@@ -194,18 +195,26 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   };
 
   const breachProbability = breaches / runs;
+  const p95Demand = percentile(0.95);
+  const freeEnergyMarginGw = availableGw - p95Demand;
+  const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
   const summary = {
     runs,
     breachProbability,
     tolerance: safetyMarginPct,
     withinTolerance: breachProbability <= safetyMarginPct,
+    availableGw,
+    reserveGw,
     capturedGw,
     marginGw,
+    freeEnergyMarginGw,
+    freeEnergyMarginPct,
+    maintainsBuffer: freeEnergyMarginGw >= marginGw,
     peakDemandGw: peakDemand,
     averageDemandGw: samples.length === 0 ? 0 : totalDemand / samples.length,
     percentileGw: {
       p50: percentile(0.5),
-      p95: percentile(0.95),
+      p95: p95Demand,
       p99: percentile(0.99),
     },
   };
@@ -359,6 +368,9 @@ function main() {
     `- **Energy Monte Carlo:** ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% breach probability across ${energyMonteCarlo.runs} runs (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
   );
   reportLines.push(
+    `- **Free Energy Margin:** ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%) vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum buffer.`
+  );
+  reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
   );
   reportLines.push('');
@@ -486,10 +498,25 @@ function main() {
     return;
   }
 
+  if (!energyMonteCarlo.maintainsBuffer) {
+    console.error('❌ Free energy margin collapsed below target corridor.');
+    console.error(
+      `   - Remaining margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum.`
+    );
+    console.error(
+      '   - Action: divert reserve thrums, widen lattice buffers, or throttle shard intake until the Hamiltonian stays negative.'
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   if (check) {
     console.log('✅ Kardashev II scale dossier validated (check mode).');
     console.log(
       `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
+    );
+    console.log(
+      `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
     );
     return;
   }
@@ -500,6 +527,9 @@ function main() {
   console.log(`   - Telemetry: ${path.join(outputDir, 'kardashev-telemetry.json')}`);
   console.log(
     `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
+  );
+  console.log(
+    `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
   );
 }
 

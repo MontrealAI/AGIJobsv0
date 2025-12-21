@@ -24,6 +24,7 @@ def test_run_demo_check_mode(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert "validated (check mode)" in result.stdout
+    assert "Free energy margin" in result.stdout
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
@@ -48,3 +49,8 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     telemetry_payload = json.loads(telemetry.read_text())
     assert telemetry_payload.get("energyMonteCarlo", {}).get("withinTolerance") is True
     assert telemetry_payload.get("dominanceScore")
+
+    energy = telemetry_payload["energyMonteCarlo"]
+    assert energy["maintainsBuffer"] is True
+    assert energy["freeEnergyMarginGw"] > 0
+    assert 0 < energy["freeEnergyMarginPct"] <= 1
