@@ -22,7 +22,7 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Literal
+from typing import Callable, Iterable, Literal
 
 
 @dataclass(frozen=True)
@@ -459,6 +459,73 @@ def _node_runner_args(package_root: Path) -> list[str]:
     return []
 
 
+def _forge_exists() -> bool:
+    default_foundry_path = Path.home() / ".foundry" / "bin" / "forge"
+    return shutil.which("forge") is not None or default_foundry_path.exists()
+
+
+_foundry_install_attempted = False
+
+
+def _install_foundry(env: dict[str, str]) -> bool:
+    """Install Foundry non-interactively if it is not already available."""
+
+    bootstrap = ["bash", "-c", "curl -L https://foundry.paradigm.xyz | bash"]
+    result = subprocess.run(
+        bootstrap,
+        check=False,
+        env={**env, "CI": env.get("CI", "1")},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if result.returncode != 0:
+        return False
+
+    foundryup = Path.home() / ".foundry" / "bin" / "foundryup"
+    if not foundryup.exists():
+        return False
+
+    install = subprocess.run(
+        [str(foundryup), "--no-modify-path", "-y"],
+        check=False,
+        env={**env, "CI": env.get("CI", "1"), "FOUNDRYUP_NO_ANALYTICS": "1"},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    return install.returncode == 0
+
+
+def _ensure_foundry_available(
+    env: dict[str, str] | None = None,
+    *,
+    installer: Callable[[dict[str, str]], bool] | None = None,
+) -> bool:
+    """Try to make ``forge`` available so Foundry suites are executed."""
+
+    global _foundry_install_attempted
+
+    if _forge_exists():
+        return True
+
+    env = env or os.environ
+    allow_install = (
+        env.get("DEMO_INSTALL_FOUNDRY", "1").lower() not in {"0", "false", "no"}
+    )
+    if not allow_install:
+        return False
+
+    installer = installer or _install_foundry
+
+    if _foundry_install_attempted:
+        return _forge_exists()
+
+    _foundry_install_attempted = True
+    if not installer(env):
+        return False
+
+    return _forge_exists()
+
+
 def _has_foundry_tests(
     tests_dir: Path, demo_dir: Path
 ) -> Path | bool | None:
@@ -470,7 +537,7 @@ def _has_foundry_tests(
     if not has_tests:
         return False
 
-    if shutil.which("forge") is None:
+    if not _ensure_foundry_available():
         print(
             f"→ Skipping {tests_dir} (forge is not available on PATH; "
             "install Foundry via foundryup to run these suites)"
