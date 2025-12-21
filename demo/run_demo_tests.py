@@ -162,6 +162,10 @@ def _run_suite(
         playwright_cache.mkdir(parents=True, exist_ok=True)
         env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
         env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
+        # Ensure any system package installs triggered by Playwright or other
+        # tooling run non-interactively. This prevents hangs in CI when apt
+        # prompts for locale/timezone configuration or sudo escalation.
+        env.setdefault("DEBIAN_FRONTEND", "noninteractive")
         if "Phase-8-Universal-Value-Dominance" in str(suite.demo_root):
             # The Phase-8 demo exercises a browser-backed validation path; it
             # needs Playwright's system dependencies available even in CI-like
