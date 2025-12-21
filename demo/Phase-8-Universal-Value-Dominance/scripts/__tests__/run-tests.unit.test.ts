@@ -296,3 +296,39 @@ describe('shouldInstallPlaywrightDeps', () => {
     expect(shouldInstallPlaywrightDeps()).toBe(false);
   });
 });
+
+describe('isDepsInstallExplicitlyDisabled', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+    delete process.env.PLAYWRIGHT_INSTALL_WITH_DEPS;
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  test('returns false when the flag is unset', () => {
+    const { isDepsInstallExplicitlyDisabled } = require('../run-tests.js');
+
+    expect(isDepsInstallExplicitlyDisabled()).toBe(false);
+  });
+
+  test('detects explicit opt-out aliases', () => {
+    const { isDepsInstallExplicitlyDisabled } = require('../run-tests.js');
+    process.env.PLAYWRIGHT_INSTALL_WITH_DEPS = '0';
+    expect(isDepsInstallExplicitlyDisabled()).toBe(true);
+
+    process.env.PLAYWRIGHT_INSTALL_WITH_DEPS = 'false';
+    expect(isDepsInstallExplicitlyDisabled()).toBe(true);
+  });
+
+  test('returns false when the flag is enabled', () => {
+    const { isDepsInstallExplicitlyDisabled } = require('../run-tests.js');
+    process.env.PLAYWRIGHT_INSTALL_WITH_DEPS = '1';
+
+    expect(isDepsInstallExplicitlyDisabled()).toBe(false);
+  });
+});

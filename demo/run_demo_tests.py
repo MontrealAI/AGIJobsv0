@@ -162,6 +162,12 @@ def _run_suite(
         playwright_cache.mkdir(parents=True, exist_ok=True)
         env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
         env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
+        if "Phase-8-Universal-Value-Dominance" in str(suite.demo_root):
+            # The Phase-8 demo exercises a browser-backed validation path; it
+            # needs Playwright's system dependencies available even in CI-like
+            # environments. Opt in explicitly to avoid surprising retries that
+            # attempt to apt-get packages when the variable is left at "0".
+            env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
