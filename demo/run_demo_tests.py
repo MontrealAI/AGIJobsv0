@@ -133,6 +133,28 @@ def _suite_runtime_root(
     return base / runner if runner else base
 
 
+def _can_install_playwright_deps() -> bool:
+    """Return True when the host can satisfy Playwright's system deps.
+
+    The Phase-8 demo optionally requests ``--with-deps`` installs. On sandboxed
+    hosts without ``apt-get`` or privilege escalation, forcing that flag leads
+    to noisy failures. Detecting capability up front lets us opt-out cleanly
+    while still running the full e2e suite whenever the environment allows it.
+    """
+
+    if not sys.platform.startswith("linux"):
+        return False
+
+    if shutil.which("apt-get") is None:
+        return False
+
+    try:
+        return os.geteuid() == 0 or shutil.which("sudo") is not None
+    except AttributeError:
+        # Windows/POSIX shims may not expose geteuid; fall back to sudo check.
+        return shutil.which("sudo") is not None
+
+
 def _run_suite(
     suite: Suite,
     env_overrides: dict[str, str],
@@ -169,9 +191,14 @@ def _run_suite(
         if "Phase-8-Universal-Value-Dominance" in str(suite.demo_root):
             # The Phase-8 demo exercises a browser-backed validation path; it
             # needs Playwright's system dependencies available even in CI-like
-            # environments. Opt in explicitly to avoid surprising retries that
-            # attempt to apt-get packages when the variable is left at "0".
-            env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
+            # environments. Opt in explicitly when the host can satisfy them,
+            # and otherwise allow the suite to skip e2e checks instead of
+            # failing outright on locked-down runners.
+            if _can_install_playwright_deps():
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
+            else:
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
+                env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
