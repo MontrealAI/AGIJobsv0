@@ -188,6 +188,71 @@ def test_discovers_foundry_suite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ]
 
 
+def test_foundry_installation_is_attempted_when_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "foundry-demo"
+    tests_dir = project_dir / "test"
+    tests_dir.mkdir(parents=True)
+
+    (project_dir / "foundry.toml").write_text("[profile.default]\n")
+    (tests_dir / "Alpha.t.sol").write_text("// solidity test\n")
+
+    # Pretend forge is absent until the installer runs.
+    state = {"installed": False}
+
+    def fake_forge_exists() -> bool:
+        return state["installed"]
+
+    installs: list[dict[str, str]] = []
+
+    def fake_install(env: dict[str, str]) -> bool:
+        installs.append(env)
+        state["installed"] = True
+        return True
+
+    monkeypatch.setattr(run_demo_tests, "_forge_exists", fake_forge_exists)
+    monkeypatch.setattr(run_demo_tests, "_install_foundry", fake_install)
+    run_demo_tests._foundry_install_attempted = False
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert installs, "installer should be invoked when forge is missing"
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=project_dir, tests_dir=tests_dir, runner="forge"
+        )
+    ]
+    run_demo_tests._foundry_install_attempted = False
+
+
+def test_foundry_installation_can_be_disabled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    project_dir = demo_root / "foundry-demo"
+    tests_dir = project_dir / "test"
+    tests_dir.mkdir(parents=True)
+
+    (project_dir / "foundry.toml").write_text("[profile.default]\n")
+    (tests_dir / "Alpha.t.sol").write_text("// solidity test\n")
+
+    monkeypatch.setattr(run_demo_tests, "_forge_exists", lambda: False)
+    installs: list[dict[str, str]] = []
+    monkeypatch.setattr(
+        run_demo_tests, "_install_foundry", lambda env: installs.append(env) or True
+    )
+    run_demo_tests._foundry_install_attempted = False
+    monkeypatch.setenv("DEMO_INSTALL_FOUNDRY", "0")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert not installs, "installer should not run when explicitly disabled"
+    assert suites == []
+    run_demo_tests._foundry_install_attempted = False
+
+
 def test_discovers_pnpm_suite(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     project_dir = demo_root / "pnpm-demo"
