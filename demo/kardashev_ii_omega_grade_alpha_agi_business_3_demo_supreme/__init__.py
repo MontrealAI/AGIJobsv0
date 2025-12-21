@@ -28,6 +28,18 @@ _module = importlib.util.module_from_spec(_spec)
 sys.modules[__name__] = _module
 _spec.loader.exec_module(_module)
 
+# Ensure the compatibility wrapper exposes a stable ``main`` callable for
+# consumers such as ``run_demo.py``. The upstream package intentionally keeps
+# its public surface minimal; wiring ``main`` to ``run_from_cli`` here provides
+# an ergonomic, ASCII-safe entrypoint without mutating the source package.
+_main = getattr(_module, "run_from_cli", None)
+if _main is not None and not hasattr(_module, "main"):
+    setattr(_module, "main", _main)
+    if hasattr(_module, "__all__"):
+        upstream_all = list(getattr(_module, "__all__", ()))
+        if "main" not in upstream_all:
+            setattr(_module, "__all__", upstream_all + ["main"])
+
 # Keep local helper modules (such as ``run_demo.py``) importable alongside the
 # canonical package contents.
 if hasattr(_module, "__path__"):
@@ -38,4 +50,4 @@ if hasattr(_module, "__path__"):
 __all__ = getattr(_module, "__all__", [])
 run_from_cli = getattr(_module, "run_from_cli", None)
 build_arg_parser = getattr(_module, "build_arg_parser", None)
-main = getattr(_module, "run_from_cli", None)
+main = getattr(_module, "main", getattr(_module, "run_from_cli", None))
