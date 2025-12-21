@@ -200,6 +200,7 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
     tolerance: safetyMarginPct,
     withinTolerance: breachProbability <= safetyMarginPct,
     capturedGw,
+    reserveGw,
     marginGw,
     peakDemandGw: peakDemand,
     averageDemandGw: samples.length === 0 ? 0 : totalDemand / samples.length,
@@ -211,6 +212,22 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   };
   debugLog('energy-monte-carlo', summary);
   return summary;
+}
+
+function computeThermodynamicHeadroom({ capturedGw, reserveGw, averageDemandGw, peakDemandGw }) {
+  const availableGw = Math.max(0, capturedGw + reserveGw - averageDemandGw);
+  const peakBufferGw = Math.max(0, capturedGw + reserveGw - peakDemandGw);
+  const gibbsFreeEnergyMj = round(
+    Math.max(0, availableGw * 3_600_000 - 310 * 0.42),
+    2
+  );
+  return {
+    availableGw,
+    peakBufferGw,
+    gibbsFreeEnergyMj,
+    headroomPct: round(capturedGw > 0 ? (availableGw / capturedGw) * 100 : 0, 2),
+    peakBufferPct: round(capturedGw > 0 ? (peakBufferGw / capturedGw) * 100 : 0, 2),
+  };
 }
 
 function buildMermaidTaskHierarchy(dyson) {
@@ -316,6 +333,12 @@ function main() {
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
   const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng);
+  const thermodynamicHeadroom = computeThermodynamicHeadroom({
+    capturedGw: energyMonteCarlo.capturedGw,
+    reserveGw: energyMonteCarlo.reserveGw,
+    averageDemandGw: energyMonteCarlo.averageDemandGw,
+    peakDemandGw: energyMonteCarlo.peakDemandGw,
+  });
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -360,6 +383,9 @@ function main() {
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
+  );
+  reportLines.push(
+    `- **Thermodynamic headroom:** ${thermodynamicHeadroom.headroomPct.toFixed(2)}% reserve (${thermodynamicHeadroom.gibbsFreeEnergyMj.toFixed(2)} MJ Gibbs-equivalent) after buffers.`
   );
   reportLines.push('');
 
@@ -423,6 +449,7 @@ function main() {
     sentinelFindings,
     dyson,
     energyMonteCarlo,
+    thermodynamicHeadroom,
     configs: {
       knowledgeGraph: fabric.knowledgeGraph,
       energyOracle: fabric.energyOracle,
