@@ -332,3 +332,65 @@ describe('isDepsInstallExplicitlyDisabled', () => {
     expect(isDepsInstallExplicitlyDisabled()).toBe(false);
   });
 });
+
+describe('main', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    spawnSync.mockReset();
+  });
+
+  test('retries with dependency installation when it becomes available after the first probe', () => {
+    const ensureChromiumAvailable = jest.fn().mockImplementation(({ installWithDeps, canInstallDeps }) => {
+      if (installWithDeps) {
+        return canInstallDeps();
+      }
+      return false;
+    });
+    const runStep = jest.fn();
+    const buildPlaywrightEnv = jest.fn().mockReturnValue({
+      PLAYWRIGHT_BROWSERS_PATH: '/tmp/pw',
+      PLAYWRIGHT_AUTO_INSTALL: '1',
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1',
+    });
+    const canInstallDeps = jest.fn().mockReturnValue(true);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { main } = require('../run-tests.js');
+
+    main({
+      argv: ['--runInBand'],
+      env: { PLAYWRIGHT_OPTIONAL_E2E: '0' },
+      ensureChromiumAvailable,
+      buildPlaywrightEnv,
+      runStep,
+      canInstallDeps,
+    });
+
+    expect(runStep).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('npm'),
+      ['run', 'test:unit', '--', '--runInBand'],
+    );
+    expect(canInstallDeps).toHaveBeenCalledTimes(2);
+    expect(ensureChromiumAvailable).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        installWithDeps: false,
+      }),
+    );
+    expect(ensureChromiumAvailable).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        installWithDeps: true,
+      }),
+    );
+    expect(runStep).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('npm'),
+      ['run', 'test:e2e'],
+      { env: buildPlaywrightEnv.mock.results[0].value },
+    );
+
+    warnSpy.mockRestore();
+  });
+});
