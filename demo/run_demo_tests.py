@@ -252,6 +252,18 @@ def _has_python_tests(tests_dir: Path) -> bool:
     return False
 
 
+_NODE_TEST_EXTENSIONS = {".js", ".ts", ".jsx", ".tsx"}
+
+
+def _iter_node_test_files(tests_dir: Path) -> Iterable[Path]:
+    """Yield Node-oriented test files if present beneath ``tests_dir``."""
+
+    for pattern in ("*.test.*", "*.spec.*"):
+        for file in tests_dir.rglob(pattern):
+            if file.suffix in _NODE_TEST_EXTENSIONS:
+                yield file
+
+
 def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path | None:
     """Return the nearest ancestor with a package.json, stopping at ``demo_dir``."""
 
@@ -475,6 +487,10 @@ def _has_node_tests(
     generate_prisma: bool = True,
     prisma_cache: dict[Path, bool] | None = None,
 ) -> tuple[Path, str] | bool | None:
+    has_node_tests = any(_iter_node_test_files(tests_dir))
+    if not has_node_tests:
+        return None
+
     package_root = _node_package_root(tests_dir, demo_dir)
     if not package_root:
         return None
@@ -514,13 +530,7 @@ def _has_node_tests(
         elif generate_prisma and not _ensure_prisma_client(package_root, package_meta):
             return False
 
-    for file in tests_dir.rglob("*.test.*"):
-        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return package_root, manager
-    for file in tests_dir.rglob("*.spec.*"):
-        if file.suffix in {".js", ".ts", ".jsx", ".tsx"}:
-            return package_root, manager
-    return None
+    return package_root, manager
 
 
 _SKIP_TEST_PARTS = {"node_modules", ".venv", "venv", ".tox", ".git"}

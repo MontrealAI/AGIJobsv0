@@ -274,6 +274,33 @@ def test_pnpm_workspace_root_is_skipped(
     assert "workspace root" in output
 
 
+def test_pnpm_workspace_root_without_node_tests_is_ignored(
+    tmp_path: Path, capsys: pytest.CaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    workspace = demo_root / "workspace"
+    tests_dir = workspace / "test"
+    tests_dir.mkdir(parents=True)
+
+    (workspace / "package.json").write_text('{"packageManager": "pnpm@9.0.0"}\n')
+    (workspace / "pnpm-lock.yaml").write_text("lockfileVersion: 9.0\n")
+    (workspace / "pnpm-workspace.yaml").write_text("packages:\n  - packages/*\n")
+    (workspace / "foundry.toml").write_text("[profile.default]\n")
+    (tests_dir / "Alpha.t.sol").write_text("// solidity test\n")
+
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: f"/usr/bin/{name}")
+
+    suites = list(run_demo_tests._discover_tests(demo_root))
+
+    assert suites == [
+        run_demo_tests.Suite(
+            demo_root=workspace, tests_dir=tests_dir, runner="forge"
+        )
+    ]
+    output = capsys.readouterr().out.lower()
+    assert "workspace root" not in output
+
+
 def test_node_suite_anchors_to_nearest_package(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     project_dir = demo_root / "node-demo"
