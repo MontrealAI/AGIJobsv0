@@ -195,9 +195,9 @@ def _run_suite(
             # and otherwise allow the suite to skip e2e checks instead of
             # failing outright on locked-down runners.
             if _can_install_playwright_deps():
-                env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "1")
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
             else:
-                env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
                 env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
