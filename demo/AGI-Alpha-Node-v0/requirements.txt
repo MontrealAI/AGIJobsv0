@@ -6,3 +6,8 @@ rich>=13.7
 typer[all]>=0.9
 uvicorn[standard]>=0.23
 web3>=6.11
+# Keep eth-typing on a pre-4.x release so pytest's web3 plugin can import the
+# legacy ContractName alias when global plugins auto-load. Without this pin,
+# running the suite via the bare ``pytest`` console script can crash before our
+# local shim and sitecustomize helpers are on ``sys.path``.
+eth-typing>=3.3,<4
