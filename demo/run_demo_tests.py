@@ -228,8 +228,10 @@ def _run_suite(
 
     print(f"\n→ Running {description}")
     run_kwargs = {"env": env, "check": False, "cwd": cwd}
-    if timeout is not None:
-        run_kwargs["timeout"] = timeout
+
+    adjusted_timeout = _maybe_extend_timeout_for_playwright(suite, env, timeout)
+    if adjusted_timeout is not None:
+        run_kwargs["timeout"] = adjusted_timeout
 
     try:
         result = subprocess.run(cmd, **run_kwargs)
@@ -484,6 +486,66 @@ def _node_runner_args(package_root: Path) -> list[str]:
         return ["--", "--runInBand"]
 
     return []
+
+
+def _uses_playwright(package_meta: dict[str, object] | None) -> bool:
+    if not package_meta:
+        return False
+
+    def _contains_playwright(section: str) -> bool:
+        deps = package_meta.get(section, {}) or {}
+        return any(
+            name in deps
+            for name in ("@playwright/test", "playwright", "playwright-core")
+        )
+
+    if _contains_playwright("dependencies") or _contains_playwright("devDependencies"):
+        return True
+
+    scripts = package_meta.get("scripts", {}) or {}
+    return any("playwright" in str(command).lower() for command in scripts.values())
+
+
+def _playwright_cache_ready(env: dict[str, str]) -> bool:
+    cache = env.get("PLAYWRIGHT_BROWSERS_PATH")
+    if not cache:
+        return False
+
+    cache_root = Path(cache)
+    try:
+        for child in cache_root.iterdir():
+            if child.is_dir() and child.name.startswith("chromium"):
+                return True
+    except OSError:
+        return False
+
+    return False
+
+
+def _maybe_extend_timeout_for_playwright(
+    suite: Suite, env: dict[str, str], timeout: float | None
+) -> float | None:
+    """Give Playwright suites more time to download browsers on first run."""
+
+    if timeout is None or suite.runner not in {"npm", "pnpm", "yarn"}:
+        return timeout
+
+    package_json = suite.demo_root / "package.json"
+    package_meta = _load_package_meta(package_json.parent) if package_json.is_file() else None
+    if not _uses_playwright(package_meta):
+        return timeout
+
+    extended_timeout = max(timeout, 240.0)
+    if extended_timeout != timeout:
+        cache_root = env.get("PLAYWRIGHT_BROWSERS_PATH", "unknown")
+        cache_state = (
+            "warm cache detected" if _playwright_cache_ready(env) else "no cached browsers"
+        )
+        print(
+            f"   ↪️  Extending timeout to {extended_timeout:.0f}s for Playwright suite "
+            f"({cache_state}, cache: {cache_root})."
+        )
+    return extended_timeout
 
 
 def _forge_exists() -> bool:
