@@ -24,6 +24,10 @@ function isOptionalE2E(env = process.env) {
 
 const OPTIONAL_E2E = isOptionalE2E();
 
+function hasBinary(binary) {
+  return spawnSync('which', [binary], { stdio: 'ignore' }).status === 0;
+}
+
 function buildPlaywrightEnv({ autoInstall, env = process.env }) {
   const browsersPath = env.PLAYWRIGHT_BROWSERS_PATH ?? DEFAULT_PLAYWRIGHT_BROWSERS_PATH;
   // Keep the cache stable across npm reinstalls by pinning to a repo-local
@@ -77,14 +81,16 @@ function installChromium({ withDeps, browsersPath }) {
 
 function canInstallPlaywrightDeps() {
   if (process.platform !== 'linux') return false;
-  const hasApt = spawnSync('which', ['apt-get'], { stdio: 'ignore' }).status === 0;
+  const hasApt = hasBinary('apt-get');
   if (!hasApt) return false;
 
-  // Allow attempts to install dependencies even when the current user is not
-  // root. Playwright's dependency installer will elevate via sudo when
-  // available and emit actionable errors otherwise, so gating on UID here
-  // would incorrectly skip runnable environments (e.g., passwordless sudo).
-  return true;
+  const isRoot = typeof process.getuid === 'function' ? process.getuid() === 0 : false;
+  if (isRoot) return true;
+
+  // Avoid triggering sudo prompts (or immediate failures) in non-interactive
+  // environments by confirming privilege escalation is available before asking
+  // Playwright to install system packages.
+  return hasBinary('sudo');
 }
 
 function ensureChromiumAvailable({
