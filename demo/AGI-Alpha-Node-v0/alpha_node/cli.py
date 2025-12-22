@@ -24,8 +24,10 @@ from .state import StateStore
 def load_environment(config_path: Path) -> dict[str, Any]:
     config = AlphaNodeConfig.load(config_path)
     base_dir = config_path.parent
-    state_store = StateStore(base_dir / "state.json")
-    ledger_path = base_dir / "stake_ledger.csv"
+    runtime_dir = base_dir / ".runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    state_store = StateStore(runtime_dir / "state.json")
+    ledger_path = runtime_dir / "stake_ledger.csv"
     stake_manager = StakeManager(config.stake, state_store, ledger_path)
     ens_registry = base_dir / "ens_registry.csv"
     ens_verifier = ENSVerifier(config.ens, ens_registry)

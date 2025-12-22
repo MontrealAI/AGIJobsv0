@@ -85,5 +85,6 @@ demo/CULTURE-v0/typechain-types/
 demo/CULTURE-v0/hardhat/gasReporterOutput.json
 demo/Phase-8-Universal-Value-Dominance/.cache/
 demo/Phase-8-Universal-Value-Dominance/test-results/
+demo/AGI-Alpha-Node-v0/.runtime/
 __pycache__/
 **/__pycache__/
