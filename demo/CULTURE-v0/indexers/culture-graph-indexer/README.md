@@ -26,6 +26,7 @@ flowchart LR
 2. Inspect the scripts under `scripts/` or this module's `package.json` entry (where applicable) to discover targeted automation for `demo/CULTURE-v0/indexers/culture-graph-indexer`.
 3. Execute `npm test` and `npm run lint --if-present` before pushing to guarantee a fully green AGI Jobs v0 (v2) CI signal.
 4. Capture mission telemetry with `make operator:green` or the module-specific runbooks documented in [`OperatorRunbook.md`](../../../../OperatorRunbook.md).
+   - Prisma client artefacts are generated automatically by `scripts/ensure-prisma-client.mjs` when you run `npm test`; set `DATABASE_URL` if you need a non-default datasource for generation (defaults to `file:.tmp/dev.db`).
 
 ## Directory Guide
 ### Key Directories
