@@ -143,6 +143,44 @@ describe('ensureChromiumAvailable', () => {
   });
 });
 
+describe('hasBinary', () => {
+  const platform = process.platform;
+
+  beforeEach(() => {
+    jest.resetModules();
+    spawnSync.mockReset();
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+  });
+
+  test('prefers shell built-ins on POSIX and falls back to which', () => {
+    const { hasBinary } = require('../run-tests.js');
+    spawnSync.mockReturnValueOnce({ status: 1 }).mockReturnValueOnce({ status: 0 });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+
+    expect(hasBinary('apt-get')).toBe(true);
+    expect(spawnSync).toHaveBeenNthCalledWith(1, 'command', ['-v', 'apt-get'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['apt-get'], { stdio: 'ignore' });
+  });
+
+  test('uses where on Windows hosts', () => {
+    const { hasBinary } = require('../run-tests.js');
+    spawnSync.mockReturnValue({ status: 0 });
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true });
+
+    expect(hasBinary('npm')).toBe(true);
+    expect(spawnSync).toHaveBeenCalledWith('where', ['npm'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+  });
+});
+
 describe('canInstallPlaywrightDeps', () => {
   const platform = process.platform;
   const originalGetUid = process.getuid;
@@ -164,7 +202,10 @@ describe('canInstallPlaywrightDeps', () => {
     Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(true);
-    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenCalledWith('command', ['-v', 'apt-get'], {
+      stdio: 'ignore',
+      shell: true,
+    });
   });
 
   test('returns true on linux when apt-get and sudo are available for non-root users', () => {
@@ -174,8 +215,14 @@ describe('canInstallPlaywrightDeps', () => {
     Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(true);
-    expect(spawnSync).toHaveBeenNthCalledWith(1, 'which', ['apt-get'], { stdio: 'ignore' });
-    expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['sudo'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(1, 'command', ['-v', 'apt-get'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'command', ['-v', 'sudo'], {
+      stdio: 'ignore',
+      shell: true,
+    });
   });
 
   test('returns false when apt-get is unavailable', () => {
@@ -185,17 +232,28 @@ describe('canInstallPlaywrightDeps', () => {
     Object.defineProperty(process, 'getuid', { value: () => 0, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(false);
-    expect(spawnSync).toHaveBeenCalledWith('which', ['apt-get'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(1, 'command', ['-v', 'apt-get'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['apt-get'], { stdio: 'ignore' });
   });
 
   test('returns false when sudo is unavailable for non-root users', () => {
     const { canInstallPlaywrightDeps } = require('../run-tests.js');
-    spawnSync.mockReturnValueOnce({ status: 0 }).mockReturnValueOnce({ status: 1 });
+    spawnSync
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 1 })
+      .mockReturnValue({ status: 1 });
     Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
     Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(false);
-    expect(spawnSync).toHaveBeenCalledWith('which', ['sudo'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'command', ['-v', 'sudo'], {
+      stdio: 'ignore',
+      shell: true,
+    });
+    expect(spawnSync).toHaveBeenNthCalledWith(3, 'which', ['sudo'], { stdio: 'ignore' });
   });
 
   test('returns false on non-linux platforms', () => {
