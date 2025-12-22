@@ -22,6 +22,7 @@ import sys
 import tempfile
 import time
 import ctypes.util
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Literal
@@ -35,6 +36,14 @@ class Suite:
     demo_root: Path
     tests_dir: Path
     runner: Literal["python", "npm", "pnpm", "yarn", "forge"]
+
+
+@dataclass(frozen=True)
+class SuiteResult:
+    suite: Suite
+    code: int
+    duration: float
+    output: str | None = None
 
 
 def _candidate_paths(demo_root: Path) -> Iterable[Path]:
@@ -187,7 +196,8 @@ def _run_suite(
     *,
     allow_empty: bool = False,
     timeout: float | None = None,
-) -> int:
+    capture_output: bool = False,
+) -> tuple[int, str | None]:
     env = os.environ.copy()
     env.update(env_overrides)
 
@@ -258,6 +268,11 @@ def _run_suite(
     print(f"\n→ Running {description}")
     run_kwargs = {"env": env, "check": False, "cwd": cwd}
 
+    if capture_output:
+        run_kwargs["stdout"] = subprocess.PIPE
+        run_kwargs["stderr"] = subprocess.STDOUT
+        run_kwargs["text"] = True
+
     adjusted_timeout = _maybe_extend_timeout_for_playwright(suite, env, timeout)
     if adjusted_timeout is not None:
         run_kwargs["timeout"] = adjusted_timeout
@@ -271,13 +286,13 @@ def _run_suite(
             f"while running {suite.tests_dir}. Install it or adjust PATH to "
             "continue."
         )
-        return 1
+        return 1, None
     except subprocess.TimeoutExpired:
         print(
             f"⏰  Timed out running {suite.tests_dir} after {timeout}s; "
             "investigate slow or hanging demos."
         )
-        return 1
+        return 1, None
 
     if suite.runner == "python" and result.returncode == 5:
         message = (
@@ -286,12 +301,38 @@ def _run_suite(
         )
         if allow_empty:
             print(message)
-            return 0
+            return 0, result.stdout if capture_output else None
 
         print(f"⛔️  {message}")
-        return result.returncode
+        return result.returncode, result.stdout if capture_output else None
 
-    return result.returncode
+    return result.returncode, result.stdout if capture_output else None
+
+
+def _execute_suite(
+    suite: Suite,
+    runtime_root: Path,
+    *,
+    allow_empty: bool,
+    timeout: float | None,
+    capture_output: bool,
+) -> SuiteResult:
+    suite_runtime = _suite_runtime_root(
+        runtime_root, suite.demo_root, suite.tests_dir, runner=suite.runner
+    )
+    if suite_runtime.exists():
+        shutil.rmtree(suite_runtime)
+    env_overrides = _configure_runtime_env(suite_runtime)
+    start = time.perf_counter()
+    code, output = _run_suite(
+        suite,
+        env_overrides,
+        allow_empty=allow_empty,
+        timeout=timeout,
+        capture_output=capture_output,
+    )
+    duration = time.perf_counter() - start
+    return SuiteResult(suite=suite, code=code, duration=duration, output=output)
 
 
 def _has_python_tests(tests_dir: Path) -> bool:
@@ -947,6 +988,15 @@ def _discover_tests(
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
+    def _positive_int(value: str) -> int:
+        try:
+            parsed = int(value)
+        except ValueError:
+            raise argparse.ArgumentTypeError("--max-workers must be a positive integer")
+        if parsed < 1:
+            raise argparse.ArgumentTypeError("--max-workers must be at least 1")
+        return parsed
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--demo",
@@ -963,6 +1013,15 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--list",
         action="store_true",
         help="List discovered suites (after filtering) without running them.",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=_positive_int,
+        default=1,
+        help=(
+            "Run up to N suites concurrently. Values greater than 1 capture suite "
+            "output to avoid interleaved logs. --fail-fast enforces sequential runs."
+        ),
     )
     parser.add_argument(
         "--fail-fast",
@@ -1036,34 +1095,62 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             print("No demo test suites found for the provided filters.")
             return 1
 
-        results: list[tuple[Suite, int, float]] = []
+        results: list[SuiteResult] = []
         try:
-            for suite in suites:
-                # Allocate an isolated runtime sandbox per suite to eliminate
-                # cross-contamination between demos that rely on orchestrator state.
-                suite_runtime = _suite_runtime_root(
-                    runtime_root, suite.demo_root, suite.tests_dir, runner=suite.runner
-                )
-                if suite_runtime.exists():
-                    shutil.rmtree(suite_runtime)
-                env_overrides = _configure_runtime_env(suite_runtime)
-                start = time.perf_counter()
-                code = _run_suite(
-                    suite,
-                    env_overrides,
-                    allow_empty=args.allow_empty,
-                    timeout=args.timeout,
-                )
-                duration = time.perf_counter() - start
-                results.append((suite, code, duration))
-
-                print(f"   ↳ Completed in {duration:.2f}s (exit code {code}).")
-
-                if args.fail_fast and code:
-                    print(
-                        "\n⛔️  Halting remaining demo suites because --fail-fast is enabled."
+            if args.fail_fast or args.max_workers == 1:
+                for suite in suites:
+                    result = _execute_suite(
+                        suite,
+                        runtime_root,
+                        allow_empty=args.allow_empty,
+                        timeout=args.timeout,
+                        capture_output=False,
                     )
-                    break
+                    results.append(result)
+
+                    print(
+                        f"   ↳ Completed in {result.duration:.2f}s "
+                        f"(exit code {result.code})."
+                    )
+
+                    if args.fail_fast and result.code:
+                        print(
+                            "\n⛔️  Halting remaining demo suites because --fail-fast is enabled."
+                        )
+                        break
+            else:
+                ordered_results: list[SuiteResult | None] = [None] * len(suites)
+                print(
+                    f"→ Running {len(suites)} suites with up to {args.max_workers} workers."
+                )
+                with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+                    future_to_index = {
+                        executor.submit(
+                            _execute_suite,
+                            suite,
+                            runtime_root,
+                            allow_empty=args.allow_empty,
+                            timeout=args.timeout,
+                            capture_output=True,
+                        ): index
+                        for index, suite in enumerate(suites)
+                    }
+                    for future in as_completed(future_to_index):
+                        index = future_to_index[future]
+                        result = future.result()
+                        ordered_results[index] = result
+                        results.append(result)
+                        print(
+                            f"   ↳ Completed {result.suite.tests_dir} in "
+                            f"{result.duration:.2f}s (exit code {result.code})."
+                        )
+                        if result.output:
+                            print(
+                                f"\n----- Output: {result.suite.tests_dir} -----\n"
+                                f"{result.output}\n"
+                                f"----- end output -----\n"
+                            )
+                results = [res for res in ordered_results if res is not None]
         except KeyboardInterrupt:
             completed = len(results)
             remaining = len(suites) - completed
@@ -1073,24 +1160,28 @@ def main(argv: list[str] | None = None, demo_root: Path | None = None) -> int:
             )
             return 130
 
-        failed = [(suite, code, duration) for suite, code, duration in results if code]
+        failed = [(result.suite, result.code, result.duration) for result in results if result.code]
         if failed:
             print("\n⚠️  Demo test runs completed with failures:")
             for suite, code, duration in failed:
                 print(f"   • {suite.tests_dir} (exit code {code}, {duration:.2f}s)")
             return 1
 
-        total_duration = sum(duration for _, __, duration in results)
+        total_duration = sum(result.duration for result in results)
         print(
             f"\n✅ All demo test suites passed ({len(results)} suites, "
             f"total {total_duration:.2f}s)."
         )
 
         if len(results) > 1:
-            slowest = sorted(results, key=lambda entry: entry[2], reverse=True)[:3]
+            slowest = sorted(
+                results,
+                key=lambda entry: entry.duration,
+                reverse=True,
+            )[:3]
             print("   Slowest suites:")
-            for suite, _, duration in slowest:
-                print(f"   • {suite.tests_dir} — {duration:.2f}s")
+            for result in slowest:
+                print(f"   • {result.suite.tests_dir} — {result.duration:.2f}s")
 
         return 0
 
