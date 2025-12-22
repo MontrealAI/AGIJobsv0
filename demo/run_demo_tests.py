@@ -15,6 +15,7 @@ import argparse
 import contextlib
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -594,7 +595,25 @@ def _foundry_solc_version(project_root: Path) -> str | None:
 
 
 def _resolve_solc_artifact(version: str) -> tuple[str, str] | None:
-    manifest_url = "https://binaries.soliditylang.org/linux-amd64/list.json"
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+
+    if system == "linux" and machine in ("x86_64", "amd64"):
+        platform_key = "linux-amd64"
+    elif system == "linux" and machine in ("aarch64", "arm64"):
+        platform_key = "linux-arm64"
+    elif system == "darwin" and machine in ("x86_64", "amd64"):
+        platform_key = "macosx-amd64"
+    elif system == "darwin" and machine in ("arm64", "aarch64"):
+        platform_key = "macosx-arm64"
+    else:
+        print(
+            "→ Skipping solc prefetch on unsupported host platform; "
+            "forge will attempt to download a native compiler."
+        )
+        return None
+
+    manifest_url = f"https://binaries.soliditylang.org/{platform_key}/list.json"
     try:
         with urllib.request.urlopen(manifest_url, timeout=30) as response:
             manifest = json.load(response)
@@ -613,7 +632,7 @@ def _resolve_solc_artifact(version: str) -> tuple[str, str] | None:
         )
         return None
 
-    base_url = "https://binaries.soliditylang.org/linux-amd64"
+    base_url = f"https://binaries.soliditylang.org/{platform_key}"
     return base_url, release_key
 
 
