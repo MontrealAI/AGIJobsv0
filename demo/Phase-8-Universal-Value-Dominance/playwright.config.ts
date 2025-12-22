@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const port = Number(process.env.PORT ?? process.env.PLAYWRIGHT_PORT ?? 4175);
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: './tests',
   globalSetup: './tests/global-setup.ts',
@@ -8,7 +11,7 @@ export default defineConfig({
     timeout: 5_000,
   },
   use: {
-    baseURL: 'http://127.0.0.1:4175',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -20,8 +23,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'node tests/server.js',
-    port: 4175,
-    reuseExistingServer: !process.env.CI,
+    command: `PORT=${port} node tests/server.js`,
+    port,
+    reuseExistingServer: true,
   },
 });
