@@ -13,10 +13,50 @@ THIS_DIR = Path(__file__).resolve().parent
 DEMO_ROOT = THIS_DIR
 DEMO_PARENT = DEMO_ROOT.parent
 
-for path in (DEMO_ROOT, DEMO_PARENT):
-    path_str = str(path)
-    if path_str not in sys.path:
-        sys.path.insert(0, path_str)
+
+def _prioritise_local_paths() -> None:
+    """Ensure imports resolve to this demo's package instead of sibling fixtures.
+
+    Some demo test suites prepend their own source roots to ``sys.path`` and do
+    not clean up afterwards. When this CLI is imported after those suites, the
+    ``alpha_node`` package could resolve to the ``grand_demo`` variant rather
+    than the intended top-level implementation, leading to missing symbols
+    (for example, ``ComplianceReport``).
+
+    To keep the CLI hermetic we:
+    - drop the ``grand_demo`` path if another suite left it on ``sys.path``,
+    - de-duplicate entries while preserving order,
+    - force the current demo root and its parent to the front.
+    """
+
+    unwanted = {str(DEMO_ROOT / "grand_demo")}
+    filtered: list[str] = []
+    for entry in sys.path:
+        if entry in unwanted or entry in filtered:
+            continue
+        filtered.append(entry)
+
+    for preferred in (DEMO_ROOT, DEMO_PARENT):
+        path_str = str(preferred)
+        if path_str in filtered:
+            filtered.remove(path_str)
+        filtered.insert(0, path_str)
+
+    sys.path[:] = filtered
+
+
+_prioritise_local_paths()
+
+
+def _purge_stale_modules() -> None:
+    """Remove previously imported alpha_node modules from other suites."""
+
+    for name in list(sys.modules):
+        if name == "alpha_node" or name.startswith("alpha_node."):
+            sys.modules.pop(name, None)
+
+
+_purge_stale_modules()
 
 if os.environ.get("DEMO_SYS_PATH_DEBUG"):
     import importlib.util
