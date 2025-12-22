@@ -137,6 +137,34 @@ def test_demo_filter_returns_none_when_empty() -> None:
     assert run_demo_tests._normalize_include_filters([" , "]) is None
 
 
+def test_playwright_dep_check_requires_passwordless_sudo(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+    monkeypatch.setattr(run_demo_tests.os, "geteuid", lambda: 1000)
+
+    def fake_which(name: str) -> str | None:
+        return f"/usr/bin/{name}"
+
+    monkeypatch.setattr(run_demo_tests.shutil, "which", fake_which)
+    calls: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 1)
+
+    monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
+
+    assert run_demo_tests._can_install_playwright_deps() is False
+    assert calls == [["/usr/bin/sudo", "-n", "true"]]
+
+
+def test_playwright_dep_check_accepts_root(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+    monkeypatch.setattr(run_demo_tests.os, "geteuid", lambda: 0)
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: f"/usr/bin/{name}")
+
+    assert run_demo_tests._can_install_playwright_deps() is True
+
+
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"

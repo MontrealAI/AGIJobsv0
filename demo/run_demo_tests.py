@@ -149,10 +149,30 @@ def _can_install_playwright_deps() -> bool:
         return False
 
     try:
-        return os.geteuid() == 0 or shutil.which("sudo") is not None
+        if os.geteuid() == 0:
+            return True
     except AttributeError:
         # Windows/POSIX shims may not expose geteuid; fall back to sudo check.
-        return shutil.which("sudo") is not None
+        pass
+
+    sudo_path = shutil.which("sudo")
+    if not sudo_path:
+        return False
+
+    try:
+        # Ensure sudo can run without prompting for a password. Non-zero exit
+        # codes (or environments that block sudo entirely) should skip the
+        # dependency install instead of hanging the test runner.
+        result = subprocess.run(
+            [sudo_path, "-n", "true"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        return False
+
+    return result.returncode == 0
 
 
 def _run_suite(
