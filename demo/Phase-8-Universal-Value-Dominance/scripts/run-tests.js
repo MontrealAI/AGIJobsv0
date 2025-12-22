@@ -174,8 +174,16 @@ function main(options = {}) {
   const canInstallDeps = () => canInstallDepsImpl();
 
   const playwrightEnv = buildEnv({ autoInstall: playwrightAutoInstall, env });
+  process.env.PLAYWRIGHT_BROWSERS_PATH = playwrightEnv.PLAYWRIGHT_BROWSERS_PATH;
 
   run(npmBinary, ['run', 'test:unit', '--', ...forwardedArgs]);
+  const cachedChromiumReady = hasWorkingChromium(require('@playwright/test').chromium.executablePath());
+  if (optionalE2E && !cachedChromiumReady) {
+    console.warn(
+      'Skipping Playwright e2e tests because PLAYWRIGHT_OPTIONAL_E2E is enabled and no cached Chromium binary is available.',
+    );
+    return;
+  }
   // Default to auto-installing Chromium so the Playwright suite actually runs in
   // CI and local environments without extra flags. Allows opt-out by explicitly
   // setting PLAYWRIGHT_AUTO_INSTALL=0 while still validating that a browser is

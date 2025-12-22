@@ -393,4 +393,36 @@ describe('main', () => {
 
     warnSpy.mockRestore();
   });
+
+  test('skips e2e setup when marked optional and no cached browser is available', () => {
+    const ensureChromiumAvailable = jest.fn();
+    const runStep = jest.fn();
+    const buildPlaywrightEnv = jest.fn().mockReturnValue({
+      PLAYWRIGHT_BROWSERS_PATH: '/tmp/pw',
+      PLAYWRIGHT_AUTO_INSTALL: '1',
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1',
+    });
+    const canInstallDeps = jest.fn().mockReturnValue(true);
+    fs.existsSync.mockReturnValue(false);
+    spawnSync.mockReturnValue({ status: 1 });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const { main } = require('../run-tests.js');
+
+    main({
+      argv: [],
+      env: { PLAYWRIGHT_OPTIONAL_E2E: '1' },
+      ensureChromiumAvailable,
+      buildPlaywrightEnv,
+      runStep,
+      canInstallDeps,
+    });
+
+    expect(runStep).toHaveBeenCalledTimes(1);
+    expect(runStep).toHaveBeenCalledWith(expect.stringContaining('npm'), ['run', 'test:unit', '--']);
+    expect(ensureChromiumAvailable).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
 });
