@@ -713,17 +713,28 @@ def _forge_exists() -> bool:
 _foundry_install_attempted = False
 
 
-def _install_foundry(env: dict[str, str]) -> bool:
-    """Install Foundry non-interactively if it is not already available."""
+def _install_foundry(env: dict[str, str], *, timeout: int = 120) -> bool:
+    """Install Foundry non-interactively if it is not already available.
+
+    A timeout is applied to each step so that environments without outbound
+    network access fail fast instead of hanging forever.
+    """
 
     bootstrap = ["bash", "-c", "curl -L https://foundry.paradigm.xyz | bash"]
-    result = subprocess.run(
-        bootstrap,
-        check=False,
-        env={**env, "CI": env.get("CI", "1")},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    try:
+        result = subprocess.run(
+            bootstrap,
+            check=False,
+            env={**env, "CI": env.get("CI", "1")},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            text=True,
+        )
+    except subprocess.TimeoutExpired:
+        print("→ Timed out while downloading Foundry bootstrap script; skipping.")
+        return False
+
     if result.returncode != 0:
         return False
 
@@ -731,13 +742,20 @@ def _install_foundry(env: dict[str, str]) -> bool:
     if not foundryup.exists():
         return False
 
-    install = subprocess.run(
-        [str(foundryup), "--no-modify-path", "-y"],
-        check=False,
-        env={**env, "CI": env.get("CI", "1"), "FOUNDRYUP_NO_ANALYTICS": "1"},
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
+    try:
+        install = subprocess.run(
+            [str(foundryup), "--no-modify-path", "-y"],
+            check=False,
+            env={**env, "CI": env.get("CI", "1"), "FOUNDRYUP_NO_ANALYTICS": "1"},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            text=True,
+        )
+    except subprocess.TimeoutExpired:
+        print("→ Timed out while running foundryup; skipping Foundry suites.")
+        return False
+
     return install.returncode == 0
 
 
