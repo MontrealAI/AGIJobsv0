@@ -199,6 +199,11 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   const p95Demand = percentile(0.95);
   const freeEnergyMarginGw = availableGw - p95Demand;
   const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
+  const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600; // convert GW headroom into GJ over a one-hour horizon
+  const hamiltonianStability = Math.max(
+    0,
+    Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * freeEnergyMarginPct)
+  );
   const summary = {
     runs,
     breachProbability,
@@ -210,6 +215,8 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    gibbsFreeEnergyGj,
+    hamiltonianStability,
     maintainsBuffer: freeEnergyMarginGw >= marginGw,
     peakDemandGw: peakDemand,
     averageDemandGw: samples.length === 0 ? 0 : totalDemand / samples.length,
@@ -370,6 +377,9 @@ function main() {
   );
   reportLines.push(
     `- **Free Energy Margin:** ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%) vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum buffer.`
+  );
+  reportLines.push(
+    `- **Thermodynamic Reserve:** ${formatNumber(round(energyMonteCarlo.gibbsFreeEnergyGj, 2))} GJ Gibbs free energy; Hamiltonian stability ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}% across the sampled phase space.`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
