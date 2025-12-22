@@ -54,3 +54,5 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert energy["maintainsBuffer"] is True
     assert energy["freeEnergyMarginGw"] > 0
     assert 0 < energy["freeEnergyMarginPct"] <= 1
+    assert energy["gibbsFreeEnergyGj"] > 0
+    assert 0 <= energy["hamiltonianStability"] <= 1
