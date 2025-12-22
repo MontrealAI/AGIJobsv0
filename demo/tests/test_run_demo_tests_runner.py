@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import threading
+import time
 from pathlib import Path
 from typing import Iterable
 
@@ -64,6 +66,59 @@ def test_main_clears_existing_runtime_dir(tmp_path: Path) -> None:
 
     assert exit_code == 0
     assert not stale_artifact.exists()
+
+
+def test_max_workers_option_validates_positive_values() -> None:
+    args = run_demo_tests._parse_args(["--max-workers", "3"])
+    assert args.max_workers == 3
+
+    with pytest.raises(SystemExit):
+        run_demo_tests._parse_args(["--max-workers", "0"])
+
+
+def test_parallel_runs_use_multiple_threads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "demo"
+    suites: list[run_demo_tests.Suite] = []
+    for name in ("alpha", "beta"):
+        demo_dir = demo_root / name
+        tests_dir = demo_dir / "tests"
+        tests_dir.mkdir(parents=True)
+        suites.append(
+            run_demo_tests.Suite(
+                demo_root=demo_dir,
+                tests_dir=tests_dir,
+                runner="python",
+            )
+        )
+
+    monkeypatch.setattr(
+        run_demo_tests,
+        "_discover_tests",
+        lambda *_args, **_kwargs: suites,
+    )
+
+    threads: list[str] = []
+
+    def fake_run_suite(
+        suite: run_demo_tests.Suite,
+        env_overrides: dict[str, str],
+        *,
+        allow_empty: bool = False,
+        timeout: float | None = None,
+        capture_output: bool = False,
+    ) -> tuple[int, str | None]:
+        threads.append(threading.current_thread().name)
+        time.sleep(0.05)
+        return 0, "captured" if capture_output else None
+
+    monkeypatch.setattr(run_demo_tests, "_run_suite", fake_run_suite)
+
+    exit_code = run_demo_tests.main(["--max-workers", "2"], demo_root=demo_root)
+
+    assert exit_code == 0
+    assert len(set(threads)) >= 2
 
 
 def test_list_mode_does_not_create_runtime_artifacts(tmp_path: Path) -> None:
@@ -659,7 +714,7 @@ def test_main_reports_durations_and_slowest_suites(
 
     timings = iter([0.0, 0.25, 0.25, 1.0])
     monkeypatch.setattr(run_demo_tests, "_discover_tests", lambda *_, **__: suites)
-    monkeypatch.setattr(run_demo_tests, "_run_suite", lambda *_, **__: 0)
+    monkeypatch.setattr(run_demo_tests, "_run_suite", lambda *_, **__: (0, None))
     monkeypatch.setattr(run_demo_tests.time, "perf_counter", lambda: next(timings))
 
     exit_code = run_demo_tests.main(["--runtime-dir", str(tmp_path / "runtime")], demo_root=demo_root)
@@ -688,7 +743,7 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
 
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
-    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+    exit_code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
 
     assert exit_code == 0
     assert captured_env["CI"].lower() in {"1", "true"}
@@ -718,7 +773,7 @@ def test_foundry_suites_set_ci_profile(monkeypatch: pytest.MonkeyPatch, tmp_path
 
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
-    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+    exit_code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
 
     assert exit_code == 0
     assert captured["cmd"][:3] == ["forge", "test", "--root"]
@@ -753,7 +808,7 @@ def test_phase8_skips_playwright_dep_install_when_ready(
     monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: True)
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
-    code = run_demo_tests._run_suite(suite, {})
+    code, _ = run_demo_tests._run_suite(suite, {})
 
     assert code == 0
     assert captured_env["PLAYWRIGHT_INSTALL_WITH_DEPS"] == "0"
@@ -777,7 +832,7 @@ def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, t
 
     monkeypatch.setattr(subprocess, "run", _fake_run)
 
-    exit_code = run_demo_tests._run_suite(suite, {}, timeout=1)
+    exit_code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
 
     assert exit_code == 0
     assert commands
@@ -799,7 +854,7 @@ def test_node_suite_reports_missing_runner(
     # Remove PATH entries to force a FileNotFoundError for npm during the run.
     monkeypatch.setenv("PATH", str(tmp_path / "bin"))
 
-    exit_code = run_demo_tests._run_suite(suite, env_overrides={})
+    exit_code, _ = run_demo_tests._run_suite(suite, env_overrides={})
 
     captured = capsys.readouterr()
     assert exit_code == 1

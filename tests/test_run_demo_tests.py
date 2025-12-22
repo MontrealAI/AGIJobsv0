@@ -56,12 +56,12 @@ def test_main_handles_keyboard_interrupt(
 ) -> None:
     call_count = 0
 
-    def fake_run_suite(*_: object, **__: object) -> int:
+    def fake_run_suite(*_: object, **__: object) -> tuple[int, None]:
         nonlocal call_count
         call_count += 1
         if call_count > 1:
             raise KeyboardInterrupt
-        return 0
+        return 0, None
 
     monkeypatch.setattr(run_demo_tests, "_run_suite", fake_run_suite)
 
@@ -75,9 +75,9 @@ def test_main_handles_keyboard_interrupt(
 def test_list_flag_does_not_execute_suites(monkeypatch: pytest.MonkeyPatch, demo_workspace: Path, capsys: pytest.CaptureFixture[str]) -> None:
     called = types.SimpleNamespace(count=0)
 
-    def fake_run_suite(*_: object) -> int:  # pragma: no cover - should not be invoked
+    def fake_run_suite(*_: object) -> tuple[int, None]:  # pragma: no cover - should not be invoked
         called.count += 1
-        return 0
+        return 0, None
 
     monkeypatch.setattr(run_demo_tests, "_run_suite", fake_run_suite)
 
@@ -146,7 +146,7 @@ def test_run_suite_disables_external_plugins(
 
     monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
 
-    code = run_demo_tests._run_suite(suite, {"EXTRA": "1"})
+    code, _ = run_demo_tests._run_suite(suite, {"EXTRA": "1"})
 
     assert code == 0
     assert captured_env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "0"
