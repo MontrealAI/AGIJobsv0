@@ -287,6 +287,19 @@ def test_foundry_installation_is_attempted_when_missing(
     run_demo_tests._foundry_install_attempted = False
 
 
+def test_foundry_installation_times_out_cleanly(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def _timeout(*args: object, **kwargs: object) -> object:
+        raise subprocess.TimeoutExpired(cmd=args[0] if args else [], timeout=1)
+
+    monkeypatch.setattr(subprocess, "run", _timeout)
+
+    assert run_demo_tests._install_foundry({}) is False
+    captured = capsys.readouterr().out
+    assert "Timed out" in captured
+
+
 def test_foundry_installation_can_be_disabled(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
