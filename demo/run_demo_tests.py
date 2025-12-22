@@ -15,6 +15,7 @@ import argparse
 import contextlib
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -23,6 +24,9 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Literal
+import urllib.error
+import urllib.request
+import tomllib
 
 
 @dataclass(frozen=True)
@@ -104,6 +108,7 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
         "ORCHESTRATOR_GOVERNANCE_PATH": storage_root / "governance.json",
         "ORCHESTRATOR_STATE_DIR": storage_root / "runs",
         "AGENT_REGISTRY_PATH": storage_root / "agents" / "registry.json",
+        "DEMO_RUNTIME_ROOT": runtime_root,
     }
 
     for path in overrides.values():
@@ -230,6 +235,7 @@ def _run_suite(
         env["PATH"] = os.pathsep.join(
             [str(default_foundry_path), env.get("PATH", "")]
         )
+        _maybe_prefetch_solc(suite, env)
         cmd = [forge_path, "test", "--root", str(suite.demo_root)]
         description = f"{suite.tests_dir} via forge test"
         cwd = suite.demo_root
@@ -566,6 +572,102 @@ def _maybe_extend_timeout_for_playwright(
             f"({cache_state}, cache: {cache_root})."
         )
     return extended_timeout
+
+
+def _foundry_solc_version(project_root: Path) -> str | None:
+    config = project_root / "foundry.toml"
+    if not config.is_file():
+        return None
+
+    try:
+        parsed = tomllib.loads(config.read_text())
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+
+    profile = parsed.get("profile", {}).get("default", {})
+    version = profile.get("solc_version")
+    if isinstance(version, str):
+        cleaned = version.strip()
+        if cleaned:
+            return cleaned
+
+    return None
+
+
+def _resolve_solc_artifact(version: str) -> tuple[str, str] | None:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+
+    if system == "linux" and machine in ("x86_64", "amd64"):
+        platform_key = "linux-amd64"
+    elif system == "linux" and machine in ("aarch64", "arm64"):
+        platform_key = "linux-arm64"
+    elif system == "darwin" and machine in ("x86_64", "amd64"):
+        platform_key = "macosx-amd64"
+    elif system == "darwin" and machine in ("arm64", "aarch64"):
+        platform_key = "macosx-arm64"
+    else:
+        print(
+            "→ Skipping solc prefetch on unsupported host platform; "
+            "forge will attempt to download a native compiler."
+        )
+        return None
+
+    manifest_url = f"https://binaries.soliditylang.org/{platform_key}/list.json"
+    try:
+        with urllib.request.urlopen(manifest_url, timeout=30) as response:
+            manifest = json.load(response)
+    except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+        print(
+            f"→ Unable to fetch Solidity release manifest ({exc}); "
+            "forge will attempt to download the compiler directly."
+        )
+        return None
+
+    release_key = manifest.get("releases", {}).get(version)
+    if not isinstance(release_key, str) or not release_key.strip():
+        print(
+            f"→ No solc artifact mapping found for version '{version}'; "
+            "forge will attempt to download the compiler directly."
+        )
+        return None
+
+    base_url = f"https://binaries.soliditylang.org/{platform_key}"
+    return base_url, release_key
+
+
+def _maybe_prefetch_solc(suite: Suite, env: dict[str, str]) -> None:
+    runtime_root_raw = env.get("DEMO_RUNTIME_ROOT")
+    solc_version = _foundry_solc_version(suite.demo_root)
+
+    if not runtime_root_raw or not solc_version:
+        return
+
+    resolved = _resolve_solc_artifact(solc_version)
+    if not resolved:
+        return
+
+    base_url, artifact = resolved
+    runtime_root = Path(runtime_root_raw)
+    cache_dir = runtime_root / "solc-cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    target = cache_dir / artifact
+
+    if not target.exists():
+        try:
+            with urllib.request.urlopen(f"{base_url}/{artifact}", timeout=120) as response:
+                with target.open("wb") as handle:
+                    shutil.copyfileobj(response, handle)
+            target.chmod(0o755)
+            print(f"→ Prefetched solc {solc_version} to {target}")
+        except (OSError, urllib.error.URLError) as exc:
+            print(
+                f"→ Unable to prefetch solc {solc_version} ({exc}); "
+                "forge will attempt its own download."
+            )
+            return
+
+    env.setdefault("FOUNDRY_SOLC", str(target))
 
 
 def _forge_exists() -> bool:
