@@ -15,11 +15,13 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
+import tempfile
 import shutil
 
 
 ROOT = Path(__file__).resolve().parent
 NODE_SCRIPT = ROOT / "run-demo.cjs"
+DEFAULT_OUTPUT_DIR = Path(tempfile.gettempdir()) / "agi-jobs-platform"
 
 
 def _ensure_node_available() -> str:
@@ -49,6 +51,7 @@ def run(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output-dir",
+        default=DEFAULT_OUTPUT_DIR,
         help="Directory where generated artefacts should be written.",
     )
     parser.add_argument(

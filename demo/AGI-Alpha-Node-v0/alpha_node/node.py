@@ -26,6 +26,7 @@ class AlphaNode:
         config: AlphaNodeConfig,
         *,
         base_path: Optional[Path] = None,
+        runtime_dir: Optional[Path] = None,
         state_store: Optional[StateStore] = None,
         stake_manager: Optional[StakeManager] = None,
         ens_verifier: Optional[ENSVerifier] = None,
@@ -40,8 +41,10 @@ class AlphaNode:
     ) -> None:
         self.config = config
         self.base_path = base_path or Path(__file__).resolve().parent.parent
-        self.state_store = state_store or StateStore(self.base_path / "state.json")
-        ledger_path = self.base_path / "stake_ledger.csv"
+        self.runtime_dir = runtime_dir or self.base_path / ".runtime"
+        self.runtime_dir.mkdir(parents=True, exist_ok=True)
+        self.state_store = state_store or StateStore(self.runtime_dir / "state.json")
+        ledger_path = self.runtime_dir / "stake_ledger.csv"
         self.stake_manager = stake_manager or StakeManager(config.stake, self.state_store, ledger_path)
         self.ens_verifier = ens_verifier or ENSVerifier(config.ens, self.base_path / "ens_registry.csv")
         self.governance = governance or GovernanceController(config.governance, self.state_store)
