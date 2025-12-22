@@ -22,6 +22,12 @@ function isOptionalE2E(env = process.env) {
   return !isCi(env);
 }
 
+function isOptionalE2EOnFailure(env = process.env) {
+  const flag = env.PLAYWRIGHT_OPTIONAL_E2E_ON_FAILURE;
+  if (flag === undefined) return false;
+  return flag !== '0' && flag.toString().toLowerCase() !== 'false';
+}
+
 function isDepsInstallExplicitlyDisabled(env = process.env) {
   const raw = env.PLAYWRIGHT_INSTALL_WITH_DEPS;
   if (raw === undefined) return false;
@@ -171,6 +177,7 @@ function main(options = {}) {
   const playwrightInstallWithDeps = shouldInstallPlaywrightDeps(env);
   const depsInstallExplicitlyDisabled = isDepsInstallExplicitlyDisabled(env);
   const optionalE2E = isOptionalE2E(env);
+  const optionalE2EOnFailure = isOptionalE2EOnFailure(env);
   const canInstallDeps = () => canInstallDepsImpl();
 
   const playwrightEnv = buildEnv({ autoInstall: playwrightAutoInstall, env });
@@ -221,7 +228,7 @@ function main(options = {}) {
   if (!chromiumReady && depsInstallExplicitlyDisabled) {
     const message =
       'Chromium is unavailable and PLAYWRIGHT_INSTALL_WITH_DEPS=0; re-run with PLAYWRIGHT_INSTALL_WITH_DEPS=1 to allow installing system dependencies or set PLAYWRIGHT_OPTIONAL_E2E=1 to skip Playwright checks.';
-    if (optionalE2E) {
+    if (optionalE2E || optionalE2EOnFailure) {
       console.warn(message);
       return;
     }
@@ -231,7 +238,7 @@ function main(options = {}) {
   if (!chromiumReady) {
     const message =
       'Skipping Playwright e2e tests because Chromium is unavailable and automatic installation failed.';
-    if (optionalE2E) {
+    if (optionalE2E || optionalE2EOnFailure) {
       console.warn(
         `${message} Set PLAYWRIGHT_OPTIONAL_E2E=0 to require these checks even outside CI.`,
       );
@@ -256,6 +263,7 @@ module.exports = {
   runStep,
   main,
   isOptionalE2E,
+  isOptionalE2EOnFailure,
   isDepsInstallExplicitlyDisabled,
   shouldInstallPlaywrightDeps,
 };

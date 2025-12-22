@@ -226,6 +226,7 @@ def _run_suite(
                 env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
                 if not _playwright_system_deps_ready():
                     env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
+            env.setdefault("PLAYWRIGHT_OPTIONAL_E2E_ON_FAILURE", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
