@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import ctypes.util
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, Literal
@@ -219,11 +220,12 @@ def _run_suite(
             # environments. Opt in explicitly when the host can satisfy them,
             # and otherwise allow the suite to skip e2e checks instead of
             # failing outright on locked-down runners.
-            if _can_install_playwright_deps():
+            if _can_install_playwright_deps() and not _playwright_system_deps_ready():
                 env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
             else:
                 env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
-                env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
+                if not _playwright_system_deps_ready():
+                    env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
@@ -546,6 +548,39 @@ def _playwright_cache_ready(env: dict[str, str]) -> bool:
         return False
 
     return False
+
+
+_PLAYWRIGHT_LIB_PATHS = (
+    Path("/usr/lib/x86_64-linux-gnu/libnss3.so"),
+    Path("/usr/lib/x86_64-linux-gnu/libasound.so.2"),
+    Path("/usr/lib/x86_64-linux-gnu/libatk-1.0.so.0"),
+    Path("/usr/lib/x86_64-linux-gnu/libgtk-3.so.0"),
+)
+
+
+def _playwright_system_deps_ready() -> bool:
+    """Return True when common Playwright system deps are already installed.
+
+    Playwright's ``--with-deps`` mode triggers ``apt-get update`` on every run,
+    which can add minutes of overhead once the machine is already provisioned.
+    A quick readiness probe lets us skip that work while still opting into the
+    dependency installer when libraries are genuinely missing.
+    """
+
+    if not sys.platform.startswith("linux"):
+        return False
+
+    if not shutil.which("xvfb"):
+        return False
+
+    for lib in _PLAYWRIGHT_LIB_PATHS:
+        if lib.exists():
+            continue
+        resolved = ctypes.util.find_library(lib.stem.replace(".so", ""))
+        if not resolved:
+            return False
+
+    return True
 
 
 def _maybe_extend_timeout_for_playwright(

@@ -165,6 +165,38 @@ def test_playwright_dep_check_accepts_root(monkeypatch: pytest.MonkeyPatch) -> N
     assert run_demo_tests._can_install_playwright_deps() is True
 
 
+def test_playwright_dep_readiness_detects_installed_libs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    libs = [
+        tmp_path / "libnss3.so",
+        tmp_path / "libasound.so.2",
+        tmp_path / "libatk-1.0.so.0",
+        tmp_path / "libgtk-3.so.0",
+    ]
+    for lib in libs:
+        lib.write_text("placeholder")
+
+    monkeypatch.setattr(run_demo_tests, "_PLAYWRIGHT_LIB_PATHS", tuple(libs))
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: "/usr/bin/xvfb")
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+
+    assert run_demo_tests._playwright_system_deps_ready() is True
+
+
+def test_playwright_dep_readiness_requires_xvfb(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    libs = [tmp_path / "libnss3.so"]
+    libs[0].write_text("placeholder")
+
+    monkeypatch.setattr(run_demo_tests, "_PLAYWRIGHT_LIB_PATHS", tuple(libs))
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: None)
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+
+    assert run_demo_tests._playwright_system_deps_ready() is False
+
+
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"
@@ -683,6 +715,35 @@ def test_foundry_suites_set_ci_profile(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert env["FOUNDRY_PROFILE"].lower() == "ci"
     assert str(Path.home() / ".foundry" / "bin") in env["PATH"]
     assert captured["cwd"] == demo_root
+
+
+def test_phase8_skips_playwright_dep_install_when_ready(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "Phase-8-Universal-Value-Dominance"
+    tests_dir = demo_root / "tests"
+    demo_root.mkdir()
+    tests_dir.mkdir()
+
+    captured_env: dict[str, str] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured_env.update(kwargs.get("env", {}))  # type: ignore[arg-type]
+        return _Result()
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
+
+    monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: True)
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    code = run_demo_tests._run_suite(suite, {})
+
+    assert code == 0
+    assert captured_env["PLAYWRIGHT_INSTALL_WITH_DEPS"] == "0"
 
 
 def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
