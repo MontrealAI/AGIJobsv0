@@ -786,9 +786,16 @@ def _install_foundry(env: dict[str, str], *, timeout: int = 120) -> bool:
 
     try:
         install = subprocess.run(
-            [str(foundryup), "--no-modify-path", "-y"],
+            [str(foundryup), "-i", "stable"],
             check=False,
-            env={**env, "CI": env.get("CI", "1"), "FOUNDRYUP_NO_ANALYTICS": "1"},
+            env={
+                **env,
+                # Keep the installation fully non-interactive while avoiding
+                # shell profile mutations that can bleed into subsequent steps.
+                "CI": env.get("CI", "1"),
+                "FOUNDRYUP_NO_ANALYTICS": "1",
+                "FOUNDRYUP_NO_MODIFY_PATH": env.get("FOUNDRYUP_NO_MODIFY_PATH", "1"),
+            },
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=timeout,
