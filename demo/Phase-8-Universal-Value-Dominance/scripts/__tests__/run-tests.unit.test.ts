@@ -141,6 +141,34 @@ describe('ensureChromiumAvailable', () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
     expect(exitSpy).not.toHaveBeenCalled();
   });
+
+  test('avoids with-deps fallback when dependencies are already present', () => {
+    const { ensureChromiumAvailable } = require('../run-tests.js');
+    const installer = jest.fn().mockReturnValue(true);
+    const prober = jest
+      .fn()
+      .mockImplementationOnce(() => false)
+      .mockImplementation(() => true);
+    const depsProbe = jest.fn().mockReturnValue(true);
+
+    const ready = ensureChromiumAvailable({
+      autoInstall: true,
+      installWithDeps: true,
+      browsersPath: '.local-browsers',
+      installer,
+      prober,
+      canInstallDeps,
+      depsProbe,
+    });
+
+    expect(ready).toBe(true);
+    expect(installer).toHaveBeenCalledTimes(1);
+    expect(installer).toHaveBeenCalledWith(
+      expect.objectContaining({ withDeps: false, browsersPath: '.local-browsers' }),
+    );
+    expect(depsProbe).toHaveBeenCalled();
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe('canInstallPlaywrightDeps', () => {
@@ -424,5 +452,54 @@ describe('main', () => {
     expect(warnSpy).toHaveBeenCalled();
 
     warnSpy.mockRestore();
+  });
+});
+
+describe('arePlaywrightDepsReady', () => {
+  const platform = process.platform;
+
+  beforeEach(() => {
+    jest.resetModules();
+    spawnSync.mockReset();
+    fs.existsSync.mockReset();
+  });
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: platform, configurable: true });
+  });
+
+  test('returns false on non-linux hosts', () => {
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true });
+    const { arePlaywrightDepsReady } = require('../run-tests.js');
+
+    expect(arePlaywrightDepsReady()).toBe(false);
+    expect(spawnSync).not.toHaveBeenCalled();
+  });
+
+  test('verifies common X and GTK dependencies on linux', () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    const { arePlaywrightDepsReady } = require('../run-tests.js');
+    const binaryCheck = jest.fn().mockImplementationOnce(() => false).mockReturnValue(true);
+    const fsProbe = jest.fn().mockReturnValue(true);
+
+    expect(arePlaywrightDepsReady({ binaryCheck, fsProbe })).toBe(true);
+    expect(process.platform).toBe('linux');
+    expect(binaryCheck).toHaveBeenCalledWith('xvfb');
+    expect(binaryCheck).toHaveBeenCalledWith('Xvfb');
+    expect(fsProbe).toHaveBeenCalledTimes(3);
+  });
+
+  test('fails fast when expected libraries are missing', () => {
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    const { arePlaywrightDepsReady } = require('../run-tests.js');
+    const binaryCheck = jest.fn().mockReturnValue(true);
+    const fsProbe = jest
+      .fn()
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(true)
+      .mockReturnValueOnce(false);
+
+    expect(arePlaywrightDepsReady({ binaryCheck, fsProbe })).toBe(false);
+    expect(fsProbe).toHaveBeenCalledTimes(3);
   });
 });
