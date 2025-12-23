@@ -7,6 +7,11 @@ const DEFAULT_PLAYWRIGHT_BROWSERS_PATH =
   process.env.PLAYWRIGHT_BROWSERS_PATH ?? path.join(PROJECT_ROOT, '.cache', 'ms-playwright');
 const npmBinary = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxBinary = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const REQUIRED_SYSTEM_DEPS = [
+  ['/usr/lib/x86_64-linux-gnu/libnss3.so'],
+  ['/usr/lib/x86_64-linux-gnu/libasound.so.2'],
+  ['/usr/lib/x86_64-linux-gnu/libatk-1.0.so.0'],
+];
 
 function isCi(env = process.env) {
   return (env.CI ?? '').toString().toLowerCase() === 'true' || env.CI === '1';
@@ -38,6 +43,20 @@ function isDepsInstallExplicitlyDisabled(env = process.env) {
 
 function hasBinary(binary) {
   return spawnSync('which', [binary], { stdio: 'ignore' }).status === 0;
+}
+
+function arePlaywrightDepsReady({ binaryCheck = hasBinary, fsProbe = fs.existsSync } = {}) {
+  if (process.platform !== 'linux') return false;
+  if (!binaryCheck('xvfb') && !binaryCheck('Xvfb')) return false;
+
+  const requiredSatisfied = REQUIRED_SYSTEM_DEPS.every((candidates) =>
+    candidates.some((candidate) => fsProbe(candidate)),
+  );
+
+  // Headless Chromium can start without the full GTK stack. Focus on the core
+  // runtime libraries so we avoid re-running `install --with-deps` once the
+  // essentials are present.
+  return requiredSatisfied;
 }
 
 function buildPlaywrightEnv({ autoInstall, env = process.env }) {
@@ -112,6 +131,7 @@ function ensureChromiumAvailable({
   prober = hasWorkingChromium,
   installer = installChromium,
   canInstallDeps = canInstallPlaywrightDeps,
+  depsProbe = arePlaywrightDepsReady,
 }) {
   // Keep Playwright downloads scoped to the project directory unless callers
   // explicitly override the location. This avoids writing into system
@@ -121,22 +141,29 @@ function ensureChromiumAvailable({
 
   const { chromium } = require('@playwright/test');
   const getExecutablePath = () => chromium.executablePath();
+  const systemDepsReady = depsProbe();
+  const wantsDepsInstall = installWithDeps;
+  const depsInstallSupported = wantsDepsInstall && canInstallDeps();
+  const chromiumReady = () => prober(getExecutablePath());
 
-  if (prober(getExecutablePath())) {
+  if (chromiumReady()) {
     return true;
   }
 
   if (autoInstall) {
     const installedWithoutDeps = installer({ withDeps: false, browsersPath });
-    if (installedWithoutDeps && prober(getExecutablePath())) {
+    const executablePath = getExecutablePath();
+    if (installedWithoutDeps && prober(executablePath)) {
       return true;
     }
-    if (installWithDeps && canInstallDeps()) {
+    const shouldRetryWithDeps =
+      depsInstallSupported && (!systemDepsReady || installedWithoutDeps || !prober(executablePath));
+    if (shouldRetryWithDeps) {
       const installedWithDeps = installer({ withDeps: true, browsersPath });
       if (installedWithDeps && prober(getExecutablePath())) {
         return true;
       }
-    } else if (installWithDeps) {
+    } else if (wantsDepsInstall && !depsInstallSupported) {
       console.warn(
         'Skipping Playwright system dependency installation (insufficient privileges or package manager unavailable).',
       );
@@ -266,6 +293,7 @@ module.exports = {
   isOptionalE2EOnFailure,
   isDepsInstallExplicitlyDisabled,
   shouldInstallPlaywrightDeps,
+  arePlaywrightDepsReady,
 };
 
 if (require.main === module) {
