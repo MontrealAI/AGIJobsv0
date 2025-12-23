@@ -86,6 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=30.0,
         help="Seconds between autonomous integrity verification sweeps",
     )
+    parser.add_argument(
+        "--claim-window",
+        type=float,
+        default=0.4,
+        help="Seconds to collect job claims before arbitration (0 = immediate assignment)",
+    )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
     parser.add_argument(
         "--status-output",
@@ -151,6 +157,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     _require_positive(args.heartbeat_timeout, field="heartbeat_timeout_seconds")
     _require_positive(args.health_check_interval, field="health_check_interval_seconds")
     _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
+    _require_positive(args.claim_window, field="claim_window_seconds", allow_zero=True)
     _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
     checkpoint_interval = float(
         overrides.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
@@ -180,6 +187,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,
         "integrity_check_interval_seconds": args.integrity_interval,
+        "claim_window_seconds": args.claim_window,
     }
     params.update(overrides)
     params["checkpoint_interval_seconds"] = checkpoint_interval
