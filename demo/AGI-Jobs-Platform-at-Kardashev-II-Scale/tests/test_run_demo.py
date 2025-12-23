@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -58,3 +59,28 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= energy["hamiltonianStability"] <= 1
     assert energy["entropyMargin"] > 0
     assert 0 <= energy["gameTheorySlack"] <= 1
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_rejects_invalid_energy_feed(tmp_path: Path) -> None:
+    """Invalid energy configs should fail fast with a helpful error."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][0]["nominalMw"] = -1  # provoke validation failure
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "configuration validation failed" in combined_output
+    assert "energy feed" in combined_output

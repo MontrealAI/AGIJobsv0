@@ -34,9 +34,21 @@ function createRng(seed) {
   };
 }
 
-function loadJson(relPath) {
-  const abs = path.join(__dirname, relPath);
-  return JSON.parse(fs.readFileSync(abs, 'utf8'));
+function resolveConfigPath(envVar, fallbackRelative) {
+  const override = process.env[envVar];
+  const target = override ? path.resolve(override) : path.join(__dirname, fallbackRelative);
+
+  if (!fs.existsSync(target)) {
+    throw new Error(
+      `Missing configuration file at ${target} (${override ? `${envVar} override` : 'default path'})`,
+    );
+  }
+
+  return target;
+}
+
+function loadJson(absolutePath) {
+  return JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
 }
 
 function toTable(rows, headers) {
@@ -242,6 +254,53 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   return summary;
 }
 
+function validateEnergyFeeds(energy) {
+  if (!energy || !Array.isArray(energy.feeds) || energy.feeds.length === 0) {
+    throw new Error('Energy feeds must include at least one region with nominal + buffer MW defined.');
+  }
+
+  energy.feeds.forEach((feed, idx) => {
+    if (typeof feed.region !== 'string' || feed.region.trim() === '') {
+      throw new Error(`Energy feed #${idx} is missing a region identifier.`);
+    }
+    if (!Number.isFinite(feed.nominalMw) || feed.nominalMw <= 0) {
+      throw new Error(`Energy feed ${feed.region} must declare positive nominalMw.`);
+    }
+    if (!Number.isFinite(feed.bufferMw) || feed.bufferMw < 0) {
+      throw new Error(`Energy feed ${feed.region} must declare non-negative bufferMw.`);
+    }
+    if (!Number.isFinite(feed.latencyMs) || feed.latencyMs < 0) {
+      throw new Error(`Energy feed ${feed.region} latencyMs must be non-negative.`);
+    }
+  });
+
+  const tolerancePct = energy?.tolerancePct ?? 0;
+  if (!Number.isFinite(tolerancePct) || tolerancePct <= 0 || tolerancePct > 50) {
+    throw new Error('Energy tolerancePct must be between 0 and 50.');
+  }
+}
+
+function validateFabric(fabric) {
+  if (!fabric || !Array.isArray(fabric.shards) || fabric.shards.length === 0) {
+    throw new Error('Fabric config must include at least one shard definition.');
+  }
+
+  fabric.shards.forEach((shard, idx) => {
+    if (typeof shard.id !== 'string' || shard.id.trim() === '') {
+      throw new Error(`Shard #${idx} is missing an id.`);
+    }
+    if (!Number.isFinite(shard.latencyMs) || shard.latencyMs <= 0) {
+      throw new Error(`Shard ${shard.id} latencyMs must be positive.`);
+    }
+  });
+
+  ['knowledgeGraph', 'energyOracle', 'rewardEngine', 'phase8Manager'].forEach((field) => {
+    if (typeof fabric[field] !== 'string' || fabric[field].trim() === '') {
+      throw new Error(`Fabric config missing required field "${field}".`);
+    }
+  });
+}
+
 function buildMermaidTaskHierarchy(dyson) {
   return `---
 title Dyson Swarm Execution Tree
@@ -339,8 +398,22 @@ function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
 }
 
 function main() {
-  const fabric = loadJson('config/fabric.json');
-  const energy = loadJson('config/energy-feeds.json');
+  let fabric;
+  let energy;
+  try {
+    const fabricPath = resolveConfigPath('KARDASHEV_FABRIC_PATH', 'config/fabric.json');
+    const energyPath = resolveConfigPath('KARDASHEV_ENERGY_FEEDS_PATH', 'config/energy-feeds.json');
+    fabric = loadJson(fabricPath);
+    energy = loadJson(energyPath);
+    validateFabric(fabric);
+    validateEnergyFeeds(energy);
+  } catch (err) {
+    console.error('❌ Kardashev configuration validation failed.');
+    console.error(`   - ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
+
   const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
