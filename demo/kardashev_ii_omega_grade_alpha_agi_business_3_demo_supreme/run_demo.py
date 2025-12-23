@@ -10,15 +10,16 @@ directory.
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 from pathlib import Path
 from typing import Iterable, Optional
 
-# Keep demos fast and deterministic when no CLI arguments are provided. The
-# canonical orchestrator defaults to an infinite run with long validator delays,
-# which can feel “stuck” in automated smoke tests. These defaults execute a
-# handful of cycles with short validation windows so operators immediately see
-# output and generated artifacts.
+# Keep demos fast and deterministic when no CLI arguments are provided and the
+# fast-defaults opt-in is enabled. The canonical orchestrator defaults to an
+# infinite run with long validator delays, which can feel “stuck” in automated
+# smoke tests. These defaults execute a handful of cycles with short validation
+# windows so operators immediately see output and generated artifacts.
 DEFAULT_DEMO_ARGS = [
     "--cycles",
     "6",
@@ -34,6 +35,7 @@ DEFAULT_DEMO_ARGS = [
     "10",
     "--no-resume",
 ]
+FAST_DEFAULTS_ENV = "AGI_SUPREME_FAST_DEFAULTS"
 
 PACKAGE_NAME = "demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme"
 THIS_DIR = Path(__file__).resolve().parent
@@ -78,7 +80,8 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
     """
 
     argv_list = sys.argv[1:] if argv is None else list(argv)
-    if not argv_list:
+    use_fast_defaults = os.getenv(FAST_DEFAULTS_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+    if not argv_list and use_fast_defaults:
         argv_list = DEFAULT_DEMO_ARGS.copy()
         print(
             "🛰️  Launching Supreme Omega-grade demo with fast defaults "
