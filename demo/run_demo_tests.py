@@ -111,6 +111,7 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
     """Route orchestrator state into a temporary sandbox."""
 
     storage_root = runtime_root / "orchestrator"
+    cache_root = Path(os.environ.get("DEMO_PLAYWRIGHT_CACHE", Path.home() / ".cache" / "agi-jobs-demo" / "ms-playwright"))
     overrides = {
         "ORCHESTRATOR_SCOREBOARD_PATH": storage_root / "scoreboard.json",
         "ORCHESTRATOR_CHECKPOINT_PATH": storage_root / "checkpoint.json",
@@ -119,6 +120,7 @@ def _configure_runtime_env(runtime_root: Path) -> dict[str, str]:
         "ORCHESTRATOR_STATE_DIR": storage_root / "runs",
         "AGENT_REGISTRY_PATH": storage_root / "agents" / "registry.json",
         "DEMO_RUNTIME_ROOT": runtime_root,
+        "DEMO_PLAYWRIGHT_CACHE": cache_root,
     }
 
     for path in overrides.values():
@@ -218,7 +220,7 @@ def _run_suite(
         # fast and non-invasive while still allowing suites to download the
         # browser binaries they need.
         runtime_root = Path(env.get("DEMO_RUNTIME_ROOT", Path(__file__).resolve().parent))
-        playwright_cache = runtime_root / ".cache" / "ms-playwright"
+        playwright_cache = Path(env.get("DEMO_PLAYWRIGHT_CACHE", Path.home() / ".cache" / "agi-jobs-demo" / "ms-playwright"))
         playwright_cache.mkdir(parents=True, exist_ok=True)
         env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
         env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
