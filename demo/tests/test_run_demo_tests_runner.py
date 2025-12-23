@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import subprocess
 import threading
 import time
+import urllib.request
 from pathlib import Path
 from typing import Iterable
 
@@ -345,6 +347,8 @@ def test_foundry_installation_is_attempted_when_missing(
 def test_foundry_installation_times_out_cleanly(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: contextlib.nullcontext())
+
     def _timeout(*args: object, **kwargs: object) -> object:
         raise subprocess.TimeoutExpired(cmd=args[0] if args else [], timeout=1)
 
@@ -353,6 +357,22 @@ def test_foundry_installation_times_out_cleanly(
     assert run_demo_tests._install_foundry({}) is False
     captured = capsys.readouterr().out
     assert "Timed out" in captured
+
+
+def test_foundry_installation_skips_when_bootstrap_unreachable(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def _failing_probe(*args: object, **kwargs: object) -> object:
+        raise OSError("network unreachable")
+
+    monkeypatch.setattr(urllib.request, "urlopen", _failing_probe)
+    invoked: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: invoked.append(a) or None)
+
+    assert run_demo_tests._install_foundry({}) is False
+    captured = capsys.readouterr().out
+    assert "bootstrap endpoint is unreachable" in captured
+    assert invoked == []
 
 
 def test_foundry_installation_can_be_disabled(
