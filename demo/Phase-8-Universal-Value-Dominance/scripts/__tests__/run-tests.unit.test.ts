@@ -79,6 +79,7 @@ describe('ensureChromiumAvailable', () => {
       installer,
       prober,
       canInstallDeps,
+      depsProbe: jest.fn().mockReturnValue(true),
     });
 
     expect(ready).toBe(true);
@@ -106,6 +107,7 @@ describe('ensureChromiumAvailable', () => {
       installer,
       prober,
       canInstallDeps,
+      depsProbe: jest.fn().mockReturnValue(true),
     });
 
     expect(ready).toBe(true);
@@ -168,6 +170,33 @@ describe('ensureChromiumAvailable', () => {
     );
     expect(depsProbe).toHaveBeenCalled();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  test('prefers installing with system deps first when the host is missing them', () => {
+    const { ensureChromiumAvailable } = require('../run-tests.js');
+    const installer = jest.fn().mockReturnValue(true);
+    const prober = jest
+      .fn()
+      .mockImplementationOnce(() => false)
+      .mockImplementation(() => true);
+    const depsProbe = jest.fn().mockReturnValue(false);
+
+    const ready = ensureChromiumAvailable({
+      autoInstall: true,
+      installWithDeps: true,
+      browsersPath: '.local-browsers',
+      installer,
+      prober,
+      canInstallDeps,
+      depsProbe,
+    });
+
+    expect(ready).toBe(true);
+    expect(installer).toHaveBeenCalledTimes(1);
+    expect(installer).toHaveBeenCalledWith(
+      expect.objectContaining({ withDeps: true, browsersPath: '.local-browsers' }),
+    );
+    expect(depsProbe).toHaveBeenCalled();
   });
 });
 
