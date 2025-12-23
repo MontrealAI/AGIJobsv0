@@ -896,6 +896,68 @@ def test_phase8_skips_playwright_dep_install_when_ready(
     assert captured_env["PLAYWRIGHT_INSTALL_WITH_DEPS"] == "0"
 
 
+def test_phase8_honors_user_playwright_dep_preference(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "Phase-8-Universal-Value-Dominance"
+    tests_dir = demo_root / "tests"
+    demo_root.mkdir()
+    tests_dir.mkdir()
+
+    captured_env: dict[str, str] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured_env.update(kwargs.get("env", {}))  # type: ignore[arg-type]
+        return _Result()
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
+
+    monkeypatch.setenv("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
+    monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: False)
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
+
+    assert code == 0
+    assert captured_env["PLAYWRIGHT_INSTALL_WITH_DEPS"] == "0"
+    assert captured_env["PLAYWRIGHT_OPTIONAL_E2E"] == "1"
+
+
+def test_phase8_auto_installs_deps_when_host_ready(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    demo_root = tmp_path / "Phase-8-Universal-Value-Dominance"
+    tests_dir = demo_root / "tests"
+    demo_root.mkdir()
+    tests_dir.mkdir()
+
+    captured_env: dict[str, str] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured_env.update(kwargs.get("env", {}))  # type: ignore[arg-type]
+        return _Result()
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
+
+    monkeypatch.delenv("PLAYWRIGHT_INSTALL_WITH_DEPS", raising=False)
+    monkeypatch.setattr(run_demo_tests, "_can_install_playwright_deps", lambda: True)
+    monkeypatch.setattr(run_demo_tests, "_playwright_system_deps_ready", lambda: False)
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    code, _ = run_demo_tests._run_suite(suite, {}, timeout=1)
+
+    assert code == 0
+    assert captured_env["PLAYWRIGHT_INSTALL_WITH_DEPS"] == "1"
+    assert captured_env["PLAYWRIGHT_OPTIONAL_E2E_ON_FAILURE"] == "1"
+
+
 def test_vitest_suites_use_single_thread_pool(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"
