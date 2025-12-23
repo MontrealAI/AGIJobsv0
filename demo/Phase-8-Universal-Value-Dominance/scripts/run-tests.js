@@ -144,6 +144,7 @@ function ensureChromiumAvailable({
   const systemDepsReady = depsProbe();
   const wantsDepsInstall = installWithDeps;
   const depsInstallSupported = wantsDepsInstall && canInstallDeps();
+  const shouldPreferWithDepsFirst = wantsDepsInstall && depsInstallSupported && !systemDepsReady;
   const chromiumReady = () => prober(getExecutablePath());
 
   if (chromiumReady()) {
@@ -151,19 +152,24 @@ function ensureChromiumAvailable({
   }
 
   if (autoInstall) {
-    const installedWithoutDeps = installer({ withDeps: false, browsersPath });
-    const executablePath = getExecutablePath();
-    if (installedWithoutDeps && prober(executablePath)) {
-      return true;
+    const installPlan = [];
+    if (shouldPreferWithDepsFirst) {
+      installPlan.push(true);
     }
-    const shouldRetryWithDeps =
-      depsInstallSupported && (!systemDepsReady || installedWithoutDeps || !prober(executablePath));
-    if (shouldRetryWithDeps) {
-      const installedWithDeps = installer({ withDeps: true, browsersPath });
-      if (installedWithDeps && prober(getExecutablePath())) {
+    installPlan.push(false);
+    if (!shouldPreferWithDepsFirst && depsInstallSupported) {
+      installPlan.push(true);
+    }
+
+    for (const withDeps of installPlan) {
+      const installed = installer({ withDeps, browsersPath });
+      const executablePath = getExecutablePath();
+      if (installed && prober(executablePath)) {
         return true;
       }
-    } else if (wantsDepsInstall && !depsInstallSupported) {
+    }
+
+    if (wantsDepsInstall && !depsInstallSupported) {
       console.warn(
         'Skipping Playwright system dependency installation (insufficient privileges or package manager unavailable).',
       );
