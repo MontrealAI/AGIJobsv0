@@ -72,10 +72,28 @@ async function ensureAgialphaToken(): Promise<void> {
   const agiArtifact = await artifacts.readArtifact(
     'contracts/v2/mocks/LocalAgialpha.sol:LocalAgialpha'
   );
-  await network.provider.send('hardhat_setCode', [
-    AGIALPHA,
-    agiArtifact.deployedBytecode,
-  ]);
+  const setCodePayload = [AGIALPHA, agiArtifact.deployedBytecode];
+  const setCodeMethods = ['hardhat_setCode', 'anvil_setCode'];
+  let seeded = false;
+  for (const method of setCodeMethods) {
+    try {
+      await network.provider.send(method, setCodePayload);
+      seeded = true;
+      break;
+    } catch (err) {
+      const message = String((err as Error).message ?? err);
+      if (!message.toLowerCase().includes('method not found')) {
+        throw err;
+      }
+    }
+  }
+  if (!seeded) {
+    throw new Error(
+      `Unable to install LocalAgialpha stub: provider does not support ${setCodeMethods.join(
+        ' or '
+      )}`
+    );
+  }
 
   const [defaultSigner] = await ethers.getSigners();
   const token = await ethers.getContractAt(
