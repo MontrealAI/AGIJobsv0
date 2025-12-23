@@ -1,12 +1,25 @@
-"""Persistent knowledge lake implementation."""
+"""Persistent knowledge lake implementation.
+
+This module backs the ``grand_demo`` variant of the Alpha Node and is used by
+the CLI shim in ``run_alpha_node.py`` during tests. Historically it only
+supported vector storage via ``upsert``/``query`` and exported
+``KnowledgeItem``.  The primary package, however, relies on a higher-level
+``KnowledgeEntry`` dataclass with an ``add_entry`` helper.
+
+To keep the two flavours compatible – regardless of which package instance
+``sys.path`` resolves first – we provide a lightweight ``KnowledgeEntry`` here
+and a thin ``add_entry`` wrapper that persists entries using the existing
+vector store.  This keeps the deterministic retrieval used by the grand demo
+while allowing the CLI orchestrator to operate without import errors.
+"""
 from __future__ import annotations
 
 import json
 import logging
 import math
 import pathlib
-from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Tuple
+from dataclasses import asdict, dataclass, field
+from typing import Dict, Iterable, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +69,16 @@ class KnowledgeLake:
         self._save()
         logger.info("Upserted knowledge item", extra={"key": key})
 
+    def add_entry(self, entry: "KnowledgeEntry", *, embedding: Optional[Iterable[float]] = None) -> None:
+        """Persist a higher-level entry interface used by the primary CLI.
+
+        When an embedding is not provided we derive a simple, reproducible
+        vector from the entry's impact score.  This preserves similarity search
+        semantics without requiring a heavyweight model inside the demo.
+        """
+        vector = embedding or [entry.impact or 0.0] * self.embedding_dim
+        self.upsert(entry.topic, vector, payload={**asdict(entry)})
+
     def query(self, embedding: Iterable[float], top_k: int = 5) -> List[Tuple[KnowledgeItem, float]]:
         target = self._normalise(embedding)
         results: List[Tuple[KnowledgeItem, float]] = []
@@ -74,4 +97,14 @@ class KnowledgeLake:
             logger.info("Erased knowledge item", extra={"key": key})
 
 
-__all__ = ["KnowledgeLake", "KnowledgeItem"]
+@dataclass(slots=True)
+class KnowledgeEntry:
+    """Schema-compatible entry for the CLI orchestrator."""
+
+    topic: str
+    insight: str
+    impact: float
+    job_id: str
+
+
+__all__ = ["KnowledgeLake", "KnowledgeItem", "KnowledgeEntry"]
