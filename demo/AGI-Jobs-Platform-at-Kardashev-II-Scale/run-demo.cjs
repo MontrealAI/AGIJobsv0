@@ -156,6 +156,7 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   const availableGw = capturedGw + reserveGw;
   let breaches = 0;
   let totalDemand = 0;
+  let sumDemandSquared = 0;
   let peakDemand = 0;
   const samples = [];
 
@@ -185,6 +186,7 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
       peakDemand = demandGw;
     }
     totalDemand += demandGw;
+    sumDemandSquared += demandGw * demandGw;
     samples.push(demandGw);
   }
 
@@ -197,6 +199,9 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
 
   const breachProbability = breaches / runs;
   const p95Demand = percentile(0.95);
+  const meanDemandGw = totalDemand / runs;
+  const variance = Math.max(0, sumDemandSquared / runs - meanDemandGw * meanDemandGw);
+  const demandStdDevGw = Math.sqrt(variance);
   const freeEnergyMarginGw = availableGw - p95Demand;
   const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
   const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600; // convert GW headroom into GJ over a one-hour horizon
@@ -215,6 +220,13 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    meanDemandGw,
+    demandStdDevGw,
+    entropyMargin: demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw,
+    gameTheorySlack: Math.min(
+      1,
+      (1 - breachProbability) * 0.55 + hamiltonianStability * 0.45
+    ),
     gibbsFreeEnergyGj,
     hamiltonianStability,
     maintainsBuffer: freeEnergyMarginGw >= marginGw,
@@ -332,7 +344,9 @@ function main() {
   const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
-  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng);
+  const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? '', 10);
+  const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
+  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng, mcRuns);
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -377,6 +391,9 @@ function main() {
   );
   reportLines.push(
     `- **Free Energy Margin:** ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%) vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum buffer.`
+  );
+  reportLines.push(
+    `- **Entropy Buffer:** ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ thermodynamic headroom; game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%.`
   );
   reportLines.push(
     `- **Thermodynamic Reserve:** ${formatNumber(round(energyMonteCarlo.gibbsFreeEnergyGj, 2))} GJ Gibbs free energy; Hamiltonian stability ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}% across the sampled phase space.`
@@ -529,6 +546,9 @@ function main() {
     console.log(
       `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
     );
+    console.log(
+      `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
+    );
     return;
   }
 
@@ -541,6 +561,9 @@ function main() {
   );
   console.log(
     `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
+  );
+  console.log(
+    `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
   );
 }
 
