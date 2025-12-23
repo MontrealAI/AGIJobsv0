@@ -751,6 +751,35 @@ def test_node_suites_run_in_ci_mode(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert captured_env["npm_config_fund"] == "false"
 
 
+def test_node_suites_use_runtime_root_playwright_cache(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    demo_root = tmp_path / "demo"
+    tests_dir = demo_root / "example" / "tests"
+    tests_dir.mkdir(parents=True)
+
+    suite = run_demo_tests.Suite(demo_root=demo_root, tests_dir=tests_dir, runner="npm")
+    runtime_root = tmp_path / "runtime-root"
+    captured_env: dict[str, str] = {}
+
+    class _Result:
+        returncode = 0
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Result:
+        captured_env.update(kwargs.get("env", {}))
+        return _Result()
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+
+    exit_code, _ = run_demo_tests._run_suite(
+        suite, {"DEMO_RUNTIME_ROOT": str(runtime_root)}, timeout=1
+    )
+
+    assert exit_code == 0
+    cache_path = Path(captured_env["PLAYWRIGHT_BROWSERS_PATH"])
+    assert cache_path.is_relative_to(runtime_root / ".cache")
+
+
 def test_foundry_suites_set_ci_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "test"
