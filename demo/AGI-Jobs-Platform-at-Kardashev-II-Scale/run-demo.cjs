@@ -254,6 +254,49 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   return summary;
 }
 
+function softmaxScores(scores, temperature) {
+  if (!scores.length) {
+    return [];
+  }
+  const temp = Math.max(0.05, temperature);
+  const maxScore = Math.max(...scores);
+  const expScores = scores.map((score) => Math.exp((score - maxScore) / temp));
+  const total = expScores.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return scores.map(() => 1 / scores.length);
+  }
+  return expScores.map((value) => value / total);
+}
+
+function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
+  const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
+  const scores = shardMetrics.map((metric) => {
+    const utilisationPenalty = metric.utilisation / 100;
+    const latencyPenalty = Math.min(1, metric.settlementLagMinutes / 180);
+    return metric.resilience - 0.6 * utilisationPenalty - 0.2 * latencyPenalty;
+  });
+  const weights = softmaxScores(scores, temperature);
+  const availableGw = energyMonteCarlo.availableGw;
+  const allocations = shardMetrics.map((metric, idx) => {
+    const weight = weights[idx] ?? 0;
+    const payoff = Math.max(0.001, metric.resilience) * Math.max(0.1, 1 - metric.utilisation / 100);
+    return {
+      shardId: metric.shardId,
+      weight,
+      recommendedGw: availableGw * weight,
+      payoff,
+    };
+  });
+
+  const nashLog = allocations.reduce((sum, item) => sum + Math.log(item.payoff), 0);
+  const nashProduct = Math.exp(nashLog / Math.max(1, allocations.length));
+  return {
+    temperature,
+    nashProduct,
+    allocations,
+  };
+}
+
 function validateEnergyFeeds(energy) {
   if (!energy || !Array.isArray(energy.feeds) || energy.feeds.length === 0) {
     throw new Error('Energy feeds must include at least one region with nominal + buffer MW defined.');
@@ -420,6 +463,7 @@ function main() {
   const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? '', 10);
   const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
   const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng, mcRuns);
+  const allocationPolicy = computeAllocationPolicy(shardMetrics, energyMonteCarlo);
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -472,6 +516,9 @@ function main() {
     `- **Thermodynamic Reserve:** ${formatNumber(round(energyMonteCarlo.gibbsFreeEnergyGj, 2))} GJ Gibbs free energy; Hamiltonian stability ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}% across the sampled phase space.`
   );
   reportLines.push(
+    `- **Gibbs Allocation Temperature:** ${allocationPolicy.temperature.toFixed(2)} (lower favors resilience-heavy shards); Nash welfare ${(allocationPolicy.nashProduct * 100).toFixed(2)}%.`
+  );
+  reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
   );
   reportLines.push('');
@@ -489,6 +536,21 @@ function main() {
         `${metric.utilisation}%`,
       ]),
       ['Shard', 'Monthly Jobs', 'Active Validators', 'Settlement Lag', 'Resilience', 'Energy Utilisation']
+    )
+  );
+  reportLines.push('');
+
+  reportLines.push('## Thermodynamic Allocation Policy');
+  reportLines.push('');
+  reportLines.push(
+    toTable(
+      allocationPolicy.allocations.map((allocation) => [
+        allocation.shardId,
+        `${(allocation.weight * 100).toFixed(1)}%`,
+        formatNumber(round(allocation.recommendedGw, 2)),
+        round(allocation.payoff, 3),
+      ]),
+      ['Shard', 'Boltzmann Weight', 'Recommended GW', 'Nash Payoff']
     )
   );
   reportLines.push('');
@@ -536,6 +598,7 @@ function main() {
     sentinelFindings,
     dyson,
     energyMonteCarlo,
+    allocationPolicy,
     configs: {
       knowledgeGraph: fabric.knowledgeGraph,
       energyOracle: fabric.energyOracle,
