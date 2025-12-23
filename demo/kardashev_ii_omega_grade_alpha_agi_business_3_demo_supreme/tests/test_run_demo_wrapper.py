@@ -36,3 +36,46 @@ def test_run_demo_accepts_injected_main_fn():
     demo_runner.run(["--alpha", "--beta"], main_fn=fake_main)
 
     assert captured_args == [["--alpha", "--beta"]]
+
+
+def test_run_demo_injects_fast_defaults():
+    """Ensure default runs finish quickly by injecting short-cycle args."""
+
+    captured_args: list[list[str]] = []
+
+    demo_runner.run(argv=[], main_fn=lambda argv: captured_args.append(list(argv)))
+
+    assert captured_args, "run_demo should supply a default argument set"
+    args = captured_args[0]
+    assert "--cycles" in args
+    assert "--validator_commit_delay_seconds" in args
+    assert "--validator_reveal_delay_seconds" in args
+
+
+def test_status_snapshot_reports_paths(tmp_path):
+    """Expose orchestration paths for operator-friendly summaries."""
+
+    from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo_supreme import (
+        SupremeDemoConfig,
+        SupremeOrchestrator,
+    )
+
+    config = SupremeDemoConfig(
+        cycles=1,
+        log_path=tmp_path / "logs.jsonl",
+        structured_metrics_path=tmp_path / "metrics.jsonl",
+        mermaid_dashboard_path=tmp_path / "dash.mmd",
+        job_history_path=tmp_path / "history.jsonl",
+        checkpoint_path=tmp_path / "state.json",
+        bus_history_path=tmp_path / "bus.jsonl",
+        resume_from_checkpoint=False,
+    )
+
+    orchestrator = SupremeOrchestrator(config)
+    snapshot = orchestrator.status_snapshot()
+
+    assert snapshot["cycles"] == 0
+    assert snapshot["jobs_total"] == 0
+    assert snapshot["log_path"] == str(config.log_path)
+    assert snapshot["dashboard_path"] == str(config.mermaid_dashboard_path)
+    assert snapshot["job_history_path"] == str(config.job_history_path)

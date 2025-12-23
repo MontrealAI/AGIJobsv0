@@ -89,12 +89,31 @@ def _build_config_from_args(args: argparse.Namespace) -> SupremeDemoConfig:
     return config
 
 
+async def _run_and_report(config: SupremeDemoConfig) -> None:
+    orchestrator = SupremeOrchestrator(config)
+    await orchestrator.run()
+    snapshot = orchestrator.status_snapshot()
+    print(
+        "\n✅ Supreme Omega-grade demo completed.",
+        f"Cycles: {snapshot['cycles']}",
+        f"Jobs posted: {snapshot['jobs_total']} (active {snapshot['jobs_active']})",
+        sep="\n",
+    )
+    print(
+        "Artifacts:",
+        f" - Structured logs: {snapshot['log_path']}",
+        f" - Metrics snapshot: {snapshot['metrics_path']}",
+        f" - Mermaid dashboard: {snapshot['dashboard_path']}",
+        f" - Job history: {snapshot['job_history_path']}",
+        sep="\n",
+    )
+
+
 def run_from_cli(args: Optional[argparse.Namespace] = None) -> None:
     parser = build_arg_parser()
     parsed = args or parser.parse_args()
     config = _build_config_from_args(parsed)
-    orchestrator = SupremeOrchestrator(config)
-    asyncio.run(orchestrator.run())
+    asyncio.run(_run_and_report(config))
 
 
 __all__ = ["build_arg_parser", "run_from_cli"]
