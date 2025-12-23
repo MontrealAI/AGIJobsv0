@@ -31,6 +31,13 @@ const MIME_TYPES = {
 
 const ADDRESS_REGEX = /^0x[0-9a-fA-F]{40}$/;
 
+function parseBoolean(value, defaultValue = false) {
+  if (value === undefined || value === null) return defaultValue;
+  const normalised = String(value).trim().toLowerCase();
+  if (!normalised) return defaultValue;
+  return ['1', 'true', 'yes', 'on'].includes(normalised);
+}
+
 function parseAbsoluteUrl(value) {
   if (!value) {
     return null;
@@ -311,6 +318,8 @@ async function assertPortsAvailable(config) {
 }
 
 function resolveConfig(env, options = {}) {
+  const allowPartialFromEnv = parseBoolean(env.ONEBOX_ALLOW_PARTIAL) || parseBoolean(env.ONEBOX_DEMO_MODE);
+  const allowPartial = options.allowPartial ?? allowPartialFromEnv;
   const missing = [];
   const warnings = [];
   for (const key of REQUIRED_ENV_KEYS) {
@@ -320,7 +329,7 @@ function resolveConfig(env, options = {}) {
       missing.push(key);
     }
   }
-  if (missing.length && !options.allowPartial) {
+  if (missing.length && !allowPartial) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
@@ -472,13 +481,16 @@ function resolveConfig(env, options = {}) {
     stakeManagerAddress,
     systemPauseAddress,
     agentAddress,
+    allowPartial,
   };
 }
 
 function createDemoUrl(config) {
   const base = `${buildOrigin(config.uiHost, config.uiPort)}/`;
   const params = new URLSearchParams();
-  params.set('orchestrator', config.publicOrchestratorUrl);
+  if (config.publicOrchestratorUrl) {
+    params.set('orchestrator', config.publicOrchestratorUrl);
+  }
   if (config.prefix) {
     params.set('oneboxPrefix', config.prefix);
   }
@@ -727,7 +739,10 @@ async function runDemo(options = {}) {
   const rootDir = options.rootDir ?? path.resolve(__dirname, '../../');
   const demoDir = options.demoDir ?? __dirname;
   const env = loadEnvironment({ rootDir, demoDir });
-  const config = resolveConfig(env, options);
+  const demoMode = options.demoMode ?? parseBoolean(env.ONEBOX_DEMO_MODE);
+  const allowPartial = options.allowPartial ?? demoMode ?? parseBoolean(env.ONEBOX_ALLOW_PARTIAL);
+  const staticOnly = options.staticOnly ?? false;
+  const config = resolveConfig(env, { ...options, allowPartial });
 
   const portDiagnostics = await assertPortsAvailable(config);
   const additionalWarnings = portDiagnostics
@@ -745,14 +760,35 @@ async function runDemo(options = {}) {
   await ensureInstall(rootDir);
   await buildStaticAssets(rootDir, env);
 
-  const orchestratorProcess = startOrchestrator(rootDir, env, config);
+  const shouldUseStaticOnly = staticOnly || demoMode || (config.allowPartial && config.missing.length > 0);
+
+  let orchestratorProcess = null;
+  if (!shouldUseStaticOnly && config.missing.length === 0) {
+    orchestratorProcess = startOrchestrator(rootDir, env, config);
+  } else {
+    const missingVars = config.missing.join(', ');
+    const modeLabel = demoMode ? 'demo' : 'static';
+    if (config.missing.length > 0) {
+      console.warn(
+        `[onebox] Missing required environment (${missingVars}). Starting in ${modeLabel} mode without the orchestrator.`,
+      );
+    } else {
+      console.warn(`[onebox] ${modeLabel} mode enabled. Skipping orchestrator startup.`);
+    }
+    config.publicOrchestratorUrl =
+      options.publicOrchestratorUrl ?? env.ONEBOX_PUBLIC_ORCHESTRATOR_URL ?? '';
+  }
   const server = await startStaticServer(path.join(rootDir, 'apps/onebox-static/dist'), config);
   const demoUrl = createDemoUrl(config);
 
   console.log('');
   console.log('🎖️  AGI Jobs One-Box demo ready');
   console.log(`   • UI:        ${demoUrl}`);
-  console.log(`   • Orchestrator API: http://${config.uiHost}:${config.orchestratorPort}/onebox`);
+  if (orchestratorProcess) {
+    console.log(`   • Orchestrator API: http://${config.uiHost}:${config.orchestratorPort}/onebox`);
+  } else {
+    console.log('   • Orchestrator API: static-mode (UI demo only)');
+  }
   if (config.maxJobBudgetAgia || config.maxJobDurationDays) {
     console.log('   • Guardrails:');
     if (config.maxJobBudgetAgia) {
@@ -805,7 +841,7 @@ async function runDemo(options = {}) {
     } catch (error) {
       // ignore
     }
-    if (!orchestratorProcess.killed) {
+    if (orchestratorProcess && !orchestratorProcess.killed) {
       orchestratorProcess.kill('SIGINT');
       await once(orchestratorProcess, 'exit').catch(() => {});
     }
@@ -815,15 +851,17 @@ async function runDemo(options = {}) {
   process.once('SIGINT', shutdown);
   process.once('SIGTERM', shutdown);
 
-  orchestratorProcess.on('exit', (code) => {
-    console.log('[onebox] Orchestrator process exited', code);
-    try {
-      server.close();
-    } catch (error) {
-      // ignore
-    }
-    process.exit(code ?? 0);
-  });
+  if (orchestratorProcess) {
+    orchestratorProcess.on('exit', (code) => {
+      console.log('[onebox] Orchestrator process exited', code);
+      try {
+        server.close();
+      } catch (error) {
+        // ignore
+      }
+      process.exit(code ?? 0);
+    });
+  }
 
   return { config, demoUrl, orchestratorProcess, server };
 }
