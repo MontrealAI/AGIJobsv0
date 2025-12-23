@@ -41,8 +41,27 @@ function isDepsInstallExplicitlyDisabled(env = process.env) {
   return normalized === '0' || normalized === 'false';
 }
 
-function hasBinary(binary) {
-  return spawnSync('which', [binary], { stdio: 'ignore' }).status === 0;
+function hasBinary(binary, platform = process.platform) {
+  // Prefer shell built-ins so we avoid PATH lookups failing when minimal
+  // environments omit helper binaries such as ``which`` (common in Alpine or
+  // busybox images). Fall back to ``which`` on POSIX hosts to preserve
+  // compatibility with environments that disallow shell execution.
+  const shellCommand = platform === 'win32' ? 'where' : 'command';
+  const shellArgs = platform === 'win32' ? [binary] : ['-v', binary];
+  const primary = spawnSync(shellCommand, shellArgs, {
+    stdio: 'ignore',
+    shell: true,
+  });
+  if (primary.status === 0) {
+    return true;
+  }
+
+  if (platform !== 'win32') {
+    const fallback = spawnSync('which', [binary], { stdio: 'ignore' });
+    return fallback.status === 0;
+  }
+
+  return false;
 }
 
 function arePlaywrightDepsReady({ binaryCheck = hasBinary, fsProbe = fs.existsSync } = {}) {
@@ -290,6 +309,7 @@ function main(options = {}) {
 module.exports = {
   buildPlaywrightEnv,
   canInstallPlaywrightDeps,
+  hasBinary,
   ensureChromiumAvailable,
   hasWorkingChromium,
   installChromium,
