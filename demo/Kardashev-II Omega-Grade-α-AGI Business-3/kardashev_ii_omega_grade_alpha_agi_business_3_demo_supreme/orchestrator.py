@@ -580,4 +580,19 @@ class SupremeOrchestrator(SupremeOrchestratorProtocol):
         if self._simulation_plugins and self.simulation is None:
             self.simulation = self._simulation_plugins[0]
 
+    def status_snapshot(self) -> Dict[str, Any]:
+        """Return a lightweight snapshot suitable for CLI summaries."""
+
+        return {
+            "cycles": self._metadata.get("cycles", 0),
+            "jobs_total": len(self.registry.all_jobs()),
+            "jobs_active": len(self.registry.active_jobs()),
+            "energy_reserve": self.resources.energy_reserve,
+            "compute_reserve": self.resources.compute_reserve,
+            "log_path": str(self._log_path),
+            "metrics_path": str(self.resources.snapshot_path) if self.resources.snapshot_path else None,
+            "dashboard_path": str(self.config.mermaid_dashboard_path),
+            "job_history_path": str(self._job_history_path),
+        }
+
 __all__ = ["SupremeOrchestrator"]
