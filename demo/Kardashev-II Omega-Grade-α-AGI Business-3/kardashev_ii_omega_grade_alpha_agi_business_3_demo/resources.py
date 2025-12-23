@@ -343,6 +343,8 @@ class ResourceManager:
                     compute_quota=compute_quota,
                 )
 
+        restored_token_supply = sum(account.tokens for account in restored_accounts.values())
+
         if "energy_capacity" in state_payload:
             self._base_energy_capacity = max(0.0, float(state_payload["energy_capacity"]))
         if "compute_capacity" in state_payload:
@@ -370,16 +372,15 @@ class ResourceManager:
 
         if "token_supply" in state_payload:
             self.token_supply = float(state_payload["token_supply"])
-        elif restored_accounts:
-            self.token_supply = sum(account.tokens for account in restored_accounts.values())
+        else:
+            self.token_supply = restored_token_supply
         if "energy_price" in state_payload:
             self.energy_price = max(0.0, float(state_payload["energy_price"]))
         if "compute_price" in state_payload:
             self.compute_price = max(0.0, float(state_payload["compute_price"]))
 
         self._reservations = reservations
-        if restored_accounts:
-            self._accounts = restored_accounts
+        self._accounts = restored_accounts
         self.energy_available = min(self.energy_available, max_energy_available)
         self.compute_available = min(self.compute_available, max_compute_available)
         self._rebalance_prices()

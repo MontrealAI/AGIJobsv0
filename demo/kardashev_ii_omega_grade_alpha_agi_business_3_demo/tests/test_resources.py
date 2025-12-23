@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.resources import ResourceManager
 
 
@@ -56,3 +58,28 @@ def test_restore_state_rehydrates_accounts_from_serialized_payload() -> None:
     assert restored.energy_capacity == 500
     assert restored.compute_capacity == 800
     assert restored.reservation_for("job-42") == (40, 60)
+
+
+def test_restore_state_clears_accounts_and_ledger_when_absent() -> None:
+    manager = ResourceManager(energy_capacity=1_000, compute_capacity=1_000, base_token_supply=0)
+    manager.adjust_account("validator-1", tokens=500, locked=200, energy_quota=50, compute_quota=75)
+    manager.reserve_budget("job-old", energy=100, compute=150)
+
+    payload = {
+        "state": {
+            "energy_capacity": 2_000,
+            "compute_capacity": 3_000,
+            "energy_available": 1_500,
+            "compute_available": 2_500,
+        }
+    }
+
+    manager.restore_state(payload)
+
+    with pytest.raises(KeyError):
+        manager.get_account("validator-1")
+    assert manager.token_supply == 0
+    assert manager.reserved_energy == 0
+    assert manager.reserved_compute == 0
+    assert manager.energy_available == 1_500
+    assert manager.compute_available == 2_500
