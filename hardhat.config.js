@@ -84,6 +84,7 @@ const isCoverageRun =
   process.env.HARDHAT_COVERAGE === '1';
 const isFastCompile = process.env.HARDHAT_FAST_COMPILE === '1';
 const viaIROverride = process.env.HARDHAT_VIA_IR;
+const jobRegistryViaIROverride = process.env.HARDHAT_JOBREGISTRY_VIA_IR;
 // Prefer viaIR to avoid stack-depth issues in larger contracts. Allow explicit
 // opt-out via HARDHAT_VIA_IR=false. Fast compile runs keep viaIR enabled by
 // default to preserve correctness while other toggles (like reduced compiler
@@ -92,9 +93,15 @@ const baseViaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride =
 const compilerViaIR = baseViaIR;
 
 // JobRegistry relies on viaIR to avoid stack depth issues in several
-// configuration and settlement paths, so keep it enabled even during fast
-// compiles.
-const jobRegistryViaIR = compilerViaIR;
+// configuration and settlement paths. Default to enabling viaIR for that
+// contract even when the global compiler flag is disabled, while allowing an
+// explicit override for specialised builds.
+const jobRegistryViaIR =
+  jobRegistryViaIROverride === 'true'
+    ? true
+    : jobRegistryViaIROverride === 'false'
+      ? false
+      : true;
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 

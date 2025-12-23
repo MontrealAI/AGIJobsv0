@@ -30,20 +30,6 @@ type GovernanceAction = {
   after?: Record<string, string>;
 };
 
-type ThermostatConfig = {
-  systemTemperature?: string | number;
-  temperatureBounds?: { min: string | number; max: string | number };
-  integralBounds?: { min: string | number; max: string | number };
-  pid?: { kp: string | number; ki: string | number; kd: string | number };
-  kpiWeights?: {
-    emission: string | number;
-    backlog: string | number;
-    sla: string | number;
-  };
-  roleTemperatures?: Record<string, string | number>;
-  unsetRoleTemperatures?: string[];
-};
-
 type ThermostatUpdate = {
   action: string;
   before: string;
@@ -158,6 +144,8 @@ type ThermostatConfig = {
   };
   roleTemperatures?: Record<string, string | number>;
   unsetRoleTemperatures?: string[];
+};
+
 type MissionConfig = {
   version?: string;
   scope?: string;
@@ -728,18 +716,17 @@ async function main() {
     thermostatConfigPath !== null
       ? readJsonFile<ThermostatConfig>(thermostatConfigPath)
       : null;
-  const validatorCount = spec.validation.n;
-  const quorum = spec.validation.k;
   const baseSpec = readJsonFile<Spec>(SPEC_PATH);
+  if (!baseSpec.validation || !baseSpec.validation.k || !baseSpec.validation.n) {
+    throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
+  }
+
   const missionConfig =
     MISSION_CONFIG_PATH && fs.existsSync(MISSION_CONFIG_PATH)
       ? readJsonFile<MissionConfig>(MISSION_CONFIG_PATH)
       : null;
   if (missionConfig?.scope && !process.env.AURORA_REPORT_SCOPE) {
     REPORT_SCOPE = missionConfig.scope;
-  const spec = readJsonFile<Spec>(SPEC_PATH);
-  if (!spec.validation || !spec.validation.k || !spec.validation.n) {
-    throw new Error('Validation quorum (k-of-n) must be defined in the spec.');
   }
 
   const missionJobs =
@@ -826,9 +813,6 @@ async function main() {
     createNonceManagedSigner(provider, key)
   );
 
-  const thermostatConfig = fs.existsSync(THERMOSTAT_CONFIG_PATH)
-    ? readJsonFile<ThermostatConfig>(THERMOSTAT_CONFIG_PATH)
-    : null;
   const agentRole = 0;
   const validatorRole = 1;
   const platformRole = 2;
@@ -861,15 +845,6 @@ async function main() {
       )
     );
 
-  const jobRegistryArtifact = artifact('JobRegistry');
-  const stakeManagerArtifact = artifact('StakeManager');
-  const validationModuleArtifact = artifact('ValidationModule');
-  const identityRegistryArtifact = artifact('IdentityRegistry');
-  const systemPauseArtifact = artifact('SystemPause');
-  const thermostatArtifact =
-    thermostatAddress && thermostatAddress !== ethers.ZeroAddress
-      ? artifact('Thermostat')
-      : null;
   const jobRegistryArtifact = loadArtifact('JobRegistry');
   const stakeManagerArtifact = loadArtifact('StakeManager');
   const validationModuleArtifact = loadArtifact('ValidationModule');
@@ -907,12 +882,6 @@ async function main() {
   const thermostat =
     thermostatArtifact && thermostatAddress
       ? new ethers.Contract(thermostatAddress, thermostatArtifact.abi, employer)
-    thermostatAddress && thermostatArtifact
-      ? new ethers.Contract(
-          thermostatAddress,
-          thermostatArtifact.abi,
-          employer
-        )
       : null;
 
   const recordForwardGovernanceCall = async (
@@ -1006,9 +975,6 @@ async function main() {
     );
     const requiredAllowance =
       wallet === employer ? mintAmount + totalReward : mintAmount;
-      wallet.address.toLowerCase() === employer.address.toLowerCase()
-        ? mintAmount + rewardAmount + validatorStakeAmount
-        : mintAmount;
     if (allowance < requiredAllowance) {
       const approveTx = await token
         .connect(wallet)
@@ -1049,11 +1015,6 @@ async function main() {
     maxValidatorStake / 2n > 0n ? maxValidatorStake / 2n : 1n;
   const adjustedPlatformMinimum =
     maxValidatorStake / 4n > 0n ? maxValidatorStake / 4n : 1n;
-    workerStakeAmount / 2n > 0n ? workerStakeAmount / 2n : 1n;
-  const adjustedValidatorMinimum =
-    validatorStakeAmount / 2n > 0n ? validatorStakeAmount / 2n : 1n;
-  const adjustedPlatformMinimum =
-    validatorStakeAmount / 4n > 0n ? validatorStakeAmount / 4n : 1n;
   const stakeMinimumAdjusted = {
     agent: adjustedAgentMinimum,
     validator: adjustedValidatorMinimum,
@@ -1118,6 +1079,7 @@ async function main() {
   }
 
   let identityCleanup: (() => Promise<void>) | null = null;
+  let identityReady = true;
   try {
     const identityOwnerAddress = await identityRegistry.owner();
     const normalisedIdentityOwner = identityOwnerAddress
@@ -1160,6 +1122,7 @@ async function main() {
       );
     }
   } catch (err) {
+    identityReady = false;
     console.warn(
       '⚠️  Unable to apply identity overrides automatically:',
       (err as Error).message
@@ -1168,19 +1131,19 @@ async function main() {
     if (identityCleanup) {
       await identityCleanup();
     }
-  await recordDirectGovernanceCall(
-    'IdentityRegistry',
-    'addAdditionalAgent',
-    () => identityRegistry.addAdditionalAgent(worker.address),
-    'Whitelist flagship worker identity'
-  );
-  for (const validator of validators) {
-    await recordDirectGovernanceCall(
-      'IdentityRegistry',
-      'addAdditionalValidator',
-      () => identityRegistry.addAdditionalValidator(validator.address),
-      'Whitelist validator for demo quorum'
+  }
+
+  if (!identityReady) {
+    writeReceipt(networkName, 'mission.json', {
+      scope: REPORT_SCOPE,
+      version: missionConfig?.version || '1.0',
+      description: missionConfig?.description,
+      jobs: [],
+    });
+    console.warn(
+      '⚠️  Skipping mission execution because identity overrides could not be applied.'
     );
+    return;
   }
 
   const validationInterface = new ethers.Interface(
@@ -1192,10 +1155,6 @@ async function main() {
   const validatorsPerJobCount = Math.max(3, validatorCount);
   const minValidatorsBound = Math.max(3, quorum);
   const maxValidatorsBound = Math.max(minValidatorsBound, validatorsPerJobCount);
-  const thermostatInterface = new ethers.Interface(thermostatArtifact.abi);
-  const thermostatInterface = thermostatArtifact
-    ? new ethers.Interface(thermostatArtifact.abi)
-    : null;
 
   await recordForwardGovernanceCall(
     'ValidationModule',
@@ -1272,8 +1231,6 @@ async function main() {
     amount: string;
     txHash: string;
   }> = [];
-  const agentRole = 0;
-  const validatorRole = 1;
 
   const workerStakeTx = await stakeManager
     .connect(worker)
@@ -1301,27 +1258,6 @@ async function main() {
 
   writeReceipt(networkName, 'stake.json', { entries: stakeEntries });
 
-  const specHash = ethers.keccak256(
-    ethers.toUtf8Bytes(JSON.stringify(spec, Object.keys(spec).sort()))
-  );
-  const specUri =
-    process.env.AURORA_SPEC_URI ||
-    spec.acceptanceCriteriaURI ||
-    'ipfs://aurora-demo-spec';
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
-
-  const postTx = await jobRegistry
-    .connect(employer)
-    .acknowledgeAndCreateJob(rewardAmount, Number(deadline), specHash, specUri);
-  const postReceipt = await postTx.wait();
-  let jobId = 0n;
-  if (postReceipt && postReceipt.logs) {
-    for (const log of postReceipt.logs) {
-      try {
-        const parsed = jobRegistry.interface.parseLog(log);
-        if (parsed.name === 'JobCreated') {
-          jobId = parsed.args.jobId as bigint;
-          break;
   const trackAddresses = [
     employer.address,
     worker.address,
@@ -1378,43 +1314,6 @@ async function main() {
     if (jobId === 0n) {
       jobId = 1n;
     }
-  }
-  if (jobId === 0n) {
-    jobId = 1n;
-  }
-
-  writeReceipt(networkName, 'postJob.json', {
-    jobId: jobId.toString(),
-    txHash: postReceipt?.hash || postTx.hash,
-    reward: formatUnits(rewardAmount, decimals),
-    deadline: deadline.toString(),
-    specHash,
-    specPath: specPath,
-    specURI: specUri,
-    specUri,
-  });
-
-  const subdomain =
-    process.env.AURORA_AGENT_SUBDOMAIN || 'aurora-agent';
-  const applyTx = await jobRegistry
-    .connect(worker)
-    .acknowledgeAndApply(jobId, subdomain, []);
-  await applyTx.wait();
-
-  const resultUri =
-    process.env.AURORA_RESULT_URI || 'ipfs://aurora-demo-result';
-  const resultHash = ethers.keccak256(ethers.toUtf8Bytes(resultUri));
-  const submitTx = await jobRegistry
-    .connect(worker)
-    .submit(jobId, resultHash, resultUri, subdomain, []);
-  const submitReceipt = await submitTx.wait();
-
-  writeReceipt(networkName, 'submit.json', {
-    worker: worker.address,
-    txHash: submitReceipt?.hash || submitTx.hash,
-    resultURI: resultUri,
-    resultHash,
-  });
     const postRecord = {
       jobId: jobId.toString(),
       txHash: postReceipt?.hash || postTx.hash,
@@ -1455,6 +1354,8 @@ async function main() {
     const nonce = (await validationModule.jobNonce(jobId)).valueOf() as bigint;
     const specHashOnChain = await jobRegistry.getSpecHash(jobId);
     const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
+    const validatorSubdomain =
+      process.env.AURORA_VALIDATOR_SUBDOMAIN || 'aurora-validator';
     const commitRecords: Array<{
       address: string;
       commitTx: string;
@@ -1465,70 +1366,6 @@ async function main() {
 
     for (const validator of validators) {
       const plan = deriveCommitPlan(
-  const nonce = (await validationModule.jobNonce(jobId)) as bigint;
-  const specHashOnChain = await jobRegistry.getSpecHash(jobId);
-  const domainSeparator = await validationModule.DOMAIN_SEPARATOR();
-  const validatorSubdomain =
-    process.env.AURORA_VALIDATOR_SUBDOMAIN || 'aurora-validator';
-  const commitRecords: Array<{
-    address: string;
-    commitTx: string;
-    revealTx: string;
-    commitHash: string;
-    salt: string;
-  }> = [];
-
-  for (const validator of validators) {
-    const plan = deriveCommitPlan(
-      jobId,
-      true,
-      validator.address,
-      nonce,
-      specHashOnChain,
-      chain.chainId,
-      domainSeparator
-    );
-    const commitTx = await validationModule
-      .connect(validator)
-      .commitValidation(jobId, plan.commitHash, validatorSubdomain, []);
-    const commitReceipt = await commitTx.wait();
-    const revealTx = await validationModule
-      .connect(validator)
-      .revealValidation(
-        jobId,
-        true,
-        plan.burnTxHash,
-        plan.salt,
-        validatorSubdomain,
-        []
-      );
-    const revealReceipt = await revealTx.wait();
-    commitRecords.push({
-      address: validator.address,
-      commitTx: commitReceipt?.hash || commitTx.hash,
-      revealTx: '',
-      commitHash: plan.commitHash,
-      salt: plan.salt,
-    });
-  }
-
-  const commitWindowSeconds = Number(await validationModule.commitWindow());
-  await advanceTime(provider, commitWindowSeconds + 1);
-
-  for (let i = 0; i < validators.length; i++) {
-    const validator = validators[i];
-    const plan = deriveCommitPlan(
-      jobId,
-      true,
-      validator.address,
-      nonce,
-      specHashOnChain,
-      chain.chainId,
-      domainSeparator
-    );
-    const revealTx = await validationModule
-      .connect(validator)
-      .revealValidation(
         jobId,
         true,
         validator.address,
@@ -1539,8 +1376,31 @@ async function main() {
       );
       const commitTx = await validationModule
         .connect(validator)
-        .commitValidation(jobId, plan.commitHash, 'aurora-validator', []);
+        .commitValidation(jobId, plan.commitHash, validatorSubdomain, []);
       const commitReceipt = await commitTx.wait();
+      commitRecords.push({
+        address: validator.address,
+        commitTx: commitReceipt?.hash || commitTx.hash,
+        revealTx: '',
+        commitHash: plan.commitHash,
+        salt: plan.salt,
+      });
+    }
+
+    const commitWindowSeconds = Number(await validationModule.commitWindow());
+    await advanceTime(provider, commitWindowSeconds + 1);
+
+    for (let i = 0; i < validators.length; i++) {
+      const validator = validators[i];
+      const plan = deriveCommitPlan(
+        jobId,
+        true,
+        validator.address,
+        nonce,
+        specHashOnChain,
+        chain.chainId,
+        domainSeparator
+      );
       const revealTx = await validationModule
         .connect(validator)
         .revealValidation(
@@ -1548,21 +1408,12 @@ async function main() {
           true,
           plan.burnTxHash,
           plan.salt,
-          'aurora-validator',
+          validatorSubdomain,
           []
         );
       const revealReceipt = await revealTx.wait();
-      commitRecords.push({
-        address: validator.address,
-        commitTx: commitReceipt?.hash || commitTx.hash,
-        revealTx: revealReceipt?.hash || revealTx.hash,
-        commitHash: plan.commitHash,
-        salt: plan.salt,
-      });
+      commitRecords[i].revealTx = revealReceipt?.hash || revealTx.hash;
     }
-    const revealReceipt = await revealTx.wait();
-    commitRecords[i].revealTx = revealReceipt?.hash || revealTx.hash;
-  }
 
     const balancesBefore = new Map<string, bigint>();
     for (const addr of trackAddresses) {
@@ -1594,19 +1445,6 @@ async function main() {
       finalizeTx: finalizeReceipt?.hash || finalizeTx.hash,
       commits: commitRecords.length,
       reveals: commitRecords.length,
-  const finalizeTx = await validationModule
-    .connect(validators[0])
-    .finalize(jobId);
-  const finalizeReceipt = await finalizeTx.wait();
-
-  const payouts: Record<string, { before: string; after: string; delta: string }> = {};
-  for (const addr of trackAddresses) {
-    const before = balancesBefore.get(addr) || 0n;
-    const after = await token.balanceOf(addr);
-    payouts[addr] = {
-      before: formatUnits(before, decimals),
-      after: formatUnits(after, decimals),
-      delta: formatUnits(after - before, decimals),
     };
     writeReceipt(
       networkName,
@@ -1660,10 +1498,6 @@ async function main() {
     jobs: missionRecords,
   });
 
-  if (thermostatConfig && thermostat && thermostatInterface) {
-    await applyThermostatConfig(
-      networkName,
-      systemPause,
   let thermostatUpdates: ThermostatUpdate[] = [];
   if (thermostatConfig && thermostat && thermostatInterface) {
     thermostatUpdates = await applyThermostatConfig(
