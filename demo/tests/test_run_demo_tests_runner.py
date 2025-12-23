@@ -254,6 +254,35 @@ def test_playwright_dep_readiness_requires_xvfb(
     assert run_demo_tests._playwright_system_deps_ready() is False
 
 
+def test_playwright_cache_uses_shared_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    package_root = tmp_path / "phase8"
+    tests_dir = package_root / "tests"
+    tests_dir.mkdir(parents=True)
+    (package_root / "package.json").write_text(
+        json.dumps({"scripts": {"test": "playwright test"}, "devDependencies": {"@playwright/test": "1.0.0"}})
+    )
+
+    suite = run_demo_tests.Suite(demo_root=package_root, tests_dir=tests_dir, runner="npm")
+    shared_cache = tmp_path / "shared-playwright-cache"
+    monkeypatch.setenv("DEMO_PLAYWRIGHT_CACHE", str(shared_cache))
+
+    captured_env: dict[str, str] = {}
+
+    def fake_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        captured_env.update(kwargs.get("env", {}))
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(run_demo_tests.subprocess, "run", fake_run)
+
+    exit_code, _ = run_demo_tests._run_suite(
+        suite, run_demo_tests._configure_runtime_env(tmp_path), capture_output=True
+    )
+
+    assert exit_code == 0
+    assert captured_env["PLAYWRIGHT_BROWSERS_PATH"] == str(shared_cache)
+    assert shared_cache.exists()
+
+
 def test_top_level_tests_pythonpath_includes_demo_root(tmp_path: Path) -> None:
     demo_root = tmp_path / "demo"
     tests_dir = demo_root / "tests"
@@ -797,7 +826,11 @@ def test_node_suites_use_runtime_root_playwright_cache(
 
     assert exit_code == 0
     cache_path = Path(captured_env["PLAYWRIGHT_BROWSERS_PATH"])
-    assert cache_path.is_relative_to(runtime_root / ".cache")
+    expected_cache = Path(
+        os.environ.get("DEMO_PLAYWRIGHT_CACHE", Path.home() / ".cache" / "agi-jobs-demo" / "ms-playwright")
+    )
+    assert cache_path == expected_cache
+    assert cache_path.exists()
 
 
 def test_foundry_suites_set_ci_profile(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
