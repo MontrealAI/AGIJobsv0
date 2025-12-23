@@ -31,3 +31,28 @@ def test_restore_state_rehydrates_reservations_and_clamps_availability():
     # Availability should never exceed the residual capacity after reservations.
     assert restored.energy_available == restored.energy_capacity - restored.reserved_energy
     assert restored.compute_available == restored.compute_capacity - restored.reserved_compute
+
+
+def test_restore_state_rehydrates_accounts_from_serialized_payload() -> None:
+    manager = ResourceManager(energy_capacity=500, compute_capacity=800, base_token_supply=0)
+    manager.adjust_account(
+        "validator-1", tokens=300, locked=120, energy_quota=50, compute_quota=75
+    )
+    manager.adjust_account("validator-2", tokens=50, locked=0, energy_quota=20, compute_quota=10)
+    manager.reserve_budget("job-42", energy=40, compute=60)
+
+    serialized = manager.to_serializable()
+
+    restored = ResourceManager(energy_capacity=0, compute_capacity=0, base_token_supply=0)
+    restored.restore_state(serialized)
+
+    restored_validator = restored.get_account("validator-1")
+    assert restored_validator.tokens == 300
+    assert restored_validator.locked == 120
+    assert restored_validator.energy_quota == 50
+    assert restored_validator.compute_quota == 75
+    assert restored.token_supply == serialized["state"]["token_supply"]
+    assert restored.locked_supply == 120
+    assert restored.energy_capacity == 500
+    assert restored.compute_capacity == 800
+    assert restored.reservation_for("job-42") == (40, 60)
