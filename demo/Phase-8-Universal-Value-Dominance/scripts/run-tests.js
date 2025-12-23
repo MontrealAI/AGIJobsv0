@@ -142,25 +142,28 @@ function ensureChromiumAvailable({
   const { chromium } = require('@playwright/test');
   const getExecutablePath = () => chromium.executablePath();
   const systemDepsReady = depsProbe();
-  const shouldInstallDeps = installWithDeps && !systemDepsReady;
+  const wantsDepsInstall = installWithDeps;
+  const depsInstallSupported = wantsDepsInstall && canInstallDeps();
+  const chromiumReady = () => prober(getExecutablePath());
 
-  if (prober(getExecutablePath())) {
+  if (chromiumReady()) {
     return true;
   }
 
   if (autoInstall) {
     const installedWithoutDeps = installer({ withDeps: false, browsersPath });
-    if (installedWithoutDeps && prober(getExecutablePath())) {
+    const executablePath = getExecutablePath();
+    if (installedWithoutDeps && prober(executablePath)) {
       return true;
     }
-    if (shouldInstallDeps && canInstallDeps()) {
+    const shouldRetryWithDeps =
+      depsInstallSupported && (!systemDepsReady || installedWithoutDeps || !prober(executablePath));
+    if (shouldRetryWithDeps) {
       const installedWithDeps = installer({ withDeps: true, browsersPath });
       if (installedWithDeps && prober(getExecutablePath())) {
         return true;
       }
-    } else if (installWithDeps && !shouldInstallDeps) {
-      console.warn('Detected Playwright system dependencies; skipping --with-deps reinstall.');
-    } else if (installWithDeps) {
+    } else if (wantsDepsInstall && !depsInstallSupported) {
       console.warn(
         'Skipping Playwright system dependency installation (insufficient privileges or package manager unavailable).',
       );
