@@ -764,6 +764,23 @@ def _install_foundry(env: dict[str, str], *, timeout: int = 120) -> bool:
     network access fail fast instead of hanging forever.
     """
 
+    try:
+        probe = urllib.request.Request(
+            "https://foundry.paradigm.xyz", method="HEAD"
+        )
+    except TypeError:
+        probe = urllib.request.Request("https://foundry.paradigm.xyz")
+
+    try:
+        with urllib.request.urlopen(probe, timeout=10):
+            pass
+    except OSError:
+        print(
+            "→ Foundry bootstrap endpoint is unreachable; skipping Foundry suites. "
+            "Set DEMO_INSTALL_FOUNDRY=0 to silence this check explicitly."
+        )
+        return False
+
     bootstrap = ["bash", "-c", "curl -L https://foundry.paradigm.xyz | bash"]
     try:
         result = subprocess.run(
