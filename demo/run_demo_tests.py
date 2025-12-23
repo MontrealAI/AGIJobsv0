@@ -222,6 +222,7 @@ def _run_suite(
         runtime_root = Path(env.get("DEMO_RUNTIME_ROOT", Path(__file__).resolve().parent))
         playwright_cache = Path(env.get("DEMO_PLAYWRIGHT_CACHE", Path.home() / ".cache" / "agi-jobs-demo" / "ms-playwright"))
         playwright_cache.mkdir(parents=True, exist_ok=True)
+        user_playwright_pref = env.get("PLAYWRIGHT_INSTALL_WITH_DEPS")
         env.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(playwright_cache))
         env.setdefault("PLAYWRIGHT_INSTALL_WITH_DEPS", "0")
         # Ensure any system package installs triggered by Playwright or other
@@ -234,7 +235,7 @@ def _run_suite(
             # environments. Opt in explicitly when the host can satisfy them,
             # and otherwise allow the suite to skip e2e checks instead of
             # failing outright on locked-down runners.
-            user_pref = env.get("PLAYWRIGHT_INSTALL_WITH_DEPS")
+            user_pref = user_playwright_pref
             if user_pref is None:
                 if _can_install_playwright_deps() and not _playwright_system_deps_ready():
                     env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
