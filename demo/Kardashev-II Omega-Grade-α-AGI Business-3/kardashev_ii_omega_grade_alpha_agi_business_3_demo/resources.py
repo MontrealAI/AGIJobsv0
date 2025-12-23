@@ -298,12 +298,25 @@ class ResourceManager:
         """Restore global fields from a checkpoint snapshot.
 
         The payload can include the ``reservations`` block emitted by
-        :meth:`to_serializable`. When present we rebuild the reservation map and
-        clamp availability so that ``energy_available``/``compute_available`` do
-        not exceed the remaining capacity after honoring those reservations.
+        :meth:`to_serializable`. When present we rebuild the reservation map,
+        accounts, and clamp availability so that ``energy_available``/``compute_available``
+        do not exceed the remaining capacity after honoring those reservations.
+
+        The method accepts either the full object returned by ``to_serializable``
+        (with ``state``/``accounts``/``reservations`` keys) or a single flattened
+        state dictionary for backwards compatibility with legacy checkpoints.
         """
 
-        reservations_payload = payload.get("reservations", {})
+        state_payload: Dict[str, object]
+        if "state" in payload:
+            state_payload = payload.get("state", {}) or {}
+            reservations_payload = payload.get("reservations", {})
+            accounts_payload = payload.get("accounts", {})
+        else:
+            state_payload = payload
+            reservations_payload = payload.get("reservations", {})
+            accounts_payload = payload.get("accounts", {})
+
         reservations: Dict[str, tuple[float, float]] = {}
         if isinstance(reservations_payload, dict):
             for key, values in reservations_payload.items():
@@ -313,10 +326,27 @@ class ResourceManager:
                 compute = max(0.0, float(values.get("compute", 0.0)))
                 reservations[str(key)] = (energy, compute)
 
-        if "energy_capacity" in payload:
-            self._base_energy_capacity = max(0.0, float(payload["energy_capacity"]))
-        if "compute_capacity" in payload:
-            self._base_compute_capacity = max(0.0, float(payload["compute_capacity"]))
+        restored_accounts: Dict[str, Account] = {}
+        if isinstance(accounts_payload, dict):
+            for name, values in accounts_payload.items():
+                if not isinstance(values, dict):
+                    continue
+                tokens = max(0.0, float(values.get("tokens", 0.0)))
+                locked = max(0.0, float(values.get("locked", 0.0)))
+                energy_quota = max(0.0, float(values.get("energy_quota", 0.0)))
+                compute_quota = max(0.0, float(values.get("compute_quota", 0.0)))
+                restored_accounts[str(name)] = Account(
+                    name=str(name),
+                    tokens=tokens,
+                    locked=locked,
+                    energy_quota=energy_quota,
+                    compute_quota=compute_quota,
+                )
+
+        if "energy_capacity" in state_payload:
+            self._base_energy_capacity = max(0.0, float(state_payload["energy_capacity"]))
+        if "compute_capacity" in state_payload:
+            self._base_compute_capacity = max(0.0, float(state_payload["compute_capacity"]))
 
         reserved_energy = sum(value[0] for value in reservations.values())
         reserved_compute = sum(value[1] for value in reservations.values())
@@ -324,24 +354,32 @@ class ResourceManager:
         max_energy_available = max(0.0, self.energy_capacity - reserved_energy)
         max_compute_available = max(0.0, self.compute_capacity - reserved_compute)
 
-        if "energy_available" in payload:
-            self.energy_available = max(0.0, min(float(payload["energy_available"]), max_energy_available))
+        if "energy_available" in state_payload:
+            self.energy_available = max(
+                0.0, min(float(state_payload["energy_available"]), max_energy_available)
+            )
         else:
             self.energy_available = max_energy_available
 
-        if "compute_available" in payload:
-            self.compute_available = max(0.0, min(float(payload["compute_available"]), max_compute_available))
+        if "compute_available" in state_payload:
+            self.compute_available = max(
+                0.0, min(float(state_payload["compute_available"]), max_compute_available)
+            )
         else:
             self.compute_available = max_compute_available
 
-        if "token_supply" in payload:
-            self.token_supply = float(payload["token_supply"])
-        if "energy_price" in payload:
-            self.energy_price = max(0.0, float(payload["energy_price"]))
-        if "compute_price" in payload:
-            self.compute_price = max(0.0, float(payload["compute_price"]))
+        if "token_supply" in state_payload:
+            self.token_supply = float(state_payload["token_supply"])
+        elif restored_accounts:
+            self.token_supply = sum(account.tokens for account in restored_accounts.values())
+        if "energy_price" in state_payload:
+            self.energy_price = max(0.0, float(state_payload["energy_price"]))
+        if "compute_price" in state_payload:
+            self.compute_price = max(0.0, float(state_payload["compute_price"]))
 
         self._reservations = reservations
+        if restored_accounts:
+            self._accounts = restored_accounts
         self.energy_available = min(self.energy_available, max_energy_available)
         self.compute_available = min(self.compute_available, max_compute_available)
         self._rebalance_prices()
