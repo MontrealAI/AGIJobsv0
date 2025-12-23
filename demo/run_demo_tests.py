@@ -234,11 +234,17 @@ def _run_suite(
             # environments. Opt in explicitly when the host can satisfy them,
             # and otherwise allow the suite to skip e2e checks instead of
             # failing outright on locked-down runners.
-            if _can_install_playwright_deps() and not _playwright_system_deps_ready():
-                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
+            user_pref = env.get("PLAYWRIGHT_INSTALL_WITH_DEPS")
+            if user_pref is None:
+                if _can_install_playwright_deps() and not _playwright_system_deps_ready():
+                    env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
+                else:
+                    env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
+                    if not _playwright_system_deps_ready():
+                        env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
             else:
-                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
-                if not _playwright_system_deps_ready():
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = user_pref
+                if user_pref == "0" and not _playwright_system_deps_ready():
                     env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
             env.setdefault("PLAYWRIGHT_OPTIONAL_E2E_ON_FAILURE", "1")
         binary = suite.runner
