@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ethers, network, run } from 'hardhat';
-import { AGIALPHA_DECIMALS } from '../constants';
+import { artifacts, ethers, network, run } from 'hardhat';
+import { AGIALPHA, AGIALPHA_DECIMALS } from '../constants';
 import { loadEnsConfig } from '../config';
 
 type CliArgs = Record<string, string | boolean>;
@@ -39,6 +39,57 @@ interface DeployerConfig {
   identity?: IdentityConfig;
   tax?: TaxConfig;
   output?: unknown;
+}
+
+async function ensureAgialphaToken(): Promise<void> {
+  const localNetworks = new Set(['hardhat', 'localhost', 'anvil']);
+  if (!localNetworks.has(network.name)) {
+    return;
+  }
+
+  let decimals: number | undefined;
+  try {
+    const token = await ethers.getContractAt(
+      ['function decimals() view returns (uint8)'],
+      AGIALPHA
+    );
+    decimals = Number(await token.decimals());
+    if (decimals === AGIALPHA_DECIMALS) {
+      return;
+    }
+    console.warn(
+      `⚠️  AGIALPHA token at ${AGIALPHA} reports ${decimals} decimals; reinstalling local stub`
+    );
+  } catch (error) {
+    // Fall through to install a local stub.
+    console.warn(
+      `⚠️  AGIALPHA token missing on ${network.name}; installing LocalAgialpha stub (${String(
+        error
+      )})`
+    );
+  }
+
+  const agiArtifact = await artifacts.readArtifact(
+    'contracts/v2/mocks/LocalAgialpha.sol:LocalAgialpha'
+  );
+  await network.provider.send('hardhat_setCode', [
+    AGIALPHA,
+    agiArtifact.deployedBytecode,
+  ]);
+
+  const [defaultSigner] = await ethers.getSigners();
+  const token = await ethers.getContractAt(
+    ['function mint(address to,uint256 amount) external', 'function decimals() view returns (uint8)'],
+    AGIALPHA
+  );
+  const mintAmount = ethers.parseUnits('1000000', AGIALPHA_DECIMALS);
+  await token.mint(defaultSigner.address, mintAmount);
+  console.log(
+    `🔧 Provisioned LocalAgialpha stub at ${AGIALPHA} with ${ethers.formatUnits(
+      mintAmount,
+      AGIALPHA_DECIMALS
+    )} tokens for signer ${defaultSigner.address}`
+  );
 }
 
 const MAX_UINT96 = (1n << 96n) - 1n;
@@ -469,6 +520,8 @@ async function main() {
     );
   }
 
+  await ensureAgialphaToken();
+
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
   );
@@ -717,8 +770,8 @@ async function main() {
 
   const outputCandidate =
     toStringOrUndefined(cli.output) ??
-    toStringOrUndefined(config.output) ??
-    envOutput;
+    envOutput ??
+    toStringOrUndefined(config.output);
 
   if (outputCandidate) {
     const outputPath = path.resolve(outputCandidate);
