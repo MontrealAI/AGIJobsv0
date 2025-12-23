@@ -578,7 +578,11 @@ function startStaticServer(distDir, config) {
     try {
       const base = req.headers.host ? `http://${req.headers.host}` : `${buildOrigin(config.uiHost, config.uiPort)}/`;
       const requestUrl = new URL(req.url || '/', base);
-      if (requestUrl.pathname === '/' && !requestUrl.searchParams.has('orchestrator')) {
+      if (
+        config.publicOrchestratorUrl &&
+        requestUrl.pathname === '/' &&
+        !requestUrl.searchParams.has('orchestrator')
+      ) {
         res.statusCode = 302;
         res.setHeader('Location', `/?${demoQuery}`);
         res.end();
