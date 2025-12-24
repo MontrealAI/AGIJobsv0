@@ -222,7 +222,7 @@
     "demo:aurora:report": "ts-node --transpile-only demo/aurora/bin/aurora-report.ts",
     "demo:aurora:sepolia": "npx hardhat run demo/aurora/aurora.demo.ts --network sepolia",
     "demo:flagship": "demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh",
-    "demo:kardashev": "node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/run-demo.cjs",
+    "demo:kardashev": "npm run demo:kardashev-ii:orchestrate",
     "demo:kardashev-ii-lattice:ci": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/scripts/ci-validate.ts",
     "demo:kardashev-ii-lattice:orchestrate": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/stellar-civilization-lattice/scripts/orchestrate.ts",
     "demo:kardashev-ii-omega-upgrade": "python -m kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo.cli launch --config demo/'Kardashev-II Omega-Grade-α-AGI Business-3'/kardashev_ii_omega_grade_upgrade_for_alpha_agi_business_3_demo/config/mission.json",

@@ -226,7 +226,17 @@
       "maxGw": 256900.13860232956,
       "averageGw": 236334.58660710318,
       "withinTolerance": true,
-      "tolerance": 0.01
+      "tolerance": 0.01,
+      "capturedGw": 420000,
+      "marginGw": 52500,
+      "freeEnergyMarginGw": 167810.861217711,
+      "freeEnergyMarginPct": 0.3995496695659786,
+      "gibbsFreeEnergyGj": 604119100.3837596,
+      "hamiltonianStability": 0.6997748347829893,
+      "entropyMargin": 17.733813250187428,
+      "gameTheorySlack": 0.8648986756523452,
+      "demandStdDevGw": 9462.762399166317,
+      "maintainsBuffer": true
     },
     "liveFeeds": {
       "calibrationISO8601": "2025-02-28T18:00:00Z",
