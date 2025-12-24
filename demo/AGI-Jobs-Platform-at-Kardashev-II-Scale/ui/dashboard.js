@@ -71,6 +71,27 @@ function renderGlobalFailure(message) {
   main.prepend(alert);
 }
 
+function isLegacyTelemetry(telemetry) {
+  return telemetry && telemetry.dominance === undefined && typeof telemetry.dominanceScore === "number";
+}
+
+function renderLegacyBanner() {
+  const main = document.querySelector("main");
+  if (!main) return;
+
+  const alert = document.createElement("section");
+  alert.classList.add("card", "status-warn");
+  alert.innerHTML = `
+    <div class="section-title">
+      <h2>Legacy telemetry loaded</h2>
+    </div>
+    <p class="lede">This dashboard is running on the lightweight Node demo output. Some sections are disabled until the full orchestrator regenerates telemetry.</p>
+    <p class="lede">Run <code>npm run demo:kardashev-ii:orchestrate</code> to restore full mission telemetry and diagrams.</p>
+  `;
+
+  main.prepend(alert);
+}
+
 function renderLedgerUnavailable(reason) {
   const summary = document.querySelector("#ledger-summary");
   if (!summary) return;
@@ -100,6 +121,57 @@ function renderOwnerProofUnavailable(reason) {
     li.textContent = "Owner signatures could not be loaded. Refresh after regenerating artefacts.";
     li.classList.add("status-warn");
     summary.appendChild(li);
+  }
+}
+
+function renderMonteCarloDetails(monteCarlo) {
+  const freeEnergyElement = document.querySelector("#energy-monte-carlo-free-energy");
+  const hamiltonianElement = document.querySelector("#energy-monte-carlo-hamiltonian");
+  const gameTheoryElement = document.querySelector("#energy-monte-carlo-game-theory");
+
+  if (!freeEnergyElement || !hamiltonianElement || !gameTheoryElement) return;
+
+  if (!monteCarlo) {
+    freeEnergyElement.textContent = "Free energy margin unavailable.";
+    hamiltonianElement.textContent = "Hamiltonian stability unavailable.";
+    gameTheoryElement.textContent = "Game-theory slack unavailable.";
+    applyStatus(freeEnergyElement, "status-warn");
+    applyStatus(hamiltonianElement, "status-warn");
+    applyStatus(gameTheoryElement, "status-warn");
+    return;
+  }
+
+  if (Number.isFinite(monteCarlo.freeEnergyMarginGw)) {
+    freeEnergyElement.textContent = `Free energy margin ${formatNumber(monteCarlo.freeEnergyMarginGw)} GW (${(
+      monteCarlo.freeEnergyMarginPct * 100
+    ).toFixed(2)}%) · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`;
+    applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
+  } else {
+    freeEnergyElement.textContent = "Free energy margin unavailable.";
+    applyStatus(freeEnergyElement, "status-warn");
+  }
+
+  if (Number.isFinite(monteCarlo.hamiltonianStability)) {
+    hamiltonianElement.textContent = `Hamiltonian stability ${(monteCarlo.hamiltonianStability * 100).toFixed(
+      1
+    )}% · entropy margin ${formatNumber(monteCarlo.entropyMargin)}σ`;
+    applyStatus(
+      hamiltonianElement,
+      monteCarlo.hamiltonianStability >= 0.9 ? "status-ok" : monteCarlo.hamiltonianStability >= 0.8 ? "status-warn" : "status-fail"
+    );
+  } else {
+    hamiltonianElement.textContent = "Hamiltonian stability unavailable.";
+    applyStatus(hamiltonianElement, "status-warn");
+  }
+
+  if (Number.isFinite(monteCarlo.gameTheorySlack)) {
+    gameTheoryElement.textContent = `Game-theory slack ${(monteCarlo.gameTheorySlack * 100).toFixed(
+      1
+    )}% · buffer ${monteCarlo.maintainsBuffer ? "stable" : "at risk"}`;
+    applyStatus(gameTheoryElement, monteCarlo.gameTheorySlack >= 0.85 ? "status-ok" : "status-warn");
+  } else {
+    gameTheoryElement.textContent = "Game-theory slack unavailable.";
+    applyStatus(gameTheoryElement, "status-warn");
   }
 }
 
@@ -133,6 +205,7 @@ function renderMetrics(telemetry) {
     document.querySelector("#energy-monte-carlo-status"),
     monteCarlo.withinTolerance
   );
+  renderMonteCarloDetails(monteCarlo);
   setStatusText(
     document.querySelector("#compute-deviation"),
     telemetry.verification.compute.withinTolerance,
@@ -164,6 +237,123 @@ function renderMetrics(telemetry) {
     li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(2)}% Δ · ${feed.latencyMs} ms</span>`;
     li.classList.add(feed.withinTolerance ? "status-ok" : feed.driftAlert ? "status-warn" : "status-fail");
     feedList.appendChild(li);
+  });
+}
+
+function renderLegacyMetrics(telemetry) {
+  const shards = Array.isArray(telemetry.shards) ? telemetry.shards : [];
+  const averageResilience =
+    shards.length > 0 ? shards.reduce((sum, shard) => sum + (shard.resilience ?? 0), 0) / shards.length : 0;
+  const averageUtilisation =
+    shards.length > 0 ? shards.reduce((sum, shard) => sum + (shard.utilisation ?? 0), 0) / shards.length : 0;
+  const monteCarlo = telemetry.energyMonteCarlo;
+
+  document.querySelector("#dominance-score").textContent = `${telemetry.dominanceScore.toFixed(1)} / 100`;
+  document.querySelector("#monthly-value").textContent = "Legacy telemetry does not report monthly value flow.";
+  document.querySelector("#resilience").textContent = `${(averageResilience * 100).toFixed(2)}% resilience (legacy)`;
+  document.querySelector("#energy-utilisation").textContent = `${averageUtilisation.toFixed(2)}% utilisation (legacy)`;
+
+  const marginElement = document.querySelector("#energy-margin");
+  if (marginElement) {
+    marginElement.textContent =
+      monteCarlo && Number.isFinite(monteCarlo.freeEnergyMarginPct)
+        ? `${(monteCarlo.freeEnergyMarginPct * 100).toFixed(2)}% free energy margin`
+        : "Energy margin unavailable.";
+  }
+
+  const coverageElement = document.querySelector("#coverage");
+  if (coverageElement) {
+    coverageElement.textContent = "Coverage telemetry unavailable in legacy mode.";
+  }
+  setStatusText(document.querySelector("#coverage-status"), false, "Legacy data");
+  setStatus(
+    document.querySelector("#energy-status"),
+    monteCarlo ? monteCarlo.withinTolerance && monteCarlo.maintainsBuffer : false
+  );
+
+  const bridgeList = document.querySelector("#bridge-statuses");
+  bridgeList.innerHTML = "";
+  const bridgeItem = document.createElement("li");
+  bridgeItem.textContent = "Legacy telemetry does not include bridge latency checks.";
+  bridgeItem.classList.add("status-warn");
+  bridgeList.appendChild(bridgeItem);
+
+  const energyModels = document.querySelector("#energy-models");
+  if (energyModels) {
+    energyModels.textContent = "Energy model reconciliation unavailable in legacy telemetry.";
+    applyStatus(energyModels, "status-warn");
+  }
+
+  if (monteCarlo) {
+    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(monteCarlo.breachProbability * 100).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
+    setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
+  } else {
+    document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";
+    applyStatus(document.querySelector("#energy-monte-carlo-status"), "status-warn");
+  }
+  renderMonteCarloDetails(monteCarlo);
+
+  const computeDeviation = document.querySelector("#compute-deviation");
+  if (computeDeviation) {
+    computeDeviation.textContent = "Compute deviation unavailable in legacy telemetry.";
+    applyStatus(computeDeviation, "status-warn");
+  }
+
+  const bridgeCompliance = document.querySelector("#bridge-compliance");
+  if (bridgeCompliance) {
+    bridgeCompliance.textContent = "Bridge compliance unavailable in legacy telemetry.";
+    applyStatus(bridgeCompliance, "status-warn");
+  }
+
+  const feeds = Array.isArray(telemetry.energyFeeds) ? telemetry.energyFeeds : [];
+  const feedCompliance = document.querySelector("#energy-feed-compliance");
+  if (feedCompliance) {
+    feedCompliance.textContent = `Legacy feeds loaded (${feeds.length}) · drift analytics unavailable.`;
+    applyStatus(feedCompliance, "status-warn");
+  }
+  const feedLatency = document.querySelector("#energy-feed-latency");
+  if (feedLatency) {
+    const latencies = feeds.map((feed) => feed.latencyMs ?? 0);
+    const averageLatency =
+      latencies.length > 0 ? latencies.reduce((sum, value) => sum + value, 0) / latencies.length : 0;
+    const maxLatency = latencies.length > 0 ? Math.max(...latencies) : 0;
+    feedLatency.textContent = `Avg ${averageLatency.toFixed(0)} ms · Max ${maxLatency.toFixed(0)} ms`;
+  }
+
+  const feedList = document.querySelector("#energy-feed-list");
+  feedList.innerHTML = "";
+  feeds.forEach((feed) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${formatNumber(feed.nominalMw)} MW + ${formatNumber(
+      feed.bufferMw
+    )} MW buffer</span>`;
+    li.classList.add("status-warn");
+    feedList.appendChild(li);
+  });
+
+  const placeholderSections = [
+    "#identity-summary",
+    "#fabric-summary",
+    "#fabric-federation-summary",
+    "#schedule-summary",
+    "#mission-summary",
+    "#logistics-summary",
+    "#settlement-summary",
+  ];
+  placeholderSections.forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.textContent = "Full telemetry required. Run the orchestrator to populate this section.";
+      applyStatus(element, "status-warn");
+    }
+  });
+
+  ["#mission-mermaid", "#mermaid-container", "#dyson-container"].forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.textContent = "Diagram unavailable in legacy telemetry.";
+      applyStatus(element, "status-warn");
+    }
   });
 }
 
@@ -846,6 +1036,21 @@ async function bootstrap() {
   }
 
   const telemetry = telemetryResult.value;
+  if (isLegacyTelemetry(telemetry)) {
+    renderLegacyBanner();
+    renderLegacyMetrics(telemetry);
+
+    if (ledgerResult.status === "fulfilled") {
+      renderLedger(ledgerResult.value);
+    } else {
+      console.warn("Ledger unavailable", ledgerResult.reason);
+      renderLedgerUnavailable(ledgerResult.reason);
+    }
+
+    renderOwnerProofUnavailable("Owner proof requires full orchestrator output.");
+    return;
+  }
+
   renderMetrics(telemetry);
   attachReflectionButton(telemetry);
   renderOwnerDirectives(telemetry);
