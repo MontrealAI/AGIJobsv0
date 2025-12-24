@@ -15,11 +15,12 @@ import sys
 from pathlib import Path
 from typing import Iterable, Optional
 
-# Keep demos fast and deterministic when no CLI arguments are provided and the
-# fast-defaults opt-in is enabled. The canonical orchestrator defaults to an
-# infinite run with long validator delays, which can feel “stuck” in automated
-# smoke tests. These defaults execute a handful of cycles with short validation
-# windows so operators immediately see output and generated artifacts.
+# Keep demos fast and deterministic when no CLI arguments are provided unless
+# fast defaults are explicitly disabled. The canonical orchestrator defaults to
+# an infinite run with long validator delays, which can feel “stuck” in
+# automated smoke tests. These defaults execute a handful of cycles with short
+# validation windows so operators immediately see output and generated
+# artifacts.
 DEFAULT_DEMO_ARGS = [
     "--cycles",
     "6",
@@ -80,8 +81,9 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
     """
 
     argv_list = sys.argv[1:] if argv is None else list(argv)
-    use_fast_defaults = os.getenv(FAST_DEFAULTS_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
-    if not argv_list and use_fast_defaults:
+    raw_fast_defaults = os.getenv(FAST_DEFAULTS_ENV, "").strip().lower()
+    disable_fast_defaults = raw_fast_defaults in {"0", "false", "no", "off"}
+    if not argv_list and not disable_fast_defaults:
         argv_list = DEFAULT_DEMO_ARGS.copy()
         print(
             "🛰️  Launching Supreme Omega-grade demo with fast defaults "
