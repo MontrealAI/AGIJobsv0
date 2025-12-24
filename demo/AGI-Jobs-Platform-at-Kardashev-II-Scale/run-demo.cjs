@@ -255,16 +255,22 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
 
 function softmaxScores(scores, temperature) {
   if (!scores.length) {
-    return [];
+    return { weights: [], partition: 0 };
   }
   const temp = Math.max(0.05, temperature);
   const maxScore = Math.max(...scores);
   const expScores = scores.map((score) => Math.exp((score - maxScore) / temp));
-  const total = expScores.reduce((sum, value) => sum + value, 0);
-  if (!Number.isFinite(total) || total <= 0) {
-    return scores.map(() => 1 / scores.length);
+  const partition = expScores.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(partition) || partition <= 0) {
+    return {
+      weights: scores.map(() => 1 / scores.length),
+      partition: scores.length,
+    };
   }
-  return expScores.map((value) => value / total);
+  return {
+    weights: expScores.map((value) => value / partition),
+    partition,
+  };
 }
 
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
@@ -274,7 +280,7 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     const latencyPenalty = Math.min(1, metric.settlementLagMinutes / 180);
     return metric.resilience - 0.6 * utilisationPenalty - 0.2 * latencyPenalty;
   });
-  const weights = softmaxScores(scores, temperature);
+  const { weights, partition } = softmaxScores(scores, temperature);
   const availableGw = energyMonteCarlo.availableGw;
   const allocations = shardMetrics.map((metric, idx) => {
     const weight = weights[idx] ?? 0;
@@ -289,9 +295,21 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
 
   const nashLog = allocations.reduce((sum, item) => sum + Math.log(item.payoff), 0);
   const nashProduct = Math.exp(nashLog / Math.max(1, allocations.length));
+  const allocationEntropy = allocations.reduce((sum, item) => {
+    if (item.weight <= 0) {
+      return sum;
+    }
+    return sum - item.weight * Math.log(item.weight);
+  }, 0);
+  const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
+  const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
+  const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
   return {
     temperature,
     nashProduct,
+    allocationEntropy,
+    fairnessIndex,
+    gibbsPotential,
     allocations,
   };
 }
@@ -478,6 +496,9 @@ function main() {
   );
   const outputDir = resolveOutputDir(cliOutputDir, { ensure: !check });
   const mermaidDir = path.join(outputDir, 'mermaid');
+  const dysonHierarchyPath = path.join(mermaidDir, 'dyson-hierarchy.mmd');
+  const dysonHierarchyReference =
+    path.relative(outputDir, dysonHierarchyPath) || 'mermaid/dyson-hierarchy.mmd';
 
   if (!check) {
     ensureDir(outputDir);
@@ -516,6 +537,9 @@ function main() {
   );
   reportLines.push(
     `- **Gibbs Allocation Temperature:** ${allocationPolicy.temperature.toFixed(2)} (lower favors resilience-heavy shards); Nash welfare ${(allocationPolicy.nashProduct * 100).toFixed(2)}%.`
+  );
+  reportLines.push(
+    `- **Allocation Entropy:** ${allocationPolicy.allocationEntropy.toFixed(3)} (fairness ${(allocationPolicy.fairnessIndex * 100).toFixed(1)}%); Gibbs potential ${allocationPolicy.gibbsPotential.toFixed(3)}.`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
@@ -571,7 +595,7 @@ function main() {
   reportLines.push(`- Assembly rate: ${dyson.assemblyRatePerDay} satellites/day`);
   reportLines.push(`- Energy per satellite: ${dyson.energyPerSatelliteMw} MW`);
   reportLines.push('');
-  reportLines.push('A detailed task hierarchy diagram is available at `output/mermaid/dyson-hierarchy.mmd`.');
+  reportLines.push(`A detailed task hierarchy diagram is available at \`${dysonHierarchyReference}\`.`);
   reportLines.push('');
 
   const crossChainDiagram = buildSequenceDiagram();
@@ -610,7 +634,7 @@ function main() {
 
   if (!check) {
     fs.writeFileSync(
-      path.join(mermaidDir, 'dyson-hierarchy.mmd'),
+      dysonHierarchyPath,
       `${buildMermaidTaskHierarchy(dyson)}\n`
     );
     fs.writeFileSync(

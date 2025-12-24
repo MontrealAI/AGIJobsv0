@@ -60,6 +60,11 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert energy["entropyMargin"] > 0
     assert 0 <= energy["gameTheorySlack"] <= 1
 
+    allocation = telemetry_payload["allocationPolicy"]
+    assert allocation["allocationEntropy"] >= 0
+    assert 0 < allocation["fairnessIndex"] <= 1
+    assert allocation["gibbsPotential"] <= 0
+
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_rejects_invalid_energy_feed(tmp_path: Path) -> None:

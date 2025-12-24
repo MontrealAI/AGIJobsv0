@@ -37,7 +37,8 @@ def _build_command(args: argparse.Namespace) -> list[str]:
     cmd = [_ensure_node_available(), str(NODE_SCRIPT)]
     if args.output_dir:
         output_dir = Path(args.output_dir).expanduser().resolve()
-        output_dir.mkdir(parents=True, exist_ok=True)
+        if not args.check:
+            output_dir.mkdir(parents=True, exist_ok=True)
         cmd.extend(["--output-dir", str(output_dir)])
     if args.check:
         cmd.append("--check")
