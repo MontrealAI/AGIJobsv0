@@ -1277,6 +1277,119 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   };
 }
 
+function softmaxScores(scores: number[], temperature: number) {
+  if (scores.length === 0) {
+    return { weights: [], partition: 0 };
+  }
+  const temp = Math.max(0.05, temperature);
+  const maxScore = Math.max(...scores);
+  const expScores = scores.map((score) => Math.exp((score - maxScore) / temp));
+  const partition = expScores.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(partition) || partition <= 0) {
+    return {
+      weights: scores.map(() => 1 / scores.length),
+      partition: scores.length,
+    };
+  }
+  return {
+    weights: expScores.map((value) => value / partition),
+    partition,
+  };
+}
+
+function computeAllocationPolicy(manifest: Manifest, energyMonteCarlo: MonteCarloSummary) {
+  const federations = manifest.federations;
+  const maxExaflops = Math.max(1, ...federations.map((f) => f.compute.exaflops));
+  const maxEnergyGw = Math.max(1, ...federations.map((f) => f.energy.availableGw));
+  const baselineCapturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const reserveGw = Math.max(0, energyMonteCarlo.freeEnergyMarginGw);
+  const availableGw = baselineCapturedGw + reserveGw;
+  const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
+
+  const scores = federations.map((federation) => {
+    const resilience =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.resilience, 0) / federation.domains.length;
+    const coverageSeconds =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.coverageSeconds, 0) /
+          federation.domains.length;
+    const coverageScore = Math.min(
+      1,
+      coverageSeconds / Math.max(1, manifest.interstellarCouncil.guardianReviewWindow)
+    );
+    const computeScore = federation.compute.exaflops / maxExaflops;
+    const energyScore = federation.energy.availableGw / maxEnergyGw;
+    const latencyPenalty = Math.min(1, federation.energy.latencyMs / 1200);
+
+    const score =
+      resilience * 0.55 +
+      coverageScore * 0.15 +
+      computeScore * 0.2 +
+      energyScore * 0.1 -
+      latencyPenalty * 0.2;
+    return Math.max(0.01, score);
+  });
+
+  const { weights, partition } = softmaxScores(scores, temperature);
+  const allocations = federations.map((federation, idx) => {
+    const resilience =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.resilience, 0) / federation.domains.length;
+    const coverageSeconds =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.coverageSeconds, 0) /
+          federation.domains.length;
+    const latencyPenalty = Math.min(1, federation.energy.latencyMs / 1200);
+    const renewableBoost = 0.6 + federation.energy.renewablePct * 0.4;
+    const payoff =
+      Math.max(0.001, resilience) *
+      Math.max(0.1, 1 - latencyPenalty) *
+      Math.max(0.1, renewableBoost);
+    const weight = weights[idx] ?? 0;
+    return {
+      federation: federation.slug,
+      name: federation.name,
+      weight,
+      recommendedGw: availableGw * weight,
+      payoff,
+      resilience,
+      coverageSeconds,
+      energyAvailableGw: federation.energy.availableGw,
+      computeExaflops: federation.compute.exaflops,
+      latencyMs: federation.energy.latencyMs,
+      renewablePct: federation.energy.renewablePct,
+    };
+  });
+
+  const nashLog = allocations.reduce((sum, allocation) => sum + Math.log(allocation.payoff), 0);
+  const nashProduct = Math.exp(nashLog / Math.max(1, allocations.length));
+  const allocationEntropy = allocations.reduce((sum, allocation) => {
+    if (allocation.weight <= 0) {
+      return sum;
+    }
+    return sum - allocation.weight * Math.log(allocation.weight);
+  }, 0);
+  const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
+  const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
+  const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
+
+  return {
+    temperature,
+    nashProduct,
+    allocationEntropy,
+    fairnessIndex,
+    gibbsPotential,
+    availableGw,
+    reserveGw,
+    allocations,
+  };
+}
+
 function loadManifest(): { manifest: Manifest; raw: string } {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
@@ -2475,6 +2588,13 @@ function buildRunbook(
       telemetry.energy.schedule.coverageThreshold * 100
     }%) · reliability ${(telemetry.energy.schedule.globalReliabilityPct * 100).toFixed(2)}%.`
   );
+  if (telemetry.allocationPolicy) {
+    lines.push(
+      `* Allocation policy: Gibbs temp ${telemetry.allocationPolicy.temperature.toFixed(2)} · Nash welfare ${(telemetry.allocationPolicy.nashProduct * 100).toFixed(
+        2
+      )}% · fairness ${(telemetry.allocationPolicy.fairnessIndex * 100).toFixed(1)}%.`
+    );
+  }
   if (telemetry.energy.schedule.deficits.length > 0) {
     lines.push(
       `* ⚠️ Energy deficits: ${telemetry.energy.schedule.deficits
@@ -2493,6 +2613,24 @@ function buildRunbook(
   }
   if (telemetry.energy.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.energy.warnings.join("; ")}`);
+  }
+  if (telemetry.allocationPolicy) {
+    const policy = telemetry.allocationPolicy;
+    const topAllocations = [...policy.allocations]
+      .sort((a: any, b: any) => b.weight - a.weight)
+      .slice(0, 3)
+      .map(
+        (allocation: any) =>
+          `${allocation.federation} ${(allocation.weight * 100).toFixed(1)}% · ${allocation.recommendedGw.toFixed(
+            0
+          )} GW`
+      );
+    lines.push(
+      `* Allocation policy: Gibbs temperature ${policy.temperature.toFixed(2)} · Nash welfare ${(policy.nashProduct * 100).toFixed(
+        2
+      )}% · fairness ${(policy.fairnessIndex * 100).toFixed(1)}% · Gibbs potential ${policy.gibbsPotential.toFixed(3)}.`
+    );
+    lines.push(`* Top allocations: ${topAllocations.join(" · ")}.`);
   }
   lines.push("\n---\n");
   lines.push("## Logistics corridors");
@@ -2856,6 +2994,7 @@ function computeTelemetry(
       `Free energy margin ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW below safety buffer ${energyMonteCarlo.marginGw.toFixed(2)} GW`
     );
   }
+  const allocationPolicy = computeAllocationPolicy(manifest, energyMonteCarlo);
 
   const feedComparisons = energyFeeds.feeds.map((feed) => {
     const federation = manifest.federations.find((f) => f.slug === feed.federationSlug);
@@ -3486,6 +3625,7 @@ function computeTelemetry(
       },
       crossVerification: energyCrossVerification,
     },
+    allocationPolicy,
     logistics: {
       corridors: logisticsCorridors,
       aggregate: {

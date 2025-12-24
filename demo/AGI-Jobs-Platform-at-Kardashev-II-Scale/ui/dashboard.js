@@ -347,6 +347,7 @@ function renderLegacyMetrics(telemetry) {
     "#fabric-summary",
     "#fabric-federation-summary",
     "#schedule-summary",
+    "#allocation-summary",
     "#mission-summary",
     "#logistics-summary",
     "#settlement-summary",
@@ -358,6 +359,22 @@ function renderLegacyMetrics(telemetry) {
       applyStatus(element, "status-warn");
     }
   });
+
+  ["#allocation-temperature", "#allocation-nash", "#allocation-fairness", "#allocation-gibbs"].forEach((selector) => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.textContent = "—";
+      applyStatus(element, "status-warn");
+    }
+  });
+  const allocationList = document.querySelector("#allocation-list");
+  if (allocationList) {
+    allocationList.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Allocation policy unavailable in legacy telemetry.";
+    li.classList.add("status-warn");
+    allocationList.appendChild(li);
+  }
 
   ["#mission-mermaid", "#mermaid-container", "#dyson-container"].forEach((selector) => {
     const element = document.querySelector(selector);
@@ -591,6 +608,56 @@ function renderEnergySchedule(schedule, verification) {
     deficits.classList.add("status-fail");
     deficits.classList.remove("status-ok");
   }
+}
+
+function renderAllocationPolicy(policy) {
+  const summary = document.querySelector("#allocation-summary");
+  const temperatureEl = document.querySelector("#allocation-temperature");
+  const nashEl = document.querySelector("#allocation-nash");
+  const fairnessEl = document.querySelector("#allocation-fairness");
+  const gibbsEl = document.querySelector("#allocation-gibbs");
+  const list = document.querySelector("#allocation-list");
+
+  if (!summary || !temperatureEl || !nashEl || !fairnessEl || !gibbsEl || !list) return;
+
+  if (!policy) {
+    summary.textContent = "Allocation policy unavailable. Regenerate telemetry to restore Game Theory routing.";
+    applyStatus(summary, "status-warn");
+    temperatureEl.textContent = "—";
+    nashEl.textContent = "—";
+    fairnessEl.textContent = "—";
+    gibbsEl.textContent = "—";
+    list.innerHTML = "";
+    return;
+  }
+
+  const reserveGw = Number.isFinite(policy.reserveGw) ? policy.reserveGw : 0;
+  summary.textContent = `Gibbs temperature ${policy.temperature.toFixed(2)} · Nash welfare ${(policy.nashProduct * 100).toFixed(
+    2
+  )}% · fairness ${(policy.fairnessIndex * 100).toFixed(1)}% · reserve ${formatNumber(reserveGw)} GW`;
+  applyStatus(
+    summary,
+    policy.fairnessIndex >= 0.8 ? "status-ok" : policy.fairnessIndex >= 0.7 ? "status-warn" : "status-fail"
+  );
+
+  temperatureEl.textContent = policy.temperature.toFixed(2);
+  nashEl.textContent = `${(policy.nashProduct * 100).toFixed(2)}%`;
+  fairnessEl.textContent = `${(policy.fairnessIndex * 100).toFixed(1)}%`;
+  gibbsEl.textContent = policy.gibbsPotential.toFixed(3);
+
+  list.innerHTML = "";
+  [...policy.allocations]
+    .sort((a, b) => b.weight - a.weight)
+    .forEach((allocation) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<strong>${allocation.name}</strong> · ${(allocation.weight * 100).toFixed(1)}% share · ${formatNumber(
+        allocation.recommendedGw
+      )} GW · payoff ${allocation.payoff.toFixed(3)} · latency ${allocation.latencyMs} ms`;
+      li.classList.add(
+        allocation.weight >= 0.34 ? "status-ok" : allocation.weight >= 0.2 ? "status-warn" : "status-fail"
+      );
+      list.appendChild(li);
+    });
 }
 
 function renderMissionLattice(mission) {
@@ -1074,6 +1141,7 @@ async function bootstrap() {
   renderComputeFabric(telemetry.computeFabric);
   renderOrchestrationFabric(telemetry.orchestrationFabric);
   renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+  renderAllocationPolicy(telemetry.allocationPolicy);
   renderMissionLattice(telemetry.missionLattice);
   renderLogistics(telemetry.logistics, telemetry.verification.logistics);
   renderSettlement(telemetry.settlement, telemetry.verification.settlement);

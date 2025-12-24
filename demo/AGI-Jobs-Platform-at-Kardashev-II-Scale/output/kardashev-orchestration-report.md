@@ -25,7 +25,10 @@
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
+* Allocation policy: Gibbs temp 0.30 · Nash welfare 60.44% · fairness 90.3%.
 * Energy window deficits: none — all federations meet coverage targets.
+* Allocation policy: Gibbs temperature 0.30 · Nash welfare 60.44% · fairness 90.3% · Gibbs potential -0.207.
+* Top allocations: orbital 50.2% · 295219 GW · earth 35.4% · 208107 GW · mars 14.4% · 84485 GW.
 
 ---
 
