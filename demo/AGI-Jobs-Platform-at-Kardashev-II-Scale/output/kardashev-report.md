@@ -8,6 +8,10 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Dyson Swarm Progress:** 2669/10000 satellites assembled (26.69% coverage).
 - **Captured Power:** 120,105 MW available for reallocation.
 - **Energy Monte Carlo:** 3.91% breach probability across 256 runs (tolerance 5.00%).
+- **Free Energy Margin:** 13478.69 GW (5.57%) vs 11980.00 GW minimum buffer.
+- **Entropy Buffer:** 2.69σ thermodynamic headroom; game-theoretic slack 75.7%.
+- **Thermodynamic Reserve:** 48,523,291.36 GJ Gibbs free energy; Hamiltonian stability 50.8% across the sampled phase space.
+- **Gibbs Allocation Temperature:** 0.49 (lower favors resilience-heavy shards); Nash welfare 9.99%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
@@ -17,6 +21,14 @@ Generated: 2125-01-01T19:05:39.398Z
 | earth   | 668,431      | 133               | 6 min          | 0.999      | 99.54%             |
 | mars    | 112,364      | 120               | 17 min         | 0.999      | 98.73%             |
 | orbital | 600,104      | 120               | 6 min          | 0.999      | 99.16%             |
+
+## Thermodynamic Allocation Policy
+
+| Shard   | Boltzmann Weight | Recommended GW | Nash Payoff |
+| ------- | ---------------- | -------------- | ----------- |
+| earth   | 33.4%            | 80,942.25      | 0.1         |
+| mars    | 33.0%            | 79,739.29      | 0.1         |
+| orbital | 33.6%            | 81,318.46      | 0.1         |
 
 ## Sentinel Advisories
 
