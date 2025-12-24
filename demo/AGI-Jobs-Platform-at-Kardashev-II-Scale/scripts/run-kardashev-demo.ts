@@ -8,6 +8,18 @@ import { z } from "zod";
 const rawArgs = process.argv.slice(2);
 const args = new Set(rawArgs);
 
+function getArgValue(flag: string): string | undefined {
+  const index = rawArgs.indexOf(flag);
+  if (index >= 0 && rawArgs[index + 1]) {
+    return rawArgs[index + 1];
+  }
+  const prefixed = rawArgs.find((entry) => entry.startsWith(`${flag}=`));
+  if (prefixed) {
+    return prefixed.split("=", 2)[1];
+  }
+  return undefined;
+}
+
 function resolveDemoRoot(): string {
   const defaultRoot = join(__dirname, "..");
   const repoRoot = resolve(defaultRoot, "..", "..", "..");
@@ -52,19 +64,50 @@ function resolveDemoRoot(): string {
 }
 
 const DEMO_ROOT = resolveDemoRoot();
-const CONFIG_PATH = join(DEMO_ROOT, "config", "kardashev-ii.manifest.json");
-const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
-const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
-const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
-const OUTPUT_DIR = join(DEMO_ROOT, "output");
+const REPO_ROOT = resolve(DEMO_ROOT, "..", "..", "..");
+
+function resolveConfigPath(envVar: string, fallbackRelative: string): string {
+  const override = process.env[envVar]?.trim();
+  const target = override
+    ? isAbsolute(override)
+      ? override
+      : resolve(REPO_ROOT, override)
+    : join(DEMO_ROOT, fallbackRelative);
+
+  if (!existsSync(target)) {
+    throw new Error(
+      `Missing configuration file at ${target} (${override ? `${envVar} override` : "default path"})`
+    );
+  }
+
+  return target;
+}
+
+const CONFIG_PATH = resolveConfigPath("KARDASHEV_MANIFEST_PATH", "config/kardashev-ii.manifest.json");
+const ENERGY_FEEDS_PATH = resolveConfigPath("KARDASHEV_ENERGY_FEEDS_PATH", "config/energy-feeds.json");
+const FABRIC_CONFIG_PATH = resolveConfigPath("KARDASHEV_FABRIC_PATH", "config/fabric.json");
+const TASK_LATTICE_CONFIG_PATH = resolveConfigPath("KARDASHEV_TASK_LATTICE_PATH", "config/task-lattice.json");
+const OUTPUT_DIR = (() => {
+  const override =
+    getArgValue("--output-dir")?.trim() ||
+    process.env.KARDASHEV_DEMO_OUTPUT_DIR?.trim() ||
+    process.env.OUTPUT_DIR?.trim();
+  if (!override) {
+    return join(DEMO_ROOT, "output");
+  }
+  return isAbsolute(override) ? override : resolve(REPO_ROOT, override);
+})();
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
   const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
   return slug.length > 0 ? slug : "kardashev";
 })();
 
-const CHECK_MODE = args.has("--check") || args.has("--ci");
+const DRY_RUN = args.has("--check");
+const VERIFY_OUTPUT = args.has("--ci");
+const CHECK_MODE = DRY_RUN || VERIFY_OUTPUT;
 const REFLECT_MODE = args.has("--reflect");
+const PRINT_COMMANDS = args.has("--print-commands");
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const managerInterface = new Interface([
@@ -84,6 +127,28 @@ const systemPauseInterface = new Interface([
   "function pauseAll()",
   "function unpauseAll()",
 ]);
+
+function formatZodIssues(issues: z.ZodIssue[]): string {
+  if (issues.length === 0) {
+    return "Unknown schema error.";
+  }
+  return issues
+    .map((issue) => {
+      const path = issue.path.length > 0 ? issue.path.join(".") : "value";
+      return `${path}: ${issue.message}`;
+    })
+    .join("; ");
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    return formatZodIssues(error.issues);
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
 
 function createDeterministicRng(seed: string): () => number {
   let h = 1779033703 ^ seed.length;
@@ -1280,25 +1345,41 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
 function loadManifest(): { manifest: Manifest; raw: string } {
   const raw = readFileSync(CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
-  return { manifest: ManifestSchema.parse(parsed), raw };
+  const result = ManifestSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Manifest configuration invalid: ${formatZodIssues(result.error.issues)}`);
+  }
+  return { manifest: result.data, raw };
 }
 
 function loadEnergyFeeds(): EnergyFeedsConfig {
   const raw = readFileSync(ENERGY_FEEDS_PATH, "utf8");
   const parsed = JSON.parse(raw);
-  return EnergyFeedsConfigSchema.parse(parsed);
+  const result = EnergyFeedsConfigSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Energy feed configuration invalid: ${formatZodIssues(result.error.issues)}`);
+  }
+  return result.data;
 }
 
 function loadFabricConfig(): FabricConfig {
   const raw = readFileSync(FABRIC_CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
-  return FabricConfigSchema.parse(parsed);
+  const result = FabricConfigSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Fabric configuration invalid: ${formatZodIssues(result.error.issues)}`);
+  }
+  return result.data;
 }
 
 function loadMissionLattice(): { lattice: MissionLattice; raw: string } {
   const raw = readFileSync(TASK_LATTICE_CONFIG_PATH, "utf8");
   const parsed = JSON.parse(raw);
-  return { lattice: MissionLatticeSchema.parse(parsed), raw };
+  const result = MissionLatticeSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Task lattice configuration invalid: ${formatZodIssues(result.error.issues)}`);
+  }
+  return { lattice: result.data, raw };
 }
 
 function ensureOutputDir() {
@@ -2845,7 +2926,9 @@ function computeTelemetry(
     energyWarnings.push("Dyson programme yield below captured baseline");
   }
 
-  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
+  const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? "", 10);
+  const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
+  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash, mcRuns);
   if (!energyMonteCarlo.withinTolerance) {
     energyWarnings.push(
       `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
@@ -4230,8 +4313,16 @@ function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
   };
 }
 
+function printCommandChecklist(batch: ReturnType<typeof buildSafeBatch>) {
+  console.log("\nGovernance command checklist:");
+  batch.transactions.forEach((tx, index) => {
+    const selector = tx.data?.slice(0, 10) ?? "0x";
+    console.log(` ${index + 1}. ${tx.description} → ${tx.to} (${selector})`);
+  });
+}
+
 function writeOrCheck(path: string, content: string) {
-  if (CHECK_MODE) {
+  if (VERIFY_OUTPUT) {
     const existing = readFileSync(path, "utf8");
     if (existing !== content) {
       console.error(`❌ Drift detected for ${path}. Regenerate artefacts.`);
@@ -4239,14 +4330,31 @@ function writeOrCheck(path: string, content: string) {
     }
     return;
   }
+  if (DRY_RUN) {
+    return;
+  }
   writeFileSync(path, content);
 }
 
 function run() {
-  const { manifest, raw } = loadManifest();
-  const energyFeedsConfig = loadEnergyFeeds();
-  const fabricConfig = loadFabricConfig();
-  const { lattice: missionLattice } = loadMissionLattice();
+  let manifest: Manifest;
+  let raw: string;
+  let energyFeedsConfig: EnergyFeedsConfig;
+  let fabricConfig: FabricConfig;
+  let missionLattice: MissionLattice;
+
+  try {
+    ({ manifest, raw } = loadManifest());
+    energyFeedsConfig = loadEnergyFeeds();
+    fabricConfig = loadFabricConfig();
+    ({ lattice: missionLattice } = loadMissionLattice());
+  } catch (error) {
+    console.error("❌ Kardashev configuration validation failed.");
+    console.error(`   - ${formatError(error)}`);
+    process.exitCode = 1;
+    return;
+  }
+
   ensureOutputDir();
 
   const totalMonthlyValue = manifest.federations.flatMap((f) => f.domains).reduce((sum, d) => sum + d.monthlyValueUSD, 0);
@@ -4367,13 +4475,33 @@ function run() {
     writeOrCheck(output.path, output.content);
   }
 
-  if (CHECK_MODE) {
+  if (VERIFY_OUTPUT) {
     const failures = process.exitCode ?? 0;
     if (failures) {
       console.error("Kardashev-II demo validation failed.");
       process.exit(failures);
     }
     console.log("✔ Kardashev-II artefacts are up-to-date.");
+    if (PRINT_COMMANDS) {
+      printCommandChecklist(safeBatch);
+    }
+    return;
+  }
+
+  if (DRY_RUN) {
+    console.log("✅ Kardashev II scale dossier validated (check mode).");
+    console.log(
+      `   - Energy Monte Carlo breach: ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`
+    );
+    console.log(
+      `   - Free energy margin: ${telemetry.energy.monteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(telemetry.energy.monteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
+    );
+    console.log(
+      `   - Entropy buffer: ${telemetry.energy.monteCarlo.entropyMargin.toFixed(2)}σ · game-theoretic slack ${(telemetry.energy.monteCarlo.gameTheorySlack * 100).toFixed(1)}%`
+    );
+    if (PRINT_COMMANDS) {
+      printCommandChecklist(safeBatch);
+    }
     return;
   }
 
@@ -4447,6 +4575,9 @@ function run() {
   }
   if (missionTelemetry.summary.verification.warnings.length) {
     console.log(`   ⚠ Mission lattice advisories: ${missionTelemetry.summary.verification.warnings.join("; ")}`);
+  }
+  if (PRINT_COMMANDS) {
+    printCommandChecklist(safeBatch);
   }
 
   if (REFLECT_MODE) {
