@@ -61,6 +61,8 @@ class OrchestratorConfig:
     status_output_path: Optional[Path] = None
     energy_oracle_path: Optional[Path] = None
     energy_oracle_interval_seconds: float = 60.0
+    auto_policy_actions: bool = True
+    policy_action_interval_seconds: float = 10.0
     heartbeat_interval_seconds: float = 5.0
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
@@ -91,6 +93,8 @@ class Orchestrator:
         self.simulation: Optional[PlanetarySimulation] = SyntheticEconomySim() if config.enable_simulation else None
         self._latest_simulation_state: Optional[SimulationState] = None
         self._last_simulation_action: Optional[Dict[str, Any]] = None
+        self._simulation_lock = asyncio.Lock()
+        self._simulation_ready = asyncio.Event()
         self._integrity_suite = IntegritySuite(self.job_registry, self.resources, self.scheduler)
         self._last_integrity_report: Optional[IntegrityReport] = None
         self._tasks: List[asyncio.Task] = []
@@ -150,6 +154,8 @@ class Orchestrator:
         self._tasks.append(asyncio.create_task(self._agent_health_loop(), name="agent-health"))
         if self.simulation:
             self._tasks.append(asyncio.create_task(self._simulation_loop(), name="simulation"))
+        if self.simulation and self.config.auto_policy_actions:
+            self._tasks.append(asyncio.create_task(self._policy_action_loop(), name="policy-actions"))
         await self._seed_jobs()
         await self._run_integrity_suite()
         self._tasks.append(asyncio.create_task(self._integrity_loop(), name="integrity"))
@@ -382,6 +388,7 @@ class Orchestrator:
 
     def _apply_simulation_state(self, state: SimulationState, *, event: str) -> None:
         self._latest_simulation_state = state
+        self._simulation_ready.set()
         prev_energy_capacity = self.resources.energy_capacity
         prev_energy_available = self.resources.energy_available
         prev_compute_capacity = self.resources.compute_capacity
@@ -431,8 +438,9 @@ class Orchestrator:
         while self._running:
             await self._paused.wait()
             hours = max(0.0, float(self.config.simulation_hours_per_tick)) or 1.0
-            state = self.simulation.tick(hours=hours)
-            self._apply_simulation_state(state, event="simulation_tick")
+            async with self._simulation_lock:
+                state = self.simulation.tick(hours=hours)
+                self._apply_simulation_state(state, event="simulation_tick")
             await asyncio.sleep(max(0.01, float(self.config.simulation_tick_seconds)))
 
     async def _seed_jobs(self) -> None:
@@ -686,10 +694,12 @@ class Orchestrator:
         policy = payload.get("policy")
         action_payload = payload.get("action_payload")
         if isinstance(policy, str):
-            if self._latest_simulation_state is None:
-                self._latest_simulation_state = self.simulation.tick(hours=0.0)
-            assert self._latest_simulation_state is not None
-            action_payload = self._build_policy_action(self._latest_simulation_state)
+            async with self._simulation_lock:
+                if self._latest_simulation_state is None:
+                    state = self.simulation.tick(hours=0.0)
+                    self._apply_simulation_state(state, event="simulation_probe")
+                assert self._latest_simulation_state is not None
+                action_payload = self._build_policy_action(self._latest_simulation_state)
         if not isinstance(action_payload, dict):
             self._warning("simulation_action_missing_payload")
             return
@@ -697,14 +707,43 @@ class Orchestrator:
         if not normalized:
             self._warning("simulation_action_empty")
             return
-        state = self.simulation.apply_action(normalized)
-        self._apply_simulation_state(state, event="simulation_action_applied")
+        async with self._simulation_lock:
+            state = self.simulation.apply_action(normalized)
+            self._apply_simulation_state(state, event="simulation_action_applied")
         self._last_simulation_action = {
             "action": normalized,
             "policy": policy,
             "applied_at": datetime.now(timezone.utc).isoformat(),
         }
         await self._persist_status_snapshot()
+
+    async def _policy_action_loop(self) -> None:
+        if self.simulation is None:
+            return
+        interval = max(0.1, float(self.config.policy_action_interval_seconds))
+        try:
+            await self._simulation_ready.wait()
+            while self._running:
+                await self._paused.wait()
+                action: Dict[str, float] | None = None
+                async with self._simulation_lock:
+                    if self._latest_simulation_state is not None:
+                        action = self._build_policy_action(self._latest_simulation_state)
+                        if action:
+                            state = self.simulation.apply_action(action)
+                            self._apply_simulation_state(state, event="simulation_policy_action")
+                            self._last_simulation_action = {
+                                "action": action,
+                                "policy": "autonomous",
+                                "applied_at": datetime.now(timezone.utc).isoformat(),
+                            }
+                if not action:
+                    await asyncio.sleep(interval)
+                    continue
+                await self._persist_status_snapshot()
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:  # pragma: no cover - cooperative shutdown
+            return
 
     async def _heartbeat_listener(self) -> None:
         async with self.bus.subscribe("heartbeat") as receiver:
