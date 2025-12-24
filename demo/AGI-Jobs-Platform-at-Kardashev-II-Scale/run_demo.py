@@ -1,6 +1,6 @@
 """Python wrapper for the Kardashev II platform demo.
 
-This wrapper delegates to the existing ``run-demo.cjs`` Node script while
+This wrapper delegates to the legacy ``run-demo.cjs`` Node script while
 providing a Python-friendly interface for CI and contributor workflows.
 It mirrors the most important flags (``--output-dir``, ``--check``, and
 ``--print-commands``) and ensures outputs are written to the requested
@@ -20,7 +20,7 @@ import shutil
 
 ROOT = Path(__file__).resolve().parent
 NODE_SCRIPT = ROOT / "run-demo.cjs"
-DEFAULT_OUTPUT_DIR = ROOT / "output"
+DEFAULT_OUTPUT_DIR = ROOT / "output" / "legacy"
 
 
 def _ensure_node_available() -> str:

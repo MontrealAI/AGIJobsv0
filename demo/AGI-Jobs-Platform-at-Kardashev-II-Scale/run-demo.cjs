@@ -450,7 +450,7 @@ function parseArgs(argv) {
 function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
   const dir = rawOutputDir
     ? path.resolve(rawOutputDir)
-    : path.join(__dirname, 'output');
+    : path.join(__dirname, 'output', 'legacy');
   if (ensure) {
     ensureDir(dir);
   }
