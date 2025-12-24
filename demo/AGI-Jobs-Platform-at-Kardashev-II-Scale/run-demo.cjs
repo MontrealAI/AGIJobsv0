@@ -334,9 +334,11 @@ function validateEnergyFeeds(energy) {
     }
   });
 
-  const tolerancePct = energy?.tolerancePct ?? 0;
-  if (!Number.isFinite(tolerancePct) || tolerancePct <= 0 || tolerancePct > 50) {
-    throw new Error('Energy tolerancePct must be between 0 and 50.');
+  const tolerancePct = energy?.tolerancePct;
+  if (tolerancePct !== undefined) {
+    if (!Number.isFinite(tolerancePct) || tolerancePct <= 0 || tolerancePct > 50) {
+      throw new Error('Energy tolerancePct must be between 0 and 50.');
+    }
   }
 }
 
