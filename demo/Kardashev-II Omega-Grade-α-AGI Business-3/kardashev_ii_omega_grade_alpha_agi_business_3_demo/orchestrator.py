@@ -389,17 +389,20 @@ class Orchestrator:
             prev_energy_available = self.resources.energy_available
             prev_compute_capacity = self.resources.compute_capacity
             prev_compute_available = self.resources.compute_available
+            free_energy_boost = max(0.0, min(0.5, state.free_energy))
+            energy_scale = self.config.simulation_energy_scale * (1.0 + free_energy_boost * 0.05)
             energy_capacity_target = max(
                 self.resources.energy_capacity,
                 self.config.energy_capacity,
-                state.energy_output_gw * self.config.simulation_energy_scale,
+                state.energy_output_gw * energy_scale,
             )
             prosperity_factor = 1.0 + state.prosperity_index * self.config.simulation_compute_scale
             sustainability_factor = 1.0 + state.sustainability_index * 0.5 * self.config.simulation_compute_scale
+            coordination_factor = 1.0 + state.coordination_index * 0.1
             compute_capacity_target = max(
                 self.resources.compute_capacity,
                 self.config.compute_capacity,
-                self.config.compute_capacity * prosperity_factor * sustainability_factor,
+                self.config.compute_capacity * prosperity_factor * sustainability_factor * coordination_factor,
             )
             energy_usage = max(0.0, prev_energy_capacity - prev_energy_available)
             compute_usage = max(0.0, prev_compute_capacity - prev_compute_available)
@@ -416,6 +419,10 @@ class Orchestrator:
                 energy_output=state.energy_output_gw,
                 prosperity=state.prosperity_index,
                 sustainability=state.sustainability_index,
+                free_energy=state.free_energy,
+                entropy=state.entropy,
+                hamiltonian=state.hamiltonian,
+                coordination_index=state.coordination_index,
                 energy_available=self.resources.energy_available,
                 compute_available=self.resources.compute_available,
                 energy_price=self.resources.energy_price,
@@ -1121,6 +1128,10 @@ class Orchestrator:
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
                 "prosperity_index": self._latest_simulation_state.prosperity_index,
                 "sustainability_index": self._latest_simulation_state.sustainability_index,
+                "free_energy": self._latest_simulation_state.free_energy,
+                "entropy": self._latest_simulation_state.entropy,
+                "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "coordination_index": self._latest_simulation_state.coordination_index,
             }
         pending_events = list(self.scheduler.pending_events())
         pending_counts = Counter(event.event_type for event in pending_events)
@@ -1193,6 +1204,10 @@ class Orchestrator:
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
                 "prosperity_index": self._latest_simulation_state.prosperity_index,
                 "sustainability_index": self._latest_simulation_state.sustainability_index,
+                "free_energy": self._latest_simulation_state.free_energy,
+                "entropy": self._latest_simulation_state.entropy,
+                "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "coordination_index": self._latest_simulation_state.coordination_index,
             }
         return {
             "mission": self.config.mission_name,
