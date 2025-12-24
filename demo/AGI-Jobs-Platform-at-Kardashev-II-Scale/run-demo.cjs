@@ -273,6 +273,19 @@ function softmaxScores(scores, temperature) {
   };
 }
 
+function computeJainIndex(values) {
+  if (!values.length) {
+    return 1;
+  }
+  const sum = values.reduce((total, value) => total + value, 0);
+  const sumSquares = values.reduce((total, value) => total + value * value, 0);
+  if (!Number.isFinite(sum) || !Number.isFinite(sumSquares) || sumSquares <= 0) {
+    return 1;
+  }
+  const rawIndex = (sum * sum) / (values.length * sumSquares);
+  return Math.min(1, Math.max(0, rawIndex));
+}
+
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
@@ -301,12 +314,21 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     }
     return sum - item.weight * Math.log(item.weight);
   }, 0);
+  const payoffs = allocations.map((allocation) => allocation.payoff);
+  const averagePayoff = payoffs.length ? payoffs.reduce((sum, value) => sum + value, 0) / payoffs.length : 0;
+  const maxPayoff = payoffs.length ? Math.max(...payoffs) : 0;
+  const deviationIncentive = maxPayoff > 0 ? Math.min(1, Math.max(0, (maxPayoff - averagePayoff) / maxPayoff)) : 0;
+  const strategyStability = 1 - deviationIncentive;
+  const jainIndex = computeJainIndex(payoffs);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
   const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
   return {
     temperature,
     nashProduct,
+    strategyStability,
+    deviationIncentive,
+    jainIndex,
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
@@ -542,6 +564,9 @@ function main() {
   );
   reportLines.push(
     `- **Allocation Entropy:** ${allocationPolicy.allocationEntropy.toFixed(3)} (fairness ${(allocationPolicy.fairnessIndex * 100).toFixed(1)}%); Gibbs potential ${allocationPolicy.gibbsPotential.toFixed(3)}.`
+  );
+  reportLines.push(
+    `- **Strategy Stability:** ${(allocationPolicy.strategyStability * 100).toFixed(1)}% (deviation incentive ${(allocationPolicy.deviationIncentive * 100).toFixed(1)}%; Jain fairness ${(allocationPolicy.jainIndex * 100).toFixed(1)}%).`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
