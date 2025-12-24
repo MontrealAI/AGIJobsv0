@@ -103,6 +103,18 @@ def build_parser() -> argparse.ArgumentParser:
         default=60.0,
         help="Seconds between energy oracle telemetry updates",
     )
+    parser.add_argument(
+        "--auto-policy-actions",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable autonomous policy actions based on simulation metrics",
+    )
+    parser.add_argument(
+        "--policy-action-interval",
+        type=float,
+        default=10.0,
+        help="Seconds between autonomous policy actions",
+    )
     parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
     return parser
 
@@ -152,6 +164,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     _require_positive(args.health_check_interval, field="health_check_interval_seconds")
     _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
     _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
+    _require_positive(args.policy_action_interval, field="policy_action_interval_seconds")
     checkpoint_interval = float(
         overrides.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
     )
@@ -176,6 +189,8 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "status_output_path": args.status_output,
         "energy_oracle_path": args.energy_oracle,
         "energy_oracle_interval_seconds": args.energy_oracle_interval,
+        "auto_policy_actions": args.auto_policy_actions,
+        "policy_action_interval_seconds": args.policy_action_interval,
         "heartbeat_interval_seconds": args.heartbeat_interval,
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,
