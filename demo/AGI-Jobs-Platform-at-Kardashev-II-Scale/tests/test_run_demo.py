@@ -40,18 +40,18 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
 
-    report = tmp_path / "kardashev-report.md"
-    governance = tmp_path / "governance-playbook.md"
+    report = tmp_path / "kardashev-orchestration-report.md"
+    briefing = tmp_path / "kardashev-operator-briefing.md"
     telemetry = tmp_path / "kardashev-telemetry.json"
 
-    for path in (report, governance, telemetry):
+    for path in (report, briefing, telemetry):
         assert path.exists(), f"expected artefact missing: {path}"
 
     telemetry_payload = json.loads(telemetry.read_text())
-    assert telemetry_payload.get("energyMonteCarlo", {}).get("withinTolerance") is True
-    assert telemetry_payload.get("dominanceScore")
+    assert telemetry_payload.get("dominance", {}).get("score")
 
-    energy = telemetry_payload["energyMonteCarlo"]
+    energy = telemetry_payload["energy"]["monteCarlo"]
+    assert energy["withinTolerance"] is True
     assert energy["maintainsBuffer"] is True
     assert energy["freeEnergyMarginGw"] > 0
     assert 0 < energy["freeEnergyMarginPct"] <= 1
@@ -60,10 +60,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert energy["entropyMargin"] > 0
     assert 0 <= energy["gameTheorySlack"] <= 1
 
-    allocation = telemetry_payload["allocationPolicy"]
-    assert allocation["allocationEntropy"] >= 0
-    assert 0 < allocation["fairnessIndex"] <= 1
-    assert allocation["gibbsPotential"] <= 0
+    verification = telemetry_payload["verification"]
+    assert verification["energyModels"]["withinMargin"] is True
+    assert verification["energyFeeds"]["allWithinTolerance"] is True
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
