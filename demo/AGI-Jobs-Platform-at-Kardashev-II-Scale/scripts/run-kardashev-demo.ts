@@ -1165,6 +1165,16 @@ type MonteCarloSummary = {
   averageGw: number;
   withinTolerance: boolean;
   tolerance: number;
+  capturedGw: number;
+  marginGw: number;
+  freeEnergyMarginGw: number;
+  freeEnergyMarginPct: number;
+  gibbsFreeEnergyGj: number;
+  hamiltonianStability: number;
+  entropyMargin: number;
+  gameTheorySlack: number;
+  demandStdDevGw: number;
+  maintainsBuffer: boolean;
 };
 
 function percentile(values: number[], ratio: number): number {
@@ -1191,6 +1201,7 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   let breaches = 0;
   let maxGw = 0;
   let totalGw = 0;
+  let sumSquares = 0;
 
   for (let iteration = 0; iteration < runs; iteration += 1) {
     let civilisationDemandGw = 0;
@@ -1218,24 +1229,52 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     }
     samples.push(civilisationDemandGw);
     totalGw += civilisationDemandGw;
+    sumSquares += civilisationDemandGw ** 2;
   }
 
   samples.sort((a, b) => a - b);
   const breachProbability = breaches / runs;
   const averageGw = samples.length === 0 ? 0 : totalGw / samples.length;
 
+  const variance = samples.length === 0 ? 0 : Math.max(0, sumSquares / samples.length - averageGw ** 2);
+  const demandStdDevGw = Math.sqrt(variance);
+  const p95Demand = percentile(samples, 0.95);
+  const freeEnergyMarginGw = capturedGw - p95Demand;
+  const freeEnergyMarginPct = capturedGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / capturedGw);
+  const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600;
+  const hamiltonianStability = Math.max(
+    0,
+    Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * freeEnergyMarginPct)
+  );
+  const entropyMargin = demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw;
+  const gameTheorySlack = Math.max(
+    0,
+    Math.min(1, (1 - breachProbability) * 0.55 + hamiltonianStability * 0.45)
+  );
+  const maintainsBuffer = freeEnergyMarginGw >= marginGw;
+
   return {
     runs,
     breachProbability,
     percentileGw: {
       p50: percentile(samples, 0.5),
-      p95: percentile(samples, 0.95),
+      p95: p95Demand,
       p99: percentile(samples, 0.99),
     },
     maxGw,
     averageGw,
     withinTolerance: breachProbability <= 0.01,
     tolerance: 0.01,
+    capturedGw,
+    marginGw,
+    freeEnergyMarginGw,
+    freeEnergyMarginPct,
+    gibbsFreeEnergyGj,
+    hamiltonianStability,
+    entropyMargin,
+    gameTheorySlack,
+    demandStdDevGw,
+    maintainsBuffer,
   };
 }
 
@@ -2408,6 +2447,18 @@ function buildRunbook(
     `* Monte Carlo breach probability ${(telemetry.energy.monteCarlo.breachProbability * 100).toFixed(2)}% (runs ${
       telemetry.energy.monteCarlo.runs
     }, tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`
+  );
+  lines.push(
+    `* Free energy margin ${telemetry.energy.monteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(
+      telemetry.energy.monteCarlo.freeEnergyMarginPct * 100
+    ).toFixed(2)}%) · Gibbs free energy ${telemetry.energy.monteCarlo.gibbsFreeEnergyGj.toFixed(2)} GJ.`
+  );
+  lines.push(
+    `* Hamiltonian stability ${(telemetry.energy.monteCarlo.hamiltonianStability * 100).toFixed(
+      1
+    )}% · entropy buffer ${telemetry.energy.monteCarlo.entropyMargin.toFixed(2)}σ · game-theoretic slack ${(
+      telemetry.energy.monteCarlo.gameTheorySlack * 100
+    ).toFixed(1)}%.`
   );
   lines.push(
     `* Demand percentiles: P95 ${telemetry.energy.monteCarlo.percentileGw.p95.toLocaleString()} GW · P99 ${
@@ -4283,6 +4334,7 @@ function run() {
   const logisticsJson = `${JSON.stringify(telemetry.logistics, null, 2)}\n`;
 
   const outputs = [
+    { suffix: "report.md", content: `${operatorBriefing}\n` },
     { suffix: "telemetry.json", content: telemetryJson },
     { suffix: "safe-transaction-batch.json", content: safeJson },
     { suffix: "stability-ledger.json", content: ledgerJson },
@@ -4305,6 +4357,7 @@ function run() {
     path: join(OUTPUT_DIR, `${OUTPUT_PREFIX}-${suffix}`),
     content,
   }));
+  outputs.push({ path: join(OUTPUT_DIR, "governance-playbook.md"), content: `${runbook}\n` });
 
   for (const output of outputs) {
     if (!CHECK_MODE && !existsSync(output.path)) {

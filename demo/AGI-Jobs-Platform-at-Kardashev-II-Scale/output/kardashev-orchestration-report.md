@@ -19,6 +19,8 @@
 * Utilisation: 57.62% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
+* Free energy margin 167810.86 GW (39.95%) · Gibbs free energy 604119100.38 GJ.
+* Hamiltonian stability 70.0% · entropy buffer 17.73σ · game-theoretic slack 86.5%.
 * Demand percentiles: P95 252,189.139 GW · P99 255,160.811 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
