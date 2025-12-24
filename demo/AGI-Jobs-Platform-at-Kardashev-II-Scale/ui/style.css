@@ -215,7 +215,8 @@ button:hover {
 
 .identity-list,
 .fabric-list,
-.feed-list {
+.feed-list,
+.allocation-list {
   list-style: none;
   padding: 0;
   margin: 12px 0 0 0;
@@ -226,12 +227,26 @@ button:hover {
 
 .identity-list li,
 .fabric-list li,
-.feed-list li {
+.feed-list li,
+.allocation-list li {
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 14px;
   padding: 12px 16px;
   line-height: 1.5;
+}
+
+.allocation-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+
+.allocation-metrics p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(226, 232, 240, 0.85);
 }
 
 .feed-list li {

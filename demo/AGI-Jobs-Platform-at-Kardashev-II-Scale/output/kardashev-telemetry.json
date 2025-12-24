@@ -576,6 +576,56 @@
       }
     }
   },
+  "allocationPolicy": {
+    "temperature": 0.3002251652170107,
+    "nashProduct": 0.6044212863844729,
+    "allocationEntropy": 0.9923063827819896,
+    "fairnessIndex": 0.9032361944403527,
+    "gibbsPotential": -0.20676099515198731,
+    "availableGw": 587810.861217711,
+    "reserveGw": 167810.861217711,
+    "allocations": [
+      {
+        "federation": "earth",
+        "name": "Earth Sovereign Federation",
+        "weight": 0.35403689197533944,
+        "recommendedGw": 208106.730374866,
+        "payoff": 0.8324032499999999,
+        "resilience": 0.945,
+        "coverageSeconds": 1950,
+        "energyAvailableGw": 82000,
+        "computeExaflops": 18.4,
+        "latencyMs": 85,
+        "renewablePct": 0.87
+      },
+      {
+        "federation": "mars",
+        "name": "Mars Terraforming Compact",
+        "weight": 0.14372774729043328,
+        "recommendedGw": 84484.73091567111,
+        "payoff": 0.28779299999999997,
+        "resilience": 0.935,
+        "coverageSeconds": 2400,
+        "energyAvailableGw": 24000,
+        "computeExaflops": 6.1,
+        "latencyMs": 820,
+        "renewablePct": 0.93
+      },
+      {
+        "federation": "orbital",
+        "name": "Orbital Research Halo",
+        "weight": 0.5022353607342273,
+        "recommendedGw": 295219.39992717386,
+        "payoff": 0.9217332599999999,
+        "resilience": 0.959,
+        "coverageSeconds": 1920,
+        "energyAvailableGw": 136000,
+        "computeExaflops": 24.6,
+        "latencyMs": 42,
+        "renewablePct": 0.99
+      }
+    ]
+  },
   "logistics": {
     "corridors": [
       {

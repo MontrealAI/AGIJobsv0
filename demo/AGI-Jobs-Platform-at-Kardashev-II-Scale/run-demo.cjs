@@ -310,6 +310,8 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
+    availableGw,
+    reserveGw: energyMonteCarlo.reserveGw ?? 0,
     allocations,
   };
 }
