@@ -16,7 +16,8 @@ This dossier is the living operator manual for `demo/AGI-Jobs-Platform-at-Kardas
 2. Run `npm run demo:kardashev-ii:ci` to validate artefacts, README integrity, and orchestrator invariants.
 3. Launch a deterministic dry-run with `npm run demo:kardashev-ii:orchestrate -- --check` to produce ledgers without writing new outputs.
 4. Generate full artefacts with `npm run demo:kardashev` (writes to `output/` and refreshes dashboards in `ui/`).
-5. Escalate anomalies using the guardian contacts embedded in [`OperatorRunbook.md`](../../OperatorRunbook.md) and `config/kardashev-ii.manifest.json`.
+5. Serve the dashboard locally with `npm run demo:kardashev-ii:serve` and open the provided `http://localhost` URL.
+6. Escalate anomalies using the guardian contacts embedded in [`OperatorRunbook.md`](../../OperatorRunbook.md) and `config/kardashev-ii.manifest.json`.
 
 ## 🧱 Architecture overview
 ```mermaid
