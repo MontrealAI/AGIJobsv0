@@ -1163,6 +1163,15 @@ type MonteCarloSummary = {
   percentileGw: { p50: number; p95: number; p99: number };
   maxGw: number;
   averageGw: number;
+  marginGw: number;
+  freeEnergyMarginGw: number;
+  freeEnergyMarginPct: number;
+  demandStdDevGw: number;
+  entropyMargin: number;
+  gibbsFreeEnergyGj: number;
+  hamiltonianStability: number;
+  gameTheorySlack: number;
+  maintainsBuffer: boolean;
   withinTolerance: boolean;
   tolerance: number;
 };
@@ -1191,6 +1200,7 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   let breaches = 0;
   let maxGw = 0;
   let totalGw = 0;
+  let totalSquares = 0;
 
   for (let iteration = 0; iteration < runs; iteration += 1) {
     let civilisationDemandGw = 0;
@@ -1218,22 +1228,50 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     }
     samples.push(civilisationDemandGw);
     totalGw += civilisationDemandGw;
+    totalSquares += civilisationDemandGw * civilisationDemandGw;
   }
 
   samples.sort((a, b) => a - b);
   const breachProbability = breaches / runs;
   const averageGw = samples.length === 0 ? 0 : totalGw / samples.length;
+  const variance = runs > 0 ? Math.max(0, totalSquares / runs - averageGw * averageGw) : 0;
+  const demandStdDevGw = Math.sqrt(variance);
+  const p50 = percentile(samples, 0.5);
+  const p95 = percentile(samples, 0.95);
+  const p99 = percentile(samples, 0.99);
+  const freeEnergyMarginGw = capturedGw - p95;
+  const freeEnergyMarginPct = capturedGw === 0 ? 0 : freeEnergyMarginGw / capturedGw;
+  const entropyMargin = demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw;
+  const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600;
+  const hamiltonianStability = Math.max(
+    0,
+    Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * Math.max(0, freeEnergyMarginPct))
+  );
+  const gameTheorySlack = Math.max(
+    0,
+    Math.min(1, (1 - breachProbability) * 0.55 + hamiltonianStability * 0.45)
+  );
+  const maintainsBuffer = freeEnergyMarginGw >= marginGw;
 
   return {
     runs,
     breachProbability,
     percentileGw: {
-      p50: percentile(samples, 0.5),
-      p95: percentile(samples, 0.95),
-      p99: percentile(samples, 0.99),
+      p50,
+      p95,
+      p99,
     },
     maxGw,
     averageGw,
+    marginGw,
+    freeEnergyMarginGw,
+    freeEnergyMarginPct,
+    demandStdDevGw,
+    entropyMargin,
+    gibbsFreeEnergyGj,
+    hamiltonianStability,
+    gameTheorySlack,
+    maintainsBuffer,
     withinTolerance: breachProbability <= 0.01,
     tolerance: 0.01,
   };
@@ -2410,6 +2448,16 @@ function buildRunbook(
     }, tolerance ${(telemetry.energy.monteCarlo.tolerance * 100).toFixed(2)}%).`
   );
   lines.push(
+    `* Free energy margin ${telemetry.energy.monteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(
+      telemetry.energy.monteCarlo.freeEnergyMarginPct * 100
+    ).toFixed(2)}%) · Gibbs free energy ${telemetry.energy.monteCarlo.gibbsFreeEnergyGj.toLocaleString()} GJ.`
+  );
+  lines.push(
+    `* Hamiltonian stability ${(telemetry.energy.monteCarlo.hamiltonianStability * 100).toFixed(1)}% · entropy margin ${telemetry.energy.monteCarlo.entropyMargin.toFixed(2)}σ · game-theory slack ${(
+      telemetry.energy.monteCarlo.gameTheorySlack * 100
+    ).toFixed(1)}% · buffer ${telemetry.energy.monteCarlo.maintainsBuffer ? "stable" : "at risk"}.`
+  );
+  lines.push(
     `* Demand percentiles: P95 ${telemetry.energy.monteCarlo.percentileGw.p95.toLocaleString()} GW · P99 ${
       telemetry.energy.monteCarlo.percentileGw.p99.toLocaleString()
     } GW.`
@@ -2801,6 +2849,11 @@ function computeTelemetry(
   if (!energyMonteCarlo.withinTolerance) {
     energyWarnings.push(
       `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
+    );
+  }
+  if (!energyMonteCarlo.maintainsBuffer) {
+    energyWarnings.push(
+      `Free energy margin ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW below safety buffer ${energyMonteCarlo.marginGw.toFixed(2)} GW`
     );
   }
 
