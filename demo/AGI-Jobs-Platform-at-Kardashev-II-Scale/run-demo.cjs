@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 
 const DEBUG_TOKEN = 'kardashev-demo';
@@ -433,7 +432,7 @@ function parseArgs(argv) {
 function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
   const dir = rawOutputDir
     ? path.resolve(rawOutputDir)
-    : path.join(os.tmpdir(), 'agi-jobs-platform');
+    : path.join(__dirname, 'output');
   if (ensure) {
     ensureDir(dir);
   }

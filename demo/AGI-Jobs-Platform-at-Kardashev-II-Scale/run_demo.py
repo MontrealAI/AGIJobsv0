@@ -15,13 +15,12 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
-import tempfile
 import shutil
 
 
 ROOT = Path(__file__).resolve().parent
 NODE_SCRIPT = ROOT / "run-demo.cjs"
-DEFAULT_OUTPUT_DIR = Path(tempfile.gettempdir()) / "agi-jobs-platform"
+DEFAULT_OUTPUT_DIR = ROOT / "output"
 
 
 def _ensure_node_available() -> str:
