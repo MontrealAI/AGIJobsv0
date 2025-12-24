@@ -297,6 +297,62 @@ class DayOneUtilityOrchestrator:
     # ------------------------------------------------------------------
     # Simulation
     # ------------------------------------------------------------------
+    def _shannon_entropy(self, samples: Sequence[float]) -> float:
+        total = sum(samples)
+        if total <= 0:
+            return 0.0
+        entropy = 0.0
+        for value in samples:
+            if value <= 0:
+                continue
+            prob = value / total
+            entropy -= prob * math.log(prob)
+        return entropy
+
+    def _compute_thermodynamics(
+        self,
+        *,
+        baseline_utility: float,
+        candidate_utility: float,
+        total_candidate_cost: float,
+        avg_candidate_latency: float,
+        latency_delta: float,
+        utility_uplift: float,
+        candidate_latencies: Sequence[float],
+        utility_threshold: float,
+        latency_threshold: float,
+        reliability_score: float,
+    ) -> Mapping[str, float]:
+        entropy = self._shannon_entropy(candidate_latencies)
+        if len(candidate_latencies) > 1:
+            max_entropy = math.log(len(candidate_latencies))
+            entropy_ratio = entropy / max_entropy
+        else:
+            entropy_ratio = 0.0
+        entropy_margin_sigma = max(0.0, (1.0 - entropy_ratio) * 3.0)
+        temperature = max(avg_candidate_latency, 0.05)
+        free_energy_margin = candidate_utility - baseline_utility
+        gibbs_free_energy = candidate_utility - (temperature * entropy)
+        hamiltonian = gibbs_free_energy - abs(latency_delta) * total_candidate_cost
+        scale = max(1.0, abs(baseline_utility))
+        hamiltonian_stability = 1.0 / (1.0 + math.exp(-hamiltonian / scale))
+        utility_gap = max(0.0, utility_threshold - utility_uplift)
+        latency_gap = max(0.0, latency_delta - latency_threshold)
+        reliability_gap = max(0.0, 0.92 - reliability_score)
+        game_theory_slack = max(0.0, min(1.0, 1.0 - (utility_gap + latency_gap + reliability_gap)))
+
+        return {
+            "entropy": entropy,
+            "entropy_ratio": entropy_ratio,
+            "entropy_margin_sigma": entropy_margin_sigma,
+            "temperature": temperature,
+            "free_energy_margin": free_energy_margin,
+            "gibbs_free_energy": gibbs_free_energy,
+            "hamiltonian": hamiltonian,
+            "hamiltonian_stability": hamiltonian_stability,
+            "game_theory_slack": game_theory_slack,
+        }
+
     def simulate(self, strategy_name: str) -> Mapping[str, Any]:
         snapshot = self.load_owner_controls()
         if snapshot.get("paused"):
@@ -410,6 +466,19 @@ class DayOneUtilityOrchestrator:
             "owner_treasury": platform_fee + treasury_bonus,
         }
 
+        thermodynamics = self._compute_thermodynamics(
+            baseline_utility=baseline_utility,
+            candidate_utility=candidate_utility,
+            total_candidate_cost=total_candidate_cost,
+            avg_candidate_latency=avg_candidate_latency,
+            latency_delta=latency_delta,
+            utility_uplift=utility_uplift,
+            candidate_latencies=candidate_latencies,
+            utility_threshold=utility_threshold,
+            latency_threshold=latency_threshold,
+            reliability_score=profile.reliability_score,
+        )
+
         report = {
             "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
             "strategy": profile.name,
@@ -420,6 +489,7 @@ class DayOneUtilityOrchestrator:
                 "reliability_score": profile.reliability_score,
             },
             "metrics": metrics_block,
+            "thermodynamics": thermodynamics,
             "rules": {
                 "utility_uplift_threshold": utility_threshold,
                 "max_latency_delta": latency_threshold,
@@ -672,6 +742,7 @@ class DayOneUtilityOrchestrator:
     def _render_dashboard(self, report: Mapping[str, Any], chart_path: Optional[Path]) -> Path:
         profile = report["strategy_profile"]
         metrics = report["metrics"]
+        thermodynamics = report["thermodynamics"]
         owner_controls = report["owner_controls"]
         guardrail_pass = report["guardrail_pass"]
         mermaid_blocks = report["mermaid"]
@@ -859,6 +930,17 @@ class DayOneUtilityOrchestrator:
                             <p><strong>Latency Override:</strong> {latency_override_display}</p>
                             <p><strong>Narrative:</strong> {owner_controls['narrative']}</p>
                         </div>
+                    </div>
+                </section>
+                <section class="card">
+                    <h2>Thermodynamic Guardrails</h2>
+                    <div class="metrics-grid">
+                        <div class="metric"><h3>Free Energy Margin</h3><p>{thermodynamics['free_energy_margin']:.2f}</p></div>
+                        <div class="metric"><h3>Gibbs Free Energy</h3><p>{thermodynamics['gibbs_free_energy']:.2f}</p></div>
+                        <div class="metric"><h3>Hamiltonian Stability</h3><p>{thermodynamics['hamiltonian_stability']*100:.1f}%</p></div>
+                        <div class="metric"><h3>Entropy Margin</h3><p>{thermodynamics['entropy_margin_sigma']:.2f}σ</p></div>
+                        <div class="metric"><h3>Game-Theory Slack</h3><p>{thermodynamics['game_theory_slack']*100:.1f}%</p></div>
+                        <div class="metric"><h3>Temperature</h3><p>{thermodynamics['temperature']:.2f}</p></div>
                     </div>
                 </section>
                 <section class="card">
@@ -1181,6 +1263,7 @@ class DayOneUtilityOrchestrator:
     def _build_human_summary(self, report: Mapping[str, Any]) -> str:
         profile = report["strategy_profile"]
         metrics = report["metrics"]
+        thermodynamics = report["thermodynamics"]
         guardrails = report["guardrail_pass"]
         owner_snapshot = report["owner_controls"]
         utility_pct = metrics["utility_uplift"] * 100
@@ -1192,6 +1275,18 @@ class DayOneUtilityOrchestrator:
             f"P95 latency: {metrics['latency_p95']:.3f}s",
             f"Reliability score: {profile['reliability_score']*100:.1f} — {'Operational' if guardrails['reliability_score'] else 'Investigate'}",
             f"Owner treasury (fees + bonuses): {metrics['owner_treasury']:.2f}",
+            (
+                "Thermodynamics: "
+                f"free energy margin {thermodynamics['free_energy_margin']:.2f}, "
+                f"Gibbs {thermodynamics['gibbs_free_energy']:.2f}, "
+                f"Hamiltonian stability {thermodynamics['hamiltonian_stability']*100:.1f}%."
+            ),
+            (
+                "Thermo slack: "
+                f"entropy {thermodynamics['entropy_margin_sigma']:.2f}σ · "
+                f"game-theory slack {thermodynamics['game_theory_slack']*100:.1f}% · "
+                f"temperature {thermodynamics['temperature']:.2f}."
+            ),
             "Highlights:",
         ]
         for bullet in profile["highlights"]:

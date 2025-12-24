@@ -51,6 +51,12 @@ def test_simulate_e2e_outputs():
     assert payload["metrics"]["candidate"]["platform_fee"] > 0
     assert payload["metrics"]["candidate"]["treasury_bonus"] >= 0
     assert payload["metrics"]["latency_p95"] > 0
+    thermo = payload["thermodynamics"]
+    assert thermo["free_energy_margin"] > 0
+    assert thermo["gibbs_free_energy"] > 0
+    assert 0 <= thermo["hamiltonian_stability"] <= 1
+    assert thermo["entropy_margin_sigma"] >= 0
+    assert 0 <= thermo["game_theory_slack"] <= 1
 
 
 def test_pause_blocks_simulation():
