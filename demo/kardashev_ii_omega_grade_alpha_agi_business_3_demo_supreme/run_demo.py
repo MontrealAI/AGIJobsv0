@@ -87,7 +87,17 @@ def run(argv: Optional[Iterable[str]] = None, *, main_fn=None) -> None:
     if fast_defaults_flag:
         argv_list = [arg for arg in argv_list if arg != "--fast-defaults"]
 
-    if not argv_list and (fast_defaults_env or fast_defaults_flag or argv_provided):
+    full_run_flag = "--full-run" in argv_list
+    if full_run_flag:
+        argv_list = [arg for arg in argv_list if arg != "--full-run"]
+
+    use_fast_defaults = False
+    if not argv_list:
+        use_fast_defaults = not full_run_flag
+    if fast_defaults_env or fast_defaults_flag:
+        use_fast_defaults = True
+
+    if use_fast_defaults and not argv_list:
         argv_list = DEFAULT_DEMO_ARGS.copy()
         print(
             "🛰️  Launching Supreme Omega-grade demo with fast defaults "
