@@ -89,3 +89,27 @@ def test_run_demo_rejects_invalid_energy_feed(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "configuration validation failed" in combined_output
     assert "energy feed" in combined_output
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_allows_default_tolerance(tmp_path: Path) -> None:
+    """Missing tolerancePct should fall back to defaults instead of failing validation."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config.pop("tolerancePct", None)
+    energy_config.pop("driftAlertPct", None)
+    relaxed_energy = tmp_path / "energy-feeds.json"
+    relaxed_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(relaxed_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "validated (check mode)" in result.stdout
