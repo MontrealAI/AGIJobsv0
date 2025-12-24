@@ -71,6 +71,17 @@ function renderGlobalFailure(message) {
   main.prepend(alert);
 }
 
+function renderLocalFileWarning() {
+  renderGlobalFailure(
+    "This dashboard is running from a local file URL. Modern browsers block fetch() for local files, so telemetry cannot be loaded."
+  );
+  const hint = document.createElement("p");
+  hint.classList.add("lede");
+  hint.innerHTML =
+    "Start the local dashboard server with <code>npm run demo:kardashev-ii:serve</code> and open the provided <code>http://localhost</code> URL.";
+  document.querySelector("main")?.querySelector("section")?.appendChild(hint);
+}
+
 function isLegacyTelemetry(telemetry) {
   return telemetry && telemetry.dominance === undefined && typeof telemetry.dominanceScore === "number";
 }
@@ -1023,6 +1034,10 @@ function renderOwnerProof(ownerProof, telemetry) {
 }
 
 async function bootstrap() {
+  if (window.location.protocol === "file:") {
+    renderLocalFileWarning();
+    return;
+  }
   const [telemetryResult, ledgerResult, ownerProofResult] = await Promise.allSettled([
     fetchJson("./output/kardashev-telemetry.json"),
     fetchJson("./output/kardashev-stability-ledger.json"),
