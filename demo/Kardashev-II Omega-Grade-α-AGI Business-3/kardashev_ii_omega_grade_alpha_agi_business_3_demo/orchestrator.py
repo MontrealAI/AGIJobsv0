@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -89,6 +90,7 @@ class Orchestrator:
         self.governance = GovernanceController(config.governance)
         self.simulation: Optional[PlanetarySimulation] = SyntheticEconomySim() if config.enable_simulation else None
         self._latest_simulation_state: Optional[SimulationState] = None
+        self._last_simulation_action: Optional[Dict[str, Any]] = None
         self._integrity_suite = IntegritySuite(self.job_registry, self.resources, self.scheduler)
         self._last_integrity_report: Optional[IntegrityReport] = None
         self._tasks: List[asyncio.Task] = []
@@ -378,56 +380,59 @@ class Orchestrator:
             await self._persist_status_snapshot()
             await asyncio.sleep(self.config.insight_interval_seconds)
 
+    def _apply_simulation_state(self, state: SimulationState, *, event: str) -> None:
+        self._latest_simulation_state = state
+        prev_energy_capacity = self.resources.energy_capacity
+        prev_energy_available = self.resources.energy_available
+        prev_compute_capacity = self.resources.compute_capacity
+        prev_compute_available = self.resources.compute_available
+        free_energy_boost = max(0.0, min(0.5, state.free_energy))
+        energy_scale = self.config.simulation_energy_scale * (1.0 + free_energy_boost * 0.05)
+        energy_capacity_target = max(
+            self.resources.energy_capacity,
+            self.config.energy_capacity,
+            state.energy_output_gw * energy_scale,
+        )
+        prosperity_factor = 1.0 + state.prosperity_index * self.config.simulation_compute_scale
+        sustainability_factor = 1.0 + state.sustainability_index * 0.5 * self.config.simulation_compute_scale
+        coordination_factor = 1.0 + state.coordination_index * 0.1
+        compute_capacity_target = max(
+            self.resources.compute_capacity,
+            self.config.compute_capacity,
+            self.config.compute_capacity * prosperity_factor * sustainability_factor * coordination_factor,
+        )
+        energy_usage = max(0.0, prev_energy_capacity - prev_energy_available)
+        compute_usage = max(0.0, prev_compute_capacity - prev_compute_available)
+        energy_available_target = max(0.0, energy_capacity_target - energy_usage)
+        compute_available_target = max(0.0, compute_capacity_target - compute_usage)
+        self.resources.update_capacity(
+            energy_capacity=energy_capacity_target,
+            energy_available=energy_available_target,
+            compute_capacity=compute_capacity_target,
+            compute_available=compute_available_target,
+        )
+        self._info(
+            event,
+            energy_output=state.energy_output_gw,
+            prosperity=state.prosperity_index,
+            sustainability=state.sustainability_index,
+            free_energy=state.free_energy,
+            entropy=state.entropy,
+            hamiltonian=state.hamiltonian,
+            coordination_index=state.coordination_index,
+            energy_available=self.resources.energy_available,
+            compute_available=self.resources.compute_available,
+            energy_price=self.resources.energy_price,
+            compute_price=self.resources.compute_price,
+        )
+
     async def _simulation_loop(self) -> None:
         assert self.simulation is not None
         while self._running:
             await self._paused.wait()
             hours = max(0.0, float(self.config.simulation_hours_per_tick)) or 1.0
             state = self.simulation.tick(hours=hours)
-            self._latest_simulation_state = state
-            prev_energy_capacity = self.resources.energy_capacity
-            prev_energy_available = self.resources.energy_available
-            prev_compute_capacity = self.resources.compute_capacity
-            prev_compute_available = self.resources.compute_available
-            free_energy_boost = max(0.0, min(0.5, state.free_energy))
-            energy_scale = self.config.simulation_energy_scale * (1.0 + free_energy_boost * 0.05)
-            energy_capacity_target = max(
-                self.resources.energy_capacity,
-                self.config.energy_capacity,
-                state.energy_output_gw * energy_scale,
-            )
-            prosperity_factor = 1.0 + state.prosperity_index * self.config.simulation_compute_scale
-            sustainability_factor = 1.0 + state.sustainability_index * 0.5 * self.config.simulation_compute_scale
-            coordination_factor = 1.0 + state.coordination_index * 0.1
-            compute_capacity_target = max(
-                self.resources.compute_capacity,
-                self.config.compute_capacity,
-                self.config.compute_capacity * prosperity_factor * sustainability_factor * coordination_factor,
-            )
-            energy_usage = max(0.0, prev_energy_capacity - prev_energy_available)
-            compute_usage = max(0.0, prev_compute_capacity - prev_compute_available)
-            energy_available_target = max(0.0, energy_capacity_target - energy_usage)
-            compute_available_target = max(0.0, compute_capacity_target - compute_usage)
-            self.resources.update_capacity(
-                energy_capacity=energy_capacity_target,
-                energy_available=energy_available_target,
-                compute_capacity=compute_capacity_target,
-                compute_available=compute_available_target,
-            )
-            self._info(
-                "simulation_tick",
-                energy_output=state.energy_output_gw,
-                prosperity=state.prosperity_index,
-                sustainability=state.sustainability_index,
-                free_energy=state.free_energy,
-                entropy=state.entropy,
-                hamiltonian=state.hamiltonian,
-                coordination_index=state.coordination_index,
-                energy_available=self.resources.energy_available,
-                compute_available=self.resources.compute_available,
-                energy_price=self.resources.energy_price,
-                compute_price=self.resources.compute_price,
-            )
+            self._apply_simulation_state(state, event="simulation_tick")
             await asyncio.sleep(max(0.01, float(self.config.simulation_tick_seconds)))
 
     async def _seed_jobs(self) -> None:
@@ -617,6 +622,89 @@ class Orchestrator:
                     self._handle_account_adjustment(message.payload)
                 elif action == "cancel_job":
                     await self._handle_cancel_job(message.payload)
+                elif action == "simulation_action":
+                    await self._handle_simulation_action(message.payload)
+
+    def _normalize_simulation_action(self, payload: Dict[str, Any]) -> Dict[str, float]:
+        allowed_fields = ("build_dyson_nodes", "stimulus", "green_shift")
+        normalized: Dict[str, float] = {}
+        for field in allowed_fields:
+            if field not in payload:
+                continue
+            try:
+                value = float(payload[field])
+            except (TypeError, ValueError):
+                self._warning("simulation_action_invalid_value", field=field, value=payload[field])
+                continue
+            normalized[field] = max(0.0, min(10.0, value))
+        return normalized
+
+    def _build_policy_action(self, state: SimulationState) -> Dict[str, float]:
+        """Derive a cooperative policy action from thermodynamic signals.
+
+        We use a Nash-style bargaining split between prosperity and sustainability
+        gaps, and a Boltzmann weighting (statistical physics) to soften allocation
+        under coordination stress. Gibbs free energy and the Hamiltonian magnitude
+        shape the energy expansion push to keep the demo grounded in Kardashev-II
+        scaling dynamics.
+        """
+
+        prosperity_gap = max(0.0, 1.0 - state.prosperity_index)
+        sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
+        coordination_gap = max(0.0, 1.0 - state.coordination_index)
+        temperature = 1.0 + coordination_gap
+        prosperity_weight = math.exp(prosperity_gap / temperature)
+        sustainability_weight = math.exp(sustainability_gap / temperature)
+        total_weight = prosperity_weight + sustainability_weight
+        if total_weight == 0:
+            prosperity_share = 0.5
+            sustainability_share = 0.5
+        else:
+            prosperity_share = prosperity_weight / total_weight
+            sustainability_share = sustainability_weight / total_weight
+        gibbs_drive = max(0.0, state.free_energy)
+        hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
+        energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
+        energy_action = (0.5 + 3.0 * energy_price_pressure + 4.0 * gibbs_drive) * (
+            1.0 + 0.5 * hamiltonian_pressure
+        )
+        coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap)
+        stimulus = 5.0 * prosperity_share * coordination_damping
+        green_shift = 5.0 * sustainability_share * coordination_damping
+        return self._normalize_simulation_action(
+            {
+                "build_dyson_nodes": energy_action,
+                "stimulus": stimulus,
+                "green_shift": green_shift,
+            }
+        )
+
+    async def _handle_simulation_action(self, payload: Dict[str, Any]) -> None:
+        if self.simulation is None:
+            self._warning("simulation_action_ignored", reason="simulation_disabled")
+            return
+        policy = payload.get("policy")
+        action_payload = payload.get("action_payload")
+        if isinstance(policy, str):
+            if self._latest_simulation_state is None:
+                self._latest_simulation_state = self.simulation.tick(hours=0.0)
+            assert self._latest_simulation_state is not None
+            action_payload = self._build_policy_action(self._latest_simulation_state)
+        if not isinstance(action_payload, dict):
+            self._warning("simulation_action_missing_payload")
+            return
+        normalized = self._normalize_simulation_action(action_payload)
+        if not normalized:
+            self._warning("simulation_action_empty")
+            return
+        state = self.simulation.apply_action(normalized)
+        self._apply_simulation_state(state, event="simulation_action_applied")
+        self._last_simulation_action = {
+            "action": normalized,
+            "policy": policy,
+            "applied_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await self._persist_status_snapshot()
 
     async def _heartbeat_listener(self) -> None:
         async with self.bus.subscribe("heartbeat") as receiver:
@@ -1225,6 +1313,7 @@ class Orchestrator:
             "active_jobs": active,
             "finalized_jobs": finalized,
             "simulation": simulation_state,
+            "last_simulation_action": self._last_simulation_action,
         }
 
     async def _energy_oracle_loop(self) -> None:

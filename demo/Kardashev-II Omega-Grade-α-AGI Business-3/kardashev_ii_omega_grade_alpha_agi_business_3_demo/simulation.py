@@ -24,6 +24,9 @@ class PlanetarySimulation:
     def tick(self, hours: float) -> SimulationState:  # pragma: no cover - abstract
         raise NotImplementedError
 
+    def apply_action(self, action: Dict[str, float]) -> SimulationState:  # pragma: no cover - abstract
+        raise NotImplementedError
+
 
 class SyntheticEconomySim(PlanetarySimulation):
     """Simple synthetic economy simulation."""
@@ -33,10 +36,14 @@ class SyntheticEconomySim(PlanetarySimulation):
         self.prosperity_index = 0.7
         self.sustainability_index = 0.6
 
-    def apply_action(self, action: Dict[str, float]) -> None:
-        self.energy_output_gw += action.get("build_dyson_nodes", 0.0) * 10_000
-        self.prosperity_index = min(1.0, self.prosperity_index + action.get("stimulus", 0.0) * 0.01)
-        self.sustainability_index = min(1.0, self.sustainability_index + action.get("green_shift", 0.0) * 0.02)
+    def apply_action(self, action: Dict[str, float]) -> SimulationState:
+        build_dyson_nodes = max(0.0, float(action.get("build_dyson_nodes", 0.0)))
+        stimulus = max(0.0, float(action.get("stimulus", 0.0)))
+        green_shift = max(0.0, float(action.get("green_shift", 0.0)))
+        self.energy_output_gw += build_dyson_nodes * 10_000
+        self.prosperity_index = min(1.0, self.prosperity_index + stimulus * 0.01)
+        self.sustainability_index = min(1.0, self.sustainability_index + green_shift * 0.02)
+        return self._snapshot_state()
 
     def _compute_thermodynamic_metrics(self) -> dict[str, float]:
         """Compute free-energy inspired metrics for the simulated economy."""
@@ -65,6 +72,9 @@ class SyntheticEconomySim(PlanetarySimulation):
         self.energy_output_gw *= 1.0 + 0.0001 * drift
         self.prosperity_index = min(1.0, self.prosperity_index + 0.0005 * drift)
         self.sustainability_index = min(1.0, self.sustainability_index + 0.0004 * drift)
+        return self._snapshot_state()
+
+    def _snapshot_state(self) -> SimulationState:
         metrics = self._compute_thermodynamic_metrics()
         return SimulationState(
             energy_output_gw=self.energy_output_gw,
