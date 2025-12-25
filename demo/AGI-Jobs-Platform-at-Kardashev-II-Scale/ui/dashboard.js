@@ -46,6 +46,18 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value);
 }
 
+function setTextWithStatus(element, text, status) {
+  if (!element) return;
+  element.textContent = text;
+  if (status) {
+    applyStatus(element, status);
+  }
+}
+
+function isFiniteNumber(value) {
+  return Number.isFinite(value);
+}
+
 function applyStatus(element, status) {
   if (!element) return;
   element.classList.remove("status-ok", "status-warn", "status-fail");
@@ -187,68 +199,142 @@ function renderMonteCarloDetails(monteCarlo) {
 }
 
 function renderMetrics(telemetry) {
-  document.querySelector("#dominance-score").textContent = `${telemetry.dominance.score.toFixed(1)} / 100`;
-  document.querySelector("#monthly-value").textContent = `$${formatNumber(telemetry.dominance.monthlyValueUSD / 1_000_000_000_000)}T monthly throughput`;
-  document.querySelector("#resilience").textContent = `${(telemetry.dominance.averageResilience * 100).toFixed(2)}% resilience`;
-  document.querySelector("#energy-utilisation").textContent = `${(telemetry.energy.utilisationPct * 100).toFixed(2)}% utilisation`;
-  document.querySelector("#energy-margin").textContent = `${(telemetry.energy.marginPct * 100).toFixed(2)}% safety margin`;
-  document.querySelector("#coverage").textContent = `${Math.round(telemetry.governance.averageCoverageSeconds)}s coverage`;
-  setStatus(document.querySelector("#coverage-status"), telemetry.governance.coverageOk);
-  setStatus(document.querySelector("#energy-status"), telemetry.energy.tripleCheck && telemetry.energy.warnings.length === 0);
+  const dominance = telemetry?.dominance ?? {};
+  const energy = telemetry?.energy ?? {};
+  const governance = telemetry?.governance ?? {};
+  const verification = telemetry?.verification ?? {};
+
+  if (isFiniteNumber(dominance.score)) {
+    setTextWithStatus(
+      document.querySelector("#dominance-score"),
+      `${dominance.score.toFixed(1)} / 100`,
+      "status-ok"
+    );
+  } else {
+    setTextWithStatus(document.querySelector("#dominance-score"), "Dominance telemetry unavailable.", "status-warn");
+  }
+
+  if (isFiniteNumber(dominance.monthlyValueUSD)) {
+    document.querySelector("#monthly-value").textContent = `$${formatNumber(
+      dominance.monthlyValueUSD / 1_000_000_000_000
+    )}T monthly throughput`;
+  } else {
+    setTextWithStatus(document.querySelector("#monthly-value"), "Monthly value telemetry unavailable.", "status-warn");
+  }
+
+  if (isFiniteNumber(dominance.averageResilience)) {
+    document.querySelector("#resilience").textContent = `${(dominance.averageResilience * 100).toFixed(2)}% resilience`;
+  } else {
+    setTextWithStatus(document.querySelector("#resilience"), "Resilience telemetry unavailable.", "status-warn");
+  }
+
+  if (isFiniteNumber(energy.utilisationPct)) {
+    document.querySelector("#energy-utilisation").textContent = `${(energy.utilisationPct * 100).toFixed(2)}% utilisation`;
+  } else {
+    setTextWithStatus(document.querySelector("#energy-utilisation"), "Energy utilisation unavailable.", "status-warn");
+  }
+
+  if (isFiniteNumber(energy.marginPct)) {
+    document.querySelector("#energy-margin").textContent = `${(energy.marginPct * 100).toFixed(2)}% safety margin`;
+  } else {
+    setTextWithStatus(document.querySelector("#energy-margin"), "Energy margin unavailable.", "status-warn");
+  }
+
+  if (isFiniteNumber(governance.averageCoverageSeconds)) {
+    document.querySelector("#coverage").textContent = `${Math.round(governance.averageCoverageSeconds)}s coverage`;
+  } else {
+    setTextWithStatus(document.querySelector("#coverage"), "Coverage telemetry unavailable.", "status-warn");
+  }
+
+  setStatus(document.querySelector("#coverage-status"), Boolean(governance.coverageOk));
+  setStatus(
+    document.querySelector("#energy-status"),
+    Boolean(energy.tripleCheck) && Array.isArray(energy.warnings) && energy.warnings.length === 0
+  );
   const bridgeList = document.querySelector("#bridge-statuses");
   bridgeList.innerHTML = "";
-  for (const [name, data] of Object.entries(telemetry.bridges)) {
+  if (telemetry?.bridges && Object.keys(telemetry.bridges).length > 0) {
+    for (const [name, data] of Object.entries(telemetry.bridges)) {
+      const li = document.createElement("li");
+      li.textContent = `${name}: ${data.latencySeconds}s latency · ${data.bandwidthGbps} Gbps · ${data.protocol}`;
+      li.classList.add(data.withinFailsafe ? "status-ok" : "status-fail");
+      bridgeList.appendChild(li);
+    }
+  } else {
     const li = document.createElement("li");
-    li.textContent = `${name}: ${data.latencySeconds}s latency · ${data.bandwidthGbps} Gbps · ${data.protocol}`;
-    li.classList.add(data.withinFailsafe ? "status-ok" : "status-fail");
+    li.textContent = "Bridge latency telemetry unavailable.";
+    li.classList.add("status-warn");
     bridgeList.appendChild(li);
   }
   setStatusText(
     document.querySelector("#energy-models"),
-    telemetry.verification.energyModels.withinMargin,
-    telemetry.verification.energyModels.withinMargin
-      ? `Aligned — ${formatNumber(telemetry.energy.models.regionalSumGw)} vs ${formatNumber(telemetry.energy.models.dysonProjectionGw)} GW`
-      : "Mismatch across energy models"
+    verification.energyModels?.withinMargin === true,
+    verification.energyModels
+      ? verification.energyModels.withinMargin
+        ? `Aligned — ${formatNumber(energy.models?.regionalSumGw)} vs ${formatNumber(
+            energy.models?.dysonProjectionGw
+          )} GW`
+        : "Mismatch across energy models"
+      : "Energy model reconciliation unavailable."
   );
-  const monteCarlo = telemetry.energy.monteCarlo;
-  document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(monteCarlo.breachProbability * 100).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
-  setStatus(
-    document.querySelector("#energy-monte-carlo-status"),
-    monteCarlo.withinTolerance
-  );
+  const monteCarlo = energy.monteCarlo;
+  if (monteCarlo) {
+    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(
+      monteCarlo.breachProbability * 100
+    ).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
+    setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
+  } else {
+    document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";
+    applyStatus(document.querySelector("#energy-monte-carlo-status"), "status-warn");
+  }
   renderMonteCarloDetails(monteCarlo);
   setStatusText(
     document.querySelector("#compute-deviation"),
-    telemetry.verification.compute.withinTolerance,
-    `${telemetry.verification.compute.deviationPct.toFixed(2)}% deviation (≤ ${telemetry.verification.compute.tolerancePct}%)`
+    verification.compute?.withinTolerance === true,
+    verification.compute
+      ? `${verification.compute.deviationPct.toFixed(2)}% deviation (≤ ${verification.compute.tolerancePct}%)`
+      : "Compute deviation telemetry unavailable."
   );
   setStatusText(
     document.querySelector("#bridge-compliance"),
-    telemetry.verification.bridges.allWithinTolerance,
-    telemetry.verification.bridges.allWithinTolerance
-      ? `All bridges ≤ ${telemetry.verification.bridges.toleranceSeconds}s`
-      : "Latency exceeds tolerance"
+    verification.bridges?.allWithinTolerance === true,
+    verification.bridges
+      ? verification.bridges.allWithinTolerance
+        ? `All bridges ≤ ${verification.bridges.toleranceSeconds}s`
+        : "Latency exceeds tolerance"
+      : "Bridge compliance telemetry unavailable."
   );
 
-  const feedCompliance = telemetry.energy.liveFeeds.allWithinTolerance;
-  setStatusText(
-    document.querySelector("#energy-feed-compliance"),
-    feedCompliance,
-    feedCompliance
-      ? `Δ ≤ ${telemetry.energy.liveFeeds.tolerancePct}% across ${telemetry.energy.liveFeeds.feeds.length} feeds`
-      : `Drift > ${telemetry.energy.liveFeeds.tolerancePct}%`
-  );
-  document.querySelector("#energy-feed-latency").textContent = `Avg ${telemetry.energy.liveFeeds.averageLatencyMs.toFixed(
-    0
-  )} ms · Max ${telemetry.energy.liveFeeds.maxLatencyMs} ms`;
   const feedList = document.querySelector("#energy-feed-list");
   feedList.innerHTML = "";
-  telemetry.energy.liveFeeds.feeds.forEach((feed) => {
+  if (energy.liveFeeds?.feeds?.length) {
+    const feedCompliance = energy.liveFeeds.allWithinTolerance;
+    setStatusText(
+      document.querySelector("#energy-feed-compliance"),
+      feedCompliance,
+      feedCompliance
+        ? `Δ ≤ ${energy.liveFeeds.tolerancePct}% across ${energy.liveFeeds.feeds.length} feeds`
+        : `Drift > ${energy.liveFeeds.tolerancePct}%`
+    );
+    document.querySelector("#energy-feed-latency").textContent = `Avg ${energy.liveFeeds.averageLatencyMs.toFixed(
+      0
+    )} ms · Max ${energy.liveFeeds.maxLatencyMs} ms`;
+    energy.liveFeeds.feeds.forEach((feed) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(
+        2
+      )}% Δ · ${feed.latencyMs} ms</span>`;
+      li.classList.add(feed.withinTolerance ? "status-ok" : feed.driftAlert ? "status-warn" : "status-fail");
+      feedList.appendChild(li);
+    });
+  } else {
+    setTextWithStatus(document.querySelector("#energy-feed-compliance"), "Energy feed telemetry unavailable.", "status-warn");
+    setTextWithStatus(document.querySelector("#energy-feed-latency"), "Latency telemetry unavailable.", "status-warn");
     const li = document.createElement("li");
-    li.innerHTML = `<span>${feed.region} (${feed.type})</span><span>${feed.deltaPct.toFixed(2)}% Δ · ${feed.latencyMs} ms</span>`;
-    li.classList.add(feed.withinTolerance ? "status-ok" : feed.driftAlert ? "status-warn" : "status-fail");
+    li.textContent = "Energy feed list unavailable.";
+    li.classList.add("status-warn");
     feedList.appendChild(li);
-  });
+  }
 }
 
 function renderLegacyMetrics(telemetry) {
