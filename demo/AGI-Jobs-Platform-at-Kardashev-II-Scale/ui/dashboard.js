@@ -445,13 +445,6 @@ function renderLegacyMetrics(telemetry) {
     }
   });
 
-  ["#mission-mermaid", "#mermaid-container", "#dyson-container"].forEach((selector) => {
-    const element = document.querySelector(selector);
-    if (element) {
-      element.textContent = "Diagram unavailable in legacy telemetry.";
-      applyStatus(element, "status-warn");
-    }
-  });
 }
 
 let mermaidInitialised = false;
@@ -478,6 +471,7 @@ async function renderMermaidDiagram(path, containerId, renderId) {
   }
 
   const { svg } = await mermaid.render(renderId, source);
+  container.classList.remove("status-warn", "status-fail");
   container.innerHTML = svg;
 }
 
@@ -1193,6 +1187,23 @@ async function bootstrap() {
     }
 
     renderOwnerProofUnavailable("Owner proof requires full orchestrator output.");
+
+    const diagrams = await Promise.allSettled([
+      renderMermaidDiagram("./output/kardashev-task-hierarchy.mmd", "mission-mermaid", "mission-hierarchy-diagram"),
+      renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram"),
+      renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram"),
+    ]);
+
+    diagrams.forEach((result, index) => {
+      if (result.status === "fulfilled") return;
+      const targets = ["mission-mermaid", "mermaid-container", "dyson-container"];
+      const target = document.querySelector(`#${targets[index]}`);
+      if (target) {
+        target.textContent = "Diagram unavailable: " + result.reason;
+        target.classList.add("status-fail");
+      }
+    });
+
     return;
   }
 

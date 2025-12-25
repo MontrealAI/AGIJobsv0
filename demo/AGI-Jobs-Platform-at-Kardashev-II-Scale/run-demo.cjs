@@ -422,6 +422,28 @@ flowchart TB
 `;
 }
 
+function buildDysonThermoDiagram(dyson, energyMonteCarlo) {
+  return `---
+title Dyson Swarm Thermodynamic Stability
+---
+flowchart LR
+    capture[Captured Power\\n${formatNumber(dyson.capturedMw)} MW] --> reserve[Reserve Buffer\\n${formatNumber(
+      round(energyMonteCarlo.marginGw, 2)
+    )} GW]
+    reserve --> freeEnergy[Free Energy Margin\\n${formatNumber(round(energyMonteCarlo.freeEnergyMarginGw, 2))} GW]
+    freeEnergy --> gibbs[Gibbs Free Energy\\n${formatNumber(round(energyMonteCarlo.gibbsFreeEnergyGj, 2))} GJ]
+    freeEnergy --> entropy[Entropy Buffer\\n${round(energyMonteCarlo.entropyMargin || 0, 2)}σ]
+    gibbs --> hamiltonian[Hamiltonian Stability\\n${round(energyMonteCarlo.hamiltonianStability * 100, 1)}%]
+    hamiltonian --> gameTheory[Game-Theory Slack\\n${round(energyMonteCarlo.gameTheorySlack * 100, 1)}%]
+
+    style capture fill:#111827,stroke:#22d3ee,stroke-width:2px
+    style freeEnergy fill:#1f2937,stroke:#38bdf8,stroke-width:2px
+    style gibbs fill:#1f2937,stroke:#a855f7
+    style hamiltonian fill:#1f2937,stroke:#f97316
+    style gameTheory fill:#111827,stroke:#22c55e,stroke-width:2px
+`;
+}
+
 function buildSequenceDiagram() {
   return `---
 title Interplanetary Settlement
@@ -521,8 +543,11 @@ function main() {
   const outputDir = resolveOutputDir(cliOutputDir, { ensure: !check });
   const mermaidDir = path.join(outputDir, 'mermaid');
   const dysonHierarchyPath = path.join(mermaidDir, 'dyson-hierarchy.mmd');
+  const taskHierarchyPath = path.join(outputDir, 'kardashev-task-hierarchy.mmd');
+  const mermaidMapPath = path.join(outputDir, 'kardashev-mermaid.mmd');
+  const dysonDiagramPath = path.join(outputDir, 'kardashev-dyson.mmd');
   const dysonHierarchyReference =
-    path.relative(outputDir, dysonHierarchyPath) || 'mermaid/dyson-hierarchy.mmd';
+    path.relative(outputDir, taskHierarchyPath) || 'kardashev-task-hierarchy.mmd';
 
   if (!check) {
     ensureDir(outputDir);
@@ -665,8 +690,20 @@ function main() {
       `${buildMermaidTaskHierarchy(dyson)}\n`
     );
     fs.writeFileSync(
+      taskHierarchyPath,
+      `${buildMermaidTaskHierarchy(dyson)}\n`
+    );
+    fs.writeFileSync(
       path.join(mermaidDir, 'interplanetary-settlement.mmd'),
       `${crossChainDiagram}\n`
+    );
+    fs.writeFileSync(
+      mermaidMapPath,
+      `${crossChainDiagram}\n`
+    );
+    fs.writeFileSync(
+      dysonDiagramPath,
+      `${buildDysonThermoDiagram(dyson, energyMonteCarlo)}\n`
     );
     fs.writeFileSync(
       path.join(outputDir, 'kardashev-report.md'),
