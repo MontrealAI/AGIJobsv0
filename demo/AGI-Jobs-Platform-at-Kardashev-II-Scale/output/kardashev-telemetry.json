@@ -242,6 +242,8 @@
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
+      "replicatorDrift": 0.13321210526130617,
+      "replicatorStability": 0.8667878947386938,
       "jainIndex": 0.9900236513129889,
       "allocationEntropy": 1.0283928406037925,
       "fairnessIndex": 0.9360835038997727,

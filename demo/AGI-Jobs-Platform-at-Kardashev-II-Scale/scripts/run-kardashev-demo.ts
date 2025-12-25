@@ -1195,6 +1195,8 @@ type AllocationPolicy = {
   nashProduct: number;
   strategyStability: number;
   deviationIncentive: number;
+  replicatorDrift: number;
+  replicatorStability: number;
   jainIndex: number;
   allocationEntropy: number;
   fairnessIndex: number;
@@ -1393,6 +1395,12 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
   const deviationIncentive =
     maxPayoff > 0 ? Math.min(1, Math.max(0, (maxPayoff - averagePayoff) / maxPayoff)) : 0;
   const strategyStability = 1 - deviationIncentive;
+  const payoffSum = payoffs.reduce((sum, value) => sum + value, 0);
+  const normalizedPayoffs =
+    payoffSum > 0 ? payoffs.map((payoff) => payoff / payoffSum) : payoffs.map(() => 1 / Math.max(1, payoffs.length));
+  const replicatorDrift =
+    weights.reduce((sum, weight, index) => sum + Math.abs(weight - (normalizedPayoffs[index] ?? 0)), 0) / 2;
+  const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
@@ -1403,6 +1411,8 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     nashProduct,
     strategyStability,
     deviationIncentive,
+    replicatorDrift,
+    replicatorStability,
     jainIndex,
     allocationEntropy,
     fairnessIndex,
@@ -2055,7 +2065,11 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
   const strategyStability = Number.isFinite(telemetry.energy.allocationPolicy.strategyStability)
     ? telemetry.energy.allocationPolicy.strategyStability
     : 0;
-  const relayBoostPct = Math.min(0.35, Math.max(0, freeEnergyRatio * 0.6 + strategyStability * 0.15));
+  const replicatorStability = Number.isFinite(telemetry.energy.allocationPolicy.replicatorStability)
+    ? telemetry.energy.allocationPolicy.replicatorStability
+    : strategyStability;
+  const equilibriumStability = (strategyStability + replicatorStability) / 2;
+  const relayBoostPct = Math.min(0.35, Math.max(0, freeEnergyRatio * 0.6 + equilibriumStability * 0.15));
   const relayBoostGw = capturedGwTelemetry * relayBoostPct;
   const mitigatedLatency = failoverLatency * (1 - relayBoostPct);
   const mitigatedSlack = failsafeLatency - mitigatedLatency;
@@ -2631,6 +2645,9 @@ function buildRunbook(
     ).toFixed(2)}% · fairness ${(telemetry.energy.allocationPolicy.fairnessIndex * 100).toFixed(
       1
     )}% · Gibbs potential ${telemetry.energy.allocationPolicy.gibbsPotential.toFixed(3)}.`
+  );
+  lines.push(
+    `* Replicator equilibrium ${(telemetry.energy.allocationPolicy.replicatorStability * 100).toFixed(1)}% · drift ${telemetry.energy.allocationPolicy.replicatorDrift.toFixed(3)}.`
   );
   lines.push(
     `* Allocation deltas: ${telemetry.energy.allocationPolicy.allocations

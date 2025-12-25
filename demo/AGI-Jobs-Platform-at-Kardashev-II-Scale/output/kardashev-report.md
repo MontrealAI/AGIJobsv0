@@ -14,6 +14,7 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Gibbs Allocation Temperature:** 0.49 (lower favors resilience-heavy shards); Nash welfare 9.99%.
 - **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.536.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
+- **Replicator Equilibrium:** 99.6% stability (drift 0.004).
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
