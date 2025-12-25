@@ -1,574 +1,95 @@
 {
-  "generatedAt": "2025-03-01T00:00:00Z",
-  "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
-  "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9243119266055047,
+    "compositeScore": 0.8571428571428571,
     "quorum": false,
-    "summary": "Manual review required for 2 check(s).",
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
-        "method": "deterministic-consensus",
-        "score": 0.9243119266055047,
-        "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
+        "method": "gibbs-free-energy",
+        "score": 0.05569707456640303,
+        "explanation": "Free energy margin 5.57% · Gibbs 48523291.36 GJ"
       },
       {
-        "method": "redundant-telemetry",
-        "score": 0.918918918918919,
-        "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
+        "method": "hamiltonian-balance",
+        "score": 0.5083172872832015,
+        "explanation": "Hamiltonian 50.8% · entropy 2.69σ"
       },
       {
-        "method": "energy-safety-buffer",
+        "method": "game-theory-slack",
+        "score": 0.7572584042774407,
+        "explanation": "Game-theory slack 75.7%"
+      },
+      {
+        "method": "allocation-policy",
         "score": 1,
-        "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
-      },
-      {
-        "method": "logistics-corridors",
-        "score": 1,
-        "explanation": "Corridor reliability 98.50% · min buffer 14.00d · utilisation 82.00%."
-      },
-      {
-        "method": "monte-carlo",
-        "score": 1,
-        "explanation": "Energy breach probability 0.00% across 256 simulations (tolerance 1.00%)."
-      },
-      {
-        "method": "mission-lattice",
-        "score": 0.9444,
-        "explanation": "Mission unstoppable 94.44% · dependencies resolved · warnings 1."
-      },
-      {
-        "method": "scenario-sweep",
-        "score": 0.8545256873680519,
-        "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
-      },
-      {
-        "method": "identity-ledger",
-        "score": 1,
-        "explanation": "Identity quorum, latency, and revocation tolerances satisfied across federations."
-      },
-      {
-        "method": "compute-fabric",
-        "score": 1,
-        "explanation": "Hierarchical compute planes maintain quorum under worst-case failover."
-      },
-      {
-        "method": "owner-control-proof",
-        "score": 1,
-        "explanation": "Selector coverage, pause toggles, and target isolation verified for owner overrides."
-      },
-      {
-        "method": "owner-control-secondary",
-        "score": 1,
-        "explanation": "Independent decode of Safe batch confirms unstoppable levers match primary proof."
-      },
-      {
-        "method": "owner-control-tertiary",
-        "score": 1,
-        "explanation": "Interface-level replay validates pause/resume embeds with zero decode failures."
+        "explanation": "Nash welfare 9.99% · Gibbs temperature 0.49"
       }
     ]
   },
   "checks": [
     {
-      "id": "manifest-digest",
-      "title": "Manifest digests aligned",
+      "id": "energy-monte-carlo",
+      "title": "Energy Monte Carlo within tolerance",
       "severity": "critical",
       "status": true,
       "weight": 1.2,
-      "evidence": "expected 0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033, observed 0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033"
+      "evidence": "breach 3.91% vs tolerance 5.00%"
     },
     {
-      "id": "self-improvement-digest",
-      "title": "Self-improvement charter verified",
-      "severity": "critical",
-      "status": true,
-      "weight": 1,
-      "evidence": "expected 0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d, observed 0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d"
-    },
-    {
-      "id": "owner-control",
-      "title": "Owner override levers encoded",
+      "id": "free-energy-buffer",
+      "title": "Free energy margin maintains Gibbs buffer",
       "severity": "high",
-      "status": true,
-      "weight": 0.9,
-      "evidence": "10/10 selectors · pause yes · resume yes · unstoppable 100.0%"
-    },
-    {
-      "id": "owner-control-secondary",
-      "title": "Owner override cross-check aligned",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.7,
-      "evidence": "secondary 100.0% vs primary 100.0%"
-    },
-    {
-      "id": "owner-control-tertiary",
-      "title": "Owner override decode consensus",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.65,
-      "evidence": "tertiary 100.0% · decode failures 0"
-    },
-    {
-      "id": "mission-lattice",
-      "title": "Mission lattice unstoppable",
-      "severity": "high",
-      "status": false,
-      "weight": 0.85,
-      "evidence": "unstoppable 94.44% · warnings 1"
-    },
-    {
-      "id": "guardian-coverage",
-      "title": "Guardian coverage >= review window",
-      "severity": "high",
-      "status": true,
-      "weight": 0.85,
-      "evidence": "minimum coverage 1800s vs 900s window"
-    },
-    {
-      "id": "energy-triple-check",
-      "title": "Energy models reconciled",
-      "severity": "critical",
       "status": true,
       "weight": 1.1,
-      "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
+      "evidence": "13478.69 GW margin vs 11980.00 GW target"
     },
     {
-      "id": "energy-cross-verification",
-      "title": "Energy cross-verification consensus",
+      "id": "hamiltonian-stability",
+      "title": "Hamiltonian stability above control floor",
       "severity": "high",
-      "status": true,
-      "weight": 0.95,
-      "evidence": "max deviation 0.000000 GW · tolerance 0.242000 GW · coverage 100.00%"
-    },
-    {
-      "id": "energy-monte-carlo",
-      "title": "Monte Carlo breach ≤ tolerance",
-      "severity": "critical",
-      "status": true,
+      "status": false,
       "weight": 1,
-      "evidence": "breach 0.00% (runs 256)"
+      "evidence": "stability 50.8% · entropy 2.69σ"
     },
     {
-      "id": "energy-feeds",
-      "title": "Live energy feeds within tolerance",
-      "severity": "high",
-      "status": true,
-      "weight": 0.85,
-      "evidence": "earth-grid 0.00% · mars-dome 0.00% · orbital-swarm 0.00%"
-    },
-    {
-      "id": "energy-schedule-coverage",
-      "title": "Energy windows cover demand",
+      "id": "game-theory-slack",
+      "title": "Game-theory slack exceeds equilibrium guardrail",
       "severity": "medium",
-      "status": true,
-      "weight": 0.7,
-      "evidence": "global 100.00% (threshold 98%)"
-    },
-    {
-      "id": "energy-schedule-reliability",
-      "title": "Energy window reliability",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.6,
-      "evidence": "global 98.56% (threshold 95%)"
-    },
-    {
-      "id": "logistics-corridors",
-      "title": "Logistics corridors hold buffers",
-      "severity": "high",
-      "status": true,
-      "weight": 0.8,
-      "evidence": "avg reliability 98.50% · min buffer 14.00d · utilisation 82.00% · watchers 9"
-    },
-    {
-      "id": "energy-margin",
-      "title": "Dyson thermostat buffer intact",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.6,
-      "evidence": "utilisation 57.62% vs permitted 87.50%"
-    },
-    {
-      "id": "compute-alignment",
-      "title": "Compute deviation within tolerance",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.7,
-      "evidence": "deviation 0.45% (≤ 0.75%)"
-    },
-    {
-      "id": "identity-quorum",
-      "title": "Identity anchors meet quorum",
-      "severity": "critical",
-      "status": true,
-      "weight": 0.95,
-      "evidence": "3/3 federations at quorum 5"
-    },
-    {
-      "id": "identity-latency",
-      "title": "Identity attestations within revocation window",
-      "severity": "high",
-      "status": true,
-      "weight": 0.8,
-      "evidence": "max 96s vs window 240s"
-    },
-    {
-      "id": "identity-revocation",
-      "title": "Identity revocation rate within tolerance",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.65,
-      "evidence": "0.35 ppm (≤ 120 ppm)"
-    },
-    {
-      "id": "identity-reconciliation",
-      "title": "Identity ledger reconciles with compute agents",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.6,
-      "evidence": "delta 0 agents"
-    },
-    {
-      "id": "compute-fabric-failover",
-      "title": "Compute fabric failover meets quorum",
-      "severity": "critical",
       "status": true,
       "weight": 0.9,
-      "evidence": "failover 44.50 EF vs required 42.90 EF"
+      "evidence": "slack 75.7%"
     },
     {
-      "id": "orchestration-fabric",
-      "title": "Sharded registry fabric aligned",
+      "id": "allocation-stability",
+      "title": "Allocation policy stability in Nash corridor",
       "severity": "medium",
       "status": true,
-      "weight": 0.75,
-      "evidence": "unmatched federations: 0 · unmatched shards: 0"
+      "weight": 1,
+      "evidence": "strategy stability 100.0% · deviation 0.0%"
     },
     {
-      "id": "bridge-latency",
-      "title": "Bridge latency ≤ tolerance",
-      "severity": "high",
-      "status": true,
-      "weight": 0.75,
-      "evidence": "tolerance 120s · failsafe 120s"
-    },
-    {
-      "id": "settlement-finality",
-      "title": "Settlement finality within tolerance",
+      "id": "dyson-capture",
+      "title": "Dyson capture coverage on expansion track",
       "severity": "medium",
       "status": true,
-      "weight": 0.6,
-      "evidence": "avg 5.23 min ≤ 10.00 min"
-    },
-    {
-      "id": "settlement-coverage",
-      "title": "Settlement coverage ≥ threshold",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.55,
-      "evidence": "min 96.70% (threshold 95%)"
-    },
-    {
-      "id": "settlement-slippage",
-      "title": "Settlement slippage within tolerance",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.5,
-      "evidence": "max 35.00 bps (threshold 75 bps)"
-    },
-    {
-      "id": "settlement-risk",
-      "title": "Settlement risk band acceptable",
-      "severity": "medium",
-      "status": true,
-      "weight": 0.5,
-      "evidence": "risk levels: Sol-Earth Safe Settlement=low · Mars Credit Hub=medium · Orbital Lattice Clearing=low"
-    },
-    {
-      "id": "scenario-resilience",
-      "title": "Scenario sweep resilient",
-      "severity": "critical",
-      "status": false,
       "weight": 0.8,
-      "evidence": "6/11 nominal · 4 warning · 1 critical"
+      "evidence": "coverage 26.69% · 2669/10000 satellites"
+    },
+    {
+      "id": "sentinel-advisories",
+      "title": "Sentinel advisories within response window",
+      "severity": "medium",
+      "status": true,
+      "weight": 0.9,
+      "evidence": "3 advisory(ies) logged"
     }
   ],
   "alerts": [
     {
-      "id": "mission-lattice",
-      "title": "Mission lattice unstoppable",
+      "id": "hamiltonian-stability",
+      "title": "Hamiltonian stability above control floor",
       "severity": "high",
-      "evidence": "unstoppable 94.44% · warnings 1"
-    },
-    {
-      "id": "scenario-resilience",
-      "title": "Scenario sweep resilient",
-      "severity": "critical",
-      "evidence": "6/11 nominal · 4 warning · 1 critical"
+      "evidence": "stability 50.8% · entropy 2.69σ"
     }
-  ],
-  "scenarioSweep": {
-    "total": 11,
-    "nominal": 6,
-    "warning": 4,
-    "critical": 1,
-    "averageConfidence": 0.8545256873680519,
-    "entries": [
-      {
-        "id": "energy-demand-surge",
-        "title": "20% demand surge vs Dyson safety margin",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Dyson lattice absorbs surge with 129,600 GW spare."
-      },
-      {
-        "id": "bridge-failover",
-        "title": "Interplanetary bridge outage simulation",
-        "status": "warning",
-        "confidence": 0.5125,
-        "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve."
-      },
-      {
-        "id": "sentinel-gap",
-        "title": "Sentinel outage (10 min) coverage test",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Guardian window stays protected under sentinel gap."
-      },
-      {
-        "id": "compute-drawdown",
-        "title": "Compute drawdown (15%) resilience",
-        "status": "warning",
-        "confidence": 0.35033642480450966,
-        "summary": "Deviation 14.62% exceeds tolerance 0.75%."
-      },
-      {
-        "id": "dyson-phase-slip",
-        "title": "Dyson phase slip (30 days)",
-        "status": "nominal",
-        "confidence": 0.95,
-        "summary": "Schedule buffer absorbs slip with 490 days remaining."
-      },
-      {
-        "id": "energy-window-loss",
-        "title": "Primary energy window offline",
-        "status": "critical",
-        "confidence": 0.8222297183336145,
-        "summary": "Removing orbital 8h window drops coverage to 80.58%."
-      },
-      {
-        "id": "logistics-demand-spike",
-        "title": "Logistics demand spike (+25%)",
-        "status": "warning",
-        "confidence": 0.8567164179104477,
-        "summary": "Corridors absorb spike with utilisation 104.33% and buffers 12.00d."
-      },
-      {
-        "id": "settlement-backlog",
-        "title": "Settlement backlog (+40% finality)",
-        "status": "warning",
-        "confidence": 0.908,
-        "summary": "Settlement mesh absorbs backlog within tolerance."
-      },
-      {
-        "id": "identity-infiltration",
-        "title": "Identity infiltration (3% forged daily credentials)",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Revocation network absorbs infiltration within tolerance."
-      },
-      {
-        "id": "energy-feed-drift",
-        "title": "Live energy feed drift shock",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Live feeds remain within tolerance bands."
-      },
-      {
-        "id": "compute-plane-failover",
-        "title": "Primary compute plane offline",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Failover capacity 44.50 EF covers quorum."
-      }
-    ]
-  },
-  "ownerControls": {
-    "manager": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-    "systemPause": "0xb740e9e719f1a3f138ce7c36418495f5d9e6b4d2",
-    "guardianCouncil": "0x3ecb7d31b20d4a3bf59f7ae8894d42bee0b1a24b",
-    "transactionsEncoded": 23,
-    "pauseCallEncoded": true,
-    "resumeCallEncoded": true,
-    "unstoppableScore": 1,
-    "secondary": {
-      "selectorsMatch": true,
-      "pauseDecoded": true,
-      "resumeDecoded": true,
-      "unstoppableScore": 1,
-      "matchesPrimaryScore": true
-    },
-    "tertiary": {
-      "selectorsMatch": true,
-      "pauseDecoded": true,
-      "resumeDecoded": true,
-      "singleOwnerTargets": true,
-      "unstoppableScore": 1,
-      "matchesPrimaryScore": true,
-      "matchesSecondaryScore": true,
-      "decodeFailures": 0,
-      "decodedCalls": [
-        {
-          "index": 0,
-          "signature": "setGlobalParameters((address,address,address,address,address,address,uint64,uint64,uint256,string,bytes32))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 1,
-          "signature": "setGuardianCouncil(address)",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 2,
-          "signature": "setSystemPause(address)",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 3,
-          "signature": "setSelfImprovementPlan((string,bytes32,uint64,uint64,string))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 4,
-          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 5,
-          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 6,
-          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 7,
-          "signature": "setSentinelDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 8,
-          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 9,
-          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 10,
-          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 11,
-          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 12,
-          "signature": "setSentinelDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 13,
-          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 14,
-          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 15,
-          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 16,
-          "signature": "registerDomain((string,string,string,address,address,address,address,uint64,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 17,
-          "signature": "registerSentinel((string,string,string,address,uint64,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 18,
-          "signature": "setSentinelDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 19,
-          "signature": "registerCapitalStream((string,string,string,address,uint256,uint256,bool))",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 20,
-          "signature": "setCapitalStreamDomains(bytes32,bytes32[])",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 21,
-          "signature": "forwardPauseCall(bytes)",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        },
-        {
-          "index": 22,
-          "signature": "forwardPauseCall(bytes)",
-          "to": "0x8f9c10b7d9a1ed2f2fa9c42c0f2d4a5e3b7c2a10",
-          "matched": true
-        }
-      ]
-    }
-  },
-  "safety": {
-    "guardianReviewWindow": 900,
-    "minimumCoverageSeconds": 1800,
-    "coverageRatio": 1,
-    "bridgeFailsafeSeconds": 120,
-    "permittedUtilisation": 0.875,
-    "utilisation": 0.5761904761904761,
-    "monteCarloBreachProbability": 0,
-    "monteCarloWithinTolerance": true
-  }
+  ]
 }
