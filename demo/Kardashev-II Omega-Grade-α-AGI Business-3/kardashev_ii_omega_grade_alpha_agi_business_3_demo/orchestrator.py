@@ -662,7 +662,10 @@ class Orchestrator:
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
-        temperature = 1.0 + coordination_gap
+        energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
+        compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
+        scarcity_pressure = min(1.0, 0.5 * (energy_price_pressure + compute_price_pressure))
+        temperature = 1.0 + coordination_gap + scarcity_pressure
         prosperity_weight = math.exp(prosperity_gap / temperature)
         sustainability_weight = math.exp(sustainability_gap / temperature)
         total_weight = prosperity_weight + sustainability_weight
@@ -674,14 +677,14 @@ class Orchestrator:
             sustainability_share = sustainability_weight / total_weight
         gibbs_drive = max(0.0, state.free_energy)
         hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
-        energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
-        energy_action = (0.5 + 3.0 * energy_price_pressure + 4.0 * gibbs_drive) * (
+        energy_action = (0.5 + 3.0 * energy_price_pressure + 2.0 * compute_price_pressure + 4.0 * gibbs_drive) * (
             1.0 + 0.5 * hamiltonian_pressure
         )
-        stability_factor = 0.7 + 0.3 * game_theory_slack
+        stability_factor = (0.7 + 0.3 * game_theory_slack) * max(0.4, 1.0 - 0.2 * compute_price_pressure)
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
-        stimulus = 5.0 * prosperity_share * coordination_damping
-        green_shift = 5.0 * sustainability_share * coordination_damping
+        compute_boost = 1.0 + 0.4 * compute_price_pressure
+        stimulus = 5.0 * prosperity_share * coordination_damping * compute_boost
+        green_shift = 5.0 * sustainability_share * coordination_damping * compute_boost
         return self._normalize_simulation_action(
             {
                 "build_dyson_nodes": energy_action * stability_factor,
