@@ -64,6 +64,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert allocation["allocationEntropy"] >= 0
     assert 0 < allocation["fairnessIndex"] <= 1
     assert allocation["gibbsPotential"] <= 0
+    assert 0 <= allocation["strategyStability"] <= 1
+    assert 0 <= allocation["deviationIncentive"] <= 1
+    assert 0 <= allocation["jainIndex"] <= 1
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
