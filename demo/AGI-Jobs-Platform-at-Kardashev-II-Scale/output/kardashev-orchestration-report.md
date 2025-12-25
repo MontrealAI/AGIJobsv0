@@ -36,6 +36,7 @@
 * 3 corridors · avg reliability 98.50% · avg utilisation 82.00% · min buffer 14.00 days.
 * Watcher coverage: 9 unique sentinels; verification ✅.
 * Capacity 2,010,000 tonnes/day · throughput 1,677,600 tonnes/day · energy 363,000 MWh.
+* Hamiltonian stability 98.5% · entropy 1.097 · game-theory slack 99.3% · Gibbs 8.85 MWh.
 * Logistics advisories: none — buffers and reliability nominal.
 
 ---

@@ -1218,6 +1218,13 @@ function round(value: number, decimals = 2): number {
   return Math.round(value * factor) / factor;
 }
 
+function clamp01(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.min(1, Math.max(0, value));
+}
+
 function softmaxScores(scores: number[], temperature: number): { weights: number[]; partition: number } {
   if (scores.length === 0) {
     return { weights: [], partition: 0 };
@@ -2708,6 +2715,11 @@ function buildRunbook(
   lines.push(
     `* Capacity ${telemetry.logistics.aggregate.capacityTonnesPerDay.toLocaleString()} tonnes/day · throughput ${telemetry.logistics.aggregate.throughputTonnesPerDay.toLocaleString()} tonnes/day · energy ${telemetry.logistics.aggregate.totalEnergyMwh.toLocaleString()} MWh.`
   );
+  lines.push(
+    `* Hamiltonian stability ${(telemetry.logistics.equilibrium.hamiltonianStability * 100).toFixed(1)}% · entropy ${(telemetry.logistics.equilibrium.entropy).toFixed(
+      3
+    )} · game-theory slack ${(telemetry.logistics.equilibrium.gameTheorySlack * 100).toFixed(1)}% · Gibbs ${telemetry.logistics.equilibrium.gibbsFreeEnergyMwh.toLocaleString()} MWh.`
+  );
   if (telemetry.logistics.warnings.length > 0) {
     lines.push(`* ⚠️ ${telemetry.logistics.warnings.join("; ")}`);
   } else {
@@ -2908,9 +2920,17 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
     )}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(2)}d · watchers ${telemetry.logistics.aggregate.watchers.length} (${telemetry.verification.logistics.reliabilityOk &&
     telemetry.verification.logistics.bufferOk &&
     telemetry.verification.logistics.utilisationOk &&
-    telemetry.verification.logistics.watchersOk
+    telemetry.verification.logistics.watchersOk &&
+    telemetry.verification.logistics.equilibriumOk
       ? "nominal"
       : "review"}).`
+  );
+  lines.push(
+    `* Logistics equilibrium: Hamiltonian ${(telemetry.logistics.equilibrium.hamiltonianStability * 100).toFixed(
+      1
+    )}% · entropy ${(telemetry.logistics.equilibrium.entropy).toFixed(3)} · game-theory slack ${(
+      telemetry.logistics.equilibrium.gameTheorySlack * 100
+    ).toFixed(1)}%.`
   );
   lines.push(
     `* Mission unstoppable ${(telemetry.missionLattice.verification.unstoppableScore * 100).toFixed(2)}% across ${telemetry.missionLattice.totals.programmes} programmes (dependencies resolved ${telemetry.missionLattice.verification.dependenciesResolved}).`
@@ -3292,6 +3312,47 @@ function computeTelemetry(
     (sum, corridor) => sum + corridor.energyPerTransitMwh,
     0
   );
+  const logisticsUtilisationWeights = logisticsCorridorsRaw.map((corridor) =>
+    Math.max(0, corridor.utilisationPct)
+  );
+  const logisticsUtilisationTotal = logisticsUtilisationWeights.reduce((sum, value) => sum + value, 0);
+  const logisticsEntropy = logisticsUtilisationTotal
+    ? -logisticsUtilisationWeights.reduce((sum, value) => {
+        const probability = value / logisticsUtilisationTotal;
+        return probability > 0 ? sum + probability * Math.log(probability) : sum;
+      }, 0)
+    : 0;
+  const logisticsEntropyMax = logisticsUtilisationWeights.length > 1 ? Math.log(logisticsUtilisationWeights.length) : 1;
+  const logisticsEntropyRatio = logisticsEntropyMax > 0 ? logisticsEntropy / logisticsEntropyMax : 1;
+  const logisticsPayoffs = logisticsCorridorsRaw.map((corridor) => {
+    const utilisationPenalty = Math.max(0, corridor.utilisationPct - logisticsUtilisationCeiling);
+    const bufferPenalty = Math.max(0, logisticsBufferThresholdDays - corridor.bufferDays) / logisticsBufferThresholdDays;
+    const payoff = corridor.reliabilityPct * (1 - utilisationPenalty) * (1 - bufferPenalty);
+    return Math.max(0.001, payoff);
+  });
+  const logisticsPayoffLog = logisticsPayoffs.reduce((sum, payoff) => sum + Math.log(payoff), 0);
+  const logisticsNashWelfare =
+    logisticsPayoffs.length > 0 ? Math.exp(logisticsPayoffLog / logisticsPayoffs.length) : 0;
+  const logisticsAveragePayoff =
+    logisticsPayoffs.length > 0
+      ? logisticsPayoffs.reduce((sum, payoff) => sum + payoff, 0) / logisticsPayoffs.length
+      : 0;
+  const logisticsMaxPayoff = logisticsPayoffs.length > 0 ? Math.max(...logisticsPayoffs) : 0;
+  const logisticsDeviationIncentive =
+    logisticsMaxPayoff > 0 ? clamp01((logisticsMaxPayoff - logisticsAveragePayoff) / logisticsMaxPayoff) : 0;
+  const logisticsGameTheorySlack = clamp01(1 - logisticsDeviationIncentive);
+  const logisticsHamiltonian = logisticsCorridorsRaw.reduce((sum, corridor) => {
+    const utilisationPenalty = Math.max(0, corridor.utilisationPct - logisticsUtilisationCeiling);
+    const bufferPenalty = Math.max(0, logisticsBufferThresholdDays - corridor.bufferDays) / logisticsBufferThresholdDays;
+    const reliabilityPenalty = 1 - corridor.reliabilityPct;
+    return sum + utilisationPenalty + bufferPenalty + reliabilityPenalty;
+  }, 0);
+  const logisticsHamiltonianStability =
+    logisticsCorridorsRaw.length > 0
+      ? clamp01(1 - logisticsHamiltonian / logisticsCorridorsRaw.length)
+      : 1;
+  const logisticsGibbsFreeEnergyMwh =
+    logisticsTotalEnergyMwh * (1 - clamp01(logisticsEntropyRatio)) * (1 - clamp01(logisticsAverageReliability));
 
   const logisticsCorridors = logisticsCorridorsRaw.map((corridor) => ({
     id: corridor.id,
@@ -3332,6 +3393,7 @@ function computeTelemetry(
     autonomyOk: logisticsCorridorsRaw.every(
       (corridor) => corridor.autonomyLevelBps <= manifest.dysonProgram.safety.maxAutonomyBps
     ),
+    equilibriumOk: logisticsHamiltonianStability >= 0.75 && logisticsGameTheorySlack >= 0.75,
   };
 
   const scheduleCoverageOk = rawScheduleCoverage.every(
@@ -3696,6 +3758,15 @@ function computeTelemetry(
         watchers: Array.from(logisticsWatcherSet),
         totalEnergyMwh: round(logisticsTotalEnergyMwh, 2),
       },
+      equilibrium: {
+        hamiltonian: round(logisticsHamiltonian, 4),
+        hamiltonianStability: round(logisticsHamiltonianStability, 4),
+        entropy: round(logisticsEntropy, 4),
+        entropyRatio: round(logisticsEntropyRatio, 4),
+        nashWelfare: round(logisticsNashWelfare, 4),
+        gameTheorySlack: round(logisticsGameTheorySlack, 4),
+        gibbsFreeEnergyMwh: round(logisticsGibbsFreeEnergyMwh, 2),
+      },
       warnings: logisticsWarnings,
       verification: logisticsVerification,
     },
@@ -3828,9 +3899,12 @@ function computeTelemetry(
         utilisationOk: logisticsVerification.utilisationOk,
         watchersOk: logisticsVerification.watchersOk,
         autonomyOk: logisticsVerification.autonomyOk,
+        equilibriumOk: logisticsVerification.equilibriumOk,
         minimumBufferDays: Number.isFinite(logisticsMinBuffer) ? round(logisticsMinBuffer, 2) : 0,
         averageReliabilityPct: round(logisticsAverageReliability, 4),
         averageUtilisationPct: round(logisticsAverageUtilisation, 4),
+        hamiltonianStability: round(logisticsHamiltonianStability, 4),
+        gameTheorySlack: round(logisticsGameTheorySlack, 4),
       },
       compute: {
         tolerancePct: manifest.verificationProtocols.computeTolerancePct,
@@ -4087,11 +4161,14 @@ function buildStabilityLedger(
         telemetry.verification.logistics.bufferOk &&
         telemetry.verification.logistics.utilisationOk &&
         telemetry.verification.logistics.watchersOk &&
-        telemetry.verification.logistics.autonomyOk,
+        telemetry.verification.logistics.autonomyOk &&
+        telemetry.verification.logistics.equilibriumOk,
       weight: 0.8,
       evidence: `avg reliability ${(telemetry.verification.logistics.averageReliabilityPct * 100).toFixed(2)}% · min buffer ${telemetry.verification.logistics.minimumBufferDays.toFixed(
         2
-      )}d · utilisation ${(telemetry.verification.logistics.averageUtilisationPct * 100).toFixed(2)}% · watchers ${telemetry.logistics.aggregate.watchers.length}`,
+      )}d · utilisation ${(telemetry.verification.logistics.averageUtilisationPct * 100).toFixed(2)}% · Hamiltonian ${(telemetry.verification.logistics.hamiltonianStability * 100).toFixed(
+        1
+      )}% · watchers ${telemetry.logistics.aggregate.watchers.length}`,
     },
     {
       id: "energy-margin",

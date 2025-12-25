@@ -1088,7 +1088,8 @@ function renderLogistics(logistics, verification) {
     verification?.bufferOk &&
     verification?.utilisationOk &&
     verification?.watchersOk &&
-    verification?.autonomyOk;
+    verification?.autonomyOk &&
+    (verification?.equilibriumOk ?? true);
 
   summary.textContent = `Average reliability ${avgReliability.toFixed(2)}% · utilisation ${avgUtilisation.toFixed(
     2
@@ -1098,6 +1099,16 @@ function renderLogistics(logistics, verification) {
 
   const watcherText = document.querySelector("#logistics-watchers");
   watcherText.textContent = `Unique watchers ${logistics.aggregate.watchers.length} · capacity ${logistics.aggregate.capacityTonnesPerDay.toLocaleString()} tonnes/day`;
+
+  const equilibriumText = document.querySelector("#logistics-equilibrium");
+  if (equilibriumText && logistics.equilibrium) {
+    const hamiltonianStability = (logistics.equilibrium.hamiltonianStability ?? 0) * 100;
+    const gameTheorySlack = (logistics.equilibrium.gameTheorySlack ?? 0) * 100;
+    equilibriumText.textContent = `Hamiltonian stability ${hamiltonianStability.toFixed(
+      1
+    )}% · entropy ${logistics.equilibrium.entropy.toFixed(3)} · game-theory slack ${gameTheorySlack.toFixed(1)}%`;
+    applyStatus(equilibriumText, (verification?.equilibriumOk ?? true) ? "status-ok" : "status-warn");
+  }
 
   const list = document.querySelector("#logistics-corridors");
   list.innerHTML = "";
