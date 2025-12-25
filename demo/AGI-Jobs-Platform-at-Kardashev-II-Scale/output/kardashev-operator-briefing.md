@@ -27,7 +27,7 @@
 * Mission advisories: dyson-swarm autonomy exceeds max 7800 bps
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
 * Scenario sweep: 6/11 nominal, 4 warning, 1 critical.
-  - Interplanetary bridge outage simulation: Failover latency 180s breaches 120s failsafe.
+  - Interplanetary bridge outage simulation: Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Compute drawdown (15%) resilience: Deviation 14.62% exceeds tolerance 0.75%.
   - Primary energy window offline: Removing orbital 8h window drops coverage to 80.58%.
   - Logistics demand spike (+25%): Corridors absorb spike with utilisation 104.33% and buffers 12.00d.

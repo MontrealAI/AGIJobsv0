@@ -13,6 +13,7 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Thermodynamic Reserve:** 48,523,291.36 GJ Gibbs free energy; Hamiltonian stability 50.8% across the sampled phase space.
 - **Gibbs Allocation Temperature:** 0.49 (lower favors resilience-heavy shards); Nash welfare 9.99%.
 - **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.536.
+- **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
@@ -57,5 +58,5 @@ Generated: 2125-01-01T19:05:39.398Z
 - Assembly rate: 96 satellites/day
 - Energy per satellite: 45 MW
 
-A detailed task hierarchy diagram is available at `mermaid/dyson-hierarchy.mmd`.
+A detailed task hierarchy diagram is available at `kardashev-task-hierarchy.mmd`.
 
