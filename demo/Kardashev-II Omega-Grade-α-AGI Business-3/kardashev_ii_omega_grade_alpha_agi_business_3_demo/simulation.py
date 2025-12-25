@@ -16,6 +16,7 @@ class SimulationState:
     entropy: float = 0.0
     hamiltonian: float = 0.0
     coordination_index: float = 0.0
+    game_theory_slack: float = 0.0
 
 
 class PlanetarySimulation:
@@ -60,11 +61,16 @@ class SyntheticEconomySim(PlanetarySimulation):
         hamiltonian = -internal_energy * order_parameter
         coordination_index = 1.0 - abs(self.prosperity_index - self.sustainability_index)
         coordination_index = min(1.0, max(0.0, coordination_index))
+        nash_welfare = math.sqrt(
+            max(1e-6, self.prosperity_index) * max(1e-6, self.sustainability_index)
+        )
+        game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
         return {
             "free_energy": free_energy,
             "entropy": entropy,
             "hamiltonian": hamiltonian,
             "coordination_index": coordination_index,
+            "game_theory_slack": game_theory_slack,
         }
 
     def tick(self, hours: float) -> SimulationState:
@@ -84,4 +90,5 @@ class SyntheticEconomySim(PlanetarySimulation):
             entropy=metrics["entropy"],
             hamiltonian=metrics["hamiltonian"],
             coordination_index=metrics["coordination_index"],
+            game_theory_slack=metrics["game_theory_slack"],
         )
