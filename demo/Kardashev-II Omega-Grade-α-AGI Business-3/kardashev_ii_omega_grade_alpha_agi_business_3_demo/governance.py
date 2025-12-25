@@ -10,6 +10,7 @@ from datetime import timedelta
 class GovernanceParameters:
     worker_stake_ratio: float = 0.15
     validator_stake: float = 100.0
+    validator_reward_ratio: float = 0.05
     validator_commit_window: timedelta = timedelta(minutes=5)
     validator_reveal_window: timedelta = timedelta(minutes=5)
     approvals_required: int = 2
@@ -33,4 +34,3 @@ class GovernanceController:
 
     def slash_amount(self, stake_locked: float) -> float:
         return stake_locked * self.params.slash_ratio
-

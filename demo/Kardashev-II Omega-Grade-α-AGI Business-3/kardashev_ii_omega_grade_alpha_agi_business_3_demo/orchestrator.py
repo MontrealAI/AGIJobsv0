@@ -539,6 +539,7 @@ class Orchestrator:
                 energy_used=float(payload.get("energy_used", 0.0)),
                 compute_used=float(payload.get("compute_used", 0.0)),
                 stake_locked=float(payload.get("stake_locked", 0.0)),
+                validator_reward_pool=float(payload.get("validator_reward_pool", 0.0)),
                 reserved_energy=reserved_energy,
                 reserved_compute=reserved_compute,
                 result_summary=payload.get("result_summary"),
@@ -906,6 +907,7 @@ class Orchestrator:
         if job.status in {JobStatus.POSTED, JobStatus.IN_PROGRESS}:
             job = self.job_registry.mark_failed(job.job_id, "Deadline reached")
             self._warning("job_deadline_missed", job_id=job.job_id)
+            self._refund_validator_reward_pool(job, reason="deadline_missed")
             if job.assigned_agent:
                 slash_amount = self.governance.slash_amount(job.stake_locked)
                 self.resources.slash(job.assigned_agent, slash_amount)
@@ -950,11 +952,14 @@ class Orchestrator:
         employer = spec.metadata.get("employer", self.config.operator_account)
         employer_account = self.resources.ensure_account(employer, self.config.base_agent_tokens)
         stake_required = spec.reward_tokens * self.governance.params.worker_stake_ratio
-        if employer_account.tokens < spec.reward_tokens + stake_required:
+        validator_reward_pool = self._compute_validator_reward_pool(spec.reward_tokens)
+        total_required = spec.reward_tokens + stake_required + validator_reward_pool
+        if employer_account.tokens < total_required:
             raise ValueError("Employer lacks budget for job")
-        self.resources.debit_tokens(employer, spec.reward_tokens)
+        self.resources.debit_tokens(employer, spec.reward_tokens + validator_reward_pool)
         spec.stake_required = stake_required
         record = self.job_registry.create_job(spec)
+        record.validator_reward_pool = validator_reward_pool
         try:
             self.resources.reserve_budget(
                 record.job_id,
@@ -963,7 +968,7 @@ class Orchestrator:
             )
         except ValueError as exc:
             self.job_registry.delete_job(record.job_id)
-            self.resources.credit_tokens(employer, spec.reward_tokens)
+            self.resources.credit_tokens(employer, spec.reward_tokens + validator_reward_pool)
             raise
         record.reserved_energy = max(0.0, spec.energy_budget)
         record.reserved_compute = max(0.0, spec.compute_budget)
@@ -974,6 +979,7 @@ class Orchestrator:
             reward=spec.reward_tokens,
             energy_budget=spec.energy_budget,
             compute_budget=spec.compute_budget,
+            validator_reward_pool=validator_reward_pool,
         )
         deadline_event = await self.scheduler.schedule(
             "job_deadline",
@@ -1040,9 +1046,11 @@ class Orchestrator:
         if job.status == JobStatus.FINALIZED:
             return
         approvals = sum(1 for v in job.validator_votes.values() if v)
-        if not self.governance.require_quorum(approvals):
+        approved = self.governance.require_quorum(approvals)
+        if not approved:
             self._warning("validation_quorum_not_met", job_id=job.job_id)
             job = self.job_registry.mark_failed(job.job_id, "Validation quorum not met")
+            self._refund_validator_reward_pool(job, reason="validation_quorum_not_met")
             if job.assigned_agent:
                 slash_amount = self.governance.slash_amount(job.stake_locked)
                 self.resources.slash(job.assigned_agent, slash_amount)
@@ -1051,6 +1059,9 @@ class Orchestrator:
             if job.assigned_agent:
                 self.resources.credit_tokens(job.assigned_agent, job.spec.reward_tokens)
                 self.resources.release_stake(job.assigned_agent, job.stake_locked)
+            distributed = self._distribute_validator_rewards(job)
+            if distributed <= 0.0 and job.validator_reward_pool > 0.0:
+                self._refund_validator_reward_pool(job, reason="no_validator_votes")
         released_energy, released_compute = self.resources.release_budget(job.job_id)
         if released_energy or released_compute:
             job.reserved_energy = max(0.0, job.reserved_energy - released_energy)
@@ -1221,7 +1232,8 @@ class Orchestrator:
             self._info("cancel_noop", job_id=job_id)
             return
         employer = str(job.spec.metadata.get("employer", self.config.operator_account))
-        self.resources.credit_tokens(employer, job.spec.reward_tokens)
+        self.resources.credit_tokens(employer, job.spec.reward_tokens + job.validator_reward_pool)
+        job.validator_reward_pool = 0.0
         if job.assigned_agent:
             self.resources.release_stake(job.assigned_agent, job.stake_locked)
         self._release_validator_stake(job)
@@ -1237,6 +1249,45 @@ class Orchestrator:
         )
         self._info("job_cancelled", job_id=job_id, reason=reason)
         await self._persist_status_snapshot()
+
+    def _compute_validator_reward_pool(self, reward_tokens: float) -> float:
+        ratio = max(0.0, float(self.governance.params.validator_reward_ratio))
+        return max(0.0, reward_tokens * ratio)
+
+    def _distribute_validator_rewards(self, job: JobRecord) -> float:
+        pool = max(0.0, job.validator_reward_pool)
+        if pool <= 0:
+            return 0.0
+        eligible = [validator for validator, vote in job.validator_votes.items() if vote]
+        if not eligible:
+            return 0.0
+        share = pool / len(eligible)
+        for validator in eligible:
+            self.resources.credit_tokens(validator, share)
+        job.validator_reward_pool = 0.0
+        self._info(
+            "validator_rewards_distributed",
+            job_id=job.job_id,
+            validators=eligible,
+            amount=pool,
+        )
+        return pool
+
+    def _refund_validator_reward_pool(self, job: JobRecord, *, reason: str) -> float:
+        pool = max(0.0, job.validator_reward_pool)
+        if pool <= 0:
+            return 0.0
+        employer = str(job.spec.metadata.get("employer", self.config.operator_account))
+        self.resources.credit_tokens(employer, pool)
+        job.validator_reward_pool = 0.0
+        self._info(
+            "validator_reward_refunded",
+            job_id=job.job_id,
+            employer=employer,
+            amount=pool,
+            reason=reason,
+        )
+        return pool
 
     def _capture_agent_snapshot(self) -> Dict[str, Any]:
         with self._agent_lock:
