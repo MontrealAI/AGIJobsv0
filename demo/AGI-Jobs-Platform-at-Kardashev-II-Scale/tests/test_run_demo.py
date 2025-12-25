@@ -64,6 +64,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     telemetry_payload = json.loads(telemetry.read_text())
     assert telemetry_payload.get("energyMonteCarlo", {}).get("withinTolerance") is True
     assert telemetry_payload.get("dominanceScore")
+    assert telemetry_payload.get("dominance", {}).get("score") == telemetry_payload["dominanceScore"]
+    assert telemetry_payload.get("dominance", {}).get("monthlyValueUSD") > 0
+    assert 0 <= telemetry_payload.get("dominance", {}).get("averageResilience") <= 1
 
     energy = telemetry_payload["energyMonteCarlo"]
     assert energy["maintainsBuffer"] is True
@@ -91,6 +94,14 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert owner_payload["verification"]["unstoppableScore"] >= 0
     assert owner_payload["secondaryVerification"]["matchesPrimaryScore"] is True
     assert owner_payload["hashes"]["transactionSet"].startswith("sha256:")
+
+    telemetry_energy = telemetry_payload["energy"]
+    assert telemetry_energy["utilisationPct"] > 0
+    assert telemetry_energy["models"]["regionalSumGw"] > 0
+    assert telemetry_energy["monteCarlo"]["withinTolerance"] is True
+    assert telemetry_energy["liveFeeds"]["feeds"]
+    assert telemetry_payload["missionDirectives"]["ownerPowers"]
+    assert telemetry_payload["missionLattice"]["programmes"]
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")

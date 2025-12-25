@@ -348,6 +348,475 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   };
 }
 
+function average(values) {
+  if (!values.length) {
+    return 0;
+  }
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function sum(values) {
+  return values.reduce((total, value) => total + value, 0);
+}
+
+function clampRatio(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function unique(values) {
+  return [...new Set(values)];
+}
+
+function renewablePctForFeed(feed) {
+  const type = (feed.type || '').toLowerCase();
+  if (type.includes('solar')) return 0.98;
+  if (type.includes('fusion')) return 0.92;
+  return 0.9;
+}
+
+function buildEnergyModels(energyConfig, manifest, dyson) {
+  const regionalSumGw = sum(energyConfig.feeds.map((feed) => feed.nominalMw)) / 1000;
+  const dysonProjectionGw =
+    manifest?.energyProtocols?.stellarLattice?.baselineCapturedGw ??
+    Math.max(regionalSumGw, dyson.capturedMw / 1000);
+  return {
+    regionalSumGw,
+    dysonProjectionGw,
+  };
+}
+
+function buildLiveEnergyFeeds(energyConfig, rng) {
+  const tolerancePct = energyConfig.tolerancePct ?? 5;
+  const driftAlertPct = energyConfig.driftAlertPct ?? 8.5;
+  const feeds = energyConfig.feeds.map((feed) => {
+    const deltaPct = Math.abs((rng() - 0.5) * driftAlertPct * 1.25);
+    const withinTolerance = deltaPct <= tolerancePct;
+    return {
+      region: feed.region,
+      type: feed.type,
+      deltaPct,
+      latencyMs: feed.latencyMs,
+      withinTolerance,
+      driftAlert: deltaPct > driftAlertPct,
+    };
+  });
+  const latencies = feeds.map((feed) => feed.latencyMs);
+  return {
+    tolerancePct,
+    driftAlertPct,
+    averageLatencyMs: average(latencies),
+    maxLatencyMs: Math.max(...latencies),
+    allWithinTolerance: feeds.every((feed) => feed.withinTolerance),
+    feeds,
+  };
+}
+
+function enrichAllocationPolicy(allocationPolicy, shardMetrics, energyConfig) {
+  const feedByShard = new Map(
+    energyConfig.feeds.map((feed) => {
+      const shardId = feed.region.split('-')[0];
+      return [shardId, feed];
+    })
+  );
+
+  const allocations = allocationPolicy.allocations.map((allocation) => {
+    const metric = shardMetrics.find((entry) => entry.shardId === allocation.shardId);
+    const feed = feedByShard.get(allocation.shardId);
+    const nominalGw = feed ? feed.nominalMw / 1000 : 0;
+    const deltaGw = allocation.recommendedGw - nominalGw;
+    return {
+      ...allocation,
+      deltaGw,
+      resilience: metric?.resilience ?? null,
+      renewablePct: feed ? renewablePctForFeed(feed) : null,
+      latencyMs: metric?.settlementLagMinutes ? metric.settlementLagMinutes * 60 * 1000 : feed?.latencyMs ?? null,
+    };
+  });
+
+  return {
+    ...allocationPolicy,
+    allocations,
+  };
+}
+
+function collectTasks(task) {
+  if (!task) return [];
+  const children = Array.isArray(task.children) ? task.children : [];
+  return [task, ...children.flatMap((child) => collectTasks(child))];
+}
+
+function computeCriticalPath(task) {
+  if (!task) return 0;
+  const children = Array.isArray(task.children) ? task.children : [];
+  const childMax = children.length ? Math.max(...children.map((child) => computeCriticalPath(child))) : 0;
+  return (task.durationDays ?? 0) + childMax;
+}
+
+function buildMissionLattice(taskLattice, manifest) {
+  const programmes = taskLattice?.programmes ?? [];
+  const programmeIds = programmes.map((programme) => programme.id);
+  const maxAutonomyBps = manifest?.dysonProgram?.safety?.maxAutonomyBps ?? 8000;
+
+  const programmeSummaries = programmes.map((programme) => {
+    const tasks = collectTasks(programme.rootTask);
+    const taskIds = tasks.map((task) => task.id);
+    const missingDependencies = unique(
+      tasks.flatMap((task) => (task.dependencies || []).filter((dep) => !taskIds.includes(dep)))
+    );
+    const missingProgrammeDependencies = (programme.dependencies || []).filter(
+      (dep) => !programmeIds.includes(dep)
+    );
+    const sentinelAlerts = tasks.filter((task) => !task.sentinel).map((task) => task.id);
+    const ownerAlerts = tasks
+      .filter((task) => task.ownerSafe && programme.ownerSafe && task.ownerSafe !== programme.ownerSafe)
+      .map((task) => task.id);
+    const riskDistribution = tasks.reduce(
+      (acc, task) => {
+        const risk = (task.risk || 'low').toLowerCase();
+        if (risk === 'high') acc.high += 1;
+        else if (risk === 'medium') acc.medium += 1;
+        else acc.low += 1;
+        return acc;
+      },
+      { low: 0, medium: 0, high: 0 }
+    );
+    const criticalPathDays = computeCriticalPath(programme.rootTask);
+    const timelineSlackDays = (programme.timelineDays ?? criticalPathDays) - criticalPathDays;
+    const autonomyOk = tasks.every((task) => (task.autonomyBps ?? 0) <= maxAutonomyBps);
+    const timelineOk = timelineSlackDays >= 0;
+    const totalEnergyGw = sum(tasks.map((task) => task.energyGw ?? 0));
+    const totalComputeExaflops = sum(tasks.map((task) => task.computeExaflops ?? 0));
+    const totalAgentQuorum = sum(tasks.map((task) => task.agentQuorum ?? 0));
+    const unstoppableBase = 1 - Math.min(0.4, riskDistribution.high / Math.max(1, tasks.length) * 0.6);
+    const unstoppableScore = clampRatio(
+      unstoppableBase - (missingDependencies.length + missingProgrammeDependencies.length) * 0.03
+    );
+
+    return {
+      id: programme.id,
+      name: programme.name,
+      objective: programme.objective,
+      federation: programme.federation,
+      ownerSafe: programme.ownerSafe,
+      dependencies: programme.dependencies || [],
+      taskCount: tasks.length,
+      totalEnergyGw,
+      totalComputeExaflops,
+      totalAgentQuorum,
+      criticalPathDays,
+      timelineSlackDays,
+      timelineOk,
+      riskDistribution,
+      missingDependencies,
+      missingProgrammeDependencies,
+      sentinelAlerts,
+      ownerAlerts,
+      autonomyOk,
+      unstoppableScore,
+    };
+  });
+
+  const totals = {
+    programmes: programmeSummaries.length,
+    tasks: sum(programmeSummaries.map((programme) => programme.taskCount)),
+    energyGw: sum(programmeSummaries.map((programme) => programme.totalEnergyGw)),
+    computeExaflops: sum(programmeSummaries.map((programme) => programme.totalComputeExaflops)),
+    agentQuorum: sum(programmeSummaries.map((programme) => programme.totalAgentQuorum)),
+    averageTimelineDays: average(programmeSummaries.map((programme) => programme.criticalPathDays)),
+  };
+
+  const verification = {
+    unstoppableScore: average(programmeSummaries.map((programme) => programme.unstoppableScore)),
+    dependenciesResolved: programmeSummaries.every((programme) => programme.missingDependencies.length === 0),
+    programmeDependenciesResolved: programmeSummaries.every(
+      (programme) => programme.missingProgrammeDependencies.length === 0
+    ),
+    sentinelCoverage: programmeSummaries.every((programme) => programme.sentinelAlerts.length === 0),
+    fallbackCoverage: programmes.every(
+      (programme) =>
+        collectTasks(programme.rootTask).every((task) => typeof task.fallbackPlan === 'string' && task.fallbackPlan.length)
+    ),
+    ownerAlignment: programmeSummaries.every((programme) => programme.ownerAlerts.length === 0),
+    autonomyWithinBounds: programmeSummaries.every((programme) => programme.autonomyOk),
+    timelineAligned: programmeSummaries.every((programme) => programme.timelineOk),
+    warnings: programmeSummaries
+      .filter((programme) => programme.timelineSlackDays < 14)
+      .map((programme) => `${programme.name} timeline slack ${programme.timelineSlackDays.toFixed(1)}d`),
+  };
+
+  return {
+    totals,
+    programmes: programmeSummaries,
+    verification,
+  };
+}
+
+function buildIdentity(identityProtocols) {
+  const federations = identityProtocols?.federations ?? [];
+  const global = identityProtocols?.global ?? {};
+  const anchorsMeetingQuorum = federations.filter((fed) => (fed.anchors || []).length >= global.attestationQuorum).length;
+  const totalAgents = sum(federations.map((fed) => fed.totalAgents ?? 0));
+  const totalRevocations = sum(federations.map((fed) => fed.credentialRevocations24h ?? 0));
+  const revocationRatePpm = totalAgents > 0 ? (totalRevocations / totalAgents) * 1_000_000 : 0;
+  const minCoveragePct = Math.min(...federations.map((fed) => fed.coveragePct ?? 1));
+  const maxLatency = Math.max(...federations.map((fed) => fed.attestationLatencySeconds ?? 0));
+
+  return {
+    global,
+    federations,
+    totals: {
+      federationCount: federations.length,
+      anchorsMeetingQuorum,
+      revocationRatePpm,
+      minCoveragePct,
+      maxAttestationLatencySeconds: maxLatency,
+    },
+    withinQuorum: anchorsMeetingQuorum === federations.length,
+  };
+}
+
+function buildComputeFabric(computeFabrics) {
+  const planes = computeFabrics?.orchestrationPlanes ?? [];
+  const policies = computeFabrics?.failoverPolicies ?? {};
+  const totalCapacity = sum(planes.map((plane) => plane.capacityExaflops ?? 0));
+  const failoverCapacity = totalCapacity * (policies.quorumPct ?? 0.5);
+  const requiredFailover = totalCapacity * (policies.quorumPct ?? 0.5);
+  const averageAvailability = average(planes.map((plane) => plane.availabilityPct ?? 0));
+
+  return {
+    failoverWithinQuorum: failoverCapacity >= requiredFailover,
+    failoverCapacityExaflops: failoverCapacity,
+    requiredFailoverCapacity: requiredFailover,
+    totalCapacityExaflops: totalCapacity,
+    averageAvailabilityPct: averageAvailability,
+    policies: {
+      layeredHierarchies: policies.layeredHierarchies ?? 1,
+    },
+    planes,
+  };
+}
+
+function buildOrchestrationFabric(shards, federations) {
+  const federationMap = new Map(federations.map((fed) => [fed.slug, fed]));
+  const shardSummaries = shards.map((shard) => {
+    const federation = federationMap.get(shard.id);
+    const federationDomains = federation?.domains?.map((domain) => domain.slug) ?? [];
+    const missingDomains = (shard.domains || []).filter((domain) => !federationDomains.includes(domain));
+    const domainCoverageOk = missingDomains.length === 0;
+    const sentinelsOk = Array.isArray(shard.sentinels) && shard.sentinels.length > 0;
+    return {
+      id: shard.id,
+      jobRegistry: shard.jobRegistry,
+      latencyMs: shard.latencyMs,
+      domains: shard.domains,
+      domainCoverageOk,
+      missingDomains,
+      sentinelsOk,
+      federationFound: !!federation,
+    };
+  });
+
+  const latencies = shardSummaries.map((shard) => shard.latencyMs);
+  const coverage = {
+    domainsOk: shardSummaries.every((shard) => shard.domainCoverageOk),
+    sentinelsOk: shardSummaries.every((shard) => shard.sentinelsOk),
+    federationsOk: shardSummaries.every((shard) => shard.federationFound),
+    averageLatencyMs: average(latencies),
+    maxLatencyMs: Math.max(...latencies),
+  };
+
+  return {
+    coverage,
+    shards: shardSummaries,
+  };
+}
+
+function buildEnergySchedule(manifest) {
+  const windows = manifest?.energyWindows ?? [];
+  const coverageThreshold = 0.84;
+  const reliabilityThreshold = 0.96;
+  const windowSummaries = windows.map((window) => {
+    const coverageRatio = window.availableGw / Math.max(1, window.availableGw + window.backupGw);
+    return {
+      ...window,
+      coverageRatio,
+    };
+  });
+  const coverageByFederation = {};
+  windowSummaries.forEach((window) => {
+    if (!coverageByFederation[window.federation]) {
+      coverageByFederation[window.federation] = [];
+    }
+    coverageByFederation[window.federation].push(window);
+  });
+  const coverage = Object.entries(coverageByFederation).map(([federation, entries]) => {
+    return {
+      federation,
+      coverageRatio: average(entries.map((entry) => entry.coverageRatio)),
+      reliabilityPct: average(entries.map((entry) => entry.reliabilityPct)),
+    };
+  });
+  const globalCoverageRatio = average(coverage.map((entry) => entry.coverageRatio));
+  const globalReliabilityPct = average(coverage.map((entry) => entry.reliabilityPct));
+  const deficits = coverage
+    .filter((entry) => entry.coverageRatio < coverageThreshold)
+    .map((entry) => ({
+      federation: entry.federation,
+      coverageRatio: entry.coverageRatio,
+      deficitGwH: round((coverageThreshold - entry.coverageRatio) * 1000, 2),
+    }));
+
+  return {
+    globalCoverageRatio,
+    globalReliabilityPct,
+    coverageThreshold,
+    reliabilityThreshold,
+    coverage,
+    windows: windowSummaries,
+    deficits,
+  };
+}
+
+function buildLogistics(manifest, safetyPolicy) {
+  const corridors = manifest?.logisticsCorridors ?? [];
+  const autonomyLimit = safetyPolicy?.maxAutonomyBps ?? 8000;
+  const uniqueWatchers = unique(corridors.flatMap((corridor) => corridor.watchers || []));
+  const aggregate = {
+    watchers: uniqueWatchers,
+    capacityTonnesPerDay: sum(corridors.map((corridor) => corridor.capacityTonnesPerDay ?? 0)),
+  };
+
+  const corridorSummaries = corridors.map((corridor) => {
+    const utilisationOk = corridor.utilisationPct >= 0.65 && corridor.utilisationPct <= 0.9;
+    const reliabilityOk = corridor.reliabilityPct >= 0.97;
+    const bufferOk = corridor.bufferDays >= 10;
+    const watchersOk = (corridor.watchers || []).length >= 3;
+    const autonomyOk = (corridor.autonomyLevelBps ?? 0) <= autonomyLimit;
+    return {
+      ...corridor,
+      utilisationOk,
+      reliabilityOk,
+      bufferOk,
+      watchersOk,
+      autonomyOk,
+    };
+  });
+
+  const verification = {
+    averageReliabilityPct: average(corridorSummaries.map((corridor) => corridor.reliabilityPct)),
+    averageUtilisationPct: average(corridorSummaries.map((corridor) => corridor.utilisationPct)),
+    minimumBufferDays: Math.min(...corridorSummaries.map((corridor) => corridor.bufferDays)),
+    reliabilityOk: corridorSummaries.every((corridor) => corridor.reliabilityOk),
+    utilisationOk: corridorSummaries.every((corridor) => corridor.utilisationOk),
+    bufferOk: corridorSummaries.every((corridor) => corridor.bufferOk),
+    watchersOk: corridorSummaries.every((corridor) => corridor.watchersOk),
+    autonomyOk: corridorSummaries.every((corridor) => corridor.autonomyOk),
+  };
+
+  return {
+    aggregate,
+    corridors: corridorSummaries,
+    verification,
+  };
+}
+
+function buildSettlement(manifest) {
+  const protocols = manifest?.settlementProtocols ?? [];
+  const coverageThreshold = 0.95;
+  const slippageThresholdBps = 40;
+  const watchers = unique(protocols.flatMap((protocol) => protocol.watchers || []));
+  const watchersOnline = watchers.length;
+  const averageFinality = average(protocols.map((protocol) => protocol.finalityMinutes));
+  const maxTolerance = Math.max(...protocols.map((protocol) => protocol.toleranceMinutes));
+  const minCoverage = Math.min(...protocols.map((protocol) => protocol.coveragePct));
+
+  const verification = {
+    allWithinTolerance: protocols.every((protocol) => protocol.finalityMinutes <= protocol.toleranceMinutes),
+    coverageOk: protocols.every((protocol) => protocol.coveragePct >= coverageThreshold),
+    slippageOk: protocols.every((protocol) => protocol.slippageBps <= slippageThresholdBps),
+  };
+
+  return {
+    protocols,
+    watchers,
+    watchersOnline,
+    averageFinalityMinutes: averageFinality,
+    maxToleranceMinutes: maxTolerance,
+    minCoveragePct: minCoverage,
+    coverageThreshold,
+    slippageThresholdBps,
+    verification,
+  };
+}
+
+function buildScenarioSweep({ energyMonteCarlo, mission, bridges }) {
+  const energyScenario = {
+    title: 'Thermal drift stress test',
+    status: energyMonteCarlo.withinTolerance ? 'stable' : 'critical',
+    confidence: clampRatio(1 - energyMonteCarlo.breachProbability),
+    summary: 'Monte Carlo drift projected across Dyson lattice reserves.',
+    metrics: [
+      {
+        label: 'Breach probability',
+        value: `${(energyMonteCarlo.breachProbability * 100).toFixed(2)}%`,
+        ok: energyMonteCarlo.withinTolerance,
+      },
+      {
+        label: 'Free energy margin',
+        value: `${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW`,
+        ok: energyMonteCarlo.freeEnergyMarginGw > 0,
+      },
+    ],
+    recommendedActions: energyMonteCarlo.withinTolerance
+      ? ['Maintain current buffer window']
+      : ['Increase buffer MW', 'Rebalance allocation policy'],
+  };
+
+  const missionScenario = {
+    title: 'Mission lattice dependencies',
+    status:
+      mission.verification.dependenciesResolved && mission.verification.programmeDependenciesResolved
+        ? 'stable'
+        : 'degraded',
+    confidence: clampRatio(mission.verification.unstoppableScore),
+    summary: 'Task lattice dependency closure and owner alignment.',
+    metrics: [
+      {
+        label: 'Dependencies resolved',
+        value: mission.verification.dependenciesResolved ? 'Yes' : 'No',
+        ok: mission.verification.dependenciesResolved,
+      },
+      {
+        label: 'Owner alignment',
+        value: mission.verification.ownerAlignment ? 'Yes' : 'No',
+        ok: mission.verification.ownerAlignment,
+      },
+    ],
+    recommendedActions: mission.verification.dependenciesResolved
+      ? ['Continue scheduled drills']
+      : ['Resolve missing task dependencies'],
+  };
+
+  const bridgeScenario = {
+    title: 'Bridge latency audit',
+    status: bridges?.allWithinTolerance ? 'stable' : 'warning',
+    confidence: bridges?.allWithinTolerance ? 0.96 : 0.82,
+    summary: 'Interplanetary bridge compliance vs tolerance window.',
+    metrics: [
+      {
+        label: 'Bridge compliance',
+        value: bridges?.allWithinTolerance ? 'All within tolerance' : 'Review required',
+        ok: bridges?.allWithinTolerance,
+      },
+    ],
+    recommendedActions: bridges?.allWithinTolerance
+      ? ['Keep failover drills active']
+      : ['Trigger bridge isolation playbook'],
+  };
+
+  return [energyScenario, missionScenario, bridgeScenario];
+}
+
 function validateEnergyFeeds(energy) {
   if (!energy || !Array.isArray(energy.feeds) || energy.feeds.length === 0) {
     throw new Error('Energy feeds must include at least one region with nominal + buffer MW defined.');
@@ -395,6 +864,24 @@ function validateFabric(fabric) {
       throw new Error(`Fabric config missing required field "${field}".`);
     }
   });
+}
+
+function validateManifest(manifest) {
+  if (!manifest || typeof manifest !== 'object') {
+    throw new Error('Manifest configuration is missing or malformed.');
+  }
+  if (!Array.isArray(manifest.federations) || manifest.federations.length === 0) {
+    throw new Error('Manifest must define at least one federation.');
+  }
+  if (!Array.isArray(manifest.energyWindows) || manifest.energyWindows.length === 0) {
+    throw new Error('Manifest must define energy windows.');
+  }
+}
+
+function validateTaskLattice(taskLattice) {
+  if (!taskLattice || !Array.isArray(taskLattice.programmes) || taskLattice.programmes.length === 0) {
+    throw new Error('Task lattice must include at least one programme.');
+  }
 }
 
 function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy, dominanceScore, sentinelFindings }) {
@@ -682,13 +1169,21 @@ function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
 function main() {
   let fabric;
   let energy;
+  let manifest;
+  let taskLattice;
   try {
     const fabricPath = resolveConfigPath('KARDASHEV_FABRIC_PATH', 'config/fabric.json');
     const energyPath = resolveConfigPath('KARDASHEV_ENERGY_FEEDS_PATH', 'config/energy-feeds.json');
+    const manifestPath = resolveConfigPath('KARDASHEV_MANIFEST_PATH', 'config/kardashev-ii.manifest.json');
+    const taskLatticePath = resolveConfigPath('KARDASHEV_TASK_LATTICE_PATH', 'config/task-lattice.json');
     fabric = loadJson(fabricPath);
     energy = loadJson(energyPath);
+    manifest = loadJson(manifestPath);
+    taskLattice = loadJson(taskLatticePath);
     validateFabric(fabric);
     validateEnergyFeeds(energy);
+    validateManifest(manifest);
+    validateTaskLattice(taskLattice);
   } catch (err) {
     console.error('❌ Kardashev configuration validation failed.');
     console.error(`   - ${err.message}`);
@@ -702,7 +1197,11 @@ function main() {
   const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? '', 10);
   const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
   const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng, mcRuns);
-  const allocationPolicy = computeAllocationPolicy(shardMetrics, energyMonteCarlo);
+  const allocationPolicy = enrichAllocationPolicy(
+    computeAllocationPolicy(shardMetrics, energyMonteCarlo),
+    shardMetrics,
+    energy
+  );
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -712,6 +1211,101 @@ function main() {
     shardMetrics.reduce((sum, metric) => sum + metric.resilience * 100, 0) / shardMetrics.length,
     2
   );
+  const dominanceMonthlyValueUSD = sum(
+    manifest.federations.flatMap((federation) =>
+      federation.domains.map((domain) => domain.monthlyValueUSD ?? 0)
+    )
+  );
+  const dominanceAverageResilience = average(
+    manifest.federations.flatMap((federation) => federation.domains.map((domain) => domain.resilience ?? 0))
+  );
+  const dominance = {
+    score: dominanceScore,
+    monthlyValueUSD: dominanceMonthlyValueUSD,
+    averageResilience: dominanceAverageResilience,
+  };
+
+  const energyModels = buildEnergyModels(energy, manifest, dyson);
+  const liveFeeds = buildLiveEnergyFeeds(energy, rng);
+  const energyUtilisationPct = average(shardMetrics.map((metric) => metric.utilisation / 100));
+  const energyMarginPct = clampRatio(energyMonteCarlo.freeEnergyMarginPct ?? 0);
+  const energyModelDiff = Math.abs(energyModels.regionalSumGw - energyModels.dysonProjectionGw);
+  const energyModelTolerance = (energy.tolerancePct ?? 5) / 100;
+  const energyModelsWithin = energyModels.dysonProjectionGw > 0
+    ? energyModelDiff / energyModels.dysonProjectionGw <= energyModelTolerance
+    : true;
+  const energyWarnings = [];
+  if (!energyMonteCarlo.withinTolerance) {
+    energyWarnings.push('Monte Carlo breach risk exceeds tolerance.');
+  }
+  if (!liveFeeds.allWithinTolerance) {
+    energyWarnings.push('Live energy feeds exceed drift tolerance.');
+  }
+  if (!energyModelsWithin) {
+    energyWarnings.push('Energy model reconciliation outside tolerance.');
+  }
+
+  const energySchedule = buildEnergySchedule(manifest);
+  const energyScheduleVerification = {
+    coverageOk: energySchedule.globalCoverageRatio >= energySchedule.coverageThreshold,
+    reliabilityOk: energySchedule.globalReliabilityPct >= energySchedule.reliabilityThreshold,
+  };
+
+  const governanceCoverageSeconds = average(
+    manifest.federations.flatMap((federation) =>
+      federation.sentinels.map((sentinel) => sentinel.coverageSeconds ?? 0)
+    )
+  );
+  const guardianWindow = manifest.interstellarCouncil?.guardianReviewWindow ?? 900;
+  const governance = {
+    averageCoverageSeconds: governanceCoverageSeconds,
+    coverageOk: governanceCoverageSeconds <= guardianWindow * 2,
+  };
+
+  const bridgeTolerance = manifest.verificationProtocols?.bridgeLatencyToleranceSeconds ?? 120;
+  const bridges = Object.entries(manifest.interplanetaryBridges || {}).reduce((acc, [name, data]) => {
+    acc[name] = {
+      latencySeconds: data.latencySeconds,
+      bandwidthGbps: data.bandwidthGbps,
+      protocol: data.protocol,
+      withinFailsafe: data.latencySeconds <= bridgeTolerance,
+    };
+    return acc;
+  }, {});
+  const bridgesVerification = {
+    allWithinTolerance: Object.values(bridges).every((bridge) => bridge.withinFailsafe),
+    toleranceSeconds: bridgeTolerance,
+  };
+
+  const identity = buildIdentity(manifest.identityProtocols);
+  const computeFabric = buildComputeFabric(manifest.computeFabrics);
+  const orchestrationFabric = buildOrchestrationFabric(fabric.shards, manifest.federations);
+  const missionLattice = buildMissionLattice(taskLattice, manifest);
+  const logistics = buildLogistics(manifest, manifest.dysonProgram?.safety);
+  const settlement = buildSettlement(manifest);
+  const computeTolerancePct = manifest.verificationProtocols?.computeTolerancePct ?? 0.75;
+  const computeDeviationPct =
+    computeFabric.requiredFailoverCapacity > 0
+      ? Math.abs(
+          (computeFabric.failoverCapacityExaflops - computeFabric.requiredFailoverCapacity) /
+            computeFabric.requiredFailoverCapacity
+        ) * 100
+      : 0;
+
+  const verification = {
+    energyModels: {
+      withinMargin: energyModelsWithin,
+    },
+    compute: {
+      deviationPct: computeDeviationPct,
+      tolerancePct: computeTolerancePct,
+      withinTolerance: computeDeviationPct <= computeTolerancePct,
+    },
+    bridges: bridgesVerification,
+    energySchedule: energyScheduleVerification,
+    logistics: logistics.verification,
+    settlement: settlement.verification,
+  };
 
   const { outputDir: cliOutputDir, check, printCommands } = parseArgs(
     process.argv.slice(2)
@@ -845,11 +1439,51 @@ function main() {
   const telemetry = {
     generatedAt,
     dominanceScore,
+    dominance,
     shards: shardMetrics,
     sentinelFindings,
     dyson,
     energyMonteCarlo,
     allocationPolicy,
+    energy: {
+      utilisationPct: energyUtilisationPct,
+      marginPct: energyMarginPct,
+      tripleCheck: energyMonteCarlo.withinTolerance && energyModelsWithin && liveFeeds.allWithinTolerance,
+      warnings: energyWarnings,
+      models: energyModels,
+      monteCarlo: energyMonteCarlo,
+      liveFeeds,
+      schedule: energySchedule,
+      allocationPolicy,
+    },
+    governance,
+    verification,
+    bridges,
+    missionDirectives: manifest.missionDirectives,
+    federations: manifest.federations,
+    identity,
+    computeFabric,
+    orchestrationFabric,
+    missionLattice,
+    logistics: {
+      aggregate: logistics.aggregate,
+      corridors: logistics.corridors,
+    },
+    settlement: {
+      protocols: settlement.protocols,
+      watchers: settlement.watchers,
+      watchersOnline: settlement.watchersOnline,
+      averageFinalityMinutes: settlement.averageFinalityMinutes,
+      maxToleranceMinutes: settlement.maxToleranceMinutes,
+      minCoveragePct: settlement.minCoveragePct,
+      coverageThreshold: settlement.coverageThreshold,
+      slippageThresholdBps: settlement.slippageThresholdBps,
+    },
+    scenarioSweep: buildScenarioSweep({ energyMonteCarlo, mission: missionLattice, bridges: bridgesVerification }),
+    manifest: {
+      manifestoHashMatches: Boolean(manifest.interstellarCouncil?.manifestoHash),
+      planHashMatches: Boolean(manifest.selfImprovement?.planHash),
+    },
     configs: {
       knowledgeGraph: fabric.knowledgeGraph,
       energyOracle: fabric.energyOracle,
