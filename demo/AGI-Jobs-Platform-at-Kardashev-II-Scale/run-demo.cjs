@@ -716,6 +716,10 @@ function main() {
 
     const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
     fs.writeFileSync(telemetryPath, `${JSON.stringify(telemetry, null, 2)}\n`);
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-telemetry.inline.js'),
+      `window.__KARDASHEV_TELEMETRY__ = ${JSON.stringify(telemetry)};\n`
+    );
 
     const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
     if (fs.existsSync(legacyTelemetryPath)) {
