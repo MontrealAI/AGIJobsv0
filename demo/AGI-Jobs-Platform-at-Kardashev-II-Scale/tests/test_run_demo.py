@@ -43,11 +43,22 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     report = tmp_path / "kardashev-report.md"
     governance = tmp_path / "governance-playbook.md"
     telemetry = tmp_path / "kardashev-telemetry.json"
+    stability_ledger = tmp_path / "kardashev-stability-ledger.json"
+    owner_proof = tmp_path / "kardashev-owner-proof.json"
     task_hierarchy = tmp_path / "kardashev-task-hierarchy.mmd"
     mermaid_map = tmp_path / "kardashev-mermaid.mmd"
     dyson_diagram = tmp_path / "kardashev-dyson.mmd"
 
-    for path in (report, governance, telemetry, task_hierarchy, mermaid_map, dyson_diagram):
+    for path in (
+        report,
+        governance,
+        telemetry,
+        stability_ledger,
+        owner_proof,
+        task_hierarchy,
+        mermaid_map,
+        dyson_diagram,
+    ):
         assert path.exists(), f"expected artefact missing: {path}"
 
     telemetry_payload = json.loads(telemetry.read_text())
@@ -70,6 +81,16 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= allocation["strategyStability"] <= 1
     assert 0 <= allocation["deviationIncentive"] <= 1
     assert 0 <= allocation["jainIndex"] <= 1
+
+    ledger_payload = json.loads(stability_ledger.read_text())
+    assert ledger_payload["confidence"]["compositeScore"] >= 0
+    assert isinstance(ledger_payload["checks"], list)
+    assert "summary" in ledger_payload["confidence"]
+
+    owner_payload = json.loads(owner_proof.read_text())
+    assert owner_payload["verification"]["unstoppableScore"] >= 0
+    assert owner_payload["secondaryVerification"]["matchesPrimaryScore"] is True
+    assert owner_payload["hashes"]["transactionSet"].startswith("sha256:")
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
