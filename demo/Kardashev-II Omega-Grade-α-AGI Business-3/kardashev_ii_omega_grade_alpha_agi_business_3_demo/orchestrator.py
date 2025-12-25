@@ -67,6 +67,7 @@ class OrchestratorConfig:
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
     integrity_check_interval_seconds: float = 30.0
+    claim_window_seconds: float = 0.4
 
 
 class Orchestrator:
@@ -119,12 +120,16 @@ class Orchestrator:
             "job_deadline": self._handle_job_deadline_event,
             "validation_commit_end": self._handle_validation_commit_end_event,
             "validation_finalize": self._handle_validation_finalize_event,
+            "claim_window": self._handle_claim_window_event,
         }
         self._agent_last_seen: Dict[str, datetime] = {}
         self._agent_roles: Dict[str, str] = {}
         self._agent_skills: Dict[str, List[str]] = {}
         self._unresponsive_agents: Set[str] = set()
         self._agent_lock = Lock()
+        self._claim_window_seconds = max(0.0, float(config.claim_window_seconds))
+        self._claim_buffer: Dict[str, List[str]] = {}
+        self._claim_event_ids: Dict[str, str] = {}
 
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
@@ -568,14 +573,7 @@ class Orchestrator:
             while self._running:
                 message = await receiver()
                 if message.topic == "jobs:claim":
-                    try:
-                        await self.assign_job(message.payload["job_id"], message.payload["agent"])
-                    except ValueError:
-                        self._warning(
-                            "job_claim_race",
-                            job_id=message.payload.get("job_id"),
-                            agent=message.payload.get("agent"),
-                        )
+                    await self._register_claim(message.payload)
                 elif message.topic.startswith("results:"):
                     await self._handle_job_result(message.payload)
                 elif message.topic.startswith("validation:commit:"):
@@ -592,6 +590,69 @@ class Orchestrator:
             self._warning("scheduler_unknown_event", event_type=event.event_type, payload=event.payload)
             return
         await handler(event)
+
+    async def _register_claim(self, payload: Dict[str, Any]) -> None:
+        job_id = str(payload.get("job_id"))
+        agent = str(payload.get("agent"))
+        if not job_id or not agent:
+            return
+        job = self.job_registry.get_job(job_id)
+        if job.status != JobStatus.POSTED:
+            return
+        if self._claim_window_seconds <= 0:
+            try:
+                await self.assign_job(job_id, agent)
+            except ValueError:
+                return
+            return
+        claims = self._claim_buffer.setdefault(job_id, [])
+        if agent not in claims:
+            claims.append(agent)
+        if job_id not in self._claim_event_ids:
+            execute_at = datetime.now(timezone.utc) + timedelta(seconds=self._claim_window_seconds)
+            event = await self.scheduler.schedule("claim_window", execute_at, {"job_id": job_id})
+            self._claim_event_ids[job_id] = event.event_id
+
+    async def _handle_claim_window_event(self, event: ScheduledEvent) -> None:
+        job_id = str(event.payload.get("job_id"))
+        if not job_id:
+            return
+        self._claim_event_ids.pop(job_id, None)
+        job = self.job_registry.get_job(job_id)
+        if job.status != JobStatus.POSTED:
+            self._claim_buffer.pop(job_id, None)
+            return
+        claims = self._claim_buffer.pop(job_id, [])
+        if not claims:
+            return
+        winner = self._select_claim_winner(job, claims)
+        try:
+            await self.assign_job(job_id, winner)
+        except ValueError:
+            self._warning("job_claim_expired", job_id=job_id, winner=winner)
+
+    def _select_claim_winner(self, job: JobRecord, claims: List[str]) -> str:
+        scored = [(self._score_claim(job, agent), agent) for agent in claims]
+        scored.sort(key=lambda item: (-item[0], item[1]))
+        return scored[0][1]
+
+    def _score_claim(self, job: JobRecord, agent: str) -> float:
+        required_skills = {skill for skill in job.spec.required_skills if skill}
+        agent_skills = set(self._agent_skills.get(agent, []))
+        skill_overlap = len(required_skills & agent_skills)
+        skill_coverage = skill_overlap / max(1, len(required_skills))
+        active_jobs = sum(
+            1
+            for record in self.job_registry.iter_jobs()
+            if record.assigned_agent == agent and record.status == JobStatus.IN_PROGRESS
+        )
+        load_penalty = 1.0 / (1.0 + active_jobs)
+        energy_cost = job.spec.energy_budget * self.resources.energy_price
+        compute_cost = job.spec.compute_budget * self.resources.compute_price
+        hamiltonian = energy_cost + compute_cost
+        entropy_bonus = math.log1p(skill_overlap)
+        free_energy = job.spec.reward_tokens - hamiltonian
+        return (free_energy * load_penalty) + (10.0 * skill_coverage) + entropy_bonus
 
     async def _control_file_listener(self) -> None:
         try:
