@@ -58,6 +58,13 @@ function isFiniteNumber(value) {
   return Number.isFinite(value);
 }
 
+function formatMaybeNumber(value, formatter, fallback = "n/a") {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return formatter(value);
+}
+
 function applyStatus(element, status) {
   if (!element) return;
   element.classList.remove("status-ok", "status-warn", "status-fail");
@@ -428,6 +435,8 @@ function renderLegacyMetrics(telemetry) {
     feedList.appendChild(li);
   });
 
+  renderAllocationPolicy(normalizeLegacyAllocationPolicy(telemetry));
+
   const placeholderSections = [
     "#identity-summary",
     "#fabric-summary",
@@ -445,6 +454,64 @@ function renderLegacyMetrics(telemetry) {
     }
   });
 
+}
+
+function normalizeLegacyAllocationPolicy(telemetry) {
+  const policy = telemetry?.allocationPolicy;
+  if (!policy) {
+    return null;
+  }
+
+  const feeds = Array.isArray(telemetry.energyFeeds) ? telemetry.energyFeeds : [];
+  const shards = Array.isArray(telemetry.shards) ? telemetry.shards : [];
+
+  const findFeed = (shardId) =>
+    feeds.find((feed) => feed.federationSlug === shardId || (feed.region ?? "").startsWith(shardId));
+  const findShard = (shardId) =>
+    shards.find((shard) => shard.shardId === shardId || shard.id === shardId);
+
+  const allocations = Array.isArray(policy.allocations)
+    ? policy.allocations.map((allocation) => {
+        const shardId =
+          allocation.shardId ??
+          allocation.federation ??
+          allocation.id ??
+          allocation.name;
+        const shard = shardId ? findShard(shardId) : null;
+        const feed = shardId ? findFeed(shardId) : null;
+        const currentGw = Number.isFinite(feed?.nominalMw) ? feed.nominalMw / 1000 : null;
+        const recommendedGw = Number.isFinite(allocation.recommendedGw) ? allocation.recommendedGw : null;
+        const deltaGw =
+          Number.isFinite(currentGw) && Number.isFinite(recommendedGw)
+            ? recommendedGw - currentGw
+            : null;
+        const latencyMs = Number.isFinite(feed?.latencyMs)
+          ? feed.latencyMs
+          : Number.isFinite(shard?.settlementLagMinutes)
+            ? shard.settlementLagMinutes * 60_000
+            : null;
+
+        return {
+          ...allocation,
+          shardId,
+          name:
+            allocation.name ??
+            (shardId ? `${String(shardId).toUpperCase()} shard` : "Shard"),
+          currentGw,
+          deltaGw,
+          resilience: Number.isFinite(allocation.resilience)
+            ? allocation.resilience
+            : shard?.resilience ?? null,
+          renewablePct: Number.isFinite(allocation.renewablePct) ? allocation.renewablePct : null,
+          latencyMs,
+        };
+      })
+    : [];
+
+  return {
+    ...policy,
+    allocations,
+  };
 }
 
 let mermaidInitialised = false;
@@ -689,29 +756,51 @@ function renderAllocationPolicy(policy) {
     return;
   }
 
-  summary.textContent = `Gibbs temperature ${policy.temperature.toFixed(2)} · Nash welfare ${(policy.nashProduct * 100).toFixed(
-    2
-  )}% · fairness ${(policy.fairnessIndex * 100).toFixed(1)}% · Gibbs potential ${policy.gibbsPotential.toFixed(3)}`;
-  stability.textContent = `Strategy stability ${(policy.strategyStability * 100).toFixed(1)}% · deviation incentive ${(policy.deviationIncentive * 100).toFixed(
-    1
-  )}% · Jain fairness ${(policy.jainIndex * 100).toFixed(1)}%`;
-  applyStatus(
-    stability,
-    policy.strategyStability >= 0.85 ? "status-ok" : policy.strategyStability >= 0.7 ? "status-warn" : "status-fail"
-  );
+  summary.textContent = `Gibbs temperature ${formatMaybeNumber(
+    policy.temperature,
+    (value) => value.toFixed(2)
+  )} · Nash welfare ${formatMaybeNumber(policy.nashProduct, (value) => (value * 100).toFixed(2))}% · fairness ${formatMaybeNumber(
+    policy.fairnessIndex,
+    (value) => (value * 100).toFixed(1)
+  )}% · Gibbs potential ${formatMaybeNumber(policy.gibbsPotential, (value) => value.toFixed(3))}`;
+  stability.textContent = `Strategy stability ${formatMaybeNumber(
+    policy.strategyStability,
+    (value) => (value * 100).toFixed(1)
+  )}% · deviation incentive ${formatMaybeNumber(policy.deviationIncentive, (value) => (value * 100).toFixed(1))}% · Jain fairness ${formatMaybeNumber(
+    policy.jainIndex,
+    (value) => (value * 100).toFixed(1)
+  )}%`;
+  if (Number.isFinite(policy.strategyStability)) {
+    applyStatus(
+      stability,
+      policy.strategyStability >= 0.85 ? "status-ok" : policy.strategyStability >= 0.7 ? "status-warn" : "status-fail"
+    );
+  } else {
+    applyStatus(stability, "status-warn");
+  }
 
   list.innerHTML = "";
   policy.allocations.forEach((allocation) => {
     const li = document.createElement("li");
-    const deltaLabel = `${allocation.deltaGw >= 0 ? "+" : ""}${formatNumber(allocation.deltaGw)} GW`;
+    const deltaLabel = Number.isFinite(allocation.deltaGw)
+      ? `${allocation.deltaGw >= 0 ? "+" : ""}${formatNumber(allocation.deltaGw)} GW`
+      : "Δ n/a";
+    const resilienceLabel = Number.isFinite(allocation.resilience)
+      ? `Resilience ${(allocation.resilience * 100).toFixed(1)}%`
+      : "Resilience n/a";
+    const renewableLabel = Number.isFinite(allocation.renewablePct)
+      ? `Renewable ${(allocation.renewablePct * 100).toFixed(1)}%`
+      : "Renewable n/a";
+    const latencyLabel = Number.isFinite(allocation.latencyMs)
+      ? `Latency ${formatNumber(allocation.latencyMs)} ms`
+      : "Latency n/a";
     li.innerHTML = `
-      <strong>${allocation.name}</strong>
-      <div>Weight ${(allocation.weight * 100).toFixed(1)}% · Recommend ${formatNumber(
-        allocation.recommendedGw
+      <strong>${allocation.name ?? allocation.shardId ?? allocation.federation ?? "Shard"}</strong>
+      <div>Weight ${formatMaybeNumber(allocation.weight, (value) => (value * 100).toFixed(1))}% · Recommend ${formatMaybeNumber(
+        allocation.recommendedGw,
+        formatNumber
       )} GW (${deltaLabel})</div>
-      <div>Resilience ${(allocation.resilience * 100).toFixed(1)}% · Renewable ${(allocation.renewablePct * 100).toFixed(
-        1
-      )}% · Latency ${formatNumber(allocation.latencyMs)} ms</div>
+      <div>${resilienceLabel} · ${renewableLabel} · ${latencyLabel}</div>
     `;
     list.appendChild(li);
   });
