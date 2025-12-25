@@ -598,18 +598,36 @@ class Orchestrator:
         try:
             with self._control_path.open("r", encoding="utf-8") as handle:
                 handle.seek(0, 2)
+                buffered_line = ""
                 while self._running:
                     position = handle.tell()
+                    try:
+                        if self._control_path.stat().st_size < position:
+                            handle.seek(0)
+                            position = 0
+                            buffered_line = ""
+                    except FileNotFoundError:
+                        self._error("control_file_missing", path=str(self._control_path))
+                        return
                     line = handle.readline()
                     if not line:
                         await asyncio.sleep(1)
                         handle.seek(position)
                         continue
+                    line = buffered_line + line
+                    if not line.strip():
+                        buffered_line = ""
+                        continue
+                    if not line.endswith("\n"):
+                        buffered_line = line
+                        continue
                     try:
                         payload = json.loads(line)
                     except json.JSONDecodeError:
                         self._warning("control_decode_error", line=line.strip())
+                        buffered_line = ""
                         continue
+                    buffered_line = ""
                     await self.bus.broadcast_control(payload, "operator-file")
         except FileNotFoundError:
             self._error("control_file_missing", path=str(self._control_path))
