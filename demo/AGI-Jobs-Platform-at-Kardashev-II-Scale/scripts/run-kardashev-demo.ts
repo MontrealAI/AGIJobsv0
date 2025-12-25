@@ -1176,6 +1176,32 @@ type MonteCarloSummary = {
   tolerance: number;
 };
 
+type AllocationRecommendation = {
+  federation: string;
+  name: string;
+  weight: number;
+  recommendedGw: number;
+  payoff: number;
+  currentGw: number;
+  deltaGw: number;
+  resilience: number;
+  renewablePct: number;
+  latencyMs: number;
+  storageGwh: number;
+};
+
+type AllocationPolicy = {
+  temperature: number;
+  nashProduct: number;
+  strategyStability: number;
+  deviationIncentive: number;
+  jainIndex: number;
+  allocationEntropy: number;
+  fairnessIndex: number;
+  gibbsPotential: number;
+  allocations: AllocationRecommendation[];
+};
+
 function percentile(values: number[], ratio: number): number {
   if (values.length === 0) {
     return 0;
@@ -1188,6 +1214,33 @@ function percentile(values: number[], ratio: number): number {
 function round(value: number, decimals = 2): number {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+function softmaxScores(scores: number[], temperature: number): { weights: number[]; partition: number } {
+  if (scores.length === 0) {
+    return { weights: [], partition: 0 };
+  }
+  const temp = Math.max(0.05, temperature);
+  const maxScore = Math.max(...scores);
+  const expScores = scores.map((score) => Math.exp((score - maxScore) / temp));
+  const partition = expScores.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(partition) || partition <= 0) {
+    return { weights: scores.map(() => 1 / scores.length), partition: scores.length };
+  }
+  return { weights: expScores.map((value) => value / partition), partition };
+}
+
+function computeJainIndex(values: number[]): number {
+  if (!values.length) {
+    return 1;
+  }
+  const sum = values.reduce((total, value) => total + value, 0);
+  const sumSquares = values.reduce((total, value) => total + value * value, 0);
+  if (!Number.isFinite(sum) || !Number.isFinite(sumSquares) || sumSquares <= 0) {
+    return 1;
+  }
+  const rawIndex = (sum * sum) / (values.length * sumSquares);
+  return Math.min(1, Math.max(0, rawIndex));
 }
 
 function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
@@ -1274,6 +1327,87 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     maintainsBuffer,
     withinTolerance: breachProbability <= 0.01,
     tolerance: 0.01,
+  };
+}
+
+function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: MonteCarloSummary): AllocationPolicy {
+  const federations = manifest.federations;
+  const totalAvailableGw = federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0);
+  const maxStorageGwh = federations.reduce((max, federation) => Math.max(max, federation.energy.storageGwh), 0);
+  const stabilityFactor =
+    energyMonteCarlo.hamiltonianStability * 0.6 + energyMonteCarlo.gameTheorySlack * 0.4;
+  const temperature = Math.max(0.12, 1 - stabilityFactor);
+
+  const scores = federations.map((federation) => {
+    const resilience =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.resilience, 0) / federation.domains.length;
+    const renewableScore = federation.energy.renewablePct;
+    const storageScore = maxStorageGwh > 0 ? federation.energy.storageGwh / maxStorageGwh : 0;
+    const latencyPenalty = Math.min(1, federation.energy.latencyMs / 120_000);
+    const efficiencyScore =
+      resilience * 0.45 +
+      renewableScore * 0.25 +
+      storageScore * 0.2 +
+      (1 - latencyPenalty) * 0.1;
+    return Math.min(1, Math.max(0, efficiencyScore));
+  });
+
+  const { weights, partition } = softmaxScores(scores, temperature);
+  const allocations = federations.map((federation, index) => {
+    const weight = weights[index] ?? 0;
+    const resilience =
+      federation.domains.length === 0
+        ? 0
+        : federation.domains.reduce((sum, domain) => sum + domain.resilience, 0) / federation.domains.length;
+    const latencyPenalty = Math.min(1, federation.energy.latencyMs / 120_000);
+    const payoff = Math.max(0.001, scores[index] ?? 0) * Math.max(0.1, 1 - latencyPenalty);
+    const recommendedGw = totalAvailableGw * weight;
+    return {
+      federation: federation.slug,
+      name: federation.name,
+      weight,
+      recommendedGw: round(recommendedGw, 2),
+      payoff: round(payoff, 4),
+      currentGw: round(federation.energy.availableGw, 2),
+      deltaGw: round(recommendedGw - federation.energy.availableGw, 2),
+      resilience: round(resilience, 4),
+      renewablePct: round(federation.energy.renewablePct, 4),
+      latencyMs: round(federation.energy.latencyMs, 2),
+      storageGwh: round(federation.energy.storageGwh, 2),
+    };
+  });
+
+  const nashLog = allocations.reduce((sum, item) => sum + Math.log(item.payoff), 0);
+  const nashProduct = Math.exp(nashLog / Math.max(1, allocations.length));
+  const allocationEntropy = allocations.reduce((sum, item) => {
+    if (item.weight <= 0) {
+      return sum;
+    }
+    return sum - item.weight * Math.log(item.weight);
+  }, 0);
+  const payoffs = allocations.map((allocation) => allocation.payoff);
+  const averagePayoff = payoffs.length ? payoffs.reduce((sum, value) => sum + value, 0) / payoffs.length : 0;
+  const maxPayoff = payoffs.length ? Math.max(...payoffs) : 0;
+  const deviationIncentive =
+    maxPayoff > 0 ? Math.min(1, Math.max(0, (maxPayoff - averagePayoff) / maxPayoff)) : 0;
+  const strategyStability = 1 - deviationIncentive;
+  const jainIndex = computeJainIndex(payoffs);
+  const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
+  const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
+  const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
+
+  return {
+    temperature,
+    nashProduct,
+    strategyStability,
+    deviationIncentive,
+    jainIndex,
+    allocationEntropy,
+    fairnessIndex,
+    gibbsPotential,
+    allocations,
   };
 }
 
@@ -2458,6 +2592,18 @@ function buildRunbook(
     ).toFixed(1)}% · buffer ${telemetry.energy.monteCarlo.maintainsBuffer ? "stable" : "at risk"}.`
   );
   lines.push(
+    `* Allocation policy: Gibbs temperature ${telemetry.energy.allocationPolicy.temperature.toFixed(2)} · Nash welfare ${(
+      telemetry.energy.allocationPolicy.nashProduct * 100
+    ).toFixed(2)}% · fairness ${(telemetry.energy.allocationPolicy.fairnessIndex * 100).toFixed(
+      1
+    )}% · Gibbs potential ${telemetry.energy.allocationPolicy.gibbsPotential.toFixed(3)}.`
+  );
+  lines.push(
+    `* Allocation deltas: ${telemetry.energy.allocationPolicy.allocations
+      .map((allocation: any) => `${allocation.name} ${allocation.deltaGw >= 0 ? "+" : ""}${allocation.deltaGw.toFixed(2)} GW`)
+      .join(" · ")}.`
+  );
+  lines.push(
     `* Demand percentiles: P95 ${telemetry.energy.monteCarlo.percentileGw.p95.toLocaleString()} GW · P99 ${
       telemetry.energy.monteCarlo.percentileGw.p99.toLocaleString()
     } GW.`
@@ -2846,6 +2992,7 @@ function computeTelemetry(
   }
 
   const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
+  const allocationPolicy = buildEnergyAllocationPolicy(manifest, energyMonteCarlo);
   if (!energyMonteCarlo.withinTolerance) {
     energyWarnings.push(
       `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
@@ -3464,6 +3611,7 @@ function computeTelemetry(
         withinMargin: energyAgreementWithinMargin,
       },
       monteCarlo: energyMonteCarlo,
+      allocationPolicy,
       liveFeeds: {
         calibrationISO8601: energyFeeds.calibrationISO8601,
         tolerancePct: energyFeeds.tolerancePct,
