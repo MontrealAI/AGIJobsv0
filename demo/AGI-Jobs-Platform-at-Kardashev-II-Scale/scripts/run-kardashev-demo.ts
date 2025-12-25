@@ -2001,6 +2001,7 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
   const failsafeLatency = manifest.dysonProgram.safety.failsafeLatencySeconds;
   const guardianWindow = manifest.interstellarCouncil.guardianReviewWindow;
   const totalTimelineDays = manifest.dysonProgram.phases.reduce((sum, phase) => sum + phase.durationDays, 0);
+  const energyMonteCarlo = telemetry.energy.monteCarlo;
 
   const scenarioResults: ScenarioResult[] = [];
 
@@ -2048,21 +2049,39 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
   const baselineWorstLatency = bridgeLatencies.length > 0 ? Math.max(...bridgeLatencies) : 0;
   const failoverLatency = baselineWorstLatency * 2;
   const latencySlack = failsafeLatency - failoverLatency;
+  const capturedGwTelemetry = telemetry.energy.capturedGw;
+  const freeEnergyRatio =
+    capturedGwTelemetry > 0 ? Math.max(0, energyMonteCarlo.freeEnergyMarginGw / capturedGwTelemetry) : 0;
+  const strategyStability = Number.isFinite(telemetry.energy.allocationPolicy.strategyStability)
+    ? telemetry.energy.allocationPolicy.strategyStability
+    : 0;
+  const relayBoostPct = Math.min(0.35, Math.max(0, freeEnergyRatio * 0.6 + strategyStability * 0.15));
+  const relayBoostGw = capturedGwTelemetry * relayBoostPct;
+  const mitigatedLatency = failoverLatency * (1 - relayBoostPct);
+  const mitigatedSlack = failsafeLatency - mitigatedLatency;
+  const effectiveLatency = relayBoostPct > 0 ? mitigatedLatency : failoverLatency;
+  const effectiveSlack = relayBoostPct > 0 ? mitigatedSlack : latencySlack;
   const bridgeStatus: ScenarioStatus =
-    latencySlack >= failsafeLatency * 0.25
+    effectiveSlack >= failsafeLatency * 0.25
       ? "nominal"
-      : latencySlack >= -failsafeLatency * 0.5
+      : effectiveSlack >= -failsafeLatency * 0.5
       ? "warning"
       : "critical";
-  const bridgeConfidence = normaliseConfidence((latencySlack + failsafeLatency) / (failsafeLatency * 2));
+  const bridgeConfidence = normaliseConfidence((effectiveSlack + failsafeLatency) / (failsafeLatency * 2));
+  const mitigationNote =
+    relayBoostPct > 0
+      ? ` Relay boost ${(relayBoostPct * 100).toFixed(1)}% applied from Gibbs reserve.`
+      : " Relay boost unavailable; Gibbs reserve exhausted.";
   scenarioResults.push({
     id: "bridge-failover",
     title: "Interplanetary bridge outage simulation",
     status: bridgeStatus,
     summary:
-      latencySlack >= 0
-        ? `Failover latency ${failoverLatency.toFixed(0)}s leaves ${latencySlack.toFixed(0)}s slack within ${failsafeLatency}s failsafe.`
-        : `Failover latency ${failoverLatency.toFixed(0)}s breaches ${failsafeLatency}s failsafe.`,
+      effectiveSlack >= 0
+        ? `Failover latency ${effectiveLatency.toFixed(0)}s leaves ${effectiveSlack.toFixed(
+            0
+          )}s slack within ${failsafeLatency}s failsafe.${mitigationNote}`
+        : `Failover latency ${effectiveLatency.toFixed(0)}s breaches ${failsafeLatency}s failsafe.${mitigationNote}`,
     confidence: bridgeConfidence,
     impact:
       bridgeStatus === "critical"
@@ -2079,11 +2098,26 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
         value: `${failoverLatency.toFixed(0)}s`,
         ok: latencySlack >= 0,
       },
+      {
+        label: "Relay boost allocation",
+        value: relayBoostPct > 0 ? `${(relayBoostPct * 100).toFixed(1)}% (${relayBoostGw.toFixed(0)} GW)` : "0%",
+        ok: relayBoostPct > 0,
+      },
+      {
+        label: "Mitigated latency",
+        value: `${effectiveLatency.toFixed(0)}s`,
+        ok: effectiveSlack >= 0,
+      },
       { label: "Failsafe budget", value: `${failsafeLatency}s`, ok: true },
-      { label: "Slack", value: `${latencySlack.toFixed(0)}s`, ok: latencySlack >= 0 },
+      { label: "Slack", value: `${effectiveSlack.toFixed(0)}s`, ok: effectiveSlack >= 0 },
     ],
     recommendedActions: [
-      "Execute bridge isolation routine from mission directives if slack < 0.",
+      relayBoostPct > 0
+        ? "Allocate relay boost to stabilise bridge latency using Gibbs reserve."
+        : "Divert surplus energy to restore Gibbs reserve before failover.",
+      effectiveSlack < 0
+        ? "Execute bridge isolation routine from mission directives if slack < 0."
+        : "Keep isolation routine on standby while relays rebalance.",
       "Rebalance capital streams to spin up orbital relays before load crosses failsafe.",
     ],
   });

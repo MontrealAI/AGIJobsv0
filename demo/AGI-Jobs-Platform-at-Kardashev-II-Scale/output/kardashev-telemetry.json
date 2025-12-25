@@ -1814,8 +1814,8 @@
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
       "status": "warning",
-      "summary": "Failover latency 180s breaches 120s failsafe.",
-      "confidence": 0.25,
+      "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
+      "confidence": 0.5125,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -1829,18 +1829,29 @@
           "ok": false
         },
         {
+          "label": "Relay boost allocation",
+          "value": "35.0% (147000 GW)",
+          "ok": true
+        },
+        {
+          "label": "Mitigated latency",
+          "value": "117s",
+          "ok": true
+        },
+        {
           "label": "Failsafe budget",
           "value": "120s",
           "ok": true
         },
         {
           "label": "Slack",
-          "value": "-60s",
-          "ok": false
+          "value": "3s",
+          "ok": true
         }
       ],
       "recommendedActions": [
-        "Execute bridge isolation routine from mission directives if slack < 0.",
+        "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
+        "Keep isolation routine on standby while relays rebalance.",
         "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
       ]
     },

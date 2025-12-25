@@ -83,12 +83,14 @@
   - Thermostat margin: 52,500 GW (ok)
   - Utilisation: 69.14% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 25.0%) · Failover latency 180s breaches 120s failsafe.
+* **Interplanetary bridge outage simulation** — status WARNING (confidence 51.2%) · Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
+  - Relay boost allocation: 35.0% (147000 GW) (ok)
+  - Mitigated latency: 117s (ok)
   - Failsafe budget: 120s (ok)
-  - Slack: -60s (check)
-  - Recommended: Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
+  - Slack: 3s (ok)
+  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Keep isolation routine on standby while relays rebalance. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1800s (ok)
   - Simulated coverage: 1200s (ok)
