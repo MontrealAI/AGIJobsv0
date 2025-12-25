@@ -847,14 +847,21 @@ function renderAllocationPolicy(policy) {
   stability.textContent = `Strategy stability ${formatMaybeNumber(
     policy.strategyStability,
     (value) => (value * 100).toFixed(1)
-  )}% · deviation incentive ${formatMaybeNumber(policy.deviationIncentive, (value) => (value * 100).toFixed(1))}% · Jain fairness ${formatMaybeNumber(
+  )}% · deviation incentive ${formatMaybeNumber(policy.deviationIncentive, (value) => (value * 100).toFixed(1))}% · replicator stability ${formatMaybeNumber(
+    policy.replicatorStability,
+    (value) => (value * 100).toFixed(1)
+  )}% · drift ${formatMaybeNumber(policy.replicatorDrift, (value) => value.toFixed(3))} · Jain fairness ${formatMaybeNumber(
     policy.jainIndex,
     (value) => (value * 100).toFixed(1)
   )}%`;
   if (Number.isFinite(policy.strategyStability)) {
+    const replicator = Number.isFinite(policy.replicatorStability)
+      ? policy.replicatorStability
+      : policy.strategyStability;
+    const equilibriumScore = (policy.strategyStability + replicator) / 2;
     applyStatus(
       stability,
-      policy.strategyStability >= 0.85 ? "status-ok" : policy.strategyStability >= 0.7 ? "status-warn" : "status-fail"
+      equilibriumScore >= 0.85 ? "status-ok" : equilibriumScore >= 0.7 ? "status-warn" : "status-fail"
     );
   } else {
     applyStatus(stability, "status-warn");

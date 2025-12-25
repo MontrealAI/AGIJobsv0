@@ -331,6 +331,12 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const maxPayoff = payoffs.length ? Math.max(...payoffs) : 0;
   const deviationIncentive = maxPayoff > 0 ? Math.min(1, Math.max(0, (maxPayoff - averagePayoff) / maxPayoff)) : 0;
   const strategyStability = 1 - deviationIncentive;
+  const payoffSum = payoffs.reduce((sum, value) => sum + value, 0);
+  const normalizedPayoffs =
+    payoffSum > 0 ? payoffs.map((payoff) => payoff / payoffSum) : payoffs.map(() => 1 / Math.max(1, payoffs.length));
+  const replicatorDrift =
+    weights.reduce((sum, weight, idx) => sum + Math.abs(weight - (normalizedPayoffs[idx] ?? 0)), 0) / 2;
+  const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
@@ -340,6 +346,8 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     nashProduct,
     strategyStability,
     deviationIncentive,
+    replicatorDrift,
+    replicatorStability,
     jainIndex,
     allocationEntropy,
     fairnessIndex,
@@ -890,6 +898,13 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
     shardMetrics.reduce((sum, metric) => sum + metric.resilience, 0) / Math.max(1, shardMetrics.length);
   const resilienceOk = averageResilience >= 0.985;
   const fairnessOk = allocationPolicy.fairnessIndex >= 0.85 && allocationPolicy.jainIndex >= 0.85;
+  const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy.strategyStability;
+  const equilibriumScore = clamp01(
+    (clamp01(allocationPolicy.strategyStability) + clamp01(replicatorStability)) / 2
+  );
+  const equilibriumOk = equilibriumScore >= 0.85;
   const sentinelOk = sentinelFindings.every((incident) => incident.severity !== 'high');
   const energyScore = energyOk
     ? 1
@@ -901,7 +916,7 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
   const compositeScore = clamp01(
     round(
       0.4 * energyScore +
-        0.3 * clamp01(allocationPolicy.strategyStability) +
+        0.3 * equilibriumScore +
         0.3 * clamp01(dominanceScore / 100),
       4
     )
@@ -928,6 +943,13 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
       evidence: `Fairness ${(allocationPolicy.fairnessIndex * 100).toFixed(1)}% · Jain ${(
         allocationPolicy.jainIndex * 100
       ).toFixed(1)}%`,
+    },
+    {
+      title: 'Replicator equilibrium',
+      status: equilibriumOk,
+      evidence: `Equilibrium ${(equilibriumScore * 100).toFixed(1)}% · drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(
+        3
+      )}`,
     },
     {
       title: 'Sentinel advisories',
@@ -962,6 +984,15 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
       }`,
     });
   }
+  if (!equilibriumOk) {
+    alerts.push({
+      title: 'Replicator equilibrium drift',
+      severity: 'moderate',
+      evidence: `Equilibrium ${(equilibriumScore * 100).toFixed(1)}% · drift ${(
+        allocationPolicy.replicatorDrift ?? 0
+      ).toFixed(3)}`,
+    });
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -987,6 +1018,13 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
           )}% based on Nash deviation incentive.`,
         },
         {
+          method: 'Replicator equilibrium',
+          score: clamp01(replicatorStability),
+          explanation: `Replicator stability ${(replicatorStability * 100).toFixed(
+            1
+          )}% with drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(3)}.`,
+        },
+        {
           method: 'Dominance continuity',
           score: clamp01(dominanceScore / 100),
           explanation: `Dominance score ${dominanceScore.toFixed(2)} across federation shards.`,
@@ -999,9 +1037,15 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
 }
 
 function buildOwnerProof({ fabric, telemetry, allocationPolicy, dominanceScore }) {
+  const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy.strategyStability;
+  const equilibriumScore = clamp01(
+    (clamp01(allocationPolicy.strategyStability) + clamp01(replicatorStability)) / 2
+  );
   const resilienceScore = clamp01(
     (telemetry.energyMonteCarlo.hamiltonianStability +
-      allocationPolicy.strategyStability +
+      equilibriumScore +
       dominanceScore / 100) /
       3
   );
@@ -1362,6 +1406,9 @@ function main() {
   );
   reportLines.push(
     `- **Strategy Stability:** ${(allocationPolicy.strategyStability * 100).toFixed(1)}% (deviation incentive ${(allocationPolicy.deviationIncentive * 100).toFixed(1)}%; Jain fairness ${(allocationPolicy.jainIndex * 100).toFixed(1)}%).`
+  );
+  reportLines.push(
+    `- **Replicator Equilibrium:** ${(allocationPolicy.replicatorStability * 100).toFixed(1)}% stability (drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(3)}).`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
