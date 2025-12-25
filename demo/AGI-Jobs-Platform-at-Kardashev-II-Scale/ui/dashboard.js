@@ -593,6 +593,50 @@ function renderEnergySchedule(schedule, verification) {
   }
 }
 
+function renderAllocationPolicy(policy) {
+  const summary = document.querySelector("#allocation-summary");
+  const stability = document.querySelector("#allocation-stability");
+  const list = document.querySelector("#allocation-list");
+
+  if (!summary || !stability || !list) return;
+
+  if (!policy) {
+    summary.textContent = "Allocation policy unavailable. Regenerate telemetry.";
+    stability.textContent = "Strategy stability unavailable.";
+    applyStatus(summary, "status-warn");
+    applyStatus(stability, "status-warn");
+    list.innerHTML = "";
+    return;
+  }
+
+  summary.textContent = `Gibbs temperature ${policy.temperature.toFixed(2)} · Nash welfare ${(policy.nashProduct * 100).toFixed(
+    2
+  )}% · fairness ${(policy.fairnessIndex * 100).toFixed(1)}% · Gibbs potential ${policy.gibbsPotential.toFixed(3)}`;
+  stability.textContent = `Strategy stability ${(policy.strategyStability * 100).toFixed(1)}% · deviation incentive ${(policy.deviationIncentive * 100).toFixed(
+    1
+  )}% · Jain fairness ${(policy.jainIndex * 100).toFixed(1)}%`;
+  applyStatus(
+    stability,
+    policy.strategyStability >= 0.85 ? "status-ok" : policy.strategyStability >= 0.7 ? "status-warn" : "status-fail"
+  );
+
+  list.innerHTML = "";
+  policy.allocations.forEach((allocation) => {
+    const li = document.createElement("li");
+    const deltaLabel = `${allocation.deltaGw >= 0 ? "+" : ""}${formatNumber(allocation.deltaGw)} GW`;
+    li.innerHTML = `
+      <strong>${allocation.name}</strong>
+      <div>Weight ${(allocation.weight * 100).toFixed(1)}% · Recommend ${formatNumber(
+        allocation.recommendedGw
+      )} GW (${deltaLabel})</div>
+      <div>Resilience ${(allocation.resilience * 100).toFixed(1)}% · Renewable ${(allocation.renewablePct * 100).toFixed(
+        1
+      )}% · Latency ${formatNumber(allocation.latencyMs)} ms</div>
+    `;
+    list.appendChild(li);
+  });
+}
+
 function renderMissionLattice(mission) {
   const summaryElement = document.querySelector("#mission-summary");
   const listElement = document.querySelector("#mission-programmes");
@@ -1074,6 +1118,7 @@ async function bootstrap() {
   renderComputeFabric(telemetry.computeFabric);
   renderOrchestrationFabric(telemetry.orchestrationFabric);
   renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
+  renderAllocationPolicy(telemetry.energy.allocationPolicy);
   renderMissionLattice(telemetry.missionLattice);
   renderLogistics(telemetry.logistics, telemetry.verification.logistics);
   renderSettlement(telemetry.settlement, telemetry.verification.settlement);
