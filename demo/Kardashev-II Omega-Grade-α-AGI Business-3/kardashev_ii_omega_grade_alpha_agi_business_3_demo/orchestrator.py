@@ -427,6 +427,7 @@ class Orchestrator:
             entropy=state.entropy,
             hamiltonian=state.hamiltonian,
             coordination_index=state.coordination_index,
+            game_theory_slack=state.game_theory_slack,
             energy_available=self.resources.energy_available,
             compute_available=self.resources.compute_available,
             energy_price=self.resources.energy_price,
@@ -660,6 +661,7 @@ class Orchestrator:
         prosperity_gap = max(0.0, 1.0 - state.prosperity_index)
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
+        game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
         temperature = 1.0 + coordination_gap
         prosperity_weight = math.exp(prosperity_gap / temperature)
         sustainability_weight = math.exp(sustainability_gap / temperature)
@@ -676,12 +678,13 @@ class Orchestrator:
         energy_action = (0.5 + 3.0 * energy_price_pressure + 4.0 * gibbs_drive) * (
             1.0 + 0.5 * hamiltonian_pressure
         )
-        coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap)
+        stability_factor = 0.7 + 0.3 * game_theory_slack
+        coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         stimulus = 5.0 * prosperity_share * coordination_damping
         green_shift = 5.0 * sustainability_share * coordination_damping
         return self._normalize_simulation_action(
             {
-                "build_dyson_nodes": energy_action,
+                "build_dyson_nodes": energy_action * stability_factor,
                 "stimulus": stimulus,
                 "green_shift": green_shift,
             }
@@ -1259,6 +1262,7 @@ class Orchestrator:
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "coordination_index": self._latest_simulation_state.coordination_index,
+                "game_theory_slack": self._latest_simulation_state.game_theory_slack,
             }
         pending_events = list(self.scheduler.pending_events())
         pending_counts = Counter(event.event_type for event in pending_events)
@@ -1335,6 +1339,7 @@ class Orchestrator:
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "coordination_index": self._latest_simulation_state.coordination_index,
+                "game_theory_slack": self._latest_simulation_state.game_theory_slack,
             }
         return {
             "mission": self.config.mission_name,
