@@ -4484,6 +4484,9 @@ function run() {
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
   const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
+  const telemetryInlineJs = `window.__KARDASHEV_TELEMETRY__ = ${JSON.stringify(telemetryWithScenarios)};\n`;
+  const ledgerInlineJs = `window.__KARDASHEV_LEDGER__ = ${JSON.stringify(stabilityLedger)};\n`;
+  const ownerProofInlineJs = `window.__KARDASHEV_OWNER_PROOF__ = ${JSON.stringify(ownerProof)};\n`;
   const monteCarloJson = `${JSON.stringify(telemetry.energy.monteCarlo, null, 2)}\n`;
   const consistencyJson = `${JSON.stringify(consistencyLedger, null, 2)}\n`;
   const energyFeedsJson = `${JSON.stringify(
@@ -4519,8 +4522,10 @@ function run() {
 
   const outputs = [
     { suffix: "telemetry.json", content: telemetryJson },
+    { suffix: "telemetry.inline.js", content: telemetryInlineJs },
     { suffix: "safe-transaction-batch.json", content: safeJson },
     { suffix: "stability-ledger.json", content: ledgerJson },
+    { suffix: "stability-ledger.inline.js", content: ledgerInlineJs },
     { suffix: "consistency-ledger.json", content: consistencyJson },
     { suffix: "scenario-sweep.json", content: scenariosJson },
     { suffix: "monte-carlo.json", content: monteCarloJson },
@@ -4536,6 +4541,7 @@ function run() {
     { suffix: "task-hierarchy.mmd", content: `${missionTelemetry.mermaid}\n` },
     { suffix: "operator-briefing.md", content: `${operatorBriefing}\n` },
     { suffix: "owner-proof.json", content: ownerProofJson },
+    { suffix: "owner-proof.inline.js", content: ownerProofInlineJs },
   ].map(({ suffix, content }) => ({
     path: join(OUTPUT_DIR, `${OUTPUT_PREFIX}-${suffix}`),
     content,

@@ -101,6 +101,14 @@ function renderLocalFileWarning() {
   document.querySelector("main")?.querySelector("section")?.appendChild(hint);
 }
 
+function readInlinePayload(key) {
+  const payload = window[key];
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+  return payload;
+}
+
 function isLegacyTelemetry(telemetry) {
   return telemetry && telemetry.dominance === undefined && typeof telemetry.dominanceScore === "number";
 }
@@ -1306,14 +1314,20 @@ function renderOwnerProof(ownerProof, telemetry) {
 }
 
 async function bootstrap() {
-  if (window.location.protocol === "file:") {
+  const inlineTelemetry = readInlinePayload("__KARDASHEV_TELEMETRY__");
+  const inlineLedger = readInlinePayload("__KARDASHEV_LEDGER__");
+  const inlineOwnerProof = readInlinePayload("__KARDASHEV_OWNER_PROOF__");
+  const isFileProtocol = window.location.protocol === "file:";
+
+  if (isFileProtocol && !inlineTelemetry) {
     renderLocalFileWarning();
     return;
   }
+
   const [telemetryResult, ledgerResult, ownerProofResult] = await Promise.allSettled([
-    fetchJson("./output/kardashev-telemetry.json"),
-    fetchJson("./output/kardashev-stability-ledger.json"),
-    fetchJson("./output/kardashev-owner-proof.json"),
+    inlineTelemetry ? Promise.resolve(inlineTelemetry) : fetchJson("./output/kardashev-telemetry.json"),
+    inlineLedger ? Promise.resolve(inlineLedger) : fetchJson("./output/kardashev-stability-ledger.json"),
+    inlineOwnerProof ? Promise.resolve(inlineOwnerProof) : fetchJson("./output/kardashev-owner-proof.json"),
   ]);
 
   if (telemetryResult.status !== "fulfilled") {
