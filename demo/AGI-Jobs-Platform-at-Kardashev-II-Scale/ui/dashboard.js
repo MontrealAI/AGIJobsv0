@@ -180,9 +180,13 @@ function renderMonteCarloDetails(monteCarlo) {
   }
 
   if (Number.isFinite(monteCarlo.freeEnergyMarginGw)) {
-    freeEnergyElement.textContent = `Free energy margin ${formatNumber(monteCarlo.freeEnergyMarginGw)} GW (${(
-      monteCarlo.freeEnergyMarginPct * 100
-    ).toFixed(2)}%) · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`;
+    const freeEnergyPct = Number.isFinite(monteCarlo.freeEnergyMarginPct)
+      ? ` (${(monteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
+      : "";
+    const gibbsText = Number.isFinite(monteCarlo.gibbsFreeEnergyGj)
+      ? ` · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`
+      : "";
+    freeEnergyElement.textContent = `Free energy margin ${formatNumber(monteCarlo.freeEnergyMarginGw)} GW${freeEnergyPct}${gibbsText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
@@ -190,9 +194,12 @@ function renderMonteCarloDetails(monteCarlo) {
   }
 
   if (Number.isFinite(monteCarlo.hamiltonianStability)) {
+    const entropyText = Number.isFinite(monteCarlo.entropyMargin)
+      ? ` · entropy margin ${formatNumber(monteCarlo.entropyMargin)}σ`
+      : "";
     hamiltonianElement.textContent = `Hamiltonian stability ${(monteCarlo.hamiltonianStability * 100).toFixed(
       1
-    )}% · entropy margin ${formatNumber(monteCarlo.entropyMargin)}σ`;
+    )}%${entropyText}`;
     applyStatus(
       hamiltonianElement,
       monteCarlo.hamiltonianStability >= 0.9 ? "status-ok" : monteCarlo.hamiltonianStability >= 0.8 ? "status-warn" : "status-fail"
@@ -203,9 +210,11 @@ function renderMonteCarloDetails(monteCarlo) {
   }
 
   if (Number.isFinite(monteCarlo.gameTheorySlack)) {
+    const bufferStatus =
+      typeof monteCarlo.maintainsBuffer === "boolean" ? (monteCarlo.maintainsBuffer ? "stable" : "at risk") : "status unknown";
     gameTheoryElement.textContent = `Game-theory slack ${(monteCarlo.gameTheorySlack * 100).toFixed(
       1
-    )}% · buffer ${monteCarlo.maintainsBuffer ? "stable" : "at risk"}`;
+    )}% · buffer ${bufferStatus}`;
     applyStatus(gameTheoryElement, monteCarlo.gameTheorySlack >= 0.85 ? "status-ok" : "status-warn");
   } else {
     gameTheoryElement.textContent = "Game-theory slack unavailable.";
@@ -314,9 +323,14 @@ function renderMetrics(telemetry) {
   );
   const monteCarlo = energy.monteCarlo;
   if (monteCarlo) {
-    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(
-      monteCarlo.breachProbability * 100
-    ).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
+    const breachText = Number.isFinite(monteCarlo.breachProbability)
+      ? `${(monteCarlo.breachProbability * 100).toFixed(2)}%`
+      : "n/a";
+    const p95Text = Number.isFinite(monteCarlo.percentileGw?.p95)
+      ? `${formatNumber(monteCarlo.percentileGw.p95)} GW`
+      : "n/a";
+    const runsText = Number.isFinite(monteCarlo.runs) ? monteCarlo.runs.toLocaleString() : "n/a";
+    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${breachText} · P95 ${p95Text} · runs ${runsText}`;
     setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
   } else {
     document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";
