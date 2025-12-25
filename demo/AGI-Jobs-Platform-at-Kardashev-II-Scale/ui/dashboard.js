@@ -205,6 +205,26 @@ function renderMonteCarloDetails(monteCarlo) {
   }
 }
 
+function renderReflectionUnavailable(reason) {
+  const button = document.querySelector("#reflect-button");
+  if (button) {
+    button.disabled = true;
+    button.setAttribute("aria-disabled", "true");
+    button.classList.add("status-warn");
+  }
+  const list = document.querySelector("#reflection-checklist");
+  if (!list) return;
+  list.innerHTML = "";
+  const li = document.createElement("li");
+  li.textContent = reason;
+  li.classList.add("status-warn");
+  list.appendChild(li);
+}
+
+function buildChecklistItem(label, ok) {
+  return { label, ok: typeof ok === "boolean" ? ok : null };
+}
+
 function renderMetrics(telemetry) {
   const dominance = telemetry?.dominance ?? {};
   const energy = telemetry?.energy ?? {};
@@ -544,21 +564,60 @@ async function renderMermaidDiagram(path, containerId, renderId) {
 
 function attachReflectionButton(telemetry) {
   const button = document.querySelector("#reflect-button");
+  if (!button) {
+    return;
+  }
+  if (!telemetry) {
+    renderReflectionUnavailable("Reflection checklist unavailable: telemetry missing.");
+    return;
+  }
+  button.disabled = false;
+  button.removeAttribute("aria-disabled");
+  button.classList.remove("status-warn");
+
   button.addEventListener("click", () => {
+    const monteCarlo = telemetry.energy?.monteCarlo;
     const checklist = [
-      { label: "Manifesto hash", ok: telemetry.manifest.manifestoHashMatches },
-      { label: "Self-improvement plan hash", ok: telemetry.manifest.planHashMatches },
-      { label: "Guardian coverage", ok: telemetry.governance.coverageOk },
-      { label: "Energy triple check", ok: telemetry.energy.tripleCheck },
-      { label: "Energy Monte Carlo", ok: telemetry.energy.monteCarlo.withinTolerance },
-      ...Object.entries(telemetry.bridges).map(([name, data]) => ({ label: `Bridge ${name}`, ok: data.withinFailsafe })),
+      buildChecklistItem("Manifesto hash", telemetry.manifest?.manifestoHashMatches),
+      buildChecklistItem("Self-improvement plan hash", telemetry.manifest?.planHashMatches),
+      buildChecklistItem("Guardian coverage", telemetry.governance?.coverageOk),
+      buildChecklistItem("Energy triple check", telemetry.energy?.tripleCheck),
+      buildChecklistItem("Energy Monte Carlo", monteCarlo?.withinTolerance),
+      buildChecklistItem(
+        "Thermodynamic buffer",
+        typeof monteCarlo?.maintainsBuffer === "boolean" ? monteCarlo.maintainsBuffer : null
+      ),
+      buildChecklistItem(
+        "Hamiltonian stability",
+        Number.isFinite(monteCarlo?.hamiltonianStability) ? monteCarlo.hamiltonianStability >= 0.9 : null
+      ),
+      buildChecklistItem(
+        "Game-theory slack",
+        Number.isFinite(monteCarlo?.gameTheorySlack) ? monteCarlo.gameTheorySlack >= 0.85 : null
+      ),
+      buildChecklistItem(
+        "Allocation stability",
+        Number.isFinite(telemetry.energy?.allocationPolicy?.strategyStability)
+          ? telemetry.energy.allocationPolicy.strategyStability >= 0.9
+          : null
+      ),
     ];
+
+    const bridges = telemetry.bridges ?? {};
+    if (Object.keys(bridges).length > 0) {
+      Object.entries(bridges).forEach(([name, data]) => {
+        checklist.push(buildChecklistItem(`Bridge ${name}`, data?.withinFailsafe));
+      });
+    } else {
+      checklist.push(buildChecklistItem("Bridge telemetry", null));
+    }
     const list = document.querySelector("#reflection-checklist");
     list.innerHTML = "";
     checklist.forEach((item) => {
       const li = document.createElement("li");
-      li.textContent = `${item.label}: ${item.ok ? "✅" : "❌"}`;
-      li.classList.add(item.ok ? "status-ok" : "status-fail");
+      const statusIcon = item.ok === null ? "⚠️" : item.ok ? "✅" : "❌";
+      li.textContent = `${item.label}: ${statusIcon}`;
+      li.classList.add(item.ok === null ? "status-warn" : item.ok ? "status-ok" : "status-fail");
       list.appendChild(li);
     });
   });
@@ -1267,6 +1326,9 @@ async function bootstrap() {
   if (isLegacyTelemetry(telemetry)) {
     renderLegacyBanner();
     renderLegacyMetrics(telemetry);
+    renderReflectionUnavailable(
+      "Reflection checklist requires full orchestrator telemetry. Run demo:kardashev-ii:orchestrate to enable it."
+    );
 
     if (ledgerResult.status === "fulfilled") {
       renderLedger(ledgerResult.value);
