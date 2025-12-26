@@ -1293,8 +1293,9 @@ function renderEquilibriumLedger(ledger) {
   const summary = document.querySelector("#equilibrium-summary");
   const componentsList = document.querySelector("#equilibrium-components");
   const pathwaysList = document.querySelector("#equilibrium-pathways");
+  const actionPathList = document.querySelector("#equilibrium-action-path");
   const recommendationsList = document.querySelector("#equilibrium-recommendations");
-  if (!summary || !componentsList || !pathwaysList || !recommendationsList) return;
+  if (!summary || !componentsList || !pathwaysList || !actionPathList || !recommendationsList) return;
 
   if (!ledger) {
     renderEquilibriumUnavailable("Missing ledger payload.");
@@ -1352,6 +1353,22 @@ function renderEquilibriumLedger(ledger) {
       li.innerHTML = `<strong>${pathway.title}</strong> — ${pathway.rationale}<br /><span>${pathway.action}</span>`;
       li.classList.add(status);
       pathwaysList.appendChild(li);
+    });
+  }
+
+  actionPathList.innerHTML = "";
+  if (!ledger.actionPath || ledger.actionPath.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No action path available.";
+    li.classList.add("status-warn");
+    actionPathList.appendChild(li);
+  } else {
+    ledger.actionPath.forEach((step) => {
+      const li = document.createElement("li");
+      const status = step.status === "needs-action" ? "status-warn" : "status-ok";
+      li.innerHTML = `<strong>${step.rank}. ${step.title}</strong> — ${step.rationale}<br /><span>${step.action}</span><br /><span>Target: ${step.target}</span>`;
+      li.classList.add(status);
+      actionPathList.appendChild(li);
     });
   }
 
