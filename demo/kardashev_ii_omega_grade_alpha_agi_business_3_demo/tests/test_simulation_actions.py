@@ -31,6 +31,7 @@ def test_simulation_action_updates_resources() -> None:
     assert orchestrator.resources.energy_capacity >= initial_capacity
     assert orchestrator._last_simulation_action is not None
     assert orchestrator._last_simulation_action["action"]["build_dyson_nodes"] == 2.0
+    assert orchestrator._last_simulation_action["rationale"]["policy_source"] == "operator"
 
 
 def test_simulation_policy_auto_generates_action() -> None:
@@ -42,6 +43,7 @@ def test_simulation_policy_auto_generates_action() -> None:
     assert orchestrator._last_simulation_action is not None
     assert orchestrator._last_simulation_action["policy"] == "auto"
     assert "build_dyson_nodes" in orchestrator._last_simulation_action["action"]
+    assert orchestrator._last_simulation_action["rationale"]["policy_source"] == "autonomous"
 
 
 def test_simulation_operator_action_respects_payload() -> None:
@@ -64,6 +66,7 @@ def test_simulation_operator_action_respects_payload() -> None:
     assert orchestrator._last_simulation_action is not None
     assert orchestrator._last_simulation_action["policy"] == "operator"
     assert orchestrator._last_simulation_action["action"]["build_dyson_nodes"] == 4.0
+    assert orchestrator._last_simulation_action["rationale"]["policy_source"] == "operator"
 
 
 def test_policy_action_accounts_for_compute_scarcity() -> None:
