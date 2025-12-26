@@ -15,6 +15,9 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.536.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
 - **Replicator Equilibrium:** 99.6% stability (drift 0.004).
+- **Sentient Welfare Equilibrium:** 95.6% · cooperation 89.0% · inequality 0.0% · free energy/agent 0.010831 GJ.
+- **Sentient Coalition Stability:** 100.0% · collective action 80.8% · payoff dispersion 0.0%.
+- **Equilibrium Ledger:** 82.9% (warning); energy 57.8%, allocation 100.0%, welfare 93.6%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations

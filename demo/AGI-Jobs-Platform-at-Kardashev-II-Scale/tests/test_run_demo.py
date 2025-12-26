@@ -119,6 +119,8 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= equilibrium_payload["components"]["allocation"]["strategyStability"] <= 1
     assert 0 <= equilibrium_payload["components"]["welfare"]["coalitionStability"] <= 1
     assert equilibrium_payload["components"]["compute"]["averageAvailabilityPct"] >= 0
+    assert equilibrium_payload["pathways"]
+    assert equilibrium_payload["pathways"][0]["title"]
 
     telemetry_energy = telemetry_payload["energy"]
     assert telemetry_energy["utilisationPct"] > 0
