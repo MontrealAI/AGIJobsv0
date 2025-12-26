@@ -314,6 +314,22 @@ function computeGiniIndex(values) {
   return clamp01(weightedSum / (sorted.length * total));
 }
 
+function computeCoefficientOfVariation(values) {
+  if (!values.length) {
+    return 0;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  if (!Number.isFinite(mean) || mean <= 0) {
+    return 0;
+  }
+  const variance =
+    values.reduce((sum, value) => {
+      const delta = value - mean;
+      return sum + delta * delta;
+    }, 0) / values.length;
+  return Math.sqrt(Math.max(0, variance)) / mean;
+}
+
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
@@ -613,6 +629,7 @@ function buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo) {
     ? allocationPolicy.allocations.map((allocation) => allocation.payoff)
     : [];
   const inequalityIndex = computeGiniIndex(payoffs);
+  const payoffCoefficient = computeCoefficientOfVariation(payoffs);
   const replicatorStability = Number.isFinite(allocationPolicy?.replicatorStability)
     ? allocationPolicy.replicatorStability
     : allocationPolicy?.strategyStability ?? 0;
@@ -630,6 +647,12 @@ function buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo) {
       0.3 * (allocationPolicy?.fairnessIndex ?? 0) +
       0.3 * (energyMonteCarlo?.hamiltonianStability ?? 0)
   );
+  const coalitionStability = clamp01(1 - payoffCoefficient);
+  const collectiveActionPotential = clamp01(
+    0.4 * cooperationIndex +
+      0.3 * paretoSlack +
+      0.3 * (energyMonteCarlo?.hamiltonianStability ?? 0)
+  );
   const freeEnergyPerAgentGj =
     totalAgents > 0 ? round((energyMonteCarlo?.gibbsFreeEnergyGj ?? 0) / totalAgents, 6) : 0;
 
@@ -639,9 +662,12 @@ function buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo) {
     freeEnergyPerAgentGj,
     cooperationIndex,
     inequalityIndex,
+    payoffCoefficient,
+    coalitionStability,
     paretoSlack,
     equilibriumScore,
     welfarePotential,
+    collectiveActionPotential,
   };
 }
 
@@ -1478,6 +1504,9 @@ function main() {
   );
   reportLines.push(
     `- **Sentient Welfare Equilibrium:** ${(sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(sentientWelfare.cooperationIndex * 100).toFixed(1)}% · inequality ${(sentientWelfare.inequalityIndex * 100).toFixed(1)}% · free energy/agent ${sentientWelfare.freeEnergyPerAgentGj.toFixed(6)} GJ.`
+  );
+  reportLines.push(
+    `- **Sentient Coalition Stability:** ${(sentientWelfare.coalitionStability * 100).toFixed(1)}% · collective action ${(sentientWelfare.collectiveActionPotential * 100).toFixed(1)}% · payoff dispersion ${(sentientWelfare.payoffCoefficient * 100).toFixed(1)}%.`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
