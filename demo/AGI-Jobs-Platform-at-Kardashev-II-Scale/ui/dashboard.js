@@ -263,8 +263,14 @@ function renderSentientWelfare(welfare) {
   const potentialText = Number.isFinite(welfare.welfarePotential)
     ? `${(welfare.welfarePotential * 100).toFixed(1)}%`
     : "n/a";
+  const coalitionText = Number.isFinite(welfare.coalitionStability)
+    ? `${(welfare.coalitionStability * 100).toFixed(1)}%`
+    : "n/a";
+  const actionText = Number.isFinite(welfare.collectiveActionPotential)
+    ? `${(welfare.collectiveActionPotential * 100).toFixed(1)}%`
+    : "n/a";
 
-  details.textContent = `Cooperation ${cooperationText} · inequality ${inequalityText} · Pareto slack ${paretoText} · welfare potential ${potentialText}`;
+  details.textContent = `Cooperation ${cooperationText} · inequality ${inequalityText} · Pareto slack ${paretoText} · welfare potential ${potentialText} · coalition stability ${coalitionText} · collective action ${actionText}`;
 
   if (Number.isFinite(welfare.equilibriumScore)) {
     const score = welfare.equilibriumScore;

@@ -94,9 +94,12 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert sentient["freeEnergyPerAgentGj"] >= 0
     assert 0 <= sentient["cooperationIndex"] <= 1
     assert 0 <= sentient["inequalityIndex"] <= 1
+    assert sentient["payoffCoefficient"] >= 0
+    assert 0 <= sentient["coalitionStability"] <= 1
     assert 0 <= sentient["paretoSlack"] <= 1
     assert 0 <= sentient["equilibriumScore"] <= 1
     assert 0 <= sentient["welfarePotential"] <= 1
+    assert 0 <= sentient["collectiveActionPotential"] <= 1
 
     ledger_payload = json.loads(stability_ledger.read_text())
     assert ledger_payload["confidence"]["compositeScore"] >= 0
