@@ -220,7 +220,12 @@ function renderMonteCarloDetails(monteCarlo) {
     const gibbsText = Number.isFinite(monteCarlo.gibbsFreeEnergyGj)
       ? ` · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`
       : "";
-    freeEnergyElement.textContent = `Free energy margin ${formatNumber(monteCarlo.freeEnergyMarginGw)} GW${freeEnergyPct}${gibbsText}`;
+    const runwayText = Number.isFinite(monteCarlo.runwayHours)
+      ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
+      : "";
+    freeEnergyElement.textContent = `Free energy margin ${formatNumber(
+      monteCarlo.freeEnergyMarginGw
+    )} GW${freeEnergyPct}${gibbsText}${runwayText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
@@ -420,11 +425,16 @@ function renderMetrics(telemetry) {
     const breachText = Number.isFinite(monteCarlo.breachProbability)
       ? `${(monteCarlo.breachProbability * 100).toFixed(2)}%`
       : "n/a";
+    const runwayText = Number.isFinite(monteCarlo.runwayHours)
+      ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
+      : "";
     const p95Text = Number.isFinite(monteCarlo.percentileGw?.p95)
       ? `${formatNumber(monteCarlo.percentileGw.p95)} GW`
       : "n/a";
     const runsText = Number.isFinite(monteCarlo.runs) ? monteCarlo.runs.toLocaleString() : "n/a";
-    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${breachText} · P95 ${p95Text} · runs ${runsText}`;
+    document.querySelector(
+      "#energy-monte-carlo-summary"
+    ).textContent = `Breach ${breachText}${runwayText} · P95 ${p95Text} · runs ${runsText}`;
     setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
   } else {
     document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";
@@ -537,7 +547,14 @@ function renderLegacyMetrics(telemetry) {
   }
 
   if (monteCarlo) {
-    document.querySelector("#energy-monte-carlo-summary").textContent = `Breach ${(monteCarlo.breachProbability * 100).toFixed(2)}% · P95 ${formatNumber(monteCarlo.percentileGw.p95)} GW · runs ${monteCarlo.runs}`;
+    const runwayText = Number.isFinite(monteCarlo.runwayHours)
+      ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
+      : "";
+    document.querySelector(
+      "#energy-monte-carlo-summary"
+    ).textContent = `Breach ${(monteCarlo.breachProbability * 100).toFixed(2)}%${runwayText} · P95 ${formatNumber(
+      monteCarlo.percentileGw.p95
+    )} GW · runs ${monteCarlo.runs}`;
     setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
   } else {
     document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";

@@ -9,6 +9,7 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Captured Power:** 120,105 MW available for reallocation.
 - **Energy Monte Carlo:** 3.91% breach probability across 256 runs (tolerance 5.00%).
 - **Free Energy Margin:** 13478.69 GW (5.57%) vs 11980.00 GW minimum buffer.
+- **Free Energy Runway:** 0.06 hours of buffer at mean demand.
 - **Entropy Buffer:** 2.69σ thermodynamic headroom; game-theoretic slack 75.7%.
 - **Thermodynamic Reserve:** 48,523,291.36 GJ Gibbs free energy; Hamiltonian stability 50.8% across the sampled phase space.
 - **Gibbs Allocation Temperature:** 0.49 (lower favors resilience-heavy shards); Nash welfare 9.99%.

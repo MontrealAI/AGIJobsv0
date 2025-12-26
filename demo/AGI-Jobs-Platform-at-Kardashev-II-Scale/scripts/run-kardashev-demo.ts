@@ -1166,6 +1166,7 @@ type MonteCarloSummary = {
   marginGw: number;
   freeEnergyMarginGw: number;
   freeEnergyMarginPct: number;
+  runwayHours: number;
   demandStdDevGw: number;
   entropyMargin: number;
   gibbsFreeEnergyGj: number;
@@ -1346,6 +1347,7 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   const p99 = percentile(samples, 0.99);
   const freeEnergyMarginGw = capturedGw - p95;
   const freeEnergyMarginPct = capturedGw === 0 ? 0 : freeEnergyMarginGw / capturedGw;
+  const runwayHours = averageGw > 0 ? Math.max(0, freeEnergyMarginGw) / averageGw : 0;
   const entropyMargin = demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw;
   const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600;
   const hamiltonianStability = Math.max(
@@ -1371,6 +1373,7 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    runwayHours,
     demandStdDevGw,
     entropyMargin,
     gibbsFreeEnergyGj,
@@ -2736,6 +2739,9 @@ function buildRunbook(
     `* Free energy margin ${telemetry.energy.monteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(
       telemetry.energy.monteCarlo.freeEnergyMarginPct * 100
     ).toFixed(2)}%) · Gibbs free energy ${telemetry.energy.monteCarlo.gibbsFreeEnergyGj.toLocaleString()} GJ.`
+  );
+  lines.push(
+    `* Free energy runway ${telemetry.energy.monteCarlo.runwayHours.toFixed(2)} hours at mean demand.`
   );
   lines.push(
     `* Hamiltonian stability ${(telemetry.energy.monteCarlo.hamiltonianStability * 100).toFixed(1)}% · entropy margin ${telemetry.energy.monteCarlo.entropyMargin.toFixed(2)}σ · game-theory slack ${(
