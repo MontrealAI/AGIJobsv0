@@ -248,6 +248,8 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
   const demandStdDevGw = Math.sqrt(variance);
   const freeEnergyMarginGw = availableGw - p95Demand;
   const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
+  const runwayHours =
+    meanDemandGw > 0 ? Math.max(0, freeEnergyMarginGw) / meanDemandGw : 0;
   const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600; // convert GW headroom into GJ over a one-hour horizon
   const hamiltonianStability = Math.max(
     0,
@@ -264,6 +266,7 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs =
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    runwayHours,
     meanDemandGw,
     demandStdDevGw,
     entropyMargin: demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw,
@@ -1837,6 +1840,9 @@ function main() {
     `- **Free Energy Margin:** ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%) vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum buffer.`
   );
   reportLines.push(
+    `- **Free Energy Runway:** ${energyMonteCarlo.runwayHours.toFixed(2)} hours of buffer at mean demand.`
+  );
+  reportLines.push(
     `- **Entropy Buffer:** ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ thermodynamic headroom; game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%.`
   );
   reportLines.push(
@@ -2131,6 +2137,9 @@ function main() {
       `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
     );
     console.log(
+      `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand`
+    );
+    console.log(
       `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
     );
     console.log(
@@ -2152,6 +2161,9 @@ function main() {
   );
   console.log(
     `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
+  );
+  console.log(
+    `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand`
   );
   console.log(
     `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`

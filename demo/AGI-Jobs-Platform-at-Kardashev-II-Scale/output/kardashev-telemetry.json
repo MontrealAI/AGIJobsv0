@@ -228,6 +228,7 @@
       "marginGw": 52500,
       "freeEnergyMarginGw": 167810.861217711,
       "freeEnergyMarginPct": 0.3995496695659786,
+      "runwayHours": 0.7100562961471647,
       "demandStdDevGw": 9462.762399166317,
       "entropyMargin": 17.733813250187428,
       "gibbsFreeEnergyGj": 604119100.3837596,

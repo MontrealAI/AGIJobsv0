@@ -20,6 +20,7 @@
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
 * Free energy margin 167810.86 GW (39.95%) · Gibbs free energy 604,119,100.384 GJ.
+* Free energy runway 0.71 hours at mean demand.
 * Hamiltonian stability 70.0% · entropy margin 17.73σ · game-theory slack 86.5% · buffer stable.
 * Allocation policy: Gibbs temperature 0.23 · Nash welfare 85.60% · fairness 93.6% · Gibbs potential -0.157.
 * Replicator equilibrium 86.7% · drift 0.133.
