@@ -1,32 +1,32 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
-  "status": "warning",
-  "overallScore": 0.8794,
+  "status": "nominal",
+  "overallScore": 0.9198,
   "components": {
     "energy": {
-      "score": 0.7411,
-      "freeEnergyMarginPct": 0.3995,
-      "hamiltonianStability": 0.6998,
-      "gameTheorySlack": 0.8649,
+      "score": 0.9049,
+      "freeEnergyMarginPct": 0.7795,
+      "hamiltonianStability": 0.8897,
+      "gameTheorySlack": 0.9504,
       "breachProbability": 0,
-      "gibbsFreeEnergyGj": 604119100.38
+      "gibbsFreeEnergyGj": 3227074308.57
     },
     "allocation": {
-      "score": 0.9154,
-      "fairnessIndex": 0.9361,
+      "score": 0.8736,
+      "fairnessIndex": 0.7688,
       "strategyStability": 0.8789,
       "deviationIncentive": 0.1211,
       "nashProduct": 0.856,
       "jainIndex": 0.99,
-      "gibbsPotential": -0.1566
+      "gibbsPotential": -0.0465
     },
     "welfare": {
-      "score": 0.8832,
-      "cooperationIndex": 0.8702,
+      "score": 0.8812,
+      "cooperationIndex": 0.8754,
       "inequalityIndex": 0.0525,
       "coalitionStability": 0.8996,
       "paretoSlack": 0.8789,
-      "collectiveActionPotential": 0.8217
+      "collectiveActionPotential": 0.8808
     },
     "logistics": {
       "score": 0.9904,
@@ -39,14 +39,14 @@
       "score": 0.9929,
       "failoverWithinQuorum": true,
       "averageAvailabilityPct": 0.9823,
-      "deviationPct": 0.4501
+      "deviationPct": 0
     }
   },
   "thermodynamics": {
-    "freeEnergyMarginPct": 0.3995,
-    "gibbsFreeEnergyGj": 604119100.38,
-    "entropyMargin": 17.7338,
-    "hamiltonianStability": 0.6998
+    "freeEnergyMarginPct": 0.7795,
+    "gibbsFreeEnergyGj": 3227074308.57,
+    "entropyMargin": 99.2264,
+    "hamiltonianStability": 0.8897
   },
   "gameTheory": {
     "nashProduct": 0.856,
@@ -56,9 +56,9 @@
   "pathways": [
     {
       "title": "Thermodynamic headroom",
-      "status": "needs-action",
-      "rationale": "Free energy 40.0% · Hamiltonian 70.0%",
-      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%."
+      "status": "on-track",
+      "rationale": "Free energy 77.9% · Hamiltonian 89.0%",
+      "action": "Maintain reserve cadence and keep Monte Carlo breach probability below tolerance."
     },
     {
       "title": "Nash deviation control",
@@ -85,7 +85,5 @@
       "action": "Sustain quorum failover coverage and monitor deviation drift."
     }
   ],
-  "recommendations": [
-    "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%."
-  ]
+  "recommendations": []
 }

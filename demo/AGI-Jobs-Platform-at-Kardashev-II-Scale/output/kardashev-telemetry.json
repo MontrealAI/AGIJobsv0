@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0x96c86f0f4ff7f3c7ee017c892efcc7f43774e16019c2356298d0151e24694f1c",
+    "hash": "0x3a63809973a12d76a6bea4c26586a27fd4ae5ca48c4c776a02fd90f5d67e9a9b",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -183,9 +183,9 @@
     }
   },
   "energy": {
-    "capturedGw": 420000,
-    "dysonYield": 488800,
-    "utilisationPct": 0.5761904761904761,
+    "capturedGw": 1150000,
+    "dysonYield": 1150000,
+    "utilisationPct": 0.21043478260869566,
     "marginPct": 0.125,
     "warnings": [],
     "regional": [
@@ -211,53 +211,53 @@
     "tripleCheck": true,
     "models": {
       "regionalSumGw": 242000,
-      "dysonProjectionGw": 488800,
-      "thermostatBudgetGw": 340200,
+      "dysonProjectionGw": 1150000,
+      "thermostatBudgetGw": 931500.0000000001,
       "withinMargin": true
     },
     "monteCarlo": {
       "runs": 256,
       "breachProbability": 0,
       "percentileGw": {
-        "p50": 236349.67577342957,
-        "p95": 252189.138782289,
-        "p99": 255160.81119188174
+        "p50": 238645.9295734167,
+        "p95": 253590.4698404905,
+        "p99": 255272.26754529556
       },
-      "maxGw": 256900.13860232956,
-      "averageGw": 236334.58660710318,
-      "marginGw": 52500,
-      "freeEnergyMarginGw": 167810.861217711,
-      "freeEnergyMarginPct": 0.3995496695659786,
-      "runwayHours": 0.7100562961471647,
-      "demandStdDevGw": 9462.762399166317,
-      "entropyMargin": 17.733813250187428,
-      "gibbsFreeEnergyGj": 604119100.3837596,
-      "hamiltonianStability": 0.6997748347829893,
-      "gameTheorySlack": 0.8648986756523452,
+      "maxGw": 257849.33713571046,
+      "averageGw": 237852.0691801336,
+      "marginGw": 143750,
+      "freeEnergyMarginGw": 896409.5301595095,
+      "freeEnergyMarginPct": 0.7794865479647909,
+      "runwayHours": 3.7687691061481896,
+      "demandStdDevGw": 9033.981038246582,
+      "entropyMargin": 99.22641262633144,
+      "gibbsFreeEnergyGj": 3227074308.574234,
+      "hamiltonianStability": 0.8897432739823954,
+      "gameTheorySlack": 0.950384473292078,
       "maintainsBuffer": true,
       "withinTolerance": true,
       "tolerance": 0.01
     },
     "allocationPolicy": {
-      "temperature": 0.23417562886926835,
+      "temperature": 0.12,
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
-      "replicatorDrift": 0.13321210526130617,
-      "replicatorStability": 0.8667878947386938,
+      "replicatorDrift": 0.2994520102195295,
+      "replicatorStability": 0.7005479897804705,
       "jainIndex": 0.9900236513129889,
-      "allocationEntropy": 1.0283928406037925,
-      "fairnessIndex": 0.9360835038997727,
-      "gibbsPotential": -0.1565517654231928,
+      "allocationEntropy": 0.8446616979420176,
+      "fairnessIndex": 0.7688442106960536,
+      "gibbsPotential": -0.04650826317843133,
       "allocations": [
         {
           "federation": "earth",
           "name": "Earth Sovereign Federation",
-          "weight": 0.26781974907193434,
-          "recommendedGw": 64812.38,
+          "weight": 0.19130062458363836,
+          "recommendedGw": 46294.75,
           "payoff": 0.8265,
           "currentGw": 82000,
-          "deltaGw": -17187.62,
+          "deltaGw": -35705.25,
           "resilience": 0.945,
           "renewablePct": 0.87,
           "latencyMs": 85,
@@ -266,11 +266,11 @@
         {
           "federation": "mars",
           "name": "Mars Terraforming Compact",
-          "weight": 0.21971525874123823,
-          "recommendedGw": 53171.09,
+          "weight": 0.129994478271311,
+          "recommendedGw": 31458.66,
           "payoff": 0.7754,
           "currentGw": 24000,
-          "deltaGw": 29171.09,
+          "deltaGw": 7458.66,
           "resilience": 0.935,
           "renewablePct": 0.93,
           "latencyMs": 820,
@@ -279,11 +279,11 @@
         {
           "federation": "orbital",
           "name": "Orbital Research Halo",
-          "weight": 0.5124649921868274,
-          "recommendedGw": 124016.53,
+          "weight": 0.6787048971450508,
+          "recommendedGw": 164246.59,
           "payoff": 0.9787,
           "currentGw": 136000,
-          "deltaGw": -11983.47,
+          "deltaGw": 28246.59,
           "resilience": 0.959,
           "renewablePct": 0.99,
           "latencyMs": 42,
@@ -362,7 +362,7 @@
           ],
           "transferCapacityGbps": 520,
           "supportedExaflops": 7083.33,
-          "demandExaflops": 18.4,
+          "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
@@ -382,7 +382,7 @@
           ],
           "transferCapacityGbps": 505,
           "supportedExaflops": 6916.67,
-          "demandExaflops": 18.4,
+          "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
@@ -402,7 +402,7 @@
           ],
           "transferCapacityGbps": 488,
           "supportedExaflops": 6750,
-          "demandExaflops": 18.4,
+          "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
@@ -423,7 +423,7 @@
           ],
           "transferCapacityGbps": 472,
           "supportedExaflops": 6583.33,
-          "demandExaflops": 18.4,
+          "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
@@ -443,7 +443,7 @@
           ],
           "transferCapacityGbps": 210,
           "supportedExaflops": 2041.67,
-          "demandExaflops": 6.1,
+          "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
@@ -463,7 +463,7 @@
           ],
           "transferCapacityGbps": 198,
           "supportedExaflops": 2000,
-          "demandExaflops": 6.1,
+          "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
@@ -483,7 +483,7 @@
           ],
           "transferCapacityGbps": 204,
           "supportedExaflops": 1958.33,
-          "demandExaflops": 6.1,
+          "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
@@ -503,7 +503,7 @@
           ],
           "transferCapacityGbps": 640,
           "supportedExaflops": 11750,
-          "demandExaflops": 24.6,
+          "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
@@ -523,7 +523,7 @@
           ],
           "transferCapacityGbps": 612,
           "supportedExaflops": 11208.33,
-          "demandExaflops": 24.6,
+          "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
@@ -544,7 +544,7 @@
           ],
           "transferCapacityGbps": 598,
           "supportedExaflops": 11041.67,
-          "demandExaflops": 24.6,
+          "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
@@ -775,29 +775,29 @@
   },
   "compute": {
     "totalAgents": 4480000000,
-    "totalExaflops": 49.1,
+    "totalExaflops": 115,
     "regional": [
       {
         "slug": "earth",
         "agents": 2800000000,
-        "exaflops": 18.4,
+        "exaflops": 43.1,
         "resilience": 0.945
       },
       {
         "slug": "mars",
         "agents": 720000000,
-        "exaflops": 6.1,
+        "exaflops": 14.3,
         "resilience": 0.935
       },
       {
         "slug": "orbital",
         "agents": 960000000,
-        "exaflops": 24.6,
+        "exaflops": 57.6,
         "resilience": 0.959
       }
     ],
     "crossChecks": {
-      "sumAgainstCouncil": 0.21999999999999886
+      "sumAgainstCouncil": 0
     }
   },
   "identity": {
@@ -914,15 +914,15 @@
   "sentientWelfare": {
     "totalAgents": 4480000000,
     "federationCount": 3,
-    "freeEnergyPerAgentGj": 0.134848,
-    "cooperationIndex": 0.8701843391780725,
+    "freeEnergyPerAgentGj": 0.720329,
+    "cooperationIndex": 0.8754049671243076,
     "inequalityIndex": 0.05252008576816762,
     "payoffCoefficient": 0.10038365976123358,
     "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
-    "equilibriumScore": 0.9137125816273135,
-    "welfarePotential": 0.8697494672975614,
-    "collectiveActionPotential": 0.8216824914090786
+    "equilibriumScore": 0.8739910095048778,
+    "welfarePotential": 0.8765682110962676,
+    "collectiveActionPotential": 0.8807612743473945
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
@@ -1181,7 +1181,7 @@
       },
       "compute": {
         "agents": 2800000000,
-        "exaflops": 18.4,
+        "exaflops": 43.1,
         "validatorNodes": 1480000,
         "edgeNodes": 760000000
       },
@@ -1237,7 +1237,7 @@
       },
       "compute": {
         "agents": 720000000,
-        "exaflops": 6.1,
+        "exaflops": 14.3,
         "validatorNodes": 420000,
         "edgeNodes": 98000000
       },
@@ -1284,7 +1284,7 @@
       },
       "compute": {
         "agents": 960000000,
-        "exaflops": 24.6,
+        "exaflops": 57.6,
         "validatorNodes": 640000,
         "edgeNodes": 220000000
       },
@@ -1508,13 +1508,11 @@
       "sentinelCoverage": true,
       "fallbackCoverage": true,
       "ownerAlignment": true,
-      "autonomyWithinBounds": false,
+      "autonomyWithinBounds": true,
       "timelineAligned": true,
       "programmeDependenciesResolved": true,
-      "unstoppableScore": 0.9444,
-      "warnings": [
-        "dyson-swarm autonomy exceeds max 7800 bps"
-      ]
+      "unstoppableScore": 1,
+      "warnings": []
     },
     "programmes": [
       {
@@ -1529,7 +1527,7 @@
         "totalAgentQuorum": 25370000000,
         "criticalPathDays": 540,
         "timelineSlackDays": 0,
-        "unstoppableScore": 0.8333,
+        "unstoppableScore": 1,
         "riskDistribution": {
           "low": 5,
           "medium": 11,
@@ -1541,7 +1539,7 @@
         "sentinelAlerts": [],
         "ownerAlerts": [],
         "timelineOk": true,
-        "autonomyOk": false
+        "autonomyOk": true
       },
       {
         "id": "ares-biosphere",
@@ -1646,8 +1644,8 @@
       ],
       "results": {
         "regionalSumGw": 242000,
-        "dysonProjectionGw": 488800,
-        "thermostatBudgetGw": 340200
+        "dysonProjectionGw": 1150000,
+        "thermostatBudgetGw": 931500.0000000001
       },
       "withinMargin": true
     },
@@ -1657,9 +1655,9 @@
       "tolerance": 0.01,
       "withinTolerance": true,
       "percentileGw": {
-        "p50": 236349.67577342957,
-        "p95": 252189.138782289,
-        "p99": 255160.81119188174
+        "p50": 238645.9295734167,
+        "p95": 253590.4698404905,
+        "p99": 255272.26754529556
       }
     },
     "energyFeeds": {
@@ -1735,8 +1733,8 @@
     },
     "compute": {
       "tolerancePct": 0.75,
-      "deviationPct": 0.45008183306055416,
-      "dysonProjectionExaflops": 48.88,
+      "deviationPct": 0,
+      "dysonProjectionExaflops": 115,
       "withinTolerance": true
     },
     "bridges": {
@@ -1794,13 +1792,11 @@
       "sentinelCoverage": true,
       "fallbackCoverage": true,
       "ownerAlignment": true,
-      "autonomyWithinBounds": false,
+      "autonomyWithinBounds": true,
       "timelineAligned": true,
       "programmeDependenciesResolved": true,
-      "unstoppableScore": 0.9444,
-      "warnings": [
-        "dyson-swarm autonomy exceeds max 7800 bps"
-      ]
+      "unstoppableScore": 1,
+      "warnings": []
     },
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
   },
@@ -1809,7 +1805,7 @@
       "id": "energy-demand-surge",
       "title": "20% demand surge vs Dyson safety margin",
       "status": "nominal",
-      "summary": "Dyson lattice absorbs surge with 129,600 GW spare.",
+      "summary": "Dyson lattice absorbs surge with 859,600 GW spare.",
       "confidence": 1,
       "impact": "Thermostat margin remains controllable under surge scenario.",
       "metrics": [
@@ -1820,17 +1816,17 @@
         },
         {
           "label": "Remaining buffer",
-          "value": "129,600 GW",
+          "value": "859,600 GW",
           "ok": true
         },
         {
           "label": "Thermostat margin",
-          "value": "52,500 GW",
+          "value": "143,750 GW",
           "ok": true
         },
         {
           "label": "Utilisation",
-          "value": "69.14%",
+          "value": "25.25%",
           "ok": true
         }
       ],
@@ -1859,7 +1855,7 @@
         },
         {
           "label": "Relay boost allocation",
-          "value": "35.0% (147000 GW)",
+          "value": "35.0% (402500 GW)",
           "ok": true
         },
         {
@@ -1922,23 +1918,23 @@
       "id": "compute-drawdown",
       "title": "Compute drawdown (15%) resilience",
       "status": "warning",
-      "summary": "Deviation 14.62% exceeds tolerance 0.75%.",
-      "confidence": 0.35033642480450966,
+      "summary": "Deviation 15.00% exceeds tolerance 0.75%.",
+      "confidence": 0.33333333333333337,
       "impact": "Capital streams absorb transient compute reduction.",
       "metrics": [
         {
           "label": "Projected compute",
-          "value": "48.88 EF",
+          "value": "115.00 EF",
           "ok": true
         },
         {
           "label": "Stressed compute",
-          "value": "41.73 EF",
+          "value": "97.75 EF",
           "ok": false
         },
         {
           "label": "Deviation",
-          "value": "14.62%",
+          "value": "15.00%",
           "ok": false
         },
         {

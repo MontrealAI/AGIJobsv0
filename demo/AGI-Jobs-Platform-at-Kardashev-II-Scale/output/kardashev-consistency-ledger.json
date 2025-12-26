@@ -45,17 +45,17 @@
   },
   "compute": {
     "methods": {
-      "direct": 49.1,
-      "telemetry": 49.1,
-      "kahan": 49.1,
-      "pairwise": 49.1
+      "direct": 115,
+      "telemetry": 115,
+      "kahan": 115,
+      "pairwise": 115
     },
     "diffs": {
       "directVsTelemetry": 0,
       "directVsKahan": 0,
       "kahanVsPairwise": 0
     },
-    "toleranceExaflops": 0.0000491,
+    "toleranceExaflops": 0.00011499999999999999,
     "maxDeviationExaflops": 0,
     "consensus": true
   },

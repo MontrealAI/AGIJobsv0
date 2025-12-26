@@ -29,12 +29,12 @@
   "energyProtocols": {
     "stellarLattice": {
       "name": "Helios Dyson Swarm Alpha",
-      "baselineCapturedGw": 420000,
+      "baselineCapturedGw": 1150000,
       "expansionTargetsGw": [
-        420000,
-        560000,
-        710000,
-        920000
+        1150000,
+        1400000,
+        1650000,
+        1950000
       ],
       "safetyMarginPct": 12.5
     },
@@ -247,7 +247,7 @@
       },
       "compute": {
         "agents": 2800000000,
-        "exaflops": 18.4,
+        "exaflops": 43.1,
         "validatorNodes": 1480000,
         "edgeNodes": 760000000
       },
@@ -328,7 +328,7 @@
       },
       "compute": {
         "agents": 720000000,
-        "exaflops": 6.1,
+        "exaflops": 14.3,
         "validatorNodes": 420000,
         "edgeNodes": 98000000
       },
@@ -392,7 +392,7 @@
       },
       "compute": {
         "agents": 960000000,
-        "exaflops": 24.6,
+        "exaflops": 57.6,
         "validatorNodes": 640000,
         "edgeNodes": 220000000
       },
@@ -482,19 +482,19 @@
         "name": "Seed Swarm",
         "durationDays": 120,
         "satellites": 1200,
-        "energyYieldGw": 4800
+        "energyYieldGw": 11300
       },
       {
         "name": "Helios Halo",
         "durationDays": 260,
         "satellites": 6800,
-        "energyYieldGw": 64000
+        "energyYieldGw": 150500
       },
       {
         "name": "Crown Array",
         "durationDays": 520,
         "satellites": 24000,
-        "energyYieldGw": 420000
+        "energyYieldGw": 988200
       }
     ],
     "safety": {

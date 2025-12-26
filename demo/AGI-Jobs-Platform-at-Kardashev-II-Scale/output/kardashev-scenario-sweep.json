@@ -3,7 +3,7 @@
     "id": "energy-demand-surge",
     "title": "20% demand surge vs Dyson safety margin",
     "status": "nominal",
-    "summary": "Dyson lattice absorbs surge with 129,600 GW spare.",
+    "summary": "Dyson lattice absorbs surge with 859,600 GW spare.",
     "confidence": 1,
     "impact": "Thermostat margin remains controllable under surge scenario.",
     "metrics": [
@@ -14,17 +14,17 @@
       },
       {
         "label": "Remaining buffer",
-        "value": "129,600 GW",
+        "value": "859,600 GW",
         "ok": true
       },
       {
         "label": "Thermostat margin",
-        "value": "52,500 GW",
+        "value": "143,750 GW",
         "ok": true
       },
       {
         "label": "Utilisation",
-        "value": "69.14%",
+        "value": "25.25%",
         "ok": true
       }
     ],
@@ -53,7 +53,7 @@
       },
       {
         "label": "Relay boost allocation",
-        "value": "35.0% (147000 GW)",
+        "value": "35.0% (402500 GW)",
         "ok": true
       },
       {
@@ -116,23 +116,23 @@
     "id": "compute-drawdown",
     "title": "Compute drawdown (15%) resilience",
     "status": "warning",
-    "summary": "Deviation 14.62% exceeds tolerance 0.75%.",
-    "confidence": 0.35033642480450966,
+    "summary": "Deviation 15.00% exceeds tolerance 0.75%.",
+    "confidence": 0.33333333333333337,
     "impact": "Capital streams absorb transient compute reduction.",
     "metrics": [
       {
         "label": "Projected compute",
-        "value": "48.88 EF",
+        "value": "115.00 EF",
         "ok": true
       },
       {
         "label": "Stressed compute",
-        "value": "41.73 EF",
+        "value": "97.75 EF",
         "ok": false
       },
       {
         "label": "Deviation",
-        "value": "14.62%",
+        "value": "15.00%",
         "ok": false
       },
       {

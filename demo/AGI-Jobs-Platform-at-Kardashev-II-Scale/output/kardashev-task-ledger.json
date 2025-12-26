@@ -14,13 +14,11 @@
     "sentinelCoverage": true,
     "fallbackCoverage": true,
     "ownerAlignment": true,
-    "autonomyWithinBounds": false,
+    "autonomyWithinBounds": true,
     "timelineAligned": true,
     "programmeDependenciesResolved": true,
-    "unstoppableScore": 0.9444,
-    "warnings": [
-      "dyson-swarm autonomy exceeds max 7800 bps"
-    ]
+    "unstoppableScore": 1,
+    "warnings": []
   },
   "programmes": [
     {
@@ -35,7 +33,7 @@
       "criticalPathDays": 540,
       "timelineDays": 540,
       "timelineSlackDays": 0,
-      "unstoppableScore": 0.8333,
+      "unstoppableScore": 1,
       "riskDistribution": {
         "low": 5,
         "medium": 11,
@@ -47,7 +45,7 @@
       "sentinelAlerts": [],
       "ownerAlerts": [],
       "timelineOk": true,
-      "autonomyOk": false
+      "autonomyOk": true
     },
     {
       "id": "ares-biosphere",

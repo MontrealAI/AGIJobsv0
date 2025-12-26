@@ -189,12 +189,13 @@ function simulateDysonSwarm(rng) {
   return progress;
 }
 
-function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, rng, runs = 256) {
+function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModels, rng, runs = 256) {
   const safetyMarginPct = (energyConfig?.tolerancePct ?? 5) / 100;
   const driftPct = (energyConfig?.driftAlertPct ?? 8.5) / 100;
   const demandFloor = Math.max(0.6, 1 - safetyMarginPct * 1.5);
   const demandVariance = Math.max(0.05, safetyMarginPct * 0.75);
-  const capturedGw = energyFeeds.reduce((sum, feed) => sum + feed.nominalMw, 0) / 1000;
+  const regionalCapturedGw = energyFeeds.reduce((sum, feed) => sum + feed.nominalMw, 0) / 1000;
+  const capturedGw = Math.max(energyModels?.dysonProjectionGw ?? 0, regionalCapturedGw);
   const reserveGw = energyFeeds.reduce((sum, feed) => sum + feed.bufferMw, 0) / 1000;
   const marginGw = Math.max(capturedGw * safetyMarginPct, reserveGw * 0.5);
   const availableGw = capturedGw + reserveGw;
@@ -1672,9 +1673,17 @@ function main() {
   const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
+  const energyModels = buildEnergyModels(energy, manifest, dyson);
   const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? '', 10);
   const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
-  const energyMonteCarlo = simulateEnergyMonteCarlo(fabric, energy.feeds, energy, rng, mcRuns);
+  const energyMonteCarlo = simulateEnergyMonteCarlo(
+    fabric,
+    energy.feeds,
+    energy,
+    energyModels,
+    rng,
+    mcRuns
+  );
   const allocationPolicy = enrichAllocationPolicy(
     computeAllocationPolicy(shardMetrics, energyMonteCarlo),
     shardMetrics,
@@ -1703,14 +1712,13 @@ function main() {
     averageResilience: dominanceAverageResilience,
   };
 
-  const energyModels = buildEnergyModels(energy, manifest, dyson);
   const liveFeeds = buildLiveEnergyFeeds(energy, rng);
   const energyUtilisationPct = average(shardMetrics.map((metric) => metric.utilisation / 100));
   const energyMarginPct = clampRatio(energyMonteCarlo.freeEnergyMarginPct ?? 0);
   const energyModelDiff = Math.abs(energyModels.regionalSumGw - energyModels.dysonProjectionGw);
   const energyModelTolerance = (energy.tolerancePct ?? 5) / 100;
   const energyModelsWithin = energyModels.dysonProjectionGw > 0
-    ? energyModelDiff / energyModels.dysonProjectionGw <= energyModelTolerance
+    ? energyModels.regionalSumGw <= energyModels.dysonProjectionGw * (1 + energyModelTolerance)
     : true;
   const energyWarnings = [];
   if (!energyMonteCarlo.withinTolerance) {

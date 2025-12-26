@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0x96c86f0f4ff7f3c7ee017c892efcc7f43774e16019c2356298d0151e24694f1c
+**Manifest hash**: 0x3a63809973a12d76a6bea4c26586a27fd4ae5ca48c4c776a02fd90f5d67e9a9b
 **Dominance score**: 90.0 / 100
 
 ---
@@ -15,18 +15,18 @@
 ---
 
 ## Energy telemetry
-* Captured GW (Dyson baseline): 420,000 GW.
-* Utilisation: 57.62% (margin 0.13%).
+* Captured GW (Dyson baseline): 1,150,000 GW.
+* Utilisation: 21.04% (margin 0.13%).
 * Regional availability: earth 82000 GW · mars 24000 GW · orbital 136000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Free energy margin 167810.86 GW (39.95%) · Gibbs free energy 604,119,100.384 GJ.
-* Free energy runway 0.71 hours at mean demand.
-* Hamiltonian stability 70.0% · entropy margin 17.73σ · game-theory slack 86.5% · buffer stable.
-* Allocation policy: Gibbs temperature 0.23 · Nash welfare 85.60% · fairness 93.6% · Gibbs potential -0.157.
-* Replicator equilibrium 86.7% · drift 0.133.
-* Sentient welfare equilibrium 91.4% · cooperation 87.0% · inequality 5.3% · free energy/agent 0.134848 GJ.
-* Allocation deltas: Earth Sovereign Federation -17187.62 GW · Mars Terraforming Compact +29171.09 GW · Orbital Research Halo -11983.47 GW.
-* Demand percentiles: P95 252,189.139 GW · P99 255,160.811 GW.
+* Free energy margin 896409.53 GW (77.95%) · Gibbs free energy 3,227,074,308.574 GJ.
+* Free energy runway 3.77 hours at mean demand.
+* Hamiltonian stability 89.0% · entropy margin 99.23σ · game-theory slack 95.0% · buffer stable.
+* Allocation policy: Gibbs temperature 0.12 · Nash welfare 85.60% · fairness 76.9% · Gibbs potential -0.047.
+* Replicator equilibrium 70.1% · drift 0.299.
+* Sentient welfare equilibrium 87.4% · cooperation 87.5% · inequality 5.3% · free energy/agent 0.720329 GJ.
+* Allocation deltas: Earth Sovereign Federation -35705.25 GW · Mars Terraforming Compact +7458.66 GW · Orbital Research Halo +28246.59 GW.
+* Demand percentiles: P95 253,590.47 GW · P99 255,272.268 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
@@ -44,18 +44,18 @@
 ---
 
 ## Compute & domains
-* Aggregate compute 49.10 EF · 4,480,000,000 agents · deviation 0.45% (≤ 0.75%).
-* **EARTH** – 18.40 EF, 2,800,000,000 agents, resilience 94.50%.
-* **MARS** – 6.10 EF, 720,000,000 agents, resilience 93.50%.
-* **ORBITAL** – 24.60 EF, 960,000,000 agents, resilience 95.90%.
+* Aggregate compute 115.00 EF · 4,480,000,000 agents · deviation 0.00% (≤ 0.75%).
+* **EARTH** – 43.10 EF, 2,800,000,000 agents, resilience 94.50%.
+* **MARS** – 14.30 EF, 720,000,000 agents, resilience 93.50%.
+* **ORBITAL** – 57.60 EF, 960,000,000 agents, resilience 95.90%.
 
 ---
 
 ## Mission lattice & task hierarchy
 * 3 programmes · 26 tasks · 2,441,200 GW · 261.90 EF.
-* Unstoppable score 94.44% · dependencies resolved true · sentinel coverage true.
-* Lead programme Dyson Swarm Expansion Programme (orbital) — 17 tasks, 2173200 GW, unstoppable 83.33%.
-* ⚠ Mission advisories: dyson-swarm autonomy exceeds max 7800 bps
+* Unstoppable score 100.00% · dependencies resolved true · sentinel coverage true.
+* Lead programme Dyson Swarm Expansion Programme (orbital) — 17 tasks, 2173200 GW, unstoppable 100.00%.
+* Mission advisories: none — autonomy, sentinel coverage, and timelines are nominal.
 
 ---
 
@@ -81,16 +81,16 @@
 ---
 
 ## Scenario stress sweep
-* **20% demand surge vs Dyson safety margin** — status NOMINAL (confidence 100.0%) · Dyson lattice absorbs surge with 129,600 GW spare.
+* **20% demand surge vs Dyson safety margin** — status NOMINAL (confidence 100.0%) · Dyson lattice absorbs surge with 859,600 GW spare.
   - Simulated demand: 290,400 GW (ok)
-  - Remaining buffer: 129,600 GW (ok)
-  - Thermostat margin: 52,500 GW (ok)
-  - Utilisation: 69.14% (ok)
+  - Remaining buffer: 859,600 GW (ok)
+  - Thermostat margin: 143,750 GW (ok)
+  - Utilisation: 25.25% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
 * **Interplanetary bridge outage simulation** — status WARNING (confidence 51.2%) · Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
-  - Relay boost allocation: 35.0% (147000 GW) (ok)
+  - Relay boost allocation: 35.0% (402500 GW) (ok)
   - Mitigated latency: 117s (ok)
   - Failsafe budget: 120s (ok)
   - Slack: 3s (ok)
@@ -101,10 +101,10 @@
   - Guardian window: 900s (ok)
   - Coverage ratio: 133.33% (ok)
   - Recommended: Register standby sentinel via Safe batch if ratio < 100%. · Shorten guardian drill cadence until redundancy restored.
-* **Compute drawdown (15%) resilience** — status WARNING (confidence 35.0%) · Deviation 14.62% exceeds tolerance 0.75%.
-  - Projected compute: 48.88 EF (ok)
-  - Stressed compute: 41.73 EF (check)
-  - Deviation: 14.62% (check)
+* **Compute drawdown (15%) resilience** — status WARNING (confidence 33.3%) · Deviation 15.00% exceeds tolerance 0.75%.
+  - Projected compute: 115.00 EF (ok)
+  - Stressed compute: 97.75 EF (check)
+  - Deviation: 15.00% (check)
   - Tolerance: 0.75% (ok)
   - Recommended: Authorise capital stream expansion for orbital compute nodes. · Notify guardians to ratify temporary autonomy reduction if deviation persists.
 * **Dyson phase slip (30 days)** — status NOMINAL (confidence 95.0%) · Schedule buffer absorbs slip with 490 days remaining.
@@ -165,9 +165,9 @@
 ---
 
 ## Dyson programme
-* Seed Swarm: 1,200 satellites, 4,800 GW, 120 days.
-* Helios Halo: 6,800 satellites, 64,000 GW, 260 days.
-* Crown Array: 24,000 satellites, 420,000 GW, 520 days.
+* Seed Swarm: 1,200 satellites, 11,300 GW, 120 days.
+* Helios Halo: 6,800 satellites, 150,500 GW, 260 days.
+* Crown Array: 24,000 satellites, 988,200 GW, 520 days.
 
 ---
 
