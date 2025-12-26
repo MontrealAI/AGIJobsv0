@@ -162,6 +162,31 @@ function renderOwnerProofUnavailable(reason) {
   }
 }
 
+function renderEquilibriumUnavailable(reason) {
+  const summary = document.querySelector("#equilibrium-summary");
+  if (!summary) return;
+  summary.textContent = `Equilibrium ledger unavailable: ${reason}`;
+  applyStatus(summary, "status-warn");
+
+  const components = document.querySelector("#equilibrium-components");
+  if (components) {
+    components.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Re-run the orchestrator to generate equilibrium telemetry.";
+    li.classList.add("status-warn");
+    components.appendChild(li);
+  }
+
+  const recommendations = document.querySelector("#equilibrium-recommendations");
+  if (recommendations) {
+    recommendations.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Recommendations pending equilibrium ledger refresh.";
+    li.classList.add("status-warn");
+    recommendations.appendChild(li);
+  }
+}
+
 function renderMonteCarloDetails(monteCarlo) {
   const freeEnergyElement = document.querySelector("#energy-monte-carlo-free-energy");
   const hamiltonianElement = document.querySelector("#energy-monte-carlo-hamiltonian");
@@ -1255,6 +1280,71 @@ function renderSettlement(settlement, verification) {
   });
 }
 
+function renderEquilibriumLedger(ledger) {
+  const summary = document.querySelector("#equilibrium-summary");
+  const componentsList = document.querySelector("#equilibrium-components");
+  const recommendationsList = document.querySelector("#equilibrium-recommendations");
+  if (!summary || !componentsList || !recommendationsList) return;
+
+  if (!ledger) {
+    renderEquilibriumUnavailable("Missing ledger payload.");
+    return;
+  }
+
+  const overall = Number.isFinite(ledger.overallScore) ? ledger.overallScore : 0;
+  const status = ledger.status || (overall >= 0.9 ? "nominal" : overall >= 0.8 ? "warning" : "critical");
+  summary.textContent = `Overall equilibrium ${(overall * 100).toFixed(1)}% · status ${status}`;
+  applyStatus(summary, overall >= 0.9 ? "status-ok" : overall >= 0.8 ? "status-warn" : "status-fail");
+
+  const componentLabels = {
+    energy: "Energy thermodynamics",
+    allocation: "Allocation policy",
+    welfare: "Sentient welfare",
+    logistics: "Logistics equilibrium",
+    compute: "Compute fabric",
+  };
+
+  const componentDetails = {
+    energy: (component) =>
+      `free energy ${(component.freeEnergyMarginPct * 100).toFixed(1)}% · Hamiltonian ${(component.hamiltonianStability * 100).toFixed(1)}%`,
+    allocation: (component) =>
+      `strategy ${(component.strategyStability * 100).toFixed(1)}% · Nash ${(component.nashProduct * 100).toFixed(1)}%`,
+    welfare: (component) =>
+      `cooperation ${(component.cooperationIndex * 100).toFixed(1)}% · coalition ${(component.coalitionStability * 100).toFixed(1)}%`,
+    logistics: (component) =>
+      `Hamiltonian ${(component.hamiltonianStability * 100).toFixed(1)}% · slack ${(component.gameTheorySlack * 100).toFixed(1)}%`,
+    compute: (component) =>
+      `availability ${(component.averageAvailabilityPct * 100).toFixed(1)}% · failover ${component.failoverWithinQuorum ? "ok" : "risk"}`,
+  };
+
+  componentsList.innerHTML = "";
+  Object.entries(ledger.components || {}).forEach(([key, component]) => {
+    const score = Number.isFinite(component.score) ? component.score : 0;
+    const li = document.createElement("li");
+    const label = componentLabels[key] || key;
+    const detailFn = componentDetails[key];
+    const details = detailFn ? detailFn(component) : "Telemetry unavailable.";
+    li.innerHTML = `<strong>${label}</strong> — ${(score * 100).toFixed(1)}% · ${details}`;
+    li.classList.add(score >= 0.9 ? "status-ok" : score >= 0.8 ? "status-warn" : "status-fail");
+    componentsList.appendChild(li);
+  });
+
+  recommendationsList.innerHTML = "";
+  if (!ledger.recommendations || ledger.recommendations.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No equilibrium interventions required.";
+    li.classList.add("status-ok");
+    recommendationsList.appendChild(li);
+  } else {
+    ledger.recommendations.forEach((recommendation) => {
+      const li = document.createElement("li");
+      li.textContent = recommendation;
+      li.classList.add("status-warn");
+      recommendationsList.appendChild(li);
+    });
+  }
+}
+
 function renderLedger(ledger) {
   document.querySelector("#ledger-summary").textContent = ledger.confidence.summary;
   const composite = `${(ledger.confidence.compositeScore * 100).toFixed(2)}%`;
@@ -1432,6 +1522,7 @@ function renderOwnerProof(ownerProof, telemetry) {
 async function bootstrap() {
   const inlineTelemetry = readInlinePayload("__KARDASHEV_TELEMETRY__");
   const inlineLedger = readInlinePayload("__KARDASHEV_LEDGER__");
+  const inlineEquilibrium = readInlinePayload("__KARDASHEV_EQUILIBRIUM__");
   const inlineOwnerProof = readInlinePayload("__KARDASHEV_OWNER_PROOF__");
   const inlineDiagrams = readInlinePayload("__KARDASHEV_DIAGRAMS__");
   const isFileProtocol = window.location.protocol === "file:";
@@ -1441,9 +1532,12 @@ async function bootstrap() {
     return;
   }
 
-  const [telemetryResult, ledgerResult, ownerProofResult] = await Promise.allSettled([
+  const [telemetryResult, ledgerResult, equilibriumResult, ownerProofResult] = await Promise.allSettled([
     inlineTelemetry ? Promise.resolve(inlineTelemetry) : fetchJson("./output/kardashev-telemetry.json"),
     inlineLedger ? Promise.resolve(inlineLedger) : fetchJson("./output/kardashev-stability-ledger.json"),
+    inlineEquilibrium
+      ? Promise.resolve(inlineEquilibrium)
+      : fetchJson("./output/kardashev-equilibrium-ledger.json"),
     inlineOwnerProof ? Promise.resolve(inlineOwnerProof) : fetchJson("./output/kardashev-owner-proof.json"),
   ]);
 
@@ -1466,6 +1560,13 @@ async function bootstrap() {
     } else {
       console.warn("Ledger unavailable", ledgerResult.reason);
       renderLedgerUnavailable(ledgerResult.reason);
+    }
+
+    if (equilibriumResult.status === "fulfilled") {
+      renderEquilibriumLedger(equilibriumResult.value);
+    } else {
+      console.warn("Equilibrium ledger unavailable", equilibriumResult.reason);
+      renderEquilibriumUnavailable(equilibriumResult.reason);
     }
 
     renderOwnerProofUnavailable("Owner proof requires full orchestrator output.");
@@ -1513,6 +1614,12 @@ async function bootstrap() {
   renderOrchestrationFabric(telemetry.orchestrationFabric);
   renderEnergySchedule(telemetry.energy.schedule, telemetry.verification.energySchedule);
   renderAllocationPolicy(telemetry.energy.allocationPolicy);
+  if (equilibriumResult.status === "fulfilled") {
+    renderEquilibriumLedger(equilibriumResult.value);
+  } else {
+    console.warn("Equilibrium ledger unavailable", equilibriumResult.reason);
+    renderEquilibriumUnavailable(equilibriumResult.reason);
+  }
   renderMissionLattice(telemetry.missionLattice);
   renderLogistics(telemetry.logistics, telemetry.verification.logistics);
   renderSettlement(telemetry.settlement, telemetry.verification.settlement);

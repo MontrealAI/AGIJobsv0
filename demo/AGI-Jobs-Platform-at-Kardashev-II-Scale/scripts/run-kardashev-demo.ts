@@ -1210,9 +1210,12 @@ type SentientWelfareSummary = {
   freeEnergyPerAgentGj: number;
   cooperationIndex: number;
   inequalityIndex: number;
+  payoffCoefficient: number;
+  coalitionStability: number;
   paretoSlack: number;
   equilibriumScore: number;
   welfarePotential: number;
+  collectiveActionPotential: number;
 };
 
 function percentile(values: number[], ratio: number): number {
@@ -1277,6 +1280,19 @@ function computeGiniIndex(values: number[]): number {
     weightedSum += (2 * i - sorted.length + 1) * sorted[i];
   }
   return Math.min(1, Math.max(0, weightedSum / (sorted.length * total)));
+}
+
+function computeCoefficientOfVariation(values: number[]): number {
+  if (!values.length) {
+    return 0;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  if (!Number.isFinite(mean) || mean === 0) {
+    return 0;
+  }
+  const variance =
+    values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+  return Math.sqrt(variance) / Math.abs(mean);
 }
 
 function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
@@ -1468,6 +1484,7 @@ function buildSentientWelfare({
 }): SentientWelfareSummary {
   const payoffs = allocationPolicy.allocations.map((allocation) => allocation.payoff);
   const inequalityIndex = computeGiniIndex(payoffs);
+  const payoffCoefficient = computeCoefficientOfVariation(payoffs);
   const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
     ? allocationPolicy.replicatorStability
     : allocationPolicy.strategyStability;
@@ -1485,6 +1502,10 @@ function buildSentientWelfare({
       0.3 * allocationPolicy.fairnessIndex +
       0.3 * energyMonteCarlo.hamiltonianStability
   );
+  const coalitionStability = clamp01(1 - payoffCoefficient);
+  const collectiveActionPotential = clamp01(
+    0.4 * cooperationIndex + 0.3 * paretoSlack + 0.3 * energyMonteCarlo.hamiltonianStability
+  );
   const freeEnergyPerAgentGj =
     totalAgents > 0 ? round(energyMonteCarlo.gibbsFreeEnergyGj / totalAgents, 6) : 0;
 
@@ -1494,9 +1515,12 @@ function buildSentientWelfare({
     freeEnergyPerAgentGj,
     cooperationIndex,
     inequalityIndex,
+    payoffCoefficient,
+    coalitionStability,
     paretoSlack,
     equilibriumScore,
     welfarePotential,
+    collectiveActionPotential,
   };
 }
 
@@ -4571,6 +4595,144 @@ function buildConsistencyLedger(manifest: Manifest, telemetry: Telemetry) {
   };
 }
 
+function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
+  const energy = telemetry.energy.monteCarlo;
+  const allocation = telemetry.energy.allocationPolicy;
+  const welfare = telemetry.sentientWelfare;
+  const logistics = telemetry.logistics.equilibrium;
+  const computeFabric = telemetry.computeFabric;
+
+  const breachPenalty = energy.withinTolerance
+    ? 1
+    : clamp01(1 - energy.breachProbability / Math.max(energy.tolerance, 1e-6));
+  const energyScore = clamp01(
+    0.35 * energy.hamiltonianStability +
+      0.25 * energy.gameTheorySlack +
+      0.2 * energy.freeEnergyMarginPct +
+      0.2 * breachPenalty
+  );
+  const allocationScore = clamp01(
+    0.35 * allocation.strategyStability +
+      0.25 * allocation.fairnessIndex +
+      0.2 * allocation.jainIndex +
+      0.2 * (1 - allocation.deviationIncentive)
+  );
+  const welfareScore = clamp01(
+    0.3 * welfare.equilibriumScore +
+      0.2 * welfare.cooperationIndex +
+      0.2 * welfare.coalitionStability +
+      0.15 * welfare.paretoSlack +
+      0.15 * welfare.collectiveActionPotential
+  );
+  const logisticsScore = clamp01(
+    0.45 * (logistics?.hamiltonianStability ?? 0) +
+      0.35 * (logistics?.gameTheorySlack ?? 0) +
+      0.2 * (logistics?.entropyRatio ?? 0)
+  );
+  const computeScore = clamp01(
+    0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) + 0.4 * computeFabric.averageAvailabilityPct
+  );
+
+  const overallScore = clamp01(
+    0.3 * energyScore +
+      0.2 * allocationScore +
+      0.2 * welfareScore +
+      0.2 * logisticsScore +
+      0.1 * computeScore
+  );
+  const status = overallScore >= 0.9 ? "nominal" : overallScore >= 0.8 ? "warning" : "critical";
+
+  const recommendations = [];
+  if (energyScore < 0.85) {
+    recommendations.push(
+      "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%."
+    );
+  }
+  if (allocation.deviationIncentive > 0.2) {
+    recommendations.push(
+      "Rebalance allocation weights to reduce deviation incentives and tighten Nash equilibrium adherence."
+    );
+  }
+  if (welfare.inequalityIndex > 0.3) {
+    recommendations.push(
+      "Target inequality reduction by expanding cooperative rewards and boosting high-latency federation buffers."
+    );
+  }
+  if ((logistics?.gameTheorySlack ?? 1) < 0.85) {
+    recommendations.push(
+      "Re-route logistics corridors to raise game-theory slack above 85% and preserve corridor entropy."
+    );
+  }
+  if (!computeFabric.failoverWithinQuorum) {
+    recommendations.push(
+      "Add failover capacity to meet compute quorum before large-scale autonomy escalation."
+    );
+  }
+
+  const generatedAt =
+    typeof manifest.generatedAt === "number"
+      ? new Date(manifest.generatedAt).toISOString()
+      : manifest.generatedAt;
+
+  return {
+    generatedAt,
+    status,
+    overallScore: round(overallScore, 4),
+    components: {
+      energy: {
+        score: round(energyScore, 4),
+        freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+        hamiltonianStability: round(energy.hamiltonianStability, 4),
+        gameTheorySlack: round(energy.gameTheorySlack, 4),
+        breachProbability: round(energy.breachProbability, 4),
+        gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
+      },
+      allocation: {
+        score: round(allocationScore, 4),
+        fairnessIndex: round(allocation.fairnessIndex, 4),
+        strategyStability: round(allocation.strategyStability, 4),
+        deviationIncentive: round(allocation.deviationIncentive, 4),
+        nashProduct: round(allocation.nashProduct, 4),
+        jainIndex: round(allocation.jainIndex, 4),
+        gibbsPotential: round(allocation.gibbsPotential, 4),
+      },
+      welfare: {
+        score: round(welfareScore, 4),
+        cooperationIndex: round(welfare.cooperationIndex, 4),
+        inequalityIndex: round(welfare.inequalityIndex, 4),
+        coalitionStability: round(welfare.coalitionStability, 4),
+        paretoSlack: round(welfare.paretoSlack, 4),
+        collectiveActionPotential: round(welfare.collectiveActionPotential, 4),
+      },
+      logistics: {
+        score: round(logisticsScore, 4),
+        hamiltonianStability: round(logistics.hamiltonianStability, 4),
+        gameTheorySlack: round(logistics.gameTheorySlack, 4),
+        entropyRatio: round(logistics.entropyRatio, 4),
+        nashWelfare: round(logistics.nashWelfare, 4),
+      },
+      compute: {
+        score: round(computeScore, 4),
+        failoverWithinQuorum: computeFabric.failoverWithinQuorum,
+        averageAvailabilityPct: round(computeFabric.averageAvailabilityPct, 4),
+        deviationPct: round(telemetry.verification.compute.deviationPct, 4),
+      },
+    },
+    thermodynamics: {
+      freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+      gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
+      entropyMargin: round(energy.entropyMargin, 4),
+      hamiltonianStability: round(energy.hamiltonianStability, 4),
+    },
+    gameTheory: {
+      nashProduct: round(allocation.nashProduct, 4),
+      logisticsNashWelfare: round(logistics.nashWelfare, 4),
+      coalitionStability: round(welfare.coalitionStability, 4),
+    },
+    recommendations,
+  };
+}
+
 function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
   const parsedCreatedAt =
     typeof manifest.generatedAt === "number" ? manifest.generatedAt : Date.parse(manifest.generatedAt);
@@ -4655,6 +4817,7 @@ function run() {
     ownerProof
   );
   const consistencyLedger = buildConsistencyLedger(manifest, telemetryWithScenarios);
+  const equilibriumLedger = buildEquilibriumLedger(manifest, telemetryWithScenarios);
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
   const runbook = buildRunbook(manifest, telemetryWithScenarios, dominanceScore, scenarioSweep);
@@ -4663,10 +4826,12 @@ function run() {
   const telemetryJson = `${JSON.stringify(telemetryWithScenarios, null, 2)}\n`;
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
   const ledgerJson = `${JSON.stringify(stabilityLedger, null, 2)}\n`;
+  const equilibriumJson = `${JSON.stringify(equilibriumLedger, null, 2)}\n`;
   const scenariosJson = `${JSON.stringify(scenarioSweep, null, 2)}\n`;
   const ownerProofJson = `${JSON.stringify(ownerProof, null, 2)}\n`;
   const telemetryInlineJs = `window.__KARDASHEV_TELEMETRY__ = ${JSON.stringify(telemetryWithScenarios)};\n`;
   const ledgerInlineJs = `window.__KARDASHEV_LEDGER__ = ${JSON.stringify(stabilityLedger)};\n`;
+  const equilibriumInlineJs = `window.__KARDASHEV_EQUILIBRIUM__ = ${JSON.stringify(equilibriumLedger)};\n`;
   const ownerProofInlineJs = `window.__KARDASHEV_OWNER_PROOF__ = ${JSON.stringify(ownerProof)};\n`;
   const diagramsInlineJs = `window.__KARDASHEV_DIAGRAMS__ = ${JSON.stringify({
     missionHierarchy: missionTelemetry.mermaid,
@@ -4712,6 +4877,8 @@ function run() {
     { suffix: "safe-transaction-batch.json", content: safeJson },
     { suffix: "stability-ledger.json", content: ledgerJson },
     { suffix: "stability-ledger.inline.js", content: ledgerInlineJs },
+    { suffix: "equilibrium-ledger.json", content: equilibriumJson },
+    { suffix: "equilibrium-ledger.inline.js", content: equilibriumInlineJs },
     { suffix: "consistency-ledger.json", content: consistencyJson },
     { suffix: "scenario-sweep.json", content: scenariosJson },
     { suffix: "monte-carlo.json", content: monteCarloJson },
@@ -4759,6 +4926,9 @@ function run() {
   console.log(`   Energy utilisation: ${(telemetry.energy.utilisationPct * 100).toFixed(2)}% (margin ${(telemetry.energy.marginPct * 100).toFixed(2)}%).`);
   console.log(
     `   Stability ledger composite confidence: ${(stabilityLedger.confidence.compositeScore * 100).toFixed(2)}% (quorum ${stabilityLedger.confidence.quorum}).`
+  );
+  console.log(
+    `   Equilibrium ledger score: ${(equilibriumLedger.overallScore * 100).toFixed(2)}% (${equilibriumLedger.status}).`
   );
   console.log(
     `   Energy models aligned: ${telemetry.verification.energyModels.withinMargin} (regional ${telemetry.energy.models.regionalSumGw.toLocaleString()} GW vs Dyson ${telemetry.energy.models.dysonProjectionGw.toLocaleString()} GW).`
