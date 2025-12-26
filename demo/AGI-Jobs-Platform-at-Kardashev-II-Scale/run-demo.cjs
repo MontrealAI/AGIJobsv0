@@ -298,6 +298,22 @@ function computeJainIndex(values) {
   return Math.min(1, Math.max(0, rawIndex));
 }
 
+function computeGiniIndex(values) {
+  if (!values.length) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const total = sorted.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return 0;
+  }
+  let weightedSum = 0;
+  for (let i = 0; i < sorted.length; i += 1) {
+    weightedSum += (2 * i - sorted.length + 1) * sorted[i];
+  }
+  return clamp01(weightedSum / (sorted.length * total));
+}
+
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
@@ -564,7 +580,9 @@ function buildIdentity(identityProtocols) {
   const global = identityProtocols?.global ?? {};
   const anchorsMeetingQuorum = federations.filter((fed) => (fed.anchors || []).length >= global.attestationQuorum).length;
   const totalAgents = sum(federations.map((fed) => fed.totalAgents ?? 0));
+  const totalValidators = sum(federations.map((fed) => fed.totalValidators ?? 0));
   const totalRevocations = sum(federations.map((fed) => fed.credentialRevocations24h ?? 0));
+  const totalIssuances = sum(federations.map((fed) => fed.credentialIssuances24h ?? 0));
   const revocationRatePpm = totalAgents > 0 ? (totalRevocations / totalAgents) * 1_000_000 : 0;
   const minCoveragePct = Math.min(...federations.map((fed) => fed.coveragePct ?? 1));
   const maxLatency = Math.max(...federations.map((fed) => fed.attestationLatencySeconds ?? 0));
@@ -575,11 +593,55 @@ function buildIdentity(identityProtocols) {
     totals: {
       federationCount: federations.length,
       anchorsMeetingQuorum,
+      totalAgents,
+      totalValidators,
+      revocations24h: totalRevocations,
+      issuances24h: totalIssuances,
       revocationRatePpm,
       minCoveragePct,
       maxAttestationLatencySeconds: maxLatency,
     },
     withinQuorum: anchorsMeetingQuorum === federations.length,
+  };
+}
+
+function buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo) {
+  const totalAgents = identity?.totals?.totalAgents ?? 0;
+  const federationCount =
+    identity?.totals?.federationCount ?? (Array.isArray(identity?.federations) ? identity.federations.length : 0);
+  const payoffs = Array.isArray(allocationPolicy?.allocations)
+    ? allocationPolicy.allocations.map((allocation) => allocation.payoff)
+    : [];
+  const inequalityIndex = computeGiniIndex(payoffs);
+  const replicatorStability = Number.isFinite(allocationPolicy?.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy?.strategyStability ?? 0;
+  const cooperationIndex = clamp01(
+    0.45 * (energyMonteCarlo?.gameTheorySlack ?? 0) +
+      0.35 * (allocationPolicy?.strategyStability ?? 0) +
+      0.2 * replicatorStability
+  );
+  const paretoSlack = clamp01(1 - (allocationPolicy?.deviationIncentive ?? 0));
+  const equilibriumScore = clamp01(
+    0.4 * cooperationIndex + 0.35 * (1 - inequalityIndex) + 0.25 * (allocationPolicy?.fairnessIndex ?? 0)
+  );
+  const welfarePotential = clamp01(
+    0.4 * (1 - inequalityIndex) +
+      0.3 * (allocationPolicy?.fairnessIndex ?? 0) +
+      0.3 * (energyMonteCarlo?.hamiltonianStability ?? 0)
+  );
+  const freeEnergyPerAgentGj =
+    totalAgents > 0 ? round((energyMonteCarlo?.gibbsFreeEnergyGj ?? 0) / totalAgents, 6) : 0;
+
+  return {
+    totalAgents,
+    federationCount,
+    freeEnergyPerAgentGj,
+    cooperationIndex,
+    inequalityIndex,
+    paretoSlack,
+    equilibriumScore,
+    welfarePotential,
   };
 }
 
@@ -1322,6 +1384,7 @@ function main() {
   };
 
   const identity = buildIdentity(manifest.identityProtocols);
+  const sentientWelfare = buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo);
   const computeFabric = buildComputeFabric(manifest.computeFabrics);
   const orchestrationFabric = buildOrchestrationFabric(fabric.shards, manifest.federations);
   const missionLattice = buildMissionLattice(taskLattice, manifest);
@@ -1414,6 +1477,9 @@ function main() {
     `- **Replicator Equilibrium:** ${(allocationPolicy.replicatorStability * 100).toFixed(1)}% stability (drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(3)}).`
   );
   reportLines.push(
+    `- **Sentient Welfare Equilibrium:** ${(sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(sentientWelfare.cooperationIndex * 100).toFixed(1)}% · inequality ${(sentientWelfare.inequalityIndex * 100).toFixed(1)}% · free energy/agent ${sentientWelfare.freeEnergyPerAgentGj.toFixed(6)} GJ.`
+  );
+  reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
   );
   reportLines.push('');
@@ -1494,6 +1560,7 @@ function main() {
     dyson,
     energyMonteCarlo,
     allocationPolicy,
+    sentientWelfare,
     energy: {
       utilisationPct: energyUtilisationPct,
       marginPct: energyMarginPct,
@@ -1673,6 +1740,9 @@ function main() {
     console.log(
       `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
     );
+    console.log(
+      `   - Sentient welfare equilibrium: ${(sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(sentientWelfare.cooperationIndex * 100).toFixed(1)}%`
+    );
     return;
   }
 
@@ -1688,6 +1758,9 @@ function main() {
   );
   console.log(
     `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
+  );
+  console.log(
+    `   - Sentient welfare equilibrium: ${(sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(sentientWelfare.cooperationIndex * 100).toFixed(1)}%`
   );
 }
 

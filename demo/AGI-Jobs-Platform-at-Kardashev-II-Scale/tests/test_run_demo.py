@@ -26,6 +26,7 @@ def test_run_demo_check_mode(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert "validated (check mode)" in result.stdout
     assert "Free energy margin" in result.stdout
+    assert "Sentient welfare equilibrium" in result.stdout
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
@@ -86,6 +87,16 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= allocation["strategyStability"] <= 1
     assert 0 <= allocation["deviationIncentive"] <= 1
     assert 0 <= allocation["jainIndex"] <= 1
+
+    sentient = telemetry_payload["sentientWelfare"]
+    assert sentient["totalAgents"] > 0
+    assert sentient["federationCount"] > 0
+    assert sentient["freeEnergyPerAgentGj"] >= 0
+    assert 0 <= sentient["cooperationIndex"] <= 1
+    assert 0 <= sentient["inequalityIndex"] <= 1
+    assert 0 <= sentient["paretoSlack"] <= 1
+    assert 0 <= sentient["equilibriumScore"] <= 1
+    assert 0 <= sentient["welfarePotential"] <= 1
 
     ledger_payload = json.loads(stability_ledger.read_text())
     assert ledger_payload["confidence"]["compositeScore"] >= 0

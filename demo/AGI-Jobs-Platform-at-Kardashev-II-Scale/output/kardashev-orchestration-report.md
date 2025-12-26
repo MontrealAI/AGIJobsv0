@@ -23,6 +23,7 @@
 * Hamiltonian stability 70.0% · entropy margin 17.73σ · game-theory slack 86.5% · buffer stable.
 * Allocation policy: Gibbs temperature 0.23 · Nash welfare 85.60% · fairness 93.6% · Gibbs potential -0.157.
 * Replicator equilibrium 86.7% · drift 0.133.
+* Sentient welfare equilibrium 91.4% · cooperation 87.0% · inequality 5.3% · free energy/agent 0.134848 GJ.
 * Allocation deltas: Earth Sovereign Federation -17187.62 GW · Mars Terraforming Compact +29171.09 GW · Orbital Research Halo -11983.47 GW.
 * Demand percentiles: P95 252,189.139 GW · P99 255,160.811 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
