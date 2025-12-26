@@ -802,6 +802,8 @@ function buildLogistics(manifest, safetyPolicy) {
   const corridors = manifest?.logisticsCorridors ?? [];
   const autonomyLimit = safetyPolicy?.maxAutonomyBps ?? 8000;
   const uniqueWatchers = unique(corridors.flatMap((corridor) => corridor.watchers || []));
+  const utilisationCeiling = 0.9;
+  const bufferThresholdDays = 10;
   const aggregate = {
     watchers: uniqueWatchers,
     capacityTonnesPerDay: sum(corridors.map((corridor) => corridor.capacityTonnesPerDay ?? 0)),
@@ -834,10 +836,53 @@ function buildLogistics(manifest, safetyPolicy) {
     autonomyOk: corridorSummaries.every((corridor) => corridor.autonomyOk),
   };
 
+  const utilisationWeights = corridorSummaries.map((corridor) => Math.max(0, corridor.utilisationPct));
+  const utilisationTotal = utilisationWeights.reduce((total, value) => total + value, 0);
+  const entropy = utilisationTotal
+    ? -utilisationWeights.reduce((total, value) => {
+        const probability = value / utilisationTotal;
+        return probability > 0 ? total + probability * Math.log(probability) : total;
+      }, 0)
+    : 0;
+  const entropyMax = utilisationWeights.length > 1 ? Math.log(utilisationWeights.length) : 1;
+  const entropyRatio = entropyMax > 0 ? entropy / entropyMax : 1;
+  const payoffs = corridorSummaries.map((corridor) => {
+    const utilisationPenalty = Math.max(0, corridor.utilisationPct - utilisationCeiling);
+    const bufferPenalty = Math.max(0, bufferThresholdDays - corridor.bufferDays) / bufferThresholdDays;
+    const payoff = corridor.reliabilityPct * (1 - utilisationPenalty) * (1 - bufferPenalty);
+    return Math.max(0.001, payoff);
+  });
+  const payoffLog = payoffs.reduce((total, payoff) => total + Math.log(payoff), 0);
+  const nashWelfare = payoffs.length > 0 ? Math.exp(payoffLog / payoffs.length) : 0;
+  const averagePayoff = payoffs.length > 0 ? sum(payoffs) / payoffs.length : 0;
+  const maxPayoff = payoffs.length > 0 ? Math.max(...payoffs) : 0;
+  const deviationIncentive =
+    maxPayoff > 0 ? clamp01((maxPayoff - averagePayoff) / maxPayoff) : 0;
+  const gameTheorySlack = clamp01(1 - deviationIncentive);
+  const hamiltonian = corridorSummaries.reduce((total, corridor) => {
+    const utilisationPenalty = Math.max(0, corridor.utilisationPct - utilisationCeiling);
+    const bufferPenalty = Math.max(0, bufferThresholdDays - corridor.bufferDays) / bufferThresholdDays;
+    const reliabilityPenalty = 1 - corridor.reliabilityPct;
+    return total + utilisationPenalty + bufferPenalty + reliabilityPenalty;
+  }, 0);
+  const hamiltonianStability =
+    corridorSummaries.length > 0 ? clamp01(1 - hamiltonian / corridorSummaries.length) : 1;
+  const totalEnergyMwh = sum(corridorSummaries.map((corridor) => corridor.energyPerTransitMwh ?? 0));
+  const gibbsFreeEnergyMwh = totalEnergyMwh * (1 - clamp01(entropyRatio)) * (1 - clamp01(verification.averageReliabilityPct));
+
   return {
     aggregate,
     corridors: corridorSummaries,
     verification,
+    equilibrium: {
+      hamiltonian: round(hamiltonian, 4),
+      hamiltonianStability: round(hamiltonianStability, 4),
+      entropy: round(entropy, 4),
+      entropyRatio: round(entropyRatio, 4),
+      nashWelfare: round(nashWelfare, 4),
+      gameTheorySlack: round(gameTheorySlack, 4),
+      gibbsFreeEnergyMwh: round(gibbsFreeEnergyMwh, 2),
+    },
   };
 }
 
@@ -1982,6 +2027,7 @@ function main() {
     logistics: {
       aggregate: logistics.aggregate,
       corridors: logistics.corridors,
+      equilibrium: logistics.equilibrium,
     },
     settlement: {
       protocols: settlement.protocols,
