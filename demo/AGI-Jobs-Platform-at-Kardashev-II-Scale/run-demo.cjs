@@ -95,13 +95,34 @@ function hashString(value) {
   return `sha256:${crypto.createHash('sha256').update(value).digest('hex')}`;
 }
 
+function resolveEnergyFeedForShard(shard, energyFeeds) {
+  const shardId = (shard.id || '').toLowerCase();
+  if (!shardId) {
+    return null;
+  }
+  return (
+    energyFeeds.find(
+      (feed) => (feed.federationSlug || '').toLowerCase() === shardId
+    ) ||
+    energyFeeds.find((feed) =>
+      (feed.region || '').toLowerCase().startsWith(shardId)
+    ) ||
+    null
+  );
+}
+
 function computeShardMetrics(shard, energyFeeds, rng) {
   const baseLoad = 1_000_000; // baseline monthly jobs
   const latencyFactor = Math.max(1, shard.latencyMs / 1000);
   const throughput = Math.floor(baseLoad * (1 + rng() * 0.2) / Math.log2(latencyFactor + 2));
   const validators = Math.max(120, Math.floor(throughput / 5000));
 
-  const energy = energyFeeds.find((feed) => feed.region.startsWith(shard.id)) || energyFeeds[0];
+  const energy = resolveEnergyFeedForShard(shard, energyFeeds);
+  if (!energy) {
+    throw new Error(
+      `Energy feeds missing coverage for shard "${shard.id}". Add a feed with matching federationSlug or region.`
+    );
+  }
   const surplusMw = Math.max(0, energy.nominalMw - energy.bufferMw * 0.75);
   const utilisation = round((surplusMw / energy.nominalMw) * 100, 2);
 
@@ -941,6 +962,16 @@ function validateEnergyFeeds(energy) {
   }
 }
 
+function validateEnergyFeedCoverage(fabric, energy) {
+  const missing = fabric.shards.filter(
+    (shard) => !resolveEnergyFeedForShard(shard, energy.feeds)
+  );
+  if (missing.length > 0) {
+    const shardList = missing.map((shard) => shard.id).join(', ');
+    throw new Error(`Energy feeds missing coverage for shards: ${shardList}.`);
+  }
+}
+
 function validateFabric(fabric) {
   if (!fabric || !Array.isArray(fabric.shards) || fabric.shards.length === 0) {
     throw new Error('Fabric config must include at least one shard definition.');
@@ -1625,6 +1656,7 @@ function main() {
     taskLattice = loadJson(taskLatticePath);
     validateFabric(fabric);
     validateEnergyFeeds(energy);
+    validateEnergyFeedCoverage(fabric, energy);
     validateManifest(manifest);
     validateTaskLattice(taskLattice);
   } catch (err) {

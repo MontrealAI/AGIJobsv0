@@ -181,3 +181,28 @@ def test_run_demo_allows_default_tolerance(tmp_path: Path) -> None:
 
     assert result.returncode == 0, result.stderr
     assert "validated (check mode)" in result.stdout
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_requires_energy_coverage(tmp_path: Path) -> None:
+    """Every shard must map to a matching energy feed."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][0]["federationSlug"] = "luna"
+    energy_config["feeds"][0]["region"] = "luna-grid"
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "energy feeds missing coverage" in combined_output
