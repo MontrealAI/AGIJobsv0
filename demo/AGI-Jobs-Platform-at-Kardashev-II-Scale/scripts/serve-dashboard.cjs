@@ -21,13 +21,41 @@ const MIME_TYPES = {
 };
 
 function parseArgs(argv) {
+  const help = argv.includes('--help') || argv.includes('-h');
   const portIndex = argv.findIndex((value) => value === '--port');
-  const portValue = portIndex >= 0 ? argv[portIndex + 1] : undefined;
+  const portValue =
+    portIndex >= 0
+      ? argv[portIndex + 1]
+      : argv.find((value) => value.startsWith('--port='))?.split('=')[1];
   const port = Number(portValue || process.env.PORT || 4175);
   return {
+    help,
     port: Number.isFinite(port) && port > 0 ? port : 4175,
   };
 }
+
+function renderHelp() {
+  console.log(`Kardashev II dashboard server
+
+Usage:
+  node demo/AGI-Jobs-Platform-at-Kardashev-II-Scale/scripts/serve-dashboard.cjs [--port 4175]
+
+Options:
+  --port <number>     Override the HTTP port (default: 4175, env: PORT).
+  --port=<number>     Override the HTTP port (alternate syntax).
+  -h, --help          Show this help message.
+`);
+}
+
+const REQUIRED_OUTPUTS = [
+  'output/kardashev-telemetry.json',
+  'output/kardashev-stability-ledger.json',
+  'output/kardashev-equilibrium-ledger.json',
+  'output/kardashev-owner-proof.json',
+  'output/kardashev-task-hierarchy.mmd',
+  'output/kardashev-mermaid.mmd',
+  'output/kardashev-dyson.mmd',
+];
 
 function resolvePath(requestUrl) {
   try {
@@ -62,13 +90,52 @@ async function readFileOr404(targetPath, res) {
   }
 }
 
+async function detectMissingOutputs() {
+  const missing = [];
+  for (const relativePath of REQUIRED_OUTPUTS) {
+    const absolutePath = path.join(DEMO_ROOT, relativePath);
+    try {
+      await fs.access(absolutePath);
+    } catch (error) {
+      missing.push(relativePath);
+    }
+  }
+  return missing;
+}
+
 async function startServer() {
-  const { port } = parseArgs(process.argv.slice(2));
+  const { port, help } = parseArgs(process.argv.slice(2));
+  if (help) {
+    renderHelp();
+    return;
+  }
+
+  const missingOutputs = await detectMissingOutputs();
 
   const server = http.createServer(async (req, res) => {
     if (!req.url) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Missing request URL');
+      return;
+    }
+
+    if (req.url === '/status.json') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(
+        JSON.stringify(
+          {
+            ok: missingOutputs.length === 0,
+            demoRoot: pathToFileURL(DEMO_ROOT).toString(),
+            missingOutputs,
+            hint:
+              missingOutputs.length === 0
+                ? 'All telemetry artefacts present.'
+                : 'Run npm run demo:kardashev to regenerate missing artefacts.',
+          },
+          null,
+          2
+        )
+      );
       return;
     }
 
@@ -87,6 +154,12 @@ async function startServer() {
     console.log(`🚀 Kardashev II dashboard ready at ${url}`);
     console.log('   Serve this URL in a browser to load telemetry without CORS errors.');
     console.log(`   Demo root: ${pathToFileURL(DEMO_ROOT).toString()}`);
+    if (missingOutputs.length > 0) {
+      console.warn('⚠️  Telemetry artefacts are missing:');
+      missingOutputs.forEach((file) => console.warn(`   - ${file}`));
+      console.warn('   Run npm run demo:kardashev to regenerate the artefacts.');
+      console.warn(`   Health check: http://localhost:${port}/status.json`);
+    }
   });
 }
 
