@@ -916,9 +916,12 @@
     "freeEnergyPerAgentGj": 0.134848,
     "cooperationIndex": 0.8701843391780725,
     "inequalityIndex": 0.05252008576816762,
+    "payoffCoefficient": 0.10038365976123358,
+    "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
     "equilibriumScore": 0.9137125816273135,
-    "welfarePotential": 0.8697494672975614
+    "welfarePotential": 0.8697494672975614,
+    "collectiveActionPotential": 0.8216824914090786
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,

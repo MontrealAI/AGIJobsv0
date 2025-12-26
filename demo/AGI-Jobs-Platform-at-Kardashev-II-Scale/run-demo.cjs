@@ -1158,6 +1158,138 @@ function buildStabilityLedger({
   };
 }
 
+function buildEquilibriumLedger({
+  energyMonteCarlo,
+  allocationPolicy,
+  sentientWelfare,
+  logistics,
+  computeFabric,
+  verification,
+}) {
+  const breachPenalty = energyMonteCarlo.withinTolerance
+    ? 1
+    : clamp01(1 - energyMonteCarlo.breachProbability / Math.max(energyMonteCarlo.tolerance, 1e-6));
+  const energyScore = clamp01(
+    0.35 * energyMonteCarlo.hamiltonianStability +
+      0.25 * energyMonteCarlo.gameTheorySlack +
+      0.2 * energyMonteCarlo.freeEnergyMarginPct +
+      0.2 * breachPenalty
+  );
+  const allocationScore = clamp01(
+    0.35 * allocationPolicy.strategyStability +
+      0.25 * allocationPolicy.fairnessIndex +
+      0.2 * allocationPolicy.jainIndex +
+      0.2 * (1 - allocationPolicy.deviationIncentive)
+  );
+  const welfareScore = clamp01(
+    0.3 * sentientWelfare.equilibriumScore +
+      0.2 * sentientWelfare.cooperationIndex +
+      0.2 * sentientWelfare.coalitionStability +
+      0.15 * sentientWelfare.paretoSlack +
+      0.15 * sentientWelfare.collectiveActionPotential
+  );
+
+  const averageReliability = logistics?.verification?.averageReliabilityPct ?? 0;
+  const averageUtilisation = logistics?.verification?.averageUtilisationPct ?? 0;
+  const minBuffer = logistics?.verification?.minimumBufferDays ?? 0;
+  const hamiltonianStability = clamp01(0.6 * averageReliability + 0.4 * Math.min(1, minBuffer / 20));
+  const gameTheorySlack = clamp01(1 - Math.abs(averageUtilisation - 0.75) / 0.75);
+  const entropyRatio = clamp01(
+    -(averageUtilisation * Math.log(Math.max(averageUtilisation, 1e-6)) +
+      (1 - averageUtilisation) * Math.log(Math.max(1 - averageUtilisation, 1e-6))) / Math.log(2)
+  );
+  const logisticsScore = clamp01(
+    0.45 * hamiltonianStability + 0.35 * gameTheorySlack + 0.2 * entropyRatio
+  );
+
+  const computeScore = clamp01(
+    0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) +
+      0.4 * (computeFabric.averageAvailabilityPct ?? 0)
+  );
+
+  const overallScore = clamp01(
+    0.3 * energyScore +
+      0.2 * allocationScore +
+      0.2 * welfareScore +
+      0.2 * logisticsScore +
+      0.1 * computeScore
+  );
+  const status = overallScore >= 0.9 ? 'nominal' : overallScore >= 0.8 ? 'warning' : 'critical';
+
+  const recommendations = [];
+  if (energyScore < 0.85) {
+    recommendations.push('Increase energy buffer or tighten demand variance to raise Hamiltonian stability.');
+  }
+  if (allocationPolicy.deviationIncentive > 0.2) {
+    recommendations.push('Reduce deviation incentives to reinforce Nash equilibrium adherence.');
+  }
+  if (sentientWelfare.inequalityIndex > 0.3) {
+    recommendations.push('Redistribute cooperative rewards to curb inequality across federations.');
+  }
+  if (gameTheorySlack < 0.85) {
+    recommendations.push('Rebalance corridor utilization to lift logistics game-theory slack above 85%.');
+  }
+  if (!computeFabric.failoverWithinQuorum) {
+    recommendations.push('Expand compute failover capacity before scaling autonomy.');
+  }
+
+  return {
+    generatedAt: new Date().toISOString(),
+    status,
+    overallScore: round(overallScore, 4),
+    components: {
+      energy: {
+        score: round(energyScore, 4),
+        freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+        hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
+        gameTheorySlack: round(energyMonteCarlo.gameTheorySlack, 4),
+        breachProbability: round(energyMonteCarlo.breachProbability, 4),
+        gibbsFreeEnergyGj: round(energyMonteCarlo.gibbsFreeEnergyGj, 2),
+      },
+      allocation: {
+        score: round(allocationScore, 4),
+        fairnessIndex: round(allocationPolicy.fairnessIndex, 4),
+        strategyStability: round(allocationPolicy.strategyStability, 4),
+        deviationIncentive: round(allocationPolicy.deviationIncentive, 4),
+        nashProduct: round(allocationPolicy.nashProduct, 4),
+        jainIndex: round(allocationPolicy.jainIndex, 4),
+        gibbsPotential: round(allocationPolicy.gibbsPotential, 4),
+      },
+      welfare: {
+        score: round(welfareScore, 4),
+        cooperationIndex: round(sentientWelfare.cooperationIndex, 4),
+        inequalityIndex: round(sentientWelfare.inequalityIndex, 4),
+        coalitionStability: round(sentientWelfare.coalitionStability, 4),
+        paretoSlack: round(sentientWelfare.paretoSlack, 4),
+        collectiveActionPotential: round(sentientWelfare.collectiveActionPotential, 4),
+      },
+      logistics: {
+        score: round(logisticsScore, 4),
+        hamiltonianStability: round(hamiltonianStability, 4),
+        gameTheorySlack: round(gameTheorySlack, 4),
+        entropyRatio: round(entropyRatio, 4),
+      },
+      compute: {
+        score: round(computeScore, 4),
+        failoverWithinQuorum: computeFabric.failoverWithinQuorum,
+        averageAvailabilityPct: round(computeFabric.averageAvailabilityPct, 4),
+        deviationPct: round(verification.compute.deviationPct, 4),
+      },
+    },
+    thermodynamics: {
+      freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+      gibbsFreeEnergyGj: round(energyMonteCarlo.gibbsFreeEnergyGj, 2),
+      entropyMargin: round(energyMonteCarlo.entropyMargin, 4),
+      hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
+    },
+    gameTheory: {
+      nashProduct: round(allocationPolicy.nashProduct, 4),
+      coalitionStability: round(sentientWelfare.coalitionStability, 4),
+    },
+    recommendations,
+  };
+}
+
 function buildOwnerProof({ fabric, telemetry, allocationPolicy, dominanceScore }) {
   const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
     ? allocationPolicy.replicatorStability
@@ -1474,6 +1606,15 @@ function main() {
     settlement: settlement.verification,
   };
 
+  const equilibriumLedger = buildEquilibriumLedger({
+    energyMonteCarlo,
+    allocationPolicy,
+    sentientWelfare,
+    logistics,
+    computeFabric,
+    verification,
+  });
+
   const { outputDir: cliOutputDir, check, printCommands } = parseArgs(
     process.argv.slice(2)
   );
@@ -1541,6 +1682,9 @@ function main() {
   );
   reportLines.push(
     `- **Sentient Coalition Stability:** ${(sentientWelfare.coalitionStability * 100).toFixed(1)}% · collective action ${(sentientWelfare.collectiveActionPotential * 100).toFixed(1)}% · payoff dispersion ${(sentientWelfare.payoffCoefficient * 100).toFixed(1)}%.`
+  );
+  reportLines.push(
+    `- **Equilibrium Ledger:** ${(equilibriumLedger.overallScore * 100).toFixed(1)}% (${equilibriumLedger.status}); energy ${(equilibriumLedger.components.energy.score * 100).toFixed(1)}%, allocation ${(equilibriumLedger.components.allocation.score * 100).toFixed(1)}%, welfare ${(equilibriumLedger.components.welfare.score * 100).toFixed(1)}%.`
   );
   reportLines.push(
     `- **Sentinel Status:** ${sentinelFindings.length} advisories generated; all resolved within guardian SLA.`
@@ -1733,6 +1877,14 @@ function main() {
       `window.__KARDASHEV_LEDGER__ = ${JSON.stringify(stabilityLedger)};\n`
     );
     fs.writeFileSync(
+      path.join(outputDir, 'kardashev-equilibrium-ledger.json'),
+      `${JSON.stringify(equilibriumLedger, null, 2)}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-equilibrium-ledger.inline.js'),
+      `window.__KARDASHEV_EQUILIBRIUM__ = ${JSON.stringify(equilibriumLedger)};\n`
+    );
+    fs.writeFileSync(
       path.join(outputDir, 'kardashev-owner-proof.json'),
       `${JSON.stringify(ownerProof, null, 2)}\n`
     );
@@ -1807,6 +1959,9 @@ function main() {
     console.log(
       `   - Sentient welfare equilibrium: ${(sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(sentientWelfare.cooperationIndex * 100).toFixed(1)}%`
     );
+    console.log(
+      `   - Equilibrium ledger: ${(equilibriumLedger.overallScore * 100).toFixed(1)}% (${equilibriumLedger.status})`
+    );
     return;
   }
 
@@ -1814,6 +1969,7 @@ function main() {
   console.log(`   - Report: ${path.join(outputDir, 'kardashev-report.md')}`);
   console.log(`   - Governance playbook: ${path.join(outputDir, 'governance-playbook.md')}`);
   console.log(`   - Telemetry: ${path.join(outputDir, 'kardashev-telemetry.json')}`);
+  console.log(`   - Equilibrium ledger: ${path.join(outputDir, 'kardashev-equilibrium-ledger.json')}`);
   console.log(
     `   - Energy Monte Carlo breach: ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% (tolerance ${(energyMonteCarlo.tolerance * 100).toFixed(2)}%).`
   );

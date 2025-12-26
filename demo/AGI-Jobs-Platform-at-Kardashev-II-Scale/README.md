@@ -120,6 +120,7 @@ flowchart LR
 - `config/` — manifest, fabric topology, energy feeds, and mission lattice JSON.
 - `scripts/` — TypeScript automation for orchestration and CI enforcement.
 - `output/` — generated ledgers, dashboards-in-waiting, and mermaid sources.
+- `output/kardashev-equilibrium-ledger.json` — equilibrium scoring across energy, allocation, welfare, logistics, and compute fabrics.
 - `ui/` — static dashboards consuming the latest artefacts.
 - `k2-stellar-demo/`, `stellar-civilization-lattice/` — specialised sub-demos with their own manifests and CI rituals.
 - `run-demo.cjs`, `index.html` — launchers for the operator experience.

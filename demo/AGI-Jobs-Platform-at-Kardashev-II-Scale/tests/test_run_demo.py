@@ -45,6 +45,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     governance = tmp_path / "governance-playbook.md"
     telemetry = tmp_path / "kardashev-telemetry.json"
     stability_ledger = tmp_path / "kardashev-stability-ledger.json"
+    equilibrium_ledger = tmp_path / "kardashev-equilibrium-ledger.json"
     owner_proof = tmp_path / "kardashev-owner-proof.json"
     task_hierarchy = tmp_path / "kardashev-task-hierarchy.mmd"
     mermaid_map = tmp_path / "kardashev-mermaid.mmd"
@@ -56,6 +57,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
         governance,
         telemetry,
         stability_ledger,
+        equilibrium_ledger,
         owner_proof,
         task_hierarchy,
         mermaid_map,
@@ -110,6 +112,13 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert owner_payload["verification"]["unstoppableScore"] >= 0
     assert owner_payload["secondaryVerification"]["matchesPrimaryScore"] is True
     assert owner_payload["hashes"]["transactionSet"].startswith("sha256:")
+
+    equilibrium_payload = json.loads(equilibrium_ledger.read_text())
+    assert equilibrium_payload["overallScore"] >= 0
+    assert equilibrium_payload["components"]["energy"]["freeEnergyMarginPct"] > 0
+    assert 0 <= equilibrium_payload["components"]["allocation"]["strategyStability"] <= 1
+    assert 0 <= equilibrium_payload["components"]["welfare"]["coalitionStability"] <= 1
+    assert equilibrium_payload["components"]["compute"]["averageAvailabilityPct"] >= 0
 
     telemetry_energy = telemetry_payload["energy"]
     assert telemetry_energy["utilisationPct"] > 0
