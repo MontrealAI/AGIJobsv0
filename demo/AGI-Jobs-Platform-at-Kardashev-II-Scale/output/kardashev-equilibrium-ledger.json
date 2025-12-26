@@ -53,6 +53,38 @@
     "logisticsNashWelfare": 0.985,
     "coalitionStability": 0.8996
   },
+  "pathways": [
+    {
+      "title": "Thermodynamic headroom",
+      "status": "needs-action",
+      "rationale": "Free energy 40.0% · Hamiltonian 70.0%",
+      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%."
+    },
+    {
+      "title": "Nash deviation control",
+      "status": "on-track",
+      "rationale": "Deviation incentive 12.1% · strategy 87.9%",
+      "action": "Keep incentive gradients aligned with Nash stability targets."
+    },
+    {
+      "title": "Sentient coalition balance",
+      "status": "on-track",
+      "rationale": "Coalition 90.0% · inequality 5.3%",
+      "action": "Continue cooperative reward rotations to sustain coalition stability."
+    },
+    {
+      "title": "Logistics game-theory slack",
+      "status": "on-track",
+      "rationale": "Slack 99.3% · entropy 1.00",
+      "action": "Maintain corridor utilisation within the equilibrium band."
+    },
+    {
+      "title": "Compute quorum resilience",
+      "status": "on-track",
+      "rationale": "Availability 98.2% · failover ok",
+      "action": "Sustain quorum failover coverage and monitor deviation drift."
+    }
+  ],
   "recommendations": [
     "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%."
   ]

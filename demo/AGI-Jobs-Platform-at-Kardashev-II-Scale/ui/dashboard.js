@@ -177,6 +177,15 @@ function renderEquilibriumUnavailable(reason) {
     components.appendChild(li);
   }
 
+  const pathways = document.querySelector("#equilibrium-pathways");
+  if (pathways) {
+    pathways.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Equilibrium pathways pending telemetry refresh.";
+    li.classList.add("status-warn");
+    pathways.appendChild(li);
+  }
+
   const recommendations = document.querySelector("#equilibrium-recommendations");
   if (recommendations) {
     recommendations.innerHTML = "";
@@ -1283,8 +1292,9 @@ function renderSettlement(settlement, verification) {
 function renderEquilibriumLedger(ledger) {
   const summary = document.querySelector("#equilibrium-summary");
   const componentsList = document.querySelector("#equilibrium-components");
+  const pathwaysList = document.querySelector("#equilibrium-pathways");
   const recommendationsList = document.querySelector("#equilibrium-recommendations");
-  if (!summary || !componentsList || !recommendationsList) return;
+  if (!summary || !componentsList || !pathwaysList || !recommendationsList) return;
 
   if (!ledger) {
     renderEquilibriumUnavailable("Missing ledger payload.");
@@ -1328,6 +1338,22 @@ function renderEquilibriumLedger(ledger) {
     li.classList.add(score >= 0.9 ? "status-ok" : score >= 0.8 ? "status-warn" : "status-fail");
     componentsList.appendChild(li);
   });
+
+  pathwaysList.innerHTML = "";
+  if (!ledger.pathways || ledger.pathways.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No equilibrium pathways defined.";
+    li.classList.add("status-warn");
+    pathwaysList.appendChild(li);
+  } else {
+    ledger.pathways.forEach((pathway) => {
+      const li = document.createElement("li");
+      const status = pathway.status === "on-track" ? "status-ok" : "status-warn";
+      li.innerHTML = `<strong>${pathway.title}</strong> — ${pathway.rationale}<br /><span>${pathway.action}</span>`;
+      li.classList.add(status);
+      pathwaysList.appendChild(li);
+    });
+  }
 
   recommendationsList.innerHTML = "";
   if (!ledger.recommendations || ledger.recommendations.length === 0) {
