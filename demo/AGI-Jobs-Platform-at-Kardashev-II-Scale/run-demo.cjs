@@ -323,6 +323,14 @@ function computeJainIndex(values) {
   return Math.min(1, Math.max(0, rawIndex));
 }
 
+function computeHerfindahlIndex(weights) {
+  if (!weights.length) {
+    return 0;
+  }
+  const rawIndex = weights.reduce((sum, weight) => sum + weight * weight, 0);
+  return clamp01(rawIndex);
+}
+
 function computeGiniIndex(values) {
   if (!values.length) {
     return 0;
@@ -395,6 +403,8 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     weights.reduce((sum, weight, idx) => sum + Math.abs(weight - (normalizedPayoffs[idx] ?? 0)), 0) / 2;
   const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
+  const concentrationIndex = computeHerfindahlIndex(weights);
+  const diversificationScore = clamp01(1 - concentrationIndex);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
   const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
@@ -406,6 +416,8 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     replicatorDrift,
     replicatorStability,
     jainIndex,
+    concentrationIndex,
+    diversificationScore,
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
@@ -1073,6 +1085,8 @@ function buildStabilityLedger({
     shardMetrics.reduce((sum, metric) => sum + metric.resilience, 0) / Math.max(1, shardMetrics.length);
   const resilienceOk = averageResilience >= 0.985;
   const fairnessOk = allocationPolicy.fairnessIndex >= 0.85 && allocationPolicy.jainIndex >= 0.85;
+  const concentrationIndex = allocationPolicy.concentrationIndex ?? 0;
+  const diversificationOk = concentrationIndex <= 0.3;
   const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
     ? allocationPolicy.replicatorStability
     : allocationPolicy.strategyStability;
@@ -1124,6 +1138,13 @@ function buildStabilityLedger({
       ).toFixed(1)}%`,
     },
     {
+      title: 'Allocation diversification',
+      status: diversificationOk,
+      evidence: `HHI ${concentrationIndex.toFixed(3)} · diversification ${(allocationPolicy.diversificationScore * 100).toFixed(
+        1
+      )}%`,
+    },
+    {
       title: 'Replicator equilibrium',
       status: equilibriumOk,
       evidence: `Equilibrium ${(equilibriumScore * 100).toFixed(1)}% · drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(
@@ -1168,6 +1189,15 @@ function buildStabilityLedger({
       evidence: `Entropy ${(allocationPolicy.allocationEntropy || 0).toFixed(2)} · Gibbs ${
         allocationPolicy.gibbsPotential
       }`,
+    });
+  }
+  if (!diversificationOk) {
+    alerts.push({
+      title: 'Allocation concentration spike',
+      severity: 'moderate',
+      evidence: `HHI ${concentrationIndex.toFixed(3)} · diversification ${(allocationPolicy.diversificationScore * 100).toFixed(
+        1
+      )}%`,
     });
   }
   if (!equilibriumOk) {
@@ -1303,6 +1333,9 @@ function buildEquilibriumLedger({
   if (allocationPolicy.deviationIncentive > 0.2) {
     recommendations.push('Reduce deviation incentives to reinforce Nash equilibrium adherence.');
   }
+  if ((allocationPolicy.concentrationIndex ?? 0) > 0.3) {
+    recommendations.push('Reduce allocation concentration by broadening energy weights across shards.');
+  }
   if (sentientWelfare.inequalityIndex > 0.3) {
     recommendations.push('Redistribute cooperative rewards to curb inequality across federations.');
   }
@@ -1343,6 +1376,15 @@ function buildEquilibriumLedger({
         allocationPolicy.deviationIncentive <= 0.2
           ? 'Keep incentive gradients aligned with Nash stability targets.'
           : 'Tune reward weights to lower deviation incentives and raise strategy stability.',
+    },
+    {
+      title: 'Allocation diversification',
+      status: (allocationPolicy.concentrationIndex ?? 0) <= 0.3 ? 'on-track' : 'needs-action',
+      rationale: `HHI ${(allocationPolicy.concentrationIndex ?? 0).toFixed(3)} · diversification ${(allocationPolicy.diversificationScore * 100).toFixed(1)}%`,
+      action:
+        (allocationPolicy.concentrationIndex ?? 0) <= 0.3
+          ? 'Maintain diversified allocation weights to avoid concentration risk.'
+          : 'Rebalance allocations to reduce concentration risk below the 0.30 HHI threshold.',
     },
     {
       title: 'Sentient coalition balance',
@@ -1392,6 +1434,8 @@ function buildEquilibriumLedger({
         deviationIncentive: round(allocationPolicy.deviationIncentive, 4),
         nashProduct: round(allocationPolicy.nashProduct, 4),
         jainIndex: round(allocationPolicy.jainIndex, 4),
+        concentrationIndex: round(allocationPolicy.concentrationIndex, 4),
+        diversificationScore: round(allocationPolicy.diversificationScore, 4),
         gibbsPotential: round(allocationPolicy.gibbsPotential, 4),
       },
       welfare: {
@@ -1918,6 +1962,9 @@ function main() {
   );
   reportLines.push(
     `- **Strategy Stability:** ${(allocationPolicy.strategyStability * 100).toFixed(1)}% (deviation incentive ${(allocationPolicy.deviationIncentive * 100).toFixed(1)}%; Jain fairness ${(allocationPolicy.jainIndex * 100).toFixed(1)}%).`
+  );
+  reportLines.push(
+    `- **Allocation Diversification:** ${(allocationPolicy.diversificationScore * 100).toFixed(1)}% (HHI ${(allocationPolicy.concentrationIndex ?? 0).toFixed(3)}).`
   );
   reportLines.push(
     `- **Replicator Equilibrium:** ${(allocationPolicy.replicatorStability * 100).toFixed(1)}% stability (drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(3)}).`
