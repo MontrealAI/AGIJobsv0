@@ -23,6 +23,7 @@
 * Bridge latency tolerance (120s): true
 * Settlement finality 5.23 min (max 10.00 min) · slippage threshold 75 bps.
 * Logistics corridors 3 active — avg reliability 98.50% · min buffer 14.00d · watchers 9 (nominal).
+* Logistics equilibrium: Hamiltonian 98.5% · entropy 1.097 · game-theory slack 99.3%.
 * Mission unstoppable 94.44% across 3 programmes (dependencies resolved true).
 * Mission advisories: dyson-swarm autonomy exceeds max 7800 bps
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).

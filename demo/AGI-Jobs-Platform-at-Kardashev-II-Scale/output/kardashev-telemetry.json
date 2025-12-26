@@ -753,13 +753,23 @@
       ],
       "totalEnergyMwh": 363000
     },
+    "equilibrium": {
+      "hamiltonian": 0.045,
+      "hamiltonianStability": 0.985,
+      "entropy": 1.0968,
+      "entropyRatio": 0.9984,
+      "nashWelfare": 0.985,
+      "gameTheorySlack": 0.9929,
+      "gibbsFreeEnergyMwh": 8.85
+    },
     "warnings": [],
     "verification": {
       "reliabilityOk": true,
       "bufferOk": true,
       "utilisationOk": true,
       "watchersOk": true,
-      "autonomyOk": true
+      "autonomyOk": true,
+      "equilibriumOk": true
     }
   },
   "compute": {
@@ -1702,9 +1712,12 @@
       "utilisationOk": true,
       "watchersOk": true,
       "autonomyOk": true,
+      "equilibriumOk": true,
       "minimumBufferDays": 14,
       "averageReliabilityPct": 0.985,
-      "averageUtilisationPct": 0.82
+      "averageUtilisationPct": 0.82,
+      "hamiltonianStability": 0.985,
+      "gameTheorySlack": 0.9929
     },
     "compute": {
       "tolerancePct": 0.75,

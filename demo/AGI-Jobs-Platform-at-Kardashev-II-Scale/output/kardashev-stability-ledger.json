@@ -180,7 +180,7 @@
       "severity": "high",
       "status": true,
       "weight": 0.8,
-      "evidence": "avg reliability 98.50% · min buffer 14.00d · utilisation 82.00% · watchers 9"
+      "evidence": "avg reliability 98.50% · min buffer 14.00d · utilisation 82.00% · Hamiltonian 98.5% · watchers 9"
     },
     {
       "id": "energy-margin",
