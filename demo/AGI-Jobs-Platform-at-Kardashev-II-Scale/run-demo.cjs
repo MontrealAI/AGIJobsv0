@@ -980,7 +980,14 @@ function validateTaskLattice(taskLattice) {
   }
 }
 
-function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy, dominanceScore, sentinelFindings }) {
+function buildStabilityLedger({
+  shardMetrics,
+  energyMonteCarlo,
+  allocationPolicy,
+  dominanceScore,
+  sentinelFindings,
+  sentientWelfare,
+}) {
   const energyOk = energyMonteCarlo.withinTolerance && energyMonteCarlo.maintainsBuffer;
   const averageResilience =
     shardMetrics.reduce((sum, metric) => sum + metric.resilience, 0) / Math.max(1, shardMetrics.length);
@@ -993,6 +1000,9 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
     (clamp01(allocationPolicy.strategyStability) + clamp01(replicatorStability)) / 2
   );
   const equilibriumOk = equilibriumScore >= 0.85;
+  const sentientEquilibrium = clamp01(sentientWelfare?.equilibriumScore ?? 0);
+  const sentientCoalition = clamp01(sentientWelfare?.coalitionStability ?? 0);
+  const sentientWelfareOk = sentientEquilibrium >= 0.85 && sentientCoalition >= 0.8;
   const sentinelOk = sentinelFindings.every((incident) => incident.severity !== 'high');
   const energyScore = energyOk
     ? 1
@@ -1003,9 +1013,10 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
       );
   const compositeScore = clamp01(
     round(
-      0.4 * energyScore +
-        0.3 * equilibriumScore +
-        0.3 * clamp01(dominanceScore / 100),
+      0.35 * energyScore +
+        0.25 * equilibriumScore +
+        0.2 * clamp01(dominanceScore / 100) +
+        0.2 * sentientEquilibrium,
       4
     )
   );
@@ -1038,6 +1049,13 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
       evidence: `Equilibrium ${(equilibriumScore * 100).toFixed(1)}% · drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(
         3
       )}`,
+    },
+    {
+      title: 'Sentient welfare equilibrium',
+      status: sentientWelfareOk,
+      evidence: `Equilibrium ${(sentientEquilibrium * 100).toFixed(1)}% · coalition ${(sentientCoalition * 100).toFixed(
+        1
+      )}%`,
     },
     {
       title: 'Sentinel advisories',
@@ -1081,6 +1099,15 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
       ).toFixed(3)}`,
     });
   }
+  if (!sentientWelfareOk) {
+    alerts.push({
+      title: 'Sentient welfare imbalance',
+      severity: 'moderate',
+      evidence: `Equilibrium ${(sentientEquilibrium * 100).toFixed(1)}% · coalition ${(
+        sentientCoalition * 100
+      ).toFixed(1)}%`,
+    });
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -1111,6 +1138,13 @@ function buildStabilityLedger({ shardMetrics, energyMonteCarlo, allocationPolicy
           explanation: `Replicator stability ${(replicatorStability * 100).toFixed(
             1
           )}% with drift ${(allocationPolicy.replicatorDrift ?? 0).toFixed(3)}.`,
+        },
+        {
+          method: 'Sentient welfare equilibrium',
+          score: sentientEquilibrium,
+          explanation: `Sentient welfare equilibrium ${(sentientEquilibrium * 100).toFixed(
+            1
+          )}% with coalition stability ${(sentientCoalition * 100).toFixed(1)}%.`,
         },
         {
           method: 'Dominance continuity',
@@ -1646,6 +1680,7 @@ function main() {
       allocationPolicy,
       dominanceScore,
       sentinelFindings,
+      sentientWelfare,
     });
     const ownerProof = buildOwnerProof({
       fabric,
