@@ -1309,6 +1309,9 @@ function buildEquilibriumLedger({
   if (gameTheorySlack < 0.85) {
     recommendations.push('Rebalance corridor utilization to lift logistics game-theory slack above 85%.');
   }
+  if (averageUtilisation > 0 && entropyRatio < 0.9) {
+    recommendations.push('Raise logistics entropy ratio above 0.90 by smoothing corridor utilization bands.');
+  }
   if (!computeFabric.failoverWithinQuorum) {
     recommendations.push('Expand compute failover capacity before scaling autonomy.');
   }
@@ -1478,15 +1481,21 @@ function buildEquilibriumActionPath({
   });
 
   const averageUtilisation = logistics?.verification?.averageUtilisationPct ?? 0;
-  const logisticsNeeds = averageUtilisation > 0 && Math.abs(averageUtilisation - 0.75) > 0.1;
-  const entropyRatio = clamp01(
-    -(averageUtilisation * Math.log(Math.max(averageUtilisation, 1e-6)) +
-      (1 - averageUtilisation) * Math.log(Math.max(1 - averageUtilisation, 1e-6))) / Math.log(2)
-  );
+  const hasUtilisation = Number.isFinite(averageUtilisation) && averageUtilisation > 0;
+  const entropyRatio = hasUtilisation
+    ? clamp01(
+        -(averageUtilisation * Math.log(Math.max(averageUtilisation, 1e-6)) +
+          (1 - averageUtilisation) * Math.log(Math.max(1 - averageUtilisation, 1e-6))) /
+          Math.log(2)
+      )
+    : null;
+  const utilisationOk = hasUtilisation && Math.abs(averageUtilisation - 0.75) <= 0.1;
+  const entropyOk = entropyRatio !== null && entropyRatio >= 0.9;
+  const logisticsNeeds = !hasUtilisation || !utilisationOk || !entropyOk;
   steps.push({
     title: 'Logistics entropy smoothing',
     status: logisticsNeeds ? 'needs-action' : 'on-track',
-    target: 'Utilisation band 65–85% with entropy ratio above 0.9.',
+    target: 'Utilisation band 65–85% with entropy ratio ≥ 0.90.',
     rationale: `Utilisation ${(averageUtilisation * 100).toFixed(1)}% · entropy ${
       Number.isFinite(entropyRatio) ? entropyRatio.toFixed(2) : 'n/a'
     }`,
