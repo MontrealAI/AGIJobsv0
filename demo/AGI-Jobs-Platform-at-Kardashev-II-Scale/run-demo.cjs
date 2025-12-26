@@ -1233,6 +1233,15 @@ function buildEquilibriumLedger({
     recommendations.push('Expand compute failover capacity before scaling autonomy.');
   }
 
+  const actionPath = buildEquilibriumActionPath({
+    energyMonteCarlo,
+    allocationPolicy,
+    sentientWelfare,
+    logistics,
+    computeFabric,
+    verification,
+  });
+
   const pathways = [
     {
       title: 'Thermodynamic headroom',
@@ -1334,8 +1343,96 @@ function buildEquilibriumLedger({
       coalitionStability: round(sentientWelfare.coalitionStability, 4),
     },
     pathways,
+    actionPath,
     recommendations,
   };
+}
+
+function buildEquilibriumActionPath({
+  energyMonteCarlo,
+  allocationPolicy,
+  sentientWelfare,
+  logistics,
+  computeFabric,
+  verification,
+}) {
+  const steps = [];
+  const energyNeeds =
+    energyMonteCarlo.freeEnergyMarginPct < 0.08 ||
+    energyMonteCarlo.hamiltonianStability < 0.9 ||
+    !energyMonteCarlo.maintainsBuffer;
+  steps.push({
+    title: 'Thermodynamic headroom reset',
+    status: energyNeeds ? 'needs-action' : 'on-track',
+    target: 'Free energy margin ≥ 8% and Hamiltonian stability ≥ 90%.',
+    rationale: `Gibbs free energy ${energyMonteCarlo.gibbsFreeEnergyGj.toFixed(
+      1
+    )} GJ · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}%`,
+    action:
+      'Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.',
+  });
+
+  const deviationNeeds =
+    allocationPolicy.deviationIncentive > 0.2 || allocationPolicy.strategyStability < 0.85;
+  steps.push({
+    title: 'Nash deviation suppression',
+    status: deviationNeeds ? 'needs-action' : 'on-track',
+    target: 'Deviation incentive ≤ 20% with strategy stability ≥ 85%.',
+    rationale: `Deviation ${(allocationPolicy.deviationIncentive * 100).toFixed(
+      1
+    )}% · Nash ${(allocationPolicy.nashProduct * 100).toFixed(1)}%`,
+    action:
+      'Retune reward weights with a Boltzmann temperature drop and align shard payoffs to reduce exploitable gradients.',
+  });
+
+  const welfareNeeds = sentientWelfare.inequalityIndex > 0.3 || sentientWelfare.coalitionStability < 0.85;
+  steps.push({
+    title: 'Coalition welfare equilibration',
+    status: welfareNeeds ? 'needs-action' : 'on-track',
+    target: 'Coalition stability ≥ 85% and inequality ≤ 30%.',
+    rationale: `Coalition ${(sentientWelfare.coalitionStability * 100).toFixed(
+      1
+    )}% · Gini ${(sentientWelfare.inequalityIndex * 100).toFixed(1)}%`,
+    action:
+      'Redistribute cooperative rewards and re-weight federation incentives to preserve Pareto-optimal welfare.',
+  });
+
+  const averageUtilisation = logistics?.verification?.averageUtilisationPct ?? 0;
+  const logisticsNeeds = averageUtilisation > 0 && Math.abs(averageUtilisation - 0.75) > 0.1;
+  const entropyRatio = clamp01(
+    -(averageUtilisation * Math.log(Math.max(averageUtilisation, 1e-6)) +
+      (1 - averageUtilisation) * Math.log(Math.max(1 - averageUtilisation, 1e-6))) / Math.log(2)
+  );
+  steps.push({
+    title: 'Logistics entropy smoothing',
+    status: logisticsNeeds ? 'needs-action' : 'on-track',
+    target: 'Utilisation band 65–85% with entropy ratio above 0.9.',
+    rationale: `Utilisation ${(averageUtilisation * 100).toFixed(1)}% · entropy ${
+      Number.isFinite(entropyRatio) ? entropyRatio.toFixed(2) : 'n/a'
+    }`,
+    action:
+      'Shift corridor quotas toward the 0.75 equilibrium band to maximize logistics entropy and game-theory slack.',
+  });
+
+  const computeNeeds = !computeFabric.failoverWithinQuorum;
+  steps.push({
+    title: 'Compute quorum resilience',
+    status: computeNeeds ? 'needs-action' : 'on-track',
+    target: 'Failover quorum satisfied with deviation under tolerance.',
+    rationale: `Failover ${computeFabric.failoverWithinQuorum ? 'ok' : 'risk'} · deviation ${verification.compute.deviationPct.toFixed(
+      2
+    )}%`,
+    action:
+      'Provision additional failover capacity and validate latency budgets before expanding autonomy.',
+  });
+
+  const actionable = steps.filter((step) => step.status === 'needs-action');
+  const path = actionable.length ? actionable : steps.map((step) => ({ ...step, status: 'on-track' }));
+
+  return path.map((step, index) => ({
+    rank: index + 1,
+    ...step,
+  }));
 }
 
 function buildOwnerProof({ fabric, telemetry, allocationPolicy, dominanceScore }) {

@@ -121,6 +121,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert equilibrium_payload["components"]["compute"]["averageAvailabilityPct"] >= 0
     assert equilibrium_payload["pathways"]
     assert equilibrium_payload["pathways"][0]["title"]
+    assert equilibrium_payload["actionPath"]
+    assert equilibrium_payload["actionPath"][0]["title"]
+    assert equilibrium_payload["actionPath"][0]["target"]
 
     telemetry_energy = telemetry_payload["energy"]
     assert telemetry_energy["utilisationPct"] > 0
