@@ -44,6 +44,28 @@ def test_simulation_policy_auto_generates_action() -> None:
     assert "build_dyson_nodes" in orchestrator._last_simulation_action["action"]
 
 
+def test_simulation_operator_action_respects_payload() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    assert orchestrator.simulation is not None
+
+    asyncio.run(
+        orchestrator._handle_simulation_action(
+            {
+                "policy": "operator",
+                "action_payload": {
+                    "build_dyson_nodes": 4.0,
+                    "stimulus": 1.0,
+                    "green_shift": 2.0,
+                },
+            }
+        )
+    )
+
+    assert orchestrator._last_simulation_action is not None
+    assert orchestrator._last_simulation_action["policy"] == "operator"
+    assert orchestrator._last_simulation_action["action"]["build_dyson_nodes"] == 4.0
+
+
 def test_policy_action_accounts_for_compute_scarcity() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
     low_coordination_state = SimulationState(

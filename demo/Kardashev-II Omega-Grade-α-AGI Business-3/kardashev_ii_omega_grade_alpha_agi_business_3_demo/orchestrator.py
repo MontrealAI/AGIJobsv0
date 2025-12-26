@@ -717,7 +717,8 @@ class Orchestrator:
             return
         policy = payload.get("policy")
         action_payload = payload.get("action_payload")
-        if isinstance(policy, str):
+        auto_policy = isinstance(policy, str) and policy.lower() in {"auto", "autonomous"}
+        if auto_policy and action_payload is None:
             async with self._simulation_lock:
                 if self._latest_simulation_state is None:
                     state = self.simulation.tick(hours=0.0)
