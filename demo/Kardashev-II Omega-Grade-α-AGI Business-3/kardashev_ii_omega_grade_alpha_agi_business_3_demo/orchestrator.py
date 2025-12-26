@@ -666,16 +666,7 @@ class Orchestrator:
             normalized[field] = max(0.0, min(10.0, value))
         return normalized
 
-    def _build_policy_action(self, state: SimulationState) -> Dict[str, float]:
-        """Derive a cooperative policy action from thermodynamic signals.
-
-        We use a Nash-style bargaining split between prosperity and sustainability
-        gaps, and a Boltzmann weighting (statistical physics) to soften allocation
-        under coordination stress. Gibbs free energy and the Hamiltonian magnitude
-        shape the energy expansion push to keep the demo grounded in Kardashev-II
-        scaling dynamics.
-        """
-
+    def _compute_policy_signals(self, state: SimulationState) -> Dict[str, float]:
         prosperity_gap = max(0.0, 1.0 - state.prosperity_index)
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
@@ -695,21 +686,91 @@ class Orchestrator:
             sustainability_share = sustainability_weight / total_weight
         gibbs_drive = max(0.0, state.free_energy)
         hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
-        energy_action = (0.5 + 3.0 * energy_price_pressure + 2.0 * compute_price_pressure + 4.0 * gibbs_drive) * (
-            1.0 + 0.5 * hamiltonian_pressure
-        )
         stability_factor = (0.7 + 0.3 * game_theory_slack) * max(0.4, 1.0 - 0.2 * compute_price_pressure)
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         compute_boost = 1.0 + 0.4 * compute_price_pressure
-        stimulus = 5.0 * prosperity_share * coordination_damping * compute_boost
-        green_shift = 5.0 * sustainability_share * coordination_damping * compute_boost
-        return self._normalize_simulation_action(
+        return {
+            "prosperity_gap": prosperity_gap,
+            "sustainability_gap": sustainability_gap,
+            "coordination_gap": coordination_gap,
+            "game_theory_slack": game_theory_slack,
+            "energy_price_pressure": energy_price_pressure,
+            "compute_price_pressure": compute_price_pressure,
+            "scarcity_pressure": scarcity_pressure,
+            "temperature": temperature,
+            "prosperity_weight": prosperity_weight,
+            "sustainability_weight": sustainability_weight,
+            "prosperity_share": prosperity_share,
+            "sustainability_share": sustainability_share,
+            "gibbs_drive": gibbs_drive,
+            "hamiltonian_pressure": hamiltonian_pressure,
+            "stability_factor": stability_factor,
+            "coordination_damping": coordination_damping,
+            "compute_boost": compute_boost,
+        }
+
+    def _build_policy_rationale(
+        self,
+        state: SimulationState,
+        action: Dict[str, float],
+        *,
+        policy_source: str,
+        raw_signals: Optional[Dict[str, float]] = None,
+        raw_action: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, float | str]:
+        signals = raw_signals or self._compute_policy_signals(state)
+        intensity = sum(action.values()) / max(len(action), 1)
+        rationale: Dict[str, float | str] = {
+            **signals,
+            "action_intensity": intensity,
+            "policy_source": policy_source,
+        }
+        if raw_action:
+            for key, value in raw_action.items():
+                rationale[f"{key}_raw"] = value
+        return rationale
+
+    def _build_policy_decision(self, state: SimulationState) -> Dict[str, Dict[str, float] | Dict[str, float | str]]:
+        """Derive a cooperative policy action from thermodynamic signals.
+
+        We use a Nash-style bargaining split between prosperity and sustainability
+        gaps, and a Boltzmann weighting (statistical physics) to soften allocation
+        under coordination stress. Gibbs free energy and the Hamiltonian magnitude
+        shape the energy expansion push to keep the demo grounded in Kardashev-II
+        scaling dynamics.
+        """
+
+        signals = self._compute_policy_signals(state)
+        energy_action = (
+            0.5
+            + 3.0 * signals["energy_price_pressure"]
+            + 2.0 * signals["compute_price_pressure"]
+            + 4.0 * signals["gibbs_drive"]
+        ) * (1.0 + 0.5 * signals["hamiltonian_pressure"])
+        stimulus = 5.0 * signals["prosperity_share"] * signals["coordination_damping"] * signals["compute_boost"]
+        green_shift = 5.0 * signals["sustainability_share"] * signals["coordination_damping"] * signals["compute_boost"]
+        normalized_action = self._normalize_simulation_action(
             {
-                "build_dyson_nodes": energy_action * stability_factor,
+                "build_dyson_nodes": energy_action * signals["stability_factor"],
                 "stimulus": stimulus,
                 "green_shift": green_shift,
             }
         )
+        rationale = self._build_policy_rationale(
+            state,
+            normalized_action,
+            policy_source="autonomous",
+            raw_signals=signals,
+            raw_action={
+                "energy_action": energy_action,
+                "stimulus": stimulus,
+                "green_shift": green_shift,
+            },
+        )
+        return {"action": normalized_action, "rationale": rationale}
+
+    def _build_policy_action(self, state: SimulationState) -> Dict[str, float]:
+        return self._build_policy_decision(state)["action"]
 
     async def _handle_simulation_action(self, payload: Dict[str, Any]) -> None:
         if self.simulation is None:
@@ -718,13 +779,16 @@ class Orchestrator:
         policy = payload.get("policy")
         action_payload = payload.get("action_payload")
         auto_policy = isinstance(policy, str) and policy.lower() in {"auto", "autonomous"}
+        rationale: Optional[Dict[str, float | str]] = None
         if auto_policy and action_payload is None:
             async with self._simulation_lock:
                 if self._latest_simulation_state is None:
                     state = self.simulation.tick(hours=0.0)
                     self._apply_simulation_state(state, event="simulation_probe")
                 assert self._latest_simulation_state is not None
-                action_payload = self._build_policy_action(self._latest_simulation_state)
+                decision = self._build_policy_decision(self._latest_simulation_state)
+                action_payload = decision["action"]
+                rationale = decision["rationale"]
         if not isinstance(action_payload, dict):
             self._warning("simulation_action_missing_payload")
             return
@@ -735,10 +799,17 @@ class Orchestrator:
         async with self._simulation_lock:
             state = self.simulation.apply_action(normalized)
             self._apply_simulation_state(state, event="simulation_action_applied")
+            if rationale is None:
+                rationale = self._build_policy_rationale(
+                    self._latest_simulation_state,
+                    normalized,
+                    policy_source=str(policy or "operator"),
+                )
         self._last_simulation_action = {
             "action": normalized,
             "policy": policy,
             "applied_at": datetime.now(timezone.utc).isoformat(),
+            "rationale": rationale,
         }
         await self._persist_status_snapshot()
 
@@ -753,7 +824,8 @@ class Orchestrator:
                 action: Dict[str, float] | None = None
                 async with self._simulation_lock:
                     if self._latest_simulation_state is not None:
-                        action = self._build_policy_action(self._latest_simulation_state)
+                        decision = self._build_policy_decision(self._latest_simulation_state)
+                        action = decision["action"]
                         if action:
                             state = self.simulation.apply_action(action)
                             self._apply_simulation_state(state, event="simulation_policy_action")
@@ -761,6 +833,7 @@ class Orchestrator:
                                 "action": action,
                                 "policy": "autonomous",
                                 "applied_at": datetime.now(timezone.utc).isoformat(),
+                                "rationale": decision["rationale"],
                             }
                 if not action:
                     await asyncio.sleep(interval)
@@ -1338,6 +1411,11 @@ class Orchestrator:
                 "validator_reveal_window_seconds": governance.validator_reveal_window.total_seconds(),
             },
             "simulation": simulation_state,
+            "policy": {
+                "auto_actions_enabled": self.config.auto_policy_actions,
+                "action_interval_seconds": self.config.policy_action_interval_seconds,
+                "last_action": self._last_simulation_action,
+            },
             "scheduler": {
                 "pending_events": len(pending_events),
                 "pending_by_type": dict(pending_counts),
