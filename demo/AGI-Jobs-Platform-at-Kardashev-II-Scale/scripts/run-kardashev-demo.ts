@@ -1204,6 +1204,17 @@ type AllocationPolicy = {
   allocations: AllocationRecommendation[];
 };
 
+type SentientWelfareSummary = {
+  totalAgents: number;
+  federationCount: number;
+  freeEnergyPerAgentGj: number;
+  cooperationIndex: number;
+  inequalityIndex: number;
+  paretoSlack: number;
+  equilibriumScore: number;
+  welfarePotential: number;
+};
+
 function percentile(values: number[], ratio: number): number {
   if (values.length === 0) {
     return 0;
@@ -1250,6 +1261,22 @@ function computeJainIndex(values: number[]): number {
   }
   const rawIndex = (sum * sum) / (values.length * sumSquares);
   return Math.min(1, Math.max(0, rawIndex));
+}
+
+function computeGiniIndex(values: number[]): number {
+  if (!values.length) {
+    return 0;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const total = sorted.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return 0;
+  }
+  let weightedSum = 0;
+  for (let i = 0; i < sorted.length; i += 1) {
+    weightedSum += (2 * i - sorted.length + 1) * sorted[i];
+  }
+  return Math.min(1, Math.max(0, weightedSum / (sorted.length * total)));
 }
 
 function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
@@ -1425,6 +1452,51 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     fairnessIndex,
     gibbsPotential,
     allocations,
+  };
+}
+
+function buildSentientWelfare({
+  totalAgents,
+  federationCount,
+  allocationPolicy,
+  energyMonteCarlo,
+}: {
+  totalAgents: number;
+  federationCount: number;
+  allocationPolicy: AllocationPolicy;
+  energyMonteCarlo: MonteCarloSummary;
+}): SentientWelfareSummary {
+  const payoffs = allocationPolicy.allocations.map((allocation) => allocation.payoff);
+  const inequalityIndex = computeGiniIndex(payoffs);
+  const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy.strategyStability;
+  const cooperationIndex = clamp01(
+    0.45 * energyMonteCarlo.gameTheorySlack +
+      0.35 * allocationPolicy.strategyStability +
+      0.2 * replicatorStability
+  );
+  const paretoSlack = clamp01(1 - allocationPolicy.deviationIncentive);
+  const equilibriumScore = clamp01(
+    0.4 * cooperationIndex + 0.35 * (1 - inequalityIndex) + 0.25 * allocationPolicy.fairnessIndex
+  );
+  const welfarePotential = clamp01(
+    0.4 * (1 - inequalityIndex) +
+      0.3 * allocationPolicy.fairnessIndex +
+      0.3 * energyMonteCarlo.hamiltonianStability
+  );
+  const freeEnergyPerAgentGj =
+    totalAgents > 0 ? round(energyMonteCarlo.gibbsFreeEnergyGj / totalAgents, 6) : 0;
+
+  return {
+    totalAgents,
+    federationCount,
+    freeEnergyPerAgentGj,
+    cooperationIndex,
+    inequalityIndex,
+    paretoSlack,
+    equilibriumScore,
+    welfarePotential,
   };
 }
 
@@ -2657,6 +2729,13 @@ function buildRunbook(
     `* Replicator equilibrium ${(telemetry.energy.allocationPolicy.replicatorStability * 100).toFixed(1)}% · drift ${telemetry.energy.allocationPolicy.replicatorDrift.toFixed(3)}.`
   );
   lines.push(
+    `* Sentient welfare equilibrium ${(telemetry.sentientWelfare.equilibriumScore * 100).toFixed(1)}% · cooperation ${(
+      telemetry.sentientWelfare.cooperationIndex * 100
+    ).toFixed(1)}% · inequality ${(telemetry.sentientWelfare.inequalityIndex * 100).toFixed(
+      1
+    )}% · free energy/agent ${telemetry.sentientWelfare.freeEnergyPerAgentGj.toFixed(6)} GJ.`
+  );
+  lines.push(
     `* Allocation deltas: ${telemetry.energy.allocationPolicy.allocations
       .map((allocation: any) => `${allocation.name} ${allocation.deltaGw >= 0 ? "+" : ""}${allocation.deltaGw.toFixed(2)} GW`)
       .join(" · ")}.`
@@ -3563,6 +3642,13 @@ function computeTelemetry(
       : (identityTotals.revocations24h / Math.max(identityTotals.totalAgents, 1)) * 1_000_000;
   const revocationWithinTolerance = revocationRatePpm <= identityGlobal.revocationTolerancePpm;
 
+  const sentientWelfare = buildSentientWelfare({
+    totalAgents: identityTotals.totalAgents,
+    federationCount: identityFederations.length,
+    allocationPolicy,
+    energyMonteCarlo,
+  });
+
   const computePlanes = manifest.computeFabrics.orchestrationPlanes.map((plane) => ({
     slug: plane.slug,
     name: plane.name,
@@ -3808,6 +3894,7 @@ function computeTelemetry(
       revocationWithinTolerance,
       federations: identityFederations,
     },
+    sentientWelfare,
     computeFabric: {
       totalCapacityExaflops: totalPlaneCapacity,
       failoverCapacityExaflops,

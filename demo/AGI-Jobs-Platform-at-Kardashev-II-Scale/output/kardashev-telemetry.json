@@ -910,6 +910,16 @@
       }
     ]
   },
+  "sentientWelfare": {
+    "totalAgents": 4480000000,
+    "federationCount": 3,
+    "freeEnergyPerAgentGj": 0.134848,
+    "cooperationIndex": 0.8701843391780725,
+    "inequalityIndex": 0.05252008576816762,
+    "paretoSlack": 0.8789210176765097,
+    "equilibriumScore": 0.9137125816273135,
+    "welfarePotential": 0.8697494672975614
+  },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
     "failoverCapacityExaflops": 44.5,

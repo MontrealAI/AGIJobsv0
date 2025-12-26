@@ -222,6 +222,60 @@ function renderMonteCarloDetails(monteCarlo) {
   }
 }
 
+function renderSentientWelfare(welfare) {
+  const summary = document.querySelector("#sentient-welfare-summary");
+  const details = document.querySelector("#sentient-welfare-details");
+  const status = document.querySelector("#sentient-welfare-status");
+
+  if (!summary || !details || !status) return;
+
+  if (!welfare) {
+    summary.textContent = "Sentient welfare telemetry unavailable.";
+    details.textContent = "Cooperation and equilibrium metrics unavailable.";
+    applyStatus(summary, "status-warn");
+    applyStatus(details, "status-warn");
+    applyStatus(status, "status-warn");
+    status.textContent = "Status unavailable.";
+    return;
+  }
+
+  const populationText = Number.isFinite(welfare.totalAgents)
+    ? `${formatNumber(welfare.totalAgents)} agents`
+    : "Population n/a";
+  const federationText = Number.isFinite(welfare.federationCount)
+    ? `${welfare.federationCount} federations`
+    : "Federations n/a";
+  const freeEnergyText = Number.isFinite(welfare.freeEnergyPerAgentGj)
+    ? `${welfare.freeEnergyPerAgentGj.toFixed(6)} GJ/agent`
+    : "Free energy n/a";
+
+  summary.textContent = `${populationText} · ${federationText} · ${freeEnergyText}`;
+
+  const cooperationText = Number.isFinite(welfare.cooperationIndex)
+    ? `${(welfare.cooperationIndex * 100).toFixed(1)}%`
+    : "n/a";
+  const inequalityText = Number.isFinite(welfare.inequalityIndex)
+    ? `${(welfare.inequalityIndex * 100).toFixed(1)}%`
+    : "n/a";
+  const paretoText = Number.isFinite(welfare.paretoSlack)
+    ? `${(welfare.paretoSlack * 100).toFixed(1)}%`
+    : "n/a";
+  const potentialText = Number.isFinite(welfare.welfarePotential)
+    ? `${(welfare.welfarePotential * 100).toFixed(1)}%`
+    : "n/a";
+
+  details.textContent = `Cooperation ${cooperationText} · inequality ${inequalityText} · Pareto slack ${paretoText} · welfare potential ${potentialText}`;
+
+  if (Number.isFinite(welfare.equilibriumScore)) {
+    const score = welfare.equilibriumScore;
+    status.textContent = `${(score * 100).toFixed(1)}% equilibrium`;
+    applyStatus(status, score >= 0.85 ? "status-ok" : score >= 0.7 ? "status-warn" : "status-fail");
+  } else {
+    status.textContent = "Equilibrium score unavailable.";
+    applyStatus(status, "status-warn");
+  }
+}
+
 function renderReflectionUnavailable(reason) {
   const button = document.querySelector("#reflect-button");
   if (button) {
@@ -337,6 +391,7 @@ function renderMetrics(telemetry) {
     applyStatus(document.querySelector("#energy-monte-carlo-status"), "status-warn");
   }
   renderMonteCarloDetails(monteCarlo);
+  renderSentientWelfare(telemetry?.sentientWelfare);
   setStatusText(
     document.querySelector("#compute-deviation"),
     verification.compute?.withinTolerance === true,
@@ -398,6 +453,17 @@ function renderLegacyMetrics(telemetry) {
   document.querySelector("#monthly-value").textContent = "Legacy telemetry does not report monthly value flow.";
   document.querySelector("#resilience").textContent = `${(averageResilience * 100).toFixed(2)}% resilience (legacy)`;
   document.querySelector("#energy-utilisation").textContent = `${averageUtilisation.toFixed(2)}% utilisation (legacy)`;
+  setTextWithStatus(
+    document.querySelector("#sentient-welfare-summary"),
+    "Sentient welfare unavailable in legacy telemetry.",
+    "status-warn"
+  );
+  setTextWithStatus(
+    document.querySelector("#sentient-welfare-details"),
+    "Run the orchestrator to compute equilibrium guarantees.",
+    "status-warn"
+  );
+  setStatusText(document.querySelector("#sentient-welfare-status"), false, "Legacy data");
 
   const marginElement = document.querySelector("#energy-margin");
   if (marginElement) {
