@@ -558,14 +558,26 @@ function normalizeLegacyAllocationPolicy(telemetry) {
 
 let mermaidInitialised = false;
 
-async function renderMermaidDiagram(path, containerId, renderId) {
+async function renderMermaidDiagram(path, containerId, renderId, inlineSource) {
   const container = document.querySelector(`#${containerId}`);
   if (!container) {
     console.warn(`Mermaid container #${containerId} not found for ${path}`);
     return;
   }
 
-  const source = await fetchText(path);
+  let source = inlineSource;
+  if (!source) {
+    try {
+      source = await fetchText(path);
+    } catch (error) {
+      console.warn(`Mermaid source unavailable for ${path}`, error);
+    }
+  }
+  if (!source) {
+    container.textContent = "Diagram source unavailable — regenerate artefacts or serve the dashboard.";
+    container.classList.add("status-warn");
+    return;
+  }
   const mermaid = await loadMermaid();
   if (!mermaid) {
     container.textContent =
@@ -1349,6 +1361,7 @@ async function bootstrap() {
   const inlineTelemetry = readInlinePayload("__KARDASHEV_TELEMETRY__");
   const inlineLedger = readInlinePayload("__KARDASHEV_LEDGER__");
   const inlineOwnerProof = readInlinePayload("__KARDASHEV_OWNER_PROOF__");
+  const inlineDiagrams = readInlinePayload("__KARDASHEV_DIAGRAMS__");
   const isFileProtocol = window.location.protocol === "file:";
 
   if (isFileProtocol && !inlineTelemetry) {
@@ -1386,9 +1399,24 @@ async function bootstrap() {
     renderOwnerProofUnavailable("Owner proof requires full orchestrator output.");
 
     const diagrams = await Promise.allSettled([
-      renderMermaidDiagram("./output/kardashev-task-hierarchy.mmd", "mission-mermaid", "mission-hierarchy-diagram"),
-      renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram"),
-      renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram"),
+      renderMermaidDiagram(
+        "./output/kardashev-task-hierarchy.mmd",
+        "mission-mermaid",
+        "mission-hierarchy-diagram",
+        inlineDiagrams?.missionHierarchy
+      ),
+      renderMermaidDiagram(
+        "./output/kardashev-mermaid.mmd",
+        "mermaid-container",
+        "kardashev-diagram",
+        inlineDiagrams?.interstellarMap
+      ),
+      renderMermaidDiagram(
+        "./output/kardashev-dyson.mmd",
+        "dyson-container",
+        "dyson-diagram",
+        inlineDiagrams?.dysonThermo
+      ),
     ]);
 
     diagrams.forEach((result, index) => {
@@ -1433,9 +1461,24 @@ async function bootstrap() {
   }
 
   const diagrams = await Promise.allSettled([
-    renderMermaidDiagram("./output/kardashev-task-hierarchy.mmd", "mission-mermaid", "mission-hierarchy-diagram"),
-    renderMermaidDiagram("./output/kardashev-mermaid.mmd", "mermaid-container", "kardashev-diagram"),
-    renderMermaidDiagram("./output/kardashev-dyson.mmd", "dyson-container", "dyson-diagram"),
+    renderMermaidDiagram(
+      "./output/kardashev-task-hierarchy.mmd",
+      "mission-mermaid",
+      "mission-hierarchy-diagram",
+      inlineDiagrams?.missionHierarchy
+    ),
+    renderMermaidDiagram(
+      "./output/kardashev-mermaid.mmd",
+      "mermaid-container",
+      "kardashev-diagram",
+      inlineDiagrams?.interstellarMap
+    ),
+    renderMermaidDiagram(
+      "./output/kardashev-dyson.mmd",
+      "dyson-container",
+      "dyson-diagram",
+      inlineDiagrams?.dysonThermo
+    ),
   ]);
 
   diagrams.forEach((result, index) => {

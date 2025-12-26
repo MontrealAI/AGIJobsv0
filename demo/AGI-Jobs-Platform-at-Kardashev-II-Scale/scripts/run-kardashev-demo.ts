@@ -4581,6 +4581,11 @@ function run() {
   const telemetryInlineJs = `window.__KARDASHEV_TELEMETRY__ = ${JSON.stringify(telemetryWithScenarios)};\n`;
   const ledgerInlineJs = `window.__KARDASHEV_LEDGER__ = ${JSON.stringify(stabilityLedger)};\n`;
   const ownerProofInlineJs = `window.__KARDASHEV_OWNER_PROOF__ = ${JSON.stringify(ownerProof)};\n`;
+  const diagramsInlineJs = `window.__KARDASHEV_DIAGRAMS__ = ${JSON.stringify({
+    missionHierarchy: missionTelemetry.mermaid,
+    interstellarMap: mermaid,
+    dysonThermo: dysonTimeline,
+  })};\n`;
   const monteCarloJson = `${JSON.stringify(telemetry.energy.monteCarlo, null, 2)}\n`;
   const consistencyJson = `${JSON.stringify(consistencyLedger, null, 2)}\n`;
   const energyFeedsJson = `${JSON.stringify(
@@ -4636,6 +4641,7 @@ function run() {
     { suffix: "operator-briefing.md", content: `${operatorBriefing}\n` },
     { suffix: "owner-proof.json", content: ownerProofJson },
     { suffix: "owner-proof.inline.js", content: ownerProofInlineJs },
+    { suffix: "diagrams.inline.js", content: diagramsInlineJs },
   ].map(({ suffix, content }) => ({
     path: join(OUTPUT_DIR, `${OUTPUT_PREFIX}-${suffix}`),
     content,
