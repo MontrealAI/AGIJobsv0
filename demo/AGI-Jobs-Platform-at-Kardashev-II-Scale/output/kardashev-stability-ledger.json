@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9243119266055047,
-    "quorum": false,
-    "summary": "Manual review required for 2 check(s).",
+    "compositeScore": 0.963302752293578,
+    "quorum": true,
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9243119266055047,
+        "score": 0.963302752293578,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.918918918918919,
+        "score": 0.972972972972973,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -34,12 +34,12 @@
       },
       {
         "method": "mission-lattice",
-        "score": 0.9444,
-        "explanation": "Mission unstoppable 94.44% · dependencies resolved · warnings 1."
+        "score": 1,
+        "explanation": "Mission unstoppable 100.00% · dependencies resolved · warnings 0."
       },
       {
         "method": "scenario-sweep",
-        "score": 0.8545256873680519,
+        "score": 0.8529799517797634,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -114,9 +114,9 @@
       "id": "mission-lattice",
       "title": "Mission lattice unstoppable",
       "severity": "high",
-      "status": false,
+      "status": true,
       "weight": 0.85,
-      "evidence": "unstoppable 94.44% · warnings 1"
+      "evidence": "unstoppable 100.00% · warnings 0"
     },
     {
       "id": "guardian-coverage",
@@ -132,7 +132,7 @@
       "severity": "critical",
       "status": true,
       "weight": 1.1,
-      "evidence": "regional 242,000 GW · Dyson 488,800 GW · thermostat 340,200 GW"
+      "evidence": "regional 242,000 GW · Dyson 1,150,000 GW · thermostat 931,500 GW"
     },
     {
       "id": "energy-cross-verification",
@@ -188,7 +188,7 @@
       "severity": "medium",
       "status": true,
       "weight": 0.6,
-      "evidence": "utilisation 57.62% vs permitted 87.50%"
+      "evidence": "utilisation 21.04% vs permitted 87.50%"
     },
     {
       "id": "compute-alignment",
@@ -196,7 +196,7 @@
       "severity": "medium",
       "status": true,
       "weight": 0.7,
-      "evidence": "deviation 0.45% (≤ 0.75%)"
+      "evidence": "deviation 0.00% (≤ 0.75%)"
     },
     {
       "id": "identity-quorum",
@@ -297,12 +297,6 @@
   ],
   "alerts": [
     {
-      "id": "mission-lattice",
-      "title": "Mission lattice unstoppable",
-      "severity": "high",
-      "evidence": "unstoppable 94.44% · warnings 1"
-    },
-    {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
@@ -314,14 +308,14 @@
     "nominal": 6,
     "warning": 4,
     "critical": 1,
-    "averageConfidence": 0.8545256873680519,
+    "averageConfidence": 0.8529799517797634,
     "entries": [
       {
         "id": "energy-demand-surge",
         "title": "20% demand surge vs Dyson safety margin",
         "status": "nominal",
         "confidence": 1,
-        "summary": "Dyson lattice absorbs surge with 129,600 GW spare."
+        "summary": "Dyson lattice absorbs surge with 859,600 GW spare."
       },
       {
         "id": "bridge-failover",
@@ -341,8 +335,8 @@
         "id": "compute-drawdown",
         "title": "Compute drawdown (15%) resilience",
         "status": "warning",
-        "confidence": 0.35033642480450966,
-        "summary": "Deviation 14.62% exceeds tolerance 0.75%."
+        "confidence": 0.33333333333333337,
+        "summary": "Deviation 15.00% exceeds tolerance 0.75%."
       },
       {
         "id": "dyson-phase-slip",
@@ -567,7 +561,7 @@
     "coverageRatio": 1,
     "bridgeFailsafeSeconds": 120,
     "permittedUtilisation": 0.875,
-    "utilisation": 0.5761904761904761,
+    "utilisation": 0.21043478260869566,
     "monteCarloBreachProbability": 0,
     "monteCarloWithinTolerance": true
   }

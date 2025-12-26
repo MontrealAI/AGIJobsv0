@@ -7,18 +7,18 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Universal Dominance Score:** 99.9/100 (targets met across all shards).
 - **Dyson Swarm Progress:** 2669/10000 satellites assembled (26.69% coverage).
 - **Captured Power:** 120,105 MW available for reallocation.
-- **Energy Monte Carlo:** 3.91% breach probability across 256 runs (tolerance 5.00%).
-- **Free Energy Margin:** 13478.69 GW (5.57%) vs 11980.00 GW minimum buffer.
-- **Free Energy Runway:** 0.06 hours of buffer at mean demand.
-- **Entropy Buffer:** 2.69σ thermodynamic headroom; game-theoretic slack 75.7%.
-- **Thermodynamic Reserve:** 48,523,291.36 GJ Gibbs free energy; Hamiltonian stability 50.8% across the sampled phase space.
-- **Gibbs Allocation Temperature:** 0.49 (lower favors resilience-heavy shards); Nash welfare 9.99%.
-- **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.536.
+- **Energy Monte Carlo:** 0.00% breach probability across 256 runs (tolerance 5.00%).
+- **Free Energy Margin:** 923878.69 GW (80.17%) vs 57500.00 GW minimum buffer.
+- **Free Energy Runway:** 4.19 hours of buffer at mean demand.
+- **Entropy Buffer:** 184.24σ thermodynamic headroom; game-theoretic slack 95.5%.
+- **Thermodynamic Reserve:** 3,325,963,291.36 GJ Gibbs free energy; Hamiltonian stability 90.1% across the sampled phase space.
+- **Gibbs Allocation Temperature:** 0.15 (lower favors resilience-heavy shards); Nash welfare 9.99%.
+- **Allocation Entropy:** 1.098 (fairness 100.0%); Gibbs potential -0.161.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
-- **Replicator Equilibrium:** 99.6% stability (drift 0.004).
-- **Sentient Welfare Equilibrium:** 95.6% · cooperation 89.0% · inequality 0.0% · free energy/agent 0.010831 GJ.
-- **Sentient Coalition Stability:** 100.0% · collective action 80.8% · payoff dispersion 0.0%.
-- **Equilibrium Ledger:** 82.9% (warning); energy 57.8%, allocation 100.0%, welfare 93.6%.
+- **Replicator Equilibrium:** 98.8% stability (drift 0.012).
+- **Sentient Welfare Equilibrium:** 99.1% · cooperation 97.7% · inequality 0.0% · free energy/agent 0.742403 GJ.
+- **Sentient Coalition Stability:** 100.0% · collective action 96.1% · payoff dispersion 0.0%.
+- **Equilibrium Ledger:** 94.0% (nominal); energy 91.5%, allocation 100.0%, welfare 98.7%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
@@ -33,9 +33,9 @@ Generated: 2125-01-01T19:05:39.398Z
 
 | Shard   | Boltzmann Weight | Recommended GW | Nash Payoff |
 | ------- | ---------------- | -------------- | ----------- |
-| earth   | 33.4%            | 80,942.25      | 0.1         |
-| mars    | 33.0%            | 79,739.29      | 0.1         |
-| orbital | 33.6%            | 81,318.46      | 0.1         |
+| earth   | 33.7%            | 388,350.87     | 0.1         |
+| mars    | 32.1%            | 369,750.24     | 0.1         |
+| orbital | 34.2%            | 394,298.89     | 0.1         |
 
 ## Sentinel Advisories
 
