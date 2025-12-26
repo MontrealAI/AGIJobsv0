@@ -1362,6 +1362,9 @@ function main() {
   const dysonDiagramPath = path.join(outputDir, 'kardashev-dyson.mmd');
   const dysonHierarchyReference =
     path.relative(outputDir, taskHierarchyPath) || 'kardashev-task-hierarchy.mmd';
+  const missionHierarchyDiagram = buildMermaidTaskHierarchy(dyson);
+  const crossChainDiagram = buildSequenceDiagram();
+  const dysonThermoDiagram = buildDysonThermoDiagram(dyson, energyMonteCarlo);
 
   if (!check) {
     ensureDir(outputDir);
@@ -1467,7 +1470,6 @@ function main() {
   reportLines.push(`A detailed task hierarchy diagram is available at \`${dysonHierarchyReference}\`.`);
   reportLines.push('');
 
-  const crossChainDiagram = buildSequenceDiagram();
   const governanceLines = [];
   governanceLines.push('# Kardashev II Governance Playbook');
   governanceLines.push('');
@@ -1558,11 +1560,11 @@ function main() {
 
     fs.writeFileSync(
       dysonHierarchyPath,
-      `${buildMermaidTaskHierarchy(dyson)}\n`
+      `${missionHierarchyDiagram}\n`
     );
     fs.writeFileSync(
       taskHierarchyPath,
-      `${buildMermaidTaskHierarchy(dyson)}\n`
+      `${missionHierarchyDiagram}\n`
     );
     fs.writeFileSync(
       path.join(mermaidDir, 'interplanetary-settlement.mmd'),
@@ -1574,7 +1576,7 @@ function main() {
     );
     fs.writeFileSync(
       dysonDiagramPath,
-      `${buildDysonThermoDiagram(dyson, energyMonteCarlo)}\n`
+      `${dysonThermoDiagram}\n`
     );
     fs.writeFileSync(
       path.join(outputDir, 'kardashev-report.md'),
@@ -1606,6 +1608,14 @@ function main() {
     fs.writeFileSync(
       path.join(outputDir, 'kardashev-owner-proof.inline.js'),
       `window.__KARDASHEV_OWNER_PROOF__ = ${JSON.stringify(ownerProof)};\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-diagrams.inline.js'),
+      `window.__KARDASHEV_DIAGRAMS__ = ${JSON.stringify({
+        missionHierarchy: missionHierarchyDiagram,
+        interstellarMap: crossChainDiagram,
+        dysonThermo: dysonThermoDiagram,
+      })};\n`
     );
 
     const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');

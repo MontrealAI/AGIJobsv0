@@ -48,6 +48,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     task_hierarchy = tmp_path / "kardashev-task-hierarchy.mmd"
     mermaid_map = tmp_path / "kardashev-mermaid.mmd"
     dyson_diagram = tmp_path / "kardashev-dyson.mmd"
+    diagrams_inline = tmp_path / "kardashev-diagrams.inline.js"
 
     for path in (
         report,
@@ -58,6 +59,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
         task_hierarchy,
         mermaid_map,
         dyson_diagram,
+        diagrams_inline,
     ):
         assert path.exists(), f"expected artefact missing: {path}"
 
