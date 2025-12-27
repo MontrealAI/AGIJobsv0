@@ -4807,6 +4807,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const welfare = telemetry.sentientWelfare;
   const logistics = telemetry.logistics.equilibrium;
   const computeFabric = telemetry.computeFabric;
+  const missionThermo = telemetry.missionThermodynamics;
 
   const breachPenalty = energy.withinTolerance
     ? 1
@@ -4837,6 +4838,10 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   );
   const computeScore = clamp01(
     0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) + 0.4 * computeFabric.averageAvailabilityPct
+  );
+  const missionScore = clamp01(
+    0.7 * (missionThermo?.hamiltonianStability ?? 0) +
+      0.3 * clamp01((missionThermo?.freeEnergyHeadroomPct ?? 0) / 0.05)
   );
 
   const overallScore = clamp01(
@@ -4874,6 +4879,11 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       "Add failover capacity to meet compute quorum before large-scale autonomy escalation."
     );
   }
+  if (missionScore < 0.85) {
+    recommendations.push(
+      "Lower mission Hamiltonian load or increase energy headroom to stabilize critical-path programmes."
+    );
+  }
 
   const pathways = [
     {
@@ -4886,6 +4896,17 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         energyScore >= 0.85
           ? "Maintain reserve cadence and keep Monte Carlo breach probability below tolerance."
           : "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%.",
+    },
+    {
+      title: "Mission Hamiltonian balance",
+      status: missionScore >= 0.85 ? "on-track" : "needs-action",
+      rationale: `Stability ${((missionThermo?.hamiltonianStability ?? 0) * 100).toFixed(
+        1
+      )}% · headroom ${((missionThermo?.freeEnergyHeadroomPct ?? 0) * 100).toFixed(1)}%`,
+      action:
+        missionScore >= 0.85
+          ? "Maintain mission timelines and monitor critical-path energy headroom."
+          : "Adjust programme timelines and buffers to restore Hamiltonian stability above 90%.",
     },
     {
       title: "Nash deviation control",
@@ -4945,6 +4966,19 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
           ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
           : "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.",
       target: "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%.",
+    },
+    {
+      key: "mission",
+      score: missionScore,
+      title: "Stabilize mission Hamiltonian",
+      rationale: `Stability ${((missionThermo?.hamiltonianStability ?? 0) * 100).toFixed(
+        1
+      )}% · headroom ${((missionThermo?.freeEnergyHeadroomPct ?? 0) * 100).toFixed(1)}%`,
+      action:
+        missionScore >= 0.85
+          ? "Maintain mission throughput and monitor critical-path buffers."
+          : "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
+      target: "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
     },
     {
       key: "allocation",
@@ -5008,6 +5042,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       rationale: step.rationale,
       action: step.action,
       target: step.target,
+      priorityScore: round(1 - step.score, 4),
     }));
 
   const generatedAt =
