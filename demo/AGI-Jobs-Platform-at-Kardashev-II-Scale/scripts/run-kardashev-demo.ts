@@ -3262,6 +3262,11 @@ function computeTelemetry(
         ? 0
         : windows.reduce((sum, window) => sum + window.reliabilityPct * window.windowEnergyGwH, 0) /
           Math.max(scheduledGwH, 1);
+    const renewablePct =
+      scheduledGwH === 0
+        ? 0
+        : windows.reduce((sum, window) => sum + window.renewablePct * window.windowEnergyGwH, 0) /
+          Math.max(scheduledGwH, 1);
     const transferCapacityGbps = windows.reduce((sum, window) => sum + window.transferCapacityGbps, 0);
     return {
       federation: federation.slug,
@@ -3269,6 +3274,7 @@ function computeTelemetry(
       scheduledGwH,
       coverageRatio,
       reliabilityPct,
+      renewablePct,
       windowCount: windows.length,
       transferCapacityGbps,
       deficitGwH: Math.max(0, dailyDemandGwH - scheduledGwH),
@@ -3289,6 +3295,13 @@ function computeTelemetry(
       ? 0
       : rawScheduleWindows.reduce(
           (sum, window) => sum + window.reliabilityPct * window.windowEnergyGwH,
+          0
+        ) / Math.max(totalWindowEnergyGwH, 1);
+  const globalRenewablePct =
+    totalWindowEnergyGwH === 0
+      ? 0
+      : rawScheduleWindows.reduce(
+          (sum, window) => sum + window.renewablePct * window.windowEnergyGwH,
           0
         ) / Math.max(totalWindowEnergyGwH, 1);
 
@@ -3313,12 +3326,13 @@ function computeTelemetry(
     scheduledGwH: round(entry.scheduledGwH, 2),
     coverageRatio: round(entry.coverageRatio, 4),
     reliabilityPct: round(entry.reliabilityPct, 4),
+    renewablePct: round(entry.renewablePct, 4),
     transferCapacityGbps: round(entry.transferCapacityGbps, 2),
     deficitGwH: round(entry.deficitGwH, 2),
   }));
 
   const energyScheduleDeficits = rawScheduleCoverage
-    .filter((entry) => entry.coverageRatio < 1)
+    .filter((entry) => entry.coverageRatio < scheduleCoverageThreshold)
     .map((entry) => ({
       federation: entry.federation,
       coverageRatio: round(entry.coverageRatio, 4),
@@ -3330,6 +3344,7 @@ function computeTelemetry(
     .map((entry) => ({
       federation: entry.federation,
       reliabilityPct: round(entry.reliabilityPct, 4),
+      deltaPct: round((scheduleReliabilityThreshold - entry.reliabilityPct) * 100, 2),
     }));
 
   const logisticsReliabilityThreshold = 0.97;
@@ -3854,6 +3869,7 @@ function computeTelemetry(
       schedule: {
         globalCoverageRatio: round(globalCoverageRatio, 4),
         globalReliabilityPct: round(globalReliabilityPct, 4),
+        globalRenewablePct: round(globalRenewablePct, 4),
         coverageThreshold: scheduleCoverageThreshold,
         reliabilityThreshold: scheduleReliabilityThreshold,
         windows: energyScheduleWindows,
