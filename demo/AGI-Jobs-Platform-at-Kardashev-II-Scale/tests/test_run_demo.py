@@ -104,6 +104,12 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= sentient["welfarePotential"] <= 1
     assert 0 <= sentient["collectiveActionPotential"] <= 1
 
+    mission_thermo = telemetry_payload["missionThermodynamics"]
+    assert 0 <= mission_thermo["hamiltonianLoad"] <= 1
+    assert 0 <= mission_thermo["hamiltonianStability"] <= 1
+    assert 0 <= mission_thermo["freeEnergyHeadroomPct"] <= 1
+    assert mission_thermo["actionQueue"]
+
     ledger_payload = json.loads(stability_ledger.read_text())
     assert ledger_payload["confidence"]["compositeScore"] >= 0
     assert isinstance(ledger_payload["checks"], list)
