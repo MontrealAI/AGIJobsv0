@@ -585,6 +585,30 @@ type MissionTelemetryArtifacts = {
   ledger: any;
 };
 
+type MissionThermodynamics = {
+  freeEnergyBudgetGw: number;
+  freeEnergyHeadroomPct: number;
+  hamiltonianLoad: number;
+  hamiltonianStability: number;
+  programmes: Array<{
+    id: string;
+    name: string;
+    energyShare: number;
+    computeShare: number;
+    riskIndex: number;
+    timelineSlackDays: number;
+    hamiltonian: number;
+    pressureScore: number;
+    recommendation: string;
+  }>;
+  actionQueue: Array<{
+    id: string;
+    name: string;
+    pressureScore: number;
+    recommendation: string;
+  }>;
+};
+
 type FlattenedMissionTask = {
   key: string;
   programmeId: string;
@@ -982,6 +1006,65 @@ function buildMissionLatticeTelemetry(lattice: MissionLattice, manifest: Manifes
   return { summary, mermaid: mermaidDiagram, ledger };
 }
 
+function buildMissionThermodynamics(
+  mission: MissionTelemetrySummary,
+  energyMonteCarlo: MonteCarloSummary
+): MissionThermodynamics {
+  const totalEnergyGw = mission.totals.energyGw ?? 0;
+  const totalCompute = mission.totals.computeExaflops ?? 0;
+  const freeEnergyBudgetGw = Math.max(0, energyMonteCarlo.freeEnergyMarginGw ?? 0);
+  const freeEnergyHeadroomPct = totalEnergyGw > 0 ? clamp01(freeEnergyBudgetGw / totalEnergyGw) : 0;
+
+  const programmeThermo = mission.programmes.map((programme) => {
+    const energyShare = totalEnergyGw > 0 ? programme.totalEnergyGw / totalEnergyGw : 0;
+    const computeShare = totalCompute > 0 ? programme.totalComputeExaflops / totalCompute : 0;
+    const riskIndex = computeRiskIndex(programme.riskDistribution);
+    const slackPenalty = programme.timelineSlackDays < 0 ? 1 : programme.timelineSlackDays < 14 ? 0.5 : 0;
+    const hamiltonian = clamp01(0.45 * energyShare + 0.25 * computeShare + 0.2 * riskIndex + 0.1 * slackPenalty);
+    const pressureScore = clamp01(hamiltonian + 0.25 * slackPenalty + 0.15 * riskIndex);
+    let recommendation = "Maintain cadence while monitoring energy draw.";
+    if (programme.missingDependencies.length > 0) {
+      recommendation = "Resolve dependency gaps to lower mission drag.";
+    } else if (slackPenalty >= 0.5) {
+      recommendation = "Expand timeline slack and buffer energy reserves.";
+    } else if (riskIndex >= 0.6) {
+      recommendation = "Increase sentinel coverage and redundancy to reduce risk.";
+    }
+    return {
+      id: programme.id,
+      name: programme.name,
+      energyShare,
+      computeShare,
+      riskIndex,
+      timelineSlackDays: programme.timelineSlackDays,
+      hamiltonian,
+      pressureScore,
+      recommendation,
+    };
+  });
+
+  const hamiltonianLoad = average(programmeThermo.map((entry) => entry.hamiltonian));
+  const hamiltonianStability = clamp01(1 - hamiltonianLoad);
+  const actionQueue = [...programmeThermo]
+    .sort((a, b) => b.pressureScore - a.pressureScore)
+    .slice(0, 3)
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      pressureScore: entry.pressureScore,
+      recommendation: entry.recommendation,
+    }));
+
+  return {
+    freeEnergyBudgetGw,
+    freeEnergyHeadroomPct,
+    hamiltonianLoad,
+    hamiltonianStability,
+    programmes: programmeThermo,
+    actionQueue,
+  };
+}
+
 function computeEnergyWindowProjection(manifest: Manifest): EnergyWindowProjection {
   const perFederation: Array<{
     federation: string;
@@ -1294,6 +1377,25 @@ function computeCoefficientOfVariation(values: number[]): number {
   const variance =
     values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
   return Math.sqrt(variance) / Math.abs(mean);
+}
+
+function average(values: number[]): number {
+  if (!values.length) {
+    return 0;
+  }
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function computeRiskIndex(riskDistribution: { low: number; medium: number; high: number }): number {
+  const low = riskDistribution.low ?? 0;
+  const medium = riskDistribution.medium ?? 0;
+  const high = riskDistribution.high ?? 0;
+  const total = low + medium + high;
+  if (total <= 0) {
+    return 0;
+  }
+  const weightedRisk = low * 0.2 + medium * 0.6 + high;
+  return clamp01(weightedRisk / total);
 }
 
 function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
@@ -3173,6 +3275,7 @@ function computeTelemetry(
 
   const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
   const allocationPolicy = buildEnergyAllocationPolicy(manifest, energyMonteCarlo);
+  const missionThermodynamics = buildMissionThermodynamics(mission, energyMonteCarlo);
   if (!energyMonteCarlo.withinTolerance) {
     energyWarnings.push(
       `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
@@ -3990,6 +4093,7 @@ function computeTelemetry(
       tertiary: ownerProof.tertiaryVerification,
     },
     missionLattice: mission,
+    missionThermodynamics,
     missionDirectives: manifest.missionDirectives,
     verification: {
       energyModels: {
