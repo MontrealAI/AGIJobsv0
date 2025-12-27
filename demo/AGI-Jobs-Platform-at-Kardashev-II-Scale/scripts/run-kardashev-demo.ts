@@ -4748,6 +4748,84 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
     },
   ];
 
+  const actionCandidates = [
+    {
+      key: "energy",
+      score: energyScore,
+      title: "Stabilize free energy buffer",
+      rationale: `Free energy ${(energy.freeEnergyMarginPct * 100).toFixed(
+        1
+      )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(1)}%`,
+      action:
+        energyScore >= 0.85
+          ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
+          : "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.",
+      target: "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%.",
+    },
+    {
+      key: "allocation",
+      score: allocationScore,
+      title: "Tighten Nash allocation",
+      rationale: `Deviation ${(allocation.deviationIncentive * 100).toFixed(
+        1
+      )}% · strategy ${(allocation.strategyStability * 100).toFixed(1)}%`,
+      action:
+        allocationScore >= 0.85
+          ? "Keep incentive gradients aligned with Nash stability targets."
+          : "Rebalance allocation weights to suppress deviation incentives.",
+      target: "Deviation incentive ≤ 20% and strategy stability ≥ 85%.",
+    },
+    {
+      key: "welfare",
+      score: welfareScore,
+      title: "Reinforce sentient welfare balance",
+      rationale: `Coalition ${(welfare.coalitionStability * 100).toFixed(
+        1
+      )}% · inequality ${(welfare.inequalityIndex * 100).toFixed(1)}%`,
+      action:
+        welfareScore >= 0.85
+          ? "Continue cooperative reward rotations to sustain coalition stability."
+          : "Boost cooperative rewards and reallocate buffers to reduce inequality.",
+      target: "Coalition stability ≥ 85% and inequality ≤ 30%.",
+    },
+    {
+      key: "logistics",
+      score: logisticsScore,
+      title: "Restore logistics game-theory slack",
+      rationale: `Slack ${((logistics?.gameTheorySlack ?? 0) * 100).toFixed(
+        1
+      )}% · entropy ${(logistics?.entropyRatio ?? 0).toFixed(2)}`,
+      action:
+        logisticsScore >= 0.85
+          ? "Maintain corridor utilisation within the equilibrium band."
+          : "Re-route corridors to lift game-theory slack and preserve entropy.",
+      target: "Game-theory slack ≥ 85% and entropy ratio ≥ 0.9.",
+    },
+    {
+      key: "compute",
+      score: computeScore,
+      title: "Secure compute quorum failover",
+      rationale: `Availability ${(computeFabric.averageAvailabilityPct * 100).toFixed(
+        1
+      )}% · failover ${computeFabric.failoverWithinQuorum ? "ok" : "risk"}`,
+      action:
+        computeScore >= 0.85
+          ? "Sustain quorum failover coverage and monitor deviation drift."
+          : "Add failover capacity to restore quorum resilience.",
+      target: "Failover within quorum and availability ≥ 95%.",
+    },
+  ];
+  const actionPath = actionCandidates
+    .sort((a, b) => a.score - b.score)
+    .map((step, index) => ({
+      rank: index + 1,
+      title: step.title,
+      status: step.score >= 0.85 ? "on-track" : "needs-action",
+      rationale: step.rationale,
+      action: step.action,
+      target: step.target,
+    }));
+
   const generatedAt =
     typeof manifest.generatedAt === "number"
       ? new Date(manifest.generatedAt).toISOString()
@@ -4809,6 +4887,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       coalitionStability: round(welfare.coalitionStability, 4),
     },
     pathways,
+    actionPath,
     recommendations,
   };
 }
