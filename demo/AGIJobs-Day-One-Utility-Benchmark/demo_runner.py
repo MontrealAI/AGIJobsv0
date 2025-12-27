@@ -353,7 +353,7 @@ class DayOneUtilityOrchestrator:
             "game_theory_slack": game_theory_slack,
         }
 
-    def simulate(self, strategy_name: str) -> Mapping[str, Any]:
+    def simulate(self, strategy_name: str, *, write_artifacts: bool = True) -> Mapping[str, Any]:
         snapshot = self.load_owner_controls()
         if snapshot.get("paused"):
             raise DemoPausedError("Demo is paused. Ask the owner to resume from the owner console.")
@@ -500,16 +500,18 @@ class DayOneUtilityOrchestrator:
         }
 
         chart_path = None
-        if plot_available:
-            chart_path = self._render_chart(profile, metrics_block)
-        html_path = self._render_dashboard(report, chart_path)
+        html_path = None
+        if write_artifacts:
+            if plot_available:
+                chart_path = self._render_chart(profile, metrics_block)
+            html_path = self._render_dashboard(report, chart_path)
 
-        self._write_json(self.output_dir / f"report_{profile.name}.json", report)
-        self._write_json(self.output_dir / "owner_controls_snapshot.json", owner_snapshot)
+            self._write_json(self.output_dir / f"report_{profile.name}.json", report)
+            self._write_json(self.output_dir / "owner_controls_snapshot.json", owner_snapshot)
 
         report["outputs"] = {
             "chart": str(chart_path) if chart_path else None,
-            "dashboard": str(html_path),
+            "dashboard": str(html_path) if html_path else None,
         }
         return report
 
@@ -520,7 +522,9 @@ class DayOneUtilityOrchestrator:
     # ------------------------------------------------------------------
     # Scoreboard orchestration
     # ------------------------------------------------------------------
-    def scoreboard(self, strategies: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+    def scoreboard(
+        self, strategies: Optional[Sequence[str]] = None, *, write_artifacts: bool = True
+    ) -> Mapping[str, Any]:
         available = self.load_strategies()
         if strategies is None:
             requested = list(available.keys())
@@ -541,7 +545,7 @@ class DayOneUtilityOrchestrator:
         owner_snapshot: Optional[Mapping[str, Any]] = None
 
         for key in requested:
-            report = self.simulate(key)
+            report = self.simulate(key, write_artifacts=write_artifacts)
             metrics = report["metrics"]
             profile = report["strategy_profile"]
             guardrails = report["guardrail_pass"]
@@ -559,7 +563,7 @@ class DayOneUtilityOrchestrator:
                 "latency_p95": float(metrics.get("latency_p95", 0.0)),
                 "owner_treasury": float(metrics["owner_treasury"]),
                 "reliability_score": float(profile["reliability_score"]),
-                "report_path": str(self.output_dir / f"report_{key}.json"),
+                "report_path": str(self.output_dir / f"report_{key}.json") if write_artifacts else None,
                 "dashboard_path": report["outputs"]["dashboard"],
                 "snapshot_path": report["outputs"].get("chart"),
                 "guardrail_pass": guardrails,
@@ -621,10 +625,11 @@ class DayOneUtilityOrchestrator:
             "best_latency_p95": leaders["latency_p95"]["value"]["latency_p95"],
         }
 
-        html_path = self._render_scoreboard_html(scoreboard_payload)
-        scoreboard_payload["outputs"] = {"dashboard": str(html_path)}
-
-        self._write_json(self.output_dir / "scoreboard.json", scoreboard_payload)
+        html_path = None
+        if write_artifacts:
+            html_path = self._render_scoreboard_html(scoreboard_payload)
+            self._write_json(self.output_dir / "scoreboard.json", scoreboard_payload)
+        scoreboard_payload["outputs"] = {"dashboard": str(html_path) if html_path else None}
         return scoreboard_payload
 
     # ------------------------------------------------------------------
@@ -1185,6 +1190,11 @@ class DayOneUtilityOrchestrator:
     @classmethod
     def build_parser(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="AGI Jobs Day-One Utility Benchmark")
+        parser.add_argument(
+            "--check",
+            action="store_true",
+            help="Run the demo in validation mode without writing dashboards or JSON artefacts.",
+        )
         subparsers = parser.add_subparsers(dest="command", required=False)
 
         simulate = subparsers.add_parser("simulate", help="Run a day-one utility simulation")
@@ -1227,8 +1237,9 @@ class DayOneUtilityOrchestrator:
         parser = self.build_parser()
         parsed = parser.parse_args(args=args)
         command = parsed.command or "simulate"
+        write_artifacts = not bool(getattr(parsed, "check", False))
         if command == "simulate":
-            report = self.simulate(parsed.strategy)
+            report = self.simulate(parsed.strategy, write_artifacts=write_artifacts)
             output_format = getattr(parsed, "format", "json")
             if output_format == "human":
                 summary = self._build_human_summary(report)
@@ -1252,7 +1263,7 @@ class DayOneUtilityOrchestrator:
             return {"strategies": strategies}, "json"
         if command == "scoreboard":
             strategy_args = getattr(parsed, "strategies", None)
-            scoreboard_payload = self.scoreboard(strategy_args)
+            scoreboard_payload = self.scoreboard(strategy_args, write_artifacts=write_artifacts)
             output_format = getattr(parsed, "format", "json")
             if output_format == "human":
                 summary = self._build_scoreboard_human_summary(scoreboard_payload)
@@ -1291,6 +1302,9 @@ class DayOneUtilityOrchestrator:
         ]
         for bullet in profile["highlights"]:
             lines.append(f"  • {bullet}")
+        outputs = report.get("outputs", {})
+        dashboard = outputs.get("dashboard") or "N/A (check mode)"
+        chart = outputs.get("chart") or "N/A (check mode)"
         lines.extend(
             [
                 "Owner controls:",
@@ -1301,8 +1315,8 @@ class DayOneUtilityOrchestrator:
                 f"  • Latency guardrail: {owner_snapshot['latency_threshold_active']}",
                 f"  • Narrative: {owner_snapshot['narrative']}",
                 "Outputs:",
-                f"  • Dashboard: {report['outputs']['dashboard']}",
-                f"  • Snapshot: {report['outputs']['chart']}",
+                f"  • Dashboard: {dashboard}",
+                f"  • Snapshot: {chart}",
             ]
         )
         return "\n".join(lines)
@@ -1333,7 +1347,8 @@ class DayOneUtilityOrchestrator:
                 failed_list = ", ".join(failure["failed"])
                 lines.append(f"  • {failure['title']} ({failure['strategy']}): {failed_list}")
 
-        lines.append(f"Dashboard: {payload['outputs']['dashboard']}")
+        dashboard = payload.get("outputs", {}).get("dashboard") or "N/A (check mode)"
+        lines.append(f"Dashboard: {dashboard}")
         return "\n".join(lines)
 
 
@@ -1355,6 +1370,11 @@ def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], st
     if normalized_args is None:
         return orchestrator.execute(None)
 
+    has_check = False
+    if "--check" in normalized_args:
+        has_check = True
+        normalized_args = [arg for arg in normalized_args if arg != "--check"]
+
     if not normalized_args:
         normalized_args = ["simulate"]
     else:
@@ -1368,6 +1388,9 @@ def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], st
         elif primary.startswith("-"):
             # Any flag-only invocation should default to the simulate command.
             normalized_args = ["simulate", *normalized_args]
+
+    if has_check:
+        normalized_args = ["--check", *normalized_args]
 
     return orchestrator.execute(normalized_args)
 

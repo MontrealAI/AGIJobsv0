@@ -190,6 +190,34 @@ def test_scoreboard_generates_dashboard():
     )
 
 
+def test_check_mode_skips_artifacts(monkeypatch):
+    base_path = Path(__file__).resolve().parents[1]
+    monkeypatch.chdir(base_path)
+
+    output_dir = base_path / "out"
+    report_path = output_dir / "report_e2e.json"
+    dashboard_path = output_dir / "dashboard_e2e.html"
+    snapshot_path = output_dir / "snapshot_e2e.png"
+    scoreboard_path = output_dir / "scoreboard.json"
+
+    for path in (report_path, dashboard_path, snapshot_path, scoreboard_path):
+        if path.exists():
+            path.unlink()
+
+    payload, fmt = run_cli(["simulate", "--strategy", "e2e", "--check"])
+    assert fmt == "json"
+    assert payload["outputs"]["dashboard"] is None
+    assert payload["outputs"]["chart"] is None
+    assert not report_path.exists()
+    assert not dashboard_path.exists()
+    assert not snapshot_path.exists()
+
+    scoreboard_payload, fmt = run_cli(["scoreboard", "--check", "--strategies", "e2e"])
+    assert fmt == "json"
+    assert scoreboard_payload["outputs"]["dashboard"] is None
+    assert not scoreboard_path.exists()
+
+
 def test_scoreboard_human_summary(monkeypatch):
     base_path = Path(__file__).resolve().parents[1]
     monkeypatch.chdir(base_path)
