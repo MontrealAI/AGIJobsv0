@@ -15,6 +15,7 @@ Generated: 2125-01-01T19:05:39.398Z
 - **Gibbs Allocation Temperature:** 0.15 (lower favors resilience-heavy shards); Nash welfare 9.99%.
 - **Allocation Entropy:** 1.098 (fairness 100.0%); Gibbs potential -0.161.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
+- **Allocation Diversification:** 66.6% (HHI 0.334).
 - **Replicator Equilibrium:** 98.8% stability (drift 0.012).
 - **Sentient Welfare Equilibrium:** 99.1% · cooperation 97.7% · inequality 0.0% · free energy/agent 0.742403 GJ.
 - **Sentient Coalition Stability:** 100.0% · collective action 96.1% · payoff dispersion 0.0%.

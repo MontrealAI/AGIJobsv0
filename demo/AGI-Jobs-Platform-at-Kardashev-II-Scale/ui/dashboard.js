@@ -918,7 +918,10 @@ function renderEnergySchedule(schedule, verification) {
   }
   const coverage = (schedule.globalCoverageRatio * 100).toFixed(2);
   const reliability = (schedule.globalReliabilityPct * 100).toFixed(2);
-  summary.textContent = `Coverage ${coverage}% (threshold ${schedule.coverageThreshold * 100}%) · Reliability ${reliability}%`;
+  const renewable = Number.isFinite(schedule.globalRenewablePct)
+    ? ` · Renewables ${(schedule.globalRenewablePct * 100).toFixed(2)}%`
+    : "";
+  summary.textContent = `Coverage ${coverage}% (threshold ${schedule.coverageThreshold * 100}%) · Reliability ${reliability}%${renewable}`;
   const scheduleOk = verification?.coverageOk && verification?.reliabilityOk;
   summary.classList.toggle("status-ok", !!scheduleOk);
   summary.classList.toggle("status-fail", scheduleOk === false);
@@ -926,8 +929,11 @@ function renderEnergySchedule(schedule, verification) {
   const coverageList = document.querySelector("#schedule-coverage");
   coverageList.innerHTML = "";
   schedule.coverage.forEach((entry) => {
+    const renewableText = Number.isFinite(entry.renewablePct)
+      ? ` · ${(entry.renewablePct * 100).toFixed(1)}% renewable`
+      : "";
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${entry.federation.toUpperCase()}</strong><span>${(entry.coverageRatio * 100).toFixed(2)}% · ${(entry.reliabilityPct * 100).toFixed(2)}%</span>`;
+    li.innerHTML = `<strong>${entry.federation.toUpperCase()}</strong><span>${(entry.coverageRatio * 100).toFixed(2)}% · ${(entry.reliabilityPct * 100).toFixed(2)}%${renewableText}</span>`;
     const ok = entry.coverageRatio >= schedule.coverageThreshold && entry.reliabilityPct >= schedule.reliabilityThreshold;
     li.classList.add(ok ? "status-ok" : "status-fail");
     coverageList.appendChild(li);
@@ -937,20 +943,34 @@ function renderEnergySchedule(schedule, verification) {
   windowList.innerHTML = "";
   schedule.windows.forEach((window) => {
     const li = document.createElement("li");
-    li.innerHTML = `<strong>${window.federation}</strong> · ${window.startHourUTC}:00Z · ${window.durationHours}h · ${formatNumber(window.availableGw + window.backupGw)} GW · ${(window.coverageRatio * 100).toFixed(2)}% coverage · ${(window.reliabilityPct * 100).toFixed(2)}% reliability`;
+    const renewablePct = Number.isFinite(window.renewablePct)
+      ? ` · ${(window.renewablePct * 100).toFixed(1)}% renewable`
+      : "";
+    li.innerHTML = `<strong>${window.federation}</strong> · ${window.startHourUTC}:00Z · ${window.durationHours}h · ${formatNumber(window.availableGw + window.backupGw)} GW · ${(window.coverageRatio * 100).toFixed(2)}% coverage · ${(window.reliabilityPct * 100).toFixed(2)}% reliability${renewablePct}`;
     const ok = window.coverageRatio >= schedule.coverageThreshold;
     li.classList.add(ok ? "status-ok" : "status-warn");
     windowList.appendChild(li);
   });
 
   const deficits = document.querySelector("#schedule-deficits");
-  if (!schedule.deficits || schedule.deficits.length === 0) {
+  const coverageDeficits = schedule.deficits ?? [];
+  const reliabilityDeficits = schedule.reliabilityDeficits ?? [];
+  if (coverageDeficits.length === 0 && reliabilityDeficits.length === 0) {
     deficits.textContent = "No coverage deficits detected.";
     deficits.classList.add("status-ok");
     deficits.classList.remove("status-fail");
   } else {
-    deficits.textContent = `Deficits: ${schedule.deficits
-      .map((deficit) => `${deficit.federation} ${(deficit.coverageRatio * 100).toFixed(2)}% (${deficit.deficitGwH} GW·h)`).join(" · ")}`;
+    const coverageText = coverageDeficits.length
+      ? `Coverage: ${coverageDeficits
+          .map((deficit) => `${deficit.federation} ${(deficit.coverageRatio * 100).toFixed(2)}% (${deficit.deficitGwH} GW·h)`)
+          .join(" · ")}`
+      : null;
+    const reliabilityText = reliabilityDeficits.length
+      ? `Reliability: ${reliabilityDeficits
+          .map((deficit) => `${deficit.federation} ${(deficit.reliabilityPct * 100).toFixed(2)}% (-${deficit.deltaPct} pts)`)
+          .join(" · ")}`
+      : null;
+    deficits.textContent = [coverageText, reliabilityText].filter(Boolean).join(" | ");
     deficits.classList.add("status-fail");
     deficits.classList.remove("status-ok");
   }

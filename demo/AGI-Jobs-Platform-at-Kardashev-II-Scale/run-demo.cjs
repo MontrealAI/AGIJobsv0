@@ -769,12 +769,27 @@ function buildEnergySchedule(manifest) {
   const coverageThreshold = 0.84;
   const reliabilityThreshold = 0.96;
   const windowSummaries = windows.map((window) => {
-    const coverageRatio = window.availableGw / Math.max(1, window.availableGw + window.backupGw);
+    const capacityGw = (window.availableGw ?? 0) + (window.backupGw ?? 0);
+    const durationHours = window.durationHours ?? 0;
+    const coverageRatio = capacityGw > 0 ? window.availableGw / capacityGw : 0;
+    const weight = capacityGw * durationHours;
     return {
       ...window,
       coverageRatio,
+      weight,
     };
   });
+  const weightedAverage = (entries, key) => {
+    if (!entries.length) return 0;
+    const totalWeight = sum(entries.map((entry) => entry.weight || 0));
+    if (totalWeight <= 0) {
+      return average(entries.map((entry) => entry[key] ?? 0));
+    }
+    return (
+      sum(entries.map((entry) => (entry[key] ?? 0) * (entry.weight || 0))) /
+      totalWeight
+    );
+  };
   const coverageByFederation = {};
   windowSummaries.forEach((window) => {
     if (!coverageByFederation[window.federation]) {
@@ -785,12 +800,14 @@ function buildEnergySchedule(manifest) {
   const coverage = Object.entries(coverageByFederation).map(([federation, entries]) => {
     return {
       federation,
-      coverageRatio: average(entries.map((entry) => entry.coverageRatio)),
-      reliabilityPct: average(entries.map((entry) => entry.reliabilityPct)),
+      coverageRatio: weightedAverage(entries, 'coverageRatio'),
+      reliabilityPct: weightedAverage(entries, 'reliabilityPct'),
+      renewablePct: weightedAverage(entries, 'renewablePct'),
     };
   });
-  const globalCoverageRatio = average(coverage.map((entry) => entry.coverageRatio));
-  const globalReliabilityPct = average(coverage.map((entry) => entry.reliabilityPct));
+  const globalCoverageRatio = weightedAverage(coverage, 'coverageRatio');
+  const globalReliabilityPct = weightedAverage(coverage, 'reliabilityPct');
+  const globalRenewablePct = weightedAverage(coverage, 'renewablePct');
   const deficits = coverage
     .filter((entry) => entry.coverageRatio < coverageThreshold)
     .map((entry) => ({
@@ -798,15 +815,24 @@ function buildEnergySchedule(manifest) {
       coverageRatio: entry.coverageRatio,
       deficitGwH: round((coverageThreshold - entry.coverageRatio) * 1000, 2),
     }));
+  const reliabilityDeficits = coverage
+    .filter((entry) => entry.reliabilityPct < reliabilityThreshold)
+    .map((entry) => ({
+      federation: entry.federation,
+      reliabilityPct: entry.reliabilityPct,
+      deltaPct: round((reliabilityThreshold - entry.reliabilityPct) * 100, 2),
+    }));
 
   return {
     globalCoverageRatio,
     globalReliabilityPct,
+    globalRenewablePct,
     coverageThreshold,
     reliabilityThreshold,
     coverage,
     windows: windowSummaries,
     deficits,
+    reliabilityDeficits,
   };
 }
 

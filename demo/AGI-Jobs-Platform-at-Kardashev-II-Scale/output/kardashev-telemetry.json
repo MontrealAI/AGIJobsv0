@@ -344,6 +344,7 @@
     "schedule": {
       "globalCoverageRatio": 1,
       "globalReliabilityPct": 0.9856,
+      "globalRenewablePct": 0.9571,
       "coverageThreshold": 0.98,
       "reliabilityThreshold": 0.95,
       "windows": [
@@ -558,6 +559,7 @@
           "scheduledGwH": 1968000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9811,
+          "renewablePct": 0.9179,
           "windowCount": 4,
           "transferCapacityGbps": 1985,
           "deficitGwH": 0
@@ -568,6 +570,7 @@
           "scheduledGwH": 576000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9627,
+          "renewablePct": 0.9135,
           "windowCount": 3,
           "transferCapacityGbps": 612,
           "deficitGwH": 0
@@ -578,6 +581,7 @@
           "scheduledGwH": 3264000,
           "coverageRatio": 1,
           "reliabilityPct": 0.9924,
+          "renewablePct": 0.9884,
           "windowCount": 3,
           "transferCapacityGbps": 1850,
           "deficitGwH": 0
