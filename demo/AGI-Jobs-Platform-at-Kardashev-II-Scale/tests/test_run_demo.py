@@ -167,6 +167,56 @@ def test_run_demo_rejects_invalid_energy_feed(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_rejects_excess_buffer(tmp_path: Path) -> None:
+    """Energy feed buffers should not exceed nominal capacity."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][0]["bufferMw"] = energy_config["feeds"][0]["nominalMw"] + 1
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "configuration validation failed" in combined_output
+    assert "buffermw must not exceed nominalmw" in combined_output
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_rejects_invalid_drift_alert(tmp_path: Path) -> None:
+    """Invalid driftAlertPct values should fail validation."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["driftAlertPct"] = -1
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "configuration validation failed" in combined_output
+    assert "driftalertpct" in combined_output
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_allows_default_tolerance(tmp_path: Path) -> None:
     """Missing tolerancePct should fall back to defaults instead of failing validation."""
 

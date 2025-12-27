@@ -1117,6 +1117,11 @@ function validateEnergyFeeds(energy) {
     if (!Number.isFinite(feed.bufferMw) || feed.bufferMw < 0) {
       throw new Error(`Energy feed ${feed.region} must declare non-negative bufferMw.`);
     }
+    if (feed.bufferMw > feed.nominalMw) {
+      throw new Error(
+        `Energy feed ${feed.region} bufferMw must not exceed nominalMw.`
+      );
+    }
     if (!Number.isFinite(feed.latencyMs) || feed.latencyMs < 0) {
       throw new Error(`Energy feed ${feed.region} latencyMs must be non-negative.`);
     }
@@ -1126,6 +1131,13 @@ function validateEnergyFeeds(energy) {
   if (tolerancePct !== undefined) {
     if (!Number.isFinite(tolerancePct) || tolerancePct <= 0 || tolerancePct > 50) {
       throw new Error('Energy tolerancePct must be between 0 and 50.');
+    }
+  }
+
+  const driftAlertPct = energy?.driftAlertPct;
+  if (driftAlertPct !== undefined) {
+    if (!Number.isFinite(driftAlertPct) || driftAlertPct <= 0 || driftAlertPct > 50) {
+      throw new Error('Energy driftAlertPct must be between 0 and 50.');
     }
   }
 }
