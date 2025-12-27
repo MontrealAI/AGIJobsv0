@@ -674,6 +674,8 @@ class Orchestrator:
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
         nash_welfare = max(0.0, min(1.0, state.nash_welfare))
         stability_index = max(0.0, min(1.0, state.stability_index))
+        entropy = max(0.0, state.entropy)
+        entropy_pressure = min(1.0, entropy / math.log(2.0))
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
         scarcity_pressure = min(1.0, 0.5 * (energy_price_pressure + compute_price_pressure))
@@ -697,6 +699,7 @@ class Orchestrator:
         )
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         compute_boost = 1.0 + 0.4 * compute_price_pressure
+        entropy_damping = max(0.35, 1.0 - 0.6 * entropy_pressure)
         return {
             "prosperity_gap": prosperity_gap,
             "sustainability_gap": sustainability_gap,
@@ -704,6 +707,8 @@ class Orchestrator:
             "game_theory_slack": game_theory_slack,
             "nash_welfare": nash_welfare,
             "stability_index": stability_index,
+            "entropy": entropy,
+            "entropy_pressure": entropy_pressure,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
             "scarcity_pressure": scarcity_pressure,
@@ -717,6 +722,7 @@ class Orchestrator:
             "stability_factor": stability_factor,
             "coordination_damping": coordination_damping,
             "compute_boost": compute_boost,
+            "entropy_damping": entropy_damping,
         }
 
     def _build_policy_rationale(
@@ -751,22 +757,28 @@ class Orchestrator:
         """
 
         signals = self._compute_policy_signals(state)
-        energy_action = (
-            0.5
+        action_budget = (
+            1.5
             + 3.0 * signals["energy_price_pressure"]
             + 2.0 * signals["compute_price_pressure"]
             + 4.0 * signals["gibbs_drive"]
-        ) * (1.0 + 0.5 * signals["hamiltonian_pressure"])
+        )
+        action_budget *= (
+            (0.7 + 0.6 * signals["stability_index"])
+            * (1.0 + 0.5 * signals["hamiltonian_pressure"])
+            * signals["entropy_damping"]
+        )
+        energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"])
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
         stimulus = (
-            5.0
+            action_budget
             * signals["prosperity_share"]
             * signals["coordination_damping"]
             * signals["compute_boost"]
             * stability_modifier
         )
         green_shift = (
-            5.0
+            action_budget
             * signals["sustainability_share"]
             * signals["coordination_damping"]
             * signals["compute_boost"]
