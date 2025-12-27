@@ -1663,6 +1663,55 @@ function buildEquilibriumLedger({
   };
 }
 
+function formatPercentValue(value, digits = 1) {
+  if (!Number.isFinite(value)) {
+    return 'n/a';
+  }
+  return `${(value * 100).toFixed(digits)}%`;
+}
+
+function buildActionPathBriefing(equilibriumLedger) {
+  const thermodynamics = equilibriumLedger?.thermodynamics ?? {};
+  const gameTheory = equilibriumLedger?.gameTheory ?? {};
+  const actionPath = Array.isArray(equilibriumLedger?.actionPath)
+    ? equilibriumLedger.actionPath
+    : [];
+  const lines = [];
+  lines.push('# Kardashev II Action Path');
+  lines.push('');
+  lines.push(`Generated: ${equilibriumLedger?.generatedAt ?? new Date().toISOString()}`);
+  lines.push('');
+  lines.push('## Core equilibrium signals');
+  lines.push(
+    `- Free energy margin: ${formatPercentValue(thermodynamics.freeEnergyMarginPct, 2)}`
+  );
+  lines.push(
+    `- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj ?? 0)} GJ`
+  );
+  lines.push(
+    `- Hamiltonian stability: ${formatPercentValue(thermodynamics.hamiltonianStability)}`
+  );
+  lines.push(`- Nash product: ${formatPercentValue(gameTheory.nashProduct)}`);
+  lines.push(
+    `- Coalition stability: ${formatPercentValue(gameTheory.coalitionStability)}`
+  );
+  lines.push('');
+  lines.push('## Action path');
+  if (actionPath.length === 0) {
+    lines.push('No corrective steps required. Maintain current equilibrium and monitor drift.');
+  } else {
+    actionPath.forEach((step) => {
+      lines.push(`### Step ${step.rank}: ${step.title}`);
+      lines.push(`- Status: ${step.status}`);
+      lines.push(`- Target: ${step.target}`);
+      lines.push(`- Rationale: ${step.rationale}`);
+      lines.push(`- Action: ${step.action}`);
+      lines.push('');
+    });
+  }
+  return lines.join('\n');
+}
+
 function buildEquilibriumActionPath({
   energyMonteCarlo,
   allocationPolicy,
@@ -2398,6 +2447,10 @@ function main() {
     fs.writeFileSync(
       path.join(outputDir, 'governance-playbook.md'),
       `${governanceLines.join('\n')}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-action-path.md'),
+      `${buildActionPathBriefing(equilibriumLedger)}\n`
     );
 
     const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
