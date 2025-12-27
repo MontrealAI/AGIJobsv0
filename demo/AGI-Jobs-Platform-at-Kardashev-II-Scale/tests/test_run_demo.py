@@ -191,6 +191,33 @@ def test_run_demo_allows_default_tolerance(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_energy_feed_resolution_prefers_federation_slug(tmp_path: Path) -> None:
+    """Allocation enrichment should match feeds by federationSlug even if region names drift."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][0]["region"] = "terra-grid"
+    custom_energy = tmp_path / "energy-feeds.json"
+    custom_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(custom_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    telemetry_payload = json.loads((tmp_path / "kardashev-telemetry.json").read_text())
+    allocations = telemetry_payload["allocationPolicy"]["allocations"]
+    earth_allocation = next(entry for entry in allocations if entry["shardId"] == "earth")
+    assert earth_allocation["renewablePct"] is not None
+    assert earth_allocation["deltaGw"] is not None
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_requires_energy_coverage(tmp_path: Path) -> None:
     """Every shard must map to a matching energy feed."""
 

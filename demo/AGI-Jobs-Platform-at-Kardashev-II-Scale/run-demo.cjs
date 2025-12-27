@@ -504,16 +504,12 @@ function buildLiveEnergyFeeds(energyConfig, rng) {
 }
 
 function enrichAllocationPolicy(allocationPolicy, shardMetrics, energyConfig) {
-  const feedByShard = new Map(
-    energyConfig.feeds.map((feed) => {
-      const shardId = feed.region.split('-')[0];
-      return [shardId, feed];
-    })
-  );
-
   const allocations = allocationPolicy.allocations.map((allocation) => {
     const metric = shardMetrics.find((entry) => entry.shardId === allocation.shardId);
-    const feed = feedByShard.get(allocation.shardId);
+    const feed = resolveEnergyFeedForShard(
+      { id: allocation.shardId },
+      energyConfig.feeds
+    );
     const nominalGw = feed ? feed.nominalMw / 1000 : 0;
     const deltaGw = allocation.recommendedGw - nominalGw;
     return {
