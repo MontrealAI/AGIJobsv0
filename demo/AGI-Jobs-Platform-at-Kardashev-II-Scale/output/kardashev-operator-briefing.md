@@ -35,6 +35,16 @@
   - Settlement backlog (+40% finality): Settlement mesh absorbs backlog within tolerance.
 * Audit checklist: ipfs://QmKardashevAuditChecklist
 
+## Equilibrium action path
+* Gibbs free energy 3,227,074,308.57 GJ · entropy 99.23σ · Hamiltonian 89.0%
+* Nash 85.6% · coalition 90.0% · logistics welfare 98.5%
+* 1. Stabilize mission Hamiltonian (needs-action) — Rebalance mission timelines and energy buffers to regain Hamiltonian stability. · target Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.
+* 2. Stabilize free energy buffer (on-track) — Hold reserve cadence and keep Monte Carlo breach probability below tolerance. · target Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%.
+* 3. Reinforce sentient welfare balance (on-track) — Continue cooperative reward rotations to sustain coalition stability. · target Coalition stability ≥ 85% and inequality ≤ 30%.
+* 4. Tighten Nash allocation (on-track) — Keep incentive gradients aligned with Nash stability targets. · target Deviation incentive ≤ 20% and strategy stability ≥ 85%.
+* 5. Restore logistics game-theory slack (on-track) — Maintain corridor utilisation within the equilibrium band. · target Game-theory slack ≥ 85% and entropy ratio ≥ 0.9.
+* 6. Secure compute quorum failover (on-track) — Sustain quorum failover coverage and monitor deviation drift. · target Failover within quorum and availability ≥ 95%.
+
 ## Identity posture
 * 3/3 federations meeting quorum 5.
 * Revocation rate 0.35 ppm (tolerance 120 ppm); latency window 96s / 240s.
