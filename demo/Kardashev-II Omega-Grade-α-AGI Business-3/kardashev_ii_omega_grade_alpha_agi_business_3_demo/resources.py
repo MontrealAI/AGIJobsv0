@@ -268,6 +268,19 @@ class ResourceManager:
             compute_capacity=self.compute_capacity,
         )
 
+    def accounts_snapshot(self) -> Dict[str, Dict[str, float]]:
+        """Return a JSON-serialisable view of account balances."""
+
+        return {
+            name: {
+                "tokens": account.tokens,
+                "locked": account.locked,
+                "energy_quota": account.energy_quota,
+                "compute_quota": account.compute_quota,
+            }
+            for name, account in self._accounts.items()
+        }
+
     def to_serializable(self) -> Dict[str, object]:
         return {
             "state": {
@@ -279,15 +292,7 @@ class ResourceManager:
                 "energy_price": self.energy_price,
                 "compute_price": self.compute_price,
             },
-            "accounts": {
-                name: {
-                    "tokens": account.tokens,
-                    "locked": account.locked,
-                    "energy_quota": account.energy_quota,
-                    "compute_quota": account.compute_quota,
-                }
-                for name, account in self._accounts.items()
-            },
+            "accounts": self.accounts_snapshot(),
             "reservations": {
                 key: {"energy": values[0], "compute": values[1]}
                 for key, values in self._reservations.items()
