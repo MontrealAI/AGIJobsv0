@@ -52,6 +52,10 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     dyson_diagram = tmp_path / "kardashev-dyson.mmd"
     diagrams_inline = tmp_path / "kardashev-diagrams.inline.js"
     action_path = tmp_path / "kardashev-action-path.md"
+    offline_index = tmp_path / "index.html"
+    offline_ui = tmp_path / "ui"
+    offline_css = offline_ui / "style.css"
+    offline_dashboard = offline_ui / "dashboard.js"
 
     for path in (
         report,
@@ -65,8 +69,15 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
         dyson_diagram,
         diagrams_inline,
         action_path,
+        offline_index,
+        offline_css,
+        offline_dashboard,
     ):
         assert path.exists(), f"expected artefact missing: {path}"
+
+    offline_index_contents = offline_index.read_text()
+    assert 'window.__KARDASHEV_ASSET_BASE__ = ".";' in offline_index_contents
+    assert 'src="./kardashev-telemetry.inline.js"' in offline_index_contents
 
     action_path_contents = action_path.read_text()
     assert "Kardashev II Action Path" in action_path_contents

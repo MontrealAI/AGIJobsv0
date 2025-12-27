@@ -1966,6 +1966,23 @@ function ensureDir(dirPath) {
   }
 }
 
+function writeOfflineDashboard(outputDir) {
+  const uiSourceDir = path.join(__dirname, 'ui');
+  const uiTargetDir = path.join(outputDir, 'ui');
+  ensureDir(uiTargetDir);
+  for (const filename of ['style.css', 'dashboard.js']) {
+    fs.copyFileSync(path.join(uiSourceDir, filename), path.join(uiTargetDir, filename));
+  }
+
+  const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const assetBaseMarker = 'window.__KARDASHEV_ASSET_BASE__ = "./output";';
+  const offlineIndex = indexTemplate
+    .replace(assetBaseMarker, 'window.__KARDASHEV_ASSET_BASE__ = ".";')
+    .replace(/src="\.\/output\//g, 'src="./');
+
+  fs.writeFileSync(path.join(outputDir, 'index.html'), offlineIndex);
+}
+
 function parseArgs(argv) {
   const args = {
     outputDir: process.env.OUTPUT_DIR,
@@ -2491,6 +2508,8 @@ function main() {
         dysonThermo: dysonThermoDiagram,
       })};\n`
     );
+
+    writeOfflineDashboard(outputDir);
 
     const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
     if (fs.existsSync(legacyTelemetryPath)) {
