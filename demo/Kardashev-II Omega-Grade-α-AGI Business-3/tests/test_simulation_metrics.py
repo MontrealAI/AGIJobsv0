@@ -31,6 +31,7 @@ def test_simulation_thermodynamic_metrics() -> None:
     game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
 
     assert state.entropy == pytest.approx(entropy)
+    assert state.nash_welfare == pytest.approx(nash_welfare)
     assert state.free_energy == pytest.approx(free_energy)
     assert state.hamiltonian == pytest.approx(hamiltonian)
     assert state.stability_index == pytest.approx(stability_index)
@@ -39,3 +40,4 @@ def test_simulation_thermodynamic_metrics() -> None:
     assert 0.0 <= state.coordination_index <= 1.0
     assert 0.0 <= state.stability_index <= 1.0
     assert 0.0 <= state.game_theory_slack <= 1.0
+    assert 0.0 <= state.nash_welfare <= 1.0

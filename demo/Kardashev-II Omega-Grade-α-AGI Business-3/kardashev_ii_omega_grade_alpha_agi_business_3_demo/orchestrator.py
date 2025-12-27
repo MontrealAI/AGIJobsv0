@@ -423,6 +423,7 @@ class Orchestrator:
             energy_output=state.energy_output_gw,
             prosperity=state.prosperity_index,
             sustainability=state.sustainability_index,
+            nash_welfare=state.nash_welfare,
             free_energy=state.free_energy,
             entropy=state.entropy,
             hamiltonian=state.hamiltonian,
@@ -671,6 +672,7 @@ class Orchestrator:
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
+        nash_welfare = max(0.0, min(1.0, state.nash_welfare))
         stability_index = max(0.0, min(1.0, state.stability_index))
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
@@ -690,6 +692,7 @@ class Orchestrator:
         stability_factor = (
             (0.6 + 0.4 * stability_index)
             * (0.7 + 0.3 * game_theory_slack)
+            * (0.8 + 0.2 * nash_welfare)
             * max(0.4, 1.0 - 0.2 * compute_price_pressure)
         )
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
@@ -699,6 +702,7 @@ class Orchestrator:
             "sustainability_gap": sustainability_gap,
             "coordination_gap": coordination_gap,
             "game_theory_slack": game_theory_slack,
+            "nash_welfare": nash_welfare,
             "stability_index": stability_index,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
@@ -1370,10 +1374,11 @@ class Orchestrator:
         if self._latest_simulation_state is not None:
             simulation_state = {
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
-                "prosperity_index": self._latest_simulation_state.prosperity_index,
-                "sustainability_index": self._latest_simulation_state.sustainability_index,
-                "free_energy": self._latest_simulation_state.free_energy,
-                "entropy": self._latest_simulation_state.entropy,
+            "prosperity_index": self._latest_simulation_state.prosperity_index,
+            "sustainability_index": self._latest_simulation_state.sustainability_index,
+            "nash_welfare": self._latest_simulation_state.nash_welfare,
+            "free_energy": self._latest_simulation_state.free_energy,
+            "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
@@ -1453,10 +1458,11 @@ class Orchestrator:
         if self._latest_simulation_state is not None:
             simulation_state = {
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
-                "prosperity_index": self._latest_simulation_state.prosperity_index,
-                "sustainability_index": self._latest_simulation_state.sustainability_index,
-                "free_energy": self._latest_simulation_state.free_energy,
-                "entropy": self._latest_simulation_state.entropy,
+            "prosperity_index": self._latest_simulation_state.prosperity_index,
+            "sustainability_index": self._latest_simulation_state.sustainability_index,
+            "nash_welfare": self._latest_simulation_state.nash_welfare,
+            "free_energy": self._latest_simulation_state.free_energy,
+            "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,

@@ -12,6 +12,7 @@ class SimulationState:
     energy_output_gw: float
     prosperity_index: float
     sustainability_index: float
+    nash_welfare: float = 0.0
     free_energy: float = 0.0
     entropy: float = 0.0
     hamiltonian: float = 0.0
@@ -70,6 +71,7 @@ class SyntheticEconomySim(PlanetarySimulation):
         )
         game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
         return {
+            "nash_welfare": nash_welfare,
             "free_energy": free_energy,
             "entropy": entropy,
             "hamiltonian": hamiltonian,
@@ -91,6 +93,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             energy_output_gw=self.energy_output_gw,
             prosperity_index=self.prosperity_index,
             sustainability_index=self.sustainability_index,
+            nash_welfare=metrics["nash_welfare"],
             free_energy=metrics["free_energy"],
             entropy=metrics["entropy"],
             hamiltonian=metrics["hamiltonian"],
