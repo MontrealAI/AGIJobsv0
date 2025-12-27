@@ -1,5 +1,32 @@
 let mermaidModule;
 
+const DEFAULT_ASSET_BASE = "./output";
+
+function resolveAssetBase() {
+  const explicitBase = window.__KARDASHEV_ASSET_BASE__;
+  if (typeof explicitBase === "string" && explicitBase.length > 0) {
+    return explicitBase.replace(/\/$/, "");
+  }
+
+  const datasetBase = document.documentElement?.dataset?.assetBase;
+  if (typeof datasetBase === "string" && datasetBase.length > 0) {
+    return datasetBase.replace(/\/$/, "");
+  }
+
+  return DEFAULT_ASSET_BASE;
+}
+
+const ASSET_BASE = resolveAssetBase();
+
+function assetPath(filename) {
+  if (!filename) {
+    return ASSET_BASE;
+  }
+  const trimmed = ASSET_BASE.endsWith("/") ? ASSET_BASE.slice(0, -1) : ASSET_BASE;
+  const base = trimmed === "." ? "." : trimmed || ".";
+  return `${base}/${filename}`;
+}
+
 async function loadMermaid() {
   if (mermaidModule !== undefined) {
     return mermaidModule;
@@ -1774,12 +1801,12 @@ async function bootstrap() {
   }
 
   const [telemetryResult, ledgerResult, equilibriumResult, ownerProofResult] = await Promise.allSettled([
-    inlineTelemetry ? Promise.resolve(inlineTelemetry) : fetchJson("./output/kardashev-telemetry.json"),
-    inlineLedger ? Promise.resolve(inlineLedger) : fetchJson("./output/kardashev-stability-ledger.json"),
+    inlineTelemetry ? Promise.resolve(inlineTelemetry) : fetchJson(assetPath("kardashev-telemetry.json")),
+    inlineLedger ? Promise.resolve(inlineLedger) : fetchJson(assetPath("kardashev-stability-ledger.json")),
     inlineEquilibrium
       ? Promise.resolve(inlineEquilibrium)
-      : fetchJson("./output/kardashev-equilibrium-ledger.json"),
-    inlineOwnerProof ? Promise.resolve(inlineOwnerProof) : fetchJson("./output/kardashev-owner-proof.json"),
+      : fetchJson(assetPath("kardashev-equilibrium-ledger.json")),
+    inlineOwnerProof ? Promise.resolve(inlineOwnerProof) : fetchJson(assetPath("kardashev-owner-proof.json")),
   ]);
 
   if (telemetryResult.status !== "fulfilled") {
@@ -1814,19 +1841,19 @@ async function bootstrap() {
 
     const diagrams = await Promise.allSettled([
       renderMermaidDiagram(
-        "./output/kardashev-task-hierarchy.mmd",
+        assetPath("kardashev-task-hierarchy.mmd"),
         "mission-mermaid",
         "mission-hierarchy-diagram",
         inlineDiagrams?.missionHierarchy
       ),
       renderMermaidDiagram(
-        "./output/kardashev-mermaid.mmd",
+        assetPath("kardashev-mermaid.mmd"),
         "mermaid-container",
         "kardashev-diagram",
         inlineDiagrams?.interstellarMap
       ),
       renderMermaidDiagram(
-        "./output/kardashev-dyson.mmd",
+        assetPath("kardashev-dyson.mmd"),
         "dyson-container",
         "dyson-diagram",
         inlineDiagrams?.dysonThermo
@@ -1883,19 +1910,19 @@ async function bootstrap() {
 
   const diagrams = await Promise.allSettled([
     renderMermaidDiagram(
-      "./output/kardashev-task-hierarchy.mmd",
+      assetPath("kardashev-task-hierarchy.mmd"),
       "mission-mermaid",
       "mission-hierarchy-diagram",
       inlineDiagrams?.missionHierarchy
     ),
     renderMermaidDiagram(
-      "./output/kardashev-mermaid.mmd",
+      assetPath("kardashev-mermaid.mmd"),
       "mermaid-container",
       "kardashev-diagram",
       inlineDiagrams?.interstellarMap
     ),
     renderMermaidDiagram(
-      "./output/kardashev-dyson.mmd",
+      assetPath("kardashev-dyson.mmd"),
       "dyson-container",
       "dyson-diagram",
       inlineDiagrams?.dysonThermo
