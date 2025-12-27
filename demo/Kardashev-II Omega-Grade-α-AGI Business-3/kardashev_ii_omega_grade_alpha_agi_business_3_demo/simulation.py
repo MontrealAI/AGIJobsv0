@@ -15,6 +15,7 @@ class SimulationState:
     free_energy: float = 0.0
     entropy: float = 0.0
     hamiltonian: float = 0.0
+    stability_index: float = 0.0
     coordination_index: float = 0.0
     game_theory_slack: float = 0.0
 
@@ -61,6 +62,9 @@ class SyntheticEconomySim(PlanetarySimulation):
         hamiltonian = -internal_energy * order_parameter
         coordination_index = 1.0 - abs(self.prosperity_index - self.sustainability_index)
         coordination_index = min(1.0, max(0.0, coordination_index))
+        stability_index = math.exp(-entropy) * (1.0 / (1.0 + abs(hamiltonian)))
+        stability_index *= 0.5 + 0.5 * coordination_index
+        stability_index = min(1.0, max(0.0, stability_index))
         nash_welfare = math.sqrt(
             max(1e-6, self.prosperity_index) * max(1e-6, self.sustainability_index)
         )
@@ -69,6 +73,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             "free_energy": free_energy,
             "entropy": entropy,
             "hamiltonian": hamiltonian,
+            "stability_index": stability_index,
             "coordination_index": coordination_index,
             "game_theory_slack": game_theory_slack,
         }
@@ -89,6 +94,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             free_energy=metrics["free_energy"],
             entropy=metrics["entropy"],
             hamiltonian=metrics["hamiltonian"],
+            stability_index=metrics["stability_index"],
             coordination_index=metrics["coordination_index"],
             game_theory_slack=metrics["game_theory_slack"],
         )
