@@ -66,3 +66,19 @@ Generated: 2125-01-01T19:05:39.398Z
 
 A detailed task hierarchy diagram is available at `kardashev-task-hierarchy.mmd`.
 
+## Mission Thermodynamics
+
+- Mission Hamiltonian load: 44.04% · stability 55.96%
+- Free energy headroom vs mission demand: 37.85% (923878.69 GW buffer)
+
+| Programme                          | Energy Share | Compute Share | Risk Index | Slack   | Hamiltonian Load |
+| ---------------------------------- | ------------ | ------------- | ---------- | ------- | ---------------- |
+| Dyson Swarm Expansion Programme    | 89.0%        | 71.7%         | 50.6%      | -600.0d | 78.1%            |
+| Ares Biosphere Terraforming Sprint | 7.0%         | 16.8%         | 60.0%      | -220.0d | 29.4%            |
+| Gaia Resilience Grid               | 3.9%         | 11.5%         | 50.0%      | -240.0d | 24.6%            |
+
+### Priority queue
+- 1. Dyson Swarm Expansion Programme: 100.0% pressure · Expand timeline slack and buffer energy reserves.
+- 2. Ares Biosphere Terraforming Sprint: 63.4% pressure · Expand timeline slack and buffer energy reserves.
+- 3. Gaia Resilience Grid: 57.1% pressure · Expand timeline slack and buffer energy reserves.
+
