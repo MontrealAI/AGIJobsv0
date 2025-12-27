@@ -1,14 +1,29 @@
 """Prometheus metrics exporter."""
 from __future__ import annotations
 
+import importlib.util
 import logging
 import threading
 from contextlib import suppress
 from typing import Dict
 
-from prometheus_client import Gauge, start_http_server
-
 logger = logging.getLogger(__name__)
+
+_PROMETHEUS_AVAILABLE = importlib.util.find_spec("prometheus_client") is not None
+
+if _PROMETHEUS_AVAILABLE:
+    from prometheus_client import Gauge, start_http_server
+else:
+
+    class Gauge:  # type: ignore[override]
+        def __init__(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+        def set(self, *_args: object, **_kwargs: object) -> None:
+            pass
+
+    def start_http_server(*_args: object, **_kwargs: object) -> None:
+        logger.warning("Prometheus metrics disabled; prometheus_client is not installed.")
 
 
 class MetricsExporter:
@@ -17,8 +32,12 @@ class MetricsExporter:
         self.port = port
         self._server_thread: threading.Thread | None = None
         self._gauges: Dict[str, Gauge] = {}
+        self._enabled = _PROMETHEUS_AVAILABLE
 
     def start(self) -> None:
+        if not self._enabled:
+            logger.warning("Prometheus metrics disabled; prometheus_client is not installed.")
+            return
         if self._server_thread and self._server_thread.is_alive():
             return
 
@@ -30,6 +49,8 @@ class MetricsExporter:
         self._server_thread.start()
 
     def update(self, metric: str, value: float, description: str = "") -> None:
+        if not self._enabled:
+            return
         gauge = self._gauges.get(metric)
         if gauge is None:
             gauge = Gauge(metric, description or metric)
