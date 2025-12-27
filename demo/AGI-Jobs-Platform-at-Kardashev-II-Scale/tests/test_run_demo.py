@@ -51,6 +51,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     mermaid_map = tmp_path / "kardashev-mermaid.mmd"
     dyson_diagram = tmp_path / "kardashev-dyson.mmd"
     diagrams_inline = tmp_path / "kardashev-diagrams.inline.js"
+    action_path = tmp_path / "kardashev-action-path.md"
 
     for path in (
         report,
@@ -63,8 +64,13 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
         mermaid_map,
         dyson_diagram,
         diagrams_inline,
+        action_path,
     ):
         assert path.exists(), f"expected artefact missing: {path}"
+
+    action_path_contents = action_path.read_text()
+    assert "Kardashev II Action Path" in action_path_contents
+    assert "Action path" in action_path_contents
 
     telemetry_payload = json.loads(telemetry.read_text())
     assert telemetry_payload.get("energyMonteCarlo", {}).get("withinTolerance") is True
