@@ -363,6 +363,21 @@ function computeCoefficientOfVariation(values) {
   return Math.sqrt(Math.max(0, variance)) / mean;
 }
 
+function computeRiskIndex(riskDistribution) {
+  if (!riskDistribution) {
+    return 0;
+  }
+  const low = riskDistribution.low ?? 0;
+  const medium = riskDistribution.medium ?? 0;
+  const high = riskDistribution.high ?? 0;
+  const total = low + medium + high;
+  if (total <= 0) {
+    return 0;
+  }
+  const weightedRisk = low * 0.2 + medium * 0.6 + high;
+  return clamp01(weightedRisk / total);
+}
+
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
@@ -625,6 +640,76 @@ function buildMissionLattice(taskLattice, manifest) {
     totals,
     programmes: programmeSummaries,
     verification,
+  };
+}
+
+function buildMissionThermodynamics(mission, energyMonteCarlo) {
+  if (!mission) {
+    return {
+      freeEnergyBudgetGw: 0,
+      freeEnergyHeadroomPct: 0,
+      hamiltonianLoad: 0,
+      hamiltonianStability: 0,
+      programmes: [],
+      actionQueue: [],
+    };
+  }
+
+  const totalEnergyGw = mission.totals.energyGw ?? 0;
+  const totalCompute = mission.totals.computeExaflops ?? 0;
+  const freeEnergyBudgetGw = Math.max(0, energyMonteCarlo?.freeEnergyMarginGw ?? 0);
+  const freeEnergyHeadroomPct =
+    totalEnergyGw > 0 ? clamp01(freeEnergyBudgetGw / totalEnergyGw) : 0;
+
+  const programmeThermo = mission.programmes.map((programme) => {
+    const energyShare = totalEnergyGw > 0 ? programme.totalEnergyGw / totalEnergyGw : 0;
+    const computeShare = totalCompute > 0 ? programme.totalComputeExaflops / totalCompute : 0;
+    const riskIndex = computeRiskIndex(programme.riskDistribution);
+    const slackPenalty = programme.timelineSlackDays < 0 ? 1 : programme.timelineSlackDays < 14 ? 0.5 : 0;
+    const hamiltonian = clamp01(
+      0.45 * energyShare + 0.25 * computeShare + 0.2 * riskIndex + 0.1 * slackPenalty
+    );
+    const pressureScore = clamp01(hamiltonian + 0.25 * slackPenalty + 0.15 * riskIndex);
+    let recommendation = "Maintain cadence while monitoring energy draw.";
+    if (programme.missingDependencies.length > 0) {
+      recommendation = "Resolve dependency gaps to lower mission drag.";
+    } else if (slackPenalty >= 0.5) {
+      recommendation = "Expand timeline slack and buffer energy reserves.";
+    } else if (riskIndex >= 0.6) {
+      recommendation = "Increase sentinel coverage and redundancy to reduce risk.";
+    }
+    return {
+      id: programme.id,
+      name: programme.name,
+      energyShare,
+      computeShare,
+      riskIndex,
+      timelineSlackDays: programme.timelineSlackDays,
+      hamiltonian,
+      pressureScore,
+      recommendation,
+    };
+  });
+
+  const hamiltonianLoad = average(programmeThermo.map((entry) => entry.hamiltonian));
+  const hamiltonianStability = clamp01(1 - hamiltonianLoad);
+  const actionQueue = [...programmeThermo]
+    .sort((a, b) => b.pressureScore - a.pressureScore)
+    .slice(0, 3)
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      pressureScore: entry.pressureScore,
+      recommendation: entry.recommendation,
+    }));
+
+  return {
+    freeEnergyBudgetGw,
+    freeEnergyHeadroomPct,
+    hamiltonianLoad,
+    hamiltonianStability,
+    programmes: programmeThermo,
+    actionQueue,
   };
 }
 
@@ -1300,6 +1385,7 @@ function buildEquilibriumLedger({
   sentientWelfare,
   logistics,
   computeFabric,
+  missionThermodynamics,
   verification,
 }) {
   const breachPenalty = energyMonteCarlo.withinTolerance
@@ -1381,6 +1467,7 @@ function buildEquilibriumLedger({
     sentientWelfare,
     logistics,
     computeFabric,
+    missionThermodynamics,
     verification,
   });
 
@@ -1507,6 +1594,7 @@ function buildEquilibriumActionPath({
   sentientWelfare,
   logistics,
   computeFabric,
+  missionThermodynamics,
   verification,
 }) {
   const steps = [];
@@ -1523,6 +1611,24 @@ function buildEquilibriumActionPath({
     )} GJ · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}%`,
     action:
       'Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.',
+  });
+
+  const missionNeeds =
+    (missionThermodynamics?.hamiltonianStability ?? 0) < 0.9 ||
+    (missionThermodynamics?.freeEnergyHeadroomPct ?? 0) < 0.05;
+  const missionHamiltonianPct = Number.isFinite(missionThermodynamics?.hamiltonianStability)
+    ? (missionThermodynamics.hamiltonianStability * 100).toFixed(1)
+    : "n/a";
+  const missionHeadroomPct = Number.isFinite(missionThermodynamics?.freeEnergyHeadroomPct)
+    ? (missionThermodynamics.freeEnergyHeadroomPct * 100).toFixed(1)
+    : "n/a";
+  steps.push({
+    title: 'Mission Hamiltonian load-balance',
+    status: missionNeeds ? 'needs-action' : 'on-track',
+    target: 'Mission Hamiltonian stability ≥ 90% with ≥ 5% free energy headroom.',
+    rationale: `Mission stability ${missionHamiltonianPct}% · headroom ${missionHeadroomPct}%`,
+    action:
+      'Shift energy-intensive programmes, stretch critical-path timelines, and lower risk exposure until mission stability clears target.',
   });
 
   const deviationNeeds =
@@ -1892,6 +1998,7 @@ function main() {
   const computeFabric = buildComputeFabric(manifest.computeFabrics);
   const orchestrationFabric = buildOrchestrationFabric(fabric.shards, manifest.federations);
   const missionLattice = buildMissionLattice(taskLattice, manifest);
+  const missionThermodynamics = buildMissionThermodynamics(missionLattice, energyMonteCarlo);
   const logistics = buildLogistics(manifest, manifest.dysonProgram?.safety);
   const settlement = buildSettlement(manifest);
   const computeTolerancePct = manifest.verificationProtocols?.computeTolerancePct ?? 0.75;
@@ -1924,6 +2031,7 @@ function main() {
     sentientWelfare,
     logistics,
     computeFabric,
+    missionThermodynamics,
     verification,
   });
 
@@ -2061,6 +2169,41 @@ function main() {
   reportLines.push(`A detailed task hierarchy diagram is available at \`${dysonHierarchyReference}\`.`);
   reportLines.push('');
 
+  reportLines.push('## Mission Thermodynamics');
+  reportLines.push('');
+  reportLines.push(
+    `- Mission Hamiltonian load: ${(missionThermodynamics.hamiltonianLoad * 100).toFixed(
+      2
+    )}% · stability ${(missionThermodynamics.hamiltonianStability * 100).toFixed(2)}%`
+  );
+  reportLines.push(
+    `- Free energy headroom vs mission demand: ${(missionThermodynamics.freeEnergyHeadroomPct * 100).toFixed(
+      2
+    )}% (${missionThermodynamics.freeEnergyBudgetGw.toFixed(2)} GW buffer)`
+  );
+  reportLines.push('');
+  reportLines.push(
+    toTable(
+      missionThermodynamics.programmes.map((programme) => [
+        programme.name,
+        `${(programme.energyShare * 100).toFixed(1)}%`,
+        `${(programme.computeShare * 100).toFixed(1)}%`,
+        `${(programme.riskIndex * 100).toFixed(1)}%`,
+        `${programme.timelineSlackDays.toFixed(1)}d`,
+        `${(programme.hamiltonian * 100).toFixed(1)}%`,
+      ]),
+      ['Programme', 'Energy Share', 'Compute Share', 'Risk Index', 'Slack', 'Hamiltonian Load']
+    )
+  );
+  reportLines.push('');
+  reportLines.push('### Priority queue');
+  missionThermodynamics.actionQueue.forEach((entry, idx) => {
+    reportLines.push(
+      `- ${idx + 1}. ${entry.name}: ${(entry.pressureScore * 100).toFixed(1)}% pressure · ${entry.recommendation}`
+    );
+  });
+  reportLines.push('');
+
   const governanceLines = [];
   governanceLines.push('# Kardashev II Governance Playbook');
   governanceLines.push('');
@@ -2106,6 +2249,7 @@ function main() {
     computeFabric,
     orchestrationFabric,
     missionLattice,
+    missionThermodynamics,
     logistics: {
       aggregate: logistics.aggregate,
       corridors: logistics.corridors,
