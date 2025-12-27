@@ -38,6 +38,11 @@ __all__ = getattr(_module, "__all__", [])
 _main_attr = getattr(_module, "main", None)
 if _main_attr is None:
     _main_attr = importlib.import_module(f"{__name__}.cli").main
+
+# ``sys.modules`` already points at the nested module, so ensure the fallback
+# ``main`` attribute is attached to that object rather than the transient
+# wrapper module instance.
+setattr(_module, "main", _main_attr)
 main = _main_attr
 
 
