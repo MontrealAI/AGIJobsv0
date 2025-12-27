@@ -14,6 +14,7 @@
     "hardhat": "^2.26.1",
     "hardhat-contract-sizer": "^2.10.0",
     "solidity-coverage": "^0.8.12",
+    "solc": "^0.8.25",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }
