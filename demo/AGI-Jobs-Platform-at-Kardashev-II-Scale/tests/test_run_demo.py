@@ -149,6 +149,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert equilibrium_payload["actionPath"]
     assert equilibrium_payload["actionPath"][0]["title"]
     assert equilibrium_payload["actionPath"][0]["target"]
+    priorities = [step["priorityScore"] for step in equilibrium_payload["actionPath"]]
+    assert all(0 <= priority <= 1 for priority in priorities)
+    assert priorities == sorted(priorities, reverse=True)
 
     telemetry_energy = telemetry_payload["energy"]
     assert telemetry_energy["utilisationPct"] > 0

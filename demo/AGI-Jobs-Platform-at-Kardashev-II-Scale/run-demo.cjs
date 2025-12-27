@@ -1498,6 +1498,11 @@ function buildEquilibriumLedger({
     0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) +
       0.4 * (computeFabric.averageAvailabilityPct ?? 0)
   );
+  const missionHamiltonian = missionThermodynamics?.hamiltonianStability ?? 0;
+  const missionHeadroom = missionThermodynamics?.freeEnergyHeadroomPct ?? 0;
+  const missionScore = clamp01(
+    0.7 * missionHamiltonian + 0.3 * clamp01(missionHeadroom / 0.05)
+  );
 
   const overallScore = clamp01(
     0.3 * energyScore +
@@ -1539,6 +1544,14 @@ function buildEquilibriumLedger({
     computeFabric,
     missionThermodynamics,
     verification,
+    scores: {
+      energy: energyScore,
+      mission: missionScore,
+      allocation: allocationScore,
+      welfare: welfareScore,
+      logistics: logisticsScore,
+      compute: computeScore,
+    },
   });
 
   const pathways = [
@@ -1704,6 +1717,9 @@ function buildActionPathBriefing(equilibriumLedger) {
       lines.push(`### Step ${step.rank}: ${step.title}`);
       lines.push(`- Status: ${step.status}`);
       lines.push(`- Target: ${step.target}`);
+      if (Number.isFinite(step.priorityScore)) {
+        lines.push(`- Priority: ${formatPercentValue(step.priorityScore)}`);
+      }
       lines.push(`- Rationale: ${step.rationale}`);
       lines.push(`- Action: ${step.action}`);
       lines.push('');
@@ -1720,6 +1736,7 @@ function buildEquilibriumActionPath({
   computeFabric,
   missionThermodynamics,
   verification,
+  scores,
 }) {
   const steps = [];
   const energyNeeds =
@@ -1727,6 +1744,8 @@ function buildEquilibriumActionPath({
     energyMonteCarlo.hamiltonianStability < 0.9 ||
     !energyMonteCarlo.maintainsBuffer;
   steps.push({
+    key: 'energy',
+    score: scores?.energy ?? 0,
     title: 'Thermodynamic headroom reset',
     status: energyNeeds ? 'needs-action' : 'on-track',
     target: 'Free energy margin ≥ 8% and Hamiltonian stability ≥ 90%.',
@@ -1747,6 +1766,8 @@ function buildEquilibriumActionPath({
     ? (missionThermodynamics.freeEnergyHeadroomPct * 100).toFixed(1)
     : "n/a";
   steps.push({
+    key: 'mission',
+    score: scores?.mission ?? 0,
     title: 'Mission Hamiltonian load-balance',
     status: missionNeeds ? 'needs-action' : 'on-track',
     target: 'Mission Hamiltonian stability ≥ 90% with ≥ 5% free energy headroom.',
@@ -1758,6 +1779,8 @@ function buildEquilibriumActionPath({
   const deviationNeeds =
     allocationPolicy.deviationIncentive > 0.2 || allocationPolicy.strategyStability < 0.85;
   steps.push({
+    key: 'allocation',
+    score: scores?.allocation ?? 0,
     title: 'Nash deviation suppression',
     status: deviationNeeds ? 'needs-action' : 'on-track',
     target: 'Deviation incentive ≤ 20% with strategy stability ≥ 85%.',
@@ -1770,6 +1793,8 @@ function buildEquilibriumActionPath({
 
   const welfareNeeds = sentientWelfare.inequalityIndex > 0.3 || sentientWelfare.coalitionStability < 0.85;
   steps.push({
+    key: 'welfare',
+    score: scores?.welfare ?? 0,
     title: 'Coalition welfare equilibration',
     status: welfareNeeds ? 'needs-action' : 'on-track',
     target: 'Coalition stability ≥ 85% and inequality ≤ 30%.',
@@ -1793,6 +1818,8 @@ function buildEquilibriumActionPath({
   const entropyOk = entropyRatio !== null && entropyRatio >= 0.9;
   const logisticsNeeds = !hasUtilisation || !utilisationOk || !entropyOk;
   steps.push({
+    key: 'logistics',
+    score: scores?.logistics ?? 0,
     title: 'Logistics entropy smoothing',
     status: logisticsNeeds ? 'needs-action' : 'on-track',
     target: 'Utilisation band 65–85% with entropy ratio ≥ 0.90.',
@@ -1805,6 +1832,8 @@ function buildEquilibriumActionPath({
 
   const computeNeeds = !computeFabric.failoverWithinQuorum;
   steps.push({
+    key: 'compute',
+    score: scores?.compute ?? 0,
     title: 'Compute quorum resilience',
     status: computeNeeds ? 'needs-action' : 'on-track',
     target: 'Failover quorum satisfied with deviation under tolerance.',
@@ -1816,12 +1845,15 @@ function buildEquilibriumActionPath({
   });
 
   const actionable = steps.filter((step) => step.status === 'needs-action');
-  const path = actionable.length ? actionable : steps.map((step) => ({ ...step, status: 'on-track' }));
+  const path = (actionable.length ? actionable : steps)
+    .sort((a, b) => a.score - b.score)
+    .map((step, index) => ({
+      rank: index + 1,
+      priorityScore: round(1 - step.score, 4),
+      ...step,
+    }));
 
-  return path.map((step, index) => ({
-    rank: index + 1,
-    ...step,
-  }));
+  return path.map(({ score, key, ...step }) => step);
 }
 
 function buildOwnerProof({ fabric, telemetry, allocationPolicy, dominanceScore }) {

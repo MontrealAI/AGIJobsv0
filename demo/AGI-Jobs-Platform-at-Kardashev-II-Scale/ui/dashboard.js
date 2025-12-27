@@ -1591,7 +1591,10 @@ function renderEquilibriumLedger(ledger) {
     ledger.actionPath.forEach((step) => {
       const li = document.createElement("li");
       const status = step.status === "needs-action" ? "status-warn" : "status-ok";
-      li.innerHTML = `<strong>${step.rank}. ${step.title}</strong> — ${step.rationale}<br /><span>${step.action}</span><br /><span>Target: ${step.target}</span>`;
+      const priorityText = Number.isFinite(step.priorityScore)
+        ? `<br /><span>Priority: ${formatPercent(step.priorityScore)}</span>`
+        : "";
+      li.innerHTML = `<strong>${step.rank}. ${step.title}</strong> — ${step.rationale}<br /><span>${step.action}</span><br /><span>Target: ${step.target}</span>${priorityText}`;
       li.classList.add(status);
       actionPathList.appendChild(li);
     });
