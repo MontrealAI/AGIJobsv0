@@ -90,6 +90,7 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= allocation["strategyStability"] <= 1
     assert 0 <= allocation["deviationIncentive"] <= 1
     assert 0 <= allocation["jainIndex"] <= 1
+    assert allocation["concentrationIndex"] <= allocation["diversificationTarget"]
 
     sentient = telemetry_payload["sentientWelfare"]
     assert sentient["totalAgents"] > 0

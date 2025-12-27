@@ -22,10 +22,10 @@
 * Free energy margin 896409.53 GW (77.95%) · Gibbs free energy 3,227,074,308.574 GJ.
 * Free energy runway 3.77 hours at mean demand.
 * Hamiltonian stability 89.0% · entropy margin 99.23σ · game-theory slack 95.0% · buffer stable.
-* Allocation policy: Gibbs temperature 0.12 · Nash welfare 85.60% · fairness 76.9% · Gibbs potential -0.047.
-* Replicator equilibrium 70.1% · drift 0.299.
-* Sentient welfare equilibrium 87.4% · cooperation 87.5% · inequality 5.3% · free energy/agent 0.720329 GJ.
-* Allocation deltas: Earth Sovereign Federation -35705.25 GW · Mars Terraforming Compact +7458.66 GW · Orbital Research Halo +28246.59 GW.
+* Allocation policy: Gibbs temperature 0.12 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.047.
+* Replicator equilibrium 95.4% · drift 0.046.
+* Sentient welfare equilibrium 95.2% · cooperation 92.6% · inequality 5.3% · free energy/agent 0.720329 GJ.
+* Allocation deltas: Earth Sovereign Federation -1333.33 GW · Mars Terraforming Compact +56666.67 GW · Orbital Research Halo -55333.33 GW.
 * Demand percentiles: P95 253,590.47 GW · P99 255,272.268 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).

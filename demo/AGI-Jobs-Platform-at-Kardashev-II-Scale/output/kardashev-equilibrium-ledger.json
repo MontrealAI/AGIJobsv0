@@ -1,7 +1,7 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
   "status": "nominal",
-  "overallScore": 0.9198,
+  "overallScore": 0.9387,
   "components": {
     "energy": {
       "score": 0.9049,
@@ -12,8 +12,8 @@
       "gibbsFreeEnergyGj": 3227074308.57
     },
     "allocation": {
-      "score": 0.8736,
-      "fairnessIndex": 0.7688,
+      "score": 0.9314,
+      "fairnessIndex": 1,
       "strategyStability": 0.8789,
       "deviationIncentive": 0.1211,
       "nashProduct": 0.856,
@@ -21,12 +21,12 @@
       "gibbsPotential": -0.0465
     },
     "welfare": {
-      "score": 0.8812,
-      "cooperationIndex": 0.8754,
+      "score": 0.9178,
+      "cooperationIndex": 0.9261,
       "inequalityIndex": 0.0525,
       "coalitionStability": 0.8996,
       "paretoSlack": 0.8789,
-      "collectiveActionPotential": 0.8808
+      "collectiveActionPotential": 0.901
     },
     "logistics": {
       "score": 0.9904,
@@ -88,11 +88,11 @@
   "actionPath": [
     {
       "rank": 1,
-      "title": "Tighten Nash allocation",
+      "title": "Stabilize free energy buffer",
       "status": "on-track",
-      "rationale": "Deviation 12.1% · strategy 87.9%",
-      "action": "Keep incentive gradients aligned with Nash stability targets.",
-      "target": "Deviation incentive ≤ 20% and strategy stability ≥ 85%."
+      "rationale": "Free energy 77.9% · Hamiltonian 89.0%",
+      "action": "Hold reserve cadence and keep Monte Carlo breach probability below tolerance.",
+      "target": "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%."
     },
     {
       "rank": 2,
@@ -104,11 +104,11 @@
     },
     {
       "rank": 3,
-      "title": "Stabilize free energy buffer",
+      "title": "Tighten Nash allocation",
       "status": "on-track",
-      "rationale": "Free energy 77.9% · Hamiltonian 89.0%",
-      "action": "Hold reserve cadence and keep Monte Carlo breach probability below tolerance.",
-      "target": "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%."
+      "rationale": "Deviation 12.1% · strategy 87.9%",
+      "action": "Keep incentive gradients aligned with Nash stability targets.",
+      "target": "Deviation incentive ≤ 20% and strategy stability ≥ 85%."
     },
     {
       "rank": 4,
