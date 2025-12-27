@@ -10,6 +10,7 @@ const debugEnabled = (process.env.DEBUG || '')
   .map((entry) => entry.trim())
   .filter(Boolean)
   .includes(DEBUG_TOKEN);
+const DIVERSIFICATION_TARGET_HHI = 0.3;
 
 function debugLog(section, payload) {
   if (!debugEnabled) {
@@ -331,6 +332,58 @@ function computeHerfindahlIndex(weights) {
   return clamp01(rawIndex);
 }
 
+function normalizeWeights(weights) {
+  if (!weights.length) {
+    return [];
+  }
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return weights.map(() => 1 / weights.length);
+  }
+  return weights.map((weight) => weight / total);
+}
+
+function diversifyWeights(weights, targetConcentration) {
+  if (!weights.length) {
+    return {
+      weights,
+      concentrationIndex: 0,
+      diversificationAlpha: 0,
+    };
+  }
+  const normalized = normalizeWeights(weights);
+  const concentrationIndex = computeHerfindahlIndex(normalized);
+  if (concentrationIndex <= targetConcentration) {
+    return {
+      weights: normalized,
+      concentrationIndex,
+      diversificationAlpha: 0,
+    };
+  }
+  const uniformWeight = 1 / normalized.length;
+  if (targetConcentration <= uniformWeight) {
+    return {
+      weights: Array.from({ length: normalized.length }, () => uniformWeight),
+      concentrationIndex: uniformWeight,
+      diversificationAlpha: 1,
+    };
+  }
+
+  const delta = concentrationIndex - uniformWeight;
+  const ratio = (targetConcentration - uniformWeight) / delta;
+  const diversificationAlpha = clamp01(1 - Math.sqrt(Math.max(0, ratio)));
+  const blended = normalizeWeights(
+    normalized.map(
+      (weight) => (1 - diversificationAlpha) * weight + diversificationAlpha * uniformWeight
+    )
+  );
+  return {
+    weights: blended,
+    concentrationIndex: computeHerfindahlIndex(blended),
+    diversificationAlpha,
+  };
+}
+
 function computeGiniIndex(values) {
   if (!values.length) {
     return 0;
@@ -385,7 +438,13 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     const latencyPenalty = Math.min(1, metric.settlementLagMinutes / 180);
     return metric.resilience - 0.6 * utilisationPenalty - 0.2 * latencyPenalty;
   });
-  const { weights, partition } = softmaxScores(scores, temperature);
+  const { weights: rawWeights, partition } = softmaxScores(scores, temperature);
+  const diversificationTarget = Math.max(
+    DIVERSIFICATION_TARGET_HHI,
+    rawWeights.length ? 1 / rawWeights.length : DIVERSIFICATION_TARGET_HHI
+  );
+  const diversification = diversifyWeights(rawWeights, diversificationTarget);
+  const weights = diversification.weights;
   const availableGw = energyMonteCarlo.availableGw;
   const allocations = shardMetrics.map((metric, idx) => {
     const weight = weights[idx] ?? 0;
@@ -418,7 +477,7 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     weights.reduce((sum, weight, idx) => sum + Math.abs(weight - (normalizedPayoffs[idx] ?? 0)), 0) / 2;
   const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
-  const concentrationIndex = computeHerfindahlIndex(weights);
+  const concentrationIndex = diversification.concentrationIndex;
   const diversificationScore = clamp01(1 - concentrationIndex);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
@@ -433,6 +492,8 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     jainIndex,
     concentrationIndex,
     diversificationScore,
+    diversificationTarget,
+    diversificationAlpha: diversification.diversificationAlpha,
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
@@ -1205,7 +1266,8 @@ function buildStabilityLedger({
   const resilienceOk = averageResilience >= 0.985;
   const fairnessOk = allocationPolicy.fairnessIndex >= 0.85 && allocationPolicy.jainIndex >= 0.85;
   const concentrationIndex = allocationPolicy.concentrationIndex ?? 0;
-  const diversificationOk = concentrationIndex <= 0.3;
+  const diversificationTarget = allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI;
+  const diversificationOk = concentrationIndex <= diversificationTarget;
   const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
     ? allocationPolicy.replicatorStability
     : allocationPolicy.strategyStability;
@@ -1453,7 +1515,7 @@ function buildEquilibriumLedger({
   if (allocationPolicy.deviationIncentive > 0.2) {
     recommendations.push('Reduce deviation incentives to reinforce Nash equilibrium adherence.');
   }
-  if ((allocationPolicy.concentrationIndex ?? 0) > 0.3) {
+  if ((allocationPolicy.concentrationIndex ?? 0) > (allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI)) {
     recommendations.push('Reduce allocation concentration by broadening energy weights across shards.');
   }
   if (sentientWelfare.inequalityIndex > 0.3) {
@@ -1500,12 +1562,17 @@ function buildEquilibriumLedger({
     },
     {
       title: 'Allocation diversification',
-      status: (allocationPolicy.concentrationIndex ?? 0) <= 0.3 ? 'on-track' : 'needs-action',
+      status:
+        (allocationPolicy.concentrationIndex ?? 0) <=
+        (allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI)
+          ? 'on-track'
+          : 'needs-action',
       rationale: `HHI ${(allocationPolicy.concentrationIndex ?? 0).toFixed(3)} · diversification ${(allocationPolicy.diversificationScore * 100).toFixed(1)}%`,
       action:
-        (allocationPolicy.concentrationIndex ?? 0) <= 0.3
+        (allocationPolicy.concentrationIndex ?? 0) <=
+        (allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI)
           ? 'Maintain diversified allocation weights to avoid concentration risk.'
-          : 'Rebalance allocations to reduce concentration risk below the 0.30 HHI threshold.',
+          : 'Rebalance allocations to reduce concentration risk below the target HHI threshold.',
     },
     {
       title: 'Sentient coalition balance',

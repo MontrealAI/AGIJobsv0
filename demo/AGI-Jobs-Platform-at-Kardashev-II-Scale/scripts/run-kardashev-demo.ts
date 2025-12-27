@@ -57,6 +57,7 @@ const ENERGY_FEEDS_PATH = join(DEMO_ROOT, "config", "energy-feeds.json");
 const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
 const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
+const DIVERSIFICATION_TARGET_HHI = 0.3;
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
   const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
@@ -1282,6 +1283,10 @@ type AllocationPolicy = {
   replicatorDrift: number;
   replicatorStability: number;
   jainIndex: number;
+  concentrationIndex: number;
+  diversificationScore: number;
+  diversificationTarget: number;
+  diversificationAlpha: number;
   allocationEntropy: number;
   fairnessIndex: number;
   gibbsPotential: number;
@@ -1348,6 +1353,69 @@ function computeJainIndex(values: number[]): number {
   }
   const rawIndex = (sum * sum) / (values.length * sumSquares);
   return Math.min(1, Math.max(0, rawIndex));
+}
+
+function computeHerfindahlIndex(weights: number[]): number {
+  if (!weights.length) {
+    return 0;
+  }
+  const rawIndex = weights.reduce((sum, weight) => sum + weight * weight, 0);
+  return clamp01(rawIndex);
+}
+
+function normalizeWeights(weights: number[]): number[] {
+  if (!weights.length) {
+    return [];
+  }
+  const total = weights.reduce((sum, weight) => sum + weight, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    return weights.map(() => 1 / weights.length);
+  }
+  return weights.map((weight) => weight / total);
+}
+
+function diversifyWeights(
+  weights: number[],
+  targetConcentration: number
+): { weights: number[]; concentrationIndex: number; diversificationAlpha: number } {
+  if (!weights.length) {
+    return {
+      weights,
+      concentrationIndex: 0,
+      diversificationAlpha: 0,
+    };
+  }
+  const normalized = normalizeWeights(weights);
+  const concentrationIndex = computeHerfindahlIndex(normalized);
+  if (concentrationIndex <= targetConcentration) {
+    return {
+      weights: normalized,
+      concentrationIndex,
+      diversificationAlpha: 0,
+    };
+  }
+  const uniformWeight = 1 / normalized.length;
+  if (targetConcentration <= uniformWeight) {
+    return {
+      weights: Array.from({ length: normalized.length }, () => uniformWeight),
+      concentrationIndex: uniformWeight,
+      diversificationAlpha: 1,
+    };
+  }
+
+  const delta = concentrationIndex - uniformWeight;
+  const ratio = (targetConcentration - uniformWeight) / delta;
+  const diversificationAlpha = clamp01(1 - Math.sqrt(Math.max(0, ratio)));
+  const blended = normalizeWeights(
+    normalized.map(
+      (weight) => (1 - diversificationAlpha) * weight + diversificationAlpha * uniformWeight
+    )
+  );
+  return {
+    weights: blended,
+    concentrationIndex: computeHerfindahlIndex(blended),
+    diversificationAlpha,
+  };
 }
 
 function computeGiniIndex(values: number[]): number {
@@ -1511,7 +1579,13 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     return Math.min(1, Math.max(0, efficiencyScore));
   });
 
-  const { weights, partition } = softmaxScores(scores, temperature);
+  const { weights: rawWeights, partition } = softmaxScores(scores, temperature);
+  const diversificationTarget = Math.max(
+    DIVERSIFICATION_TARGET_HHI,
+    rawWeights.length ? 1 / rawWeights.length : DIVERSIFICATION_TARGET_HHI
+  );
+  const diversification = diversifyWeights(rawWeights, diversificationTarget);
+  const weights = diversification.weights;
   const allocations = federations.map((federation, index) => {
     const weight = weights[index] ?? 0;
     const resilience =
@@ -1557,6 +1631,8 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     weights.reduce((sum, weight, index) => sum + Math.abs(weight - (normalizedPayoffs[index] ?? 0)), 0) / 2;
   const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
+  const concentrationIndex = diversification.concentrationIndex;
+  const diversificationScore = clamp01(1 - concentrationIndex);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
   const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
@@ -1569,6 +1645,10 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     replicatorDrift,
     replicatorStability,
     jainIndex,
+    concentrationIndex,
+    diversificationScore,
+    diversificationTarget,
+    diversificationAlpha: diversification.diversificationAlpha,
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
