@@ -65,6 +65,14 @@ function formatMaybeNumber(value, formatter, fallback = "n/a") {
   return formatter(value);
 }
 
+function formatPercent(value, digits = 1) {
+  return formatMaybeNumber(value, (val) => `${(val * 100).toFixed(digits)}%`);
+}
+
+function formatFixed(value, digits = 2) {
+  return formatMaybeNumber(value, (val) => val.toFixed(digits));
+}
+
 function applyStatus(element, status) {
   if (!element) return;
   element.classList.remove("status-ok", "status-warn", "status-fail");
@@ -175,6 +183,24 @@ function renderEquilibriumUnavailable(reason) {
     li.textContent = "Re-run the orchestrator to generate equilibrium telemetry.";
     li.classList.add("status-warn");
     components.appendChild(li);
+  }
+
+  const thermo = document.querySelector("#equilibrium-thermo");
+  if (thermo) {
+    thermo.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Thermodynamic equilibrium pending telemetry refresh.";
+    li.classList.add("status-warn");
+    thermo.appendChild(li);
+  }
+
+  const gameTheory = document.querySelector("#equilibrium-game-theory");
+  if (gameTheory) {
+    gameTheory.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Game-theory equilibrium pending telemetry refresh.";
+    li.classList.add("status-warn");
+    gameTheory.appendChild(li);
   }
 
   const pathways = document.querySelector("#equilibrium-pathways");
@@ -1329,10 +1355,21 @@ function renderSettlement(settlement, verification) {
 function renderEquilibriumLedger(ledger) {
   const summary = document.querySelector("#equilibrium-summary");
   const componentsList = document.querySelector("#equilibrium-components");
+  const thermoList = document.querySelector("#equilibrium-thermo");
+  const gameTheoryList = document.querySelector("#equilibrium-game-theory");
   const pathwaysList = document.querySelector("#equilibrium-pathways");
   const actionPathList = document.querySelector("#equilibrium-action-path");
   const recommendationsList = document.querySelector("#equilibrium-recommendations");
-  if (!summary || !componentsList || !pathwaysList || !actionPathList || !recommendationsList) return;
+  if (
+    !summary ||
+    !componentsList ||
+    !thermoList ||
+    !gameTheoryList ||
+    !pathwaysList ||
+    !actionPathList ||
+    !recommendationsList
+  )
+    return;
 
   if (!ledger) {
     renderEquilibriumUnavailable("Missing ledger payload.");
@@ -1354,15 +1391,15 @@ function renderEquilibriumLedger(ledger) {
 
   const componentDetails = {
     energy: (component) =>
-      `free energy ${(component.freeEnergyMarginPct * 100).toFixed(1)}% · Hamiltonian ${(component.hamiltonianStability * 100).toFixed(1)}%`,
+      `free energy ${formatPercent(component.freeEnergyMarginPct)} · Hamiltonian ${formatPercent(component.hamiltonianStability)}`,
     allocation: (component) =>
-      `strategy ${(component.strategyStability * 100).toFixed(1)}% · Nash ${(component.nashProduct * 100).toFixed(1)}%`,
+      `strategy ${formatPercent(component.strategyStability)} · Nash ${formatPercent(component.nashProduct)}`,
     welfare: (component) =>
-      `cooperation ${(component.cooperationIndex * 100).toFixed(1)}% · coalition ${(component.coalitionStability * 100).toFixed(1)}%`,
+      `cooperation ${formatPercent(component.cooperationIndex)} · coalition ${formatPercent(component.coalitionStability)}`,
     logistics: (component) =>
-      `Hamiltonian ${(component.hamiltonianStability * 100).toFixed(1)}% · slack ${(component.gameTheorySlack * 100).toFixed(1)}%`,
+      `Hamiltonian ${formatPercent(component.hamiltonianStability)} · slack ${formatPercent(component.gameTheorySlack)}`,
     compute: (component) =>
-      `availability ${(component.averageAvailabilityPct * 100).toFixed(1)}% · failover ${component.failoverWithinQuorum ? "ok" : "risk"}`,
+      `availability ${formatPercent(component.averageAvailabilityPct)} · failover ${component.failoverWithinQuorum ? "ok" : "risk"}`,
   };
 
   componentsList.innerHTML = "";
@@ -1375,6 +1412,45 @@ function renderEquilibriumLedger(ledger) {
     li.innerHTML = `<strong>${label}</strong> — ${(score * 100).toFixed(1)}% · ${details}`;
     li.classList.add(score >= 0.9 ? "status-ok" : score >= 0.8 ? "status-warn" : "status-fail");
     componentsList.appendChild(li);
+  });
+
+  const thermodynamics = ledger.thermodynamics ?? {};
+  const gameTheory = ledger.gameTheory ?? {};
+
+  thermoList.innerHTML = "";
+  const thermoItems = [
+    `Free energy margin: ${formatPercent(thermodynamics.freeEnergyMarginPct)}`,
+    `Gibbs free energy: ${formatFixed(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`,
+    `Entropy buffer: ${formatFixed(thermodynamics.entropyMargin, 2)}σ`,
+    `Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability)}`,
+  ];
+  thermoItems.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    li.classList.add(
+      Number.isFinite(thermodynamics.freeEnergyMarginPct) &&
+        thermodynamics.freeEnergyMarginPct >= 0.7
+        ? "status-ok"
+        : "status-warn"
+    );
+    thermoList.appendChild(li);
+  });
+
+  gameTheoryList.innerHTML = "";
+  const gameTheoryItems = [
+    `Nash product: ${formatPercent(gameTheory.nashProduct)}`,
+    `Coalition stability: ${formatPercent(gameTheory.coalitionStability)}`,
+    `Logistics Nash welfare: ${formatPercent(gameTheory.logisticsNashWelfare)}`,
+  ];
+  gameTheoryItems.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    li.classList.add(
+      Number.isFinite(gameTheory.nashProduct) && gameTheory.nashProduct >= 0.8
+        ? "status-ok"
+        : "status-warn"
+    );
+    gameTheoryList.appendChild(li);
   });
 
   pathwaysList.innerHTML = "";
