@@ -1603,6 +1603,67 @@
       }
     ]
   },
+  "missionThermodynamics": {
+    "freeEnergyBudgetGw": 896409.5301595095,
+    "freeEnergyHeadroomPct": 0.3672003646401399,
+    "hamiltonianLoad": 0.3903921568627451,
+    "hamiltonianStability": 0.6096078431372549,
+    "programmes": [
+      {
+        "id": "dyson-swarm",
+        "name": "Dyson Swarm Expansion Programme",
+        "energyShare": 0.8902179256103555,
+        "computeShare": 0.7174494081710577,
+        "riskIndex": 0.5058823529411764,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.7311368891556598,
+        "pressureScore": 0.9320192420968363,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "ares-biosphere",
+        "name": "Ares Biosphere Terraforming Sprint",
+        "energyShare": 0.07045715222021956,
+        "computeShare": 0.16800305460099277,
+        "riskIndex": 0.6,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.24370648214934698,
+        "pressureScore": 0.45870648214934695,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "gaia-resilience",
+        "name": "Gaia Resilience Grid",
+        "energyShare": 0.039324922169424875,
+        "computeShare": 0.11454753722794961,
+        "riskIndex": 0.49999999999999994,
+        "timelineSlackDays": 0,
+        "hamiltonian": 0.19633309928322856,
+        "pressureScore": 0.3963330992832286,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      }
+    ],
+    "actionQueue": [
+      {
+        "id": "dyson-swarm",
+        "name": "Dyson Swarm Expansion Programme",
+        "pressureScore": 0.9320192420968363,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "ares-biosphere",
+        "name": "Ares Biosphere Terraforming Sprint",
+        "pressureScore": 0.45870648214934695,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      },
+      {
+        "id": "gaia-resilience",
+        "name": "Gaia Resilience Grid",
+        "pressureScore": 0.3963330992832286,
+        "recommendation": "Expand timeline slack and buffer energy reserves."
+      }
+    ]
+  },
   "missionDirectives": {
     "ownerPowers": [
       {

@@ -1253,6 +1253,91 @@ function renderMissionLattice(mission) {
   }
 }
 
+function renderMissionThermodynamics(thermo) {
+  const summaryElement = document.querySelector("#mission-thermo-summary");
+  const programmesElement = document.querySelector("#mission-thermo-programmes");
+  const queueElement = document.querySelector("#mission-thermo-queue");
+
+  if (!summaryElement || !programmesElement || !queueElement) {
+    return;
+  }
+
+  if (!thermo) {
+    summaryElement.textContent = "Mission thermodynamics unavailable. Regenerate artefacts.";
+    applyStatus(summaryElement, "status-warn");
+    programmesElement.innerHTML = "";
+    queueElement.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Thermodynamic action queue unavailable.";
+    li.classList.add("status-warn");
+    queueElement.appendChild(li);
+    return;
+  }
+
+  const budgetText = Number.isFinite(thermo.freeEnergyBudgetGw)
+    ? `${formatNumber(thermo.freeEnergyBudgetGw)} GW buffer`
+    : "Free energy budget n/a";
+  const headroomText = `headroom ${formatPercent(thermo.freeEnergyHeadroomPct)}`;
+  const loadText = `Hamiltonian load ${formatPercent(thermo.hamiltonianLoad)}`;
+  const stabilityText = `stability ${formatPercent(thermo.hamiltonianStability)}`;
+  summaryElement.textContent = `${budgetText} · ${headroomText} · ${loadText} · ${stabilityText}`;
+  const stabilityScore = Number.isFinite(thermo.hamiltonianStability) ? thermo.hamiltonianStability : 0;
+  applyStatus(summaryElement, stabilityScore >= 0.85 ? "status-ok" : stabilityScore >= 0.7 ? "status-warn" : "status-fail");
+
+  programmesElement.innerHTML = "";
+  if (Array.isArray(thermo.programmes) && thermo.programmes.length > 0) {
+    thermo.programmes.forEach((programme) => {
+      const li = document.createElement("li");
+      const slackText = Number.isFinite(programme.timelineSlackDays)
+        ? `${programme.timelineSlackDays.toFixed(1)}d`
+        : "n/a";
+      const hamiltonianStatus =
+        programme.hamiltonian >= 0.8 ? "status-fail" : programme.hamiltonian >= 0.6 ? "status-warn" : "status-ok";
+      li.classList.add(hamiltonianStatus);
+      li.innerHTML = `
+        <strong>${programme.name}</strong>
+        <div class="thermo-metrics">
+          <span>Energy ${formatPercent(programme.energyShare, 1)}</span>
+          <span>Compute ${formatPercent(programme.computeShare, 1)}</span>
+          <span>Risk ${formatPercent(programme.riskIndex, 1)}</span>
+          <span>Slack ${slackText}</span>
+          <span>Hamiltonian ${formatPercent(programme.hamiltonian, 1)}</span>
+          <span>Pressure ${formatPercent(programme.pressureScore, 1)}</span>
+        </div>
+        <div>${programme.recommendation}</div>
+      `;
+      programmesElement.appendChild(li);
+    });
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "Programme thermodynamics unavailable.";
+    li.classList.add("status-warn");
+    programmesElement.appendChild(li);
+  }
+
+  queueElement.innerHTML = "";
+  if (Array.isArray(thermo.actionQueue) && thermo.actionQueue.length > 0) {
+    thermo.actionQueue.forEach((entry, index) => {
+      const li = document.createElement("li");
+      const scoreText = formatPercent(entry.pressureScore, 1);
+      const statusClass =
+        entry.pressureScore >= 0.75 ? "status-fail" : entry.pressureScore >= 0.55 ? "status-warn" : "status-ok";
+      li.classList.add(statusClass);
+      li.innerHTML = `
+        <strong>${index + 1}. ${entry.name}</strong>
+        <span class="queue-score">Pressure ${scoreText}</span>
+        <span>${entry.recommendation}</span>
+      `;
+      queueElement.appendChild(li);
+    });
+  } else {
+    const li = document.createElement("li");
+    li.textContent = "No mission thermodynamics action queue available.";
+    li.classList.add("status-warn");
+    queueElement.appendChild(li);
+  }
+}
+
 function renderLogistics(logistics, verification) {
   const summary = document.querySelector("#logistics-summary");
   if (!logistics) {
@@ -1777,6 +1862,7 @@ async function bootstrap() {
     renderEquilibriumUnavailable(equilibriumResult.reason);
   }
   renderMissionLattice(telemetry.missionLattice);
+  renderMissionThermodynamics(telemetry.missionThermodynamics);
   renderLogistics(telemetry.logistics, telemetry.verification.logistics);
   renderSettlement(telemetry.settlement, telemetry.verification.settlement);
   renderScenarioSweep(telemetry);
