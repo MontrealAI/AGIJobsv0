@@ -9,11 +9,12 @@ network sockets.
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import inspect
 import logging
 import sys
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import Awaitable, Callable, Optional, TYPE_CHECKING
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -34,16 +35,17 @@ def _bootstrap_sys_path() -> None:
 
 _bootstrap_sys_path()
 
-import uvicorn  # noqa: E402  (import after path bootstrap)
+if TYPE_CHECKING:
+    import uvicorn
 for _name in list(sys.modules):
     if _name.startswith("alpha_node"):
         sys.modules.pop(_name, None)
 
-from alpha_node.console.cli import demo_job  # noqa: E402
-from alpha_node.web.app import app  # noqa: E402
 
 
-def _build_server(app_obj: object, *, host: str, port: int) -> uvicorn.Server:
+def _build_server(app_obj: object, *, host: str, port: int) -> "uvicorn.Server":
+    import uvicorn
+
     return uvicorn.Server(
         uvicorn.Config(app_obj, host=host, port=port, loop="asyncio", lifespan="off")
     )
@@ -90,13 +92,48 @@ async def main(
     host: str = "0.0.0.0",
     port: int = 8080,
     run_server: bool = True,
-    demo_job_fn: Callable[..., Awaitable[None] | None] = demo_job,
-    app_obj: object = app,
+    demo_job_fn: Callable[..., Awaitable[None] | None] | None = None,
+    app_obj: object | None = None,
     config_path: Optional[Path] = None,
 ) -> None:
     """Launch the demo job and, optionally, the local Uvicorn service."""
 
     logging.basicConfig(level=logging.INFO)
+
+    if demo_job_fn is None:
+        from alpha_node.console.cli import demo_job as default_demo_job
+
+        demo_job_fn = default_demo_job
+
+    if run_server and app_obj is None:
+        if importlib.util.find_spec("fastapi") is not None:
+            from alpha_node.web.app import app as default_app
+
+            app_obj = default_app
+        else:
+            logging.warning(
+                "FastAPI is not installed; running a minimal fallback app. "
+                "Install the demo dependencies to enable the full dashboard."
+            )
+
+            async def fallback_app(scope, receive, send):  # type: ignore[no-untyped-def]
+                if scope.get("type") != "http":
+                    return
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 503,
+                        "headers": [(b"content-type", b"text/plain; charset=utf-8")],
+                    }
+                )
+                await send(
+                    {
+                        "type": "http.response.body",
+                        "body": b"FastAPI is not installed. Install demo dependencies.",
+                    }
+                )
+
+            app_obj = fallback_app
 
     server = _build_server(app_obj, host=host, port=port) if run_server else None
     server_task = asyncio.create_task(server.serve()) if server else None
