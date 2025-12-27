@@ -85,5 +85,47 @@
       "action": "Sustain quorum failover coverage and monitor deviation drift."
     }
   ],
+  "actionPath": [
+    {
+      "rank": 1,
+      "title": "Tighten Nash allocation",
+      "status": "on-track",
+      "rationale": "Deviation 12.1% · strategy 87.9%",
+      "action": "Keep incentive gradients aligned with Nash stability targets.",
+      "target": "Deviation incentive ≤ 20% and strategy stability ≥ 85%."
+    },
+    {
+      "rank": 2,
+      "title": "Reinforce sentient welfare balance",
+      "status": "on-track",
+      "rationale": "Coalition 90.0% · inequality 5.3%",
+      "action": "Continue cooperative reward rotations to sustain coalition stability.",
+      "target": "Coalition stability ≥ 85% and inequality ≤ 30%."
+    },
+    {
+      "rank": 3,
+      "title": "Stabilize free energy buffer",
+      "status": "on-track",
+      "rationale": "Free energy 77.9% · Hamiltonian 89.0%",
+      "action": "Hold reserve cadence and keep Monte Carlo breach probability below tolerance.",
+      "target": "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%."
+    },
+    {
+      "rank": 4,
+      "title": "Restore logistics game-theory slack",
+      "status": "on-track",
+      "rationale": "Slack 99.3% · entropy 1.00",
+      "action": "Maintain corridor utilisation within the equilibrium band.",
+      "target": "Game-theory slack ≥ 85% and entropy ratio ≥ 0.9."
+    },
+    {
+      "rank": 5,
+      "title": "Secure compute quorum failover",
+      "status": "on-track",
+      "rationale": "Availability 98.2% · failover ok",
+      "action": "Sustain quorum failover coverage and monitor deviation drift.",
+      "target": "Failover within quorum and availability ≥ 95%."
+    }
+  ],
   "recommendations": []
 }
