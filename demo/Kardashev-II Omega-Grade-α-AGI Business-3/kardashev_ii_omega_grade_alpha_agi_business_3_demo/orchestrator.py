@@ -671,6 +671,7 @@ class Orchestrator:
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
+        stability_index = max(0.0, min(1.0, state.stability_index))
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
         scarcity_pressure = min(1.0, 0.5 * (energy_price_pressure + compute_price_pressure))
@@ -686,7 +687,11 @@ class Orchestrator:
             sustainability_share = sustainability_weight / total_weight
         gibbs_drive = max(0.0, state.free_energy)
         hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
-        stability_factor = (0.7 + 0.3 * game_theory_slack) * max(0.4, 1.0 - 0.2 * compute_price_pressure)
+        stability_factor = (
+            (0.6 + 0.4 * stability_index)
+            * (0.7 + 0.3 * game_theory_slack)
+            * max(0.4, 1.0 - 0.2 * compute_price_pressure)
+        )
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         compute_boost = 1.0 + 0.4 * compute_price_pressure
         return {
@@ -694,6 +699,7 @@ class Orchestrator:
             "sustainability_gap": sustainability_gap,
             "coordination_gap": coordination_gap,
             "game_theory_slack": game_theory_slack,
+            "stability_index": stability_index,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
             "scarcity_pressure": scarcity_pressure,
@@ -747,11 +753,24 @@ class Orchestrator:
             + 2.0 * signals["compute_price_pressure"]
             + 4.0 * signals["gibbs_drive"]
         ) * (1.0 + 0.5 * signals["hamiltonian_pressure"])
-        stimulus = 5.0 * signals["prosperity_share"] * signals["coordination_damping"] * signals["compute_boost"]
-        green_shift = 5.0 * signals["sustainability_share"] * signals["coordination_damping"] * signals["compute_boost"]
+        stability_modifier = 0.7 + 0.6 * signals["stability_index"]
+        stimulus = (
+            5.0
+            * signals["prosperity_share"]
+            * signals["coordination_damping"]
+            * signals["compute_boost"]
+            * stability_modifier
+        )
+        green_shift = (
+            5.0
+            * signals["sustainability_share"]
+            * signals["coordination_damping"]
+            * signals["compute_boost"]
+            * stability_modifier
+        )
         normalized_action = self._normalize_simulation_action(
             {
-                "build_dyson_nodes": energy_action * signals["stability_factor"],
+                "build_dyson_nodes": energy_action * signals["stability_factor"] * stability_modifier,
                 "stimulus": stimulus,
                 "green_shift": green_shift,
             }
@@ -1356,6 +1375,7 @@ class Orchestrator:
                 "free_energy": self._latest_simulation_state.free_energy,
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
             }
@@ -1438,6 +1458,7 @@ class Orchestrator:
                 "free_energy": self._latest_simulation_state.free_energy,
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
             }
