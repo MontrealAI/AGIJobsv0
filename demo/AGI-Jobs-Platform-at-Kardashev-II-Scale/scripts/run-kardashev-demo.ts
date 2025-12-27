@@ -3153,7 +3153,29 @@ function buildRunbook(
   return lines.join("\n");
 }
 
-function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
+function buildOperatorBriefing(
+  manifest: Manifest,
+  telemetry: any,
+  equilibriumLedger?: {
+    thermodynamics?: {
+      gibbsFreeEnergyGj?: number;
+      entropyMargin?: number;
+      hamiltonianStability?: number;
+    };
+    gameTheory?: {
+      nashProduct?: number;
+      coalitionStability?: number;
+      logisticsNashWelfare?: number;
+    };
+    actionPath?: Array<{
+      rank: number;
+      title: string;
+      status?: string;
+      action: string;
+      target?: string;
+    }>;
+  }
+): string {
   const lines: string[] = [];
   lines.push("# Kardashev II Operator Briefing");
   lines.push("");
@@ -3261,6 +3283,39 @@ function buildOperatorBriefing(manifest: Manifest, telemetry: any): string {
       });
   }
   lines.push(`* Audit checklist: ${telemetry.verification.auditChecklistURI}`);
+  if (equilibriumLedger) {
+    const thermodynamics = equilibriumLedger.thermodynamics ?? {};
+    const gameTheory = equilibriumLedger.gameTheory ?? {};
+    const actionPath = equilibriumLedger.actionPath ?? [];
+    lines.push("");
+    lines.push("## Equilibrium action path");
+    if (Number.isFinite(thermodynamics.gibbsFreeEnergyGj)) {
+      const gibbsEnergy = thermodynamics.gibbsFreeEnergyGj ?? 0;
+      const entropyText = Number.isFinite(thermodynamics.entropyMargin)
+        ? thermodynamics.entropyMargin?.toFixed(2)
+        : "n/a";
+      const hamiltonianPct = Number.isFinite(thermodynamics.hamiltonianStability)
+        ? ((thermodynamics.hamiltonianStability ?? 0) * 100).toFixed(1)
+        : "n/a";
+      lines.push(
+        `* Gibbs free energy ${gibbsEnergy.toLocaleString()} GJ · entropy ${entropyText}σ · Hamiltonian ${hamiltonianPct}%`
+      );
+    }
+    lines.push(
+      `* Nash ${((gameTheory.nashProduct ?? 0) * 100).toFixed(1)}% · coalition ${(
+        (gameTheory.coalitionStability ?? 0) * 100
+      ).toFixed(1)}% · logistics welfare ${((gameTheory.logisticsNashWelfare ?? 0) * 100).toFixed(1)}%`
+    );
+    if (actionPath.length === 0) {
+      lines.push("* No immediate corrective steps required. Maintain equilibrium cadence.");
+    } else {
+      actionPath.forEach((step) => {
+        const status = step.status ? ` (${step.status})` : "";
+        const target = step.target ? ` · target ${step.target}` : "";
+        lines.push(`* ${step.rank}. ${step.title}${status} — ${step.action}${target}`);
+      });
+    }
+  }
   lines.push("");
   lines.push("## Identity posture");
   lines.push(
@@ -5199,7 +5254,7 @@ function run() {
   const mermaid = buildMermaid(manifest, dominanceScore);
   const dysonTimeline = buildDysonTimeline(manifest);
   const runbook = buildRunbook(manifest, telemetryWithScenarios, dominanceScore, scenarioSweep);
-  const operatorBriefing = buildOperatorBriefing(manifest, telemetryWithScenarios);
+  const operatorBriefing = buildOperatorBriefing(manifest, telemetryWithScenarios, equilibriumLedger);
 
   const telemetryJson = `${JSON.stringify(telemetryWithScenarios, null, 2)}\n`;
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
