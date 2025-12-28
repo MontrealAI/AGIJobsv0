@@ -1589,11 +1589,12 @@ function buildEquilibriumLedger({
   );
 
   const overallScore = clamp01(
-    0.3 * energyScore +
+    0.25 * energyScore +
       0.2 * allocationScore +
       0.2 * welfareScore +
-      0.2 * logisticsScore +
-      0.1 * computeScore
+      0.15 * logisticsScore +
+      0.1 * computeScore +
+      0.1 * missionScore
   );
   const status = overallScore >= 0.9 ? 'nominal' : overallScore >= 0.8 ? 'warning' : 'critical';
 
@@ -1618,6 +1619,9 @@ function buildEquilibriumLedger({
   }
   if (!computeFabric.failoverWithinQuorum) {
     recommendations.push('Expand compute failover capacity before scaling autonomy.');
+  }
+  if (missionScore < 0.85) {
+    recommendations.push('Rebalance mission timelines and energy allocations to raise mission Hamiltonian stability.');
   }
 
   const actionPath = buildEquilibriumActionPath({
@@ -1647,6 +1651,15 @@ function buildEquilibriumLedger({
         energyScore >= 0.85
           ? 'Maintain reserve cadence and keep Monte Carlo breach probability below tolerance.'
           : 'Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%.',
+    },
+    {
+      title: 'Mission Hamiltonian stability',
+      status: missionScore >= 0.85 ? 'on-track' : 'needs-action',
+      rationale: `Mission stability ${(missionHamiltonian * 100).toFixed(1)}% · headroom ${(missionHeadroom * 100).toFixed(1)}%`,
+      action:
+        missionScore >= 0.85
+          ? 'Maintain mission thermodynamics within the safe Hamiltonian band.'
+          : 'Reduce mission load or extend slack windows until stability clears 85%.',
     },
     {
       title: 'Nash deviation control',
@@ -1745,6 +1758,11 @@ function buildEquilibriumLedger({
         failoverWithinQuorum: computeFabric.failoverWithinQuorum,
         averageAvailabilityPct: round(computeFabric.averageAvailabilityPct, 4),
         deviationPct: round(verification.compute.deviationPct, 4),
+      },
+      mission: {
+        score: round(missionScore, 4),
+        hamiltonianStability: round(missionHamiltonian, 4),
+        freeEnergyHeadroomPct: round(missionHeadroom, 4),
       },
     },
     thermodynamics: {

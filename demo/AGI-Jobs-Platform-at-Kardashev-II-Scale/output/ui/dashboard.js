@@ -1530,6 +1530,7 @@ function renderEquilibriumLedger(ledger) {
     welfare: "Sentient welfare",
     logistics: "Logistics equilibrium",
     compute: "Compute fabric",
+    mission: "Mission thermodynamics",
   };
 
   const componentDetails = {
@@ -1543,6 +1544,8 @@ function renderEquilibriumLedger(ledger) {
       `Hamiltonian ${formatPercent(component.hamiltonianStability)} · slack ${formatPercent(component.gameTheorySlack)}`,
     compute: (component) =>
       `availability ${formatPercent(component.averageAvailabilityPct)} · failover ${component.failoverWithinQuorum ? "ok" : "risk"}`,
+    mission: (component) =>
+      `Hamiltonian ${formatPercent(component.hamiltonianStability)} · headroom ${formatPercent(component.freeEnergyHeadroomPct)}`,
   };
 
   componentsList.innerHTML = "";

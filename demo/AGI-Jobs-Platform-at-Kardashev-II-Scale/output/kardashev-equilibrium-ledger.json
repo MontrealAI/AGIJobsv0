@@ -1,7 +1,7 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
   "status": "critical",
-  "overallScore": 0.6267,
+  "overallScore": 0.6199,
   "components": {
     "energy": {
       "score": 0,
@@ -42,6 +42,11 @@
       "failoverWithinQuorum": true,
       "averageAvailabilityPct": 0.9823,
       "deviationPct": 0
+    },
+    "mission": {
+      "score": 0.4267,
+      "hamiltonianStability": 0.6096,
+      "freeEnergyHeadroomPct": 0
     }
   },
   "thermodynamics": {

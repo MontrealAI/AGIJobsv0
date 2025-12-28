@@ -4909,11 +4909,12 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   );
 
   const overallScore = clamp01(
-    0.3 * energyScore +
+    0.25 * energyScore +
       0.2 * allocationScore +
       0.2 * welfareScore +
-      0.2 * logisticsScore +
-      0.1 * computeScore
+      0.15 * logisticsScore +
+      0.1 * computeScore +
+      0.1 * missionScore
   );
   const status = overallScore >= 0.9 ? "nominal" : overallScore >= 0.8 ? "warning" : "critical";
 
@@ -5158,6 +5159,11 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         failoverWithinQuorum: computeFabric.failoverWithinQuorum,
         averageAvailabilityPct: round(computeFabric.averageAvailabilityPct, 4),
         deviationPct: round(telemetry.verification.compute.deviationPct, 4),
+      },
+      mission: {
+        score: round(missionScore, 4),
+        hamiltonianStability: round(missionThermo?.hamiltonianStability ?? 0, 4),
+        freeEnergyHeadroomPct: round(missionThermo?.freeEnergyHeadroomPct ?? 0, 4),
       },
     },
     thermodynamics: {
