@@ -11,6 +11,7 @@ const debugEnabled = (process.env.DEBUG || '')
   .filter(Boolean)
   .includes(DEBUG_TOKEN);
 const DIVERSIFICATION_TARGET_HHI = 0.3;
+const ENERGY_RUNWAY_TARGET_HOURS = 1;
 
 function debugLog(section, payload) {
   if (!debugEnabled) {
@@ -1541,13 +1542,17 @@ function buildEquilibriumLedger({
   missionThermodynamics,
   verification,
 }) {
+  const runwayScore = clamp01(
+    (energyMonteCarlo.runwayHours ?? 0) / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)
+  );
   const breachPenalty = energyMonteCarlo.withinTolerance
     ? 1
     : clamp01(1 - energyMonteCarlo.breachProbability / Math.max(energyMonteCarlo.tolerance, 1e-6));
   const energyScore = clamp01(
-    0.35 * energyMonteCarlo.hamiltonianStability +
-      0.25 * energyMonteCarlo.gameTheorySlack +
-      0.2 * energyMonteCarlo.freeEnergyMarginPct +
+    0.3 * energyMonteCarlo.hamiltonianStability +
+      0.2 * energyMonteCarlo.gameTheorySlack +
+      0.15 * energyMonteCarlo.freeEnergyMarginPct +
+      0.15 * runwayScore +
       0.2 * breachPenalty
   );
   const allocationScore = clamp01(
@@ -1602,6 +1607,11 @@ function buildEquilibriumLedger({
   if (energyScore < 0.85) {
     recommendations.push('Increase energy buffer or tighten demand variance to raise Hamiltonian stability.');
   }
+  if ((energyMonteCarlo.runwayHours ?? 0) < ENERGY_RUNWAY_TARGET_HOURS) {
+    recommendations.push(
+      `Extend free-energy runway to at least ${ENERGY_RUNWAY_TARGET_HOURS}h to absorb demand shocks.`
+    );
+  }
   if (allocationPolicy.deviationIncentive > 0.2) {
     recommendations.push('Reduce deviation incentives to reinforce Nash equilibrium adherence.');
   }
@@ -1646,7 +1656,9 @@ function buildEquilibriumLedger({
     {
       title: 'Thermodynamic headroom',
       status: energyScore >= 0.85 ? 'on-track' : 'needs-action',
-      rationale: `Free energy ${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(1)}% · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}%`,
+      rationale: `Free energy ${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(
+        1
+      )}% · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}% · runway ${energyMonteCarlo.runwayHours.toFixed(2)}h`,
       action:
         energyScore >= 0.85
           ? 'Maintain reserve cadence and keep Monte Carlo breach probability below tolerance.'
@@ -1720,6 +1732,7 @@ function buildEquilibriumLedger({
       energy: {
         score: round(energyScore, 4),
         freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+        runwayHours: round(energyMonteCarlo.runwayHours ?? 0, 4),
         hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
         gameTheorySlack: round(energyMonteCarlo.gameTheorySlack, 4),
         breachProbability: round(energyMonteCarlo.breachProbability, 4),
@@ -1767,6 +1780,7 @@ function buildEquilibriumLedger({
     },
     thermodynamics: {
       freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+      runwayHours: round(energyMonteCarlo.runwayHours ?? 0, 4),
       gibbsFreeEnergyGj: round(energyMonteCarlo.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energyMonteCarlo.entropyMargin, 4),
       hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
@@ -1811,6 +1825,9 @@ function buildActionPathBriefing(equilibriumLedger) {
   lines.push('## Core equilibrium signals');
   lines.push(
     `- Free energy margin: ${formatPercentValue(thermodynamics.freeEnergyMarginPct, 2)}`
+  );
+  lines.push(
+    `- Free energy runway: ${formatFixedValue(thermodynamics.runwayHours, 2)} hours`
   );
   lines.push(
     `- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj ?? 0)} GJ`
@@ -1866,10 +1883,12 @@ function buildEquilibriumActionPath({
     score: scores?.energy ?? 0,
     title: 'Thermodynamic headroom reset',
     status: energyNeeds ? 'needs-action' : 'on-track',
-    target: 'Free energy margin ≥ 8% and Hamiltonian stability ≥ 90%.',
+    target: `Free energy margin ≥ 8%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, and Hamiltonian stability ≥ 90%.`,
     rationale: `Gibbs free energy ${energyMonteCarlo.gibbsFreeEnergyGj.toFixed(
       1
-    )} GJ · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}%`,
+    )} GJ · Hamiltonian ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(
+      1
+    )}% · runway ${energyMonteCarlo.runwayHours.toFixed(2)}h`,
     action:
       'Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.',
   });

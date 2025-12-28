@@ -1,9 +1,10 @@
 # Kardashev II Action Path
 
-Generated: 2025-12-28T17:17:56.634Z
+Generated: 2025-12-28T18:40:23.334Z
 
 ## Core equilibrium signals
 - Free energy margin: 9.25%
+- Free energy runway: 0.11 hours
 - Gibbs free energy: 384,474,779.47 GJ
 - Hamiltonian stability: 54.6%
 - Nash product: 10.0%
@@ -14,9 +15,9 @@ Generated: 2025-12-28T17:17:56.634Z
 ## Action path
 ### Step 1: Thermodynamic headroom reset
 - Status: needs-action
-- Target: Free energy margin ≥ 8% and Hamiltonian stability ≥ 90%.
-- Priority: 39.1%
-- Rationale: Gibbs free energy 384474779.5 GJ · Hamiltonian 54.6%
+- Target: Free energy margin ≥ 8%, runway ≥ 1h, and Hamiltonian stability ≥ 90%.
+- Priority: 44.7%
+- Rationale: Gibbs free energy 384474779.5 GJ · Hamiltonian 54.6% · runway 0.11h
 - Action: Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.
 
 ### Step 2: Mission Hamiltonian load-balance

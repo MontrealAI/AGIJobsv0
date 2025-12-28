@@ -19,7 +19,7 @@ Generated: 2125-01-01T17:44:16.944Z
 - **Replicator Equilibrium:** 100.0% stability (drift 0.000).
 - **Sentient Welfare Equilibrium:** 96.3% · cooperation 90.8% · inequality 0.0% · free energy/agent 0.085820 GJ.
 - **Sentient Coalition Stability:** 100.0% · collective action 82.7% · payoff dispersion 0.0%.
-- **Equilibrium Ledger:** 83.3% (warning); energy 60.9%, allocation 100.0%, welfare 94.5%.
+- **Equilibrium Ledger:** 81.9% (warning); energy 55.3%, allocation 100.0%, welfare 94.5%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
