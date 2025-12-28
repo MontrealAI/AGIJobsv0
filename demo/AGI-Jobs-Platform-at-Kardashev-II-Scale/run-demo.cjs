@@ -224,7 +224,8 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
         Math.max(demandFloor, demandFloor + (rng() - 0.5) * demandVariance * 2)
       );
       const jitter = (rng() - 0.5) * driftPct * 1.25; // tighten drift to reflect tuned telemetry
-      const bufferDraw = bufferGw * (0.1 + rng() * 0.35); // probabilistic buffer draw without over-stressing reserves
+      const bufferDrawCap = Math.min(bufferGw, baseGw * 0.25);
+      const bufferDraw = bufferDrawCap * (0.1 + rng() * 0.35); // probabilistic buffer draw without over-stressing reserves
       const regionalDemand = Math.max(
         0,
         baseGw * demandLoad * latencyDrag * (1 + jitter) + bufferDraw
@@ -306,6 +307,140 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
   };
   debugLog('energy-monte-carlo', summary);
   return summary;
+}
+
+function runEnergyMonteCarlo({
+  fabric,
+  energyFeeds,
+  energyConfig,
+  energyModels,
+  runs,
+  seed,
+}) {
+  const rng = createRng(seed);
+  return simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModels, rng, runs);
+}
+
+function distributeReserveBoost(energyFeeds, boostGw) {
+  const totalNominalGw = sum(energyFeeds.map((feed) => feed.nominalMw)) / 1000;
+  if (boostGw <= 0 || totalNominalGw <= 0) {
+    return {
+      feeds: energyFeeds,
+      plan: [],
+    };
+  }
+
+  const boostMwTotal = boostGw * 1000;
+  const plan = [];
+  const feeds = energyFeeds.map((feed) => {
+    const share = (feed.nominalMw / 1000) / totalNominalGw;
+    const boostMw = Math.max(0, Math.round(boostMwTotal * share));
+    if (boostMw > 0) {
+      plan.push({
+        federationSlug: feed.federationSlug,
+        region: feed.region,
+        boostMw,
+      });
+    }
+    return {
+      ...feed,
+      bufferMw: feed.bufferMw + boostMw,
+    };
+  });
+
+  return { feeds, plan };
+}
+
+function stabilizeEnergyRunway({
+  fabric,
+  energyConfig,
+  energyModels,
+  runs,
+  seed,
+  maxIterations = 4,
+}) {
+  const originalFeeds = energyConfig.feeds.map((feed) => ({ ...feed }));
+  let adjustedFeeds = energyConfig.feeds.map((feed) => ({ ...feed }));
+  let energyMonteCarlo = runEnergyMonteCarlo({
+    fabric,
+    energyFeeds: adjustedFeeds,
+    energyConfig,
+    energyModels,
+    runs,
+    seed,
+  });
+
+  const adjustments = [];
+  const reserveMultiplier = 2.4; // offset margin + buffer draw to keep runway above target
+
+  for (let i = 0; i < maxIterations; i += 1) {
+    if ((energyMonteCarlo.runwayHours ?? 0) >= ENERGY_RUNWAY_TARGET_HOURS) {
+      break;
+    }
+    const meanDemandGw = energyMonteCarlo.meanDemandGw ?? 0;
+    if (meanDemandGw <= 0) {
+      break;
+    }
+    const gapHours = Math.max(0, ENERGY_RUNWAY_TARGET_HOURS - energyMonteCarlo.runwayHours);
+    const neededUsableGw = gapHours * meanDemandGw;
+    const boostGw = neededUsableGw * reserveMultiplier;
+    if (boostGw <= 0) {
+      break;
+    }
+
+    const { feeds, plan } = distributeReserveBoost(adjustedFeeds, boostGw);
+    const nextMonteCarlo = runEnergyMonteCarlo({
+      fabric,
+      energyFeeds: feeds,
+      energyConfig,
+      energyModels,
+      runs,
+      seed,
+    });
+
+    adjustments.push({
+      iteration: i + 1,
+      reserveBoostGw: round(boostGw, 4),
+      runwayHoursBefore: round(energyMonteCarlo.runwayHours ?? 0, 4),
+      runwayHoursAfter: round(nextMonteCarlo.runwayHours ?? 0, 4),
+      plan,
+    });
+
+    adjustedFeeds = feeds;
+    energyMonteCarlo = nextMonteCarlo;
+  }
+
+  const bufferAdjustments = adjustedFeeds
+    .map((feed, index) => {
+      const original = originalFeeds[index];
+      const deltaMw = feed.bufferMw - original.bufferMw;
+      if (!Number.isFinite(deltaMw) || deltaMw <= 0) {
+        return null;
+      }
+      return {
+        federationSlug: feed.federationSlug,
+        region: feed.region,
+        bufferMw: feed.bufferMw,
+        deltaMw,
+      };
+    })
+    .filter(Boolean);
+
+  const totalBoostMw = bufferAdjustments.reduce((sumValue, entry) => sumValue + entry.deltaMw, 0);
+  const runwayAdjustment = {
+    targetHours: ENERGY_RUNWAY_TARGET_HOURS,
+    applied: adjustments.length > 0,
+    iterations: adjustments.length,
+    totalReserveBoostGw: round(totalBoostMw / 1000, 4),
+    perFeedBoosts: bufferAdjustments,
+    iterationsLog: adjustments,
+  };
+
+  return {
+    adjustedFeeds,
+    energyMonteCarlo,
+    runwayAdjustment,
+  };
 }
 
 function softmaxScores(scores, temperature) {
@@ -2261,24 +2396,30 @@ function main() {
     return;
   }
 
-  const rng = createRng(JSON.stringify(fabric) + JSON.stringify(energy));
+  const seed = JSON.stringify(fabric) + JSON.stringify(energy);
+  const rng = createRng(seed);
   const shardMetrics = fabric.shards.map((shard) => computeShardMetrics(shard, energy.feeds, rng));
   const dyson = simulateDysonSwarm(rng);
   const energyModels = buildEnergyModels(energy, manifest, dyson);
   const mcRunsEnv = Number.parseInt(process.env.KARDASHEV_MC_RUNS ?? '', 10);
   const mcRuns = Number.isFinite(mcRunsEnv) ? Math.max(64, Math.min(4096, mcRunsEnv)) : 256;
-  const energyMonteCarlo = simulateEnergyMonteCarlo(
+  const energyCalibration = stabilizeEnergyRunway({
     fabric,
-    energy.feeds,
-    energy,
+    energyConfig: energy,
     energyModels,
-    rng,
-    mcRuns
-  );
+    runs: mcRuns,
+    seed: `${seed}|energy`,
+  });
+  const energyMonteCarlo = energyCalibration.energyMonteCarlo;
+  const energyRunwayAdjustment = energyCalibration.runwayAdjustment;
+  const calibratedEnergy = {
+    ...energy,
+    feeds: energyCalibration.adjustedFeeds,
+  };
   const allocationPolicy = enrichAllocationPolicy(
     computeAllocationPolicy(shardMetrics, energyMonteCarlo),
     shardMetrics,
-    energy
+    calibratedEnergy
   );
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
@@ -2303,7 +2444,7 @@ function main() {
     averageResilience: dominanceAverageResilience,
   };
 
-  const liveFeeds = buildLiveEnergyFeeds(energy, rng);
+  const liveFeeds = buildLiveEnergyFeeds(calibratedEnergy, rng);
   const energyUtilisationPct = average(shardMetrics.map((metric) => metric.utilisation / 100));
   const energyMarginPct = clampRatio(energyMonteCarlo.freeEnergyMarginPct ?? 0);
   const energyModelDiff = Math.abs(energyModels.regionalSumGw - energyModels.dysonProjectionGw);
@@ -2461,6 +2602,13 @@ function main() {
   reportLines.push(
     `- **Thermodynamic Reserve:** ${formatNumber(round(energyMonteCarlo.gibbsFreeEnergyGj, 2))} GJ Gibbs free energy; Hamiltonian stability ${(energyMonteCarlo.hamiltonianStability * 100).toFixed(1)}% across the sampled phase space.`
   );
+  if (energyRunwayAdjustment.applied) {
+    reportLines.push(
+      `- **Runway Stabilization:** +${energyRunwayAdjustment.totalReserveBoostGw.toFixed(
+        2
+      )} GW reserve buffers applied across ${energyRunwayAdjustment.perFeedBoosts.length} feeds to reach the ${ENERGY_RUNWAY_TARGET_HOURS}h runway target.`
+    );
+  }
   reportLines.push(
     `- **Gibbs Allocation Temperature:** ${allocationPolicy.temperature.toFixed(2)} (lower favors resilience-heavy shards); Nash welfare ${(allocationPolicy.nashProduct * 100).toFixed(2)}%.`
   );
@@ -2611,6 +2759,7 @@ function main() {
       warnings: energyWarnings,
       models: energyModels,
       monteCarlo: energyMonteCarlo,
+      runwayAdjustment: energyRunwayAdjustment,
       liveFeeds,
       schedule: energySchedule,
       allocationPolicy,
@@ -2651,7 +2800,8 @@ function main() {
       rewardEngine: fabric.rewardEngine,
       phase8Manager: fabric.phase8Manager,
     },
-    energyFeeds: energy.feeds,
+    energyFeeds: calibratedEnergy.feeds,
+    energyRunwayAdjustment,
   };
   debugLog('telemetry', telemetry);
 
@@ -2802,6 +2952,13 @@ function main() {
         2
       )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
     );
+    if (energyRunwayAdjustment.applied) {
+      console.log(
+        `   - Runway stabilization: +${energyRunwayAdjustment.totalReserveBoostGw.toFixed(
+          2
+        )} GW reserve buffers applied across ${energyRunwayAdjustment.perFeedBoosts.length} feeds`
+      );
+    }
     console.log(
       `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
     );
@@ -2830,6 +2987,13 @@ function main() {
       2
     )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
   );
+  if (energyRunwayAdjustment.applied) {
+    console.log(
+      `   - Runway stabilization: +${energyRunwayAdjustment.totalReserveBoostGw.toFixed(
+        2
+      )} GW reserve buffers applied across ${energyRunwayAdjustment.perFeedBoosts.length} feeds`
+    );
+  }
   console.log(
     `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
   );
