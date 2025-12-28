@@ -276,9 +276,17 @@ function renderMonteCarloDetails(monteCarlo) {
     const runwayText = Number.isFinite(monteCarlo.runwayHours)
       ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
       : "";
+    const runwayGapText =
+      Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
+        ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)`
+        : "";
+    const runwayGapText =
+      Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
+        ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)`
+        : "";
     freeEnergyElement.textContent = `Free energy margin ${formatNumber(
       monteCarlo.freeEnergyMarginGw
-    )} GW${freeEnergyPct}${gibbsText}${runwayText}`;
+    )} GW${freeEnergyPct}${gibbsText}${runwayText}${runwayGapText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
@@ -495,7 +503,7 @@ function renderMetrics(telemetry) {
     const runsText = Number.isFinite(monteCarlo.runs) ? monteCarlo.runs.toLocaleString() : "n/a";
     document.querySelector(
       "#energy-monte-carlo-summary"
-    ).textContent = `Breach ${breachText}${runwayText} · P95 ${p95Text} · runs ${runsText}`;
+    ).textContent = `Breach ${breachText}${runwayText}${runwayGapText} · P95 ${p95Text} · runs ${runsText}`;
     setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
   } else {
     document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";

@@ -20,18 +20,18 @@
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
 * Monte Carlo breach probability 100.00% (runs 256, tolerance 1.00%).
 * Free energy margin -10199.14 GW (-0.89%) · Gibbs free energy 0 GJ.
-* Free energy runway 0.00 hours at mean demand.
+* Free energy runway 0.00 hours at mean demand (gap 1.00h, 1093911.26 GWh).
 * Hamiltonian stability 0.0% · entropy margin -0.27σ · game-theory slack 0.0% · buffer at risk.
 * Allocation policy: Gibbs temperature 1.00 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.985.
 * Replicator equilibrium 95.4% · drift 0.046.
 * Sentient welfare equilibrium 78.1% · cooperation 49.8% · inequality 5.3% · free energy/agent 0.000000 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
 * Demand percentiles: P95 1,160,199.139 GW · P99 1,175,408.998 GW.
-* Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.81%.
+* Live feeds (≤ 5%): earth-grid Δ 6.47% · mars-dome Δ 6.42% · orbital-swarm Δ 6.83%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Energy window deficits: none — all federations meet coverage targets.
-* ⚠️ Utilisation exceeds configured safety margin; Monte Carlo breach probability 100.00% exceeds 1.00% tolerance; Free energy margin -10199.14 GW below safety buffer 143750.00 GW
+* ⚠️ Utilisation exceeds configured safety margin; Monte Carlo breach probability 100.00% exceeds 1.00% tolerance; Free energy margin -10199.14 GW below safety buffer 143750.00 GW; Energy feed earth-grid deviates 6.47% (tolerance 5%).; Energy feed mars-dome deviates 6.42% (tolerance 5%).; Energy feed orbital-swarm deviates 6.83% (tolerance 5%).
 
 ---
 
@@ -137,8 +137,8 @@
   - Tolerance: 120 ppm (ok)
   - Anchors at quorum: 3/3 (ok)
   - Recommended: Execute fallback ENS registrar policy if forged rate exceeds tolerance. · Rotate identity anchors using Safe batch identity transactions.
-* **Live energy feed drift shock** — status NOMINAL (confidence 100.0%) · Live feeds remain within tolerance bands.
-  - Max drift: 0.81% (ok)
+* **Live energy feed drift shock** — status WARNING (confidence 78.5%) · Max drift 6.83% (tolerance 5%, alert 8.5%).
+  - Max drift: 6.83% (ok)
   - Tolerance: 5% (ok)
   - Drift alert: 8.5% (ok)
   - Average latency: 241467 ms (check)

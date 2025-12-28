@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.8463302752293578,
+    "compositeScore": 0.8073394495412844,
     "quorum": false,
-    "summary": "Manual review required for 4 check(s).",
+    "summary": "Manual review required for 5 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.8463302752293578,
+        "score": 0.8073394495412844,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.918918918918919,
+        "score": 0.8918918918918919,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.747622768922909,
+        "score": 0.7280584021562467,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -154,9 +154,9 @@
       "id": "energy-feeds",
       "title": "Live energy feeds within tolerance",
       "severity": "high",
-      "status": true,
+      "status": false,
       "weight": 0.85,
-      "evidence": "earth-grid 0.00% · mars-dome 0.00% · orbital-swarm 0.81%"
+      "evidence": "earth-grid 6.47% · mars-dome 6.42% · orbital-swarm 6.83%"
     },
     {
       "id": "energy-schedule-coverage",
@@ -292,7 +292,7 @@
       "severity": "critical",
       "status": false,
       "weight": 0.8,
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "evidence": "4/11 nominal · 5 warning · 2 critical"
     }
   ],
   "alerts": [
@@ -309,6 +309,12 @@
       "evidence": "breach 100.00% (runs 256)"
     },
     {
+      "id": "energy-feeds",
+      "title": "Live energy feeds within tolerance",
+      "severity": "high",
+      "evidence": "earth-grid 6.47% · mars-dome 6.42% · orbital-swarm 6.83%"
+    },
+    {
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
       "severity": "medium",
@@ -318,15 +324,15 @@
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "evidence": "4/11 nominal · 5 warning · 2 critical"
     }
   ],
   "scenarioSweep": {
     "total": 11,
-    "nominal": 5,
-    "warning": 4,
+    "nominal": 4,
+    "warning": 5,
     "critical": 2,
-    "averageConfidence": 0.747622768922909,
+    "averageConfidence": 0.7280584021562467,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -394,9 +400,9 @@
       {
         "id": "energy-feed-drift",
         "title": "Live energy feed drift shock",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Live feeds remain within tolerance bands."
+        "status": "warning",
+        "confidence": 0.7847919655667144,
+        "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%)."
       },
       {
         "id": "compute-plane-failover",

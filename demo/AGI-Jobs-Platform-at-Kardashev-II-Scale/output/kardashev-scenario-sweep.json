@@ -314,14 +314,14 @@
   {
     "id": "energy-feed-drift",
     "title": "Live energy feed drift shock",
-    "status": "nominal",
-    "summary": "Live feeds remain within tolerance bands.",
-    "confidence": 1,
+    "status": "warning",
+    "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%).",
+    "confidence": 0.7847919655667144,
     "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
     "metrics": [
       {
         "label": "Max drift",
-        "value": "0.81%",
+        "value": "6.83%",
         "ok": true
       },
       {
