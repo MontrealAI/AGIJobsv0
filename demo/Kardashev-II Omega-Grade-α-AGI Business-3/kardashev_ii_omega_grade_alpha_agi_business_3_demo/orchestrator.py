@@ -428,6 +428,7 @@ class Orchestrator:
             prosperity=state.prosperity_index,
             sustainability=state.sustainability_index,
             nash_welfare=state.nash_welfare,
+            sentient_welfare_index=state.sentient_welfare_index,
             free_energy=state.free_energy,
             entropy=state.entropy,
             hamiltonian=state.hamiltonian,
@@ -670,6 +671,8 @@ class Orchestrator:
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
         nash_welfare = max(0.0, min(1.0, state.nash_welfare))
+        sentient_welfare_index = max(0.0, min(1.0, state.sentient_welfare_index))
+        welfare_floor = max(0.0, min(state.prosperity_index, state.sustainability_index))
         stability_index = max(0.0, min(1.0, state.stability_index))
         entropy = max(0.0, state.entropy)
         entropy_pressure = min(1.0, entropy / math.log(2.0))
@@ -697,12 +700,15 @@ class Orchestrator:
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         compute_boost = 1.0 + 0.4 * compute_price_pressure
         entropy_damping = max(0.35, 1.0 - 0.6 * entropy_pressure)
+        welfare_urgency = max(0.0, 1.0 - sentient_welfare_index)
         return {
             "prosperity_gap": prosperity_gap,
             "sustainability_gap": sustainability_gap,
             "coordination_gap": coordination_gap,
             "game_theory_slack": game_theory_slack,
             "nash_welfare": nash_welfare,
+            "sentient_welfare_index": sentient_welfare_index,
+            "welfare_floor": welfare_floor,
             "stability_index": stability_index,
             "entropy": entropy,
             "entropy_pressure": entropy_pressure,
@@ -720,6 +726,7 @@ class Orchestrator:
             "coordination_damping": coordination_damping,
             "compute_boost": compute_boost,
             "entropy_damping": entropy_damping,
+            "welfare_urgency": welfare_urgency,
         }
 
     def _score_claimant(self, job: JobRecord, agent: str) -> Tuple[float, float, int, str]:
@@ -877,6 +884,7 @@ class Orchestrator:
             * (1.0 + 0.5 * signals["hamiltonian_pressure"])
             * signals["entropy_damping"]
         )
+        action_budget *= 0.9 + 0.6 * signals["welfare_urgency"]
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"])
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
         stimulus = (
@@ -1496,11 +1504,12 @@ class Orchestrator:
         if self._latest_simulation_state is not None:
             simulation_state = {
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
-            "prosperity_index": self._latest_simulation_state.prosperity_index,
-            "sustainability_index": self._latest_simulation_state.sustainability_index,
-            "nash_welfare": self._latest_simulation_state.nash_welfare,
-            "free_energy": self._latest_simulation_state.free_energy,
-            "entropy": self._latest_simulation_state.entropy,
+                "prosperity_index": self._latest_simulation_state.prosperity_index,
+                "sustainability_index": self._latest_simulation_state.sustainability_index,
+                "nash_welfare": self._latest_simulation_state.nash_welfare,
+                "sentient_welfare_index": self._latest_simulation_state.sentient_welfare_index,
+                "free_energy": self._latest_simulation_state.free_energy,
+                "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,

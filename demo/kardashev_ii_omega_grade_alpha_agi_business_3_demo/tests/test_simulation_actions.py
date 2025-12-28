@@ -95,6 +95,42 @@ def test_policy_action_accounts_for_compute_scarcity() -> None:
     assert scarcity_action["green_shift"] >= baseline_action["green_shift"]
 
 
+def test_policy_action_accounts_for_sentient_welfare() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    low_welfare_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.4,
+        sustainability_index=0.4,
+        nash_welfare=0.4,
+        sentient_welfare_index=0.2,
+        free_energy=0.2,
+        entropy=0.2,
+        hamiltonian=-0.1,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+    high_welfare_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.4,
+        sustainability_index=0.4,
+        nash_welfare=0.4,
+        sentient_welfare_index=0.9,
+        free_energy=0.2,
+        entropy=0.2,
+        hamiltonian=-0.1,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+
+    low_action = orchestrator._build_policy_action(low_welfare_state)
+    high_action = orchestrator._build_policy_action(high_welfare_state)
+
+    assert low_action["stimulus"] >= high_action["stimulus"]
+    assert low_action["green_shift"] >= high_action["green_shift"]
+
+
 def test_select_best_claimant_prefers_skill_match_and_capacity() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
     job_spec = JobSpec(
