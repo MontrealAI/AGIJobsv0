@@ -177,6 +177,19 @@ button:hover {
   overflow-x: auto;
 }
 
+.diagram-source {
+  margin: 12px 0 0;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(226, 232, 240, 0.9);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .footer-note {
   font-size: 0.85rem;
   color: rgba(148, 163, 184, 0.8);
