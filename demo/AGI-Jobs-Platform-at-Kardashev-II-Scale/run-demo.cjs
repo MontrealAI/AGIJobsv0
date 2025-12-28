@@ -1730,6 +1730,8 @@ function buildEquilibriumLedger({
         coalitionStability: round(sentientWelfare.coalitionStability, 4),
         paretoSlack: round(sentientWelfare.paretoSlack, 4),
         collectiveActionPotential: round(sentientWelfare.collectiveActionPotential, 4),
+        freeEnergyPerAgentGj: round(sentientWelfare.freeEnergyPerAgentGj, 6),
+        welfarePotential: round(sentientWelfare.welfarePotential, 4),
       },
       logistics: {
         score: round(logisticsScore, 4),
@@ -1769,9 +1771,17 @@ function formatPercentValue(value, digits = 1) {
   return `${(value * 100).toFixed(digits)}%`;
 }
 
+function formatFixedValue(value, digits = 2) {
+  if (!Number.isFinite(value)) {
+    return 'n/a';
+  }
+  return value.toFixed(digits);
+}
+
 function buildActionPathBriefing(equilibriumLedger) {
   const thermodynamics = equilibriumLedger?.thermodynamics ?? {};
   const gameTheory = equilibriumLedger?.gameTheory ?? {};
+  const welfare = equilibriumLedger?.components?.welfare ?? {};
   const actionPath = Array.isArray(equilibriumLedger?.actionPath)
     ? equilibriumLedger.actionPath
     : [];
@@ -1794,6 +1804,10 @@ function buildActionPathBriefing(equilibriumLedger) {
   lines.push(
     `- Coalition stability: ${formatPercentValue(gameTheory.coalitionStability)}`
   );
+  lines.push(
+    `- Free energy per agent: ${formatFixedValue(welfare.freeEnergyPerAgentGj, 6)} GJ`
+  );
+  lines.push(`- Welfare potential: ${formatPercentValue(welfare.welfarePotential)}`);
   lines.push('');
   lines.push('## Action path');
   if (actionPath.length === 0) {

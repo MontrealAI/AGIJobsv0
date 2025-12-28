@@ -26,7 +26,9 @@
       "inequalityIndex": 0.0525,
       "coalitionStability": 0.8996,
       "paretoSlack": 0.8789,
-      "collectiveActionPotential": 0.4631
+      "collectiveActionPotential": 0.4631,
+      "freeEnergyPerAgentGj": 0,
+      "welfarePotential": 0.679
     },
     "logistics": {
       "score": 0.9904,
