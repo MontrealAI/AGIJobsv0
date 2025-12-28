@@ -3837,8 +3837,12 @@ function computeTelemetry(
 
   const thermostatBudgetGw =
     manifest.energyProtocols.stellarLattice.baselineCapturedGw * manifest.energyProtocols.thermostat.targetKelvin;
+  const energyModelDeltaGw = Math.abs(sumRegionalGw - dysonYield);
+  const energyModelDeltaPct = dysonYield > 0 ? energyModelDeltaGw / dysonYield : 0;
   const energyAgreementWithinMargin =
-    sumRegionalGw <= dysonYield && sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) && dysonYield >= capturedGw;
+    energyModelDeltaPct <= marginPct &&
+    sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) &&
+    dysonYield >= capturedGw;
 
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
@@ -4090,6 +4094,8 @@ function computeTelemetry(
         regionalSumGw: sumRegionalGw,
         dysonProjectionGw: dysonYield,
         thermostatBudgetGw,
+        deltaGw: round(energyModelDeltaGw, 4),
+        deltaPct: round(energyModelDeltaPct, 6),
         withinMargin: energyAgreementWithinMargin,
       },
       monteCarlo: energyMonteCarlo,
@@ -4237,8 +4243,11 @@ function computeTelemetry(
           regionalSumGw: sumRegionalGw,
           dysonProjectionGw: dysonYield,
           thermostatBudgetGw,
+          deltaGw: round(energyModelDeltaGw, 4),
+          deltaPct: round(energyModelDeltaPct, 6),
         },
         withinMargin: energyAgreementWithinMargin,
+        tolerancePct: round(marginPct, 6),
       },
       energyMonteCarlo: {
         runs: energyMonteCarlo.runs,

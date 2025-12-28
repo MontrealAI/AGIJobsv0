@@ -32,11 +32,11 @@ Generated: 2125-01-01T19:05:39.398Z
 
 ## Thermodynamic Allocation Policy
 
-| Shard   | Boltzmann Weight | Recommended GW | Nash Payoff |
-| ------- | ---------------- | -------------- | ----------- |
-| earth   | 33.3%            | 384,133.33     | 0.1         |
-| mars    | 33.3%            | 384,133.33     | 0.1         |
-| orbital | 33.3%            | 384,133.33     | 0.1         |
+| Shard   | Boltzmann Weight | Effective Weight | Recommended GW | Capacity GW | Nash Payoff |
+| ------- | ---------------- | ---------------- | -------------- | ----------- | ----------- |
+| earth   | 33.3%            | 33.9%            | 82,000         | 82,000      | 0.1         |
+| mars    | 33.3%            | 9.9%             | 24,000         | 24,000      | 0.1         |
+| orbital | 33.3%            | 56.2%            | 136,000        | 136,000     | 0.1         |
 
 ## Sentinel Advisories
 

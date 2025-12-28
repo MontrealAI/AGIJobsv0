@@ -15,7 +15,7 @@
 * Next scheduled drill: 2025-03-02T12:00:00Z
 
 ## Verification status
-* Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: true
+* Energy models (regionalSum, dysonProjection, thermostatBudget) aligned: false
 * Monte Carlo breach 0.00% (≤ 1% tolerance): true
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Compute deviation 0.00% (tolerance 0.75%): true

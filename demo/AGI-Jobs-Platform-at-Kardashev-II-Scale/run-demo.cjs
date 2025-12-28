@@ -2225,9 +2225,12 @@ function main() {
   const energyMarginPct = clampRatio(energyMonteCarlo.freeEnergyMarginPct ?? 0);
   const energyModelDiff = Math.abs(energyModels.regionalSumGw - energyModels.dysonProjectionGw);
   const energyModelTolerance = (energy.tolerancePct ?? 5) / 100;
-  const energyModelsWithin = energyModels.dysonProjectionGw > 0
-    ? energyModels.regionalSumGw <= energyModels.dysonProjectionGw * (1 + energyModelTolerance)
-    : true;
+  const energyModelDiffPct =
+    energyModels.dysonProjectionGw > 0
+      ? energyModelDiff / energyModels.dysonProjectionGw
+      : 0;
+  const energyModelsWithin =
+    energyModels.dysonProjectionGw > 0 ? energyModelDiffPct <= energyModelTolerance : true;
   const energyWarnings = [];
   if (!energyMonteCarlo.withinTolerance) {
     energyWarnings.push('Monte Carlo breach risk exceeds tolerance.');
@@ -2291,6 +2294,13 @@ function main() {
   const verification = {
     energyModels: {
       withinMargin: energyModelsWithin,
+      tolerancePct: round(energyModelTolerance, 6),
+      results: {
+        regionalSumGw: round(energyModels.regionalSumGw, 4),
+        dysonProjectionGw: round(energyModels.dysonProjectionGw, 4),
+        deltaGw: round(energyModelDiff, 4),
+        deltaPct: round(energyModelDiffPct, 6),
+      },
     },
     compute: {
       deviationPct: computeDeviationPct,
