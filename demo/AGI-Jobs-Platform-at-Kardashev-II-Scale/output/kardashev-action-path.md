@@ -1,6 +1,6 @@
 # Kardashev II Action Path
 
-Generated: 2025-12-28T12:08:43.852Z
+Generated: 2025-12-28T15:25:09.392Z
 
 ## Core equilibrium signals
 - Free energy margin: 9.25%
@@ -8,6 +8,8 @@ Generated: 2025-12-28T12:08:43.852Z
 - Hamiltonian stability: 54.6%
 - Nash product: 10.0%
 - Coalition stability: 100.0%
+- Free energy per agent: 0.085820 GJ
+- Welfare potential: 86.4%
 
 ## Action path
 ### Step 1: Thermodynamic headroom reset

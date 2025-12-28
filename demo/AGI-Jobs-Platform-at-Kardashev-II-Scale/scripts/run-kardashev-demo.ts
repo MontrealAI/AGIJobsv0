@@ -5143,6 +5143,8 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         coalitionStability: round(welfare.coalitionStability, 4),
         paretoSlack: round(welfare.paretoSlack, 4),
         collectiveActionPotential: round(welfare.collectiveActionPotential, 4),
+        freeEnergyPerAgentGj: round(welfare.freeEnergyPerAgentGj, 6),
+        welfarePotential: round(welfare.welfarePotential, 4),
       },
       logistics: {
         score: round(logisticsScore, 4),
