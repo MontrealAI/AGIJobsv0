@@ -253,16 +253,19 @@ function renderMonteCarloDetails(monteCarlo) {
   const freeEnergyElement = document.querySelector("#energy-monte-carlo-free-energy");
   const hamiltonianElement = document.querySelector("#energy-monte-carlo-hamiltonian");
   const gameTheoryElement = document.querySelector("#energy-monte-carlo-game-theory");
+  const riskElement = document.querySelector("#energy-monte-carlo-risk");
 
-  if (!freeEnergyElement || !hamiltonianElement || !gameTheoryElement) return;
+  if (!freeEnergyElement || !hamiltonianElement || !gameTheoryElement || !riskElement) return;
 
   if (!monteCarlo) {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
     hamiltonianElement.textContent = "Hamiltonian stability unavailable.";
     gameTheoryElement.textContent = "Game-theory slack unavailable.";
+    riskElement.textContent = "Thermodynamic risk index unavailable.";
     applyStatus(freeEnergyElement, "status-warn");
     applyStatus(hamiltonianElement, "status-warn");
     applyStatus(gameTheoryElement, "status-warn");
+    applyStatus(riskElement, "status-warn");
     return;
   }
 
@@ -273,8 +276,14 @@ function renderMonteCarloDetails(monteCarlo) {
     const gibbsText = Number.isFinite(monteCarlo.gibbsFreeEnergyGj)
       ? ` · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`
       : "";
+    const usableText = Number.isFinite(monteCarlo.usableFreeEnergyGw)
+      ? ` · usable ${formatNumber(monteCarlo.usableFreeEnergyGw)} GW`
+      : "";
     const runwayText = Number.isFinite(monteCarlo.runwayHours)
       ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
+      : "";
+    const grossRunwayText = Number.isFinite(monteCarlo.grossRunwayHours)
+      ? ` (gross ${monteCarlo.grossRunwayHours.toFixed(2)}h)`
       : "";
     const runwayGapText =
       Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
@@ -282,7 +291,7 @@ function renderMonteCarloDetails(monteCarlo) {
         : "";
     freeEnergyElement.textContent = `Free energy margin ${formatNumber(
       monteCarlo.freeEnergyMarginGw
-    )} GW${freeEnergyPct}${gibbsText}${runwayText}${runwayGapText}`;
+    )} GW${freeEnergyPct}${gibbsText}${usableText}${runwayText}${grossRunwayText}${runwayGapText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
@@ -315,6 +324,29 @@ function renderMonteCarloDetails(monteCarlo) {
   } else {
     gameTheoryElement.textContent = "Game-theory slack unavailable.";
     applyStatus(gameTheoryElement, "status-warn");
+  }
+
+  const thermodynamicStability = isFiniteNumber(monteCarlo.thermodynamicStability)
+    ? monteCarlo.thermodynamicStability
+    : null;
+  const riskIndex = isFiniteNumber(monteCarlo.riskIndex)
+    ? monteCarlo.riskIndex
+    : thermodynamicStability !== null
+      ? Math.max(0, Math.min(1, 1 - thermodynamicStability))
+      : null;
+  if (riskIndex !== null) {
+    const stabilityText =
+      thermodynamicStability !== null
+        ? ` · stability ${(thermodynamicStability * 100).toFixed(1)}%`
+        : "";
+    riskElement.textContent = `Thermodynamic risk ${(riskIndex * 100).toFixed(1)}%${stabilityText}`;
+    applyStatus(
+      riskElement,
+      riskIndex <= 0.15 ? "status-ok" : riskIndex <= 0.3 ? "status-warn" : "status-fail"
+    );
+  } else {
+    riskElement.textContent = "Thermodynamic risk index unavailable.";
+    applyStatus(riskElement, "status-warn");
   }
 }
 
@@ -499,7 +531,7 @@ function renderMetrics(telemetry) {
     const runsText = Number.isFinite(monteCarlo.runs) ? monteCarlo.runs.toLocaleString() : "n/a";
     document.querySelector(
       "#energy-monte-carlo-summary"
-    ).textContent = `Breach ${breachText}${runwayText} · P95 ${p95Text} · runs ${runsText}`;
+    ).textContent = `Breach ${breachText}${runwayText}${runwayGapText} · P95 ${p95Text} · runs ${runsText}`;
     setStatus(document.querySelector("#energy-monte-carlo-status"), monteCarlo.withinTolerance);
   } else {
     document.querySelector("#energy-monte-carlo-summary").textContent = "Monte Carlo telemetry unavailable.";

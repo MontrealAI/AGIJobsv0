@@ -1,42 +1,43 @@
 # Kardashev II Scale Control Dossier
 
-Generated: 2125-01-01T17:44:16.944Z
+Generated: 2125-01-01T08:26:44.069Z
 
 ## Executive Summary
 
 - **Universal Dominance Score:** 99.9/100 (targets met across all shards).
-- **Dyson Swarm Progress:** 3008/10000 satellites assembled (30.08% coverage).
-- **Captured Power:** 135,360 MW available for reallocation.
+- **Dyson Swarm Progress:** 3073/10000 satellites assembled (30.73% coverage).
+- **Captured Power:** 138,285 MW available for reallocation.
 - **Energy Monte Carlo:** 0.00% breach probability across 256 runs (tolerance 5.00%).
-- **Free Energy Margin:** 106798.55 GW (9.25%) vs 57500.00 GW minimum buffer.
-- **Free Energy Runway:** 0.11 hours of buffer at mean demand.
-- **Entropy Buffer:** 4.28σ thermodynamic headroom; game-theoretic slack 79.6%.
-- **Thermodynamic Reserve:** 384,474,779.47 GJ Gibbs free energy; Hamiltonian stability 54.6% across the sampled phase space.
-- **Gibbs Allocation Temperature:** 0.45 (lower favors resilience-heavy shards); Nash welfare 9.99%.
-- **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.495.
+- **Free Energy Margin:** 2321447.00 GW (67.33%) vs 1149023.20 GW minimum buffer.
+- **Free Energy Runway:** 1.08 hours at mean demand (gap 0.00h, 0.00 GWh).
+- **Entropy Buffer:** 80.22σ thermodynamic headroom; game-theoretic slack 92.6%.
+- **Thermodynamic Reserve:** 4,220,725,703.75 GJ Gibbs free energy; Hamiltonian stability 83.7% across the sampled phase space.
+- **Runway Stabilization:** +2225046.40 GW reserve buffers applied across 3 feeds to reach the 1h runway target.
+- **Gibbs Allocation Temperature:** 0.16 (lower favors resilience-heavy shards); Nash welfare 9.99%.
+- **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.176.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
 - **Allocation Diversification:** 66.7% (HHI 0.333).
 - **Replicator Equilibrium:** 100.0% stability (drift 0.000).
-- **Sentient Welfare Equilibrium:** 96.3% · cooperation 90.8% · inequality 0.0% · free energy/agent 0.085820 GJ.
-- **Sentient Coalition Stability:** 100.0% · collective action 82.7% · payoff dispersion 0.0%.
-- **Equilibrium Ledger:** 81.9% (warning); energy 55.3%, allocation 100.0%, welfare 94.5%.
+- **Sentient Welfare Equilibrium:** 98.7% · cooperation 96.7% · inequality 0.0% · free energy/agent 0.942126 GJ.
+- **Sentient Coalition Stability:** 100.0% · collective action 93.8% · payoff dispersion 0.0%.
+- **Equilibrium Ledger:** 91.3% (nominal); energy 88.7%, allocation 100.0%, welfare 98.0%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
 
 | Shard   | Monthly Jobs | Active Validators | Settlement Lag | Resilience | Energy Utilisation |
 | ------- | ------------ | ----------------- | -------------- | ---------- | ------------------ |
-| earth   | 748,669      | 149               | 6 min          | 0.999      | 99.8%              |
-| mars    | 121,327      | 120               | 17 min         | 0.999      | 99.31%             |
-| orbital | 705,492      | 141               | 6 min          | 0.999      | 99.64%             |
+| earth   | 698,811      | 139               | 6 min          | 0.999      | 94.93%             |
+| mars    | 113,713      | 120               | 17 min         | 0.999      | 94.44%             |
+| orbital | 670,887      | 134               | 6 min          | 0.999      | 95.14%             |
 
 ## Thermodynamic Allocation Policy
 
 | Shard   | Boltzmann Weight | Effective Weight | Recommended GW | Capacity GW | Nash Payoff |
 | ------- | ---------------- | ---------------- | -------------- | ----------- | ----------- |
-| earth   | 33.3%            | 33.7%            | 371,000        | 371,000     | 0.1         |
-| mars    | 33.3%            | 9.9%             | 109,000        | 109,000     | 0.1         |
-| orbital | 33.3%            | 56.4%            | 620,000        | 620,000     | 0.1         |
+| earth   | 33.3%            | 33.8%            | 395,000        | 395,000     | 0.1         |
+| mars    | 33.3%            | 9.9%             | 116,000        | 116,000     | 0.1         |
+| orbital | 33.3%            | 56.3%            | 657,000        | 657,000     | 0.1         |
 
 ## Sentinel Advisories
 
@@ -69,7 +70,7 @@ A detailed task hierarchy diagram is available at `kardashev-task-hierarchy.mmd`
 ## Mission Thermodynamics
 
 - Mission Hamiltonian load: 44.04% · stability 55.96%
-- Free energy headroom vs mission demand: 4.37% (106798.55 GW buffer)
+- Free energy headroom vs mission demand: 95.09% (2321447.00 GW buffer)
 
 | Programme                          | Energy Share | Compute Share | Risk Index | Slack   | Hamiltonian Load |
 | ---------------------------------- | ------------ | ------------- | ---------- | ------- | ---------------- |
