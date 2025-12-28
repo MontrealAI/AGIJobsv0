@@ -2,43 +2,43 @@
   "generatedAt": "2025-03-01T00:00:00Z",
   "energy": {
     "methods": {
-      "direct": 242000,
-      "kahan": 242000,
-      "pairwise": 242000,
-      "bigInt": 242000,
-      "projection": 242000
+      "direct": 1095000,
+      "kahan": 1095000,
+      "pairwise": 1095000,
+      "bigInt": 1095000,
+      "projection": 1095500
     },
-    "toleranceGw": 0.242,
+    "toleranceGw": 1.095,
     "tolerancePct": 0.000001,
-    "maxDeviationGw": 0,
-    "consensus": true,
+    "maxDeviationGw": 500,
+    "consensus": false,
     "coverageRatio": 1,
     "projection": {
       "perFederation": [
         {
           "federation": "earth",
-          "scheduledEnergyGwH": 1968000,
-          "averageScheduledGw": 82000,
+          "scheduledEnergyGwH": 8916000,
+          "averageScheduledGw": 371500,
           "windowCount": 4,
           "scheduledHours": 24
         },
         {
           "federation": "mars",
-          "scheduledEnergyGwH": 576000,
-          "averageScheduledGw": 24000,
+          "scheduledEnergyGwH": 2600000,
+          "averageScheduledGw": 108333.33333333333,
           "windowCount": 3,
           "scheduledHours": 24
         },
         {
           "federation": "orbital",
-          "scheduledEnergyGwH": 3264000,
-          "averageScheduledGw": 136000,
+          "scheduledEnergyGwH": 14776000,
+          "averageScheduledGw": 615666.6666666666,
           "windowCount": 3,
           "scheduledHours": 24
         }
       ],
-      "totalScheduledGwH": 5808000,
-      "normalisedTotalGw": 242000,
+      "totalScheduledGwH": 26292000,
+      "normalisedTotalGw": 1095500,
       "coverageRatio": 1,
       "windowCount": 10
     }

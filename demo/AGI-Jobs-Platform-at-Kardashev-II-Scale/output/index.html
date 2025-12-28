@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AGI Jobs v0 (v2) — Kardashev II Command Deck</title>
+    <link rel="stylesheet" href="./ui/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">AGI Jobs v0 (v2) · Kardashev II demo</span>
+        <h1>Interstellar Command Deck</h1>
+        <p>
+          Non-technical stewards can orchestrate the Dyson Swarm, federated domains, and emergency levers by loading the Safe
+          batch generated with <code>npm run demo:kardashev-ii:orchestrate</code> or the Sovereign Lattice variant from
+          <code>npm run demo:kardashev-ii-lattice:orchestrate</code>.
+        </p>
+      </header>
+
+      <section class="metrics-grid">
+        <article class="card">
+          <h2>Dominance</h2>
+          <p id="dominance-score">…</p>
+        </article>
+        <article class="card">
+          <h2>Monthly value flow</h2>
+          <p id="monthly-value">…</p>
+        </article>
+        <article class="card">
+          <h2>Resilience</h2>
+          <p id="resilience">…</p>
+        </article>
+        <article class="card">
+          <h2>Energy utilisation</h2>
+          <p id="energy-utilisation">…</p>
+          <p id="energy-margin">…</p>
+          <p>Status: <span id="energy-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Guardian coverage</h2>
+          <p id="coverage">…</p>
+          <p>Status: <span id="coverage-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Bridges</h2>
+          <ul id="bridge-statuses"></ul>
+        </article>
+        <article class="card">
+          <h2>Energy models</h2>
+          <p id="energy-models">…</p>
+        </article>
+        <article class="card">
+          <h2>Energy Monte Carlo</h2>
+          <p id="energy-monte-carlo-summary">…</p>
+          <p id="energy-monte-carlo-free-energy">…</p>
+          <p id="energy-monte-carlo-hamiltonian">…</p>
+          <p id="energy-monte-carlo-game-theory">…</p>
+          <p>Status: <span id="energy-monte-carlo-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Sentient welfare equilibrium</h2>
+          <p id="sentient-welfare-summary">…</p>
+          <p id="sentient-welfare-details">…</p>
+          <p>Status: <span id="sentient-welfare-status">…</span></p>
+        </article>
+        <article class="card">
+          <h2>Live energy feeds</h2>
+          <p id="energy-feed-compliance">…</p>
+          <p id="energy-feed-latency">…</p>
+          <ul id="energy-feed-list" class="feed-list"></ul>
+        </article>
+        <article class="card">
+          <h2>Compute delta</h2>
+          <p id="compute-deviation">…</p>
+        </article>
+        <article class="card">
+          <h2>Bridge compliance</h2>
+          <p id="bridge-compliance">…</p>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Identity lattice posture</h2>
+        </div>
+        <p id="identity-summary" class="lede">…</p>
+        <ul id="identity-federations" class="identity-list"></ul>
+        <div class="identity-meta">
+          <p>Root authority: <span id="identity-root">…</span></p>
+          <p>Merkle root: <span id="identity-merkle">…</span></p>
+          <p>Revocation rate: <span id="identity-revocation">…</span></p>
+          <p>Latency window: <span id="identity-latency">…</span></p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Compute fabric orchestration</h2>
+        </div>
+        <p id="fabric-summary" class="lede">…</p>
+        <ul id="fabric-planes" class="fabric-list"></ul>
+        <p class="fabric-meta" id="fabric-meta">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Sharded registry fabric</h2>
+        </div>
+        <p id="fabric-federation-summary" class="lede">…</p>
+        <p id="fabric-latency-summary">…</p>
+        <ul id="fabric-shards" class="fabric-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Energy window schedule</h2>
+        </div>
+        <p id="schedule-summary" class="lede">…</p>
+        <ul id="schedule-coverage" class="schedule-coverage"></ul>
+        <ul id="energy-window-list" class="window-list"></ul>
+        <p id="schedule-deficits">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Thermodynamic allocation policy</h2>
+        </div>
+        <p id="allocation-summary" class="lede">…</p>
+        <p id="allocation-stability" class="lede">…</p>
+        <ul id="allocation-list" class="fabric-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Equilibrium ledger</h2>
+        </div>
+        <p id="equilibrium-summary" class="lede">…</p>
+        <ul id="equilibrium-components" class="ledger-list"></ul>
+        <h3>Thermodynamics</h3>
+        <ul id="equilibrium-thermo" class="ledger-list"></ul>
+        <h3>Game-theory posture</h3>
+        <ul id="equilibrium-game-theory" class="ledger-list"></ul>
+        <h3>Pathways</h3>
+        <ul id="equilibrium-pathways" class="ledger-list"></ul>
+        <h3>Action path</h3>
+        <ul id="equilibrium-action-path" class="ledger-list"></ul>
+        <h3>Recommendations</h3>
+        <ul id="equilibrium-recommendations" class="ledger-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Mission lattice</h2>
+        </div>
+        <p id="mission-summary" class="lede">…</p>
+        <ul id="mission-programmes" class="mission-list"></ul>
+        <p id="mission-warnings">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Mission thermodynamics</h2>
+        </div>
+        <p id="mission-thermo-summary" class="lede">…</p>
+        <ul id="mission-thermo-programmes" class="thermo-list"></ul>
+        <h3>Priority action queue</h3>
+        <ul id="mission-thermo-queue" class="thermo-queue"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Mission hierarchy</h2>
+        </div>
+        <div id="mission-mermaid">Loading mission lattice…</div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Logistics corridors</h2>
+        </div>
+        <p id="logistics-summary" class="lede">…</p>
+        <p id="logistics-watchers">…</p>
+        <p id="logistics-equilibrium" class="lede">…</p>
+        <ul id="logistics-corridors" class="logistics-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Settlement lattice</h2>
+        </div>
+        <p id="settlement-summary" class="lede">…</p>
+        <p id="settlement-watchers">…</p>
+        <ul id="settlement-protocols" class="settlement-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Stability ledger</h2>
+        </div>
+        <p id="ledger-summary" class="lede">…</p>
+        <p class="ledger-score">Composite confidence: <span id="ledger-score">…</span></p>
+        <ul id="ledger-checks" class="ledger-list"></ul>
+        <h3>Verification vectors</h3>
+        <ul id="ledger-methods" class="ledger-methods"></ul>
+        <div class="ledger-alerts">
+          <h3>Alerts</h3>
+          <ul id="ledger-alerts"></ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Owner override proof</h2>
+        </div>
+        <p id="owner-proof-score" class="lede">…</p>
+        <p id="owner-proof-secondary" class="lede">…</p>
+        <ul id="owner-proof-summary" class="owner-proof-summary"></ul>
+        <ul id="owner-proof-functions" class="owner-proof-list"></ul>
+        <div class="owner-proof-meta">
+          <p>Transaction set hash: <span id="owner-proof-tx-hash">…</span></p>
+          <p>Selector set hash: <span id="owner-proof-selector-hash">…</span></p>
+        </div>
+        <p id="owner-proof-targets">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Federated systems map</h2>
+          <button id="reflect-button">Run reflection checklist</button>
+        </div>
+        <div id="mermaid-container">Loading interstellar map…</div>
+        <ul id="reflection-checklist"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Dyson Swarm timeline</h2>
+        </div>
+        <div id="dyson-container">Preparing Dyson programme timeline…</div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Scenario stress sweep</h2>
+        </div>
+        <ul id="scenario-list" class="scenario-list"></ul>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Owner directives</h2>
+        </div>
+        <ul id="owner-powers" class="owner-powers"></ul>
+        <div class="escalation-grid">
+          <p>Guardians: <span id="guardian-hotline">…</span></p>
+          <p>Operations: <span id="operations-hotline">…</span></p>
+          <p>Status page: <span id="status-page">…</span></p>
+          <p>Bridge failover: <span id="bridge-failover">…</span></p>
+        </div>
+        <p id="drill-info">…</p>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>Federation readiness</h2>
+        </div>
+        <div id="federation-grid" class="federation-grid"></div>
+      </section>
+
+      <footer class="footer-note">
+        Generated from <code>config/kardashev-ii.manifest.json</code> · artefacts in <code>output/</code> · validate with
+        <code>npm run demo:kardashev-ii:ci</code>
+      </footer>
+    </main>
+    <script>window.__KARDASHEV_ASSET_BASE__ = ".";</script>
+    <script src="./kardashev-telemetry.inline.js"></script>
+    <script src="./kardashev-stability-ledger.inline.js"></script>
+    <script src="./kardashev-equilibrium-ledger.inline.js"></script>
+    <script src="./kardashev-owner-proof.inline.js"></script>
+    <script src="./kardashev-diagrams.inline.js"></script>
+    <script type="module" src="./ui/dashboard.js"></script>
+  </body>
+</html>

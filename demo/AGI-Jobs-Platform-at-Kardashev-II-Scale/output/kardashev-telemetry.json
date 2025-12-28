@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0x3a63809973a12d76a6bea4c26586a27fd4ae5ca48c4c776a02fd90f5d67e9a9b",
+    "hash": "0xb101ca6722c4bdff068b5b09ebe8847704a073090931e264abcaaac21f9c5d9e",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -185,63 +185,67 @@
   "energy": {
     "capturedGw": 1150000,
     "dysonYield": 1150000,
-    "utilisationPct": 0.21043478260869566,
+    "utilisationPct": 0.9521739130434783,
     "marginPct": 0.125,
-    "warnings": [],
+    "warnings": [
+      "Utilisation exceeds configured safety margin",
+      "Monte Carlo breach probability 100.00% exceeds 1.00% tolerance",
+      "Free energy margin -10199.14 GW below safety buffer 143750.00 GW"
+    ],
     "regional": [
       {
         "slug": "earth",
-        "availableGw": 82000,
+        "availableGw": 371000,
         "storageGwh": 54000,
         "renewablePct": 0.87
       },
       {
         "slug": "mars",
-        "availableGw": 24000,
+        "availableGw": 109000,
         "storageGwh": 18000,
         "renewablePct": 0.93
       },
       {
         "slug": "orbital",
-        "availableGw": 136000,
+        "availableGw": 615000,
         "storageGwh": 128000,
         "renewablePct": 0.99
       }
     ],
     "tripleCheck": true,
     "models": {
-      "regionalSumGw": 242000,
+      "regionalSumGw": 1095000,
       "dysonProjectionGw": 1150000,
-      "thermostatBudgetGw": 931500.0000000001,
-      "deltaGw": 908000,
-      "deltaPct": 0.789565,
-      "withinMargin": false
+      "thermostatBudgetGw": 977500,
+      "deltaGw": 55000,
+      "deltaPct": 0.047826,
+      "withinMargin": true
     },
     "monteCarlo": {
       "runs": 256,
-      "breachProbability": 0,
+      "breachProbability": 1,
       "percentileGw": {
-        "p50": 238645.9295734167,
-        "p95": 253590.4698404905,
-        "p99": 255272.26754529556
+        "p50": 1092349.3727788075,
+        "p95": 1160199.1386940242,
+        "p99": 1175408.998372291
       },
-      "maxGw": 257849.33713571046,
-      "averageGw": 237852.0691801336,
+      "maxGw": 1178049.319000517,
+      "averageGw": 1093911.2572673024,
       "marginGw": 143750,
-      "freeEnergyMarginGw": 896409.5301595095,
-      "freeEnergyMarginPct": 0.7794865479647909,
-      "runwayHours": 3.7687691061481896,
-      "demandStdDevGw": 9033.981038246582,
-      "entropyMargin": 99.22641262633144,
-      "gibbsFreeEnergyGj": 3227074308.574234,
-      "hamiltonianStability": 0.8897432739823954,
-      "gameTheorySlack": 0.950384473292078,
-      "maintainsBuffer": true,
-      "withinTolerance": true,
+      "freeEnergyMarginGw": -10199.13869402418,
+      "freeEnergyMarginPct": -0.0088688162556732,
+      "runwayHours": 0,
+      "demandStdDevGw": 37206.376816308235,
+      "entropyMargin": -0.2741234048232751,
+      "gibbsFreeEnergyGj": 0,
+      "hamiltonianStability": 0,
+      "gameTheorySlack": 0,
+      "maintainsBuffer": false,
+      "withinTolerance": false,
       "tolerance": 0.01
     },
     "allocationPolicy": {
-      "temperature": 0.12,
+      "temperature": 1,
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
@@ -254,16 +258,16 @@
       "diversificationAlpha": 1,
       "allocationEntropy": 1.0986122886681096,
       "fairnessIndex": 1,
-      "gibbsPotential": -0.04650826317843133,
+      "gibbsPotential": -0.9854908340169315,
       "allocations": [
         {
           "federation": "earth",
           "name": "Earth Sovereign Federation",
           "weight": 0.3333333333333333,
-          "recommendedGw": 80666.67,
+          "recommendedGw": 365000,
           "payoff": 0.8265,
-          "currentGw": 82000,
-          "deltaGw": -1333.33,
+          "currentGw": 371000,
+          "deltaGw": -6000,
           "resilience": 0.945,
           "renewablePct": 0.87,
           "latencyMs": 85,
@@ -273,10 +277,10 @@
           "federation": "mars",
           "name": "Mars Terraforming Compact",
           "weight": 0.3333333333333333,
-          "recommendedGw": 80666.67,
+          "recommendedGw": 365000,
           "payoff": 0.7754,
-          "currentGw": 24000,
-          "deltaGw": 56666.67,
+          "currentGw": 109000,
+          "deltaGw": 256000,
           "resilience": 0.935,
           "renewablePct": 0.93,
           "latencyMs": 820,
@@ -286,10 +290,10 @@
           "federation": "orbital",
           "name": "Orbital Research Halo",
           "weight": 0.3333333333333333,
-          "recommendedGw": 80666.67,
+          "recommendedGw": 365000,
           "payoff": 0.9787,
-          "currentGw": 136000,
-          "deltaGw": -55333.33,
+          "currentGw": 615000,
+          "deltaGw": -250000,
           "resilience": 0.959,
           "renewablePct": 0.99,
           "latencyMs": 42,
@@ -307,8 +311,8 @@
           "federationSlug": "earth",
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
-          "manifestGw": 82000,
-          "feedGw": 82000,
+          "manifestGw": 371000,
+          "feedGw": 371000,
           "deltaGw": 0,
           "deltaPct": 0,
           "latencyMs": 1200,
@@ -320,8 +324,8 @@
           "federationSlug": "mars",
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
-          "manifestGw": 24000,
-          "feedGw": 24000,
+          "manifestGw": 109000,
+          "feedGw": 109000,
           "deltaGw": 0,
           "deltaPct": 0,
           "latencyMs": 720000,
@@ -333,10 +337,10 @@
           "federationSlug": "orbital",
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
-          "manifestGw": 136000,
-          "feedGw": 136000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "manifestGw": 615000,
+          "feedGw": 620000,
+          "deltaGw": -5000,
+          "deltaPct": 0.8130081300813009,
           "latencyMs": 3200,
           "withinTolerance": true,
           "driftAlert": false
@@ -359,8 +363,8 @@
           "federation": "earth",
           "startHourUTC": 0,
           "durationHours": 6,
-          "availableGw": 72000,
-          "backupGw": 13000,
+          "availableGw": 326000,
+          "backupGw": 59000,
           "renewablePct": 0.94,
           "reliabilityPct": 0.985,
           "priorityDomains": [
@@ -368,60 +372,60 @@
             "earth.infrastructure"
           ],
           "transferCapacityGbps": 520,
-          "supportedExaflops": 7083.33,
+          "supportedExaflops": 32083.33,
           "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
-          "windowEnergyGwH": 510000
+          "windowEnergyGwH": 2310000
         },
         {
           "id": "earth-6",
           "federation": "earth",
           "startHourUTC": 6,
           "durationHours": 6,
-          "availableGw": 70000,
-          "backupGw": 13000,
+          "availableGw": 317000,
+          "backupGw": 59000,
           "renewablePct": 0.92,
           "reliabilityPct": 0.982,
           "priorityDomains": [
             "earth.finance"
           ],
           "transferCapacityGbps": 505,
-          "supportedExaflops": 6916.67,
+          "supportedExaflops": 31333.33,
           "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
-          "windowEnergyGwH": 498000
+          "windowEnergyGwH": 2256000
         },
         {
           "id": "earth-12",
           "federation": "earth",
           "startHourUTC": 12,
           "durationHours": 6,
-          "availableGw": 68000,
-          "backupGw": 13000,
+          "availableGw": 308000,
+          "backupGw": 59000,
           "renewablePct": 0.91,
           "reliabilityPct": 0.979,
           "priorityDomains": [
             "earth.infrastructure"
           ],
           "transferCapacityGbps": 488,
-          "supportedExaflops": 6750,
+          "supportedExaflops": 30583.33,
           "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
-          "windowEnergyGwH": 486000
+          "windowEnergyGwH": 2202000
         },
         {
           "id": "earth-18",
           "federation": "earth",
           "startHourUTC": 18,
           "durationHours": 6,
-          "availableGw": 66000,
-          "backupGw": 13000,
+          "availableGw": 299000,
+          "backupGw": 59000,
           "renewablePct": 0.9,
           "reliabilityPct": 0.978,
           "priorityDomains": [
@@ -429,120 +433,120 @@
             "earth.infrastructure"
           ],
           "transferCapacityGbps": 472,
-          "supportedExaflops": 6583.33,
+          "supportedExaflops": 29833.33,
           "demandExaflops": 43.1,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 336000,
           "recommendedJobs": 2016000,
-          "windowEnergyGwH": 474000
+          "windowEnergyGwH": 2148000
         },
         {
           "id": "mars-0",
           "federation": "mars",
           "startHourUTC": 0,
           "durationHours": 8,
-          "availableGw": 22000,
-          "backupGw": 2500,
+          "availableGw": 100000,
+          "backupGw": 11000,
           "renewablePct": 0.93,
           "reliabilityPct": 0.966,
           "priorityDomains": [
             "mars.terraforming"
           ],
           "transferCapacityGbps": 210,
-          "supportedExaflops": 2041.67,
+          "supportedExaflops": 9250,
           "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
-          "windowEnergyGwH": 196000
+          "windowEnergyGwH": 888000
         },
         {
           "id": "mars-8",
           "federation": "mars",
           "startHourUTC": 8,
           "durationHours": 8,
-          "availableGw": 21500,
-          "backupGw": 2500,
+          "availableGw": 97000,
+          "backupGw": 11000,
           "renewablePct": 0.91,
           "reliabilityPct": 0.963,
           "priorityDomains": [
             "mars.terraforming"
           ],
           "transferCapacityGbps": 198,
-          "supportedExaflops": 2000,
+          "supportedExaflops": 9000,
           "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
-          "windowEnergyGwH": 192000
+          "windowEnergyGwH": 864000
         },
         {
           "id": "mars-16",
           "federation": "mars",
           "startHourUTC": 16,
           "durationHours": 8,
-          "availableGw": 21000,
-          "backupGw": 2500,
+          "availableGw": 95000,
+          "backupGw": 11000,
           "renewablePct": 0.9,
           "reliabilityPct": 0.959,
           "priorityDomains": [
             "mars.terraforming"
           ],
           "transferCapacityGbps": 204,
-          "supportedExaflops": 1958.33,
+          "supportedExaflops": 8833.33,
           "demandExaflops": 14.3,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 86400,
           "recommendedJobs": 691200,
-          "windowEnergyGwH": 188000
+          "windowEnergyGwH": 848000
         },
         {
           "id": "orbital-0",
           "federation": "orbital",
           "startHourUTC": 0,
           "durationHours": 8,
-          "availableGw": 110000,
-          "backupGw": 31000,
+          "availableGw": 498000,
+          "backupGw": 140000,
           "renewablePct": 0.99,
           "reliabilityPct": 0.994,
           "priorityDomains": [
             "orbital.defense"
           ],
           "transferCapacityGbps": 640,
-          "supportedExaflops": 11750,
+          "supportedExaflops": 53166.67,
           "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
-          "windowEnergyGwH": 1128000
+          "windowEnergyGwH": 5104000
         },
         {
           "id": "orbital-8",
           "federation": "orbital",
           "startHourUTC": 8,
           "durationHours": 8,
-          "availableGw": 104000,
-          "backupGw": 30500,
+          "availableGw": 471000,
+          "backupGw": 138000,
           "renewablePct": 0.99,
           "reliabilityPct": 0.992,
           "priorityDomains": [
             "orbital.research"
           ],
           "transferCapacityGbps": 612,
-          "supportedExaflops": 11208.33,
+          "supportedExaflops": 50750,
           "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
-          "windowEnergyGwH": 1076000
+          "windowEnergyGwH": 4872000
         },
         {
           "id": "orbital-16",
           "federation": "orbital",
           "startHourUTC": 16,
           "durationHours": 8,
-          "availableGw": 102000,
-          "backupGw": 30500,
+          "availableGw": 462000,
+          "backupGw": 138000,
           "renewablePct": 0.985,
           "reliabilityPct": 0.991,
           "priorityDomains": [
@@ -550,20 +554,20 @@
             "orbital.research"
           ],
           "transferCapacityGbps": 598,
-          "supportedExaflops": 11041.67,
+          "supportedExaflops": 50000,
           "demandExaflops": 57.6,
           "coverageRatio": 1,
           "recommendedJobsPerHour": 115200,
           "recommendedJobs": 921600,
-          "windowEnergyGwH": 1060000
+          "windowEnergyGwH": 4800000
         }
       ],
       "coverage": [
         {
           "federation": "earth",
-          "dailyDemandGwH": 1968000,
-          "scheduledGwH": 1968000,
-          "coverageRatio": 1,
+          "dailyDemandGwH": 8904000,
+          "scheduledGwH": 8916000,
+          "coverageRatio": 1.0013,
           "reliabilityPct": 0.9811,
           "renewablePct": 0.9179,
           "windowCount": 4,
@@ -572,20 +576,20 @@
         },
         {
           "federation": "mars",
-          "dailyDemandGwH": 576000,
-          "scheduledGwH": 576000,
-          "coverageRatio": 1,
+          "dailyDemandGwH": 2616000,
+          "scheduledGwH": 2600000,
+          "coverageRatio": 0.9939,
           "reliabilityPct": 0.9627,
-          "renewablePct": 0.9135,
+          "renewablePct": 0.9136,
           "windowCount": 3,
           "transferCapacityGbps": 612,
-          "deficitGwH": 0
+          "deficitGwH": 16000
         },
         {
           "federation": "orbital",
-          "dailyDemandGwH": 3264000,
-          "scheduledGwH": 3264000,
-          "coverageRatio": 1,
+          "dailyDemandGwH": 14760000,
+          "scheduledGwH": 14776000,
+          "coverageRatio": 1.0011,
           "reliabilityPct": 0.9924,
           "renewablePct": 0.9884,
           "windowCount": 3,
@@ -598,43 +602,43 @@
     },
     "crossVerification": {
       "methods": {
-        "direct": 242000,
-        "kahan": 242000,
-        "pairwise": 242000,
-        "bigInt": 242000,
-        "projection": 242000
+        "direct": 1095000,
+        "kahan": 1095000,
+        "pairwise": 1095000,
+        "bigInt": 1095000,
+        "projection": 1095500
       },
-      "toleranceGw": 0.242,
+      "toleranceGw": 1.095,
       "tolerancePct": 0.000001,
-      "maxDeviationGw": 0,
-      "consensus": true,
+      "maxDeviationGw": 500,
+      "consensus": false,
       "coverageRatio": 1,
       "projection": {
         "perFederation": [
           {
             "federation": "earth",
-            "scheduledEnergyGwH": 1968000,
-            "averageScheduledGw": 82000,
+            "scheduledEnergyGwH": 8916000,
+            "averageScheduledGw": 371500,
             "windowCount": 4,
             "scheduledHours": 24
           },
           {
             "federation": "mars",
-            "scheduledEnergyGwH": 576000,
-            "averageScheduledGw": 24000,
+            "scheduledEnergyGwH": 2600000,
+            "averageScheduledGw": 108333.33333333333,
             "windowCount": 3,
             "scheduledHours": 24
           },
           {
             "federation": "orbital",
-            "scheduledEnergyGwH": 3264000,
-            "averageScheduledGw": 136000,
+            "scheduledEnergyGwH": 14776000,
+            "averageScheduledGw": 615666.6666666666,
             "windowCount": 3,
             "scheduledHours": 24
           }
         ],
-        "totalScheduledGwH": 5808000,
-        "normalisedTotalGw": 242000,
+        "totalScheduledGwH": 26292000,
+        "normalisedTotalGw": 1095500,
         "coverageRatio": 1,
         "windowCount": 10
       }
@@ -924,15 +928,15 @@
   "sentientWelfare": {
     "totalAgents": 4480000000,
     "federationCount": 3,
-    "freeEnergyPerAgentGj": 0.720329,
-    "cooperationIndex": 0.9261114584497759,
+    "freeEnergyPerAgentGj": 0,
+    "cooperationIndex": 0.4984384454683408,
     "inequalityIndex": 0.05252008576816762,
     "payoffCoefficient": 0.10038365976123358,
     "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
-    "equilibriumScore": 0.9520625533610517,
-    "welfarePotential": 0.9459149478874516,
-    "collectiveActionPotential": 0.9010438708775819
+    "equilibriumScore": 0.7809933481684777,
+    "welfarePotential": 0.678991965692733,
+    "collectiveActionPotential": 0.46305168349028925
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
@@ -1184,7 +1188,7 @@
       "chainId": 1,
       "governanceSafe": "0xaaccfefb5b833b41c1a6ff1d4a20e2f91b9fa5c2",
       "energy": {
-        "availableGw": 82000,
+        "availableGw": 371000,
         "renewablePct": 0.87,
         "storageGwh": 54000,
         "latencyMs": 85
@@ -1240,7 +1244,7 @@
       "chainId": 534352,
       "governanceSafe": "0x7b0f87d532f43c4a0e7816d9d7806f48a9c3f2d1",
       "energy": {
-        "availableGw": 24000,
+        "availableGw": 109000,
         "renewablePct": 0.93,
         "storageGwh": 18000,
         "latencyMs": 820
@@ -1287,7 +1291,7 @@
       "chainId": 42161,
       "governanceSafe": "0x1b3da8f56e47c29e8ceaff4b2d9c8b5d7ae2c6f4",
       "energy": {
-        "availableGw": 136000,
+        "availableGw": 615000,
         "renewablePct": 0.99,
         "storageGwh": 128000,
         "latencyMs": 42
@@ -1610,8 +1614,8 @@
     ]
   },
   "missionThermodynamics": {
-    "freeEnergyBudgetGw": 896409.5301595095,
-    "freeEnergyHeadroomPct": 0.3672003646401399,
+    "freeEnergyBudgetGw": 0,
+    "freeEnergyHeadroomPct": 0,
     "hamiltonianLoad": 0.3903921568627451,
     "hamiltonianStability": 0.6096078431372549,
     "programmes": [
@@ -1714,24 +1718,24 @@
         "thermostatBudget"
       ],
       "results": {
-        "regionalSumGw": 242000,
+        "regionalSumGw": 1095000,
         "dysonProjectionGw": 1150000,
-        "thermostatBudgetGw": 931500.0000000001,
-        "deltaGw": 908000,
-        "deltaPct": 0.789565
+        "thermostatBudgetGw": 977500,
+        "deltaGw": 55000,
+        "deltaPct": 0.047826
       },
-      "withinMargin": false,
+      "withinMargin": true,
       "tolerancePct": 0.125
     },
     "energyMonteCarlo": {
       "runs": 256,
-      "breachProbability": 0,
+      "breachProbability": 1,
       "tolerance": 0.01,
-      "withinTolerance": true,
+      "withinTolerance": false,
       "percentileGw": {
-        "p50": 238645.9295734167,
-        "p95": 253590.4698404905,
-        "p99": 255272.26754529556
+        "p50": 1092349.3727788075,
+        "p95": 1160199.1386940242,
+        "p99": 1175408.998372291
       }
     },
     "energyFeeds": {
@@ -1744,8 +1748,8 @@
           "federationSlug": "earth",
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
-          "manifestGw": 82000,
-          "feedGw": 82000,
+          "manifestGw": 371000,
+          "feedGw": 371000,
           "deltaGw": 0,
           "deltaPct": 0,
           "latencyMs": 1200,
@@ -1757,8 +1761,8 @@
           "federationSlug": "mars",
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
-          "manifestGw": 24000,
-          "feedGw": 24000,
+          "manifestGw": 109000,
+          "feedGw": 109000,
           "deltaGw": 0,
           "deltaPct": 0,
           "latencyMs": 720000,
@@ -1770,10 +1774,10 @@
           "federationSlug": "orbital",
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
-          "manifestGw": 136000,
-          "feedGw": 136000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "manifestGw": 615000,
+          "feedGw": 620000,
+          "deltaGw": -5000,
+          "deltaPct": 0.8130081300813009,
           "latencyMs": 3200,
           "withinTolerance": true,
           "driftAlert": false
@@ -1878,20 +1882,20 @@
     {
       "id": "energy-demand-surge",
       "title": "20% demand surge vs Dyson safety margin",
-      "status": "nominal",
-      "summary": "Dyson lattice absorbs surge with 859,600 GW spare.",
-      "confidence": 1,
-      "impact": "Thermostat margin remains controllable under surge scenario.",
+      "status": "critical",
+      "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required.",
+      "confidence": 0,
+      "impact": "Star-scale compute would brown-out without emergency pause.",
       "metrics": [
         {
           "label": "Simulated demand",
-          "value": "290,400 GW",
-          "ok": true
+          "value": "1,314,000 GW",
+          "ok": false
         },
         {
           "label": "Remaining buffer",
-          "value": "859,600 GW",
-          "ok": true
+          "value": "-164,000 GW",
+          "ok": false
         },
         {
           "label": "Thermostat margin",
@@ -1900,8 +1904,8 @@
         },
         {
           "label": "Utilisation",
-          "value": "25.25%",
-          "ok": true
+          "value": "114.26%",
+          "ok": false
         }
       ],
       "recommendedActions": [
@@ -1913,8 +1917,8 @@
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
       "status": "warning",
-      "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
-      "confidence": 0.5125,
+      "summary": "Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve.",
+      "confidence": 0.3531063323547431,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -1929,13 +1933,13 @@
         },
         {
           "label": "Relay boost allocation",
-          "value": "35.0% (402500 GW)",
+          "value": "13.7% (158096 GW)",
           "ok": true
         },
         {
           "label": "Mitigated latency",
-          "value": "117s",
-          "ok": true
+          "value": "155s",
+          "ok": false
         },
         {
           "label": "Failsafe budget",
@@ -1944,13 +1948,13 @@
         },
         {
           "label": "Slack",
-          "value": "3s",
-          "ok": true
+          "value": "-35s",
+          "ok": false
         }
       ],
       "recommendedActions": [
         "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
-        "Keep isolation routine on standby while relays rebalance.",
+        "Execute bridge isolation routine from mission directives if slack < 0.",
         "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
       ]
     },
@@ -2060,8 +2064,8 @@
       "id": "energy-window-loss",
       "title": "Primary energy window offline",
       "status": "critical",
-      "summary": "Removing orbital 8h window drops coverage to 80.58%.",
-      "confidence": 0.8222297183336145,
+      "summary": "Removing orbital 8h window drops coverage to 80.62%.",
+      "confidence": 0.8226943745534744,
       "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
       "metrics": [
         {
@@ -2071,7 +2075,7 @@
         },
         {
           "label": "Remaining coverage",
-          "value": "80.58%",
+          "value": "80.62%",
           "ok": false
         },
         {
@@ -2081,7 +2085,7 @@
         },
         {
           "label": "Lost capacity",
-          "value": "1128000.00 GW·h",
+          "value": "5104000.00 GW·h",
           "ok": false
         }
       ],
@@ -2197,7 +2201,7 @@
       "metrics": [
         {
           "label": "Max drift",
-          "value": "0.00%",
+          "value": "0.81%",
           "ok": true
         },
         {

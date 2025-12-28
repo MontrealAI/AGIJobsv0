@@ -2,20 +2,20 @@
   {
     "id": "energy-demand-surge",
     "title": "20% demand surge vs Dyson safety margin",
-    "status": "nominal",
-    "summary": "Dyson lattice absorbs surge with 859,600 GW spare.",
-    "confidence": 1,
-    "impact": "Thermostat margin remains controllable under surge scenario.",
+    "status": "critical",
+    "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required.",
+    "confidence": 0,
+    "impact": "Star-scale compute would brown-out without emergency pause.",
     "metrics": [
       {
         "label": "Simulated demand",
-        "value": "290,400 GW",
-        "ok": true
+        "value": "1,314,000 GW",
+        "ok": false
       },
       {
         "label": "Remaining buffer",
-        "value": "859,600 GW",
-        "ok": true
+        "value": "-164,000 GW",
+        "ok": false
       },
       {
         "label": "Thermostat margin",
@@ -24,8 +24,8 @@
       },
       {
         "label": "Utilisation",
-        "value": "25.25%",
-        "ok": true
+        "value": "114.26%",
+        "ok": false
       }
     ],
     "recommendedActions": [
@@ -37,8 +37,8 @@
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
     "status": "warning",
-    "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
-    "confidence": 0.5125,
+    "summary": "Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve.",
+    "confidence": 0.3531063323547431,
     "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
@@ -53,13 +53,13 @@
       },
       {
         "label": "Relay boost allocation",
-        "value": "35.0% (402500 GW)",
+        "value": "13.7% (158096 GW)",
         "ok": true
       },
       {
         "label": "Mitigated latency",
-        "value": "117s",
-        "ok": true
+        "value": "155s",
+        "ok": false
       },
       {
         "label": "Failsafe budget",
@@ -68,13 +68,13 @@
       },
       {
         "label": "Slack",
-        "value": "3s",
-        "ok": true
+        "value": "-35s",
+        "ok": false
       }
     ],
     "recommendedActions": [
       "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
-      "Keep isolation routine on standby while relays rebalance.",
+      "Execute bridge isolation routine from mission directives if slack < 0.",
       "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
     ]
   },
@@ -184,8 +184,8 @@
     "id": "energy-window-loss",
     "title": "Primary energy window offline",
     "status": "critical",
-    "summary": "Removing orbital 8h window drops coverage to 80.58%.",
-    "confidence": 0.8222297183336145,
+    "summary": "Removing orbital 8h window drops coverage to 80.62%.",
+    "confidence": 0.8226943745534744,
     "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
     "metrics": [
       {
@@ -195,7 +195,7 @@
       },
       {
         "label": "Remaining coverage",
-        "value": "80.58%",
+        "value": "80.62%",
         "ok": false
       },
       {
@@ -205,7 +205,7 @@
       },
       {
         "label": "Lost capacity",
-        "value": "1128000.00 GW·h",
+        "value": "5104000.00 GW·h",
         "ok": false
       }
     ],
@@ -321,7 +321,7 @@
     "metrics": [
       {
         "label": "Max drift",
-        "value": "0.00%",
+        "value": "0.81%",
         "ok": true
       },
       {

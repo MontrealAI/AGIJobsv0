@@ -10,8 +10,8 @@
       "federation": "earth",
       "startHourUTC": 0,
       "durationHours": 6,
-      "availableGw": 72000,
-      "backupGw": 13000,
+      "availableGw": 326000,
+      "backupGw": 59000,
       "renewablePct": 0.94,
       "reliabilityPct": 0.985,
       "priorityDomains": [
@@ -19,60 +19,60 @@
         "earth.infrastructure"
       ],
       "transferCapacityGbps": 520,
-      "supportedExaflops": 7083.33,
+      "supportedExaflops": 32083.33,
       "demandExaflops": 43.1,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 336000,
       "recommendedJobs": 2016000,
-      "windowEnergyGwH": 510000
+      "windowEnergyGwH": 2310000
     },
     {
       "id": "earth-6",
       "federation": "earth",
       "startHourUTC": 6,
       "durationHours": 6,
-      "availableGw": 70000,
-      "backupGw": 13000,
+      "availableGw": 317000,
+      "backupGw": 59000,
       "renewablePct": 0.92,
       "reliabilityPct": 0.982,
       "priorityDomains": [
         "earth.finance"
       ],
       "transferCapacityGbps": 505,
-      "supportedExaflops": 6916.67,
+      "supportedExaflops": 31333.33,
       "demandExaflops": 43.1,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 336000,
       "recommendedJobs": 2016000,
-      "windowEnergyGwH": 498000
+      "windowEnergyGwH": 2256000
     },
     {
       "id": "earth-12",
       "federation": "earth",
       "startHourUTC": 12,
       "durationHours": 6,
-      "availableGw": 68000,
-      "backupGw": 13000,
+      "availableGw": 308000,
+      "backupGw": 59000,
       "renewablePct": 0.91,
       "reliabilityPct": 0.979,
       "priorityDomains": [
         "earth.infrastructure"
       ],
       "transferCapacityGbps": 488,
-      "supportedExaflops": 6750,
+      "supportedExaflops": 30583.33,
       "demandExaflops": 43.1,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 336000,
       "recommendedJobs": 2016000,
-      "windowEnergyGwH": 486000
+      "windowEnergyGwH": 2202000
     },
     {
       "id": "earth-18",
       "federation": "earth",
       "startHourUTC": 18,
       "durationHours": 6,
-      "availableGw": 66000,
-      "backupGw": 13000,
+      "availableGw": 299000,
+      "backupGw": 59000,
       "renewablePct": 0.9,
       "reliabilityPct": 0.978,
       "priorityDomains": [
@@ -80,120 +80,120 @@
         "earth.infrastructure"
       ],
       "transferCapacityGbps": 472,
-      "supportedExaflops": 6583.33,
+      "supportedExaflops": 29833.33,
       "demandExaflops": 43.1,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 336000,
       "recommendedJobs": 2016000,
-      "windowEnergyGwH": 474000
+      "windowEnergyGwH": 2148000
     },
     {
       "id": "mars-0",
       "federation": "mars",
       "startHourUTC": 0,
       "durationHours": 8,
-      "availableGw": 22000,
-      "backupGw": 2500,
+      "availableGw": 100000,
+      "backupGw": 11000,
       "renewablePct": 0.93,
       "reliabilityPct": 0.966,
       "priorityDomains": [
         "mars.terraforming"
       ],
       "transferCapacityGbps": 210,
-      "supportedExaflops": 2041.67,
+      "supportedExaflops": 9250,
       "demandExaflops": 14.3,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 86400,
       "recommendedJobs": 691200,
-      "windowEnergyGwH": 196000
+      "windowEnergyGwH": 888000
     },
     {
       "id": "mars-8",
       "federation": "mars",
       "startHourUTC": 8,
       "durationHours": 8,
-      "availableGw": 21500,
-      "backupGw": 2500,
+      "availableGw": 97000,
+      "backupGw": 11000,
       "renewablePct": 0.91,
       "reliabilityPct": 0.963,
       "priorityDomains": [
         "mars.terraforming"
       ],
       "transferCapacityGbps": 198,
-      "supportedExaflops": 2000,
+      "supportedExaflops": 9000,
       "demandExaflops": 14.3,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 86400,
       "recommendedJobs": 691200,
-      "windowEnergyGwH": 192000
+      "windowEnergyGwH": 864000
     },
     {
       "id": "mars-16",
       "federation": "mars",
       "startHourUTC": 16,
       "durationHours": 8,
-      "availableGw": 21000,
-      "backupGw": 2500,
+      "availableGw": 95000,
+      "backupGw": 11000,
       "renewablePct": 0.9,
       "reliabilityPct": 0.959,
       "priorityDomains": [
         "mars.terraforming"
       ],
       "transferCapacityGbps": 204,
-      "supportedExaflops": 1958.33,
+      "supportedExaflops": 8833.33,
       "demandExaflops": 14.3,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 86400,
       "recommendedJobs": 691200,
-      "windowEnergyGwH": 188000
+      "windowEnergyGwH": 848000
     },
     {
       "id": "orbital-0",
       "federation": "orbital",
       "startHourUTC": 0,
       "durationHours": 8,
-      "availableGw": 110000,
-      "backupGw": 31000,
+      "availableGw": 498000,
+      "backupGw": 140000,
       "renewablePct": 0.99,
       "reliabilityPct": 0.994,
       "priorityDomains": [
         "orbital.defense"
       ],
       "transferCapacityGbps": 640,
-      "supportedExaflops": 11750,
+      "supportedExaflops": 53166.67,
       "demandExaflops": 57.6,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 115200,
       "recommendedJobs": 921600,
-      "windowEnergyGwH": 1128000
+      "windowEnergyGwH": 5104000
     },
     {
       "id": "orbital-8",
       "federation": "orbital",
       "startHourUTC": 8,
       "durationHours": 8,
-      "availableGw": 104000,
-      "backupGw": 30500,
+      "availableGw": 471000,
+      "backupGw": 138000,
       "renewablePct": 0.99,
       "reliabilityPct": 0.992,
       "priorityDomains": [
         "orbital.research"
       ],
       "transferCapacityGbps": 612,
-      "supportedExaflops": 11208.33,
+      "supportedExaflops": 50750,
       "demandExaflops": 57.6,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 115200,
       "recommendedJobs": 921600,
-      "windowEnergyGwH": 1076000
+      "windowEnergyGwH": 4872000
     },
     {
       "id": "orbital-16",
       "federation": "orbital",
       "startHourUTC": 16,
       "durationHours": 8,
-      "availableGw": 102000,
-      "backupGw": 30500,
+      "availableGw": 462000,
+      "backupGw": 138000,
       "renewablePct": 0.985,
       "reliabilityPct": 0.991,
       "priorityDomains": [
@@ -201,20 +201,20 @@
         "orbital.research"
       ],
       "transferCapacityGbps": 598,
-      "supportedExaflops": 11041.67,
+      "supportedExaflops": 50000,
       "demandExaflops": 57.6,
       "coverageRatio": 1,
       "recommendedJobsPerHour": 115200,
       "recommendedJobs": 921600,
-      "windowEnergyGwH": 1060000
+      "windowEnergyGwH": 4800000
     }
   ],
   "coverage": [
     {
       "federation": "earth",
-      "dailyDemandGwH": 1968000,
-      "scheduledGwH": 1968000,
-      "coverageRatio": 1,
+      "dailyDemandGwH": 8904000,
+      "scheduledGwH": 8916000,
+      "coverageRatio": 1.0013,
       "reliabilityPct": 0.9811,
       "renewablePct": 0.9179,
       "windowCount": 4,
@@ -223,20 +223,20 @@
     },
     {
       "federation": "mars",
-      "dailyDemandGwH": 576000,
-      "scheduledGwH": 576000,
-      "coverageRatio": 1,
+      "dailyDemandGwH": 2616000,
+      "scheduledGwH": 2600000,
+      "coverageRatio": 0.9939,
       "reliabilityPct": 0.9627,
-      "renewablePct": 0.9135,
+      "renewablePct": 0.9136,
       "windowCount": 3,
       "transferCapacityGbps": 612,
-      "deficitGwH": 0
+      "deficitGwH": 16000
     },
     {
       "federation": "orbital",
-      "dailyDemandGwH": 3264000,
-      "scheduledGwH": 3264000,
-      "coverageRatio": 1,
+      "dailyDemandGwH": 14760000,
+      "scheduledGwH": 14776000,
+      "coverageRatio": 1.0011,
       "reliabilityPct": 0.9924,
       "renewablePct": 0.9884,
       "windowCount": 3,
