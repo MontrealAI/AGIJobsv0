@@ -63,6 +63,7 @@ class OrchestratorConfig:
     energy_oracle_interval_seconds: float = 60.0
     auto_policy_actions: bool = True
     policy_action_interval_seconds: float = 10.0
+    job_claim_window_seconds: float = 0.5
     heartbeat_interval_seconds: float = 5.0
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
@@ -125,6 +126,9 @@ class Orchestrator:
         self._agent_skills: Dict[str, List[str]] = {}
         self._unresponsive_agents: Set[str] = set()
         self._agent_lock = Lock()
+        self._claim_buffer: Dict[str, Dict[str, datetime]] = {}
+        self._claim_tasks: Dict[str, asyncio.Task[None]] = {}
+        self._claim_lock = asyncio.Lock()
 
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
@@ -570,14 +574,7 @@ class Orchestrator:
             while self._running:
                 message = await receiver()
                 if message.topic == "jobs:claim":
-                    try:
-                        await self.assign_job(message.payload["job_id"], message.payload["agent"])
-                    except ValueError:
-                        self._warning(
-                            "job_claim_race",
-                            job_id=message.payload.get("job_id"),
-                            agent=message.payload.get("agent"),
-                        )
+                    await self._handle_job_claim(message.payload)
                 elif message.topic.startswith("results:"):
                     await self._handle_job_result(message.payload)
                 elif message.topic.startswith("validation:commit:"):
@@ -724,6 +721,118 @@ class Orchestrator:
             "compute_boost": compute_boost,
             "entropy_damping": entropy_damping,
         }
+
+    def _score_claimant(self, job: JobRecord, agent: str) -> Tuple[float, float, int, str]:
+        required_skills = {skill for skill in job.spec.required_skills if skill}
+        agent_skills = set(self._agent_skills.get(agent, []))
+        if required_skills:
+            skill_match = len(required_skills & agent_skills) / len(required_skills)
+        else:
+            skill_match = 1.0
+        active_jobs = [
+            record
+            for record in self.job_registry.iter_jobs()
+            if record.status == JobStatus.IN_PROGRESS and record.assigned_agent
+        ]
+        load_map = Counter(record.assigned_agent for record in active_jobs)
+        load_count = load_map.get(agent, 0)
+        total_active = max(1, sum(load_map.values()))
+        load_penalty = load_count / total_active
+        responsiveness = 0.0 if agent in self._unresponsive_agents else 1.0
+        score = (0.6 + 0.4 * responsiveness) * (0.7 + 0.3 * skill_match) * (1.0 - 0.5 * load_penalty)
+        return (score, skill_match, -load_count, agent)
+
+    def _select_best_claimant(self, job: JobRecord, claimants: Iterable[str]) -> Optional[str]:
+        unique_claimants = {agent for agent in claimants if agent}
+        if not unique_claimants:
+            return None
+        ordered = sorted(unique_claimants)
+        return max(ordered, key=lambda agent: self._score_claimant(job, agent))
+
+    async def _handle_job_claim(self, payload: Dict[str, Any]) -> None:
+        job_id = payload.get("job_id")
+        agent = payload.get("agent")
+        if not isinstance(job_id, str) or not job_id or not isinstance(agent, str) or not agent:
+            self._warning("job_claim_invalid", job_id=job_id, agent=agent)
+            return
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            self._warning("job_claim_unknown", job_id=job_id, agent=agent)
+            return
+        if job.status != JobStatus.POSTED:
+            await self.bus.publish(
+                f"jobs:claim:declined:{job_id}",
+                {"job_id": job_id, "agent": agent, "reason": "job_unavailable"},
+                "orchestrator",
+            )
+            return
+        async with self._claim_lock:
+            self._claim_buffer.setdefault(job_id, {})[agent] = datetime.now(timezone.utc)
+            if job_id not in self._claim_tasks:
+                self._claim_tasks[job_id] = asyncio.create_task(
+                    self._resolve_job_claim(job_id),
+                    name=f"claim-resolve:{job_id}",
+                )
+
+    async def _resolve_job_claim(self, job_id: str) -> None:
+        delay = max(0.0, float(self.config.job_claim_window_seconds))
+        if delay:
+            await asyncio.sleep(delay)
+        async with self._claim_lock:
+            claimants = self._claim_buffer.pop(job_id, {})
+            self._claim_tasks.pop(job_id, None)
+        if not claimants:
+            return
+        try:
+            job = self.job_registry.get_job(job_id)
+        except KeyError:
+            return
+        if job.status != JobStatus.POSTED:
+            await self._broadcast_claim_declines(job_id, claimants, reason="job_unavailable")
+            return
+        selected = self._select_best_claimant(job, claimants.keys())
+        if selected is None:
+            await self._broadcast_claim_declines(job_id, claimants, reason="no_candidates")
+            return
+        try:
+            await self.assign_job(job_id, selected)
+            self._info(
+                "job_claim_resolved",
+                job_id=job_id,
+                assigned_agent=selected,
+                candidates=len(claimants),
+            )
+        except ValueError:
+            self._warning("job_claim_race", job_id=job_id, agent=selected)
+            await self._broadcast_claim_declines(job_id, claimants, reason="assignment_failed")
+            return
+        await self._broadcast_claim_declines(
+            job_id,
+            {agent: ts for agent, ts in claimants.items() if agent != selected},
+            reason="assigned_elsewhere",
+            assigned_agent=selected,
+        )
+
+    async def _broadcast_claim_declines(
+        self,
+        job_id: str,
+        claimants: Dict[str, datetime],
+        *,
+        reason: str,
+        assigned_agent: Optional[str] = None,
+    ) -> None:
+        for agent in claimants:
+            await self.bus.publish(
+                f"jobs:claim:declined:{job_id}",
+                {
+                    "job_id": job_id,
+                    "agent": agent,
+                    "reason": reason,
+                    "assigned_agent": assigned_agent,
+                },
+                "orchestrator",
+            )
 
     def _build_policy_rationale(
         self,
@@ -1272,6 +1381,7 @@ class Orchestrator:
                 "simulation_hours_per_tick",
                 "simulation_energy_scale",
                 "simulation_compute_scale",
+                "job_claim_window_seconds",
             ):
                 if field in config_updates:
                     value = config_updates[field]
@@ -1422,6 +1532,7 @@ class Orchestrator:
                 "status_counts": dict(status_counts),
                 "active_job_ids": active_jobs,
                 "root_job_ids": root_jobs,
+                "claim_window_seconds": self.config.job_claim_window_seconds,
             },
             "resources": {
                 "energy_available": resource_state.energy_available,
