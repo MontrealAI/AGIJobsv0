@@ -108,6 +108,14 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= allocation["deviationIncentive"] <= 1
     assert 0 <= allocation["jainIndex"] <= 1
     assert allocation["concentrationIndex"] <= allocation["diversificationTarget"]
+    assert allocation["unallocatedGw"] >= 0
+    assert allocation["capacityConstraintCount"] >= 0
+    assert isinstance(allocation["capacityConstrained"], bool)
+
+    for shard_allocation in allocation["allocations"]:
+        assert 0 <= shard_allocation["effectiveWeight"] <= 1
+        if shard_allocation["capacityGw"] is not None:
+            assert shard_allocation["recommendedGw"] <= shard_allocation["capacityGw"] + 1e-6
 
     sentient = telemetry_payload["sentientWelfare"]
     assert sentient["totalAgents"] > 0

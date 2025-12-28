@@ -124,6 +124,9 @@ function computeShardMetrics(shard, energyFeeds, rng) {
       `Energy feeds missing coverage for shard "${shard.id}". Add a feed with matching federationSlug or region.`
     );
   }
+  const nominalGw = energy.nominalMw / 1000;
+  const bufferGw = energy.bufferMw / 1000;
+  const capacityGw = nominalGw + bufferGw;
   const surplusMw = Math.max(0, energy.nominalMw - energy.bufferMw * 0.75);
   const utilisation = round((surplusMw / energy.nominalMw) * 100, 2);
 
@@ -138,6 +141,9 @@ function computeShardMetrics(shard, energyFeeds, rng) {
     resilience,
     utilisation,
     surplusMw,
+    nominalGw,
+    bufferGw,
+    capacityGw,
   };
   debugLog(`shard:${shard.id}`, metric);
   return metric;
@@ -431,6 +437,65 @@ function computeRiskIndex(riskDistribution) {
   return clamp01(weightedRisk / total);
 }
 
+function allocateWithCapacityCaps({ weights, capacities, availableGw }) {
+  const allocated = weights.map((weight) => weight * availableGw);
+  const remainingCaps = capacities.map((cap, idx) => {
+    if (!Number.isFinite(cap)) {
+      return Number.POSITIVE_INFINITY;
+    }
+    return Math.max(0, cap - allocated[idx]);
+  });
+  let leftover = 0;
+  let capHits = 0;
+
+  for (let i = 0; i < allocated.length; i += 1) {
+    const cap = capacities[i];
+    if (Number.isFinite(cap) && allocated[i] > cap) {
+      leftover += allocated[i] - cap;
+      allocated[i] = cap;
+      capHits += 1;
+      remainingCaps[i] = 0;
+    }
+  }
+
+  let guard = 0;
+  const epsilon = 1e-6;
+  while (leftover > epsilon && guard < allocated.length * 3) {
+    const active = remainingCaps
+      .map((cap, idx) => (cap > epsilon ? idx : -1))
+      .filter((idx) => idx >= 0);
+    if (!active.length) {
+      break;
+    }
+    const totalWeight = active.reduce((sumWeight, idx) => sumWeight + weights[idx], 0);
+    let distributed = 0;
+    const fallbackShare = leftover / active.length;
+    for (const idx of active) {
+      const proportionalShare = totalWeight > 0 ? leftover * (weights[idx] / totalWeight) : fallbackShare;
+      const grant = Math.min(proportionalShare, remainingCaps[idx]);
+      if (grant > 0) {
+        allocated[idx] += grant;
+        remainingCaps[idx] -= grant;
+        distributed += grant;
+      }
+    }
+    if (distributed <= epsilon) {
+      break;
+    }
+    leftover = Math.max(0, leftover - distributed);
+    guard += 1;
+  }
+
+  const totalAllocated = allocated.reduce((sumValue, value) => sumValue + value, 0);
+  const effectiveWeights = totalAllocated > 0 ? allocated.map((value) => value / totalAllocated) : weights;
+  return {
+    allocated,
+    effectiveWeights,
+    unallocatedGw: Math.max(0, availableGw - totalAllocated),
+    capacityConstraintCount: capHits,
+  };
+}
+
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
@@ -446,13 +511,27 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   const diversification = diversifyWeights(rawWeights, diversificationTarget);
   const weights = diversification.weights;
   const availableGw = energyMonteCarlo.availableGw;
+  const capacities = shardMetrics.map((metric) => {
+    if (Number.isFinite(metric.capacityGw)) {
+      return metric.capacityGw;
+    }
+    return Number.POSITIVE_INFINITY;
+  });
+  const { allocated, effectiveWeights, unallocatedGw, capacityConstraintCount } = allocateWithCapacityCaps({
+    weights,
+    capacities,
+    availableGw,
+  });
   const allocations = shardMetrics.map((metric, idx) => {
     const weight = weights[idx] ?? 0;
     const payoff = Math.max(0.001, metric.resilience) * Math.max(0.1, 1 - metric.utilisation / 100);
     return {
       shardId: metric.shardId,
       weight,
-      recommendedGw: availableGw * weight,
+      effectiveWeight: effectiveWeights[idx] ?? weight,
+      desiredGw: availableGw * weight,
+      recommendedGw: allocated[idx],
+      capacityGw: Number.isFinite(metric.capacityGw) ? metric.capacityGw : null,
       payoff,
     };
   });
@@ -498,6 +577,10 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     fairnessIndex,
     gibbsPotential,
     allocations,
+    availableGw,
+    unallocatedGw,
+    capacityConstraintCount,
+    capacityConstrained: capacityConstraintCount > 0 || unallocatedGw > 0,
   };
 }
 
@@ -1794,6 +1877,25 @@ function buildEquilibriumActionPath({
       'Retune reward weights with a Boltzmann temperature drop and align shard payoffs to reduce exploitable gradients.',
   });
 
+  const unallocatedGw = allocationPolicy.unallocatedGw ?? 0;
+  const capacityScore =
+    allocationPolicy.availableGw && allocationPolicy.availableGw > 0
+      ? clamp01(1 - unallocatedGw / allocationPolicy.availableGw)
+      : 1;
+  const capacityNeeds = allocationPolicy.capacityConstrained;
+  steps.push({
+    key: 'capacity',
+    score: capacityScore,
+    title: 'Capacity spillover capture',
+    status: capacityNeeds ? 'needs-action' : 'on-track',
+    target: 'Unallocated headroom ≤ 1% of available energy.',
+    rationale: `Unallocated ${unallocatedGw.toFixed(2)} GW · capacity constraints ${
+      allocationPolicy.capacityConstraintCount ?? 0
+    }`,
+    action:
+      'Expand shard energy feeds or rebalance weights so free energy is absorbed without breaching per-shard capacity limits.',
+  });
+
   const welfareNeeds = sentientWelfare.inequalityIndex > 0.3 || sentientWelfare.coalitionStability < 0.85;
   steps.push({
     key: 'welfare',
@@ -2317,10 +2419,12 @@ function main() {
       allocationPolicy.allocations.map((allocation) => [
         allocation.shardId,
         `${(allocation.weight * 100).toFixed(1)}%`,
+        `${((allocation.effectiveWeight ?? allocation.weight) * 100).toFixed(1)}%`,
         formatNumber(round(allocation.recommendedGw, 2)),
+        allocation.capacityGw === null ? '∞' : formatNumber(round(allocation.capacityGw, 2)),
         round(allocation.payoff, 3),
       ]),
-      ['Shard', 'Boltzmann Weight', 'Recommended GW', 'Nash Payoff']
+      ['Shard', 'Boltzmann Weight', 'Effective Weight', 'Recommended GW', 'Capacity GW', 'Nash Payoff']
     )
   );
   reportLines.push('');
