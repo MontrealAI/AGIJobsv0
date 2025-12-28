@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.orchestrator import (
     Orchestrator,
     OrchestratorConfig,
 )
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.simulation import SimulationState
+from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.jobs import JobRecord, JobSpec, JobStatus
 
 
 def test_simulation_action_updates_resources() -> None:
@@ -91,3 +93,30 @@ def test_policy_action_accounts_for_compute_scarcity() -> None:
 
     assert scarcity_action["stimulus"] >= baseline_action["stimulus"]
     assert scarcity_action["green_shift"] >= baseline_action["green_shift"]
+
+
+def test_select_best_claimant_prefers_skill_match_and_capacity() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
+    job_spec = JobSpec(
+        title="Grid Stabilization",
+        description="Balance planetary grids.",
+        required_skills=["energy-architect", "supply-chain"],
+        reward_tokens=500.0,
+        deadline=datetime.now(timezone.utc) + timedelta(hours=1),
+        validation_window=timedelta(minutes=30),
+    )
+    job = JobRecord(
+        job_id="job-1",
+        spec=job_spec,
+        status=JobStatus.POSTED,
+        created_at=datetime.now(timezone.utc),
+    )
+    orchestrator._agent_skills = {
+        "energy-architect": ["energy-architect", "supply-chain"],
+        "supply-chain": ["supply-chain"],
+    }
+    orchestrator._unresponsive_agents = {"supply-chain"}
+
+    selected = orchestrator._select_best_claimant(job, ["energy-architect", "supply-chain"])
+
+    assert selected == "energy-architect"
