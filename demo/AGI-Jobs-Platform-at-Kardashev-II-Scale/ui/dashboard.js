@@ -734,6 +734,22 @@ function normalizeLegacyAllocationPolicy(telemetry) {
 
 let mermaidInitialised = false;
 
+function renderDiagramFallback(container, source, message) {
+  if (!container) {
+    return;
+  }
+  container.innerHTML = "";
+  const notice = document.createElement("p");
+  notice.textContent = message;
+  notice.classList.add("status-warn");
+
+  const pre = document.createElement("pre");
+  pre.classList.add("diagram-source");
+  pre.textContent = source;
+
+  container.append(notice, pre);
+}
+
 async function renderMermaidDiagram(path, containerId, renderId, inlineSource) {
   const container = document.querySelector(`#${containerId}`);
   if (!container) {
@@ -756,9 +772,11 @@ async function renderMermaidDiagram(path, containerId, renderId, inlineSource) {
   }
   const mermaid = await loadMermaid();
   if (!mermaid) {
-    container.textContent =
-      "Diagram renderer unavailable — check connectivity to the Mermaid CDN and retry.";
-    container.classList.add("status-warn");
+    renderDiagramFallback(
+      container,
+      source,
+      "Diagram renderer unavailable — rendering source for offline inspection."
+    );
     return;
   }
 
@@ -767,9 +785,14 @@ async function renderMermaidDiagram(path, containerId, renderId, inlineSource) {
     mermaidInitialised = true;
   }
 
-  const { svg } = await mermaid.render(renderId, source);
-  container.classList.remove("status-warn", "status-fail");
-  container.innerHTML = svg;
+  try {
+    const { svg } = await mermaid.render(renderId, source);
+    container.classList.remove("status-warn", "status-fail");
+    container.innerHTML = svg;
+  } catch (error) {
+    console.warn(`Mermaid render failed for ${path}`, error);
+    renderDiagramFallback(container, source, "Diagram render failed — showing source instead.");
+  }
 }
 
 function attachReflectionButton(telemetry) {
