@@ -1598,11 +1598,12 @@ class Orchestrator:
         if self._latest_simulation_state is not None:
             simulation_state = {
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
-            "prosperity_index": self._latest_simulation_state.prosperity_index,
-            "sustainability_index": self._latest_simulation_state.sustainability_index,
-            "nash_welfare": self._latest_simulation_state.nash_welfare,
-            "free_energy": self._latest_simulation_state.free_energy,
-            "entropy": self._latest_simulation_state.entropy,
+                "prosperity_index": self._latest_simulation_state.prosperity_index,
+                "sustainability_index": self._latest_simulation_state.sustainability_index,
+                "nash_welfare": self._latest_simulation_state.nash_welfare,
+                "sentient_welfare_index": self._latest_simulation_state.sentient_welfare_index,
+                "free_energy": self._latest_simulation_state.free_energy,
+                "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
