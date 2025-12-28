@@ -1,106 +1,34 @@
 ---
-title Mission Lattice Orchestration
+title Dyson Swarm Execution Tree
 ---
-flowchart TD
-  subgraph programme_dyson_swarm[Dyson Swarm Expansion Programme]
-    dyson_swarm_dyson_master[Helios Dyson Swarm Execution\n540d · 920000 GW]
-    dyson_swarm_design_lattice[Stellar Lattice Architecture\n60d · 20000 GW]
-    dyson_swarm_cad_blueprints[CAD Blueprint Synthesis\n24d · 6000 GW]
-    dyson_swarm_design_lattice --> dyson_swarm_cad_blueprints
-    dyson_swarm_policy_sync[Manifest & Policy Synchronisation\n18d · 3200 GW]
-    dyson_swarm_design_lattice --> dyson_swarm_policy_sync
-    dyson_swarm_dyson_master --> dyson_swarm_design_lattice
-    dyson_swarm_mining_chain[Asteroid Resource Chain\n210d · 180000 GW]
-    dyson_swarm_prospecting_swarm[Prospecting Swarm Deployment\n45d · 36000 GW]
-    dyson_swarm_mining_chain --> dyson_swarm_prospecting_swarm
-    dyson_swarm_orbital_refinery[Autonomous Refinery Grid\n120d · 98000 GW]
-    dyson_swarm_mining_chain --> dyson_swarm_orbital_refinery
-    dyson_swarm_dyson_master --> dyson_swarm_mining_chain
-    dyson_swarm_orbital_fabrication[Orbital Manufacturing & QA\n180d · 260000 GW]
-    dyson_swarm_microgravity_printing[Microgravity Printer Array\n90d · 88000 GW]
-    dyson_swarm_orbital_fabrication --> dyson_swarm_microgravity_printing
-    dyson_swarm_validator_quality[Validator QA Orchestration\n75d · 54000 GW]
-    dyson_swarm_orbital_fabrication --> dyson_swarm_validator_quality
-    dyson_swarm_dyson_master --> dyson_swarm_orbital_fabrication
-    dyson_swarm_launch_network[Launch & Deployment Pipeline\n160d · 110000 GW]
-    dyson_swarm_reusable_boosters[Reusable Booster Fleet\n80d · 62000 GW]
-    dyson_swarm_launch_network --> dyson_swarm_reusable_boosters
-    dyson_swarm_mass_driver[Lunar Mass Driver Array\n120d · 36000 GW]
-    dyson_swarm_launch_network --> dyson_swarm_mass_driver
-    dyson_swarm_dyson_master --> dyson_swarm_launch_network
-    dyson_swarm_adaptive_operations[Adaptive Operations & Maintenance\n360d · 150000 GW]
-    dyson_swarm_beam_control[Beam Control Lattice\n120d · 52000 GW]
-    dyson_swarm_adaptive_operations --> dyson_swarm_beam_control
-    dyson_swarm_maintenance_swarm[Self-Healing Maintenance Swarm\n240d · 68000 GW]
-    dyson_swarm_adaptive_operations --> dyson_swarm_maintenance_swarm
-    dyson_swarm_energy_balancing[Energy Balancing Mesh\n150d · 30000 GW]
-    dyson_swarm_adaptive_operations --> dyson_swarm_energy_balancing
-    dyson_swarm_dyson_master --> dyson_swarm_adaptive_operations
-  end
-  subgraph programme_ares_biosphere[Ares Biosphere Terraforming Sprint]
-    ares_biosphere_ares_core[Terraforming Core Orchestration\n420d · 86000 GW]
-    ares_biosphere_carbon_capture[Carbon Capture Megalattice\n160d · 22000 GW]
-    ares_biosphere_ares_core --> ares_biosphere_carbon_capture
-    ares_biosphere_ice_import[Polar Ice Import Rail\n120d · 18000 GW]
-    ares_biosphere_ares_core --> ares_biosphere_ice_import
-    ares_biosphere_biosphere_habitats[Biosphere Habitat Expansion\n220d · 32000 GW]
-    ares_biosphere_ares_core --> ares_biosphere_biosphere_habitats
-    ares_biosphere_terraforming_governance[Terraforming Governance Council\n120d · 14000 GW]
-    ares_biosphere_ares_core --> ares_biosphere_terraforming_governance
-  end
-  subgraph programme_gaia_resilience[Gaia Resilience Grid]
-    gaia_resilience_gaia_control[Earth Resilience Control Plane\n365d · 48000 GW]
-    gaia_resilience_grid_balance[Continental Grid Balancing\n200d · 22000 GW]
-    gaia_resilience_gaia_control --> gaia_resilience_grid_balance
-    gaia_resilience_logistics_harmoniser[Logistics Harmoniser\n240d · 16000 GW]
-    gaia_resilience_gaia_control --> gaia_resilience_logistics_harmoniser
-    gaia_resilience_guardian_autonomy[Guardian Autonomy Uplift\n150d · 10000 GW]
-    gaia_resilience_gaia_control --> gaia_resilience_guardian_autonomy
-  end
-  dyson_swarm_policy_sync -.-> dyson_swarm_cad_blueprints
-  dyson_swarm_orbital_refinery -.-> dyson_swarm_prospecting_swarm
-  dyson_swarm_mining_chain -.-> dyson_swarm_design_lattice
-  dyson_swarm_microgravity_printing -.-> dyson_swarm_orbital_refinery
-  dyson_swarm_validator_quality -.-> dyson_swarm_microgravity_printing
-  dyson_swarm_orbital_fabrication -.-> dyson_swarm_mining_chain
-  dyson_swarm_reusable_boosters -.-> dyson_swarm_validator_quality
-  dyson_swarm_mass_driver -.-> dyson_swarm_reusable_boosters
-  dyson_swarm_launch_network -.-> dyson_swarm_orbital_fabrication
-  dyson_swarm_beam_control -.-> dyson_swarm_mass_driver
-  dyson_swarm_maintenance_swarm -.-> dyson_swarm_beam_control
-  dyson_swarm_energy_balancing -.-> dyson_swarm_beam_control
-  dyson_swarm_adaptive_operations -.-> dyson_swarm_launch_network
-  ares_biosphere_ice_import -.-> ares_biosphere_carbon_capture
-  ares_biosphere_biosphere_habitats -.-> ares_biosphere_ice_import
-  ares_biosphere_terraforming_governance -.-> ares_biosphere_biosphere_habitats
-  gaia_resilience_logistics_harmoniser -.-> gaia_resilience_grid_balance
-  gaia_resilience_guardian_autonomy -.-> gaia_resilience_logistics_harmoniser
-  classDef risk-low fill:#0b3b31,stroke:#34d399,color:#ecfeff;
-  classDef risk-medium fill:#1f2937,stroke:#fbbf24,color:#f8fafc;
-  classDef risk-high fill:#7f1d1d,stroke:#f87171,color:#fef2f2;
-class dyson_swarm_dyson_master risk-medium;
-class dyson_swarm_design_lattice risk-low;
-class dyson_swarm_cad_blueprints risk-low;
-class dyson_swarm_policy_sync risk-low;
-class dyson_swarm_mining_chain risk-medium;
-class dyson_swarm_prospecting_swarm risk-medium;
-class dyson_swarm_orbital_refinery risk-medium;
-class dyson_swarm_orbital_fabrication risk-medium;
-class dyson_swarm_microgravity_printing risk-medium;
-class dyson_swarm_validator_quality risk-low;
-class dyson_swarm_launch_network risk-medium;
-class dyson_swarm_reusable_boosters risk-medium;
-class dyson_swarm_mass_driver risk-medium;
-class dyson_swarm_adaptive_operations risk-high;
-class dyson_swarm_beam_control risk-medium;
-class dyson_swarm_maintenance_swarm risk-medium;
-class dyson_swarm_energy_balancing risk-low;
-class ares_biosphere_ares_core risk-medium;
-class ares_biosphere_carbon_capture risk-medium;
-class ares_biosphere_ice_import risk-medium;
-class ares_biosphere_biosphere_habitats risk-high;
-class ares_biosphere_terraforming_governance risk-low;
-class gaia_resilience_gaia_control risk-medium;
-class gaia_resilience_grid_balance risk-medium;
-class gaia_resilience_logistics_harmoniser risk-medium;
-class gaia_resilience_guardian_autonomy risk-low;
+flowchart TB
+    root((Dyson Swarm))
+    root --> design[Design Lattice Blueprints]
+    root --> mining[Asteroid Mining Campaign]
+    root --> manufacturing[Orbital Manufacturing]
+    root --> launch[Launch Windows]
+    root --> operations[Adaptive Operations]
+
+    design --> cad[CAD Agents]
+    design --> governance[Manifest Updates]
+
+    mining --> probes[Prospecting Swarm]
+    mining --> refineries[Autonomous Refineries]
+
+    manufacturing --> printers[Microgravity Printers]
+    manufacturing --> qa[QA Sentinels]
+
+    launch --> boosters[Reusable Boosters]
+    launch --> elevators[Mass Drivers]
+
+    operations --> control[Beam Steering]
+    operations --> maintenance[Self-Healing Rituals]
+
+    style root fill:#111827,stroke:#0ea5e9,stroke-width:3px
+    style operations fill:#1f2937,stroke:#f97316
+    subgraph Progress Metrics
+        built[Satellites assembled: 2669/10000]
+        coverage[Coverage: 26.69%]
+        mw[Captured MW: 120,105]
+    end
+

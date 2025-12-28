@@ -1490,6 +1490,7 @@ function buildEquilibriumLedger({
     -(averageUtilisation * Math.log(Math.max(averageUtilisation, 1e-6)) +
       (1 - averageUtilisation) * Math.log(Math.max(1 - averageUtilisation, 1e-6))) / Math.log(2)
   );
+  const logisticsNashWelfare = clamp01(logistics?.equilibrium?.nashWelfare ?? 0);
   const logisticsScore = clamp01(
     0.45 * hamiltonianStability + 0.35 * gameTheorySlack + 0.2 * entropyRatio
   );
@@ -1652,6 +1653,7 @@ function buildEquilibriumLedger({
         hamiltonianStability: round(hamiltonianStability, 4),
         gameTheorySlack: round(gameTheorySlack, 4),
         entropyRatio: round(entropyRatio, 4),
+        nashWelfare: round(logisticsNashWelfare, 4),
       },
       compute: {
         score: round(computeScore, 4),
@@ -1668,6 +1670,7 @@ function buildEquilibriumLedger({
     },
     gameTheory: {
       nashProduct: round(allocationPolicy.nashProduct, 4),
+      logisticsNashWelfare: round(logisticsNashWelfare, 4),
       coalitionStability: round(sentientWelfare.coalitionStability, 4),
     },
     pathways,
