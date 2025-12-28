@@ -679,7 +679,15 @@ class Orchestrator:
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
         scarcity_pressure = min(1.0, 0.5 * (energy_price_pressure + compute_price_pressure))
-        temperature = 1.0 + coordination_gap + scarcity_pressure
+        energy_capacity = max(1e-6, self.resources.energy_capacity)
+        compute_capacity = max(1e-6, self.resources.compute_capacity)
+        energy_utilization = 1.0 - (self.resources.energy_available / energy_capacity)
+        compute_utilization = 1.0 - (self.resources.compute_available / compute_capacity)
+        energy_utilization = min(1.0, max(0.0, energy_utilization))
+        compute_utilization = min(1.0, max(0.0, compute_utilization))
+        resource_pressure = min(1.0, 0.5 * (energy_utilization + compute_utilization))
+        resource_damping = max(0.2, 1.0 - 0.7 * resource_pressure)
+        temperature = 1.0 + coordination_gap + scarcity_pressure + resource_pressure
         prosperity_weight = math.exp(prosperity_gap / temperature)
         sustainability_weight = math.exp(sustainability_gap / temperature)
         total_weight = prosperity_weight + sustainability_weight
@@ -711,6 +719,10 @@ class Orchestrator:
             "entropy_pressure": entropy_pressure,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
+            "energy_utilization": energy_utilization,
+            "compute_utilization": compute_utilization,
+            "resource_pressure": resource_pressure,
+            "resource_damping": resource_damping,
             "scarcity_pressure": scarcity_pressure,
             "temperature": temperature,
             "prosperity_weight": prosperity_weight,
@@ -767,6 +779,7 @@ class Orchestrator:
             (0.7 + 0.6 * signals["stability_index"])
             * (1.0 + 0.5 * signals["hamiltonian_pressure"])
             * signals["entropy_damping"]
+            * signals["resource_damping"]
         )
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"])
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
