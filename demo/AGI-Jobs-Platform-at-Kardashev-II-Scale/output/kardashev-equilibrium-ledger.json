@@ -53,6 +53,9 @@
   "thermodynamics": {
     "freeEnergyMarginPct": -0.0089,
     "runwayHours": 0,
+    "runwayGapHours": 1,
+    "runwayGapGwh": 1093911.2573,
+    "runwayGapGj": 3938080526.16,
     "gibbsFreeEnergyGj": 0,
     "entropyMargin": -0.2741,
     "hamiltonianStability": 0
@@ -106,7 +109,7 @@
       "title": "Stabilize free energy buffer",
       "status": "needs-action",
       "rationale": "Free energy -0.9% · Hamiltonian 0.0% · runway 0.00h",
-      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.",
+      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1093911.26 GWh (3938080526 GJ) to hit the 1h runway.",
       "target": "Free energy margin ≥ 70%, runway ≥ 1h, and Hamiltonian stability ≥ 90%.",
       "priorityScore": 1
     },

@@ -95,6 +95,9 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert energy["freeEnergyMarginGw"] > 0
     assert 0 < energy["freeEnergyMarginPct"] <= 1
     assert energy["runwayHours"] > 0
+    assert energy["runwayGapHours"] >= 0
+    assert energy["runwayGapGwh"] >= 0
+    assert energy["runwayGapGj"] >= 0
     assert energy["gibbsFreeEnergyGj"] > 0
     assert 0 <= energy["hamiltonianStability"] <= 1
     assert energy["entropyMargin"] > 0

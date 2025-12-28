@@ -9,7 +9,7 @@
       "telemetry": "https://energy.example/earth/live",
       "type": "solar",
       "nominalMw": 370000000,
-      "bufferMw": 1000000,
+      "bufferMw": 25000000,
       "latencyMs": 1200
     },
     {
@@ -18,7 +18,7 @@
       "telemetry": "https://energy.example/mars/live",
       "type": "fusion",
       "nominalMw": 108000000,
-      "bufferMw": 1000000,
+      "bufferMw": 8000000,
       "latencyMs": 720000
     },
     {
@@ -27,7 +27,7 @@
       "telemetry": "https://energy.example/orbital/live",
       "type": "microwave-solar",
       "nominalMw": 617000000,
-      "bufferMw": 3000000,
+      "bufferMw": 40000000,
       "latencyMs": 3200
     }
   ]

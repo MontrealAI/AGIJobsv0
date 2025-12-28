@@ -17,6 +17,9 @@
   "gibbsFreeEnergyGj": 0,
   "hamiltonianStability": 0,
   "gameTheorySlack": 0,
+  "runwayGapHours": 1,
+  "runwayGapGwh": 1093911.2572673024,
+  "runwayGapGj": 3938080526.1622887,
   "maintainsBuffer": false,
   "withinTolerance": false,
   "tolerance": 0.01

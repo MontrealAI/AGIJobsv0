@@ -190,7 +190,10 @@
     "warnings": [
       "Utilisation exceeds configured safety margin",
       "Monte Carlo breach probability 100.00% exceeds 1.00% tolerance",
-      "Free energy margin -10199.14 GW below safety buffer 143750.00 GW"
+      "Free energy margin -10199.14 GW below safety buffer 143750.00 GW",
+      "Energy feed earth-grid deviates 6.47% (tolerance 5%).",
+      "Energy feed mars-dome deviates 6.42% (tolerance 5%).",
+      "Energy feed orbital-swarm deviates 6.83% (tolerance 5%)."
     ],
     "regional": [
       {
@@ -240,6 +243,9 @@
       "gibbsFreeEnergyGj": 0,
       "hamiltonianStability": 0,
       "gameTheorySlack": 0,
+      "runwayGapHours": 1,
+      "runwayGapGwh": 1093911.2572673024,
+      "runwayGapGj": 3938080526.1622887,
       "maintainsBuffer": false,
       "withinTolerance": false,
       "tolerance": 0.01
@@ -312,11 +318,11 @@
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
           "manifestGw": 371000,
-          "feedGw": 371000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "feedGw": 395000,
+          "deltaGw": -24000,
+          "deltaPct": 6.46900269541779,
           "latencyMs": 1200,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         },
         {
@@ -325,11 +331,11 @@
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
           "manifestGw": 109000,
-          "feedGw": 109000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "feedGw": 116000,
+          "deltaGw": -7000,
+          "deltaPct": 6.422018348623854,
           "latencyMs": 720000,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         },
         {
@@ -338,15 +344,15 @@
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
           "manifestGw": 615000,
-          "feedGw": 620000,
-          "deltaGw": -5000,
-          "deltaPct": 0.8130081300813009,
+          "feedGw": 657000,
+          "deltaGw": -42000,
+          "deltaPct": 6.829268292682928,
           "latencyMs": 3200,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         }
       ],
-      "allWithinTolerance": true,
+      "allWithinTolerance": false,
       "driftAlerts": [],
       "averageLatencyMs": 241466.66666666666,
       "maxLatencyMs": 720000
@@ -1749,11 +1755,11 @@
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
           "manifestGw": 371000,
-          "feedGw": 371000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "feedGw": 395000,
+          "deltaGw": -24000,
+          "deltaPct": 6.46900269541779,
           "latencyMs": 1200,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         },
         {
@@ -1762,11 +1768,11 @@
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
           "manifestGw": 109000,
-          "feedGw": 109000,
-          "deltaGw": 0,
-          "deltaPct": 0,
+          "feedGw": 116000,
+          "deltaGw": -7000,
+          "deltaPct": 6.422018348623854,
           "latencyMs": 720000,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         },
         {
@@ -1775,15 +1781,15 @@
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
           "manifestGw": 615000,
-          "feedGw": 620000,
-          "deltaGw": -5000,
-          "deltaPct": 0.8130081300813009,
+          "feedGw": 657000,
+          "deltaGw": -42000,
+          "deltaPct": 6.829268292682928,
           "latencyMs": 3200,
-          "withinTolerance": true,
+          "withinTolerance": false,
           "driftAlert": false
         }
       ],
-      "allWithinTolerance": true,
+      "allWithinTolerance": false,
       "driftAlerts": []
     },
     "energySchedule": {
@@ -2194,14 +2200,14 @@
     {
       "id": "energy-feed-drift",
       "title": "Live energy feed drift shock",
-      "status": "nominal",
-      "summary": "Live feeds remain within tolerance bands.",
-      "confidence": 1,
+      "status": "warning",
+      "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%).",
+      "confidence": 0.7847919655667144,
       "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
       "metrics": [
         {
           "label": "Max drift",
-          "value": "0.81%",
+          "value": "6.83%",
           "ok": true
         },
         {

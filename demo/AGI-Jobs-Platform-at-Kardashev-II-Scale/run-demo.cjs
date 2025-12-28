@@ -259,6 +259,9 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
   const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
   const runwayHours =
     meanDemandGw > 0 ? Math.max(0, freeEnergyMarginGw) / meanDemandGw : 0;
+  const runwayGapHours = Math.max(0, ENERGY_RUNWAY_TARGET_HOURS - runwayHours);
+  const runwayGapGwh = meanDemandGw > 0 ? runwayGapHours * meanDemandGw : 0;
+  const runwayGapGj = runwayGapGwh * 3600;
   const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600; // convert GW headroom into GJ over a one-hour horizon
   const hamiltonianStability = Math.max(
     0,
@@ -276,6 +279,9 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
     freeEnergyMarginGw,
     freeEnergyMarginPct,
     runwayHours,
+    runwayGapHours,
+    runwayGapGwh,
+    runwayGapGj,
     meanDemandGw,
     demandStdDevGw,
     entropyMargin: demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw,
@@ -1781,6 +1787,9 @@ function buildEquilibriumLedger({
     thermodynamics: {
       freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
       runwayHours: round(energyMonteCarlo.runwayHours ?? 0, 4),
+      runwayGapHours: round(energyMonteCarlo.runwayGapHours ?? 0, 4),
+      runwayGapGwh: round(energyMonteCarlo.runwayGapGwh ?? 0, 4),
+      runwayGapGj: round(energyMonteCarlo.runwayGapGj ?? 0, 2),
       gibbsFreeEnergyGj: round(energyMonteCarlo.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energyMonteCarlo.entropyMargin, 4),
       hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
@@ -1827,7 +1836,10 @@ function buildActionPathBriefing(equilibriumLedger) {
     `- Free energy margin: ${formatPercentValue(thermodynamics.freeEnergyMarginPct, 2)}`
   );
   lines.push(
-    `- Free energy runway: ${formatFixedValue(thermodynamics.runwayHours, 2)} hours`
+    `- Free energy runway: ${formatFixedValue(thermodynamics.runwayHours, 2)} hours (gap ${formatFixedValue(
+      thermodynamics.runwayGapHours,
+      2
+    )}h, ${formatFixedValue(thermodynamics.runwayGapGwh, 2)} GWh)`
   );
   lines.push(
     `- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj ?? 0)} GJ`
@@ -1890,7 +1902,13 @@ function buildEquilibriumActionPath({
       1
     )}% · runway ${energyMonteCarlo.runwayHours.toFixed(2)}h`,
     action:
-      'Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.',
+      energyMonteCarlo.runwayGapGwh > 0
+        ? `Increase Dyson reserve buffers by ~${energyMonteCarlo.runwayGapGwh.toFixed(
+            2
+          )} GWh (${energyMonteCarlo.runwayGapGj.toFixed(
+            0
+          )} GJ), dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.`
+        : 'Increase Dyson reserve buffers, dampen demand variance, and re-run the Monte Carlo sweep until breach probability clears tolerance.',
   });
 
   const missionNeeds =
@@ -2419,7 +2437,9 @@ function main() {
     `- **Free Energy Margin:** ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%) vs ${energyMonteCarlo.marginGw.toFixed(2)} GW minimum buffer.`
   );
   reportLines.push(
-    `- **Free Energy Runway:** ${energyMonteCarlo.runwayHours.toFixed(2)} hours of buffer at mean demand.`
+    `- **Free Energy Runway:** ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand (gap ${energyMonteCarlo.runwayGapHours.toFixed(
+      2
+    )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh).`
   );
   reportLines.push(
     `- **Entropy Buffer:** ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ thermodynamic headroom; game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%.`
@@ -2764,7 +2784,9 @@ function main() {
       `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
     );
     console.log(
-      `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand`
+      `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand (gap ${energyMonteCarlo.runwayGapHours.toFixed(
+        2
+      )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
     );
     console.log(
       `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`
@@ -2790,7 +2812,9 @@ function main() {
     `   - Free energy margin: ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW (${(energyMonteCarlo.freeEnergyMarginPct * 100).toFixed(2)}%)`
   );
   console.log(
-    `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand`
+    `   - Free energy runway: ${energyMonteCarlo.runwayHours.toFixed(2)} hours at mean demand (gap ${energyMonteCarlo.runwayGapHours.toFixed(
+      2
+    )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
   );
   console.log(
     `   - Entropy buffer: ${(energyMonteCarlo.entropyMargin || 0).toFixed(2)}σ · game-theoretic slack ${(energyMonteCarlo.gameTheorySlack * 100).toFixed(1)}%`

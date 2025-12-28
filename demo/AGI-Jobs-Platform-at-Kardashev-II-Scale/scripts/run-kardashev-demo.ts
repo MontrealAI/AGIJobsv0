@@ -1257,6 +1257,9 @@ type MonteCarloSummary = {
   gibbsFreeEnergyGj: number;
   hamiltonianStability: number;
   gameTheorySlack: number;
+  runwayGapHours: number;
+  runwayGapGwh: number;
+  runwayGapGj: number;
   maintainsBuffer: boolean;
   withinTolerance: boolean;
   tolerance: number;
@@ -1519,6 +1522,9 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   const freeEnergyMarginGw = capturedGw - p95;
   const freeEnergyMarginPct = capturedGw === 0 ? 0 : freeEnergyMarginGw / capturedGw;
   const runwayHours = averageGw > 0 ? Math.max(0, freeEnergyMarginGw) / averageGw : 0;
+  const runwayGapHours = Math.max(0, ENERGY_RUNWAY_TARGET_HOURS - runwayHours);
+  const runwayGapGwh = averageGw > 0 ? runwayGapHours * averageGw : 0;
+  const runwayGapGj = runwayGapGwh * 3600;
   const entropyMargin = demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw;
   const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600;
   const hamiltonianStability = Math.max(
@@ -1550,6 +1556,9 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     gibbsFreeEnergyGj,
     hamiltonianStability,
     gameTheorySlack,
+    runwayGapHours,
+    runwayGapGwh,
+    runwayGapGj,
     maintainsBuffer,
     withinTolerance: breachProbability <= 0.01,
     tolerance: 0.01,
@@ -2924,7 +2933,7 @@ function buildRunbook(
     ).toFixed(2)}%) · Gibbs free energy ${telemetry.energy.monteCarlo.gibbsFreeEnergyGj.toLocaleString()} GJ.`
   );
   lines.push(
-    `* Free energy runway ${telemetry.energy.monteCarlo.runwayHours.toFixed(2)} hours at mean demand.`
+    `* Free energy runway ${telemetry.energy.monteCarlo.runwayHours.toFixed(2)} hours at mean demand (gap ${telemetry.energy.monteCarlo.runwayGapHours.toFixed(2)}h, ${telemetry.energy.monteCarlo.runwayGapGwh.toFixed(2)} GWh).`
   );
   lines.push(
     `* Hamiltonian stability ${(telemetry.energy.monteCarlo.hamiltonianStability * 100).toFixed(1)}% · entropy margin ${telemetry.energy.monteCarlo.entropyMargin.toFixed(2)}σ · game-theory slack ${(
@@ -3163,6 +3172,9 @@ function buildOperatorBriefing(
       entropyMargin?: number;
       hamiltonianStability?: number;
       runwayHours?: number;
+      runwayGapHours?: number;
+      runwayGapGwh?: number;
+      runwayGapGj?: number;
     };
     gameTheory?: {
       nashProduct?: number;
@@ -3303,7 +3315,9 @@ function buildOperatorBriefing(
         `* Gibbs free energy ${gibbsEnergy.toLocaleString()} GJ · entropy ${entropyText}σ · Hamiltonian ${hamiltonianPct}%`
       );
       if (Number.isFinite(thermodynamics.runwayHours)) {
-        lines.push(`* Free energy runway ${(thermodynamics.runwayHours ?? 0).toFixed(2)}h at mean demand.`);
+        lines.push(
+          `* Free energy runway ${(thermodynamics.runwayHours ?? 0).toFixed(2)}h at mean demand (gap ${(thermodynamics.runwayGapHours ?? 0).toFixed(2)}h, ${(thermodynamics.runwayGapGwh ?? 0).toFixed(2)} GWh).`
+        );
       }
     }
     lines.push(
@@ -5047,7 +5061,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       action:
         energyScore >= 0.85
           ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
-          : "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.",
+          : `Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.${energy.runwayGapGwh > 0 ? ` Add ~${energy.runwayGapGwh.toFixed(2)} GWh (${energy.runwayGapGj.toFixed(0)} GJ) to hit the 1h runway.` : ""}`,
       target: `Free energy margin ≥ 70%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, and Hamiltonian stability ≥ 90%.`,
     },
     {
@@ -5188,6 +5202,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
     thermodynamics: {
       freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
       runwayHours: round(energy.runwayHours ?? 0, 4),
+      runwayGapHours: round(energy.runwayGapHours ?? 0, 4),
+      runwayGapGwh: round(energy.runwayGapGwh ?? 0, 4),
+      runwayGapGj: round(energy.runwayGapGj ?? 0, 2),
       gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energy.entropyMargin, 4),
       hamiltonianStability: round(energy.hamiltonianStability, 4),
