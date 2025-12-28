@@ -58,6 +58,7 @@ const FABRIC_CONFIG_PATH = join(DEMO_ROOT, "config", "fabric.json");
 const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
 const DIVERSIFICATION_TARGET_HHI = 0.3;
+const ENERGY_RUNWAY_TARGET_HOURS = 1;
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
   const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
@@ -3161,6 +3162,7 @@ function buildOperatorBriefing(
       gibbsFreeEnergyGj?: number;
       entropyMargin?: number;
       hamiltonianStability?: number;
+      runwayHours?: number;
     };
     gameTheory?: {
       nashProduct?: number;
@@ -3300,6 +3302,9 @@ function buildOperatorBriefing(
       lines.push(
         `* Gibbs free energy ${gibbsEnergy.toLocaleString()} GJ · entropy ${entropyText}σ · Hamiltonian ${hamiltonianPct}%`
       );
+      if (Number.isFinite(thermodynamics.runwayHours)) {
+        lines.push(`* Free energy runway ${(thermodynamics.runwayHours ?? 0).toFixed(2)}h at mean demand.`);
+      }
     }
     lines.push(
       `* Nash ${((gameTheory.nashProduct ?? 0) * 100).toFixed(1)}% · coalition ${(
@@ -4872,14 +4877,18 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const logistics = telemetry.logistics.equilibrium;
   const computeFabric = telemetry.computeFabric;
   const missionThermo = telemetry.missionThermodynamics;
+  const runwayScore = clamp01(
+    (energy.runwayHours ?? 0) / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)
+  );
 
   const breachPenalty = energy.withinTolerance
     ? 1
     : clamp01(1 - energy.breachProbability / Math.max(energy.tolerance, 1e-6));
   const energyScore = clamp01(
-    0.35 * energy.hamiltonianStability +
-      0.25 * energy.gameTheorySlack +
-      0.2 * energy.freeEnergyMarginPct +
+    0.3 * energy.hamiltonianStability +
+      0.2 * energy.gameTheorySlack +
+      0.15 * energy.freeEnergyMarginPct +
+      0.15 * runwayScore +
       0.2 * breachPenalty
   );
   const allocationScore = clamp01(
@@ -4924,6 +4933,11 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%."
     );
   }
+  if ((energy.runwayHours ?? 0) < ENERGY_RUNWAY_TARGET_HOURS) {
+    recommendations.push(
+      `Extend free-energy runway to at least ${ENERGY_RUNWAY_TARGET_HOURS}h to absorb demand shocks.`
+    );
+  }
   if (allocation.deviationIncentive > 0.2) {
     recommendations.push(
       "Rebalance allocation weights to reduce deviation incentives and tighten Nash equilibrium adherence."
@@ -4956,7 +4970,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       status: energyScore >= 0.85 ? "on-track" : "needs-action",
       rationale: `Free energy ${(energy.freeEnergyMarginPct * 100).toFixed(
         1
-      )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(1)}%`,
+      )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(
+        1
+      )}% · runway ${energy.runwayHours.toFixed(2)}h`,
       action:
         energyScore >= 0.85
           ? "Maintain reserve cadence and keep Monte Carlo breach probability below tolerance."
@@ -5025,12 +5041,14 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       title: "Stabilize free energy buffer",
       rationale: `Free energy ${(energy.freeEnergyMarginPct * 100).toFixed(
         1
-      )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(1)}%`,
+      )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(
+        1
+      )}% · runway ${energy.runwayHours.toFixed(2)}h`,
       action:
         energyScore >= 0.85
           ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
           : "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.",
-      target: "Free energy margin ≥ 70% and Hamiltonian stability ≥ 90%.",
+      target: `Free energy margin ≥ 70%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, and Hamiltonian stability ≥ 90%.`,
     },
     {
       key: "mission",
@@ -5123,6 +5141,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       energy: {
         score: round(energyScore, 4),
         freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+        runwayHours: round(energy.runwayHours ?? 0, 4),
         hamiltonianStability: round(energy.hamiltonianStability, 4),
         gameTheorySlack: round(energy.gameTheorySlack, 4),
         breachProbability: round(energy.breachProbability, 4),
@@ -5168,6 +5187,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
     },
     thermodynamics: {
       freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+      runwayHours: round(energy.runwayHours ?? 0, 4),
       gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energy.entropyMargin, 4),
       hamiltonianStability: round(energy.hamiltonianStability, 4),

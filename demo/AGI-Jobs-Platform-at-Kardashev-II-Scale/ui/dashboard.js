@@ -1566,6 +1566,7 @@ function renderEquilibriumLedger(ledger) {
   thermoList.innerHTML = "";
   const thermoItems = [
     `Free energy margin: ${formatPercent(thermodynamics.freeEnergyMarginPct)}`,
+    `Free energy runway: ${formatFixed(thermodynamics.runwayHours, 2)} hours`,
     `Gibbs free energy: ${formatFixed(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`,
     `Entropy buffer: ${formatFixed(thermodynamics.entropyMargin, 2)}σ`,
     `Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability)}`,
