@@ -273,8 +273,14 @@ function renderMonteCarloDetails(monteCarlo) {
     const gibbsText = Number.isFinite(monteCarlo.gibbsFreeEnergyGj)
       ? ` · Gibbs ${formatNumber(monteCarlo.gibbsFreeEnergyGj)} GJ`
       : "";
+    const usableText = Number.isFinite(monteCarlo.usableFreeEnergyGw)
+      ? ` · usable ${formatNumber(monteCarlo.usableFreeEnergyGw)} GW`
+      : "";
     const runwayText = Number.isFinite(monteCarlo.runwayHours)
       ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
+      : "";
+    const grossRunwayText = Number.isFinite(monteCarlo.grossRunwayHours)
+      ? ` (gross ${monteCarlo.grossRunwayHours.toFixed(2)}h)`
       : "";
     const runwayGapText =
       Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
@@ -282,7 +288,7 @@ function renderMonteCarloDetails(monteCarlo) {
         : "";
     freeEnergyElement.textContent = `Free energy margin ${formatNumber(
       monteCarlo.freeEnergyMarginGw
-    )} GW${freeEnergyPct}${gibbsText}${runwayText}${runwayGapText}`;
+    )} GW${freeEnergyPct}${gibbsText}${usableText}${runwayText}${grossRunwayText}${runwayGapText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
