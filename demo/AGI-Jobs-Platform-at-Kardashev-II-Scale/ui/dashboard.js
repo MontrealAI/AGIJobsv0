@@ -280,10 +280,6 @@ function renderMonteCarloDetails(monteCarlo) {
       Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
         ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)`
         : "";
-    const runwayGapText =
-      Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
-        ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)`
-        : "";
     freeEnergyElement.textContent = `Free energy margin ${formatNumber(
       monteCarlo.freeEnergyMarginGw
     )} GW${freeEnergyPct}${gibbsText}${runwayText}${runwayGapText}`;
