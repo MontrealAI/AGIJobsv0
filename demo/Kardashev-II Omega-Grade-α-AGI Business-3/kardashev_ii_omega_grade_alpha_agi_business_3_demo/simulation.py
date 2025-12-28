@@ -44,9 +44,20 @@ class SyntheticEconomySim(PlanetarySimulation):
         build_dyson_nodes = max(0.0, float(action.get("build_dyson_nodes", 0.0)))
         stimulus = max(0.0, float(action.get("stimulus", 0.0)))
         green_shift = max(0.0, float(action.get("green_shift", 0.0)))
+        alignment_investment = max(0.0, float(action.get("alignment_investment", 0.0)))
         self.energy_output_gw += build_dyson_nodes * 10_000
         self.prosperity_index = min(1.0, self.prosperity_index + stimulus * 0.01)
         self.sustainability_index = min(1.0, self.sustainability_index + green_shift * 0.02)
+        if alignment_investment:
+            gap = self.prosperity_index - self.sustainability_index
+            alignment_step = min(0.02 * alignment_investment, abs(gap))
+            if gap > 0:
+                self.sustainability_index = min(1.0, self.sustainability_index + alignment_step)
+            elif gap < 0:
+                self.prosperity_index = min(1.0, self.prosperity_index + alignment_step)
+            shared_boost = 0.003 * alignment_investment
+            self.prosperity_index = min(1.0, self.prosperity_index + shared_boost)
+            self.sustainability_index = min(1.0, self.sustainability_index + shared_boost)
         return self._snapshot_state()
 
     def _compute_thermodynamic_metrics(self) -> dict[str, float]:

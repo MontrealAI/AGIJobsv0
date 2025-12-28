@@ -652,7 +652,7 @@ class Orchestrator:
                     await self._handle_simulation_action(message.payload)
 
     def _normalize_simulation_action(self, payload: Dict[str, Any]) -> Dict[str, float]:
-        allowed_fields = ("build_dyson_nodes", "stimulus", "green_shift")
+        allowed_fields = ("build_dyson_nodes", "stimulus", "green_shift", "alignment_investment")
         normalized: Dict[str, float] = {}
         for field in allowed_fields:
             if field not in payload:
@@ -901,11 +901,18 @@ class Orchestrator:
             * signals["compute_boost"]
             * stability_modifier
         )
+        alignment_investment = (
+            action_budget
+            * signals["coordination_gap"]
+            * (0.6 + 0.4 * signals["welfare_urgency"])
+            * (0.7 + 0.3 * signals["stability_index"])
+        )
         normalized_action = self._normalize_simulation_action(
             {
                 "build_dyson_nodes": energy_action * signals["stability_factor"] * stability_modifier,
                 "stimulus": stimulus,
                 "green_shift": green_shift,
+                "alignment_investment": alignment_investment,
             }
         )
         rationale = self._build_policy_rationale(
@@ -917,6 +924,7 @@ class Orchestrator:
                 "energy_action": energy_action,
                 "stimulus": stimulus,
                 "green_shift": green_shift,
+                "alignment_investment": alignment_investment,
             },
         )
         return {"action": normalized_action, "rationale": rationale}
