@@ -213,7 +213,9 @@
       "regionalSumGw": 242000,
       "dysonProjectionGw": 1150000,
       "thermostatBudgetGw": 931500.0000000001,
-      "withinMargin": true
+      "deltaGw": 908000,
+      "deltaPct": 0.789565,
+      "withinMargin": false
     },
     "monteCarlo": {
       "runs": 256,
@@ -1714,9 +1716,12 @@
       "results": {
         "regionalSumGw": 242000,
         "dysonProjectionGw": 1150000,
-        "thermostatBudgetGw": 931500.0000000001
+        "thermostatBudgetGw": 931500.0000000001,
+        "deltaGw": 908000,
+        "deltaPct": 0.789565
       },
-      "withinMargin": true
+      "withinMargin": false,
+      "tolerancePct": 0.125
     },
     "energyMonteCarlo": {
       "runs": 256,

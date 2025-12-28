@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.963302752293578,
-    "quorum": true,
-    "summary": "Manual review required for 1 check(s).",
+    "compositeScore": 0.9128440366972476,
+    "quorum": false,
+    "summary": "Manual review required for 2 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.963302752293578,
+        "score": 0.9128440366972476,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.972972972972973,
+        "score": 0.9459459459459459,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -130,7 +130,7 @@
       "id": "energy-triple-check",
       "title": "Energy models reconciled",
       "severity": "critical",
-      "status": true,
+      "status": false,
       "weight": 1.1,
       "evidence": "regional 242,000 GW · Dyson 1,150,000 GW · thermostat 931,500 GW"
     },
@@ -296,6 +296,12 @@
     }
   ],
   "alerts": [
+    {
+      "id": "energy-triple-check",
+      "title": "Energy models reconciled",
+      "severity": "critical",
+      "evidence": "regional 242,000 GW · Dyson 1,150,000 GW · thermostat 931,500 GW"
+    },
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",

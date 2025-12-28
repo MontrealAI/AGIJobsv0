@@ -467,9 +467,17 @@ function renderMetrics(telemetry) {
     verification.energyModels?.withinMargin === true,
     verification.energyModels
       ? verification.energyModels.withinMargin
-        ? `Aligned — ${formatNumber(energy.models?.regionalSumGw)} vs ${formatNumber(
-            energy.models?.dysonProjectionGw
-          )} GW`
+        ? (() => {
+            const deltaGw = verification.energyModels.results?.deltaGw;
+            const deltaPct = verification.energyModels.results?.deltaPct;
+            const deltaText =
+              Number.isFinite(deltaGw) && Number.isFinite(deltaPct)
+                ? ` · Δ${formatNumber(deltaGw)} GW (${formatPercent(deltaPct, 2)})`
+                : "";
+            return `Aligned — ${formatNumber(energy.models?.regionalSumGw)} vs ${formatNumber(
+              energy.models?.dysonProjectionGw
+            )} GW${deltaText}`;
+          })()
         : "Mismatch across energy models"
       : "Energy model reconciliation unavailable."
   );
