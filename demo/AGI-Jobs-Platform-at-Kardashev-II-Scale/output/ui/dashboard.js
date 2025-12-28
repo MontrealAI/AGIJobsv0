@@ -276,9 +276,13 @@ function renderMonteCarloDetails(monteCarlo) {
     const runwayText = Number.isFinite(monteCarlo.runwayHours)
       ? ` · runway ${monteCarlo.runwayHours.toFixed(2)}h`
       : "";
+    const runwayGapText =
+      Number.isFinite(monteCarlo.runwayGapHours) && Number.isFinite(monteCarlo.runwayGapGwh)
+        ? ` (gap ${monteCarlo.runwayGapHours.toFixed(2)}h, ${formatNumber(monteCarlo.runwayGapGwh)} GWh)`
+        : "";
     freeEnergyElement.textContent = `Free energy margin ${formatNumber(
       monteCarlo.freeEnergyMarginGw
-    )} GW${freeEnergyPct}${gibbsText}${runwayText}`;
+    )} GW${freeEnergyPct}${gibbsText}${runwayText}${runwayGapText}`;
     applyStatus(freeEnergyElement, monteCarlo.maintainsBuffer ? "status-ok" : "status-warn");
   } else {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
