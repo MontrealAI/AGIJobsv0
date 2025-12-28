@@ -8,8 +8,8 @@
       "region": "earth-grid",
       "telemetry": "https://energy.example/earth/live",
       "type": "solar",
-      "nominalMw": 81500000,
-      "bufferMw": 500000,
+      "nominalMw": 370000000,
+      "bufferMw": 1000000,
       "latencyMs": 1200
     },
     {
@@ -17,8 +17,8 @@
       "region": "mars-dome",
       "telemetry": "https://energy.example/mars/live",
       "type": "fusion",
-      "nominalMw": 23600000,
-      "bufferMw": 400000,
+      "nominalMw": 108000000,
+      "bufferMw": 1000000,
       "latencyMs": 720000
     },
     {
@@ -26,8 +26,8 @@
       "region": "orbital-swarm",
       "telemetry": "https://energy.example/orbital/live",
       "type": "microwave-solar",
-      "nominalMw": 134500000,
-      "bufferMw": 1500000,
+      "nominalMw": 617000000,
+      "bufferMw": 3000000,
       "latencyMs": 3200
     }
   ]

@@ -41,7 +41,7 @@
     "thermostat": {
       "minKelvin": 0.35,
       "maxKelvin": 0.92,
-      "targetKelvin": 0.81
+      "targetKelvin": 0.85
     }
   },
   "missionDirectives": {
@@ -240,7 +240,7 @@
       "chainId": 1,
       "governanceSafe": "0xAaCcFefb5b833B41c1A6ff1d4A20E2F91B9Fa5C2",
       "energy": {
-        "availableGw": 82000,
+        "availableGw": 371000,
         "renewablePct": 0.87,
         "storageGwh": 54000,
         "latencyMs": 85
@@ -321,7 +321,7 @@
       "chainId": 534352,
       "governanceSafe": "0x7B0f87d532f43C4a0E7816d9D7806f48A9c3f2D1",
       "energy": {
-        "availableGw": 24000,
+        "availableGw": 109000,
         "renewablePct": 0.93,
         "storageGwh": 18000,
         "latencyMs": 820
@@ -385,7 +385,7 @@
       "chainId": 42161,
       "governanceSafe": "0x1B3dA8f56E47c29E8cEafF4b2d9C8B5d7aE2c6F4",
       "energy": {
-        "availableGw": 136000,
+        "availableGw": 615000,
         "renewablePct": 0.99,
         "storageGwh": 128000,
         "latencyMs": 42
@@ -508,8 +508,8 @@
       "federation": "earth",
       "startHourUTC": 0,
       "durationHours": 6,
-      "availableGw": 72000,
-      "backupGw": 13000,
+      "availableGw": 326000,
+      "backupGw": 59000,
       "renewablePct": 0.94,
       "reliabilityPct": 0.985,
       "priorityDomains": [
@@ -522,8 +522,8 @@
       "federation": "earth",
       "startHourUTC": 6,
       "durationHours": 6,
-      "availableGw": 70000,
-      "backupGw": 13000,
+      "availableGw": 317000,
+      "backupGw": 59000,
       "renewablePct": 0.92,
       "reliabilityPct": 0.982,
       "priorityDomains": [
@@ -535,8 +535,8 @@
       "federation": "earth",
       "startHourUTC": 12,
       "durationHours": 6,
-      "availableGw": 68000,
-      "backupGw": 13000,
+      "availableGw": 308000,
+      "backupGw": 59000,
       "renewablePct": 0.91,
       "reliabilityPct": 0.979,
       "priorityDomains": [
@@ -548,8 +548,8 @@
       "federation": "earth",
       "startHourUTC": 18,
       "durationHours": 6,
-      "availableGw": 66000,
-      "backupGw": 13000,
+      "availableGw": 299000,
+      "backupGw": 59000,
       "renewablePct": 0.9,
       "reliabilityPct": 0.978,
       "priorityDomains": [
@@ -562,8 +562,8 @@
       "federation": "mars",
       "startHourUTC": 0,
       "durationHours": 8,
-      "availableGw": 22000,
-      "backupGw": 2500,
+      "availableGw": 100000,
+      "backupGw": 11000,
       "renewablePct": 0.93,
       "reliabilityPct": 0.966,
       "priorityDomains": [
@@ -575,8 +575,8 @@
       "federation": "mars",
       "startHourUTC": 8,
       "durationHours": 8,
-      "availableGw": 21500,
-      "backupGw": 2500,
+      "availableGw": 97000,
+      "backupGw": 11000,
       "renewablePct": 0.91,
       "reliabilityPct": 0.963,
       "priorityDomains": [
@@ -588,8 +588,8 @@
       "federation": "mars",
       "startHourUTC": 16,
       "durationHours": 8,
-      "availableGw": 21000,
-      "backupGw": 2500,
+      "availableGw": 95000,
+      "backupGw": 11000,
       "renewablePct": 0.9,
       "reliabilityPct": 0.959,
       "priorityDomains": [
@@ -601,8 +601,8 @@
       "federation": "orbital",
       "startHourUTC": 0,
       "durationHours": 8,
-      "availableGw": 110000,
-      "backupGw": 31000,
+      "availableGw": 498000,
+      "backupGw": 140000,
       "renewablePct": 0.99,
       "reliabilityPct": 0.994,
       "priorityDomains": [
@@ -614,8 +614,8 @@
       "federation": "orbital",
       "startHourUTC": 8,
       "durationHours": 8,
-      "availableGw": 104000,
-      "backupGw": 30500,
+      "availableGw": 471000,
+      "backupGw": 138000,
       "renewablePct": 0.99,
       "reliabilityPct": 0.992,
       "priorityDomains": [
@@ -627,8 +627,8 @@
       "federation": "orbital",
       "startHourUTC": 16,
       "durationHours": 8,
-      "availableGw": 102000,
-      "backupGw": 30500,
+      "availableGw": 462000,
+      "backupGw": 138000,
       "renewablePct": 0.985,
       "reliabilityPct": 0.991,
       "priorityDomains": [
