@@ -95,6 +95,8 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert energy["freeEnergyMarginGw"] > 0
     assert 0 < energy["freeEnergyMarginPct"] <= 1
     assert energy["runwayHours"] > 0
+    assert energy["grossRunwayHours"] >= energy["runwayHours"]
+    assert energy["usableFreeEnergyGw"] >= 0
     assert energy["runwayGapHours"] >= 0
     assert energy["runwayGapGwh"] >= 0
     assert energy["runwayGapGj"] >= 0
@@ -152,6 +154,11 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     equilibrium_payload = json.loads(equilibrium_ledger.read_text())
     assert equilibrium_payload["overallScore"] >= 0
     assert equilibrium_payload["components"]["energy"]["freeEnergyMarginPct"] > 0
+    assert equilibrium_payload["components"]["energy"]["usableFreeEnergyGw"] >= 0
+    assert (
+        equilibrium_payload["components"]["energy"]["grossRunwayHours"]
+        >= equilibrium_payload["components"]["energy"]["runwayHours"]
+    )
     assert 0 <= equilibrium_payload["components"]["allocation"]["strategyStability"] <= 1
     assert 0 <= equilibrium_payload["components"]["welfare"]["coalitionStability"] <= 1
     assert equilibrium_payload["components"]["compute"]["averageAvailabilityPct"] >= 0

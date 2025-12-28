@@ -257,12 +257,14 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
   const demandStdDevGw = Math.sqrt(variance);
   const freeEnergyMarginGw = availableGw - p95Demand;
   const freeEnergyMarginPct = availableGw === 0 ? 0 : Math.max(0, freeEnergyMarginGw / availableGw);
-  const runwayHours =
+  const grossRunwayHours =
     meanDemandGw > 0 ? Math.max(0, freeEnergyMarginGw) / meanDemandGw : 0;
+  const usableFreeEnergyGw = Math.max(0, freeEnergyMarginGw - marginGw);
+  const runwayHours = meanDemandGw > 0 ? usableFreeEnergyGw / meanDemandGw : 0;
   const runwayGapHours = Math.max(0, ENERGY_RUNWAY_TARGET_HOURS - runwayHours);
   const runwayGapGwh = meanDemandGw > 0 ? runwayGapHours * meanDemandGw : 0;
   const runwayGapGj = runwayGapGwh * 3600;
-  const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600; // convert GW headroom into GJ over a one-hour horizon
+  const gibbsFreeEnergyGj = usableFreeEnergyGw * 3600; // convert buffered headroom into GJ over a one-hour horizon
   const hamiltonianStability = Math.max(
     0,
     Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * freeEnergyMarginPct)
@@ -278,10 +280,12 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    grossRunwayHours,
     runwayHours,
     runwayGapHours,
     runwayGapGwh,
     runwayGapGj,
+    usableFreeEnergyGw,
     meanDemandGw,
     demandStdDevGw,
     entropyMargin: demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw,
@@ -1738,6 +1742,8 @@ function buildEquilibriumLedger({
       energy: {
         score: round(energyScore, 4),
         freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+        usableFreeEnergyGw: round(energyMonteCarlo.usableFreeEnergyGw ?? 0, 4),
+        grossRunwayHours: round(energyMonteCarlo.grossRunwayHours ?? 0, 4),
         runwayHours: round(energyMonteCarlo.runwayHours ?? 0, 4),
         hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
         gameTheorySlack: round(energyMonteCarlo.gameTheorySlack, 4),
@@ -1786,6 +1792,8 @@ function buildEquilibriumLedger({
     },
     thermodynamics: {
       freeEnergyMarginPct: round(energyMonteCarlo.freeEnergyMarginPct, 4),
+      usableFreeEnergyGw: round(energyMonteCarlo.usableFreeEnergyGw ?? 0, 4),
+      grossRunwayHours: round(energyMonteCarlo.grossRunwayHours ?? 0, 4),
       runwayHours: round(energyMonteCarlo.runwayHours ?? 0, 4),
       runwayGapHours: round(energyMonteCarlo.runwayGapHours ?? 0, 4),
       runwayGapGwh: round(energyMonteCarlo.runwayGapGwh ?? 0, 4),
@@ -1840,6 +1848,12 @@ function buildActionPathBriefing(equilibriumLedger) {
       thermodynamics.runwayGapHours,
       2
     )}h, ${formatFixedValue(thermodynamics.runwayGapGwh, 2)} GWh)`
+  );
+  lines.push(
+    `- Buffered free energy: ${formatFixedValue(thermodynamics.usableFreeEnergyGw, 2)} GW usable · gross runway ${formatFixedValue(
+      thermodynamics.grossRunwayHours,
+      2
+    )}h`
   );
   lines.push(
     `- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj ?? 0)} GJ`
