@@ -202,6 +202,7 @@ function main(options = {}) {
     buildPlaywrightEnv: buildEnv = buildPlaywrightEnv,
     runStep: run = runStep,
     canInstallDeps: canInstallDepsImpl = canInstallPlaywrightDeps,
+    depsProbe: depsProbeImpl = arePlaywrightDepsReady,
   } = options;
 
   // Forward npm-provided args to the Jest suite (demo runner passes --runInBand)
@@ -212,15 +213,16 @@ function main(options = {}) {
   const optionalE2E = isOptionalE2E(env);
   const optionalE2EOnFailure = isOptionalE2EOnFailure(env);
   const canInstallDeps = () => canInstallDepsImpl();
+  const systemDepsReady = () => depsProbeImpl();
 
   const playwrightEnv = buildEnv({ autoInstall: playwrightAutoInstall, env });
   process.env.PLAYWRIGHT_BROWSERS_PATH = playwrightEnv.PLAYWRIGHT_BROWSERS_PATH;
 
   run(npmBinary, ['run', 'test:unit', '--', ...forwardedArgs]);
   const cachedChromiumReady = hasWorkingChromium(require('@playwright/test').chromium.executablePath());
-  if (optionalE2E && !cachedChromiumReady) {
+  if (optionalE2E && (!cachedChromiumReady || !systemDepsReady())) {
     console.warn(
-      'Skipping Playwright e2e tests because PLAYWRIGHT_OPTIONAL_E2E is enabled and no cached Chromium binary is available.',
+      'Skipping Playwright e2e tests because PLAYWRIGHT_OPTIONAL_E2E is enabled and the environment lacks a cached Chromium build or required system dependencies.',
     );
     return;
   }
