@@ -131,6 +131,41 @@ def test_policy_action_accounts_for_sentient_welfare() -> None:
     assert low_action["green_shift"] >= high_action["green_shift"]
 
 
+def test_policy_action_invests_in_alignment_for_coordination_gap() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    low_coordination_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.7,
+        sustainability_index=0.2,
+        nash_welfare=0.4,
+        sentient_welfare_index=0.4,
+        free_energy=0.4,
+        entropy=0.4,
+        hamiltonian=-0.2,
+        coordination_index=0.2,
+        game_theory_slack=0.3,
+        stability_index=0.5,
+    )
+    high_coordination_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.6,
+        sustainability_index=0.6,
+        nash_welfare=0.6,
+        sentient_welfare_index=0.7,
+        free_energy=0.2,
+        entropy=0.2,
+        hamiltonian=-0.1,
+        coordination_index=0.9,
+        game_theory_slack=0.8,
+        stability_index=0.8,
+    )
+
+    low_action = orchestrator._build_policy_action(low_coordination_state)
+    high_action = orchestrator._build_policy_action(high_coordination_state)
+
+    assert low_action["alignment_investment"] >= high_action["alignment_investment"]
+
+
 def test_select_best_claimant_prefers_skill_match_and_capacity() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
     job_spec = JobSpec(
