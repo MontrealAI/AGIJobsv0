@@ -790,28 +790,47 @@ function buildEnergyModels(energyConfig, manifest, dyson) {
   };
 }
 
-function buildLiveEnergyFeeds(energyConfig, rng) {
+function buildLiveEnergyFeeds(energyConfig, manifest) {
   const tolerancePct = energyConfig.tolerancePct ?? 5;
-  const driftAlertPct = energyConfig.driftAlertPct ?? 8.5;
+  const driftAlertPct =
+    typeof energyConfig.driftAlertPct === 'number'
+      ? energyConfig.driftAlertPct
+      : tolerancePct * 1.5;
   const feeds = energyConfig.feeds.map((feed) => {
-    const deltaPct = Math.abs((rng() - 0.5) * driftAlertPct * 1.25);
+    const federation = manifest.federations.find(
+      (entry) => entry.slug === feed.federationSlug
+    );
+    const manifestGw = federation?.energy?.availableGw ?? 0;
+    const feedGw = (feed.nominalMw + feed.bufferMw) / 1000;
+    const deltaGw = manifestGw - feedGw;
+    const deltaPct =
+      manifestGw === 0 ? 0 : (Math.abs(deltaGw) / Math.max(manifestGw, 1)) * 100;
     const withinTolerance = deltaPct <= tolerancePct;
+    const driftAlert = deltaPct >= driftAlertPct;
     return {
       region: feed.region,
+      federationSlug: feed.federationSlug,
       type: feed.type,
+      telemetry: feed.telemetry,
+      manifestGw,
+      feedGw,
+      deltaGw,
       deltaPct,
       latencyMs: feed.latencyMs,
       withinTolerance,
-      driftAlert: deltaPct > driftAlertPct,
+      driftAlert,
     };
   });
   const latencies = feeds.map((feed) => feed.latencyMs);
+  const driftAlerts = feeds.filter((feed) => feed.driftAlert);
   return {
+    calibrationISO8601: energyConfig.calibrationISO8601 ?? null,
     tolerancePct,
     driftAlertPct,
     averageLatencyMs: average(latencies),
     maxLatencyMs: Math.max(...latencies),
     allWithinTolerance: feeds.every((feed) => feed.withinTolerance),
+    driftAlerts,
     feeds,
   };
 }
@@ -2466,7 +2485,7 @@ function main() {
     averageResilience: dominanceAverageResilience,
   };
 
-  const liveFeeds = buildLiveEnergyFeeds(calibratedEnergy, rng);
+  const liveFeeds = buildLiveEnergyFeeds(energy, manifest);
   const energyUtilisationPct = average(shardMetrics.map((metric) => metric.utilisation / 100));
   const energyMarginPct = clampRatio(energyMonteCarlo.freeEnergyMarginPct ?? 0);
   const energyModelDiff = Math.abs(energyModels.regionalSumGw - energyModels.dysonProjectionGw);
@@ -2874,6 +2893,23 @@ function main() {
     fs.writeFileSync(
       path.join(outputDir, 'kardashev-action-path.md'),
       `${buildActionPathBriefing(equilibriumLedger)}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-energy-feeds.json'),
+      `${JSON.stringify(
+        {
+          calibrationISO8601: liveFeeds.calibrationISO8601,
+          tolerancePct: liveFeeds.tolerancePct,
+          driftAlertPct: liveFeeds.driftAlertPct,
+          feeds: liveFeeds.feeds,
+        },
+        null,
+        2
+      )}\n`
+    );
+    fs.writeFileSync(
+      path.join(outputDir, 'kardashev-monte-carlo.json'),
+      `${JSON.stringify(energyMonteCarlo, null, 2)}\n`
     );
 
     const telemetryPath = path.join(outputDir, 'kardashev-telemetry.json');
