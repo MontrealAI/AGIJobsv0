@@ -2384,9 +2384,8 @@ function parseArgs(argv) {
 }
 
 function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
-  const dir = rawOutputDir
-    ? path.resolve(rawOutputDir)
-    : path.join(__dirname, 'output');
+  const override = normalizePathOverride(rawOutputDir);
+  const dir = override ? path.resolve(override) : path.join(__dirname, 'output');
   if (ensure) {
     ensureDir(dir);
   }

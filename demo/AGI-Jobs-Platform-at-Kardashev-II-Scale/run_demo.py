@@ -11,11 +11,12 @@ missing or when the demo script cannot be located.
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
-import shutil
+from urllib.parse import unquote, urlparse
 
 
 ROOT = Path(__file__).resolve().parent
@@ -30,13 +31,23 @@ def _ensure_node_available() -> str:
     return node_path
 
 
+def _normalize_output_dir(raw: str) -> Path:
+    parsed = urlparse(raw)
+    if parsed.scheme == "file":
+        parsed_path = unquote(parsed.path)
+        if not parsed_path:
+            raise ValueError(f"Output directory URL is missing a path: {raw}")
+        return Path(parsed_path)
+    return Path(raw).expanduser()
+
+
 def _build_command(args: argparse.Namespace) -> list[str]:
     if not NODE_SCRIPT.exists():
         raise FileNotFoundError(f"Unable to find demo script at {NODE_SCRIPT}")
 
     cmd = [_ensure_node_available(), str(NODE_SCRIPT)]
     if args.output_dir:
-        output_dir = Path(args.output_dir).expanduser().resolve()
+        output_dir = _normalize_output_dir(args.output_dir).resolve()
         if not args.check:
             output_dir.mkdir(parents=True, exist_ok=True)
         cmd.extend(["--output-dir", str(output_dir)])
