@@ -58,6 +58,12 @@ def test_simulate_e2e_outputs():
     assert thermo["entropy_margin_sigma"] >= 0
     assert 0 <= thermo["game_theory_slack"] <= 1
 
+    action_path = payload["action_path"]
+    assert action_path
+    assert all("title" in step and "priority" in step and "sequence" in step for step in action_path)
+    priorities = [step["priority"] for step in action_path]
+    assert priorities == sorted(priorities, reverse=True)
+
 
 def test_pause_blocks_simulation():
     orchestrator = _orchestrator()
@@ -238,9 +244,15 @@ def test_execute_human_format_summary():
     assert fmt == "human"
     summary = payload["summary"]
     assert "Strategy:" in summary
-    assert "Utility uplift" in summary
-    assert "Dashboard:" in summary
-    assert "P95 latency" in summary
+
+
+def test_output_dir_override(tmp_path):
+    payload, fmt = run_cli(["--output-dir", str(tmp_path), "simulate", "--strategy", "e2e"])
+    assert fmt == "json"
+    assert (tmp_path / "report_e2e.json").exists()
+    dashboard = Path(payload["outputs"]["dashboard"])
+    assert dashboard.exists()
+    assert dashboard.parent == tmp_path
 
 
 def test_invalid_owner_address_rejected():

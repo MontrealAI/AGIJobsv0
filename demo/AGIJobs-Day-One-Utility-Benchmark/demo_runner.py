@@ -82,11 +82,11 @@ class DayOneUtilityOrchestrator:
         "narrative": str,
     }
 
-    def __init__(self, base_path: Optional[Path] = None) -> None:
+    def __init__(self, base_path: Optional[Path] = None, output_dir: Optional[Path] = None) -> None:
         self.base_path = base_path or Path(__file__).resolve().parent
         self.config_dir = self.base_path / "config"
-        self.output_dir = self.base_path / "out"
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir = output_dir or (self.base_path / "out")
+        self._ensure_output_dir(self.output_dir)
         self._owner_config_path = self.config_dir / "owner_controls.yaml"
         self._owner_defaults_path = self.config_dir / "owner_controls.defaults.yaml"
         if not self._owner_defaults_path.exists():
@@ -107,6 +107,10 @@ class DayOneUtilityOrchestrator:
     def _save_yaml(self, path: Path, payload: Mapping[str, Any]) -> None:
         with path.open("w", encoding="utf-8") as handle:
             yaml.safe_dump(payload, handle, sort_keys=False)
+
+    @staticmethod
+    def _ensure_output_dir(path: Path) -> None:
+        path.mkdir(parents=True, exist_ok=True)
 
     def load_jobs(self) -> List[JobRecord]:
         dataset_path = self.config_dir / "microset.yaml"
@@ -478,6 +482,14 @@ class DayOneUtilityOrchestrator:
             latency_threshold=latency_threshold,
             reliability_score=profile.reliability_score,
         )
+        action_path = self._build_action_path(
+            metrics_block=metrics_block,
+            thermodynamics=thermodynamics,
+            guardrail_status=guardrail_status,
+            utility_threshold=utility_threshold,
+            latency_threshold=latency_threshold,
+            reliability_score=profile.reliability_score,
+        )
 
         report = {
             "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
@@ -497,11 +509,13 @@ class DayOneUtilityOrchestrator:
             "guardrail_pass": guardrail_status,
             "owner_controls": owner_snapshot,
             "mermaid": self._build_mermaid_summaries(profile, guardrail_status),
+            "action_path": action_path,
         }
 
         chart_path = None
         html_path = None
         if write_artifacts:
+            self._ensure_output_dir(self.output_dir)
             if plot_available:
                 chart_path = self._render_chart(profile, metrics_block)
             html_path = self._render_dashboard(report, chart_path)
@@ -516,8 +530,126 @@ class DayOneUtilityOrchestrator:
         return report
 
     def _write_json(self, path: Path, payload: Mapping[str, Any]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, sort_keys=True)
+
+    @staticmethod
+    def _clamp01(value: float) -> float:
+        return max(0.0, min(1.0, value))
+
+    def _build_action_path(
+        self,
+        *,
+        metrics_block: Mapping[str, Any],
+        thermodynamics: Mapping[str, float],
+        guardrail_status: Mapping[str, bool],
+        utility_threshold: float,
+        latency_threshold: float,
+        reliability_score: float,
+    ) -> List[Mapping[str, Any]]:
+        actions: List[Dict[str, Any]] = []
+
+        utility_gap = max(0.0, utility_threshold - metrics_block["utility_uplift"])
+        latency_gap = max(0.0, metrics_block["latency_delta"] - latency_threshold)
+        reliability_gap = max(0.0, 0.92 - reliability_score)
+
+        if not guardrail_status["utility_uplift"]:
+            priority = self._clamp01(utility_gap / max(0.05, abs(utility_threshold)))
+            actions.append(
+                {
+                    "title": "Lift day-one utility above guardrail",
+                    "rationale": (
+                        f"Utility uplift is {metrics_block['utility_uplift']*100:.2f}% versus "
+                        f"{utility_threshold*100:.2f}% target. Adjust matching multipliers or treasury "
+                        "bonuses to unlock the Gibbs free energy headroom."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if not guardrail_status["latency_delta"]:
+            priority = self._clamp01(latency_gap / max(0.02, abs(latency_threshold)))
+            actions.append(
+                {
+                    "title": "Reduce latency delta to stabilize the Hamiltonian",
+                    "rationale": (
+                        f"Latency delta is {metrics_block['latency_delta']*100:.2f}% vs "
+                        f"{latency_threshold*100:.2f}% threshold. Rebalance regional routing or "
+                        "allocate more capacity to constrained lanes."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if not guardrail_status["reliability_score"]:
+            priority = self._clamp01(reliability_gap / 0.92)
+            actions.append(
+                {
+                    "title": "Restore reliability above 92% baseline",
+                    "rationale": (
+                        f"Reliability score is {reliability_score*100:.1f}%. Align validator cohorts "
+                        "and enforce redundancy to avoid entropy spikes."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if thermodynamics["hamiltonian_stability"] < 0.6:
+            priority = self._clamp01(1.0 - thermodynamics["hamiltonian_stability"])
+            actions.append(
+                {
+                    "title": "Stabilize thermodynamic state variables",
+                    "rationale": (
+                        f"Hamiltonian stability is {thermodynamics['hamiltonian_stability']*100:.1f}%. "
+                        "Increase free energy buffers or tighten latency variance."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if thermodynamics["game_theory_slack"] < 0.7:
+            priority = self._clamp01(0.7 - thermodynamics["game_theory_slack"])
+            actions.append(
+                {
+                    "title": "Expand coalition incentives",
+                    "rationale": (
+                        f"Game-theory slack is {thermodynamics['game_theory_slack']*100:.1f}%. "
+                        "Align treasury bonuses and shard commitments to keep cooperative equilibria."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if thermodynamics["entropy_margin_sigma"] < 1.0:
+            priority = self._clamp01(1.0 - thermodynamics["entropy_margin_sigma"])
+            actions.append(
+                {
+                    "title": "Increase entropy buffers for operational safety",
+                    "rationale": (
+                        f"Entropy margin is {thermodynamics['entropy_margin_sigma']:.2f}σ. "
+                        "Increase diversification or reduce concentration in the job intake."
+                    ),
+                    "priority": priority,
+                }
+            )
+
+        if not actions:
+            actions.append(
+                {
+                    "title": "Maintain equilibrium and publish the mission briefing",
+                    "rationale": (
+                        "All guardrails are green; lock in the current policy, broadcast the action "
+                        "path to operators, and keep monitoring free energy drift."
+                    ),
+                    "priority": 0.2,
+                }
+            )
+
+        actions_sorted = sorted(actions, key=lambda entry: entry["priority"], reverse=True)
+        for index, action in enumerate(actions_sorted, start=1):
+            action["sequence"] = index
+        return actions_sorted
 
     # ------------------------------------------------------------------
     # Scoreboard orchestration
@@ -1195,6 +1327,11 @@ class DayOneUtilityOrchestrator:
             action="store_true",
             help="Run the demo in validation mode without writing dashboards or JSON artefacts.",
         )
+        parser.add_argument(
+            "--output-dir",
+            default=None,
+            help="Override the output directory for generated artefacts and dashboards.",
+        )
         subparsers = parser.add_subparsers(dest="command", required=False)
 
         simulate = subparsers.add_parser("simulate", help="Run a day-one utility simulation")
@@ -1238,6 +1375,10 @@ class DayOneUtilityOrchestrator:
         parsed = parser.parse_args(args=args)
         command = parsed.command or "simulate"
         write_artifacts = not bool(getattr(parsed, "check", False))
+        if parsed.output_dir:
+            self.output_dir = Path(parsed.output_dir).expanduser()
+            if write_artifacts:
+                self._ensure_output_dir(self.output_dir)
         if command == "simulate":
             report = self.simulate(parsed.strategy, write_artifacts=write_artifacts)
             output_format = getattr(parsed, "format", "json")
@@ -1302,6 +1443,11 @@ class DayOneUtilityOrchestrator:
         ]
         for bullet in profile["highlights"]:
             lines.append(f"  • {bullet}")
+        action_path = report.get("action_path", [])
+        if action_path:
+            lines.append("Action path:")
+            for step in action_path[:3]:
+                lines.append(f"  • {step['sequence']}. {step['title']}")
         outputs = report.get("outputs", {})
         dashboard = outputs.get("dashboard") or "N/A (check mode)"
         chart = outputs.get("chart") or "N/A (check mode)"
@@ -1370,29 +1516,42 @@ def run_cli(args: Optional[Sequence[str]] = None) -> Tuple[Mapping[str, Any], st
     if normalized_args is None:
         return orchestrator.execute(None)
 
-    has_check = False
-    if "--check" in normalized_args:
-        has_check = True
-        normalized_args = [arg for arg in normalized_args if arg != "--check"]
+    global_args: List[str] = []
+    remainder: List[str] = []
+    idx = 0
+    while idx < len(normalized_args):
+        token = normalized_args[idx]
+        if token == "--check":
+            global_args.append(token)
+            idx += 1
+            continue
+        if token == "--output-dir":
+            global_args.append(token)
+            if idx + 1 < len(normalized_args):
+                global_args.append(normalized_args[idx + 1])
+                idx += 2
+                continue
+            remainder.append(token)
+            idx += 1
+            continue
+        remainder.append(token)
+        idx += 1
 
-    if not normalized_args:
-        normalized_args = ["simulate"]
+    if not remainder:
+        remainder = ["simulate"]
     else:
-        primary = normalized_args[0]
+        primary = remainder[0]
         known_commands = {"simulate", "owner", "list", "scoreboard"}
         if primary not in known_commands and not primary.startswith("-"):
             # Allow operators to call `python run_demo.py e2e` and treat the
             # first positional argument as the strategy name. This mirrors the
             # friendly interface described in the scaffold request.
-            normalized_args = ["simulate", "--strategy", primary, *normalized_args[1:]]
+            remainder = ["simulate", "--strategy", primary, *remainder[1:]]
         elif primary.startswith("-"):
             # Any flag-only invocation should default to the simulate command.
-            normalized_args = ["simulate", *normalized_args]
+            remainder = ["simulate", *remainder]
 
-    if has_check:
-        normalized_args = ["--check", *normalized_args]
-
-    return orchestrator.execute(normalized_args)
+    return orchestrator.execute([*global_args, *remainder])
 
 
 def main() -> None:
