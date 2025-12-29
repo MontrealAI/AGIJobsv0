@@ -701,6 +701,9 @@ class Orchestrator:
         compute_boost = 1.0 + 0.4 * compute_price_pressure
         entropy_damping = max(0.35, 1.0 - 0.6 * entropy_pressure)
         welfare_urgency = max(0.0, 1.0 - sentient_welfare_index)
+        stability_guard = 1.0 - 0.55 * entropy_pressure - 0.35 * coordination_gap - 0.2 * hamiltonian_pressure
+        stability_guard *= 0.6 + 0.4 * stability_index
+        stability_guard = min(1.0, max(0.2, stability_guard))
         return {
             "prosperity_gap": prosperity_gap,
             "sustainability_gap": sustainability_gap,
@@ -727,6 +730,7 @@ class Orchestrator:
             "compute_boost": compute_boost,
             "entropy_damping": entropy_damping,
             "welfare_urgency": welfare_urgency,
+            "stability_guard": stability_guard,
         }
 
     def _score_claimant(self, job: JobRecord, agent: str) -> Tuple[float, float, int, str]:
@@ -885,14 +889,22 @@ class Orchestrator:
             * signals["entropy_damping"]
         )
         action_budget *= 0.9 + 0.6 * signals["welfare_urgency"]
-        energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"])
+        alignment_budget = (
+            action_budget
+            * (1.0 + 0.8 * signals["entropy_pressure"])
+            / max(0.6, signals["entropy_damping"])
+        )
+        stability_guard = signals["stability_guard"]
+        energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"]) * stability_guard
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
+        stability_bias = 0.85 + 0.15 * stability_guard
         stimulus = (
             action_budget
             * signals["prosperity_share"]
             * signals["coordination_damping"]
             * signals["compute_boost"]
             * stability_modifier
+            * stability_bias
         )
         green_shift = (
             action_budget
@@ -900,12 +912,14 @@ class Orchestrator:
             * signals["coordination_damping"]
             * signals["compute_boost"]
             * stability_modifier
+            * stability_bias
         )
         alignment_investment = (
-            action_budget
+            alignment_budget
             * signals["coordination_gap"]
             * (0.6 + 0.4 * signals["welfare_urgency"])
             * (0.7 + 0.3 * signals["stability_index"])
+            * (1.0 + (1.0 - stability_guard))
         )
         normalized_action = self._normalize_simulation_action(
             {
