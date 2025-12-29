@@ -689,7 +689,8 @@ class Orchestrator:
         else:
             prosperity_share = prosperity_weight / total_weight
             sustainability_share = sustainability_weight / total_weight
-        gibbs_drive = max(0.0, -state.free_energy)
+        gibbs_reference = state.gibbs_free_energy if state.gibbs_free_energy is not None else state.free_energy
+        gibbs_drive = max(0.0, -gibbs_reference)
         hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
         stability_factor = (
             (0.6 + 0.4 * stability_index)
@@ -1531,8 +1532,12 @@ class Orchestrator:
                 "nash_welfare": self._latest_simulation_state.nash_welfare,
                 "sentient_welfare_index": self._latest_simulation_state.sentient_welfare_index,
                 "free_energy": self._latest_simulation_state.free_energy,
+                "gibbs_free_energy": self._latest_simulation_state.gibbs_free_energy,
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "temperature": self._latest_simulation_state.temperature,
+                "enthalpy": self._latest_simulation_state.enthalpy,
+                "pressure": self._latest_simulation_state.pressure,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
@@ -1617,8 +1622,12 @@ class Orchestrator:
                 "nash_welfare": self._latest_simulation_state.nash_welfare,
                 "sentient_welfare_index": self._latest_simulation_state.sentient_welfare_index,
                 "free_energy": self._latest_simulation_state.free_energy,
+                "gibbs_free_energy": self._latest_simulation_state.gibbs_free_energy,
                 "entropy": self._latest_simulation_state.entropy,
                 "hamiltonian": self._latest_simulation_state.hamiltonian,
+                "temperature": self._latest_simulation_state.temperature,
+                "enthalpy": self._latest_simulation_state.enthalpy,
+                "pressure": self._latest_simulation_state.pressure,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,

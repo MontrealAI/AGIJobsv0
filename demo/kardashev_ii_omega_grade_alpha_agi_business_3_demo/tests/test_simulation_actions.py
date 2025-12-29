@@ -202,6 +202,43 @@ def test_policy_action_escalates_alignment_when_entropy_high() -> None:
     assert high_action["build_dyson_nodes"] <= low_action["build_dyson_nodes"]
 
 
+def test_policy_action_responds_to_gibbs_deficit() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    baseline_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.45,
+        nash_welfare=0.45,
+        sentient_welfare_index=0.5,
+        free_energy=0.2,
+        gibbs_free_energy=0.2,
+        entropy=0.2,
+        hamiltonian=-0.2,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+    deficit_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.45,
+        nash_welfare=0.45,
+        sentient_welfare_index=0.5,
+        free_energy=0.2,
+        gibbs_free_energy=-0.4,
+        entropy=0.2,
+        hamiltonian=-0.2,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+
+    baseline_action = orchestrator._build_policy_action(baseline_state)
+    deficit_action = orchestrator._build_policy_action(deficit_state)
+
+    assert deficit_action["build_dyson_nodes"] >= baseline_action["build_dyson_nodes"]
+
+
 def test_select_best_claimant_prefers_skill_match_and_capacity() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
     job_spec = JobSpec(
