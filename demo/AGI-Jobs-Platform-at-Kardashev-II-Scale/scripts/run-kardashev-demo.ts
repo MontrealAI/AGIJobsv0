@@ -1749,6 +1749,45 @@ function ensureOutputDir() {
   }
 }
 
+function formatPercent(value: number | undefined, digits = 1): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return `${((value ?? 0) * 100).toFixed(digits)}%`;
+}
+
+function formatNumber(value: number | undefined, digits = 2): string {
+  if (!Number.isFinite(value)) {
+    return "n/a";
+  }
+  return (value ?? 0).toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function writeOfflineDashboard() {
+  const uiSourceDir = join(DEMO_ROOT, "ui");
+  const uiTargetDir = join(OUTPUT_DIR, "ui");
+  if (!existsSync(uiTargetDir)) {
+    mkdirSync(uiTargetDir, { recursive: true });
+  }
+
+  const uiFiles = ["style.css", "dashboard.js"];
+  for (const filename of uiFiles) {
+    const sourcePath = join(uiSourceDir, filename);
+    const targetPath = join(uiTargetDir, filename);
+    const content = readFileSync(sourcePath, "utf8");
+    writeFileSync(targetPath, content);
+  }
+
+  const indexTemplate = readFileSync(join(DEMO_ROOT, "index.html"), "utf8");
+  const offlineIndex = indexTemplate
+    .replace('window.__KARDASHEV_ASSET_BASE__ = "./output";', 'window.__KARDASHEV_ASSET_BASE__ = ".";')
+    .replace(/src="\.\/output\//g, 'src="./');
+  writeFileSync(join(OUTPUT_DIR, "index.html"), offlineIndex);
+}
+
 function slugToId(slug: string): string {
   return keccak256(toUtf8Bytes(slug));
 }
@@ -5220,6 +5259,56 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   };
 }
 
+type EquilibriumLedger = ReturnType<typeof buildEquilibriumLedger>;
+
+function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: EquilibriumLedger): string {
+  const thermodynamics = equilibriumLedger.thermodynamics;
+  const gameTheory = equilibriumLedger.gameTheory;
+  const welfare = telemetry.sentientWelfare;
+  const monteCarlo = telemetry.energy.monteCarlo;
+  const actionPath = equilibriumLedger.actionPath ?? [];
+  const generatedAt = equilibriumLedger.generatedAt ?? new Date().toISOString();
+
+  const lines = ["# Kardashev II Action Path", "", `Generated: ${generatedAt}`, "", "## Core equilibrium signals"];
+  lines.push(`- Free energy margin: ${formatPercent(thermodynamics.freeEnergyMarginPct, 2)}`);
+  lines.push(
+    `- Free energy runway: ${formatNumber(thermodynamics.runwayHours, 2)} hours (gap ${formatNumber(
+      thermodynamics.runwayGapHours,
+      2
+    )}h, ${formatNumber(thermodynamics.runwayGapGwh, 2)} GWh)`
+  );
+  lines.push(
+    `- Buffered free energy: ${formatNumber(monteCarlo.freeEnergyMarginGw, 2)} GW above buffer (${formatNumber(
+      monteCarlo.marginGw,
+      2
+    )} GW required)`
+  );
+  lines.push(`- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`);
+  lines.push(`- Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability, 1)}`);
+  lines.push(`- Nash product: ${formatPercent(gameTheory.nashProduct, 1)}`);
+  lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);
+  lines.push(`- Free energy per agent: ${formatNumber(welfare.freeEnergyPerAgentGj, 6)} GJ`);
+  lines.push(`- Welfare potential: ${formatPercent(welfare.welfarePotential, 1)}`);
+  lines.push("");
+  lines.push("## Action path");
+
+  if (actionPath.length === 0) {
+    lines.push("No immediate corrective steps required. Maintain equilibrium cadence.");
+  } else {
+    actionPath.forEach((step) => {
+      lines.push(`### Step ${step.rank}: ${step.title}`);
+      lines.push(`- Status: ${step.status}`);
+      lines.push(`- Target: ${step.target}`);
+      lines.push(`- Priority: ${formatPercent(step.priorityScore, 1)}`);
+      lines.push(`- Rationale: ${step.rationale}`);
+      lines.push(`- Action: ${step.action}`);
+      lines.push("");
+    });
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
   const parsedCreatedAt =
     typeof manifest.generatedAt === "number" ? manifest.generatedAt : Date.parse(manifest.generatedAt);
@@ -5309,6 +5398,7 @@ function run() {
   const dysonTimeline = buildDysonTimeline(manifest);
   const runbook = buildRunbook(manifest, telemetryWithScenarios, dominanceScore, scenarioSweep);
   const operatorBriefing = buildOperatorBriefing(manifest, telemetryWithScenarios, equilibriumLedger);
+  const actionPathReport = renderActionPathReport(telemetryWithScenarios, equilibriumLedger);
 
   const telemetryJson = `${JSON.stringify(telemetryWithScenarios, null, 2)}\n`;
   const safeJson = `${JSON.stringify(safeBatch, null, 2)}\n`;
@@ -5377,6 +5467,7 @@ function run() {
     { suffix: "logistics-ledger.json", content: logisticsJson },
     { suffix: "mermaid.mmd", content: `${mermaid}\n` },
     { suffix: "orchestration-report.md", content: `${runbook}\n` },
+    { suffix: "action-path.md", content: actionPathReport },
     { suffix: "dyson.mmd", content: `${dysonTimeline}\n` },
     { suffix: "task-hierarchy.mmd", content: `${missionTelemetry.mermaid}\n` },
     { suffix: "operator-briefing.md", content: `${operatorBriefing}\n` },
@@ -5405,6 +5496,8 @@ function run() {
     console.log("✔ Kardashev-II artefacts are up-to-date.");
     return;
   }
+
+  writeOfflineDashboard();
 
   console.log("✔ Kardashev-II orchestration artefacts generated.");
   console.log(`   Dominance score: ${dominanceScore.toFixed(1)} / 100.`);
