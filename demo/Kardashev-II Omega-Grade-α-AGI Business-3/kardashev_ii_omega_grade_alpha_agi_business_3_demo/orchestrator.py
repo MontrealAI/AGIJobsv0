@@ -689,7 +689,7 @@ class Orchestrator:
         else:
             prosperity_share = prosperity_weight / total_weight
             sustainability_share = sustainability_weight / total_weight
-        gibbs_drive = max(0.0, state.free_energy)
+        gibbs_drive = max(0.0, -state.free_energy)
         hamiltonian_pressure = min(1.0, abs(state.hamiltonian))
         stability_factor = (
             (0.6 + 0.4 * stability_index)
@@ -867,9 +867,9 @@ class Orchestrator:
 
         We use a Nash-style bargaining split between prosperity and sustainability
         gaps, and a Boltzmann weighting (statistical physics) to soften allocation
-        under coordination stress. Gibbs free energy and the Hamiltonian magnitude
-        shape the energy expansion push to keep the demo grounded in Kardashev-II
-        scaling dynamics.
+        under coordination stress. The Gibbs free-energy deficit and Hamiltonian
+        magnitude shape the energy expansion push to keep the demo grounded in
+        Kardashev-II scaling dynamics.
         """
 
         signals = self._compute_policy_signals(state)
