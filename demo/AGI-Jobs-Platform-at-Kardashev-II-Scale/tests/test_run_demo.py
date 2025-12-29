@@ -7,10 +7,12 @@ import sys
 from pathlib import Path
 
 import pytest
+import shutil
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEMO_ROOT = PROJECT_ROOT / "demo" / "AGI-Jobs-Platform-at-Kardashev-II-Scale"
 PYTHON_ENTRYPOINT = DEMO_ROOT / "run_demo.py"
+NODE_ENTRYPOINT = DEMO_ROOT / "run-demo.cjs"
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
@@ -180,6 +182,27 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert telemetry_energy["liveFeeds"]["feeds"]
     assert telemetry_payload["missionDirectives"]["ownerPowers"]
     assert telemetry_payload["missionLattice"]["programmes"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node is required to run the demo script")
+@pytest.mark.skipif(not NODE_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_accepts_file_output_dir(tmp_path: Path) -> None:
+    """The Node demo should accept file:// output directories for local workflows."""
+
+    output_dir = tmp_path / "file-output"
+    output_uri = output_dir.as_uri()
+    env = os.environ.copy()
+    env["OUTPUT_DIR"] = output_uri
+
+    result = subprocess.run(
+        ["node", str(NODE_ENTRYPOINT)],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (output_dir / "kardashev-report.md").exists()
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
