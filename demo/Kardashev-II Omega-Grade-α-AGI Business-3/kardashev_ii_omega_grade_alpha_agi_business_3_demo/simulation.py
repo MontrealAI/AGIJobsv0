@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 
 @dataclass
@@ -15,11 +15,19 @@ class SimulationState:
     nash_welfare: float = 0.0
     sentient_welfare_index: float = 0.0
     free_energy: float = 0.0
+    gibbs_free_energy: Optional[float] = None
     entropy: float = 0.0
     hamiltonian: float = 0.0
     stability_index: float = 0.0
     coordination_index: float = 0.0
     game_theory_slack: float = 0.0
+    temperature: float = 0.0
+    enthalpy: float = 0.0
+    pressure: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.gibbs_free_energy is None:
+            self.gibbs_free_energy = self.free_energy
 
 
 class PlanetarySimulation:
@@ -69,12 +77,16 @@ class SyntheticEconomySim(PlanetarySimulation):
             order_parameter * math.log(order_parameter)
             + (1.0 - order_parameter) * math.log(1.0 - order_parameter)
         )
-        temperature = 1.0 + (1.0 - self.sustainability_index)
-        internal_energy = self.energy_output_gw / 1_000_000.0
-        free_energy = internal_energy - temperature * entropy
-        hamiltonian = -internal_energy * order_parameter
         coordination_index = 1.0 - abs(self.prosperity_index - self.sustainability_index)
         coordination_index = min(1.0, max(0.0, coordination_index))
+        temperature = 1.0 + (1.0 - self.sustainability_index) + 0.5 * (1.0 - order_parameter)
+        pressure = 1.0 + 0.5 * (1.0 - self.prosperity_index) + 0.5 * (1.0 - self.sustainability_index)
+        volume = 1.0 + coordination_index
+        internal_energy = self.energy_output_gw / 1_000_000.0
+        enthalpy = internal_energy + pressure * volume
+        free_energy = internal_energy - temperature * entropy
+        gibbs_free_energy = enthalpy - temperature * entropy
+        hamiltonian = -internal_energy * order_parameter
         stability_index = math.exp(-entropy) * (1.0 / (1.0 + abs(hamiltonian)))
         stability_index *= 0.5 + 0.5 * coordination_index
         stability_index = min(1.0, max(0.0, stability_index))
@@ -88,11 +100,15 @@ class SyntheticEconomySim(PlanetarySimulation):
             "nash_welfare": nash_welfare,
             "sentient_welfare_index": sentient_welfare_index,
             "free_energy": free_energy,
+            "gibbs_free_energy": gibbs_free_energy,
             "entropy": entropy,
             "hamiltonian": hamiltonian,
             "stability_index": stability_index,
             "coordination_index": coordination_index,
             "game_theory_slack": game_theory_slack,
+            "temperature": temperature,
+            "enthalpy": enthalpy,
+            "pressure": pressure,
         }
 
     def tick(self, hours: float) -> SimulationState:
@@ -111,9 +127,13 @@ class SyntheticEconomySim(PlanetarySimulation):
             nash_welfare=metrics["nash_welfare"],
             sentient_welfare_index=metrics["sentient_welfare_index"],
             free_energy=metrics["free_energy"],
+            gibbs_free_energy=metrics["gibbs_free_energy"],
             entropy=metrics["entropy"],
             hamiltonian=metrics["hamiltonian"],
             stability_index=metrics["stability_index"],
             coordination_index=metrics["coordination_index"],
             game_theory_slack=metrics["game_theory_slack"],
+            temperature=metrics["temperature"],
+            enthalpy=metrics["enthalpy"],
+            pressure=metrics["pressure"],
         )
