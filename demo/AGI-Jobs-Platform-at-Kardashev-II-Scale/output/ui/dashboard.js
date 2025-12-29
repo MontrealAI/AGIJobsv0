@@ -13,6 +13,11 @@ function resolveAssetBase() {
     return datasetBase.replace(/\/$/, "");
   }
 
+  const path = window.location?.pathname || "";
+  if (path.includes("/output/") || path.endsWith("/output")) {
+    return ".";
+  }
+
   return DEFAULT_ASSET_BASE;
 }
 
