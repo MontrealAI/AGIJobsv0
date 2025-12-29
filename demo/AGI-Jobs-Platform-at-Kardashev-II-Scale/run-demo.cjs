@@ -3,6 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
+const { fileURLToPath } = require('url');
 
 const DEBUG_TOKEN = 'kardashev-demo';
 const debugEnabled = (process.env.DEBUG || '')
@@ -37,7 +39,7 @@ function createRng(seed) {
 }
 
 function resolveConfigPath(envVar, fallbackRelative) {
-  const override = process.env[envVar];
+  const override = normalizePathOverride(process.env[envVar]);
   const target = override ? path.resolve(override) : path.join(__dirname, fallbackRelative);
 
   if (!fs.existsSync(target)) {
@@ -47,6 +49,19 @@ function resolveConfigPath(envVar, fallbackRelative) {
   }
 
   return target;
+}
+
+function normalizePathOverride(override) {
+  if (!override || typeof override !== 'string') {
+    return null;
+  }
+  if (override.startsWith('file:')) {
+    return fileURLToPath(new URL(override));
+  }
+  if (override.startsWith('~')) {
+    return path.join(os.homedir(), override.slice(1));
+  }
+  return override;
 }
 
 function loadJson(absolutePath) {
@@ -270,6 +285,12 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
     0,
     Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * freeEnergyMarginPct)
   );
+  const entropyScore = clamp01((demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw) / 10);
+  const runwayScore = clamp01(1 - runwayGapHours / ENERGY_RUNWAY_TARGET_HOURS);
+  const thermodynamicStability = clamp01(
+    0.35 * hamiltonianStability + 0.25 * (1 - breachProbability) + 0.2 * entropyScore + 0.2 * runwayScore
+  );
+  const riskIndex = clamp01(1 - thermodynamicStability);
   const summary = {
     runs,
     breachProbability,
@@ -294,6 +315,8 @@ function simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModel
       1,
       (1 - breachProbability) * 0.55 + hamiltonianStability * 0.45
     ),
+    thermodynamicStability,
+    riskIndex,
     gibbsFreeEnergyGj,
     hamiltonianStability,
     maintainsBuffer: freeEnergyMarginGw >= marginGw,

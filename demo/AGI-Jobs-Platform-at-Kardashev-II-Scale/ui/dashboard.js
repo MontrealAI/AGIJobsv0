@@ -253,16 +253,19 @@ function renderMonteCarloDetails(monteCarlo) {
   const freeEnergyElement = document.querySelector("#energy-monte-carlo-free-energy");
   const hamiltonianElement = document.querySelector("#energy-monte-carlo-hamiltonian");
   const gameTheoryElement = document.querySelector("#energy-monte-carlo-game-theory");
+  const riskElement = document.querySelector("#energy-monte-carlo-risk");
 
-  if (!freeEnergyElement || !hamiltonianElement || !gameTheoryElement) return;
+  if (!freeEnergyElement || !hamiltonianElement || !gameTheoryElement || !riskElement) return;
 
   if (!monteCarlo) {
     freeEnergyElement.textContent = "Free energy margin unavailable.";
     hamiltonianElement.textContent = "Hamiltonian stability unavailable.";
     gameTheoryElement.textContent = "Game-theory slack unavailable.";
+    riskElement.textContent = "Thermodynamic risk index unavailable.";
     applyStatus(freeEnergyElement, "status-warn");
     applyStatus(hamiltonianElement, "status-warn");
     applyStatus(gameTheoryElement, "status-warn");
+    applyStatus(riskElement, "status-warn");
     return;
   }
 
@@ -321,6 +324,29 @@ function renderMonteCarloDetails(monteCarlo) {
   } else {
     gameTheoryElement.textContent = "Game-theory slack unavailable.";
     applyStatus(gameTheoryElement, "status-warn");
+  }
+
+  const thermodynamicStability = isFiniteNumber(monteCarlo.thermodynamicStability)
+    ? monteCarlo.thermodynamicStability
+    : null;
+  const riskIndex = isFiniteNumber(monteCarlo.riskIndex)
+    ? monteCarlo.riskIndex
+    : thermodynamicStability !== null
+      ? Math.max(0, Math.min(1, 1 - thermodynamicStability))
+      : null;
+  if (riskIndex !== null) {
+    const stabilityText =
+      thermodynamicStability !== null
+        ? ` · stability ${(thermodynamicStability * 100).toFixed(1)}%`
+        : "";
+    riskElement.textContent = `Thermodynamic risk ${(riskIndex * 100).toFixed(1)}%${stabilityText}`;
+    applyStatus(
+      riskElement,
+      riskIndex <= 0.15 ? "status-ok" : riskIndex <= 0.3 ? "status-warn" : "status-fail"
+    );
+  } else {
+    riskElement.textContent = "Thermodynamic risk index unavailable.";
+    applyStatus(riskElement, "status-warn");
   }
 }
 
