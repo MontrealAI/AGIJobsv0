@@ -72,3 +72,39 @@ def test_policy_signals_use_gibbs_deficit(tmp_path: Path) -> None:
     signals = orchestrator._compute_policy_signals(state)
 
     assert signals["gibbs_drive"] == pytest.approx(0.5)
+
+
+def test_insight_payload_surfaces_thermodynamic_strategy(tmp_path: Path) -> None:
+    orchestrator = Orchestrator(
+        OrchestratorConfig(
+            control_channel_file=tmp_path / "control.jsonl",
+            checkpoint_path=tmp_path / "checkpoint.json",
+            status_output_path=None,
+            audit_log_path=None,
+            energy_oracle_path=None,
+        )
+    )
+    orchestrator._latest_simulation_state = SimulationState(
+        energy_output_gw=850_000.0,
+        prosperity_index=0.74,
+        sustainability_index=0.62,
+        free_energy=-0.2,
+        gibbs_free_energy=-0.8,
+        entropy=0.35,
+        hamiltonian=-0.1,
+        stability_index=0.82,
+        coordination_index=0.9,
+        nash_welfare=0.68,
+        sentient_welfare_index=0.66,
+        game_theory_slack=0.74,
+        temperature=1.4,
+        enthalpy=2.2,
+        pressure=1.1,
+    )
+
+    payload = orchestrator._build_insight_payload()
+
+    assert payload["strategy_priority"] == "energy_expansion"
+    assert "policy_recommendation" in payload
+    assert payload["thermodynamics"]["gibbs_free_energy"] == pytest.approx(-0.8)
+    assert payload["game_theory"]["game_theory_slack"] == pytest.approx(0.74)

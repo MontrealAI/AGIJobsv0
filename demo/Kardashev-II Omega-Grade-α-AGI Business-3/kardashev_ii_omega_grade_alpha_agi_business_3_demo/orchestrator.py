@@ -382,13 +382,63 @@ class Orchestrator:
     async def _insight_loop(self) -> None:
         while self._running:
             await self._paused.wait()
-            await self.bus.publish(
-                "insights",
-                {"idea": f"Dyson-swarm expansion cycle {self._cycle}"},
-                "orchestrator",
-            )
+            await self.bus.publish("insights", self._build_insight_payload(), "orchestrator")
             await self._persist_status_snapshot()
             await asyncio.sleep(self.config.insight_interval_seconds)
+
+    def _build_insight_payload(self) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "idea": f"Dyson-swarm expansion cycle {self._cycle}",
+            "cycle": self._cycle,
+        }
+        if self._latest_simulation_state is None:
+            return payload
+        state = self._latest_simulation_state
+        signals = self._compute_policy_signals(state)
+        decision = self._build_policy_decision(state)
+        if signals["gibbs_drive"] > 0.35 and signals["stability_guard"] > 0.6:
+            strategy_priority = "energy_expansion"
+            strategy_path = (
+                "Exploit the Gibbs deficit with guarded Dyson-node expansion while preserving "
+                "stability buffers."
+            )
+        elif signals["coordination_gap"] > 0.35 or signals["entropy_pressure"] > 0.5:
+            strategy_priority = "coordination_stability"
+            strategy_path = (
+                "Reduce entropy through alignment and green shift investments before accelerating "
+                "growth."
+            )
+        else:
+            strategy_priority = "balanced_growth"
+            strategy_path = "Blend stimulus, green shift, and alignment investment to maintain equilibrium."
+        payload.update(
+            {
+                "strategy_priority": strategy_priority,
+                "strategy_path": strategy_path,
+                "policy_recommendation": decision["action"],
+                "thermodynamics": {
+                    "gibbs_free_energy": state.gibbs_free_energy,
+                    "hamiltonian": state.hamiltonian,
+                    "entropy": state.entropy,
+                    "temperature": state.temperature,
+                    "enthalpy": state.enthalpy,
+                    "pressure": state.pressure,
+                },
+                "game_theory": {
+                    "nash_welfare": state.nash_welfare,
+                    "sentient_welfare_index": state.sentient_welfare_index,
+                    "game_theory_slack": state.game_theory_slack,
+                    "coordination_index": state.coordination_index,
+                },
+                "policy_signals": {
+                    "gibbs_drive": signals["gibbs_drive"],
+                    "hamiltonian_pressure": signals["hamiltonian_pressure"],
+                    "entropy_pressure": signals["entropy_pressure"],
+                    "stability_guard": signals["stability_guard"],
+                },
+            }
+        )
+        return payload
 
     def _apply_simulation_state(self, state: SimulationState, *, event: str) -> None:
         self._latest_simulation_state = state
