@@ -30,6 +30,11 @@ def test_run_demo_script_generates_report():
     assert 0 <= payload["coverage"]["ratio"] <= 1
     assert 0 <= payload["totals"]["dominanceScore"] <= 100
     assert payload["resilience"]["cadenceSeconds"] > 0
+    assert 0 <= payload["physics"]["valueScore"] <= 1
+    assert 0 <= payload["physics"]["entropyPressure"] <= 1
+    assert 0 <= payload["physics"]["freeEnergyScore"] <= 1
+    assert 0 <= payload["physics"]["hamiltonianStability"] <= 1
+    assert 0 <= payload["physics"]["gameTheoreticSlack"] <= 1
 
 
 def test_report_addresses_are_normalised():
