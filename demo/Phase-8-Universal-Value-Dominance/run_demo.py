@@ -24,6 +24,7 @@ MANIFEST_PATH = PHASE_ROOT / "config" / "universal.value.manifest.json"
 REPORT_PATH = PHASE_ROOT / "output" / "phase8_run_report.json"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
+SECONDS_PER_DAY = 24 * 60 * 60
 
 
 def load_manifest(path: Path) -> Mapping[str, Any]:
@@ -90,26 +91,69 @@ class PhaseMetrics:
     cadence_seconds: int
 
     @property
+    def value_score(self) -> float:
+        return 0.0 if self.total_monthly_usd <= 0 else min(1.0, self.total_monthly_usd / 500_000_000_000)
+
+    @property
+    def resilience_score(self) -> float:
+        return clamp01(self.average_resilience)
+
+    @property
+    def cadence_score(self) -> float:
+        if self.cadence_seconds <= 0:
+            return 0.5
+        return clamp01(1 - min(1.0, self.cadence_seconds / SECONDS_PER_DAY))
+
+    @property
     def dominance_score(self) -> float:
         """Compute a bounded dominance score (0-100)."""
-        value_score = 0 if self.total_monthly_usd <= 0 else min(1, self.total_monthly_usd / 500_000_000_000)
-        resilience_score = max(0, min(1, self.average_resilience))
-        coverage_score = min(1, (self.coverage_ratio + self.coverage_strength) / 2)
+        coverage_score = min(1.0, (self.coverage_ratio + self.coverage_strength) / 2)
         autonomy_score = (
-            min(1, self.max_autonomy_bps / self.autonomy_guard_cap_bps)
+            min(1.0, self.max_autonomy_bps / self.autonomy_guard_cap_bps)
             if self.autonomy_guard_cap_bps > 0
-            else 1
+            else 1.0
         )
-        cadence_score = max(0, 1 - min(1, self.cadence_seconds / (24 * 60 * 60))) if self.cadence_seconds > 0 else 0.5
 
-        weighted = 0.3 * value_score + 0.25 * resilience_score + 0.2 * coverage_score + 0.15 * autonomy_score + 0.1 * cadence_score
+        weighted = (
+            0.3 * self.value_score
+            + 0.25 * self.resilience_score
+            + 0.2 * coverage_score
+            + 0.15 * autonomy_score
+            + 0.1 * self.cadence_score
+        )
         return round(min(1, weighted) * 100, 1)
 
     @property
     def coverage_strength(self) -> float:
         if self.guardian_review_window_seconds <= 0:
             return 1
-        return min(1, self.average_coverage_seconds / self.guardian_review_window_seconds)
+        return min(1.0, self.average_coverage_seconds / self.guardian_review_window_seconds)
+
+    @property
+    def entropy_pressure(self) -> float:
+        """Proxy for disorder pressure: higher when coverage/resilience drop."""
+        stability_signal = 0.5 * self.coverage_ratio + 0.5 * self.resilience_score
+        return clamp01(1 - stability_signal)
+
+    @property
+    def free_energy_score(self) -> float:
+        """Gibbs-like free energy proxy in [0, 1]."""
+        raw = self.value_score * (1 - self.entropy_pressure)
+        return clamp01(raw)
+
+    @property
+    def hamiltonian_stability(self) -> float:
+        """Hamiltonian-inspired stability proxy in [0, 1]."""
+        raw = (self.coverage_strength + self.resilience_score + self.cadence_score) / 3
+        return clamp01(raw)
+
+    @property
+    def game_theoretic_slack(self) -> float:
+        """Slack ratio between autonomy ceiling and policy guardrail."""
+        if self.autonomy_guard_cap_bps <= 0:
+            return 0.0
+        slack = (self.autonomy_guard_cap_bps - self.max_autonomy_bps) / self.autonomy_guard_cap_bps
+        return clamp01(slack)
 
 
 def fmean(values: Iterable[float]) -> float:
@@ -117,6 +161,10 @@ def fmean(values: Iterable[float]) -> float:
         return statistics.fmean(values)
     except statistics.StatisticsError:
         return 0.0
+
+
+def clamp01(value: float) -> float:
+    return max(0.0, min(1.0, value))
 
 
 def compute_metrics(manifest: Mapping[str, Any]) -> PhaseMetrics:
@@ -213,6 +261,13 @@ def save_report(
             "maxAutonomyBps": metrics.max_autonomy_bps,
             "autonomyGuardCapBps": metrics.autonomy_guard_cap_bps,
         },
+        "physics": {
+            "valueScore": metrics.value_score,
+            "entropyPressure": metrics.entropy_pressure,
+            "freeEnergyScore": metrics.free_energy_score,
+            "hamiltonianStability": metrics.hamiltonian_stability,
+            "gameTheoreticSlack": metrics.game_theoretic_slack,
+        },
         "global": {
             **extract_global_addresses(global_section),
         },
@@ -272,6 +327,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"• Dominance score: {metrics.dominance_score:.1f} / 100")
         print(f"• Coverage ratio: {metrics.coverage_ratio:.2%} across sentinels")
         print(f"• Average resilience: {metrics.average_resilience:.2%}")
+        print(f"• Gibbs free-energy proxy: {metrics.free_energy_score:.2f}")
+        print(f"• Hamiltonian stability proxy: {metrics.hamiltonian_stability:.2f}")
         if invalid_addresses:
             print(f"• ⚠️  Global address fields need review: {', '.join(sorted(invalid_addresses))}")
         else:
