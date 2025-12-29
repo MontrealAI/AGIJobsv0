@@ -166,6 +166,42 @@ def test_policy_action_invests_in_alignment_for_coordination_gap() -> None:
     assert low_action["alignment_investment"] >= high_action["alignment_investment"]
 
 
+def test_policy_action_escalates_alignment_when_entropy_high() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    low_entropy_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.45,
+        nash_welfare=0.45,
+        sentient_welfare_index=0.5,
+        free_energy=0.1,
+        entropy=0.1,
+        hamiltonian=-0.2,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+    high_entropy_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.45,
+        nash_welfare=0.45,
+        sentient_welfare_index=0.5,
+        free_energy=0.1,
+        entropy=0.9,
+        hamiltonian=-0.2,
+        coordination_index=0.5,
+        game_theory_slack=0.5,
+        stability_index=0.6,
+    )
+
+    low_action = orchestrator._build_policy_action(low_entropy_state)
+    high_action = orchestrator._build_policy_action(high_entropy_state)
+
+    assert high_action["alignment_investment"] >= low_action["alignment_investment"]
+    assert high_action["build_dyson_nodes"] <= low_action["build_dyson_nodes"]
+
+
 def test_select_best_claimant_prefers_skill_match_and_capacity() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
     job_spec = JobSpec(
