@@ -498,6 +498,14 @@ def _ensure_prisma_client(
     if _has_prisma_client(package_root):
         return True
 
+    node_modules = package_root / "node_modules"
+    if not node_modules.exists():
+        print(
+            "→ Skipping Prisma-dependent suite because node_modules is missing; "
+            f"run `npm install` in {package_root} to install dependencies."
+        )
+        return False
+
     print(f"→ Generating Prisma client for {package_root} (missing artifacts)")
     env = os.environ.copy()
     env.setdefault("CI", "1")
