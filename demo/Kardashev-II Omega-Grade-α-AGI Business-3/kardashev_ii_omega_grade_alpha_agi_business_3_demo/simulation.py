@@ -79,7 +79,7 @@ class SyntheticEconomySim(PlanetarySimulation):
         )
         coordination_index = 1.0 - abs(self.prosperity_index - self.sustainability_index)
         coordination_index = min(1.0, max(0.0, coordination_index))
-        temperature = 1.0 + (1.0 - self.sustainability_index) + 0.5 * (1.0 - order_parameter)
+        temperature = 1.0 + (1.0 - self.sustainability_index)
         pressure = 1.0 + 0.5 * (1.0 - self.prosperity_index) + 0.5 * (1.0 - self.sustainability_index)
         volume = 1.0 + coordination_index
         internal_energy = self.energy_output_gw / 1_000_000.0
