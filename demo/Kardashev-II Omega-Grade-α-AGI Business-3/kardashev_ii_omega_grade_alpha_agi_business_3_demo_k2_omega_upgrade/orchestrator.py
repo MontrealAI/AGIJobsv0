@@ -305,6 +305,7 @@ class Orchestrator:
             await self._propagate_completion(parent)
 
     async def _emit_status(self) -> None:
+        simulation_snapshot = self.simulation.get_state() if self.simulation else None
         snapshot = {
             "mission": self.config.mission_name,
             "resources": {
@@ -314,6 +315,7 @@ class Orchestrator:
             },
             "ledger": self.resource_manager.ledger.snapshot(),
             "jobs": [job.to_dict() for job in self.registry.jobs()],
+            "simulation": simulation_snapshot,
         }
         with self.status_output_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(snapshot) + "\n")
@@ -331,4 +333,3 @@ class Orchestrator:
             return
         result = self.simulation.apply_action(action)
         await self.bus.publish("simulation:events", {"action": action, "result": result})
-
