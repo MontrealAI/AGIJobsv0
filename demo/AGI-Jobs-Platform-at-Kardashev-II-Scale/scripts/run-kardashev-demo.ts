@@ -59,6 +59,7 @@ const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
 const DIVERSIFICATION_TARGET_HHI = 0.3;
 const ENERGY_RUNWAY_TARGET_HOURS = 1;
+const ENERGY_RESERVE_MULTIPLIER = 2.4;
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
   const slug = raw?.toLowerCase().replace(/[^a-z0-9]+/g, "-") ?? "kardashev";
@@ -1265,6 +1266,17 @@ type MonteCarloSummary = {
   tolerance: number;
 };
 
+type RunwayAdjustmentPlan = {
+  targetHours: number;
+  applied: boolean;
+  totalReserveBoostGw: number;
+  perFeedBoosts: Array<{
+    federationSlug: string | null;
+    region: string | null;
+    boostGw: number;
+  }>;
+};
+
 type AllocationRecommendation = {
   federation: string;
   name: string;
@@ -1565,6 +1577,55 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   };
 }
 
+function buildRunwayAdjustmentPlan(
+  energy: MonteCarloSummary,
+  feeds: Array<{ federationSlug: string; region: string; manifestGw: number }>
+): RunwayAdjustmentPlan {
+  const runwayGapHours = energy.runwayGapHours ?? 0;
+  const gapGwh = energy.runwayGapGwh ?? 0;
+  if (!Number.isFinite(gapGwh) || gapGwh <= 0 || !Number.isFinite(runwayGapHours) || runwayGapHours <= 0) {
+    return {
+      targetHours: ENERGY_RUNWAY_TARGET_HOURS,
+      applied: false,
+      totalReserveBoostGw: 0,
+      perFeedBoosts: [],
+    };
+  }
+
+  const totalNominalGw = feeds.reduce((sum, feed) => sum + (feed.manifestGw ?? 0), 0);
+  const boostGw = (gapGwh / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)) * ENERGY_RESERVE_MULTIPLIER;
+  if (!Number.isFinite(totalNominalGw) || totalNominalGw <= 0) {
+    return {
+      targetHours: ENERGY_RUNWAY_TARGET_HOURS,
+      applied: false,
+      totalReserveBoostGw: round(boostGw, 4),
+      perFeedBoosts: [],
+    };
+  }
+
+  const perFeedBoosts = feeds
+    .map((feed) => {
+      const share = (feed.manifestGw ?? 0) / totalNominalGw;
+      const boost = round(boostGw * share, 4);
+      if (boost <= 0) {
+        return null;
+      }
+      return {
+        federationSlug: feed.federationSlug ?? null,
+        region: feed.region ?? null,
+        boostGw: boost,
+      };
+    })
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+
+  return {
+    targetHours: ENERGY_RUNWAY_TARGET_HOURS,
+    applied: false,
+    totalReserveBoostGw: round(boostGw, 4),
+    perFeedBoosts,
+  };
+}
+
 function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: MonteCarloSummary): AllocationPolicy {
   const federations = manifest.federations;
   const totalAvailableGw = federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0);
@@ -1764,6 +1825,19 @@ function formatNumber(value: number | undefined, digits = 2): string {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
+}
+
+function formatRunwayAdjustment(plan?: RunwayAdjustmentPlan | null): string | null {
+  if (!plan || plan.perFeedBoosts.length === 0) {
+    return null;
+  }
+  const perFeed = plan.perFeedBoosts
+    .map((boost) => {
+      const label = boost.federationSlug || boost.region || "unknown";
+      return `${label}: +${formatNumber(boost.boostGw, 2)} GW`;
+    })
+    .join(", ");
+  return `${perFeed} (total +${formatNumber(plan.totalReserveBoostGw, 2)} GW)`;
 }
 
 function writeOfflineDashboard() {
@@ -3214,6 +3288,7 @@ function buildOperatorBriefing(
       runwayGapHours?: number;
       runwayGapGwh?: number;
       runwayGapGj?: number;
+      runwayAdjustment?: RunwayAdjustmentPlan | null;
     };
     gameTheory?: {
       nashProduct?: number;
@@ -4930,6 +5005,11 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const logistics = telemetry.logistics.equilibrium;
   const computeFabric = telemetry.computeFabric;
   const missionThermo = telemetry.missionThermodynamics;
+  const runwayAdjustmentPlan = buildRunwayAdjustmentPlan(
+    energy,
+    telemetry.energy.liveFeeds.feeds
+  );
+  const runwayPlanText = formatRunwayAdjustment(runwayAdjustmentPlan);
   const runwayScore = clamp01(
     (energy.runwayHours ?? 0) / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)
   );
@@ -5097,10 +5177,13 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(
         1
       )}% · runway ${energy.runwayHours.toFixed(2)}h`,
-      action:
-        energyScore >= 0.85
-          ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
-          : `Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.${energy.runwayGapGwh > 0 ? ` Add ~${energy.runwayGapGwh.toFixed(2)} GWh (${energy.runwayGapGj.toFixed(0)} GJ) to hit the 1h runway.` : ""}`,
+      action: (() => {
+        const baseAction =
+          energyScore >= 0.85
+            ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
+            : `Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.${energy.runwayGapGwh > 0 ? ` Add ~${energy.runwayGapGwh.toFixed(2)} GWh (${energy.runwayGapGj.toFixed(0)} GJ) to hit the 1h runway.` : ""}`;
+        return runwayPlanText ? `${baseAction} Reserve boost plan: ${runwayPlanText}.` : baseAction;
+      })(),
       target: `Free energy margin ≥ 70%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, and Hamiltonian stability ≥ 90%.`,
     },
     {
@@ -5247,6 +5330,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energy.entropyMargin, 4),
       hamiltonianStability: round(energy.hamiltonianStability, 4),
+      runwayAdjustment: runwayAdjustmentPlan,
     },
     gameTheory: {
       nashProduct: round(allocation.nashProduct, 4),
@@ -5284,6 +5368,13 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
     )} GW required)`
   );
   lines.push(`- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`);
+  const runwayPlanText = formatRunwayAdjustment(thermodynamics.runwayAdjustment);
+  if (runwayPlanText) {
+    const prefix = thermodynamics.runwayAdjustment?.applied
+      ? "Runway adjustment applied"
+      : "Runway adjustment plan";
+    lines.push(`- ${prefix}: ${runwayPlanText}`);
+  }
   lines.push(`- Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability, 1)}`);
   lines.push(`- Nash product: ${formatPercent(gameTheory.nashProduct, 1)}`);
   lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);

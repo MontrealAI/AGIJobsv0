@@ -58,7 +58,29 @@
     "runwayGapGj": 3938080526.16,
     "gibbsFreeEnergyGj": 0,
     "entropyMargin": -0.2741,
-    "hamiltonianStability": 0
+    "hamiltonianStability": 0,
+    "runwayAdjustment": {
+      "targetHours": 1,
+      "applied": false,
+      "totalReserveBoostGw": 2625387.0174,
+      "perFeedBoosts": [
+        {
+          "federationSlug": "earth",
+          "region": "earth-grid",
+          "boostGw": 889514.6881
+        },
+        {
+          "federationSlug": "mars",
+          "region": "mars-dome",
+          "boostGw": 261339.8949
+        },
+        {
+          "federationSlug": "orbital",
+          "region": "orbital-swarm",
+          "boostGw": 1474532.4345
+        }
+      ]
+    }
   },
   "gameTheory": {
     "nashProduct": 0.856,
@@ -109,7 +131,7 @@
       "title": "Stabilize free energy buffer",
       "status": "needs-action",
       "rationale": "Free energy -0.9% · Hamiltonian 0.0% · runway 0.00h",
-      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1093911.26 GWh (3938080526 GJ) to hit the 1h runway.",
+      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1093911.26 GWh (3938080526 GJ) to hit the 1h runway. Reserve boost plan: earth: +889,514.69 GW, mars: +261,339.89 GW, orbital: +1,474,532.43 GW (total +2,625,387.02 GW).",
       "target": "Free energy margin ≥ 70%, runway ≥ 1h, and Hamiltonian stability ≥ 90%.",
       "priorityScore": 1
     },

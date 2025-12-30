@@ -1620,6 +1620,19 @@ function renderEquilibriumLedger(ledger) {
     `Entropy buffer: ${formatFixed(thermodynamics.entropyMargin, 2)}σ`,
     `Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability)}`,
   ];
+  if (thermodynamics.runwayAdjustment?.perFeedBoosts?.length) {
+    const boosts = thermodynamics.runwayAdjustment.perFeedBoosts
+      .map((boost) => {
+        const label = boost.federationSlug || boost.region || "unknown";
+        return `${label}: +${formatFixed(boost.boostGw, 2)} GW`;
+      })
+      .join(", ");
+    const total = formatFixed(thermodynamics.runwayAdjustment.totalReserveBoostGw, 2);
+    const planLabel = thermodynamics.runwayAdjustment.applied
+      ? "Runway adjustment applied"
+      : "Runway adjustment plan";
+    thermoItems.push(`${planLabel}: ${boosts} (total +${total} GW)`);
+  }
   thermoItems.forEach((item) => {
     const li = document.createElement("li");
     li.textContent = item;

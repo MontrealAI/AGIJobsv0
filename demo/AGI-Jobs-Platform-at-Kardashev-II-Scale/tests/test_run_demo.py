@@ -174,6 +174,11 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     priorities = [step["priorityScore"] for step in equilibrium_payload["actionPath"]]
     assert all(0 <= priority <= 1 for priority in priorities)
     assert priorities == sorted(priorities, reverse=True)
+    runway_adjustment = equilibrium_payload["thermodynamics"]["runwayAdjustment"]
+    assert runway_adjustment["targetHours"] >= 0
+    assert runway_adjustment["totalReserveBoostGw"] >= 0
+    assert isinstance(runway_adjustment["applied"], bool)
+    assert isinstance(runway_adjustment["perFeedBoosts"], list)
 
     telemetry_energy = telemetry_payload["energy"]
     assert telemetry_energy["utilisationPct"] > 0
