@@ -38,9 +38,9 @@ function createRng(seed) {
   };
 }
 
-function resolveConfigPath(envVar, fallbackRelative) {
+function resolveConfigPath(envVar, fallbackRelative, baseDir = __dirname) {
   const override = normalizePathOverride(process.env[envVar]);
-  const target = override ? path.resolve(override) : path.join(__dirname, fallbackRelative);
+  const target = override ? path.resolve(override) : path.join(baseDir, fallbackRelative);
 
   if (!fs.existsSync(target)) {
     throw new Error(
@@ -2445,8 +2445,8 @@ function copyMermaidBundle(outputDir) {
   }
 }
 
-function writeOfflineDashboard(outputDir) {
-  const uiSourceDir = path.join(__dirname, 'ui');
+function writeOfflineDashboard(outputDir, demoRoot = __dirname) {
+  const uiSourceDir = path.join(demoRoot, 'ui');
   const uiTargetDir = path.join(outputDir, 'ui');
   ensureDir(uiTargetDir);
   for (const filename of ['style.css', 'dashboard.js']) {
@@ -2454,7 +2454,7 @@ function writeOfflineDashboard(outputDir) {
   }
   copyMermaidBundle(outputDir);
 
-  const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const indexTemplate = fs.readFileSync(path.join(demoRoot, 'index.html'), 'utf8');
   const assetBaseMarker = 'window.__KARDASHEV_ASSET_BASE__ = "./output";';
   const offlineIndex = indexTemplate
     .replace(assetBaseMarker, 'window.__KARDASHEV_ASSET_BASE__ = ".";')
@@ -2468,12 +2468,20 @@ function parseArgs(argv) {
     outputDir: process.env.OUTPUT_DIR,
     check: false,
     printCommands: false,
+    configRoot: null,
+    profile: null,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     if (flag === '--output-dir' && argv[i + 1]) {
       args.outputDir = argv[i + 1];
+      i += 1;
+    } else if (flag === '--config-root' && argv[i + 1]) {
+      args.configRoot = argv[i + 1];
+      i += 1;
+    } else if (flag === '--profile' && argv[i + 1]) {
+      args.profile = argv[i + 1];
       i += 1;
     } else if (flag === '--check') {
       args.check = true;
@@ -2485,25 +2493,60 @@ function parseArgs(argv) {
   return args;
 }
 
-function resolveOutputDir(rawOutputDir, { ensure = true } = {}) {
+function resolveOutputDir(rawOutputDir, demoRoot, { ensure = true } = {}) {
   const override = normalizePathOverride(rawOutputDir);
-  const dir = override ? path.resolve(override) : path.join(__dirname, 'output');
+  const dir = override ? path.resolve(override) : path.join(demoRoot, 'output');
   if (ensure) {
     ensureDir(dir);
   }
   return dir;
 }
 
+function resolveDemoRoot({ profile, configRoot } = {}) {
+  if (profile) {
+    const candidate = path.resolve(__dirname, profile);
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    throw new Error(`Profile directory not found: ${candidate}`);
+  }
+  if (configRoot) {
+    const candidate = normalizePathOverride(configRoot);
+    const resolved = candidate ? path.resolve(candidate) : path.resolve(configRoot);
+    if (fs.existsSync(resolved)) {
+      return resolved;
+    }
+    throw new Error(`Config root override not found: ${resolved}`);
+  }
+  return __dirname;
+}
+
 function main() {
+  const { outputDir: cliOutputDir, check, printCommands, configRoot, profile } = parseArgs(
+    process.argv.slice(2)
+  );
+  let demoRoot;
+  try {
+    demoRoot = resolveDemoRoot({ profile, configRoot });
+  } catch (err) {
+    console.error('❌ Kardashev configuration root resolution failed.');
+    console.error(`   - ${err.message}`);
+    process.exitCode = 1;
+    return;
+  }
   let fabric;
   let energy;
   let manifest;
   let taskLattice;
   try {
-    const fabricPath = resolveConfigPath('KARDASHEV_FABRIC_PATH', 'config/fabric.json');
-    const energyPath = resolveConfigPath('KARDASHEV_ENERGY_FEEDS_PATH', 'config/energy-feeds.json');
-    const manifestPath = resolveConfigPath('KARDASHEV_MANIFEST_PATH', 'config/kardashev-ii.manifest.json');
-    const taskLatticePath = resolveConfigPath('KARDASHEV_TASK_LATTICE_PATH', 'config/task-lattice.json');
+    const fabricPath = resolveConfigPath('KARDASHEV_FABRIC_PATH', 'config/fabric.json', demoRoot);
+    const energyPath = resolveConfigPath('KARDASHEV_ENERGY_FEEDS_PATH', 'config/energy-feeds.json', demoRoot);
+    const manifestPath = resolveConfigPath(
+      'KARDASHEV_MANIFEST_PATH',
+      'config/kardashev-ii.manifest.json',
+      demoRoot
+    );
+    const taskLatticePath = resolveConfigPath('KARDASHEV_TASK_LATTICE_PATH', 'config/task-lattice.json', demoRoot);
     fabric = loadJson(fabricPath);
     energy = loadJson(energyPath);
     manifest = loadJson(manifestPath);
@@ -2672,10 +2715,7 @@ function main() {
     runwayAdjustment: energyRunwayAdjustment,
   });
 
-  const { outputDir: cliOutputDir, check, printCommands } = parseArgs(
-    process.argv.slice(2)
-  );
-  const outputDir = resolveOutputDir(cliOutputDir, { ensure: !check });
+  const outputDir = resolveOutputDir(cliOutputDir, demoRoot, { ensure: !check });
   const mermaidDir = path.join(outputDir, 'mermaid');
   const dysonHierarchyPath = path.join(mermaidDir, 'dyson-hierarchy.mmd');
   const taskHierarchyPath = path.join(outputDir, 'kardashev-task-hierarchy.mmd');
@@ -3035,7 +3075,7 @@ function main() {
       })};\n`
     );
 
-    writeOfflineDashboard(outputDir);
+    writeOfflineDashboard(outputDir, demoRoot);
 
     const legacyTelemetryPath = path.join(outputDir, 'telemetry.json');
     if (fs.existsSync(legacyTelemetryPath)) {
