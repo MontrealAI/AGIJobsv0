@@ -681,11 +681,17 @@ function allocateWithCapacityCaps({ weights, capacities, availableGw }) {
 }
 
 function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
-  const temperature = Math.max(0.15, 1 - energyMonteCarlo.hamiltonianStability);
+  const hamiltonianStability = Number.isFinite(energyMonteCarlo?.hamiltonianStability)
+    ? energyMonteCarlo.hamiltonianStability
+    : 0.9;
+  const temperature = Math.max(0.15, 1 - hamiltonianStability);
   const scores = shardMetrics.map((metric) => {
-    const utilisationPenalty = metric.utilisation / 100;
-    const latencyPenalty = Math.min(1, metric.settlementLagMinutes / 180);
-    return metric.resilience - 0.6 * utilisationPenalty - 0.2 * latencyPenalty;
+    const resilience = Number.isFinite(metric.resilience) ? metric.resilience : 0;
+    const utilisationPenalty = Number.isFinite(metric.utilisation) ? metric.utilisation / 100 : 0;
+    const latencyPenalty = Number.isFinite(metric.settlementLagMinutes)
+      ? Math.min(1, metric.settlementLagMinutes / 180)
+      : 0;
+    return resilience - 0.6 * utilisationPenalty - 0.2 * latencyPenalty;
   });
   const { weights: rawWeights, partition } = softmaxScores(scores, temperature);
   const diversificationTarget = Math.max(
@@ -694,7 +700,7 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   );
   const diversification = diversifyWeights(rawWeights, diversificationTarget);
   const weights = diversification.weights;
-  const availableGw = energyMonteCarlo.availableGw;
+  const availableGw = Number.isFinite(energyMonteCarlo?.availableGw) ? energyMonteCarlo.availableGw : 0;
   const capacities = shardMetrics.map((metric) => {
     if (Number.isFinite(metric.capacityGw)) {
       return metric.capacityGw;
@@ -760,6 +766,7 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
     allocationEntropy,
     fairnessIndex,
     gibbsPotential,
+    partitionFunction: partition,
     allocations,
     availableGw,
     unallocatedGw,

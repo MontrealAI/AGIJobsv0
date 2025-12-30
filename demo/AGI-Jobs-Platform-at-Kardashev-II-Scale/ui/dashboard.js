@@ -1191,7 +1191,10 @@ function renderAllocationPolicy(policy) {
   )} · Nash welfare ${formatMaybeNumber(policy.nashProduct, (value) => (value * 100).toFixed(2))}% · fairness ${formatMaybeNumber(
     policy.fairnessIndex,
     (value) => (value * 100).toFixed(1)
-  )}% · Gibbs potential ${formatMaybeNumber(policy.gibbsPotential, (value) => value.toFixed(3))}`;
+  )}% · Gibbs potential ${formatMaybeNumber(policy.gibbsPotential, (value) => value.toFixed(3))} · partition Z ${formatMaybeNumber(
+    policy.partitionFunction,
+    (value) => value.toFixed(3)
+  )}`;
   stability.textContent = `Strategy stability ${formatMaybeNumber(
     policy.strategyStability,
     (value) => (value * 100).toFixed(1)
