@@ -24,6 +24,8 @@ class SimulationState:
     temperature: float = 0.0
     enthalpy: float = 0.0
     pressure: float = 0.0
+    exergy_balance: float = 0.0
+    pareto_efficiency: float = 0.0
 
     def __post_init__(self) -> None:
         if self.gibbs_free_energy is None:
@@ -96,6 +98,10 @@ class SyntheticEconomySim(PlanetarySimulation):
         welfare_floor = min(self.prosperity_index, self.sustainability_index)
         sentient_welfare_index = 0.55 * nash_welfare + 0.45 * welfare_floor
         game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
+        pareto_efficiency = math.sqrt(max(0.0, coordination_index) * max(0.0, nash_welfare))
+        exergy_balance = 0.0
+        if enthalpy:
+            exergy_balance = max(-1.0, min(1.0, gibbs_free_energy / enthalpy))
         return {
             "nash_welfare": nash_welfare,
             "sentient_welfare_index": sentient_welfare_index,
@@ -109,6 +115,8 @@ class SyntheticEconomySim(PlanetarySimulation):
             "temperature": temperature,
             "enthalpy": enthalpy,
             "pressure": pressure,
+            "exergy_balance": exergy_balance,
+            "pareto_efficiency": pareto_efficiency,
         }
 
     def tick(self, hours: float) -> SimulationState:
@@ -136,4 +144,6 @@ class SyntheticEconomySim(PlanetarySimulation):
             temperature=metrics["temperature"],
             enthalpy=metrics["enthalpy"],
             pressure=metrics["pressure"],
+            exergy_balance=metrics["exergy_balance"],
+            pareto_efficiency=metrics["pareto_efficiency"],
         )

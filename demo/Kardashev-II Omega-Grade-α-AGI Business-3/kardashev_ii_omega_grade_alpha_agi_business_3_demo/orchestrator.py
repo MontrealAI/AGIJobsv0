@@ -744,6 +744,9 @@ class Orchestrator:
         stability_index = max(0.0, min(1.0, state.stability_index))
         entropy = max(0.0, state.entropy)
         entropy_pressure = min(1.0, entropy / math.log(2.0))
+        exergy_balance = max(-1.0, min(1.0, state.exergy_balance))
+        pareto_efficiency = max(0.0, min(1.0, state.pareto_efficiency))
+        pareto_gap = max(0.0, 1.0 - pareto_efficiency)
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
         reserved_energy_ratio = self.resources.reserved_energy / max(self.resources.energy_capacity, 1.0)
@@ -789,6 +792,9 @@ class Orchestrator:
             "stability_index": stability_index,
             "entropy": entropy,
             "entropy_pressure": entropy_pressure,
+            "exergy_balance": exergy_balance,
+            "pareto_efficiency": pareto_efficiency,
+            "pareto_gap": pareto_gap,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
             "reserved_energy_ratio": reserved_energy_ratio,
@@ -981,12 +987,14 @@ class Orchestrator:
                 "hamiltonian_pressure": signals["hamiltonian_pressure"],
                 "entropy_pressure": signals["entropy_pressure"],
                 "stability_guard": signals["stability_guard"],
+                "exergy_balance": signals["exergy_balance"],
             },
             "game_theory_snapshot": {
                 "nash_welfare": state.nash_welfare,
                 "sentient_welfare_index": state.sentient_welfare_index,
                 "coordination_index": state.coordination_index,
                 "game_theory_slack": state.game_theory_slack,
+                "pareto_efficiency": state.pareto_efficiency,
             },
         }
 
@@ -1043,6 +1051,7 @@ class Orchestrator:
             * signals["coordination_gap"]
             * (0.6 + 0.4 * signals["welfare_urgency"])
             * (0.7 + 0.3 * signals["stability_index"])
+            * (0.7 + 0.6 * signals["pareto_gap"])
             * (1.0 + (1.0 - stability_guard))
         )
         normalized_action = self._normalize_simulation_action(
@@ -1661,6 +1670,8 @@ class Orchestrator:
                 "temperature": self._latest_simulation_state.temperature,
                 "enthalpy": self._latest_simulation_state.enthalpy,
                 "pressure": self._latest_simulation_state.pressure,
+                "exergy_balance": self._latest_simulation_state.exergy_balance,
+                "pareto_efficiency": self._latest_simulation_state.pareto_efficiency,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
@@ -1751,6 +1762,8 @@ class Orchestrator:
                 "temperature": self._latest_simulation_state.temperature,
                 "enthalpy": self._latest_simulation_state.enthalpy,
                 "pressure": self._latest_simulation_state.pressure,
+                "exergy_balance": self._latest_simulation_state.exergy_balance,
+                "pareto_efficiency": self._latest_simulation_state.pareto_efficiency,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
