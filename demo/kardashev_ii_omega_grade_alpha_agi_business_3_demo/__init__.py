@@ -57,4 +57,4 @@ def __getattr__(name: str) -> Any:
 
 
 def __dir__() -> list[str]:  # pragma: no cover - intellisense helper
-    return sorted(set(__all__) | set(dir(ModuleType)))
+    return sorted(set(__all__) | set(dir(_module)))

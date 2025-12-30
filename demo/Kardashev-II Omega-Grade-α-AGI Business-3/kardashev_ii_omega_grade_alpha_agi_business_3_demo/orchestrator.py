@@ -447,8 +447,13 @@ class Orchestrator:
         prev_energy_available = self.resources.energy_available
         prev_compute_capacity = self.resources.compute_capacity
         prev_compute_available = self.resources.compute_available
+        gibbs_reference = state.gibbs_free_energy if state.gibbs_free_energy is not None else state.free_energy
         free_energy_boost = max(0.0, min(0.5, state.free_energy))
-        energy_scale = self.config.simulation_energy_scale * (1.0 + free_energy_boost * 0.05)
+        gibbs_deficit = max(0.0, -gibbs_reference)
+        gibbs_boost = min(0.5, gibbs_deficit)
+        energy_scale = self.config.simulation_energy_scale * (
+            1.0 + free_energy_boost * 0.05 + gibbs_boost * 0.08
+        )
         energy_capacity_target = max(
             self.resources.energy_capacity,
             self.config.energy_capacity,
@@ -480,8 +485,10 @@ class Orchestrator:
             nash_welfare=state.nash_welfare,
             sentient_welfare_index=state.sentient_welfare_index,
             free_energy=state.free_energy,
+            gibbs_free_energy=state.gibbs_free_energy,
             entropy=state.entropy,
             hamiltonian=state.hamiltonian,
+            stability_index=state.stability_index,
             coordination_index=state.coordination_index,
             game_theory_slack=state.game_theory_slack,
             energy_available=self.resources.energy_available,
@@ -728,7 +735,12 @@ class Orchestrator:
         entropy_pressure = min(1.0, entropy / math.log(2.0))
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
-        scarcity_pressure = min(1.0, 0.5 * (energy_price_pressure + compute_price_pressure))
+        reserved_energy_ratio = self.resources.reserved_energy / max(self.resources.energy_capacity, 1.0)
+        reserved_compute_ratio = self.resources.reserved_compute / max(self.resources.compute_capacity, 1.0)
+        reservation_pressure = min(1.0, 0.5 * (reserved_energy_ratio + reserved_compute_ratio))
+        scarcity_pressure = min(
+            1.0, 0.5 * (energy_price_pressure + compute_price_pressure) + 0.5 * reservation_pressure
+        )
         temperature = 1.0 + coordination_gap + scarcity_pressure
         prosperity_weight = math.exp(prosperity_gap / temperature)
         sustainability_weight = math.exp(sustainability_gap / temperature)
@@ -768,6 +780,9 @@ class Orchestrator:
             "entropy_pressure": entropy_pressure,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
+            "reserved_energy_ratio": reserved_energy_ratio,
+            "reserved_compute_ratio": reserved_compute_ratio,
+            "reservation_pressure": reservation_pressure,
             "scarcity_pressure": scarcity_pressure,
             "temperature": temperature,
             "prosperity_weight": prosperity_weight,
