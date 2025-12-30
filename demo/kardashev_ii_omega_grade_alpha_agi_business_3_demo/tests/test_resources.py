@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
+from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.orchestrator import (
+    Orchestrator,
+    OrchestratorConfig,
+)
 from demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.resources import ResourceManager
 
 
@@ -83,3 +89,29 @@ def test_restore_state_clears_accounts_and_ledger_when_absent() -> None:
     assert manager.reserved_compute == 0
     assert manager.energy_available == 1_500
     assert manager.compute_available == 2_500
+
+
+def test_orchestrator_bootstrap_balances_token_supply(tmp_path) -> None:
+    config = OrchestratorConfig(
+        control_channel_file=tmp_path / "control.jsonl",
+        checkpoint_path=tmp_path / "checkpoint.json",
+        resume_from_checkpoint=False,
+    )
+    orchestrator = Orchestrator(config)
+
+    asyncio.run(orchestrator._bootstrap_state())
+
+    snapshot = orchestrator.resources.to_serializable()
+    accounts = snapshot["accounts"]
+    total_tokens = sum(
+        float(payload.get("tokens", 0.0)) + float(payload.get("locked", 0.0))
+        for payload in accounts.values()
+    )
+    circulating = orchestrator.resources.token_supply + orchestrator.resources.locked_supply
+    assert total_tokens == pytest.approx(circulating)
+    for worker in config.worker_specs:
+        assert accounts[worker]["tokens"] == pytest.approx(config.base_agent_tokens)
+    for validator in config.validator_names:
+        assert accounts[validator]["tokens"] == pytest.approx(config.base_agent_tokens / 2.0)
+    for strategist in config.strategist_names:
+        assert accounts[strategist]["tokens"] == pytest.approx(config.base_agent_tokens)

@@ -82,11 +82,13 @@ class Orchestrator:
         if config.audit_log_path:
             self.audit = AuditTrail(config.audit_log_path)
             self.bus.register_listener(self.audit.record_message)
+        operator_treasury = self._operator_treasury_tokens(config)
         self.resources = ResourceManager(
             energy_capacity=config.energy_capacity,
             compute_capacity=config.compute_capacity,
-            base_token_supply=config.base_agent_tokens * 10,
+            base_token_supply=operator_treasury,
         )
+        self._operator_treasury = operator_treasury
         self.job_registry = JobRegistry()
         self.scheduler = EventScheduler(self._dispatch_scheduled_event)
         self.checkpoint = CheckpointManager(config.checkpoint_path)
@@ -130,6 +132,14 @@ class Orchestrator:
         self._claim_tasks: Dict[str, asyncio.Task[None]] = {}
         self._claim_lock = asyncio.Lock()
 
+    @staticmethod
+    def _operator_treasury_tokens(config: OrchestratorConfig) -> float:
+        reserve = config.base_agent_tokens * 10
+        worker_tokens = config.base_agent_tokens * len(config.worker_specs)
+        validator_tokens = config.base_agent_tokens * 0.5 * len(config.validator_names)
+        strategist_tokens = config.base_agent_tokens * len(config.strategist_names)
+        return reserve + worker_tokens + validator_tokens + strategist_tokens
+
     def _log(self, level: int, event: str, **fields: object) -> None:
         self.log.log(level, event, extra={"event": event, **fields})
 
@@ -168,7 +178,7 @@ class Orchestrator:
             self._tasks.append(asyncio.create_task(self._energy_oracle_loop(), name="energy-oracle"))
 
     async def _bootstrap_state(self) -> None:
-        self.resources.ensure_account(self.config.operator_account, self.config.base_agent_tokens * 10)
+        self.resources.ensure_account(self.config.operator_account, self._operator_treasury)
         self._control_path = self.config.control_channel_file
         self._control_path.parent.mkdir(parents=True, exist_ok=True)
         self._control_path.touch(exist_ok=True)
