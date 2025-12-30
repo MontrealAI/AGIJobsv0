@@ -46,6 +46,28 @@ def test_run_demo_check_mode_with_default_output_dir() -> None:
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_check_mode_with_config_root(tmp_path: Path) -> None:
+    """The wrapper should accept a config root override and still validate."""
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PYTHON_ENTRYPOINT),
+            "--output-dir",
+            str(tmp_path),
+            "--config-root",
+            str(DEMO_ROOT),
+            "--check",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "validated (check mode)" in result.stdout
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     """Running without --check should emit the expected report artefacts."""
 

@@ -54,6 +54,10 @@ def _build_command(args: argparse.Namespace) -> list[str]:
         if not args.check:
             output_dir.mkdir(parents=True, exist_ok=True)
         cmd.extend(["--output-dir", str(output_dir)])
+    if args.config_root:
+        cmd.extend(["--config-root", args.config_root])
+    if args.profile:
+        cmd.extend(["--profile", args.profile])
     if args.check:
         cmd.append("--check")
     if args.print_commands:
@@ -77,6 +81,14 @@ def run(argv: Sequence[str] | None = None) -> int:
         "--print-commands",
         action="store_true",
         help="Show governance commands produced by the Node demo.",
+    )
+    parser.add_argument(
+        "--config-root",
+        help="Override the demo configuration root (expects a directory containing config/).",
+    )
+    parser.add_argument(
+        "--profile",
+        help="Load a sub-profile directory within the demo root.",
     )
     args = parser.parse_args(argv)
 
