@@ -37,15 +37,29 @@ async function loadMermaid() {
     return mermaidModule;
   }
 
-  try {
-    const mermaidNamespace = await import(
-      "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs"
-    );
-    mermaidModule = mermaidNamespace?.default ?? mermaidNamespace;
-  } catch (error) {
-    console.error("Failed to load mermaid from CDN", error);
-    mermaidModule = null;
+  const localUrl = new URL(
+    assetPath("mermaid/mermaid.esm.min.mjs"),
+    window.location.href
+  ).href;
+  const sources = [
+    { label: "local bundle", url: localUrl },
+    {
+      label: "cdn bundle",
+      url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs",
+    },
+  ];
+
+  for (const source of sources) {
+    try {
+      const mermaidNamespace = await import(source.url);
+      mermaidModule = mermaidNamespace?.default ?? mermaidNamespace;
+      return mermaidModule;
+    } catch (error) {
+      console.warn(`Failed to load mermaid from ${source.label}`, error);
+    }
   }
+
+  mermaidModule = null;
 
   return mermaidModule;
 }
