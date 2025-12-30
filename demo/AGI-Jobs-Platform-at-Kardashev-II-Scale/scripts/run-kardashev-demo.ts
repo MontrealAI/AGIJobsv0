@@ -1866,11 +1866,13 @@ function writeOfflineDashboard() {
 
   try {
     const mermaidSource = mermaidRequire.resolve("mermaid/dist/mermaid.esm.min.mjs");
+    const mermaidScriptSource = mermaidRequire.resolve("mermaid/dist/mermaid.min.js");
     const mermaidTargetDir = join(OUTPUT_DIR, "mermaid");
     if (!existsSync(mermaidTargetDir)) {
       mkdirSync(mermaidTargetDir, { recursive: true });
     }
     copyFileSync(mermaidSource, join(mermaidTargetDir, "mermaid.esm.min.mjs"));
+    copyFileSync(mermaidScriptSource, join(mermaidTargetDir, "mermaid.min.js"));
   } catch (error) {
     console.warn(
       "⚠️ Mermaid bundle unavailable. Diagrams will fall back to source rendering only.",
