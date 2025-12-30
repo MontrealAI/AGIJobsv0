@@ -108,3 +108,19 @@ def test_insight_payload_surfaces_thermodynamic_strategy(tmp_path: Path) -> None
     assert "policy_recommendation" in payload
     assert payload["thermodynamics"]["gibbs_free_energy"] == pytest.approx(-0.8)
     assert payload["game_theory"]["game_theory_slack"] == pytest.approx(0.74)
+
+
+def test_policy_steps_include_exergy_recovery(tmp_path: Path) -> None:
+    orchestrator = Orchestrator(
+        OrchestratorConfig(
+            control_channel_file=tmp_path / "control.jsonl",
+            checkpoint_path=tmp_path / "checkpoint.json",
+            status_output_path=None,
+            audit_log_path=None,
+            energy_oracle_path=None,
+        )
+    )
+
+    steps = orchestrator._format_policy_steps({"exergy_recovery": 2.5})
+
+    assert any("Recover exergy" in step for step in steps)

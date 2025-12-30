@@ -55,9 +55,15 @@ class SyntheticEconomySim(PlanetarySimulation):
         stimulus = max(0.0, float(action.get("stimulus", 0.0)))
         green_shift = max(0.0, float(action.get("green_shift", 0.0)))
         alignment_investment = max(0.0, float(action.get("alignment_investment", 0.0)))
+        exergy_recovery = max(0.0, float(action.get("exergy_recovery", 0.0)))
         self.energy_output_gw += build_dyson_nodes * 10_000
+        if exergy_recovery:
+            self.energy_output_gw += exergy_recovery * 4_000
         self.prosperity_index = min(1.0, self.prosperity_index + stimulus * 0.01)
         self.sustainability_index = min(1.0, self.sustainability_index + green_shift * 0.02)
+        if exergy_recovery:
+            self.prosperity_index = min(1.0, self.prosperity_index + exergy_recovery * 0.004)
+            self.sustainability_index = min(1.0, self.sustainability_index + exergy_recovery * 0.006)
         if alignment_investment:
             gap = self.prosperity_index - self.sustainability_index
             alignment_step = min(0.02 * alignment_investment, abs(gap))
