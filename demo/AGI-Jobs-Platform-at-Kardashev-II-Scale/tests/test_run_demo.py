@@ -32,6 +32,20 @@ def test_run_demo_check_mode(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_check_mode_with_default_output_dir() -> None:
+    """The wrapper should accept the default output directory in check mode."""
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--check"],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "validated (check mode)" in result.stdout
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     """Running without --check should emit the expected report artefacts."""
 
