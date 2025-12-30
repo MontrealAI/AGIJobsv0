@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.8073394495412844,
+    "compositeScore": 0.9357798165137614,
     "quorum": false,
-    "summary": "Manual review required for 5 check(s).",
+    "summary": "Manual review required for 2 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.8073394495412844,
+        "score": 0.9357798165137614,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.8918918918918919,
+        "score": 0.972972972972973,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -29,8 +29,8 @@
       },
       {
         "method": "monte-carlo",
-        "score": 0,
-        "explanation": "Energy breach probability 100.00% across 256 simulations (tolerance 1.00%)."
+        "score": 1,
+        "explanation": "Energy breach probability 0.00% across 256 simulations (tolerance 1.00%)."
       },
       {
         "method": "mission-lattice",
@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.7280584021562467,
+        "score": 0.7490720823516539,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -138,25 +138,25 @@
       "id": "energy-cross-verification",
       "title": "Energy cross-verification consensus",
       "severity": "high",
-      "status": false,
+      "status": true,
       "weight": 0.95,
-      "evidence": "max deviation 500.000000 GW · tolerance 1.095000 GW · coverage 100.00%"
+      "evidence": "max deviation 500.000000 GW · tolerance 547.500000 GW · coverage 100.00%"
     },
     {
       "id": "energy-monte-carlo",
       "title": "Monte Carlo breach ≤ tolerance",
       "severity": "critical",
-      "status": false,
+      "status": true,
       "weight": 1,
-      "evidence": "breach 100.00% (runs 256)"
+      "evidence": "breach 0.00% (runs 256)"
     },
     {
       "id": "energy-feeds",
       "title": "Live energy feeds within tolerance",
       "severity": "high",
-      "status": false,
+      "status": true,
       "weight": 0.85,
-      "evidence": "earth-grid 6.47% · mars-dome 6.42% · orbital-swarm 6.83%"
+      "evidence": "earth-grid 0.00% · mars-dome 0.00% · orbital-swarm 0.00%"
     },
     {
       "id": "energy-schedule-coverage",
@@ -292,28 +292,10 @@
       "severity": "critical",
       "status": false,
       "weight": 0.8,
-      "evidence": "4/11 nominal · 5 warning · 2 critical"
+      "evidence": "5/11 nominal · 4 warning · 2 critical"
     }
   ],
   "alerts": [
-    {
-      "id": "energy-cross-verification",
-      "title": "Energy cross-verification consensus",
-      "severity": "high",
-      "evidence": "max deviation 500.000000 GW · tolerance 1.095000 GW · coverage 100.00%"
-    },
-    {
-      "id": "energy-monte-carlo",
-      "title": "Monte Carlo breach ≤ tolerance",
-      "severity": "critical",
-      "evidence": "breach 100.00% (runs 256)"
-    },
-    {
-      "id": "energy-feeds",
-      "title": "Live energy feeds within tolerance",
-      "severity": "high",
-      "evidence": "earth-grid 6.47% · mars-dome 6.42% · orbital-swarm 6.83%"
-    },
     {
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
@@ -324,15 +306,15 @@
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
-      "evidence": "4/11 nominal · 5 warning · 2 critical"
+      "evidence": "5/11 nominal · 4 warning · 2 critical"
     }
   ],
   "scenarioSweep": {
     "total": 11,
-    "nominal": 4,
-    "warning": 5,
+    "nominal": 5,
+    "warning": 4,
     "critical": 2,
-    "averageConfidence": 0.7280584021562467,
+    "averageConfidence": 0.7490720823516539,
     "entries": [
       {
         "id": "energy-demand-surge",
@@ -345,8 +327,8 @@
         "id": "bridge-failover",
         "title": "Interplanetary bridge outage simulation",
         "status": "warning",
-        "confidence": 0.3531063323547431,
-        "summary": "Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve."
+        "confidence": 0.36904878007093556,
+        "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve."
       },
       {
         "id": "sentinel-gap",
@@ -400,9 +382,9 @@
       {
         "id": "energy-feed-drift",
         "title": "Live energy feed drift shock",
-        "status": "warning",
-        "confidence": 0.7847919655667144,
-        "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%)."
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Live feeds remain within tolerance bands."
       },
       {
         "id": "compute-plane-failover",
@@ -586,7 +568,7 @@
     "bridgeFailsafeSeconds": 120,
     "permittedUtilisation": 0.875,
     "utilisation": 0.9521739130434783,
-    "monteCarloBreachProbability": 1,
-    "monteCarloWithinTolerance": false
+    "monteCarloBreachProbability": 0,
+    "monteCarloWithinTolerance": true
   }
 }

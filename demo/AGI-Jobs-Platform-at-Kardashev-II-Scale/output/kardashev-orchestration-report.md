@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0xb101ca6722c4bdff068b5b09ebe8847704a073090931e264abcaaac21f9c5d9e
+**Manifest hash**: 0x19283759619864f91927aed3d1165195684d0769f6b25304b70790524038c47d
 **Dominance score**: 90.0 / 100
 
 ---
@@ -18,20 +18,20 @@
 * Captured GW (Dyson baseline): 1,150,000 GW.
 * Utilisation: 95.22% (margin 0.13%).
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
-* Monte Carlo breach probability 100.00% (runs 256, tolerance 1.00%).
-* Free energy margin -10199.14 GW (-0.89%) · Gibbs free energy 0 GJ.
-* Free energy runway 0.00 hours at mean demand (gap 1.00h, 1093911.26 GWh).
-* Hamiltonian stability 0.0% · entropy margin -0.27σ · game-theory slack 0.0% · buffer at risk.
-* Allocation policy: Gibbs temperature 1.00 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.985.
+* Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
+* Free energy margin 40741.81 GW (3.54%) · Gibbs free energy 146,670,518.989 GJ.
+* Free energy runway 0.04 hours at mean demand (gap 0.96h, 1054667.95 GWh).
+* Hamiltonian stability 51.8% · entropy margin 4.87σ · game-theory slack 78.3% · buffer stable.
+* Allocation policy: Gibbs temperature 0.38 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.306.
 * Replicator equilibrium 95.4% · drift 0.046.
-* Sentient welfare equilibrium 78.1% · cooperation 49.8% · inequality 5.3% · free energy/agent 0.000000 GJ.
+* Sentient welfare equilibrium 92.2% · cooperation 85.1% · inequality 5.3% · free energy/agent 0.032739 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
-* Demand percentiles: P95 1,160,199.139 GW · P99 1,175,408.998 GW.
-* Live feeds (≤ 5%): earth-grid Δ 6.47% · mars-dome Δ 6.42% · orbital-swarm Δ 6.83%.
+* Demand percentiles: P95 1,109,258.189 GW · P99 1,111,780.775 GW.
+* Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Energy window deficits: none — all federations meet coverage targets.
-* ⚠️ Utilisation exceeds configured safety margin; Monte Carlo breach probability 100.00% exceeds 1.00% tolerance; Free energy margin -10199.14 GW below safety buffer 143750.00 GW; Energy feed earth-grid deviates 6.47% (tolerance 5%).; Energy feed mars-dome deviates 6.42% (tolerance 5%).; Energy feed orbital-swarm deviates 6.83% (tolerance 5%).
+* ⚠️ Utilisation exceeds configured safety margin
 
 ---
 
@@ -88,13 +88,13 @@
   - Thermostat margin: 143,750 GW (ok)
   - Utilisation: 114.26% (check)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 35.3%) · Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve.
+* **Interplanetary bridge outage simulation** — status WARNING (confidence 36.9%) · Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
-  - Relay boost allocation: 13.7% (158096 GW) (ok)
-  - Mitigated latency: 155s (check)
+  - Relay boost allocation: 15.9% (182541 GW) (ok)
+  - Mitigated latency: 151s (check)
   - Failsafe budget: 120s (ok)
-  - Slack: -35s (check)
+  - Slack: -31s (check)
   - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1800s (ok)
@@ -137,8 +137,8 @@
   - Tolerance: 120 ppm (ok)
   - Anchors at quorum: 3/3 (ok)
   - Recommended: Execute fallback ENS registrar policy if forged rate exceeds tolerance. · Rotate identity anchors using Safe batch identity transactions.
-* **Live energy feed drift shock** — status WARNING (confidence 78.5%) · Max drift 6.83% (tolerance 5%, alert 8.5%).
-  - Max drift: 6.83% (ok)
+* **Live energy feed drift shock** — status NOMINAL (confidence 100.0%) · Live feeds remain within tolerance bands.
+  - Max drift: 0.00% (ok)
   - Tolerance: 5% (ok)
   - Drift alert: 8.5% (ok)
   - Average latency: 241467 ms (check)
