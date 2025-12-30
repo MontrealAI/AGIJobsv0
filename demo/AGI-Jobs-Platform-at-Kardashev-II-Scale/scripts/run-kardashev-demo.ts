@@ -596,6 +596,13 @@ type MissionThermodynamics = {
   freeEnergyHeadroomPct: number;
   hamiltonianLoad: number;
   hamiltonianStability: number;
+  entropy: number;
+  entropyRatio: number;
+  temperature: number;
+  pressureIndex: number;
+  enthalpyGw: number;
+  gibbsFreeEnergyGw: number;
+  gibbsFreeEnergyPct: number;
   programmes: Array<{
     id: string;
     name: string;
@@ -1020,9 +1027,10 @@ function buildMissionThermodynamics(
   const totalCompute = mission.totals.computeExaflops ?? 0;
   const freeEnergyBudgetGw = Math.max(0, energyMonteCarlo.freeEnergyMarginGw ?? 0);
   const freeEnergyHeadroomPct = totalEnergyGw > 0 ? clamp01(freeEnergyBudgetGw / totalEnergyGw) : 0;
+  const programmeCount = Math.max(mission.programmes.length, 1);
 
   const programmeThermo = mission.programmes.map((programme) => {
-    const energyShare = totalEnergyGw > 0 ? programme.totalEnergyGw / totalEnergyGw : 0;
+    const energyShare = totalEnergyGw > 0 ? programme.totalEnergyGw / totalEnergyGw : 1 / programmeCount;
     const computeShare = totalCompute > 0 ? programme.totalComputeExaflops / totalCompute : 0;
     const riskIndex = computeRiskIndex(programme.riskDistribution);
     const slackPenalty = programme.timelineSlackDays < 0 ? 1 : programme.timelineSlackDays < 14 ? 0.5 : 0;
@@ -1049,6 +1057,17 @@ function buildMissionThermodynamics(
     };
   });
 
+  const entropySummary = computeShannonEntropy(programmeThermo.map((entry) => entry.energyShare));
+  const averageRisk = average(programmeThermo.map((entry) => entry.riskIndex));
+  const averagePressure = average(programmeThermo.map((entry) => entry.pressureScore));
+  const temperature = 1 + averagePressure + (1 - freeEnergyHeadroomPct) * 0.5;
+  const pressureIndex = clamp01(0.5 * averagePressure + 0.5 * (1 - freeEnergyHeadroomPct));
+  const enthalpyGw = totalEnergyGw * (1 + 0.1 * averageRisk + 0.1 * pressureIndex);
+  const entropyPenaltyGw = entropySummary.entropyRatio * temperature * totalEnergyGw * 0.05;
+  const gibbsFreeEnergyGw = Math.max(0, freeEnergyBudgetGw - entropyPenaltyGw);
+  const gibbsFreeEnergyPct =
+    freeEnergyBudgetGw > 0 ? clamp01(gibbsFreeEnergyGw / freeEnergyBudgetGw) : 0;
+
   const hamiltonianLoad = average(programmeThermo.map((entry) => entry.hamiltonian));
   const hamiltonianStability = clamp01(1 - hamiltonianLoad);
   const actionQueue = [...programmeThermo]
@@ -1066,6 +1085,13 @@ function buildMissionThermodynamics(
     freeEnergyHeadroomPct,
     hamiltonianLoad,
     hamiltonianStability,
+    entropy: entropySummary.entropy,
+    entropyRatio: entropySummary.entropyRatio,
+    temperature,
+    pressureIndex,
+    enthalpyGw,
+    gibbsFreeEnergyGw,
+    gibbsFreeEnergyPct,
     programmes: programmeThermo,
     actionQueue,
   };
@@ -1471,6 +1497,27 @@ function average(values: number[]): number {
     return 0;
   }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function computeShannonEntropy(values: number[]): { entropy: number; entropyRatio: number } {
+  if (!values.length) {
+    return { entropy: 0, entropyRatio: 0 };
+  }
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const probabilities =
+    total > 0
+      ? values.map((value) => Math.max(0, value) / total)
+      : values.map(() => 1 / values.length);
+  let entropy = 0;
+  for (const probability of probabilities) {
+    if (probability <= 0) {
+      continue;
+    }
+    entropy -= probability * Math.log(probability);
+  }
+  const maxEntropy = Math.log(values.length);
+  const entropyRatio = maxEntropy > 0 ? clamp01(entropy / maxEntropy) : 0;
+  return { entropy, entropyRatio };
 }
 
 function computeRiskIndex(riskDistribution: { low: number; medium: number; high: number }): number {
@@ -5070,9 +5117,11 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const computeScore = clamp01(
     0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) + 0.4 * computeFabric.averageAvailabilityPct
   );
+  const missionGibbsPct = missionThermo?.gibbsFreeEnergyPct ?? 0;
   const missionScore = clamp01(
-    0.7 * (missionThermo?.hamiltonianStability ?? 0) +
-      0.3 * clamp01((missionThermo?.freeEnergyHeadroomPct ?? 0) / 0.05)
+    0.55 * (missionThermo?.hamiltonianStability ?? 0) +
+      0.25 * clamp01((missionThermo?.freeEnergyHeadroomPct ?? 0) / 0.05) +
+      0.2 * missionGibbsPct
   );
 
   const overallScore = clamp01(
@@ -5344,6 +5393,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         score: round(missionScore, 4),
         hamiltonianStability: round(missionThermo?.hamiltonianStability ?? 0, 4),
         freeEnergyHeadroomPct: round(missionThermo?.freeEnergyHeadroomPct ?? 0, 4),
+        gibbsFreeEnergyGw: round(missionThermo?.gibbsFreeEnergyGw ?? 0, 4),
+        entropyRatio: round(missionThermo?.entropyRatio ?? 0, 4),
+        temperature: round(missionThermo?.temperature ?? 0, 4),
       },
     },
     thermodynamics: {
@@ -5375,6 +5427,7 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
   const gameTheory = equilibriumLedger.gameTheory;
   const welfare = telemetry.sentientWelfare;
   const monteCarlo = telemetry.energy.monteCarlo;
+  const missionThermo = telemetry.missionThermodynamics;
   const actionPath = equilibriumLedger.actionPath ?? [];
   const generatedAt = equilibriumLedger.generatedAt ?? new Date().toISOString();
 
@@ -5401,6 +5454,14 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
     lines.push(`- ${prefix}: ${runwayPlanText}`);
   }
   lines.push(`- Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability, 1)}`);
+  if (missionThermo) {
+    lines.push(
+      `- Mission Gibbs headroom: ${formatNumber(missionThermo.gibbsFreeEnergyGw, 2)} GW · entropy ${formatPercent(
+        missionThermo.entropyRatio,
+        1
+      )} · temperature ${formatNumber(missionThermo.temperature, 2)}`
+    );
+  }
   lines.push(`- Nash product: ${formatPercent(gameTheory.nashProduct, 1)}`);
   lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);
   lines.push(`- Free energy per agent: ${formatNumber(welfare.freeEnergyPerAgentGj, 6)} GJ`);

@@ -1450,7 +1450,13 @@ function renderMissionThermodynamics(thermo) {
   const headroomText = `headroom ${formatPercent(thermo.freeEnergyHeadroomPct)}`;
   const loadText = `Hamiltonian load ${formatPercent(thermo.hamiltonianLoad)}`;
   const stabilityText = `stability ${formatPercent(thermo.hamiltonianStability)}`;
-  summaryElement.textContent = `${budgetText} · ${headroomText} · ${loadText} · ${stabilityText}`;
+  const gibbsText = Number.isFinite(thermo.gibbsFreeEnergyGw)
+    ? `Gibbs ${formatNumber(thermo.gibbsFreeEnergyGw)} GW`
+    : "Gibbs n/a";
+  const entropyText = Number.isFinite(thermo.entropyRatio)
+    ? `entropy ${formatPercent(thermo.entropyRatio)}`
+    : "entropy n/a";
+  summaryElement.textContent = `${budgetText} · ${headroomText} · ${loadText} · ${stabilityText} · ${gibbsText} · ${entropyText}`;
   const stabilityScore = Number.isFinite(thermo.hamiltonianStability) ? thermo.hamiltonianStability : 0;
   applyStatus(summaryElement, stabilityScore >= 0.85 ? "status-ok" : stabilityScore >= 0.7 ? "status-warn" : "status-fail");
 
