@@ -2410,16 +2410,38 @@ function ensureDir(dirPath) {
 
 function copyMermaidBundle(outputDir) {
   const targetDir = path.join(outputDir, 'mermaid');
-  const targetPath = path.join(targetDir, 'mermaid.esm.min.mjs');
-  try {
-    const sourcePath = require.resolve('mermaid/dist/mermaid.esm.min.mjs');
-    ensureDir(targetDir);
-    fs.copyFileSync(sourcePath, targetPath);
-  } catch (error) {
+  const bundleTargets = [
+    {
+      label: 'ESM',
+      source: 'mermaid/dist/mermaid.esm.min.mjs',
+      target: 'mermaid.esm.min.mjs',
+    },
+    {
+      label: 'UMD',
+      source: 'mermaid/dist/mermaid.min.js',
+      target: 'mermaid.min.js',
+    },
+  ];
+  const failures = [];
+  let copiedAny = false;
+  for (const bundle of bundleTargets) {
+    try {
+      const sourcePath = require.resolve(bundle.source);
+      ensureDir(targetDir);
+      fs.copyFileSync(sourcePath, path.join(targetDir, bundle.target));
+      copiedAny = true;
+    } catch (error) {
+      failures.push(`${bundle.label}: ${error?.message ?? error}`);
+    }
+  }
+
+  if (!copiedAny) {
     console.warn(
       '⚠️ Mermaid bundle unavailable. Diagrams will fall back to source rendering only.',
-      error?.message ?? error
+      failures.join(' | ')
     );
+  } else if (failures.length > 0) {
+    console.warn('⚠️ Mermaid bundle partially unavailable.', failures.join(' | '));
   }
 }
 
