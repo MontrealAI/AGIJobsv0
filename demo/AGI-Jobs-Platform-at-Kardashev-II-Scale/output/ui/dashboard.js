@@ -1191,7 +1191,10 @@ function renderAllocationPolicy(policy) {
   )} · Nash welfare ${formatMaybeNumber(policy.nashProduct, (value) => (value * 100).toFixed(2))}% · fairness ${formatMaybeNumber(
     policy.fairnessIndex,
     (value) => (value * 100).toFixed(1)
-  )}% · Gibbs potential ${formatMaybeNumber(policy.gibbsPotential, (value) => value.toFixed(3))}`;
+  )}% · Gibbs potential ${formatMaybeNumber(policy.gibbsPotential, (value) => value.toFixed(3))} · partition Z ${formatMaybeNumber(
+    policy.partitionFunction,
+    (value) => value.toFixed(3)
+  )}`;
   stability.textContent = `Strategy stability ${formatMaybeNumber(
     policy.strategyStability,
     (value) => (value * 100).toFixed(1)
@@ -1447,7 +1450,13 @@ function renderMissionThermodynamics(thermo) {
   const headroomText = `headroom ${formatPercent(thermo.freeEnergyHeadroomPct)}`;
   const loadText = `Hamiltonian load ${formatPercent(thermo.hamiltonianLoad)}`;
   const stabilityText = `stability ${formatPercent(thermo.hamiltonianStability)}`;
-  summaryElement.textContent = `${budgetText} · ${headroomText} · ${loadText} · ${stabilityText}`;
+  const gibbsText = Number.isFinite(thermo.gibbsFreeEnergyGw)
+    ? `Gibbs ${formatNumber(thermo.gibbsFreeEnergyGw)} GW`
+    : "Gibbs n/a";
+  const entropyText = Number.isFinite(thermo.entropyRatio)
+    ? `entropy ${formatPercent(thermo.entropyRatio)}`
+    : "entropy n/a";
+  summaryElement.textContent = `${budgetText} · ${headroomText} · ${loadText} · ${stabilityText} · ${gibbsText} · ${entropyText}`;
   const stabilityScore = Number.isFinite(thermo.hamiltonianStability) ? thermo.hamiltonianStability : 0;
   applyStatus(summaryElement, stabilityScore >= 0.85 ? "status-ok" : stabilityScore >= 0.7 ? "status-warn" : "status-fail");
 
