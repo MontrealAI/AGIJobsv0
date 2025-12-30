@@ -1,6 +1,7 @@
 #!/usr/bin/env ts-node
 
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, copyFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, resolve, isAbsolute } from "node:path";
 import { Interface, keccak256, toUtf8Bytes } from "ethers";
 import { z } from "zod";
@@ -68,6 +69,7 @@ const OUTPUT_PREFIX = (() => {
 
 const CHECK_MODE = args.has("--check") || args.has("--ci");
 const REFLECT_MODE = args.has("--reflect");
+const mermaidRequire = createRequire(__filename);
 
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const managerInterface = new Interface([
@@ -1860,6 +1862,20 @@ function writeOfflineDashboard() {
     const targetPath = join(uiTargetDir, filename);
     const content = readFileSync(sourcePath, "utf8");
     writeFileSync(targetPath, content);
+  }
+
+  try {
+    const mermaidSource = mermaidRequire.resolve("mermaid/dist/mermaid.esm.min.mjs");
+    const mermaidTargetDir = join(OUTPUT_DIR, "mermaid");
+    if (!existsSync(mermaidTargetDir)) {
+      mkdirSync(mermaidTargetDir, { recursive: true });
+    }
+    copyFileSync(mermaidSource, join(mermaidTargetDir, "mermaid.esm.min.mjs"));
+  } catch (error) {
+    console.warn(
+      "⚠️ Mermaid bundle unavailable. Diagrams will fall back to source rendering only.",
+      error
+    );
   }
 
   const indexTemplate = readFileSync(join(DEMO_ROOT, "index.html"), "utf8");

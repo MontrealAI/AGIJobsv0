@@ -2408,6 +2408,21 @@ function ensureDir(dirPath) {
   }
 }
 
+function copyMermaidBundle(outputDir) {
+  const targetDir = path.join(outputDir, 'mermaid');
+  const targetPath = path.join(targetDir, 'mermaid.esm.min.mjs');
+  try {
+    const sourcePath = require.resolve('mermaid/dist/mermaid.esm.min.mjs');
+    ensureDir(targetDir);
+    fs.copyFileSync(sourcePath, targetPath);
+  } catch (error) {
+    console.warn(
+      '⚠️ Mermaid bundle unavailable. Diagrams will fall back to source rendering only.',
+      error?.message ?? error
+    );
+  }
+}
+
 function writeOfflineDashboard(outputDir) {
   const uiSourceDir = path.join(__dirname, 'ui');
   const uiTargetDir = path.join(outputDir, 'ui');
@@ -2415,6 +2430,7 @@ function writeOfflineDashboard(outputDir) {
   for (const filename of ['style.css', 'dashboard.js']) {
     fs.copyFileSync(path.join(uiSourceDir, filename), path.join(uiTargetDir, filename));
   }
+  copyMermaidBundle(outputDir);
 
   const indexTemplate = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
   const assetBaseMarker = 'window.__KARDASHEV_ASSET_BASE__ = "./output";';
