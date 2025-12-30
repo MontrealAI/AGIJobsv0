@@ -32,6 +32,35 @@ function assetPath(filename) {
   return `${base}/${filename}`;
 }
 
+function loadMermaidScript(url) {
+  if (!url) {
+    return Promise.resolve(null);
+  }
+  if (window.mermaid) {
+    return Promise.resolve(window.mermaid);
+  }
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-mermaid-src="${url}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.mermaid || null), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error(`Failed to load mermaid script from ${url}`)),
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = true;
+    script.dataset.mermaidSrc = url;
+    script.onload = () => resolve(window.mermaid || null);
+    script.onerror = () => reject(new Error(`Failed to load mermaid script from ${url}`));
+    document.head.appendChild(script);
+  });
+}
+
 async function loadMermaid() {
   if (mermaidModule !== undefined) {
     return mermaidModule;
@@ -54,6 +83,23 @@ async function loadMermaid() {
       const mermaidNamespace = await import(source.url);
       mermaidModule = mermaidNamespace?.default ?? mermaidNamespace;
       return mermaidModule;
+    } catch (error) {
+      console.warn(`Failed to load mermaid from ${source.label}`, error);
+    }
+  }
+
+  const scriptSources = [
+    { label: "local script", url: assetPath("mermaid/mermaid.min.js") },
+    { label: "cdn script", url: "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" },
+  ];
+
+  for (const source of scriptSources) {
+    try {
+      const mermaidNamespace = await loadMermaidScript(source.url);
+      if (mermaidNamespace) {
+        mermaidModule = mermaidNamespace;
+        return mermaidModule;
+      }
     } catch (error) {
       console.warn(`Failed to load mermaid from ${source.label}`, error);
     }
