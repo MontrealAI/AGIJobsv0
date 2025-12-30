@@ -720,7 +720,13 @@ class Orchestrator:
                     await self._handle_simulation_action(message.payload)
 
     def _normalize_simulation_action(self, payload: Dict[str, Any]) -> Dict[str, float]:
-        allowed_fields = ("build_dyson_nodes", "stimulus", "green_shift", "alignment_investment")
+        allowed_fields = (
+            "build_dyson_nodes",
+            "stimulus",
+            "green_shift",
+            "alignment_investment",
+            "exergy_recovery",
+        )
         normalized: Dict[str, float] = {}
         for field in allowed_fields:
             if field not in payload:
@@ -745,6 +751,7 @@ class Orchestrator:
         entropy = max(0.0, state.entropy)
         entropy_pressure = min(1.0, entropy / math.log(2.0))
         exergy_balance = max(-1.0, min(1.0, state.exergy_balance))
+        exergy_pressure = max(0.0, min(1.0, (1.0 - exergy_balance) / 2.0))
         pareto_efficiency = max(0.0, min(1.0, state.pareto_efficiency))
         pareto_gap = max(0.0, 1.0 - pareto_efficiency)
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
@@ -793,6 +800,7 @@ class Orchestrator:
             "entropy": entropy,
             "entropy_pressure": entropy_pressure,
             "exergy_balance": exergy_balance,
+            "exergy_pressure": exergy_pressure,
             "pareto_efficiency": pareto_efficiency,
             "pareto_gap": pareto_gap,
             "energy_price_pressure": energy_price_pressure,
@@ -956,6 +964,7 @@ class Orchestrator:
             ("stimulus", "Launch prosperity stimulus"),
             ("green_shift", "Accelerate green transition"),
             ("alignment_investment", "Invest in alignment"),
+            ("exergy_recovery", "Recover exergy"),
         )
         for key, label in ordered_actions:
             value = float(action.get(key, 0.0))
@@ -1054,12 +1063,20 @@ class Orchestrator:
             * (0.7 + 0.6 * signals["pareto_gap"])
             * (1.0 + (1.0 - stability_guard))
         )
+        exergy_recovery = (
+            action_budget
+            * signals["exergy_pressure"]
+            * signals["entropy_damping"]
+            * (0.6 + 0.4 * signals["stability_index"])
+            * signals["coordination_damping"]
+        )
         normalized_action = self._normalize_simulation_action(
             {
                 "build_dyson_nodes": energy_action * signals["stability_factor"] * stability_modifier,
                 "stimulus": stimulus,
                 "green_shift": green_shift,
                 "alignment_investment": alignment_investment,
+                "exergy_recovery": exergy_recovery,
             }
         )
         rationale = self._build_policy_rationale(
@@ -1072,6 +1089,7 @@ class Orchestrator:
                 "stimulus": stimulus,
                 "green_shift": green_shift,
                 "alignment_investment": alignment_investment,
+                "exergy_recovery": exergy_recovery,
             },
         )
         return {"action": normalized_action, "rationale": rationale}
