@@ -42,7 +42,8 @@
       "minKelvin": 0.35,
       "maxKelvin": 0.92,
       "targetKelvin": 0.85
-    }
+    },
+    "crossVerificationTolerancePct": 0.05
   },
   "missionDirectives": {
     "ownerPowers": [

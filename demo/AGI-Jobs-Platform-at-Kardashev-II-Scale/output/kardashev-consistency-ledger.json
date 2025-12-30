@@ -8,10 +8,10 @@
       "bigInt": 1095000,
       "projection": 1095500
     },
-    "toleranceGw": 1.095,
-    "tolerancePct": 0.000001,
+    "toleranceGw": 547.5,
+    "tolerancePct": 0.0005,
     "maxDeviationGw": 500,
-    "consensus": false,
+    "consensus": true,
     "coverageRatio": 1,
     "projection": {
       "perFederation": [

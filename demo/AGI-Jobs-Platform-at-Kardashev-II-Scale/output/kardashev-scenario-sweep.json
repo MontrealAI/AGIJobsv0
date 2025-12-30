@@ -37,8 +37,8 @@
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
     "status": "warning",
-    "summary": "Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve.",
-    "confidence": 0.3531063323547431,
+    "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
+    "confidence": 0.36904878007093556,
     "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
@@ -53,12 +53,12 @@
       },
       {
         "label": "Relay boost allocation",
-        "value": "13.7% (158096 GW)",
+        "value": "15.9% (182541 GW)",
         "ok": true
       },
       {
         "label": "Mitigated latency",
-        "value": "155s",
+        "value": "151s",
         "ok": false
       },
       {
@@ -68,7 +68,7 @@
       },
       {
         "label": "Slack",
-        "value": "-35s",
+        "value": "-31s",
         "ok": false
       }
     ],
@@ -314,14 +314,14 @@
   {
     "id": "energy-feed-drift",
     "title": "Live energy feed drift shock",
-    "status": "warning",
-    "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%).",
-    "confidence": 0.7847919655667144,
+    "status": "nominal",
+    "summary": "Live feeds remain within tolerance bands.",
+    "confidence": 1,
     "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
     "metrics": [
       {
         "label": "Max drift",
-        "value": "6.83%",
+        "value": "0.00%",
         "ok": true
       },
       {

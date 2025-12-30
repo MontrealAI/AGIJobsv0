@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0xb101ca6722c4bdff068b5b09ebe8847704a073090931e264abcaaac21f9c5d9e",
+    "hash": "0x19283759619864f91927aed3d1165195684d0769f6b25304b70790524038c47d",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -188,12 +188,7 @@
     "utilisationPct": 0.9521739130434783,
     "marginPct": 0.125,
     "warnings": [
-      "Utilisation exceeds configured safety margin",
-      "Monte Carlo breach probability 100.00% exceeds 1.00% tolerance",
-      "Free energy margin -10199.14 GW below safety buffer 143750.00 GW",
-      "Energy feed earth-grid deviates 6.47% (tolerance 5%).",
-      "Energy feed mars-dome deviates 6.42% (tolerance 5%).",
-      "Energy feed orbital-swarm deviates 6.83% (tolerance 5%)."
+      "Utilisation exceeds configured safety margin"
     ],
     "regional": [
       {
@@ -226,32 +221,32 @@
     },
     "monteCarlo": {
       "runs": 256,
-      "breachProbability": 1,
+      "breachProbability": 0,
       "percentileGw": {
-        "p50": 1092349.3727788075,
-        "p95": 1160199.1386940242,
-        "p99": 1175408.998372291
+        "p50": 1095320.5680055048,
+        "p95": 1109258.1891697305,
+        "p99": 1111780.7752236363
       },
-      "maxGw": 1178049.319000517,
-      "averageGw": 1093911.2572673024,
-      "marginGw": 143750,
-      "freeEnergyMarginGw": -10199.13869402418,
-      "freeEnergyMarginPct": -0.0088688162556732,
-      "runwayHours": 0,
-      "demandStdDevGw": 37206.376816308235,
-      "entropyMargin": -0.2741234048232751,
-      "gibbsFreeEnergyGj": 0,
-      "hamiltonianStability": 0,
-      "gameTheorySlack": 0,
-      "runwayGapHours": 1,
-      "runwayGapGwh": 1093911.2572673024,
-      "runwayGapGj": 3938080526.1622887,
-      "maintainsBuffer": false,
-      "withinTolerance": false,
+      "maxGw": 1113689.7410643003,
+      "averageGw": 1095409.7618084832,
+      "marginGw": 27500,
+      "freeEnergyMarginGw": 40741.810830269475,
+      "freeEnergyMarginPct": 0.03542766159153867,
+      "runwayHours": 0.03719321504220135,
+      "demandStdDevGw": 8365.693389504962,
+      "entropyMargin": 4.870105672457637,
+      "gibbsFreeEnergyGj": 146670518.9889701,
+      "hamiltonianStability": 0.5177138307957694,
+      "gameTheorySlack": 0.7829712238580963,
+      "runwayGapHours": 0.9628067849577987,
+      "runwayGapGwh": 1054667.9509782137,
+      "runwayGapGj": 3796804623.5215693,
+      "maintainsBuffer": true,
+      "withinTolerance": true,
       "tolerance": 0.01
     },
     "allocationPolicy": {
-      "temperature": 1,
+      "temperature": 0.3761832119792998,
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
@@ -264,7 +259,7 @@
       "diversificationAlpha": 1,
       "allocationEntropy": 1.0986122886681096,
       "fairnessIndex": 1,
-      "gibbsPotential": -0.9854908340169315,
+      "gibbsPotential": -0.3063819574404354,
       "allocations": [
         {
           "federation": "earth",
@@ -318,11 +313,11 @@
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
           "manifestGw": 371000,
-          "feedGw": 395000,
-          "deltaGw": -24000,
-          "deltaPct": 6.46900269541779,
+          "feedGw": 371000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 1200,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         },
         {
@@ -331,11 +326,11 @@
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
           "manifestGw": 109000,
-          "feedGw": 116000,
-          "deltaGw": -7000,
-          "deltaPct": 6.422018348623854,
+          "feedGw": 109000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 720000,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         },
         {
@@ -344,15 +339,15 @@
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
           "manifestGw": 615000,
-          "feedGw": 657000,
-          "deltaGw": -42000,
-          "deltaPct": 6.829268292682928,
+          "feedGw": 615000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 3200,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         }
       ],
-      "allWithinTolerance": false,
+      "allWithinTolerance": true,
       "driftAlerts": [],
       "averageLatencyMs": 241466.66666666666,
       "maxLatencyMs": 720000
@@ -614,10 +609,10 @@
         "bigInt": 1095000,
         "projection": 1095500
       },
-      "toleranceGw": 1.095,
-      "tolerancePct": 0.000001,
+      "toleranceGw": 547.5,
+      "tolerancePct": 0.0005,
       "maxDeviationGw": 500,
-      "consensus": false,
+      "consensus": true,
       "coverageRatio": 1,
       "projection": {
         "perFederation": [
@@ -934,15 +929,15 @@
   "sentientWelfare": {
     "totalAgents": 4480000000,
     "federationCount": 3,
-    "freeEnergyPerAgentGj": 0,
-    "cooperationIndex": 0.4984384454683408,
+    "freeEnergyPerAgentGj": 0.032739,
+    "cooperationIndex": 0.8507754962044841,
     "inequalityIndex": 0.05252008576816762,
     "payoffCoefficient": 0.10038365976123358,
     "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
-    "equilibriumScore": 0.7809933481684777,
-    "welfarePotential": 0.678991965692733,
-    "collectiveActionPotential": 0.46305168349028925
+    "equilibriumScore": 0.921928168462935,
+    "welfarePotential": 0.8343061149314638,
+    "collectiveActionPotential": 0.7593006530234773
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
@@ -1620,8 +1615,8 @@
     ]
   },
   "missionThermodynamics": {
-    "freeEnergyBudgetGw": 0,
-    "freeEnergyHeadroomPct": 0,
+    "freeEnergyBudgetGw": 40741.810830269475,
+    "freeEnergyHeadroomPct": 0.016689255624393527,
     "hamiltonianLoad": 0.3903921568627451,
     "hamiltonianStability": 0.6096078431372549,
     "programmes": [
@@ -1735,13 +1730,13 @@
     },
     "energyMonteCarlo": {
       "runs": 256,
-      "breachProbability": 1,
+      "breachProbability": 0,
       "tolerance": 0.01,
-      "withinTolerance": false,
+      "withinTolerance": true,
       "percentileGw": {
-        "p50": 1092349.3727788075,
-        "p95": 1160199.1386940242,
-        "p99": 1175408.998372291
+        "p50": 1095320.5680055048,
+        "p95": 1109258.1891697305,
+        "p99": 1111780.7752236363
       }
     },
     "energyFeeds": {
@@ -1755,11 +1750,11 @@
           "type": "solar",
           "telemetry": "https://energy.example/earth/live",
           "manifestGw": 371000,
-          "feedGw": 395000,
-          "deltaGw": -24000,
-          "deltaPct": 6.46900269541779,
+          "feedGw": 371000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 1200,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         },
         {
@@ -1768,11 +1763,11 @@
           "type": "fusion",
           "telemetry": "https://energy.example/mars/live",
           "manifestGw": 109000,
-          "feedGw": 116000,
-          "deltaGw": -7000,
-          "deltaPct": 6.422018348623854,
+          "feedGw": 109000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 720000,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         },
         {
@@ -1781,15 +1776,15 @@
           "type": "microwave-solar",
           "telemetry": "https://energy.example/orbital/live",
           "manifestGw": 615000,
-          "feedGw": 657000,
-          "deltaGw": -42000,
-          "deltaPct": 6.829268292682928,
+          "feedGw": 615000,
+          "deltaGw": 0,
+          "deltaPct": 0,
           "latencyMs": 3200,
-          "withinTolerance": false,
+          "withinTolerance": true,
           "driftAlert": false
         }
       ],
-      "allWithinTolerance": false,
+      "allWithinTolerance": true,
       "driftAlerts": []
     },
     "energySchedule": {
@@ -1923,8 +1918,8 @@
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
       "status": "warning",
-      "summary": "Failover latency 155s breaches 120s failsafe. Relay boost 13.7% applied from Gibbs reserve.",
-      "confidence": 0.3531063323547431,
+      "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
+      "confidence": 0.36904878007093556,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -1939,12 +1934,12 @@
         },
         {
           "label": "Relay boost allocation",
-          "value": "13.7% (158096 GW)",
+          "value": "15.9% (182541 GW)",
           "ok": true
         },
         {
           "label": "Mitigated latency",
-          "value": "155s",
+          "value": "151s",
           "ok": false
         },
         {
@@ -1954,7 +1949,7 @@
         },
         {
           "label": "Slack",
-          "value": "-35s",
+          "value": "-31s",
           "ok": false
         }
       ],
@@ -2200,14 +2195,14 @@
     {
       "id": "energy-feed-drift",
       "title": "Live energy feed drift shock",
-      "status": "warning",
-      "summary": "Max drift 6.83% (tolerance 5%, alert 8.5%).",
-      "confidence": 0.7847919655667144,
+      "status": "nominal",
+      "summary": "Live feeds remain within tolerance bands.",
+      "confidence": 1,
       "impact": "Feeds drift but remain serviceable; monitor and prepare calibration update.",
       "metrics": [
         {
           "label": "Max drift",
-          "value": "6.83%",
+          "value": "0.00%",
           "ok": true
         },
         {

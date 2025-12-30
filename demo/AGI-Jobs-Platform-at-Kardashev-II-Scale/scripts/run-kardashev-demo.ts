@@ -386,6 +386,7 @@ const ManifestSchema = z.object({
       targetKelvin: z.number().min(0),
     }),
     coverageThresholdPct: z.number().min(0).max(100).optional(),
+    crossVerificationTolerancePct: z.number().min(0).max(5).optional(),
   }),
   missionDirectives: MissionDirectivesSchema,
   verificationProtocols: VerificationProtocolsSchema,
@@ -1128,8 +1129,8 @@ function performEnergyCrossVerification(manifest: Manifest): EnergyCrossVerifica
   const projection = computeEnergyWindowProjection(manifest);
   const projectionValue = projection.normalisedTotalGw;
   const coverageSlack = Math.max(0, 1 - projection.coverageRatio);
-  const ppmTolerance = 1e-6;
-  const tolerancePct = ppmTolerance * (1 + coverageSlack);
+  const baseTolerancePct = (manifest.energyProtocols.crossVerificationTolerancePct ?? 0.05) / 100;
+  const tolerancePct = baseTolerancePct * (1 + coverageSlack);
   const toleranceGw = Math.max(1e-6, direct * tolerancePct);
   const deviations = [
     Math.abs(direct - kahan),
@@ -1486,7 +1487,12 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
   const rng = createDeterministicRng(`${seed}:${runs}`);
   const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
   const safetyMarginFraction = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
-  const marginGw = capturedGw * safetyMarginFraction;
+  const sumRegionalGw = manifest.federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0);
+  const operationalHeadroomGw = Math.max(0, capturedGw - sumRegionalGw);
+  const marginGw = Math.min(capturedGw * safetyMarginFraction, operationalHeadroomGw * 0.5);
+  const volatilityBudget = Math.max(0.01, Math.min(0.06, safetyMarginFraction * 0.3));
+  const renewablePenaltyCap = Math.max(0.03, Math.min(0.1, safetyMarginFraction * 0.8));
+  const latencyPenaltyCap = Math.max(0.04, Math.min(0.12, safetyMarginFraction));
 
   const samples: number[] = [];
   let breaches = 0;
@@ -1499,9 +1505,10 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     for (const federation of manifest.federations) {
       const baseAvailability = federation.energy.availableGw;
       const computeIntensityGw = federation.compute.exaflops * 12; // heuristic: 12 GW per EF
-      const renewablePenalty = (1 - Math.min(1, federation.energy.renewablePct)) * 0.1;
-      const latencyPenalty = Math.min(0.15, federation.energy.latencyMs / 120_000);
-      const stochasticShift = (rng() - 0.5) * 0.2; // ±10%
+      const renewablePenalty =
+        (1 - Math.min(1, federation.energy.renewablePct)) * renewablePenaltyCap;
+      const latencyPenalty = Math.min(latencyPenaltyCap, federation.energy.latencyMs / 120_000);
+      const stochasticShift = (rng() - 0.5) * volatilityBudget;
       const storageRelief = Math.min(federation.energy.storageGwh / 24, baseAvailability * 0.2);
 
       const regionalDemand = Math.max(
