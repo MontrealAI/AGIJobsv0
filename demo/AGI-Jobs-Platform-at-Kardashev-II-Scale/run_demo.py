@@ -31,7 +31,10 @@ def _ensure_node_available() -> str:
     return node_path
 
 
-def _normalize_output_dir(raw: str) -> Path:
+def _normalize_output_dir(raw: str | Path) -> Path:
+    if isinstance(raw, Path):
+        return raw.expanduser()
+
     parsed = urlparse(raw)
     if parsed.scheme == "file":
         parsed_path = unquote(parsed.path)
