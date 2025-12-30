@@ -416,6 +416,7 @@ class Orchestrator:
                 "strategy_priority": strategy_priority,
                 "strategy_path": strategy_path,
                 "policy_recommendation": decision["action"],
+                "policy_brief": self._build_policy_brief(state, decision, signals),
                 "thermodynamics": {
                     "gibbs_free_energy": state.gibbs_free_energy,
                     "hamiltonian": state.hamiltonian,
@@ -931,6 +932,53 @@ class Orchestrator:
             for key, value in raw_action.items():
                 rationale[f"{key}_raw"] = value
         return rationale
+
+    def _format_policy_steps(self, action: Dict[str, float]) -> list[str]:
+        steps: list[str] = []
+        ordered_actions = (
+            ("build_dyson_nodes", "Deploy Dyson nodes"),
+            ("stimulus", "Launch prosperity stimulus"),
+            ("green_shift", "Accelerate green transition"),
+            ("alignment_investment", "Invest in alignment"),
+        )
+        for key, label in ordered_actions:
+            value = float(action.get(key, 0.0))
+            if value <= 0:
+                continue
+            steps.append(f"{label}: {value:.2f}")
+        if not steps:
+            steps.append("Hold steady; no material policy action recommended this cycle.")
+        return steps
+
+    def _build_policy_brief(
+        self,
+        state: SimulationState,
+        decision: Dict[str, Dict[str, float] | Dict[str, float | str]],
+        signals: Dict[str, float],
+    ) -> Dict[str, Any]:
+        action = decision["action"]
+        if not isinstance(action, dict):
+            action = {}
+        gibbs_reference = state.gibbs_free_energy if state.gibbs_free_energy is not None else state.free_energy
+        focus = "energy_expansion" if signals["gibbs_drive"] > 0.35 else "stability_balancing"
+        return {
+            "focus": focus,
+            "next_steps": self._format_policy_steps(action),
+            "action": action,
+            "energy_dynamics": {
+                "gibbs_reference": gibbs_reference,
+                "gibbs_drive": signals["gibbs_drive"],
+                "hamiltonian_pressure": signals["hamiltonian_pressure"],
+                "entropy_pressure": signals["entropy_pressure"],
+                "stability_guard": signals["stability_guard"],
+            },
+            "game_theory_snapshot": {
+                "nash_welfare": state.nash_welfare,
+                "sentient_welfare_index": state.sentient_welfare_index,
+                "coordination_index": state.coordination_index,
+                "game_theory_slack": state.game_theory_slack,
+            },
+        }
 
     def _build_policy_decision(self, state: SimulationState) -> Dict[str, Dict[str, float] | Dict[str, float | str]]:
         """Derive a cooperative policy action from thermodynamic signals.
