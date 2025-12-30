@@ -402,8 +402,16 @@ function renderSentientWelfare(welfare) {
   const actionText = Number.isFinite(welfare.collectiveActionPotential)
     ? `${(welfare.collectiveActionPotential * 100).toFixed(1)}%`
     : "n/a";
+  const payoffText = Number.isFinite(welfare.payoffCoefficient)
+    ? `${(welfare.payoffCoefficient * 100).toFixed(1)}%`
+    : "n/a";
+  const riskIndex =
+    Number.isFinite(welfare.inequalityIndex) && Number.isFinite(welfare.coalitionStability)
+      ? Math.min(1, Math.max(0, 0.6 * welfare.inequalityIndex + 0.4 * (1 - welfare.coalitionStability)))
+      : null;
+  const riskText = riskIndex !== null ? `${(riskIndex * 100).toFixed(1)}%` : "n/a";
 
-  details.textContent = `Cooperation ${cooperationText} · inequality ${inequalityText} · Pareto slack ${paretoText} · welfare potential ${potentialText} · coalition stability ${coalitionText} · collective action ${actionText}`;
+  details.textContent = `Cooperation ${cooperationText} · inequality ${inequalityText} · Pareto slack ${paretoText} · welfare potential ${potentialText} · coalition stability ${coalitionText} · collective action ${actionText} · payoff dispersion ${payoffText} · welfare risk ${riskText}`;
 
   if (Number.isFinite(welfare.equilibriumScore)) {
     const score = welfare.equilibriumScore;
@@ -1612,6 +1620,19 @@ function renderEquilibriumLedger(ledger) {
     `Entropy buffer: ${formatFixed(thermodynamics.entropyMargin, 2)}σ`,
     `Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability)}`,
   ];
+  if (thermodynamics.runwayAdjustment?.perFeedBoosts?.length) {
+    const boosts = thermodynamics.runwayAdjustment.perFeedBoosts
+      .map((boost) => {
+        const label = boost.federationSlug || boost.region || "unknown";
+        return `${label}: +${formatFixed(boost.boostGw, 2)} GW`;
+      })
+      .join(", ");
+    const total = formatFixed(thermodynamics.runwayAdjustment.totalReserveBoostGw, 2);
+    const planLabel = thermodynamics.runwayAdjustment.applied
+      ? "Runway adjustment applied"
+      : "Runway adjustment plan";
+    thermoItems.push(`${planLabel}: ${boosts} (total +${total} GW)`);
+  }
   thermoItems.forEach((item) => {
     const li = document.createElement("li");
     li.textContent = item;
