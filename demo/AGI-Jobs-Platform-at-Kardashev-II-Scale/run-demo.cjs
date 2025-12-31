@@ -534,18 +534,19 @@ function stabilizeEnergyRunway({
         federationSlug: feed.federationSlug,
         region: feed.region,
         bufferMw: feed.bufferMw,
-        deltaMw,
+        boostMw: round(deltaMw, 4),
       };
     })
     .filter(Boolean);
 
-  const totalBoostMw = bufferAdjustments.reduce((sumValue, entry) => sumValue + entry.deltaMw, 0);
+  const perFeedBoosts = aggregateRunwayPlan(adjustments, bufferAdjustments);
+  const totalBoostMw = perFeedBoosts.reduce((sumValue, entry) => sumValue + (entry.boostMw ?? 0), 0);
   const runwayAdjustment = {
     targetHours: ENERGY_RUNWAY_TARGET_HOURS,
     applied: adjustments.length > 0,
     iterations: adjustments.length,
     totalReserveBoostGw: round(totalBoostMw / 1000, 4),
-    perFeedBoosts: bufferAdjustments,
+    perFeedBoosts,
     iterationsLog: adjustments,
   };
 
@@ -554,6 +555,61 @@ function stabilizeEnergyRunway({
     energyMonteCarlo,
     runwayAdjustment,
   };
+}
+
+function aggregateRunwayPlan(adjustments, fallbackBoosts) {
+  if (!Array.isArray(adjustments) || adjustments.length === 0) {
+    return fallbackBoosts;
+  }
+
+  const aggregated = new Map();
+  for (const adjustment of adjustments) {
+    const planEntries = Array.isArray(adjustment.plan) ? adjustment.plan : [];
+    for (const entry of planEntries) {
+      const key = entry.federationSlug || entry.region || 'unknown';
+      const existing = aggregated.get(key) || {
+        federationSlug: entry.federationSlug ?? null,
+        region: entry.region ?? null,
+        boostMw: 0,
+        weightPctTotal: 0,
+        weightPctCount: 0,
+        scarcityTotal: 0,
+        latencyPenaltyTotal: 0,
+        riskScoreTotal: 0,
+        samples: 0,
+      };
+      const boostMw = Number.isFinite(entry.boostMw) ? entry.boostMw : 0;
+      existing.boostMw += boostMw;
+      if (Number.isFinite(entry.weightPct)) {
+        existing.weightPctTotal += entry.weightPct;
+        existing.weightPctCount += 1;
+      }
+      if (Number.isFinite(entry.scarcity)) {
+        existing.scarcityTotal += entry.scarcity;
+      }
+      if (Number.isFinite(entry.latencyPenalty)) {
+        existing.latencyPenaltyTotal += entry.latencyPenalty;
+      }
+      if (Number.isFinite(entry.riskScore)) {
+        existing.riskScoreTotal += entry.riskScore;
+      }
+      existing.samples += 1;
+      aggregated.set(key, existing);
+    }
+  }
+
+  const summary = Array.from(aggregated.values()).map((entry) => ({
+    federationSlug: entry.federationSlug,
+    region: entry.region,
+    boostMw: round(entry.boostMw, 4),
+    weightPct:
+      entry.weightPctCount > 0 ? round(entry.weightPctTotal / entry.weightPctCount, 2) : null,
+    scarcity: entry.samples > 0 ? round(entry.scarcityTotal / entry.samples, 4) : null,
+    latencyPenalty: entry.samples > 0 ? round(entry.latencyPenaltyTotal / entry.samples, 4) : null,
+    riskScore: entry.samples > 0 ? round(entry.riskScoreTotal / entry.samples, 4) : null,
+  }));
+
+  return summary.length > 0 ? summary : fallbackBoosts;
 }
 
 function softmaxScores(scores, temperature) {
@@ -2014,12 +2070,12 @@ function buildEquilibriumLedger({
         targetHours: runwayAdjustment.targetHours ?? ENERGY_RUNWAY_TARGET_HOURS,
         applied: Boolean(runwayAdjustment.applied),
         totalReserveBoostGw: round(runwayAdjustment.totalReserveBoostGw ?? 0, 4),
-        perFeedBoosts: (runwayAdjustment.perFeedBoosts ?? []).map((boost) => ({
-          federationSlug: boost.federationSlug ?? null,
-          region: boost.region ?? null,
-          boostGw: round((boost.deltaMw ?? boost.boostMw ?? 0) / 1000, 4),
-          weightPct: Number.isFinite(boost.weightPct) ? round(boost.weightPct, 2) : null,
-        })),
+      perFeedBoosts: (runwayAdjustment.perFeedBoosts ?? []).map((boost) => ({
+        federationSlug: boost.federationSlug ?? null,
+        region: boost.region ?? null,
+        boostGw: round((boost.boostMw ?? boost.deltaMw ?? 0) / 1000, 4),
+        weightPct: Number.isFinite(boost.weightPct) ? round(boost.weightPct, 2) : null,
+      })),
       }
     : null;
   const runwayPlanText = formatRunwayAdjustment(runwayAdjustmentSummary);
