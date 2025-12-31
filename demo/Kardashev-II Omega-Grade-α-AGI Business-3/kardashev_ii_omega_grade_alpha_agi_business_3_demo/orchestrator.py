@@ -747,6 +747,7 @@ class Orchestrator:
         nash_welfare = max(0.0, min(1.0, state.nash_welfare))
         sentient_welfare_index = max(0.0, min(1.0, state.sentient_welfare_index))
         welfare_floor = max(0.0, min(state.prosperity_index, state.sustainability_index))
+        welfare_gap = max(0.0, 1.0 - welfare_floor)
         stability_index = max(0.0, min(1.0, state.stability_index))
         entropy = max(0.0, state.entropy)
         entropy_pressure = min(1.0, entropy / math.log(2.0))
@@ -754,6 +755,7 @@ class Orchestrator:
         exergy_pressure = max(0.0, min(1.0, (1.0 - exergy_balance) / 2.0))
         pareto_efficiency = max(0.0, min(1.0, state.pareto_efficiency))
         pareto_gap = max(0.0, 1.0 - pareto_efficiency)
+        equity_pressure = min(1.0, 0.6 * welfare_gap + 0.4 * pareto_gap)
         energy_price_pressure = max(0.0, self.resources.energy_price - 1.0)
         compute_price_pressure = max(0.0, self.resources.compute_price - 1.0)
         reserved_energy_ratio = self.resources.reserved_energy / max(self.resources.energy_capacity, 1.0)
@@ -796,6 +798,7 @@ class Orchestrator:
             "nash_welfare": nash_welfare,
             "sentient_welfare_index": sentient_welfare_index,
             "welfare_floor": welfare_floor,
+            "welfare_gap": welfare_gap,
             "stability_index": stability_index,
             "entropy": entropy,
             "entropy_pressure": entropy_pressure,
@@ -803,6 +806,7 @@ class Orchestrator:
             "exergy_pressure": exergy_pressure,
             "pareto_efficiency": pareto_efficiency,
             "pareto_gap": pareto_gap,
+            "equity_pressure": equity_pressure,
             "energy_price_pressure": energy_price_pressure,
             "compute_price_pressure": compute_price_pressure,
             "reserved_energy_ratio": reserved_energy_ratio,
@@ -990,6 +994,12 @@ class Orchestrator:
             "focus": focus,
             "next_steps": self._format_policy_steps(action),
             "action": action,
+            "welfare_guardrails": {
+                "welfare_floor": signals["welfare_floor"],
+                "welfare_gap": signals["welfare_gap"],
+                "equity_pressure": signals["equity_pressure"],
+                "welfare_urgency": signals["welfare_urgency"],
+            },
             "energy_dynamics": {
                 "gibbs_reference": gibbs_reference,
                 "gibbs_drive": signals["gibbs_drive"],
@@ -1029,12 +1039,13 @@ class Orchestrator:
             * (1.0 + 0.5 * signals["hamiltonian_pressure"])
             * signals["entropy_damping"]
         )
-        action_budget *= 0.9 + 0.6 * signals["welfare_urgency"]
+        action_budget *= 0.9 + 0.6 * signals["welfare_urgency"] + 0.3 * signals["equity_pressure"]
         alignment_budget = (
             action_budget
             * (1.0 + 0.8 * signals["entropy_pressure"])
             / max(0.6, signals["entropy_damping"])
         )
+        alignment_budget *= 1.0 + 0.6 * signals["equity_pressure"]
         stability_guard = signals["stability_guard"]
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"]) * stability_guard
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
@@ -1061,6 +1072,7 @@ class Orchestrator:
             * (0.6 + 0.4 * signals["welfare_urgency"])
             * (0.7 + 0.3 * signals["stability_index"])
             * (0.7 + 0.6 * signals["pareto_gap"])
+            * (0.7 + 0.3 * signals["equity_pressure"])
             * (1.0 + (1.0 - stability_guard))
         )
         exergy_recovery = (
