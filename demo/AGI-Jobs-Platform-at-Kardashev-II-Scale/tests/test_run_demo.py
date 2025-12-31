@@ -173,6 +173,23 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 <= sentient["welfarePotential"] <= 1
     assert 0 <= sentient["collectiveActionPotential"] <= 1
 
+    federation_equity = telemetry_payload["federationEquity"]
+    assert federation_equity["totalAvailableGw"] > 0
+    assert federation_equity["totalAgents"] > 0
+    assert federation_equity["totalFreeEnergyGj"] >= 0
+    assert 0 <= federation_equity["inequalityIndex"] <= 1
+    assert 0 <= federation_equity["coalitionStability"] <= 1
+    assert 0 <= federation_equity["equityScore"] <= 1
+    assert federation_equity["entries"]
+    for entry in federation_equity["entries"]:
+        assert entry["federation"]
+        assert entry["agents"] >= 0
+        assert entry["availableGw"] >= 0
+        assert 0 <= entry["energySharePct"] <= 1
+        assert 0 <= entry["agentSharePct"] <= 1
+        assert entry["freeEnergyPerAgentGj"] >= 0
+        assert -1 <= entry["equityGapPct"] <= 1
+
     mission_thermo = telemetry_payload["missionThermodynamics"]
     assert 0 <= mission_thermo["hamiltonianLoad"] <= 1
     assert 0 <= mission_thermo["hamiltonianStability"] <= 1

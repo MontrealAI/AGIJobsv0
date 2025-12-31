@@ -1072,8 +1072,12 @@ function buildIdentity(identityProtocols) {
   const totalRevocations = sum(federations.map((fed) => fed.credentialRevocations24h ?? 0));
   const totalIssuances = sum(federations.map((fed) => fed.credentialIssuances24h ?? 0));
   const revocationRatePpm = totalAgents > 0 ? (totalRevocations / totalAgents) * 1_000_000 : 0;
-  const minCoveragePct = Math.min(...federations.map((fed) => fed.coveragePct ?? 1));
-  const maxLatency = Math.max(...federations.map((fed) => fed.attestationLatencySeconds ?? 0));
+  const minCoveragePct = federations.length
+    ? Math.min(...federations.map((fed) => fed.coveragePct ?? 1))
+    : 0;
+  const maxLatency = federations.length
+    ? Math.max(...federations.map((fed) => fed.attestationLatencySeconds ?? 0))
+    : 0;
 
   return {
     global,
@@ -1090,6 +1094,59 @@ function buildIdentity(identityProtocols) {
       maxAttestationLatencySeconds: maxLatency,
     },
     withinQuorum: anchorsMeetingQuorum === federations.length,
+  };
+}
+
+function buildFederationEquity(manifestFederations, identity, energyMonteCarlo) {
+  const identityFederations = identity?.federations ?? [];
+  const identityBySlug = new Map(identityFederations.map((fed) => [fed.slug, fed]));
+  const totalAvailableGw = sum(manifestFederations.map((fed) => fed.energy?.availableGw ?? 0));
+  const totalAgents = sum(
+    manifestFederations.map((fed) => {
+      const identityFed = identityBySlug.get(fed.slug);
+      return identityFed?.totalAgents ?? fed.compute?.agents ?? 0;
+    })
+  );
+  const totalFreeEnergyGj = energyMonteCarlo?.gibbsFreeEnergyGj ?? 0;
+
+  const entries = manifestFederations.map((fed) => {
+    const identityFed = identityBySlug.get(fed.slug);
+    const agents = identityFed?.totalAgents ?? fed.compute?.agents ?? 0;
+    const availableGw = fed.energy?.availableGw ?? 0;
+    const energySharePct = totalAvailableGw > 0 ? availableGw / totalAvailableGw : 0;
+    const agentSharePct = totalAgents > 0 ? agents / totalAgents : 0;
+    const freeEnergyShareGj = totalFreeEnergyGj * energySharePct;
+    const freeEnergyPerAgentGj = agents > 0 ? freeEnergyShareGj / agents : 0;
+    return {
+      federation: fed.slug,
+      name: fed.name ?? fed.slug,
+      agents,
+      availableGw,
+      energySharePct,
+      agentSharePct,
+      freeEnergyShareGj,
+      freeEnergyPerAgentGj,
+      equityGapPct: energySharePct - agentSharePct,
+    };
+  });
+
+  const perAgentValues = entries
+    .map((entry) => entry.freeEnergyPerAgentGj)
+    .filter((value) => Number.isFinite(value) && value > 0);
+  const inequalityIndex = computeGiniIndex(perAgentValues);
+  const payoffCoefficient = computeCoefficientOfVariation(perAgentValues);
+  const coalitionStability = clamp01(1 - payoffCoefficient);
+  const equityScore = clamp01(0.6 * (1 - inequalityIndex) + 0.4 * coalitionStability);
+
+  return {
+    totalAvailableGw,
+    totalAgents,
+    totalFreeEnergyGj,
+    inequalityIndex,
+    payoffCoefficient,
+    coalitionStability,
+    equityScore,
+    entries,
   };
 }
 
@@ -1746,6 +1803,7 @@ function buildEquilibriumLedger({
   energyMonteCarlo,
   allocationPolicy,
   sentientWelfare,
+  federationEquity,
   logistics,
   computeFabric,
   missionThermodynamics,
@@ -1848,6 +1906,7 @@ function buildEquilibriumLedger({
     energyMonteCarlo,
     allocationPolicy,
     sentientWelfare,
+    federationEquity,
     logistics,
     computeFabric,
     missionThermodynamics,
@@ -2122,6 +2181,7 @@ function buildEquilibriumActionPath({
   energyMonteCarlo,
   allocationPolicy,
   sentientWelfare,
+  federationEquity,
   logistics,
   computeFabric,
   missionThermodynamics,
@@ -2220,6 +2280,22 @@ function buildEquilibriumActionPath({
     )}% · Gini ${(sentientWelfare.inequalityIndex * 100).toFixed(1)}%`,
     action:
       'Redistribute cooperative rewards and re-weight federation incentives to preserve Pareto-optimal welfare.',
+  });
+
+  const equityScore = federationEquity?.equityScore ?? 1;
+  const equityNeeds =
+    equityScore < 0.85 || (federationEquity?.inequalityIndex ?? 0) > 0.25;
+  steps.push({
+    key: 'equity',
+    score: scores?.welfare ?? 0,
+    title: 'Federation free-energy equity',
+    status: equityNeeds ? 'needs-action' : 'on-track',
+    target: 'Equity score ≥ 85% with inequality ≤ 25%.',
+    rationale: `Equity ${(equityScore * 100).toFixed(1)}% · inequality ${(
+      (federationEquity?.inequalityIndex ?? 0) * 100
+    ).toFixed(1)}%`,
+    action:
+      'Rebalance Dyson reserve allocations and welfare grants so free energy per agent converges across federations.',
   });
 
   const averageUtilisation = logistics?.verification?.averageUtilisationPct ?? 0;
@@ -2674,6 +2750,7 @@ function main() {
 
   const identity = buildIdentity(manifest.identityProtocols);
   const sentientWelfare = buildSentientWelfare(identity, allocationPolicy, energyMonteCarlo);
+  const federationEquity = buildFederationEquity(manifest.federations ?? [], identity, energyMonteCarlo);
   const computeFabric = buildComputeFabric(manifest.computeFabrics);
   const orchestrationFabric = buildOrchestrationFabric(fabric.shards, manifest.federations);
   const missionLattice = buildMissionLattice(taskLattice, manifest);
@@ -2715,6 +2792,7 @@ function main() {
     energyMonteCarlo,
     allocationPolicy,
     sentientWelfare,
+    federationEquity,
     logistics,
     computeFabric,
     missionThermodynamics,
@@ -2803,6 +2881,11 @@ function main() {
     `- **Sentient Coalition Stability:** ${(sentientWelfare.coalitionStability * 100).toFixed(1)}% · collective action ${(sentientWelfare.collectiveActionPotential * 100).toFixed(1)}% · payoff dispersion ${(sentientWelfare.payoffCoefficient * 100).toFixed(1)}%.`
   );
   reportLines.push(
+    `- **Federation Energy Equity:** ${(federationEquity.equityScore * 100).toFixed(1)}% · inequality ${(
+      federationEquity.inequalityIndex * 100
+    ).toFixed(1)}% · coalition stability ${(federationEquity.coalitionStability * 100).toFixed(1)}%.`
+  );
+  reportLines.push(
     `- **Equilibrium Ledger:** ${(equilibriumLedger.overallScore * 100).toFixed(1)}% (${equilibriumLedger.status}); energy ${(equilibriumLedger.components.energy.score * 100).toFixed(1)}%, allocation ${(equilibriumLedger.components.allocation.score * 100).toFixed(1)}%, welfare ${(equilibriumLedger.components.welfare.score * 100).toFixed(1)}%.`
   );
   reportLines.push(
@@ -2840,6 +2923,22 @@ function main() {
         round(allocation.payoff, 3),
       ]),
       ['Shard', 'Boltzmann Weight', 'Effective Weight', 'Recommended GW', 'Capacity GW', 'Nash Payoff']
+    )
+  );
+  reportLines.push('');
+
+  reportLines.push('## Federation Equity Ledger');
+  reportLines.push('');
+  reportLines.push(
+    toTable(
+      federationEquity.entries.map((entry) => [
+        entry.name,
+        `${(entry.energySharePct * 100).toFixed(1)}%`,
+        `${(entry.agentSharePct * 100).toFixed(1)}%`,
+        `${entry.freeEnergyPerAgentGj.toFixed(6)} GJ`,
+        `${(entry.equityGapPct * 100).toFixed(2)}%`,
+      ]),
+      ['Federation', 'Energy Share', 'Agent Share', 'Free Energy/Agent', 'Equity Gap']
     )
   );
   reportLines.push('');
@@ -2924,6 +3023,7 @@ function main() {
     energyMonteCarlo,
     allocationPolicy,
     sentientWelfare,
+    federationEquity,
     energy: {
       utilisationPct: energyUtilisationPct,
       marginPct: energyMarginPct,
