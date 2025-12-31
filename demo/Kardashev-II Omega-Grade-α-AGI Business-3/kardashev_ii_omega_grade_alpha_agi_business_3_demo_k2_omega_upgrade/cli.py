@@ -37,6 +37,7 @@ def build_cli() -> argparse.ArgumentParser:
     subparsers.add_parser("plan", help="Render a mermaid plan and textual summary without launching agents.")
     subparsers.add_parser("status", help="Print the latest structured status snapshot from disk.")
     subparsers.add_parser("ci", help="Validate configuration for CI pipelines.")
+    subparsers.add_parser("policy", help="Generate a policy action recommendation from the simulation state.")
 
     inject_parser = subparsers.add_parser("inject-sim", help="Send an action to the attached planetary simulation.")
     inject_parser.add_argument("--action", required=True, help="JSON encoded action payload (e.g. '{\"build_solar\": 10}')")
@@ -67,6 +68,9 @@ def main(argv: Optional[Iterable[str]] = None) -> None:
         _render_plan(MissionPlan(config_payload.get("initial_jobs", [])), output_dir=config_path.parent)
         _print_summary(config_payload)
         print("Configuration ready for CI execution.")
+        return
+    if args.command == "policy":
+        _print_policy(config)
         return
     if args.command == "inject-sim":
         asyncio.run(_inject_sim_action(config, action=args.action))
@@ -148,6 +152,21 @@ def _print_status(status_path: Path) -> None:
     print(json.dumps(json.loads(lines[-1]), indent=2))
 
 
+def _print_policy(config: OrchestratorConfig) -> None:
+    orchestrator = Orchestrator(config)
+    orchestrator._load_simulation()
+    decision = orchestrator.policy_decision()
+    if decision is None:
+        print("Simulation disabled; no policy recommendation available.")
+        return
+    payload = {
+        "action": decision.action,
+        "steps": decision.steps,
+        "rationale": decision.rationale,
+    }
+    print(json.dumps(payload, indent=2))
+
+
 async def _run_demo(config: OrchestratorConfig, payload: Dict[str, Any], *, duration: float) -> None:
     orchestrator = Orchestrator(config)
     await orchestrator.start()
@@ -195,7 +214,18 @@ async def _inject_sim_action(config: OrchestratorConfig, *, action: str) -> None
     orchestrator = Orchestrator(config)
     await orchestrator.start()
     try:
-        payload = json.loads(action)
+        normalized = action.strip().lower()
+        if normalized in {"auto", "autonomous"}:
+            decision = orchestrator.policy_decision()
+            if decision is None:
+                print("Simulation disabled; no policy recommendation available.")
+                return
+            payload = decision.action
+        else:
+            try:
+                payload = json.loads(action)
+            except json.JSONDecodeError as exc:
+                raise SystemExit(f"Invalid JSON action payload: {exc}") from exc
         await orchestrator.inject_simulation_action(payload)
     finally:
         await orchestrator.shutdown()
@@ -203,4 +233,3 @@ async def _inject_sim_action(config: OrchestratorConfig, *, action: str) -> None
 
 if __name__ == "__main__":  # pragma: no cover
     main()
-
