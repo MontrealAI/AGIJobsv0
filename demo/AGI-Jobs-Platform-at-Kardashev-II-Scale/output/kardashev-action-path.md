@@ -6,6 +6,7 @@ Generated: 2025-03-01T00:00:00Z
 - Free energy margin: 3.54%
 - Free energy runway: 0.04 hours (gap 0.96h, 1,054,667.95 GWh)
 - Buffered free energy: 40,741.81 GW above buffer (27,500.00 GW required)
+- Utilisation: 95.22% (safety margin 12.50%)
 - Gibbs free energy: 146,670,518.99 GJ
 - Runway adjustment plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW)
 - Hamiltonian stability: 51.8%
@@ -17,10 +18,10 @@ Generated: 2025-03-01T00:00:00Z
 ## Action path
 ### Step 1: Stabilize free energy buffer
 - Status: needs-action
-- Target: Free energy margin ≥ 70%, runway ≥ 1h, and Hamiltonian stability ≥ 90%.
-- Priority: 47.7%
-- Rationale: Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h
-- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW).
+- Target: Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
+- Priority: 51.5%
+- Rationale: Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)
+- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW).
 
 ### Step 2: Stabilize mission Hamiltonian
 - Status: needs-action
