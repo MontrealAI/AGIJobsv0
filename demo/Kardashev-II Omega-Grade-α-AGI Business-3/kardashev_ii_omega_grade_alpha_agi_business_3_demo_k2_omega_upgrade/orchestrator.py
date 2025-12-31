@@ -12,6 +12,7 @@ from typing import Any, Dict, Iterable, List, Optional
 from .agents import AgentBase, AgentContext, ValidatorAgent, WorkerAgent
 from .bus import MessageBus
 from .jobs import JobRecord, JobRegistry, JobSpec, JobStatus
+from .policy import PolicyDecision, build_policy_decision
 from .resources import ResourceCaps, ResourceManager
 from .simulation import PlanetarySim, SyntheticEconomySim
 
@@ -319,6 +320,12 @@ class Orchestrator:
         }
         with self.status_output_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(snapshot) + "\n")
+
+    def policy_decision(self) -> PolicyDecision | None:
+        if not self.simulation:
+            return None
+        state = self.simulation.get_state()
+        return build_policy_decision(state)
 
     def _load_simulation(self) -> None:
         if not self.config.simulation_params:
