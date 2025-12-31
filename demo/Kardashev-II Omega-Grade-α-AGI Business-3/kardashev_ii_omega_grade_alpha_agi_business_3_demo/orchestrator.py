@@ -1017,6 +1017,36 @@ class Orchestrator:
             },
         }
 
+    def _build_equilibrium_forecast(self, state: SimulationState) -> Dict[str, float]:
+        """Project a cooperative equilibrium forecast for the next planning window."""
+
+        signals = self._compute_policy_signals(state)
+        gibbs_reference = state.gibbs_free_energy if state.gibbs_free_energy is not None else state.free_energy
+        gibbs_drive = max(0.0, -gibbs_reference)
+        hamiltonian_load = min(1.0, abs(state.hamiltonian))
+        coordination = max(0.0, min(1.0, state.coordination_index))
+        cooperation_target = 0.4 + 0.35 * state.game_theory_slack + 0.25 * coordination
+        cooperation_target = max(0.0, min(1.0, cooperation_target))
+        welfare_gain = (
+            0.08 * gibbs_drive
+            + 0.05 * signals["stability_index"]
+            + 0.04 * signals["coordination_damping"]
+            + 0.03 * signals["pareto_efficiency"]
+            - 0.06 * signals["entropy_pressure"]
+            - 0.04 * hamiltonian_load
+        )
+        forecasted_welfare = max(0.0, min(1.0, state.sentient_welfare_index + welfare_gain))
+        exergy_headroom = 1.0 - max(0.0, signals["exergy_pressure"])
+        risk_budget = max(0.0, min(1.0, signals["stability_guard"] * signals["entropy_damping"]))
+        return {
+            "cooperation_target": cooperation_target,
+            "forecasted_welfare": forecasted_welfare,
+            "gibbs_drive": gibbs_drive,
+            "hamiltonian_load": hamiltonian_load,
+            "exergy_headroom": exergy_headroom,
+            "risk_budget": risk_budget,
+        }
+
     def _build_policy_decision(self, state: SimulationState) -> Dict[str, Dict[str, float] | Dict[str, float | str]]:
         """Derive a cooperative policy action from thermodynamic signals.
 
@@ -1705,6 +1735,7 @@ class Orchestrator:
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
+                "equilibrium_forecast": self._build_equilibrium_forecast(self._latest_simulation_state),
             }
         pending_events = list(self.scheduler.pending_events())
         pending_counts = Counter(event.event_type for event in pending_events)
@@ -1797,6 +1828,7 @@ class Orchestrator:
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
+                "equilibrium_forecast": self._build_equilibrium_forecast(self._latest_simulation_state),
             }
         return {
             "mission": self.config.mission_name,
