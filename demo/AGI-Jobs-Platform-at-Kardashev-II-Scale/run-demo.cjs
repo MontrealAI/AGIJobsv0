@@ -1590,8 +1590,8 @@ function validateFabric(fabric) {
     if (typeof shard.id !== 'string' || shard.id.trim() === '') {
       throw new Error(`Shard #${idx} is missing an id.`);
     }
-    if (!Number.isFinite(shard.latencyMs) || shard.latencyMs <= 0) {
-      throw new Error(`Shard ${shard.id} latencyMs must be positive.`);
+    if (!Number.isFinite(shard.latencyMs) || shard.latencyMs < 0) {
+      throw new Error(`Shard ${shard.id} latencyMs must be non-negative.`);
     }
   });
 
