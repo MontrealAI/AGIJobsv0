@@ -1687,7 +1687,11 @@ function renderEquilibriumLedger(ledger) {
     const boosts = thermodynamics.runwayAdjustment.perFeedBoosts
       .map((boost) => {
         const label = boost.federationSlug || boost.region || "unknown";
-        return `${label}: +${formatFixed(boost.boostGw, 2)} GW`;
+        const weight =
+          Number.isFinite(boost.weightPct) && boost.weightPct > 0
+            ? ` (${boost.weightPct.toFixed(1)}%)`
+            : "";
+        return `${label}: +${formatFixed(boost.boostGw, 2)} GW${weight}`;
       })
       .join(", ");
     const total = formatFixed(thermodynamics.runwayAdjustment.totalReserveBoostGw, 2);
