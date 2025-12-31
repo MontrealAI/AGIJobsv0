@@ -1277,6 +1277,7 @@ type RunwayAdjustmentPlan = {
     federationSlug: string | null;
     region: string | null;
     boostGw: number;
+    weightPct?: number;
   }>;
 };
 
@@ -1588,7 +1589,14 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
 
 function buildRunwayAdjustmentPlan(
   energy: MonteCarloSummary,
-  feeds: Array<{ federationSlug: string; region: string; manifestGw: number }>
+  feeds: Array<{
+    federationSlug: string;
+    region: string;
+    manifestGw: number;
+    feedGw?: number;
+    latencyMs?: number;
+    deltaPct?: number;
+  }>
 ): RunwayAdjustmentPlan {
   const runwayGapHours = energy.runwayGapHours ?? 0;
   const gapGwh = energy.runwayGapGwh ?? 0;
@@ -1612,17 +1620,64 @@ function buildRunwayAdjustmentPlan(
     };
   }
 
-  const perFeedBoosts = feeds
-    .map((feed) => {
-      const share = (feed.manifestGw ?? 0) / totalNominalGw;
-      const boost = round(boostGw * share, 4);
+  const scoredFeeds = feeds.map((feed) => {
+    const manifestGw = feed.manifestGw ?? 0;
+    const feedGw = Number.isFinite(feed.feedGw) ? (feed.feedGw as number) : manifestGw;
+    const coverageRatio = manifestGw > 0 ? feedGw / manifestGw : 1;
+    const scarcity = clamp01(1 - coverageRatio);
+    const latencyPenalty = Math.min(1, (feed.latencyMs ?? 0) / 120_000);
+    const driftPenalty = clamp01(
+      (feed.deltaPct ?? 0) / Math.max((energy.tolerance ?? 0.01) * 100, 1)
+    );
+    const riskScore = 0.1 + 0.5 * scarcity + 0.3 * latencyPenalty + 0.1 * driftPenalty;
+    return {
+      feed,
+      weightedScore: Math.max(0, manifestGw) * riskScore,
+    };
+  });
+
+  const temperature = Math.max(0.2, 1 - energy.hamiltonianStability);
+  const { weights } = softmaxScores(
+    scoredFeeds.map((entry) => entry.weightedScore),
+    temperature
+  );
+  const boostMwTotal = Math.max(0, Math.round(boostGw * 1000));
+  const allocations = scoredFeeds.map((entry, index) => {
+    const weight = weights[index] ?? 0;
+    const raw = boostMwTotal * weight;
+    return {
+      feed: entry.feed,
+      weight,
+      boostMw: Math.floor(raw),
+      remainder: raw - Math.floor(raw),
+    };
+  });
+
+  let remainder = boostMwTotal - allocations.reduce((sum, entry) => sum + entry.boostMw, 0);
+  if (remainder > 0) {
+    allocations
+      .slice()
+      .sort((a, b) => b.remainder - a.remainder)
+      .forEach((entry) => {
+        if (remainder <= 0) {
+          return;
+        }
+        entry.boostMw += 1;
+        remainder -= 1;
+      });
+  }
+
+  const perFeedBoosts = allocations
+    .map((entry) => {
+      const boost = round(entry.boostMw / 1000, 4);
       if (boost <= 0) {
         return null;
       }
       return {
-        federationSlug: feed.federationSlug ?? null,
-        region: feed.region ?? null,
+        federationSlug: entry.feed.federationSlug ?? null,
+        region: entry.feed.region ?? null,
         boostGw: boost,
+        weightPct: round(entry.weight * 100, 2),
       };
     })
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
@@ -1843,7 +1898,11 @@ function formatRunwayAdjustment(plan?: RunwayAdjustmentPlan | null): string | nu
   const perFeed = plan.perFeedBoosts
     .map((boost) => {
       const label = boost.federationSlug || boost.region || "unknown";
-      return `${label}: +${formatNumber(boost.boostGw, 2)} GW`;
+      const weight =
+        Number.isFinite(boost.weightPct ?? NaN) && (boost.weightPct ?? 0) > 0
+          ? ` (${(boost.weightPct ?? 0).toFixed(1)}%)`
+          : "";
+      return `${label}: +${formatNumber(boost.boostGw, 2)} GW${weight}`;
     })
     .join(", ");
   return `${perFeed} (total +${formatNumber(plan.totalReserveBoostGw, 2)} GW)`;

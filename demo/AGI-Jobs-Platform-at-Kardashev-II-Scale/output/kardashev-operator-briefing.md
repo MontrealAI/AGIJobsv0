@@ -40,7 +40,7 @@
 * Gibbs free energy 146,670,518.99 GJ · entropy 4.87σ · Hamiltonian 51.8%
 * Free energy runway 0.04h at mean demand (gap 0.96h, 1054667.95 GWh).
 * Nash 85.6% · coalition 90.0% · logistics welfare 98.5%
-* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
+* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: orbital: +2,531,203.08 GW (100.0%) (total +2,531,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
 * 2. Stabilize mission Hamiltonian (needs-action) — Rebalance mission timelines and energy buffers to regain Hamiltonian stability. · target Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.
 * 3. Reinforce sentient welfare balance (on-track) — Continue cooperative reward rotations to sustain coalition stability. · target Coalition stability ≥ 85% and inequality ≤ 30%.
 * 4. Tighten Nash allocation (on-track) — Keep incentive gradients aligned with Nash stability targets. · target Deviation incentive ≤ 20% and strategy stability ≥ 85%.

@@ -107,7 +107,11 @@ function formatRunwayAdjustment(runwayAdjustment) {
   }
   const parts = perFeedBoosts.map((boost) => {
     const label = boost.federationSlug || boost.region || 'unknown';
-    return `${label}: +${formatNumber(boost.boostGw)} GW`;
+    const weight =
+      Number.isFinite(boost.weightPct) && boost.weightPct > 0
+        ? ` (${boost.weightPct.toFixed(1)}%)`
+        : '';
+    return `${label}: +${formatNumber(boost.boostGw)} GW${weight}`;
   });
   return `${parts.join(', ')} (total +${formatNumber(runwayAdjustment.totalReserveBoostGw)} GW)`;
 }
@@ -121,6 +125,13 @@ function clamp01(value) {
     return 0;
   }
   return Math.min(1, Math.max(0, value));
+}
+
+function clamp(value, min, max) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, value));
 }
 
 function hashString(value) {
@@ -359,30 +370,93 @@ function runEnergyMonteCarlo({
   return simulateEnergyMonteCarlo(fabric, energyFeeds, energyConfig, energyModels, rng, runs);
 }
 
-function distributeReserveBoost(energyFeeds, boostGw) {
-  const totalNominalGw = sum(energyFeeds.map((feed) => feed.nominalMw)) / 1000;
-  if (boostGw <= 0 || totalNominalGw <= 0) {
+function scoreReserveBoostFeeds(energyFeeds) {
+  return energyFeeds.map((feed) => {
+    const nominalMw = Math.max(0, feed.nominalMw ?? 0);
+    const bufferMw = Math.max(0, feed.bufferMw ?? 0);
+    const bufferRatio = nominalMw > 0 ? bufferMw / nominalMw : 0;
+    const latencyPenalty = clamp((feed.latencyMs ?? 0) / 1_200_000, 0, 1);
+    const scarcity = clamp01(1 - bufferRatio);
+    const riskScore = 0.1 + 0.55 * scarcity + 0.35 * latencyPenalty;
+    return {
+      feed,
+      nominalMw,
+      scarcity,
+      latencyPenalty,
+      riskScore,
+      weightedScore: nominalMw * riskScore,
+    };
+  });
+}
+
+function allocateReserveBoost(boostMwTotal, weightEntries) {
+  if (boostMwTotal <= 0 || weightEntries.length === 0) {
+    return weightEntries.map((entry) => ({ ...entry, boostMw: 0 }));
+  }
+
+  const allocations = weightEntries.map((entry) => {
+    const raw = boostMwTotal * entry.weight;
+    const floored = Math.floor(raw);
+    return {
+      ...entry,
+      boostMw: floored,
+      remainder: raw - floored,
+    };
+  });
+
+  let remaining = boostMwTotal - allocations.reduce((sumValue, entry) => sumValue + entry.boostMw, 0);
+  if (remaining > 0) {
+    allocations
+      .slice()
+      .sort((a, b) => b.remainder - a.remainder)
+      .forEach((entry) => {
+        if (remaining <= 0) {
+          return;
+        }
+        entry.boostMw += 1;
+        remaining -= 1;
+      });
+  }
+
+  return allocations;
+}
+
+function distributeReserveBoost(energyFeeds, boostGw, { temperature = 0.4 } = {}) {
+  const totalNominalMw = sum(energyFeeds.map((feed) => feed.nominalMw));
+  if (boostGw <= 0 || totalNominalMw <= 0) {
     return {
       feeds: energyFeeds,
       plan: [],
     };
   }
 
-  const boostMwTotal = boostGw * 1000;
+  const scoredFeeds = scoreReserveBoostFeeds(energyFeeds);
+  const scores = scoredFeeds.map((entry) => entry.weightedScore);
+  const { weights } = softmaxScores(scores, temperature);
+  const boostMwTotal = Math.max(0, Math.round(boostGw * 1000));
+  const weightedEntries = scoredFeeds.map((entry, index) => ({
+    ...entry,
+    weight: weights[index] ?? 0,
+  }));
+  const allocations = allocateReserveBoost(boostMwTotal, weightedEntries);
+
   const plan = [];
-  const feeds = energyFeeds.map((feed) => {
-    const share = (feed.nominalMw / 1000) / totalNominalGw;
-    const boostMw = Math.max(0, Math.round(boostMwTotal * share));
+  const feeds = allocations.map((entry) => {
+    const boostMw = Math.max(0, entry.boostMw);
     if (boostMw > 0) {
       plan.push({
-        federationSlug: feed.federationSlug,
-        region: feed.region,
+        federationSlug: entry.feed.federationSlug,
+        region: entry.feed.region,
         boostMw,
+        weightPct: round(entry.weight * 100, 2),
+        scarcity: round(entry.scarcity, 4),
+        latencyPenalty: round(entry.latencyPenalty, 4),
+        riskScore: round(entry.riskScore, 4),
       });
     }
     return {
-      ...feed,
-      bufferMw: feed.bufferMw + boostMw,
+      ...entry.feed,
+      bufferMw: entry.feed.bufferMw + boostMw,
     };
   });
 
@@ -426,7 +500,8 @@ function stabilizeEnergyRunway({
       break;
     }
 
-    const { feeds, plan } = distributeReserveBoost(adjustedFeeds, boostGw);
+    const temperature = clamp(1 - (energyMonteCarlo.hamiltonianStability ?? 0), 0.2, 1.1);
+    const { feeds, plan } = distributeReserveBoost(adjustedFeeds, boostGw, { temperature });
     const nextMonteCarlo = runEnergyMonteCarlo({
       fabric,
       energyFeeds: feeds,
@@ -1943,6 +2018,7 @@ function buildEquilibriumLedger({
           federationSlug: boost.federationSlug ?? null,
           region: boost.region ?? null,
           boostGw: round((boost.deltaMw ?? boost.boostMw ?? 0) / 1000, 4),
+          weightPct: Number.isFinite(boost.weightPct) ? round(boost.weightPct, 2) : null,
         })),
       }
     : null;
