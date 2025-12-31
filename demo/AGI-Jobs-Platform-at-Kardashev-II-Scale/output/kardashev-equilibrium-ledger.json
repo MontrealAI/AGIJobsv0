@@ -1,16 +1,19 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
   "status": "critical",
-  "overallScore": 0.792,
+  "overallScore": 0.7826,
   "components": {
     "energy": {
-      "score": 0.5228,
+      "score": 0.4852,
       "freeEnergyMarginPct": 0.0354,
       "runwayHours": 0.0372,
       "hamiltonianStability": 0.5177,
       "gameTheorySlack": 0.783,
       "breachProbability": 0,
-      "gibbsFreeEnergyGj": 146670518.99
+      "gibbsFreeEnergyGj": 146670518.99,
+      "utilisationPct": 0.9522,
+      "utilisationScore": 0.3826,
+      "safetyMarginPct": 0.125
     },
     "allocation": {
       "score": 0.9314,
@@ -91,8 +94,8 @@
     {
       "title": "Thermodynamic headroom",
       "status": "needs-action",
-      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h",
-      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%."
+      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)",
+      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%. Lower utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin."
     },
     {
       "title": "Mission Hamiltonian balance",
@@ -130,10 +133,10 @@
       "rank": 1,
       "title": "Stabilize free energy buffer",
       "status": "needs-action",
-      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h",
-      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW).",
-      "target": "Free energy margin ≥ 70%, runway ≥ 1h, and Hamiltonian stability ≥ 90%.",
-      "priorityScore": 0.4772
+      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)",
+      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW).",
+      "target": "Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.",
+      "priorityScore": 0.5148
     },
     {
       "rank": 2,
@@ -183,6 +186,7 @@
   ],
   "recommendations": [
     "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%.",
+    "Reduce aggregate utilisation below 87.5% to preserve the 12.5% safety margin.",
     "Extend free-energy runway to at least 1h to absorb demand shocks.",
     "Lower mission Hamiltonian load or increase energy headroom to stabilize critical-path programmes."
   ]

@@ -5038,16 +5038,23 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const runwayScore = clamp01(
     (energy.runwayHours ?? 0) / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)
   );
+  const utilisationPct = telemetry.energy.utilisationPct ?? 0;
+  const marginPct = telemetry.energy.marginPct ?? 0;
+  const utilisationTarget = 1 - marginPct;
+  const marginFloor = Math.max(marginPct, 0.05);
+  const utilisationExcess = Math.max(0, utilisationPct - utilisationTarget);
+  const utilisationScore = clamp01(1 - utilisationExcess / marginFloor);
 
   const breachPenalty = energy.withinTolerance
     ? 1
     : clamp01(1 - energy.breachProbability / Math.max(energy.tolerance, 1e-6));
   const energyScore = clamp01(
-    0.3 * energy.hamiltonianStability +
+    0.25 * energy.hamiltonianStability +
       0.2 * energy.gameTheorySlack +
       0.15 * energy.freeEnergyMarginPct +
       0.15 * runwayScore +
-      0.2 * breachPenalty
+      0.15 * breachPenalty +
+      0.1 * utilisationScore
   );
   const allocationScore = clamp01(
     0.35 * allocation.strategyStability +
@@ -5091,6 +5098,13 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%."
     );
   }
+  if (utilisationScore < 0.85) {
+    recommendations.push(
+      `Reduce aggregate utilisation below ${(utilisationTarget * 100).toFixed(
+        1
+      )}% to preserve the ${(marginPct * 100).toFixed(1)}% safety margin.`
+    );
+  }
   if ((energy.runwayHours ?? 0) < ENERGY_RUNWAY_TARGET_HOURS) {
     recommendations.push(
       `Extend free-energy runway to at least ${ENERGY_RUNWAY_TARGET_HOURS}h to absorb demand shocks.`
@@ -5130,11 +5144,24 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         1
       )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(
         1
-      )}% · runway ${energy.runwayHours.toFixed(2)}h`,
-      action:
-        energyScore >= 0.85
-          ? "Maintain reserve cadence and keep Monte Carlo breach probability below tolerance."
-          : "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%.",
+      )}% · runway ${energy.runwayHours.toFixed(2)}h · utilisation ${(utilisationPct * 100).toFixed(
+        1
+      )}% (margin ${(marginPct * 100).toFixed(1)}%)`,
+      action: (() => {
+        const baseAction =
+          energyScore >= 0.85
+            ? "Maintain reserve cadence and keep Monte Carlo breach probability below tolerance."
+            : "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%.";
+        const utilisationAction =
+          utilisationScore >= 0.85
+            ? ""
+            : ` Lower utilisation below ${(utilisationTarget * 100).toFixed(
+                1
+              )}% or expand captured energy to preserve the ${(marginPct * 100).toFixed(
+                1
+              )}% safety margin.`;
+        return `${baseAction}${utilisationAction}`;
+      })(),
     },
     {
       title: "Mission Hamiltonian balance",
@@ -5201,15 +5228,28 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         1
       )}% · Hamiltonian ${(energy.hamiltonianStability * 100).toFixed(
         1
-      )}% · runway ${energy.runwayHours.toFixed(2)}h`,
+      )}% · runway ${energy.runwayHours.toFixed(2)}h · utilisation ${(utilisationPct * 100).toFixed(
+        1
+      )}% (margin ${(marginPct * 100).toFixed(1)}%)`,
       action: (() => {
         const baseAction =
           energyScore >= 0.85
             ? "Hold reserve cadence and keep Monte Carlo breach probability below tolerance."
             : `Increase reserve buffers or smooth demand variance to restore Hamiltonian stability.${energy.runwayGapGwh > 0 ? ` Add ~${energy.runwayGapGwh.toFixed(2)} GWh (${energy.runwayGapGj.toFixed(0)} GJ) to hit the 1h runway.` : ""}`;
-        return runwayPlanText ? `${baseAction} Reserve boost plan: ${runwayPlanText}.` : baseAction;
+        const utilisationAction =
+          utilisationScore >= 0.85
+            ? ""
+            : ` Reduce utilisation below ${(utilisationTarget * 100).toFixed(
+                1
+              )}% or expand captured energy to preserve the ${(marginPct * 100).toFixed(
+                1
+              )}% safety margin.`;
+        const combined = `${baseAction}${utilisationAction}`;
+        return runwayPlanText ? `${combined} Reserve boost plan: ${runwayPlanText}.` : combined;
       })(),
-      target: `Free energy margin ≥ 70%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, and Hamiltonian stability ≥ 90%.`,
+      target: `Free energy margin ≥ 70%, runway ≥ ${ENERGY_RUNWAY_TARGET_HOURS}h, Hamiltonian stability ≥ 90%, utilisation ≤ ${(utilisationTarget * 100).toFixed(
+        1
+      )}%.`,
     },
     {
       key: "mission",
@@ -5307,6 +5347,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
         gameTheorySlack: round(energy.gameTheorySlack, 4),
         breachProbability: round(energy.breachProbability, 4),
         gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
+        utilisationPct: round(utilisationPct, 4),
+        utilisationScore: round(utilisationScore, 4),
+        safetyMarginPct: round(marginPct, 4),
       },
       allocation: {
         score: round(allocationScore, 4),
@@ -5392,6 +5435,13 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
       2
     )} GW required)`
   );
+  const utilisationPct = telemetry.energy.utilisationPct;
+  const marginPct = telemetry.energy.marginPct;
+  if (Number.isFinite(utilisationPct) && Number.isFinite(marginPct)) {
+    lines.push(
+      `- Utilisation: ${(utilisationPct * 100).toFixed(2)}% (safety margin ${(marginPct * 100).toFixed(2)}%)`
+    );
+  }
   lines.push(`- Gibbs free energy: ${formatNumber(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`);
   const runwayPlanText = formatRunwayAdjustment(thermodynamics.runwayAdjustment);
   if (runwayPlanText) {
