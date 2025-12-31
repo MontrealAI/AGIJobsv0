@@ -15,6 +15,14 @@ Generated: 2025-03-01T00:00:00Z
 - Free energy per agent: 0.032739 GJ
 - Welfare potential: 83.4%
 
+## Primary action
+### Stabilize free energy buffer
+- Status: needs-action
+- Target: Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
+- Priority: 51.5%
+- Rationale: Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)
+- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: earth: +857,603.97 GW, mars: +251,964.51 GW, orbital: +1,421,634.61 GW (total +2,531,203.08 GW).
+
 ## Action path
 ### Step 1: Stabilize free energy buffer
 - Status: needs-action
