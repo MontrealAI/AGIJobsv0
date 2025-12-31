@@ -12,6 +12,8 @@ from typing import Any, Optional
 from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
 
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "default.json"
+
 
 def _require_positive(value: float, *, field: str, allow_zero: bool = False) -> None:
     """Validate that numeric CLI arguments remain within safe bounds.
@@ -115,7 +117,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=10.0,
         help="Seconds between autonomous policy actions",
     )
-    parser.add_argument("--config", type=Path, help="Optional JSON file overriding orchestrator configuration")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help=(
+            "Optional JSON file overriding orchestrator configuration "
+            f"(defaults to {DEFAULT_CONFIG_PATH.as_posix()})"
+        ),
+    )
     return parser
 
 
@@ -131,10 +140,14 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     """
 
     overrides = overrides or {}
-    if args.config:
-        if not args.config.exists():
-            raise FileNotFoundError(f"Config file not found: {args.config}")
-        data = json.loads(args.config.read_text(encoding="utf-8"))
+    config_path = args.config or (DEFAULT_CONFIG_PATH if DEFAULT_CONFIG_PATH.exists() else None)
+    if config_path:
+        if not config_path.exists():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+        config_base = (
+            DEFAULT_CONFIG_PATH.parent.parent if config_path == DEFAULT_CONFIG_PATH else config_path.parent
+        )
         for path_field in (
             "checkpoint_path",
             "control_channel_file",
@@ -143,7 +156,10 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
             "energy_oracle_path",
         ):
             if path_field in data and data[path_field] is not None:
-                data[path_field] = Path(data[path_field])
+                candidate = Path(data[path_field])
+                if not candidate.is_absolute():
+                    candidate = config_base / candidate
+                data[path_field] = candidate
         if "governance" in data:
             gov_data = dict(data["governance"])
             if "validator_commit_window" in gov_data:
