@@ -1,19 +1,19 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
-  "status": "critical",
-  "overallScore": 0.7826,
+  "status": "nominal",
+  "overallScore": 0.9001,
   "components": {
     "energy": {
-      "score": 0.4852,
-      "freeEnergyMarginPct": 0.0354,
-      "runwayHours": 0.0372,
-      "hamiltonianStability": 0.5177,
-      "gameTheorySlack": 0.783,
+      "score": 0.8341,
+      "freeEnergyMarginPct": 0.4906,
+      "runwayHours": 0.9811,
+      "hamiltonianStability": 0.7453,
+      "gameTheorySlack": 0.8854,
       "breachProbability": 0,
-      "gibbsFreeEnergyGj": 146670518.99,
-      "utilisationPct": 0.9522,
-      "utilisationScore": 0.3826,
-      "safetyMarginPct": 0.125
+      "gibbsFreeEnergyGj": 3867514105.19,
+      "utilisationPct": 0.5,
+      "utilisationScore": 1,
+      "safetyMarginPct": 0.5
     },
     "allocation": {
       "score": 0.9314,
@@ -22,17 +22,17 @@
       "deviationIncentive": 0.1211,
       "nashProduct": 0.856,
       "jainIndex": 0.99,
-      "gibbsPotential": -0.3064
+      "gibbsPotential": -0.1205
     },
     "welfare": {
-      "score": 0.8724,
-      "cooperationIndex": 0.8508,
+      "score": 0.9001,
+      "cooperationIndex": 0.8969,
       "inequalityIndex": 0.0525,
       "coalitionStability": 0.8996,
       "paretoSlack": 0.8789,
-      "collectiveActionPotential": 0.7593,
-      "freeEnergyPerAgentGj": 0.032739,
-      "welfarePotential": 0.8343
+      "collectiveActionPotential": 0.846,
+      "freeEnergyPerAgentGj": 0.863284,
+      "welfarePotential": 0.9026
     },
     "logistics": {
       "score": 0.9904,
@@ -45,32 +45,32 @@
       "score": 0.9929,
       "failoverWithinQuorum": true,
       "averageAvailabilityPct": 0.9823,
-      "deviationPct": 0
+      "deviationPct": 5.0228
     },
     "mission": {
-      "score": 0.5269,
-      "hamiltonianStability": 0.6096,
-      "freeEnergyHeadroomPct": 0.0167
+      "score": 0.7743,
+      "hamiltonianStability": 0.6775,
+      "freeEnergyHeadroomPct": 0.4401
     }
   },
   "thermodynamics": {
-    "freeEnergyMarginPct": 0.0354,
-    "runwayHours": 0.0372,
-    "runwayGapHours": 0.9628,
-    "runwayGapGwh": 1054667.951,
-    "runwayGapGj": 3796804623.52,
-    "gibbsFreeEnergyGj": 146670518.99,
-    "entropyMargin": 4.8701,
-    "hamiltonianStability": 0.5177,
+    "freeEnergyMarginPct": 0.4906,
+    "runwayHours": 0.9811,
+    "runwayGapHours": 0.0189,
+    "runwayGapGwh": 20713.1419,
+    "runwayGapGj": 74567310.72,
+    "gibbsFreeEnergyGj": 3867514105.19,
+    "entropyMargin": 82.4859,
+    "hamiltonianStability": 0.7453,
     "runwayAdjustment": {
       "targetHours": 1,
       "applied": false,
-      "totalReserveBoostGw": 2531203.0823,
+      "totalReserveBoostGw": 49711.5405,
       "perFeedBoosts": [
         {
           "federationSlug": "orbital",
           "region": "orbital-swarm",
-          "boostGw": 2531203.082,
+          "boostGw": 49711.54,
           "weightPct": 100
         }
       ]
@@ -85,13 +85,13 @@
     {
       "title": "Thermodynamic headroom",
       "status": "needs-action",
-      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)",
-      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%. Lower utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin."
+      "rationale": "Free energy 49.1% · Hamiltonian 74.5% · runway 0.98h · utilisation 50.0% (margin 50.0%)",
+      "action": "Raise reserve buffers or smooth demand variance until Hamiltonian stability clears 85%."
     },
     {
       "title": "Mission Hamiltonian balance",
       "status": "needs-action",
-      "rationale": "Stability 61.0% · headroom 1.7%",
+      "rationale": "Stability 67.8% · headroom 44.0%",
       "action": "Adjust programme timelines and buffers to restore Hamiltonian stability above 90%."
     },
     {
@@ -122,21 +122,21 @@
   "actionPath": [
     {
       "rank": 1,
-      "title": "Stabilize free energy buffer",
+      "title": "Stabilize mission Hamiltonian",
       "status": "needs-action",
-      "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)",
-      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: orbital: +2,531,203.08 GW (100.0%) (total +2,531,203.08 GW).",
-      "target": "Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.",
-      "priorityScore": 0.5148
+      "rationale": "Stability 67.8% · headroom 44.0%",
+      "action": "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
+      "target": "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
+      "priorityScore": 0.2257
     },
     {
       "rank": 2,
-      "title": "Stabilize mission Hamiltonian",
+      "title": "Stabilize free energy buffer",
       "status": "needs-action",
-      "rationale": "Stability 61.0% · headroom 1.7%",
-      "action": "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
-      "target": "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
-      "priorityScore": 0.4731
+      "rationale": "Free energy 49.1% · Hamiltonian 74.5% · runway 0.98h · utilisation 50.0% (margin 50.0%)",
+      "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~20713.14 GWh (74567311 GJ) to hit the 1h runway. Reserve boost plan: orbital: +49,711.54 GW (100.0%) (total +49,711.54 GW).",
+      "target": "Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 50.0%.",
+      "priorityScore": 0.1659
     },
     {
       "rank": 3,
@@ -145,7 +145,7 @@
       "rationale": "Coalition 90.0% · inequality 5.3%",
       "action": "Continue cooperative reward rotations to sustain coalition stability.",
       "target": "Coalition stability ≥ 85% and inequality ≤ 30%.",
-      "priorityScore": 0.1276
+      "priorityScore": 0.0999
     },
     {
       "rank": 4,
@@ -177,16 +177,15 @@
   ],
   "primaryAction": {
     "rank": 1,
-    "title": "Stabilize free energy buffer",
+    "title": "Stabilize mission Hamiltonian",
     "status": "needs-action",
-    "rationale": "Free energy 3.5% · Hamiltonian 51.8% · runway 0.04h · utilisation 95.2% (margin 12.5%)",
-    "action": "Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: orbital: +2,531,203.08 GW (100.0%) (total +2,531,203.08 GW).",
-    "target": "Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.",
-    "priorityScore": 0.5148
+    "rationale": "Stability 67.8% · headroom 44.0%",
+    "action": "Rebalance mission timelines and energy buffers to regain Hamiltonian stability.",
+    "target": "Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.",
+    "priorityScore": 0.2257
   },
   "recommendations": [
     "Increase energy buffer or lower demand variance until Hamiltonian stability remains above 90%.",
-    "Reduce aggregate utilisation below 87.5% to preserve the 12.5% safety margin.",
     "Extend free-energy runway to at least 1h to absorb demand shocks.",
     "Lower mission Hamiltonian load or increase energy headroom to stabilize critical-path programmes."
   ]

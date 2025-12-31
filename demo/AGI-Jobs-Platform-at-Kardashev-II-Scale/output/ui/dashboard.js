@@ -1717,6 +1717,10 @@ function renderEquilibriumLedger(ledger) {
     `Nash product: ${formatPercent(gameTheory.nashProduct)}`,
     `Coalition stability: ${formatPercent(gameTheory.coalitionStability)}`,
     `Logistics Nash welfare: ${formatPercent(gameTheory.logisticsNashWelfare)}`,
+    `Replicator stability: ${formatPercent(gameTheory.replicatorStability)} · drift ${formatFixed(
+      gameTheory.replicatorDrift,
+      3
+    )}`,
   ];
   gameTheoryItems.forEach((item) => {
     const li = document.createElement("li");

@@ -2,30 +2,30 @@
   {
     "id": "energy-demand-surge",
     "title": "20% demand surge vs Dyson safety margin",
-    "status": "critical",
-    "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required.",
-    "confidence": 0,
-    "impact": "Star-scale compute would brown-out without emergency pause.",
+    "status": "warning",
+    "summary": "Dyson lattice absorbs surge with 876,000 GW spare.",
+    "confidence": 0.9,
+    "impact": "Thermostat margin remains controllable under surge scenario.",
     "metrics": [
       {
         "label": "Simulated demand",
         "value": "1,314,000 GW",
-        "ok": false
+        "ok": true
       },
       {
         "label": "Remaining buffer",
-        "value": "-164,000 GW",
+        "value": "876,000 GW",
         "ok": false
       },
       {
         "label": "Thermostat margin",
-        "value": "143,750 GW",
+        "value": "1,095,000 GW",
         "ok": true
       },
       {
         "label": "Utilisation",
-        "value": "114.26%",
-        "ok": false
+        "value": "60.00%",
+        "ok": true
       }
     ],
     "recommendedActions": [
@@ -37,8 +37,8 @@
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
     "status": "warning",
-    "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
-    "confidence": 0.36904878007093556,
+    "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
+    "confidence": 0.5125,
     "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
@@ -53,13 +53,13 @@
       },
       {
         "label": "Relay boost allocation",
-        "value": "15.9% (182541 GW)",
+        "value": "35.0% (766500 GW)",
         "ok": true
       },
       {
         "label": "Mitigated latency",
-        "value": "151s",
-        "ok": false
+        "value": "117s",
+        "ok": true
       },
       {
         "label": "Failsafe budget",
@@ -68,13 +68,13 @@
       },
       {
         "label": "Slack",
-        "value": "-31s",
-        "ok": false
+        "value": "3s",
+        "ok": true
       }
     ],
     "recommendedActions": [
       "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
-      "Execute bridge isolation routine from mission directives if slack < 0.",
+      "Keep isolation routine on standby while relays rebalance.",
       "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
     ]
   },
@@ -115,14 +115,14 @@
   {
     "id": "compute-drawdown",
     "title": "Compute drawdown (15%) resilience",
-    "status": "warning",
-    "summary": "Deviation 15.00% exceeds tolerance 0.75%.",
-    "confidence": 0.33333333333333337,
+    "status": "nominal",
+    "summary": "Dyson projection stays within tolerance under drawdown.",
+    "confidence": 0.9403855910705226,
     "impact": "Capital streams absorb transient compute reduction.",
     "metrics": [
       {
         "label": "Projected compute",
-        "value": "115.00 EF",
+        "value": "109.50 EF",
         "ok": true
       },
       {
@@ -132,12 +132,12 @@
       },
       {
         "label": "Deviation",
-        "value": "15.00%",
+        "value": "10.73%",
         "ok": false
       },
       {
         "label": "Tolerance",
-        "value": "0.75%",
+        "value": "6%",
         "ok": true
       }
     ],

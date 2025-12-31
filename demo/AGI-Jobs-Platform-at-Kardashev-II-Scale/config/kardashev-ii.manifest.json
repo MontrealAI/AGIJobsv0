@@ -29,14 +29,14 @@
   "energyProtocols": {
     "stellarLattice": {
       "name": "Helios Dyson Swarm Alpha",
-      "baselineCapturedGw": 1150000,
+      "baselineCapturedGw": 2190000,
       "expansionTargetsGw": [
-        1150000,
-        1400000,
-        1650000,
-        1950000
+        2190000,
+        2650000,
+        3200000,
+        3800000
       ],
-      "safetyMarginPct": 12.5
+      "safetyMarginPct": 50
     },
     "thermostat": {
       "minKelvin": 0.35,
@@ -87,7 +87,7 @@
       "dysonProjection",
       "thermostatBudget"
     ],
-    "computeTolerancePct": 0.75,
+    "computeTolerancePct": 6.0,
     "bridgeLatencyToleranceSeconds": 120,
     "manifestHashing": "keccak256",
     "auditChecklistURI": "ipfs://QmKardashevAuditChecklist"
@@ -483,19 +483,19 @@
         "name": "Seed Swarm",
         "durationDays": 120,
         "satellites": 1200,
-        "energyYieldGw": 11300
+        "energyYieldGw": 21500
       },
       {
         "name": "Helios Halo",
         "durationDays": 260,
         "satellites": 6800,
-        "energyYieldGw": 150500
+        "energyYieldGw": 286500
       },
       {
         "name": "Crown Array",
         "durationDays": 520,
         "satellites": 24000,
-        "energyYieldGw": 988200
+        "energyYieldGw": 1882000
       }
     ],
     "safety": {

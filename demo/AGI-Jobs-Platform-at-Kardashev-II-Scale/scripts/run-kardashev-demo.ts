@@ -1020,14 +1020,21 @@ function buildMissionThermodynamics(
   const totalCompute = mission.totals.computeExaflops ?? 0;
   const freeEnergyBudgetGw = Math.max(0, energyMonteCarlo.freeEnergyMarginGw ?? 0);
   const freeEnergyHeadroomPct = totalEnergyGw > 0 ? clamp01(freeEnergyBudgetGw / totalEnergyGw) : 0;
+  const programmeCount = Math.max(1, mission.programmes.length);
+  const uniformShare = 1 / programmeCount;
 
   const programmeThermo = mission.programmes.map((programme) => {
     const energyShare = totalEnergyGw > 0 ? programme.totalEnergyGw / totalEnergyGw : 0;
     const computeShare = totalCompute > 0 ? programme.totalComputeExaflops / totalCompute : 0;
     const riskIndex = computeRiskIndex(programme.riskDistribution);
     const slackPenalty = programme.timelineSlackDays < 0 ? 1 : programme.timelineSlackDays < 14 ? 0.5 : 0;
-    const hamiltonian = clamp01(0.45 * energyShare + 0.25 * computeShare + 0.2 * riskIndex + 0.1 * slackPenalty);
-    const pressureScore = clamp01(hamiltonian + 0.25 * slackPenalty + 0.15 * riskIndex);
+    const energyImbalance =
+      uniformShare > 0 ? Math.abs(energyShare - uniformShare) / uniformShare : 0;
+    const computeImbalance =
+      uniformShare > 0 ? Math.abs(computeShare - uniformShare) / uniformShare : 0;
+    const imbalanceScore = clamp01(0.5 * energyImbalance + 0.5 * computeImbalance);
+    const hamiltonian = clamp01(0.18 * imbalanceScore + 0.22 * riskIndex + 0.12 * slackPenalty);
+    const pressureScore = clamp01(hamiltonian + 0.18 * slackPenalty + 0.18 * riskIndex);
     let recommendation = "Maintain cadence while monitoring energy draw.";
     if (programme.missingDependencies.length > 0) {
       recommendation = "Resolve dependency gaps to lower mission drag.";
@@ -4079,7 +4086,8 @@ function computeTelemetry(
   }
 
   const totalExaflops = manifest.federations.reduce((sum, f) => sum + f.compute.exaflops, 0);
-  const dysonComputeEstimate = dysonYield / 10_000;
+  const computeProjectionBase = Math.min(sumRegionalGw, dysonYield);
+  const dysonComputeEstimate = computeProjectionBase / 10_000;
   const computeDeviationPct =
     dysonComputeEstimate === 0
       ? 0
