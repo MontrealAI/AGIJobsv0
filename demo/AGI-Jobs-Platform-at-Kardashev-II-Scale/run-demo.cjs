@@ -1900,6 +1900,15 @@ function buildEquilibriumLedger({
   if (allocationPolicy.deviationIncentive > 0.2) {
     recommendations.push('Reduce deviation incentives to reinforce Nash equilibrium adherence.');
   }
+  const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy.strategyStability ?? 0;
+  const replicatorDrift = allocationPolicy.replicatorDrift ?? 0;
+  if (replicatorStability < 0.85 || replicatorDrift > 0.15) {
+    recommendations.push(
+      'Raise replicator stability (≥ 85%) and reduce drift (≤ 0.15) by tightening payoff alignment across shards.'
+    );
+  }
   if ((allocationPolicy.concentrationIndex ?? 0) > (allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI)) {
     recommendations.push('Reduce allocation concentration by broadening energy weights across shards.');
   }
@@ -2107,6 +2116,8 @@ function buildEquilibriumLedger({
       nashProduct: round(allocationPolicy.nashProduct, 4),
       logisticsNashWelfare: round(logisticsNashWelfare, 4),
       coalitionStability: round(sentientWelfare.coalitionStability, 4),
+      replicatorStability: round(allocationPolicy.replicatorStability ?? 0, 4),
+      replicatorDrift: round(allocationPolicy.replicatorDrift ?? 0, 4),
     },
     pathways,
     actionPath: prioritizedActionPath,
@@ -2170,6 +2181,12 @@ function buildActionPathBriefing(equilibriumLedger) {
     `- Hamiltonian stability: ${formatPercentValue(thermodynamics.hamiltonianStability)}`
   );
   lines.push(`- Nash product: ${formatPercentValue(gameTheory.nashProduct)}`);
+  lines.push(
+    `- Replicator stability: ${formatPercentValue(gameTheory.replicatorStability)} (drift ${formatFixedValue(
+      gameTheory.replicatorDrift,
+      3
+    )})`
+  );
   lines.push(
     `- Coalition stability: ${formatPercentValue(gameTheory.coalitionStability)}`
   );
@@ -2268,17 +2285,26 @@ function buildEquilibriumActionPath({
       'Shift energy-intensive programmes, stretch critical-path timelines, and lower risk exposure until mission stability clears target.',
   });
 
+  const replicatorDrift = allocationPolicy.replicatorDrift ?? 0;
+  const replicatorStability = Number.isFinite(allocationPolicy.replicatorStability)
+    ? allocationPolicy.replicatorStability
+    : allocationPolicy.strategyStability;
   const deviationNeeds =
-    allocationPolicy.deviationIncentive > 0.2 || allocationPolicy.strategyStability < 0.85;
+    allocationPolicy.deviationIncentive > 0.2 ||
+    allocationPolicy.strategyStability < 0.85 ||
+    replicatorStability < 0.85 ||
+    replicatorDrift > 0.15;
   steps.push({
     key: 'allocation',
     score: scores?.allocation ?? 0,
     title: 'Nash deviation suppression',
     status: deviationNeeds ? 'needs-action' : 'on-track',
-    target: 'Deviation incentive ≤ 20% with strategy stability ≥ 85%.',
+    target: 'Deviation incentive ≤ 20%, strategy stability ≥ 85%, replicator stability ≥ 85%, drift ≤ 0.15.',
     rationale: `Deviation ${(allocationPolicy.deviationIncentive * 100).toFixed(
       1
-    )}% · Nash ${(allocationPolicy.nashProduct * 100).toFixed(1)}%`,
+    )}% · Nash ${(allocationPolicy.nashProduct * 100).toFixed(1)}% · replicator ${(
+      replicatorStability * 100
+    ).toFixed(1)}% · drift ${replicatorDrift.toFixed(3)}`,
     action:
       'Retune reward weights with a Boltzmann temperature drop and align shard payoffs to reduce exploitable gradients.',
   });
