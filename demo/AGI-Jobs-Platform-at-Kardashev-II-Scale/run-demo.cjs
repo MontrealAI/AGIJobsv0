@@ -1947,6 +1947,16 @@ function buildEquilibriumLedger({
       }
     : null;
   const runwayPlanText = formatRunwayAdjustment(runwayAdjustmentSummary);
+  const prioritizedActionPath = actionPath.map((step) => {
+    if (step.key !== 'energy' || !runwayPlanText) {
+      return step;
+    }
+    return {
+      ...step,
+      action: `${step.action} Reserve boost plan: ${runwayPlanText}.`,
+    };
+  });
+  const primaryAction = prioritizedActionPath[0] ?? null;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -2023,15 +2033,8 @@ function buildEquilibriumLedger({
       coalitionStability: round(sentientWelfare.coalitionStability, 4),
     },
     pathways,
-    actionPath: actionPath.map((step) => {
-      if (step.key !== 'energy' || !runwayPlanText) {
-        return step;
-      }
-      return {
-        ...step,
-        action: `${step.action} Reserve boost plan: ${runwayPlanText}.`,
-      };
-    }),
+    actionPath: prioritizedActionPath,
+    primaryAction,
     recommendations,
   };
 }
@@ -2098,6 +2101,21 @@ function buildActionPathBriefing(equilibriumLedger) {
     `- Free energy per agent: ${formatFixedValue(welfare.freeEnergyPerAgentGj, 6)} GJ`
   );
   lines.push(`- Welfare potential: ${formatPercentValue(welfare.welfarePotential)}`);
+  lines.push('');
+  lines.push('## Primary action');
+  if (actionPath.length === 0) {
+    lines.push('No corrective steps required. Maintain current equilibrium and monitor drift.');
+  } else {
+    const primary = actionPath[0];
+    lines.push(`### ${primary.title}`);
+    lines.push(`- Status: ${primary.status}`);
+    lines.push(`- Target: ${primary.target}`);
+    if (Number.isFinite(primary.priorityScore)) {
+      lines.push(`- Priority: ${formatPercentValue(primary.priorityScore)}`);
+    }
+    lines.push(`- Rationale: ${primary.rationale}`);
+    lines.push(`- Action: ${primary.action}`);
+  }
   lines.push('');
   lines.push('## Action path');
   if (actionPath.length === 0) {

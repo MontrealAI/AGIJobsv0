@@ -5328,6 +5328,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       target: step.target,
       priorityScore: round(1 - step.score, 4),
     }));
+  const primaryAction = actionPath[0] ?? null;
 
   const generatedAt =
     typeof manifest.generatedAt === "number"
@@ -5407,6 +5408,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
     },
     pathways,
     actionPath,
+    primaryAction,
     recommendations,
   };
 }
@@ -5455,6 +5457,19 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
   lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);
   lines.push(`- Free energy per agent: ${formatNumber(welfare.freeEnergyPerAgentGj, 6)} GJ`);
   lines.push(`- Welfare potential: ${formatPercent(welfare.welfarePotential, 1)}`);
+  lines.push("");
+  lines.push("## Primary action");
+  if (actionPath.length === 0) {
+    lines.push("No immediate corrective steps required. Maintain equilibrium cadence.");
+  } else {
+    const primary = actionPath[0];
+    lines.push(`### ${primary.title}`);
+    lines.push(`- Status: ${primary.status}`);
+    lines.push(`- Target: ${primary.target}`);
+    lines.push(`- Priority: ${formatPercent(primary.priorityScore, 1)}`);
+    lines.push(`- Rationale: ${primary.rationale}`);
+    lines.push(`- Action: ${primary.action}`);
+  }
   lines.push("");
   lines.push("## Action path");
 
