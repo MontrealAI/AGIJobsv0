@@ -18,6 +18,13 @@ for path in (DEMO_ROOT, DEMO_PARENT):
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
 
+for name in list(sys.modules):
+    if name == "alpha_node" or name.startswith("alpha_node."):
+        sys.modules.pop(name)
+
+grand_demo_path = str(DEMO_ROOT / "grand_demo")
+sys.path = [path for path in sys.path if path != grand_demo_path]
+
 if os.environ.get("DEMO_SYS_PATH_DEBUG"):
     import importlib.util
 
