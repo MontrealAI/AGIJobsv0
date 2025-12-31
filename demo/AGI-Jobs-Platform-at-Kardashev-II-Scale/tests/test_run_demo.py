@@ -68,6 +68,38 @@ def test_run_demo_check_mode_with_config_root(tmp_path: Path) -> None:
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_check_mode_with_config_dir(tmp_path: Path) -> None:
+    """The wrapper should accept a direct config directory as the config root."""
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True)
+    for filename in (
+        "fabric.json",
+        "energy-feeds.json",
+        "kardashev-ii.manifest.json",
+        "task-lattice.json",
+    ):
+        shutil.copy(DEMO_ROOT / "config" / filename, config_dir / filename)
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(PYTHON_ENTRYPOINT),
+            "--output-dir",
+            str(tmp_path),
+            "--config-root",
+            str(config_dir),
+            "--check",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "validated (check mode)" in result.stdout
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
 def test_run_demo_accepts_zero_latency_shards(tmp_path: Path) -> None:
     """The demo should allow local shards that declare zero latency."""
 

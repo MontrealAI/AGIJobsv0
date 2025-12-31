@@ -2629,7 +2629,7 @@ function resolveOutputDir(rawOutputDir, demoRoot, { ensure = true } = {}) {
   return dir;
 }
 
-function resolveDemoRoot({ profile, configRoot } = {}) {
+function resolveDemoRoot({ profile } = {}) {
   if (profile) {
     const candidate = path.resolve(__dirname, profile);
     if (fs.existsSync(candidate)) {
@@ -2637,15 +2637,34 @@ function resolveDemoRoot({ profile, configRoot } = {}) {
     }
     throw new Error(`Profile directory not found: ${candidate}`);
   }
-  if (configRoot) {
-    const candidate = normalizePathOverride(configRoot);
-    const resolved = candidate ? path.resolve(candidate) : path.resolve(configRoot);
-    if (fs.existsSync(resolved)) {
-      return resolved;
-    }
+  return __dirname;
+}
+
+function resolveConfigRoot({ configRoot, demoRoot }) {
+  if (!configRoot) {
+    return demoRoot;
+  }
+  const candidate = normalizePathOverride(configRoot);
+  const resolved = candidate ? path.resolve(candidate) : path.resolve(configRoot);
+  if (!fs.existsSync(resolved)) {
     throw new Error(`Config root override not found: ${resolved}`);
   }
-  return __dirname;
+  if (fs.existsSync(path.join(resolved, 'config'))) {
+    return resolved;
+  }
+  const configFiles = [
+    'fabric.json',
+    'energy-feeds.json',
+    'kardashev-ii.manifest.json',
+    'task-lattice.json',
+  ];
+  if (configFiles.some((filename) => fs.existsSync(path.join(resolved, filename)))) {
+    const parent = path.dirname(resolved);
+    if (fs.existsSync(path.join(parent, 'config'))) {
+      return parent;
+    }
+  }
+  return resolved;
 }
 
 function main() {
@@ -2653,8 +2672,10 @@ function main() {
     process.argv.slice(2)
   );
   let demoRoot;
+  let resolvedConfigRoot;
   try {
-    demoRoot = resolveDemoRoot({ profile, configRoot });
+    demoRoot = resolveDemoRoot({ profile });
+    resolvedConfigRoot = resolveConfigRoot({ configRoot, demoRoot });
   } catch (err) {
     console.error('❌ Kardashev configuration root resolution failed.');
     console.error(`   - ${err.message}`);
@@ -2666,14 +2687,26 @@ function main() {
   let manifest;
   let taskLattice;
   try {
-    const fabricPath = resolveConfigPath('KARDASHEV_FABRIC_PATH', 'config/fabric.json', demoRoot);
-    const energyPath = resolveConfigPath('KARDASHEV_ENERGY_FEEDS_PATH', 'config/energy-feeds.json', demoRoot);
+    const fabricPath = resolveConfigPath(
+      'KARDASHEV_FABRIC_PATH',
+      'config/fabric.json',
+      resolvedConfigRoot
+    );
+    const energyPath = resolveConfigPath(
+      'KARDASHEV_ENERGY_FEEDS_PATH',
+      'config/energy-feeds.json',
+      resolvedConfigRoot
+    );
     const manifestPath = resolveConfigPath(
       'KARDASHEV_MANIFEST_PATH',
       'config/kardashev-ii.manifest.json',
-      demoRoot
+      resolvedConfigRoot
     );
-    const taskLatticePath = resolveConfigPath('KARDASHEV_TASK_LATTICE_PATH', 'config/task-lattice.json', demoRoot);
+    const taskLatticePath = resolveConfigPath(
+      'KARDASHEV_TASK_LATTICE_PATH',
+      'config/task-lattice.json',
+      resolvedConfigRoot
+    );
     fabric = loadJson(fabricPath);
     energy = loadJson(energyPath);
     manifest = loadJson(manifestPath);
