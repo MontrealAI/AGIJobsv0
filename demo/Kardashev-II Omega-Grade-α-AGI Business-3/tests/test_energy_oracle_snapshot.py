@@ -18,3 +18,7 @@ def test_energy_oracle_snapshot_exposes_welfare_metrics() -> None:
     assert simulation is not None
     assert simulation["sentient_welfare_index"] == state.sentient_welfare_index
     assert simulation["nash_welfare"] == state.nash_welfare
+    assert "equilibrium_forecast" in simulation
+    forecast = simulation["equilibrium_forecast"]
+    assert 0.0 <= forecast["forecasted_welfare"] <= 1.0
+    assert 0.0 <= forecast["cooperation_target"] <= 1.0
