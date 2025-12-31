@@ -14,6 +14,7 @@ const debugEnabled = (process.env.DEBUG || '')
   .includes(DEBUG_TOKEN);
 const DIVERSIFICATION_TARGET_HHI = 0.3;
 const ENERGY_RUNWAY_TARGET_HOURS = 1;
+const HAMILTONIAN_TARGET_STABILITY = 0.9;
 
 function debugLog(section, payload) {
   if (!debugEnabled) {
@@ -1877,6 +1878,10 @@ function buildEquilibriumLedger({
   const missionScore = clamp01(
     0.7 * missionHamiltonian + 0.3 * clamp01(missionHeadroom / 0.05)
   );
+  const compositeHamiltonian = clamp01(
+    (energyMonteCarlo.hamiltonianStability + missionHamiltonian + hamiltonianStability) / 3
+  );
+  const hamiltonianDelta = round(HAMILTONIAN_TARGET_STABILITY - compositeHamiltonian, 4);
 
   const overallScore = clamp01(
     0.25 * energyScore +
@@ -1926,6 +1931,13 @@ function buildEquilibriumLedger({
   }
   if (missionScore < 0.85) {
     recommendations.push('Rebalance mission timelines and energy allocations to raise mission Hamiltonian stability.');
+  }
+  if (compositeHamiltonian < HAMILTONIAN_TARGET_STABILITY) {
+    recommendations.push(
+      `Lift composite Hamiltonian stability by ${(hamiltonianDelta * 100).toFixed(
+        1
+      )}% using reserve buffers, mission slack, and logistics entropy smoothing.`
+    );
   }
 
   const actionPath = buildEquilibriumActionPath({
@@ -2110,6 +2122,9 @@ function buildEquilibriumLedger({
       gibbsFreeEnergyGj: round(energyMonteCarlo.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energyMonteCarlo.entropyMargin, 4),
       hamiltonianStability: round(energyMonteCarlo.hamiltonianStability, 4),
+      hamiltonianComposite: round(compositeHamiltonian, 4),
+      hamiltonianTarget: HAMILTONIAN_TARGET_STABILITY,
+      hamiltonianDelta,
       runwayAdjustment: runwayAdjustmentSummary,
     },
     gameTheory: {
@@ -2180,6 +2195,16 @@ function buildActionPathBriefing(equilibriumLedger) {
   lines.push(
     `- Hamiltonian stability: ${formatPercentValue(thermodynamics.hamiltonianStability)}`
   );
+  if (Number.isFinite(thermodynamics.hamiltonianComposite)) {
+    const delta = thermodynamics.hamiltonianDelta ?? 0;
+    const deltaText =
+      delta > 0 ? ` (Δ ${(delta * 100).toFixed(1)}% to target)` : ' (target met)';
+    lines.push(
+      `- Composite Hamiltonian stability: ${formatPercentValue(
+        thermodynamics.hamiltonianComposite
+      )}${deltaText}`
+    );
+  }
   lines.push(`- Nash product: ${formatPercentValue(gameTheory.nashProduct)}`);
   lines.push(
     `- Replicator stability: ${formatPercentValue(gameTheory.replicatorStability)} (drift ${formatFixedValue(
