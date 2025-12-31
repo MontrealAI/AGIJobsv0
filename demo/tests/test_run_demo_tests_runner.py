@@ -624,6 +624,7 @@ def test_prisma_client_generation_is_triggered(
     }
     (project_dir / "package.json").write_text(json.dumps(package_json))
     (project_dir / "package-lock.json").write_text("{}\n")
+    (project_dir / "node_modules").mkdir()
     (tests_dir / "ledger.test.ts").write_text("describe('ok', () => {});")
 
     calls: list[tuple[Path, dict[str, object] | None]] = []
@@ -706,6 +707,7 @@ def test_prisma_client_generation_is_cached_per_package(
     }
     (package_root / "package.json").write_text(json.dumps(package_json))
     (package_root / "package-lock.json").write_text("{}\n")
+    (package_root / "node_modules").mkdir()
 
     calls: list[tuple[Path, dict[str, object] | None]] = []
     monkeypatch.setattr(run_demo_tests, "_has_prisma_client", lambda _: False)
