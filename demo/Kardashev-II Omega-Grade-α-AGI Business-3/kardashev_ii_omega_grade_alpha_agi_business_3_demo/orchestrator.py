@@ -405,7 +405,7 @@ class Orchestrator:
             return payload
         state = self._latest_simulation_state
         signals = self._compute_policy_signals(state)
-        decision = self._build_policy_decision(state)
+        decision = self._build_policy_decision(state, signals=signals)
         if signals["gibbs_drive"] > 0.35 and signals["stability_guard"] > 0.6:
             strategy_priority = "energy_expansion"
             strategy_path = (
@@ -1049,7 +1049,12 @@ class Orchestrator:
             "risk_budget": risk_budget,
         }
 
-    def _build_policy_decision(self, state: SimulationState) -> Dict[str, Dict[str, float] | Dict[str, float | str]]:
+    def _build_policy_decision(
+        self,
+        state: SimulationState,
+        *,
+        signals: Optional[Dict[str, float]] = None,
+    ) -> Dict[str, Dict[str, float] | Dict[str, float | str]]:
         """Derive a cooperative policy action from thermodynamic signals.
 
         We use a Nash-style bargaining split between prosperity and sustainability
@@ -1059,7 +1064,7 @@ class Orchestrator:
         Kardashev-II scaling dynamics.
         """
 
-        signals = self._compute_policy_signals(state)
+        signals = signals or self._compute_policy_signals(state)
         action_budget = (
             1.5
             + 3.0 * signals["energy_price_pressure"]
@@ -1137,6 +1142,16 @@ class Orchestrator:
             },
         )
         return {"action": normalized_action, "rationale": rationale}
+
+    def _build_policy_snapshot(self, state: SimulationState) -> Dict[str, Any]:
+        signals = self._compute_policy_signals(state)
+        decision = self._build_policy_decision(state, signals=signals)
+        return {
+            "recommendation": decision["action"],
+            "rationale": decision["rationale"],
+            "brief": self._build_policy_brief(state, decision, signals),
+            "signals": signals,
+        }
 
     def _build_policy_action(self, state: SimulationState) -> Dict[str, float]:
         return self._build_policy_decision(state)["action"]
@@ -1718,6 +1733,7 @@ class Orchestrator:
         accounts = self.resources.to_serializable()
         governance = self.governance.params
         simulation_state: Optional[Dict[str, float]] = None
+        policy_snapshot: Optional[Dict[str, Any]] = None
         if self._latest_simulation_state is not None:
             simulation_state = {
                 "energy_output_gw": self._latest_simulation_state.energy_output_gw,
@@ -1739,6 +1755,7 @@ class Orchestrator:
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
                 "equilibrium_forecast": self._build_equilibrium_forecast(self._latest_simulation_state),
             }
+            policy_snapshot = self._build_policy_snapshot(self._latest_simulation_state)
         pending_events = list(self.scheduler.pending_events())
         pending_counts = Counter(event.event_type for event in pending_events)
         next_event = self.scheduler.peek_next()
@@ -1796,6 +1813,7 @@ class Orchestrator:
                 "auto_actions_enabled": self.config.auto_policy_actions,
                 "action_interval_seconds": self.config.policy_action_interval_seconds,
                 "last_action": self._last_simulation_action,
+                "snapshot": policy_snapshot,
             },
             "scheduler": {
                 "pending_events": len(pending_events),

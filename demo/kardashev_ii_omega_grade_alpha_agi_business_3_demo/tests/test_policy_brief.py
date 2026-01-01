@@ -38,3 +38,29 @@ def test_insight_payload_includes_policy_brief() -> None:
     assert brief["welfare_guardrails"]["welfare_gap"] >= 0.0
     assert brief["energy_dynamics"]["gibbs_reference"] == state.gibbs_free_energy
     assert brief["game_theory_snapshot"]["nash_welfare"] == state.nash_welfare
+
+
+def test_status_snapshot_includes_policy_snapshot() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=False))
+    state = SimulationState(
+        energy_output_gw=420_000.0,
+        prosperity_index=0.62,
+        sustainability_index=0.57,
+        nash_welfare=0.58,
+        sentient_welfare_index=0.6,
+        free_energy=0.12,
+        gibbs_free_energy=-0.08,
+        entropy=0.25,
+        hamiltonian=-0.15,
+        coordination_index=0.78,
+        game_theory_slack=0.54,
+        stability_index=0.7,
+    )
+    orchestrator._latest_simulation_state = state
+
+    snapshot = orchestrator._collect_status_snapshot()
+
+    policy_snapshot = snapshot["policy"]["snapshot"]
+    assert policy_snapshot is not None
+    assert policy_snapshot["brief"]["energy_dynamics"]["gibbs_reference"] == state.gibbs_free_energy
+    assert policy_snapshot["brief"]["game_theory_snapshot"]["nash_welfare"] == state.nash_welfare
