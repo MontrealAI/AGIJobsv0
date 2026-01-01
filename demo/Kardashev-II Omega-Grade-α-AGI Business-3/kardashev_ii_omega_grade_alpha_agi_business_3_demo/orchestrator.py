@@ -989,11 +989,13 @@ class Orchestrator:
         if not isinstance(action, dict):
             action = {}
         gibbs_reference = state.gibbs_free_energy if state.gibbs_free_energy is not None else state.free_energy
+        equilibrium_forecast = self._build_equilibrium_forecast(state)
         focus = "energy_expansion" if signals["gibbs_drive"] > 0.35 else "stability_balancing"
         return {
             "focus": focus,
             "next_steps": self._format_policy_steps(action),
             "action": action,
+            "equilibrium_forecast": equilibrium_forecast,
             "welfare_guardrails": {
                 "welfare_floor": signals["welfare_floor"],
                 "welfare_gap": signals["welfare_gap"],
