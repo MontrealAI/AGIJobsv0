@@ -30,6 +30,8 @@ def test_insight_payload_includes_policy_brief() -> None:
     brief = payload["policy_brief"]
     assert isinstance(brief["next_steps"], list)
     assert brief["next_steps"]
+    assert "equilibrium_forecast" in brief
+    assert brief["equilibrium_forecast"]["cooperation_target"] >= 0.0
     assert brief["welfare_guardrails"]["welfare_floor"] == min(
         state.prosperity_index, state.sustainability_index
     )
