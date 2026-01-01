@@ -79,7 +79,9 @@
   "gameTheory": {
     "nashProduct": 0.856,
     "logisticsNashWelfare": 0.985,
-    "coalitionStability": 0.8996
+    "coalitionStability": 0.8996,
+    "replicatorStability": 0.9541,
+    "replicatorDrift": 0.0459
   },
   "pathways": [
     {

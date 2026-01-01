@@ -176,6 +176,8 @@ function applyStatus(element, status) {
 function renderGlobalFailure(message) {
   const main = document.querySelector("main");
   if (!main) return;
+  const detail =
+    message instanceof Error ? message.message : typeof message === "string" ? message : JSON.stringify(message);
 
   const alert = document.createElement("section");
   alert.classList.add("card", "status-fail");
@@ -183,7 +185,7 @@ function renderGlobalFailure(message) {
     <div class="section-title">
       <h2>Telemetry unavailable</h2>
     </div>
-    <p class="lede">${message}</p>
+    <p class="lede">${detail}</p>
     <p class="lede">Regenerate artefacts with <code>npm run demo:kardashev-ii:orchestrate</code> and refresh the dashboard.</p>
   `;
 
@@ -1682,6 +1684,11 @@ function renderEquilibriumLedger(ledger) {
     `Gibbs free energy: ${formatFixed(thermodynamics.gibbsFreeEnergyGj, 2)} GJ`,
     `Entropy buffer: ${formatFixed(thermodynamics.entropyMargin, 2)}σ`,
     `Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability)}`,
+    Number.isFinite(thermodynamics.hamiltonianComposite)
+      ? `Composite Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianComposite)}${Number.isFinite(
+          thermodynamics.hamiltonianDelta
+        ) ? ` (Δ ${(thermodynamics.hamiltonianDelta * 100).toFixed(1)}% to target)` : ""}`
+      : null,
   ];
   if (thermodynamics.runwayAdjustment?.perFeedBoosts?.length) {
     const boosts = thermodynamics.runwayAdjustment.perFeedBoosts
@@ -1700,7 +1707,7 @@ function renderEquilibriumLedger(ledger) {
       : "Runway adjustment plan";
     thermoItems.push(`${planLabel}: ${boosts} (total +${total} GW)`);
   }
-  thermoItems.forEach((item) => {
+  thermoItems.filter(Boolean).forEach((item) => {
     const li = document.createElement("li");
     li.textContent = item;
     li.classList.add(
@@ -1717,6 +1724,10 @@ function renderEquilibriumLedger(ledger) {
     `Nash product: ${formatPercent(gameTheory.nashProduct)}`,
     `Coalition stability: ${formatPercent(gameTheory.coalitionStability)}`,
     `Logistics Nash welfare: ${formatPercent(gameTheory.logisticsNashWelfare)}`,
+    `Replicator stability: ${formatPercent(gameTheory.replicatorStability)} · drift ${formatFixed(
+      gameTheory.replicatorDrift,
+      3
+    )}`,
   ];
   gameTheoryItems.forEach((item) => {
     const li = document.createElement("li");
