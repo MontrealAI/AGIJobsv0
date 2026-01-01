@@ -5464,6 +5464,8 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       nashProduct: round(allocation.nashProduct, 4),
       logisticsNashWelfare: round(logistics.nashWelfare, 4),
       coalitionStability: round(welfare.coalitionStability, 4),
+      replicatorStability: round(allocation.replicatorStability, 4),
+      replicatorDrift: round(allocation.replicatorDrift, 4),
     },
     pathways,
     actionPath,
