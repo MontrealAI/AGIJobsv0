@@ -29,7 +29,7 @@
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
 * Scenario sweep: 5/11 nominal, 4 warning, 2 critical.
   - 20% demand surge vs Dyson safety margin: Dyson lattice overrun by 164,000 GW. Immediate throttling required.
-  - Interplanetary bridge outage simulation: Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.
+  - Interplanetary bridge outage simulation: Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.
   - Compute drawdown (15%) resilience: Deviation 15.00% exceeds tolerance 0.75%.
   - Primary energy window offline: Removing orbital 8h window drops coverage to 80.62%.
   - Logistics demand spike (+25%): Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
@@ -37,10 +37,10 @@
 * Audit checklist: ipfs://QmKardashevAuditChecklist
 
 ## Equilibrium action path
-* Gibbs free energy 146,670,518.99 GJ · entropy 4.87σ · Hamiltonian 51.8%
-* Free energy runway 0.04h at mean demand (gap 0.96h, 1054667.95 GWh).
+* Gibbs free energy 1,046,670,518.99 GJ · entropy 34.75σ · Hamiltonian 60.4%
+* Free energy runway 0.27h at mean demand (gap 0.73h, 804667.95 GWh).
 * Nash 85.6% · coalition 90.0% · logistics welfare 98.5%
-* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~1054667.95 GWh (3796804624 GJ) to hit the 1h runway. Reduce utilisation below 87.5% or expand captured energy to preserve the 12.5% safety margin. Reserve boost plan: orbital: +2,531,203.08 GW (100.0%) (total +2,531,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
+* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~804667.95 GWh (2896804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +1,931,203.08 GW (100.0%) (total +1,931,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
 * 2. Stabilize mission Hamiltonian (needs-action) — Rebalance mission timelines and energy buffers to regain Hamiltonian stability. · target Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.
 * 3. Reinforce sentient welfare balance (on-track) — Continue cooperative reward rotations to sustain coalition stability. · target Coalition stability ≥ 85% and inequality ≤ 30%.
 * 4. Tighten Nash allocation (on-track) — Keep incentive gradients aligned with Nash stability targets. · target Deviation incentive ≤ 20% and strategy stability ≥ 85%.

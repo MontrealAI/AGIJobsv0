@@ -37,8 +37,8 @@
     "id": "bridge-failover",
     "title": "Interplanetary bridge outage simulation",
     "status": "warning",
-    "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
-    "confidence": 0.36904878007093556,
+    "summary": "Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.",
+    "confidence": 0.44655905726447265,
     "impact": "Bridge sentries maintain cadence under reroute load.",
     "metrics": [
       {
@@ -53,12 +53,12 @@
       },
       {
         "label": "Relay boost allocation",
-        "value": "15.9% (182541 GW)",
+        "value": "26.2% (366910 GW)",
         "ok": true
       },
       {
         "label": "Mitigated latency",
-        "value": "151s",
+        "value": "133s",
         "ok": false
       },
       {
@@ -68,7 +68,7 @@
       },
       {
         "label": "Slack",
-        "value": "-31s",
+        "value": "-13s",
         "ok": false
       }
     ],

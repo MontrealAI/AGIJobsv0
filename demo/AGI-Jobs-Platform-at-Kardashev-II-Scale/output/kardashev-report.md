@@ -8,19 +8,19 @@ Generated: 2125-01-01T22:58:01.595Z
 - **Dyson Swarm Progress:** 2812/10000 satellites assembled (28.12% coverage).
 - **Captured Power:** 126,540 MW available for reallocation.
 - **Energy Monte Carlo:** 0.00% breach probability across 256 runs (tolerance 5.00%).
-- **Free Energy Margin:** 2131897.30 GW (66.48%) vs 1028389.18 GW minimum buffer.
-- **Free Energy Runway:** 1.07 hours at mean demand (gap 0.00h, 0.00 GWh).
-- **Entropy Buffer:** 71.39σ thermodynamic headroom; game-theoretic slack 92.5%.
-- **Thermodynamic Reserve:** 3,972,629,247.19 GJ Gibbs free energy; Hamiltonian stability 83.2% across the sampled phase space.
-- **Runway Stabilization:** +2002028.35 GW reserve buffers applied across 3 feeds to reach the 1h runway target.
-- **Gibbs Allocation Temperature:** 0.17 (lower favors resilience-heavy shards); Nash welfare 9.99%.
-- **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.180.
+- **Free Energy Margin:** 2154519.66 GW (67.19%) vs 1028389.18 GW minimum buffer.
+- **Free Energy Runway:** 1.12 hours at mean demand (gap 0.00h, 0.00 GWh).
+- **Entropy Buffer:** 74.00σ thermodynamic headroom; game-theoretic slack 92.6%.
+- **Thermodynamic Reserve:** 4,054,069,758.08 GJ Gibbs free energy; Hamiltonian stability 83.6% across the sampled phase space.
+- **Runway Stabilization:** +2002028.35 GW reserve buffers applied across 1 feeds to reach the 1h runway target.
+- **Gibbs Allocation Temperature:** 0.16 (lower favors resilience-heavy shards); Nash welfare 9.99%.
+- **Allocation Entropy:** 1.099 (fairness 100.0%); Gibbs potential -0.176.
 - **Strategy Stability:** 100.0% (deviation incentive 0.0%; Jain fairness 100.0%).
 - **Allocation Diversification:** 66.7% (HHI 0.333).
 - **Replicator Equilibrium:** 100.0% stability (drift 0.000).
-- **Sentient Welfare Equilibrium:** 98.6% · cooperation 96.6% · inequality 0.0% · free energy/agent 0.886748 GJ.
-- **Sentient Coalition Stability:** 100.0% · collective action 93.6% · payoff dispersion 0.0%.
-- **Equilibrium Ledger:** 91.2% (nominal); energy 88.4%, allocation 100.0%, welfare 98.0%.
+- **Sentient Welfare Equilibrium:** 98.7% · cooperation 96.7% · inequality 0.0% · free energy/agent 0.904926 GJ.
+- **Sentient Coalition Stability:** 100.0% · collective action 93.7% · payoff dispersion 0.0%.
+- **Equilibrium Ledger:** 91.3% (nominal); energy 88.7%, allocation 100.0%, welfare 98.0%.
 - **Sentinel Status:** 3 advisories generated; all resolved within guardian SLA.
 
 ## Shard Operations
@@ -70,7 +70,7 @@ A detailed task hierarchy diagram is available at `kardashev-task-hierarchy.mmd`
 ## Mission Thermodynamics
 
 - Mission Hamiltonian load: 44.04% · stability 55.96%
-- Free energy headroom vs mission demand: 87.33% (2131897.30 GW buffer)
+- Free energy headroom vs mission demand: 88.26% (2154519.66 GW buffer)
 
 | Programme                          | Energy Share | Compute Share | Risk Index | Slack   | Hamiltonian Load |
 | ---------------------------------- | ------------ | ------------- | ---------- | ------- | ---------------- |
