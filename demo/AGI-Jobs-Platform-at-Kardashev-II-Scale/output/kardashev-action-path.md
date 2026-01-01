@@ -4,32 +4,33 @@ Generated: 2025-03-01T00:00:00Z
 
 ## Core equilibrium signals
 - Free energy margin: 20.77%
-- Free energy runway: 0.27 hours (gap 0.73h, 804,667.95 GWh)
+- Free energy runway: 0.13 hours (gap 0.87h, 957,167.95 GWh)
 - Buffered free energy: 290,741.81 GW above buffer (152,500.00 GW required)
 - Utilisation: 78.21% (safety margin 12.50%)
-- Gibbs free energy: 1,046,670,518.99 GJ
-- Runway adjustment plan: orbital: +1,931,203.08 GW (100.0%) (total +1,931,203.08 GW)
+- Gibbs free energy: 497,670,518.99 GJ
+- Runway adjustment plan: orbital: +2,297,203.08 GW (100.0%) (total +2,297,203.08 GW)
 - Hamiltonian stability: 60.4%
+- Composite Hamiltonian stability: 73.3% (Δ 16.7% to target 90.0%)
 - Nash product: 85.6%
 - Coalition stability: 90.0%
-- Free energy per agent: 0.233632 GJ
+- Free energy per agent: 0.111087 GJ
 - Welfare potential: 86.0%
 
 ## Primary action
 ### Stabilize free energy buffer
 - Status: needs-action
 - Target: Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
-- Priority: 36.4%
-- Rationale: Free energy 20.8% · Hamiltonian 60.4% · runway 0.27h · utilisation 78.2% (margin 12.5%)
-- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~804667.95 GWh (2896804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +1,931,203.08 GW (100.0%) (total +1,931,203.08 GW).
+- Priority: 38.5%
+- Rationale: Free energy 20.8% · Hamiltonian 60.4% · runway 0.13h · utilisation 78.2% (margin 12.5%)
+- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~957167.95 GWh (3445804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +2,297,203.08 GW (100.0%) (total +2,297,203.08 GW).
 
 ## Action path
 ### Step 1: Stabilize free energy buffer
 - Status: needs-action
 - Target: Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
-- Priority: 36.4%
-- Rationale: Free energy 20.8% · Hamiltonian 60.4% · runway 0.27h · utilisation 78.2% (margin 12.5%)
-- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~804667.95 GWh (2896804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +1,931,203.08 GW (100.0%) (total +1,931,203.08 GW).
+- Priority: 38.5%
+- Rationale: Free energy 20.8% · Hamiltonian 60.4% · runway 0.13h · utilisation 78.2% (margin 12.5%)
+- Action: Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~957167.95 GWh (3445804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +2,297,203.08 GW (100.0%) (total +2,297,203.08 GW).
 
 ### Step 2: Stabilize mission Hamiltonian
 - Status: needs-action

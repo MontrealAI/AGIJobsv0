@@ -37,10 +37,10 @@
 * Audit checklist: ipfs://QmKardashevAuditChecklist
 
 ## Equilibrium action path
-* Gibbs free energy 1,046,670,518.99 GJ · entropy 34.75σ · Hamiltonian 60.4%
-* Free energy runway 0.27h at mean demand (gap 0.73h, 804667.95 GWh).
+* Gibbs free energy 497,670,518.99 GJ · entropy 34.75σ · Hamiltonian 60.4%
+* Free energy runway 0.13h at mean demand (gap 0.87h, 957167.95 GWh).
 * Nash 85.6% · coalition 90.0% · logistics welfare 98.5%
-* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~804667.95 GWh (2896804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +1,931,203.08 GW (100.0%) (total +1,931,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
+* 1. Stabilize free energy buffer (needs-action) — Increase reserve buffers or smooth demand variance to restore Hamiltonian stability. Add ~957167.95 GWh (3445804624 GJ) to hit the 1h runway. Reserve boost plan: orbital: +2,297,203.08 GW (100.0%) (total +2,297,203.08 GW). · target Free energy margin ≥ 70%, runway ≥ 1h, Hamiltonian stability ≥ 90%, utilisation ≤ 87.5%.
 * 2. Stabilize mission Hamiltonian (needs-action) — Rebalance mission timelines and energy buffers to regain Hamiltonian stability. · target Mission Hamiltonian stability ≥ 90% and headroom ≥ 5%.
 * 3. Reinforce sentient welfare balance (on-track) — Continue cooperative reward rotations to sustain coalition stability. · target Coalition stability ≥ 85% and inequality ≤ 30%.
 * 4. Tighten Nash allocation (on-track) — Keep incentive gradients aligned with Nash stability targets. · target Deviation incentive ≤ 20% and strategy stability ≥ 85%.

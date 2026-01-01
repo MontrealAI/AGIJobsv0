@@ -19,12 +19,12 @@
 * Utilisation: 78.21% (margin 0.13%).
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Free energy margin 290741.81 GW (20.77%) · Gibbs free energy 1,046,670,518.989 GJ.
-* Free energy runway 0.27 hours at mean demand (gap 0.73h, 804667.95 GWh).
+* Free energy margin 290741.81 GW (20.77%) · Gibbs free energy 497,670,518.989 GJ.
+* Free energy runway 0.13 hours at mean demand (gap 0.87h, 957167.95 GWh).
 * Hamiltonian stability 60.4% · entropy margin 34.75σ · game-theory slack 82.2% · buffer stable.
 * Allocation policy: Gibbs temperature 0.31 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.235.
 * Replicator equilibrium 95.4% · drift 0.046.
-* Sentient welfare equilibrium 92.9% · cooperation 86.8% · inequality 5.3% · free energy/agent 0.233632 GJ.
+* Sentient welfare equilibrium 92.9% · cooperation 86.8% · inequality 5.3% · free energy/agent 0.111087 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
 * Demand percentiles: P95 1,109,258.189 GW · P99 1,111,780.775 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
