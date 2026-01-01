@@ -121,7 +121,9 @@ function canInstallPlaywrightDeps() {
   // Avoid triggering sudo prompts (or immediate failures) in non-interactive
   // environments by confirming privilege escalation is available before asking
   // Playwright to install system packages.
-  return hasBinary('sudo');
+  if (!hasBinary('sudo')) return false;
+  const sudoProbe = spawnSync('sudo', ['-n', 'true'], { stdio: 'ignore' });
+  return sudoProbe.status === 0;
 }
 
 function ensureChromiumAvailable({
