@@ -60,6 +60,7 @@ const TASK_LATTICE_CONFIG_PATH = join(DEMO_ROOT, "config", "task-lattice.json");
 const OUTPUT_DIR = join(DEMO_ROOT, "output");
 const DIVERSIFICATION_TARGET_HHI = 0.3;
 const ENERGY_RUNWAY_TARGET_HOURS = 1;
+const HAMILTONIAN_TARGET_STABILITY = 0.9;
 const ENERGY_RESERVE_MULTIPLIER = 2.4;
 const OUTPUT_PREFIX = (() => {
   const raw = process.env.KARDASHEV_DEMO_PREFIX?.trim();
@@ -1255,6 +1256,8 @@ type MonteCarloSummary = {
   marginGw: number;
   freeEnergyMarginGw: number;
   freeEnergyMarginPct: number;
+  grossRunwayHours: number;
+  usableFreeEnergyGw: number;
   runwayHours: number;
   demandStdDevGw: number;
   entropyMargin: number;
@@ -1550,12 +1553,14 @@ function runEnergyMonteCarlo(
   const p99 = percentile(samples, 0.99);
   const freeEnergyMarginGw = capturedGw - p95;
   const freeEnergyMarginPct = capturedGw === 0 ? 0 : freeEnergyMarginGw / capturedGw;
-  const runwayHours = averageGw > 0 ? Math.max(0, freeEnergyMarginGw) / averageGw : 0;
+  const grossRunwayHours = averageGw > 0 ? Math.max(0, freeEnergyMarginGw) / averageGw : 0;
+  const usableFreeEnergyGw = Math.max(0, freeEnergyMarginGw - marginGw);
+  const runwayHours = averageGw > 0 ? usableFreeEnergyGw / averageGw : 0;
   const runwayGapHours = Math.max(0, ENERGY_RUNWAY_TARGET_HOURS - runwayHours);
   const runwayGapGwh = averageGw > 0 ? runwayGapHours * averageGw : 0;
   const runwayGapGj = runwayGapGwh * 3600;
   const entropyMargin = demandStdDevGw > 0 ? freeEnergyMarginGw / demandStdDevGw : freeEnergyMarginGw;
-  const gibbsFreeEnergyGj = Math.max(0, freeEnergyMarginGw) * 3600;
+  const gibbsFreeEnergyGj = usableFreeEnergyGw * 3600;
   const hamiltonianStability = Math.max(
     0,
     Math.min(1, 0.5 * (1 - breachProbability) + 0.5 * Math.max(0, freeEnergyMarginPct))
@@ -1579,6 +1584,8 @@ function runEnergyMonteCarlo(
     marginGw,
     freeEnergyMarginGw,
     freeEnergyMarginPct,
+    grossRunwayHours,
+    usableFreeEnergyGw,
     runwayHours,
     demandStdDevGw,
     entropyMargin,
@@ -5204,6 +5211,14 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       0.35 * (logistics?.gameTheorySlack ?? 0) +
       0.2 * (logistics?.entropyRatio ?? 0)
   );
+  const compositeHamiltonian = clamp01(
+    average([
+      energy.hamiltonianStability,
+      missionThermo?.hamiltonianStability ?? 0,
+      logistics?.hamiltonianStability ?? 0,
+    ])
+  );
+  const hamiltonianDelta = round(HAMILTONIAN_TARGET_STABILITY - compositeHamiltonian, 4);
   const computeScore = clamp01(
     0.6 * (computeFabric.failoverWithinQuorum ? 1 : 0) + 0.4 * computeFabric.averageAvailabilityPct
   );
@@ -5263,6 +5278,13 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   if (missionScore < 0.85) {
     recommendations.push(
       "Lower mission Hamiltonian load or increase energy headroom to stabilize critical-path programmes."
+    );
+  }
+  if (compositeHamiltonian < HAMILTONIAN_TARGET_STABILITY) {
+    recommendations.push(
+      `Lift composite Hamiltonian stability by ${(hamiltonianDelta * 100).toFixed(
+        1
+      )}% using reserve buffers, mission slack, and logistics entropy smoothing.`
     );
   }
 
@@ -5473,6 +5495,8 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       energy: {
         score: round(energyScore, 4),
         freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+        usableFreeEnergyGw: round(energy.usableFreeEnergyGw ?? 0, 4),
+        grossRunwayHours: round(energy.grossRunwayHours ?? 0, 4),
         runwayHours: round(energy.runwayHours ?? 0, 4),
         hamiltonianStability: round(energy.hamiltonianStability, 4),
         gameTheorySlack: round(energy.gameTheorySlack, 4),
@@ -5522,6 +5546,8 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
     },
     thermodynamics: {
       freeEnergyMarginPct: round(energy.freeEnergyMarginPct, 4),
+      usableFreeEnergyGw: round(energy.usableFreeEnergyGw ?? 0, 4),
+      grossRunwayHours: round(energy.grossRunwayHours ?? 0, 4),
       runwayHours: round(energy.runwayHours ?? 0, 4),
       runwayGapHours: round(energy.runwayGapHours ?? 0, 4),
       runwayGapGwh: round(energy.runwayGapGwh ?? 0, 4),
@@ -5529,6 +5555,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       gibbsFreeEnergyGj: round(energy.gibbsFreeEnergyGj, 2),
       entropyMargin: round(energy.entropyMargin, 4),
       hamiltonianStability: round(energy.hamiltonianStability, 4),
+      hamiltonianComposite: round(compositeHamiltonian, 4),
+      hamiltonianTarget: HAMILTONIAN_TARGET_STABILITY,
+      hamiltonianDelta,
       runwayAdjustment: runwayAdjustmentPlan,
     },
     gameTheory: {
@@ -5585,6 +5614,20 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
     lines.push(`- ${prefix}: ${runwayPlanText}`);
   }
   lines.push(`- Hamiltonian stability: ${formatPercent(thermodynamics.hamiltonianStability, 1)}`);
+  if (Number.isFinite(thermodynamics.hamiltonianComposite)) {
+    const delta = Number.isFinite(thermodynamics.hamiltonianDelta)
+      ? ` (Δ ${(thermodynamics.hamiltonianDelta * 100).toFixed(1)}% to target ${formatPercent(
+          thermodynamics.hamiltonianTarget,
+          1
+        )})`
+      : "";
+    lines.push(
+      `- Composite Hamiltonian stability: ${formatPercent(
+        thermodynamics.hamiltonianComposite,
+        1
+      )}${delta}`
+    );
+  }
   lines.push(`- Nash product: ${formatPercent(gameTheory.nashProduct, 1)}`);
   lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);
   lines.push(`- Free energy per agent: ${formatNumber(welfare.freeEnergyPerAgentGj, 6)} GJ`);
