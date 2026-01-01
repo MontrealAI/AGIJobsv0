@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 import os
 import runpy
 import subprocess
@@ -67,3 +68,15 @@ def test_module_entrypoint_invokable():
 
     assert result.returncode == 0
     assert "Kardashev-II Omega-Grade" in result.stdout
+
+
+def test_cli_checkpoint_overrides_config(tmp_path):
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({"checkpoint_path": "config-checkpoint.json"}))
+    cli_checkpoint = tmp_path / "cli-checkpoint.json"
+
+    module = importlib.import_module("demo.kardashev_ii_omega_grade_alpha_agi_business_3_demo.cli")
+    args = module.parse_args(["--config", str(config_path), "--checkpoint", str(cli_checkpoint)])
+    config = module.build_config(args)
+
+    assert config.checkpoint_path == cli_checkpoint
