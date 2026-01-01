@@ -226,13 +226,17 @@ describe('canInstallPlaywrightDeps', () => {
 
   test('returns true on linux when apt-get and sudo are available for non-root users', () => {
     const { canInstallPlaywrightDeps } = require('../run-tests.js');
-    spawnSync.mockReturnValueOnce({ status: 0 }).mockReturnValueOnce({ status: 0 });
+    spawnSync
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 });
     Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
     Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
 
     expect(canInstallPlaywrightDeps()).toBe(true);
     expect(spawnSync).toHaveBeenNthCalledWith(1, 'which', ['apt-get'], { stdio: 'ignore' });
     expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['sudo'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(3, 'sudo', ['-n', 'true'], { stdio: 'ignore' });
   });
 
   test('returns false when apt-get is unavailable', () => {
@@ -253,6 +257,21 @@ describe('canInstallPlaywrightDeps', () => {
 
     expect(canInstallPlaywrightDeps()).toBe(false);
     expect(spawnSync).toHaveBeenCalledWith('which', ['sudo'], { stdio: 'ignore' });
+  });
+
+  test('returns false when sudo exists but requires a password', () => {
+    const { canInstallPlaywrightDeps } = require('../run-tests.js');
+    spawnSync
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 0 })
+      .mockReturnValueOnce({ status: 1 });
+    Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
+    Object.defineProperty(process, 'getuid', { value: () => 1000, configurable: true });
+
+    expect(canInstallPlaywrightDeps()).toBe(false);
+    expect(spawnSync).toHaveBeenNthCalledWith(1, 'which', ['apt-get'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(2, 'which', ['sudo'], { stdio: 'ignore' });
+    expect(spawnSync).toHaveBeenNthCalledWith(3, 'sudo', ['-n', 'true'], { stdio: 'ignore' });
   });
 
   test('returns false on non-linux platforms', () => {
