@@ -218,6 +218,14 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert 0 < allocation["fairnessIndex"] <= 1
     assert allocation["gibbsPotential"] <= 0
     assert 0 <= allocation["strategyStability"] <= 1
+
+    shard_thermo = telemetry_payload["shardThermodynamics"]
+    assert len(shard_thermo) == len(telemetry_payload["shards"])
+    for entry in shard_thermo:
+        assert entry["freeEnergyMarginGw"] >= 0
+        assert entry["gibbsFreeEnergyGj"] >= 0
+        assert 0 <= entry["hamiltonianStability"] <= 1
+        assert 0 <= entry["gameTheorySlack"] <= 1
     assert 0 <= allocation["deviationIncentive"] <= 1
     assert 0 <= allocation["jainIndex"] <= 1
     assert allocation["concentrationIndex"] <= allocation["diversificationTarget"]

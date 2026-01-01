@@ -851,6 +851,50 @@ function computeAllocationPolicy(shardMetrics, energyMonteCarlo) {
   };
 }
 
+function buildShardThermodynamics({
+  shardMetrics,
+  allocationPolicy,
+  energyFeeds,
+}) {
+  const allocationByShard = new Map(
+    (allocationPolicy?.allocations ?? []).map((allocation) => [
+      allocation.shardId,
+      allocation,
+    ])
+  );
+  return shardMetrics.map((metric) => {
+    const feed = resolveEnergyFeedForShard({ id: metric.shardId }, energyFeeds);
+    const nominalGw = feed ? Math.max(0, (feed.nominalMw ?? 0) / 1000) : 0;
+    const bufferGw = feed ? Math.max(0, (feed.bufferMw ?? 0) / 1000) : 0;
+    const availableGw = nominalGw + bufferGw;
+    const utilisationRatio = clamp01((metric.utilisation ?? 0) / 100);
+    const freeEnergyMarginGw = Math.max(0, availableGw * (1 - utilisationRatio));
+    const gibbsFreeEnergyGj = freeEnergyMarginGw * 3600;
+    const allocation = allocationByShard.get(metric.shardId);
+    const allocationWeight = allocation?.effectiveWeight ?? allocation?.weight ?? 0;
+    const payoff = allocation?.payoff ?? 0;
+    const resilience = clamp01(metric.resilience ?? 0);
+    const hamiltonianStability = clamp01(
+      0.5 * (1 - utilisationRatio) + 0.3 * resilience + 0.2 * allocationWeight
+    );
+    const gameTheorySlack = clamp01(0.6 * (1 - utilisationRatio) + 0.4 * payoff);
+    const entropyContribution =
+      allocationWeight > 0 ? -allocationWeight * Math.log(allocationWeight) : 0;
+    return {
+      shardId: metric.shardId,
+      region: feed?.region ?? null,
+      availableGw,
+      freeEnergyMarginGw,
+      gibbsFreeEnergyGj,
+      allocationWeight,
+      payoff,
+      hamiltonianStability,
+      gameTheorySlack,
+      entropyContribution,
+    };
+  });
+}
+
 function average(values) {
   if (!values.length) {
     return 0;
@@ -2773,6 +2817,11 @@ function main() {
     shardMetrics,
     calibratedEnergy
   );
+  const shardThermodynamics = buildShardThermodynamics({
+    shardMetrics,
+    allocationPolicy,
+    energyFeeds: calibratedEnergy.feeds,
+  });
   const generatedAt = new Date(
     Date.UTC(2125, 0, 1) + Math.floor(rng() * 86_400_000)
   ).toISOString();
@@ -3005,6 +3054,30 @@ function main() {
   );
   reportLines.push('');
 
+  reportLines.push('## Shard Thermodynamic Ledger');
+  reportLines.push('');
+  reportLines.push(
+    toTable(
+      shardThermodynamics.map((entry) => [
+        entry.shardId,
+        entry.region ?? 'unknown',
+        formatNumber(round(entry.freeEnergyMarginGw, 2)),
+        formatNumber(round(entry.gibbsFreeEnergyGj, 2)),
+        `${round(entry.hamiltonianStability * 100, 1)}%`,
+        `${round(entry.gameTheorySlack * 100, 1)}%`,
+      ]),
+      [
+        'Shard',
+        'Region',
+        'Free Energy GW',
+        'Gibbs Free Energy GJ',
+        'Hamiltonian Stability',
+        'Game-Theory Slack',
+      ]
+    )
+  );
+  reportLines.push('');
+
   reportLines.push('## Thermodynamic Allocation Policy');
   reportLines.push('');
   reportLines.push(
@@ -3097,6 +3170,7 @@ function main() {
     dominanceScore,
     dominance,
     shards: shardMetrics,
+    shardThermodynamics,
     sentinelFindings,
     dyson,
     energyMonteCarlo,
