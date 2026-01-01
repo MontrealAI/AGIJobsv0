@@ -1486,9 +1486,16 @@ function computeRiskIndex(riskDistribution: { low: number; medium: number; high:
   return clamp01(weightedRisk / total);
 }
 
-function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): MonteCarloSummary {
+function runEnergyMonteCarlo(
+  manifest: Manifest,
+  seed: string,
+  runs = 256,
+  capturedOverride?: number
+): MonteCarloSummary {
   const rng = createDeterministicRng(`${seed}:${runs}`);
-  const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const capturedGw = Number.isFinite(capturedOverride)
+    ? (capturedOverride as number)
+    : manifest.energyProtocols.stellarLattice.baselineCapturedGw;
   const safetyMarginFraction = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
   const sumRegionalGw = manifest.federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0);
   const operationalHeadroomGw = Math.max(0, capturedGw - sumRegionalGw);
@@ -1584,6 +1591,52 @@ function runEnergyMonteCarlo(manifest: Manifest, seed: string, runs = 256): Mont
     maintainsBuffer,
     withinTolerance: breachProbability <= 0.01,
     tolerance: 0.01,
+  };
+}
+
+type CapturedEnergyPlan = {
+  baselineCapturedGw: number;
+  effectiveCapturedGw: number;
+  requiredCapturedGw: number;
+  expansionTargetGw: number | null;
+  expansionNeeded: boolean;
+};
+
+function resolveCapturedEnergy(manifest: Manifest, regionalDemandGw: number): CapturedEnergyPlan {
+  const baselineCapturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const expansionTargets = [...(manifest.energyProtocols.stellarLattice.expansionTargetsGw ?? [])]
+    .filter((target) => Number.isFinite(target))
+    .sort((a, b) => a - b);
+  const marginPct = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
+  const requiredCapturedGw =
+    marginPct >= 1
+      ? baselineCapturedGw
+      : regionalDemandGw / Math.max(1 - marginPct, 1e-6);
+  let effectiveCapturedGw = baselineCapturedGw;
+  let expansionTargetGw: number | null = null;
+
+  for (const target of expansionTargets) {
+    if (target >= requiredCapturedGw && target >= baselineCapturedGw) {
+      effectiveCapturedGw = target;
+      expansionTargetGw = target;
+      break;
+    }
+  }
+
+  if (effectiveCapturedGw < requiredCapturedGw && expansionTargets.length > 0) {
+    const maxTarget = expansionTargets[expansionTargets.length - 1];
+    if (maxTarget > effectiveCapturedGw) {
+      effectiveCapturedGw = maxTarget;
+      expansionTargetGw = maxTarget;
+    }
+  }
+
+  return {
+    baselineCapturedGw,
+    effectiveCapturedGw,
+    requiredCapturedGw,
+    expansionTargetGw,
+    expansionNeeded: effectiveCapturedGw > baselineCapturedGw,
   };
 }
 
@@ -3605,7 +3658,11 @@ function computeTelemetry(
   const averageCoverage = domainCount > 0 ? totalCoverage / domainCount : 0;
   const minimumCoverage = domainCoverages.length > 0 ? Math.min(...domainCoverages) : 0;
 
-  const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const capturedPlan = resolveCapturedEnergy(
+    manifest,
+    manifest.federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0)
+  );
+  const capturedGw = capturedPlan.effectiveCapturedGw;
   const regionalEnergy = manifest.federations.map((f) => ({
     slug: f.slug,
     availableGw: f.energy.availableGw,
@@ -3621,11 +3678,18 @@ function computeTelemetry(
   if (utilisationPct > 1 - marginPct) {
     energyWarnings.push("Utilisation exceeds configured safety margin");
   }
-  if (dysonYield < capturedGw) {
+  if (capturedPlan.requiredCapturedGw > capturedPlan.effectiveCapturedGw * 1.0001) {
+    energyWarnings.push(
+      `Captured energy shortfall: need ${capturedPlan.requiredCapturedGw.toFixed(
+        0
+      )} GW for margin but only ${capturedPlan.effectiveCapturedGw.toFixed(0)} GW available.`
+    );
+  }
+  if (dysonYield < capturedPlan.baselineCapturedGw) {
     energyWarnings.push("Dyson programme yield below captured baseline");
   }
 
-  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash);
+  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash, 256, capturedPlan.effectiveCapturedGw);
   const allocationPolicy = buildEnergyAllocationPolicy(manifest, energyMonteCarlo);
   const missionThermodynamics = buildMissionThermodynamics(mission, energyMonteCarlo);
   if (!energyMonteCarlo.withinTolerance) {
@@ -4059,7 +4123,7 @@ function computeTelemetry(
   const energyAgreementWithinMargin =
     energyModelDeltaPct <= marginPct &&
     sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) &&
-    dysonYield >= capturedGw;
+    dysonYield >= capturedPlan.baselineCapturedGw;
 
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
@@ -4301,6 +4365,13 @@ function computeTelemetry(
     },
     energy: {
       capturedGw,
+      capturedPlan: {
+        baselineCapturedGw: capturedPlan.baselineCapturedGw,
+        effectiveCapturedGw: capturedPlan.effectiveCapturedGw,
+        requiredCapturedGw: round(capturedPlan.requiredCapturedGw, 2),
+        expansionTargetGw: capturedPlan.expansionTargetGw,
+        expansionNeeded: capturedPlan.expansionNeeded,
+      },
       dysonYield,
       utilisationPct,
       marginPct,

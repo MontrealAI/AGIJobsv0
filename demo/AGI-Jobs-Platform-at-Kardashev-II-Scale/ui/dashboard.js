@@ -547,6 +547,28 @@ function renderMetrics(telemetry) {
     setTextWithStatus(document.querySelector("#energy-margin"), "Energy margin unavailable.", "status-warn");
   }
 
+  const capturePlan = energy.capturedPlan;
+  if (capturePlan && isFiniteNumber(capturePlan.effectiveCapturedGw)) {
+    const baselineText = isFiniteNumber(capturePlan.baselineCapturedGw)
+      ? `${formatNumber(capturePlan.baselineCapturedGw)} GW`
+      : "n/a";
+    const requiredText = isFiniteNumber(capturePlan.requiredCapturedGw)
+      ? `${formatNumber(capturePlan.requiredCapturedGw)} GW`
+      : "n/a";
+    const targetText = isFiniteNumber(capturePlan.expansionTargetGw)
+      ? ` · target ${formatNumber(capturePlan.expansionTargetGw)} GW`
+      : "";
+    document.querySelector(
+      "#energy-capture-plan"
+    ).textContent = `Captured ${formatNumber(capturePlan.effectiveCapturedGw)} GW (baseline ${baselineText}, required ${requiredText}${targetText})`;
+  } else {
+    setTextWithStatus(
+      document.querySelector("#energy-capture-plan"),
+      "Captured energy plan unavailable.",
+      "status-warn"
+    );
+  }
+
   if (isFiniteNumber(governance.averageCoverageSeconds)) {
     document.querySelector("#coverage").textContent = `${Math.round(governance.averageCoverageSeconds)}s coverage`;
   } else {

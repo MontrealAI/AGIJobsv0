@@ -15,23 +15,22 @@
 ---
 
 ## Energy telemetry
-* Captured GW (Dyson baseline): 1,150,000 GW.
-* Utilisation: 95.22% (margin 0.13%).
+* Captured GW (Dyson baseline): 1,400,000 GW.
+* Utilisation: 78.21% (margin 0.13%).
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Free energy margin 40741.81 GW (3.54%) · Gibbs free energy 146,670,518.989 GJ.
-* Free energy runway 0.04 hours at mean demand (gap 0.96h, 1054667.95 GWh).
-* Hamiltonian stability 51.8% · entropy margin 4.87σ · game-theory slack 78.3% · buffer stable.
-* Allocation policy: Gibbs temperature 0.38 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.306.
+* Free energy margin 290741.81 GW (20.77%) · Gibbs free energy 1,046,670,518.989 GJ.
+* Free energy runway 0.27 hours at mean demand (gap 0.73h, 804667.95 GWh).
+* Hamiltonian stability 60.4% · entropy margin 34.75σ · game-theory slack 82.2% · buffer stable.
+* Allocation policy: Gibbs temperature 0.31 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.235.
 * Replicator equilibrium 95.4% · drift 0.046.
-* Sentient welfare equilibrium 92.2% · cooperation 85.1% · inequality 5.3% · free energy/agent 0.032739 GJ.
+* Sentient welfare equilibrium 92.9% · cooperation 86.8% · inequality 5.3% · free energy/agent 0.233632 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
 * Demand percentiles: P95 1,109,258.189 GW · P99 1,111,780.775 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Energy window deficits: none — all federations meet coverage targets.
-* ⚠️ Utilisation exceeds configured safety margin
 
 ---
 
@@ -88,13 +87,13 @@
   - Thermostat margin: 143,750 GW (ok)
   - Utilisation: 114.26% (check)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 36.9%) · Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.
+* **Interplanetary bridge outage simulation** — status WARNING (confidence 44.7%) · Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
-  - Relay boost allocation: 15.9% (182541 GW) (ok)
-  - Mitigated latency: 151s (check)
+  - Relay boost allocation: 26.2% (366910 GW) (ok)
+  - Mitigated latency: 133s (check)
   - Failsafe budget: 120s (ok)
-  - Slack: -31s (check)
+  - Slack: -13s (check)
   - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1800s (ok)

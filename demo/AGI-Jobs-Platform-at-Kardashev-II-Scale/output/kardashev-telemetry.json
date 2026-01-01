@@ -183,13 +183,18 @@
     }
   },
   "energy": {
-    "capturedGw": 1150000,
+    "capturedGw": 1400000,
+    "capturedPlan": {
+      "baselineCapturedGw": 1150000,
+      "effectiveCapturedGw": 1400000,
+      "requiredCapturedGw": 1251428.57,
+      "expansionTargetGw": 1400000,
+      "expansionNeeded": true
+    },
     "dysonYield": 1150000,
-    "utilisationPct": 0.9521739130434783,
+    "utilisationPct": 0.7821428571428571,
     "marginPct": 0.125,
-    "warnings": [
-      "Utilisation exceeds configured safety margin"
-    ],
+    "warnings": [],
     "regional": [
       {
         "slug": "earth",
@@ -210,7 +215,7 @@
         "renewablePct": 0.99
       }
     ],
-    "tripleCheck": true,
+    "tripleCheck": false,
     "models": {
       "regionalSumGw": 1095000,
       "dysonProjectionGw": 1150000,
@@ -229,24 +234,24 @@
       },
       "maxGw": 1113689.7410643003,
       "averageGw": 1095409.7618084832,
-      "marginGw": 27500,
-      "freeEnergyMarginGw": 40741.810830269475,
-      "freeEnergyMarginPct": 0.03542766159153867,
-      "runwayHours": 0.03719321504220135,
+      "marginGw": 152500,
+      "freeEnergyMarginGw": 290741.8108302695,
+      "freeEnergyMarginPct": 0.20767272202162104,
+      "runwayHours": 0.26541831282411155,
       "demandStdDevGw": 8365.693389504962,
-      "entropyMargin": 4.870105672457637,
-      "gibbsFreeEnergyGj": 146670518.9889701,
-      "hamiltonianStability": 0.5177138307957694,
-      "gameTheorySlack": 0.7829712238580963,
-      "runwayGapHours": 0.9628067849577987,
-      "runwayGapGwh": 1054667.9509782137,
-      "runwayGapGj": 3796804623.5215693,
+      "entropyMargin": 34.754060099192095,
+      "gibbsFreeEnergyGj": 1046670518.9889702,
+      "hamiltonianStability": 0.6038363610108105,
+      "gameTheorySlack": 0.8217263624548647,
+      "runwayGapHours": 0.7345816871758885,
+      "runwayGapGwh": 804667.9509782137,
+      "runwayGapGj": 2896804623.5215693,
       "maintainsBuffer": true,
       "withinTolerance": true,
       "tolerance": 0.01
     },
     "allocationPolicy": {
-      "temperature": 0.3761832119792998,
+      "temperature": 0.30900763841156775,
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
@@ -259,7 +264,7 @@
       "diversificationAlpha": 1,
       "allocationEntropy": 1.0986122886681096,
       "fairnessIndex": 1,
-      "gibbsPotential": -0.3063819574404354,
+      "gibbsPotential": -0.23478898407050652,
       "allocations": [
         {
           "federation": "earth",
@@ -929,15 +934,15 @@
   "sentientWelfare": {
     "totalAgents": 4480000000,
     "federationCount": 3,
-    "freeEnergyPerAgentGj": 0.032739,
-    "cooperationIndex": 0.8507754962044841,
+    "freeEnergyPerAgentGj": 0.233632,
+    "cooperationIndex": 0.86821530857303,
     "inequalityIndex": 0.05252008576816762,
     "payoffCoefficient": 0.10038365976123358,
     "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
-    "equilibriumScore": 0.921928168462935,
-    "welfarePotential": 0.8343061149314638,
-    "collectiveActionPotential": 0.7593006530234773
+    "equilibriumScore": 0.9289040934103534,
+    "welfarePotential": 0.8601428739959762,
+    "collectiveActionPotential": 0.7921133370354081
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
@@ -1615,8 +1620,8 @@
     ]
   },
   "missionThermodynamics": {
-    "freeEnergyBudgetGw": 40741.810830269475,
-    "freeEnergyHeadroomPct": 0.016689255624393527,
+    "freeEnergyBudgetGw": 290741.8108302695,
+    "freeEnergyHeadroomPct": 0.11909790710727079,
     "hamiltonianLoad": 0.3903921568627451,
     "hamiltonianStability": 0.6096078431372549,
     "programmes": [
@@ -1918,8 +1923,8 @@
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
       "status": "warning",
-      "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
-      "confidence": 0.36904878007093556,
+      "summary": "Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.",
+      "confidence": 0.44655905726447265,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -1934,12 +1939,12 @@
         },
         {
           "label": "Relay boost allocation",
-          "value": "15.9% (182541 GW)",
+          "value": "26.2% (366910 GW)",
           "ok": true
         },
         {
           "label": "Mitigated latency",
-          "value": "151s",
+          "value": "133s",
           "ok": false
         },
         {
@@ -1949,7 +1954,7 @@
         },
         {
           "label": "Slack",
-          "value": "-31s",
+          "value": "-13s",
           "ok": false
         }
       ],
