@@ -2,7 +2,7 @@
   "manifest": {
     "version": "agi-jobs.kardashev-ii.demo.v1",
     "generatedAt": "2025-03-01T00:00:00Z",
-    "hash": "0x19283759619864f91927aed3d1165195684d0769f6b25304b70790524038c47d",
+    "hash": "0x73fe8a6f347d572ca53fbb631dbbf341630ddd9d0ae91c3206bb6067eb779bb6",
     "manifestoHash": "0x620a4ecd9820a125ddf954a346556b7d6125c31dd93138e00491a4bf969e0033",
     "manifestoHashMatches": true,
     "planHash": "0x08b94f37ebb5dfc4f564eb0dc97c407846355762f0596d8af89379ba6aec127d",
@@ -183,13 +183,11 @@
     }
   },
   "energy": {
-    "capturedGw": 1150000,
-    "dysonYield": 1150000,
-    "utilisationPct": 0.9521739130434783,
-    "marginPct": 0.125,
-    "warnings": [
-      "Utilisation exceeds configured safety margin"
-    ],
+    "capturedGw": 2190000,
+    "dysonYield": 2190000,
+    "utilisationPct": 0.5,
+    "marginPct": 0.5,
+    "warnings": [],
     "regional": [
       {
         "slug": "earth",
@@ -213,40 +211,40 @@
     "tripleCheck": true,
     "models": {
       "regionalSumGw": 1095000,
-      "dysonProjectionGw": 1150000,
-      "thermostatBudgetGw": 977500,
-      "deltaGw": 55000,
-      "deltaPct": 0.047826,
+      "dysonProjectionGw": 2190000,
+      "thermostatBudgetGw": 1861500,
+      "deltaGw": 1095000,
+      "deltaPct": 0.5,
       "withinMargin": true
     },
     "monteCarlo": {
       "runs": 256,
       "breachProbability": 0,
       "percentileGw": {
-        "p50": 1095320.5680055048,
-        "p95": 1109258.1891697305,
-        "p99": 1111780.7752236363
+        "p50": 1094670.6012452855,
+        "p95": 1115690.5263364932,
+        "p99": 1119549.3931820057
       },
-      "maxGw": 1113689.7410643003,
-      "averageGw": 1095409.7618084832,
-      "marginGw": 27500,
-      "freeEnergyMarginGw": 40741.810830269475,
-      "freeEnergyMarginPct": 0.03542766159153867,
-      "runwayHours": 0.03719321504220135,
-      "demandStdDevGw": 8365.693389504962,
-      "entropyMargin": 4.870105672457637,
-      "gibbsFreeEnergyGj": 146670518.9889701,
-      "hamiltonianStability": 0.5177138307957694,
-      "gameTheorySlack": 0.7829712238580963,
-      "runwayGapHours": 0.9628067849577987,
-      "runwayGapGwh": 1054667.9509782137,
-      "runwayGapGj": 3796804623.5215693,
+      "maxGw": 1124040.5443364822,
+      "averageGw": 1095022.6155290126,
+      "marginGw": 547500,
+      "freeEnergyMarginGw": 1074309.4736635068,
+      "freeEnergyMarginPct": 0.49055227107922683,
+      "runwayHours": 0.9810842793822124,
+      "demandStdDevGw": 13024.153947262455,
+      "entropyMargin": 82.4859317552305,
+      "gibbsFreeEnergyGj": 3867514105.1886244,
+      "hamiltonianStability": 0.7452761355396134,
+      "gameTheorySlack": 0.8853742609928261,
+      "runwayGapHours": 0.018915720617787568,
+      "runwayGapGwh": 20713.141865505815,
+      "runwayGapGj": 74567310.71582094,
       "maintainsBuffer": true,
       "withinTolerance": true,
       "tolerance": 0.01
     },
     "allocationPolicy": {
-      "temperature": 0.3761832119792998,
+      "temperature": 0.19868461427910156,
       "nashProduct": 0.8559979953942851,
       "strategyStability": 0.8789210176765097,
       "deviationIncentive": 0.12107898232349039,
@@ -259,7 +257,7 @@
       "diversificationAlpha": 1,
       "allocationEntropy": 1.0986122886681096,
       "fairnessIndex": 1,
-      "gibbsPotential": -0.3063819574404354,
+      "gibbsPotential": -0.12049775771212021,
       "allocations": [
         {
           "federation": "earth",
@@ -812,7 +810,7 @@
       }
     ],
     "crossChecks": {
-      "sumAgainstCouncil": 0
+      "sumAgainstCouncil": 104
     }
   },
   "identity": {
@@ -929,15 +927,15 @@
   "sentientWelfare": {
     "totalAgents": 4480000000,
     "federationCount": 3,
-    "freeEnergyPerAgentGj": 0.032739,
-    "cooperationIndex": 0.8507754962044841,
+    "freeEnergyPerAgentGj": 0.863284,
+    "cooperationIndex": 0.8968568629151126,
     "inequalityIndex": 0.05252008576816762,
     "payoffCoefficient": 0.10038365976123358,
     "coalitionStability": 0.8996163402387665,
     "paretoSlack": 0.8789210176765097,
-    "equilibriumScore": 0.921928168462935,
-    "welfarePotential": 0.8343061149314638,
-    "collectiveActionPotential": 0.7593006530234773
+    "equilibriumScore": 0.9403607151471864,
+    "welfarePotential": 0.9025748063546171,
+    "collectiveActionPotential": 0.846001891130882
   },
   "computeFabric": {
     "totalCapacityExaflops": 82.5,
@@ -1615,10 +1613,10 @@
     ]
   },
   "missionThermodynamics": {
-    "freeEnergyBudgetGw": 40741.810830269475,
-    "freeEnergyHeadroomPct": 0.016689255624393527,
-    "hamiltonianLoad": 0.3903921568627451,
-    "hamiltonianStability": 0.6096078431372549,
+    "freeEnergyBudgetGw": 1074309.4736635068,
+    "freeEnergyHeadroomPct": 0.44007433789263756,
+    "hamiltonianLoad": 0.32245476592268013,
+    "hamiltonianStability": 0.6775452340773198,
     "programmes": [
       {
         "id": "dyson-swarm",
@@ -1627,8 +1625,8 @@
         "computeShare": 0.7174494081710577,
         "riskIndex": 0.5058823529411764,
         "timelineSlackDays": 0,
-        "hamiltonian": 0.7311368891556598,
-        "pressureScore": 0.9320192420968363,
+        "hamiltonian": 0.3512941176470588,
+        "pressureScore": 0.5323529411764706,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       },
       {
@@ -1638,8 +1636,8 @@
         "computeShare": 0.16800305460099277,
         "riskIndex": 0.6,
         "timelineSlackDays": 0,
-        "hamiltonian": 0.24370648214934698,
-        "pressureScore": 0.45870648214934695,
+        "hamiltonian": 0.30761574415827264,
+        "pressureScore": 0.5056157441582726,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       },
       {
@@ -1649,8 +1647,8 @@
         "computeShare": 0.11454753722794961,
         "riskIndex": 0.49999999999999994,
         "timelineSlackDays": 0,
-        "hamiltonian": 0.19633309928322856,
-        "pressureScore": 0.3963330992832286,
+        "hamiltonian": 0.30845443596270883,
+        "pressureScore": 0.48845443596270877,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       }
     ],
@@ -1658,19 +1656,19 @@
       {
         "id": "dyson-swarm",
         "name": "Dyson Swarm Expansion Programme",
-        "pressureScore": 0.9320192420968363,
+        "pressureScore": 0.5323529411764706,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       },
       {
         "id": "ares-biosphere",
         "name": "Ares Biosphere Terraforming Sprint",
-        "pressureScore": 0.45870648214934695,
+        "pressureScore": 0.5056157441582726,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       },
       {
         "id": "gaia-resilience",
         "name": "Gaia Resilience Grid",
-        "pressureScore": 0.3963330992832286,
+        "pressureScore": 0.48845443596270877,
         "recommendation": "Expand timeline slack and buffer energy reserves."
       }
     ]
@@ -1720,13 +1718,13 @@
       ],
       "results": {
         "regionalSumGw": 1095000,
-        "dysonProjectionGw": 1150000,
-        "thermostatBudgetGw": 977500,
-        "deltaGw": 55000,
-        "deltaPct": 0.047826
+        "dysonProjectionGw": 2190000,
+        "thermostatBudgetGw": 1861500,
+        "deltaGw": 1095000,
+        "deltaPct": 0.5
       },
       "withinMargin": true,
-      "tolerancePct": 0.125
+      "tolerancePct": 0.5
     },
     "energyMonteCarlo": {
       "runs": 256,
@@ -1734,9 +1732,9 @@
       "tolerance": 0.01,
       "withinTolerance": true,
       "percentileGw": {
-        "p50": 1095320.5680055048,
-        "p95": 1109258.1891697305,
-        "p99": 1111780.7752236363
+        "p50": 1094670.6012452855,
+        "p95": 1115690.5263364932,
+        "p99": 1119549.3931820057
       }
     },
     "energyFeeds": {
@@ -1811,9 +1809,9 @@
       "gameTheorySlack": 0.9929
     },
     "compute": {
-      "tolerancePct": 0.75,
-      "deviationPct": 0,
-      "dysonProjectionExaflops": 115,
+      "tolerancePct": 6,
+      "deviationPct": 5.0228310502283104,
+      "dysonProjectionExaflops": 109.5,
       "withinTolerance": true
     },
     "bridges": {
@@ -1883,30 +1881,30 @@
     {
       "id": "energy-demand-surge",
       "title": "20% demand surge vs Dyson safety margin",
-      "status": "critical",
-      "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required.",
-      "confidence": 0,
-      "impact": "Star-scale compute would brown-out without emergency pause.",
+      "status": "warning",
+      "summary": "Dyson lattice absorbs surge with 876,000 GW spare.",
+      "confidence": 0.9,
+      "impact": "Thermostat margin remains controllable under surge scenario.",
       "metrics": [
         {
           "label": "Simulated demand",
           "value": "1,314,000 GW",
-          "ok": false
+          "ok": true
         },
         {
           "label": "Remaining buffer",
-          "value": "-164,000 GW",
+          "value": "876,000 GW",
           "ok": false
         },
         {
           "label": "Thermostat margin",
-          "value": "143,750 GW",
+          "value": "1,095,000 GW",
           "ok": true
         },
         {
           "label": "Utilisation",
-          "value": "114.26%",
-          "ok": false
+          "value": "60.00%",
+          "ok": true
         }
       ],
       "recommendedActions": [
@@ -1918,8 +1916,8 @@
       "id": "bridge-failover",
       "title": "Interplanetary bridge outage simulation",
       "status": "warning",
-      "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.",
-      "confidence": 0.36904878007093556,
+      "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.",
+      "confidence": 0.5125,
       "impact": "Bridge sentries maintain cadence under reroute load.",
       "metrics": [
         {
@@ -1934,13 +1932,13 @@
         },
         {
           "label": "Relay boost allocation",
-          "value": "15.9% (182541 GW)",
+          "value": "35.0% (766500 GW)",
           "ok": true
         },
         {
           "label": "Mitigated latency",
-          "value": "151s",
-          "ok": false
+          "value": "117s",
+          "ok": true
         },
         {
           "label": "Failsafe budget",
@@ -1949,13 +1947,13 @@
         },
         {
           "label": "Slack",
-          "value": "-31s",
-          "ok": false
+          "value": "3s",
+          "ok": true
         }
       ],
       "recommendedActions": [
         "Allocate relay boost to stabilise bridge latency using Gibbs reserve.",
-        "Execute bridge isolation routine from mission directives if slack < 0.",
+        "Keep isolation routine on standby while relays rebalance.",
         "Rebalance capital streams to spin up orbital relays before load crosses failsafe."
       ]
     },
@@ -1996,14 +1994,14 @@
     {
       "id": "compute-drawdown",
       "title": "Compute drawdown (15%) resilience",
-      "status": "warning",
-      "summary": "Deviation 15.00% exceeds tolerance 0.75%.",
-      "confidence": 0.33333333333333337,
+      "status": "nominal",
+      "summary": "Dyson projection stays within tolerance under drawdown.",
+      "confidence": 0.9403855910705226,
       "impact": "Capital streams absorb transient compute reduction.",
       "metrics": [
         {
           "label": "Projected compute",
-          "value": "115.00 EF",
+          "value": "109.50 EF",
           "ok": true
         },
         {
@@ -2013,12 +2011,12 @@
         },
         {
           "label": "Deviation",
-          "value": "15.00%",
+          "value": "10.73%",
           "ok": false
         },
         {
           "label": "Tolerance",
-          "value": "0.75%",
+          "value": "6%",
           "ok": true
         }
       ],

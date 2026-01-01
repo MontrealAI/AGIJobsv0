@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0x19283759619864f91927aed3d1165195684d0769f6b25304b70790524038c47d
+**Manifest hash**: 0x73fe8a6f347d572ca53fbb631dbbf341630ddd9d0ae91c3206bb6067eb779bb6
 **Dominance score**: 90.0 / 100
 
 ---
@@ -15,23 +15,22 @@
 ---
 
 ## Energy telemetry
-* Captured GW (Dyson baseline): 1,150,000 GW.
-* Utilisation: 95.22% (margin 0.13%).
+* Captured GW (Dyson baseline): 2,190,000 GW.
+* Utilisation: 50.00% (margin 0.50%).
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Free energy margin 40741.81 GW (3.54%) · Gibbs free energy 146,670,518.989 GJ.
-* Free energy runway 0.04 hours at mean demand (gap 0.96h, 1054667.95 GWh).
-* Hamiltonian stability 51.8% · entropy margin 4.87σ · game-theory slack 78.3% · buffer stable.
-* Allocation policy: Gibbs temperature 0.38 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.306.
+* Free energy margin 1074309.47 GW (49.06%) · Gibbs free energy 3,867,514,105.189 GJ.
+* Free energy runway 0.98 hours at mean demand (gap 0.02h, 20713.14 GWh).
+* Hamiltonian stability 74.5% · entropy margin 82.49σ · game-theory slack 88.5% · buffer stable.
+* Allocation policy: Gibbs temperature 0.20 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.120.
 * Replicator equilibrium 95.4% · drift 0.046.
-* Sentient welfare equilibrium 92.2% · cooperation 85.1% · inequality 5.3% · free energy/agent 0.032739 GJ.
+* Sentient welfare equilibrium 94.0% · cooperation 89.7% · inequality 5.3% · free energy/agent 0.863284 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
-* Demand percentiles: P95 1,109,258.189 GW · P99 1,111,780.775 GW.
+* Demand percentiles: P95 1,115,690.526 GW · P99 1,119,549.393 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
 * Energy window deficits: none — all federations meet coverage targets.
-* ⚠️ Utilisation exceeds configured safety margin
 
 ---
 
@@ -45,7 +44,7 @@
 ---
 
 ## Compute & domains
-* Aggregate compute 115.00 EF · 4,480,000,000 agents · deviation 0.00% (≤ 0.75%).
+* Aggregate compute 115.00 EF · 4,480,000,000 agents · deviation 5.02% (≤ 6%).
 * **EARTH** – 43.10 EF, 2,800,000,000 agents, resilience 94.50%.
 * **MARS** – 14.30 EF, 720,000,000 agents, resilience 93.50%.
 * **ORBITAL** – 57.60 EF, 960,000,000 agents, resilience 95.90%.
@@ -82,31 +81,31 @@
 ---
 
 ## Scenario stress sweep
-* **20% demand surge vs Dyson safety margin** — status CRITICAL (confidence 0.0%) · Dyson lattice overrun by 164,000 GW. Immediate throttling required.
-  - Simulated demand: 1,314,000 GW (check)
-  - Remaining buffer: -164,000 GW (check)
-  - Thermostat margin: 143,750 GW (ok)
-  - Utilisation: 114.26% (check)
+* **20% demand surge vs Dyson safety margin** — status WARNING (confidence 90.0%) · Dyson lattice absorbs surge with 876,000 GW spare.
+  - Simulated demand: 1,314,000 GW (ok)
+  - Remaining buffer: 876,000 GW (check)
+  - Thermostat margin: 1,095,000 GW (ok)
+  - Utilisation: 60.00% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 36.9%) · Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve.
+* **Interplanetary bridge outage simulation** — status WARNING (confidence 51.2%) · Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
-  - Relay boost allocation: 15.9% (182541 GW) (ok)
-  - Mitigated latency: 151s (check)
+  - Relay boost allocation: 35.0% (766500 GW) (ok)
+  - Mitigated latency: 117s (ok)
   - Failsafe budget: 120s (ok)
-  - Slack: -31s (check)
-  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
+  - Slack: 3s (ok)
+  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Keep isolation routine on standby while relays rebalance. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1800s (ok)
   - Simulated coverage: 1200s (ok)
   - Guardian window: 900s (ok)
   - Coverage ratio: 133.33% (ok)
   - Recommended: Register standby sentinel via Safe batch if ratio < 100%. · Shorten guardian drill cadence until redundancy restored.
-* **Compute drawdown (15%) resilience** — status WARNING (confidence 33.3%) · Deviation 15.00% exceeds tolerance 0.75%.
-  - Projected compute: 115.00 EF (ok)
+* **Compute drawdown (15%) resilience** — status NOMINAL (confidence 94.0%) · Dyson projection stays within tolerance under drawdown.
+  - Projected compute: 109.50 EF (ok)
   - Stressed compute: 97.75 EF (check)
-  - Deviation: 15.00% (check)
-  - Tolerance: 0.75% (ok)
+  - Deviation: 10.73% (check)
+  - Tolerance: 6% (ok)
   - Recommended: Authorise capital stream expansion for orbital compute nodes. · Notify guardians to ratify temporary autonomy reduction if deviation persists.
 * **Dyson phase slip (30 days)** — status NOMINAL (confidence 95.0%) · Schedule buffer absorbs slip with 490 days remaining.
   - Total timeline: 900 days (ok)
@@ -166,9 +165,9 @@
 ---
 
 ## Dyson programme
-* Seed Swarm: 1,200 satellites, 11,300 GW, 120 days.
-* Helios Halo: 6,800 satellites, 150,500 GW, 260 days.
-* Crown Array: 24,000 satellites, 988,200 GW, 520 days.
+* Seed Swarm: 1,200 satellites, 21,500 GW, 120 days.
+* Helios Halo: 6,800 satellites, 286,500 GW, 260 days.
+* Crown Array: 24,000 satellites, 1,882,000 GW, 520 days.
 
 ---
 

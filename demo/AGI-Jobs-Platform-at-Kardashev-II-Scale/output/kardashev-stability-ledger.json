@@ -3,13 +3,13 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9357798165137614,
-    "quorum": false,
-    "summary": "Manual review required for 2 check(s).",
+    "compositeScore": 0.963302752293578,
+    "quorum": true,
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9357798165137614,
+        "score": 0.963302752293578,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
@@ -19,7 +19,7 @@
       },
       {
         "method": "energy-safety-buffer",
-        "score": 0.3826086956521735,
+        "score": 1,
         "explanation": "Remaining Dyson thermostat buffer relative to configured safety margin."
       },
       {
@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.7490720823516539,
+        "score": 0.899117853048586,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -132,7 +132,7 @@
       "severity": "critical",
       "status": true,
       "weight": 1.1,
-      "evidence": "regional 1,095,000 GW · Dyson 1,150,000 GW · thermostat 977,500 GW"
+      "evidence": "regional 1,095,000 GW · Dyson 2,190,000 GW · thermostat 1,861,500 GW"
     },
     {
       "id": "energy-cross-verification",
@@ -186,9 +186,9 @@
       "id": "energy-margin",
       "title": "Dyson thermostat buffer intact",
       "severity": "medium",
-      "status": false,
+      "status": true,
       "weight": 0.6,
-      "evidence": "utilisation 95.22% vs permitted 87.50%"
+      "evidence": "utilisation 50.00% vs permitted 50.00%"
     },
     {
       "id": "compute-alignment",
@@ -196,7 +196,7 @@
       "severity": "medium",
       "status": true,
       "weight": 0.7,
-      "evidence": "deviation 0.00% (≤ 0.75%)"
+      "evidence": "deviation 5.02% (≤ 6%)"
     },
     {
       "id": "identity-quorum",
@@ -292,43 +292,37 @@
       "severity": "critical",
       "status": false,
       "weight": 0.8,
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "alerts": [
     {
-      "id": "energy-margin",
-      "title": "Dyson thermostat buffer intact",
-      "severity": "medium",
-      "evidence": "utilisation 95.22% vs permitted 87.50%"
-    },
-    {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
       "severity": "critical",
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "scenarioSweep": {
     "total": 11,
-    "nominal": 5,
+    "nominal": 6,
     "warning": 4,
-    "critical": 2,
-    "averageConfidence": 0.7490720823516539,
+    "critical": 1,
+    "averageConfidence": 0.899117853048586,
     "entries": [
       {
         "id": "energy-demand-surge",
         "title": "20% demand surge vs Dyson safety margin",
-        "status": "critical",
-        "confidence": 0,
-        "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required."
+        "status": "warning",
+        "confidence": 0.9,
+        "summary": "Dyson lattice absorbs surge with 876,000 GW spare."
       },
       {
         "id": "bridge-failover",
         "title": "Interplanetary bridge outage simulation",
         "status": "warning",
-        "confidence": 0.36904878007093556,
-        "summary": "Failover latency 151s breaches 120s failsafe. Relay boost 15.9% applied from Gibbs reserve."
+        "confidence": 0.5125,
+        "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve."
       },
       {
         "id": "sentinel-gap",
@@ -340,9 +334,9 @@
       {
         "id": "compute-drawdown",
         "title": "Compute drawdown (15%) resilience",
-        "status": "warning",
-        "confidence": 0.33333333333333337,
-        "summary": "Deviation 15.00% exceeds tolerance 0.75%."
+        "status": "nominal",
+        "confidence": 0.9403855910705226,
+        "summary": "Dyson projection stays within tolerance under drawdown."
       },
       {
         "id": "dyson-phase-slip",
@@ -566,8 +560,8 @@
     "minimumCoverageSeconds": 1800,
     "coverageRatio": 1,
     "bridgeFailsafeSeconds": 120,
-    "permittedUtilisation": 0.875,
-    "utilisation": 0.9521739130434783,
+    "permittedUtilisation": 0.5,
+    "utilisation": 0.5,
     "monteCarloBreachProbability": 0,
     "monteCarloWithinTolerance": true
   }
