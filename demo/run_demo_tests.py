@@ -22,6 +22,7 @@ import sys
 import tempfile
 import time
 import ctypes.util
+import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -237,17 +238,28 @@ def _run_suite(
             # failing outright on locked-down runners.
             user_pref = user_playwright_pref
             if user_pref is None:
-                if _can_install_playwright_deps() and not _playwright_system_deps_ready():
+                can_install_deps = _can_install_playwright_deps()
+                deps_ready = _playwright_system_deps_ready()
+                apt_reachable = _apt_repos_reachable() if can_install_deps else False
+                if can_install_deps and apt_reachable and not deps_ready:
                     env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "1"
                 else:
                     env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
-                    if not _playwright_system_deps_ready():
+                    if not deps_ready:
                         env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
             else:
                 env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = user_pref
                 if user_pref == "0" and not _playwright_system_deps_ready():
                     env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
             env.setdefault("PLAYWRIGHT_OPTIONAL_E2E_ON_FAILURE", "1")
+            if (
+                user_pref is None
+                and not _playwright_cache_ready(env)
+                and not _playwright_downloads_reachable()
+            ):
+                env.setdefault("PLAYWRIGHT_AUTO_INSTALL", "0")
+                env.setdefault("PLAYWRIGHT_OPTIONAL_E2E", "1")
+                env["PLAYWRIGHT_INSTALL_WITH_DEPS"] = "0"
         binary = suite.runner
         cmd = [binary, "test", *_node_runner_args(suite.demo_root)]
         description = f"{suite.tests_dir} via {binary} test"
@@ -617,6 +629,54 @@ _PLAYWRIGHT_LIB_PATHS = (
     Path("/usr/lib/x86_64-linux-gnu/libatk-1.0.so.0"),
     Path("/usr/lib/x86_64-linux-gnu/libgtk-3.so.0"),
 )
+_PLAYWRIGHT_DOWNLOAD_HOSTS = (
+    "cdn.playwright.dev",
+    "playwright.download.prss.microsoft.com",
+)
+
+
+def _playwright_downloads_reachable() -> bool:
+    """Return True when Playwright download hosts resolve in DNS.
+
+    The Phase-8 demo can auto-install browsers. In sandboxed environments the
+    DNS resolution fails, which turns the install step into a long, noisy
+    failure. A lightweight probe lets us skip auto-install when downloads are
+    clearly unreachable.
+    """
+
+    try:
+        for host in _PLAYWRIGHT_DOWNLOAD_HOSTS:
+            socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
+    except OSError:
+        return False
+    return True
+
+
+def _apt_repos_reachable(timeout: float = 3.0) -> bool:
+    """Return True when apt repositories can be reached without errors."""
+
+    if not sys.platform.startswith("linux"):
+        return False
+
+    codename = "noble"
+    try:
+        codename = platform.freedesktop_os_release().get("VERSION_CODENAME", codename)
+    except OSError:
+        pass
+
+    urls = [
+        f"http://archive.ubuntu.com/ubuntu/dists/{codename}/InRelease",
+        f"http://security.ubuntu.com/ubuntu/dists/{codename}-security/InRelease",
+    ]
+    for url in urls:
+        try:
+            with urllib.request.urlopen(url, timeout=timeout) as response:
+                if response.status < 400:
+                    return True
+        except (urllib.error.URLError, ValueError):
+            continue
+
+    return False
 
 
 def _playwright_system_deps_ready() -> bool:
