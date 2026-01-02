@@ -274,6 +274,45 @@ def test_policy_action_escalates_alignment_when_entropy_high() -> None:
     assert high_action["build_dyson_nodes"] <= low_action["build_dyson_nodes"]
 
 
+def test_policy_action_invests_in_entropy_mitigation_for_phase_risk() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    low_risk_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.6,
+        sustainability_index=0.55,
+        nash_welfare=0.6,
+        sentient_welfare_index=0.6,
+        free_energy=0.2,
+        entropy=0.1,
+        entropy_production=0.05,
+        hamiltonian=-0.1,
+        coordination_index=0.7,
+        game_theory_slack=0.7,
+        stability_index=0.7,
+        phase_transition_risk=0.1,
+    )
+    high_risk_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.45,
+        nash_welfare=0.45,
+        sentient_welfare_index=0.5,
+        free_energy=0.1,
+        entropy=0.85,
+        entropy_production=0.75,
+        hamiltonian=-0.2,
+        coordination_index=0.4,
+        game_theory_slack=0.4,
+        stability_index=0.5,
+        phase_transition_risk=0.9,
+    )
+
+    low_action = orchestrator._build_policy_action(low_risk_state)
+    high_action = orchestrator._build_policy_action(high_risk_state)
+
+    assert high_action["entropy_mitigation"] >= low_action["entropy_mitigation"]
+
+
 def test_policy_action_responds_to_gibbs_deficit() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
     baseline_state = SimulationState(

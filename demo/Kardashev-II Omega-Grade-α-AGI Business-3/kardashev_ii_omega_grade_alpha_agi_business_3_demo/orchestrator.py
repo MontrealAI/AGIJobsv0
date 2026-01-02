@@ -731,6 +731,7 @@ class Orchestrator:
             "alignment_investment",
             "exergy_recovery",
             "coordination_incentives",
+            "entropy_mitigation",
         )
         normalized: Dict[str, float] = {}
         for field in allowed_fields:
@@ -997,6 +998,7 @@ class Orchestrator:
             ("alignment_investment", "Invest in alignment"),
             ("coordination_incentives", "Fund coordination incentives"),
             ("exergy_recovery", "Recover exergy"),
+            ("entropy_mitigation", "Deploy entropy sinks"),
         )
         for key, label in ordered_actions:
             value = float(action.get(key, 0.0))
@@ -1155,6 +1157,13 @@ class Orchestrator:
             * (0.7 + 0.3 * signals["equity_pressure"])
             * (1.0 + (1.0 - stability_guard))
         )
+        entropy_mitigation = (
+            alignment_budget
+            * (0.6 * signals["entropy_pressure"] + 0.4 * signals["entropy_production_pressure"])
+            * (0.6 + 0.4 * signals["phase_transition_risk"])
+            * (0.7 + 0.3 * signals["stability_index"])
+            * (0.7 + 0.3 * signals["coordination_damping"])
+        )
         coordination_incentives = (
             alignment_budget
             * signals["coordination_pressure"]
@@ -1180,6 +1189,7 @@ class Orchestrator:
                 "alignment_investment": alignment_investment,
                 "exergy_recovery": exergy_recovery,
                 "coordination_incentives": coordination_incentives,
+                "entropy_mitigation": entropy_mitigation,
             }
         )
         rationale = self._build_policy_rationale(
@@ -1194,6 +1204,7 @@ class Orchestrator:
                 "alignment_investment": alignment_investment,
                 "exergy_recovery": exergy_recovery,
                 "coordination_incentives": coordination_incentives,
+                "entropy_mitigation": entropy_mitigation,
             },
         )
         return {"action": normalized_action, "rationale": rationale}
