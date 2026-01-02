@@ -34,6 +34,9 @@
   "status_output_path": "logs/omega-status.jsonl",
   "energy_oracle_path": "logs/omega-energy-oracle.jsonl",
   "energy_oracle_interval_seconds": 60.0,
+  "auto_pause_on_phase_transition": true,
+  "phase_transition_pause_threshold": 0.85,
+  "phase_transition_resume_threshold": 0.7,
   "initial_jobs": [
     {
       "title": "Planetary Dyson Swarm Expansion",

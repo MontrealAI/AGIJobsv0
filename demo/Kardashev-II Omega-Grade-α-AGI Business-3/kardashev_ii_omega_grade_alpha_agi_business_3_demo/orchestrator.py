@@ -68,6 +68,9 @@ class OrchestratorConfig:
     heartbeat_timeout_seconds: float = 30.0
     health_check_interval_seconds: float = 5.0
     integrity_check_interval_seconds: float = 30.0
+    auto_pause_on_phase_transition: bool = True
+    phase_transition_pause_threshold: float = 0.85
+    phase_transition_resume_threshold: float = 0.7
 
 
 class Orchestrator:
@@ -104,6 +107,7 @@ class Orchestrator:
         self._running = False
         self._paused = asyncio.Event()
         self._paused.set()
+        self._phase_transition_paused = False
         self._cycle = 0
         self._stopped = asyncio.Event()
         self._status_path = config.status_output_path
@@ -511,6 +515,30 @@ class Orchestrator:
             energy_price=self.resources.energy_price,
             compute_price=self.resources.compute_price,
         )
+        self._apply_phase_transition_guard(state)
+
+    def _apply_phase_transition_guard(self, state: SimulationState) -> None:
+        if not self.config.auto_pause_on_phase_transition:
+            return
+        risk = float(state.phase_transition_risk)
+        pause_threshold = float(self.config.phase_transition_pause_threshold)
+        resume_threshold = float(self.config.phase_transition_resume_threshold)
+        if not self._phase_transition_paused and risk >= pause_threshold:
+            self._phase_transition_paused = True
+            self._warning(
+                "phase_transition_pause",
+                risk=risk,
+                threshold=pause_threshold,
+            )
+            self.pause()
+        elif self._phase_transition_paused and risk <= resume_threshold:
+            self._phase_transition_paused = False
+            self._info(
+                "phase_transition_resume",
+                risk=risk,
+                threshold=resume_threshold,
+            )
+            self.resume()
 
     async def _simulation_loop(self) -> None:
         assert self.simulation is not None
