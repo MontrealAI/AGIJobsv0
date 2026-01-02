@@ -126,3 +126,36 @@ def test_policy_steps_include_exergy_recovery(tmp_path: Path) -> None:
     steps = orchestrator._format_policy_steps({"exergy_recovery": 2.5})
 
     assert any("Recover exergy" in step for step in steps)
+
+
+def test_policy_brief_surfaces_risk_budget(tmp_path: Path) -> None:
+    orchestrator = Orchestrator(
+        OrchestratorConfig(
+            control_channel_file=tmp_path / "control.jsonl",
+            checkpoint_path=tmp_path / "checkpoint.json",
+            status_output_path=None,
+            audit_log_path=None,
+            energy_oracle_path=None,
+        )
+    )
+    state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.62,
+        sustainability_index=0.58,
+        free_energy=-0.4,
+        entropy=0.52,
+        entropy_production=0.4,
+        hamiltonian=-0.25,
+        stability_index=0.7,
+        coordination_index=0.55,
+        nash_welfare=0.6,
+        sentient_welfare_index=0.58,
+        game_theory_slack=0.62,
+    )
+
+    signals = orchestrator._compute_policy_signals(state)
+    decision = orchestrator._build_policy_decision(state, signals=signals)
+    brief = orchestrator._build_policy_brief(state, decision, signals)
+
+    assert 0.1 <= signals["risk_budget"] <= 1.0
+    assert brief["welfare_guardrails"]["risk_budget"] == pytest.approx(signals["risk_budget"])
