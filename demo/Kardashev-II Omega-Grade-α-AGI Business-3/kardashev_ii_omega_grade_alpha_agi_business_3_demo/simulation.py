@@ -17,6 +17,7 @@ class SimulationState:
     free_energy: float = 0.0
     gibbs_free_energy: Optional[float] = None
     entropy: float = 0.0
+    entropy_production: float = 0.0
     hamiltonian: float = 0.0
     stability_index: float = 0.0
     coordination_index: float = 0.0
@@ -94,6 +95,7 @@ class SyntheticEconomySim(PlanetarySimulation):
         enthalpy = internal_energy + pressure * volume
         free_energy = internal_energy - temperature * entropy
         gibbs_free_energy = enthalpy - temperature * entropy
+        entropy_production = max(0.0, entropy * temperature * (1.0 - coordination_index))
         hamiltonian = -internal_energy * order_parameter
         stability_index = math.exp(-entropy) * (1.0 / (1.0 + abs(hamiltonian)))
         stability_index *= 0.5 + 0.5 * coordination_index
@@ -114,6 +116,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             "free_energy": free_energy,
             "gibbs_free_energy": gibbs_free_energy,
             "entropy": entropy,
+            "entropy_production": entropy_production,
             "hamiltonian": hamiltonian,
             "stability_index": stability_index,
             "coordination_index": coordination_index,
@@ -143,6 +146,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             free_energy=metrics["free_energy"],
             gibbs_free_energy=metrics["gibbs_free_energy"],
             entropy=metrics["entropy"],
+            entropy_production=metrics["entropy_production"],
             hamiltonian=metrics["hamiltonian"],
             stability_index=metrics["stability_index"],
             coordination_index=metrics["coordination_index"],

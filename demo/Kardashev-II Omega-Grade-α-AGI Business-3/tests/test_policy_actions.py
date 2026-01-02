@@ -61,6 +61,7 @@ def test_policy_signals_use_gibbs_deficit(tmp_path: Path) -> None:
         sustainability_index=0.6,
         free_energy=-0.5,
         entropy=0.4,
+        entropy_production=0.5,
         hamiltonian=-0.3,
         stability_index=0.8,
         coordination_index=0.9,
@@ -72,6 +73,7 @@ def test_policy_signals_use_gibbs_deficit(tmp_path: Path) -> None:
     signals = orchestrator._compute_policy_signals(state)
 
     assert signals["gibbs_drive"] == pytest.approx(0.5)
+    assert signals["entropy_production_pressure"] == pytest.approx(0.5 / 1.4)
 
 
 def test_insight_payload_surfaces_thermodynamic_strategy(tmp_path: Path) -> None:
