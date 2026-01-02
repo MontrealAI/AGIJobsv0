@@ -803,6 +803,12 @@ class Orchestrator:
         stability_guard -= 0.15 * entropy_production_pressure
         stability_guard *= 0.6 + 0.4 * stability_index
         stability_guard = min(1.0, max(0.2, stability_guard))
+        risk_budget = (
+            stability_guard
+            * (0.6 + 0.4 * entropy_damping)
+            * (0.6 + 0.4 * coordination_damping)
+        )
+        risk_budget = min(1.0, max(0.1, risk_budget))
         return {
             "prosperity_gap": prosperity_gap,
             "sustainability_gap": sustainability_gap,
@@ -842,6 +848,7 @@ class Orchestrator:
             "welfare_urgency": welfare_urgency,
             "coordination_pressure": coordination_pressure,
             "stability_guard": stability_guard,
+            "risk_budget": risk_budget,
         }
 
     def _score_claimant(self, job: JobRecord, agent: str) -> Tuple[float, float, int, str]:
@@ -1018,6 +1025,7 @@ class Orchestrator:
                 "welfare_gap": signals["welfare_gap"],
                 "equity_pressure": signals["equity_pressure"],
                 "welfare_urgency": signals["welfare_urgency"],
+                "risk_budget": signals["risk_budget"],
             },
             "energy_dynamics": {
                 "gibbs_reference": gibbs_reference,
@@ -1084,6 +1092,7 @@ class Orchestrator:
         """
 
         signals = signals or self._compute_policy_signals(state)
+        risk_budget = signals["risk_budget"]
         action_budget = (
             1.5
             + 3.0 * signals["energy_price_pressure"]
@@ -1096,12 +1105,14 @@ class Orchestrator:
             * signals["entropy_damping"]
         )
         action_budget *= 0.9 + 0.6 * signals["welfare_urgency"] + 0.3 * signals["equity_pressure"]
+        action_budget *= 0.5 + 0.5 * risk_budget
         alignment_budget = (
             action_budget
             * (1.0 + 0.8 * signals["entropy_pressure"])
             / max(0.6, signals["entropy_damping"])
         )
         alignment_budget *= 1.0 + 0.6 * signals["equity_pressure"]
+        alignment_budget *= 0.5 + 0.5 * risk_budget
         stability_guard = signals["stability_guard"]
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"]) * stability_guard
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
