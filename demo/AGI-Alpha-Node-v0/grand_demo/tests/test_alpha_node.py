@@ -8,8 +8,27 @@ import sys
 import pytest
 
 PACKAGE_ROOT = pathlib.Path(__file__).resolve().parents[1]
-if str(PACKAGE_ROOT) not in sys.path:
-    sys.path.insert(0, str(PACKAGE_ROOT))
+PACKAGE_ROOT_STR = str(PACKAGE_ROOT)
+if PACKAGE_ROOT_STR not in sys.path:
+    sys.path.insert(0, PACKAGE_ROOT_STR)
+
+
+def _ensure_grand_demo_alpha_node() -> None:
+    module = sys.modules.get("alpha_node")
+    if not module:
+        return
+
+    module_file = getattr(module, "__file__", "") or ""
+    module_paths = [str(path) for path in getattr(module, "__path__", [])]
+    if PACKAGE_ROOT_STR in module_file or any(PACKAGE_ROOT_STR in path for path in module_paths):
+        return
+
+    for name in list(sys.modules):
+        if name == "alpha_node" or name.startswith("alpha_node."):
+            sys.modules.pop(name, None)
+
+
+_ensure_grand_demo_alpha_node()
 
 from alpha_node.ai.planner import MuZeroPlanner
 from alpha_node.compliance.scorecard import ComplianceEngine
