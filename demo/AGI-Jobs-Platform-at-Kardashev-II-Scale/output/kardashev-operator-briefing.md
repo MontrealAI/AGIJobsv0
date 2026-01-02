@@ -27,11 +27,10 @@
 * Mission unstoppable 100.00% across 3 programmes (dependencies resolved true).
 * Mission advisories: none — autonomy, sentinel, and timeline guardrails nominal.
 * Owner override unstoppable score 100.00% (selectors true, pause true, resume true, secondary aligned @ 100.00%, tertiary aligned @ 100.00% · decode failures 0).
-* Scenario sweep: 5/11 nominal, 4 warning, 2 critical.
-  - 20% demand surge vs Dyson safety margin: Dyson lattice overrun by 164,000 GW. Immediate throttling required.
+* Scenario sweep: 6/11 nominal, 5 warning, 0 critical.
+  - 20% demand surge vs Dyson safety margin: Dyson lattice absorbs surge with 86,000 GW spare.
   - Interplanetary bridge outage simulation: Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.
   - Compute drawdown (15%) resilience: Deviation 15.00% exceeds tolerance 0.75%.
-  - Primary energy window offline: Removing orbital 8h window drops coverage to 80.62%.
   - Logistics demand spike (+25%): Corridors absorb spike with utilisation 104.33% and buffers 12.00d.
   - Settlement backlog (+40% finality): Settlement mesh absorbs backlog within tolerance.
 * Audit checklist: ipfs://QmKardashevAuditChecklist

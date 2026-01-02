@@ -81,11 +81,11 @@
 ---
 
 ## Scenario stress sweep
-* **20% demand surge vs Dyson safety margin** — status CRITICAL (confidence 0.0%) · Dyson lattice overrun by 164,000 GW. Immediate throttling required.
-  - Simulated demand: 1,314,000 GW (check)
-  - Remaining buffer: -164,000 GW (check)
-  - Thermostat margin: 143,750 GW (ok)
-  - Utilisation: 114.26% (check)
+* **20% demand surge vs Dyson safety margin** — status WARNING (confidence 74.6%) · Dyson lattice absorbs surge with 86,000 GW spare.
+  - Simulated demand: 1,314,000 GW (ok)
+  - Remaining buffer: 86,000 GW (check)
+  - Thermostat margin: 175,000 GW (ok)
+  - Utilisation: 93.86% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
 * **Interplanetary bridge outage simulation** — status WARNING (confidence 44.7%) · Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
@@ -113,10 +113,11 @@
   - Remaining buffer: 490 days (ok)
   - Slip ratio: 3.33% (ok)
   - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
-* **Primary energy window offline** — status CRITICAL (confidence 82.3%) · Removing orbital 8h window drops coverage to 80.62%.
+* **Primary energy window offline** — status NOMINAL (confidence 100.0%) · Coverage remains 150.55% after losing orbital 8h window. Reserve boost +18377625 GW·h applied from Gibbs runway plan.
   - Removed window: orbital @ 0h (check)
-  - Remaining coverage: 80.62% (check)
+  - Remaining coverage: 150.55% (ok)
   - Threshold: 98.00% (ok)
+  - Reserve boost: 18377624.66 GW·h (ok)
   - Lost capacity: 5104000.00 GW·h (check)
   - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
 * **Logistics demand spike (+25%)** — status WARNING (confidence 85.7%) · Corridors absorb spike with utilisation 104.33% and buffers 12.00d.

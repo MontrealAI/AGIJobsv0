@@ -215,7 +215,7 @@
         "renewablePct": 0.99
       }
     ],
-    "tripleCheck": false,
+    "tripleCheck": true,
     "models": {
       "regionalSumGw": 1095000,
       "dysonProjectionGw": 1150000,
@@ -1890,30 +1890,30 @@
     {
       "id": "energy-demand-surge",
       "title": "20% demand surge vs Dyson safety margin",
-      "status": "critical",
-      "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required.",
-      "confidence": 0,
-      "impact": "Star-scale compute would brown-out without emergency pause.",
+      "status": "warning",
+      "summary": "Dyson lattice absorbs surge with 86,000 GW spare.",
+      "confidence": 0.7457142857142857,
+      "impact": "Thermostat margin remains controllable under surge scenario.",
       "metrics": [
         {
           "label": "Simulated demand",
           "value": "1,314,000 GW",
-          "ok": false
+          "ok": true
         },
         {
           "label": "Remaining buffer",
-          "value": "-164,000 GW",
+          "value": "86,000 GW",
           "ok": false
         },
         {
           "label": "Thermostat margin",
-          "value": "143,750 GW",
+          "value": "175,000 GW",
           "ok": true
         },
         {
           "label": "Utilisation",
-          "value": "114.26%",
-          "ok": false
+          "value": "93.86%",
+          "ok": true
         }
       ],
       "recommendedActions": [
@@ -2071,10 +2071,10 @@
     {
       "id": "energy-window-loss",
       "title": "Primary energy window offline",
-      "status": "critical",
-      "summary": "Removing orbital 8h window drops coverage to 80.62%.",
-      "confidence": 0.8226943745534744,
-      "impact": "Civilisation would breach Dyson thermostat margin without immediate load shedding.",
+      "status": "nominal",
+      "summary": "Coverage remains 150.55% after losing orbital 8h window. Reserve boost +18377625 GW·h applied from Gibbs runway plan.",
+      "confidence": 1,
+      "impact": "Secondary windows can absorb the loss with limited throttling.",
       "metrics": [
         {
           "label": "Removed window",
@@ -2083,12 +2083,17 @@
         },
         {
           "label": "Remaining coverage",
-          "value": "80.62%",
-          "ok": false
+          "value": "150.55%",
+          "ok": true
         },
         {
           "label": "Threshold",
           "value": "98.00%",
+          "ok": true
+        },
+        {
+          "label": "Reserve boost",
+          "value": "18377624.66 GW·h",
           "ok": true
         },
         {
