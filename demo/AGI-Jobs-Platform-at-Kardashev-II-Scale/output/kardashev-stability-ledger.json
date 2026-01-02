@@ -3,18 +3,18 @@
   "manifestVersion": "agi-jobs.kardashev-ii.demo.v1",
   "dominanceScore": 90,
   "confidence": {
-    "compositeScore": 0.9128440366972476,
-    "quorum": false,
-    "summary": "Manual review required for 2 check(s).",
+    "compositeScore": 0.963302752293578,
+    "quorum": true,
+    "summary": "Manual review required for 1 check(s).",
     "methods": [
       {
         "method": "deterministic-consensus",
-        "score": 0.9128440366972476,
+        "score": 0.963302752293578,
         "explanation": "Weighted boolean consensus across critical governance, energy, and compute checks."
       },
       {
         "method": "redundant-telemetry",
-        "score": 0.9459459459459459,
+        "score": 1,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.7561184711874298,
+        "score": 0.840029372202049,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -130,7 +130,7 @@
       "id": "energy-triple-check",
       "title": "Energy models reconciled",
       "severity": "critical",
-      "status": false,
+      "status": true,
       "weight": 1.1,
       "evidence": "regional 1,095,000 GW · Dyson 1,150,000 GW · thermostat 977,500 GW"
     },
@@ -289,39 +289,33 @@
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
-      "severity": "critical",
+      "severity": "medium",
       "status": false,
       "weight": 0.8,
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "evidence": "6/11 nominal · 5 warning · 0 critical"
     }
   ],
   "alerts": [
     {
-      "id": "energy-triple-check",
-      "title": "Energy models reconciled",
-      "severity": "critical",
-      "evidence": "regional 1,095,000 GW · Dyson 1,150,000 GW · thermostat 977,500 GW"
-    },
-    {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
-      "severity": "critical",
-      "evidence": "5/11 nominal · 4 warning · 2 critical"
+      "severity": "medium",
+      "evidence": "6/11 nominal · 5 warning · 0 critical"
     }
   ],
   "scenarioSweep": {
     "total": 11,
-    "nominal": 5,
-    "warning": 4,
-    "critical": 2,
-    "averageConfidence": 0.7561184711874298,
+    "nominal": 6,
+    "warning": 5,
+    "critical": 0,
+    "averageConfidence": 0.840029372202049,
     "entries": [
       {
         "id": "energy-demand-surge",
         "title": "20% demand surge vs Dyson safety margin",
-        "status": "critical",
-        "confidence": 0,
-        "summary": "Dyson lattice overrun by 164,000 GW. Immediate throttling required."
+        "status": "warning",
+        "confidence": 0.7457142857142857,
+        "summary": "Dyson lattice absorbs surge with 86,000 GW spare."
       },
       {
         "id": "bridge-failover",
@@ -354,9 +348,9 @@
       {
         "id": "energy-window-loss",
         "title": "Primary energy window offline",
-        "status": "critical",
-        "confidence": 0.8226943745534744,
-        "summary": "Removing orbital 8h window drops coverage to 80.62%."
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Coverage remains 150.55% after losing orbital 8h window. Reserve boost +18377625 GW·h applied from Gibbs runway plan."
       },
       {
         "id": "logistics-demand-spike",

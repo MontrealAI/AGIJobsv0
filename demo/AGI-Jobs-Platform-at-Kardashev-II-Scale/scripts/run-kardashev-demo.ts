@@ -2561,12 +2561,17 @@ function normaliseConfidence(value: number): number {
 
 function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof computeTelemetry>): ScenarioResult[] {
   const safetyMargin = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
-  const capturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
+  const capturedGw = telemetry.energy.capturedGw;
   const thermostatMarginGw = capturedGw * safetyMargin;
   const failsafeLatency = manifest.dysonProgram.safety.failsafeLatencySeconds;
   const guardianWindow = manifest.interstellarCouncil.guardianReviewWindow;
   const totalTimelineDays = manifest.dysonProgram.phases.reduce((sum, phase) => sum + phase.durationDays, 0);
   const energyMonteCarlo = telemetry.energy.monteCarlo;
+  const runwayAdjustmentPlan = buildRunwayAdjustmentPlan(
+    telemetry.energy.monteCarlo,
+    telemetry.energy.liveFeeds.feeds
+  );
+  const reserveBoostGw = runwayAdjustmentPlan.totalReserveBoostGw ?? 0;
 
   const scenarioResults: ScenarioResult[] = [];
 
@@ -2828,25 +2833,40 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
     const demandGwH = schedule.coverage.reduce((sum: number, entry: any) => {
       return sum + Number(entry.dailyDemandGwH);
     }, 0);
+    const reserveCoverageGwH =
+      reserveBoostGw > 0 && Number.isFinite(removed.durationHours)
+        ? reserveBoostGw * Number(removed.durationHours)
+        : 0;
+    const adjustedGwH = remainingGwH + reserveCoverageGwH;
     const remainingCoverageRatio = demandGwH === 0 ? 1 : remainingGwH / Math.max(demandGwH, 1);
+    const adjustedCoverageRatio = demandGwH === 0 ? 1 : adjustedGwH / Math.max(demandGwH, 1);
     const coverageThreshold =
       schedule.coverageThreshold ?? telemetry.verification.energySchedule.thresholdCoverage;
-    const coverageSlack = remainingCoverageRatio - coverageThreshold;
+    const effectiveCoverageRatio = reserveCoverageGwH > 0 ? adjustedCoverageRatio : remainingCoverageRatio;
+    const coverageSlack = effectiveCoverageRatio - coverageThreshold;
     const scheduleStatus: ScenarioStatus =
       coverageSlack >= 0.02
         ? "nominal"
         : coverageSlack >= -0.02
         ? "warning"
         : "critical";
-    const scheduleConfidence = normaliseConfidence(remainingCoverageRatio / Math.max(coverageThreshold, 0.0001));
+    const scheduleConfidence = normaliseConfidence(effectiveCoverageRatio / Math.max(coverageThreshold, 0.0001));
+    const reserveNote =
+      reserveCoverageGwH > 0
+        ? ` Reserve boost +${reserveCoverageGwH.toFixed(0)} GW·h applied from Gibbs runway plan.`
+        : "";
     scenarioResults.push({
       id: "energy-window-loss",
       title: "Primary energy window offline",
       status: scheduleStatus,
       summary:
         scheduleStatus === "critical"
-          ? `Removing ${removed.federation} ${removed.durationHours}h window drops coverage to ${(remainingCoverageRatio * 100).toFixed(2)}%.`
-          : `Coverage remains ${(remainingCoverageRatio * 100).toFixed(2)}% after losing ${removed.federation} ${removed.durationHours}h window.`,
+          ? `Removing ${removed.federation} ${removed.durationHours}h window drops coverage to ${(
+              effectiveCoverageRatio * 100
+            ).toFixed(2)}%.${reserveNote}`
+          : `Coverage remains ${(effectiveCoverageRatio * 100).toFixed(2)}% after losing ${removed.federation} ${
+              removed.durationHours
+            }h window.${reserveNote}`,
       confidence: scheduleConfidence,
       impact:
         scheduleStatus === "critical"
@@ -2856,10 +2876,19 @@ function buildScenarioSweep(manifest: Manifest, telemetry: ReturnType<typeof com
         { label: "Removed window", value: `${removed.federation} @ ${removed.startHourUTC}h`, ok: false },
         {
           label: "Remaining coverage",
-          value: `${(remainingCoverageRatio * 100).toFixed(2)}%`,
-          ok: remainingCoverageRatio >= coverageThreshold,
+          value: `${(effectiveCoverageRatio * 100).toFixed(2)}%`,
+          ok: effectiveCoverageRatio >= coverageThreshold,
         },
         { label: "Threshold", value: `${(coverageThreshold * 100).toFixed(2)}%`, ok: true },
+        ...(reserveCoverageGwH > 0
+          ? [
+              {
+                label: "Reserve boost",
+                value: `${reserveCoverageGwH.toFixed(2)} GW·h`,
+                ok: true,
+              },
+            ]
+          : []),
         {
           label: "Lost capacity",
           value: `${Number(removed.windowEnergyGwH).toFixed(2)} GW·h`,
@@ -4131,6 +4160,10 @@ function computeTelemetry(
     energyModelDeltaPct <= marginPct &&
     sumRegionalGw <= thermostatBudgetGw * (1 + marginPct) &&
     dysonYield >= capturedPlan.baselineCapturedGw;
+  const energyTripleCheck =
+    sumRegionalGw <= capturedPlan.effectiveCapturedGw * 1.001 &&
+    dysonYield >= capturedPlan.baselineCapturedGw &&
+    sumRegionalGw <= thermostatBudgetGw * (1 + marginPct);
 
   const manifestoHash = keccak256(toUtf8Bytes(manifest.interstellarCouncil.manifestoURI));
   const planHash = keccak256(toUtf8Bytes(manifest.selfImprovement.planURI));
@@ -4384,7 +4417,7 @@ function computeTelemetry(
       marginPct,
       warnings: energyWarnings,
       regional: regionalEnergy,
-      tripleCheck: sumRegionalGw <= capturedGw * 1.001 && dysonYield >= capturedGw,
+      tripleCheck: energyTripleCheck,
       models: {
         regionalSumGw: sumRegionalGw,
         dysonProjectionGw: dysonYield,
