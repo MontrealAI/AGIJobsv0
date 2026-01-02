@@ -31,6 +31,14 @@ Generated: 2125-01-01T22:58:01.595Z
 | mars    | 109,212      | 120               | 17 min         | 0.999      | 96.05%             |
 | orbital | 633,731      | 126               | 6 min          | 0.999      | 96.05%             |
 
+## Shard Thermodynamic Ledger
+
+| Shard   | Region        | Free Energy GW | Gibbs Free Energy GJ | Hamiltonian Stability | Game-Theory Slack |
+| ------- | ------------- | -------------- | -------------------- | --------------------- | ----------------- |
+| earth   | earth-grid    | 14,654.5       | 52,756,200           | 38.7%                 | 6.4%              |
+| mars    | mars-dome     | 4,305.5        | 15,499,800           | 33.9%                 | 6.4%              |
+| orbital | orbital-swarm | 103,372.62     | 372,141,431.37       | 43.2%                 | 6.4%              |
+
 ## Thermodynamic Allocation Policy
 
 | Shard   | Boltzmann Weight | Effective Weight | Recommended GW | Capacity GW | Nash Payoff |
