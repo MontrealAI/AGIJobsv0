@@ -1,6 +1,13 @@
 let mermaidModule;
 
 const DEFAULT_ASSET_BASE = "./output";
+const INLINE_PAYLOADS = [
+  { key: "__KARDASHEV_TELEMETRY__", filename: "kardashev-telemetry.inline.js" },
+  { key: "__KARDASHEV_LEDGER__", filename: "kardashev-stability-ledger.inline.js" },
+  { key: "__KARDASHEV_EQUILIBRIUM__", filename: "kardashev-equilibrium-ledger.inline.js" },
+  { key: "__KARDASHEV_OWNER_PROOF__", filename: "kardashev-owner-proof.inline.js" },
+  { key: "__KARDASHEV_DIAGRAMS__", filename: "kardashev-diagrams.inline.js" },
+];
 
 function resolveAssetBase() {
   const explicitBase = window.__KARDASHEV_ASSET_BASE__;
@@ -59,6 +66,60 @@ function loadMermaidScript(url) {
     script.onerror = () => reject(new Error(`Failed to load mermaid script from ${url}`));
     document.head.appendChild(script);
   });
+}
+
+function loadInlineScript(url) {
+  if (!url) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-kardashev-inline="${url}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error(`Failed to load inline payload from ${url}`)),
+        { once: true }
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = true;
+    script.dataset.kardashevInline = url;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load inline payload from ${url}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function hydrateInlinePayloads() {
+  const payloads = {};
+  for (const entry of INLINE_PAYLOADS) {
+    const existing = readInlinePayload(entry.key);
+    if (existing) {
+      payloads[entry.key] = existing;
+      continue;
+    }
+
+    try {
+      await loadInlineScript(assetPath(entry.filename));
+      payloads[entry.key] = readInlinePayload(entry.key);
+    } catch (error) {
+      console.warn(`Failed to load inline payload ${entry.filename}`, error);
+      payloads[entry.key] = null;
+    }
+  }
+
+  return {
+    telemetry: payloads.__KARDASHEV_TELEMETRY__ ?? null,
+    ledger: payloads.__KARDASHEV_LEDGER__ ?? null,
+    equilibrium: payloads.__KARDASHEV_EQUILIBRIUM__ ?? null,
+    ownerProof: payloads.__KARDASHEV_OWNER_PROOF__ ?? null,
+    diagrams: payloads.__KARDASHEV_DIAGRAMS__ ?? null,
+  };
 }
 
 async function loadMermaid() {
@@ -1988,12 +2049,21 @@ function renderOwnerProof(ownerProof, telemetry) {
 }
 
 async function bootstrap() {
-  const inlineTelemetry = readInlinePayload("__KARDASHEV_TELEMETRY__");
-  const inlineLedger = readInlinePayload("__KARDASHEV_LEDGER__");
-  const inlineEquilibrium = readInlinePayload("__KARDASHEV_EQUILIBRIUM__");
-  const inlineOwnerProof = readInlinePayload("__KARDASHEV_OWNER_PROOF__");
-  const inlineDiagrams = readInlinePayload("__KARDASHEV_DIAGRAMS__");
+  let inlineTelemetry = readInlinePayload("__KARDASHEV_TELEMETRY__");
+  let inlineLedger = readInlinePayload("__KARDASHEV_LEDGER__");
+  let inlineEquilibrium = readInlinePayload("__KARDASHEV_EQUILIBRIUM__");
+  let inlineOwnerProof = readInlinePayload("__KARDASHEV_OWNER_PROOF__");
+  let inlineDiagrams = readInlinePayload("__KARDASHEV_DIAGRAMS__");
   const isFileProtocol = window.location.protocol === "file:";
+
+  if (isFileProtocol && !inlineTelemetry) {
+    const hydrated = await hydrateInlinePayloads();
+    inlineTelemetry = hydrated.telemetry ?? inlineTelemetry;
+    inlineLedger = hydrated.ledger ?? inlineLedger;
+    inlineEquilibrium = hydrated.equilibrium ?? inlineEquilibrium;
+    inlineOwnerProof = hydrated.ownerProof ?? inlineOwnerProof;
+    inlineDiagrams = hydrated.diagrams ?? inlineDiagrams;
+  }
 
   if (isFileProtocol && !inlineTelemetry) {
     renderLocalFileWarning();
