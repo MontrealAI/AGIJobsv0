@@ -2056,7 +2056,7 @@ async function bootstrap() {
   let inlineDiagrams = readInlinePayload("__KARDASHEV_DIAGRAMS__");
   const isFileProtocol = window.location.protocol === "file:";
 
-  if (isFileProtocol && !inlineTelemetry) {
+  if (isFileProtocol) {
     const hydrated = await hydrateInlinePayloads();
     inlineTelemetry = hydrated.telemetry ?? inlineTelemetry;
     inlineLedger = hydrated.ledger ?? inlineLedger;
