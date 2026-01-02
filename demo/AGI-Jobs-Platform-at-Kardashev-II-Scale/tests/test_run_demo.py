@@ -473,3 +473,53 @@ def test_run_demo_requires_energy_coverage(tmp_path: Path) -> None:
     combined_output = (result.stdout + result.stderr).lower()
     assert result.returncode != 0
     assert "energy feeds missing coverage" in combined_output
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_rejects_duplicate_energy_regions(tmp_path: Path) -> None:
+    """Energy feeds must not reuse region identifiers."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][1]["region"] = energy_config["feeds"][0]["region"]
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "duplicated" in combined_output
+    assert "region" in combined_output
+
+
+@pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
+def test_run_demo_rejects_duplicate_federation_slugs(tmp_path: Path) -> None:
+    """Energy feeds must not reuse federation slug identifiers."""
+
+    energy_config = json.loads((DEMO_ROOT / "config" / "energy-feeds.json").read_text())
+    energy_config["feeds"][1]["federationSlug"] = energy_config["feeds"][0]["federationSlug"]
+    invalid_energy = tmp_path / "energy-feeds.json"
+    invalid_energy.write_text(json.dumps(energy_config))
+
+    env = os.environ.copy()
+    env.update({"KARDASHEV_ENERGY_FEEDS_PATH": str(invalid_energy)})
+
+    result = subprocess.run(
+        [sys.executable, str(PYTHON_ENTRYPOINT), "--output-dir", str(tmp_path), "--check"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    combined_output = (result.stdout + result.stderr).lower()
+    assert result.returncode != 0
+    assert "duplicated" in combined_output
+    assert "federationslug" in combined_output
