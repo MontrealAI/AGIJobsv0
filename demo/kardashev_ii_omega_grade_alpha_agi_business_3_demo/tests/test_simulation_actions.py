@@ -201,6 +201,43 @@ def test_policy_action_invests_in_alignment_for_coordination_gap() -> None:
     assert low_action["alignment_investment"] >= high_action["alignment_investment"]
 
 
+def test_policy_action_supports_coordination_incentives() -> None:
+    orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
+    low_coordination_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.55,
+        sustainability_index=0.35,
+        nash_welfare=0.35,
+        sentient_welfare_index=0.3,
+        free_energy=0.3,
+        entropy=0.45,
+        hamiltonian=-0.25,
+        coordination_index=0.2,
+        game_theory_slack=0.2,
+        stability_index=0.4,
+        pareto_efficiency=0.3,
+    )
+    high_coordination_state = SimulationState(
+        energy_output_gw=500_000.0,
+        prosperity_index=0.62,
+        sustainability_index=0.6,
+        nash_welfare=0.6,
+        sentient_welfare_index=0.65,
+        free_energy=0.2,
+        entropy=0.2,
+        hamiltonian=-0.1,
+        coordination_index=0.85,
+        game_theory_slack=0.8,
+        stability_index=0.7,
+        pareto_efficiency=0.7,
+    )
+
+    low_action = orchestrator._build_policy_action(low_coordination_state)
+    high_action = orchestrator._build_policy_action(high_coordination_state)
+
+    assert low_action["coordination_incentives"] >= high_action["coordination_incentives"]
+
+
 def test_policy_action_escalates_alignment_when_entropy_high() -> None:
     orchestrator = Orchestrator(OrchestratorConfig(enable_simulation=True))
     low_entropy_state = SimulationState(

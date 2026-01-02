@@ -57,6 +57,7 @@ class SyntheticEconomySim(PlanetarySimulation):
         green_shift = max(0.0, float(action.get("green_shift", 0.0)))
         alignment_investment = max(0.0, float(action.get("alignment_investment", 0.0)))
         exergy_recovery = max(0.0, float(action.get("exergy_recovery", 0.0)))
+        coordination_incentives = max(0.0, float(action.get("coordination_incentives", 0.0)))
         self.energy_output_gw += build_dyson_nodes * 10_000
         if exergy_recovery:
             self.energy_output_gw += exergy_recovery * 4_000
@@ -73,6 +74,16 @@ class SyntheticEconomySim(PlanetarySimulation):
             elif gap < 0:
                 self.prosperity_index = min(1.0, self.prosperity_index + alignment_step)
             shared_boost = 0.003 * alignment_investment
+            self.prosperity_index = min(1.0, self.prosperity_index + shared_boost)
+            self.sustainability_index = min(1.0, self.sustainability_index + shared_boost)
+        if coordination_incentives:
+            gap = self.prosperity_index - self.sustainability_index
+            coordination_step = min(0.015 * coordination_incentives, abs(gap))
+            if gap > 0:
+                self.sustainability_index = min(1.0, self.sustainability_index + coordination_step)
+            elif gap < 0:
+                self.prosperity_index = min(1.0, self.prosperity_index + coordination_step)
+            shared_boost = 0.002 * coordination_incentives
             self.prosperity_index = min(1.0, self.prosperity_index + shared_boost)
             self.sustainability_index = min(1.0, self.sustainability_index + shared_boost)
         return self._snapshot_state()

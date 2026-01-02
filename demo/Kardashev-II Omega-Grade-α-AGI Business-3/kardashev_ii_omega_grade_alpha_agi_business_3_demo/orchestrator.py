@@ -728,6 +728,7 @@ class Orchestrator:
             "green_shift",
             "alignment_investment",
             "exergy_recovery",
+            "coordination_incentives",
         )
         normalized: Dict[str, float] = {}
         for field in allowed_fields:
@@ -794,6 +795,10 @@ class Orchestrator:
             1.0 - 0.6 * entropy_pressure - 0.2 * entropy_production_pressure,
         )
         welfare_urgency = max(0.0, 1.0 - sentient_welfare_index)
+        coordination_pressure = max(
+            0.0,
+            min(1.0, 0.5 * coordination_gap + 0.5 * (1.0 - game_theory_slack)),
+        )
         stability_guard = 1.0 - 0.55 * entropy_pressure - 0.35 * coordination_gap - 0.2 * hamiltonian_pressure
         stability_guard -= 0.15 * entropy_production_pressure
         stability_guard *= 0.6 + 0.4 * stability_index
@@ -835,6 +840,7 @@ class Orchestrator:
             "compute_boost": compute_boost,
             "entropy_damping": entropy_damping,
             "welfare_urgency": welfare_urgency,
+            "coordination_pressure": coordination_pressure,
             "stability_guard": stability_guard,
         }
 
@@ -978,6 +984,7 @@ class Orchestrator:
             ("stimulus", "Launch prosperity stimulus"),
             ("green_shift", "Accelerate green transition"),
             ("alignment_investment", "Invest in alignment"),
+            ("coordination_incentives", "Fund coordination incentives"),
             ("exergy_recovery", "Recover exergy"),
         )
         for key, label in ordered_actions:
@@ -1124,6 +1131,15 @@ class Orchestrator:
             * (0.7 + 0.3 * signals["equity_pressure"])
             * (1.0 + (1.0 - stability_guard))
         )
+        coordination_incentives = (
+            alignment_budget
+            * signals["coordination_pressure"]
+            * (0.6 + 0.4 * signals["welfare_urgency"])
+            * (0.7 + 0.3 * signals["stability_index"])
+            * (0.6 + 0.4 * signals["pareto_efficiency"])
+            * (0.6 + 0.4 * signals["equity_pressure"])
+            * signals["coordination_damping"]
+        )
         exergy_recovery = (
             action_budget
             * signals["exergy_pressure"]
@@ -1138,6 +1154,7 @@ class Orchestrator:
                 "green_shift": green_shift,
                 "alignment_investment": alignment_investment,
                 "exergy_recovery": exergy_recovery,
+                "coordination_incentives": coordination_incentives,
             }
         )
         rationale = self._build_policy_rationale(
@@ -1151,6 +1168,7 @@ class Orchestrator:
                 "green_shift": green_shift,
                 "alignment_investment": alignment_investment,
                 "exergy_recovery": exergy_recovery,
+                "coordination_incentives": coordination_incentives,
             },
         )
         return {"action": normalized_action, "rationale": rationale}
