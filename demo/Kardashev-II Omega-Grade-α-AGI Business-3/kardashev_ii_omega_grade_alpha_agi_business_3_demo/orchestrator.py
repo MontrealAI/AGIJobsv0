@@ -431,6 +431,7 @@ class Orchestrator:
                     "gibbs_free_energy": state.gibbs_free_energy,
                     "hamiltonian": state.hamiltonian,
                     "entropy": state.entropy,
+                    "entropy_production": state.entropy_production,
                     "temperature": state.temperature,
                     "enthalpy": state.enthalpy,
                     "pressure": state.pressure,
@@ -445,6 +446,7 @@ class Orchestrator:
                     "gibbs_drive": signals["gibbs_drive"],
                     "hamiltonian_pressure": signals["hamiltonian_pressure"],
                     "entropy_pressure": signals["entropy_pressure"],
+                    "entropy_production_pressure": signals["entropy_production_pressure"],
                     "stability_guard": signals["stability_guard"],
                 },
             }
@@ -751,6 +753,8 @@ class Orchestrator:
         stability_index = max(0.0, min(1.0, state.stability_index))
         entropy = max(0.0, state.entropy)
         entropy_pressure = min(1.0, entropy / math.log(2.0))
+        entropy_production = max(0.0, state.entropy_production)
+        entropy_production_pressure = min(1.0, entropy_production / (1.0 + entropy))
         exergy_balance = max(-1.0, min(1.0, state.exergy_balance))
         exergy_pressure = max(0.0, min(1.0, (1.0 - exergy_balance) / 2.0))
         pareto_efficiency = max(0.0, min(1.0, state.pareto_efficiency))
@@ -785,9 +789,13 @@ class Orchestrator:
         )
         coordination_damping = max(0.2, 1.0 - 0.3 * coordination_gap) * stability_factor
         compute_boost = 1.0 + 0.4 * compute_price_pressure
-        entropy_damping = max(0.35, 1.0 - 0.6 * entropy_pressure)
+        entropy_damping = max(
+            0.35,
+            1.0 - 0.6 * entropy_pressure - 0.2 * entropy_production_pressure,
+        )
         welfare_urgency = max(0.0, 1.0 - sentient_welfare_index)
         stability_guard = 1.0 - 0.55 * entropy_pressure - 0.35 * coordination_gap - 0.2 * hamiltonian_pressure
+        stability_guard -= 0.15 * entropy_production_pressure
         stability_guard *= 0.6 + 0.4 * stability_index
         stability_guard = min(1.0, max(0.2, stability_guard))
         return {
@@ -802,6 +810,8 @@ class Orchestrator:
             "stability_index": stability_index,
             "entropy": entropy,
             "entropy_pressure": entropy_pressure,
+            "entropy_production": entropy_production,
+            "entropy_production_pressure": entropy_production_pressure,
             "exergy_balance": exergy_balance,
             "exergy_pressure": exergy_pressure,
             "pareto_efficiency": pareto_efficiency,
@@ -1007,6 +1017,8 @@ class Orchestrator:
                 "gibbs_drive": signals["gibbs_drive"],
                 "hamiltonian_pressure": signals["hamiltonian_pressure"],
                 "entropy_pressure": signals["entropy_pressure"],
+                "entropy_production": signals["entropy_production"],
+                "entropy_production_pressure": signals["entropy_production_pressure"],
                 "stability_guard": signals["stability_guard"],
                 "exergy_balance": signals["exergy_balance"],
             },

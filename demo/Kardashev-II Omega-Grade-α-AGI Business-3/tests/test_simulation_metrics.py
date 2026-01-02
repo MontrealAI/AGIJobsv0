@@ -22,6 +22,7 @@ def test_simulation_thermodynamic_metrics() -> None:
     free_energy = internal_energy - temperature * entropy
     hamiltonian = -internal_energy * order_parameter
     coordination_index = 1.0 - abs(state.prosperity_index - state.sustainability_index)
+    entropy_production = max(0.0, entropy * temperature * (1.0 - coordination_index))
     stability_index = math.exp(-entropy) * (1.0 / (1.0 + abs(hamiltonian)))
     stability_index *= 0.5 + 0.5 * coordination_index
     stability_index = min(1.0, max(0.0, stability_index))
@@ -31,6 +32,7 @@ def test_simulation_thermodynamic_metrics() -> None:
     game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
 
     assert state.entropy == pytest.approx(entropy)
+    assert state.entropy_production == pytest.approx(entropy_production)
     assert state.nash_welfare == pytest.approx(nash_welfare)
     assert state.free_energy == pytest.approx(free_energy)
     assert state.hamiltonian == pytest.approx(hamiltonian)
