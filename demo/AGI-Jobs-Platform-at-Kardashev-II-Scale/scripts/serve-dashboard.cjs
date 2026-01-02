@@ -3,9 +3,18 @@
 const http = require('http');
 const fs = require('fs/promises');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const { pathToFileURL } = require('url');
 
 const DEMO_ROOT = path.resolve(__dirname, '..');
+const OUTPUT_DIR = path.join(DEMO_ROOT, 'output');
+const REQUIRED_ARTEFACTS = [
+  'index.html',
+  'kardashev-telemetry.json',
+  'kardashev-stability-ledger.json',
+  'kardashev-equilibrium-ledger.json',
+  'kardashev-owner-proof.json',
+];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -64,6 +73,7 @@ async function readFileOr404(targetPath, res) {
 
 async function startServer() {
   const { port } = parseArgs(process.argv.slice(2));
+  await ensureArtefacts();
 
   const server = http.createServer(async (req, res) => {
     if (!req.url) {
@@ -88,6 +98,33 @@ async function startServer() {
     console.log('   Serve this URL in a browser to load telemetry without CORS errors.');
     console.log(`   Demo root: ${pathToFileURL(DEMO_ROOT).toString()}`);
   });
+}
+
+async function ensureArtefacts() {
+  const missing = [];
+  for (const filename of REQUIRED_ARTEFACTS) {
+    const targetPath = path.join(OUTPUT_DIR, filename);
+    try {
+      await fs.stat(targetPath);
+    } catch (error) {
+      missing.push(filename);
+    }
+  }
+
+  if (missing.length === 0) {
+    return;
+  }
+
+  console.log(
+    `⚠️ Missing Kardashev II artefacts (${missing.join(', ')}). Regenerating via run-demo.cjs...`
+  );
+  const result = spawnSync(process.execPath, [path.join(DEMO_ROOT, 'run-demo.cjs')], {
+    stdio: 'inherit',
+    cwd: DEMO_ROOT,
+  });
+  if (result.status !== 0) {
+    throw new Error('Failed to regenerate Kardashev II demo artefacts.');
+  }
 }
 
 startServer().catch((error) => {
