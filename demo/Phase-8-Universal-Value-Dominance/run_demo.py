@@ -25,6 +25,35 @@ REPORT_PATH = PHASE_ROOT / "output" / "phase8_run_report.json"
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 ADDRESS_RE = re.compile(r"^0x[a-fA-F0-9]{40}$")
 SECONDS_PER_DAY = 24 * 60 * 60
+ADDRESS_FIELD_NAMES = {
+    "agent",
+    "capitalVault",
+    "leadAgent",
+    "missionControl",
+    "orchestrator",
+    "phase8Manager",
+    "policyKernel",
+    "systemPause",
+    "treasury",
+    "universalVault",
+    "upgradeCoordinator",
+    "validatorModule",
+    "validatorRegistry",
+    "vault",
+    "guardianCouncil",
+    "knowledgeGraph",
+}
+GLOBAL_ADDRESS_FIELDS = {
+    "treasury",
+    "universalVault",
+    "upgradeCoordinator",
+    "validatorRegistry",
+    "missionControl",
+    "knowledgeGraph",
+    "guardianCouncil",
+    "systemPause",
+    "phase8Manager",
+}
 
 
 def load_manifest(path: Path) -> Mapping[str, Any]:
@@ -61,12 +90,18 @@ def normalise_manifest_addresses(manifest: Mapping[str, Any]) -> tuple[Mapping[s
     invalid_paths: list[str] = []
     total_addresses = 0
 
-    def _walk(node: Any, path: str) -> Any:
+    def _walk(node: Any, path: str, *, key: str | None = None) -> Any:
         nonlocal total_addresses
         if isinstance(node, Mapping):
-            return {key: _walk(value, f"{path}.{key}") for key, value in node.items()}
+            return {key: _walk(value, f"{path}.{key}", key=key) for key, value in node.items()}
         if isinstance(node, list):
             return [_walk(value, f"{path}[{index}]") for index, value in enumerate(node)]
+        if key in ADDRESS_FIELD_NAMES:
+            total_addresses += 1
+            if isinstance(node, str) and ADDRESS_RE.match(node.strip()):
+                return node.strip().lower()
+            invalid_paths.append(path)
+            return ZERO_ADDRESS
         if _is_address_candidate(node):
             total_addresses += 1
             stripped = node.strip()
@@ -206,12 +241,8 @@ def compute_metrics(manifest: Mapping[str, Any]) -> PhaseMetrics:
 
 
 def extract_global_addresses(global_section: Mapping[str, Any]) -> dict[str, str]:
-    """Return only address-like entries from the global section, normalised."""
-    return {
-        key: normalise_address(value)
-        for key, value in global_section.items()
-        if isinstance(value, str) and _is_address_candidate(value)
-    }
+    """Return only address entries from the global section, normalised."""
+    return {key: normalise_address(global_section.get(key)) for key in GLOBAL_ADDRESS_FIELDS}
 
 
 def extract_domain_addresses(manifest: Mapping[str, Any]) -> list[dict[str, str]]:
