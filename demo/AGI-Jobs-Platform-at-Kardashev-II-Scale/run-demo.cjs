@@ -59,8 +59,11 @@ function normalizePathOverride(override) {
   if (override.startsWith('file:')) {
     return fileURLToPath(new URL(override));
   }
-  if (override.startsWith('~')) {
-    return path.join(os.homedir(), override.slice(1));
+  if (override === '~') {
+    return os.homedir();
+  }
+  if (override.startsWith('~/') || override.startsWith('~\\')) {
+    return path.join(os.homedir(), override.slice(2));
   }
   return override;
 }
