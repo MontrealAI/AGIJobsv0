@@ -72,6 +72,12 @@
     "runwayAdjustment": {
       "targetHours": 1,
       "applied": false,
+      "runwayHoursBefore": 0.1262010031771463,
+      "runwayHoursAfter": 0.1262010031771463,
+      "runwayGapHoursBefore": 0.8737989968228537,
+      "runwayGapHoursAfter": 0.8737989968228537,
+      "runwayGapGwhBefore": 957167.9509782137,
+      "runwayGapGwhAfter": 957167.9509782137,
       "totalReserveBoostGw": 2297203.0823,
       "perFeedBoosts": [
         {

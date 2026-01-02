@@ -1275,6 +1275,12 @@ type MonteCarloSummary = {
 type RunwayAdjustmentPlan = {
   targetHours: number;
   applied: boolean;
+  runwayHoursBefore?: number;
+  runwayHoursAfter?: number;
+  runwayGapHoursBefore?: number;
+  runwayGapHoursAfter?: number;
+  runwayGapGwhBefore?: number;
+  runwayGapGwhAfter?: number;
   totalReserveBoostGw: number;
   perFeedBoosts: Array<{
     federationSlug: string | null;
@@ -1660,10 +1666,17 @@ function buildRunwayAdjustmentPlan(
 ): RunwayAdjustmentPlan {
   const runwayGapHours = energy.runwayGapHours ?? 0;
   const gapGwh = energy.runwayGapGwh ?? 0;
+  const runwayHoursBefore = energy.runwayHours ?? 0;
   if (!Number.isFinite(gapGwh) || gapGwh <= 0 || !Number.isFinite(runwayGapHours) || runwayGapHours <= 0) {
     return {
       targetHours: ENERGY_RUNWAY_TARGET_HOURS,
       applied: false,
+      runwayHoursBefore,
+      runwayHoursAfter: runwayHoursBefore,
+      runwayGapHoursBefore: runwayGapHours,
+      runwayGapHoursAfter: runwayGapHours,
+      runwayGapGwhBefore: gapGwh,
+      runwayGapGwhAfter: gapGwh,
       totalReserveBoostGw: 0,
       perFeedBoosts: [],
     };
@@ -1675,6 +1688,12 @@ function buildRunwayAdjustmentPlan(
     return {
       targetHours: ENERGY_RUNWAY_TARGET_HOURS,
       applied: false,
+      runwayHoursBefore,
+      runwayHoursAfter: runwayHoursBefore,
+      runwayGapHoursBefore: runwayGapHours,
+      runwayGapHoursAfter: runwayGapHours,
+      runwayGapGwhBefore: gapGwh,
+      runwayGapGwhAfter: gapGwh,
       totalReserveBoostGw: round(boostGw, 4),
       perFeedBoosts: [],
     };
@@ -1745,6 +1764,12 @@ function buildRunwayAdjustmentPlan(
   return {
     targetHours: ENERGY_RUNWAY_TARGET_HOURS,
     applied: false,
+    runwayHoursBefore,
+    runwayHoursAfter: runwayHoursBefore,
+    runwayGapHoursBefore: runwayGapHours,
+    runwayGapHoursAfter: runwayGapHours,
+    runwayGapGwhBefore: gapGwh,
+    runwayGapGwhAfter: gapGwh,
     totalReserveBoostGw: round(boostGw, 4),
     perFeedBoosts,
   };
@@ -1955,6 +1980,14 @@ function formatRunwayAdjustment(plan?: RunwayAdjustmentPlan | null): string | nu
   if (!plan || plan.perFeedBoosts.length === 0) {
     return null;
   }
+  const runwayHoursBefore = plan.runwayHoursBefore;
+  const runwayHoursAfter = plan.runwayHoursAfter;
+  const runwayDelta =
+    Number.isFinite(runwayHoursBefore) &&
+    Number.isFinite(runwayHoursAfter) &&
+    Math.abs((runwayHoursAfter ?? 0) - (runwayHoursBefore ?? 0)) > 1e-4
+      ? ` (runway ${formatNumber(runwayHoursBefore, 2)}h → ${formatNumber(runwayHoursAfter, 2)}h)`
+      : "";
   const perFeed = plan.perFeedBoosts
     .map((boost) => {
       const label = boost.federationSlug || boost.region || "unknown";
@@ -1965,7 +1998,7 @@ function formatRunwayAdjustment(plan?: RunwayAdjustmentPlan | null): string | nu
       return `${label}: +${formatNumber(boost.boostGw, 2)} GW${weight}`;
     })
     .join(", ");
-  return `${perFeed} (total +${formatNumber(plan.totalReserveBoostGw, 2)} GW)`;
+  return `${perFeed} (total +${formatNumber(plan.totalReserveBoostGw, 2)} GW)${runwayDelta}`;
 }
 
 function writeOfflineDashboard() {

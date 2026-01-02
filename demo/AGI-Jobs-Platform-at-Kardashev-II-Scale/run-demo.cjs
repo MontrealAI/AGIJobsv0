@@ -106,6 +106,14 @@ function formatRunwayAdjustment(runwayAdjustment) {
   if (!perFeedBoosts.length) {
     return null;
   }
+  const runwayHoursBefore = runwayAdjustment.runwayHoursBefore;
+  const runwayHoursAfter = runwayAdjustment.runwayHoursAfter;
+  const runwayDelta =
+    Number.isFinite(runwayHoursBefore) &&
+    Number.isFinite(runwayHoursAfter) &&
+    Math.abs(runwayHoursAfter - runwayHoursBefore) > 0.0001
+      ? ` (runway ${formatNumber(runwayHoursBefore)}h → ${formatNumber(runwayHoursAfter)}h)`
+      : '';
   const parts = perFeedBoosts.map((boost) => {
     const label = boost.federationSlug || boost.region || 'unknown';
     const weight =
@@ -114,7 +122,9 @@ function formatRunwayAdjustment(runwayAdjustment) {
         : '';
     return `${label}: +${formatNumber(boost.boostGw)} GW${weight}`;
   });
-  return `${parts.join(', ')} (total +${formatNumber(runwayAdjustment.totalReserveBoostGw)} GW)`;
+  return `${parts.join(', ')} (total +${formatNumber(
+    runwayAdjustment.totalReserveBoostGw
+  )} GW)${runwayDelta}`;
 }
 
 function round(num, decimals = 2) {
@@ -482,6 +492,7 @@ function stabilizeEnergyRunway({
     runs,
     seed,
   });
+  const baselineMonteCarlo = energyMonteCarlo;
 
   const adjustments = [];
   const reserveMultiplier = 2.4; // offset margin + buffer draw to keep runway above target
@@ -545,6 +556,12 @@ function stabilizeEnergyRunway({
     targetHours: ENERGY_RUNWAY_TARGET_HOURS,
     applied: adjustments.length > 0,
     iterations: adjustments.length,
+    runwayHoursBefore: round(baselineMonteCarlo.runwayHours ?? 0, 4),
+    runwayHoursAfter: round(energyMonteCarlo.runwayHours ?? 0, 4),
+    runwayGapHoursBefore: round(baselineMonteCarlo.runwayGapHours ?? 0, 4),
+    runwayGapHoursAfter: round(energyMonteCarlo.runwayGapHours ?? 0, 4),
+    runwayGapGwhBefore: round(baselineMonteCarlo.runwayGapGwh ?? 0, 4),
+    runwayGapGwhAfter: round(energyMonteCarlo.runwayGapGwh ?? 0, 4),
     totalReserveBoostGw: round(totalBoostMw / 1000, 4),
     perFeedBoosts: bufferAdjustments,
     iterationsLog: adjustments,
@@ -2102,6 +2119,24 @@ function buildEquilibriumLedger({
     ? {
         targetHours: runwayAdjustment.targetHours ?? ENERGY_RUNWAY_TARGET_HOURS,
         applied: Boolean(runwayAdjustment.applied),
+        runwayHoursBefore: Number.isFinite(runwayAdjustment.runwayHoursBefore)
+          ? round(runwayAdjustment.runwayHoursBefore ?? 0, 4)
+          : null,
+        runwayHoursAfter: Number.isFinite(runwayAdjustment.runwayHoursAfter)
+          ? round(runwayAdjustment.runwayHoursAfter ?? 0, 4)
+          : null,
+        runwayGapHoursBefore: Number.isFinite(runwayAdjustment.runwayGapHoursBefore)
+          ? round(runwayAdjustment.runwayGapHoursBefore ?? 0, 4)
+          : null,
+        runwayGapHoursAfter: Number.isFinite(runwayAdjustment.runwayGapHoursAfter)
+          ? round(runwayAdjustment.runwayGapHoursAfter ?? 0, 4)
+          : null,
+        runwayGapGwhBefore: Number.isFinite(runwayAdjustment.runwayGapGwhBefore)
+          ? round(runwayAdjustment.runwayGapGwhBefore ?? 0, 4)
+          : null,
+        runwayGapGwhAfter: Number.isFinite(runwayAdjustment.runwayGapGwhAfter)
+          ? round(runwayAdjustment.runwayGapGwhAfter ?? 0, 4)
+          : null,
         totalReserveBoostGw: round(runwayAdjustment.totalReserveBoostGw ?? 0, 4),
         perFeedBoosts: (runwayAdjustment.perFeedBoosts ?? []).map((boost) => ({
           federationSlug: boost.federationSlug ?? null,
@@ -3418,10 +3453,19 @@ function main() {
       )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
     );
     if (energyRunwayAdjustment.applied) {
+      const runwayTransition =
+        Number.isFinite(energyRunwayAdjustment.runwayHoursBefore) &&
+        Number.isFinite(energyRunwayAdjustment.runwayHoursAfter)
+          ? ` (runway ${energyRunwayAdjustment.runwayHoursBefore.toFixed(
+              2
+            )}h → ${energyRunwayAdjustment.runwayHoursAfter.toFixed(2)}h)`
+          : '';
       console.log(
         `   - Runway stabilization: +${energyRunwayAdjustment.totalReserveBoostGw.toFixed(
           2
-        )} GW reserve buffers applied across ${energyRunwayAdjustment.perFeedBoosts.length} feeds`
+        )} GW reserve buffers applied across ${
+          energyRunwayAdjustment.perFeedBoosts.length
+        } feeds${runwayTransition}`
       );
     }
     console.log(
@@ -3453,10 +3497,19 @@ function main() {
     )}h, ${energyMonteCarlo.runwayGapGwh.toFixed(2)} GWh)`
   );
   if (energyRunwayAdjustment.applied) {
+    const runwayTransition =
+      Number.isFinite(energyRunwayAdjustment.runwayHoursBefore) &&
+      Number.isFinite(energyRunwayAdjustment.runwayHoursAfter)
+        ? ` (runway ${energyRunwayAdjustment.runwayHoursBefore.toFixed(
+            2
+          )}h → ${energyRunwayAdjustment.runwayHoursAfter.toFixed(2)}h)`
+        : '';
     console.log(
       `   - Runway stabilization: +${energyRunwayAdjustment.totalReserveBoostGw.toFixed(
         2
-      )} GW reserve buffers applied across ${energyRunwayAdjustment.perFeedBoosts.length} feeds`
+      )} GW reserve buffers applied across ${
+        energyRunwayAdjustment.perFeedBoosts.length
+      } feeds${runwayTransition}`
     );
   }
   console.log(
