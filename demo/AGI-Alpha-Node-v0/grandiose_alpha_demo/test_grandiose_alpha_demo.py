@@ -2,7 +2,27 @@ import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(BASE_DIR / "src"))
+SRC_PATH = BASE_DIR / "src"
+if str(SRC_PATH) not in sys.path:
+    sys.path.insert(0, str(SRC_PATH))
+
+
+def _ensure_grandiose_demo_package() -> None:
+    module = sys.modules.get("agi_alpha_node_demo")
+    if not module:
+        return
+
+    module_file = getattr(module, "__file__", "") or ""
+    module_paths = [str(path) for path in getattr(module, "__path__", [])]
+    if str(SRC_PATH) in module_file or any(str(SRC_PATH) in path for path in module_paths):
+        return
+
+    for name in list(sys.modules):
+        if name == "agi_alpha_node_demo" or name.startswith("agi_alpha_node_demo."):
+            sys.modules.pop(name, None)
+
+
+_ensure_grandiose_demo_package()
 
 from agi_alpha_node_demo.alpha_node import AlphaNode
 from agi_alpha_node_demo.config import load_demo_config
