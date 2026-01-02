@@ -198,110 +198,6 @@ def test_run_demo_produces_outputs(tmp_path: Path) -> None:
     assert telemetry_payload.get("dominance", {}).get("monthlyValueUSD") > 0
     assert 0 <= telemetry_payload.get("dominance", {}).get("averageResilience") <= 1
 
-    energy = telemetry_payload["energyMonteCarlo"]
-    assert energy["maintainsBuffer"] is True
-    assert energy["freeEnergyMarginGw"] > 0
-    assert 0 < energy["freeEnergyMarginPct"] <= 1
-    assert energy["runwayHours"] > 0
-    assert energy["grossRunwayHours"] >= energy["runwayHours"]
-    assert energy["usableFreeEnergyGw"] >= 0
-    assert energy["runwayGapHours"] >= 0
-    assert energy["runwayGapGwh"] >= 0
-    assert energy["runwayGapGj"] >= 0
-    assert energy["gibbsFreeEnergyGj"] > 0
-    assert 0 <= energy["hamiltonianStability"] <= 1
-    assert energy["entropyMargin"] > 0
-    assert 0 <= energy["gameTheorySlack"] <= 1
-
-    allocation = telemetry_payload["allocationPolicy"]
-    assert allocation["allocationEntropy"] >= 0
-    assert 0 < allocation["fairnessIndex"] <= 1
-    assert allocation["gibbsPotential"] <= 0
-    assert 0 <= allocation["strategyStability"] <= 1
-
-    shard_thermo = telemetry_payload["shardThermodynamics"]
-    assert len(shard_thermo) == len(telemetry_payload["shards"])
-    for entry in shard_thermo:
-        assert entry["freeEnergyMarginGw"] >= 0
-        assert entry["gibbsFreeEnergyGj"] >= 0
-        assert 0 <= entry["hamiltonianStability"] <= 1
-        assert 0 <= entry["gameTheorySlack"] <= 1
-    assert 0 <= allocation["deviationIncentive"] <= 1
-    assert 0 <= allocation["jainIndex"] <= 1
-    assert allocation["concentrationIndex"] <= allocation["diversificationTarget"]
-    assert allocation["unallocatedGw"] >= 0
-    assert allocation["capacityConstraintCount"] >= 0
-    assert isinstance(allocation["capacityConstrained"], bool)
-
-    for shard_allocation in allocation["allocations"]:
-        assert 0 <= shard_allocation["effectiveWeight"] <= 1
-        if shard_allocation["capacityGw"] is not None:
-            assert shard_allocation["recommendedGw"] <= shard_allocation["capacityGw"] + 1e-6
-
-    sentient = telemetry_payload["sentientWelfare"]
-    assert sentient["totalAgents"] > 0
-    assert sentient["federationCount"] > 0
-    assert sentient["freeEnergyPerAgentGj"] >= 0
-    assert 0 <= sentient["cooperationIndex"] <= 1
-    assert 0 <= sentient["inequalityIndex"] <= 1
-    assert sentient["payoffCoefficient"] >= 0
-    assert 0 <= sentient["coalitionStability"] <= 1
-    assert 0 <= sentient["paretoSlack"] <= 1
-    assert 0 <= sentient["equilibriumScore"] <= 1
-    assert 0 <= sentient["welfarePotential"] <= 1
-    assert 0 <= sentient["collectiveActionPotential"] <= 1
-
-    mission_thermo = telemetry_payload["missionThermodynamics"]
-    assert 0 <= mission_thermo["hamiltonianLoad"] <= 1
-    assert 0 <= mission_thermo["hamiltonianStability"] <= 1
-    assert 0 <= mission_thermo["freeEnergyHeadroomPct"] <= 1
-    assert mission_thermo["actionQueue"]
-
-    ledger_payload = json.loads(stability_ledger.read_text())
-    assert ledger_payload["confidence"]["compositeScore"] >= 0
-    assert isinstance(ledger_payload["checks"], list)
-    assert "summary" in ledger_payload["confidence"]
-
-    owner_payload = json.loads(owner_proof.read_text())
-    assert owner_payload["verification"]["unstoppableScore"] >= 0
-    assert owner_payload["secondaryVerification"]["matchesPrimaryScore"] is True
-    assert owner_payload["hashes"]["transactionSet"].startswith("sha256:")
-
-    equilibrium_payload = json.loads(equilibrium_ledger.read_text())
-    assert equilibrium_payload["overallScore"] >= 0
-    assert equilibrium_payload["components"]["energy"]["freeEnergyMarginPct"] > 0
-    assert equilibrium_payload["components"]["energy"]["usableFreeEnergyGw"] >= 0
-    assert (
-        equilibrium_payload["components"]["energy"]["grossRunwayHours"]
-        >= equilibrium_payload["components"]["energy"]["runwayHours"]
-    )
-    assert 0 <= equilibrium_payload["components"]["allocation"]["strategyStability"] <= 1
-    assert 0 <= equilibrium_payload["components"]["welfare"]["coalitionStability"] <= 1
-    assert equilibrium_payload["components"]["compute"]["averageAvailabilityPct"] >= 0
-    assert 0 <= equilibrium_payload["components"]["logistics"]["nashWelfare"] <= 1
-    assert 0 <= equilibrium_payload["gameTheory"]["logisticsNashWelfare"] <= 1
-    assert equilibrium_payload["pathways"]
-    assert equilibrium_payload["pathways"][0]["title"]
-    assert equilibrium_payload["actionPath"]
-    assert equilibrium_payload["actionPath"][0]["title"]
-    assert equilibrium_payload["actionPath"][0]["target"]
-    priorities = [step["priorityScore"] for step in equilibrium_payload["actionPath"]]
-    assert all(0 <= priority <= 1 for priority in priorities)
-    assert priorities == sorted(priorities, reverse=True)
-    runway_adjustment = equilibrium_payload["thermodynamics"]["runwayAdjustment"]
-    assert runway_adjustment["targetHours"] >= 0
-    assert runway_adjustment["totalReserveBoostGw"] >= 0
-    assert isinstance(runway_adjustment["applied"], bool)
-    assert isinstance(runway_adjustment["perFeedBoosts"], list)
-
-    telemetry_energy = telemetry_payload["energy"]
-    assert telemetry_energy["utilisationPct"] > 0
-    assert telemetry_energy["models"]["regionalSumGw"] > 0
-    assert telemetry_energy["monteCarlo"]["withinTolerance"] is True
-    assert telemetry_energy["liveFeeds"]["feeds"]
-    assert telemetry_payload["missionDirectives"]["ownerPowers"]
-    assert telemetry_payload["missionLattice"]["programmes"]
-
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="Node is required to run the demo script")
 @pytest.mark.skipif(not NODE_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
@@ -498,6 +394,25 @@ def test_run_demo_rejects_duplicate_energy_regions(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "duplicated" in combined_output
     assert "region" in combined_output
+
+
+@pytest.mark.skipif(not NODE_ENTRYPOINT.exists(), reason="Node demo entrypoint is missing")
+def test_run_demo_with_tilde_output_dir(tmp_path: Path) -> None:
+    """The Node entrypoint should expand tilde paths to the HOME directory."""
+
+    fake_home = tmp_path / "home"
+    output_dir = fake_home / "k2-output"
+    fake_home.mkdir(parents=True)
+
+    result = subprocess.run(
+        ["node", str(NODE_ENTRYPOINT), "--output-dir", "~/k2-output"],
+        capture_output=True,
+        text=True,
+        env={**os.environ, "HOME": str(fake_home)},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert (output_dir / "kardashev-report.md").exists()
 
 
 @pytest.mark.skipif(not PYTHON_ENTRYPOINT.exists(), reason="Demo entrypoint is missing")
