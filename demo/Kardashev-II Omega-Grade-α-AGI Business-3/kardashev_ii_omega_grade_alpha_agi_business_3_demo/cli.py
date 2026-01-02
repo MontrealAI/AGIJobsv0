@@ -12,6 +12,22 @@ from typing import Any, Optional
 from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
 
+DEFAULT_CYCLES = 5
+DEFAULT_CHECKPOINT = Path("checkpoint.json")
+DEFAULT_CONTROL = Path("control-channel.jsonl")
+DEFAULT_INSIGHT_INTERVAL = 30
+DEFAULT_SIMULATION_TICK = 1.0
+DEFAULT_SIMULATION_HOURS = 1.0
+DEFAULT_SIMULATION_ENERGY_SCALE = 2.0
+DEFAULT_SIMULATION_COMPUTE_SCALE = 1.0
+DEFAULT_HEARTBEAT_INTERVAL = 5.0
+DEFAULT_HEARTBEAT_TIMEOUT = 30.0
+DEFAULT_HEALTH_CHECK_INTERVAL = 5.0
+DEFAULT_INTEGRITY_INTERVAL = 30.0
+DEFAULT_ENERGY_ORACLE_INTERVAL = 60.0
+DEFAULT_POLICY_ACTION_INTERVAL = 10.0
+DEFAULT_AUTO_POLICY_ACTIONS = True
+
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config" / "default.json"
 
 
@@ -40,52 +56,65 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cycles",
         type=int,
-        default=5,
+        default=DEFAULT_CYCLES,
         help="Number of cycles to execute (0 = run indefinitely). Default keeps demo runs finite.",
     )
-    parser.add_argument("--checkpoint", type=Path, default=Path("checkpoint.json"), help="Path to checkpoint file")
+    parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT, help="Path to checkpoint file")
     parser.add_argument("--no-resume", action="store_true", help="Do not resume from checkpoint")
     parser.add_argument("--no-sim", action="store_true", help="Disable the synthetic planetary simulation")
-    parser.add_argument("--control", type=Path, default=Path("control-channel.jsonl"), help="Control channel file path")
-    parser.add_argument("--insight-interval", type=int, default=30, help="Seconds between strategic insight broadcasts")
-    parser.add_argument("--simulation-tick", type=float, default=1.0, help="Seconds between simulation updates")
+    parser.add_argument("--control", type=Path, default=DEFAULT_CONTROL, help="Control channel file path")
     parser.add_argument(
-        "--simulation-hours", type=float, default=1.0, help="In-simulation hours progressed per tick"
+        "--insight-interval",
+        type=int,
+        default=DEFAULT_INSIGHT_INTERVAL,
+        help="Seconds between strategic insight broadcasts",
+    )
+    parser.add_argument(
+        "--simulation-tick",
+        type=float,
+        default=DEFAULT_SIMULATION_TICK,
+        help="Seconds between simulation updates",
+    )
+    parser.add_argument(
+        "--simulation-hours",
+        type=float,
+        default=DEFAULT_SIMULATION_HOURS,
+        help="In-simulation hours progressed per tick",
     )
     parser.add_argument(
         "--simulation-energy-scale",
         type=float,
-        default=2.0,
+        default=DEFAULT_SIMULATION_ENERGY_SCALE,
         help="Multiplier converting GW output into available energy capacity",
     )
     parser.add_argument(
         "--simulation-compute-scale",
         type=float,
-        default=1.0,
+        default=DEFAULT_SIMULATION_COMPUTE_SCALE,
         help="Multiplier applied to prosperity/sustainability derived compute capacity",
     )
     parser.add_argument(
         "--heartbeat-interval",
         type=float,
-        default=5.0,
+        default=DEFAULT_HEARTBEAT_INTERVAL,
         help="Seconds between agent heartbeat broadcasts",
     )
     parser.add_argument(
         "--heartbeat-timeout",
         type=float,
-        default=30.0,
+        default=DEFAULT_HEARTBEAT_TIMEOUT,
         help="Seconds before agents are flagged as unresponsive",
     )
     parser.add_argument(
         "--health-check-interval",
         type=float,
-        default=5.0,
+        default=DEFAULT_HEALTH_CHECK_INTERVAL,
         help="Seconds between orchestrator health scans",
     )
     parser.add_argument(
         "--integrity-interval",
         type=float,
-        default=30.0,
+        default=DEFAULT_INTEGRITY_INTERVAL,
         help="Seconds between autonomous integrity verification sweeps",
     )
     parser.add_argument("--audit-log", type=Path, help="JSONL audit log output path")
@@ -102,19 +131,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--energy-oracle-interval",
         type=float,
-        default=60.0,
+        default=DEFAULT_ENERGY_ORACLE_INTERVAL,
         help="Seconds between energy oracle telemetry updates",
     )
     parser.add_argument(
         "--auto-policy-actions",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=DEFAULT_AUTO_POLICY_ACTIONS,
         help="Enable autonomous policy actions based on simulation metrics",
     )
     parser.add_argument(
         "--policy-action-interval",
         type=float,
-        default=10.0,
+        default=DEFAULT_POLICY_ACTION_INTERVAL,
         help="Seconds between autonomous policy actions",
     )
     parser.add_argument(
@@ -169,25 +198,8 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
             data["governance"] = GovernanceParameters(**gov_data)
         overrides.update(data)
 
-    _require_positive(args.cycles, field="cycles", allow_zero=True)
-    _require_positive(args.insight_interval, field="insight_interval_seconds")
-    _require_positive(args.simulation_tick, field="simulation_tick_seconds")
-    _require_positive(args.simulation_hours, field="simulation_hours_per_tick")
-    _require_positive(args.simulation_energy_scale, field="simulation_energy_scale")
-    _require_positive(args.simulation_compute_scale, field="simulation_compute_scale")
-    _require_positive(args.heartbeat_interval, field="heartbeat_interval_seconds")
-    _require_positive(args.heartbeat_timeout, field="heartbeat_timeout_seconds")
-    _require_positive(args.health_check_interval, field="health_check_interval_seconds")
-    _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
-    _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
-    _require_positive(args.policy_action_interval, field="policy_action_interval_seconds")
-    checkpoint_interval = float(
-        overrides.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
-    )
-    _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
-    cycle_sleep = float(overrides.get("cycle_sleep_seconds", OrchestratorConfig.cycle_sleep_seconds))
-    _require_positive(cycle_sleep, field="cycle_sleep_seconds")
-
+    checkpoint_interval = OrchestratorConfig.checkpoint_interval_seconds
+    cycle_sleep = OrchestratorConfig.cycle_sleep_seconds
     params = {
         "max_cycles": args.cycles or None,
         "checkpoint_path": args.checkpoint,
@@ -212,7 +224,71 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "health_check_interval_seconds": args.health_check_interval,
         "integrity_check_interval_seconds": args.integrity_interval,
     }
+
     params.update(overrides)
+    cli_overrides: dict[str, Any] = {}
+    if args.cycles != DEFAULT_CYCLES:
+        cli_overrides["max_cycles"] = args.cycles or None
+    if args.checkpoint != DEFAULT_CHECKPOINT:
+        cli_overrides["checkpoint_path"] = args.checkpoint
+    if args.no_resume:
+        cli_overrides["resume_from_checkpoint"] = False
+    if args.no_sim:
+        cli_overrides["enable_simulation"] = False
+    if args.control != DEFAULT_CONTROL:
+        cli_overrides["control_channel_file"] = args.control
+    if args.insight_interval != DEFAULT_INSIGHT_INTERVAL:
+        cli_overrides["insight_interval_seconds"] = args.insight_interval
+    if args.simulation_tick != DEFAULT_SIMULATION_TICK:
+        cli_overrides["simulation_tick_seconds"] = args.simulation_tick
+    if args.simulation_hours != DEFAULT_SIMULATION_HOURS:
+        cli_overrides["simulation_hours_per_tick"] = args.simulation_hours
+    if args.simulation_energy_scale != DEFAULT_SIMULATION_ENERGY_SCALE:
+        cli_overrides["simulation_energy_scale"] = args.simulation_energy_scale
+    if args.simulation_compute_scale != DEFAULT_SIMULATION_COMPUTE_SCALE:
+        cli_overrides["simulation_compute_scale"] = args.simulation_compute_scale
+    if args.heartbeat_interval != DEFAULT_HEARTBEAT_INTERVAL:
+        cli_overrides["heartbeat_interval_seconds"] = args.heartbeat_interval
+    if args.heartbeat_timeout != DEFAULT_HEARTBEAT_TIMEOUT:
+        cli_overrides["heartbeat_timeout_seconds"] = args.heartbeat_timeout
+    if args.health_check_interval != DEFAULT_HEALTH_CHECK_INTERVAL:
+        cli_overrides["health_check_interval_seconds"] = args.health_check_interval
+    if args.integrity_interval != DEFAULT_INTEGRITY_INTERVAL:
+        cli_overrides["integrity_check_interval_seconds"] = args.integrity_interval
+    if args.audit_log is not None:
+        cli_overrides["audit_log_path"] = args.audit_log
+    if args.status_output is not None:
+        cli_overrides["status_output_path"] = args.status_output
+    if args.energy_oracle is not None:
+        cli_overrides["energy_oracle_path"] = args.energy_oracle
+    if args.energy_oracle_interval != DEFAULT_ENERGY_ORACLE_INTERVAL:
+        cli_overrides["energy_oracle_interval_seconds"] = args.energy_oracle_interval
+    if args.auto_policy_actions != DEFAULT_AUTO_POLICY_ACTIONS:
+        cli_overrides["auto_policy_actions"] = args.auto_policy_actions
+    if args.policy_action_interval != DEFAULT_POLICY_ACTION_INTERVAL:
+        cli_overrides["policy_action_interval_seconds"] = args.policy_action_interval
+    params.update(cli_overrides)
+
+    max_cycles = params.get("max_cycles")
+    if max_cycles is not None:
+        _require_positive(max_cycles, field="cycles", allow_zero=True)
+    _require_positive(params["insight_interval_seconds"], field="insight_interval_seconds")
+    _require_positive(params["simulation_tick_seconds"], field="simulation_tick_seconds")
+    _require_positive(params["simulation_hours_per_tick"], field="simulation_hours_per_tick")
+    _require_positive(params["simulation_energy_scale"], field="simulation_energy_scale")
+    _require_positive(params["simulation_compute_scale"], field="simulation_compute_scale")
+    _require_positive(params["heartbeat_interval_seconds"], field="heartbeat_interval_seconds")
+    _require_positive(params["heartbeat_timeout_seconds"], field="heartbeat_timeout_seconds")
+    _require_positive(params["health_check_interval_seconds"], field="health_check_interval_seconds")
+    _require_positive(params["integrity_check_interval_seconds"], field="integrity_check_interval_seconds")
+    _require_positive(params["energy_oracle_interval_seconds"], field="energy_oracle_interval_seconds")
+    _require_positive(params["policy_action_interval_seconds"], field="policy_action_interval_seconds")
+    checkpoint_interval = float(
+        params.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
+    )
+    _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
+    cycle_sleep = float(params.get("cycle_sleep_seconds", OrchestratorConfig.cycle_sleep_seconds))
+    _require_positive(cycle_sleep, field="cycle_sleep_seconds")
     params["checkpoint_interval_seconds"] = checkpoint_interval
     params["cycle_sleep_seconds"] = cycle_sleep
 
