@@ -1106,13 +1106,18 @@ class Orchestrator:
         )
         action_budget *= 0.9 + 0.6 * signals["welfare_urgency"] + 0.3 * signals["equity_pressure"]
         action_budget *= 0.5 + 0.5 * risk_budget
+        alignment_risk_budget = max(
+            risk_budget,
+            0.35 + 0.45 * signals["entropy_pressure"] + 0.2 * signals["entropy_production_pressure"],
+        )
+        alignment_risk_budget = min(1.0, alignment_risk_budget)
         alignment_budget = (
             action_budget
             * (1.0 + 0.8 * signals["entropy_pressure"])
             / max(0.6, signals["entropy_damping"])
         )
         alignment_budget *= 1.0 + 0.6 * signals["equity_pressure"]
-        alignment_budget *= 0.5 + 0.5 * risk_budget
+        alignment_budget *= 0.5 + 0.5 * alignment_risk_budget
         stability_guard = signals["stability_guard"]
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"]) * stability_guard
         stability_modifier = 0.7 + 0.6 * signals["stability_index"]
