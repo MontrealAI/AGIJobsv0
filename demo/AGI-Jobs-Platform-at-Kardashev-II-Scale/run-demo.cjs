@@ -1581,10 +1581,34 @@ function validateEnergyFeeds(energy) {
     throw new Error('Energy feeds must include at least one region with nominal + buffer MW defined.');
   }
 
+  const regionIndex = new Map();
+  const federationIndex = new Map();
+
   energy.feeds.forEach((feed, idx) => {
-    if (typeof feed.region !== 'string' || feed.region.trim() === '') {
+    const region = typeof feed.region === 'string' ? feed.region.trim() : '';
+    if (region === '') {
       throw new Error(`Energy feed #${idx} is missing a region identifier.`);
     }
+    if (regionIndex.has(region)) {
+      throw new Error(
+        `Energy feed region "${region}" is duplicated at entries ${regionIndex.get(region)} and ${idx}.`
+      );
+    }
+    regionIndex.set(region, idx);
+
+    const federationSlug =
+      typeof feed.federationSlug === 'string' ? feed.federationSlug.trim() : '';
+    if (federationSlug) {
+      if (federationIndex.has(federationSlug)) {
+        throw new Error(
+          `Energy feed federationSlug "${federationSlug}" is duplicated at entries ${federationIndex.get(
+            federationSlug
+          )} and ${idx}.`
+        );
+      }
+      federationIndex.set(federationSlug, idx);
+    }
+
     if (!Number.isFinite(feed.nominalMw) || feed.nominalMw <= 0) {
       throw new Error(`Energy feed ${feed.region} must declare positive nominalMw.`);
     }
