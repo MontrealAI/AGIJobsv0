@@ -35,6 +35,13 @@ def _require_positive(value: float, *, field: str, allow_zero: bool = False) -> 
             raise ValueError(f"{field} must be positive (got {value})")
 
 
+def _require_unit_interval(value: float, *, field: str) -> None:
+    """Validate that a configuration value is within [0, 1]."""
+
+    if not 0.0 <= value <= 1.0:
+        raise ValueError(f"{field} must be between 0 and 1 (got {value})")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Kardashev-II Omega-Grade α-AGI Business 3 demo")
     parser.add_argument(
@@ -118,6 +125,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Seconds between autonomous policy actions",
     )
     parser.add_argument(
+        "--auto-phase-pause",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Automatically pause the orchestrator if phase-transition risk spikes",
+    )
+    parser.add_argument(
+        "--phase-transition-pause-threshold",
+        type=float,
+        default=0.85,
+        help="Phase-transition risk level that triggers an automatic pause",
+    )
+    parser.add_argument(
+        "--phase-transition-resume-threshold",
+        type=float,
+        default=0.7,
+        help="Phase-transition risk level that clears an automatic pause",
+    )
+    parser.add_argument(
         "--config",
         type=Path,
         help=(
@@ -187,6 +212,22 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
     cycle_sleep = float(overrides.get("cycle_sleep_seconds", OrchestratorConfig.cycle_sleep_seconds))
     _require_positive(cycle_sleep, field="cycle_sleep_seconds")
+    auto_pause_value = overrides.get("auto_pause_on_phase_transition", args.auto_phase_pause)
+    phase_pause_threshold = float(
+        overrides.get("phase_transition_pause_threshold", args.phase_transition_pause_threshold)
+    )
+    phase_resume_threshold = float(
+        overrides.get("phase_transition_resume_threshold", args.phase_transition_resume_threshold)
+    )
+    _require_unit_interval(phase_pause_threshold, field="phase_transition_pause_threshold")
+    _require_unit_interval(phase_resume_threshold, field="phase_transition_resume_threshold")
+    if phase_resume_threshold > phase_pause_threshold:
+        raise ValueError(
+            "phase_transition_resume_threshold must be less than or equal to phase_transition_pause_threshold"
+        )
+    overrides["auto_pause_on_phase_transition"] = bool(auto_pause_value)
+    overrides["phase_transition_pause_threshold"] = phase_pause_threshold
+    overrides["phase_transition_resume_threshold"] = phase_resume_threshold
 
     params = {
         "max_cycles": args.cycles or None,
@@ -211,6 +252,9 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
         "heartbeat_timeout_seconds": args.heartbeat_timeout,
         "health_check_interval_seconds": args.health_check_interval,
         "integrity_check_interval_seconds": args.integrity_interval,
+        "auto_pause_on_phase_transition": overrides["auto_pause_on_phase_transition"],
+        "phase_transition_pause_threshold": overrides["phase_transition_pause_threshold"],
+        "phase_transition_resume_threshold": overrides["phase_transition_resume_threshold"],
     }
     params.update(overrides)
     params["checkpoint_interval_seconds"] = checkpoint_interval
