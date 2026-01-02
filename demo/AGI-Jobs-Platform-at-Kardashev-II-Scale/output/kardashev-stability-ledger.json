@@ -14,7 +14,7 @@
       },
       {
         "method": "redundant-telemetry",
-        "score": 1,
+        "score": 0.972972972972973,
         "explanation": "Agreement ratio across energy triple-check, thermostat, compute, bridges, and guardian coverage."
       },
       {
@@ -39,7 +39,7 @@
       },
       {
         "method": "scenario-sweep",
-        "score": 0.840029372202049,
+        "score": 0.8530221932542961,
         "explanation": "Average confidence across Kardashev-II surge, bridge, sentinel, compute, identity, and schedule stressors."
       },
       {
@@ -188,7 +188,7 @@
       "severity": "medium",
       "status": true,
       "weight": 0.6,
-      "evidence": "utilisation 78.21% vs permitted 87.50%"
+      "evidence": "utilisation 29.58% vs permitted 87.50%"
     },
     {
       "id": "compute-alignment",
@@ -289,40 +289,40 @@
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
-      "severity": "medium",
+      "severity": "critical",
       "status": false,
       "weight": 0.8,
-      "evidence": "6/11 nominal · 5 warning · 0 critical"
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "alerts": [
     {
       "id": "scenario-resilience",
       "title": "Scenario sweep resilient",
-      "severity": "medium",
-      "evidence": "6/11 nominal · 5 warning · 0 critical"
+      "severity": "critical",
+      "evidence": "6/11 nominal · 4 warning · 1 critical"
     }
   ],
   "scenarioSweep": {
     "total": 11,
     "nominal": 6,
-    "warning": 5,
-    "critical": 0,
-    "averageConfidence": 0.840029372202049,
+    "warning": 4,
+    "critical": 1,
+    "averageConfidence": 0.8530221932542961,
     "entries": [
       {
         "id": "energy-demand-surge",
         "title": "20% demand surge vs Dyson safety margin",
-        "status": "warning",
-        "confidence": 0.7457142857142857,
-        "summary": "Dyson lattice absorbs surge with 86,000 GW spare."
+        "status": "nominal",
+        "confidence": 1,
+        "summary": "Dyson lattice absorbs surge with 2,387,609.339 GW spare."
       },
       {
         "id": "bridge-failover",
         "title": "Interplanetary bridge outage simulation",
         "status": "warning",
-        "confidence": 0.44655905726447265,
-        "summary": "Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve."
+        "confidence": 0.5125,
+        "summary": "Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve."
       },
       {
         "id": "sentinel-gap",
@@ -348,9 +348,9 @@
       {
         "id": "energy-window-loss",
         "title": "Primary energy window offline",
-        "status": "nominal",
-        "confidence": 1,
-        "summary": "Coverage remains 150.55% after losing orbital 8h window. Reserve boost +18377625 GW·h applied from Gibbs runway plan."
+        "status": "critical",
+        "confidence": 0.8226943745534744,
+        "summary": "Removing orbital 8h window drops coverage to 80.62%."
       },
       {
         "id": "logistics-demand-spike",
@@ -561,7 +561,7 @@
     "coverageRatio": 1,
     "bridgeFailsafeSeconds": 120,
     "permittedUtilisation": 0.875,
-    "utilisation": 0.7821428571428571,
+    "utilisation": 0.29581727831791693,
     "monteCarloBreachProbability": 0,
     "monteCarloWithinTolerance": true
   }

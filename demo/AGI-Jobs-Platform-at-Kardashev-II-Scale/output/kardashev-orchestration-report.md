@@ -1,6 +1,6 @@
 # Kardashev II Orchestration Runbook
 
-**Manifest hash**: 0x19283759619864f91927aed3d1165195684d0769f6b25304b70790524038c47d
+**Manifest hash**: 0xe55a1a5bebb2928fee0ece7a5d6c1721abc5440dc91389cc06dce6e7924c733f
 **Dominance score**: 90.0 / 100
 
 ---
@@ -15,18 +15,18 @@
 ---
 
 ## Energy telemetry
-* Captured GW (Dyson baseline): 1,400,000 GW.
-* Utilisation: 78.21% (margin 0.13%).
+* Captured GW (Dyson baseline): 3,701,609.339 GW.
+* Utilisation: 29.58% (margin 0.13%).
 * Regional availability: earth 371000 GW · mars 109000 GW · orbital 615000 GW.
 * Monte Carlo breach probability 0.00% (runs 256, tolerance 1.00%).
-* Free energy margin 290741.81 GW (20.77%) · Gibbs free energy 497,670,518.989 GJ.
-* Free energy runway 0.13 hours at mean demand (gap 0.87h, 957167.95 GWh).
-* Hamiltonian stability 60.4% · entropy margin 34.75σ · game-theory slack 82.2% · buffer stable.
-* Allocation policy: Gibbs temperature 0.31 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.235.
+* Free energy margin 2591924.84 GW (70.02%) · Gibbs free energy 7,665,205,226.564 GJ.
+* Free energy runway 1.94 hours at mean demand (gap 0.00h, 0.00 GWh).
+* Hamiltonian stability 85.0% · entropy margin 314.76σ · game-theory slack 93.3% · buffer stable.
+* Allocation policy: Gibbs temperature 0.12 · Nash welfare 85.60% · fairness 100.0% · Gibbs potential -0.047.
 * Replicator equilibrium 95.4% · drift 0.046.
-* Sentient welfare equilibrium 92.9% · cooperation 86.8% · inequality 5.3% · free energy/agent 0.111087 GJ.
+* Sentient welfare equilibrium 94.9% · cooperation 91.8% · inequality 5.3% · free energy/agent 1.710983 GJ.
 * Allocation deltas: Earth Sovereign Federation -6000.00 GW · Mars Terraforming Compact +256000.00 GW · Orbital Research Halo -250000.00 GW.
-* Demand percentiles: P95 1,109,258.189 GW · P99 1,111,780.775 GW.
+* Demand percentiles: P95 1,109,684.497 GW · P99 1,112,361.58 GW.
 * Live feeds (≤ 5%): earth-grid Δ 0.00% · mars-dome Δ 0.00% · orbital-swarm Δ 0.00%.
 * Feed latency: avg 241467 ms · max 720000 ms (calibrated 2025-02-28T18:00:00Z).
 * Energy window coverage 100.00% (threshold 98%) · reliability 98.56%.
@@ -81,20 +81,20 @@
 ---
 
 ## Scenario stress sweep
-* **20% demand surge vs Dyson safety margin** — status WARNING (confidence 74.6%) · Dyson lattice absorbs surge with 86,000 GW spare.
+* **20% demand surge vs Dyson safety margin** — status NOMINAL (confidence 100.0%) · Dyson lattice absorbs surge with 2,387,609.339 GW spare.
   - Simulated demand: 1,314,000 GW (ok)
-  - Remaining buffer: 86,000 GW (check)
-  - Thermostat margin: 175,000 GW (ok)
-  - Utilisation: 93.86% (ok)
+  - Remaining buffer: 2,387,609.339 GW (ok)
+  - Thermostat margin: 462,701.167 GW (ok)
+  - Utilisation: 35.50% (ok)
   - Recommended: Dispatch pause bundle for non-critical Earth workloads. · Increase stellar thermostat target via setGlobalParameters if surge persists.
-* **Interplanetary bridge outage simulation** — status WARNING (confidence 44.7%) · Failover latency 133s breaches 120s failsafe. Relay boost 26.2% applied from Gibbs reserve.
+* **Interplanetary bridge outage simulation** — status WARNING (confidence 51.2%) · Failover latency 117s leaves 3s slack within 120s failsafe. Relay boost 35.0% applied from Gibbs reserve.
   - Baseline latency: 90s (ok)
   - Failover latency: 180s (check)
-  - Relay boost allocation: 26.2% (366910 GW) (ok)
-  - Mitigated latency: 133s (check)
+  - Relay boost allocation: 35.0% (1295563 GW) (ok)
+  - Mitigated latency: 117s (ok)
   - Failsafe budget: 120s (ok)
-  - Slack: -13s (check)
-  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Execute bridge isolation routine from mission directives if slack < 0. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
+  - Slack: 3s (ok)
+  - Recommended: Allocate relay boost to stabilise bridge latency using Gibbs reserve. · Keep isolation routine on standby while relays rebalance. · Rebalance capital streams to spin up orbital relays before load crosses failsafe.
 * **Sentinel outage (10 min) coverage test** — status NOMINAL (confidence 100.0%) · Guardian window stays protected under sentinel gap.
   - Minimum sentinel coverage: 1800s (ok)
   - Simulated coverage: 1200s (ok)
@@ -113,11 +113,10 @@
   - Remaining buffer: 490 days (ok)
   - Slip ratio: 3.33% (ok)
   - Recommended: Accelerate self-improvement plan execution to reclaim schedule slack. · Reallocate capital from Earth infrastructure to Dyson assembly for this epoch.
-* **Primary energy window offline** — status NOMINAL (confidence 100.0%) · Coverage remains 150.55% after losing orbital 8h window. Reserve boost +18377625 GW·h applied from Gibbs runway plan.
+* **Primary energy window offline** — status CRITICAL (confidence 82.3%) · Removing orbital 8h window drops coverage to 80.62%.
   - Removed window: orbital @ 0h (check)
-  - Remaining coverage: 150.55% (ok)
+  - Remaining coverage: 80.62% (check)
   - Threshold: 98.00% (ok)
-  - Reserve boost: 18377624.66 GW·h (ok)
   - Lost capacity: 5104000.00 GW·h (check)
   - Recommended: Trigger orbital battery discharge if coverage < threshold. · Re-route Mars workloads to orbital halo until replacement window is provisioned.
 * **Logistics demand spike (+25%)** — status WARNING (confidence 85.7%) · Corridors absorb spike with utilisation 104.33% and buffers 12.00d.

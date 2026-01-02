@@ -36,7 +36,11 @@
         1650000,
         1950000
       ],
-      "safetyMarginPct": 12.5
+      "safetyMarginPct": 12.5,
+      "reserveBoost": {
+        "enabled": true,
+        "maxBoostPct": 200
+      }
     },
     "thermostat": {
       "minKelvin": 0.35,

@@ -382,6 +382,13 @@ const ManifestSchema = z.object({
       baselineCapturedGw: PositiveNumberSchema,
       expansionTargetsGw: z.array(PositiveNumberSchema).min(1),
       safetyMarginPct: z.number().positive(),
+      reserveBoost: z
+        .object({
+          enabled: z.boolean(),
+          maxBoostPct: z.number().min(0).max(500).optional(),
+          maxBoostGw: NonNegativeNumberSchema.optional(),
+        })
+        .optional(),
     }),
     thermostat: z.object({
       minKelvin: z.number().min(0),
@@ -463,6 +470,20 @@ const FabricConfigSchema = z.object({
 });
 
 type EnergyFeedsConfig = z.infer<typeof EnergyFeedsConfigSchema>;
+
+type EnergyFeedComparison = {
+  region: string;
+  federationSlug: string;
+  type: string;
+  telemetry: string;
+  manifestGw: number;
+  feedGw: number;
+  deltaGw: number;
+  deltaPct: number;
+  latencyMs: number;
+  withinTolerance: boolean;
+  driftAlert: boolean;
+};
 type FabricConfig = z.infer<typeof FabricConfigSchema>;
 
 const MissionTaskSchema = z.lazy(() =>
@@ -1615,6 +1636,13 @@ type CapturedEnergyPlan = {
   expansionNeeded: boolean;
 };
 
+type RunwayAdjustmentResult = {
+  energyMonteCarlo: MonteCarloSummary;
+  runwayAdjustment: RunwayAdjustmentPlan;
+  reserveBoostGw: number;
+  capturedGw: number;
+};
+
 function resolveCapturedEnergy(manifest: Manifest, regionalDemandGw: number): CapturedEnergyPlan {
   const baselineCapturedGw = manifest.energyProtocols.stellarLattice.baselineCapturedGw;
   const expansionTargets = [...(manifest.energyProtocols.stellarLattice.expansionTargetsGw ?? [])]
@@ -1650,6 +1678,77 @@ function resolveCapturedEnergy(manifest: Manifest, regionalDemandGw: number): Ca
     requiredCapturedGw,
     expansionTargetGw,
     expansionNeeded: effectiveCapturedGw > baselineCapturedGw,
+  };
+}
+
+function applyRunwayAdjustment(
+  manifest: Manifest,
+  seed: string,
+  runs: number,
+  baseCapturedGw: number,
+  energyMonteCarlo: MonteCarloSummary,
+  feedComparisons: EnergyFeedComparison[]
+): RunwayAdjustmentResult {
+  const runwayAdjustment = buildRunwayAdjustmentPlan(energyMonteCarlo, feedComparisons);
+  const reservePolicy = manifest.energyProtocols.stellarLattice.reserveBoost;
+  const reserveEnabled = reservePolicy?.enabled ?? false;
+  if (!reserveEnabled) {
+    return {
+      energyMonteCarlo,
+      runwayAdjustment,
+      reserveBoostGw: 0,
+      capturedGw: baseCapturedGw,
+    };
+  }
+
+  const plannedBoostGw = Math.max(0, runwayAdjustment.totalReserveBoostGw ?? 0);
+  if (!Number.isFinite(plannedBoostGw) || plannedBoostGw <= 0) {
+    return {
+      energyMonteCarlo,
+      runwayAdjustment,
+      reserveBoostGw: 0,
+      capturedGw: baseCapturedGw,
+    };
+  }
+
+  const maxBoostPct = reservePolicy?.maxBoostPct;
+  const maxBoostGw = reservePolicy?.maxBoostGw;
+  const pctCap = Number.isFinite(maxBoostPct)
+    ? (baseCapturedGw * (maxBoostPct as number)) / 100
+    : Infinity;
+  const absoluteCap = Number.isFinite(maxBoostGw) ? (maxBoostGw as number) : Infinity;
+  const cappedBoostGw = Math.min(plannedBoostGw, pctCap, absoluteCap);
+  if (!Number.isFinite(cappedBoostGw) || cappedBoostGw <= 0) {
+    return {
+      energyMonteCarlo,
+      runwayAdjustment,
+      reserveBoostGw: 0,
+      capturedGw: baseCapturedGw,
+    };
+  }
+
+  const boostScale = plannedBoostGw > 0 ? cappedBoostGw / plannedBoostGw : 0;
+  const scaledBoosts = runwayAdjustment.perFeedBoosts.map((boost) => ({
+    ...boost,
+    boostGw: round(boost.boostGw * boostScale, 4),
+    weightPct: boost.weightPct,
+  }));
+  const boostedCapturedGw = baseCapturedGw + cappedBoostGw;
+  const boostedMonteCarlo = runEnergyMonteCarlo(manifest, seed, runs, boostedCapturedGw);
+
+  return {
+    energyMonteCarlo: boostedMonteCarlo,
+    runwayAdjustment: {
+      ...runwayAdjustment,
+      applied: true,
+      runwayHoursAfter: boostedMonteCarlo.runwayHours,
+      runwayGapHoursAfter: boostedMonteCarlo.runwayGapHours,
+      runwayGapGwhAfter: boostedMonteCarlo.runwayGapGwh,
+      totalReserveBoostGw: round(cappedBoostGw, 4),
+      perFeedBoosts: scaledBoosts,
+    },
+    reserveBoostGw: round(cappedBoostGw, 4),
+    capturedGw: boostedCapturedGw,
   };
 }
 
@@ -3731,7 +3830,7 @@ function computeTelemetry(
     manifest,
     manifest.federations.reduce((sum, federation) => sum + federation.energy.availableGw, 0)
   );
-  const capturedGw = capturedPlan.effectiveCapturedGw;
+  let capturedGw = capturedPlan.effectiveCapturedGw;
   const regionalEnergy = manifest.federations.map((f) => ({
     slug: f.slug,
     availableGw: f.energy.availableGw,
@@ -3741,35 +3840,10 @@ function computeTelemetry(
   const sumRegionalGw = regionalEnergy.reduce((sum, r) => sum + r.availableGw, 0);
   const dysonYield = manifest.dysonProgram.phases.reduce((sum, p) => sum + p.energyYieldGw, 0);
   const energyCrossVerification = performEnergyCrossVerification(manifest);
-  const utilisationPct = sumRegionalGw / capturedGw;
   const marginPct = manifest.energyProtocols.stellarLattice.safetyMarginPct / 100;
   const energyWarnings: string[] = [];
-  if (utilisationPct > 1 - marginPct) {
-    energyWarnings.push("Utilisation exceeds configured safety margin");
-  }
-  if (capturedPlan.requiredCapturedGw > capturedPlan.effectiveCapturedGw * 1.0001) {
-    energyWarnings.push(
-      `Captured energy shortfall: need ${capturedPlan.requiredCapturedGw.toFixed(
-        0
-      )} GW for margin but only ${capturedPlan.effectiveCapturedGw.toFixed(0)} GW available.`
-    );
-  }
   if (dysonYield < capturedPlan.baselineCapturedGw) {
     energyWarnings.push("Dyson programme yield below captured baseline");
-  }
-
-  const energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash, 256, capturedPlan.effectiveCapturedGw);
-  const allocationPolicy = buildEnergyAllocationPolicy(manifest, energyMonteCarlo);
-  const missionThermodynamics = buildMissionThermodynamics(mission, energyMonteCarlo);
-  if (!energyMonteCarlo.withinTolerance) {
-    energyWarnings.push(
-      `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
-    );
-  }
-  if (!energyMonteCarlo.maintainsBuffer) {
-    energyWarnings.push(
-      `Free energy margin ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW below safety buffer ${energyMonteCarlo.marginGw.toFixed(2)} GW`
-    );
   }
 
   const feedComparisons = energyFeeds.feeds.map((feed) => {
@@ -3805,6 +3879,45 @@ function computeTelemetry(
       driftAlert,
     };
   });
+
+  let energyMonteCarlo = runEnergyMonteCarlo(manifest, manifestHash, 256, capturedGw);
+  const runwayAdjustmentResult = applyRunwayAdjustment(
+    manifest,
+    manifestHash,
+    256,
+    capturedGw,
+    energyMonteCarlo,
+    feedComparisons
+  );
+  const runwayAdjustment = runwayAdjustmentResult.runwayAdjustment;
+  const reserveBoostGw = runwayAdjustmentResult.reserveBoostGw;
+  capturedGw = runwayAdjustmentResult.capturedGw;
+  energyMonteCarlo = runwayAdjustmentResult.energyMonteCarlo;
+
+  const utilisationPct = sumRegionalGw / capturedGw;
+  if (utilisationPct > 1 - marginPct) {
+    energyWarnings.push("Utilisation exceeds configured safety margin");
+  }
+  if (capturedPlan.requiredCapturedGw > capturedGw * 1.0001) {
+    energyWarnings.push(
+      `Captured energy shortfall: need ${capturedPlan.requiredCapturedGw.toFixed(
+        0
+      )} GW for margin but only ${capturedGw.toFixed(0)} GW available.`
+    );
+  }
+  if (!energyMonteCarlo.withinTolerance) {
+    energyWarnings.push(
+      `Monte Carlo breach probability ${(energyMonteCarlo.breachProbability * 100).toFixed(2)}% exceeds ${(energyMonteCarlo.tolerance * 100).toFixed(2)}% tolerance`
+    );
+  }
+  if (!energyMonteCarlo.maintainsBuffer) {
+    energyWarnings.push(
+      `Free energy margin ${energyMonteCarlo.freeEnergyMarginGw.toFixed(2)} GW below safety buffer ${energyMonteCarlo.marginGw.toFixed(2)} GW`
+    );
+  }
+
+  const allocationPolicy = buildEnergyAllocationPolicy(manifest, energyMonteCarlo);
+  const missionThermodynamics = buildMissionThermodynamics(mission, energyMonteCarlo);
 
   const rawScheduleWindows = manifest.energyWindows.map((window) => {
     const federation = manifest.federations.find((f) => f.slug === window.federation);
@@ -4444,6 +4557,16 @@ function computeTelemetry(
         requiredCapturedGw: round(capturedPlan.requiredCapturedGw, 2),
         expansionTargetGw: capturedPlan.expansionTargetGw,
         expansionNeeded: capturedPlan.expansionNeeded,
+      },
+      reserveBoost: {
+        enabled: manifest.energyProtocols.stellarLattice.reserveBoost?.enabled ?? false,
+        maxBoostPct: manifest.energyProtocols.stellarLattice.reserveBoost?.maxBoostPct ?? null,
+        maxBoostGw: manifest.energyProtocols.stellarLattice.reserveBoost?.maxBoostGw ?? null,
+        applied: reserveBoostGw > 0,
+        boostGw: reserveBoostGw,
+        capturedGwBefore: capturedPlan.effectiveCapturedGw,
+        capturedGwAfter: capturedGw,
+        runwayAdjustment,
       },
       dysonYield,
       utilisationPct,
@@ -5233,10 +5356,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const logistics = telemetry.logistics.equilibrium;
   const computeFabric = telemetry.computeFabric;
   const missionThermo = telemetry.missionThermodynamics;
-  const runwayAdjustmentPlan = buildRunwayAdjustmentPlan(
-    energy,
-    telemetry.energy.liveFeeds.feeds
-  );
+  const runwayAdjustmentPlan =
+    telemetry.energy.reserveBoost?.runwayAdjustment ??
+    buildRunwayAdjustmentPlan(energy, telemetry.energy.liveFeeds.feeds);
   const runwayPlanText = formatRunwayAdjustment(runwayAdjustmentPlan);
   const runwayScore = clamp01(
     (energy.runwayHours ?? 0) / Math.max(ENERGY_RUNWAY_TARGET_HOURS, 1e-6)
