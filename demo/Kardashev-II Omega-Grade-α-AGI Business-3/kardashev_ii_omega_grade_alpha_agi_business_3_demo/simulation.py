@@ -27,6 +27,7 @@ class SimulationState:
     pressure: float = 0.0
     exergy_balance: float = 0.0
     pareto_efficiency: float = 0.0
+    phase_transition_risk: float = 0.0
 
     def __post_init__(self) -> None:
         if self.gibbs_free_energy is None:
@@ -121,6 +122,16 @@ class SyntheticEconomySim(PlanetarySimulation):
         exergy_balance = 0.0
         if enthalpy:
             exergy_balance = max(-1.0, min(1.0, gibbs_free_energy / enthalpy))
+        entropy_production_pressure = min(1.0, entropy_production / (1.0 + entropy))
+        gibbs_stress = 0.0
+        if enthalpy:
+            gibbs_stress = min(1.0, abs(gibbs_free_energy) / max(1e-6, enthalpy))
+        phase_transition_risk = (
+            0.5 * entropy_production_pressure
+            + 0.3 * (1.0 - coordination_index)
+            + 0.2 * gibbs_stress
+        )
+        phase_transition_risk = min(1.0, max(0.0, phase_transition_risk))
         return {
             "nash_welfare": nash_welfare,
             "sentient_welfare_index": sentient_welfare_index,
@@ -137,6 +148,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             "pressure": pressure,
             "exergy_balance": exergy_balance,
             "pareto_efficiency": pareto_efficiency,
+            "phase_transition_risk": phase_transition_risk,
         }
 
     def tick(self, hours: float) -> SimulationState:
@@ -167,4 +179,5 @@ class SyntheticEconomySim(PlanetarySimulation):
             pressure=metrics["pressure"],
             exergy_balance=metrics["exergy_balance"],
             pareto_efficiency=metrics["pareto_efficiency"],
+            phase_transition_risk=metrics["phase_transition_risk"],
         )

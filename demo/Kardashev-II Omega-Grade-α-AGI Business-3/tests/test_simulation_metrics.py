@@ -20,8 +20,12 @@ def test_simulation_thermodynamic_metrics() -> None:
     temperature = 1.0 + (1.0 - state.sustainability_index)
     internal_energy = state.energy_output_gw / 1_000_000.0
     free_energy = internal_energy - temperature * entropy
+    pressure = 1.0 + 0.5 * (1.0 - state.prosperity_index) + 0.5 * (1.0 - state.sustainability_index)
     hamiltonian = -internal_energy * order_parameter
     coordination_index = 1.0 - abs(state.prosperity_index - state.sustainability_index)
+    volume = 1.0 + coordination_index
+    enthalpy = internal_energy + pressure * volume
+    gibbs_free_energy = enthalpy - temperature * entropy
     entropy_production = max(0.0, entropy * temperature * (1.0 - coordination_index))
     stability_index = math.exp(-entropy) * (1.0 / (1.0 + abs(hamiltonian)))
     stability_index *= 0.5 + 0.5 * coordination_index
@@ -30,6 +34,14 @@ def test_simulation_thermodynamic_metrics() -> None:
         max(1e-6, state.prosperity_index) * max(1e-6, state.sustainability_index)
     )
     game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
+    entropy_production_pressure = min(1.0, entropy_production / (1.0 + entropy))
+    gibbs_stress = min(1.0, abs(gibbs_free_energy) / max(1e-6, enthalpy))
+    phase_transition_risk = (
+        0.5 * entropy_production_pressure
+        + 0.3 * (1.0 - coordination_index)
+        + 0.2 * gibbs_stress
+    )
+    phase_transition_risk = min(1.0, max(0.0, phase_transition_risk))
 
     assert state.entropy == pytest.approx(entropy)
     assert state.entropy_production == pytest.approx(entropy_production)
@@ -39,6 +51,7 @@ def test_simulation_thermodynamic_metrics() -> None:
     assert state.stability_index == pytest.approx(stability_index)
     assert state.coordination_index == pytest.approx(coordination_index)
     assert state.game_theory_slack == pytest.approx(game_theory_slack)
+    assert state.phase_transition_risk == pytest.approx(phase_transition_risk)
     assert 0.0 <= state.coordination_index <= 1.0
     assert 0.0 <= state.stability_index <= 1.0
     assert 0.0 <= state.game_theory_slack <= 1.0

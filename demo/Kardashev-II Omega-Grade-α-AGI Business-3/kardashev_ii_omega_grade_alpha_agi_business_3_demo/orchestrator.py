@@ -432,6 +432,7 @@ class Orchestrator:
                     "hamiltonian": state.hamiltonian,
                     "entropy": state.entropy,
                     "entropy_production": state.entropy_production,
+                    "phase_transition_risk": state.phase_transition_risk,
                     "temperature": state.temperature,
                     "enthalpy": state.enthalpy,
                     "pressure": state.pressure,
@@ -447,6 +448,7 @@ class Orchestrator:
                     "hamiltonian_pressure": signals["hamiltonian_pressure"],
                     "entropy_pressure": signals["entropy_pressure"],
                     "entropy_production_pressure": signals["entropy_production_pressure"],
+                    "phase_transition_risk": signals["phase_transition_risk"],
                     "stability_guard": signals["stability_guard"],
                 },
             }
@@ -756,6 +758,7 @@ class Orchestrator:
         entropy_pressure = min(1.0, entropy / math.log(2.0))
         entropy_production = max(0.0, state.entropy_production)
         entropy_production_pressure = min(1.0, entropy_production / (1.0 + entropy))
+        phase_transition_risk = max(0.0, min(1.0, state.phase_transition_risk))
         exergy_balance = max(-1.0, min(1.0, state.exergy_balance))
         exergy_pressure = max(0.0, min(1.0, (1.0 - exergy_balance) / 2.0))
         pareto_efficiency = max(0.0, min(1.0, state.pareto_efficiency))
@@ -823,6 +826,7 @@ class Orchestrator:
             "entropy_pressure": entropy_pressure,
             "entropy_production": entropy_production,
             "entropy_production_pressure": entropy_production_pressure,
+            "phase_transition_risk": phase_transition_risk,
             "exergy_balance": exergy_balance,
             "exergy_pressure": exergy_pressure,
             "pareto_efficiency": pareto_efficiency,
@@ -1035,6 +1039,7 @@ class Orchestrator:
                 "entropy_production": signals["entropy_production"],
                 "entropy_production_pressure": signals["entropy_production_pressure"],
                 "stability_guard": signals["stability_guard"],
+                "phase_transition_risk": signals["phase_transition_risk"],
                 "exergy_balance": signals["exergy_balance"],
             },
             "game_theory_snapshot": {
@@ -1074,6 +1079,7 @@ class Orchestrator:
             "hamiltonian_load": hamiltonian_load,
             "exergy_headroom": exergy_headroom,
             "risk_budget": risk_budget,
+            "phase_transition_risk": signals["phase_transition_risk"],
         }
 
     def _build_policy_decision(
@@ -1106,6 +1112,7 @@ class Orchestrator:
         )
         action_budget *= 0.9 + 0.6 * signals["welfare_urgency"] + 0.3 * signals["equity_pressure"]
         action_budget *= 0.5 + 0.5 * risk_budget
+        action_budget *= 1.0 - 0.3 * signals["phase_transition_risk"]
         alignment_risk_budget = max(
             risk_budget,
             0.35 + 0.45 * signals["entropy_pressure"] + 0.2 * signals["entropy_production_pressure"],
@@ -1117,6 +1124,7 @@ class Orchestrator:
             / max(0.6, signals["entropy_damping"])
         )
         alignment_budget *= 1.0 + 0.6 * signals["equity_pressure"]
+        alignment_budget *= 1.0 + 0.4 * signals["phase_transition_risk"]
         alignment_budget *= 0.5 + 0.5 * alignment_risk_budget
         stability_guard = signals["stability_guard"]
         energy_action = action_budget * (0.8 + 0.4 * signals["coordination_damping"]) * stability_guard
@@ -1155,6 +1163,7 @@ class Orchestrator:
             * (0.6 + 0.4 * signals["pareto_efficiency"])
             * (0.6 + 0.4 * signals["equity_pressure"])
             * signals["coordination_damping"]
+            * (1.0 + 0.4 * signals["phase_transition_risk"])
         )
         exergy_recovery = (
             action_budget
@@ -1796,6 +1805,7 @@ class Orchestrator:
                 "pressure": self._latest_simulation_state.pressure,
                 "exergy_balance": self._latest_simulation_state.exergy_balance,
                 "pareto_efficiency": self._latest_simulation_state.pareto_efficiency,
+                "phase_transition_risk": self._latest_simulation_state.phase_transition_risk,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
@@ -1891,6 +1901,7 @@ class Orchestrator:
                 "pressure": self._latest_simulation_state.pressure,
                 "exergy_balance": self._latest_simulation_state.exergy_balance,
                 "pareto_efficiency": self._latest_simulation_state.pareto_efficiency,
+                "phase_transition_risk": self._latest_simulation_state.phase_transition_risk,
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
