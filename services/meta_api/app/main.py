@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Final
+from contextlib import asynccontextmanager
+from typing import Final, AsyncIterator
 
 from fastapi import FastAPI
 
@@ -24,11 +25,26 @@ def _configure_logging() -> None:
     LOGGER.info("Meta API logging configured", extra={"level": level})
 
 
+@asynccontextmanager
+async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
+    scheduler = AnalyticsScheduler(AnalyticsEngine(), get_cache())
+    scheduler.start()
+    if not get_cache().snapshot().get("reports"):
+        try:
+            run_once()
+        except Exception:  # pragma: no cover - best-effort warm cache
+            LOGGER.warning("analytics warmup failed", exc_info=True)
+    try:
+        yield
+    finally:
+        scheduler.stop()
+
+
 def create_app() -> FastAPI:
     """Instantiate the FastAPI application with all orchestrator routers."""
 
     _configure_logging()
-    app = FastAPI(title="AGI Jobs Meta API", version="0.1.0", docs_url="/docs")
+    app = FastAPI(title="AGI Jobs Meta API", version="0.1.0", docs_url="/docs", lifespan=_lifespan)
 
     app.include_router(health_router)
     app.include_router(onebox_router)
@@ -36,21 +52,6 @@ def create_app() -> FastAPI:
     app.include_router(analytics_router)
     app.include_router(agents_router)
     app.include_router(hgm_router)
-
-    scheduler = AnalyticsScheduler(AnalyticsEngine(), get_cache())
-
-    @app.on_event("startup")
-    async def _start_scheduler() -> None:  # pragma: no cover - FastAPI lifecycle wiring
-        scheduler.start()
-        if not get_cache().snapshot().get("reports"):
-            try:
-                run_once()
-            except Exception:  # pragma: no cover - best-effort warm cache
-                LOGGER.warning("analytics warmup failed", exc_info=True)
-
-    @app.on_event("shutdown")
-    async def _stop_scheduler() -> None:  # pragma: no cover - FastAPI lifecycle wiring
-        scheduler.stop()
 
     @app.get("/healthz", tags=["health"])
     def root_health() -> dict[str, bool]:
