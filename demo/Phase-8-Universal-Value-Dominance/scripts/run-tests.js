@@ -22,6 +22,9 @@ function isOptionalE2E(env = process.env) {
   if (flag !== undefined) {
     return flag !== '0' && flag.toString().toLowerCase() !== 'false';
   }
+  if (env.DEMO_RUNTIME_ROOT) {
+    return true;
+  }
   // Default: enforce e2e in CI so demo regressions are caught, but allow
   // developers to skip locally without extra configuration.
   return !isCi(env);
