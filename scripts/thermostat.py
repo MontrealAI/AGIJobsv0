@@ -53,29 +53,41 @@ async def stream_prometheus(
     count = 0
     while iterations <= 0 or count < iterations:
         count += 1
-        payload = await loop.run_in_executor(None, _prometheus_query, base_url, query)
+        try:
+            payload = await loop.run_in_executor(None, _prometheus_query, base_url, query)
+        except Exception:
+            LOGGER.exception("Prometheus query failed for %s", query)
+            await asyncio.sleep(interval)
+            continue
         result = payload.get("data", {}).get("result", [])
         if not result:
             LOGGER.warning("Prometheus query returned no data: %s", query)
         for vector in result:
             values = vector.get("value")
-            if isinstance(values, (list, tuple)) and len(values) == 2:
-                ts_raw, roi_raw = values
+            if not (isinstance(values, (list, tuple)) and len(values) == 2):
+                LOGGER.warning("Prometheus vector missing value pair: %s", vector)
+                continue
+            ts_raw, roi_raw = values
+            try:
                 timestamp = datetime.fromtimestamp(float(ts_raw), tz=timezone.utc)
-                sample = MetricSample(
-                    timestamp=timestamp,
-                    roi=float(roi_raw),
-                    gmv=0.0,
-                    cost=0.0,
-                )
-                yield sample
+                roi = float(roi_raw)
+            except (TypeError, ValueError):
+                LOGGER.warning("Skipping Prometheus sample with invalid values: %s", values)
+                continue
+            sample = MetricSample(
+                timestamp=timestamp,
+                roi=roi,
+                gmv=0.0,
+                cost=0.0,
+            )
+            yield sample
         await asyncio.sleep(interval)
 
 
 def _prometheus_query(base_url: str, query: str) -> dict[str, object]:
     params = parse.urlencode({"query": query})
     url = f"{base_url.rstrip('/')}/api/v1/query?{params}"
-    req = request.Request(url)
+    req = request.Request(url, headers={"User-Agent": "agi-jobs-thermostat/1.0"})
     with request.urlopen(req, timeout=5) as resp:
         data = resp.read()
         payload = json.loads(data.decode("utf-8"))
