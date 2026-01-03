@@ -543,6 +543,16 @@ logger = logging.getLogger(__name__)
 
 _METRICS_REGISTRY: prometheus_client.CollectorRegistry | None = prometheus_client.CollectorRegistry()
 
+def _active_module():
+    """Return the latest loaded module instance for this file.
+
+    Test suites may reload ``routes.onebox`` during collection, which can leave
+    previously-imported callables referencing stale globals. Resolving the
+    current module at runtime keeps patched collaborators in sync across reloads.
+    """
+
+    return sys.modules.get(__name__, sys.modules[__name__])
+
 
 def _metrics_registry() -> prometheus_client.CollectorRegistry:
     global _METRICS_REGISTRY
@@ -2037,7 +2047,8 @@ async def _send_relayer_tx(
     context: Optional[AAExecutionContext] = None,
 ) -> Tuple[str, dict]:
     if mode == "relayer":
-        executor = _get_aa_executor()
+        module = _active_module()
+        executor = module._get_aa_executor()
         if executor:
             if context is None:
                 raise RuntimeError("AAExecutionContext is required for relayer mode")
@@ -2136,6 +2147,7 @@ def _build_receipt_payload(response: ExecuteResponse, plan_hash: Optional[str], 
     return record
 
 async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
+    module = _active_module()
     tx_hashes = _collect_tx_hashes(response.txHashes, response.txHash)
     if tx_hashes:
         response.txHashes = tx_hashes
@@ -2155,7 +2167,7 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
         receipt_payload["resultCid"] = initial_result_cid
     serialized_payload = json.loads(json.dumps(receipt_payload, sort_keys=True))
     response.receipt = serialized_payload
-    deliverable_pin = await _pin_json(serialized_payload, "job-deliverable.json")
+    deliverable_pin = await module._pin_json(serialized_payload, "job-deliverable.json")
     cid = deliverable_pin.get("cid")
     uri = deliverable_pin.get("uri")
     gateway_url = deliverable_pin.get("gatewayUrl")
@@ -2186,7 +2198,7 @@ async def _attach_receipt_artifacts(response: ExecuteResponse) -> None:
     response.receiptGatewayUrl = gateway_url
     response.receiptGatewayUrls = gateways
     if response.receipt is not None:
-        receipt_metadata, receipt_digest = _finalize_receipt_metadata(response.receipt)
+        receipt_metadata, receipt_digest = module._finalize_receipt_metadata(response.receipt)
         response.receipt = receipt_metadata
         response.receiptDigest = receipt_digest
         _propagate_attestation_fields(response, receipt_metadata)
@@ -2291,6 +2303,7 @@ async def plan(request: Request, req: PlanRequest):
 async def simulate(request: Request, req: SimulateRequest):
     start = time.perf_counter()
     correlation_id = _get_correlation_id(request)
+    module = _active_module()
     intent = req.intent
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
@@ -2303,7 +2316,7 @@ async def simulate(request: Request, req: SimulateRequest):
         if candidate:
             request_created_at = candidate
 
-    probe_status_fn = globals().get("_get_cached_status", _get_cached_status)
+    probe_status_fn = getattr(module, "_get_cached_status", _get_cached_status)
     cached_status: Optional[StatusResponse] = None
 
     if intent.action == "finalize_job" and getattr(payload, "jobId", None) is not None:
@@ -2312,7 +2325,7 @@ async def simulate(request: Request, req: SimulateRequest):
         except Exception:
             if isinstance(probe_status_fn, mock.Mock):
                 cached_status = probe_status_fn.return_value  # type: ignore[assignment]
-        if isinstance(cached_status, StatusResponse) and cached_status.state == "finalized":
+        if getattr(cached_status, "state", None) == "finalized":
             raise HTTPException(status_code=422, detail={"code": "BLOCKED", "blockers": ["JOB_ALREADY_FINALIZED"]})
 
     canonical_full, plan_hash, created_at, _, _ = _bind_plan_hash(
@@ -2356,8 +2369,8 @@ async def simulate(request: Request, req: SimulateRequest):
         if blockers:
             return
         try:
-            store = _get_org_policy_store()
-            _enforce_org_policy(store, org_identifier, reward_wei, deadline_days, requested_tools)
+            store = module._get_org_policy_store()
+            module._enforce_org_policy(store, org_identifier, reward_wei, deadline_days, requested_tools)
         except OrgPolicyViolation as violation:
             _add_blocker(violation.code)
         except Exception as exc:  # pragma: no cover - defensive guardrail
@@ -2458,19 +2471,19 @@ async def simulate(request: Request, req: SimulateRequest):
                 except (TypeError, ValueError):
                     _add_blocker("JOB_ID_REQUIRED")
                 else:
-                    cached_status_fn = globals().get("_get_cached_status", _get_cached_status)
+                    cached_status_fn = getattr(module, "_get_cached_status", _get_cached_status)
                     if cached_status is not None:
                         status = cached_status
                     elif hasattr(cached_status_fn, "return_value"):
                         status = cached_status_fn.return_value
                     else:
                         status = cached_status_fn(job_id_int)
-                    if isinstance(status, StatusResponse) and status.state == "finalized":
+                    if getattr(status, "state", None) == "finalized":
                         _add_blocker("JOB_ALREADY_FINALIZED")
                     else:
                         if status is None or not getattr(status, "state", None) or status.state == "unknown":
                             try:
-                                status = await _read_status(job_id_int)
+                                status = await module._read_status(job_id_int)
                             except Exception as exc:
                                 logger.warning(
                                     "Unable to refresh job status during simulation", exc_info=exc
@@ -2645,6 +2658,9 @@ async def simulate(request: Request, req: SimulateRequest):
 async def execute(request: Request, req: ExecuteRequest):
     start = time.perf_counter()
     correlation_id = _get_correlation_id(request)
+    module = _active_module()
+    registry_handle = getattr(module, "registry", registry)
+    log_event = module._log_event
     intent = req.intent
     payload = intent.payload
     intent_type = intent.action if intent and intent.action else "unknown"
@@ -2663,7 +2679,7 @@ async def execute(request: Request, req: ExecuteRequest):
         request_created_at,
     )
     display_plan_hash = canonical_full
-    tooling_versions = _collect_tooling_versions()
+    tooling_versions = module._collect_tooling_versions()
     requested_tools = _resolve_requested_tools(intent)
     org_identifier = _resolve_org_identifier(intent)
 
@@ -2678,8 +2694,8 @@ async def execute(request: Request, req: ExecuteRequest):
             deadline_days = int(payload.deadlineDays)
             policy_snapshot: Optional[Dict[str, Any]] = None
             try:
-                store = _get_org_policy_store()
-                policy_record = _enforce_org_policy(
+                store = module._get_org_policy_store()
+                policy_record = module._enforce_org_policy(
                     store, org_identifier, reward_wei, deadline_days, requested_tools
                 )
             except OrgPolicyViolation as violation:
@@ -2696,7 +2712,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_duration_days"] = violation.record.max_duration_days
                 if requested_tools:
                     log_fields["requested_tools"] = ",".join(requested_tools)
-                _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
+                log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
                 raise violation.to_http_exception()
             else:
                 log_fields = {
@@ -2711,7 +2727,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     log_fields["max_duration_days"] = policy_record.max_duration_days
                 if requested_tools:
                     log_fields["requested_tools"] = ",".join(requested_tools)
-                _log_event(logging.INFO, "onebox.policy.accepted", correlation_id, **log_fields)
+                log_event(logging.INFO, "onebox.policy.accepted", correlation_id, **log_fields)
                 policy_snapshot = _serialize_policy_snapshot(policy_record, org_identifier)
 
             deadline_ts = _calculate_deadline_timestamp(deadline_days)
@@ -2727,9 +2743,9 @@ async def execute(request: Request, req: ExecuteRequest):
                 "deadline": deadline_ts,
                 "agentTypes": payload.agentTypes,
             }
-            spec_hash = _compute_spec_hash(job_payload)
+            spec_hash = module._compute_spec_hash(job_payload)
             job_payload["specHash"] = "0x" + spec_hash.hex()
-            spec_pin = await _pin_json(job_payload, "job-spec.json")
+            spec_pin = await module._pin_json(job_payload, "job-spec.json")
             cid = spec_pin.get("cid")
             if not cid:
                 raise _http_error(502, "IPFS_FAILED")
@@ -2778,7 +2794,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
 
             if req.mode != "wallet":
-                func = registry.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
+                func = registry_handle.functions.postJob(uri, AGIALPHA_TOKEN, reward_wei, deadline_days)
                 sender = None
                 if relayer:
                     sender = relayer.address
@@ -2790,7 +2806,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     detail = _error_detail("RELAY_UNAVAILABLE")
                     detail["reason"] = "MISSING_SENDER"
                     raise HTTPException(status_code=400, detail=detail)
-                tx = _build_tx(func, sender)
+                tx = module._build_tx(func, sender)
                 aa_context = AAExecutionContext(
                     org_identifier=org_identifier,
                     intent_type=intent_type,
@@ -2800,11 +2816,11 @@ async def execute(request: Request, req: ExecuteRequest):
                     metadata={"action": intent.action or ""},
                 )
                 try:
-                    txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
+                    txh, receipt = await module._send_relayer_tx(tx, mode="relayer", context=aa_context)
                 except (AAPolicyRejection, AAPaymasterRejection):
                     wallet_response = _build_wallet_response()
                 else:
-                    job_id = _decode_job_created(receipt)
+                    job_id = module._decode_job_created(receipt)
                     relayed_response = ExecuteResponse(
                         **base_response_kwargs,
                         jobId=job_id,
@@ -2831,8 +2847,8 @@ async def execute(request: Request, req: ExecuteRequest):
                 raise _http_error(400, "JOB_ID_REQUIRED")
             if requested_tools:
                 try:
-                    store = _get_org_policy_store()
-                    _enforce_org_policy(store, org_identifier, 0, 0, requested_tools)
+                    store = module._get_org_policy_store()
+                    module._enforce_org_policy(store, org_identifier, 0, 0, requested_tools)
                 except OrgPolicyViolation as violation:
                     log_fields = {
                         "intent_type": intent_type,
@@ -2841,7 +2857,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     }
                     if requested_tools:
                         log_fields["requested_tools"] = ",".join(requested_tools)
-                    _log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
+                    log_event(logging.WARNING, "onebox.policy.rejected", correlation_id, **log_fields)
                     raise violation.to_http_exception()
             wallet_response: Optional[ExecuteResponse] = None
             relayed_response: Optional[ExecuteResponse] = None
@@ -2865,7 +2881,7 @@ async def execute(request: Request, req: ExecuteRequest):
                 )
 
             if req.mode != "wallet":
-                func = registry.functions.finalize(job_id_int)
+                func = registry_handle.functions.finalize(job_id_int)
                 sender = None
                 if relayer:
                     sender = relayer.address
@@ -2877,7 +2893,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     detail = _error_detail("RELAY_UNAVAILABLE")
                     detail["reason"] = "MISSING_SENDER"
                     raise HTTPException(status_code=400, detail=detail)
-                tx = _build_tx(func, sender)
+                tx = module._build_tx(func, sender)
                 aa_context = AAExecutionContext(
                     org_identifier=org_identifier,
                     intent_type=intent_type,
@@ -2887,7 +2903,7 @@ async def execute(request: Request, req: ExecuteRequest):
                     metadata={"action": intent.action or ""},
                 )
                 try:
-                    txh, receipt = await _send_relayer_tx(tx, mode="relayer", context=aa_context)
+                    txh, receipt = await module._send_relayer_tx(tx, mode="relayer", context=aa_context)
                 except (AAPolicyRejection, AAPaymasterRejection):
                     wallet_response = _build_wallet_response()
                 else:
@@ -2929,7 +2945,7 @@ async def execute(request: Request, req: ExecuteRequest):
             plan_hash=display_plan_hash,
             job_id=getattr(response, "jobId", None),
         )
-        _log_event(logging.INFO, "onebox.execute.success", correlation_id, intent_type=intent_type)
+        log_event(logging.INFO, "onebox.execute.success", correlation_id, intent_type=intent_type)
         return response
 
     except HTTPException as exc:
@@ -2945,7 +2961,7 @@ async def execute(request: Request, req: ExecuteRequest):
             status=status_code,
             error=(detail.get("code") if isinstance(detail, dict) else detail),
         )
-        _log_event(logging.WARNING, "onebox.execute.failed", correlation_id, **log_fields)
+        log_event(logging.WARNING, "onebox.execute.failed", correlation_id, **log_fields)
         raise
     except Exception as exc:
         status_code = 500
@@ -2956,7 +2972,7 @@ async def execute(request: Request, req: ExecuteRequest):
             status=status_code,
             error=str(exc),
         )
-        _log_event(logging.ERROR, "onebox.execute.error", correlation_id, intent_type=intent_type, http_status=status_code, error=str(exc))
+        log_event(logging.ERROR, "onebox.execute.error", correlation_id, intent_type=intent_type, http_status=status_code, error=str(exc))
         raise
     finally:
         duration = time.perf_counter() - start
@@ -3095,11 +3111,14 @@ def _compute_spec_hash(payload: Dict[str, Any]) -> bytes:
     return hashlib.sha256(canonical).digest()
 
 def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
+    module = _active_module()
+    registry_handle = getattr(module, "registry", registry)
+    web3_cls = getattr(module, "Web3", Web3)
     try:
-        func = getattr(registry.functions, method)(*args)
+        func = getattr(registry_handle.functions, method)(*args)
     except AttributeError as exc:
         raise _http_error(400, "UNSUPPORTED_ACTION") from exc
-    tx = func.build_transaction({"from": registry.address})
+    tx = func.build_transaction({"from": registry_handle.address})
     data = tx.get("data")
     if not data and hasattr(func, "_encode_transaction_data"):
         try:
@@ -3107,16 +3126,18 @@ def _encode_wallet_call(method: str, args: List[Any]) -> Tuple[str, str]:
         except Exception:
             data = None
     if isinstance(data, bytes):
-        data = Web3.to_hex(data)
+        data = web3_cls.to_hex(data)
     elif hasattr(data, "hex") and not isinstance(data, str):
-        data = Web3.to_hex(data)
+        data = web3_cls.to_hex(data)
     if not isinstance(data, str):
         data = "0x"
-    return registry.address, data
+    return registry_handle.address, data
 
 def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
+    module = _active_module()
+    registry_handle = getattr(module, "registry", registry)
     try:
-        event = registry.events.JobCreated()
+        event = registry_handle.events.JobCreated()
         try:
             processed = event.process_receipt(receipt)
         except Exception:
@@ -3130,13 +3151,15 @@ def _decode_job_created(receipt: Dict[str, Any]) -> Optional[int]:
     except Exception as exc:
         logger.warning("Failed to decode JobCreated event: %s", exc)
     try:
-        return int(registry.functions.nextJobId().call())
+        return int(registry_handle.functions.nextJobId().call())
     except Exception:
         return None
 
 async def _read_status(job_id: int) -> StatusResponse:
+    module = _active_module()
+    registry_handle = getattr(module, "registry", registry)
     try:
-        job = registry.functions.jobs(job_id).call()
+        job = registry_handle.functions.jobs(job_id).call()
     except Exception:
         response = StatusResponse(jobId=job_id, state="unknown")
         _cache_status(response)
@@ -3205,7 +3228,7 @@ async def _read_status(job_id: int) -> StatusResponse:
         jobId=job_id,
         state=state_output,
         reward=reward_str,
-        token=AGIALPHA_TOKEN,
+        token=getattr(module, "AGIALPHA_TOKEN", AGIALPHA_TOKEN),
         deadline=deadline,
         assignee=assignee,
     )
