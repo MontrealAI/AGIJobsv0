@@ -12,6 +12,7 @@ Generated: 2025-03-01T00:00:00Z
 - Hamiltonian stability: 60.4%
 - Composite Hamiltonian stability: 73.3% (Δ 16.7% to target 90.0%)
 - Nash product: 85.6%
+- Shapley fairness: 99.6%
 - Coalition stability: 90.0%
 - Free energy per agent: 0.111087 GJ
 - Welfare potential: 86.0%
@@ -49,7 +50,7 @@ Generated: 2025-03-01T00:00:00Z
 ### Step 4: Tighten Nash allocation
 - Status: on-track
 - Target: Deviation incentive ≤ 20% and strategy stability ≥ 85%.
-- Priority: 6.9%
+- Priority: 5.7%
 - Rationale: Deviation 12.1% · strategy 87.9%
 - Action: Keep incentive gradients aligned with Nash stability targets.
 

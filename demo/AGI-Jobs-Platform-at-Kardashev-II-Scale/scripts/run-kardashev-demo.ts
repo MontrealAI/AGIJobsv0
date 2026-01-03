@@ -1296,6 +1296,7 @@ type AllocationRecommendation = {
   weight: number;
   recommendedGw: number;
   payoff: number;
+  shapleyShare: number;
   currentGw: number;
   deltaGw: number;
   resilience: number;
@@ -1318,6 +1319,9 @@ type AllocationPolicy = {
   diversificationAlpha: number;
   allocationEntropy: number;
   fairnessIndex: number;
+  shapleyEntropy: number;
+  shapleyFairness: number;
+  shapleyConcentration: number;
   gibbsPotential: number;
   allocations: AllocationRecommendation[];
 };
@@ -1821,6 +1825,7 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
       weight,
       recommendedGw: round(recommendedGw, 2),
       payoff: round(payoff, 4),
+      shapleyShare: 0,
       currentGw: round(federation.energy.availableGw, 2),
       deltaGw: round(recommendedGw - federation.energy.availableGw, 2),
       resilience: round(resilience, 4),
@@ -1851,11 +1856,27 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     weights.reduce((sum, weight, index) => sum + Math.abs(weight - (normalizedPayoffs[index] ?? 0)), 0) / 2;
   const replicatorStability = 1 - Math.min(1, replicatorDrift);
   const jainIndex = computeJainIndex(payoffs);
+  const shapleyShares = normalizeWeights(
+    payoffs.map((payoff) => Math.max(0.0001, Number.isFinite(payoff) ? payoff : 0))
+  );
+  const shapleyEntropy = shapleyShares.reduce((sum, share) => {
+    if (share <= 0) {
+      return sum;
+    }
+    return sum - share * Math.log(share);
+  }, 0);
+  const shapleyEntropyMax = shapleyShares.length > 1 ? Math.log(shapleyShares.length) : 1;
+  const shapleyFairness = shapleyEntropyMax > 0 ? shapleyEntropy / shapleyEntropyMax : 1;
+  const shapleyConcentration = computeHerfindahlIndex(shapleyShares);
   const concentrationIndex = diversification.concentrationIndex;
   const diversificationScore = clamp01(1 - concentrationIndex);
   const entropyMax = allocations.length > 1 ? Math.log(allocations.length) : 1;
   const fairnessIndex = entropyMax > 0 ? allocationEntropy / entropyMax : 1;
   const gibbsPotential = -temperature * Math.log(Math.max(1, partition));
+
+  allocations.forEach((allocation, index) => {
+    allocation.shapleyShare = round(shapleyShares[index] ?? 0, 6);
+  });
 
   return {
     temperature,
@@ -1871,6 +1892,9 @@ function buildEnergyAllocationPolicy(manifest: Manifest, energyMonteCarlo: Monte
     diversificationAlpha: diversification.diversificationAlpha,
     allocationEntropy,
     fairnessIndex,
+    shapleyEntropy,
+    shapleyFairness,
+    shapleyConcentration,
     gibbsPotential,
     allocations,
   };
@@ -3267,6 +3291,11 @@ function buildRunbook(
     )}% · Gibbs potential ${telemetry.energy.allocationPolicy.gibbsPotential.toFixed(3)}.`
   );
   lines.push(
+    `* Shapley allocation: fairness ${(telemetry.energy.allocationPolicy.shapleyFairness * 100).toFixed(
+      1
+    )}% · concentration ${(telemetry.energy.allocationPolicy.shapleyConcentration * 100).toFixed(1)}%.`
+  );
+  lines.push(
     `* Replicator equilibrium ${(telemetry.energy.allocationPolicy.replicatorStability * 100).toFixed(1)}% · drift ${telemetry.energy.allocationPolicy.replicatorDrift.toFixed(3)}.`
   );
   lines.push(
@@ -3278,7 +3307,12 @@ function buildRunbook(
   );
   lines.push(
     `* Allocation deltas: ${telemetry.energy.allocationPolicy.allocations
-      .map((allocation: any) => `${allocation.name} ${allocation.deltaGw >= 0 ? "+" : ""}${allocation.deltaGw.toFixed(2)} GW`)
+      .map(
+        (allocation: any) =>
+          `${allocation.name} ${allocation.deltaGw >= 0 ? "+" : ""}${allocation.deltaGw.toFixed(2)} GW (Shapley ${(
+            (allocation.shapleyShare ?? 0) * 100
+          ).toFixed(1)}%)`
+      )
       .join(" · ")}.`
   );
   lines.push(
@@ -5262,8 +5296,9 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
   const allocationScore = clamp01(
     0.35 * allocation.strategyStability +
       0.25 * allocation.fairnessIndex +
-      0.2 * allocation.jainIndex +
-      0.2 * (1 - allocation.deviationIncentive)
+      0.15 * allocation.jainIndex +
+      0.15 * allocation.shapleyFairness +
+      0.1 * (1 - allocation.deviationIncentive)
   );
   const welfareScore = clamp01(
     0.3 * welfare.equilibriumScore +
@@ -5575,10 +5610,12 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       allocation: {
         score: round(allocationScore, 4),
         fairnessIndex: round(allocation.fairnessIndex, 4),
+        shapleyFairness: round(allocation.shapleyFairness, 4),
         strategyStability: round(allocation.strategyStability, 4),
         deviationIncentive: round(allocation.deviationIncentive, 4),
         nashProduct: round(allocation.nashProduct, 4),
         jainIndex: round(allocation.jainIndex, 4),
+        shapleyConcentration: round(allocation.shapleyConcentration, 4),
         gibbsPotential: round(allocation.gibbsPotential, 4),
       },
       welfare: {
@@ -5632,6 +5669,7 @@ function buildEquilibriumLedger(manifest: Manifest, telemetry: Telemetry) {
       coalitionStability: round(welfare.coalitionStability, 4),
       replicatorStability: round(allocation.replicatorStability, 4),
       replicatorDrift: round(allocation.replicatorDrift, 4),
+      shapleyFairness: round(allocation.shapleyFairness, 4),
     },
     pathways,
     actionPath,
@@ -5695,6 +5733,7 @@ function renderActionPathReport(telemetry: Telemetry, equilibriumLedger: Equilib
     );
   }
   lines.push(`- Nash product: ${formatPercent(gameTheory.nashProduct, 1)}`);
+  lines.push(`- Shapley fairness: ${formatPercent(gameTheory.shapleyFairness, 1)}`);
   lines.push(`- Coalition stability: ${formatPercent(gameTheory.coalitionStability, 1)}`);
   lines.push(`- Free energy per agent: ${formatNumber(welfare.freeEnergyPerAgentGj, 6)} GJ`);
   lines.push(`- Welfare potential: ${formatPercent(welfare.welfarePotential, 1)}`);
@@ -5755,6 +5794,11 @@ function buildSafeBatch(manifest: Manifest, transactions: SafeTransaction[]) {
 
 function writeOrCheck(path: string, content: string) {
   if (CHECK_MODE) {
+    if (!existsSync(path)) {
+      console.error(`❌ Drift detected for ${path}. Missing artefact; regenerate outputs.`);
+      process.exitCode = 1;
+      return;
+    }
     const existing = readFileSync(path, "utf8");
     if (existing !== content) {
       console.error(`❌ Drift detected for ${path}. Regenerate artefacts.`);
