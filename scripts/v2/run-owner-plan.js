@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 
 const userArgs = process.argv.slice(2);
 const hardhatArgs = ['hardhat', 'run', '--no-compile', 'scripts/v2/ownerControlPlan.ts'];
+const passthroughArgs = [];
 
 const forwardedEnv = { ...process.env };
 
@@ -58,8 +59,13 @@ for (let i = 0; i < userArgs.length; i += 1) {
       break;
     }
     default:
-      throw new Error(`Unknown owner:plan argument ${arg}`);
+      passthroughArgs.push(arg);
+      break;
   }
+}
+
+if (passthroughArgs.length > 0) {
+  hardhatArgs.push(...passthroughArgs);
 }
 
 const child = spawn('npx', hardhatArgs, {
