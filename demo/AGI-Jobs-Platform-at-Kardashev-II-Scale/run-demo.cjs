@@ -2261,6 +2261,121 @@ function formatFixedValue(value, digits = 2) {
   return value.toFixed(digits);
 }
 
+function buildEquilibriumPath({
+  energyMonteCarlo,
+  allocationPolicy,
+  sentientWelfare,
+  logistics,
+  missionThermodynamics,
+}) {
+  const steps = [];
+  const addStep = ({ title, status, metric, target, recommendation }) => {
+    steps.push({
+      title,
+      status,
+      metric,
+      target,
+      recommendation,
+    });
+  };
+
+  const freeEnergyMarginGw = Number.isFinite(energyMonteCarlo.freeEnergyMarginGw)
+    ? energyMonteCarlo.freeEnergyMarginGw
+    : 0;
+  const freeEnergyOk = Boolean(energyMonteCarlo.maintainsBuffer);
+  addStep({
+    title: 'Thermodynamic reserve buffer',
+    status: freeEnergyOk ? 'on-track' : 'needs-action',
+    metric: `Free energy margin ${formatNumber(round(freeEnergyMarginGw, 2))} GW`,
+    target: `Maintain ≥ ${formatNumber(round(energyMonteCarlo.marginGw ?? 0, 2))} GW buffer`,
+    recommendation: freeEnergyOk
+      ? 'Maintain reserve buffers and monitor drift variance.'
+      : 'Increase reserve buffers or tighten demand variance until buffer recovers.',
+  });
+
+  const hamiltonianOk = (energyMonteCarlo.hamiltonianStability ?? 0) >= HAMILTONIAN_TARGET_STABILITY;
+  addStep({
+    title: 'Hamiltonian stability band',
+    status: hamiltonianOk ? 'on-track' : 'needs-action',
+    metric: `Hamiltonian ${formatPercentValue(energyMonteCarlo.hamiltonianStability)}`,
+    target: `≥ ${formatPercentValue(HAMILTONIAN_TARGET_STABILITY)}`,
+    recommendation: hamiltonianOk
+      ? 'Maintain current stability envelope.'
+      : 'Raise reserve buffers and smooth demand phase variance to lift stability.',
+  });
+
+  const gameTheoryOk = (energyMonteCarlo.gameTheorySlack ?? 0) >= 0.85;
+  addStep({
+    title: 'Game-theory slack',
+    status: gameTheoryOk ? 'on-track' : 'needs-action',
+    metric: `Slack ${formatPercentValue(energyMonteCarlo.gameTheorySlack)}`,
+    target: '≥ 85%',
+    recommendation: gameTheoryOk
+      ? 'Maintain cooperation incentives across shards.'
+      : 'Rebalance incentives to improve cooperation slack above 85%.',
+  });
+
+  const allocationEntropy = allocationPolicy.fairnessIndex ?? 0;
+  const concentrationIndex = allocationPolicy.concentrationIndex ?? 0;
+  const diversificationTarget =
+    allocationPolicy.diversificationTarget ?? DIVERSIFICATION_TARGET_HHI;
+  const allocationOk = allocationEntropy >= 0.9 && concentrationIndex <= diversificationTarget;
+  addStep({
+    title: 'Allocation entropy balance',
+    status: allocationOk ? 'on-track' : 'needs-action',
+    metric: `Fairness ${(allocationEntropy * 100).toFixed(1)}% · HHI ${concentrationIndex.toFixed(2)}`,
+    target: `Fairness ≥ 90% · HHI ≤ ${diversificationTarget.toFixed(2)}`,
+    recommendation: allocationOk
+      ? 'Maintain entropy-balanced allocations.'
+      : 'Spread allocations to reduce concentration and lift entropy.',
+  });
+
+  const welfareOk =
+    (sentientWelfare.equilibriumScore ?? 0) >= 0.85 &&
+    (sentientWelfare.coalitionStability ?? 0) >= 0.85;
+  addStep({
+    title: 'Sentient welfare equilibrium',
+    status: welfareOk ? 'on-track' : 'needs-action',
+    metric: `Equilibrium ${formatPercentValue(sentientWelfare.equilibriumScore)} · coalition ${formatPercentValue(
+      sentientWelfare.coalitionStability
+    )}`,
+    target: '≥ 85% equilibrium + coalition',
+    recommendation: welfareOk
+      ? 'Maintain coalition reinforcement and fairness guarantees.'
+      : 'Boost coalition stability and reduce inequality to restore equilibrium.',
+  });
+
+  const logisticsEquilibrium = logistics?.equilibrium ?? {};
+  const logisticsOk =
+    (logisticsEquilibrium.gameTheorySlack ?? 0) >= 0.85 &&
+    (logisticsEquilibrium.entropyRatio ?? 0) >= 0.9;
+  addStep({
+    title: 'Logistics entropy smoothing',
+    status: logisticsOk ? 'on-track' : 'needs-action',
+    metric: `Entropy ${formatFixedValue(logisticsEquilibrium.entropyRatio, 2)} · slack ${formatPercentValue(
+      logisticsEquilibrium.gameTheorySlack
+    )}`,
+    target: 'Entropy ≥ 0.90 · slack ≥ 85%',
+    recommendation: logisticsOk
+      ? 'Maintain corridor utilization within the 65–85% band.'
+      : 'Shift corridor utilization to lift entropy and reduce deviation incentives.',
+  });
+
+  const missionHamiltonian = missionThermodynamics?.hamiltonianStability ?? 0;
+  const missionOk = missionHamiltonian >= HAMILTONIAN_TARGET_STABILITY;
+  addStep({
+    title: 'Mission Hamiltonian load-balance',
+    status: missionOk ? 'on-track' : 'needs-action',
+    metric: `Mission stability ${formatPercentValue(missionHamiltonian)}`,
+    target: `≥ ${formatPercentValue(HAMILTONIAN_TARGET_STABILITY)}`,
+    recommendation: missionOk
+      ? 'Maintain mission load balance.'
+      : 'Rebalance mission timelines to restore thermodynamic headroom.',
+  });
+
+  return steps;
+}
+
 function buildActionPathBriefing(equilibriumLedger) {
   const thermodynamics = equilibriumLedger?.thermodynamics ?? {};
   const gameTheory = equilibriumLedger?.gameTheory ?? {};
@@ -3227,6 +3342,14 @@ function main() {
   governanceLines.push('');
   governanceLines.push('All actions are auditable; copy/paste-ready commands are available via `npm run demo:kardashev -- --print-commands`.');
 
+  const equilibriumPath = buildEquilibriumPath({
+    energyMonteCarlo,
+    allocationPolicy,
+    sentientWelfare,
+    logistics,
+    missionThermodynamics,
+  });
+
   const telemetry = {
     generatedAt,
     dominanceScore,
@@ -3265,6 +3388,7 @@ function main() {
       corridors: logistics.corridors,
       equilibrium: logistics.equilibrium,
     },
+    equilibriumPath,
     settlement: {
       protocols: settlement.protocols,
       watchers: settlement.watchers,
