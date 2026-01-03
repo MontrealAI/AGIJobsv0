@@ -65,6 +65,14 @@ test('resolveOrchestratorBase normalises URLs', () => {
     resolveOrchestratorBase('https://example.com/onebox'),
     'https://example.com/onebox'
   );
+  assert.equal(
+    resolveOrchestratorBase('https://example.com/onebox/'),
+    'https://example.com/onebox'
+  );
+  assert.equal(
+    resolveOrchestratorBase('  https://example.com/edge/  '),
+    'https://example.com/edge/onebox'
+  );
   assert.equal(resolveOrchestratorBase(undefined), undefined);
 });
 

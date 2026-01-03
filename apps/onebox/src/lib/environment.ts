@@ -194,10 +194,14 @@ export const resolveOrchestratorBase = (
   if (!orchestratorUrl) {
     return undefined;
   }
-  if (orchestratorUrl.endsWith('/onebox')) {
-    return orchestratorUrl;
+  const trimmed = orchestratorUrl.trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return undefined;
   }
-  return `${orchestratorUrl}/onebox`;
+  if (trimmed.endsWith('/onebox')) {
+    return trimmed;
+  }
+  return `${trimmed}/onebox`;
 };
 
 export const createExplorerUrl = (
@@ -222,4 +226,3 @@ export const createIpfsGatewayUrl = (
   }
   return joinUrl(ipfsGatewayBase, cid);
 };
-
