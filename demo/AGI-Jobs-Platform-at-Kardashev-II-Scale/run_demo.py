@@ -21,7 +21,7 @@ from urllib.parse import unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
 NODE_SCRIPT = ROOT / "run-demo.cjs"
-DEFAULT_OUTPUT_DIR = ROOT / "output"
+DEFAULT_OUTPUT_DIR = Path.home() / ".cache" / "agi-jobs-v0" / "kardashev-ii"
 
 
 def _ensure_node_available() -> str:
