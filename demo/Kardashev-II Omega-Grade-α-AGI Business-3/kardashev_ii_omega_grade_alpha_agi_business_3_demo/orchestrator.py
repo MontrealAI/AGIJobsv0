@@ -108,6 +108,7 @@ class Orchestrator:
         self._paused = asyncio.Event()
         self._paused.set()
         self._phase_transition_paused = False
+        self._manual_pause = False
         self._cycle = 0
         self._stopped = asyncio.Event()
         self._status_path = config.status_output_path
@@ -531,15 +532,22 @@ class Orchestrator:
                 risk=risk,
                 threshold=pause_threshold,
             )
-            self.pause()
+            self.pause(reason="phase_transition")
         elif self._phase_transition_paused and risk <= resume_threshold:
             self._phase_transition_paused = False
+            if self._manual_pause:
+                self._info(
+                    "phase_transition_resume_deferred",
+                    risk=risk,
+                    threshold=resume_threshold,
+                )
+                return
             self._info(
                 "phase_transition_resume",
                 risk=risk,
                 threshold=resume_threshold,
             )
-            self.resume()
+            self.resume(reason="phase_transition")
 
     async def _simulation_loop(self) -> None:
         assert self.simulation is not None
@@ -738,9 +746,9 @@ class Orchestrator:
                 message = await receiver()
                 action = message.payload.get("action")
                 if action == "pause" and self.governance.params.pause_enabled:
-                    self.pause()
+                    self.pause(reason="operator")
                 elif action == "resume":
-                    self.resume()
+                    self.resume(reason="operator")
                 elif action == "stop":
                     await self.shutdown()
                 elif action == "update_parameters":
@@ -1630,13 +1638,34 @@ class Orchestrator:
             self.resources.release_stake(validator, self.governance.params.validator_stake)
         job.validators_with_stake.clear()
 
-    def pause(self) -> None:
+    def pause(self, *, reason: str = "operator") -> None:
+        if reason == "operator":
+            self._manual_pause = True
         self._paused.clear()
-        self._info("orchestrator_paused")
+        self._info(
+            "orchestrator_paused",
+            reason=reason,
+            manual_pause=self._manual_pause,
+            phase_transition_paused=self._phase_transition_paused,
+        )
 
-    def resume(self) -> None:
+    def resume(self, *, reason: str = "operator") -> None:
+        if reason == "operator":
+            self._manual_pause = False
+        if reason == "phase_transition" and self._manual_pause:
+            self._info(
+                "orchestrator_resume_deferred",
+                reason=reason,
+                manual_pause=self._manual_pause,
+            )
+            return
         self._paused.set()
-        self._info("orchestrator_resumed")
+        self._info(
+            "orchestrator_resumed",
+            reason=reason,
+            manual_pause=self._manual_pause,
+            phase_transition_paused=self._phase_transition_paused,
+        )
 
     async def shutdown(self) -> None:
         if not self._running and self._stopped.is_set():
@@ -1884,6 +1913,11 @@ class Orchestrator:
             "cycle": self._cycle,
             "running": self._running,
             "paused": not self._paused.is_set(),
+            "pause_state": {
+                "manual": self._manual_pause,
+                "phase_transition": self._phase_transition_paused,
+                "auto_pause_enabled": self.config.auto_pause_on_phase_transition,
+            },
             "jobs": {
                 "total": len(jobs),
                 "status_counts": dict(status_counts),
