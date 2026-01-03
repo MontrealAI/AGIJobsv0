@@ -358,6 +358,15 @@ function renderEquilibriumUnavailable(reason) {
     gameTheory.appendChild(li);
   }
 
+  const primaryAction = document.querySelector("#equilibrium-primary-action");
+  if (primaryAction) {
+    primaryAction.innerHTML = "";
+    const li = document.createElement("li");
+    li.textContent = "Primary action pending equilibrium ledger refresh.";
+    li.classList.add("status-warn");
+    primaryAction.appendChild(li);
+  }
+
   const pathways = document.querySelector("#equilibrium-pathways");
   if (pathways) {
     pathways.innerHTML = "";
@@ -1698,6 +1707,7 @@ function renderEquilibriumLedger(ledger) {
   const thermoList = document.querySelector("#equilibrium-thermo");
   const gameTheoryList = document.querySelector("#equilibrium-game-theory");
   const pathwaysList = document.querySelector("#equilibrium-pathways");
+  const primaryActionList = document.querySelector("#equilibrium-primary-action");
   const actionPathList = document.querySelector("#equilibrium-action-path");
   const recommendationsList = document.querySelector("#equilibrium-recommendations");
   if (
@@ -1706,6 +1716,7 @@ function renderEquilibriumLedger(ledger) {
     !thermoList ||
     !gameTheoryList ||
     !pathwaysList ||
+    !primaryActionList ||
     !actionPathList ||
     !recommendationsList
   )
@@ -1756,6 +1767,23 @@ function renderEquilibriumLedger(ledger) {
     li.classList.add(score >= 0.9 ? "status-ok" : score >= 0.8 ? "status-warn" : "status-fail");
     componentsList.appendChild(li);
   });
+
+  primaryActionList.innerHTML = "";
+  if (!ledger.primaryAction) {
+    const li = document.createElement("li");
+    li.textContent = "No primary equilibrium action required.";
+    li.classList.add("status-ok");
+    primaryActionList.appendChild(li);
+  } else {
+    const action = ledger.primaryAction;
+    const li = document.createElement("li");
+    const priorityText = Number.isFinite(action.priorityScore)
+      ? `<br /><span>Priority: ${formatPercent(action.priorityScore)}</span>`
+      : "";
+    li.innerHTML = `<strong>${action.rank}. ${action.title}</strong> — ${action.rationale}<br /><span>${action.action}</span><br /><span>Target: ${action.target}</span>${priorityText}`;
+    li.classList.add(action.status === "needs-action" ? "status-warn" : "status-ok");
+    primaryActionList.appendChild(li);
+  }
 
   const thermodynamics = ledger.thermodynamics ?? {};
   const gameTheory = ledger.gameTheory ?? {};
