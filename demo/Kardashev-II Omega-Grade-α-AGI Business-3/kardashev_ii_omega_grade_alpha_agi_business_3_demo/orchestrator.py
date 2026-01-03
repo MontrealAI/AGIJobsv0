@@ -442,11 +442,12 @@ class Orchestrator:
                     "pressure": state.pressure,
                 },
                 "game_theory": {
-                    "nash_welfare": state.nash_welfare,
-                    "sentient_welfare_index": state.sentient_welfare_index,
-                    "game_theory_slack": state.game_theory_slack,
-                    "coordination_index": state.coordination_index,
-                },
+                "nash_welfare": state.nash_welfare,
+                "sentient_welfare_index": state.sentient_welfare_index,
+                "game_theory_slack": state.game_theory_slack,
+                "coordination_index": state.coordination_index,
+                "cooperation_potential": state.cooperation_potential,
+            },
                 "policy_signals": {
                     "gibbs_drive": signals["gibbs_drive"],
                     "hamiltonian_pressure": signals["hamiltonian_pressure"],
@@ -778,6 +779,8 @@ class Orchestrator:
         sustainability_gap = max(0.0, 1.0 - state.sustainability_index)
         coordination_gap = max(0.0, 1.0 - state.coordination_index)
         game_theory_slack = max(0.0, min(1.0, state.game_theory_slack))
+        cooperation_potential = max(0.0, min(1.0, state.cooperation_potential))
+        cooperation_gap = max(0.0, 1.0 - cooperation_potential)
         nash_welfare = max(0.0, min(1.0, state.nash_welfare))
         sentient_welfare_index = max(0.0, min(1.0, state.sentient_welfare_index))
         welfare_floor = max(0.0, min(state.prosperity_index, state.sustainability_index))
@@ -829,7 +832,10 @@ class Orchestrator:
         welfare_urgency = max(0.0, 1.0 - sentient_welfare_index)
         coordination_pressure = max(
             0.0,
-            min(1.0, 0.5 * coordination_gap + 0.5 * (1.0 - game_theory_slack)),
+            min(
+                1.0,
+                0.4 * coordination_gap + 0.4 * (1.0 - game_theory_slack) + 0.2 * cooperation_gap,
+            ),
         )
         stability_guard = 1.0 - 0.55 * entropy_pressure - 0.35 * coordination_gap - 0.2 * hamiltonian_pressure
         stability_guard -= 0.15 * entropy_production_pressure
@@ -846,6 +852,8 @@ class Orchestrator:
             "sustainability_gap": sustainability_gap,
             "coordination_gap": coordination_gap,
             "game_theory_slack": game_theory_slack,
+            "cooperation_potential": cooperation_potential,
+            "cooperation_gap": cooperation_gap,
             "nash_welfare": nash_welfare,
             "sentient_welfare_index": sentient_welfare_index,
             "welfare_floor": welfare_floor,
@@ -1077,6 +1085,7 @@ class Orchestrator:
                 "sentient_welfare_index": state.sentient_welfare_index,
                 "coordination_index": state.coordination_index,
                 "game_theory_slack": state.game_theory_slack,
+                "cooperation_potential": state.cooperation_potential,
                 "pareto_efficiency": state.pareto_efficiency,
             },
         }
@@ -1179,6 +1188,7 @@ class Orchestrator:
         alignment_investment = (
             alignment_budget
             * signals["coordination_gap"]
+            * (0.8 + 0.4 * signals["cooperation_gap"])
             * (0.6 + 0.4 * signals["welfare_urgency"])
             * (0.7 + 0.3 * signals["stability_index"])
             * (0.7 + 0.6 * signals["pareto_gap"])
@@ -1195,6 +1205,7 @@ class Orchestrator:
         coordination_incentives = (
             alignment_budget
             * signals["coordination_pressure"]
+            * (0.7 + 0.6 * signals["cooperation_gap"])
             * (0.6 + 0.4 * signals["welfare_urgency"])
             * (0.7 + 0.3 * signals["stability_index"])
             * (0.6 + 0.4 * signals["pareto_efficiency"])
@@ -1848,6 +1859,7 @@ class Orchestrator:
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
+                "cooperation_potential": self._latest_simulation_state.cooperation_potential,
                 "equilibrium_forecast": self._build_equilibrium_forecast(self._latest_simulation_state),
             }
             policy_snapshot = self._build_policy_snapshot(self._latest_simulation_state)
@@ -1944,6 +1956,7 @@ class Orchestrator:
                 "stability_index": self._latest_simulation_state.stability_index,
                 "coordination_index": self._latest_simulation_state.coordination_index,
                 "game_theory_slack": self._latest_simulation_state.game_theory_slack,
+                "cooperation_potential": self._latest_simulation_state.cooperation_potential,
                 "equilibrium_forecast": self._build_equilibrium_forecast(self._latest_simulation_state),
             }
         return {

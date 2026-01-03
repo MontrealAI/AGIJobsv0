@@ -36,6 +36,16 @@ def test_simulation_thermodynamic_metrics() -> None:
     game_theory_slack = min(1.0, nash_welfare * (0.5 + 0.5 * coordination_index))
     entropy_production_pressure = min(1.0, entropy_production / (1.0 + entropy))
     gibbs_stress = min(1.0, abs(gibbs_free_energy) / max(1e-6, enthalpy))
+    entropy_pressure = min(1.0, entropy / math.log(2.0))
+    sentient_welfare_index = 0.55 * nash_welfare + 0.45 * min(
+        state.prosperity_index, state.sustainability_index
+    )
+    cooperation_potential = 0.5 * nash_welfare + 0.3 * coordination_index + 0.2 * sentient_welfare_index
+    cooperation_potential *= (1.0 - 0.4 * entropy_pressure) * (
+        1.0 - 0.3 * entropy_production_pressure
+    )
+    cooperation_potential *= 1.0 - 0.3 * gibbs_stress
+    cooperation_potential = min(1.0, max(0.0, cooperation_potential))
     phase_transition_risk = (
         0.5 * entropy_production_pressure
         + 0.3 * (1.0 - coordination_index)
@@ -51,6 +61,7 @@ def test_simulation_thermodynamic_metrics() -> None:
     assert state.stability_index == pytest.approx(stability_index)
     assert state.coordination_index == pytest.approx(coordination_index)
     assert state.game_theory_slack == pytest.approx(game_theory_slack)
+    assert state.cooperation_potential == pytest.approx(cooperation_potential)
     assert state.phase_transition_risk == pytest.approx(phase_transition_risk)
     assert 0.0 <= state.coordination_index <= 1.0
     assert 0.0 <= state.stability_index <= 1.0
