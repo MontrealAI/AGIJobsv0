@@ -304,6 +304,14 @@ describe('isOptionalE2E', () => {
     expect(isOptionalE2E()).toBe(false);
   });
 
+  test('defaults to optional under demo runner even in CI', () => {
+    process.env.CI = '1';
+    process.env.DEMO_RUNTIME_ROOT = '/tmp/demo-runtime';
+    const { isOptionalE2E } = require('../run-tests.js');
+
+    expect(isOptionalE2E()).toBe(true);
+  });
+
   test('defaults to optional outside CI', () => {
     delete process.env.CI;
     const { isOptionalE2E } = require('../run-tests.js');
