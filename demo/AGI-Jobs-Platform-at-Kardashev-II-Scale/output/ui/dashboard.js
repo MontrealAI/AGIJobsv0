@@ -1610,9 +1610,12 @@ function renderLogistics(logistics, verification) {
     return;
   }
 
-  const avgReliability = (verification?.averageReliabilityPct ?? 0) * 100;
-  const avgUtilisation = (verification?.averageUtilisationPct ?? 0) * 100;
-  const minBuffer = verification?.minimumBufferDays ?? 0;
+  const aggregate = logistics.aggregate ?? {};
+  const avgReliability =
+    (aggregate.averageReliabilityPct ?? verification?.averageReliabilityPct ?? 0) * 100;
+  const avgUtilisation =
+    (aggregate.averageUtilisationPct ?? verification?.averageUtilisationPct ?? 0) * 100;
+  const minBuffer = aggregate.minimumBufferDays ?? verification?.minimumBufferDays ?? 0;
   const statusOk =
     verification?.reliabilityOk &&
     verification?.bufferOk &&
@@ -1634,9 +1637,14 @@ function renderLogistics(logistics, verification) {
   if (equilibriumText && logistics.equilibrium) {
     const hamiltonianStability = (logistics.equilibrium.hamiltonianStability ?? 0) * 100;
     const gameTheorySlack = (logistics.equilibrium.gameTheorySlack ?? 0) * 100;
+    const gibbsFreeEnergy = Number.isFinite(logistics.equilibrium.gibbsFreeEnergyMwh)
+      ? ` · Gibbs ${formatNumber(logistics.equilibrium.gibbsFreeEnergyMwh)} MWh`
+      : "";
     equilibriumText.textContent = `Hamiltonian stability ${hamiltonianStability.toFixed(
       1
-    )}% · entropy ${logistics.equilibrium.entropy.toFixed(3)} · game-theory slack ${gameTheorySlack.toFixed(1)}%`;
+    )}% · entropy ${logistics.equilibrium.entropy.toFixed(3)} · game-theory slack ${gameTheorySlack.toFixed(
+      1
+    )}%${gibbsFreeEnergy}`;
     applyStatus(equilibriumText, (verification?.equilibriumOk ?? true) ? "status-ok" : "status-warn");
   }
 
@@ -1902,6 +1910,46 @@ function renderEquilibriumLedger(ledger) {
   }
 }
 
+function renderEquilibriumPath(path) {
+  const summary = document.querySelector("#equilibrium-path-summary");
+  const list = document.querySelector("#equilibrium-path");
+  if (!summary || !list) return;
+
+  list.innerHTML = "";
+  if (!Array.isArray(path) || path.length === 0) {
+    summary.textContent = "Equilibrium action path unavailable.";
+    applyStatus(summary, "status-warn");
+    return;
+  }
+
+  const needsActionCount = path.filter((entry) => entry.status === "needs-action").length;
+  if (needsActionCount === 0) {
+    summary.textContent = "All equilibrium checkpoints are on track.";
+    applyStatus(summary, "status-ok");
+  } else {
+    summary.textContent = `${needsActionCount} checkpoint${needsActionCount === 1 ? "" : "s"} need intervention.`;
+    applyStatus(summary, "status-warn");
+  }
+
+  path.forEach((entry) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<strong>${entry.title}</strong> — ${entry.metric} · target ${entry.target}`;
+    const recommendation = document.createElement("div");
+    recommendation.textContent = entry.recommendation;
+    recommendation.classList.add("lede");
+    li.appendChild(recommendation);
+
+    const statusClass =
+      entry.status === "on-track"
+        ? "status-ok"
+        : entry.status === "needs-action"
+          ? "status-fail"
+          : "status-warn";
+    li.classList.add(statusClass);
+    list.appendChild(li);
+  });
+}
+
 function renderLedger(ledger) {
   document.querySelector("#ledger-summary").textContent = ledger.confidence.summary;
   const composite = `${(ledger.confidence.compositeScore * 100).toFixed(2)}%`;
@@ -2142,6 +2190,7 @@ async function bootstrap() {
       console.warn("Equilibrium ledger unavailable", equilibriumResult.reason);
       renderEquilibriumUnavailable(equilibriumResult.reason);
     }
+    renderEquilibriumPath(null);
 
     renderOwnerProofUnavailable("Owner proof requires full orchestrator output.");
 
@@ -2194,6 +2243,7 @@ async function bootstrap() {
     console.warn("Equilibrium ledger unavailable", equilibriumResult.reason);
     renderEquilibriumUnavailable(equilibriumResult.reason);
   }
+  renderEquilibriumPath(telemetry.equilibriumPath);
   renderMissionLattice(telemetry.missionLattice);
   renderMissionThermodynamics(telemetry.missionThermodynamics);
   renderLogistics(telemetry.logistics, telemetry.verification.logistics);

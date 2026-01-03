@@ -1610,9 +1610,12 @@ function renderLogistics(logistics, verification) {
     return;
   }
 
-  const avgReliability = (verification?.averageReliabilityPct ?? 0) * 100;
-  const avgUtilisation = (verification?.averageUtilisationPct ?? 0) * 100;
-  const minBuffer = verification?.minimumBufferDays ?? 0;
+  const aggregate = logistics.aggregate ?? {};
+  const avgReliability =
+    (aggregate.averageReliabilityPct ?? verification?.averageReliabilityPct ?? 0) * 100;
+  const avgUtilisation =
+    (aggregate.averageUtilisationPct ?? verification?.averageUtilisationPct ?? 0) * 100;
+  const minBuffer = aggregate.minimumBufferDays ?? verification?.minimumBufferDays ?? 0;
   const statusOk =
     verification?.reliabilityOk &&
     verification?.bufferOk &&
@@ -1634,9 +1637,14 @@ function renderLogistics(logistics, verification) {
   if (equilibriumText && logistics.equilibrium) {
     const hamiltonianStability = (logistics.equilibrium.hamiltonianStability ?? 0) * 100;
     const gameTheorySlack = (logistics.equilibrium.gameTheorySlack ?? 0) * 100;
+    const gibbsFreeEnergy = Number.isFinite(logistics.equilibrium.gibbsFreeEnergyMwh)
+      ? ` · Gibbs ${formatNumber(logistics.equilibrium.gibbsFreeEnergyMwh)} MWh`
+      : "";
     equilibriumText.textContent = `Hamiltonian stability ${hamiltonianStability.toFixed(
       1
-    )}% · entropy ${logistics.equilibrium.entropy.toFixed(3)} · game-theory slack ${gameTheorySlack.toFixed(1)}%`;
+    )}% · entropy ${logistics.equilibrium.entropy.toFixed(3)} · game-theory slack ${gameTheorySlack.toFixed(
+      1
+    )}%${gibbsFreeEnergy}`;
     applyStatus(equilibriumText, (verification?.equilibriumOk ?? true) ? "status-ok" : "status-warn");
   }
 
