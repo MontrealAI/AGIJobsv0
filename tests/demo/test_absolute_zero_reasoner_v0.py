@@ -6,13 +6,20 @@ import sys
 from pathlib import Path
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "demo" / "Absolute-Zero-Reasoner-v0"
-if str(PACKAGE_ROOT) not in sys.path:
-    sys.path.insert(0, str(PACKAGE_ROOT))
+_PACKAGE_ROOT_STR = str(PACKAGE_ROOT)
+_added_to_path = False
+if _PACKAGE_ROOT_STR not in sys.path:
+    sys.path.insert(0, _PACKAGE_ROOT_STR)
+    _added_to_path = True
 
-from azr_demo.__main__ import AbsoluteZeroReasonerDemo, DEFAULT_CONFIG  # type: ignore  # noqa: E402
-from azr_demo.executor import SafeExecutor, SandboxViolation  # type: ignore  # noqa: E402
-from azr_demo.reward import RewardEngine  # type: ignore  # noqa: E402
-from azr_demo.tasks import TaskType  # type: ignore  # noqa: E402
+try:
+    from azr_demo.__main__ import AbsoluteZeroReasonerDemo, DEFAULT_CONFIG  # type: ignore  # noqa: E402
+    from azr_demo.executor import SafeExecutor, SandboxViolation  # type: ignore  # noqa: E402
+    from azr_demo.reward import RewardEngine  # type: ignore  # noqa: E402
+    from azr_demo.tasks import TaskType  # type: ignore  # noqa: E402
+finally:
+    if _added_to_path and sys.path[0] == _PACKAGE_ROOT_STR:
+        sys.path.pop(0)
 
 
 def test_executor_blocks_forbidden_code() -> None:
