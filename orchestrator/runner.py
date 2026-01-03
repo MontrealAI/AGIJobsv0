@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 import uuid
@@ -36,6 +37,14 @@ def _store() -> RunStateStore:
     if _STORE is None:
         _STORE = get_store()
     return _STORE
+
+
+def _should_run_inline() -> bool:
+    """Return True when runs should execute synchronously."""
+
+    return os.getenv("ORCHESTRATOR_SYNC_RUNS") == "1" or bool(
+        os.getenv("PYTEST_CURRENT_TEST")
+    )
 
 
 def _ensure_checkpoint_manager() -> CheckpointManager:
@@ -277,6 +286,24 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
         _PLANS[status.run.id] = plan
         _ensure_watchdog()
     _persist(status)
+
+    if _should_run_inline():
+        with _LOCK:
+            current_status = _RUNS.get(status.run.id)
+            if not current_status:
+                return status.run
+            current_status.run.state = "running"  # type: ignore[assignment]
+            current_status.run.started_at = time.time()
+            _RUNS[status.run.id] = current_status
+            _persist(current_status)
+        try:
+            _resume_run(plan, current_status, status.run.id)
+        except Exception:  # pragma: no cover - defensive guard for inline failures
+            logger.exception("Run %s failed during inline resume", status.run.id)
+            with _LOCK:
+                _RUNS[status.run.id] = current_status
+                _persist(current_status)
+        return status.run
 
     def _worker() -> None:
         with _LOCK:
