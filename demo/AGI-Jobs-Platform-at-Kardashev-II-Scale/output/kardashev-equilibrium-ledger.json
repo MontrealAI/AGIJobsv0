@@ -1,7 +1,7 @@
 {
   "generatedAt": "2025-03-01T00:00:00Z",
   "status": "warning",
-  "overallScore": 0.8372,
+  "overallScore": 0.8396,
   "components": {
     "energy": {
       "score": 0.6154,
@@ -18,12 +18,14 @@
       "safetyMarginPct": 0.125
     },
     "allocation": {
-      "score": 0.9314,
+      "score": 0.9433,
       "fairnessIndex": 1,
+      "shapleyFairness": 0.9955,
       "strategyStability": 0.8789,
       "deviationIncentive": 0.1211,
       "nashProduct": 0.856,
       "jainIndex": 0.99,
+      "shapleyConcentration": 0.3367,
       "gibbsPotential": -0.2348
     },
     "welfare": {
@@ -94,7 +96,8 @@
     "logisticsNashWelfare": 0.985,
     "coalitionStability": 0.8996,
     "replicatorStability": 0.9541,
-    "replicatorDrift": 0.0459
+    "replicatorDrift": 0.0459,
+    "shapleyFairness": 0.9955
   },
   "pathways": [
     {
@@ -169,7 +172,7 @@
       "rationale": "Deviation 12.1% · strategy 87.9%",
       "action": "Keep incentive gradients aligned with Nash stability targets.",
       "target": "Deviation incentive ≤ 20% and strategy stability ≥ 85%.",
-      "priorityScore": 0.0686
+      "priorityScore": 0.0567
     },
     {
       "rank": 5,

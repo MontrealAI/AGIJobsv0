@@ -266,6 +266,9 @@
       "diversificationAlpha": 1,
       "allocationEntropy": 1.0986122886681096,
       "fairnessIndex": 1,
+      "shapleyEntropy": 1.0936504197828794,
+      "shapleyFairness": 0.9954835123032842,
+      "shapleyConcentration": 0.3366922930490197,
       "gibbsPotential": -0.23478898407050652,
       "allocations": [
         {
@@ -274,6 +277,7 @@
           "weight": 0.3333333333333333,
           "recommendedGw": 365000,
           "payoff": 0.8265,
+          "shapleyShare": 0.320274,
           "currentGw": 371000,
           "deltaGw": -6000,
           "resilience": 0.945,
@@ -287,6 +291,7 @@
           "weight": 0.3333333333333333,
           "recommendedGw": 365000,
           "payoff": 0.7754,
+          "shapleyShare": 0.300473,
           "currentGw": 109000,
           "deltaGw": 256000,
           "resilience": 0.935,
@@ -300,6 +305,7 @@
           "weight": 0.3333333333333333,
           "recommendedGw": 365000,
           "payoff": 0.9787,
+          "shapleyShare": 0.379253,
           "currentGw": 615000,
           "deltaGw": -250000,
           "resilience": 0.959,
