@@ -22,6 +22,7 @@ class SimulationState:
     stability_index: float = 0.0
     coordination_index: float = 0.0
     game_theory_slack: float = 0.0
+    cooperation_potential: float = 0.0
     temperature: float = 0.0
     enthalpy: float = 0.0
     pressure: float = 0.0
@@ -139,6 +140,17 @@ class SyntheticEconomySim(PlanetarySimulation):
         gibbs_stress = 0.0
         if enthalpy:
             gibbs_stress = min(1.0, abs(gibbs_free_energy) / max(1e-6, enthalpy))
+        entropy_pressure = min(1.0, entropy / math.log(2.0))
+        cooperation_potential = (
+            0.5 * nash_welfare
+            + 0.3 * coordination_index
+            + 0.2 * sentient_welfare_index
+        )
+        cooperation_potential *= (1.0 - 0.4 * entropy_pressure) * (
+            1.0 - 0.3 * entropy_production_pressure
+        )
+        cooperation_potential *= 1.0 - 0.3 * gibbs_stress
+        cooperation_potential = min(1.0, max(0.0, cooperation_potential))
         phase_transition_risk = (
             0.5 * entropy_production_pressure
             + 0.3 * (1.0 - coordination_index)
@@ -156,6 +168,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             "stability_index": stability_index,
             "coordination_index": coordination_index,
             "game_theory_slack": game_theory_slack,
+            "cooperation_potential": cooperation_potential,
             "temperature": temperature,
             "enthalpy": enthalpy,
             "pressure": pressure,
@@ -187,6 +200,7 @@ class SyntheticEconomySim(PlanetarySimulation):
             stability_index=metrics["stability_index"],
             coordination_index=metrics["coordination_index"],
             game_theory_slack=metrics["game_theory_slack"],
+            cooperation_potential=metrics["cooperation_potential"],
             temperature=metrics["temperature"],
             enthalpy=metrics["enthalpy"],
             pressure=metrics["pressure"],
