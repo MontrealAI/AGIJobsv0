@@ -1,6 +1,7 @@
 """Stake, reward, and slashing simulators for the demo."""
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,19 +36,29 @@ class StakeManager:
         self.store.append_audit(f"[{timestamp}] stake-event {event} {amount}")
         return StakeEvent(event=event, amount=amount, total_locked=total_locked, timestamp=timestamp)
 
+    @staticmethod
+    def _validate_amount(amount: float, *, label: str) -> None:
+        if not math.isfinite(amount):
+            raise ValueError(f"{label} amount must be a finite number")
+        if amount <= 0:
+            raise ValueError(f"{label} amount must be greater than zero")
+
     def deposit(self, amount: float) -> StakeEvent:
+        self._validate_amount(amount, label="Deposit")
         state = self.store.read()
         new_total = state.stake_locked + amount
         self.store.update(stake_locked=new_total)
         return self._record("deposit", amount, new_total)
 
     def slash(self, amount: float) -> StakeEvent:
+        self._validate_amount(amount, label="Slash")
         state = self.store.read()
         new_total = max(0.0, state.stake_locked - amount)
         self.store.update(stake_locked=new_total)
         return self._record("slash", -amount, new_total)
 
     def accrue_rewards(self, amount: float) -> StakeEvent:
+        self._validate_amount(amount, label="Reward")
         state = self.store.read()
         new_total = state.total_rewards + amount
         self.store.update(total_rewards=new_total)
