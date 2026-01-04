@@ -37,14 +37,15 @@ class Database:
             raise DatabaseError("Empty database URL")
         if url.startswith("sqlite://"):
             dsn = url[len("sqlite://"):]
-            if dsn.startswith("/"):
+            if dsn.startswith("//"):
                 # Handle sqlite:////absolute/path.db -> //absolute/path.db
                 while dsn.startswith("//"):
                     dsn = dsn[1:]
-                if dsn.startswith("/"):
-                    # Absolute path
-                    return "sqlite", dsn
-                return "sqlite", dsn
+                return "sqlite", dsn or ":memory:"
+            if dsn.startswith("/"):
+                # sqlite:///relative/path.db should be treated as relative to CWD.
+                dsn = dsn.lstrip("/")
+                return "sqlite", dsn or ":memory:"
             if not dsn:
                 return "sqlite", ":memory:"
             return "sqlite", dsn
