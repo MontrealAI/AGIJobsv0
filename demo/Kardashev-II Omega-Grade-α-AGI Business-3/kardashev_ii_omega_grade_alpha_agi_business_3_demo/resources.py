@@ -148,6 +148,8 @@ class ResourceManager:
 
     def record_usage(self, name: str, energy: float, compute: float) -> None:
         account = self.ensure_account(name)
+        if energy < 0 or compute < 0:
+            raise ValueError("Usage values must be non-negative")
         if energy > self.energy_available or compute > self.compute_available:
             raise ValueError("Insufficient planetary resources for request")
         self.energy_available -= energy

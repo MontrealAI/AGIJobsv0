@@ -22,6 +22,16 @@ def test_lock_stake_mints_when_underfunded():
     assert manager.token_supply == 0
 
 
+def test_record_usage_rejects_negative_values():
+    manager = ResourceManager(energy_capacity=1_000, compute_capacity=1_000, base_token_supply=0)
+    manager.ensure_account("worker", 100)
+
+    with pytest.raises(ValueError):
+        manager.record_usage("worker", energy=-5, compute=10)
+    with pytest.raises(ValueError):
+        manager.record_usage("worker", energy=10, compute=-1)
+
+
 def test_restore_state_rehydrates_reservations_and_clamps_availability():
     manager = ResourceManager(energy_capacity=1_000, compute_capacity=2_000, base_token_supply=100)
     manager.reserve_budget("job-1", energy=200, compute=500)
