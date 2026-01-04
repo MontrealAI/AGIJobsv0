@@ -125,6 +125,8 @@ class ThermostatController:
 
         await self.initialize()
         adjustment: Optional[ThermostatAdjustment] = None
+        current: EngineConfig | None = None
+        updates: Dict[str, float] = {}
 
         async with self._lock:
             self._roi_history.append(sample.roi)
@@ -155,7 +157,6 @@ class ThermostatController:
 
             assert self._config_snapshot is not None
             current = self._config_snapshot
-            updates: Dict[str, float] = {}
 
             if direction == "roi_dip":
                 widened = min(
@@ -202,7 +203,17 @@ class ThermostatController:
 
         if adjustment is not None:
             if self._apply_updates:
-                await self._workflow.update_engine_parameters(**{k: v[1] for k, v in adjustment.parameters.items()})
+                applied = await self._workflow.update_engine_parameters(
+                    **{k: v[1] for k, v in adjustment.parameters.items()}
+                )
+                if current is not None:
+                    async with self._lock:
+                        self._config_snapshot = replace(applied)
+                    applied_parameters = {
+                        key: (getattr(current, key), getattr(applied, key))
+                        for key in updates
+                    }
+                    adjustment = replace(adjustment, parameters=applied_parameters)
             self._logger.info(
                 "Thermostat adjustment %s avg_roi=%.4f parameters=%s",
                 adjustment.reason,
