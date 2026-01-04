@@ -417,15 +417,8 @@ class DayOneUtilityOrchestrator:
         baseline_utility = total_baseline_gmv - total_baseline_cost
         candidate_utility = total_candidate_gmv - total_candidate_cost + treasury_bonus
 
-        if baseline_utility != 0:
-            utility_uplift = (candidate_utility - baseline_utility) / abs(baseline_utility)
-        else:
-            utility_uplift = math.inf if candidate_utility > 0 else 0.0
-
-        if avg_baseline_latency != 0:
-            latency_delta = (avg_candidate_latency - avg_baseline_latency) / abs(avg_baseline_latency)
-        else:
-            latency_delta = math.inf if avg_candidate_latency > 0 else 0.0
+        utility_uplift = self._safe_relative_change(candidate_utility, baseline_utility)
+        latency_delta = self._safe_relative_change(avg_candidate_latency, avg_baseline_latency)
 
         sorted_latencies = sorted(candidate_latencies)
         if sorted_latencies:
@@ -537,6 +530,15 @@ class DayOneUtilityOrchestrator:
     @staticmethod
     def _clamp01(value: float) -> float:
         return max(0.0, min(1.0, value))
+
+    @staticmethod
+    def _safe_relative_change(candidate: float, baseline: float) -> float:
+        """Return a finite relative change even when baseline is zero."""
+        if math.isclose(baseline, 0.0, abs_tol=1e-12):
+            if math.isclose(candidate, 0.0, abs_tol=1e-12):
+                return 0.0
+            return math.copysign(1.0, candidate)
+        return (candidate - baseline) / abs(baseline)
 
     def _build_action_path(
         self,
