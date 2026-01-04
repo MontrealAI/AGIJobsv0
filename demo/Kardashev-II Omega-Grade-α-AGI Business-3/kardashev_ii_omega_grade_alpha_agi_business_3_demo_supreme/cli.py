@@ -115,5 +115,7 @@ def run_from_cli(args: Optional[argparse.Namespace] = None) -> None:
     config = _build_config_from_args(parsed)
     asyncio.run(_run_and_report(config))
 
+main = run_from_cli
 
-__all__ = ["build_arg_parser", "run_from_cli"]
+
+__all__ = ["build_arg_parser", "main", "run_from_cli"]
