@@ -420,12 +420,7 @@ class DayOneUtilityOrchestrator:
         utility_uplift = self._safe_relative_change(candidate_utility, baseline_utility)
         latency_delta = self._safe_relative_change(avg_candidate_latency, avg_baseline_latency)
 
-        sorted_latencies = sorted(candidate_latencies)
-        if sorted_latencies:
-            p95_index = min(len(sorted_latencies) - 1, max(0, math.ceil(0.95 * (len(sorted_latencies) - 1))))
-            latency_p95 = sorted_latencies[p95_index]
-        else:
-            latency_p95 = 0.0
+        latency_p95 = self._percentile(candidate_latencies, 0.95)
 
         owner_snapshot = {
             **snapshot,
@@ -539,6 +534,24 @@ class DayOneUtilityOrchestrator:
                 return 0.0
             return math.copysign(1.0, candidate)
         return (candidate - baseline) / abs(baseline)
+
+    @staticmethod
+    def _percentile(values: Sequence[float], quantile: float) -> float:
+        """Return a percentile using linear interpolation for small samples."""
+        if not values:
+            return 0.0
+        if quantile <= 0.0:
+            return min(values)
+        if quantile >= 1.0:
+            return max(values)
+        ordered = sorted(values)
+        rank = quantile * (len(ordered) - 1)
+        lower = math.floor(rank)
+        upper = math.ceil(rank)
+        if lower == upper:
+            return ordered[int(rank)]
+        weight = rank - lower
+        return (1 - weight) * ordered[int(lower)] + weight * ordered[int(upper)]
 
     def _build_action_path(
         self,
