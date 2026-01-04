@@ -389,6 +389,7 @@ class CheckpointManager:
 
 
 _CHECKPOINT_STORE_SINGLETON: Optional[CheckpointStore] = None
+_CHECKPOINT_STORE_CONFIG: Optional[tuple[object, ...]] = None
 
 
 def load_governance_settings(path: Path | None = None) -> GovernanceSettings:
@@ -405,23 +406,38 @@ def load_governance_settings(path: Path | None = None) -> GovernanceSettings:
     return GovernanceSettings.from_metadata(payload, source=str(resolved))
 
 
-def get_checkpoint_store() -> CheckpointStore:
-    global _CHECKPOINT_STORE_SINGLETON
-    if _CHECKPOINT_STORE_SINGLETON is not None:
-        return _CHECKPOINT_STORE_SINGLETON
+def _checkpoint_store_config() -> tuple[object, ...]:
     backend = os.environ.get("ORCHESTRATOR_CHECKPOINT_BACKEND", "file").lower()
     if backend == "leveldb":
-        store = LevelDBCheckpointStore()
+        path = Path(os.environ.get("ORCHESTRATOR_CHECKPOINT_LEVELDB", "storage/orchestrator/checkpoint.db")).resolve()
+        return (backend, path)
+    if backend == "s3":
+        bucket = os.environ.get("ORCHESTRATOR_CHECKPOINT_BUCKET", "")
+        prefix = os.environ.get("ORCHESTRATOR_CHECKPOINT_PREFIX", _DEFAULT_S3_PREFIX)
+        return (backend, bucket, prefix)
+    path = Path(os.environ.get("ORCHESTRATOR_CHECKPOINT_PATH", "storage/orchestrator/checkpoint.json")).resolve()
+    return (backend, path)
+
+
+def get_checkpoint_store() -> CheckpointStore:
+    global _CHECKPOINT_STORE_SINGLETON, _CHECKPOINT_STORE_CONFIG
+    config = _checkpoint_store_config()
+    if _CHECKPOINT_STORE_SINGLETON is not None and _CHECKPOINT_STORE_CONFIG == config:
+        return _CHECKPOINT_STORE_SINGLETON
+    backend = config[0]
+    if backend == "leveldb":
+        store = LevelDBCheckpointStore(Path(config[1]))
     elif backend == "s3":
-        bucket = os.environ.get("ORCHESTRATOR_CHECKPOINT_BUCKET")
+        bucket = config[1]
         if not bucket:
             raise CheckpointStoreError("ORCHESTRATOR_CHECKPOINT_BUCKET is required for S3 checkpoint store")
-        prefix = os.environ.get("ORCHESTRATOR_CHECKPOINT_PREFIX", _DEFAULT_S3_PREFIX)
+        prefix = config[2]
         store = S3CheckpointStore(bucket, prefix)
     else:
-        path = Path(os.environ.get("ORCHESTRATOR_CHECKPOINT_PATH", str(_DEFAULT_FILE_PATH)))
+        path = Path(config[1])
         store = FileCheckpointStore(path)
     _CHECKPOINT_STORE_SINGLETON = store
+    _CHECKPOINT_STORE_CONFIG = config
     return store
 
 
