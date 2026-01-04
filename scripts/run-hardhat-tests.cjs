@@ -152,7 +152,10 @@ const env = { ...process.env };
 // several minutes on shared CI hosts; giving Hardhat 15 minutes by default
 // avoids spurious ETIMEDOUT failures on slower builders while still protecting
 // against runaway jobs.
-const hardhatTimeoutMs = Number.parseInt(env.HARDHAT_TEST_TIMEOUT_MS ?? '900000', 10);
+const parsedHardhatTimeout = Number.parseInt(env.HARDHAT_TEST_TIMEOUT_MS ?? '900000', 10);
+const hardhatTimeoutMs = Number.isFinite(parsedHardhatTimeout) && parsedHardhatTimeout > 0
+  ? parsedHardhatTimeout
+  : 900000;
 
 // Speed up test-time compilation by allowing the Solidity optimizer and viaIR
 // settings to be relaxed when HARDHAT_FAST_COMPILE is set. Default to the
@@ -253,7 +256,10 @@ function runHardhatWithHeartbeat(timeoutMs) {
       env,
     });
 
-    const heartbeatIntervalMs = Number.parseInt(process.env.HARDHAT_HEARTBEAT_MS ?? '60000', 10);
+    const parsedHeartbeat = Number.parseInt(process.env.HARDHAT_HEARTBEAT_MS ?? '60000', 10);
+    const heartbeatIntervalMs = Number.isFinite(parsedHeartbeat) && parsedHeartbeat > 0
+      ? parsedHeartbeat
+      : 60000;
     let elapsed = 0;
     const heartbeat = setInterval(() => {
       elapsed += heartbeatIntervalMs;
@@ -268,13 +274,31 @@ function runHardhatWithHeartbeat(timeoutMs) {
       child.kill('SIGTERM');
     }, timeoutMs);
 
+    const signalHandlers = new Map();
+    const forwardSignal = (signal) => {
+      if (!child.killed) {
+        child.kill(signal);
+      }
+    };
+    ['SIGINT', 'SIGTERM', 'SIGHUP'].forEach((signal) => {
+      const handler = () => forwardSignal(signal);
+      signalHandlers.set(signal, handler);
+      process.on(signal, handler);
+    });
+
     child.on('exit', (code, signal) => {
+      signalHandlers.forEach((handler, signalName) => {
+        process.off(signalName, handler);
+      });
       clearInterval(heartbeat);
       clearTimeout(killTimer);
       resolve({ status: code, signal });
     });
 
     child.on('error', (error) => {
+      signalHandlers.forEach((handler, signalName) => {
+        process.off(signalName, handler);
+      });
       clearInterval(heartbeat);
       clearTimeout(killTimer);
       console.error(error.message);
