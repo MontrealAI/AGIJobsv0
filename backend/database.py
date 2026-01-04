@@ -86,6 +86,10 @@ class Database:
     def driver(self) -> str:
         return self._driver
 
+    @property
+    def url(self) -> str:
+        return self._url
+
     def close(self) -> None:
         with self._lock:
             if self._closed:
@@ -177,6 +181,11 @@ def get_database(url: str | None = None) -> Database:
     global _DATABASE_SINGLETON
     with _DATABASE_LOCK:
         if _DATABASE_SINGLETON is not None:
+            if url is not None and url != _DATABASE_SINGLETON.url:
+                raise DatabaseError(
+                    "Database already initialised with a different URL. "
+                    "Call set_database() to reset the singleton before reconfiguring."
+                )
             return _DATABASE_SINGLETON
         db = Database(url)
         from backend.migrations import MIGRATIONS
