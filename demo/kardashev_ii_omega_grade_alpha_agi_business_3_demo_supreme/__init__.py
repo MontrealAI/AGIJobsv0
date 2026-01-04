@@ -32,13 +32,9 @@ _spec.loader.exec_module(_module)
 # consumers such as ``run_demo.py``. The upstream package intentionally keeps
 # its public surface minimal; wiring ``main`` to ``run_from_cli`` here provides
 # an ergonomic, ASCII-safe entrypoint without mutating the source package.
-_main = getattr(_module, "run_from_cli", None)
-if _main is not None and not hasattr(_module, "main"):
-    setattr(_module, "main", _main)
-    if hasattr(_module, "__all__"):
-        upstream_all = list(getattr(_module, "__all__", ()))
-        if "main" not in upstream_all:
-            setattr(_module, "__all__", upstream_all + ["main"])
+_upstream_all = list(_module.__dict__.get("__all__", ()))
+if "main" not in _upstream_all:
+    _upstream_all.append("main")
 
 # Keep local helper modules (such as ``run_demo.py``) importable alongside the
 # canonical package contents.
@@ -47,7 +43,23 @@ if hasattr(_module, "__path__"):
     if package_path not in _module.__path__:
         _module.__path__.append(package_path)
 
-__all__ = getattr(_module, "__all__", [])
-run_from_cli = getattr(_module, "run_from_cli", None)
-build_arg_parser = getattr(_module, "build_arg_parser", None)
-main = getattr(_module, "main", getattr(_module, "run_from_cli", None))
+__all__ = _upstream_all
+
+
+def __getattr__(name: str):
+    if name == "main":
+        return main
+    return getattr(_module, name)
+
+
+def __dir__() -> list[str]:
+    return sorted(set(__all__) | set(dir(_module)))
+
+
+def main(*args, **kwargs):
+    """Defer CLI binding until runtime to avoid import-time side effects."""
+
+    run_from_cli = getattr(_module, "run_from_cli", None)
+    if run_from_cli is None:
+        raise AttributeError("run_from_cli is not available in the upstream module")
+    return run_from_cli(*args, **kwargs)
