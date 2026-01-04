@@ -398,7 +398,9 @@ async function executeModulePlan(plan: ModulePlan) {
     const tx = await (plan.contract as any)[action.method](...action.args);
     console.log(`   Tx hash: ${tx.hash}`);
     const receipt = await tx.wait();
-    if (receipt?.status !== 1n) {
+    const receiptStatus = receipt?.status;
+    const isSuccess = receiptStatus === 1 || receiptStatus === 1n;
+    if (!isSuccess) {
       throw new Error(`Transaction for ${action.method} failed`);
     }
     txHashes.push(tx.hash);
