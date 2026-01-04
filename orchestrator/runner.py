@@ -315,19 +315,19 @@ def start_run(plan: OrchestrationPlan, approvals: List[str]) -> RunInfo:
             _RUNS[status.run.id] = current_status
             _persist(current_status)
 
-        final_state: str | None = "succeeded"
+        final_state: str | None = None
         try:
             _resume_run(plan, current_status, status.run.id)
+            final_state = current_status.run.state
         except Exception:  # pragma: no cover - defensive guard for background failures
             logger.exception("Run %s failed during resume", status.run.id)
-            final_state = None
+            final_state = "failed"
         finally:
             with _LOCK:
                 latest_status = _RUNS.get(status.run.id, current_status)
                 if final_state:
                     latest_status.run.state = final_state  # type: ignore[assignment]
-                    if hasattr(latest_status.run, "finished_at"):
-                        latest_status.run.finished_at = time.time()
+                    latest_status.run.completed_at = time.time()
                 _RUNS[status.run.id] = latest_status
                 _persist(latest_status)
 
