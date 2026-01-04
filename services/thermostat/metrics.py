@@ -29,7 +29,13 @@ class MetricSample:
         if isinstance(timestamp_raw, (int, float)):
             timestamp = datetime.fromtimestamp(float(timestamp_raw), tz=timezone.utc)
         elif isinstance(timestamp_raw, str):
-            timestamp = datetime.fromisoformat(timestamp_raw)
+            normalized = timestamp_raw.strip()
+            if normalized.endswith("Z"):
+                normalized = f"{normalized[:-1]}+00:00"
+            try:
+                timestamp = datetime.fromisoformat(normalized)
+            except ValueError:
+                timestamp = datetime.now(tz=timezone.utc)
             if timestamp.tzinfo is None:
                 timestamp = timestamp.replace(tzinfo=timezone.utc)
         else:
