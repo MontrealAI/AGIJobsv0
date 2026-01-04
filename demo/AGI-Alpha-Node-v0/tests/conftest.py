@@ -5,7 +5,7 @@ from pathlib import Path
 os.environ.setdefault("PYTEST_DISABLE_PLUGIN_AUTOLOAD", "1")
 
 for name in list(sys.modules):
-    if name.startswith("alpha_node"):
+    if name.startswith(("agi_alpha_node_demo", "alpha_node")):
         sys.modules.pop(name, None)
 
 ROOT = Path(__file__).resolve().parents[1]

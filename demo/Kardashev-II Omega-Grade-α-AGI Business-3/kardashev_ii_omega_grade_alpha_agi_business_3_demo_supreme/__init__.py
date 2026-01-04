@@ -6,6 +6,7 @@ __all__ = [
     "SupremeDemoConfig",
     "SupremeOrchestrator",
     "build_arg_parser",
+    "main",
     "run_from_cli",
 ]
 
@@ -27,6 +28,10 @@ def __getattr__(name: str):
         from .cli import run_from_cli
 
         return run_from_cli
+    if name == "main":
+        from .cli import main
+
+        return main
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
