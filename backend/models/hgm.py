@@ -200,21 +200,27 @@ class HgmRepository:
         now = _now()
         placeholder = self._db.placeholder()
         with self._db.transaction() as cur:
-            depth = 0
-            if parent_key:
-                cur.execute(
-                    f"SELECT depth FROM hgm_agents WHERE run_id = {placeholder} AND agent_key = {placeholder}",
-                    (run_id, parent_key),
-                )
-                parent_row = cur.fetchone()
-                if parent_row is not None:
-                    depth = int(parent_row[0]) + 1
             cur.execute(
                 f"SELECT run_id, agent_key, parent_key, depth, metadata, expansion_count, clade_success, clade_failure, created_at, updated_at "
                 f"FROM hgm_agents WHERE run_id = {placeholder} AND agent_key = {placeholder}",
                 (run_id, agent_key),
             )
             existing = cur.fetchone()
+            if parent_key is not None:
+                depth = 0
+                if parent_key:
+                    cur.execute(
+                        f"SELECT depth FROM hgm_agents WHERE run_id = {placeholder} AND agent_key = {placeholder}",
+                        (run_id, parent_key),
+                    )
+                    parent_row = cur.fetchone()
+                    if parent_row is not None:
+                        depth = int(parent_row[0]) + 1
+            elif existing is not None:
+                parent_key = existing[2]
+                depth = int(existing[3])
+            else:
+                depth = 0
             payload = _serialize(metadata)
             if existing is None:
                 cur.execute(
@@ -232,7 +238,7 @@ class HgmRepository:
                 if parent_key is not None and parent_key != existing[2]:
                     updates.append(f"parent_key = {placeholder}")
                     params.append(parent_key)
-                if depth != existing[3]:
+                if parent_key is not None and depth != existing[3]:
                     updates.append(f"depth = {placeholder}")
                     params.append(depth)
                 if metadata is not None:
