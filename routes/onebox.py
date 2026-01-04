@@ -1191,7 +1191,7 @@ def _calculate_deadline_timestamp(days: int) -> int:
     return base + max(0, days_int) * 86400
 
 def _compute_plan_hash(intent: JobIntent) -> str:
-    intent_data = intent.dict(exclude={"userContext"}, by_alias=True)
+    intent_data = _model_dump_with_options(intent, exclude={"userContext"}, by_alias=True)
     encoded = json.dumps(intent_data, sort_keys=True).encode("utf-8")
     h = hashlib.sha256()
     h.update(encoded)
@@ -1254,6 +1254,22 @@ def _maybe_model_dump(value: Any) -> Any:
             return value.dict()
         except Exception:
             pass
+    return value
+
+
+def _model_dump_with_options(value: Any, **kwargs: Any) -> Any:
+    if hasattr(value, "model_dump"):
+        try:
+            return value.model_dump(**kwargs)
+        except TypeError:
+            pass
+        except Exception:
+            return value
+    if hasattr(value, "dict"):
+        try:
+            return value.dict(**kwargs)
+        except Exception:
+            return value
     return value
 
 
@@ -2736,7 +2752,7 @@ async def execute(request: Request, req: ExecuteRequest):
             job_payload = {
                 "title": payload.title or "New Job",
                 "description": payload.description or "",
-                "attachments": [a.dict() for a in payload.attachments],
+                "attachments": [_maybe_model_dump(a) for a in payload.attachments],
                 "rewardToken": payload.rewardToken or AGIALPHA_SYMBOL,
                 "reward": str(payload.reward),
                 "deadlineDays": deadline_days,
