@@ -1008,7 +1008,7 @@ class ExecuteEndpointRegressionTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(router)
 
-        intent_payload = intent.dict() if hasattr(intent, "dict") else intent.model_dump()
+        intent_payload = intent.model_dump() if hasattr(intent, "model_dump") else intent.dict()
         with mock.patch("routes.onebox._API_TOKEN", ""):
             response = TestClient(app).post(
                 "/onebox/execute",
