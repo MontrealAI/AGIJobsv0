@@ -55,6 +55,10 @@ class Database:
             if psycopg is None:
                 raise DatabaseError("psycopg is required for PostgreSQL connections")
             return "postgres", url
+        if url.startswith("postgresql+psycopg"):
+            if psycopg is None:
+                raise DatabaseError("psycopg is required for PostgreSQL connections")
+            return "postgres", f"postgresql://{url.split('://', 1)[1]}"
         if ":" not in url and url.endswith(".db"):
             return "sqlite", url
         raise DatabaseError(f"Unsupported database URL: {url}")
