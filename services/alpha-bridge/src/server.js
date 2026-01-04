@@ -141,23 +141,28 @@ function buildHeaders({
 }
 
 function mapError(error) {
+  const fallbackMessage = "Unexpected error";
   if (!error) {
-    return { code: grpc.status.UNKNOWN, message: "Unknown error" };
+    const unknown = new Error("Unknown error");
+    unknown.code = grpc.status.UNKNOWN;
+    return unknown;
   }
+
+  let code = grpc.status.UNKNOWN;
+  let message = error.message || fallbackMessage;
   if (typeof error.code === "number") {
-    return {
-      code: error.code,
-      message: error.message || grpc.status[error.code] || "Error",
-      details: error.details,
-    };
+    code = error.code;
+    message = message || grpc.status[error.code] || fallbackMessage;
+  } else if (error.httpStatus) {
+    code = HTTP_TO_GRPC.get(error.httpStatus) ?? grpc.status.UNKNOWN;
   }
-  const httpStatus = error.httpStatus;
-  const mapped = httpStatus ? HTTP_TO_GRPC.get(httpStatus) : null;
-  return {
-    code: mapped ?? grpc.status.UNKNOWN,
-    message: error.message || "Unexpected error",
-    details: error.details,
-  };
+
+  const grpcError = new Error(message);
+  grpcError.code = code;
+  if (error.details !== undefined) {
+    grpcError.details = error.details;
+  }
+  return grpcError;
 }
 
 function unary(handler) {
