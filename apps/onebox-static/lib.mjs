@@ -435,10 +435,11 @@ export function formatEvent(event) {
 }
 
 export async function pinBlob(endpoint, token, file) {
+  const authHeaders = buildAuthHeaders(token);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...authHeaders,
       ...(file?.type ? { "Content-Type": file.type } : {}),
     },
     body: file,
@@ -454,10 +455,11 @@ export async function pinBlob(endpoint, token, file) {
 }
 
 export async function pinJSON(endpoint, token, json) {
+  const authHeaders = buildAuthHeaders(token);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...authHeaders,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(json),
@@ -483,6 +485,18 @@ const ERROR_FIELDS_TO_FOLLOW = [
   "info",
   "reason",
 ];
+
+const AUTH_TOKEN_PATTERN = /^[A-Za-z0-9._~+/=:-]{1,512}$/;
+
+function buildAuthHeaders(token) {
+  if (typeof token !== "string") return {};
+  const trimmed = token.trim();
+  if (!trimmed) return {};
+  if (!AUTH_TOKEN_PATTERN.test(trimmed)) {
+    throw new Error("Invalid IPFS token");
+  }
+  return { Authorization: `Bearer ${trimmed}` };
+}
 
 function pushUnique(array, value) {
   if (!value && value !== 0) return;
