@@ -1499,7 +1499,19 @@ function normaliseRewardEngineConfig(config = {}) {
   return reward;
 }
 
-const CLEAR_ROLE_TEMP_VALUES = new Set(['unset', 'remove', 'clear', 'none']);
+const CLEAR_SENTINEL_VALUES = new Set([
+  'unset',
+  'remove',
+  'clear',
+  'none',
+  'null',
+]);
+
+function isClearSentinel(value) {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim().toLowerCase();
+  return CLEAR_SENTINEL_VALUES.has(trimmed);
+}
 
 function normaliseThermostatConfig(config = {}) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -1509,12 +1521,22 @@ function normaliseThermostatConfig(config = {}) {
   const thermo = { ...config };
 
   if (thermo.address !== undefined) {
-    const allowZero = thermo.address === null || thermo.address === '';
-    thermo.address = allowZero
-      ? ethers.ZeroAddress
-      : ensureAddress(thermo.address, 'Thermostat address', {
-          allowZero: true,
-        });
+    const allowZero =
+      thermo.address === null ||
+      thermo.address === '' ||
+      isClearSentinel(thermo.address);
+    if (allowZero) {
+      delete thermo.address;
+    } else {
+      const address = ensureAddress(thermo.address, 'Thermostat address', {
+        allowZero: true,
+      });
+      if (address !== ethers.ZeroAddress) {
+        thermo.address = address;
+      } else {
+        delete thermo.address;
+      }
+    }
   }
 
   if (thermo.roleTemperatures && typeof thermo.roleTemperatures === 'object') {
@@ -1528,7 +1550,7 @@ function normaliseThermostatConfig(config = {}) {
       if (typeof value === 'string') {
         const trimmed = value.trim();
         if (!trimmed) continue;
-        if (CLEAR_ROLE_TEMP_VALUES.has(trimmed.toLowerCase())) {
+        if (isClearSentinel(trimmed)) {
           mapped[key] = null;
           continue;
         }
@@ -1666,7 +1688,8 @@ function loadThermostatConfig(options = {}) {
       typeof raw.rewardEngine === 'object' &&
       raw.rewardEngine.thermostat !== undefined &&
       raw.rewardEngine.thermostat !== null &&
-      raw.rewardEngine.thermostat !== ''
+      raw.rewardEngine.thermostat !== '' &&
+      !isClearSentinel(raw.rewardEngine.thermostat)
     ) {
       rewardEngineThermostat = ensureAddress(
         raw.rewardEngine.thermostat,
