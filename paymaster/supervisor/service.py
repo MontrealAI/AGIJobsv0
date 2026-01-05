@@ -222,10 +222,10 @@ def _extract_selector(call_data: Any) -> Optional[str]:
 def _parse_int(value: Any) -> int:
     if value is None:
         return 0
+    if isinstance(value, bool):  # guard against booleans being treated as ints
+        return 0
     if isinstance(value, int):
         return value
-    if isinstance(value, bool):  # guard against booleans being treated as ints
-        return int(value)
     if isinstance(value, float):
         return int(value)
     if isinstance(value, str):
