@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Iterable, Optional, Tuple
 
 
 def _load_latest_report(out_dir: Path) -> Optional[dict[str, Any]]:
@@ -19,11 +19,17 @@ def _load_latest_report(out_dir: Path) -> Optional[dict[str, Any]]:
     return None
 
 
-def _extract_uplift(report: dict[str, Any]) -> Optional[float]:
-    for key in ("uplift_pct", "utility_uplift", "utility_uplift_pct"):
+def _extract_uplift(report: dict[str, Any]) -> Optional[Tuple[float, str]]:
+    percent_keys = ("uplift_pct", "utility_uplift_pct")
+    ratio_keys = ("utility_uplift",)
+    for key in percent_keys:
         value = report.get(key)
         if isinstance(value, (int, float)):
-            return float(value)
+            return float(value), "percent"
+    for key in ratio_keys:
+        value = report.get(key)
+        if isinstance(value, (int, float)):
+            return float(value), "ratio"
     metrics = report.get("metrics")
     if isinstance(metrics, dict):
         baseline = metrics.get("baseline", {})
@@ -31,7 +37,7 @@ def _extract_uplift(report: dict[str, Any]) -> Optional[float]:
         base_val = baseline.get("utility") if isinstance(baseline, dict) else None
         cand_val = candidate.get("utility") if isinstance(candidate, dict) else None
         if isinstance(base_val, (int, float)) and isinstance(cand_val, (int, float)) and base_val != 0:
-            return (cand_val - base_val) / base_val
+            return (cand_val - base_val) / base_val, "ratio"
     return None
 
 
@@ -42,11 +48,11 @@ def main() -> None:
         print("✅ Day-One run complete")
         return
     uplift = _extract_uplift(report)
-    if isinstance(uplift, (int, float)):
-        value = float(uplift)
-        if abs(value) <= 1:
+    if uplift is not None:
+        value, unit = uplift
+        if unit == "ratio":
             value *= 100.0
-        print(f"✅ Day-One Utility +{value:.2f}%")
+        print(f"✅ Day-One Utility {value:+.2f}%")
     else:
         print("✅ Day-One run complete")
 
