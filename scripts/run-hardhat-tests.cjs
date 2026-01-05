@@ -269,15 +269,37 @@ function runHardhatWithHeartbeat(timeoutMs) {
       );
     }, heartbeatIntervalMs);
 
+    const killGraceMs = Number.parseInt(process.env.HARDHAT_TEST_KILL_GRACE_MS ?? '30000', 10);
+    const killGraceTimeoutMs = Number.isFinite(killGraceMs) && killGraceMs > 0
+      ? killGraceMs
+      : 30000;
+    let forcedKillTimer;
+    const startForcedKillTimer = () => {
+      if (forcedKillTimer) {
+        return;
+      }
+      forcedKillTimer = setTimeout(() => {
+        if (!child.killed) {
+          console.error(
+            `Hardhat test run did not exit after ${killGraceTimeoutMs}ms grace period. Sending SIGKILL...`,
+          );
+          child.kill('SIGKILL');
+        }
+      }, killGraceTimeoutMs);
+    };
     const killTimer = setTimeout(() => {
       console.error(`Hardhat test run exceeded ${timeoutMs}ms. Sending SIGTERM...`);
       child.kill('SIGTERM');
+      startForcedKillTimer();
     }, timeoutMs);
 
     const signalHandlers = new Map();
     const forwardSignal = (signal) => {
       if (!child.killed) {
         child.kill(signal);
+        if (signal === 'SIGTERM') {
+          startForcedKillTimer();
+        }
       }
     };
     ['SIGINT', 'SIGTERM', 'SIGHUP'].forEach((signal) => {
@@ -292,6 +314,9 @@ function runHardhatWithHeartbeat(timeoutMs) {
       });
       clearInterval(heartbeat);
       clearTimeout(killTimer);
+      if (forcedKillTimer) {
+        clearTimeout(forcedKillTimer);
+      }
       resolve({ status: code, signal });
     });
 
@@ -301,6 +326,9 @@ function runHardhatWithHeartbeat(timeoutMs) {
       });
       clearInterval(heartbeat);
       clearTimeout(killTimer);
+      if (forcedKillTimer) {
+        clearTimeout(forcedKillTimer);
+      }
       console.error(error.message);
       resolve({ status: 1, signal: null });
     });
