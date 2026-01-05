@@ -392,7 +392,7 @@ def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path | None:
     for ancestor in [tests_dir, *tests_dir.parents]:
         if (ancestor / "package.json").is_file():
             return ancestor
-        if ancestor == demo_dir.parent:
+        if ancestor == demo_dir:
             break
 
     return None
@@ -404,7 +404,7 @@ def _foundry_project_root(tests_dir: Path, demo_dir: Path) -> Path | None:
     for ancestor in [tests_dir, *tests_dir.parents]:
         if (ancestor / "foundry.toml").is_file():
             return ancestor
-        if ancestor == demo_dir.parent:
+        if ancestor == demo_dir:
             break
 
     return None

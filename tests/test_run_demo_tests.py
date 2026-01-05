@@ -190,3 +190,31 @@ def test_run_suite_only_adds_timeout_when_requested(
 
     run_demo_tests._run_suite(suite, {}, timeout=5.0)
     assert captured_kwargs.get("timeout") == 5.0
+
+
+def test_node_package_root_does_not_escape_demo_root(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    demo_root = workspace / "demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+
+    (workspace / "package.json").write_text("{}")
+    (demo_root / "package.json").write_text("{}")
+
+    package_root = run_demo_tests._node_package_root(tests_dir, demo_root)
+
+    assert package_root == demo_root
+
+
+def test_foundry_project_root_does_not_escape_demo_root(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    demo_root = workspace / "demo"
+    tests_dir = demo_root / "tests"
+    tests_dir.mkdir(parents=True)
+
+    (workspace / "foundry.toml").write_text("profile = \"default\"")
+    (demo_root / "foundry.toml").write_text("profile = \"demo\"")
+
+    project_root = run_demo_tests._foundry_project_root(tests_dir, demo_root)
+
+    assert project_root == demo_root
