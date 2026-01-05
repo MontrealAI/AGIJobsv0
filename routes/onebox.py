@@ -125,7 +125,9 @@ except Exception:  # pragma: no cover - exercised in test shims
 # Flag that forces the module to fall back to the lightweight Web3 stub. This must be
 # defined before the guarded import below to avoid NameError short-circuiting the
 # check and forcing the stub unintentionally.
-_FORCE_STUB_WEB3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3", "1") == "1"
+# Default to the real Web3 implementation unless explicitly overridden for tests.
+# Test suites set ONEBOX_TEST_FORCE_STUB_WEB3=1 in their fixtures.
+_FORCE_STUB_WEB3 = os.getenv("ONEBOX_TEST_FORCE_STUB_WEB3", "0") == "1"
 
 try:
     if _FORCE_STUB_WEB3 or (
