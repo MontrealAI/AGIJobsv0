@@ -184,7 +184,14 @@ def _resume_pending_steps(plan: OrchestrationPlan, status: StatusOut) -> Iterabl
 def _execute_step(step: Step, status: StatusOut, step_status: StepStatus) -> bool:
     _apply_transition(status, step_status, "running", f"Starting {step.name}")
     _persist(status)
-    result = _EXECUTOR.execute(step)
+    try:
+        result = _EXECUTOR.execute(step)
+    except Exception as exc:  # pragma: no cover - defensive guard for executor failures
+        logger.exception("Step executor crashed for %s", step.name)
+        _log(status, f"{step.name}: executor error: {exc}")
+        _apply_transition(status, step_status, "failed", f"Failed {step.name}")
+        _persist(status)
+        return False
     for line in result.logs:
         _log(status, f"{step.name}: {line}")
     if result.success:
