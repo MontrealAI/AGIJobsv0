@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { needsAttachmentPin, prepareJobPayload } from '../lib.mjs';
+import { needsAttachmentPin, pinJSON, prepareJobPayload } from '../lib.mjs';
 
 const IPFS_GATEWAY = 'https://w3s.link/ipfs/';
 
@@ -332,4 +332,55 @@ test('prepareJobPayload applies multiple attachments without repinning payload',
       size: 512,
     },
   ]);
+});
+
+test('pinJSON omits authorization header when token is blank', async () => {
+  const originalFetch = global.fetch;
+  const captured = [];
+  global.fetch = async (url, options) => {
+    captured.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({ cid: CID }),
+    };
+  };
+
+  try {
+    await pinJSON('https://ipfs.example.test/pins', '', { hello: 'world' });
+  } finally {
+    global.fetch = originalFetch;
+  }
+
+  assert.equal(captured.length, 1);
+  const headers = captured[0].options?.headers ?? {};
+  assert.equal(Object.prototype.hasOwnProperty.call(headers, 'Authorization'), false);
+});
+
+test('pinJSON includes authorization header when token is provided', async () => {
+  const originalFetch = global.fetch;
+  const captured = [];
+  global.fetch = async (url, options) => {
+    captured.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({ cid: CID }),
+    };
+  };
+
+  try {
+    await pinJSON('https://ipfs.example.test/pins', 'demo-token', { hello: 'world' });
+  } finally {
+    global.fetch = originalFetch;
+  }
+
+  assert.equal(captured.length, 1);
+  const headers = captured[0].options?.headers ?? {};
+  assert.equal(headers.Authorization, 'Bearer demo-token');
+});
+
+test('pinJSON rejects invalid tokens early', async () => {
+  await assert.rejects(
+    () => pinJSON('https://ipfs.example.test/pins', 'bad token!', { hello: 'world' }),
+    /Invalid IPFS token/,
+  );
 });
