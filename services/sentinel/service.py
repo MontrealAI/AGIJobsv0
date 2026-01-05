@@ -6,7 +6,7 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Awaitable, Dict, Optional
 
 from hgm_core.engine import HGMEngine
 
@@ -189,6 +189,7 @@ class SentinelMonitor:
             payload["value"] = value
         agent = event.agent_key or ""
         roi_mutated = False
+        failure_actions: list[Awaitable[None]] = []
         async with self._state_lock:
             if cost:
                 self._state.total_cost += cost
@@ -207,29 +208,35 @@ class SentinelMonitor:
                 f"{self._state.last_roi:.3f}" if self._state.last_roi is not None else "n/a",
             )
             if agent:
-                await self._update_failure_streak(agent, success)
+                failure_actions = self._update_failure_streak_locked(agent, success)
         await self._evaluate_rules()
+        for action in failure_actions:
+            await action
 
-    async def _update_failure_streak(self, agent: str, success: bool) -> None:
+    def _update_failure_streak_locked(self, agent: str, success: bool) -> list[Awaitable[None]]:
+        actions: list[Awaitable[None]] = []
         state = self._state
         if success:
             if self._config.failure_streak.success_reset:
                 state.agent_failures[agent] = 0
             else:
                 state.agent_failures[agent] = max(0, state.agent_failures.get(agent, 0) - 1)
-            return
+            return actions
         failures = state.agent_failures.get(agent, 0) + 1
         state.agent_failures[agent] = failures
         threshold = self._config.failure_streak.threshold
         if failures >= threshold and agent not in state.pruned_agents:
-            await self._engine.mark_pruned(agent, reason="failure_streak")
             state.pruned_agents.add(agent)
-            await self._schedule_alert(
-                severity="critical",
-                message=f"Agent {agent} pruned after {failures} consecutive failures",
-                reason="failure_streak",
-                metadata={"agent": agent, "failures": failures},
+            actions.append(self._engine.mark_pruned(agent, reason="failure_streak"))
+            actions.append(
+                self._schedule_alert(
+                    severity="critical",
+                    message=f"Agent {agent} pruned after {failures} consecutive failures",
+                    reason="failure_streak",
+                    metadata={"agent": agent, "failures": failures},
+                )
             )
+        return actions
 
     def _compute_roi(self) -> Optional[float]:
         if self._state.total_cost <= 0:
@@ -237,11 +244,15 @@ class SentinelMonitor:
         return self._state.total_value / self._state.total_cost
 
     async def _evaluate_rules(self) -> None:
+        actions: list[Awaitable[None]] = []
         async with self._state_lock:
-            await self._evaluate_roi_locked()
-            await self._evaluate_budget_locked()
+            actions.extend(self._evaluate_roi_locked())
+            actions.extend(self._evaluate_budget_locked())
+        for action in actions:
+            await action
 
-    async def _evaluate_roi_locked(self) -> None:
+    def _evaluate_roi_locked(self) -> list[Awaitable[None]]:
+        actions: list[Awaitable[None]] = []
         state = self._state
         roi = self._compute_roi()
         state.last_roi = roi
@@ -249,10 +260,10 @@ class SentinelMonitor:
         if roi is None:
             state.roi_checked_version = version
             state.roi_breach_count = 0
-            await self._clear_pause("roi_floor")
-            return
+            actions.extend(self._clear_pause_locked("roi_floor"))
+            return actions
         if version == state.roi_checked_version:
-            return
+            return actions
         state.roi_checked_version = version
         if roi < self._config.roi_floor:
             state.roi_breach_count += 1
@@ -264,50 +275,85 @@ class SentinelMonitor:
                 self._config.roi_grace_period,
             )
             if state.roi_breach_count >= self._config.roi_grace_period:
-                await self._set_pause(
-                    "roi_floor",
-                    detail=f"ROI {roi:.3f}x below floor {self._config.roi_floor:.3f}x",
-                    severity="warning",
+                actions.extend(
+                    self._set_pause_locked(
+                        "roi_floor",
+                        detail=f"ROI {roi:.3f}x below floor {self._config.roi_floor:.3f}x",
+                        severity="warning",
+                    )
                 )
         else:
             if state.roi_breach_count > 0:
                 state.roi_breach_count = max(0, state.roi_breach_count - 1)
             if state.roi_breach_count == 0:
-                await self._clear_pause(
-                    "roi_floor",
-                    detail=f"ROI recovered to {roi:.3f}x (floor {self._config.roi_floor:.3f}x)",
+                actions.extend(
+                    self._clear_pause_locked(
+                        "roi_floor",
+                        detail=f"ROI recovered to {roi:.3f}x (floor {self._config.roi_floor:.3f}x)",
+                    )
                 )
+        return actions
 
-    async def _evaluate_budget_locked(self) -> None:
+    def _evaluate_budget_locked(self) -> list[Awaitable[None]]:
+        actions: list[Awaitable[None]] = []
         cost = self._state.total_cost
         soft = self._config.soft_budget()
         if soft > 0 and cost >= soft:
-            await self._set_pause(
-                "budget_soft",
-                detail=f"Spend {cost:.2f} exceeded soft cap {soft:.2f}",
-                severity="warning",
+            actions.extend(
+                self._set_pause_locked(
+                    "budget_soft",
+                    detail=f"Spend {cost:.2f} exceeded soft cap {soft:.2f}",
+                    severity="warning",
+                )
             )
         cap = self._config.budget_cap
         if cap > 0 and cost >= cap and not self._state.stop_requested:
             self._state.stop_requested = True
             self._state.stop_reason = "budget_cap"
-            await self._set_pause(
-                "budget_stop",
-                detail=f"Spend {cost:.2f} reached budget cap {cap:.2f}",
-                severity="critical",
+            actions.extend(
+                self._set_pause_locked(
+                    "budget_stop",
+                    detail=f"Spend {cost:.2f} reached budget cap {cap:.2f}",
+                    severity="critical",
+                )
             )
-            await self._schedule_alert(
-                severity="critical",
-                message="Sentinel requested orchestration halt due to budget cap",
-                reason="budget_cap",
-                metadata={"cost": cost, "cap": cap},
+            actions.append(
+                self._schedule_alert(
+                    severity="critical",
+                    message="Sentinel requested orchestration halt due to budget cap",
+                    reason="budget_cap",
+                    metadata={"cost": cost, "cap": cap},
+                )
             )
+        return actions
 
-    async def _set_pause(self, reason: str, *, detail: str, severity: str) -> None:
+    def _set_pause_locked(
+        self,
+        reason: str,
+        *,
+        detail: str,
+        severity: str,
+    ) -> list[Awaitable[None]]:
         state = self._state
         if reason in state.pause_reasons:
-            return
+            return []
         state.pause_reasons.add(reason)
+        return [self._apply_pause(reason=reason, detail=detail, severity=severity)]
+
+    def _clear_pause_locked(
+        self,
+        reason: str,
+        *,
+        detail: str | None = None,
+    ) -> list[Awaitable[None]]:
+        state = self._state
+        if reason not in state.pause_reasons:
+            return []
+        state.pause_reasons.discard(reason)
+        resume_gate = not state.pause_reasons and not state.stop_requested
+        return [self._apply_clear_pause(reason=reason, detail=detail, resume_gate=resume_gate)]
+
+    async def _apply_pause(self, *, reason: str, detail: str, severity: str) -> None:
         await self._engine.set_expansion_gate(False)
         await self._schedule_alert(
             severity=severity,
@@ -316,12 +362,14 @@ class SentinelMonitor:
             metadata={"detail": detail},
         )
 
-    async def _clear_pause(self, reason: str, *, detail: str | None = None) -> None:
-        state = self._state
-        if reason not in state.pause_reasons:
-            return
-        state.pause_reasons.discard(reason)
-        if not state.pause_reasons and not state.stop_requested:
+    async def _apply_clear_pause(
+        self,
+        *,
+        reason: str,
+        detail: str | None,
+        resume_gate: bool,
+    ) -> None:
+        if resume_gate:
             await self._engine.set_expansion_gate(True)
         if detail:
             await self._schedule_alert(
@@ -333,10 +381,11 @@ class SentinelMonitor:
 
     async def _schedule_alert(self, *, severity: str, message: str, reason: str, metadata: Dict[str, Any]) -> None:
         key = f"{severity}:{reason}:{message}"
-        if key in self._state.alerts_emitted and severity != "info":
-            return
-        if severity != "info":
-            self._state.alerts_emitted.add(key)
+        async with self._state_lock:
+            if key in self._state.alerts_emitted and severity != "info":
+                return
+            if severity != "info":
+                self._state.alerts_emitted.add(key)
         if not self._config.alert_channels:
             LOGGER.debug("Alert suppressed because no channels configured: %s", message)
             return
