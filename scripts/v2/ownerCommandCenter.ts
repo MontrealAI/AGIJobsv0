@@ -1214,6 +1214,10 @@ async function main(): Promise<void> {
   }
 
   if (options.outPath) {
+    const outputDir = path.dirname(options.outPath);
+    if (outputDir && outputDir !== '.') {
+      await fs.mkdir(outputDir, { recursive: true });
+    }
     await fs.writeFile(options.outPath, output, 'utf8');
   } else {
     console.log(output);
@@ -1224,4 +1228,3 @@ main().catch((error) => {
   console.error('ownerCommandCenter failed:', error);
   process.exitCode = 1;
 });
-
