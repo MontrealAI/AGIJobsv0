@@ -3,8 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+import importlib.util
 import logging
+import sys
+from pathlib import Path
 from typing import Awaitable, Callable, Dict
+
+if importlib.util.find_spec("hgm_core") is None:
+    repo_root = Path(__file__).resolve().parents[1]
+    hgm_core_path = repo_root / "packages" / "hgm-core" / "src"
+    if hgm_core_path.exists() and str(hgm_core_path) not in sys.path:
+        sys.path.insert(0, str(hgm_core_path))
 
 from hgm_core.config import EngineConfig
 
