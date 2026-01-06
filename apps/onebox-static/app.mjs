@@ -398,6 +398,16 @@ function clearStoredOrchestrator() {
 
 export function computeAuthHeaders(base, token) {
   const sanitizedToken = sanitizeAuthToken(token);
+  const stripAuthorization = (headers) => {
+    if (!headers || typeof headers !== "object") return {};
+    const cleaned = { ...headers };
+    for (const key of Object.keys(cleaned)) {
+      if (key.toLowerCase() === "authorization") {
+        delete cleaned[key];
+      }
+    }
+    return cleaned;
+  };
   if (base instanceof Headers) {
     const headers = new Headers(base);
     if (sanitizedToken) {
@@ -420,11 +430,11 @@ export function computeAuthHeaders(base, token) {
   }
   if (!sanitizedToken) {
     if (base && typeof base === "object") {
-      return { ...base };
+      return stripAuthorization(base);
     }
     return base;
   }
-  const headers = base && typeof base === "object" ? { ...base } : {};
+  const headers = base && typeof base === "object" ? stripAuthorization(base) : {};
   headers.Authorization = `Bearer ${sanitizedToken}`;
   return headers;
 }
