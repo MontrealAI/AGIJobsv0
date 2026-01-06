@@ -39,6 +39,16 @@ test('computeAuthHeaders replaces existing Authorization entries in arrays', () 
   );
 });
 
+test('computeAuthHeaders removes stale Authorization keys from plain objects', () => {
+  const base = {
+    authorization: 'Bearer stale',
+    Accept: 'application/json',
+  };
+  const result = computeAuthHeaders(base, 'fresh-token');
+  assert.equal(result.authorization, undefined);
+  assert.equal(result.Authorization, 'Bearer fresh-token');
+});
+
 test('computeAuthHeaders rejects tokens containing control characters', () => {
   const headers = computeAuthHeaders({ Accept: 'application/json' }, 'abc\r\nInjected: yep');
   assert.deepEqual(headers, { Accept: 'application/json' });
