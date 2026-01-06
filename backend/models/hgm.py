@@ -26,6 +26,10 @@ def _serialize(metadata: Optional[Dict[str, Any]]) -> str:
 def _deserialize(payload: Any) -> Dict[str, Any]:
     if payload in (None, "", b""):
         return {}
+    if isinstance(payload, dict):
+        return payload
+    if isinstance(payload, list):
+        return {"items": payload}
     if isinstance(payload, (bytes, bytearray)):
         payload = payload.decode("utf-8")
     try:
