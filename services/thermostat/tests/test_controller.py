@@ -244,3 +244,33 @@ def test_controller_retries_after_failed_update() -> None:
     assert first is None
     assert second is None
     assert workflow.attempts == 2
+
+
+def test_controller_skips_non_finite_samples() -> None:
+    workflow = DummyWorkflow()
+    config = ThermostatConfig(
+        target_roi=1.2,
+        lower_margin=0.05,
+        upper_margin=0.2,
+        roi_window=3,
+        widening_step=0.1,
+        min_widening_alpha=0.2,
+        max_widening_alpha=1.2,
+        thompson_step=0.2,
+        min_thompson_prior=0.5,
+        max_thompson_prior=3.0,
+        cooldown_steps=0,
+    )
+    controller = ThermostatController(workflow, config)
+
+    async def scenario() -> ThermostatAdjustment | None:
+        await controller.initialize()
+        await controller.ingest(make_sample(float("nan")))
+        adjustment = None
+        for roi in (0.9, 0.88, 0.86):
+            adjustment = await controller.ingest(make_sample(roi))
+        return adjustment
+
+    adjustment = asyncio.run(scenario())
+
+    assert adjustment is not None
