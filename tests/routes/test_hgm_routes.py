@@ -42,3 +42,21 @@ def test_graphql_lineage_endpoint() -> None:
     payload = response.json()
     assert "data" in payload
     assert payload["data"]["lineage"][0]["agentKey"] == "root"
+
+
+def test_graphql_lineage_endpoint_with_variables() -> None:
+    repo = HgmRepository(get_database())
+    seed_demo_run(repo, run_id="demo-graphql-vars")
+    app = create_app()
+    client = TestClient(app)
+
+    response = client.post(
+        "/hgm/graphql",
+        json={
+            "query": "query Lineage($runId: String!, $root: String) { lineage(runId: $runId, root: $root) { agentKey } }",
+            "variables": {"runId": "demo-graphql-vars", "root": "root"},
+        },
+    )
+    payload = response.json()
+    assert "data" in payload
+    assert payload["data"]["lineage"][0]["agentKey"] == "root"
