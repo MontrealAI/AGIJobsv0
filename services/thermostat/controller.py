@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections import deque
 from dataclasses import dataclass, replace
 from typing import AsyncIterable, Deque, Dict, Optional
@@ -124,6 +125,9 @@ class ThermostatController:
         """Process a metrics sample and update parameters when necessary."""
 
         await self.initialize()
+        if not math.isfinite(sample.roi):
+            self._logger.warning("Skipping non-finite ROI sample: %s", sample.roi)
+            return None
         adjustment: Optional[ThermostatAdjustment] = None
         current: EngineConfig | None = None
         updates: Dict[str, float] = {}
