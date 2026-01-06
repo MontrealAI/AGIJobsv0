@@ -12,3 +12,23 @@ def test_metric_sample_accepts_iso_timestamp_with_z_suffix() -> None:
 
     assert sample.timestamp == datetime(2024, 5, 1, 12, 0, tzinfo=timezone.utc)
     assert sample.roi == 1.25
+
+
+def test_metric_sample_defaults_invalid_numeric_fields() -> None:
+    payload = {
+        "timestamp": 0,
+        "roi": "not-a-number",
+        "gmv": None,
+        "cost": {},
+        "successes": "7",
+        "failures": "oops",
+    }
+
+    sample = MetricSample.from_payload(payload)
+
+    assert sample.timestamp == datetime.fromtimestamp(0, tz=timezone.utc)
+    assert sample.roi == 0.0
+    assert sample.gmv == 0.0
+    assert sample.cost == 0.0
+    assert sample.successes == 7
+    assert sample.failures == 0
