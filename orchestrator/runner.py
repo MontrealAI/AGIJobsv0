@@ -181,7 +181,7 @@ def _resume_pending_steps(plan: OrchestrationPlan, status: StatusOut) -> Iterabl
         yield idx
 
 
-def _execute_step(step: Step, status: StatusOut, step_status: StepStatus) -> bool:
+def _execute_step(step: Step, status: StatusOut, step_status: StepStatus) -> bool | None:
     _apply_transition(status, step_status, "running", f"Starting {step.name}")
     _persist(status)
     try:
@@ -189,9 +189,9 @@ def _execute_step(step: Step, status: StatusOut, step_status: StepStatus) -> boo
     except Exception as exc:  # pragma: no cover - defensive guard for executor failures
         logger.exception("Step executor crashed for %s", step.name)
         _log(status, f"{step.name}: executor error: {exc}")
-        _apply_transition(status, step_status, "failed", f"Failed {step.name}")
+        _log(status, f"{step.name}: marked for resume after crash")
         _persist(status)
-        return False
+        return None
     for line in result.logs:
         _log(status, f"{step.name}: {line}")
     if result.success:
@@ -268,6 +268,8 @@ def _resume_run(plan: OrchestrationPlan, status: StatusOut, run_id: str) -> None
         success = _execute_step(step, current_status, step_status)
         with _LOCK:
             _RUNS[run_id] = current_status
+        if success is None:
+            return
         if not success:
             with _LOCK:
                 _mark_run(current_status, "failed")
