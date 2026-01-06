@@ -99,17 +99,23 @@ def _prometheus_query(base_url: str, query: str) -> dict[str, object]:
 def load_metrics_from_path(path: Path) -> Iterable[MetricSample]:
     """Load metrics from a JSON or NDJSON file."""
 
-    text = path.read_text()
     suffix = path.suffix.lower()
     if suffix in {".ndjson", ".jsonl"}:
-        for line in text.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            payload = json.loads(line)
-            yield MetricSample.from_payload(payload)
+        with path.open("r", encoding="utf-8") as handle:
+            for line_number, line in enumerate(handle, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(
+                        f"Invalid JSON on line {line_number} of {path}"
+                    ) from exc
+                yield MetricSample.from_payload(payload)
     else:
-        payload = json.loads(text)
+        with path.open("r", encoding="utf-8") as handle:
+            payload = json.load(handle)
         if isinstance(payload, list):
             for entry in payload:
                 yield MetricSample.from_payload(entry)
