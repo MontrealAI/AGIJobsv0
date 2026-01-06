@@ -160,6 +160,15 @@ const RULE_EXPECTATIONS = [
     expected: 'The orchestrator rejected our credentials. Tip: Check that your API token is correct and hasn’t expired.',
   },
   {
+    id: 'unauthorized_string_status',
+    error: () => {
+      const err = new Error('unauthorized');
+      err.status = '401';
+      return err;
+    },
+    expected: 'The orchestrator rejected our credentials. Tip: Check that your API token is correct and hasn’t expired.',
+  },
+  {
     id: 'not_found',
     error: () => {
       const err = new Error('not found');

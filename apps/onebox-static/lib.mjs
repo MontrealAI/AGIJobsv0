@@ -507,6 +507,21 @@ function pushUnique(array, value) {
   }
 }
 
+function coerceStatus(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 function collectErrorContext(err, state = { messages: [], codes: [], statuses: [] }, seen = new Set()) {
   if (err === null || err === undefined) {
     return state;
@@ -529,9 +544,9 @@ function collectErrorContext(err, state = { messages: [], codes: [], statuses: [
     if ("name" in err && err.name && err.name !== "Error") {
       pushUnique(state.codes, err.name);
     }
-    if ("status" in err && Number.isFinite(err.status)) {
-      const status = Number(err.status);
-      if (!state.statuses.includes(status)) {
+    if ("status" in err) {
+      const status = coerceStatus(err.status);
+      if (status !== undefined && !state.statuses.includes(status)) {
         state.statuses.push(status);
       }
     }
@@ -544,15 +559,15 @@ function collectErrorContext(err, state = { messages: [], codes: [], statuses: [
     if ("message" in err && err.message) {
       pushUnique(state.messages, err.message);
     }
-    if ("status" in err && Number.isFinite(err.status)) {
-      const status = Number(err.status);
-      if (!state.statuses.includes(status)) {
+    if ("status" in err) {
+      const status = coerceStatus(err.status);
+      if (status !== undefined && !state.statuses.includes(status)) {
         state.statuses.push(status);
       }
     }
-    if ("statusCode" in err && Number.isFinite(err.statusCode)) {
-      const status = Number(err.statusCode);
-      if (!state.statuses.includes(status)) {
+    if ("statusCode" in err) {
+      const status = coerceStatus(err.statusCode);
+      if (status !== undefined && !state.statuses.includes(status)) {
         state.statuses.push(status);
       }
     }
