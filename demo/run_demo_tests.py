@@ -651,12 +651,14 @@ def _playwright_downloads_reachable() -> bool:
     clearly unreachable.
     """
 
-    try:
-        for host in _PLAYWRIGHT_DOWNLOAD_HOSTS:
+    for host in _PLAYWRIGHT_DOWNLOAD_HOSTS:
+        try:
             socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)
-    except OSError:
-        return False
-    return True
+        except OSError:
+            continue
+        else:
+            return True
+    return False
 
 
 def _apt_repos_reachable(timeout: float = 3.0) -> bool:
