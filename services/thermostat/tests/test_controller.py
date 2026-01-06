@@ -56,6 +56,22 @@ class DummyWorkflow:
         return replace(self._config)
 
 
+class FailingWorkflow(DummyWorkflow):
+    def __init__(self) -> None:
+        super().__init__()
+        self.attempts = 0
+
+    async def update_engine_parameters(
+        self,
+        *,
+        widening_alpha: float | None = None,
+        min_visitations: int | None = None,
+        thompson_prior: float | None = None,
+    ) -> EngineConfig:
+        self.attempts += 1
+        raise RuntimeError("Update failed")
+
+
 def make_sample(roi: float) -> MetricSample:
     return MetricSample(
         timestamp=datetime.now(tz=timezone.utc),
@@ -196,3 +212,35 @@ def test_controller_dry_run_skips_workflow_updates() -> None:
 
     assert adjustment is not None
     assert not workflow.calls
+
+
+def test_controller_retries_after_failed_update() -> None:
+    workflow = FailingWorkflow()
+    config = ThermostatConfig(
+        target_roi=1.2,
+        lower_margin=0.05,
+        upper_margin=0.2,
+        roi_window=3,
+        widening_step=0.1,
+        min_widening_alpha=0.2,
+        max_widening_alpha=1.2,
+        thompson_step=0.2,
+        min_thompson_prior=0.5,
+        max_thompson_prior=3.0,
+        cooldown_steps=2,
+    )
+    controller = ThermostatController(workflow, config)
+
+    async def scenario() -> tuple[ThermostatAdjustment | None, ThermostatAdjustment | None]:
+        first = None
+        await controller.initialize()
+        for roi in (0.9, 0.88, 0.86):
+            first = await controller.ingest(make_sample(roi))
+        second = await controller.ingest(make_sample(0.84))
+        return first, second
+
+    first, second = asyncio.run(scenario())
+
+    assert first is None
+    assert second is None
+    assert workflow.attempts == 2

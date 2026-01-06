@@ -187,7 +187,8 @@ class ThermostatController:
                 return None
 
             new_config = replace(current, **updates)
-            self._config_snapshot = new_config
+            if not self._apply_updates:
+                self._config_snapshot = new_config
             self._cooldown = self._config.cooldown_steps
 
             parameters = {
@@ -203,9 +204,17 @@ class ThermostatController:
 
         if adjustment is not None:
             if self._apply_updates:
-                applied = await self._workflow.update_engine_parameters(
-                    **{k: v[1] for k, v in adjustment.parameters.items()}
-                )
+                try:
+                    applied = await self._workflow.update_engine_parameters(
+                        **{k: v[1] for k, v in adjustment.parameters.items()}
+                    )
+                except Exception:
+                    self._logger.exception("Thermostat update failed; retaining previous configuration")
+                    async with self._lock:
+                        if current is not None:
+                            self._config_snapshot = current
+                        self._cooldown = 0
+                    return None
                 if current is not None:
                     async with self._lock:
                         self._config_snapshot = replace(applied)
