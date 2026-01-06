@@ -222,6 +222,40 @@ def test_playwright_dep_check_accepts_root(monkeypatch: pytest.MonkeyPatch) -> N
     assert run_demo_tests._can_install_playwright_deps() is True
 
 
+def test_playwright_download_probe_accepts_any_resolvable_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hosts = run_demo_tests._PLAYWRIGHT_DOWNLOAD_HOSTS
+    calls: list[str] = []
+
+    def fake_getaddrinfo(host: str, *_args: object, **_kwargs: object) -> list[object]:
+        calls.append(host)
+        if host == hosts[0]:
+            raise OSError("simulated DNS failure")
+        return [object()]
+
+    monkeypatch.setattr(run_demo_tests.socket, "getaddrinfo", fake_getaddrinfo)
+
+    assert run_demo_tests._playwright_downloads_reachable() is True
+    assert calls == [hosts[0], hosts[1]]
+
+
+def test_playwright_download_probe_requires_any_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    hosts = run_demo_tests._PLAYWRIGHT_DOWNLOAD_HOSTS
+    calls: list[str] = []
+
+    def fake_getaddrinfo(host: str, *_args: object, **_kwargs: object) -> list[object]:
+        calls.append(host)
+        raise OSError("simulated DNS failure")
+
+    monkeypatch.setattr(run_demo_tests.socket, "getaddrinfo", fake_getaddrinfo)
+
+    assert run_demo_tests._playwright_downloads_reachable() is False
+    assert calls == list(hosts)
+
+
 def test_playwright_dep_readiness_detects_installed_libs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
