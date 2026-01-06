@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -62,7 +63,8 @@ class ENSVerifier:
             except Exception as exc:  # pragma: no cover - network branch
                 logger.warning("ENS RPC unavailable, falling back to offline mode", exc_info=exc)
 
-        mock_owner = f"0x{abs(hash(domain)) % (10**40):040x}"
+        digest = hashlib.sha256(domain.encode("utf-8")).hexdigest()
+        mock_owner = f"0x{digest[:40]}"
         verified = mock_owner.lower() == expected_owner.lower()
         return ENSVerificationResult(domain, expected_owner, mock_owner, verified)
 
