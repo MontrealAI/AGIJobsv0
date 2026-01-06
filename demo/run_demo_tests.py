@@ -386,13 +386,20 @@ def _iter_node_test_files(tests_dir: Path) -> Iterable[Path]:
                 yield file
 
 
-def _node_package_root(tests_dir: Path, demo_dir: Path) -> Path | None:
-    """Return the nearest ancestor with a package.json, stopping at ``demo_dir``."""
+def _node_package_root(
+    tests_dir: Path, demo_dir: Path, *, root_boundary: Path | None = None
+) -> Path | None:
+    """Return the nearest ancestor with a package.json, stopping at ``demo_dir``.
 
+    ``root_boundary`` can be provided to allow discovery to climb above the
+    immediate demo directory when a demo root contains nested test folders.
+    """
+
+    stop_at = root_boundary or demo_dir
     for ancestor in [tests_dir, *tests_dir.parents]:
         if (ancestor / "package.json").is_file():
             return ancestor
-        if ancestor == demo_dir:
+        if ancestor == stop_at:
             break
 
     return None
@@ -697,11 +704,23 @@ def _playwright_system_deps_ready() -> bool:
     for lib in _PLAYWRIGHT_LIB_PATHS:
         if lib.exists():
             continue
-        resolved = ctypes.util.find_library(lib.stem.replace(".so", ""))
+        library_name = _normalize_ctypes_library_name(lib)
+        resolved = ctypes.util.find_library(library_name)
         if not resolved:
             return False
 
     return True
+
+
+def _normalize_ctypes_library_name(lib_path: Path) -> str:
+    """Normalize a library path into a name suitable for ``find_library``."""
+
+    name = lib_path.name
+    if name.startswith("lib"):
+        name = name[3:]
+    if ".so" in name:
+        name = name.split(".so", 1)[0]
+    return name
 
 
 def _maybe_extend_timeout_for_playwright(
@@ -961,13 +980,16 @@ def _has_node_tests(
     demo_dir: Path,
     *,
     generate_prisma: bool = True,
+    root_boundary: Path | None = None,
     prisma_cache: dict[Path, bool] | None = None,
 ) -> tuple[Path, str] | bool | None:
     has_node_tests = any(_iter_node_test_files(tests_dir))
     if not has_node_tests:
         return None
 
-    package_root = _node_package_root(tests_dir, demo_dir)
+    package_root = _node_package_root(
+        tests_dir, demo_dir, root_boundary=root_boundary
+    )
     if not package_root:
         return None
 
@@ -1065,6 +1087,7 @@ def _discover_tests(
                 tests_dir,
                 demo_dir,
                 generate_prisma=generate_prisma,
+                root_boundary=demo_root,
                 prisma_cache=prisma_cache,
             )
 

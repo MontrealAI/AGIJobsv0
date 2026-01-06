@@ -241,6 +241,28 @@ def test_playwright_dep_readiness_detects_installed_libs(
     assert run_demo_tests._playwright_system_deps_ready() is True
 
 
+def test_playwright_dep_readiness_accepts_ctypes_resolved_libs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    libs = [
+        tmp_path / "libnss3.so",
+        tmp_path / "libasound.so.2",
+        tmp_path / "libgtk-3.so.0",
+    ]
+
+    def fake_find_library(name: str) -> str | None:
+        if name in {"nss3", "asound", "gtk-3"}:
+            return f"lib{name}.so"
+        return None
+
+    monkeypatch.setattr(run_demo_tests, "_PLAYWRIGHT_LIB_PATHS", tuple(libs))
+    monkeypatch.setattr(run_demo_tests.shutil, "which", lambda name: "/usr/bin/xvfb")
+    monkeypatch.setattr(run_demo_tests.sys, "platform", "linux")
+    monkeypatch.setattr(run_demo_tests.ctypes.util, "find_library", fake_find_library)
+
+    assert run_demo_tests._playwright_system_deps_ready() is True
+
+
 def test_playwright_dep_readiness_requires_xvfb(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
