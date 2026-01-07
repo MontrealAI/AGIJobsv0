@@ -885,7 +885,10 @@ def test_node_suites_use_runtime_root_playwright_cache(
     assert exit_code == 0
     cache_path = Path(captured_env["PLAYWRIGHT_BROWSERS_PATH"])
     expected_cache = Path(
-        os.environ.get("DEMO_PLAYWRIGHT_CACHE", Path.home() / ".cache" / "agi-jobs-demo" / "ms-playwright")
+        os.environ.get(
+            "DEMO_PLAYWRIGHT_CACHE",
+            runtime_root / "playwright" / "ms-playwright",
+        )
     )
     assert cache_path == expected_cache
     assert cache_path.exists()
