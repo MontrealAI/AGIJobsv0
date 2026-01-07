@@ -32,3 +32,12 @@ def test_metric_sample_defaults_invalid_numeric_fields() -> None:
     assert sample.cost == 0.0
     assert sample.successes == 7
     assert sample.failures == 0
+
+
+def test_metric_sample_parses_numeric_string_timestamp() -> None:
+    payload = {"timestamp": "1714560000", "roi": 2.5}
+
+    sample = MetricSample.from_payload(payload)
+
+    assert sample.timestamp == datetime.fromtimestamp(1714560000, tz=timezone.utc)
+    assert sample.roi == 2.5

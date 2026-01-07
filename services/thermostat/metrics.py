@@ -1,6 +1,7 @@
 """Shared data structures for thermostat metrics ingestion."""
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -44,14 +45,17 @@ class MetricSample:
             timestamp = datetime.fromtimestamp(float(timestamp_raw), tz=timezone.utc)
         elif isinstance(timestamp_raw, str):
             normalized = timestamp_raw.strip()
-            if normalized.endswith("Z"):
-                normalized = f"{normalized[:-1]}+00:00"
-            try:
-                timestamp = datetime.fromisoformat(normalized)
-            except ValueError:
-                timestamp = datetime.now(tz=timezone.utc)
-            if timestamp.tzinfo is None:
-                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            if re.match(r"^[+-]?\d+(\.\d+)?$", normalized):
+                timestamp = datetime.fromtimestamp(float(normalized), tz=timezone.utc)
+            else:
+                if normalized.endswith("Z"):
+                    normalized = f"{normalized[:-1]}+00:00"
+                try:
+                    timestamp = datetime.fromisoformat(normalized)
+                except ValueError:
+                    timestamp = datetime.now(tz=timezone.utc)
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=timezone.utc)
         else:
             timestamp = datetime.now(tz=timezone.utc)
 
