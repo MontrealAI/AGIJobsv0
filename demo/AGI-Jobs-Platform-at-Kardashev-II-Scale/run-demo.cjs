@@ -2895,15 +2895,26 @@ function resolveConfigRoot({ configRoot, demoRoot }) {
   if (!fs.existsSync(resolved)) {
     throw new Error(`Config root override not found: ${resolved}`);
   }
-  if (fs.existsSync(path.join(resolved, 'config'))) {
-    return resolved;
-  }
   const configFiles = [
     'fabric.json',
     'energy-feeds.json',
     'kardashev-ii.manifest.json',
     'task-lattice.json',
   ];
+  const stats = fs.statSync(resolved);
+  if (stats.isFile()) {
+    const parent = path.dirname(resolved);
+    if (path.basename(parent) === 'config') {
+      const grandparent = path.dirname(parent);
+      if (fs.existsSync(path.join(grandparent, 'config'))) {
+        return grandparent;
+      }
+    }
+    return parent;
+  }
+  if (fs.existsSync(path.join(resolved, 'config'))) {
+    return resolved;
+  }
   if (configFiles.some((filename) => fs.existsSync(path.join(resolved, filename)))) {
     const parent = path.dirname(resolved);
     if (fs.existsSync(path.join(parent, 'config'))) {
