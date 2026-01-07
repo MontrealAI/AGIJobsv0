@@ -76,10 +76,15 @@ export function listCiWorkflowJobs(): CiWorkflowJob[] {
 
 export function listWorkflowJobsByName(workflowName: string): CiWorkflowJob[] {
   const workflowsDir = resolve(__dirname, '../../../.github/workflows');
-  const candidates = [
-    resolve(workflowsDir, `${workflowName}.yml`),
-    resolve(workflowsDir, `${workflowName}.yaml`),
-  ];
+  const trimmedName = workflowName.trim();
+  const hasExtension =
+    trimmedName.endsWith('.yml') || trimmedName.endsWith('.yaml');
+  const candidates = hasExtension
+    ? [resolve(workflowsDir, trimmedName)]
+    : [
+        resolve(workflowsDir, `${trimmedName}.yml`),
+        resolve(workflowsDir, `${trimmedName}.yaml`),
+      ];
 
   const existingPath = candidates.find((candidate) => existsSync(candidate));
 
