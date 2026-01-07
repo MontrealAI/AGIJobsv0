@@ -139,15 +139,46 @@ function buildRunsUrl(
   return `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflow}/runs?${params.toString()}`;
 }
 
+const JOBS_PER_PAGE = 100;
+
 function buildJobsUrl(
   owner: string,
   repo: string,
-  runId: number
+  runId: number,
+  page: number
 ): string {
   const params = new URLSearchParams({
-    per_page: '100',
+    per_page: String(JOBS_PER_PAGE),
+    page: String(page),
   });
   return `https://api.github.com/repos/${owner}/${repo}/actions/runs/${runId}/jobs?${params.toString()}`;
+}
+
+async function fetchAllJobs(
+  owner: string,
+  repo: string,
+  runId: number,
+  token: string
+): Promise<WorkflowJob[]> {
+  const jobs: WorkflowJob[] = [];
+  let page = 1;
+  let totalCount = 0;
+
+  while (true) {
+    const jobsUrl = buildJobsUrl(owner, repo, runId, page);
+    const jobsResponse = await githubJson<WorkflowJobsResponse>(jobsUrl, token);
+    const batch = jobsResponse.jobs ?? [];
+    totalCount = jobsResponse.total_count ?? totalCount;
+    jobs.push(...batch);
+
+    if (batch.length < JOBS_PER_PAGE || jobs.length >= totalCount) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return jobs;
 }
 
 function normaliseConclusion(job: WorkflowJob): string {
@@ -188,9 +219,7 @@ async function verifyWorkflow(
     );
   }
 
-  const jobsUrl = buildJobsUrl(argv.owner, argv.repo, run.id);
-  const jobsResponse = await githubJson<WorkflowJobsResponse>(jobsUrl, token);
-  const jobs = jobsResponse.jobs ?? [];
+  const jobs = await fetchAllJobs(argv.owner, argv.repo, run.id, token);
 
   if (jobs.length === 0) {
     throw new Error(
