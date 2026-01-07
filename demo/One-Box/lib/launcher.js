@@ -565,11 +565,13 @@ function startOrchestrator(rootDir, env, config) {
 }
 
 function safeJoin(root, targetPath) {
-  const resolved = path.resolve(root, targetPath);
-  if (!resolved.startsWith(path.resolve(root))) {
+  const resolvedRoot = path.resolve(root);
+  const resolvedTarget = path.resolve(resolvedRoot, targetPath);
+  const relative = path.relative(resolvedRoot, resolvedTarget);
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
     return null;
   }
-  return resolved;
+  return resolvedTarget;
 }
 
 function startStaticServer(distDir, config) {
