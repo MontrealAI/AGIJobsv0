@@ -42,6 +42,18 @@ class ThermostatConfig:
             raise ValueError("upper_margin must be between 0 and 1")
         if self.target_roi <= 0:
             raise ValueError("target_roi must be positive")
+        if self.widening_step <= 0:
+            raise ValueError("widening_step must be positive")
+        if self.thompson_step <= 0:
+            raise ValueError("thompson_step must be positive")
+        if self.min_widening_alpha <= 0 or self.max_widening_alpha <= 0:
+            raise ValueError("widening alpha bounds must be positive")
+        if self.min_widening_alpha > self.max_widening_alpha:
+            raise ValueError("min_widening_alpha cannot exceed max_widening_alpha")
+        if self.min_thompson_prior <= 0 or self.max_thompson_prior <= 0:
+            raise ValueError("thompson prior bounds must be positive")
+        if self.min_thompson_prior > self.max_thompson_prior:
+            raise ValueError("min_thompson_prior cannot exceed max_thompson_prior")
         if self.cooldown_steps < 0:
             raise ValueError("cooldown_steps cannot be negative")
 

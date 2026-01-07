@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Dict
 
 import sys
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 HGM_CORE_SRC = ROOT / "packages" / "hgm-core" / "src"
@@ -274,3 +275,18 @@ def test_controller_skips_non_finite_samples() -> None:
     adjustment = asyncio.run(scenario())
 
     assert adjustment is not None
+
+
+def test_config_rejects_invalid_bounds() -> None:
+    with pytest.raises(ValueError, match="widening_step must be positive"):
+        ThermostatConfig(widening_step=0)
+    with pytest.raises(ValueError, match="thompson_step must be positive"):
+        ThermostatConfig(thompson_step=0)
+    with pytest.raises(ValueError, match="widening alpha bounds must be positive"):
+        ThermostatConfig(min_widening_alpha=0)
+    with pytest.raises(ValueError, match="min_widening_alpha cannot exceed max_widening_alpha"):
+        ThermostatConfig(min_widening_alpha=2.0, max_widening_alpha=1.0)
+    with pytest.raises(ValueError, match="thompson prior bounds must be positive"):
+        ThermostatConfig(min_thompson_prior=0)
+    with pytest.raises(ValueError, match="min_thompson_prior cannot exceed max_thompson_prior"):
+        ThermostatConfig(min_thompson_prior=4.0, max_thompson_prior=3.0)
