@@ -99,16 +99,19 @@ function renderMarkdownSummary(outputs: StructuredWorkflowSummary[]): string {
   return lines.join('\n');
 }
 
-async function githubJson<T>(url: string, token: string): Promise<T> {
+async function githubJson<T>(url: string, token?: string): Promise<T> {
   let response: Response;
   try {
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'agijobsv0-ci-status-wall',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
     response = await fetch(url, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'User-Agent': 'agijobsv0-ci-status-wall',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
+      headers,
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
@@ -158,7 +161,7 @@ async function fetchAllJobs(
   owner: string,
   repo: string,
   runId: number,
-  token: string
+  token?: string
 ): Promise<WorkflowJob[]> {
   const jobs: WorkflowJob[] = [];
   let page = 1;
@@ -192,7 +195,7 @@ function normaliseConclusion(job: WorkflowJob): string {
 async function verifyWorkflow(
   descriptor: WorkflowVerificationDescriptor,
   argv: CliArguments,
-  token: string
+  token?: string
 ): Promise<VerificationOutput> {
   const runsUrl = buildRunsUrl(
     argv.owner,
@@ -349,12 +352,10 @@ async function main(): Promise<void> {
     .alias('help', 'h')
     .parseSync() as CliArguments;
 
-  const token =
-    argv.token ?? process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? '';
-
+  const token = argv.token ?? process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN;
   if (!token) {
-    throw new Error(
-      'A GitHub token is required. Provide one via --token, GITHUB_TOKEN, or GH_TOKEN.'
+    console.warn(
+      'No GitHub token provided; falling back to unauthenticated API requests (rate limits apply).'
     );
   }
 
