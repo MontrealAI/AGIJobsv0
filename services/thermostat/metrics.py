@@ -38,20 +38,28 @@ class MetricSample:
         Missing optional fields default to zero which simplifies integration with
         Prometheus vector responses.
         """
-
         timestamp_raw = payload.get("timestamp")
         if isinstance(timestamp_raw, (int, float)):
             timestamp = datetime.fromtimestamp(float(timestamp_raw), tz=timezone.utc)
         elif isinstance(timestamp_raw, str):
             normalized = timestamp_raw.strip()
-            if normalized.endswith("Z"):
-                normalized = f"{normalized[:-1]}+00:00"
-            try:
-                timestamp = datetime.fromisoformat(normalized)
-            except ValueError:
-                timestamp = datetime.now(tz=timezone.utc)
-            if timestamp.tzinfo is None:
-                timestamp = timestamp.replace(tzinfo=timezone.utc)
+            timestamp = None
+            if normalized:
+                try:
+                    numeric_value = float(normalized)
+                except ValueError:
+                    numeric_value = None
+                else:
+                    timestamp = datetime.fromtimestamp(numeric_value, tz=timezone.utc)
+            if timestamp is None:
+                if normalized.endswith("Z"):
+                    normalized = f"{normalized[:-1]}+00:00"
+                try:
+                    timestamp = datetime.fromisoformat(normalized)
+                except ValueError:
+                    timestamp = datetime.now(tz=timezone.utc)
+                if timestamp.tzinfo is None:
+                    timestamp = timestamp.replace(tzinfo=timezone.utc)
         else:
             timestamp = datetime.now(tz=timezone.utc)
 
