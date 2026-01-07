@@ -41,15 +41,39 @@ function createRng(seed) {
 
 function resolveConfigPath(envVar, fallbackRelative, baseDir = __dirname) {
   const override = normalizePathOverride(process.env[envVar]);
-  const target = override ? path.resolve(override) : path.join(baseDir, fallbackRelative);
+  const fallbackName = path.basename(fallbackRelative);
 
-  if (!fs.existsSync(target)) {
-    throw new Error(
-      `Missing configuration file at ${target} (${override ? `${envVar} override` : 'default path'})`,
-    );
+  if (override) {
+    const resolvedOverride = path.resolve(override);
+    if (fs.existsSync(resolvedOverride)) {
+      const stats = fs.statSync(resolvedOverride);
+      if (stats.isDirectory()) {
+        const candidate = path.join(resolvedOverride, fallbackName);
+        if (fs.existsSync(candidate)) {
+          return candidate;
+        }
+        throw new Error(
+          `Missing configuration file at ${candidate} (derived from ${envVar} directory override).`,
+        );
+      }
+      return resolvedOverride;
+    }
+    throw new Error(`Missing configuration file at ${resolvedOverride} (${envVar} override).`);
   }
 
-  return target;
+  const defaultTarget = path.join(baseDir, fallbackRelative);
+  if (fs.existsSync(defaultTarget)) {
+    return defaultTarget;
+  }
+
+  const flatTarget = path.join(baseDir, fallbackName);
+  if (fs.existsSync(flatTarget)) {
+    return flatTarget;
+  }
+
+  throw new Error(
+    `Missing configuration file at ${defaultTarget} (default path); also checked ${flatTarget} for flat config roots.`,
+  );
 }
 
 function normalizePathOverride(override) {
