@@ -7,7 +7,7 @@ import asyncio
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from .governance import GovernanceParameters
 from .orchestrator import Orchestrator, OrchestratorConfig
@@ -165,6 +165,7 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     """
 
     overrides = overrides or {}
+    default_args = build_parser().parse_args([])
     config_path = args.config or (DEFAULT_CONFIG_PATH if DEFAULT_CONFIG_PATH.exists() else None)
     if config_path:
         if not config_path.exists():
@@ -194,31 +195,55 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
             data["governance"] = GovernanceParameters(**gov_data)
         overrides.update(data)
 
-    _require_positive(args.cycles, field="cycles", allow_zero=True)
-    _require_positive(args.insight_interval, field="insight_interval_seconds")
-    _require_positive(args.simulation_tick, field="simulation_tick_seconds")
-    _require_positive(args.simulation_hours, field="simulation_hours_per_tick")
-    _require_positive(args.simulation_energy_scale, field="simulation_energy_scale")
-    _require_positive(args.simulation_compute_scale, field="simulation_compute_scale")
-    _require_positive(args.heartbeat_interval, field="heartbeat_interval_seconds")
-    _require_positive(args.heartbeat_timeout, field="heartbeat_timeout_seconds")
-    _require_positive(args.health_check_interval, field="health_check_interval_seconds")
-    _require_positive(args.integrity_interval, field="integrity_check_interval_seconds")
-    _require_positive(args.energy_oracle_interval, field="energy_oracle_interval_seconds")
-    _require_positive(args.policy_action_interval, field="policy_action_interval_seconds")
+    def is_explicit(field: str) -> bool:
+        return getattr(args, field) != getattr(default_args, field)
+
+    def resolve(field: str, override_key: str, *, transform: Optional[Callable[[Any], Any]] = None) -> Any:
+        base_value = overrides.get(override_key, getattr(args, field))
+        if is_explicit(field):
+            base_value = getattr(args, field)
+        if transform is None:
+            return base_value
+        return transform(base_value)
+
+    cycles = resolve("cycles", "max_cycles", transform=lambda value: value or None)
+    insight_interval = resolve("insight_interval", "insight_interval_seconds")
+    simulation_tick = resolve("simulation_tick", "simulation_tick_seconds")
+    simulation_hours = resolve("simulation_hours", "simulation_hours_per_tick")
+    simulation_energy_scale = resolve("simulation_energy_scale", "simulation_energy_scale")
+    simulation_compute_scale = resolve("simulation_compute_scale", "simulation_compute_scale")
+    heartbeat_interval = resolve("heartbeat_interval", "heartbeat_interval_seconds")
+    heartbeat_timeout = resolve("heartbeat_timeout", "heartbeat_timeout_seconds")
+    health_check_interval = resolve("health_check_interval", "health_check_interval_seconds")
+    integrity_interval = resolve("integrity_interval", "integrity_check_interval_seconds")
+    energy_oracle_interval = resolve("energy_oracle_interval", "energy_oracle_interval_seconds")
+    policy_action_interval = resolve("policy_action_interval", "policy_action_interval_seconds")
     checkpoint_interval = float(
         overrides.get("checkpoint_interval_seconds", OrchestratorConfig.checkpoint_interval_seconds)
     )
-    _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
     cycle_sleep = float(overrides.get("cycle_sleep_seconds", OrchestratorConfig.cycle_sleep_seconds))
-    _require_positive(cycle_sleep, field="cycle_sleep_seconds")
-    auto_pause_value = overrides.get("auto_pause_on_phase_transition", args.auto_phase_pause)
+    auto_pause_value = resolve("auto_phase_pause", "auto_pause_on_phase_transition")
     phase_pause_threshold = float(
-        overrides.get("phase_transition_pause_threshold", args.phase_transition_pause_threshold)
+        resolve("phase_transition_pause_threshold", "phase_transition_pause_threshold")
     )
     phase_resume_threshold = float(
-        overrides.get("phase_transition_resume_threshold", args.phase_transition_resume_threshold)
+        resolve("phase_transition_resume_threshold", "phase_transition_resume_threshold")
     )
+
+    _require_positive(cycles or 0, field="cycles", allow_zero=True)
+    _require_positive(insight_interval, field="insight_interval_seconds")
+    _require_positive(simulation_tick, field="simulation_tick_seconds")
+    _require_positive(simulation_hours, field="simulation_hours_per_tick")
+    _require_positive(simulation_energy_scale, field="simulation_energy_scale")
+    _require_positive(simulation_compute_scale, field="simulation_compute_scale")
+    _require_positive(heartbeat_interval, field="heartbeat_interval_seconds")
+    _require_positive(heartbeat_timeout, field="heartbeat_timeout_seconds")
+    _require_positive(health_check_interval, field="health_check_interval_seconds")
+    _require_positive(integrity_interval, field="integrity_check_interval_seconds")
+    _require_positive(energy_oracle_interval, field="energy_oracle_interval_seconds")
+    _require_positive(policy_action_interval, field="policy_action_interval_seconds")
+    _require_positive(checkpoint_interval, field="checkpoint_interval_seconds")
+    _require_positive(cycle_sleep, field="cycle_sleep_seconds")
     _require_unit_interval(phase_pause_threshold, field="phase_transition_pause_threshold")
     _require_unit_interval(phase_resume_threshold, field="phase_transition_resume_threshold")
     if phase_resume_threshold > phase_pause_threshold:
@@ -229,29 +254,36 @@ def build_config(args: argparse.Namespace, overrides: Optional[dict[str, Any]] =
     overrides["phase_transition_pause_threshold"] = phase_pause_threshold
     overrides["phase_transition_resume_threshold"] = phase_resume_threshold
 
+    resume_from_checkpoint = overrides.get("resume_from_checkpoint", not args.no_resume)
+    if is_explicit("no_resume"):
+        resume_from_checkpoint = not args.no_resume
+    enable_simulation = overrides.get("enable_simulation", not args.no_sim)
+    if is_explicit("no_sim"):
+        enable_simulation = not args.no_sim
+
     params = {
-        "max_cycles": args.cycles or None,
-        "checkpoint_path": args.checkpoint,
+        "max_cycles": cycles,
+        "checkpoint_path": resolve("checkpoint", "checkpoint_path"),
         "checkpoint_interval_seconds": checkpoint_interval,
-        "resume_from_checkpoint": not args.no_resume,
-        "enable_simulation": not args.no_sim,
-        "control_channel_file": args.control,
-        "insight_interval_seconds": args.insight_interval,
-        "simulation_tick_seconds": args.simulation_tick,
-        "simulation_hours_per_tick": args.simulation_hours,
-        "simulation_energy_scale": args.simulation_energy_scale,
-        "simulation_compute_scale": args.simulation_compute_scale,
+        "resume_from_checkpoint": resume_from_checkpoint,
+        "enable_simulation": enable_simulation,
+        "control_channel_file": resolve("control", "control_channel_file"),
+        "insight_interval_seconds": insight_interval,
+        "simulation_tick_seconds": simulation_tick,
+        "simulation_hours_per_tick": simulation_hours,
+        "simulation_energy_scale": simulation_energy_scale,
+        "simulation_compute_scale": simulation_compute_scale,
         "cycle_sleep_seconds": cycle_sleep,
-        "audit_log_path": args.audit_log,
-        "status_output_path": args.status_output,
-        "energy_oracle_path": args.energy_oracle,
-        "energy_oracle_interval_seconds": args.energy_oracle_interval,
-        "auto_policy_actions": args.auto_policy_actions,
-        "policy_action_interval_seconds": args.policy_action_interval,
-        "heartbeat_interval_seconds": args.heartbeat_interval,
-        "heartbeat_timeout_seconds": args.heartbeat_timeout,
-        "health_check_interval_seconds": args.health_check_interval,
-        "integrity_check_interval_seconds": args.integrity_interval,
+        "audit_log_path": resolve("audit_log", "audit_log_path"),
+        "status_output_path": resolve("status_output", "status_output_path"),
+        "energy_oracle_path": resolve("energy_oracle", "energy_oracle_path"),
+        "energy_oracle_interval_seconds": energy_oracle_interval,
+        "auto_policy_actions": resolve("auto_policy_actions", "auto_policy_actions"),
+        "policy_action_interval_seconds": policy_action_interval,
+        "heartbeat_interval_seconds": heartbeat_interval,
+        "heartbeat_timeout_seconds": heartbeat_timeout,
+        "health_check_interval_seconds": health_check_interval,
+        "integrity_check_interval_seconds": integrity_interval,
         "auto_pause_on_phase_transition": overrides["auto_pause_on_phase_transition"],
         "phase_transition_pause_threshold": overrides["phase_transition_pause_threshold"],
         "phase_transition_resume_threshold": overrides["phase_transition_resume_threshold"],
