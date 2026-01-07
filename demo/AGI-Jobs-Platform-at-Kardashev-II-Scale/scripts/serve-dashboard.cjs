@@ -33,8 +33,17 @@ function parseArgs(argv) {
   const portIndex = argv.findIndex((value) => value === '--port');
   const portValue = portIndex >= 0 ? argv[portIndex + 1] : undefined;
   const port = Number(portValue || process.env.PORT || 4175);
+
+  const profileIndex = argv.findIndex((value) => value === '--profile');
+  const profileValue = profileIndex >= 0 ? argv[profileIndex + 1] : undefined;
+
+  const configRootIndex = argv.findIndex((value) => value === '--config-root');
+  const configRootValue = configRootIndex >= 0 ? argv[configRootIndex + 1] : undefined;
+
   return {
     port: Number.isFinite(port) && port > 0 ? port : 4175,
+    profile: profileValue || process.env.KARDASHEV_DEMO_PROFILE || '',
+    configRoot: configRootValue || process.env.KARDASHEV_DEMO_ROOT || '',
   };
 }
 
@@ -72,8 +81,8 @@ async function readFileOr404(targetPath, res) {
 }
 
 async function startServer() {
-  const { port } = parseArgs(process.argv.slice(2));
-  await ensureArtefacts();
+  const { port, profile, configRoot } = parseArgs(process.argv.slice(2));
+  await ensureArtefacts({ profile, configRoot });
 
   const server = http.createServer(async (req, res) => {
     if (!req.url) {
@@ -100,7 +109,7 @@ async function startServer() {
   });
 }
 
-async function ensureArtefacts() {
+async function ensureArtefacts({ profile, configRoot }) {
   const missing = [];
   for (const filename of REQUIRED_ARTEFACTS) {
     const targetPath = path.join(OUTPUT_DIR, filename);
@@ -116,13 +125,39 @@ async function ensureArtefacts() {
   }
 
   console.log(
-    `⚠️ Missing Kardashev II artefacts (${missing.join(', ')}). Regenerating via run-demo.cjs...`
+    `⚠️ Missing Kardashev II artefacts (${missing.join(
+      ', '
+    )}). Regenerating via run-kardashev-demo.ts...`
   );
-  const result = spawnSync(process.execPath, [path.join(DEMO_ROOT, 'run-demo.cjs')], {
+  const env = {
+    ...process.env,
+    ...(profile ? { KARDASHEV_DEMO_PROFILE: profile } : {}),
+    ...(configRoot ? { KARDASHEV_DEMO_ROOT: configRoot } : {}),
+  };
+  const orchestratorArgs = [
+    'ts-node',
+    '--compiler-options',
+    '{"module":"commonjs"}',
+    path.join(DEMO_ROOT, 'scripts', 'run-kardashev-demo.ts'),
+    ...(profile ? ['--profile', profile] : []),
+    ...(configRoot ? ['--config-root', configRoot] : []),
+  ];
+  const result = spawnSync('npx', orchestratorArgs, {
     stdio: 'inherit',
     cwd: DEMO_ROOT,
+    env,
   });
-  if (result.status !== 0) {
+  if (result.status === 0) {
+    return;
+  }
+
+  console.warn('⚠️ Falling back to run-demo.cjs after orchestrator failure.');
+  const fallback = spawnSync(process.execPath, [path.join(DEMO_ROOT, 'run-demo.cjs')], {
+    stdio: 'inherit',
+    cwd: DEMO_ROOT,
+    env,
+  });
+  if (fallback.status !== 0) {
     throw new Error('Failed to regenerate Kardashev II demo artefacts.');
   }
 }
