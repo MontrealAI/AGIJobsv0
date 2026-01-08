@@ -33,9 +33,12 @@ jobs:
           egress-policy: block
           allowed-endpoints: |
             api.github.com
+            actions.githubusercontent.com
+            actions-results.githubusercontent.com
             files.pythonhosted.org
             github.com
             objects.githubusercontent.com
+            pipelines.actions.githubusercontent.com
             pypi.org
             registry.npmjs.org
             nodejs.org

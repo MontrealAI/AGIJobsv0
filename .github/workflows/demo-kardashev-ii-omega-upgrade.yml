@@ -31,6 +31,9 @@ jobs:
             github.com
             objects.githubusercontent.com
             raw.githubusercontent.com
+            actions.githubusercontent.com
+            actions-results.githubusercontent.com
+            pipelines.actions.githubusercontent.com
             registry.npmjs.org
             nodejs.org
 
