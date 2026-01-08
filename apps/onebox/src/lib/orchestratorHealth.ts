@@ -15,13 +15,32 @@ export type OrchestratorHealthOptions = {
 };
 
 const DEFAULT_TIMEOUT_MS = 5000;
+const AUTH_TOKEN_PATTERN = /^[A-Za-z0-9._~+/=:-]{1,512}$/;
+
+const sanitizeAuthToken = (value?: string): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (/[\r\n]/.test(trimmed)) {
+    return undefined;
+  }
+  if (!AUTH_TOKEN_PATTERN.test(trimmed)) {
+    return undefined;
+  }
+  return trimmed;
+};
 
 const buildHeaders = (apiToken?: string): HeadersInit | undefined => {
-  if (!apiToken) {
+  const sanitizedToken = sanitizeAuthToken(apiToken);
+  if (!sanitizedToken) {
     return undefined;
   }
   return {
-    Authorization: `Bearer ${apiToken}`,
+    Authorization: `Bearer ${sanitizedToken}`,
   };
 };
 
