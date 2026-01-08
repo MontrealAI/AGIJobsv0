@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   asi-global:
