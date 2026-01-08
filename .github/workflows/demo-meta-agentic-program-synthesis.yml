@@ -58,7 +58,7 @@ jobs:
           test -f demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/report.json
 
       - name: Upload artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: meta-agentic-demo-report
           path: demo/Meta-Agentic-Program-Synthesis-v0/.ci-artifacts/
