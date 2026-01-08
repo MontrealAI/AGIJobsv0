@@ -3,7 +3,7 @@
 FROM node:20.18.1-alpine3.20 AS base-build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ \
-    && apk upgrade --no-cache libssl3 libcrypto3 \
+    && apk upgrade --no-cache \
     && ln -sf python3 /usr/bin/python
 ENV PYTHON=/usr/bin/python3 \
     CYPRESS_INSTALL_BINARY=0 \
@@ -37,7 +37,7 @@ COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/agent-gateway/dist ./agent-gateway/dist
 COPY --from=builder /app/scripts/start-telemetry.sh ./scripts/start-telemetry.sh
-RUN apk upgrade --no-cache libssl3 libcrypto3 \
+RUN apk upgrade --no-cache \
     && chmod +x ./scripts/start-telemetry.sh \
     && mkdir -p /app/storage /app/logs \
     && chown -R node:node /app
