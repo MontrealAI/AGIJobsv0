@@ -203,25 +203,25 @@ jobs:
           NODE
 
       - name: Upload α-AGI MARK recap
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: alpha-agi-mark-recap
           path: demo/alpha-agi-mark/reports/alpha-mark-recap.json
 
       - name: Upload α-AGI MARK integrity dossier
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: alpha-agi-mark-integrity
           path: demo/alpha-agi-mark/reports/alpha-mark-integrity.md
 
       - name: Upload α-AGI MARK empowerment pulse
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: alpha-agi-mark-empowerment
           path: demo/alpha-agi-mark/reports/alpha-mark-empowerment.md
 
       - name: Upload α-AGI MARK mission timeline
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: alpha-agi-mark-timeline
           path: demo/alpha-agi-mark/reports/alpha-mark-timeline.md

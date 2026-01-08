@@ -15,13 +15,16 @@ permissions:
 
 jobs:
   flagship-dry-run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: Harden runner
-        uses: step-security/harden-runner@v2.13.1
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -38,7 +41,7 @@ jobs:
             codeload.github.com
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -47,7 +50,7 @@ jobs:
         run: bash demo/cosmic-omni-sovereign-symphony/bin/flagship-demo.sh --ci --dry-run
 
       - name: Upload flagship artefacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: cosmic-flagship-demo
           path: |

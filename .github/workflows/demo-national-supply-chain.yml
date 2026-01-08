@@ -60,7 +60,7 @@ jobs:
         run: npm run demo:national-supply-chain:validate
 
       - name: Upload transcript artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: national-supply-chain-transcript
           path: demo/National-Supply-Chain-v0/ui/export/latest.json
