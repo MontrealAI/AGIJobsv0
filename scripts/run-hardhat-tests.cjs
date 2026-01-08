@@ -49,6 +49,7 @@ function getLatestMtime(rootPath) {
 // meaningful for Hardhat to keep the test harness robust.
 const passthroughArgs = [];
 const ignoredPrefixes = ['--runinband', '--maxworkers', '--silent', '--listtests'];
+const ignoredValuePrefixes = ['--maxworkers'];
 const translatedArgs = [];
 let shouldSkipHardhat = false;
 let reporterOption;
@@ -109,7 +110,10 @@ for (let i = 0; i < process.argv.length; i += 1) {
       shouldSkipHardhat = true;
     }
     // Drop Jest/npm convenience flags that Hardhat doesn't understand
-    if (arg.includes('=') === false && process.argv[i + 1] && !process.argv[i + 1].startsWith('-')) {
+    if (ignoredValuePrefixes.some((prefix) => normalised.startsWith(prefix))
+      && arg.includes('=') === false
+      && process.argv[i + 1]
+      && !process.argv[i + 1].startsWith('-')) {
       // If the ignored flag expects a value (e.g. --maxWorkers 4), skip the next token too
       i += 1;
     }
