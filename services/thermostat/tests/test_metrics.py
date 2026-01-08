@@ -40,3 +40,11 @@ def test_metric_sample_defaults_invalid_numeric_fields() -> None:
     assert sample.cost == 0.0
     assert sample.successes == 7
     assert sample.failures == 0
+
+
+def test_metric_sample_derives_roi_from_gmv_and_cost() -> None:
+    payload = {"timestamp": 0, "gmv": 250.0, "cost": 100.0}
+
+    sample = MetricSample.from_payload(payload)
+
+    assert sample.roi == 2.5

@@ -1,6 +1,7 @@
 """Shared data structures for thermostat metrics ingestion."""
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Mapping
@@ -63,9 +64,14 @@ class MetricSample:
         else:
             timestamp = datetime.now(tz=timezone.utc)
 
-        roi = _coerce_float(payload.get("roi", 0.0))
         gmv = _coerce_float(payload.get("gmv", payload.get("revenue", 0.0)))
         cost = _coerce_float(payload.get("cost", payload.get("spend", 0.0)))
+        roi = _coerce_float(payload.get("roi"), default=float("nan"))
+        if not math.isfinite(roi):
+            if cost:
+                roi = gmv / cost
+            else:
+                roi = 0.0
         successes = _coerce_int(payload.get("successes", 0))
         failures = _coerce_int(payload.get("failures", 0))
         return cls(
