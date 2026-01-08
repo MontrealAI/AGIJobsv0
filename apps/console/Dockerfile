@@ -10,6 +10,7 @@ RUN npm run build
 FROM nginx:1.27-alpine AS runner
 RUN apk upgrade --no-cache \
     libexpat \
+    libpng \
     libxml2
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
