@@ -174,6 +174,40 @@ function ensureUint(
   return parsed.toString();
 }
 
+function ensureInt(
+  value,
+  label,
+  { allowZero = false, optional = false, allowNegative = false } = {}
+) {
+  if (value === undefined || value === null || value === '') {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error(`${label} is missing`);
+  }
+  const asString = typeof value === 'string' ? value.trim() : String(value);
+  if (!asString) {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error(`${label} is missing`);
+  }
+  const pattern = allowNegative ? /^-?\d+$/ : /^\d+$/;
+  if (!pattern.test(asString)) {
+    throw new Error(
+      `${label} must be a${allowNegative ? '' : ' non-negative'} integer`
+    );
+  }
+  const parsed = BigInt(asString);
+  if (!allowNegative && parsed < 0n) {
+    throw new Error(`${label} must be non-negative`);
+  }
+  if (!allowZero && parsed === 0n) {
+    throw new Error(`${label} must be greater than zero`);
+  }
+  return parsed.toString();
+}
+
 function parseBooleanFlag(value, label) {
   if (value === undefined || value === null || value === '') {
     return undefined;
@@ -1726,11 +1760,13 @@ function normaliseHamiltonianRecord(entry, index) {
     entry.d ?? entry.dissipation ?? entry.delta ?? entry.energy ?? entry.D;
   const uValue = entry.u ?? entry.utility ?? entry.U;
 
-  record.d = ensureUint(dValue, `records[${index}].d`, {
+  record.d = ensureInt(dValue, `records[${index}].d`, {
     allowZero: true,
+    allowNegative: true,
   });
-  record.u = ensureUint(uValue, `records[${index}].u`, {
+  record.u = ensureInt(uValue, `records[${index}].u`, {
     allowZero: true,
+    allowNegative: true,
   });
 
   if (entry.timestamp !== undefined && entry.timestamp !== null) {
