@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  actions: read
+  actions: write
   security-events: write
 
 concurrency:

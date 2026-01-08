@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 jobs:
   zenith-planetary-os:

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: webapp-${{ github.workflow }}-${{ github.ref }}

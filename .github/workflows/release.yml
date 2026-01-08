@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
   packages: write
   id-token: write
 

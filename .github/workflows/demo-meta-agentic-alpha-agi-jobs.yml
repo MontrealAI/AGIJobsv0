@@ -18,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: demo-meta-agentic-${{ github.workflow }}-${{ github.ref }}
