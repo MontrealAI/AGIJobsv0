@@ -94,6 +94,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: solidity
     timeout-minutes: 30
+    env:
+      MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - name: Enable Corepack
@@ -116,10 +118,10 @@ jobs:
             ghcr.io/crytic/slither:0.10.4 \
             . --config-file slither.config.json
       - name: MythX analysis
-        if: ${{ env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '' }}
+        if: ${{ env.MYTHX_API_KEY != '' }}
         working-directory: demo/CULTURE-v0
         env:
-          MYTHX_API_KEY: ${{ secrets.MYTHX_API_KEY || env.MYTHX_API_KEY }}
+          MYTHX_API_KEY: ${{ env.MYTHX_API_KEY }}
         run: |
           docker run --rm \
             -e MYTHX_API_KEY \
@@ -127,7 +129,7 @@ jobs:
             -w /workspace/demo/CULTURE-v0 \
             mythx/mythx-cli:latest analyze contracts/CultureRegistry.sol contracts/SelfPlayArena.sol
       - name: MythX notice
-        if: ${{ !(env.MYTHX_API_KEY != '' || secrets.MYTHX_API_KEY != '') }}
+        if: ${{ env.MYTHX_API_KEY == '' }}
         run: echo 'MythX API key not provided; skipping MythX analysis.'
 
   services:
@@ -205,24 +207,6 @@ jobs:
       - services
     timeout-minutes: 60
     services:
-      anvil:
-        image: ghcr.io/foundry-rs/foundry:latest
-        options: >-
-          --health-cmd "cast block-number" --health-interval 5s --health-timeout 5s --health-retries 12 --health-start-period 5s
-        ports:
-          - 8545:8545
-        command:
-          [
-            'anvil',
-            '--host',
-            '0.0.0.0',
-            '--port',
-            '8545',
-            '--chain-id',
-            '31337',
-            '--block-time',
-            '2',
-          ]
       ipfs:
         image: ipfs/kubo:latest
         ports:
@@ -247,6 +231,10 @@ jobs:
       - name: Install dependencies
         working-directory: demo/CULTURE-v0
         run: pnpm install --frozen-lockfile
+      - name: Start Anvil
+        run: |
+          docker run -d --name anvil -p 8545:8545 ghcr.io/foundry-rs/foundry:latest \
+            anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --block-time 2
       - name: Seed deployment artifacts
         working-directory: demo/CULTURE-v0
         env:
@@ -266,7 +254,10 @@ jobs:
       - name: Wait for readiness
         run: |
           for attempt in {1..40}; do
-            if curl -fsS http://localhost:4005/metrics >/dev/null 2>&1 \
+            if curl -fsS -X POST http://localhost:8545 \
+              -H 'Content-Type: application/json' \
+              --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' >/dev/null 2>&1 \
+              && curl -fsS http://localhost:4005/metrics >/dev/null 2>&1 \
               && curl -fsS http://localhost:4100/healthz >/dev/null 2>&1 \
               && curl -fsS http://localhost:4173/healthz >/dev/null 2>&1; then
               exit 0
@@ -282,4 +273,6 @@ jobs:
       - name: Shutdown stack
         if: always()
         working-directory: demo/CULTURE-v0
-        run: docker compose down -v
+        run: |
+          docker compose down -v
+          docker rm -f anvil
