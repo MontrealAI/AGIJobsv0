@@ -29,7 +29,9 @@ function parseMochaReporterOptions(name) {
     }
 
     if (Object.keys(options).length === 0) {
-      throw new Error(`Invalid reporter options provided in ${name}: ${error.message}`);
+      throw new Error(
+        `Invalid reporter options provided in ${name}: ${error.message}`
+      );
     }
 
     return options;
@@ -89,7 +91,8 @@ const jobRegistryViaIROverride = process.env.HARDHAT_JOBREGISTRY_VIA_IR;
 // opt-out via HARDHAT_VIA_IR=false. Fast compile runs keep viaIR enabled by
 // default to preserve correctness while other toggles (like reduced compiler
 // sets) keep turnaround times manageable.
-const baseViaIR = viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
+const baseViaIR =
+  viaIROverride === undefined ? !isCoverageRun : viaIROverride === 'true';
 const compilerViaIR = baseViaIR;
 
 // JobRegistry relies on viaIR to avoid stack depth issues in several
@@ -100,14 +103,13 @@ const jobRegistryViaIR =
   jobRegistryViaIROverride === 'true'
     ? true
     : jobRegistryViaIROverride === 'false'
-      ? false
-      : true;
+    ? false
+    : true;
 
 const SOLIDITY_VERSIONS = ['0.8.25', '0.8.23', '0.8.21'];
 
-const solidityVersions = isCoverageRun || isFastCompile
-  ? [SOLIDITY_VERSIONS[0]]
-  : SOLIDITY_VERSIONS;
+const solidityVersions =
+  isCoverageRun || isFastCompile ? [SOLIDITY_VERSIONS[0]] : SOLIDITY_VERSIONS;
 
 const solidityCompilers = solidityVersions.map((version) => ({
   version,
