@@ -37,6 +37,9 @@ jobs:
             actions-results.githubusercontent.com
             files.pythonhosted.org
             github.com
+            codeload.github.com
+            uploads.github.com
+            release-assets.githubusercontent.com
             objects.githubusercontent.com
             pipelines.actions.githubusercontent.com
             pypi.org

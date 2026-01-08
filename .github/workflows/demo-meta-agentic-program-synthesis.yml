@@ -28,6 +28,9 @@ jobs:
           allowed-endpoints: |
             api.github.com
             github.com
+            codeload.github.com
+            uploads.github.com
+            release-assets.githubusercontent.com
             objects.githubusercontent.com
             raw.githubusercontent.com
             actions.githubusercontent.com
