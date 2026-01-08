@@ -11,6 +11,9 @@ on:
       - 'demo/MuZero-style-v0/**'
       - '.github/workflows/demo-muzero-style.yml'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04

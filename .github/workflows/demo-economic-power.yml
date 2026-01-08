@@ -14,6 +14,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
 
+permissions:
+  contents: read
+
 jobs:
   run-demo:
     runs-on: ubuntu-24.04

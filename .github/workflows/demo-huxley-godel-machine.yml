@@ -13,6 +13,9 @@ on:
       - '.github/workflows/demo-huxley-godel-machine.yml'
       - 'Makefile'
 
+permissions:
+  contents: read
+
 jobs:
   smoke-test:
     runs-on: ubuntu-24.04
