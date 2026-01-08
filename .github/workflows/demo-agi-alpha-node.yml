@@ -10,6 +10,9 @@ on:
     paths:
       - 'demo/AGI-Alpha-Node-v0/**'
 
+permissions:
+  contents: read
+
 jobs:
   tests:
     runs-on: ubuntu-24.04
