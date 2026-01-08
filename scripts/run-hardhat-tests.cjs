@@ -167,6 +167,12 @@ const hardhatTimeoutMs = Number.isFinite(parsedHardhatTimeout) && parsedHardhatT
 if (!env.HARDHAT_FAST_COMPILE) {
   env.HARDHAT_FAST_COMPILE = '1';
 }
+if (
+  env.HARDHAT_JOBREGISTRY_VIA_IR === undefined
+  && env.HARDHAT_FAST_COMPILE === '1'
+) {
+  env.HARDHAT_JOBREGISTRY_VIA_IR = 'true';
+}
 
 let skipCompile = env.HARDHAT_SKIP_COMPILE === '1';
 
