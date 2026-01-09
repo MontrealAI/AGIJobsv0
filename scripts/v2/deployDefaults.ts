@@ -101,7 +101,12 @@ async function ensureAgialphaToken(): Promise<void> {
     AGIALPHA
   );
   const mintAmount = ethers.parseUnits('1000000', AGIALPHA_DECIMALS);
-  await token.mint(defaultSigner.address, mintAmount);
+  const latestBlock = await ethers.provider.getBlock('latest');
+  const gasLimit =
+    latestBlock?.gasLimit && latestBlock.gasLimit > 1n
+      ? latestBlock.gasLimit - 1n
+      : 8_000_000n;
+  await token.mint(defaultSigner.address, mintAmount, { gasLimit });
   console.log(
     `🔧 Provisioned LocalAgialpha stub at ${AGIALPHA} with ${ethers.formatUnits(
       mintAmount,
