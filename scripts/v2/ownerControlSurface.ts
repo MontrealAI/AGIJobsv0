@@ -64,6 +64,7 @@ interface CliOptions {
   json?: boolean;
   outPath?: string;
   format?: 'human' | 'markdown';
+  allowErrors?: boolean;
   help?: boolean;
 }
 
@@ -90,6 +91,10 @@ interface FileInfo {
 
 function parseArgs(argv: string[]): CliOptions {
   const options: CliOptions = { format: 'human' };
+  const allowErrorsEnv = process.env.OWNER_CONTROL_SURFACE_ALLOW_ERRORS;
+  if (allowErrorsEnv && allowErrorsEnv.toLowerCase() === 'true') {
+    options.allowErrors = true;
+  }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
@@ -141,6 +146,9 @@ function parseArgs(argv: string[]): CliOptions {
         i += 1;
         break;
       }
+      case '--allow-errors':
+        options.allowErrors = true;
+        break;
       case '--help':
       case '-h':
         options.help = true;
@@ -891,6 +899,7 @@ async function main(): Promise<void> {
     console.log(
       '  --out <file>           Write output to file instead of stdout'
     );
+    console.log('  --allow-errors         Do not exit non-zero on error statuses');
     console.log('  --help                 Show this message');
     return;
   }
@@ -1044,7 +1053,7 @@ async function main(): Promise<void> {
     } else {
       console.log(json);
     }
-    if (reports.some((r) => r.status === 'error')) {
+    if (!options.allowErrors && reports.some((r) => r.status === 'error')) {
       process.exitCode = 1;
     }
     return;
@@ -1061,7 +1070,7 @@ async function main(): Promise<void> {
     console.log(rendered);
   }
 
-  if (reports.some((r) => r.status === 'error')) {
+  if (!options.allowErrors && reports.some((r) => r.status === 'error')) {
     process.exitCode = 1;
   }
 }
