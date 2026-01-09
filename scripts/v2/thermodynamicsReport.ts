@@ -483,6 +483,15 @@ async function fetchThermostat(
   return ethers.getContractAt('Thermostat', address);
 }
 
+async function hasDeployedCode(address: string): Promise<boolean> {
+  try {
+    const code = await ethers.provider.getCode(address);
+    return code !== '0x';
+  } catch (error) {
+    return false;
+  }
+}
+
 function aggregateSummary(sections: SectionResult[]) {
   return sections.map((section) => {
     const counts: Record<Status, number> = {
@@ -643,7 +652,11 @@ async function main(): Promise<void> {
   let rewardContract: import('ethers').Contract | null = null;
   if (rewardAddress && rewardAddress !== ZERO_ADDRESS) {
     try {
-      rewardContract = await fetchRewardEngine(rewardAddress);
+      if (await hasDeployedCode(rewardAddress)) {
+        rewardContract = await fetchRewardEngine(rewardAddress);
+      } else {
+        notes.push(`RewardEngineMB not deployed at ${rewardAddress}`);
+      }
     } catch (error) {
       notes.push(`Failed to instantiate RewardEngineMB at ${rewardAddress}: ${String(error)}`);
     }
@@ -652,7 +665,11 @@ async function main(): Promise<void> {
   let thermostatContract: import('ethers').Contract | null = null;
   if (thermostatAddress && thermostatAddress !== ZERO_ADDRESS) {
     try {
-      thermostatContract = await fetchThermostat(thermostatAddress);
+      if (await hasDeployedCode(thermostatAddress)) {
+        thermostatContract = await fetchThermostat(thermostatAddress);
+      } else {
+        notes.push(`Thermostat not deployed at ${thermostatAddress}`);
+      }
     } catch (error) {
       notes.push(`Failed to instantiate Thermostat at ${thermostatAddress}: ${String(error)}`);
     }
