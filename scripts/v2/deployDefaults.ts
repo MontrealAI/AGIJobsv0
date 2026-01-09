@@ -101,11 +101,7 @@ async function ensureAgialphaToken(): Promise<void> {
     AGIALPHA
   );
   const mintAmount = ethers.parseUnits('1000000', AGIALPHA_DECIMALS);
-  const latestBlock = await ethers.provider.getBlock('latest');
-  const gasLimit =
-    latestBlock?.gasLimit && latestBlock.gasLimit > 1n
-      ? latestBlock.gasLimit - 1n
-      : 8_000_000n;
+  const gasLimit = await resolveBlockGasLimit();
   await token.mint(defaultSigner.address, mintAmount, { gasLimit });
   console.log(
     `🔧 Provisioned LocalAgialpha stub at ${AGIALPHA} with ${ethers.formatUnits(
@@ -119,6 +115,14 @@ const MAX_UINT96 = (1n << 96n) - 1n;
 const DEFAULT_TAX_URI = 'ipfs://policy';
 const DEFAULT_TAX_DESCRIPTION =
   'All taxes on participants; contract and owner exempt';
+
+async function resolveBlockGasLimit(): Promise<bigint> {
+  const latestBlock = await ethers.provider.getBlock('latest');
+  if (latestBlock?.gasLimit && latestBlock.gasLimit > 1n) {
+    return latestBlock.gasLimit - 1n;
+  }
+  return 8_000_000n;
+}
 
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
@@ -544,22 +548,27 @@ async function main() {
   }
 
   await ensureAgialphaToken();
+  const deploymentGasLimit = await resolveBlockGasLimit();
 
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
   );
-  const deployer = await Deployer.deploy();
+  const deployer = await Deployer.deploy({ gasLimit: deploymentGasLimit });
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
   console.log('Deployer deployed at', deployerAddress);
 
   const tx = withTax
     ? hasEconOverrides
-      ? await deployer.deploy(econ, identity, governance)
-      : await deployer.deployDefaults(identity, governance)
+      ? await deployer.deploy(econ, identity, governance, { gasLimit: deploymentGasLimit })
+      : await deployer.deployDefaults(identity, governance, { gasLimit: deploymentGasLimit })
     : hasEconOverrides
-    ? await deployer.deployWithoutTaxPolicy(econ, identity, governance)
-    : await deployer.deployDefaultsWithoutTaxPolicy(identity, governance);
+    ? await deployer.deployWithoutTaxPolicy(econ, identity, governance, {
+        gasLimit: deploymentGasLimit,
+      })
+    : await deployer.deployDefaultsWithoutTaxPolicy(identity, governance, {
+        gasLimit: deploymentGasLimit,
+      });
 
   const receipt = await tx.wait();
   const deployLog = receipt.logs.find((log) => log.address === deployerAddress);
