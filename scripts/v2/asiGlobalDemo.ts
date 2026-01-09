@@ -396,8 +396,13 @@ async function main(): Promise<void> {
         BUNDLE_ROOT,
         '--bundle-name',
         BUNDLE_NAME,
-        '--skip-surface',
+        '--skip-plan',
+        '--skip-verify',
+        '--skip-dashboard',
       ],
+      env: {
+        OWNER_CONTROL_SURFACE_ALLOW_ERRORS: 'true',
+      },
     },
     {
       key: 'command-center',
