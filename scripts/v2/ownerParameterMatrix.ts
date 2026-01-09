@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import path from 'path';
+import { ethers } from 'ethers';
 import {
   loadTokenConfig,
   loadStakeManagerConfig,
@@ -61,6 +62,17 @@ interface SubsystemDescriptor {
   loader: (network?: string) => { config: unknown; path: string };
 }
 
+interface DemoAddressBook {
+  taxPolicy: string;
+  rewardEngine: string;
+  thermostat?: string;
+}
+
+interface DemoConfigOverrides {
+  jobRegistryPath?: string;
+  thermodynamicsPath?: string;
+}
+
 interface MatrixPayload {
   network?: string;
   subsystems: SubsystemMatrix[];
@@ -69,6 +81,8 @@ interface MatrixPayload {
 
 const NEWLINE = '\n';
 const DEFAULT_FORMAT: OutputFormat = 'markdown';
+const LOCAL_NETWORKS = new Set(['hardhat', 'localhost']);
+const DEMO_ADDRESS_BOOK_ENV = 'OWNER_MATRIX_DEMO_ADDRESS_BOOK';
 
 async function resolveHardhatContext(): Promise<HardhatContext> {
   try {
@@ -180,6 +194,107 @@ function toDisplayValue(input: unknown): string {
   return String(input);
 }
 
+function resolveDemoAddressBookPath(): string | undefined {
+  const override = process.env[DEMO_ADDRESS_BOOK_ENV];
+  if (!override || override.trim().length === 0) {
+    return undefined;
+  }
+  const trimmed = override.trim();
+  if (path.isAbsolute(trimmed)) {
+    return trimmed;
+  }
+  return path.join(process.cwd(), trimmed);
+}
+
+function normaliseDemoAddress(value: unknown, label: string): string {
+  if (value === undefined || value === null) {
+    throw new Error(`Demo address book missing ${label}`);
+  }
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    throw new Error(`Demo address book missing ${label}`);
+  }
+  const address = ethers.getAddress(trimmed);
+  if (address === ethers.ZeroAddress) {
+    throw new Error(`Demo address book ${label} cannot be the zero address`);
+  }
+  return address;
+}
+
+async function loadDemoAddressBook(filePath: string): Promise<DemoAddressBook> {
+  const raw = await fs.readFile(filePath, 'utf8');
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  return {
+    taxPolicy: normaliseDemoAddress(parsed.taxPolicy, 'taxPolicy'),
+    rewardEngine: normaliseDemoAddress(parsed.rewardEngine, 'rewardEngine'),
+    thermostat: parsed.thermostat
+      ? normaliseDemoAddress(parsed.thermostat, 'thermostat')
+      : undefined,
+  };
+}
+
+async function writeDemoConfigOverrides(
+  addressBook: DemoAddressBook,
+  network?: string
+): Promise<DemoConfigOverrides> {
+  const outputDir = path.join(
+    process.cwd(),
+    'deployment-config',
+    'generated',
+    'demo-hardhat-owner-matrix'
+  );
+  await fs.mkdir(outputDir, { recursive: true });
+
+  const jobRegistrySource = path.join(process.cwd(), 'config', 'job-registry.json');
+  const jobRegistryRaw = await fs.readFile(jobRegistrySource, 'utf8');
+  const jobRegistryConfig = JSON.parse(jobRegistryRaw) as Record<string, unknown>;
+  jobRegistryConfig.taxPolicy = addressBook.taxPolicy;
+  const jobRegistryPath = path.join(
+    outputDir,
+    `job-registry.${network ?? 'hardhat'}.json`
+  );
+  await fs.writeFile(jobRegistryPath, `${JSON.stringify(jobRegistryConfig, null, 2)}\n`);
+
+  const thermoSource = path.join(process.cwd(), 'config', 'thermodynamics.json');
+  const thermoRaw = await fs.readFile(thermoSource, 'utf8');
+  const thermoConfig = JSON.parse(thermoRaw) as Record<string, any>;
+  const rewardEngineConfig = {
+    ...(thermoConfig.rewardEngine ?? {}),
+    address: addressBook.rewardEngine,
+  };
+  if (addressBook.thermostat) {
+    rewardEngineConfig.thermostat = addressBook.thermostat;
+  }
+  thermoConfig.rewardEngine = rewardEngineConfig;
+  thermoConfig.thermostat = {
+    ...(thermoConfig.thermostat ?? {}),
+    address: addressBook.thermostat ?? rewardEngineConfig.thermostat,
+  };
+  const thermodynamicsPath = path.join(
+    outputDir,
+    `thermodynamics.${network ?? 'hardhat'}.json`
+  );
+  await fs.writeFile(thermodynamicsPath, `${JSON.stringify(thermoConfig, null, 2)}\n`);
+
+  return { jobRegistryPath, thermodynamicsPath };
+}
+
+async function prepareDemoOverrides(
+  network?: string
+): Promise<DemoConfigOverrides | null> {
+  const addressBookPath = resolveDemoAddressBookPath();
+  if (!addressBookPath) {
+    return null;
+  }
+  if (!network || !LOCAL_NETWORKS.has(network)) {
+    throw new Error(
+      `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
+    );
+  }
+  const addressBook = await loadDemoAddressBook(addressBookPath);
+  return writeDemoConfigOverrides(addressBook, network);
+}
+
 function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], depth = 0): MatrixRow[] {
   if (rows.length > 256) {
     return rows;
@@ -220,7 +335,10 @@ function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], dept
   return rows;
 }
 
-async function buildSubsystemMatrices(network?: string): Promise<SubsystemBuildResult[]> {
+async function buildSubsystemMatrices(
+  network?: string,
+  demoOverrides?: DemoConfigOverrides
+): Promise<SubsystemBuildResult[]> {
   const descriptors: SubsystemDescriptor[] = [
     {
       id: 'token',
@@ -263,7 +381,11 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemBuildR
         'npm run owner:verify-control -- --network <network> --modules=jobRegistry',
       ],
       fallbackConfigPath: 'config/job-registry.json',
-      loader: (ctx) => loadJobRegistryConfig({ network: ctx }),
+      loader: (ctx) =>
+        loadJobRegistryConfig({
+          network: ctx,
+          path: demoOverrides?.jobRegistryPath,
+        }),
     },
     {
       id: 'feePool',
@@ -292,7 +414,11 @@ async function buildSubsystemMatrices(network?: string): Promise<SubsystemBuildR
       ],
       verifyCommands: ['npm run owner:verify-control -- --network <network> --modules=rewardEngine,thermostat'],
       fallbackConfigPath: 'config/thermodynamics.json',
-      loader: (ctx) => loadThermodynamicsConfig({ network: ctx }),
+      loader: (ctx) =>
+        loadThermodynamicsConfig({
+          network: ctx,
+          path: demoOverrides?.thermodynamicsPath,
+        }),
     },
     {
       id: 'hamiltonianMonitor',
@@ -520,6 +646,9 @@ async function main(): Promise<void> {
       '  --format <format>      Output format: markdown (default), json, human',
       '  --out <path>           Write to file instead of stdout',
       '  --no-mermaid           Omit Mermaid diagrams in markdown mode',
+      '',
+      `Environment:`,
+      `  ${DEMO_ADDRESS_BOOK_ENV}=<path>  Path to demo address book JSON for hardhat demos.`,
       '  -h, --help             Show this message',
     ].join(NEWLINE);
     process.stdout.write(`${helpText}\n`);
@@ -529,7 +658,8 @@ async function main(): Promise<void> {
   const hardhat = await resolveHardhatContext();
   const selectedNetwork = options.network ?? process.env.HARDHAT_NETWORK ?? hardhat.name;
 
-  const buildResults = await buildSubsystemMatrices(selectedNetwork);
+  const demoOverrides = await prepareDemoOverrides(selectedNetwork);
+  const buildResults = await buildSubsystemMatrices(selectedNetwork, demoOverrides);
   const subsystems = buildResults.map((entry) => entry.matrix);
   const matrix: MatrixPayload = {
     network: selectedNetwork,

@@ -81,6 +81,10 @@ const COMMAND_CENTER_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_COMMAND_CENTE
 const PARAMETER_MATRIX_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_PARAMETER_MATRIX_PATH', 'parameter-matrix.md');
 const MERMAID_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_MERMAID_PATH', 'governance.mmd');
 const MERMAID_MARKDOWN_PATH = resolveWithin(REPORT_ROOT, 'ASI_GLOBAL_MERMAID_MARKDOWN_PATH', 'governance.md');
+const DEMO_ADDRESS_BOOK_PATH = resolvePathFromEnv(
+  'ASI_GLOBAL_OWNER_MATRIX_ADDRESS_BOOK',
+  path.join(ROOT, 'deployment-config', 'generated', 'demo-hardhat-addresses.json')
+);
 const MERMAID_TITLE = process.env.ASI_GLOBAL_MERMAID_TITLE?.trim() || 'Global Autonomous Economic Orchestrator';
 const BUNDLE_NAME = process.env.ASI_GLOBAL_BUNDLE_NAME?.trim() || 'asi-takeoff';
 const KIT_BASENAME = process.env.ASI_GLOBAL_OUTPUT_BASENAME?.trim() || 'asi-global-governance-kit';
@@ -417,6 +421,22 @@ async function main(): Promise<void> {
       ],
     },
     {
+      key: 'owner-matrix-demo-seed',
+      title: 'Seed hardhat owner matrix demo addresses',
+      command: [
+        'npx',
+        'hardhat',
+        'run',
+        '--no-compile',
+        'scripts/v2/demoHardhatOwnerMatrixConfig.ts',
+        '--network',
+        'hardhat',
+      ],
+      env: {
+        OWNER_MATRIX_DEMO_ADDRESS_BOOK: DEMO_ADDRESS_BOOK_PATH,
+      },
+    },
+    {
       key: 'parameter-matrix',
       title: 'Owner parameter matrix',
       command: [
@@ -432,6 +452,9 @@ async function main(): Promise<void> {
         '--out',
         PARAMETER_MATRIX_PATH,
       ],
+      env: {
+        OWNER_MATRIX_DEMO_ADDRESS_BOOK: DEMO_ADDRESS_BOOK_PATH,
+      },
     },
     {
       key: 'governance-mermaid',
