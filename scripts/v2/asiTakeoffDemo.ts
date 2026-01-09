@@ -345,6 +345,11 @@ async function main(): Promise<void> {
         '--bundle-name',
         'asi-takeoff',
         '--skip-surface',
+        '--skip-plan',
+        '--skip-verify',
+        '--skip-dashboard',
+        '--only',
+        'surface',
       ],
     },
     {
