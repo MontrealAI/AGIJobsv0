@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+import { existsSync, promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
 import {
@@ -83,6 +83,12 @@ const NEWLINE = '\n';
 const DEFAULT_FORMAT: OutputFormat = 'markdown';
 const LOCAL_NETWORKS = new Set(['hardhat', 'localhost']);
 const DEMO_ADDRESS_BOOK_ENV = 'OWNER_MATRIX_DEMO_ADDRESS_BOOK';
+const DEFAULT_DEMO_ADDRESS_BOOK = path.join(
+  process.cwd(),
+  'deployment-config',
+  'generated',
+  'demo-hardhat-addresses.json'
+);
 
 async function resolveHardhatContext(): Promise<HardhatContext> {
   try {
@@ -194,10 +200,15 @@ function toDisplayValue(input: unknown): string {
   return String(input);
 }
 
-function resolveDemoAddressBookPath(): string | undefined {
+export function resolveDemoAddressBookPath(network?: string): string | undefined {
   const override = process.env[DEMO_ADDRESS_BOOK_ENV];
   if (!override || override.trim().length === 0) {
-    return undefined;
+    if (!network || !LOCAL_NETWORKS.has(network)) {
+      return undefined;
+    }
+    return existsSync(DEFAULT_DEMO_ADDRESS_BOOK)
+      ? DEFAULT_DEMO_ADDRESS_BOOK
+      : undefined;
   }
   const trimmed = override.trim();
   if (path.isAbsolute(trimmed)) {
@@ -282,7 +293,7 @@ async function writeDemoConfigOverrides(
 async function prepareDemoOverrides(
   network?: string
 ): Promise<DemoConfigOverrides | null> {
-  const addressBookPath = resolveDemoAddressBookPath();
+  const addressBookPath = resolveDemoAddressBookPath(network);
   if (!addressBookPath) {
     return null;
   }
@@ -700,7 +711,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error('ownerParameterMatrix failed:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('ownerParameterMatrix failed:', error);
+    process.exitCode = 1;
+  });
+}
