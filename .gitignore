@@ -1,4 +1,5 @@
 node_modules/
+# Keep local environment overrides out of version control.
 .env
 artifacts/
 cache/
