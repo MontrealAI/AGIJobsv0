@@ -323,6 +323,7 @@ async function main(): Promise<void> {
         ...HARDHAT_ENV,
         THERMODYNAMICS_REPORT_FORMAT: 'json',
         THERMODYNAMICS_REPORT_OUT: THERMODYNAMICS_PATH,
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
       },
     },
     {
@@ -346,6 +347,10 @@ async function main(): Promise<void> {
         'asi-takeoff',
         '--skip-surface',
       ],
+      env: {
+        ...HARDHAT_ENV,
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
+      },
     },
     {
       key: 'verify-control',

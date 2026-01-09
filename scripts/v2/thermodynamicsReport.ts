@@ -3,9 +3,9 @@ import fsSync from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
 import { inferNetworkKey } from '../config';
+import { bootstrapHardhatDemoConfig } from './lib/hardhatDemoBootstrap';
 
 const ZERO_ADDRESS = ethers.ZeroAddress;
-
 const ROLE_KEYS = ['agent', 'validator', 'operator', 'employer'] as const;
 type RoleKey = (typeof ROLE_KEYS)[number];
 const ROLE_LABEL: Record<RoleKey, string> = {
@@ -164,6 +164,8 @@ Environment overrides:
   THERMO_REPORT_OUT             Default output path
   THERMO_REPORT_ADDRESS_BOOK    Override deployment address book path
   THERMO_REPORT_CONFIG_NETWORK  Override config network resolution
+  AGJ_DEMO_BOOTSTRAP_HARDHAT       Deploy demo fixtures + generate hardhat config overrides
+  THERMO_REPORT_BOOTSTRAP_HARDHAT  (alias) Deploy demo fixtures for thermodynamics reports
 `);
 }
 
@@ -583,6 +585,8 @@ async function main(): Promise<void> {
   const notes: string[] = [];
   const configNetwork =
     options.configNetwork || inferNetworkKey(network.name) || network.name || 'unknown';
+
+  await bootstrapHardhatDemoConfig(configNetwork, notes);
 
   const thermoConfigPath = resolveThermodynamicsPath(configNetwork);
   if (!fsSync.existsSync(thermoConfigPath)) {

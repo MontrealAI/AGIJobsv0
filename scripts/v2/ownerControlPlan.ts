@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
 import {
+  inferNetworkKey,
   loadTokenConfig,
   loadJobRegistryConfig,
   loadStakeManagerConfig,
@@ -23,6 +24,7 @@ import { buildIdentityRegistryPlan } from './lib/identityRegistryPlan';
 import { buildRewardEnginePlan } from './lib/rewardEnginePlan';
 import { buildThermostatPlan } from './lib/thermostatPlan';
 import { buildRandaoCoordinatorPlan } from './lib/randaoCoordinatorPlan';
+import { bootstrapHardhatDemoConfig } from './lib/hardhatDemoBootstrap';
 import { describeArgs, sameAddress } from './lib/utils';
 import type { ModulePlan, PlannedAction } from './lib/types';
 
@@ -447,6 +449,10 @@ async function main() {
       console.warn(error);
     }
   }
+
+  const configNetwork =
+    inferNetworkKey(network.name) || network.name || 'unknown';
+  await bootstrapHardhatDemoConfig(configNetwork);
 
   const tokenResult = loadTokenConfig({
     network: network.name,

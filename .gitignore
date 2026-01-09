@@ -11,6 +11,7 @@ coverage.json
 !contracts/coverage/**
 !test/coverage/
 !test/coverage/**
+config/*.hardhat.json
 reports/sbom/
 reports/load-sim/
 reports/python-coverage/

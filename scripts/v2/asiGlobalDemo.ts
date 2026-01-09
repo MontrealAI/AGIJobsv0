@@ -375,6 +375,7 @@ async function main(): Promise<void> {
       env: {
         THERMODYNAMICS_REPORT_FORMAT: 'json',
         THERMODYNAMICS_REPORT_OUT: THERMODYNAMICS_PATH,
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
       },
     },
     {
@@ -398,6 +399,9 @@ async function main(): Promise<void> {
         BUNDLE_NAME,
         '--skip-surface',
       ],
+      env: {
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
+      },
     },
     {
       key: 'command-center',
