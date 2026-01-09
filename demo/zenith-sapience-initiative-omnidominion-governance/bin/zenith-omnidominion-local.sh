@@ -28,4 +28,4 @@ export AURORA_REPORT_TITLE="Zenith Sapience OmniDominion — Mission Report"
 rm -rf "$LOCAL_REPORT_ROOT"
 mkdir -p "$LOCAL_REPORT_ROOT"
 
-NETWORK="$NETWORK_NAME" npm run demo:asi-global -- "$@"
+NETWORK="$NETWORK_NAME" npm run demo:asi-global:local -- "$@"
