@@ -43,5 +43,9 @@ operators to inspect intermediate states on a local fork.
 - The runbook never modifies production deployments.  It only touches ephemeral local
   chains.
 - All scripts are idempotent; re-running them overwrites previous artefacts.
+- The demo pipeline auto-bootstraps Hardhat thermodynamics + tax policy fixtures by
+  setting `AGJ_DEMO_BOOTSTRAP_HARDHAT=1`, which generates
+  `config/job-registry.hardhat.json` and `config/thermodynamics.hardhat.json` for the
+  report steps.
 - Review `demo/asi-global/project-plan.json` to adapt the scenario with new regions or
   governance policies without changing any code.

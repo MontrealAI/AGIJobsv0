@@ -104,6 +104,13 @@ Clear previous artefacts:
 rm -rf reports/localhost/asi-takeoff
 ```
 
+## 8. Notes
+
+- The demo pipeline enables `AGJ_DEMO_BOOTSTRAP_HARDHAT=1` to deploy local
+  TaxPolicy/RewardEngineMB/Thermostat fixtures and generate
+  `config/job-registry.hardhat.json` plus `config/thermodynamics.hardhat.json` for
+  the owner-control report steps.
+
 ---
 
 This runbook, combined with `mission.json`, forms a reproducible dossier demonstrating autonomous multi-sector coordination under owner governance.
