@@ -144,7 +144,7 @@
     "ci:verify-signers": "node scripts/ci/check-signers.js",
     "ci:verify-toolchain": "node scripts/ci/check-toolchain-locks.js",
     "ci:lock-integrity": "node scripts/ci/check-lock-integrity.js",
-    "ci:preflight": "npm run ci:verify-toolchain --silent && npm run ci:lock-integrity --silent",
+    "ci:preflight": "npm run ci:verify-toolchain --silent && npm run ci:lock-integrity --silent && node scripts/ci/check-workflow-hex.js",
     "compile": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/generate-constants.ts && hardhat compile",
     "compile:mainnet": "npm run compile -- --network mainnet",
     "compile:sepolia": "npm run compile -- --network sepolia",
