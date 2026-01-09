@@ -17,7 +17,7 @@ const REGISTRY_ABI = [
 export interface PostJobSpec {
   reward: bigint | number | string;
   deadline: number;
-  metadata: any;
+  metadata: Record<string, unknown>;
   wallet: Wallet;
   dependencies?: (string | number)[];
   agentTypes?: number;
@@ -29,14 +29,17 @@ export interface JobArtifacts {
   specHash: string;
 }
 
-export async function prepareJobArtifacts(metadata: any): Promise<JobArtifacts> {
+export async function prepareJobArtifacts(
+  metadata: Record<string, unknown>
+): Promise<JobArtifacts> {
   const jsonSpec = JSON.stringify(metadata ?? {}, null, 2);
   const jsonPin = await uploadToIPFS(jsonSpec);
   const jsonCid = jsonPin.cid;
 
-  const markdown = metadata?.markdown
-    ? metadata.markdown
-    : `# Job Specification\n\n\`\`\`json\n${jsonSpec}\n\`\`\`\n`;
+  const markdown =
+    typeof metadata.markdown === 'string'
+      ? metadata.markdown
+      : `# Job Specification\n\n\`\`\`json\n${jsonSpec}\n\`\`\`\n`;
   const markdownPin = await uploadToIPFS(markdown);
   const markdownCid = markdownPin.cid;
 

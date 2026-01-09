@@ -150,7 +150,33 @@ const JOB_AGENT_PCT_MASK = 0xffffffffn << JOB_AGENT_PCT_OFFSET;
 const JOB_DEADLINE_MASK = 0xffffffffffffffffn << JOB_DEADLINE_OFFSET;
 const JOB_ASSIGNED_AT_MASK = 0xffffffffffffffffn << JOB_ASSIGNED_AT_OFFSET;
 
-function decodePackedJobMetadata(packed: any): {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const toStringValue = (value: unknown): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toString();
+  }
+  if (typeof value === 'bigint') return value.toString();
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'toString' in value &&
+    typeof value.toString === 'function'
+  ) {
+    try {
+      const result = value.toString();
+      return typeof result === 'string' ? result : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+};
+
+function decodePackedJobMetadata(packed: unknown): {
   state?: number;
   success?: boolean;
   burnConfirmed?: boolean;
@@ -170,8 +196,13 @@ function decodePackedJobMetadata(packed: any): {
     value = BigInt(packed);
   } else if (typeof packed === 'string') {
     value = BigInt(packed);
-  } else if (typeof (packed as any).toString === 'function') {
-    value = BigInt((packed as any).toString());
+  } else if (
+    typeof packed === 'object' &&
+    packed !== null &&
+    'toString' in packed &&
+    typeof packed.toString === 'function'
+  ) {
+    value = BigInt(packed.toString());
   } else {
     return {};
   }
@@ -726,7 +757,7 @@ export class MetaOrchestrator {
     if (!identity) return;
     this.fallbackSelections.add(jobKey);
     const wallet = identity.wallet.connect(this.provider);
-    const writer = this.validationModule.connect(wallet) as any;
+    const writer = this.validationModule.connect(wallet);
     const entropy = ethers.hexlify(ethers.randomBytes(32));
     try {
       const tx = await writer.selectValidators(jobId, entropy);
@@ -887,7 +918,7 @@ export class MetaOrchestrator {
     if (this.stakeManager) {
       await ensureStake(wallet, requirements.stake, this.provider);
     }
-    const registry = this.registry.connect(wallet) as any;
+    const registry = this.registry.connect(wallet);
     const subdomain = toSubdomain(identity);
     const tx = await registry.applyForJob(summary.jobId, subdomain, []);
     await tx.wait();
@@ -939,16 +970,21 @@ export class MetaOrchestrator {
   private async executeAssignedJob(
     jobId: string,
     state: AppliedJobState,
-    chainJob: any
+    chainJob: unknown
   ): Promise<void> {
+    const chainJobRecord = isRecord(chainJob) ? chainJob : {};
+    const employer =
+      typeof chainJobRecord.employer === 'string' ? chainJobRecord.employer : undefined;
+    const reward = toStringValue(chainJobRecord.reward);
+    const stake = toStringValue(chainJobRecord.stake);
     auditLog('job.assigned', {
       jobId,
       actor: state.identity.address,
       details: {
         category: state.classification.category,
-        employer: chainJob.employer,
-        reward: chainJob.reward?.toString?.(),
-        stake: chainJob.stake?.toString?.(),
+        employer,
+        reward,
+        stake,
       },
     });
     const pipelineContext: PipelineContext = {
@@ -966,9 +1002,9 @@ export class MetaOrchestrator {
       spec: state.spec,
       classification: state.classification,
       onChain: {
-        reward: chainJob.reward?.toString?.(),
-        stake: chainJob.stake?.toString?.(),
-        employer: chainJob.employer,
+        reward,
+        stake,
+        employer,
       },
     };
     try {
@@ -1152,7 +1188,7 @@ export class MetaOrchestrator {
       ['uint256', 'uint256', 'bool', 'bytes32'],
       [jobId, nonce, approve, salt]
     );
-    const writer = this.validationModule.connect(wallet) as any;
+    const writer = this.validationModule.connect(wallet);
     const tx = await writer.commitValidation(jobId, commitHash, '', []);
     await tx.wait();
     auditLog('validator.commit', {
@@ -1178,7 +1214,7 @@ export class MetaOrchestrator {
     const key = `${jobId.toString()}:${identity.address.toLowerCase()}`;
     const data = this.commits.get(key);
     if (!data) return;
-    const writer = this.validationModule.connect(data.wallet) as any;
+    const writer = this.validationModule.connect(data.wallet);
     const tx = await writer.revealValidation(
       jobId,
       data.approve,
@@ -1199,41 +1235,25 @@ export class MetaOrchestrator {
     this.commitTimers.delete(key);
   }
 
-  private normaliseChainJob(job: any): OnChainJobSnapshot {
-    const toString = (value: any): string | undefined => {
-      if (value === null || value === undefined) return undefined;
-      if (typeof value === 'string') return value;
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return value.toString();
-      }
-      if (typeof value === 'bigint') return value.toString();
-      try {
-        if (typeof value.toString === 'function') {
-          const result = value.toString();
-          return typeof result === 'string' ? result : undefined;
-        }
-      } catch {
-        return undefined;
-      }
-      return undefined;
-    };
-    const metadata = decodePackedJobMetadata(job?.packedMetadata);
+  private normaliseChainJob(job: unknown): OnChainJobSnapshot {
+    const record = isRecord(job) ? job : {};
+    const metadata = decodePackedJobMetadata(record.packedMetadata);
     return {
-      employer: job?.employer,
-      agent: job?.agent,
-      reward: toString(job?.reward),
-      stake: toString(job?.stake),
-      feePct: toString(metadata.feePct),
-      agentPct: toString(metadata.agentPct),
+      employer: typeof record.employer === 'string' ? record.employer : undefined,
+      agent: typeof record.agent === 'string' ? record.agent : undefined,
+      reward: toStringValue(record.reward),
+      stake: toStringValue(record.stake),
+      feePct: toStringValue(metadata.feePct),
+      agentPct: toStringValue(metadata.agentPct),
       state: metadata.state,
       success: Boolean(metadata.success),
-      assignedAt: toString(metadata.assignedAt),
-      deadline: toString(metadata.deadline),
+      assignedAt: toStringValue(metadata.assignedAt),
+      deadline: toStringValue(metadata.deadline),
       agentTypes: metadata.agentTypes,
-      resultHash: toString(job?.resultHash),
-      specHash: toString(job?.specHash),
-      uriHash: toString(job?.uriHash),
-      burnReceiptAmount: toString(job?.burnReceiptAmount),
+      resultHash: toStringValue(record.resultHash),
+      specHash: toStringValue(record.specHash),
+      uriHash: toStringValue(record.uriHash),
+      burnReceiptAmount: toStringValue(record.burnReceiptAmount),
     };
   }
 
@@ -1242,7 +1262,7 @@ export class MetaOrchestrator {
     state: AppliedJobState,
     runResult: JobRunResult,
     resultRef: string,
-    chainJob: any
+    chainJob: unknown
   ): void {
     const agentProfile = {
       address: state.identity.address,

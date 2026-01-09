@@ -123,7 +123,7 @@ function readInsightsSync(): InsightsFile {
     parsed.agents = parsed.agents ?? {};
     parsed.updatedAt = parsed.updatedAt ?? new Date(0).toISOString();
     return parsed;
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return createEmptyInsights();
     }
@@ -143,7 +143,7 @@ async function readInsights(): Promise<InsightsFile> {
     parsed.agents = parsed.agents ?? {};
     parsed.updatedAt = parsed.updatedAt ?? new Date(0).toISOString();
     return parsed;
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return createEmptyInsights();
     }

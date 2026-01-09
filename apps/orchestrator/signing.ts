@@ -114,10 +114,10 @@ function normalizeValue(value: unknown): unknown {
       .map((item) => normalizeValue(item))
       .sort();
   if (typeof value === 'object') {
-    if (typeof (value as any).toJSON === 'function') {
-      return normalizeValue((value as any).toJSON());
+    if ('toJSON' in value && typeof value.toJSON === 'function') {
+      return normalizeValue(value.toJSON());
     }
-    const entries = Object.entries(value as Record<string, unknown>);
+    const entries = Object.entries(value);
     entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
     const normalized: Record<string, unknown> = {};
     for (const [key, val] of entries) {

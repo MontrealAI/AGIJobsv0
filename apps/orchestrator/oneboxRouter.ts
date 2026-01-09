@@ -78,6 +78,10 @@ function errorMessage(error: unknown): string {
   return typeof error === 'string' ? error : 'Unexpected error';
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function statusFromError(error: unknown): number {
   if (error instanceof HttpError) return error.status;
   if (error && typeof (error as { status?: number }).status === 'number') {
@@ -1134,8 +1138,8 @@ async function decoratePlanResponse(response: OneboxPlanResponse): Promise<PlanR
     warnings: response.warnings,
     planHash: response.planHash,
   };
-  if (Array.isArray((response as any).missingFields)) {
-    metadata.missingFields = (response as any).missingFields;
+  if (isRecord(response) && Array.isArray(response.missingFields)) {
+    metadata.missingFields = response.missingFields;
   }
   const createdAt = new Date().toISOString();
   const attested = await decorateReceipt('PLAN', metadata, {
@@ -1829,8 +1833,13 @@ export function decodePackedJobMetadata(
     value = BigInt(packed);
   } else if (typeof packed === 'string') {
     value = BigInt(packed);
-  } else if (typeof (packed as any).toString === 'function') {
-    value = BigInt((packed as any).toString());
+  } else if (
+    typeof packed === 'object' &&
+    packed !== null &&
+    'toString' in packed &&
+    typeof packed.toString === 'function'
+  ) {
+    value = BigInt(packed.toString());
   } else {
     return {};
   }
@@ -1890,7 +1899,7 @@ function formatReward(value: unknown, decimals: number): string | undefined {
         ? value
         : typeof value === 'number'
         ? BigInt(value)
-        : BigInt(value as any);
+        : BigInt(String(value));
     return ethers.formatUnits(amount, decimals);
   } catch {
     return undefined;

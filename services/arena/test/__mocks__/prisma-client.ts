@@ -49,11 +49,97 @@ type RoundLogRecord = {
   createdAt: Date;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+type AgentUpsertArgs = {
+  where: { id: string };
+  create: Partial<AgentRecord>;
+};
+
+type AgentFindManyArgs = {
+  orderBy?: { rating?: 'asc' | 'desc' };
+  take?: number;
+};
+
+type AgentUpdateArgs = {
+  where: { id: string };
+  data: Partial<AgentRecord>;
+};
+
+type RoundCreateArgs = {
+  data: {
+    state: RoundState;
+    targetDuration: number;
+    commitDeadline?: Date | null;
+    revealDeadline?: Date | null;
+    startedAt?: Date | null;
+    closedAt?: Date | null;
+    metadata?: Record<string, unknown> | null;
+    ipfsSnapshotCid?: string | null;
+  };
+};
+
+type RoundFindUniqueArgs = {
+  where: { id: string };
+  include?: { committee?: { include?: { agent?: boolean } } };
+};
+
+type RoundUpdateArgs = {
+  where: { id: string };
+  data: Partial<RoundRecord>;
+};
+
+type CommitteeCreateManyArgs = {
+  data: Array<{
+    roundId: string;
+    agentId: string;
+    role: CommitteeRole;
+    commitHash?: string | null;
+  }>;
+};
+
+type CommitteeUpdateArgs = {
+  where: { id: string };
+  data: Partial<CommitteeRecord>;
+};
+
+type RoundLogCreateArgs = {
+  data: {
+    roundId: string;
+    level: string;
+    message: string;
+    context?: unknown;
+  };
+};
+
 export class MockPrismaClient {
-  readonly agent: any;
-  readonly round: any;
-  readonly committeeMember: any;
-  readonly roundLog: any;
+  readonly agent: {
+    upsert: (args: AgentUpsertArgs) => Promise<AgentRecord>;
+    findMany: (args?: AgentFindManyArgs) => Promise<AgentRecord[]>;
+    update: (args: AgentUpdateArgs) => Promise<AgentRecord>;
+  };
+  readonly round: {
+    create: (args: RoundCreateArgs) => Promise<RoundRecord>;
+    findUnique: (
+      args: RoundFindUniqueArgs
+    ) => Promise<
+      | (RoundRecord & {
+          committee?: Array<
+            CommitteeRecord & { agent?: AgentRecord | null }
+          >;
+        })
+      | null
+    >;
+    update: (args: RoundUpdateArgs) => Promise<RoundRecord>;
+  };
+  readonly committeeMember: {
+    createMany: (args: CommitteeCreateManyArgs) => Promise<{ count: number }>;
+    update: (args: CommitteeUpdateArgs) => Promise<CommitteeRecord>;
+  };
+  readonly roundLog: {
+    create: (args: RoundLogCreateArgs) => Promise<RoundLogRecord>;
+  };
   private readonly agents = new Map<string, AgentRecord>();
   private readonly rounds = new Map<string, RoundRecord>();
   private readonly committees = new Map<string, CommitteeRecord>();
@@ -61,7 +147,7 @@ export class MockPrismaClient {
 
   constructor() {
     this.agent = {
-      upsert: async ({ where, create }: any) => {
+      upsert: async ({ where, create }: AgentUpsertArgs) => {
         const id = where.id;
         const existing = this.agents.get(id);
         if (existing) {
@@ -80,7 +166,7 @@ export class MockPrismaClient {
         this.agents.set(id, record);
         return record;
       },
-      findMany: async ({ orderBy, take }: any = {}) => {
+      findMany: async ({ orderBy, take }: AgentFindManyArgs = {}) => {
         const items = Array.from(this.agents.values());
         if (orderBy?.rating === 'desc') {
           items.sort((a, b) => b.rating - a.rating);
@@ -90,7 +176,7 @@ export class MockPrismaClient {
         }
         return items;
       },
-      update: async ({ where, data }: any) => {
+      update: async ({ where, data }: AgentUpdateArgs) => {
         const record = this.agents.get(where.id);
         if (!record) throw new Error('Agent not found');
         Object.assign(record, data, { updatedAt: new Date() });
@@ -99,7 +185,7 @@ export class MockPrismaClient {
     };
 
     this.round = {
-      create: async ({ data }: any) => {
+      create: async ({ data }: RoundCreateArgs) => {
         const id = crypto.randomUUID();
         const record: RoundRecord = {
           id,
@@ -110,7 +196,7 @@ export class MockPrismaClient {
           revealDeadline: data.revealDeadline ?? null,
           startedAt: data.startedAt ?? null,
           closedAt: data.closedAt ?? null,
-          metadata: (data.metadata ?? null) as Record<string, unknown> | null,
+          metadata: isRecord(data.metadata) ? data.metadata : null,
           ipfsSnapshotCid: data.ipfsSnapshotCid ?? null,
           createdAt: new Date(),
           updatedAt: new Date()
@@ -118,10 +204,12 @@ export class MockPrismaClient {
         this.rounds.set(id, record);
         return { ...record };
       },
-      findUnique: async ({ where, include }: any) => {
+      findUnique: async ({ where, include }: RoundFindUniqueArgs) => {
         const record = this.rounds.get(where.id);
         if (!record) return null;
-        const result: any = { ...record };
+        const result: RoundRecord & {
+          committee?: Array<CommitteeRecord & { agent?: AgentRecord | null }>;
+        } = { ...record };
         if (include?.committee) {
           const committee = Array.from(this.committees.values()).filter((c) => c.roundId === record.id);
           if (include.committee?.include?.agent) {
@@ -135,7 +223,7 @@ export class MockPrismaClient {
         }
         return result;
       },
-      update: async ({ where, data }: any) => {
+      update: async ({ where, data }: RoundUpdateArgs) => {
         const record = this.rounds.get(where.id);
         if (!record) throw new Error('Round not found');
         Object.assign(record, data, { updatedAt: new Date() });
@@ -145,7 +233,7 @@ export class MockPrismaClient {
     };
 
     this.committeeMember = {
-      createMany: async ({ data }: any) => {
+      createMany: async ({ data }: CommitteeCreateManyArgs) => {
         for (const entry of data) {
           const id = crypto.randomUUID();
           const record: CommitteeRecord = {
@@ -166,7 +254,7 @@ export class MockPrismaClient {
         }
         return { count: data.length };
       },
-      update: async ({ where, data }: any) => {
+      update: async ({ where, data }: CommitteeUpdateArgs) => {
         const record = this.committees.get(where.id);
         if (!record) throw new Error('Committee member not found');
         Object.assign(record, data, { updatedAt: new Date() });
@@ -176,7 +264,7 @@ export class MockPrismaClient {
     };
 
     this.roundLog = {
-      create: async ({ data }: any) => {
+      create: async ({ data }: RoundLogCreateArgs) => {
         const record: RoundLogRecord = {
           id: crypto.randomUUID(),
           roundId: data.roundId,

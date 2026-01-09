@@ -133,7 +133,7 @@ async function readTrendFile(): Promise<TrendFile> {
     };
     parsed.updatedAt = parsed.updatedAt ?? new Date(0).toISOString();
     return parsed;
-  } catch (err: any) {
+  } catch (err) {
     if (err.code === 'ENOENT') {
       return emptyTrendFile();
     }
@@ -292,7 +292,7 @@ function readTrendFileSync(): TrendFile {
     };
     parsed.updatedAt = parsed.updatedAt ?? new Date(0).toISOString();
     return parsed;
-  } catch (err: any) {
+  } catch (err) {
     if (err.code !== 'ENOENT') {
       console.warn('Failed to read energy trend snapshot', err);
     }

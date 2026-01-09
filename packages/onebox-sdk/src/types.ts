@@ -14,13 +14,13 @@ export const JobIntentSchema = z.object({
   deadline_days: z.number().int().nonnegative().optional(),
   job_id: z.number().int().optional(),
   attachments: z.array(AttachmentSchema).default([]),
-  constraints: z.record(z.any()).default({}),
+  constraints: z.record(z.unknown()).default({}),
 });
 
 export const StepOutputSchema = z.object({
   cid: z.string().optional(),
   tx: z.string().optional(),
-  data: z.record(z.any()).optional(),
+  data: z.record(z.unknown()).optional(),
 });
 
 export const StepSchema = z.object({
@@ -28,7 +28,7 @@ export const StepSchema = z.object({
   name: z.string(),
   kind: z.enum(['plan', 'pin', 'chain', 'llm', 'code', 'fetch', 'validate', 'finalize']),
   tool: z.string().optional(),
-  params: z.record(z.any()).default({}),
+  params: z.record(z.unknown()).default({}),
   needs: z.array(z.string()).default([]),
   out: StepOutputSchema.optional(),
 });
@@ -58,7 +58,7 @@ export const PlanResponseSchema = z.object({
   preview_summary: z.string(),
   warnings: z.array(z.string()).default([]),
   requiresConfirmation: z.boolean().default(true),
-  receipt: z.record(z.any()).optional(),
+  receipt: z.record(z.unknown()).optional(),
   receiptDigest: z.string().optional(),
   receiptAttestationUid: z.string().optional(),
   receiptAttestationTxHash: z.string().optional(),
@@ -82,7 +82,7 @@ export const SimulationResponseSchema = z.object({
   risks: z.array(z.string()).default([]),
   confirmations: z.array(z.string()).default([]),
   blockers: z.array(z.string()).default([]),
-  receipt: z.record(z.any()).optional(),
+  receipt: z.record(z.unknown()).optional(),
   receiptDigest: z.string().optional(),
   receiptAttestationUid: z.string().optional(),
   receiptAttestationTxHash: z.string().optional(),
@@ -115,8 +115,8 @@ export const ReceiptSchema = z.object({
   job_id: z.number().optional(),
   txes: z.array(z.string()).default([]),
   cids: z.array(z.string()).default([]),
-  payouts: z.array(z.record(z.any())).default([]),
-  timings: z.record(z.any()).default({}),
+  payouts: z.array(z.record(z.unknown())).default([]),
+  timings: z.record(z.unknown()).default({}),
 });
 
 export const StatusResponseSchema = z.object({
@@ -145,7 +145,7 @@ export const ExecuteResponseSchema = z.object({
   run_id: z.string(),
   started_at: z.number().optional(),
   plan_id: z.string(),
-  receipt: z.record(z.any()).optional(),
+  receipt: z.record(z.unknown()).optional(),
   receiptDigest: z.string().optional(),
   receiptAttestationUid: z.string().optional(),
   receiptAttestationTxHash: z.string().optional(),
@@ -191,4 +191,3 @@ export function parseStatusResponse(value: unknown): StatusResponse {
 export function parseExecuteResponse(value: unknown): ExecuteResponse {
   return ExecuteResponseSchema.parse(value);
 }
-

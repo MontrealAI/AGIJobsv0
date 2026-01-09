@@ -22,7 +22,7 @@ import {
 
 export interface StageDefinition {
   name: string;
-  agent: string | ((input: any) => Promise<any>);
+  agent: string | ((input: unknown) => Promise<unknown>);
   signerId?: string;
   context: AgentHandlerContext;
 }
@@ -119,9 +119,9 @@ export function saveJobGraph(graph: Record<string, string[]>): void {
 }
 
 export async function invokeAgent(
-  agent: string | ((input: any) => Promise<any>),
-  payload: any
-): Promise<any> {
+  agent: string | ((input: unknown) => Promise<unknown>),
+  payload: unknown
+): Promise<unknown> {
   if (typeof agent === 'function') {
     return agent(payload);
   }
@@ -363,7 +363,7 @@ function buildPinnerCandidates(
 }
 
 function ensureBlob(
-  content: any,
+  content: unknown,
   explicitType?: string
 ): { blob: Blob; suggestedFileName: string } {
   if (content instanceof Blob) {
@@ -383,10 +383,10 @@ function ensureBlob(
     const buffer =
       content instanceof ArrayBuffer
         ? content
-        : ((content as ArrayBufferView).buffer.slice(
-            (content as ArrayBufferView).byteOffset,
-            (content as ArrayBufferView).byteOffset + (content as ArrayBufferView).byteLength
-          ) as ArrayBuffer);
+        : content.buffer.slice(
+            content.byteOffset,
+            content.byteOffset + content.byteLength
+          );
     data = new Uint8Array(buffer);
     type = type ?? 'application/octet-stream';
   } else if (content && typeof content === 'object') {
@@ -542,7 +542,7 @@ function isRetryableStatus(status: number): boolean {
 }
 
 async function pinViaIpfsApi(
-  content: any,
+  content: unknown,
   options: UploadToIPFSOptions
 ): Promise<PinnedContent> {
   const apiUrl = options.apiUrl ?? process.env.IPFS_API_URL ?? DEFAULT_IPFS_API;
@@ -566,7 +566,7 @@ async function pinViaIpfsApi(
 }
 
 async function pinViaPinner(
-  content: any,
+  content: unknown,
   options: UploadToIPFSOptions,
   candidate: PinningCandidateConfig
 ): Promise<PinnedContent> {
@@ -658,9 +658,9 @@ async function pinViaPinner(
       let size: number | undefined;
       let pinnedAt: string | undefined;
 
-      if (payload && typeof payload === 'object') {
-        const record = payload as Record<string, unknown>;
-        const pinRecord = record.pin as Record<string, unknown> | undefined;
+      if (isRecord(payload)) {
+        const record = payload;
+        const pinRecord = isRecord(record.pin) ? record.pin : undefined;
         requestId =
           (typeof record.requestid === 'string' && record.requestid) ||
           (typeof record.requestId === 'string' && record.requestId) ||
@@ -781,9 +781,12 @@ async function fetchPinStatus(
       return {};
     }
     if (provider === 'pinata') {
-      const result = payload as { rows?: any[] };
-      const firstRow = Array.isArray(result.rows) ? result.rows[0] : undefined;
-      if (!firstRow || typeof firstRow !== 'object') {
+      if (!isRecord(payload)) {
+        return {};
+      }
+      const rows = Array.isArray(payload.rows) ? payload.rows : [];
+      const firstRow = rows.find((row) => isRecord(row));
+      if (!firstRow || !isRecord(firstRow)) {
         return {};
       }
       const status = typeof firstRow.status === 'string' ? firstRow.status : undefined;
@@ -801,17 +804,20 @@ async function fetchPinStatus(
           : undefined;
       return { status, size, pinnedAt };
     }
-    const record = payload as Record<string, unknown>;
-    const pinRecord = record.pin as Record<string, unknown> | undefined;
+    if (!isRecord(payload)) {
+      return {};
+    }
+    const record = payload;
+    const pinRecord = isRecord(record.pin) ? record.pin : undefined;
     const status =
       (typeof record.status === 'string' && record.status) ||
       (pinRecord && typeof pinRecord.status === 'string' ? pinRecord.status : undefined);
     const size =
       (pinRecord && typeof pinRecord.size === 'number' ? pinRecord.size : undefined) ??
-      (typeof record.pinSize === 'number' ? (record.pinSize as number) : undefined);
+      (typeof record.pinSize === 'number' ? record.pinSize : undefined);
     const pinnedAt =
       (pinRecord && typeof pinRecord.created === 'string' ? pinRecord.created : undefined) ||
-      (typeof record.created === 'string' ? (record.created as string) : undefined);
+      (typeof record.created === 'string' ? record.created : undefined);
     return { status, size, pinnedAt };
   } catch (error) {
     if (error instanceof PinningServiceError) {
@@ -828,7 +834,7 @@ async function fetchPinStatus(
 }
 
 export async function uploadToIPFS(
-  content: any,
+  content: unknown,
   options?: string | UploadToIPFSOptions
 ): Promise<PinnedContent> {
   const resolved = normalizeUploadOptions(options);
@@ -868,7 +874,7 @@ export async function uploadToIPFS(
 export async function runJob(
   jobId: string,
   stages: StageDefinition[],
-  initialInput?: any
+  initialInput?: unknown
 ): Promise<JobRunResult> {
   auditLog('job.start', {
     jobId,
@@ -1181,3 +1187,5 @@ function toMetricsSummary(
     errorMessage: metrics.errorMessage,
   };
 }
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
