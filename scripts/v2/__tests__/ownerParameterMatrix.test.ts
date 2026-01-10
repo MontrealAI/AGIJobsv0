@@ -1,5 +1,13 @@
+import { spawn } from 'child_process';
+import { EventEmitter } from 'events';
 import { existsSync, promises as fs } from 'fs';
 import path from 'path';
+
+jest.mock('child_process', () => ({
+  spawn: jest.fn(() => {
+    throw new Error('spawn not mocked');
+  }),
+}));
 
 import { prepareDemoOverrides, resolveDemoAddressBookPath } from '../ownerParameterMatrix';
 
@@ -72,6 +80,12 @@ describe('prepareDemoOverrides', () => {
   );
 
   afterEach(async () => {
+    delete process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT;
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockReset();
+    mockedSpawn.mockImplementation(() => {
+      throw new Error('spawn not mocked');
+    });
     if (existsSync(defaultPath)) {
       await fs.unlink(defaultPath);
     }
@@ -155,5 +169,38 @@ describe('prepareDemoOverrides', () => {
     const thermo = JSON.parse(thermoRaw);
     expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000005');
     expect(thermo.thermostat.address).toBe('0x0000000000000000000000000000000000000006');
+  });
+
+  it('bootstraps demo overrides when bootstrap is enabled and addresses are missing', async () => {
+    process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT = '1';
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockImplementation(() => {
+      const emitter = new EventEmitter();
+      void (async () => {
+        await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+        await fs.writeFile(
+          defaultPath,
+          JSON.stringify(
+            {
+              taxPolicy: '0x0000000000000000000000000000000000000007',
+              rewardEngine: '0x0000000000000000000000000000000000000008',
+              thermostat: '0x0000000000000000000000000000000000000009',
+            },
+            null,
+            2
+          )
+        );
+        emitter.emit('close', 0);
+      })();
+      return emitter;
+    });
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(mockedSpawn).toHaveBeenCalled();
+    expect(overrides?.jobRegistryPath).toBeDefined();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000007');
   });
 });
