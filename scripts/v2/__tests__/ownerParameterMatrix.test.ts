@@ -78,9 +78,15 @@ describe('prepareDemoOverrides', () => {
     'config',
     'thermodynamics.hardhat.json'
   );
+  const originalCi = process.env.CI;
 
   afterEach(async () => {
     delete process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT;
+    if (originalCi === undefined) {
+      delete process.env.CI;
+    } else {
+      process.env.CI = originalCi;
+    }
     const mockedSpawn = spawn as jest.Mock;
     mockedSpawn.mockReset();
     mockedSpawn.mockImplementation(() => {
@@ -202,5 +208,38 @@ describe('prepareDemoOverrides', () => {
     const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
     const jobRegistry = JSON.parse(jobRegistryRaw);
     expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000007');
+  });
+
+  it('bootstraps demo overrides in CI without explicit env', async () => {
+    process.env.CI = 'true';
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockImplementation(() => {
+      const emitter = new EventEmitter();
+      void (async () => {
+        await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+        await fs.writeFile(
+          defaultPath,
+          JSON.stringify(
+            {
+              taxPolicy: '0x0000000000000000000000000000000000000010',
+              rewardEngine: '0x0000000000000000000000000000000000000011',
+              thermostat: '0x0000000000000000000000000000000000000012',
+            },
+            null,
+            2
+          )
+        );
+        emitter.emit('close', 0);
+      })();
+      return emitter;
+    });
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(mockedSpawn).toHaveBeenCalled();
+    expect(overrides?.jobRegistryPath).toBeDefined();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000010');
   });
 });
