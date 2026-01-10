@@ -247,7 +247,12 @@ describe('prepareDemoOverrides', () => {
     expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000011');
   });
 
-  it('rejects demo overrides on non-local networks', async () => {
+  it('skips demo overrides on non-local networks when no override is set', async () => {
+    await expect(prepareDemoOverrides('mainnet')).resolves.toBeNull();
+  });
+
+  it('rejects explicit demo overrides on non-local networks', async () => {
+    process.env.OWNER_MATRIX_DEMO_ADDRESS_BOOK = 'tmp/demo-owner-matrix.json';
     await expect(prepareDemoOverrides('mainnet')).rejects.toThrow(
       /only supported on local hardhat networks/
     );

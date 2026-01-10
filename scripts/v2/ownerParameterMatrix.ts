@@ -463,9 +463,12 @@ export async function prepareDemoOverrides(
 ): Promise<DemoConfigOverrides | null> {
   const addressBookPath = resolveDemoAddressBookPath(network);
   if (!network || !LOCAL_NETWORKS.has(network)) {
-    throw new Error(
-      `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
-    );
+    if (process.env[DEMO_ADDRESS_BOOK_ENV]) {
+      throw new Error(
+        `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
+      );
+    }
+    return null;
   }
   let addressBook: DemoAddressBook | null = null;
   if (addressBookPath) {
