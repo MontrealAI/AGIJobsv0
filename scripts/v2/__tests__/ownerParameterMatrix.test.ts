@@ -321,6 +321,10 @@ describe('prepareDemoOverrides', () => {
     const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
     const jobRegistry = JSON.parse(jobRegistryRaw);
     expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000011');
+
+    const thermoRaw = await fs.readFile(overrides!.thermodynamicsPath!, 'utf8');
+    const thermo = JSON.parse(thermoRaw);
+    expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000022');
   });
 
   it('skips demo overrides on non-local networks when no override is set', async () => {
