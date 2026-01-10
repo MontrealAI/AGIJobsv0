@@ -244,6 +244,45 @@ async function loadDemoAddressBook(filePath: string): Promise<DemoAddressBook> {
   };
 }
 
+async function deriveDemoAddressBookFromConfigs(
+  network: string
+): Promise<DemoAddressBook | null> {
+  const configDir = path.join(process.cwd(), 'config');
+  const jobRegistryPath = path.join(configDir, `job-registry.${network}.json`);
+  const thermodynamicsPath = path.join(configDir, `thermodynamics.${network}.json`);
+
+  if (!existsSync(jobRegistryPath) || !existsSync(thermodynamicsPath)) {
+    return null;
+  }
+
+  try {
+    const jobRegistryRaw = await fs.readFile(jobRegistryPath, 'utf8');
+    const jobRegistryConfig = JSON.parse(jobRegistryRaw) as Record<string, unknown>;
+    const thermodynamicsRaw = await fs.readFile(thermodynamicsPath, 'utf8');
+    const thermodynamicsConfig = JSON.parse(thermodynamicsRaw) as Record<string, any>;
+
+    const thermostatCandidate =
+      thermodynamicsConfig?.thermostat?.address ??
+      thermodynamicsConfig?.rewardEngine?.thermostat;
+
+    return {
+      taxPolicy: normaliseDemoAddress(jobRegistryConfig.taxPolicy, 'taxPolicy'),
+      rewardEngine: normaliseDemoAddress(
+        thermodynamicsConfig?.rewardEngine?.address,
+        'rewardEngine'
+      ),
+      thermostat: thermostatCandidate
+        ? normaliseDemoAddress(thermostatCandidate, 'thermostat')
+        : undefined,
+    };
+  } catch (error) {
+    if (process.env.DEBUG_OWNER_MATRIX) {
+      console.warn('Failed to derive demo address book from configs:', error);
+    }
+    return null;
+  }
+}
+
 async function writeDemoConfigOverrides(
   addressBook: DemoAddressBook,
   network?: string
@@ -294,15 +333,27 @@ export async function prepareDemoOverrides(
   network?: string
 ): Promise<DemoConfigOverrides | null> {
   const addressBookPath = resolveDemoAddressBookPath(network);
-  if (!addressBookPath) {
-    return null;
-  }
   if (!network || !LOCAL_NETWORKS.has(network)) {
     throw new Error(
       `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
     );
   }
-  const addressBook = await loadDemoAddressBook(addressBookPath);
+  let addressBook: DemoAddressBook | null = null;
+  if (addressBookPath) {
+    try {
+      addressBook = await loadDemoAddressBook(addressBookPath);
+    } catch (error) {
+      if (process.env.DEBUG_OWNER_MATRIX) {
+        console.warn('Failed to load demo address book, falling back:', error);
+      }
+    }
+  }
+  if (!addressBook) {
+    addressBook = await deriveDemoAddressBookFromConfigs(network);
+  }
+  if (!addressBook) {
+    return null;
+  }
   return writeDemoConfigOverrides(addressBook, network);
 }
 
