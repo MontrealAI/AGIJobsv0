@@ -1,7 +1,7 @@
 import { existsSync, promises as fs } from 'fs';
 import path from 'path';
 
-import { resolveDemoAddressBookPath } from '../ownerParameterMatrix';
+import { prepareDemoOverrides, resolveDemoAddressBookPath } from '../ownerParameterMatrix';
 
 describe('resolveDemoAddressBookPath', () => {
   const envKey = 'OWNER_MATRIX_DEMO_ADDRESS_BOOK';
@@ -44,5 +44,58 @@ describe('resolveDemoAddressBookPath', () => {
 
     const resolved = resolveDemoAddressBookPath('mainnet');
     expect(resolved).toBeUndefined();
+  });
+});
+
+describe('prepareDemoOverrides', () => {
+  const defaultPath = path.join(
+    process.cwd(),
+    'deployment-config',
+    'generated',
+    'demo-hardhat-addresses.json'
+  );
+  const overridesDir = path.join(
+    process.cwd(),
+    'deployment-config',
+    'generated',
+    'demo-hardhat-owner-matrix'
+  );
+
+  afterEach(async () => {
+    if (existsSync(defaultPath)) {
+      await fs.unlink(defaultPath);
+    }
+    if (existsSync(overridesDir)) {
+      await fs.rm(overridesDir, { recursive: true, force: true });
+    }
+  });
+
+  it('writes demo overrides when a hardhat address book is available', async () => {
+    await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+    await fs.writeFile(
+      defaultPath,
+      JSON.stringify(
+        {
+          taxPolicy: '0x0000000000000000000000000000000000000001',
+          rewardEngine: '0x0000000000000000000000000000000000000002',
+          thermostat: '0x0000000000000000000000000000000000000003',
+        },
+        null,
+        2
+      )
+    );
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(overrides?.jobRegistryPath).toBeDefined();
+    expect(overrides?.thermodynamicsPath).toBeDefined();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000001');
+
+    const thermoRaw = await fs.readFile(overrides!.thermodynamicsPath!, 'utf8');
+    const thermo = JSON.parse(thermoRaw);
+    expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000002');
+    expect(thermo.rewardEngine.thermostat).toBe('0x0000000000000000000000000000000000000003');
   });
 });

@@ -290,7 +290,7 @@ async function writeDemoConfigOverrides(
   return { jobRegistryPath, thermodynamicsPath };
 }
 
-async function prepareDemoOverrides(
+export async function prepareDemoOverrides(
   network?: string
 ): Promise<DemoConfigOverrides | null> {
   const addressBookPath = resolveDemoAddressBookPath(network);
@@ -304,6 +304,28 @@ async function prepareDemoOverrides(
   }
   const addressBook = await loadDemoAddressBook(addressBookPath);
   return writeDemoConfigOverrides(addressBook, network);
+}
+
+function shouldRetryWithDemoOverrides(
+  descriptorId: string,
+  error: unknown,
+  network?: string,
+  demoOverrides?: DemoConfigOverrides | null
+): boolean {
+  if (demoOverrides) {
+    return false;
+  }
+  if (!network || !LOCAL_NETWORKS.has(network)) {
+    return false;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  if (descriptorId === 'jobRegistry') {
+    return message.includes('JobRegistry tax policy cannot be the zero address');
+  }
+  if (descriptorId === 'thermodynamics') {
+    return message.includes('RewardEngine address cannot be the zero address');
+  }
+  return false;
 }
 
 function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], depth = 0): MatrixRow[] {
@@ -350,6 +372,7 @@ async function buildSubsystemMatrices(
   network?: string,
   demoOverrides?: DemoConfigOverrides
 ): Promise<SubsystemBuildResult[]> {
+  let resolvedOverrides = demoOverrides;
   const descriptors: SubsystemDescriptor[] = [
     {
       id: 'token',
@@ -395,7 +418,7 @@ async function buildSubsystemMatrices(
       loader: (ctx) =>
         loadJobRegistryConfig({
           network: ctx,
-          path: demoOverrides?.jobRegistryPath,
+          path: resolvedOverrides?.jobRegistryPath,
         }),
     },
     {
@@ -428,7 +451,7 @@ async function buildSubsystemMatrices(
       loader: (ctx) =>
         loadThermodynamicsConfig({
           network: ctx,
-          path: demoOverrides?.thermodynamicsPath,
+          path: resolvedOverrides?.thermodynamicsPath,
         }),
     },
     {
@@ -511,6 +534,30 @@ async function buildSubsystemMatrices(
         },
       });
     } catch (error) {
+      if (shouldRetryWithDemoOverrides(descriptor.id, error, network, resolvedOverrides)) {
+        const overrides = await prepareDemoOverrides(network);
+        if (overrides) {
+          resolvedOverrides = overrides;
+          try {
+            const loaded = descriptor.loader(network);
+            results.push({
+              matrix: {
+                id: descriptor.id,
+                title: descriptor.title,
+                summary: descriptor.summary,
+                documentation: descriptor.documentation,
+                updateCommands: descriptor.updateCommands,
+                verifyCommands: descriptor.verifyCommands,
+                configPath: path.relative(process.cwd(), loaded.path),
+                rows: flattenConfig(loaded.config),
+              },
+            });
+            continue;
+          } catch (retryError) {
+            error = retryError;
+          }
+        }
+      }
       const fallback = path.relative(process.cwd(), descriptor.fallbackConfigPath);
       const message =
         error instanceof Error ? error.message : 'Unknown error loading configuration';
