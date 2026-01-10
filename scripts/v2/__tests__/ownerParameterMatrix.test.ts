@@ -60,6 +60,16 @@ describe('prepareDemoOverrides', () => {
     'generated',
     'demo-hardhat-owner-matrix'
   );
+  const hardhatJobRegistryPath = path.join(
+    process.cwd(),
+    'config',
+    'job-registry.hardhat.json'
+  );
+  const hardhatThermoPath = path.join(
+    process.cwd(),
+    'config',
+    'thermodynamics.hardhat.json'
+  );
 
   afterEach(async () => {
     if (existsSync(defaultPath)) {
@@ -67,6 +77,12 @@ describe('prepareDemoOverrides', () => {
     }
     if (existsSync(overridesDir)) {
       await fs.rm(overridesDir, { recursive: true, force: true });
+    }
+    if (existsSync(hardhatJobRegistryPath)) {
+      await fs.unlink(hardhatJobRegistryPath);
+    }
+    if (existsSync(hardhatThermoPath)) {
+      await fs.unlink(hardhatThermoPath);
     }
   });
 
@@ -97,5 +113,47 @@ describe('prepareDemoOverrides', () => {
     const thermo = JSON.parse(thermoRaw);
     expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000002');
     expect(thermo.rewardEngine.thermostat).toBe('0x0000000000000000000000000000000000000003');
+  });
+
+  it('derives demo overrides from hardhat config files when the address book is missing', async () => {
+    await fs.mkdir(path.dirname(hardhatJobRegistryPath), { recursive: true });
+    await fs.writeFile(
+      hardhatJobRegistryPath,
+      JSON.stringify(
+        {
+          taxPolicy: '0x0000000000000000000000000000000000000004',
+        },
+        null,
+        2
+      )
+    );
+    await fs.writeFile(
+      hardhatThermoPath,
+      JSON.stringify(
+        {
+          rewardEngine: {
+            address: '0x0000000000000000000000000000000000000005',
+          },
+          thermostat: {
+            address: '0x0000000000000000000000000000000000000006',
+          },
+        },
+        null,
+        2
+      )
+    );
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(overrides?.jobRegistryPath).toBeDefined();
+    expect(overrides?.thermodynamicsPath).toBeDefined();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000004');
+
+    const thermoRaw = await fs.readFile(overrides!.thermodynamicsPath!, 'utf8');
+    const thermo = JSON.parse(thermoRaw);
+    expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000005');
+    expect(thermo.thermostat.address).toBe('0x0000000000000000000000000000000000000006');
   });
 });
