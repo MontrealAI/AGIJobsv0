@@ -1,3 +1,4 @@
+import { spawn } from 'child_process';
 import { existsSync, promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
@@ -88,6 +89,14 @@ const DEFAULT_DEMO_ADDRESS_BOOK = path.join(
   'deployment-config',
   'generated',
   'demo-hardhat-addresses.json'
+);
+const OWNER_MATRIX_BOOTSTRAP_ENV = 'OWNER_MATRIX_BOOTSTRAP_HARDHAT';
+const DEMO_BOOTSTRAP_ENV = 'AGJ_DEMO_BOOTSTRAP_HARDHAT';
+const DEMO_BOOTSTRAP_SCRIPT = path.join(
+  process.cwd(),
+  'scripts',
+  'v2',
+  'demoHardhatOwnerMatrixConfig.ts'
 );
 
 async function resolveHardhatContext(): Promise<HardhatContext> {
@@ -215,6 +224,61 @@ export function resolveDemoAddressBookPath(network?: string): string | undefined
     return trimmed;
   }
   return path.join(process.cwd(), trimmed);
+}
+
+function shouldBootstrapDemo(): boolean {
+  const explicit = process.env[OWNER_MATRIX_BOOTSTRAP_ENV];
+  if (explicit !== undefined) {
+    return explicit.trim() !== '' && explicit !== '0';
+  }
+  const fallback = process.env[DEMO_BOOTSTRAP_ENV];
+  return fallback !== undefined && fallback.trim() !== '' && fallback !== '0';
+}
+
+function resolveBootstrapAddressBookPath(
+  network: string,
+  resolvedPath?: string
+): string | undefined {
+  if (!LOCAL_NETWORKS.has(network)) {
+    return undefined;
+  }
+  return resolvedPath ?? DEFAULT_DEMO_ADDRESS_BOOK;
+}
+
+async function runDemoBootstrap(
+  network: string,
+  addressBookPath?: string
+): Promise<void> {
+  const outputPath = resolveBootstrapAddressBookPath(network, addressBookPath);
+  await new Promise<void>((resolve, reject) => {
+    const child = spawn(
+      'npx',
+      [
+        'hardhat',
+        'run',
+        '--no-compile',
+        DEMO_BOOTSTRAP_SCRIPT,
+        '--network',
+        network,
+      ],
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          ...(outputPath ? { [DEMO_ADDRESS_BOOK_ENV]: outputPath } : {}),
+        },
+        stdio: 'inherit',
+      }
+    );
+    child.on('error', (error) => reject(error));
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Demo bootstrap exited with code ${code ?? 'unknown'}`));
+      }
+    });
+  });
 }
 
 function normaliseDemoAddress(value: unknown, label: string): string {
@@ -350,6 +414,19 @@ export async function prepareDemoOverrides(
   }
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
+  }
+  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo()) {
+    const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
+    await runDemoBootstrap(network, bootstrapPath);
+    try {
+      if (bootstrapPath) {
+        addressBook = await loadDemoAddressBook(bootstrapPath);
+      }
+    } catch (error) {
+      if (process.env.DEBUG_OWNER_MATRIX) {
+        console.warn('Failed to load demo address book after bootstrap:', error);
+      }
+    }
   }
   if (!addressBook) {
     return null;
@@ -758,6 +835,8 @@ async function main(): Promise<void> {
       '',
       `Environment:`,
       `  ${DEMO_ADDRESS_BOOK_ENV}=<path>  Path to demo address book JSON for hardhat demos.`,
+      `  ${OWNER_MATRIX_BOOTSTRAP_ENV}=1  Auto-deploy demo contracts when addresses are missing (hardhat only).`,
+      `  ${DEMO_BOOTSTRAP_ENV}=1         Alias to bootstrap local demo contracts.`,
       '  -h, --help             Show this message',
     ].join(NEWLINE);
     process.stdout.write(`${helpText}\n`);

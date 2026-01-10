@@ -438,6 +438,7 @@ async function main(): Promise<void> {
       ],
       env: {
         OWNER_MATRIX_DEMO_ADDRESS_BOOK: DEMO_ADDRESS_BOOK_PATH,
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
       },
     },
     {
@@ -458,6 +459,7 @@ async function main(): Promise<void> {
       ],
       env: {
         OWNER_MATRIX_DEMO_ADDRESS_BOOK: DEMO_ADDRESS_BOOK_PATH,
+        AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
       },
     },
     {
