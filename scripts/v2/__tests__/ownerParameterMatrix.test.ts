@@ -234,6 +234,51 @@ describe('prepareDemoOverrides', () => {
     expect(overrides?.jobRegistryPath).toBeDefined();
   });
 
+  it('re-runs the demo bootstrap when explicitly enabled even if an address book exists', async () => {
+    process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT = '1';
+    await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+    await fs.writeFile(
+      defaultPath,
+      JSON.stringify(
+        {
+          taxPolicy: '0x0000000000000000000000000000000000000001',
+          rewardEngine: '0x0000000000000000000000000000000000000002',
+          thermostat: '0x0000000000000000000000000000000000000003',
+        },
+        null,
+        2
+      )
+    );
+
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockImplementation(() => {
+      const emitter = new EventEmitter();
+      void (async () => {
+        await fs.writeFile(
+          defaultPath,
+          JSON.stringify(
+            {
+              taxPolicy: '0x00000000000000000000000000000000000000aa',
+              rewardEngine: '0x00000000000000000000000000000000000000bb',
+              thermostat: '0x00000000000000000000000000000000000000cc',
+            },
+            null,
+            2
+          )
+        );
+        emitter.emit('close', 0);
+      })();
+      return emitter;
+    });
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(mockedSpawn).toHaveBeenCalled();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x00000000000000000000000000000000000000AA');
+  });
+
   it('bootstraps demo overrides when local configs contain zero addresses', async () => {
     await fs.mkdir(path.dirname(hardhatJobRegistryPath), { recursive: true });
     await fs.writeFile(

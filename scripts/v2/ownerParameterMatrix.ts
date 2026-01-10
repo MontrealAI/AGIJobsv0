@@ -227,6 +227,13 @@ export function resolveDemoAddressBookPath(network?: string): string | undefined
 }
 
 function shouldBootstrapDemo(network?: string): boolean {
+  if (hasExplicitBootstrapFlag()) {
+    return true;
+  }
+  return Boolean(network && LOCAL_NETWORKS.has(network));
+}
+
+function hasExplicitBootstrapFlag(): boolean {
   const fallback = process.env[DEMO_BOOTSTRAP_ENV];
   if (fallback !== undefined) {
     return fallback.trim() !== '' && fallback !== '0';
@@ -235,7 +242,7 @@ function shouldBootstrapDemo(network?: string): boolean {
   if (explicit !== undefined) {
     return explicit.trim() !== '' && explicit !== '0';
   }
-  return Boolean(network && LOCAL_NETWORKS.has(network));
+  return false;
 }
 
 function resolveBootstrapAddressBookPath(
@@ -486,18 +493,24 @@ export async function prepareDemoOverrides(
       ? resolveBootstrapAddressBookPath(network, addressBookPath)
       : undefined;
   if (network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
-    const addressBookReady =
-      (await demoAddressBookHasAddresses(addressBookPath)) ||
-      (await demoConfigsHaveAddresses(network));
-    if (!addressBookReady) {
+    const shouldForceBootstrap = hasExplicitBootstrapFlag();
+    if (shouldForceBootstrap) {
       await runDemoBootstrap(network, bootstrapPath);
       bootstrapped = true;
+    } else {
+      const addressBookReady =
+        (await demoAddressBookHasAddresses(addressBookPath)) ||
+        (await demoConfigsHaveAddresses(network));
+      if (!addressBookReady) {
+        await runDemoBootstrap(network, bootstrapPath);
+        bootstrapped = true;
+      }
     }
   }
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
   }
-  if (!addressBook && bootstrapped && bootstrapPath) {
+  if (bootstrapped && bootstrapPath) {
     try {
       addressBook = await loadDemoAddressBook(bootstrapPath);
     } catch (error) {
