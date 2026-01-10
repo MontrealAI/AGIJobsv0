@@ -402,6 +402,7 @@ export async function prepareDemoOverrides(
       `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
     );
   }
+  const bootstrapEnabled = shouldBootstrapDemo() || process.env.CI === 'true';
   let addressBook: DemoAddressBook | null = null;
   if (addressBookPath) {
     try {
@@ -415,7 +416,7 @@ export async function prepareDemoOverrides(
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
   }
-  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo()) {
+  if (!addressBook && network && LOCAL_NETWORKS.has(network) && bootstrapEnabled) {
     const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
     await runDemoBootstrap(network, bootstrapPath);
     try {
