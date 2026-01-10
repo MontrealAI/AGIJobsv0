@@ -248,6 +248,68 @@ function resolveBootstrapAddressBookPath(
   return resolvedPath ?? DEFAULT_DEMO_ADDRESS_BOOK;
 }
 
+async function readJsonIfExists(filePath?: string): Promise<Record<string, any> | null> {
+  if (!filePath || !existsSync(filePath)) {
+    return null;
+  }
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    return JSON.parse(raw) as Record<string, any>;
+  } catch (error) {
+    if (process.env.DEBUG_OWNER_MATRIX) {
+      console.warn(`Failed to read demo config ${filePath}:`, error);
+    }
+    return null;
+  }
+}
+
+function hasNonZeroAddress(value: unknown): boolean {
+  if (!value) {
+    return false;
+  }
+  try {
+    const address = ethers.getAddress(String(value).trim());
+    return address !== ethers.ZeroAddress;
+  } catch (_) {
+    return false;
+  }
+}
+
+function resolveConfigCandidates(baseName: string, network: string): string[] {
+  const configDir = path.join(process.cwd(), 'config');
+  return [
+    path.join(configDir, `${baseName}.${network}.json`),
+    path.join(configDir, `${baseName}.json`),
+  ];
+}
+
+async function demoConfigsHaveAddresses(network: string): Promise<boolean> {
+  const [jobNetworkPath, jobDefaultPath] = resolveConfigCandidates('job-registry', network);
+  const jobConfig = (await readJsonIfExists(jobNetworkPath)) ?? (await readJsonIfExists(jobDefaultPath));
+  if (!jobConfig || !hasNonZeroAddress(jobConfig.taxPolicy)) {
+    return false;
+  }
+
+  const [thermoNetworkPath, thermoDefaultPath] = resolveConfigCandidates('thermodynamics', network);
+  const thermoConfig =
+    (await readJsonIfExists(thermoNetworkPath)) ?? (await readJsonIfExists(thermoDefaultPath));
+  const rewardEngineAddress = thermoConfig?.rewardEngine?.address;
+  if (!hasNonZeroAddress(rewardEngineAddress)) {
+    return false;
+  }
+  return true;
+}
+
+async function demoAddressBookHasAddresses(addressBookPath?: string): Promise<boolean> {
+  const addressBook = await readJsonIfExists(addressBookPath);
+  if (!addressBook) {
+    return false;
+  }
+  return (
+    hasNonZeroAddress(addressBook.taxPolicy) && hasNonZeroAddress(addressBook.rewardEngine)
+  );
+}
+
 async function runDemoBootstrap(
   network: string,
   addressBookPath?: string
@@ -415,11 +477,39 @@ export async function prepareDemoOverrides(
       }
     }
   }
+  let bootstrapped = false;
+  const bootstrapPath =
+    network && LOCAL_NETWORKS.has(network)
+      ? resolveBootstrapAddressBookPath(network, addressBookPath)
+      : undefined;
+  if (network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
+    const addressBookReady =
+      (await demoAddressBookHasAddresses(addressBookPath)) ||
+      (await demoConfigsHaveAddresses(network));
+    if (!addressBookReady) {
+      await runDemoBootstrap(network, bootstrapPath);
+      bootstrapped = true;
+    }
+  }
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
   }
-  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
-    const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
+  if (!addressBook && bootstrapped && bootstrapPath) {
+    try {
+      addressBook = await loadDemoAddressBook(bootstrapPath);
+    } catch (error) {
+      if (process.env.DEBUG_OWNER_MATRIX) {
+        console.warn('Failed to load demo address book after bootstrap:', error);
+      }
+    }
+  }
+  if (
+    !addressBook &&
+    !bootstrapped &&
+    network &&
+    LOCAL_NETWORKS.has(network) &&
+    shouldBootstrapDemo(network)
+  ) {
     await runDemoBootstrap(network, bootstrapPath);
     try {
       if (bootstrapPath) {

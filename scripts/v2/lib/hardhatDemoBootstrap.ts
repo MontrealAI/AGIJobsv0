@@ -13,9 +13,10 @@ const DEMO_NETWORKS = new Set(['hardhat', 'localhost']);
 
 export async function bootstrapHardhatDemoConfig(
   configNetwork: string,
-  notes?: string[]
+  notes?: string[],
+  options: { force?: boolean } = {}
 ): Promise<void> {
-  if (!DEMO_BOOTSTRAP_ENV) {
+  if (!options.force && !DEMO_BOOTSTRAP_ENV) {
     return;
   }
   if (!DEMO_NETWORKS.has(network.name)) {

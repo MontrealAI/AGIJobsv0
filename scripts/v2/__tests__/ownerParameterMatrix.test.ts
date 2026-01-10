@@ -203,6 +203,50 @@ describe('prepareDemoOverrides', () => {
     expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000007');
   });
 
+  it('bootstraps demo overrides when local configs contain zero addresses', async () => {
+    await fs.mkdir(path.dirname(hardhatJobRegistryPath), { recursive: true });
+    await fs.writeFile(
+      hardhatJobRegistryPath,
+      JSON.stringify({ taxPolicy: '0x0000000000000000000000000000000000000000' }, null, 2)
+    );
+    await fs.writeFile(
+      hardhatThermoPath,
+      JSON.stringify(
+        { rewardEngine: { address: '0x0000000000000000000000000000000000000000' } },
+        null,
+        2
+      )
+    );
+
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockImplementation(() => {
+      const emitter = new EventEmitter();
+      void (async () => {
+        await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+        await fs.writeFile(
+          defaultPath,
+          JSON.stringify(
+            {
+              taxPolicy: '0x0000000000000000000000000000000000000011',
+              rewardEngine: '0x0000000000000000000000000000000000000022',
+              thermostat: '0x0000000000000000000000000000000000000033',
+            },
+            null,
+            2
+          )
+        );
+        emitter.emit('close', 0);
+      })();
+      return emitter;
+    });
+
+    const overrides = await prepareDemoOverrides('hardhat');
+    expect(mockedSpawn).toHaveBeenCalled();
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000011');
+  });
+
   it('rejects demo overrides on non-local networks', async () => {
     await expect(prepareDemoOverrides('mainnet')).rejects.toThrow(
       /only supported on local hardhat networks/
