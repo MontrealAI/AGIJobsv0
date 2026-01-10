@@ -1,15 +1,12 @@
-import { spawn } from 'child_process';
-import { EventEmitter } from 'events';
 import { existsSync, promises as fs } from 'fs';
 import path from 'path';
 
-jest.mock('child_process', () => ({
-  spawn: jest.fn(() => {
-    throw new Error('spawn not mocked');
-  }),
+jest.mock('../lib/hardhatOwnerMatrixBootstrap', () => ({
+  bootstrapHardhatOwnerMatrix: jest.fn(),
 }));
 
 import { prepareDemoOverrides, resolveDemoAddressBookPath } from '../ownerParameterMatrix';
+import { bootstrapHardhatOwnerMatrix } from '../lib/hardhatOwnerMatrixBootstrap';
 
 describe('resolveDemoAddressBookPath', () => {
   const envKey = 'OWNER_MATRIX_DEMO_ADDRESS_BOOK';
@@ -81,11 +78,7 @@ describe('prepareDemoOverrides', () => {
 
   afterEach(async () => {
     delete process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT;
-    const mockedSpawn = spawn as jest.Mock;
-    mockedSpawn.mockReset();
-    mockedSpawn.mockImplementation(() => {
-      throw new Error('spawn not mocked');
-    });
+    (bootstrapHardhatOwnerMatrix as jest.Mock).mockReset();
     if (existsSync(defaultPath)) {
       await fs.unlink(defaultPath);
     }
@@ -172,13 +165,11 @@ describe('prepareDemoOverrides', () => {
   });
 
   it('bootstraps demo overrides on local networks when addresses are missing', async () => {
-    const mockedSpawn = spawn as jest.Mock;
-    mockedSpawn.mockImplementation(() => {
-      const emitter = new EventEmitter();
-      void (async () => {
+    (bootstrapHardhatOwnerMatrix as jest.Mock).mockImplementation(
+      async (outputPath?: string) => {
         await fs.mkdir(path.dirname(defaultPath), { recursive: true });
         await fs.writeFile(
-          defaultPath,
+          outputPath ?? defaultPath,
           JSON.stringify(
             {
               taxPolicy: '0x0000000000000000000000000000000000000007',
@@ -189,13 +180,18 @@ describe('prepareDemoOverrides', () => {
             2
           )
         );
-        emitter.emit('close', 0);
-      })();
-      return emitter;
-    });
+        return {
+          generatedAt: new Date().toISOString(),
+          network: 'hardhat',
+          taxPolicy: '0x0000000000000000000000000000000000000007',
+          rewardEngine: '0x0000000000000000000000000000000000000008',
+          thermostat: '0x0000000000000000000000000000000000000009',
+        };
+      }
+    );
 
     const overrides = await prepareDemoOverrides('hardhat');
-    expect(mockedSpawn).toHaveBeenCalled();
+    expect(bootstrapHardhatOwnerMatrix).toHaveBeenCalled();
     expect(overrides?.jobRegistryPath).toBeDefined();
 
     const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
