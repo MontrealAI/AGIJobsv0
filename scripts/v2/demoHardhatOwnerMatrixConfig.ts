@@ -10,6 +10,12 @@ const DEFAULT_OUTPUT = path.join(
   'demo-hardhat-addresses.json'
 );
 
+interface DemoAddressOverrides {
+  taxPolicy: string;
+  rewardEngine: string;
+  thermostat: string;
+}
+
 function resolveOutputPath(): string {
   const override = process.env.OWNER_MATRIX_DEMO_ADDRESS_BOOK;
   if (!override || override.trim().length === 0) {
@@ -35,6 +41,51 @@ async function loadThermostatConfig(): Promise<{ temp: bigint; min: bigint; max:
     min: BigInt(minRaw),
     max: BigInt(maxRaw),
   };
+}
+
+export async function writeDemoNetworkConfig(
+  networkName: string,
+  overrides: DemoAddressOverrides
+): Promise<{ jobRegistryPath: string; thermodynamicsPath: string }> {
+  const configDir = path.join(process.cwd(), 'config');
+  const jobRegistrySource = path.join(configDir, 'job-registry.json');
+  const thermoSource = path.join(configDir, 'thermodynamics.json');
+
+  const jobRegistryRaw = await fs.readFile(jobRegistrySource, 'utf8');
+  const jobRegistryConfig = JSON.parse(jobRegistryRaw) as Record<string, unknown>;
+  jobRegistryConfig.taxPolicy = overrides.taxPolicy;
+
+  const thermoRaw = await fs.readFile(thermoSource, 'utf8');
+  const thermoConfig = JSON.parse(thermoRaw) as Record<string, any>;
+  const rewardEngineConfig = {
+    ...(thermoConfig.rewardEngine ?? {}),
+    address: overrides.rewardEngine,
+    thermostat: overrides.thermostat,
+  };
+  thermoConfig.rewardEngine = rewardEngineConfig;
+  thermoConfig.thermostat = {
+    ...(thermoConfig.thermostat ?? {}),
+    address: overrides.thermostat,
+  };
+
+  const jobRegistryPath = path.join(configDir, `job-registry.${networkName}.json`);
+  const thermodynamicsPath = path.join(
+    configDir,
+    `thermodynamics.${networkName}.json`
+  );
+
+  await fs.writeFile(
+    jobRegistryPath,
+    `${JSON.stringify(jobRegistryConfig, null, 2)}\n`,
+    'utf8'
+  );
+  await fs.writeFile(
+    thermodynamicsPath,
+    `${JSON.stringify(thermoConfig, null, 2)}\n`,
+    'utf8'
+  );
+
+  return { jobRegistryPath, thermodynamicsPath };
 }
 
 async function main(): Promise<void> {
@@ -108,6 +159,12 @@ async function main(): Promise<void> {
     thermostat: await thermostat.getAddress(),
   };
 
+  await writeDemoNetworkConfig(network.name, {
+    taxPolicy: payload.taxPolicy,
+    rewardEngine: payload.rewardEngine,
+    thermostat: payload.thermostat,
+  });
+
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 
@@ -115,7 +172,9 @@ async function main(): Promise<void> {
   console.table(payload);
 }
 
-main().catch((error) => {
-  console.error('demoHardhatOwnerMatrixConfig failed:', error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('demoHardhatOwnerMatrixConfig failed:', error);
+    process.exitCode = 1;
+  });
+}
