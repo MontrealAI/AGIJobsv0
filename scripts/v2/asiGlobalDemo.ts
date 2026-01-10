@@ -402,6 +402,11 @@ async function main(): Promise<void> {
         '--bundle-name',
         BUNDLE_NAME,
         '--skip-surface',
+        '--skip-plan',
+        '--skip-verify',
+        '--skip-dashboard',
+        '--only',
+        'surface',
       ],
       env: {
         AGJ_DEMO_BOOTSTRAP_HARDHAT: '1',
