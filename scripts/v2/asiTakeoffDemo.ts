@@ -345,7 +345,8 @@ async function main(): Promise<void> {
         BUNDLE_ROOT,
         '--bundle-name',
         'asi-takeoff',
-        '--skip-surface',
+        '--only',
+        'surface',
       ],
       env: {
         ...HARDHAT_ENV,
