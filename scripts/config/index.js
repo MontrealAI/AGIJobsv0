@@ -25,6 +25,10 @@ const NETWORK_ALIASES = new Map([
   ['sep', 'sepolia'],
   ['11155111', 'sepolia'],
   ['0xaa36a7', 'sepolia'],
+  ['hardhat', 'hardhat'],
+  ['localhost', 'localhost'],
+  ['31337', 'hardhat'],
+  ['0x7a69', 'hardhat'],
 ]);
 
 const DEFAULT_ENS_NAMES = {
