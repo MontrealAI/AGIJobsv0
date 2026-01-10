@@ -227,13 +227,13 @@ export function resolveDemoAddressBookPath(network?: string): string | undefined
 }
 
 function shouldBootstrapDemo(network?: string): boolean {
-  const explicit = process.env[OWNER_MATRIX_BOOTSTRAP_ENV];
-  if (explicit !== undefined) {
-    return explicit.trim() !== '' && explicit !== '0';
-  }
   const fallback = process.env[DEMO_BOOTSTRAP_ENV];
   if (fallback !== undefined) {
     return fallback.trim() !== '' && fallback !== '0';
+  }
+  const explicit = process.env[OWNER_MATRIX_BOOTSTRAP_ENV];
+  if (explicit !== undefined) {
+    return explicit.trim() !== '' && explicit !== '0';
   }
   return Boolean(network && LOCAL_NETWORKS.has(network));
 }
