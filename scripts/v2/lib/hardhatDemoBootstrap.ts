@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import fsSync from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
+import { writeDemoAddressBook } from './demoAddressBook';
 
 const DEMO_BOOTSTRAP_ENV =
   process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT ??
@@ -118,10 +119,21 @@ export async function bootstrapHardhatDemoConfig(
     `${JSON.stringify(nextThermoConfig, null, 2)}\n`
   );
 
+  await writeDemoAddressBook({
+    generatedAt: new Date().toISOString(),
+    network: network.name,
+    taxPolicy: taxPolicyAddress,
+    rewardEngine: rewardEngineAddress,
+    thermostat: thermostatAddress,
+  });
+
   notes?.push(
     `Bootstrapped demo contracts: TaxPolicy ${taxPolicyAddress}, Thermostat ${thermostatAddress}, RewardEngineMB ${rewardEngineAddress}.`
   );
   notes?.push(
     `Generated config/job-registry.${configNetwork}.json and config/thermodynamics.${configNetwork}.json for demo runs.`
+  );
+  notes?.push(
+    'Wrote deployment-config/generated/demo-hardhat-addresses.json for local demo address overrides.'
   );
 }

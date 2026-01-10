@@ -1,30 +1,16 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ethers, network } from 'hardhat';
+import {
+  resolveDemoAddressBookOutputPath,
+  writeDemoAddressBook,
+} from './lib/demoAddressBook';
 
 const LOCAL_NETWORKS = new Set(['hardhat', 'localhost']);
-const DEFAULT_OUTPUT = path.join(
-  process.cwd(),
-  'deployment-config',
-  'generated',
-  'demo-hardhat-addresses.json'
-);
-
 interface DemoAddressOverrides {
   taxPolicy: string;
   rewardEngine: string;
   thermostat: string;
-}
-
-function resolveOutputPath(): string {
-  const override = process.env.OWNER_MATRIX_DEMO_ADDRESS_BOOK;
-  if (!override || override.trim().length === 0) {
-    return DEFAULT_OUTPUT;
-  }
-  const trimmed = override.trim();
-  return path.isAbsolute(trimmed)
-    ? trimmed
-    : path.join(process.cwd(), trimmed);
 }
 
 async function loadThermostatConfig(): Promise<{ temp: bigint; min: bigint; max: bigint }> {
@@ -150,7 +136,6 @@ async function main(): Promise<void> {
   );
   await rewardEngine.waitForDeployment();
 
-  const outputPath = resolveOutputPath();
   const payload = {
     generatedAt: new Date().toISOString(),
     network: network.name,
@@ -165,8 +150,8 @@ async function main(): Promise<void> {
     thermostat: payload.thermostat,
   });
 
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+  const outputPath = resolveDemoAddressBookOutputPath();
+  await writeDemoAddressBook(payload, outputPath);
 
   console.log(`Demo owner matrix address book written to ${outputPath}`);
   console.table(payload);
