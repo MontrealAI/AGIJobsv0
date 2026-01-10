@@ -171,8 +171,7 @@ describe('prepareDemoOverrides', () => {
     expect(thermo.thermostat.address).toBe('0x0000000000000000000000000000000000000006');
   });
 
-  it('bootstraps demo overrides when bootstrap is enabled and addresses are missing', async () => {
-    process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT = '1';
+  it('bootstraps demo overrides on local networks when addresses are missing', async () => {
     const mockedSpawn = spawn as jest.Mock;
     mockedSpawn.mockImplementation(() => {
       const emitter = new EventEmitter();
@@ -202,5 +201,11 @@ describe('prepareDemoOverrides', () => {
     const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
     const jobRegistry = JSON.parse(jobRegistryRaw);
     expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000007');
+  });
+
+  it('rejects demo overrides on non-local networks', async () => {
+    await expect(prepareDemoOverrides('mainnet')).rejects.toThrow(
+      /only supported on local hardhat networks/
+    );
   });
 });

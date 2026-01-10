@@ -226,13 +226,16 @@ export function resolveDemoAddressBookPath(network?: string): string | undefined
   return path.join(process.cwd(), trimmed);
 }
 
-function shouldBootstrapDemo(): boolean {
+function shouldBootstrapDemo(network?: string): boolean {
   const explicit = process.env[OWNER_MATRIX_BOOTSTRAP_ENV];
   if (explicit !== undefined) {
     return explicit.trim() !== '' && explicit !== '0';
   }
   const fallback = process.env[DEMO_BOOTSTRAP_ENV];
-  return fallback !== undefined && fallback.trim() !== '' && fallback !== '0';
+  if (fallback !== undefined) {
+    return fallback.trim() !== '' && fallback !== '0';
+  }
+  return Boolean(network && LOCAL_NETWORKS.has(network));
 }
 
 function resolveBootstrapAddressBookPath(
@@ -415,7 +418,7 @@ export async function prepareDemoOverrides(
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
   }
-  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo()) {
+  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
     const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
     await runDemoBootstrap(network, bootstrapPath);
     try {
