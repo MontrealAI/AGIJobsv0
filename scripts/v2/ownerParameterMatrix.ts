@@ -549,20 +549,23 @@ function shouldRetryWithDemoOverrides(
   network?: string,
   demoOverrides?: DemoConfigOverrides | null
 ): boolean {
-  if (demoOverrides) {
-    return false;
-  }
   if (!network || !LOCAL_NETWORKS.has(network)) {
     return false;
   }
   const message = error instanceof Error ? error.message : String(error);
-  if (descriptorId === 'jobRegistry') {
-    return message.includes('JobRegistry tax policy cannot be the zero address');
+  const isJobRegistryError =
+    descriptorId === 'jobRegistry' &&
+    message.includes('JobRegistry tax policy cannot be the zero address');
+  const isThermoError =
+    descriptorId === 'thermodynamics' &&
+    message.includes('RewardEngine address cannot be the zero address');
+  if (!isJobRegistryError && !isThermoError) {
+    return false;
   }
-  if (descriptorId === 'thermodynamics') {
-    return message.includes('RewardEngine address cannot be the zero address');
+  if (!demoOverrides) {
+    return true;
   }
-  return false;
+  return hasExplicitBootstrapFlag();
 }
 
 function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], depth = 0): MatrixRow[] {
