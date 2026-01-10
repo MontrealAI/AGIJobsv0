@@ -1,4 +1,3 @@
-import { spawn } from 'child_process';
 import { existsSync, promises as fs } from 'fs';
 import path from 'path';
 import { ethers } from 'ethers';
@@ -14,6 +13,7 @@ import {
   loadPlatformIncentivesConfig,
   loadIdentityRegistryConfig,
 } from '../config';
+import { bootstrapHardhatOwnerMatrix } from './lib/hardhatOwnerMatrixBootstrap';
 
 interface CliOptions {
   network?: string;
@@ -92,12 +92,6 @@ const DEFAULT_DEMO_ADDRESS_BOOK = path.join(
 );
 const OWNER_MATRIX_BOOTSTRAP_ENV = 'OWNER_MATRIX_BOOTSTRAP_HARDHAT';
 const DEMO_BOOTSTRAP_ENV = 'AGJ_DEMO_BOOTSTRAP_HARDHAT';
-const DEMO_BOOTSTRAP_SCRIPT = path.join(
-  process.cwd(),
-  'scripts',
-  'v2',
-  'demoHardhatOwnerMatrixConfig.ts'
-);
 
 async function resolveHardhatContext(): Promise<HardhatContext> {
   try {
@@ -226,7 +220,29 @@ export function resolveDemoAddressBookPath(network?: string): string | undefined
   return path.join(process.cwd(), trimmed);
 }
 
-function shouldBootstrapDemo(network?: string): boolean {
+function isHardhatNetwork(
+  network?: string,
+  context?: HardhatContext
+): boolean {
+  if (network && network.toLowerCase() === 'hardhat') {
+    return true;
+  }
+  if (context?.name && context.name.toLowerCase() === 'hardhat') {
+    return true;
+  }
+  if (context?.chainId === 31337) {
+    return true;
+  }
+  return false;
+}
+
+function shouldBootstrapDemo(
+  network?: string,
+  context?: HardhatContext
+): boolean {
+  if (!isHardhatNetwork(network, context)) {
+    return false;
+  }
   const explicit = process.env[OWNER_MATRIX_BOOTSTRAP_ENV];
   if (explicit !== undefined) {
     return explicit.trim() !== '' && explicit !== '0';
@@ -251,37 +267,14 @@ function resolveBootstrapAddressBookPath(
 async function runDemoBootstrap(
   network: string,
   addressBookPath?: string
-): Promise<void> {
+): Promise<DemoAddressBook> {
   const outputPath = resolveBootstrapAddressBookPath(network, addressBookPath);
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(
-      'npx',
-      [
-        'hardhat',
-        'run',
-        '--no-compile',
-        DEMO_BOOTSTRAP_SCRIPT,
-        '--network',
-        network,
-      ],
-      {
-        cwd: process.cwd(),
-        env: {
-          ...process.env,
-          ...(outputPath ? { [DEMO_ADDRESS_BOOK_ENV]: outputPath } : {}),
-        },
-        stdio: 'inherit',
-      }
-    );
-    child.on('error', (error) => reject(error));
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Demo bootstrap exited with code ${code ?? 'unknown'}`));
-      }
-    });
-  });
+  const payload = await bootstrapHardhatOwnerMatrix(outputPath);
+  return {
+    taxPolicy: payload.taxPolicy,
+    rewardEngine: payload.rewardEngine,
+    thermostat: payload.thermostat,
+  };
 }
 
 function normaliseDemoAddress(value: unknown, label: string): string {
@@ -396,8 +389,24 @@ async function writeDemoConfigOverrides(
   return { jobRegistryPath, thermodynamicsPath };
 }
 
+async function demoAddressesHaveCode(
+  addressBook: DemoAddressBook
+): Promise<boolean> {
+  const hardhat = await import('hardhat');
+  const addresses = [
+    addressBook.taxPolicy,
+    addressBook.rewardEngine,
+    addressBook.thermostat,
+  ].filter((value): value is string => Boolean(value));
+  const codes = await Promise.all(
+    addresses.map((address) => hardhat.ethers.provider.getCode(address))
+  );
+  return codes.every((code) => code && code !== '0x');
+}
+
 export async function prepareDemoOverrides(
-  network?: string
+  network?: string,
+  hardhatContext?: HardhatContext
 ): Promise<DemoConfigOverrides | null> {
   const addressBookPath = resolveDemoAddressBookPath(network);
   if (!network || !LOCAL_NETWORKS.has(network)) {
@@ -405,6 +414,8 @@ export async function prepareDemoOverrides(
       `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
     );
   }
+  const canBootstrap = shouldBootstrapDemo(network, hardhatContext);
+  const shouldCheckChain = canBootstrap && Boolean(hardhatContext?.chainId || hardhatContext?.name);
   let addressBook: DemoAddressBook | null = null;
   if (addressBookPath) {
     try {
@@ -418,18 +429,15 @@ export async function prepareDemoOverrides(
   if (!addressBook) {
     addressBook = await deriveDemoAddressBookFromConfigs(network);
   }
-  if (!addressBook && network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
-    const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
-    await runDemoBootstrap(network, bootstrapPath);
-    try {
-      if (bootstrapPath) {
-        addressBook = await loadDemoAddressBook(bootstrapPath);
-      }
-    } catch (error) {
-      if (process.env.DEBUG_OWNER_MATRIX) {
-        console.warn('Failed to load demo address book after bootstrap:', error);
-      }
+  if (addressBook && shouldCheckChain) {
+    const hasCode = await demoAddressesHaveCode(addressBook);
+    if (!hasCode) {
+      addressBook = null;
     }
+  }
+  if (!addressBook && network && LOCAL_NETWORKS.has(network) && canBootstrap) {
+    const bootstrapPath = resolveBootstrapAddressBookPath(network, addressBookPath);
+    addressBook = await runDemoBootstrap(network, bootstrapPath);
   }
   if (!addressBook) {
     return null;
@@ -501,7 +509,8 @@ function flattenConfig(value: unknown, prefix = '', rows: MatrixRow[] = [], dept
 
 async function buildSubsystemMatrices(
   network?: string,
-  demoOverrides?: DemoConfigOverrides
+  demoOverrides?: DemoConfigOverrides,
+  hardhatContext?: HardhatContext
 ): Promise<SubsystemBuildResult[]> {
   let resolvedOverrides = demoOverrides;
   const descriptors: SubsystemDescriptor[] = [
@@ -666,7 +675,7 @@ async function buildSubsystemMatrices(
       });
     } catch (error) {
       if (shouldRetryWithDemoOverrides(descriptor.id, error, network, resolvedOverrides)) {
-        const overrides = await prepareDemoOverrides(network);
+        const overrides = await prepareDemoOverrides(network, hardhatContext);
         if (overrides) {
           resolvedOverrides = overrides;
           try {
@@ -849,8 +858,8 @@ async function main(): Promise<void> {
   const hardhat = await resolveHardhatContext();
   const selectedNetwork = options.network ?? process.env.HARDHAT_NETWORK ?? hardhat.name;
 
-  const demoOverrides = await prepareDemoOverrides(selectedNetwork);
-  const buildResults = await buildSubsystemMatrices(selectedNetwork, demoOverrides);
+  const demoOverrides = await prepareDemoOverrides(selectedNetwork, hardhat);
+  const buildResults = await buildSubsystemMatrices(selectedNetwork, demoOverrides, hardhat);
   const subsystems = buildResults.map((entry) => entry.matrix);
   const matrix: MatrixPayload = {
     network: selectedNetwork,
