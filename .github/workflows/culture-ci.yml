@@ -272,6 +272,7 @@ jobs:
           docker compose up -d culture-orchestrator culture-indexer culture-studio
       - name: Wait for readiness
         run: |
+          # shellcheck disable=SC2034
           for attempt in {1..40}; do
             if curl -fsS -X POST http://localhost:8545 \
               -H 'Content-Type: application/json' \
