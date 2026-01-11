@@ -191,6 +191,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-unit
+          include-hidden-files: true
           path: |
             .coverage.unit
             reports/python-coverage/unit.xml
@@ -239,6 +240,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-integration
+          include-hidden-files: true
           path: |
             .coverage.integration
             reports/python-coverage/integration.xml
@@ -373,6 +375,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-combined
+          include-hidden-files: true
           path: |
             .coverage
             reports/python-coverage/combined.xml

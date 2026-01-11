@@ -401,7 +401,7 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(pool.rewards(a2), expected2, 1);
     }
 
-    function test_mbWeights_sums_to_1e18() public {
+    function test_mbWeights_sums_to_1e18() public pure {
         int256[] memory E = new int256[](3);
         uint256[] memory g = new uint256[](3);
         E[0] = 1e18;
@@ -415,7 +415,7 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(sum, 1e18, 1);
     }
 
-    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public {
+    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public view {
         vm.assume(T > 0);
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;
