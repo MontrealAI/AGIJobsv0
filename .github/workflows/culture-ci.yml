@@ -189,12 +189,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Download contract coverage artifact
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
         with:
           name: culture-contract-coverage
           path: demo/CULTURE-v0
       - name: Download service coverage artifact
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
         with:
           name: culture-service-coverage
           path: demo/CULTURE-v0
