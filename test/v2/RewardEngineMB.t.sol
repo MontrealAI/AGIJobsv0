@@ -401,7 +401,7 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(pool.rewards(a2), expected2, 1);
     }
 
-    function test_mbWeights_sums_to_1e18() public {
+    function test_mbWeights_sums_to_1e18() public pure {
         int256[] memory E = new int256[](3);
         uint256[] memory g = new uint256[](3);
         E[0] = 1e18;

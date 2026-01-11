@@ -22,9 +22,11 @@ const icsModuleUrl = pathToFileURL(
   join(process.cwd(), 'packages', 'orchestrator', 'src', 'ics.ts')
 ).href;
 
-const run = async () => {
-  const fixturePayload = await readFile(fixturePath, 'utf8');
-  const module = await import(icsModuleUrl);
+(async () => {
+  const [fixturePayload, module] = await Promise.all([
+    readFile(fixturePath, 'utf8'),
+    import(icsModuleUrl),
+  ]);
   const validate = module.validateICS ?? module.default?.validateICS;
 
   if (!validate) {
@@ -39,9 +41,7 @@ const run = async () => {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`validateICS rejected fixture payload: ${message}`);
   }
-};
-
-run().catch((error) => {
+})().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

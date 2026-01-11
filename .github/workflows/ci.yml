@@ -56,8 +56,6 @@ jobs:
         run: npm run ci:preflight
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
-      - name: Validate ICS fixture with TypeScript validator
-        run: npm run ci:validate-ics-fixture
       - name: Assert required contexts manifest is synchronised
         run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
@@ -75,6 +73,34 @@ jobs:
 
       - name: Validate sentinel templates
         run: npm run monitoring:validate
+
+  ics_validation:
+    name: ICS fixture validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            **/package-lock.json
+      - name: Preflight toolchain locks
+        run: npm run ci:preflight
+      - name: Install dependencies
+        run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Validate ICS fixture with TypeScript validator
+        run: npm run ci:validate-ics-fixture
 
   tests:
     name: Tests
@@ -148,14 +174,14 @@ jobs:
           pip install -r requirements-python.txt
       - name: Run unit test suite
         run: |
-          coverage run --rcfile=.coveragerc -m pytest \
+          coverage run --rcfile=.coveragerc -m pytest -m "not requires_torch" \
             test/paymaster \
             test/tools \
             test/orchestrator \
             test/simulation
-          coverage run --rcfile=.coveragerc --append -m pytest tests
-          coverage run --rcfile=.coveragerc --append -m pytest packages/hgm-core/tests
-          coverage run --rcfile=.coveragerc --append -m pytest demo/Huxley-Godel-Machine-v0/tests
+          coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" tests
+          coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" packages/hgm-core/tests
+          coverage run --rcfile=.coveragerc --append -m pytest -m "not requires_torch" demo/Huxley-Godel-Machine-v0/tests
       - name: Export unit coverage data
         run: |
           mkdir -p reports/python-coverage
@@ -165,6 +191,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-unit
+          include-hidden-files: true
           path: |
             .coverage.unit
             reports/python-coverage/unit.xml
@@ -213,6 +240,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-integration
+          include-hidden-files: true
           path: |
             .coverage.integration
             reports/python-coverage/integration.xml
@@ -325,12 +353,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage==7.6.4
       - name: Download unit coverage data
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        uses: actions/download-artifact@v4
         with:
           name: python-coverage-unit
           path: coverage-data/unit
       - name: Download integration coverage data
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        uses: actions/download-artifact@v4
         with:
           name: python-coverage-integration
           path: coverage-data/integration
@@ -347,6 +375,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: python-coverage-combined
+          include-hidden-files: true
           path: |
             .coverage
             reports/python-coverage/combined.xml
@@ -1027,6 +1056,7 @@ jobs:
       - branch_protection
       - lint
       - tests
+      - ics_validation
       - python_unit
       - python_integration
       - python_load_sim
@@ -1071,6 +1101,7 @@ jobs:
             branch_protection: 'Branch protection guard',
             lint: 'Lint & static checks',
             tests: 'Tests',
+            ics_validation: 'ICS fixture validation',
             python_unit: 'Python unit tests',
             python_integration: 'Python integration tests',
             python_load_sim: 'Load-simulation reports',

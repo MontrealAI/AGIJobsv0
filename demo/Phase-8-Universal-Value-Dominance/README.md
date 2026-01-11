@@ -7,12 +7,31 @@
 - **Module Focus:** Anchors Demo → Phase 8 Universal Value Dominance inside the AGI Jobs v0 (v2) lattice so teams can orchestrate economic, governance, and operational missions with deterministic guardrails.
 - **Integration Role:** Interfaces with the unified owner control plane, telemetry mesh, and contract registry to deliver end-to-end resilience.
 
+## Quickstart
+1. From the repository root, run `npm install` once to hydrate all workspaces.
+2. Regenerate the Phase 8 outputs with `npm run demo:phase8:orchestrate` when manifest data changes.
+3. Validate the manifest and exported artifacts with `npm run demo:phase8:ci`.
+
+### Exported artifacts
+- `phase8-governance-calldata.json`
+- `phase8-safe-transaction-batch.json`
+- `phase8-telemetry-report.md`
+- `phase8-mermaid-diagram.mmd`
+- `phase8-orchestration-report.txt`
+- `phase8-governance-directives.md`
+- `phase8-governance-checklist.md`
+- `phase8-self-improvement-plan.json`
+- `phase8-cycle-report.csv`
+- `phase8-dominance-scorecard.json`
+- `phase8-emergency-overrides.json`
+- `phase8-guardian-response-playbook.md`
+
 ## Capabilities
 - Provides opinionated configuration and assets tailored to `demo/Phase-8-Universal-Value-Dominance` while remaining interoperable with the global AGI Jobs v0 (v2) runtime.
 - Ships with safety-first defaults so non-technical operators can activate the experience without compromising security or compliance.
 - Publishes ready-to-automate hooks for CI, observability, and ledger reconciliation.
 
-## Systems Map
+## Mermaid
 ```mermaid
 flowchart LR
     Operators((Mission Owners)) --> demo_Phase_8_Universal_Value_Dominance[[Demo → Phase 8 Universal Value Dominance]]
@@ -20,6 +39,14 @@ flowchart LR
     Core --> Observability[[Unified CI / CD & Observability]]
     Core --> Governance[[Owner Control Plane]]
 ```
+
+## Smart contract
+- Governance execution manifests live in `phase8-governance-calldata.json` and `phase8-safe-transaction-batch.json`.
+- Emergency pause/resume actions are packaged in `phase8-emergency-overrides.json` for guardian use.
+
+## Self-improvement
+- The adaptive roadmap and cadence targets are documented in `phase8-self-improvement-plan.json`.
+- Use `phase8-cycle-report.csv` alongside `phase8-dominance-scorecard.json` to track iteration quality and resilience scores.
 
 ## Working With This Module
 1. From the repository root run `npm install` once to hydrate all workspaces.

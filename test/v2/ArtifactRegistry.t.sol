@@ -39,10 +39,12 @@ contract IdentityStub is IIdentityRegistry {
         external
         view
         override
-        returns (bool ok, bytes32 node, bool, bool)
+        returns (bool ok, bytes32 node, bool viaWrapper, bool viaMerkle)
     {
         ok = authorised[claimant] && bytes(subdomain).length > 0;
         node = bytes32(0);
+        viaWrapper = false;
+        viaMerkle = false;
     }
 
     function verifyValidator(address, string calldata, bytes32[] calldata)
