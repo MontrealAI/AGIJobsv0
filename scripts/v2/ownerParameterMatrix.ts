@@ -100,6 +100,24 @@ const DEMO_BOOTSTRAP_SCRIPT = path.join(
   'demoHardhatOwnerMatrixConfig.ts'
 );
 
+function resolveDemoNetwork(network?: string): string | undefined {
+  if (network) {
+    return network;
+  }
+  const fallbackKeys = [
+    DEMO_BOOTSTRAP_ENV,
+    OWNER_MATRIX_BOOTSTRAP_ENV,
+    DEMO_ADDRESS_BOOK_ENV,
+  ];
+  for (const key of fallbackKeys) {
+    const value = process.env[key];
+    if (value !== undefined && value.trim() !== '' && value !== '0') {
+      return 'hardhat';
+    }
+  }
+  return undefined;
+}
+
 async function resolveHardhatContext(): Promise<HardhatContext> {
   try {
     const hardhat = await import('hardhat');
@@ -469,8 +487,9 @@ async function writeDemoConfigOverrides(
 export async function prepareDemoOverrides(
   network?: string
 ): Promise<DemoConfigOverrides | null> {
-  const addressBookPath = resolveDemoAddressBookPath(network);
-  if (!network || !LOCAL_NETWORKS.has(network)) {
+  const resolvedNetwork = resolveDemoNetwork(network);
+  const addressBookPath = resolveDemoAddressBookPath(resolvedNetwork);
+  if (!resolvedNetwork || !LOCAL_NETWORKS.has(resolvedNetwork)) {
     if (process.env[DEMO_ADDRESS_BOOK_ENV]) {
       throw new Error(
         `${DEMO_ADDRESS_BOOK_ENV} is only supported on local hardhat networks`
@@ -489,27 +508,27 @@ export async function prepareDemoOverrides(
     }
   }
   let bootstrapped = false;
-  const bootstrapPath =
-    network && LOCAL_NETWORKS.has(network)
-      ? resolveBootstrapAddressBookPath(network, addressBookPath)
-      : undefined;
-  if (network && LOCAL_NETWORKS.has(network) && shouldBootstrapDemo(network)) {
+  const bootstrapPath = resolveBootstrapAddressBookPath(
+    resolvedNetwork,
+    addressBookPath
+  );
+  if (shouldBootstrapDemo(resolvedNetwork)) {
     const shouldForceBootstrap = hasExplicitBootstrapFlag();
     if (shouldForceBootstrap) {
-      await runDemoBootstrap(network, bootstrapPath);
+      await runDemoBootstrap(resolvedNetwork, bootstrapPath);
       bootstrapped = true;
     } else {
       const addressBookReady =
         (await demoAddressBookHasAddresses(addressBookPath)) ||
-        (await demoConfigsHaveAddresses(network));
+        (await demoConfigsHaveAddresses(resolvedNetwork));
       if (!addressBookReady) {
-        await runDemoBootstrap(network, bootstrapPath);
+        await runDemoBootstrap(resolvedNetwork, bootstrapPath);
         bootstrapped = true;
       }
     }
   }
   if (!addressBook) {
-    addressBook = await deriveDemoAddressBookFromConfigs(network);
+    addressBook = await deriveDemoAddressBookFromConfigs(resolvedNetwork);
   }
   if (bootstrapped && bootstrapPath) {
     try {
@@ -523,11 +542,11 @@ export async function prepareDemoOverrides(
   if (
     !addressBook &&
     !bootstrapped &&
-    network &&
-    LOCAL_NETWORKS.has(network) &&
-    shouldBootstrapDemo(network)
+    resolvedNetwork &&
+    LOCAL_NETWORKS.has(resolvedNetwork) &&
+    shouldBootstrapDemo(resolvedNetwork)
   ) {
-    await runDemoBootstrap(network, bootstrapPath);
+    await runDemoBootstrap(resolvedNetwork, bootstrapPath);
     try {
       if (bootstrapPath) {
         addressBook = await loadDemoAddressBook(bootstrapPath);
@@ -541,7 +560,7 @@ export async function prepareDemoOverrides(
   if (!addressBook) {
     return null;
   }
-  return writeDemoConfigOverrides(addressBook, network);
+  return writeDemoConfigOverrides(addressBook, resolvedNetwork);
 }
 
 function shouldRetryWithDemoOverrides(
@@ -968,16 +987,21 @@ async function main(): Promise<void> {
     hardhat.name ??
     inferredFromHardhat ??
     inferredFromEnv;
+  const resolvedNetwork = resolveDemoNetwork(selectedNetwork);
 
-  const demoOverrides = await prepareDemoOverrides(selectedNetwork);
-  const buildResults = await buildSubsystemMatrices(selectedNetwork, demoOverrides);
+  const demoOverrides = await prepareDemoOverrides(resolvedNetwork);
+  const buildResults = await buildSubsystemMatrices(resolvedNetwork, demoOverrides);
   const subsystems = buildResults.map((entry) => entry.matrix);
   const matrix: MatrixPayload = {
-    network: selectedNetwork,
+    network: resolvedNetwork,
     subsystems: subsystems.map((entry) => ({
       ...entry,
-      updateCommands: entry.updateCommands.map((cmd) => replaceNetworkPlaceholder(cmd, selectedNetwork)),
-      verifyCommands: entry.verifyCommands.map((cmd) => replaceNetworkPlaceholder(cmd, selectedNetwork)),
+      updateCommands: entry.updateCommands.map((cmd) =>
+        replaceNetworkPlaceholder(cmd, resolvedNetwork)
+      ),
+      verifyCommands: entry.verifyCommands.map((cmd) =>
+        replaceNetworkPlaceholder(cmd, resolvedNetwork)
+      ),
     })),
     generatedAt: new Date().toISOString(),
   };

@@ -327,6 +327,39 @@ describe('prepareDemoOverrides', () => {
     expect(thermo.rewardEngine.address).toBe('0x0000000000000000000000000000000000000022');
   });
 
+  it('bootstraps demo overrides when the network is omitted but demo env is set', async () => {
+    process.env.AGJ_DEMO_BOOTSTRAP_HARDHAT = '1';
+    const mockedSpawn = spawn as jest.Mock;
+    mockedSpawn.mockImplementation(() => {
+      const emitter = new EventEmitter();
+      void (async () => {
+        await fs.mkdir(path.dirname(defaultPath), { recursive: true });
+        await fs.writeFile(
+          defaultPath,
+          JSON.stringify(
+            {
+              taxPolicy: '0x0000000000000000000000000000000000000101',
+              rewardEngine: '0x0000000000000000000000000000000000000202',
+              thermostat: '0x0000000000000000000000000000000000000303',
+            },
+            null,
+            2
+          )
+        );
+        emitter.emit('close', 0);
+      })();
+      return emitter;
+    });
+
+    const overrides = await prepareDemoOverrides();
+    expect(mockedSpawn).toHaveBeenCalled();
+    expect(overrides?.jobRegistryPath).toBeDefined();
+
+    const jobRegistryRaw = await fs.readFile(overrides!.jobRegistryPath!, 'utf8');
+    const jobRegistry = JSON.parse(jobRegistryRaw);
+    expect(jobRegistry.taxPolicy).toBe('0x0000000000000000000000000000000000000101');
+  });
+
   it('skips demo overrides on non-local networks when no override is set', async () => {
     await expect(prepareDemoOverrides('mainnet')).resolves.toBeNull();
   });
