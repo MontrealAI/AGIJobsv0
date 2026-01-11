@@ -357,7 +357,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      REGISTRY_OWNER: ${{ toLower(github.repository_owner) }}
+      REGISTRY_OWNER: ${{ github.repository_owner }}
     strategy:
       fail-fast: false
       matrix:

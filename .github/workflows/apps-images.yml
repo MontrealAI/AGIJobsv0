@@ -50,8 +50,8 @@ jobs:
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:latest
+            ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/owner-console:latest
           provenance: false
           sbom: false
           outputs: type=docker
@@ -60,7 +60,7 @@ jobs:
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
-          REF="ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}"
+          REF="ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}"
           DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
@@ -72,7 +72,7 @@ jobs:
               --vuln-type os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
+              ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
 
       - name: Trivy (libraries – audit only)
         continue-on-error: true
@@ -83,7 +83,7 @@ jobs:
               --vuln-type library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
+              ghcr.io/${{ github.repository_owner }}/owner-console:${{ github.sha }}
 
   portal:
     runs-on: ubuntu-24.04
@@ -125,8 +125,8 @@ jobs:
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository_owner) }}/webapp:latest
+            ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/webapp:latest
           provenance: false
           sbom: false
           outputs: type=docker
@@ -135,7 +135,7 @@ jobs:
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
-          REF="ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}"
+          REF="ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}"
           DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
@@ -147,7 +147,7 @@ jobs:
               --vuln-type os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
+              ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
 
       - name: Trivy (libraries – audit only)
         continue-on-error: true
@@ -158,7 +158,7 @@ jobs:
               --vuln-type library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
+              ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
 
   provenance-console:
     if: github.ref == 'refs/heads/main'
@@ -169,7 +169,7 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', toLower(github.repository_owner), needs.console.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', github.repository_owner, needs.console.outputs.digest)) }}
 
   provenance-portal:
     if: github.ref == 'refs/heads/main'
@@ -180,4 +180,4 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', toLower(github.repository_owner), needs.portal.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', github.repository_owner, needs.portal.outputs.digest)) }}
