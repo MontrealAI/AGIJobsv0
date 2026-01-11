@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -56,6 +57,11 @@ def test_create_job_ics_validates_with_ts_validator(monkeypatch):
     assert plan.ics is not None, "Planner should emit an ICS payload for complete jobs"
     payload = json.dumps(plan.ics)
 
+    env = os.environ.copy()
+    env.setdefault(
+        "TS_NODE_COMPILER_OPTIONS",
+        json.dumps({"module": "esnext", "moduleResolution": "node"}),
+    )
     subprocess.run(
         [
             "node",
@@ -63,10 +69,13 @@ def test_create_job_ics_validates_with_ts_validator(monkeypatch):
             "ts-node/esm",
             "-e",
             (
-                "import { validateICS } from './packages/orchestrator/src/ics.ts';"
-                "validateICS(process.argv[1]);"
+                "import * as mod from './packages/orchestrator/src/ics.ts';"
+                "const validate = mod.validateICS ?? mod.default?.validateICS;"
+                "if (!validate) { throw new Error('validateICS export not found'); }"
+                "validate(process.argv[1]);"
             ),
             payload,
         ],
         check=True,
+        env=env,
     )

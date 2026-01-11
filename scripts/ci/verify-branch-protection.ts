@@ -162,7 +162,8 @@ async function fetchProtection(
     const isIntegration403 =
       response.status === 403 &&
       (text.includes('Resource not accessible by integration') ||
-        text.includes('Must have admin rights'));
+        text.includes('Must have admin rights') ||
+        text.includes('requires authentication'));
     if (isIntegration403 && !enforce) {
       console.log(
         '::notice::Branch protection audit skipped: GitHub token lacks administration:read access. ' +
