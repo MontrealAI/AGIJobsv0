@@ -106,7 +106,13 @@ contract ValidationFinalizeGas is Test {
 
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
-        vm.roll(block.number + 2);
+        uint256 targetBlock = block.number + 1;
+        vm.setBlockhash(
+            targetBlock,
+            keccak256(abi.encodePacked(jobId, burnTxHash, targetBlock))
+        );
+        vm.roll(targetBlock + 1);
+        vm.prevrandao(uint256(keccak256(abi.encodePacked(jobId, targetBlock))));
         validation.selectValidators(jobId, 0);
     }
 
@@ -178,4 +184,3 @@ contract ValidationFinalizeGas is Test {
         validation.setCommitWindow(0);
     }
 }
-

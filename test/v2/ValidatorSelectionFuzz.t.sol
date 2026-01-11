@@ -61,10 +61,16 @@ contract ValidatorSelectionFuzz is Test {
         internal
         returns (address[] memory selected)
     {
+        uint256 targetBlock = block.number + 1;
         validation.selectValidators(jobId, entropySeed);
         vm.prank(ENTROPY_HELPER);
         validation.selectValidators(jobId, entropySeed + 1);
-        vm.roll(block.number + 2);
+        vm.setBlockhash(
+            targetBlock,
+            keccak256(abi.encodePacked(jobId, entropySeed, targetBlock))
+        );
+        vm.roll(targetBlock + 1);
+        vm.prevrandao(uint256(keccak256(abi.encodePacked(jobId, targetBlock))));
         selected = validation.selectValidators(jobId, entropySeed + 2);
         validation.resetJobNonce(jobId);
         validation.resetSelection(jobId);
