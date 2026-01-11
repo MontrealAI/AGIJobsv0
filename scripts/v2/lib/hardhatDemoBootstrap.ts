@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import fsSync from 'fs';
 import path from 'path';
-import { ethers, network } from 'hardhat';
+import { artifacts, ethers, network, run } from 'hardhat';
 import { writeDemoAddressBook } from './demoAddressBook';
 
 const DEMO_BOOTSTRAP_ENV =
@@ -10,6 +10,32 @@ const DEMO_BOOTSTRAP_ENV =
   process.env.THERMODYNAMICS_REPORT_BOOTSTRAP_HARDHAT ??
   process.env.OWNER_PLAN_BOOTSTRAP_HARDHAT;
 const DEMO_NETWORKS = new Set(['hardhat', 'localhost']);
+
+async function ensureDemoArtifacts(): Promise<void> {
+  const requiredArtifacts = [
+    'TaxPolicy',
+    'Thermostat',
+    'RewardEngineMB',
+    'contracts/v2/mocks/RewardEngineMBMocks.sol:MockFeePool',
+    'contracts/v2/mocks/RewardEngineMBMocks.sol:MockReputation',
+    'contracts/v2/mocks/RewardEngineMBMocks.sol:MockEnergyOracle',
+  ];
+
+  for (const artifactName of requiredArtifacts) {
+    try {
+      await artifacts.readArtifact(artifactName);
+    } catch (_) {
+      if (!process.env.HARDHAT_FAST_COMPILE) {
+        process.env.HARDHAT_FAST_COMPILE = '1';
+      }
+      if (process.env.HARDHAT_JOBREGISTRY_VIA_IR === undefined) {
+        process.env.HARDHAT_JOBREGISTRY_VIA_IR = 'true';
+      }
+      await run('compile');
+      return;
+    }
+  }
+}
 
 export async function bootstrapHardhatDemoConfig(
   configNetwork: string,
@@ -33,6 +59,8 @@ export async function bootstrapHardhatDemoConfig(
   const jobConfig = JSON.parse(fsSync.readFileSync(baseJobPath, 'utf8'));
   const thermoConfig = JSON.parse(fsSync.readFileSync(baseThermoPath, 'utf8'));
   const taxConfig = JSON.parse(fsSync.readFileSync(baseTaxPath, 'utf8'));
+
+  await ensureDemoArtifacts();
 
   const [deployer] = await ethers.getSigners();
 
