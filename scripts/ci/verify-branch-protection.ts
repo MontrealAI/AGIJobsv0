@@ -40,11 +40,6 @@ type BranchProtectionResponse = {
   };
 };
 
-function isPullRequestContext(): boolean {
-  const eventName = process.env.GITHUB_EVENT_NAME ?? '';
-  return eventName.startsWith('pull_request');
-}
-
 function parseArgs(): Args {
   const parsed: Args = { branch: 'main' };
   const [, , ...argv] = process.argv;
@@ -152,6 +147,7 @@ async function fetchProtection(
   branch: string,
   token: string
 ): Promise<BranchProtectionResponse | null> {
+  const enforce = process.env.BRANCH_PROTECTION_ENFORCE === '1';
   const url = `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(
     branch
   )}/protection`;
@@ -165,15 +161,21 @@ async function fetchProtection(
 
   if (!response.ok) {
     const text = await response.text();
-    if (
+    const isIntegration403 =
       response.status === 403 &&
-      isPullRequestContext() &&
-      text.includes('Resource not accessible by integration')
-    ) {
-      console.warn(
-        'Skipping branch protection audit on pull request due to insufficient GitHub token scopes.'
+      text.includes('Resource not accessible by integration');
+    if (isIntegration403 && !enforce) {
+      console.log(
+        '::notice::Branch protection audit skipped: GitHub token lacks administration:read access. ' +
+          'Set BRANCH_PROTECTION_ENFORCE=1 to require this check in CI.'
       );
       return null;
+    }
+    if (isIntegration403 && enforce) {
+      throw new Error(
+        'Branch protection audit requires elevated permissions (administration:read). ' +
+          'Provide a token with access or unset BRANCH_PROTECTION_ENFORCE.'
+      );
     }
     throw new Error(
       `GitHub API request failed with ${response.status} ${response.statusText}: ${text}`

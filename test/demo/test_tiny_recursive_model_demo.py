@@ -9,11 +9,16 @@ import tempfile
 
 import pytest
 
+pytestmark = pytest.mark.requires_torch
+
 DEMO_ROOT = Path(__file__).resolve().parents[2] / "demo" / "Tiny-Recursive-Model-v0"
 if str(DEMO_ROOT) not in sys.path:
     sys.path.append(str(DEMO_ROOT))
 
-torch = pytest.importorskip("torch")
+torch = pytest.importorskip(
+    "torch",
+    reason="PyTorch is required for Tiny Recursive Model demo tests. Install torch and run pytest -m requires_torch.",
+)
 
 from trm_demo.config import DemoSettings, load_settings
 from trm_demo.dataset import OperationSequenceDataset
