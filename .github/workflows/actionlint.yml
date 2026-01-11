@@ -19,4 +19,4 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Run actionlint
-        uses: rhysd/actionlint@9a8d280cae38c6e2341ec201bc74e9dc6f21119a
+        uses: rhysd/actionlint@v1.7.10
