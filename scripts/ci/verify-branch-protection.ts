@@ -40,6 +40,11 @@ type BranchProtectionResponse = {
   };
 };
 
+function isPullRequestContext(): boolean {
+  const eventName = process.env.GITHUB_EVENT_NAME ?? '';
+  return eventName.startsWith('pull_request');
+}
+
 function parseArgs(): Args {
   const parsed: Args = { branch: 'main' };
   const [, , ...argv] = process.argv;
@@ -146,7 +151,7 @@ async function fetchProtection(
   repo: string,
   branch: string,
   token: string
-): Promise<BranchProtectionResponse> {
+): Promise<BranchProtectionResponse | null> {
   const url = `https://api.github.com/repos/${owner}/${repo}/branches/${encodeURIComponent(
     branch
   )}/protection`;
@@ -160,6 +165,16 @@ async function fetchProtection(
 
   if (!response.ok) {
     const text = await response.text();
+    if (
+      response.status === 403 &&
+      isPullRequestContext() &&
+      text.includes('Resource not accessible by integration')
+    ) {
+      console.warn(
+        'Skipping branch protection audit on pull request due to insufficient GitHub token scopes.'
+      );
+      return null;
+    }
     throw new Error(
       `GitHub API request failed with ${response.status} ${response.statusText}: ${text}`
     );
@@ -275,6 +290,9 @@ async function main(): Promise<void> {
     const { owner, repo } = deriveOwnerRepo(args.owner, args.repo);
     const token = resolveToken(args.token);
     const protection = await fetchProtection(owner, repo, args.branch, token);
+    if (!protection) {
+      return;
+    }
     const rows = evaluate(protection);
     printReport(owner, repo, args.branch, rows);
     const failed = rows
