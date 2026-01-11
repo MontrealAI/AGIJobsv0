@@ -7,7 +7,7 @@ from orchestrator.models import PlanIn
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 
 
-def test_create_job_ics_matches_fixture(monkeypatch):
+def test_create_job_ics_fixture_matches_golden(monkeypatch):
     monkeypatch.setattr(
         planner,
         "_generate_trace_id",
