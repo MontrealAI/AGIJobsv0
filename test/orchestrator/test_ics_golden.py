@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def test_create_job_ics_matches_fixture(monkeypatch, tmp_path):
     if shutil.which("node") is None:
         pytest.skip("Node.js runtime is required for ICS validation")
+    if not (ROOT / "node_modules" / "ts-node" / "esm.mjs").exists():
+        pytest.skip("ts-node is required for ICS validation")
 
     monkeypatch.setattr(
         planner,
