@@ -264,7 +264,7 @@ jobs:
           unset SECRET_VALUE
 
       - name: Download release bundle
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        uses: actions/download-artifact@v4
         with:
           name: release-prep
           path: reports/prep
@@ -465,7 +465,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download release preparation artefacts
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
+        uses: actions/download-artifact@v4
         with:
           name: release-prep
           path: release-prep

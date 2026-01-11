@@ -1,5 +1,6 @@
 [
   "ci (v2) / Lint & static checks",
+  "ci (v2) / ICS fixture validation",
   "ci (v2) / Tests",
   "ci (v2) / Python unit tests",
   "ci (v2) / Python integration tests",
