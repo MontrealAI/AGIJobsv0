@@ -7,11 +7,13 @@ from typing import Dict
 import sys
 import tempfile
 
+import pytest
+
 DEMO_ROOT = Path(__file__).resolve().parents[2] / "demo" / "Tiny-Recursive-Model-v0"
 if str(DEMO_ROOT) not in sys.path:
     sys.path.append(str(DEMO_ROOT))
 
-import torch
+torch = pytest.importorskip("torch")
 
 from trm_demo.config import DemoSettings, load_settings
 from trm_demo.dataset import OperationSequenceDataset
