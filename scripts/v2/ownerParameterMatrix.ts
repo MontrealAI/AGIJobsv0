@@ -13,6 +13,7 @@ import {
   loadTaxPolicyConfig,
   loadPlatformIncentivesConfig,
   loadIdentityRegistryConfig,
+  inferNetworkKey,
 } from '../config';
 
 interface CliOptions {
@@ -956,7 +957,17 @@ async function main(): Promise<void> {
   }
 
   const hardhat = await resolveHardhatContext();
-  const selectedNetwork = options.network ?? process.env.HARDHAT_NETWORK ?? hardhat.name;
+  const inferredFromHardhat =
+    hardhat.chainId !== undefined ? inferNetworkKey(String(hardhat.chainId)) : undefined;
+  const inferredFromEnv = process.env.CHAIN_ID
+    ? inferNetworkKey(process.env.CHAIN_ID)
+    : undefined;
+  const selectedNetwork =
+    options.network ??
+    process.env.HARDHAT_NETWORK ??
+    hardhat.name ??
+    inferredFromHardhat ??
+    inferredFromEnv;
 
   const demoOverrides = await prepareDemoOverrides(selectedNetwork);
   const buildResults = await buildSubsystemMatrices(selectedNetwork, demoOverrides);

@@ -26,7 +26,14 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
+      registry_owner: ${{ steps.registry_owner.outputs.value }}
     steps:
+      - name: Set registry owner
+        id: registry_owner
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "value=$owner" >> "$GITHUB_OUTPUT"
+          echo "REGISTRY_OWNER=$owner" >> "$GITHUB_ENV"
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
@@ -44,14 +51,14 @@ jobs:
         id: build_console
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
-          context: .
+          context: apps/console
           file: apps/console/Dockerfile
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:latest
+            ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
+            ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:latest
           provenance: false
           sbom: false
           outputs: type=docker
@@ -60,7 +67,7 @@ jobs:
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
-          REF="ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}"
+          REF="ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}"
           DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
@@ -72,7 +79,7 @@ jobs:
               --vuln-type os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
+              ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
 
       - name: Trivy (libraries – audit only)
         continue-on-error: true
@@ -83,13 +90,20 @@ jobs:
               --vuln-type library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/owner-console:${{ github.sha }}
+              ghcr.io/${{ env.REGISTRY_OWNER }}/owner-console:${{ github.sha }}
 
   portal:
     runs-on: ubuntu-24.04
     outputs:
       digest: ${{ steps.get_digest.outputs.digest }}
+      registry_owner: ${{ steps.registry_owner.outputs.value }}
     steps:
+      - name: Set registry owner
+        id: registry_owner
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "value=$owner" >> "$GITHUB_OUTPUT"
+          echo "REGISTRY_OWNER=$owner" >> "$GITHUB_ENV"
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955
         with:
           fetch-depth: 0
@@ -119,14 +133,14 @@ jobs:
         id: build_portal
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         with:
-          context: .
+          context: apps/enterprise-portal
           file: apps/enterprise-portal/Dockerfile
           platforms: linux/amd64
           push: ${{ github.ref == 'refs/heads/main' }}
           load: ${{ github.ref != 'refs/heads/main' }}
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository_owner) }}/webapp:latest
+            ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
+            ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:latest
           provenance: false
           sbom: false
           outputs: type=docker
@@ -135,7 +149,7 @@ jobs:
         id: get_digest
         if: github.ref == 'refs/heads/main'
         run: |
-          REF="ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}"
+          REF="ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}"
           DIGEST=$(docker buildx imagetools inspect "$REF" | awk -F'[: ]+' '/Digest:/ {print $2; exit}')
           echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
@@ -147,7 +161,7 @@ jobs:
               --vuln-type os \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
+              ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
 
       - name: Trivy (libraries – audit only)
         continue-on-error: true
@@ -158,7 +172,7 @@ jobs:
               --vuln-type library \
               --severity HIGH,CRITICAL \
               --exit-code 0 \
-              ghcr.io/${{ toLower(github.repository_owner) }}/webapp:${{ github.sha }}
+              ghcr.io/${{ env.REGISTRY_OWNER }}/webapp:${{ github.sha }}
 
   provenance-console:
     if: github.ref == 'refs/heads/main'
@@ -169,7 +183,7 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', toLower(github.repository_owner), needs.console.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/owner-console@{1}', needs.console.outputs.registry_owner, needs.console.outputs.digest)) }}
 
   provenance-portal:
     if: github.ref == 'refs/heads/main'
@@ -180,4 +194,4 @@ jobs:
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
     with:
-      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', toLower(github.repository_owner), needs.portal.outputs.digest)) }}
+      base64-subjects: ${{ toJson(format('ghcr.io/{0}/webapp@{1}', needs.portal.outputs.registry_owner, needs.portal.outputs.digest)) }}

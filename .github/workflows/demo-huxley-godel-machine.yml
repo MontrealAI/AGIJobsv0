@@ -36,7 +36,7 @@ jobs:
       - name: Run demo with fast overrides
         run: |
           python demo/Huxley-Godel-Machine-v0/run_demo.py \
-            --set simulation.evaluation_latency=[0.0,0.0] \
-            --set simulation.expansion_latency=[0.0,0.0] \
+            --set "simulation.evaluation_latency=[0.0,0.0]" \
+            --set "simulation.expansion_latency=[0.0,0.0]" \
             --output-dir demo/Huxley-Godel-Machine-v0/artifacts-ci
           cat demo/Huxley-Godel-Machine-v0/artifacts-ci/summary.txt
