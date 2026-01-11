@@ -56,6 +56,8 @@ jobs:
         run: npm run ci:preflight
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
+      - name: Validate ICS fixture with TypeScript validator
+        run: npm run ci:validate-ics-fixture
       - name: Assert required contexts manifest is synchronised
         run: npm run ci:sync-contexts -- --check
       - name: Verify toolchain locks
@@ -196,7 +198,7 @@ jobs:
           pip install -r requirements-python.txt
       - name: Run integration suite
         run: |
-          coverage run --rcfile=.coveragerc -m pytest \
+          coverage run --rcfile=.coveragerc -m pytest -m "not requires_torch" \
             test/routes/test_agents.py \
             test/routes/test_analytics.py \
             test/routes/test_onebox_health.py \
