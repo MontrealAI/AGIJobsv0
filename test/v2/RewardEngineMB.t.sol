@@ -415,7 +415,7 @@ contract RewardEngineMBTest is Test {
         assertApproxEqAbs(sum, 1e18, 1);
     }
 
-    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public view {
+    function testFuzz_mbWeights_normalization(int256 e1, int256 e2, int256 T) public {
         vm.assume(T > 0);
         vm.assume(T >= thermo.minTemp() && T <= thermo.maxTemp());
         int256 minE = e1 < e2 ? e1 : e2;

@@ -22,24 +22,26 @@ const icsModuleUrl = pathToFileURL(
   join(process.cwd(), 'packages', 'orchestrator', 'src', 'ics.ts')
 ).href;
 
-Promise.all([readFile(fixturePath, 'utf8'), import(icsModuleUrl)])
-  .then(([fixturePayload, module]) => {
-    const validate = module.validateICS ?? module.default?.validateICS;
+(async () => {
+  const [fixturePayload, module] = await Promise.all([
+    readFile(fixturePath, 'utf8'),
+    import(icsModuleUrl),
+  ]);
+  const validate = module.validateICS ?? module.default?.validateICS;
 
-    if (!validate) {
-      throw new Error(
-        'validateICS export not found in packages/orchestrator/src/ics.ts'
-      );
-    }
+  if (!validate) {
+    throw new Error(
+      'validateICS export not found in packages/orchestrator/src/ics.ts'
+    );
+  }
 
-    try {
-      validate(fixturePayload);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`validateICS rejected fixture payload: ${message}`);
-    }
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
+  try {
+    validate(fixturePayload);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`validateICS rejected fixture payload: ${message}`);
+  }
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
