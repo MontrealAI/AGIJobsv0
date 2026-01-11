@@ -35,4 +35,4 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: |
           cd demo/Tiny-Recursive-Model-v0
-          pytest -q
+          pytest -q -m "not requires_torch"

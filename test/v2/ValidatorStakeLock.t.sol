@@ -105,6 +105,7 @@ contract ValidatorStakeLockTest is Test {
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
         uint256 targetBlock = block.number + 1;
+        vm.roll(targetBlock);
         vm.setBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, burnTxHash, targetBlock))
