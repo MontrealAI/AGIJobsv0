@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -11,22 +11,13 @@ if (!process.env.TS_NODE_COMPILER_OPTIONS) {
   process.env.TS_NODE_COMPILER_OPTIONS = JSON.stringify(compilerOptions);
 }
 
-const fixturePath = join(
-  process.cwd(),
-  'test',
-  'orchestrator',
-  'fixtures',
-  'create_job_complete.json'
-);
+const fixturesDir = join(process.cwd(), 'test', 'orchestrator', 'fixtures');
 const icsModuleUrl = pathToFileURL(
   join(process.cwd(), 'packages', 'orchestrator', 'src', 'ics.ts')
 ).href;
 
-(async () => {
-  const [fixturePayload, module] = await Promise.all([
-    readFile(fixturePath, 'utf8'),
-    import(icsModuleUrl),
-  ]);
+async function loadValidator() {
+  const module = await import(icsModuleUrl);
   const validate = module.validateICS ?? module.default?.validateICS;
 
   if (!validate) {
@@ -35,13 +26,34 @@ const icsModuleUrl = pathToFileURL(
     );
   }
 
-  try {
-    validate(fixturePayload);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`validateICS rejected fixture payload: ${message}`);
+  return validate;
+}
+
+async function main() {
+  const [fixtureNames, validate] = await Promise.all([
+    readdir(fixturesDir),
+    loadValidator(),
+  ]);
+  const jsonFixtures = fixtureNames.filter((name) => name.endsWith('.json'));
+
+  if (jsonFixtures.length === 0) {
+    throw new Error(`No JSON fixtures found under ${fixturesDir}`);
   }
-})().catch((error) => {
+
+  for (const name of jsonFixtures) {
+    const fixturePath = join(fixturesDir, name);
+    const fixturePayload = await readFile(fixturePath, 'utf8');
+    try {
+      validate(fixturePayload);
+      console.log(`✅ validated ${name}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`validateICS rejected ${name}: ${message}`);
+    }
+  }
+}
+
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

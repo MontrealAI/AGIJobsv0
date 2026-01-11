@@ -99,7 +99,7 @@ jobs:
         run: npm run ci:preflight
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
-      - name: Validate ICS fixture with TypeScript validator
+      - name: Validate ICS fixtures with TypeScript validator
         run: npm run ci:validate-ics-fixture
 
   tests:
@@ -353,12 +353,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage==7.6.4
       - name: Download unit coverage data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-coverage-unit
           path: coverage-data/unit
       - name: Download integration coverage data
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: python-coverage-integration
           path: coverage-data/integration
@@ -528,7 +528,7 @@ jobs:
             echo 'forge-std already present; skipping install.';
           fi
       - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256
+        run: forge test -vv --ffi --fuzz-runs 256
 
   coverage:
     name: Coverage thresholds
