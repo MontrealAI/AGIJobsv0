@@ -159,7 +159,7 @@ jobs:
       - name: Export unit coverage data
         run: |
           mkdir -p reports/python-coverage
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/unit.xml
+          coverage xml --rcfile=.coveragerc --fail-under=0 -o reports/python-coverage/unit.xml
       - name: Upload unit coverage artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -207,7 +207,7 @@ jobs:
       - name: Export integration coverage data
         run: |
           mkdir -p reports/python-coverage
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/integration.xml
+          coverage xml --rcfile=.coveragerc --fail-under=0 -o reports/python-coverage/integration.xml
       - name: Upload integration coverage artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -325,12 +325,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage==7.6.4
       - name: Download unit coverage data
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
         with:
           name: python-coverage-unit
           path: coverage-data/unit
       - name: Download integration coverage data
-        uses: actions/download-artifact@11b4b7b450363a5e5f998efa20d2b6c9e9c03989
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e
         with:
           name: python-coverage-integration
           path: coverage-data/integration
@@ -340,8 +340,8 @@ jobs:
       - name: Enforce Python coverage threshold
         run: |
           mkdir -p reports/python-coverage
-          coverage report --rcfile=.coveragerc
-          coverage xml --rcfile=.coveragerc -o reports/python-coverage/combined.xml
+          coverage report --rcfile=.coveragerc --fail-under=85
+          coverage xml --rcfile=.coveragerc --fail-under=85 -o reports/python-coverage/combined.xml
       - name: Upload combined coverage artefacts
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
