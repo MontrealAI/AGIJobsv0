@@ -100,7 +100,7 @@ jobs:
       - name: Install dependencies
         run: ./scripts/ci/npm-ci.sh --no-audit --prefer-offline --progress=false
       - name: Validate ICS fixtures with TypeScript validator
-        run: npm run ci:validate-ics-fixtures
+        run: npm run ci:validate-ics-fixture
 
   tests:
     name: Tests
@@ -528,7 +528,7 @@ jobs:
             echo 'forge-std already present; skipping install.';
           fi
       - name: Foundry tests
-        run: forge test -vvvv --ffi --fuzz-runs 256
+        run: forge test -vv --ffi --fuzz-runs 256
 
   coverage:
     name: Coverage thresholds
