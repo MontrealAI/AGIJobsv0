@@ -136,7 +136,7 @@
     "ci:verify-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/verify-branch-protection.ts",
     "ci:enforce-branch-protection": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/enforce-branch-protection.ts",
     "ci:sync-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/update-ci-required-contexts.ts",
-    "ci:validate-ics-fixture": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"esnext\",\"moduleResolution\":\"node\"}' node --loader ts-node/esm scripts/ci/validate-ics-fixture.mjs",
+    "ci:validate-ics-fixtures": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"esnext\",\"moduleResolution\":\"node\"}' node --loader ts-node/esm scripts/ci/validate-ics-fixtures.mjs",
     "ci:owner-authority": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/render-owner-assurance.ts",
     "ci:verify-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-required-contexts.ts",
     "ci:verify-companion-contexts": "npx ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/ci/check-ci-companion-contexts.ts",

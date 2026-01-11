@@ -127,16 +127,14 @@ function deriveOwnerRepo(
   );
 }
 
-function resolveToken(explicitToken?: string): string {
+function resolveToken(explicitToken?: string): string | null {
   const token =
     explicitToken ||
     process.env.GITHUB_TOKEN ||
     process.env.GH_TOKEN ||
     process.env.PAT;
   if (!token) {
-    throw new Error(
-      'Missing GitHub token. Provide --token or set GITHUB_TOKEN/GH_TOKEN/PAT.'
-    );
+    return null;
   }
   return token;
 }
@@ -291,7 +289,20 @@ async function main(): Promise<void> {
   try {
     const args = parseArgs();
     const { owner, repo } = deriveOwnerRepo(args.owner, args.repo);
+    const enforce = process.env.BRANCH_PROTECTION_ENFORCE === '1';
     const token = resolveToken(args.token);
+    if (!token) {
+      if (enforce) {
+        throw new Error(
+          'Missing GitHub token. Provide --token or set GITHUB_TOKEN/GH_TOKEN/PAT.'
+        );
+      }
+      console.log(
+        '::notice::Branch protection audit skipped: no GitHub token available. ' +
+          'Set BRANCH_PROTECTION_ENFORCE=1 and provide a token with administration:read to enforce.'
+      );
+      return;
+    }
     const protection = await fetchProtection(owner, repo, args.branch, token);
     if (!protection) {
       return;
