@@ -120,6 +120,19 @@ const MAX_UINT96 = (1n << 96n) - 1n;
 const DEFAULT_TAX_URI = 'ipfs://policy';
 const DEFAULT_TAX_DESCRIPTION =
   'All taxes on participants; contract and owner exempt';
+const LOCAL_NETWORKS = new Set(['hardhat', 'localhost', 'anvil']);
+
+async function getLocalGasLimitOverride(): Promise<bigint | undefined> {
+  if (!LOCAL_NETWORKS.has(network.name)) {
+    return undefined;
+  }
+  const latestBlock = await ethers.provider.getBlock('latest');
+  const blockGasLimit = latestBlock?.gasLimit;
+  if (!blockGasLimit || blockGasLimit <= 1n) {
+    return undefined;
+  }
+  return blockGasLimit - 1n;
+}
 
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {};
@@ -546,21 +559,26 @@ async function main() {
 
   await ensureAgialphaToken();
 
+  const gasLimitOverride = await getLocalGasLimitOverride();
+  const txOverrides = gasLimitOverride ? { gasLimit: gasLimitOverride } : {};
+
   const Deployer = await ethers.getContractFactory(
     'contracts/v2/Deployer.sol:Deployer'
   );
-  const deployer = await Deployer.deploy();
+  const deployer = await Deployer.deploy({
+    ...txOverrides,
+  });
   await deployer.waitForDeployment();
   const deployerAddress = await deployer.getAddress();
   console.log('Deployer deployed at', deployerAddress);
 
   const tx = withTax
     ? hasEconOverrides
-      ? await deployer.deploy(econ, identity, governance)
-      : await deployer.deployDefaults(identity, governance)
+      ? await deployer.deploy(econ, identity, governance, txOverrides)
+      : await deployer.deployDefaults(identity, governance, txOverrides)
     : hasEconOverrides
-    ? await deployer.deployWithoutTaxPolicy(econ, identity, governance)
-    : await deployer.deployDefaultsWithoutTaxPolicy(identity, governance);
+    ? await deployer.deployWithoutTaxPolicy(econ, identity, governance, txOverrides)
+    : await deployer.deployDefaultsWithoutTaxPolicy(identity, governance, txOverrides);
 
   const receipt = await tx.wait();
   const deployLog = receipt.logs.find((log) => log.address === deployerAddress);
