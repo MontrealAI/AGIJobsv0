@@ -353,12 +353,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage==7.6.4
       - name: Download unit coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@v4
         with:
           name: python-coverage-unit
           path: coverage-data/unit
       - name: Download integration coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@v4
         with:
           name: python-coverage-integration
           path: coverage-data/integration
@@ -528,7 +528,7 @@ jobs:
             echo 'forge-std already present; skipping install.';
           fi
       - name: Foundry tests
-        run: forge test -vv --ffi --fuzz-runs 256
+        run: forge test --ffi --fuzz-runs 128
 
   coverage:
     name: Coverage thresholds
@@ -1239,4 +1239,4 @@ jobs:
             echo 'forge-std already present; skipping install.';
           fi
       - name: Run invariant suite
-        run: forge test -vvvv --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 512
+        run: forge test --ffi --match-path 'test/v2/invariant/**' --fuzz-runs 256

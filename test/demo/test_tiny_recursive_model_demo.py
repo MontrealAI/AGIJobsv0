@@ -9,15 +9,13 @@ import tempfile
 
 import pytest
 
-pytestmark = pytest.mark.requires_torch
-
 DEMO_ROOT = Path(__file__).resolve().parents[2] / "demo" / "Tiny-Recursive-Model-v0"
 if str(DEMO_ROOT) not in sys.path:
     sys.path.append(str(DEMO_ROOT))
 
 torch = pytest.importorskip(
     "torch",
-    reason="PyTorch is required for Tiny Recursive Model demo tests. Install torch and run pytest -m requires_torch.",
+    reason="torch is optional; install torch and run -m requires_torch",
 )
 
 from trm_demo.config import DemoSettings, load_settings
@@ -50,6 +48,7 @@ def _make_sample(engine: TrmEngine) -> Dict[str, torch.Tensor]:
     return {key: value.to(engine.device) for key, value in sample.items() if key in {"start", "steps", "length"}}
 
 
+@pytest.mark.requires_torch
 def test_trm_halting_converges_quickly() -> None:
     settings = _load_default_settings()
     engine = _build_engine(settings)
@@ -60,6 +59,7 @@ def test_trm_halting_converges_quickly() -> None:
     assert 0 <= result.prediction < settings.trm.answer_dim
 
 
+@pytest.mark.requires_torch
 def test_simulation_roi_advantage() -> None:
     settings = _load_default_settings()
     settings.sentinel = replace(
@@ -102,6 +102,7 @@ def test_simulation_roi_advantage() -> None:
     assert len(summary.trm.steps_distribution) == 24
 
 
+@pytest.mark.requires_torch
 def test_training_updates_parameters(tmp_path: Path) -> None:
     settings = _load_default_settings()
     settings.training = replace(
