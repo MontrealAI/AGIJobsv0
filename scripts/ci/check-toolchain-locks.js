@@ -106,14 +106,44 @@ function checkWorkflows() {
 }
 
 function checkFoundryVersion() {
-  const foundryToml = readFileTrim('foundry.toml');
-  if (!foundryToml) {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  if (!fs.existsSync(workflowsDir)) {
     return;
   }
 
-  const forgeVersionMatches = /forge_version\s*=\s*"1\.4\.4"/.test(foundryToml);
-  if (!forgeVersionMatches) {
-    problems.push('foundry.toml must pin forge_version = "1.4.4"');
+  const workflowFiles = fs
+    .readdirSync(workflowsDir)
+    .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'));
+
+  const expectedVersion = 'v1.4.4';
+  let foundToolchain = false;
+  const mismatchedPins = [];
+
+  for (const file of workflowFiles) {
+    const filePath = path.join(workflowsDir, file);
+    const contents = fs.readFileSync(filePath, 'utf8');
+    if (!contents.includes('foundry-rs/foundry-toolchain')) {
+      continue;
+    }
+    foundToolchain = true;
+    const hasExpectedPin =
+      contents.includes(`version: '${expectedVersion}'`) ||
+      contents.includes(`version: "${expectedVersion}"`) ||
+      contents.includes(`version: ${expectedVersion}`);
+    if (!hasExpectedPin) {
+      mismatchedPins.push(file);
+    }
+  }
+
+  if (!foundToolchain) {
+    problems.push('No workflow pins foundry-rs/foundry-toolchain version');
+    return;
+  }
+
+  if (mismatchedPins.length > 0) {
+    problems.push(
+      `Foundry toolchain version must be pinned to ${expectedVersion} in: ${mismatchedPins.join(', ')}`
+    );
   }
 }
 

@@ -484,6 +484,8 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      FOUNDRY_VERSION: 'v1.4.4'
     steps:
       - name: Harden runner
         uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a
@@ -511,15 +513,6 @@ jobs:
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
           version: 'v1.4.4'
-      - name: Cache Foundry build artifacts
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: |
-            ~/.foundry/cache
-            ~/.cache/foundry
-          key: foundry-${{ runner.os }}-${{ hashFiles('foundry.toml') }}
-          restore-keys: |
-            foundry-${{ runner.os }}-
       - name: Ensure forge-std dependency
         run: |
           if [ ! -d lib/forge-std ]; then
@@ -530,8 +523,8 @@ jobs:
       - name: Clear Foundry compiler cache
         run: |
           rm -f cache/solidity-files-cache.json || true
-          rm -f ~/.foundry/cache/solidity-files-cache.json || true
-          rm -f ~/.cache/foundry/solidity-files-cache.json || true
+          rm -rf ~/.foundry/cache || true
+          rm -rf ~/.cache/foundry || true
       - name: Foundry tests
         run: forge test --ffi --fuzz-runs 128
 

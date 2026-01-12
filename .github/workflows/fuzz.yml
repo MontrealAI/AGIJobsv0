@@ -73,8 +73,8 @@ jobs:
       - name: Clear Foundry compiler cache
         run: |
           rm -f cache/solidity-files-cache.json || true
-          rm -f ~/.foundry/cache/solidity-files-cache.json || true
-          rm -f ~/.cache/foundry/solidity-files-cache.json || true
+          rm -rf ~/.foundry/cache || true
+          rm -rf ~/.cache/foundry || true
 
       - name: Foundry fuzz tests
         env:
