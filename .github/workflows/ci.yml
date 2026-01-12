@@ -353,12 +353,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install coverage==7.6.4
       - name: Download unit coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
         with:
           name: python-coverage-unit
           path: coverage-data/unit
       - name: Download integration coverage data
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806
         with:
           name: python-coverage-integration
           path: coverage-data/integration
@@ -455,6 +455,13 @@ jobs:
         uses: foundry-rs/foundry-toolchain@50d5a8956f2e319df19e6b57539d7e2acb9f8c1e
         with:
           version: 'v1.4.4'
+      - name: Verify Foundry toolchain
+        run: |
+          export PATH="$HOME/.foundry/bin:$PATH"
+          if ! command -v forge >/dev/null 2>&1; then
+            echo "::error::Foundry (forge) not available after install."
+            exit 1
+          fi
       - name: Generate owner control assurance reports
         run: |
           mkdir -p reports/owner-control

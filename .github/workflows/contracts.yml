@@ -92,6 +92,9 @@ jobs:
         with:
           version: 'v1.4.4'
 
+      - name: Purge Foundry compiler cache
+        run: rm -rf ~/.foundry/cache ~/.cache/foundry
+
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
 
