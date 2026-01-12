@@ -104,13 +104,20 @@ contract ValidatorStakeLockTest is Test {
 
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
-        uint256 targetBlock = block.number + 1;
-        vm.roll(targetBlock);
+        uint256 targetBlock = validation.selectionBlock(jobId);
+        if (targetBlock == 0) {
+            targetBlock = block.number + 1;
+        }
+        if (targetBlock > block.number) {
+            vm.roll(targetBlock);
+        }
         vm.setBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, burnTxHash, targetBlock))
         );
-        vm.roll(targetBlock + 1);
+        if (block.number <= targetBlock) {
+            vm.roll(targetBlock + 1);
+        }
         vm.prevrandao(uint256(keccak256(abi.encodePacked(jobId, targetBlock))));
         selected = validation.selectValidators(jobId, 0);
     }

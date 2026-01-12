@@ -45,6 +45,9 @@ jobs:
         with:
           version: 'v1.4.4'
 
+      - name: Purge Foundry compiler cache
+        run: rm -rf ~/.foundry/cache ~/.cache/foundry
+
       - name: Cache forge libraries
         id: cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830

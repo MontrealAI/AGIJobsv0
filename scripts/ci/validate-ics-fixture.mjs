@@ -2,22 +2,25 @@ import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const compilerOptions = {
-  module: 'esnext',
-  moduleResolution: 'node',
-};
+async function main() {
+  const compilerOptions = {
+    module: 'esnext',
+    moduleResolution: 'node',
+  };
 
-if (!process.env.TS_NODE_COMPILER_OPTIONS) {
-  process.env.TS_NODE_COMPILER_OPTIONS = JSON.stringify(compilerOptions);
-}
+  if (!process.env.TS_NODE_COMPILER_OPTIONS) {
+    process.env.TS_NODE_COMPILER_OPTIONS = JSON.stringify(compilerOptions);
+  }
 
-const fixturesDir = join(process.cwd(), 'test', 'orchestrator', 'fixtures');
-const icsModuleUrl = pathToFileURL(
-  join(process.cwd(), 'packages', 'orchestrator', 'src', 'ics.ts')
-).href;
+  const fixturesDir = join(process.cwd(), 'test', 'orchestrator', 'fixtures');
+  const icsModuleUrl = pathToFileURL(
+    join(process.cwd(), 'packages', 'orchestrator', 'src', 'ics.ts')
+  ).href;
 
-async function loadValidator() {
-  const module = await import(icsModuleUrl);
+  const [fixtureNames, module] = await Promise.all([
+    readdir(fixturesDir),
+    import(icsModuleUrl),
+  ]);
   const validate = module.validateICS ?? module.default?.validateICS;
 
   if (!validate) {
@@ -25,15 +28,6 @@ async function loadValidator() {
       'validateICS export not found in packages/orchestrator/src/ics.ts'
     );
   }
-
-  return validate;
-}
-
-async function main() {
-  const [fixtureNames, validate] = await Promise.all([
-    readdir(fixturesDir),
-    loadValidator(),
-  ]);
   const jsonFixtures = fixtureNames.filter((name) => name.endsWith('.json'));
 
   if (jsonFixtures.length === 0) {
