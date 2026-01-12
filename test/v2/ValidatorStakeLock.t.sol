@@ -108,7 +108,7 @@ contract ValidatorStakeLockTest is Test {
         if (targetBlock == 0) {
             targetBlock = block.number + 1;
         }
-        if (targetBlock > block.number) {
+        if (block.number != targetBlock) {
             vm.roll(targetBlock);
         }
         vm.setBlockhash(
