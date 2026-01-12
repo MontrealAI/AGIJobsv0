@@ -90,6 +90,13 @@ contract ValidationFinalizeGas is Test {
         validation.setValidatorSubdomains(accounts, subdomains);
     }
 
+    function _rollPastAndSetBlockhash(uint256 blockNumber, bytes32 blockHash) internal {
+        if (block.number <= blockNumber) {
+            vm.roll(blockNumber + 1);
+        }
+        vm.setBlockhash(blockNumber, blockHash);
+    }
+
     function _prepareJob() internal returns (uint256 jobId) {
         jobId = 1;
         MockJobRegistry.LegacyJob memory job;
@@ -107,7 +114,7 @@ contract ValidationFinalizeGas is Test {
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
         uint256 targetBlock = block.number + 1;
-        vm.setBlockhash(
+        _rollPastAndSetBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, burnTxHash, targetBlock))
         );

@@ -92,6 +92,12 @@ jobs:
         with:
           version: 'v1.4.4'
 
+      - name: Clear Foundry compiler cache
+        run: |
+          rm -f cache/solidity-files-cache.json || true
+          rm -rf ~/.foundry/cache || true
+          rm -rf ~/.cache/foundry || true
+
       - name: Foundry tests
         run: forge test -vvvv --ffi --fuzz-runs 256 --match-contract 'CommitReveal|Stake|Fee|Slashing'
 

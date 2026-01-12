@@ -89,6 +89,13 @@ contract ValidatorStakeLockTest is Test {
         return ITaxPolicy(address(0));
     }
 
+    function _rollPastAndSetBlockhash(uint256 blockNumber, bytes32 blockHash) internal {
+        if (block.number <= blockNumber) {
+            vm.roll(blockNumber + 1);
+        }
+        vm.setBlockhash(blockNumber, blockHash);
+    }
+
     function _prepareJob(uint256 jobId) internal returns (address[] memory selected) {
         MockJobRegistry.LegacyJob memory job;
         job.employer = employer;
@@ -105,8 +112,7 @@ contract ValidatorStakeLockTest is Test {
         vm.prank(address(jobRegistry));
         validation.start(jobId, 0);
         uint256 targetBlock = block.number + 1;
-        vm.roll(targetBlock);
-        vm.setBlockhash(
+        _rollPastAndSetBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, burnTxHash, targetBlock))
         );
