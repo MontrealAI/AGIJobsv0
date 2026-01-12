@@ -70,6 +70,9 @@ jobs:
           npx ts-node --compiler-options '{"module":"commonjs"}' scripts/generate-constants.ts
           npx hardhat compile
 
+      - name: Clear Foundry compiler cache
+        run: rm -f cache/solidity-files-cache.json || true
+
       - name: Foundry fuzz tests
         env:
           FOUNDRY_PROFILE: default
