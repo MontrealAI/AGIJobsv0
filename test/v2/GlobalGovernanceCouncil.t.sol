@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {GlobalGovernanceCouncil} from "../../contracts/v2/governance/GlobalGovernanceCouncil.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract GlobalGovernanceCouncilTest is Test {
     GlobalGovernanceCouncil internal council;
@@ -58,7 +59,7 @@ contract GlobalGovernanceCouncilTest is Test {
         vm.prank(owner);
         council.pause();
         vm.prank(nationGovernorA);
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert(Pausable.EnforcedPause.selector);
         council.recordNationVote(mandate, nationA, true, "vote");
 
         vm.prank(owner);

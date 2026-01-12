@@ -65,6 +65,7 @@ contract ValidatorSelectionFuzz is Test {
         validation.selectValidators(jobId, entropySeed);
         vm.prank(ENTROPY_HELPER);
         validation.selectValidators(jobId, entropySeed + 1);
+        vm.roll(targetBlock);
         vm.setBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, entropySeed, targetBlock))
