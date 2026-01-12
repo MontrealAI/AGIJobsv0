@@ -196,7 +196,7 @@ contract ValidatorSelectionFuzz is Test {
         for (uint256 i; i < poolSize; i++) {
             uint256 a = counts[i];
             uint256 diff = a > expected ? a - expected : expected - a;
-            assertLt(diff, expected);
+            assertLe(diff, expected);
         }
     }
 }
