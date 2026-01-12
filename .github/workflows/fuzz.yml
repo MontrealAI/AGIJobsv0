@@ -71,7 +71,10 @@ jobs:
           npx hardhat compile
 
       - name: Clear Foundry compiler cache
-        run: rm -f cache/solidity-files-cache.json || true
+        run: |
+          rm -f cache/solidity-files-cache.json || true
+          rm -f ~/.foundry/cache/solidity-files-cache.json || true
+          rm -f ~/.cache/foundry/solidity-files-cache.json || true
 
       - name: Foundry fuzz tests
         env:
