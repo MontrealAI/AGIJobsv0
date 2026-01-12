@@ -527,6 +527,8 @@ jobs:
           else
             echo 'forge-std already present; skipping install.';
           fi
+      - name: Clear Foundry compiler cache
+        run: rm -f cache/solidity-files-cache.json || true
       - name: Foundry tests
         run: forge test --ffi --fuzz-runs 128
 

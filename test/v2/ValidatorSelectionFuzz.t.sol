@@ -57,6 +57,13 @@ contract ValidatorSelectionFuzz is Test {
         stake.setValidationModule(address(validation));
     }
 
+    function _rollPastAndSetBlockhash(uint256 blockNumber, bytes32 blockHash) internal {
+        if (block.number <= blockNumber) {
+            vm.roll(blockNumber + 1);
+        }
+        vm.setBlockhash(blockNumber, blockHash);
+    }
+
     function _select(uint256 jobId, uint256 entropySeed)
         internal
         returns (address[] memory selected)
@@ -65,7 +72,7 @@ contract ValidatorSelectionFuzz is Test {
         validation.selectValidators(jobId, entropySeed);
         vm.prank(ENTROPY_HELPER);
         validation.selectValidators(jobId, entropySeed + 1);
-        vm.setBlockhash(
+        _rollPastAndSetBlockhash(
             targetBlock,
             keccak256(abi.encodePacked(jobId, entropySeed, targetBlock))
         );
